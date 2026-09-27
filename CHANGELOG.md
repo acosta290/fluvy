@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.2] — 2026-09-27
+
 ### Added
 
 - Tiles card: each tile's readouts are chosen in the editor (a plug's power, its energy today, its cost); a wide
