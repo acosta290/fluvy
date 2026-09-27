@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-09-27
+
 ### Added
 
 - A public demo at https://acosta290.github.io/fluvy/: the real cards, pages and settings panel on the simulated
