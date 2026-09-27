@@ -28,6 +28,11 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Desk plug Energy', unit_of_measurement: 'kWh', device_class: 'energy' },
     ],
     [
+      'sensor.desk_plug_cost',
+      '0.31',
+      { friendly_name: 'Desk plug Cost', unit_of_measurement: '€', device_class: 'monetary' },
+    ],
+    [
       'cover.blinds',
       'open',
       {
@@ -74,6 +79,39 @@ export const sheet: SheetSpec = {
         },
         { type: 'custom:fluvy-tile-card', entity: 'cover.blinds', cols: 6 },
         { type: 'custom:fluvy-tile-card', entity: 'light.porch' },
+      ],
+    },
+    // a tile on its own row holds three readouts (power, today, cost); half a row holds two of the three
+    {
+      title: 'Three readouts',
+      cards: [
+        {
+          type: 'custom:fluvy-tile-card',
+          entity: 'switch.desk_plug',
+          readouts: ['sensor.desk_plug_power', 'sensor.desk_plug_energy', 'sensor.desk_plug_cost'],
+        },
+      ],
+    },
+    {
+      title: 'Three readouts, half a row',
+      width: 480,
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'large',
+          columns: 2,
+          tiles: [
+            {
+              entity: 'switch.desk_plug',
+              readouts: [
+                'sensor.desk_plug_power',
+                'sensor.desk_plug_energy',
+                'sensor.desk_plug_cost',
+              ],
+            },
+            { entity: 'light.ceiling' },
+          ],
+        },
       ],
     },
     {

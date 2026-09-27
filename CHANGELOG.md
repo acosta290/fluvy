@@ -5,6 +5,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Tiles card: each tile's readouts are chosen in the editor (a plug's power, its energy today, its cost); a wide
+  tile shows three, a narrower one two. A sensor whose device class is monetary is labelled Cost.
+- Light card: half a section is enough. Under 260 px of content (or `variant: compact`) the card keeps its head,
+  with the level in the state line, and the brightness ruler alone, so two lamps share a line; the layout editor
+  lets it go down to six columns (it stopped at nine).
+
 ## [1.1.1] — 2026-09-27
 
 ### Changed

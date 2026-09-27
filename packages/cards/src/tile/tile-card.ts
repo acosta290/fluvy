@@ -55,7 +55,7 @@ export interface TileItem {
   name?: string;
   icon?: string;
   tone?: Tone;
-  /** Up to two entities shown as small readouts in the foot of a large tile (a plug's power and energy today); the first one joins the state line of a small tile. */
+  /** Entities shown as small readouts in the foot of a large tile (a plug's power, its energy today, its cost): two, or three when the tile is wide; the first one joins the state line of a small tile. */
   readouts?: readonly string[];
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
@@ -84,6 +84,8 @@ const TOGGLE: ActionConfig = { action: 'toggle' };
 const HEAD_ROOM = 44 + 8 + 48;
 /** Two readouts share a foot from this inner width; under it the first one has the foot to itself. */
 const TWO_READOUTS = 120;
+/** Three readouts (power, today, cost) share a foot from this inner width: a tile on its own row. */
+const THREE_READOUTS = 292;
 
 /**
  * The tile. Large (172 × 168): icon circle + switch, name, state, and a foot that is either a compact
@@ -107,6 +109,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       }
       .fv-tile__foot {
         grid-template-columns: minmax(0, 46%) minmax(0, 54%);
+      }
+      .fv-tile__foot--three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
       .fv-tile__foot--one {
         grid-template-columns: minmax(0, 1fr);
@@ -154,7 +159,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         actionField('hold_action'),
       ],
       ...formLabels({
-        readouts: 'editor.entities',
+        readouts: 'editor.readouts',
         hold_action: 'editor.hold_action',
       }),
     };
@@ -429,8 +434,13 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         @click=${(e: Event) => e.stopPropagation()}
       ></fluvy-ruler>`;
     } else if (item.readouts?.length) {
-      const shown = inner >= TWO_READOUTS ? 2 : 1;
-      foot = html`<div class="fv-tile__foot ${shown === 1 ? 'fv-tile__foot--one' : ''}">
+      const shown = Math.min(
+        item.readouts.length,
+        inner >= THREE_READOUTS ? 3 : inner >= TWO_READOUTS ? 2 : 1,
+      );
+      foot = html`<div
+        class="fv-tile__foot ${shown === 1 ? 'fv-tile__foot--one' : shown === 3 ? 'fv-tile__foot--three' : ''}"
+      >
         ${item.readouts.slice(0, shown).map((id) => {
           const r = this.entity(id);
           const p = valueParts(this.hass, r);
@@ -439,7 +449,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
               ? this.t('energy.power')
               : r.deviceClass === 'energy'
                 ? this.t('energy.today')
-                : r.name.replace(name, '').trim() || r.name;
+                : r.deviceClass === 'monetary'
+                  ? this.t('energy.cost')
+                  : r.name.replace(name, '').trim() || r.name;
           return readout({ label: short, value: p.value, unit: p.unit, size: 'xs' });
         })}
       </div>`;

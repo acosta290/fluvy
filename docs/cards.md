@@ -22,8 +22,8 @@ default and are content-sized on request (`preset_style`, `fan_style`, `suction_
 | Card | Type | What it is | Editor options |
 | --- | --- | --- | --- |
 | **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size`, `readouts` |
-| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `entities`, `size`, `columns` |
-| **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `show_temperature`, `temperature_tint`, `live_update` |
+| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart; a large tile's foot shows the readouts chosen for it (two, or three when it is wide). | `entities`, `size`, `columns`, per tile `readouts` |
+| **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. Half a section wide it turns compact: the level in the head, the ruler alone. | `variant` (`auto`, `full`, `compact`), `show_temperature`, `temperature_tint`, `live_update` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `variant`, `modes_style`, `show_presets`, `preset_style`, `show_fan`, `fan_style` |
 | **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `entities`, `secondary` |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` |

@@ -49,6 +49,11 @@
   height: 40px; /* an xs readout is 40 tall: 16 label + 4 + 20 value */
 }
 
+/* three readouts (power, today, cost) share a wide tile's foot in equal cells */
+.fv-tile__foot--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 /* tile rulers: a 44 hit band drawn in the tile's 40 foot slot (the 28 band was the only sub-44 control) */
 .fv-tile > .fv-ruler {
   margin-top: -4px;

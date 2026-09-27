@@ -74,7 +74,7 @@ export class FluvyTilesCard extends FluvyTileCard {
     };
   }
 
-  /** The visual editor: the card's own fields (the compact size shown as the default), then one form per item — a name, an icon, a tone. */
+  /** The visual editor: the card's own fields (the compact size shown as the default), then one form per item — a name, an icon, a tone, its readouts. */
   static override getConfigElement(): HTMLElement {
     return listsEditor(
       this.getConfigForm(),
@@ -83,7 +83,12 @@ export class FluvyTilesCard extends FluvyTileCard {
           key: 'tiles',
           alias: 'entities',
           title: 'editor.tiles',
-          schema: [entityField(), nameIconFields(), { name: 'tone', selector: toneSelector }],
+          schema: [
+            entityField(),
+            nameIconFields(),
+            { name: 'tone', selector: toneSelector },
+            entitiesField('readouts', ['sensor']),
+          ],
         },
       ],
       () => ({ size: 'compact' }),
