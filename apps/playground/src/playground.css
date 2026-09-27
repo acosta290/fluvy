@@ -1,4 +1,5 @@
 @import '../../../packages/tokens/dist/lab.css';
+@import './frame.css';
 
 /* The playground stands in for a Home Assistant view with the fluvy theme applied: the tokens come
    from the same generated file the design lab uses, plus the sentinel the real theme carries. */
@@ -48,8 +49,6 @@ html[data-mode='dark'] body {
 html[data-mode='dark'] .pg-look__name {
   color: #ede7dc;
 }
-@import './frame.css';
-
 /* ?panel: the settings panel fills the page, as Home Assistant gives a custom panel the whole content area */
 .pg-panel {
   display: block;
