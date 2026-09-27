@@ -51,7 +51,7 @@ describe('the demo state', () => {
 
   it('falls back to the defaults on nonsense', () => {
     const state = parse(
-      'panel=nope&device=watch&width=9000&palette=neon&shape=hex&lang=fr&at=never',
+      'panel=nope&device=watch&width=9000&palette=neon&shape=hex&lang=xx&at=never',
     );
     expect(state.view).toEqual({ kind: 'panel', tab: 'appearance' });
     expect(state.device).toBe('phone');
