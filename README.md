@@ -1,32 +1,29 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="brand/mark-dark.svg">
-    <img src="brand/mark-light.svg" width="96" height="96" alt="Fluvy">
-  </picture>
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/custom_components/fluvy/brand/icon@2x.png" width="96" height="96" alt="Fluvy">
 </p>
 
 <h1 align="center">Fluvy</h1>
 
-<p align="center">A calm theme and card library for Home Assistant.</p>
+<p align="center">A premium theme and card library for Home Assistant.</p>
 
 <p align="center">
   <a href="https://hacs.xyz"><img alt="HACS custom repository" src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?logo=homeassistantcommunitystore&logoColor=white"></a>
   <a href="https://github.com/acosta290/fluvy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/acosta290/fluvy?sort=semver&display_name=tag"></a>
   <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.9 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-18BCF2.svg?logo=homeassistant&logoColor=white"></a>
-  <a href="LICENSE"><img alt="Licence: GPL-3.0" src="https://img.shields.io/github/license/acosta290/fluvy"></a>
+  <a href="LICENSE"><img alt="Licence: GPL-3.0" src="https://img.shields.io/badge/licence-GPL--3.0-4c7bd9"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/acosta290/fluvy/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml"><img alt="hassfest" src="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml/badge.svg"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml"><img alt="HACS validation" src="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml/badge.svg"></a>
 </p>
 
 <p align="center">
-  <img src="docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
 <p align="center">
-  <img src="docs/images/activity-light.png" width="32%" alt="The Activity page">
-  <img src="docs/images/history-light.png" width="32%" alt="The History page">
-  <img src="docs/images/panel-light.png" width="32%" alt="The settings panel">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/activity-light.png" width="32%" alt="The Activity page">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/history-light.png" width="32%" alt="The History page">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-light.png" width="32%" alt="The settings panel">
 </p>
 
 Fluvy brings one design to the whole of Home Assistant: a theme, thirty-nine cards, an automatic dashboard, a
