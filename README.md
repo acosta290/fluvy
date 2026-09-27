@@ -20,33 +20,99 @@
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/activity-light.png" width="32%" alt="The Activity page">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/history-light.png" width="32%" alt="The History page">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-light.png" width="32%" alt="The settings panel">
-</p>
-
 Fluvy brings one design to the whole of Home Assistant: a theme, thirty-nine cards, an automatic dashboard, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
-set of design tokens, installed as one integration through HACS.
+set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
+by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in English and Spanish.
+
+## The whole app, one design
+
+The sidebar, the header, the tabs, the dialogs, the settings pages: with the Fluvy theme on, Home Assistant
+looks like it was designed with the cards, because it was — the same tokens, the same type (Inter), the same
+radii and hairlines.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-desktop.png" width="960" alt="Home Assistant with Fluvy: the sidebar, the tabs and a dashboard in one design">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-tablet.png" width="640" alt="The same dashboard on a wall tablet">
+</p>
+
+## Thirty-nine cards
+
+Every card has an editor form and a live preview in the card picker; every option is documented in
+[the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
+hold for the 1 % scale.
+
+**Control** — lights with brightness and colour temperature, thermostats (dial or compact), water heaters and
+humidifiers, covers with position and tilt, fans, vacuums, valves, media players and TVs, tiles and lists.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-control.png" width="960" alt="Control cards: lights, thermostats, covers, fans, vacuums, media players, tiles and lists">
+</p>
+
+**Energy, security and sensors** — the energy flow (ribbons, rail or legs), today's energy and cost, solar
+production and strings, consumption by device, distribution, gauges for anything, locks, alarms, cameras,
+openings, humidity, plants and batteries.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="Energy, security and sensor cards">
+</p>
+
+**Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
+timeline, upcoming), clocks (analog, digital, world), readouts and trends, safety, helpers, updates, timers,
+schedules and to-do lists.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-home.png" width="960" alt="Home, time and helper cards">
+</p>
+
+## Activity and History
+
+Two of Home Assistant's pages, drawn in the same idiom: the logbook as a timeline with who did what, and the
+history as charts with a scrub cursor, grouped by room or device. They stand in for the built-in pages while
+the house wants them; a switch gives Home Assistant's pages back.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/activity-light.png" width="49%" alt="The Activity page">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/history-light.png" width="49%" alt="The History page">
+</p>
+
+## The settings panel
+
+**Fluvy** in the sidebar: sixteen palettes in a pastel and an electric line, or your own accent with every
+contrast checked; three shapes; where the look applies; the automatic dashboard; and each person's own
+preferences — language, motion, haptics, a palette of their own. Changes apply live on every device, no reload.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-light.png" width="49%" alt="The Appearance tab">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-scope.png" width="49%" alt="The Scope tab">
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-dashboard.png" width="49%" alt="The Dashboard tab">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-preferences.png" width="49%" alt="The Preferences tab">
+</p>
+
+## The automatic dashboard
+
+One line — `strategy: { type: custom:fluvy-home }` — and Fluvy reads your areas, devices, entities and energy
+preferences and builds Home, Lights, Climate, Energy, Media and Sensors: lights grouped by room, appliances with
+their readings, the running thermostat first, the home's forecast, the energy flow found by its words, batteries
+and phones told apart. It is rebuilt every time it opens, so a new device simply shows up.
+[How it reads a home](docs/automatic-dashboard.md).
 
 ## What you get
 
-- **One theme, light and dark**, generated from the same tokens the cards are drawn with. Sixteen palettes in a
-  pastel and an electric line, or your own accent, and three shapes — chosen in the settings panel and applied live
-  on every screen, no reload.
-- **Thirty-nine cards** for lights, climate, energy, media, security, covers, fans, vacuums, calendars, clocks,
-  helpers, people, weather, plants and more. Every card has an editor form, a live preview in the card picker,
-  and draws its `unavailable`, `unknown` and missing states on purpose.
-- **An automatic dashboard**: `strategy: { type: custom:fluvy-home }` builds Home, Lights, Climate, Energy, Media
-  and Sensors from your areas, devices and energy preferences.
-- **A settings panel** in the sidebar: appearance for the house, personal preferences for each person, where the
-  look applies, the automatic dashboard, language, motion and haptics.
-- **Activity and History pages** in the same idiom, standing in for Home Assistant's logbook and history pages
-  while the house wants them.
-- **Everywhere**: while Home Assistant wears the Fluvy theme, its own pages — Settings, dialogs, forms, the
-  sidebar, the quick search — take the same design. It can be limited to your dashboards.
+- **One theme, light and dark**, generated from the same tokens the cards are drawn with.
+- **Thirty-nine cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+  drawn on purpose.
+- **An automatic dashboard** built from your registries.
+- **A settings panel** for the house and for each person.
+- **Activity and History pages** in the same idiom.
+- **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.
 - **English and Spanish**, in every card, page and dialog.
+- **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.
 
 ## Installation
 

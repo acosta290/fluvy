@@ -5,6 +5,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-09-27
+
+### Changed
+
+- The README shows the whole product: the app with the sidebar and tabs, three galleries of cards, the two
+  pages, the four tabs of the settings panel.
+
+
 ## [1.0.1] — 2026-09-27
 
 ### Changed
@@ -39,6 +47,7 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/acosta290/fluvy/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/acosta290/fluvy/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/acosta290/fluvy/releases/tag/v1.0.0
