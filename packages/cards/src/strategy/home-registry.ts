@@ -1,29 +1,26 @@
 import { localize, type HomeAssistant, type MessageKey } from '@fluvy/core';
+import {
+  BATTERY_POWER,
+  GENERIC,
+  GRID,
+  HOME_POWER,
+  LIGHT_WORDS,
+  NOT_APPLIANCE,
+  OUTDOOR,
+  PLACE_NOISE,
+  SOLAR,
+  TODAY,
+} from './words.generated.js';
 
 /*
  * What a house looks like to the automatic dashboard: the entity, device and area registries read
- * through word rules (Spanish and English, the way people name things) and device classes. Pure
- * queries, no cards — `home-views.ts` turns them into views.
+ * through word rules (the way people name things, in every language Fluvy ships: `words.generated.ts`, from
+ * the catalogues) and device classes. Pure queries, no cards — `home-views.ts` turns them into views.
  */
 
-export const LIGHT_WORDS =
-  /(^|[\s_.-])(luz|luces|light|lights|lamp|lampara|lámpara|led|leds|bombilla|foco|focos|strip|spot|plafon|plafón|aplique)([\s_.-]|$)/i;
-export const OUTDOOR =
-  /patio|jard|exterior|porche|porch|garden|outdoor|terraza|balc|fachada|calle|garaje|garage|piscina|pool/i;
-export const SOLAR = /solar|inverter|inversor|pv\b|fotovolt|photovolt/i;
-export const GRID = /power_meter|grid|meter|contador|import|red_|_red\b|net_/i;
-export const BATTERY_POWER = /bater|battery|storage/i;
-export const HOME_POWER = /house|home|casa|consumo_total|total_consum|load/i;
-export const TODAY = /today|daily|hoy|dia\b|día|day\b|_d$/i;
-const NOT_APPLIANCE =
-  /force|forzar|timer|holiday|vacacion|boost|child|lock|bloqueo|enable|habilit|mode$|modo$|auto$|beep|sound|silent|indicator|led_|_led$|valve|valvula|válvula|llave|grifo/i;
+export { BATTERY_POWER, GRID, HOME_POWER, LIGHT_WORDS, OUTDOOR, SOLAR, TODAY };
 const WEATHER_PLATFORMS =
   /aemet|met\b|met_|openweather|accuweather|forecast|weather|tomorrow|pirate|ecowitt|buienradar|nws/i;
-/** An entity name that only says what kind of reading it is: the device's name says where. */
-const GENERIC =
-  /^(temperature|temperatura|humidity|humedad|moisture|occupancy|motion|movimiento|presence|presencia|battery|bater[ií]a|battery level|power|potencia|energy|energ[ií]a|switch|outlet|light|luz|state|status|estado|contact|door|window|leak|water leak|level)$/i;
-const PLACE_NOISE =
-  /\b(clima|sensor|sensores|temperature|temperatura|humidity|humedad|termostato|thermostat|de|del|la|el)\b/gi;
 /** Covers that are a way in, not a window's shade. */
 const GATEWAYS = new Set(['garage', 'gate', 'door']);
 const OPENINGS = new Set([

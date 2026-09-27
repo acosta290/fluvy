@@ -6,7 +6,7 @@ import {
   formatDate,
   formatTime,
   type HomeAssistant,
-  languageOverride,
+  languageOf,
   navigate,
   PREFERENCES_EVENT,
   readStored,
@@ -516,7 +516,7 @@ export class FluvyActivity extends LitElement {
   /* ---------- words ---------- */
 
   get language(): string {
-    return languageOverride() ?? this.hass?.language ?? 'en';
+    return languageOf(this.hass);
   }
 
   readonly t = (key: ActivityString, values?: Record<string, string | number>): string =>

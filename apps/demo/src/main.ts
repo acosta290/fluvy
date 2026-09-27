@@ -1,5 +1,5 @@
 import '@fluvy/cards';
-import { lookKey, paletteOf, type EffectiveSettings, type Look } from '@fluvy/core';
+import { type EffectiveSettings, ensureLanguage, type Look, lookKey, paletteOf } from '@fluvy/core';
 import { PALETTE_NAMES } from '@fluvy/tokens/runtime';
 import { pinClock } from '@fluvy/playground/clock';
 import { createMemoryLook } from '@fluvy/playground/look-memory';
@@ -19,6 +19,7 @@ import { t } from './strings.js';
 const base = import.meta.env.BASE_URL;
 let state: DemoState = parseState(new URLSearchParams(location.search), window.innerWidth);
 pinClock(state.at);
+await ensureLanguage(state.language);
 document.documentElement.lang = state.language;
 
 const favicon = document.createElement('link');

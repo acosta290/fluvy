@@ -1,9 +1,10 @@
 import {
-  HOUSE_DEFAULTS,
-  parsePalette,
-  wearsLook,
   type CardLanguage,
+  HOUSE_DEFAULTS,
+  offeredLanguages,
+  parsePalette,
   type Scope,
+  wearsLook,
 } from '@fluvy/core';
 import { chips, emptyState, head, icon, listRow, options } from '@fluvy/ui';
 import {
@@ -699,11 +700,14 @@ export function preferences(ctx: PanelContext): TemplateResult {
     ${head({ icon: 'person', title: ctx.t('pref.title'), sub: ctx.t('pref.sub') })}
     <p class="fv-label pn-label">${ctx.t('pref.language')}</p>
     ${choice(
-      (['auto', 'en', 'es'] as const).map((language) => ({
-        key: language,
-        label: language === 'auto' ? ctx.t('pref.auto') : language === 'en' ? 'English' : 'Español',
-        active: shown.language === language,
-      })),
+      [
+        { key: 'auto', label: ctx.t('pref.auto'), active: shown.language === 'auto' },
+        ...offeredLanguages().map((language) => ({
+          key: language.code,
+          label: language.name,
+          active: shown.language === language.code,
+        })),
+      ],
       (key) => ctx.editPersonal({ language: key as CardLanguage }),
     )}
     <div class="pn-rows">

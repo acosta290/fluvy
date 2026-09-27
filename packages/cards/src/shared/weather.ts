@@ -1,3 +1,4 @@
+import { english } from '@fluvy/core';
 /**
  * What the weather card, the clock's sky and the hello card read from a `weather` entity the same way: the fifteen
  * conditions, their one glyph each (never a sun at night), their words and the compass's, and whether it is night.
@@ -94,55 +95,5 @@ export function isNight(hass: HomeAssistant | undefined, condition = ''): boolea
  * The conditions' and the compass's words in the languages fluvy ships (the design's copy: "Clear" and "Showers",
  * not Home Assistant's "Clear, night" and "Rainy"; W is O in Spanish). A card spreads them into its own table.
  */
-export const WEATHER_WORDS = {
-  en: {
-    sunny: 'Sunny',
-    'clear-night': 'Clear',
-    partlycloudy: 'Partly cloudy',
-    cloudy: 'Cloudy',
-    rainy: 'Showers',
-    pouring: 'Heavy rain',
-    snowy: 'Snow',
-    'snowy-rainy': 'Sleet',
-    hail: 'Hail',
-    fog: 'Fog',
-    lightning: 'Thunderstorm',
-    'lightning-rainy': 'Thunderstorm',
-    windy: 'Windy',
-    'windy-variant': 'Windy',
-    exceptional: 'Exceptional',
-    'dir.n': 'N',
-    'dir.ne': 'NE',
-    'dir.e': 'E',
-    'dir.se': 'SE',
-    'dir.s': 'S',
-    'dir.sw': 'SW',
-    'dir.w': 'W',
-    'dir.nw': 'NW',
-  },
-  es: {
-    sunny: 'Soleado',
-    'clear-night': 'Despejado',
-    partlycloudy: 'Nubes y claros',
-    cloudy: 'Nublado',
-    rainy: 'Chubascos',
-    pouring: 'Lluvia fuerte',
-    snowy: 'Nieve',
-    'snowy-rainy': 'Aguanieve',
-    hail: 'Granizo',
-    fog: 'Niebla',
-    lightning: 'Tormenta',
-    'lightning-rainy': 'Tormenta',
-    windy: 'Viento',
-    'windy-variant': 'Viento',
-    exceptional: 'Excepcional',
-    'dir.n': 'N',
-    'dir.ne': 'NE',
-    'dir.e': 'E',
-    'dir.se': 'SE',
-    'dir.s': 'S',
-    'dir.sw': 'SO',
-    'dir.w': 'O',
-    'dir.nw': 'NO',
-  },
-} as const satisfies Record<'en' | 'es', Record<Condition | CompassKey, string>>;
+/** Every condition and every compass point has a word in the catalogue's `weather` namespace (checked here, at compile time). */
+export const WEATHER_WORDS_COMPLETE: Record<Condition | CompassKey, string> = english.weather;

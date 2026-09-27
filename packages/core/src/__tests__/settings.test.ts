@@ -27,7 +27,7 @@ describe('parsing stored settings', () => {
         activity: 'no',
       }),
     ).toEqual(HOUSE_DEFAULTS);
-    expect(parsePersonal({ language: 'fr', motion: 'fast', haptics: 'yes' })).toEqual(
+    expect(parsePersonal({ language: 'sv', motion: 'fast', haptics: 'yes' })).toEqual(
       PERSONAL_DEFAULTS,
     );
   });

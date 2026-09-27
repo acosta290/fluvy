@@ -1,5 +1,12 @@
 import '@fluvy/cards';
-import { lookRule, type HomeAssistant, type Look, type LovelaceCard } from '@fluvy/core';
+import {
+  ensureLanguage,
+  lookRule,
+  resolveLanguage,
+  type HomeAssistant,
+  type Look,
+  type LovelaceCard,
+} from '@fluvy/core';
 import {
   isPaletteName,
   isPillName,
@@ -43,6 +50,8 @@ const language = params.get('lang') ?? 'en';
 
 document.documentElement.dataset['mode'] = dark ? 'dark' : 'light';
 document.documentElement.lang = language;
+// the language's words before anything is drawn: a screenshot never catches the English fallback
+await ensureLanguage(resolveLanguage(language));
 if (params.get('theme') === 'off') {
   delete document.documentElement.dataset['palette'];
   document.documentElement.style.setProperty('--fluvy-theme', 'initial');

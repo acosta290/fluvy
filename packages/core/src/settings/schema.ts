@@ -13,6 +13,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { THEME_NAME } from '@fluvy/tokens/config';
 import type { Look } from '../look/css.js';
+import { isCardLanguage, type CardLanguage } from '../i18n/languages.js';
 
 /**
  * fluvy's settings, kept where Home Assistant keeps its own frontend settings: the house's in its system
@@ -24,7 +25,7 @@ import type { Look } from '../look/css.js';
 /** Where the look applies: the chosen dashboards only, or all of Home Assistant. */
 export type Scope = 'dashboards' | 'everywhere';
 export type Motion = 'system' | 'reduced';
-export type CardLanguage = 'auto' | 'en' | 'es';
+export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 export const SETTINGS_VERSION = 1;
@@ -154,9 +155,7 @@ export function parsePersonal(raw: unknown): PersonalSettings {
     ...(palette ? { palette } : {}),
     ...(isShapeName(value['shape']) ? { shape: value['shape'] } : {}),
     ...(isPillName(value['pills']) ? { pills: value['pills'] } : {}),
-    language: oneOf(value['language'], ['auto', 'en', 'es'] as const)
-      ? value['language']
-      : d.language,
+    language: isCardLanguage(value['language']) ? value['language'] : d.language,
     motion: oneOf(value['motion'], ['system', 'reduced'] as const) ? value['motion'] : d.motion,
     haptics: typeof value['haptics'] === 'boolean' ? value['haptics'] : d.haptics,
     activityCard:

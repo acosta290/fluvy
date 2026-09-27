@@ -1,13 +1,15 @@
 import {
-  clock12,
-  dateFormat,
   type FluvyCardConfig,
-  formatNumber,
-  houseZone,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  stateText,
   type UnsubscribeFunc,
+  clock12,
+  dateFormat,
+  formatNumber,
+  houseZone,
+  languageOf,
+  speaks,
+  stateText,
 } from '@fluvy/core';
 
 import { firstFit, glyph, ico, listRow, sheetStyles, textWidth, type Tone } from '@fluvy/ui';
@@ -306,9 +308,8 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
   private conditionText(condition: string | null | undefined, night = false): string {
     const key = condition === 'sunny' && night ? 'clear-night' : (condition ?? '');
     if (!key) return '';
-    const language = (this.hass?.language ?? 'en').split('-')[0] ?? 'en';
     const stateObj = this.entity().stateObj;
-    if (language !== 'en' && language !== 'es' && stateObj && this.hass?.formatEntityState) {
+    if (!speaks(languageOf(this.hass)) && stateObj && this.hass?.formatEntityState) {
       try {
         return capitalise(this.hass.formatEntityState(stateObj, key));
       } catch {

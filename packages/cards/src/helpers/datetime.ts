@@ -1,4 +1,12 @@
-import { dateFormat, type HomeAssistant, houseZone, relativeTime } from '@fluvy/core';
+import {
+  dateFormat,
+  houseZone,
+  languageOf,
+  localize,
+  relativeTime,
+  speaks,
+  type HomeAssistant,
+} from '@fluvy/core';
 
 /**
  * The value of a date/time helper. `input_datetime`, `date` and `time` hold wall-clock values with no
@@ -188,9 +196,8 @@ export function durationShort(
       : minutes < 1440
         ? [Math.round(minutes / 60), 'hour']
         : [Math.round(minutes / 1440), 'day'];
-  const lang = language(hass).split('-')[0];
-  if (lang === 'en' || lang === 'es')
-    return `${value} ${unit === 'minute' ? 'min' : unit === 'hour' ? 'h' : 'd'}`;
+  if (speaks(languageOf(hass)))
+    return `${value} ${localize(hass, unit === 'minute' ? 'time.unit_min' : unit === 'hour' ? 'time.unit_h' : 'time.unit_d')}`;
   try {
     return new Intl.NumberFormat(language(hass), {
       style: 'unit',

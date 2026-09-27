@@ -258,6 +258,21 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
 
+  tools/i18n:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.13.5
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.13
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.5)(happy-dom@20.14.5)(supports-color@7.2.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
+
   tools/render:
     dependencies:
       playwright:

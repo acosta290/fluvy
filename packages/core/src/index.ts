@@ -7,7 +7,6 @@ export * from './actions.js';
 export * from './motion.js';
 export * from './history/series.js';
 export * from './i18n/index.js';
-export * from './i18n/strings.js';
 export * from './fonts.js';
 export * from './register.js';
 export * from './card.js';

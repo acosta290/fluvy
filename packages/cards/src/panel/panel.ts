@@ -1,14 +1,14 @@
 import {
-  languageOverride,
-  localize,
-  lookHandle,
-  lookRule,
-  navigate,
   type EffectiveSettings,
   type HomeAssistant,
+  localize,
   type Look,
+  lookHandle,
   type LookHandle,
   type LookPreview,
+  lookRule,
+  navigate,
+  onWords,
 } from '@fluvy/core';
 import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 
@@ -194,8 +194,11 @@ export class FluvyPanel extends LitElement {
     return this.handle ?? lookHandle();
   }
 
+  private offWords: (() => void) | undefined;
   override connectedCallback(): void {
     super.connectedCallback();
+    // a language's words arriving (fetched after the first paint) re-render the page in them
+    this.offWords = onWords(() => this.requestUpdate());
     this.resize = new ResizeObserver(([entry]) => {
       if (!entry) return;
       this.wide = entry.contentRect.width >= WIDE;
@@ -229,6 +232,8 @@ export class FluvyPanel extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.offWords?.();
+    this.offWords = undefined;
     this.off?.();
     this.off = undefined;
     this.resize?.disconnect();
@@ -356,7 +361,7 @@ export class FluvyPanel extends LitElement {
 
   /** The panel's words, in the language fluvy's settings chose. */
   readonly t = (key: StringKey, values?: Record<string, string | number>): string =>
-    s({ language: languageOverride() ?? this.hass?.language ?? 'en' }, key, values);
+    s(this.hass, key, values);
 
   /** The preview's little house, its rooms named in the panel's language. */
   private previewHouse(): PreviewHouse {
@@ -681,7 +686,7 @@ export class FluvyPanel extends LitElement {
           VIEWS.map((view) => ({
             key: view.key,
             icon: view.icon,
-            title: localize({ language: languageOverride() ?? ctx.hass.language }, view.title),
+            title: localize(ctx.hass, view.title),
           })),
           {
             create: () => createAuto(this, ctx),

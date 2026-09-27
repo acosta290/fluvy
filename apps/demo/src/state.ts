@@ -1,4 +1,4 @@
-import { parsePalette, type Look } from '@fluvy/core';
+import { isLanguageCode, parsePalette, type LanguageCode, type Look } from '@fluvy/core';
 import { isPaletteName, isPillName, isShapeName, type PaletteMode } from '@fluvy/tokens/runtime';
 
 /**
@@ -27,7 +27,7 @@ export const DEVICE_NAMES = Object.keys(DEVICES) as readonly DeviceName[];
 export const PANEL_TABS = ['appearance', 'scope', 'dashboard', 'preferences', 'about'] as const;
 export type PanelTab = (typeof PANEL_TABS)[number];
 
-export type DemoLanguage = 'en' | 'es';
+export type DemoLanguage = LanguageCode;
 
 export type DemoView =
   | { readonly kind: 'sheet'; readonly name: string }
@@ -111,7 +111,7 @@ export function parseState(params: URLSearchParams, viewportWidth = 0): DemoStat
     mode: mode === 'dark' ? 'dark' : 'light',
     device: isDevice(device) ? device : deviceFor(viewportWidth),
     ...(Number.isInteger(width) && width >= 280 && width <= 1200 ? { frameWidth: width } : {}),
-    language: params.get('lang') === 'es' ? 'es' : 'en',
+    language: isLanguageCode(params.get('lang')) ? (params.get('lang') as LanguageCode) : 'en',
     look: lookOf(params),
     at: at && Number.isFinite(Date.parse(at)) ? at : AT,
     ...(path ? { path } : {}),

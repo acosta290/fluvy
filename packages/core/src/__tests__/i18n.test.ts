@@ -1,32 +1,132 @@
-import { describe, expect, it } from 'vitest';
-import { en } from '../i18n/en.js';
-import { es } from '../i18n/es.js';
-import { localize } from '../i18n/index.js';
-import { createStrings } from '../i18n/strings.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { english } from '../i18n/catalogue.js';
+import {
+  ensureLanguage,
+  languageOf,
+  languageReady,
+  localize,
+  onWords,
+  plural,
+  preloadLanguages,
+  setLanguageOverride,
+  strings,
+  wordsIn,
+} from '../i18n/index.js';
+import {
+  LANGUAGE_CODES,
+  LANGUAGES,
+  isCardLanguage,
+  offeredLanguages,
+  resolveLanguage,
+  speaks,
+} from '../i18n/languages.js';
 
-describe('i18n', () => {
-  it('Spanish mirrors English key for key, with nothing empty', () => {
-    expect(Object.keys(es).sort()).toEqual(Object.keys(en).sort());
-    for (const [key, value] of Object.entries(es)) expect(value, key).not.toBe('');
-    for (const [key, value] of Object.entries(en)) expect(value, key).not.toBe('');
+describe('the language registry', () => {
+  it('names every language it describes', () => {
+    for (const code of LANGUAGE_CODES) expect(LANGUAGES[code].code).toBe(code);
+    expect(new Set(LANGUAGE_CODES).size).toBe(LANGUAGE_CODES.length);
   });
 
-  it('keeps the same placeholders in both languages', () => {
-    const holes = (text: string): string[] =>
-      [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1] as string).sort();
-    for (const key of Object.keys(en) as (keyof typeof en)[])
-      expect(holes(es[key]), key).toEqual(holes(en[key]));
+  it('resolves what Home Assistant reports to a language Fluvy has', () => {
+    expect(resolveLanguage('es-ES')).toBe('es');
+    expect(resolveLanguage('pt-BR')).toBe('pt-BR');
+    expect(resolveLanguage('pt')).toBe('pt-BR');
+    expect(resolveLanguage('pt-PT')).toBe('pt-BR');
+    expect(resolveLanguage('en-GB')).toBe('en');
+    expect(resolveLanguage('zh-Hans')).toBe('en');
+    expect(resolveLanguage(undefined)).toBe('en');
+    expect(speaks('de-CH')).toBe(true);
+    expect(speaks('sv')).toBe(false);
+    expect(isCardLanguage('auto')).toBe(true);
+    expect(isCardLanguage('fr')).toBe(true);
+    expect(isCardLanguage('sv')).toBe(false);
   });
 
-  it('localizes by the language prefix and falls back to English', () => {
+  it('offers English first, then the rest by their own names', () => {
+    const offered = offeredLanguages().map((l) => l.code);
+    expect(offered[0]).toBe('en');
+    expect(offered).toHaveLength(LANGUAGE_CODES.length);
+    const names = offeredLanguages()
+      .slice(1)
+      .map((l) => l.name);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('keeps every greeting band in the day, in order', () => {
+    for (const { dayParts } of Object.values(LANGUAGES)) {
+      const bands = [dayParts.morning, dayParts.afternoon, dayParts.evening, dayParts.night].filter(
+        (h): h is number => h !== undefined,
+      );
+      expect(bands).toEqual([...bands].sort((a, b) => a - b));
+      for (const hour of bands) expect(hour).toBeGreaterThanOrEqual(0);
+      for (const hour of bands) expect(hour).toBeLessThanOrEqual(24);
+    }
+  });
+});
+
+describe('the catalogue', () => {
+  it('has nothing empty in English', () => {
+    for (const [namespace, table] of Object.entries(english)) {
+      if (namespace === 'words') continue;
+      for (const [key, value] of Object.entries(table))
+        expect(value, `${namespace}.${key}`).not.toBe('');
+    }
+  });
+});
+
+describe('the words', () => {
+  beforeAll(async () => {
+    await preloadLanguages();
+  });
+
+  it('are looked up by the language Home Assistant speaks, resolved, with English behind them', () => {
+    setLanguageOverride(undefined);
     expect(localize({ language: 'es-ES' }, 'common.on')).toBe('Encendido');
-    expect(localize({ language: 'de' }, 'common.on')).toBe('On');
+    expect(localize({ language: 'sv' }, 'common.on')).toBe('On');
     expect(localize(undefined, 'person.count', { home: 2, total: 3 })).toBe('2 of 3 home');
+    expect(languageOf({ language: 'pt' })).toBe('pt-BR');
   });
 
-  it('card-local tables behave the same way', () => {
-    const s = createStrings({ en: { left: '{n} left' }, es: { left: 'Quedan {n}' } });
-    expect(s({ language: 'es' }, 'left', { n: 3 })).toBe('Quedan 3');
-    expect(s({ language: 'fr' }, 'left', { n: 3 })).toBe('3 left');
+  it('follow the person’s choice over Home Assistant’s', () => {
+    setLanguageOverride('es');
+    expect(localize({ language: 'en' }, 'common.off')).toBe('Apagado');
+    expect(languageOf({ language: 'en' })).toBe('es');
+    setLanguageOverride(undefined);
+    expect(localize({ language: 'en' }, 'common.off')).toBe('Off');
+  });
+
+  it('give a card its own namespace, and a page the shared page words after its own', () => {
+    const cover = strings('cover');
+    expect(cover({ language: 'es' }, 'favourites')).toBe('Favoritos');
+    expect(cover({ language: 'xx' }, 'favourites')).toBe('Favourites');
+    const history = strings('history', 'page');
+    expect(history({ language: 'en' }, 'today')).toBe('Today');
+    expect(history({ language: 'es' }, 'title')).toBe('Historial');
+  });
+
+  it('never throw on a key the catalogue lacks', () => {
+    const s = strings('cover');
+    expect(s({ language: 'en' }, 'no_such_key' as never)).toBe('no_such_key');
+  });
+
+  it('pick a plural form when the catalogue has one, else fill the base with n', () => {
+    expect(plural({ language: 'en' }, 'history.sources_count', 3)).toBe('3 sources');
+    expect(plural({ language: 'es' }, 'page.days', 5)).toBe('5 días');
+    expect(plural({ language: 'en' }, 'common.events', 3, { count: 3 })).toBe('3 events');
+  });
+
+  it('can be read in a fixed language whatever the person chose', () => {
+    setLanguageOverride('es');
+    expect(wordsIn('en')('common.on')).toBe('On');
+    setLanguageOverride(undefined);
+  });
+
+  it('arrive once and say so', async () => {
+    let told = 0;
+    const off = onWords(() => told++);
+    await ensureLanguage('es');
+    expect(languageReady('es')).toBe(true);
+    off();
+    expect(told).toBe(0); // already here: nothing was fetched, nobody was told
   });
 });

@@ -1,5 +1,5 @@
 import {
-  createStrings,
+  strings,
   formatTime,
   isActive,
   relativeTime,
@@ -27,10 +27,7 @@ export interface RowsCardConfig extends FluvyCardConfig {
   rows?: ReadonlyArray<string | RowConfig>;
 }
 
-const s = createStrings({
-  en: { since: 'Since {time}', by: '{time} by {who}' },
-  es: { since: 'Desde las {time}', by: '{time} por {who}' },
-});
+const s = strings('lock');
 
 /** A row switch is only for what is harmless to flip by accident — never a lock, a garage door or a valve. */
 const NEVER_A_SWITCH = new Set([

@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Instala o tema Fluvy, os cartões e o painel de configurações. Não há nada a configurar."
+      }
+    },
+    "abort": {
+      "already_configured": "O Fluvy já está configurado.",
+      "single_instance_allowed": "O Fluvy já está configurado."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Os arquivos de frontend do Fluvy não estão em custom_components/fluvy/frontend. Reinstale o Fluvy pelo HACS (ou execute `pnpm build` em uma cópia de desenvolvimento) e reinicie o Home Assistant."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Remova as linhas antigas do Fluvy do configuration.yaml",
+      "description": "O Fluvy agora é uma integração e registra sozinho o painel e o módulo. Remova estas linhas do configuration.yaml (mantenha `frontend: themes: !include_dir_merge_named themes`), verifique a configuração e reinicie o Home Assistant quando for conveniente:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "O tema Fluvy não está carregado",
+      "description": "O Fluvy gravou o tema em `{path}`, mas o Home Assistant não lista um tema chamado Fluvy. Adicione isto ao configuration.yaml e execute a ação `frontend.reload_themes` (Ferramentas do desenvolvedor → Ações); não é preciso reiniciar:\n\n{yaml}\n\nSe as linhas já estiverem lá, procure em Configurações → Sistema → Registros um tema que não conseguiu carregar."
+    },
+    "resources_yaml_mode": {
+      "title": "Adicione o recurso de painel do Fluvy",
+      "description": "Os recursos dos seus painéis são gerenciados em YAML, então o Fluvy não consegue registrar o seu. Adicione isto em `lovelace: resources:` no configuration.yaml e recarregue o navegador:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nO Fluvy já carrega em todas as páginas; este recurso permite que os painéis o carreguem antes de desenhar."
+    }
+  }
+}

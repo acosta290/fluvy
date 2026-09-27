@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Installeert het Fluvy-thema, de kaarten en het instellingenpaneel. Er valt niets te configureren."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy is al ingesteld.",
+      "single_instance_allowed": "Fluvy is al ingesteld."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "De frontendbestanden van Fluvy ontbreken in custom_components/fluvy/frontend. Installeer Fluvy opnieuw via HACS (of voer `pnpm build` uit in een ontwikkelkopie) en herstart daarna Home Assistant."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Verwijder de oude Fluvy-regels uit configuration.yaml",
+      "description": "Fluvy is nu een integratie en registreert zelf zijn paneel en zijn module. Verwijder deze regels uit configuration.yaml (houd `frontend: themes: !include_dir_merge_named themes`), controleer de configuratie en herstart Home Assistant wanneer het uitkomt:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Het Fluvy-thema is niet geladen",
+      "description": "Fluvy heeft zijn thema naar `{path}` geschreven, maar Home Assistant kent geen thema met de naam Fluvy. Voeg dit toe aan configuration.yaml en voer daarna de actie `frontend.reload_themes` uit (Ontwikkelhulpmiddelen → Acties); een herstart is niet nodig:\n\n{yaml}\n\nStaan de regels er al, kijk dan in Instellingen → Systeem → Logboek naar een thema dat niet kon laden."
+    },
+    "resources_yaml_mode": {
+      "title": "Voeg de dashboardbron van Fluvy toe",
+      "description": "Je dashboardbronnen worden in YAML beheerd, dus Fluvy kan zijn eigen bron niet registreren. Voeg dit toe onder `lovelace: resources:` in configuration.yaml en herlaad de browser:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy laadt al op elke pagina; met deze bron laden dashboards het voordat ze tekenen."
+    }
+  }
+}

@@ -16,7 +16,8 @@ const { check } = suite;
 
 /** The History page on the playground's made-up house, nothing live — waited for, never guessed at. */
 const open = async (query = '', width = 1440, height = 1000) => {
-  const page = await suite.page(`history=1&live=0&${query}`, {
+  // the clock pinned to the sheets' evening: the canned day's stretches (an unavailable one among them) never depend on the hour the suite runs at
+  const page = await suite.page(`history=1&live=0&at=2026-09-17T21:47:12&${query}`, {
     viewport: { width, height },
     wait: 200,
   });

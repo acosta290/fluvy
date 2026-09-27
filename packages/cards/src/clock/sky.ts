@@ -1,10 +1,12 @@
 import {
   type EntityView,
-  formatNumber,
   type HomeAssistant,
-  numberAttr,
-  stateText,
   type UnsubscribeFunc,
+  formatNumber,
+  languageOf,
+  numberAttr,
+  speaks,
+  stateText,
 } from '@fluvy/core';
 import type { GlyphName } from '@fluvy/ui';
 import { compassKey, conditionGlyph, isCondition, isNight } from '../shared/weather.js';
@@ -61,9 +63,8 @@ export function readSky(hass: HomeAssistant | undefined, view: EntityView): Sky 
   }
   const condition = view.state;
   const night = isNight(hass, condition);
-  const language = (hass?.language ?? 'en').split('-')[0];
-  // the approved copy in the languages fluvy speaks; Home Assistant's own translation in every other
-  const known = isCondition(condition) && (language === 'en' || language === 'es');
+  // the approved copy in the languages Fluvy speaks; Home Assistant's own translation in every other
+  const known = isCondition(condition) && speaks(languageOf(hass));
   const text = known ? s(hass, condition) : stateText(hass, view);
   return {
     ok: true,

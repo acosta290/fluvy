@@ -1,11 +1,12 @@
 import {
+  type EffectiveSettings,
+  type HomeAssistant,
+  LANGUAGES,
+  type Look,
+  type LookHandle,
   lookKey,
   paletteKey,
   paletteOf,
-  type EffectiveSettings,
-  type HomeAssistant,
-  type Look,
-  type LookHandle,
 } from '@fluvy/core';
 import {
   DEFAULT_PALETTE,
@@ -265,8 +266,6 @@ export function changeTitle(from: Look, to: Look, t: PanelContext['t']): string 
   return parts.join(' · ');
 }
 
-const LANGUAGES: Readonly<Record<string, string>> = { en: 'English', es: 'Español' };
-
 /** The strategy options by the label the Dashboard tab gives them. */
 const STRATEGY_LABELS: Readonly<Record<string, StringKey>> = {
   hide: 'dashboard.views',
@@ -293,7 +292,9 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(`${t('dashboard.title')} · ${t(STRATEGY_LABELS[key] ?? 'dashboard.cards')}`);
   const personal = ctx.personalEdit;
   if (personal.language)
-    lines.push(`${t('pref.language')} · ${LANGUAGES[personal.language] ?? t('pref.auto')}`);
+    lines.push(
+      `${t('pref.language')} · ${personal.language === 'auto' ? t('pref.auto') : LANGUAGES[personal.language].name}`,
+    );
   if (personal.motion) lines.push(`${t('pref.reduce')} · ${onOff(personal.motion === 'reduced')}`);
   if (personal.haptics !== undefined)
     lines.push(`${t('pref.haptics')} · ${onOff(personal.haptics)}`);

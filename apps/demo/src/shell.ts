@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import type { PaletteName } from '@fluvy/tokens/runtime';
+import { isLanguageCode, offeredLanguages } from '@fluvy/core';
 import { baseStyles, chips, fitPills, glyph, type ChipItem } from '@fluvy/ui';
 import { FAMILIES, familyOf } from './families.js';
 import { DEVICE_NAMES, type DemoState, type DemoView, type DeviceName } from './state.js';
@@ -292,10 +293,11 @@ export class FluvyDemoShell extends LitElement {
       label: t(lang, `device.${device}`),
       active: !state.frameWidth && state.device === device,
     }));
-    const languages: ChipItem[] = [
-      { key: 'en', label: 'EN', active: lang === 'en' },
-      { key: 'es', label: 'ES', active: lang === 'es' },
-    ];
+    const languages: ChipItem[] = offeredLanguages().map((language) => ({
+      key: language.code,
+      label: language.code.split('-')[0]?.toUpperCase() ?? language.code,
+      active: lang === language.code,
+    }));
     const chosen = typeof state.look.palette === 'string' ? state.look.palette : '';
     return html`
       <div class="demo-bar">
@@ -342,7 +344,9 @@ export class FluvyDemoShell extends LitElement {
         </div>
         ${chips(modes, (key) => this.change({ mode: key === 'dark' ? 'dark' : 'light' }))}
         ${chips(devices, (key) => this.change({ device: key as DeviceName, frameWidth: undefined }))}
-        ${chips(languages, (key) => this.change({ language: key === 'es' ? 'es' : 'en' }))}
+        ${chips(languages, (key) => {
+          if (isLanguageCode(key)) this.change({ language: key });
+        })}
       </div>
       ${
         this.banner

@@ -1,11 +1,14 @@
 import {
-  formatNumber,
-  stateText,
+  type DayParts,
   type EntityView,
   type FluvyCardConfig,
+  formatNumber,
+  languageOf,
+  LANGUAGES,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
+  stateText,
 } from '@fluvy/core';
 
 import { glyph, sheetStyles } from '@fluvy/ui';
@@ -47,19 +50,14 @@ export interface HelloCardConfig extends FluvyCardConfig {
 }
 
 /**
- * English greets the evening until 22:00 and only then says "night" (a farewell before that). Spanish
- * has no evening: "buenas tardes" runs from lunch to about 20:00 and "buenas noches" greets from then on.
+ * When the day's parts begin is the language's (the registry's `dayParts`): English greets the evening until 22:00
+ * and only then says "night"; Spanish has no evening, "buenas noches" greets from 20:00.
  */
-function greetingKey(hour: number, language: string): MessageKey {
-  if (language === 'es') {
-    if (hour >= 5 && hour < 13) return 'greeting.morning';
-    if (hour >= 13 && hour < 20) return 'greeting.afternoon';
-    return 'greeting.night';
-  }
-  if (hour >= 5 && hour < 12) return 'greeting.morning';
-  if (hour >= 12 && hour < 18) return 'greeting.afternoon';
-  if (hour >= 18 && hour < 22) return 'greeting.evening';
-  return 'greeting.night'; // 22:00 – 04:59
+function greetingKey(hour: number, { morning, afternoon, evening, night }: DayParts): MessageKey {
+  if (hour >= morning && hour < afternoon) return 'greeting.morning';
+  if (hour >= afternoon && hour < (evening ?? night)) return 'greeting.afternoon';
+  if (evening !== undefined && hour >= evening && hour < night) return 'greeting.evening';
+  return 'greeting.night';
 }
 
 /** Up to two initials of a display name; an empty name gives none (the gradient disc stands alone). */
@@ -379,9 +377,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   protected renderCard(): TemplateResult {
     const now = this.now();
     const name = this.who();
-    const greeting = this.t(
-      greetingKey(now.getHours(), (this.hass?.language ?? 'en').split('-')[0] ?? 'en'),
-    );
+    const greeting = this.t(greetingKey(now.getHours(), LANGUAGES[languageOf(this.hass)].dayParts));
     const weatherId = this.config?.weather;
 
     return html`<section class="hm-hello">

@@ -1,3 +1,4 @@
+import { wordsIn, type LanguageCode } from '@fluvy/core';
 import type { HomeAssistant } from '@fluvy/core';
 import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
 import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
@@ -39,6 +40,8 @@ export interface FluvyHomeStrategyConfig {
   tile_size?: 'large' | 'compact';
   /** How the energy flow draws its lines (default: ribbons). */
   flow_style?: FlowStyle;
+  /** The dashboard's words in one language, whoever opens it (default: each person's). */
+  language?: LanguageCode;
 }
 
 /** Columns of every generated view: the widest layout, kept on every tab (an empty section still takes its column). */
@@ -92,7 +95,7 @@ export class FluvyHomeStrategy {
     const home = new HomeRegistry(hass);
     const ctx: StrategyContext = {
       home,
-      t: (key) => home.t(key),
+      t: config.language ? wordsIn(config.language) : (key) => home.t(key),
       // the dashboard the strategy is generated for: the page's first path segment
       base: `/${(typeof location !== 'undefined' ? location.pathname.split('/')[1] : '') || 'fluvy-home'}`,
       weather: config.weather ?? home.weather[0],

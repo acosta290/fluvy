@@ -10,7 +10,7 @@ import type {
   LovelaceCardConfig,
   LovelaceGridOptions,
 } from './ha/types.js';
-import { languageOverride, localize, type MessageKey } from './i18n/index.js';
+import { languageOverride, localize, onWords, type MessageKey } from './i18n/index.js';
 
 export interface FluvyCardConfig extends LovelaceCardConfig {
   entity?: string;
@@ -25,13 +25,17 @@ const inLanguage = new WeakMap<HomeAssistant, HomeAssistant>();
 /** Cards on the page, to hand the language change to at once. */
 const live = new Set<FluvyCard>();
 
-/** `hass` as the person's language choice sees it: the same object with `language` replaced (nested objects shared). */
+/**
+ * `hass` as the person's language choice sees it: the same object with `language` (the words) and `locale.language`
+ * (dates, months, numbers) replaced; Home Assistant's explicit choices (number and date formats, the first weekday,
+ * the time zone) stay. Nested objects are shared.
+ */
 function withLanguage(hass: HomeAssistant | undefined): HomeAssistant | undefined {
   const language = languageOverride();
   if (!hass || !language || hass.language === language) return hass;
   let view = inLanguage.get(hass);
   if (view?.language !== language) {
-    view = { ...hass, language };
+    view = { ...hass, language, locale: { ...hass.locale, language } };
     inLanguage.set(hass, view);
   }
   return view;
@@ -48,6 +52,10 @@ export function refreshCards(): void {
   }
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(PREFERENCES_EVENT));
 }
+// a language's words arriving are a preference change too: every card says them at once
+onWords(refreshCards);
+// a language's words arriving are a preference change too: every card says them at once
+onWords(refreshCards);
 
 /** Every card on the page looks again for the theme: the look arrived, moved or left. */
 export function resyncCardThemes(): void {

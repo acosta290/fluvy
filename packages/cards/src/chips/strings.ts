@@ -1,6 +1,3 @@
-import { createStrings } from '@fluvy/core';
+import { strings } from '@fluvy/core';
 
-export const s = createStrings({
-  en: { rooms: 'Rooms' },
-  es: { rooms: 'Estancias' },
-});
+export const s = strings('chips');

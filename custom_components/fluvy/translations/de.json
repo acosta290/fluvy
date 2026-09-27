@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Installiert das Fluvy-Theme, die Karten und den Einstellungsbereich. Es gibt nichts zu konfigurieren."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy ist bereits eingerichtet.",
+      "single_instance_allowed": "Fluvy ist bereits eingerichtet."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Die Frontend-Dateien von Fluvy fehlen in custom_components/fluvy/frontend. Installiere Fluvy über HACS neu (oder führe in einer Entwicklungskopie `pnpm build` aus) und starte Home Assistant dann neu."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Entferne die alten Fluvy-Zeilen aus configuration.yaml",
+      "description": "Fluvy ist jetzt eine Integration und registriert sein Panel und sein Modul selbst. Entferne diese Zeilen aus configuration.yaml (behalte `frontend: themes: !include_dir_merge_named themes`), prüfe die Konfiguration und starte Home Assistant bei Gelegenheit neu:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Das Fluvy-Theme ist nicht geladen",
+      "description": "Fluvy hat sein Theme nach `{path}` geschrieben, aber Home Assistant kennt kein Theme namens Fluvy. Füge dies zu configuration.yaml hinzu und führe dann die Aktion `frontend.reload_themes` aus (Entwicklerwerkzeuge → Aktionen); ein Neustart ist nicht nötig:\n\n{yaml}\n\nStehen die Zeilen schon dort, sieh unter Einstellungen → System → Protokolle nach einem Theme, das nicht geladen werden konnte."
+    },
+    "resources_yaml_mode": {
+      "title": "Füge die Dashboard-Ressource von Fluvy hinzu",
+      "description": "Deine Dashboard-Ressourcen werden in YAML verwaltet, deshalb kann Fluvy seine eigene nicht registrieren. Füge dies unter `lovelace: resources:` in configuration.yaml ein und lade den Browser neu:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy lädt bereits auf jeder Seite; mit dieser Ressource laden die Dashboards es, bevor sie gezeichnet werden."
+    }
+  }
+}

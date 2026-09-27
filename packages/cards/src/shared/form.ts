@@ -1,5 +1,5 @@
 import {
-  locales,
+  localize,
   type HaFormSchemaItem,
   type HomeAssistant,
   type LovelaceCardConfig,
@@ -39,8 +39,7 @@ export function formLabels(map: Readonly<Record<string, MessageKey>> = {}): {
     computeLabel: (schema: HaFormSchemaItem) => {
       const key = map[schema.name] ?? SHARED_LABELS[schema.name];
       if (!key) return undefined;
-      const language = (document.documentElement.lang || 'en').split('-')[0] ?? 'en';
-      return (locales[language] ?? locales['en'])?.[key];
+      return localize({ language: document.documentElement.lang || 'en' }, key);
     },
   };
 }

@@ -1,6 +1,6 @@
 import type { EntityView } from './entity.js';
 import type { FrontendLocaleData, HomeAssistant } from './ha/types.js';
-import { localize } from './i18n/index.js';
+import { languageOf, localize, speaks } from './i18n/index.js';
 
 /** Locale used for numbers: Home Assistant lets the user override the language's own grouping. */
 function numberLocale(
@@ -327,24 +327,19 @@ export function relativeTime(
   const seconds = (now.getTime() - from.getTime()) / 1000;
   const abs = Math.abs(seconds);
   if (abs < 60) return localize(hass, 'common.now');
-  const language = (hass?.language ?? 'en').split('-')[0];
   const minutes = Math.round(abs / 60);
   const hours = Math.round(abs / 3600);
   const days = Math.round(abs / 86_400);
   const past = seconds >= 0;
   // The design writes these in full ("4 min ago", "hace 2 h"); Intl's narrow style says "4m ago", its
-  // long style "4 minutes ago" — neither is the sheet. Other languages fall back to Intl.
-  if (language === 'en') {
-    if (abs < 3600) return past ? `${minutes} min ago` : `in ${minutes} min`;
-    if (abs < 86_400) return past ? `${hours} h ago` : `in ${hours} h`;
-    if (days === 1) return past ? 'yesterday' : 'tomorrow';
-    return past ? `${days} days ago` : `in ${days} days`;
-  }
-  if (language === 'es') {
-    if (abs < 3600) return past ? `hace ${minutes} min` : `en ${minutes} min`;
-    if (abs < 86_400) return past ? `hace ${hours} h` : `en ${hours} h`;
-    if (days === 1) return past ? 'ayer' : 'mañana';
-    return past ? `hace ${days} días` : `en ${days} días`;
+  // long style "4 minutes ago" — neither is the sheet. A language Fluvy does not speak falls back to Intl.
+  if (speaks(languageOf(hass))) {
+    if (abs < 3600)
+      return localize(hass, past ? 'time.minutes_ago' : 'time.in_minutes', { n: minutes });
+    if (abs < 86_400)
+      return localize(hass, past ? 'time.hours_ago' : 'time.in_hours', { n: hours });
+    if (days === 1) return localize(hass, past ? 'time.yesterday' : 'time.tomorrow');
+    return localize(hass, past ? 'time.days_ago' : 'time.in_days', { n: days });
   }
   const rtf = new Intl.RelativeTimeFormat(hass?.language ?? 'en', {
     numeric: 'auto',

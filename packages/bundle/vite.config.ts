@@ -55,6 +55,9 @@ const HISTORY =
 /** Fluvy's settings panel (all of its folder but the switch that fetches it): fetched when `/fluvy` is opened. */
 const PANEL = /\/packages\/cards\/src\/panel\/(?!on-demand\.ts)/;
 
+/** A language's catalogue (English ships in core): fetched the first time that language is spoken. */
+const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.json/;
+
 /**
  * The build Home Assistant loads (the integration serves it from `custom_components/fluvy/frontend`, under a URL
  * named after the build) and what it shares with the pages loaded on demand. The entry keeps only its own code and
@@ -79,15 +82,17 @@ export default defineConfig({
         manualChunks: (id) =>
           id.includes('/packages/bundle/src/')
             ? undefined
-            : PAGES.test(id)
-              ? 'pages'
-              : ACTIVITY.test(id)
-                ? 'activity'
-                : HISTORY.test(id)
-                  ? 'history'
-                  : PANEL.test(id)
-                    ? 'panel'
-                    : 'core',
+            : LANGUAGE.test(id)
+              ? `lang-${LANGUAGE.exec(id)?.[1]}`
+              : PAGES.test(id)
+                ? 'pages'
+                : ACTIVITY.test(id)
+                  ? 'activity'
+                  : HISTORY.test(id)
+                    ? 'history'
+                    : PANEL.test(id)
+                      ? 'panel'
+                      : 'core',
         banner: `/*! Fluvy v${version} · a theme and card library for Home Assistant · SPDX-License-Identifier: ${license} · https://github.com/acosta290/fluvy */`,
       },
     },

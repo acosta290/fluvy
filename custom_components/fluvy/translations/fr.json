@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Installe le thème Fluvy, ses cartes et son panneau de réglages. Il n'y a rien à configurer."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy est déjà configuré.",
+      "single_instance_allowed": "Fluvy est déjà configuré."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Les fichiers frontend de Fluvy manquent dans custom_components/fluvy/frontend. Réinstallez Fluvy via HACS (ou lancez `pnpm build` dans une copie de développement), puis redémarrez Home Assistant."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Retirez les anciennes lignes Fluvy de configuration.yaml",
+      "description": "Fluvy est désormais une intégration et enregistre lui-même son panneau et son module. Retirez ces lignes de configuration.yaml (gardez `frontend: themes: !include_dir_merge_named themes`), vérifiez la configuration et redémarrez Home Assistant quand cela vous arrange :\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Le thème Fluvy n'est pas chargé",
+      "description": "Fluvy a écrit son thème dans `{path}`, mais Home Assistant ne connaît aucun thème nommé Fluvy. Ajoutez ceci à configuration.yaml, puis lancez l'action `frontend.reload_themes` (Outils de développement → Actions) ; aucun redémarrage n'est nécessaire :\n\n{yaml}\n\nSi les lignes y sont déjà, cherchez dans Paramètres → Système → Journaux un thème qui n'a pas pu se charger."
+    },
+    "resources_yaml_mode": {
+      "title": "Ajoutez la ressource de tableau de bord de Fluvy",
+      "description": "Vos ressources de tableau de bord sont gérées en YAML, Fluvy ne peut donc pas enregistrer la sienne. Ajoutez ceci sous `lovelace: resources:` dans configuration.yaml et rechargez le navigateur :\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy se charge déjà sur chaque page ; cette ressource permet aux tableaux de bord de le charger avant de s'afficher."
+    }
+  }
+}

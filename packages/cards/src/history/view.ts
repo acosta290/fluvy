@@ -6,15 +6,16 @@ import {
   countTargets,
   dateFormat,
   formatTime,
-  languageOverride,
+  type HomeAssistant,
+  languageOf,
   navigate,
+  onWords,
   readStored,
   sourceEntities,
-  targetFromSearch,
-  writeStored,
-  type HomeAssistant,
   type SourceFilters,
   type SourceTarget,
+  targetFromSearch,
+  writeStored,
 } from '@fluvy/core';
 import {
   buildWindow,
@@ -174,7 +175,7 @@ export class FluvyHistory extends LitElement {
   }
 
   get language(): string {
-    return languageOverride() ?? this.hass?.language ?? 'en';
+    return languageOf(this.hass);
   }
 
   readonly t = (key: HistoryString, values?: Record<string, string | number>): string =>
@@ -262,8 +263,11 @@ export class FluvyHistory extends LitElement {
 
   /* ---------- lifecycle ---------- */
 
+  private offWords: (() => void) | undefined;
   override connectedCallback(): void {
     super.connectedCallback();
+    // a language's words arriving (fetched after the first paint) re-render the page in them
+    this.offWords = onWords(() => this.requestUpdate());
     this.readAddress(true);
     this.resubscribe();
     this.tick = window.setInterval(() => this.beat(), 30_000);
@@ -275,6 +279,8 @@ export class FluvyHistory extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.offWords?.();
+    this.offWords = undefined;
     this.stop?.();
     this.stop = undefined;
     this.subscribed = '';
