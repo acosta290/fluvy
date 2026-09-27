@@ -5,6 +5,20 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-09-27
+
+### Changed
+
+- The HACS listing says what Fluvy is: "Fluvy - Premium Theme & Cards", so a search for a theme finds it.
+- The README renders inside HACS as well: absolute image URLs, no `<picture>` element.
+- The licence badge is static, so it never depends on a cache.
+
+### Removed
+
+- The files prepared for Home Assistant's brands repository, which no longer takes custom integrations; the
+  integration serves its own icon.
+
+
 ## [1.0.0] — 2026-09-27
 
 The first public release.
@@ -25,5 +39,6 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/acosta290/fluvy/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/acosta290/fluvy/releases/tag/v1.0.0
