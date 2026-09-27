@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  - apps/*
+  - tools/*
+
+# Build scripts are blocked by default. Only esbuild (tsx's engine) needs one, and it
+# just links an already-installed platform binary. Playwright stays blocked on purpose:
+# its install script would download browsers, and this repo reuses the cached ones.
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,36 @@
+name: Feature request
+description: Something Fluvy should do, or do differently.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do in your home, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: The proposal
+      description: How Fluvy could solve it. Sketches and screenshots of other interfaces are welcome; the design language (`design/language.md`) is what a proposal is weighed against.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it belongs
+      options:
+        [
+          A card (existing),
+          A new card,
+          The automatic dashboard,
+          The settings panel,
+          The theme or palettes,
+          The shell,
+          Activity or History page,
+          The integration,
+          Documentation,
+        ]
+    validations:
+      required: true

@@ -1,0 +1,349 @@
+/* Calendar sheet composition. Primitives in fluvy.css. */
+.cd-card,
+.cd-tiles {
+  width: 360px;
+}
+
+/* event rows: 60 tall; time column 40 right-aligned, 4 px tone bar, title/sub */
+.cd-events {
+  margin-top: 16px;
+}
+
+.cd-event {
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.cd-event__time {
+  display: flex;
+  flex: 0 0 40px;
+  flex-direction: column;
+  width: 40px;
+  margin-right: 4px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--fluvy-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cd-event__end {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-disabled);
+}
+
+.cd-event__bar {
+  flex: 0 0 4px;
+  width: 4px;
+  height: 44px;
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.cd-event.is-past .fv-row__title,
+.cd-event.is-past .cd-event__time {
+  color: var(--fluvy-text-secondary);
+}
+
+.cd-event.is-past .cd-event__bar {
+  opacity: 0.45;
+}
+
+.cd-rows {
+  margin-top: 16px;
+}
+
+/* month: the trailing slot holds the ‹ › command pair (44 + 8 + 44) */
+.cd-nav {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+/* month and week: the language's days (.fv-month, .fv-day — fluvy/days.css) on seven 44 columns across the
+   content, 16 under the head */
+.cd-card {
+  --fv-tracks: repeat(7, 44px);
+  --fv-justify: space-between;
+}
+
+.cd-card .fv-month {
+  margin-top: 16px;
+}
+
+.cd-card .fv-day {
+  width: 44px;
+}
+
+/* week strip: a day is 44 × 72 — its name, its number, its dot — on the month's columns */
+.cd-week {
+  margin-top: 16px;
+}
+
+.cd-wday {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 72px;
+  padding-top: 8px;
+}
+
+.cd-wday__n {
+  height: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.cd-wday__d {
+  height: 24px;
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.cd-wday__dots {
+  display: flex;
+  gap: 4px;
+  height: 12px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.cd-wday__dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fluvy-accent);
+}
+
+/* on a fill, the name and the dot take the fill's ink */
+.cd-wday.is-selected .cd-wday__n {
+  color: var(--fluvy-on-primary, var(--fluvy-text-on-accent));
+  opacity: 0.8;
+}
+
+.cd-wday.is-selected .cd-wday__dots i {
+  background: var(--fluvy-on-primary, var(--fluvy-text-on-accent));
+}
+
+.cd-wday.is-today.is-selected .cd-wday__n {
+  color: var(--fluvy-on-mark, var(--fluvy-on-primary, var(--fluvy-text-on-accent)));
+}
+
+.cd-wday.is-today.is-selected .cd-wday__dots i {
+  background: var(--fluvy-on-mark, var(--fluvy-on-primary, var(--fluvy-text-on-accent)));
+}
+
+.cd-wday.is-today:not(.is-selected) .cd-wday__n {
+  color: var(
+    --fluvy-on-mark,
+    color-mix(in srgb, var(--fluvy-accent-text) var(--fluvy-solid, 0%), var(--fluvy-accent-on-fill))
+  );
+  opacity: 0.72;
+}
+
+.cd-wday.is-today:not(.is-selected) .cd-wday__dots i {
+  background: var(--fluvy-on-mark, var(--fluvy-accent));
+}
+
+/* timeline: 24 px per hour (08:00–23:00 = 360), hour labels in the 56 gutter, blocks from 64 to the edge */
+.cd-timeline {
+  position: relative;
+  margin-top: 16px;
+}
+
+.cd-hour {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  height: 16px;
+  margin-top: -8px;
+}
+
+.cd-hour__line {
+  position: absolute;
+  left: 56px;
+  right: 0;
+  top: 8px;
+}
+
+.cd-hour__label {
+  flex: 0 0 56px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cd-hour__line {
+  height: 1px;
+  background: var(--fluvy-border);
+}
+
+.cd-block {
+  position: absolute;
+  left: 64px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 2px 8px 8px 2px; /* the tone bar ends like the row bars */
+  background: var(--tone-fill);
+  color: var(--tone-on);
+  overflow: hidden;
+}
+
+.cd-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--tone-ink);
+}
+
+.cd-block--water {
+  --tone-ink: var(--fluvy-state-energy-water);
+  --tone-fill: var(--fluvy-state-energy-water-fill);
+  --tone-on: var(--fluvy-state-energy-water-on-fill);
+}
+.cd-block--heat {
+  --tone-ink: var(--fluvy-state-climate-heat);
+  --tone-fill: var(--fluvy-state-climate-heat-fill);
+  --tone-on: var(--fluvy-state-climate-heat-on-fill);
+}
+.cd-block--media {
+  --tone-ink: var(--fluvy-state-media-playing);
+  --tone-fill: var(--fluvy-state-media-playing-fill);
+  --tone-on: var(--fluvy-state-media-playing-on-fill);
+}
+.cd-block--cool {
+  --tone-ink: var(--fluvy-state-climate-cool);
+  --tone-fill: var(--fluvy-state-climate-cool-fill);
+  --tone-on: var(--fluvy-state-climate-cool-on-fill);
+}
+.cd-block--grid {
+  --tone-ink: var(--fluvy-state-energy-grid);
+  --tone-fill: var(--fluvy-state-energy-grid-fill);
+  --tone-on: var(--fluvy-state-energy-grid-on-fill);
+}
+
+.cd-block__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cd-block--thin .cd-block__title {
+  margin: -2px 0; /* a 16 line box in the 12 block keeps its descenders */
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.cd-now {
+  position: absolute;
+  left: 56px;
+  right: 0;
+  height: 2px;
+  margin-top: 0;
+  border-radius: 1px;
+  background: var(--fluvy-accent);
+}
+
+.cd-now::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fluvy-accent);
+}
+
+/* upcoming */
+.cd-upcoming {
+  margin-top: 16px;
+}
+
+.cd-up {
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.cd-up__date {
+  display: flex;
+  flex: 0 0 40px;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 40px;
+  margin-right: 4px;
+}
+
+.cd-up__wd {
+  height: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.cd-up__d {
+  height: 24px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* tiles: "17 Sep" on the tile head's 44 row, day-first like the rest of the set */
+.cd-tile__date {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  height: 44px;
+}
+
+.cd-tile__month {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fluvy-accent);
+}
+
+.cd-tile__day {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cd-tile__meta {
+  color: var(--fluvy-text-disabled);
+}
+
+/* month + day: the events sit 8 under their day label (the label already carries the 16 above it) */
+.cd-events--after-label {
+  margin-top: 8px;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@fluvy/demo-home",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The demo home: one fictional house in the registry form Home Assistant hands a dashboard strategy, shared by the strategy's tests, the playground and the documentation",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "packages/demo-home"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "domain": "fluvy",
+  "name": "Fluvy",
+  "codeowners": ["@acosta290"],
+  "config_flow": true,
+  "dependencies": ["brands", "frontend", "http", "lovelace", "panel_custom"],
+  "documentation": "https://github.com/acosta290/fluvy",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/acosta290/fluvy/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}

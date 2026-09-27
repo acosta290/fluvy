@@ -1,0 +1,8 @@
+{
+  "name": "Fluvy",
+  "zip_release": true,
+  "filename": "fluvy.zip",
+  "hide_default_branch": true,
+  "homeassistant": "2026.9.0",
+  "hacs": "2.0.0"
+}

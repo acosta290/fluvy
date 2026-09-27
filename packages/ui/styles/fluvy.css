@@ -1,0 +1,17 @@
+/*
+ * fluvy — shared component language for every review sheet (and, later, the cards).
+ * Grid: 4px. Cards: radius 20, padding 20. Tiles: 172×168, padding 16, radius 16. Inner tiles / buttons / fields: radius 12. Icon circles 44 / glyph 20.
+ * Controls: 28 (switch) · 36 (chip pill) · 44 (round, stepper, ruler band) · 48 (transport).
+ * Tones map to tokens; every tone has ink, fill, fill-border and on-fill.
+ */
+
+/* The language, one file per family (in this order: later families refine earlier ones). */
+@import url('fluvy/foundation.css');
+@import url('fluvy/surfaces.css');
+@import url('fluvy/buttons.css');
+@import url('fluvy/fields.css');
+@import url('fluvy/days.css');
+@import url('fluvy/controls.css');
+@import url('fluvy/lists.css');
+@import url('fluvy/tiles.css');
+@import url('fluvy/sheets.css');

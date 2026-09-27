@@ -1,0 +1,860 @@
+import {
+  languageOverride,
+  localize,
+  lookHandle,
+  lookRule,
+  navigate,
+  type EffectiveSettings,
+  type HomeAssistant,
+  type Look,
+  type LookHandle,
+  type LookPreview,
+} from '@fluvy/core';
+import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
+
+import { baseStyles, fitPills, ico, motionPreference, reducedMotion, sideScroll } from '@fluvy/ui';
+
+import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+
+import { keyed } from 'lit/directives/keyed.js';
+
+import { houseEnergy } from '../strategy/home-strategy.js';
+
+import { VIEWS } from '../strategy/home-views.js';
+
+import {
+  changeLines,
+  sameLook,
+  TABS,
+  unsaved,
+  withEdit,
+  type DashboardInfo,
+  type HouseEdit,
+  type PanelContext,
+  type PersonalEdit,
+  type StrategyEdit,
+  type StringKey,
+  type Tab,
+} from './model.js';
+import { PreviewHouse, type EnergyMeters } from './preview.js';
+
+import {
+  about,
+  appearance,
+  appearancePreview,
+  dashboard,
+  dashboardPreview,
+  preferences,
+  scope,
+} from './sections.js';
+
+import { s } from './strings.js';
+
+import { panelStyles } from './styles.js';
+
+import { aboutFacts, createAuto, exportSettings, importSettings, resetHouse } from './actions.js';
+
+/** What Home Assistant hands a custom panel. */
+interface Route {
+  readonly prefix: string;
+  readonly path: string;
+}
+
+/** From this width the panel lays out as on a desktop (a 600 column inside its 24 margins). */
+const WIDE = 648;
+/** From this width the preview leaves the column for a side column of its own (400), always in view. */
+const SIDE = 1184;
+/** How long the apply bar takes to leave (it enters in 220). */
+const BAR_LEAVE = 160;
+
+/**
+ * fluvy's settings: the look (a palette, preset or custom, and a shape) for the house or for oneself,
+ * where it applies, the automatic dashboard, a person's preferences. A Home Assistant custom panel
+ * (`panel_custom`, element `fluvy-panel`), drawn with the cards' own language and wearing the look being
+ * chosen, so every tap shows itself on the page it was made on. Nothing here is stored in the panel: the
+ * settings live in Home Assistant (`@fluvy/core` settings store) and every change applies live on every
+ * screen.
+ */
+export class FluvyPanel extends LitElement {
+  static override properties = {
+    hass: { attribute: false },
+    narrow: { type: Boolean },
+    route: { attribute: false },
+    panel: { attribute: false },
+    handle: { attribute: false },
+    tab: { state: true },
+    draft: { state: true },
+    houseEdit: { state: true },
+    personalEdit: { state: true },
+    strategyEdit: { state: true },
+    tryOnApp: { state: true },
+    dashboards: { state: true },
+    notice: { state: true },
+    resetArmed: { state: true },
+    wide: { state: true },
+    side: { state: true },
+    meters: { state: true },
+    leaving: { state: true },
+    creating: { state: true },
+    dark: { type: Boolean, reflect: true },
+    noTheme: { type: Boolean, reflect: true, attribute: 'no-theme' },
+  };
+
+  static override styles = [...baseStyles, panelStyles];
+
+  declare hass?: HomeAssistant;
+  declare narrow: boolean;
+  declare route?: Route;
+  declare panel?: unknown;
+  /** The running look; the page's own when not given (a test or the playground hands one in). */
+  declare handle?: LookHandle;
+  declare tab: Tab;
+  declare draft: Look | undefined;
+  declare houseEdit: HouseEdit;
+  declare personalEdit: PersonalEdit;
+  declare strategyEdit: StrategyEdit;
+  declare tryOnApp: boolean;
+  declare dashboards: readonly DashboardInfo[];
+  declare notice: string;
+  declare resetArmed: boolean;
+  declare wide: boolean;
+  /** The preview sits in a side column, on every tab. */
+  declare side: boolean;
+  /** The house's power meters for the preview's energy flow; null: it has none (the preview's own are drawn). */
+  declare meters: EnergyMeters | null | undefined;
+  /** The apply bar is on its way out (it keeps its last words while it goes). */
+  declare leaving: boolean;
+  /** The automatic dashboard is being created (two writes, then the list reloads). */
+  declare creating: boolean;
+  declare dark: boolean;
+  declare noTheme: boolean;
+
+  private settings?: EffectiveSettings;
+  private off: (() => void) | undefined;
+  private preview?: PreviewHouse;
+  /** The language the preview's cards were named in (they are made again in another). */
+  private previewLanguage = '';
+  /** Something is shown on the page that is not saved (the look on trial, an edit). */
+  private previewing = false;
+  private readonly lookSheet = new CSSStyleSheet();
+  private noticeTimer = 0;
+  resetTimer = 0;
+  private barTimer = 0;
+  private stillTimer = 0;
+  private fontTimer = 0;
+  private loaded = false;
+  private strip: HTMLElement | undefined;
+  private stopStrip: (() => void) | undefined;
+  private resize: ResizeObserver | undefined;
+  private barShown = false;
+  private lastBar: TemplateResult | undefined;
+  /** The tab the strip was last centred on ('' until it has been). */
+  private centred = '';
+  /** A tab's body has been shown: from then on a new tab's body fades in (decided when it is made). */
+  private entered = false;
+  private fading = false;
+  /** Pills are fitted to their text again once the web font lands (as the cards do), and the open tab re-centred. */
+  private readonly refit = (): void => {
+    if (!this.isConnected) return;
+    this.fit(true);
+    // only when the pills moved: a face that loads for something else leaves a strip the person scrolled alone
+    if (this.strip && this.strip.scrollWidth !== this.stripWidth) this.centre(this.strip, true);
+  };
+  /** The strip's scroll width when it was last centred. */
+  private stripWidth = 0;
+
+  constructor() {
+    super();
+    this.narrow = false;
+    this.tab = 'appearance';
+    this.houseEdit = {};
+    this.personalEdit = {};
+    this.strategyEdit = {};
+    this.tryOnApp = false;
+    this.dashboards = [];
+    this.notice = '';
+    this.resetArmed = false;
+    this.wide = false;
+    this.side = false;
+    this.leaving = false;
+    this.creating = false;
+    this.dark = false;
+    this.noTheme = false;
+  }
+
+  get look(): LookHandle | undefined {
+    return this.handle ?? lookHandle();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.resize = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      this.wide = entry.contentRect.width >= WIDE;
+      this.side = entry.contentRect.width >= SIDE;
+    });
+    this.resize.observe(this);
+    this.toggleAttribute('reduced-motion', motionPreference() === 'reduced');
+    this.attach();
+  }
+
+  /**
+   * Follows the running look's settings. Home Assistant may make the panel before the bundle has started the look
+   * (the element upgrades the moment it is defined): then it attaches with the first `hass` instead.
+   */
+  private attach(): void {
+    const handle = this.look;
+    if (!handle || this.off) return;
+    this.settings = handle.settings();
+    this.draft = this.settings.look;
+    this.off = handle.onChange((settings) => {
+      const kept = this.draft && this.settings && !sameLook(this.draft, this.settings.look);
+      this.settings = settings;
+      if (!kept) this.draft = settings.look;
+      // an edit now saved (here, or the same value on another screen) is no longer an edit
+      this.houseEdit = unsaved(this.houseEdit, settings);
+      this.personalEdit = unsaved(this.personalEdit, settings);
+      this.toggleAttribute('reduced-motion', motionPreference() === 'reduced');
+      this.requestUpdate();
+    });
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.off?.();
+    this.off = undefined;
+    this.resize?.disconnect();
+    this.resize = undefined;
+    // whatever the panel showed without saving ends with it
+    if (this.previewing) this.look?.preview(null);
+    this.previewing = false;
+    this.tryOnApp = false;
+    for (const timer of [
+      this.noticeTimer,
+      this.resetTimer,
+      this.barTimer,
+      this.stillTimer,
+      this.fontTimer,
+    ])
+      clearTimeout(timer);
+    (document.fonts as FontFaceSet | undefined)?.removeEventListener('loadingdone', this.refit);
+    this.stopStrip?.();
+    this.stopStrip = undefined;
+    this.strip = undefined;
+    this.centred = '';
+  }
+
+  protected override firstUpdated(): void {
+    const root = this.renderRoot as ShadowRoot;
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, this.lookSheet];
+    // (a test's DOM may have no font loading at all)
+    const fonts = document.fonts as FontFaceSet | undefined;
+    fonts?.addEventListener('loadingdone', this.refit);
+    void fonts?.ready.then(this.refit);
+    this.fontTimer = window.setTimeout(this.refit, 1200); // a face can become usable a frame after `ready` says so
+  }
+
+  protected override willUpdate(changed: PropertyValues<this>): void {
+    if (changed.has('route') && this.route) {
+      const segment = this.route.path.split('/')[1] as Tab | undefined;
+      if (segment && TABS.includes(segment)) this.tab = segment;
+    }
+    if (changed.has('hass') && this.hass) {
+      if (!this.off) this.attach();
+      this.dark = this.hass.themes?.darkMode ?? false;
+      this.noTheme = getComputedStyle(this).getPropertyValue(THEME_SENTINEL).trim() === '';
+      // the dashboards as the sidebar lists them: again whenever that list changes (one created, renamed, removed)
+      const panels = this.hass.panels;
+      if (!this.loaded || panels !== changed.get('hass')?.panels) {
+        this.loaded = true;
+        void this.loadDashboards();
+      }
+      this.previewHouse().update(this.hass);
+    }
+    // the whole panel wears the look being chosen: a tap on a palette re-skins the page it was made on
+    if ((changed.has('draft') || changed.has('dark')) && this.draft)
+      this.lookSheet.replaceSync(lookRule(this.draft, this.dark ? 'dark' : 'light', ':host'));
+    if (
+      changed.has('tryOnApp') ||
+      changed.has('houseEdit') ||
+      changed.has('personalEdit') ||
+      (changed.has('draft') && this.tryOnApp)
+    )
+      this.showEdits();
+    // the bar leaves the way it came, keeping its words while it goes
+    const shown = this.pending();
+    if (this.barShown && !shown) {
+      this.leaving = !reducedMotion();
+      clearTimeout(this.barTimer);
+      this.barTimer = window.setTimeout(() => (this.leaving = false), BAR_LEAVE);
+    }
+    if (shown) this.leaving = false;
+    this.barShown = shown;
+  }
+
+  /**
+   * Fits the pills to their text, keeping the tab strip where it was scrolled: measuring shrinks every pill for a
+   * moment, and the browser clamps the strip's scroll to the shorter row (the last tab ended half out of view).
+   */
+  private fit(force = false): void {
+    const strip = this.strip;
+    const left = strip?.scrollLeft ?? 0;
+    fitPills(this.renderRoot, force);
+    if (strip && strip.scrollLeft !== left) strip.scrollLeft = left;
+  }
+
+  protected override updated(): void {
+    this.fit();
+    // the cards rise in once (420 ms, up to 240 ms staggered) with the first body that has them; after that a
+    // tab change only fades its body in
+    if (!this.entered && this.renderRoot.querySelector('.pn-body .fv-card')) {
+      this.entered = true;
+      this.stillTimer = window.setTimeout(() => this.setAttribute('still', ''), 700);
+    }
+    // the tab strip scrolls sideways on a phone: a mouse drags it too
+    const strip = this.renderRoot.querySelector<HTMLElement>('.pn-tabs__row');
+    if (strip !== this.strip) {
+      this.stopStrip?.();
+      this.strip = strip ?? undefined;
+      this.stopStrip = strip ? sideScroll(strip) : undefined;
+      this.centred = '';
+    }
+    // the open tab in the middle: when it changes, and again at once when the pills were fitted to new widths
+    if (strip && this.centred !== this.tab) this.centre(strip, this.centred === '');
+    else if (strip && strip.scrollWidth !== this.stripWidth) this.centre(strip, true);
+  }
+
+  /** Scrolls the open tab into the middle of the strip (at once the first time, gliding after). */
+  private centre(strip: HTMLElement, first: boolean): void {
+    this.centred = this.tab;
+    this.stripWidth = strip.scrollWidth;
+    const active = strip.querySelector<HTMLElement>('.fv-chip.is-active');
+    if (!active || strip.scrollWidth <= strip.clientWidth) return this.onStrip(strip);
+    const most = strip.scrollWidth - strip.clientWidth;
+    const middle = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+    // within a fade's width of an end, the end itself (the first pill never half faded for 2 px of scroll)
+    const left = middle < 24 ? 0 : most - middle < 24 ? most : middle;
+    strip.scrollTo({ left, behavior: first || reducedMotion() ? 'instant' : 'smooth' });
+    if (first) this.onStrip(strip);
+  }
+
+  /** The strip fades only on a side where it goes on (drawn straight on the row: nothing to re-render). */
+  private onStrip(strip: HTMLElement): void {
+    strip.classList.toggle('is-start', strip.scrollLeft <= 1);
+    strip.classList.toggle('is-end', strip.scrollLeft >= strip.scrollWidth - strip.clientWidth - 1);
+  }
+
+  /* ---------- state ---------- */
+
+  /** The panel's words, in the language fluvy's settings chose. */
+  readonly t = (key: StringKey, values?: Record<string, string | number>): string =>
+    s({ language: languageOverride() ?? this.hass?.language ?? 'en' }, key, values);
+
+  /** The preview's little house, its rooms named in the panel's language. */
+  private previewHouse(): PreviewHouse {
+    const language = this.t('preview.living');
+    if (!this.preview || this.previewLanguage !== language) {
+      this.previewLanguage = language;
+      this.preview = new PreviewHouse({
+        living: this.t('preview.living'),
+        kitchen: this.t('preview.kitchen'),
+        bedroom: this.t('preview.bedroom'),
+        blinds: this.t('preview.blinds'),
+        temperature: this.t('preview.temperature'),
+        solar: this.t('preview.solar'),
+        grid: this.t('preview.grid'),
+        battery: this.t('preview.battery'),
+      });
+      if (this.hass) this.preview.update(this.hass);
+    }
+    return this.preview;
+  }
+
+  /** Something to save or to stop: a look chosen, an edit, or the look worn by the whole app on trial. */
+  private pending(): boolean {
+    return (
+      this.tryOnApp ||
+      (!!this.draft && !!this.settings && !sameLook(this.draft, this.settings.look)) ||
+      Object.keys(this.houseEdit).length > 0 ||
+      Object.keys(this.personalEdit).length > 0 ||
+      Object.keys(this.strategyEdit).length > 0
+    );
+  }
+
+  /**
+   * Shows on the whole screen what is not saved: the look on trial, where it applies (the menus, the frame) and
+   * the person's preferences (the cards' language, motion). The look itself is always on the panel.
+   */
+  private showEdits(): void {
+    const preview: LookPreview = {
+      ...(this.tryOnApp && this.draft ? { look: this.draft } : {}),
+      ...this.houseEdit,
+      ...this.personalEdit,
+    };
+    const showing = Object.keys(preview).length > 0;
+    if (!showing && !this.previewing) return;
+    this.previewing = showing;
+    this.look?.preview(showing ? preview : null);
+    this.toggleAttribute('reduced-motion', motionPreference() === 'reduced');
+  }
+
+  private show(notice: string): void {
+    this.notice = notice;
+    clearTimeout(this.noticeTimer);
+    this.noticeTimer = window.setTimeout(() => (this.notice = ''), 2400);
+  }
+
+  /** Runs a change against Home Assistant; what it refuses (a non-admin writing the house's settings) shows as the notice. */
+  readonly run = (task: () => Promise<unknown>, done?: StringKey): void => {
+    void task().then(
+      () => this.show(this.t(done ?? 'saved')),
+      (error: unknown) => this.show(error instanceof Error ? error.message : String(error)),
+    );
+  };
+
+  /**
+   * The house's dashboards as this person's own frontend lists them (`hass.panels`: admin or not, the same
+   * sidebar they see), and which one is the automatic dashboard (its config names our strategy). Reading is for
+   * everyone; only writing is an administrator's.
+   */
+  async loadDashboards(): Promise<void> {
+    const hass = this.hass;
+    if (!hass) return;
+    const panels = Object.values(hass.panels ?? {}).filter(
+      (panel) => panel.component_name === 'lovelace' && panel.url_path,
+    );
+    const overview = (): string => {
+      const own = hass.localize?.('panel.states');
+      return own && own !== 'panel.states' ? own : this.t('scope.overview');
+    };
+    this.dashboards = await Promise.all(
+      panels.map(async (panel): Promise<DashboardInfo> => {
+        const info: DashboardInfo = {
+          urlPath: panel.url_path,
+          title: panel.title || (panel.url_path === 'lovelace' ? overview() : panel.url_path),
+          ...(panel.icon ? { icon: panel.icon } : {}),
+        };
+        const config = await hass
+          .callWS<{ strategy?: Record<string, unknown> }>({
+            type: 'lovelace/config',
+            url_path: panel.url_path === 'lovelace' ? null : panel.url_path,
+          })
+          .catch(() => undefined);
+        const strategy = config?.strategy;
+        return strategy?.['type'] === 'custom:fluvy-home' ? { ...info, strategy } : info;
+      }),
+    );
+    const saved = this.dashboards.find((d) => d.strategy)?.strategy;
+    this.strategyEdit = saved ? this.unsavedStrategy(this.strategyEdit, saved) : {};
+  }
+
+  /**
+   * The house's power meters as the automatic dashboard finds them, asked once (the preview's energy flow is drawn
+   * on them when there are any, on the preview's own when there are none).
+   */
+  private async loadMeters(): Promise<void> {
+    const hass = this.hass;
+    if (!hass || this.meters !== undefined) return;
+    this.meters = null;
+    const roles = await houseEnergy(hass).catch(() => undefined);
+    if (!roles || (!roles.solarPower && !roles.gridPower)) return;
+    this.meters = {
+      ...(roles.solarPower ? { solar_power: roles.solarPower } : {}),
+      ...(roles.gridPower
+        ? { grid_power: roles.gridPower, ...(roles.gridInvert ? { grid_invert: true } : {}) }
+        : {}),
+      ...(roles.batteryPower
+        ? {
+            battery_power: roles.batteryPower,
+            ...(roles.batteryInvert ? { battery_invert: true } : {}),
+          }
+        : {}),
+      ...(roles.homePower ? { home_power: roles.homePower } : {}),
+    };
+  }
+
+  /** The strategy edits that still change something (a key taken away that is not there is no edit). */
+  private unsavedStrategy(
+    edit: StrategyEdit,
+    saved: Readonly<Record<string, unknown>>,
+  ): StrategyEdit {
+    return Object.fromEntries(
+      Object.entries(unsaved(edit, saved)).filter(
+        ([key, value]) => value !== undefined || key in saved,
+      ),
+    );
+  }
+
+  private context(): PanelContext | undefined {
+    const handle = this.look;
+    const hass = this.hass;
+    const settings = this.settings;
+    if (!handle || !hass || !settings || !this.draft) return undefined;
+    const draft = this.draft;
+    const auto = this.dashboards.find((d) => d.strategy);
+    return {
+      hass,
+      t: this.t,
+      admin: hass.user?.is_admin ?? false,
+      mode: this.dark ? 'dark' : 'light',
+      wide: this.wide,
+      handle,
+      settings,
+      shown: { ...settings, ...this.houseEdit, ...this.personalEdit },
+      draft,
+      dirty: !sameLook(draft, settings.look),
+      houseEdit: this.houseEdit,
+      personalEdit: this.personalEdit,
+      strategyEdit: this.strategyEdit,
+      tryOnApp: this.tryOnApp,
+      dashboards: this.dashboards,
+      strategy: auto?.strategy && withEdit(auto.strategy, this.strategyEdit),
+      setDraft: (look) => {
+        this.draft = { ...(this.draft ?? draft), ...look };
+      },
+      editHouse: (edit) => {
+        if (this.settings) this.houseEdit = unsaved({ ...this.houseEdit, ...edit }, this.settings);
+      },
+      editPersonal: (edit) => {
+        if (this.settings)
+          this.personalEdit = unsaved({ ...this.personalEdit, ...edit }, this.settings);
+      },
+      editStrategy: (edit) => {
+        if (auto?.strategy)
+          this.strategyEdit = this.unsavedStrategy(
+            { ...this.strategyEdit, ...edit },
+            auto.strategy,
+          );
+      },
+      setTryOnApp: (on) => {
+        this.tryOnApp = on;
+      },
+      apply: (to) => this.run(() => this.save(to)),
+      discard: () => {
+        this.draft = this.settings?.look;
+        this.houseEdit = {};
+        this.personalEdit = {};
+        this.strategyEdit = {};
+        this.tryOnApp = false;
+      },
+      run: (task) => this.run(task),
+    };
+  }
+
+  /**
+   * Saves every edit: the look (for the house, which ends a person's own look, or for this person), the house's
+   * settings, this person's preferences and the automatic dashboard's options. An edit clears itself when Home
+   * Assistant hands the saved value back, so nothing flickers to the old one in between.
+   */
+  private async save(to: 'house' | 'me'): Promise<void> {
+    const handle = this.look;
+    const settings = this.settings;
+    if (!handle || !settings || !this.draft) return;
+    const { store } = handle;
+    if (!sameLook(this.draft, settings.look)) {
+      const { palette, shape, pills } = this.draft;
+      if (to === 'house') {
+        await store.saveHouse({ palette, shape, pills });
+        if (settings.personalLook)
+          await store.savePersonal({ palette: undefined, shape: undefined, pills: undefined });
+      } else await store.savePersonal({ palette, shape, pills });
+    }
+    if (Object.keys(this.houseEdit).length) await store.saveHouse(this.houseEdit);
+    if (Object.keys(this.personalEdit).length) await store.savePersonal(this.personalEdit);
+    const auto = this.dashboards.find((d) => d.strategy);
+    if (auto?.strategy && Object.keys(this.strategyEdit).length) {
+      await this.hass?.callWS({
+        type: 'lovelace/config/save',
+        url_path: auto.urlPath,
+        config: { strategy: withEdit(auto.strategy, this.strategyEdit) },
+      });
+      await this.loadDashboards();
+    }
+    this.tryOnApp = false;
+  }
+
+  /**
+   * The Fluvy theme chosen in Home Assistant itself (this person's profile, or the house's default theme) wears the
+   * look on every page whatever the scope: the Scope tab says so, and offers Home Assistant's own way back.
+   */
+  private themeSource(): 'profile' | 'house' | 'other' | null {
+    const hass = this.hass;
+    if (hass?.selectedTheme?.theme === THEME_NAME) return 'profile';
+    const theme = hass?.themes?.theme;
+    if (!theme) return null;
+    return theme === THEME_NAME ? 'house' : 'other';
+  }
+
+  /** The theme Home Assistant wears, as its profile lists it (its own default is "Home Assistant"). */
+  private themeName(): string {
+    const theme = this.hass?.themes?.theme ?? '';
+    return theme === 'default' ? 'Home Assistant' : theme;
+  }
+
+  private leaveTheme(source: 'profile' | 'house' | 'other'): void {
+    const hass = this.hass;
+    if (!hass) return;
+    // the profile's theme picker's own event: Home Assistant stores the choice for this person (every device)
+    const settheme = (theme: string): boolean =>
+      this.dispatchEvent(
+        new CustomEvent('settheme', { detail: { theme }, bubbles: true, composed: true }),
+      );
+    if (source === 'other') settheme(THEME_NAME);
+    else if (source === 'profile') settheme('');
+    else
+      this.run(async () => {
+        await hass.callService('frontend', 'set_theme', { name: 'default' });
+        if (hass.themes.default_dark_theme === THEME_NAME)
+          await hass.callService('frontend', 'set_theme', { name: 'none', mode: 'dark' });
+      });
+  }
+
+  /* ---------- render ---------- */
+
+  private select(tab: Tab): void {
+    // a body made by a tab change fades in; the first one rose in with its cards
+    if (this.entered) this.fading = true;
+    this.tab = tab;
+    if (this.route) navigate(`${this.route.prefix}/${tab}`, true);
+  }
+
+  /** The tab row as a tab list: the arrows move along it (wrapping), Home and End to its ends. */
+  private onTabKey(event: KeyboardEvent): void {
+    const index = TABS.indexOf(this.tab);
+    const next =
+      event.key === 'ArrowRight'
+        ? TABS[(index + 1) % TABS.length]
+        : event.key === 'ArrowLeft'
+          ? TABS[(index - 1 + TABS.length) % TABS.length]
+          : event.key === 'Home'
+            ? TABS[0]
+            : event.key === 'End'
+              ? TABS[TABS.length - 1]
+              : undefined;
+    if (!next) return;
+    event.preventDefault();
+    this.select(next);
+    void this.updateComplete.then(() =>
+      this.renderRoot.querySelector<HTMLElement>(`#pn-tab-${next}`)?.focus(),
+    );
+  }
+
+  /** The open tab's cards (its preview apart: it goes under them, or beside them in a side column). */
+  private body(ctx: PanelContext): TemplateResult {
+    switch (this.tab) {
+      case 'appearance':
+        return appearance(ctx);
+      case 'scope': {
+        const source = this.themeSource();
+        return scope(
+          ctx,
+          source ? { source, name: this.themeName(), leave: () => this.leaveTheme(source) } : null,
+        );
+      }
+      case 'dashboard':
+        return dashboard(
+          ctx,
+          VIEWS.map((view) => ({
+            key: view.key,
+            icon: view.icon,
+            title: localize({ language: languageOverride() ?? ctx.hass.language }, view.title),
+          })),
+          {
+            create: () => createAuto(this, ctx),
+            open: (urlPath) => navigate(`/${urlPath}`),
+            creating: this.creating,
+          },
+        );
+      case 'preferences':
+        return preferences(ctx);
+      case 'about':
+        return about(ctx, aboutFacts(), {
+          exportSettings: () => exportSettings(this, ctx),
+          importSettings: (file) => importSettings(this, file),
+          reset: () => resetHouse(this),
+          resetArmed: this.resetArmed,
+        });
+    }
+  }
+
+  /**
+   * What the open tab's changes look like on real cards: the automatic dashboard's options on its tab, the look
+   * everywhere else. Under the cards of the tabs that have one; in the side column, on every tab.
+   */
+  private previewCard(ctx: PanelContext): TemplateResult | undefined {
+    const house = this.previewHouse();
+    if (this.tab === 'dashboard') {
+      void this.loadMeters();
+      const strategy = ctx.strategy ?? {};
+      const size = strategy['tile_size'] === 'compact' ? 'compact' : 'large';
+      const variant =
+        typeof strategy['thermostat_variant'] === 'string'
+          ? strategy['thermostat_variant']
+          : 'dial';
+      const flow = typeof strategy['flow_style'] === 'string' ? strategy['flow_style'] : 'ribbons';
+      return dashboardPreview(
+        ctx,
+        html`<div class="pn-preview pn-preview--dash">
+          <div class="pn-preview__tiles">
+            ${house.tile('living', size)}${house.tile('kitchen', size)}
+          </div>
+          <div class="pn-preview__side">${house.thermostat(variant)}</div>
+          ${house.energy(flow, this.meters ?? null)}
+        </div>`,
+      );
+    }
+    if (this.tab !== 'appearance' && !this.side) return undefined;
+    return appearancePreview(
+      ctx,
+      html`<div class="pn-preview">
+        <div class="pn-preview__hello">${house.hello()}</div>
+        <div class="pn-preview__tiles">
+          ${house.tile('living')}${house.tile('kitchen')}
+          <div class="pn-preview__extra">${house.tile('blinds')}</div>
+          <div class="pn-preview__extra">${house.tile('temperature')}</div>
+        </div>
+        ${house.thermostat('compact')}
+      </div>`,
+    );
+  }
+
+  /**
+   * The apply bar, on every tab while something is pending: what changes ("Linen → Volt · Round", or how many
+   * things), Discard, and how to save. A changed look is applied as an equal pair, for the house or only for me
+   * (one button for someone who may not change the house's); anything else is saved. A look worn on trial with
+   * nothing changed offers only to stop.
+   */
+  private bar(ctx: PanelContext): TemplateResult | undefined {
+    const lines = changeLines(ctx);
+    if (!lines.length && !ctx.tryOnApp) return undefined;
+    const text =
+      lines.length === 1
+        ? lines[0]
+        : lines.length
+          ? ctx.t('apply.changes', { n: lines.length })
+          : ctx.t('apply.trying');
+    const pair = ctx.dirty && ctx.admin;
+    return html`<div
+      class="pn-bar ${pair ? '' : 'pn-bar--single'} ${lines.length ? '' : 'pn-bar--trial'}"
+      role="region"
+      aria-label=${ctx.t('apply.region')}
+    >
+      <span class="pn-bar__text">${text}</span>
+      <button
+        class="fv-btn fv-btn--quiet pn-bar__discard"
+        data-target
+        data-fit="32"
+        @click=${ctx.discard}
+      >
+        ${ctx.t(lines.length ? 'apply.discard' : 'apply.stop')}
+      </button>
+      ${
+        !lines.length
+          ? nothing
+          : pair
+            ? html`<div class="pn-bar__pair" data-fill-row>
+                <button class="fv-btn fv-btn--quiet" data-target @click=${() => ctx.apply('me')}>
+                  ${ctx.t('apply.me')}
+                </button>
+                <button
+                  class="fv-btn fv-btn--accent"
+                  data-target
+                  @click=${() => ctx.apply('house')}
+                >
+                  ${ctx.t('apply.house')}
+                </button>
+              </div>`
+            : html`<div class="pn-bar__pair" data-fill-row>
+                <button class="fv-btn fv-btn--accent" data-target @click=${() => ctx.apply('me')}>
+                  ${ctx.t(ctx.dirty ? 'apply.mine' : 'apply.save')}
+                </button>
+              </div>`
+      }
+    </div>`;
+  }
+
+  private tabs(): TemplateResult {
+    // a wide panel's tabs share the column as a filling row; a phone's are content-sized
+    const fill = this.wide;
+    const row = html`<div
+      class="pn-tabs__row ${fill ? 'fv-chips--fill' : ''}"
+      role="tablist"
+      data-scroll-row
+      @scroll=${(event: Event) => this.onStrip(event.currentTarget as HTMLElement)}
+      @keydown=${(event: KeyboardEvent) => this.onTabKey(event)}
+    >
+      ${TABS.map(
+        (tab) =>
+          html`<button
+            class="fv-chip ${this.tab === tab ? 'is-active' : ''}"
+            id="pn-tab-${tab}"
+            role="tab"
+            aria-selected=${this.tab === tab ? 'true' : 'false'}
+            aria-controls="pn-body"
+            tabindex=${this.tab === tab ? 0 : -1}
+            data-target
+            data-fit=${fill ? nothing : '32'}
+            @click=${() => this.select(tab)}
+          >
+            <span class="fv-chip__pill" data-control>${this.t(`tab.${tab}`)}</span>
+          </button>`,
+      )}
+    </div>`;
+    // a wide panel lays the tabs out as a full row; a phone scrolls content-sized pills (fresh nodes either way,
+    // so no measured width outlives its layout)
+    return html`<nav class="pn-tabs ${fill ? 'is-wide' : ''}">${keyed(fill, row)}</nav>`;
+  }
+
+  protected override render(): TemplateResult {
+    const ctx = this.context();
+    if (!ctx) return html`<div class="pn"></div>`;
+    const bar = this.bar(ctx);
+    if (bar) this.lastBar = bar;
+    const foot = bar
+      ? html`<div class="pn-foot">${bar}</div>`
+      : this.leaving && this.lastBar
+        ? html`<div class="pn-foot is-leaving">${this.lastBar}</div>`
+        : nothing;
+    const notice = this.notice
+      ? html`<div class="pn-notice" role="status" data-fit="40" data-align="center">
+          ${this.notice}
+        </div>`
+      : nothing;
+    const preview = this.previewCard(ctx);
+    return html`<div class="pn ${this.wide ? 'is-wide' : ''} ${this.side ? 'is-side' : ''}">
+      <div class="pn-col">
+        <header class="pn-top">
+          ${
+            this.narrow
+              ? ico('menu', 'neutral', {
+                  label: this.t('menu'),
+                  onTap: () =>
+                    this.dispatchEvent(
+                      new CustomEvent('hass-toggle-menu', { bubbles: true, composed: true }),
+                    ),
+                })
+              : nothing
+          }
+          <div class="pn-titles">
+            <h1 class="pn-title">${this.t('title')}</h1>
+            <p class="pn-sub">${this.t('subtitle')}</p>
+          </div>
+        </header>
+        ${this.tabs()}
+        ${keyed(
+          this.tab,
+          html`<div
+            class="pn-body ${this.fading ? 'is-new' : ''}"
+            id="pn-body"
+            role="tabpanel"
+            aria-labelledby="pn-tab-${this.tab}"
+          >
+            ${this.body(ctx)} ${this.side ? nothing : (preview ?? nothing)}
+          </div>`,
+        )}
+        <div class="pn-dock">${foot}${notice}</div>
+      </div>
+      ${this.side && preview ? html`<aside class="pn-aside">${preview}</aside>` : nothing}
+    </div>`;
+  }
+}

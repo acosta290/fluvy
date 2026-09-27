@@ -1,0 +1,65 @@
+import { css } from 'lit';
+
+/**
+ * Fluid overrides the inputs cards share. The sheet is drawn at one width (a 320 column) with names that
+ * fit it; a dashboard column is 260 to 480 wide and a name is whatever its owner typed. Nothing here
+ * changes the sheet's geometry at its own width and content.
+ */
+export const rowStyles = css`
+  /* a row keeps its 60; a name too long for the column takes a second line instead of losing its end.
+     A row that grows keeps its circle, control and value centred on the whole text block (language rule) */
+  .fv-row {
+    align-items: center;
+    height: auto;
+    min-height: 60px;
+    padding: 8px 0;
+  }
+
+  /* a long state ("Above horizon") or a long value shares the row instead of squeezing the name out of it:
+     the name keeps a third of the row, the trailing element what is left after the circle and the gaps (68),
+     and a state made of words takes a second line, right-aligned, before it would leave the card */
+  .fv-row__text {
+    flex-shrink: 1000; /* the name and its context give way first (they may wrap); the state wraps only once they are down to their third */
+    min-width: 32%;
+  }
+
+  .fv-row__value {
+    flex: 0 0 auto;
+    min-width: 0;
+    text-align: right;
+    white-space: nowrap; /* a figure never wraps: the name and its context give way (they may take a second line) */
+  }
+
+  /* …and once they are down to their third, a state in words wraps between its words, right-aligned */
+  .fv-row__value.fv-row__value--words {
+    flex: 0 1 auto;
+    min-width: auto;
+    white-space: normal;
+  }
+
+  .fv-row__title,
+  .fv-row__sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .fv-row__sub {
+    -webkit-line-clamp: 3;
+  }
+
+  /* an editable value wears the link-button shape; a very long one gives way to the name, never the reverse */
+  .in-value {
+    max-width: calc(68% - 68px);
+  }
+
+  .in-value__text {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+  }
+`;

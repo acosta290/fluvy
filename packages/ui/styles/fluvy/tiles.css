@@ -1,0 +1,326 @@
+/* fluvy · tiles: Tiles: large (2-up), compact and mini. Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- tiles (2-up) ---------- */
+.fv-grid2 {
+  display: grid;
+  grid-template-columns: 172px 172px;
+  gap: 16px;
+}
+
+.fv-tile {
+  min-height: 168px;
+  padding: 16px;
+  border-radius: var(--fluvy-radius-lg);
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+}
+
+.fv-tile__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 44px;
+}
+
+.fv-tile__name {
+  margin-top: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-tile__state {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-tile__foot {
+  display: grid;
+  grid-template-columns: 64px 76px;
+  height: 40px; /* an xs readout is 40 tall: 16 label + 4 + 20 value */
+}
+
+/* tile rulers: a 44 hit band drawn in the tile's 40 foot slot (the 28 band was the only sub-44 control) */
+.fv-tile > .fv-ruler {
+  margin-top: -4px;
+}
+
+.fv-tile__value {
+  height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-tile.is-on {
+  background: var(--tone-fill);
+  box-shadow: inset 0 0 0 1px var(--tone-border);
+  color: var(--tone-on);
+}
+
+.fv-tile.is-on .fv-tile__state,
+.fv-tile.is-on .fv-row__sub {
+  color: var(--tone-on);
+  opacity: 0.72;
+}
+
+/* A solid fill is the colour itself: what is drawn on it takes the fill's ink (a black track with a thumb in the
+   tile's colour, ref Volt), and a dark tick loses its glow. On a tint (--fluvy-solid 0%) every value below is
+   the one it replaces. */
+.fv-tile.is-on {
+  --tone-fill-ink: color-mix(in srgb, var(--tone-on) var(--fluvy-solid, 0%), var(--tone-ink));
+  --tk-glow: color-mix(in srgb, transparent var(--fluvy-solid, 0%), var(--tone-ink));
+}
+
+.fv-tile.is-on :is(.fv-switch, .fv-ruler, .fv-knob, .fv-dial) {
+  --tone-ink: var(--tone-fill-ink);
+}
+
+/* the same inside a control with a shadow root of its own (the cards' ruler and dial), told by the tile it sits on */
+:host([on-fill]) :is(.fv-ruler, .fv-dial, .fv-knob) {
+  --tone-ink: var(--tone-fill-ink);
+}
+
+:host([on-fill]) .fv-ruler .tk-off {
+  stroke: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--tone-on) 28%, transparent) var(--fluvy-solid, 0%),
+    var(--fluvy-border-strong)
+  );
+}
+
+:host([on-fill]) .fv-knob {
+  background: color-mix(in srgb, var(--tone-fill) var(--fluvy-solid, 0%), var(--fluvy-card));
+}
+
+:host([on-fill]) {
+  --knob-halo: color-mix(in srgb, var(--tone-fill) var(--fluvy-solid, 0%), var(--fluvy-card));
+}
+
+.fv-tile.is-on .fv-switch.is-on .fv-switch__thumb {
+  background: color-mix(in srgb, var(--tone-fill) var(--fluvy-solid, 0%), var(--fluvy-card));
+}
+
+.fv-tile.is-on :is(.fv-readout__label, .fv-unit) {
+  color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--tone-on) 72%, transparent) var(--fluvy-solid, 0%),
+    var(--fluvy-text-secondary)
+  );
+}
+
+.fv-tile.is-on .fv-ico {
+  background: var(--fluvy-card);
+}
+
+.fv-tile.is-on .fv-ruler .tk-off {
+  stroke: var(--tone-on);
+  opacity: 0.28;
+}
+
+.fv-tile--light.is-on {
+  --tone-ink: var(--fluvy-state-light-active);
+  --tone-fill: var(--fluvy-state-light-active-fill);
+  --tone-border: var(--fluvy-state-light-active-fill-border);
+  --tone-on: var(--fluvy-state-light-active-on-fill);
+}
+.fv-tile--accent.is-on {
+  --tone-ink: var(--fluvy-accent);
+  --tone-fill: var(--fluvy-accent-fill);
+  --tone-border: var(--fluvy-accent-fill-border);
+  --tone-on: var(--fluvy-accent-on-fill);
+}
+.fv-tile--heat.is-on {
+  --tone-ink: var(--fluvy-state-climate-heat);
+  --tone-fill: var(--fluvy-state-climate-heat-fill);
+  --tone-border: var(--fluvy-state-climate-heat-fill-border);
+  --tone-on: var(--fluvy-state-climate-heat-on-fill);
+}
+
+.fv-tile.is-on .fv-ico {
+  color: var(--tone-ink);
+}
+
+.fv-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--fluvy-card);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--tone-on, var(--fluvy-text));
+}
+
+.fv-mini--quiet {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--tone-border, var(--fluvy-border));
+  font-weight: 500;
+}
+
+.fv-tile--off {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  height: 76px;
+  background: var(--fluvy-page);
+  box-shadow: none;
+  outline: 1px dashed var(--fluvy-unavailable-border);
+  outline-offset: -1px;
+  color: var(--fluvy-unavailable);
+}
+
+.fv-tile--off .fv-tile__name {
+  margin-top: 0;
+}
+
+.fv-tile--off .fv-row__title,
+.fv-tile--off .fv-row__sub {
+  color: var(--fluvy-unavailable);
+}
+
+.fv-tile--off .fv-tile__state {
+  color: var(--fluvy-unavailable);
+}
+
+/* ---------- tiles: compact (one row) and mini (icon over name) ---------- */
+/* the same tile, smaller, for the people who group their lights in pairs and threes: compact = 76 tall
+   (the scene tile's geometry: 16 padding, 44 icon), icon, name and state in a row; mini = 108 tall, icon over name. The whole tile is the button (tap
+   toggles, hold opens the details) and the tone fill says "on", so no switch is drawn. These rules follow
+   `.fv-tile--off` on purpose: an unavailable compact tile keeps the compact geometry with the off skin. */
+.fv-tile--compact,
+.fv-tile--mini {
+  display: flex;
+  min-height: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.fv-tile--compact {
+  align-items: center;
+  gap: 12px;
+  height: 76px;
+  padding: 16px;
+}
+
+.fv-tile--mini {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  height: 108px;
+  /* 12 at the sides while the tile is 68 or wider; in a narrower cell (four minis on a phone's 16 px grid
+     gaps are 63) the sides give way down to 8, so the 44 circle stays inside the padding box */
+  padding: 12px clamp(8px, round(down, calc((100% - 44px) / 2), 1px), 12px);
+  text-align: center;
+}
+
+.fv-tile__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fv-tile--mini .fv-tile__text {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.fv-tile--compact .fv-tile__name,
+.fv-tile--mini .fv-tile__name {
+  margin-top: 0;
+}
+
+.fv-tile--compact .fv-tile__name {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+/* two compact tiles side by side on a phone leave the name 98 px: one step smaller there, so a word like
+   "Temperatura" fits instead of ending in an ellipsis */
+.fv-tile--compact {
+  container-type: inline-size;
+}
+
+@container (max-width: 199px) {
+  .fv-tile--compact .fv-tile__name {
+    font-size: 14px;
+  }
+}
+
+/* a compact tile squeezed under 128 (a narrow dashboard cell) gives its name the icon's room: the fill still says
+   on or off; a mini tile under 60 draws a 36 circle so it stays inside its tile */
+@container (max-width: 127px) {
+  .fv-tile--compact > .fv-ico {
+    display: none;
+  }
+}
+
+.fv-tile--mini {
+  container-type: inline-size;
+}
+
+@container (max-width: 59px) {
+  .fv-tile--mini > .fv-ico {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+.fv-tile--compact .fv-tile__state {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fv-tile--mini .fv-tile__name {
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.fv-tile--mini .fv-tile__state {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* a group of small tiles: 8 px apart — two, three or four per row, or as many as fit */
+/* a group of tiles shares the dashboard grid's columns (its column gap), so a grouped tile lines up with a lone one above
+   it; rows stay 8 apart — a group reads as one */
+.fv-tiles {
+  display: grid;
+  row-gap: 8px;
+  column-gap: var(--ha-section-grid-column-gap, 8px);
+}
+
+.fv-tiles--1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fv-tiles--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.fv-tiles--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.fv-tiles--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.fv-tiles--auto {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+}
+.fv-tiles--auto.fv-tiles--mini {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}

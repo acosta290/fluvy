@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+pnpm-lock.yaml linguist-generated=true -diff
+packages/ui/src/styles/generated/*.ts linguist-generated=true
+packages/core/src/icons/generated.ts linguist-generated=true
+packages/core/src/icons/mdi.ts linguist-generated=true
+packages/theme/src/__tests__/ha-vars.json linguist-generated=true
+**/__snapshots__/*.snap linguist-generated=true
+design/language.md linguist-documentation=true

@@ -1,0 +1,43 @@
+{
+  "name": "@fluvy/tokens",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Design tokens for the Fluvy theme: OKLCH derivation, palettes, CSS/JSON emitters",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "packages/tokens"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./runtime": "./src/runtime.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json && tsx src/build/run.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^24.10.1",
+    "culori": "^4.0.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

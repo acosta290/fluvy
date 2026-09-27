@@ -1,0 +1,81 @@
+@import '../../../packages/tokens/dist/lab.css';
+
+/* The playground stands in for a Home Assistant view with the fluvy theme applied: the tokens come
+   from the same generated file the design lab uses, plus the sentinel the real theme carries. */
+:root {
+  --fluvy-theme: 1;
+}
+html,
+body {
+  margin: 0;
+}
+body {
+  background: #d6d0c4;
+  font-family: Inter, system-ui, sans-serif;
+}
+html[data-mode='dark'] body {
+  background: #0b0906;
+}
+@font-face {
+  font-family: Inter;
+  src: url('../../../packages/fonts/files/inter-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+
+.pg-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px;
+}
+/* ?compare: one column per palette, its name above it */
+.pg-look {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.pg-look__name {
+  margin: 0;
+  font:
+    600 20px/24px Inter,
+    sans-serif;
+  color: #33270b;
+  text-transform: capitalize;
+}
+html[data-mode='dark'] .pg-look__name {
+  color: #ede7dc;
+}
+/* a frame is one dashboard section: 12 columns, 16 gaps; its width is the section's width (360 = the design width) */
+.pg-frame {
+  box-sizing: content-box;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-content: start;
+  padding: 16px;
+  border-radius: 24px;
+  background: var(--fluvy-page);
+  box-shadow: 0 0 0 1px var(--fluvy-border-strong);
+}
+.pg-frame > * {
+  grid-column: span 12;
+  min-width: 0;
+}
+.pg-frame > [data-cols='6'] {
+  grid-column: span 6;
+}
+.pg-frame > [data-cols='4'] {
+  grid-column: span 4;
+}
+.pg-frame > [data-cols='3'] {
+  grid-column: span 3;
+}
+
+/* ?panel: the settings panel fills the page, as Home Assistant gives a custom panel the whole content area */
+.pg-panel {
+  display: block;
+  padding: 0;
+}

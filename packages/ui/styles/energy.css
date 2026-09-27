@@ -1,0 +1,280 @@
+/* Energy sheet composition. Primitives in fluvy.css. */
+.ef-card {
+  width: 360px;
+}
+
+.ef-stage {
+  position: relative;
+  width: 320px;
+  height: 204px;
+  margin-top: 16px;
+}
+
+.ef-link {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.ef-link--solar {
+  stroke: var(--fluvy-state-energy-solar);
+}
+.ef-link--grid {
+  stroke: var(--fluvy-state-energy-grid);
+}
+.ef-link--water {
+  stroke: var(--fluvy-state-energy-water);
+}
+
+.ef-arrow {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ef-arrow--solar {
+  stroke: var(--fluvy-state-energy-solar);
+}
+.ef-arrow--grid {
+  stroke: var(--fluvy-state-energy-grid);
+}
+.ef-arrow--water {
+  stroke: var(--fluvy-state-energy-water);
+}
+
+.ef-node {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+}
+
+.ef-node__text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  width: 120px;
+  height: 36px;
+}
+
+.ef-node__text--house {
+  align-items: flex-end;
+  text-align: right; /* shares the content column's right edge with the badge */
+}
+
+.ef-node__label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.ef-node__value {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ef-top__side {
+  padding-bottom: 3px; /* puts the 20px value on the 40px value's baseline */
+  text-align: right;
+}
+
+.ef-top__side .fv-readout__value {
+  justify-content: flex-end;
+}
+
+.ef-cost {
+  margin-bottom: 8px;
+}
+
+.ef-chart {
+  position: relative;
+  height: 120px;
+  margin-top: 12px;
+}
+
+.ef-chart--solar .fv-curve .curve-line {
+  stroke: var(--fluvy-state-energy-solar);
+}
+.ef-chart--solar .fv-curve .curve-fill-a,
+.ef-chart--solar .fv-curve .curve-fill-b {
+  stop-color: var(--fluvy-state-energy-solar);
+}
+.ef-chart--solar .fv-curve .curve-dot {
+  fill: var(--fluvy-state-energy-solar);
+}
+
+.ef-gauge {
+  margin-top: 12px;
+}
+
+.ef-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  height: 48px;
+  margin-top: 16px;
+}
+
+.ef-meter .fv-readout {
+  flex: 0 0 120px;
+}
+
+.ef-meter__bars {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ef-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fluvy-page-alt);
+  overflow: hidden;
+}
+
+.ef-bar__fill {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.ef-bar__fill--water {
+  background: var(--fluvy-state-energy-water);
+}
+.ef-bar__fill--solar {
+  background: var(--fluvy-state-energy-solar);
+}
+
+.ef-meter__note {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px; /* 12px in a 20px line puts its baseline on the 24px value's baseline; bar lands on the grid */
+  color: var(--fluvy-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+.ef-rows {
+  margin-top: 16px;
+}
+
+/* flow styles beside the dashed legs: ribbons (a band as thick as its power) and the rail (one track, connectors join it) */
+.ef-band {
+  stroke-width: 1;
+  transition: opacity var(--fv-slow) var(--fv-ease);
+}
+
+.ef-band--solar {
+  fill: var(--fluvy-state-energy-solar-fill);
+  stroke: var(--fluvy-state-energy-solar-fill-border);
+}
+.ef-band--grid {
+  fill: var(--fluvy-state-energy-grid-fill);
+  stroke: var(--fluvy-state-energy-grid-fill-border);
+}
+.ef-band--water {
+  fill: var(--fluvy-state-energy-water-fill);
+  stroke: var(--fluvy-state-energy-water-fill-border);
+}
+.ef-band--idle {
+  opacity: 0.45;
+}
+
+.ef-rail {
+  fill: none;
+  stroke: var(--fluvy-page-alt);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.ef-join {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity var(--fv-slow) var(--fv-ease);
+}
+
+.ef-join--solar {
+  stroke: var(--fluvy-state-energy-solar);
+}
+.ef-join--grid {
+  stroke: var(--fluvy-state-energy-grid);
+}
+.ef-join--water {
+  stroke: var(--fluvy-state-energy-water);
+}
+.ef-join--idle {
+  opacity: 0.4;
+}
+
+.ef-chev {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ef-chev--solar {
+  stroke: var(--fluvy-state-energy-solar);
+}
+.ef-chev--grid {
+  stroke: var(--fluvy-state-energy-grid);
+}
+.ef-chev--water {
+  stroke: var(--fluvy-state-energy-water);
+}
+.ef-chev--house {
+  stroke: var(--fluvy-text-secondary);
+}
+
+/* the flow card narrower than 240 px of content: no diagram, one row per source and one for the house */
+.ef-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ef-list__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+}
+
+.ef-list__text {
+  position: static;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/* a reading is one line: "3.2 kW" never breaks between the figure and its unit */
+.ef-list__text .ef-node__value {
+  white-space: nowrap;
+}
+
+/* the ribbons' house: a 56 circle, so three bands keep their shares */
+.ef-node--big {
+  width: 56px;
+  height: 56px;
+}
+
+.ef-node--big .fv-ico {
+  flex-basis: 56px;
+  width: 56px;
+  height: 56px;
+}
+
+/* its glyph one step up (24, the circle's proportion), which also keeps it on the 4 px grid inside the 56 */
+.ef-node--big .fv-ico svg {
+  width: 24px;
+  height: 24px;
+}

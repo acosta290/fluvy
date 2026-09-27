@@ -1,0 +1,193 @@
+/* Clock sheet composition. Primitives in fluvy.css. */
+.ck-card,
+.ck-tiles {
+  width: 360px;
+}
+
+.ck-center {
+  display: flex;
+  justify-content: center;
+}
+
+.ck-face {
+  position: relative;
+  --knob-halo: transparent; /* nothing under a clock cap: the hands run to the ring */
+}
+
+/* the cap is the knob's ring and dot, without lift (read-only) */
+.ck-face .fv-knob {
+  box-shadow: 0 0 0 2px var(--tone-ink);
+}
+
+.ck-face line {
+  stroke-linecap: round;
+}
+
+.ck-major {
+  stroke: var(--fluvy-text);
+  stroke-width: 2;
+}
+.ck-minor {
+  stroke: var(--fluvy-border-strong);
+  stroke-width: 2;
+}
+.ck-hour {
+  stroke: var(--fluvy-text);
+  stroke-linecap: round;
+}
+.ck-minute {
+  stroke: var(--fluvy-text);
+  stroke-linecap: round;
+}
+.ck-second {
+  stroke: var(--tone-ink);
+  stroke-linecap: round;
+}
+
+.ck-face--accent {
+  --tone-ink: var(--fluvy-accent);
+}
+.ck-face--solar {
+  --tone-ink: var(--fluvy-state-energy-solar);
+}
+
+.ck-num {
+  fill: var(--fluvy-text-secondary);
+  font-family: var(--fluvy-font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-num--s {
+  font-size: 12px;
+}
+
+.ck-caption {
+  height: 20px;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-caption--left {
+  margin-top: 4px;
+  text-align: left;
+}
+
+/* side face: the ring's outer edge on the column (the 12 px face padding pulled out), 20 from the ring to the text */
+.ck-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 168px;
+}
+
+.ck-side .ck-face {
+  margin-left: -12px;
+}
+
+.ck-side__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* beside a face: the 40 px time carries more air above its caps than the sub below its baseline, so the text block
+   rises 1 px to put its ink centre on the face centre (a digital side clock has no face and keeps its whole-pixel box) */
+.ck-side .ck-side__text {
+  margin-top: -1px;
+}
+
+/* big numerals: Inter's tabular "2" carries a 0.06 em left bearing at this size — pull the ink onto the column */
+.ck-time {
+  margin-left: -0.06em;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-big {
+  display: flex;
+  align-items: baseline;
+  height: 72px;
+  margin-left: -0.06em;
+  font-size: 64px;
+  font-weight: 600;
+  line-height: 72px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-big__unit {
+  margin-left: 8px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--fluvy-text-secondary);
+}
+
+/* hero clock + weather: the moon centred on the time's ink, the temperature on the date's baseline */
+.ck-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ck-split__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.ck-split__side .fv-ico {
+  margin-top: 4px;
+}
+
+.ck-temp {
+  display: flex;
+  align-items: baseline;
+  height: 28px;
+  padding-top: 2px; /* 2 + 26 = 28: the 24 px figure's baseline on the 14 px date's (measured 1 px short with 1 + 26 + 1), card stays 136 */
+  padding-bottom: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 26px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* tiles: time · state · foot (40) with the slack in one place; analog tiles are the face alone (16 + 136 + 16) */
+.ck-tile {
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-tile .fv-tile__foot {
+  margin-top: auto;
+}
+
+.ck-tiles__row {
+  margin-top: 8px;
+}
+
+.ck-tile__time {
+  height: 44px;
+  margin-left: -0.06em;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-tile--analog {
+  align-items: center;
+  justify-content: center;
+}

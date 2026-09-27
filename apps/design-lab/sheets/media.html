@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-palette="linen" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Media — fluvy design lab</title>
+    <link rel="stylesheet" href="../lab.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/fluvy.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/media.css" />
+  </head>
+  <body class="lab-page">
+    <section class="lab-sheet" data-sheet="media" id="media"></section>
+    <script src="../fluvy.js"></script>
+    <script src="../media.js"></script>
+    <script>
+      Promise.all(['600 13px Inter', '600 14px Inter', '500 13px Inter', '600 16px Inter', '600 40px Inter'].map((f) => document.fonts.load(f))).then((faces) => document.fonts.ready.then(() => faces)).then((faces) => {
+        if (!faces.every((list) => list.length) || !document.fonts.check('600 13px Inter')) throw new Error('Inter did not load');
+        renderMedia(document.getElementById('media'));
+        FLUVY.fit(document);
+        const frameMode = new URLSearchParams(location.search).get('frame');
+        if (frameMode) document.querySelectorAll('[data-frame]').forEach((f) => { f.dataset.mode = frameMode; });
+        document.documentElement.dataset.labReady = '1';
+      });
+    </script>
+  </body>
+</html>

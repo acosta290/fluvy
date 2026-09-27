@@ -1,0 +1,23 @@
+# Tooling for the integration's Python (custom_components/fluvy). The workspace's JavaScript is configured in package.json.
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["custom_components"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "D", "PL", "TRY"]
+ignore = [
+  "D203", # one blank line before a class docstring (D211 is the one used)
+  "D213", # summary on the second line (D212 is the one used)
+  "PLR0913", # Home Assistant's own APIs take many keyword arguments
+  "TRY003", # the message is the exception
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components.fluvy"]
+combine-as-imports = true

@@ -1,0 +1,18 @@
+.local/
+**/dist/
+custom_components/fluvy/frontend/
+custom_components/fluvy/themes/
+tools/dev/ha-config/
+apps/design-lab/out/
+apps/playground/out/
+pnpm-lock.yaml
+# generated sources (their generators write them; rebuild instead of editing)
+packages/core/src/icons/generated.ts
+packages/core/src/icons/mdi.ts
+packages/ui/src/styles/generated/
+**/__snapshots__/
+# prose and the approved design sheets keep their hand layout
+*.md
+*.html
+# temporary probe scripts (judges, debugging): never committed
+tools/render/.*

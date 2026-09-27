@@ -1,0 +1,214 @@
+import { FluvyMediaCard } from '../../../../packages/cards/src/media/media-card.js';
+import type { SheetSpec } from '../scenes.js';
+
+if (!customElements.get('fluvy-media-card'))
+  customElements.define('fluvy-media-card', FluvyMediaCard);
+
+/* supported_features bits of media_player */
+const PAUSE = 1,
+  SEEK = 2,
+  VOLUME_SET = 4,
+  VOLUME_MUTE = 8,
+  PREVIOUS = 16,
+  NEXT = 32;
+const TURN_ON = 128,
+  TURN_OFF = 256,
+  VOLUME_STEP = 1024,
+  SELECT_SOURCE = 2048;
+const STOP = 4096,
+  PLAY = 16384,
+  SHUFFLE = 32768,
+  REPEAT = 262144;
+
+const SPEAKER =
+  PAUSE |
+  SEEK |
+  VOLUME_SET |
+  VOLUME_MUTE |
+  PREVIOUS |
+  NEXT |
+  TURN_ON |
+  TURN_OFF |
+  VOLUME_STEP |
+  STOP |
+  PLAY |
+  SHUFFLE |
+  REPEAT;
+const CAST = PAUSE | VOLUME_SET | VOLUME_MUTE | PREVIOUS | NEXT | TURN_ON | TURN_OFF | PLAY | STOP;
+const TV =
+  PAUSE |
+  VOLUME_SET |
+  VOLUME_MUTE |
+  PREVIOUS |
+  NEXT |
+  TURN_ON |
+  TURN_OFF |
+  SELECT_SOURCE |
+  PLAY |
+  STOP;
+
+/** Album art as a data URI: the playground never reaches out to the network. */
+const art = (from: string, to: string): string =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="240" height="240" fill="url(#g)"/><circle cx="72" cy="66" r="42" fill="#ffffff" opacity="0.22"/><circle cx="168" cy="186" r="66" fill="#000000" opacity="0.12"/></svg>`,
+  );
+
+/** The position is anchored to the real clock: the card advances it once a second while playing. */
+const anchor = new Date().toISOString();
+
+export const sheet: SheetSpec = {
+  states: [
+    [
+      'media_player.kitchen',
+      'playing',
+      {
+        friendly_name: 'Kitchen speaker',
+        media_title: 'Midnight Coda',
+        media_artist: 'Ola Gjeilo',
+        media_album_name: 'Winter Songs',
+        media_duration: 222,
+        media_position: 84,
+        media_position_updated_at: anchor,
+        volume_level: 0.42,
+        is_volume_muted: false,
+        shuffle: false,
+        repeat: 'off',
+        app_name: 'Spotify',
+        entity_picture: art('#8a6a3a', '#e0cba4'),
+        supported_features: SPEAKER,
+      },
+    ],
+    [
+      'media_player.study',
+      'paused',
+      {
+        friendly_name: 'Study speaker',
+        media_title: 'Northern Lights',
+        media_artist: 'Ola Gjeilo',
+        media_album_name: 'Winter Songs',
+        media_duration: 252,
+        media_position: 84,
+        media_position_updated_at: anchor,
+        volume_level: 0.18,
+        is_volume_muted: true,
+        shuffle: true,
+        repeat: 'one',
+        app_name: 'Spotify',
+        entity_picture: art('#4a5a6a', '#b9c6cf'),
+        supported_features: SPEAKER,
+      },
+    ],
+    [
+      'media_player.office',
+      'playing',
+      {
+        friendly_name: 'Office speaker',
+        media_title: 'Tundra',
+        media_artist: 'Ola Gjeilo',
+        media_duration: 303,
+        media_position: 120,
+        media_position_updated_at: anchor,
+        volume_level: 0.66,
+        app_name: 'Radio Paradise',
+        supported_features: CAST,
+      },
+    ],
+    [
+      'media_player.living',
+      'idle',
+      {
+        friendly_name: 'Living room speaker',
+        volume_level: 0.3,
+        supported_features: CAST,
+      },
+    ],
+    ['media_player.patio', 'off', { friendly_name: 'Patio speaker', supported_features: CAST }],
+    [
+      'media_player.garden',
+      'unavailable',
+      { friendly_name: 'Garden speaker', supported_features: CAST },
+    ],
+    [
+      'media_player.tv',
+      'playing',
+      {
+        friendly_name: 'Lounge TV',
+        media_title: 'Braciole',
+        media_series_title: 'The Bear',
+        app_name: 'Netflix',
+        media_duration: 1980,
+        media_position: 600,
+        media_position_updated_at: anchor,
+        volume_level: 0.24,
+        source: 'HDMI 1',
+        source_list: ['TV', 'Netflix', 'Spotify', 'HDMI 1', 'HDMI 2', 'AirPlay', 'Radio'],
+        entity_picture: art('#5a3a4a', '#d6b3c2'),
+        supported_features: TV,
+      },
+    ],
+    [
+      'media_player.nulls',
+      'playing',
+      {
+        friendly_name: 'Bathroom radio',
+        media_title: null,
+        media_artist: null,
+        media_duration: null,
+        media_position: null,
+        volume_level: null,
+        is_volume_muted: null,
+        source: null,
+        source_list: null,
+        supported_features: CAST,
+      },
+    ],
+  ],
+  frames: [
+    {
+      title: 'Playing',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.kitchen' }],
+    },
+    {
+      title: 'Paused · muted',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.study' }],
+    },
+    { title: 'Idle', cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.living' }] },
+    { title: 'Off', cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.patio' }] },
+    {
+      title: 'No artwork',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.office' }],
+    },
+    {
+      title: 'TV · sources',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.tv' }],
+    },
+    {
+      title: 'Nulls · missing',
+      cards: [
+        { type: 'custom:fluvy-media-card', entity: 'media_player.nulls' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.gone' },
+      ],
+    },
+    {
+      title: 'Unavailable',
+      cards: [
+        { type: 'custom:fluvy-media-card', entity: 'media_player.garden' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.garden', variant: 'mini' },
+      ],
+    },
+    {
+      title: 'Mini',
+      cards: [
+        { type: 'custom:fluvy-media-card', entity: 'media_player.kitchen', variant: 'mini' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.living', variant: 'mini' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.office', variant: 'mini' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.tv', variant: 'mini' },
+      ],
+    },
+    {
+      title: 'Hero',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.kitchen', variant: 'hero' }],
+    },
+  ],
+};

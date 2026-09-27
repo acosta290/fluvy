@@ -1,0 +1,243 @@
+/* fluvy · foundation: The frame reset and the tones: every tone's ink, fill, fill border and on-fill. Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- frame reset ---------- */
+.fv-frame {
+  font-family: var(--fluvy-font-sans);
+  font-optical-sizing: auto;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  color: var(--fluvy-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.fv-frame *,
+.fv-frame *::before,
+.fv-frame *::after {
+  box-sizing: border-box;
+}
+
+.fv-frame * {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fv-frame :where(button) {
+  font: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.fv-frame svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.fv-frame ul {
+  list-style: none;
+}
+
+/* ---------- tones ---------- */
+.fv-ico--accent,
+.fv-badge--accent,
+.fv-option.is-active.fv-option--accent {
+  --tone-ink: var(--fluvy-accent);
+  --tone-fill: var(--fluvy-accent-fill);
+  --tone-border: var(--fluvy-accent-fill-border);
+  --tone-on: var(--fluvy-accent-on-fill);
+}
+.fv-ico--light,
+.fv-badge--light,
+.fv-option.is-active.fv-option--light {
+  --tone-ink: var(--fluvy-state-light-active);
+  --tone-fill: var(--fluvy-state-light-active-fill);
+  --tone-border: var(--fluvy-state-light-active-fill-border);
+  --tone-on: var(--fluvy-state-light-active-on-fill);
+}
+.fv-ico--heat,
+.fv-badge--heat,
+.fv-option.is-active.fv-option--heat {
+  --tone-ink: var(--fluvy-state-climate-heat);
+  --tone-fill: var(--fluvy-state-climate-heat-fill);
+  --tone-border: var(--fluvy-state-climate-heat-fill-border);
+  --tone-on: var(--fluvy-state-climate-heat-on-fill);
+}
+.fv-ico--cool,
+.fv-badge--cool,
+.fv-option.is-active.fv-option--cool {
+  --tone-ink: var(--fluvy-state-climate-cool);
+  --tone-fill: var(--fluvy-state-climate-cool-fill);
+  --tone-border: var(--fluvy-state-climate-cool-fill-border);
+  --tone-on: var(--fluvy-state-climate-cool-on-fill);
+}
+.fv-ico--dry,
+.fv-badge--dry,
+.fv-option.is-active.fv-option--dry {
+  --tone-ink: var(--fluvy-state-climate-dry);
+  --tone-fill: var(--fluvy-state-climate-dry-fill);
+  --tone-border: var(--fluvy-state-climate-dry-fill-border);
+  --tone-on: var(--fluvy-state-climate-dry-on-fill);
+}
+.fv-ico--fan,
+.fv-badge--fan,
+.fv-option.is-active.fv-option--fan {
+  --tone-ink: var(--fluvy-state-climate-fan);
+  --tone-fill: var(--fluvy-state-climate-fan-fill);
+  --tone-border: var(--fluvy-state-climate-fan-fill-border);
+  --tone-on: var(--fluvy-state-climate-fan-on-fill);
+}
+.fv-ico--water,
+.fv-badge--water,
+.fv-option.is-active.fv-option--water {
+  --tone-ink: var(--fluvy-state-energy-water);
+  --tone-fill: var(--fluvy-state-energy-water-fill);
+  --tone-border: var(--fluvy-state-energy-water-fill-border);
+  --tone-on: var(--fluvy-state-energy-water-on-fill);
+}
+.fv-ico--solar,
+.fv-badge--solar,
+.fv-option.is-active.fv-option--solar {
+  --tone-ink: var(--fluvy-state-energy-solar);
+  --tone-fill: var(--fluvy-state-energy-solar-fill);
+  --tone-border: var(--fluvy-state-energy-solar-fill-border);
+  --tone-on: var(--fluvy-state-energy-solar-on-fill);
+}
+.fv-ico--grid,
+.fv-badge--grid,
+.fv-option.is-active.fv-option--grid {
+  --tone-ink: var(--fluvy-state-energy-grid);
+  --tone-fill: var(--fluvy-state-energy-grid-fill);
+  --tone-border: var(--fluvy-state-energy-grid-fill-border);
+  --tone-on: var(--fluvy-state-energy-grid-on-fill);
+}
+.fv-ico--media,
+.fv-badge--media,
+.fv-option.is-active.fv-option--media {
+  --tone-ink: var(--fluvy-state-media-playing);
+  --tone-fill: var(--fluvy-state-media-playing-fill);
+  --tone-border: var(--fluvy-state-media-playing-fill-border);
+  --tone-on: var(--fluvy-state-media-playing-on-fill);
+}
+.fv-ico--neutral,
+.fv-badge--neutral {
+  --tone-ink: var(--fluvy-text-secondary);
+  --tone-fill: var(--fluvy-page);
+  --tone-border: var(--fluvy-border);
+  --tone-on: var(--fluvy-text-secondary);
+}
+.fv-ico--off,
+.fv-badge--off {
+  --tone-ink: var(--fluvy-unavailable);
+  --tone-fill: transparent;
+  --tone-border: var(--fluvy-unavailable-border);
+  --tone-on: var(--fluvy-unavailable);
+}
+.fv-ico--warning,
+.fv-badge--warning,
+.fv-option.is-active.fv-option--warning {
+  --tone-ink: var(--fluvy-warning);
+  --tone-fill: var(--fluvy-warning-fill);
+  --tone-border: var(--fluvy-warning-fill-border);
+  --tone-on: var(--fluvy-warning-on-fill);
+}
+.fv-option.is-active.fv-option--neutral {
+  --tone-fill: var(--fluvy-page-alt);
+  --tone-border: var(--fluvy-border-strong);
+  --tone-on: var(--fluvy-text);
+}
+
+.fv-ruler--accent,
+.fv-dial--accent,
+.fv-knob--accent,
+.fv-switch--accent {
+  --tone-ink: var(--fluvy-accent);
+  --tone-fill: var(--fluvy-accent-fill);
+}
+.fv-ruler--light,
+.fv-dial--light,
+.fv-knob--light,
+.fv-switch--light {
+  --tone-ink: var(--fluvy-state-light-active);
+  --tone-fill: var(--fluvy-state-light-active-fill);
+}
+.fv-ruler--heat,
+.fv-dial--heat,
+.fv-knob--heat,
+.fv-switch--heat {
+  --tone-ink: var(--fluvy-state-climate-heat);
+  --tone-fill: var(--fluvy-state-climate-heat-fill);
+}
+.fv-ruler--cool,
+.fv-dial--cool,
+.fv-knob--cool,
+.fv-switch--cool {
+  --tone-ink: var(--fluvy-state-climate-cool);
+  --tone-fill: var(--fluvy-state-climate-cool-fill);
+}
+.fv-ruler--water,
+.fv-dial--water,
+.fv-knob--water,
+.fv-switch--water {
+  --tone-ink: var(--fluvy-state-energy-water);
+  --tone-fill: var(--fluvy-state-energy-water-fill);
+}
+.fv-switch--dry {
+  --tone-ink: var(--fluvy-state-climate-dry);
+  --tone-fill: var(--fluvy-state-climate-dry-fill);
+}
+.fv-ruler--fan,
+.fv-dial--fan,
+.fv-knob--fan,
+.fv-switch--fan {
+  --tone-ink: var(--fluvy-state-climate-fan);
+  --tone-fill: var(--fluvy-state-climate-fan-fill);
+}
+.fv-ruler--neutral,
+.fv-dial--neutral,
+.fv-knob--neutral {
+  --tone-ink: var(--fluvy-text-secondary);
+  --tone-fill: var(--fluvy-page);
+}
+.fv-ruler--solar,
+.fv-dial--solar,
+.fv-knob--solar,
+.fv-switch--solar {
+  --tone-ink: var(--fluvy-state-energy-solar);
+  --tone-fill: var(--fluvy-state-energy-solar-fill);
+}
+.fv-ruler--grid,
+.fv-dial--grid,
+.fv-knob--grid,
+.fv-switch--grid {
+  --tone-ink: var(--fluvy-state-energy-grid);
+  --tone-fill: var(--fluvy-state-energy-grid-fill);
+}
+.fv-ruler--media,
+.fv-dial--media,
+.fv-knob--media,
+.fv-switch--media {
+  --tone-ink: var(--fluvy-state-media-playing);
+  --tone-fill: var(--fluvy-state-media-playing-fill);
+}
+.fv-ruler--warning,
+.fv-dial--warning,
+.fv-knob--warning,
+.fv-switch--warning {
+  --tone-ink: var(--fluvy-warning);
+  --tone-fill: var(--fluvy-warning-fill);
+}
+
+/* read out, not shown: what a screen reader announces (a press confirmed, a keypad's error). Unscoped on purpose:
+   a page is not a card frame, and only our own elements ever carry the class. */
+.fv-sr,
+.fv-frame .fv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

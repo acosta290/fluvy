@@ -1,0 +1,72 @@
+/* Climate sheet layout. Primitives live in fluvy.css; only composition rules here. */
+.cl-card {
+  width: 360px;
+}
+
+.cl-dial-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.cl-readouts {
+  display: grid;
+  grid-template-columns: 172px 172px;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cl-rows {
+  margin-top: 16px;
+}
+
+.cl-compact {
+  width: 360px;
+}
+
+.cl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 76px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.cl-row__value {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  width: 56px;
+  margin-right: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-tile__value--quiet {
+  color: var(--fluvy-text-secondary);
+}
+
+/* compact and ruler variants: the target as a large readout with its stepper on the figure's 44 line box (the light card's row) */
+
+/* the readout's label keeps its one line (the card drops the "· now" part that would not fit) */
+.cl-value .fv-readout {
+  min-width: 0;
+}
+
+.cl-value .fv-readout__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cl-bubble-row {
+  position: relative;
+  height: 40px;
+}
+
+.cl-range .fv-label {
+  margin-top: 16px;
+}
