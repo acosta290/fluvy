@@ -76,7 +76,8 @@ frontend:
 ```
 
 1. In HACS, open the menu (⋮) → **Custom repositories**, add `https://github.com/acosta290/fluvy` with the type
-   **Integration**, or click the button above.
+   **Integration**, or click the button above. (Fluvy is a custom repository: HACS's default store only lists
+   licences GitHub can identify, and it does not identify the PolyForm Noncommercial licence.)
 2. Search for **Fluvy** in HACS and download it.
 3. Restart Home Assistant.
 4. Go to **Settings → Devices & services → Add integration**, search for **Fluvy** and add it. There is nothing to

@@ -17,6 +17,10 @@ settings panel, the dashboard resource and the theme. Nothing is written to `con
 
 ## Through HACS
 
+Fluvy is a HACS **custom repository**: HACS's default store only lists projects whose licence GitHub can identify,
+and it does not identify the PolyForm Noncommercial licence Fluvy uses. Adding the repository once is the only
+difference; downloads and updates work exactly as for any other integration.
+
 1. HACS → menu (⋮) → **Custom repositories** → add `https://github.com/acosta290/fluvy`, type **Integration**.
    The button in the README opens this dialog with the fields filled in.
 2. Search for **Fluvy** and download it.
