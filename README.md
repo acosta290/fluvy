@@ -16,6 +16,8 @@
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml"><img alt="HACS validation" src="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml/badge.svg"></a>
 </p>
 
+<p align="center"><b>Try it: <a href="https://acosta290.github.io/fluvy/">acosta290.github.io/fluvy</a></b> — the real cards, pages and settings panel on a simulated home, in your browser.</p>
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
@@ -44,6 +46,12 @@ radii and hairlines.
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
 hold for the 1 % scale.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/dimmer.gif" width="45%" alt="The precision dimmer: a relative drag, finer away from the ruler, and the 1 % scale on hold">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/energy-flow.gif" width="45%" alt="The energy flow: the lines' pace and dots follow the power as the day rises, without a jump">
+  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/dimmer.mp4">dimmer.mp4</a> · <a href="https://github.com/acosta290/fluvy/blob/main/docs/media/energy-flow.mp4">energy-flow.mp4</a></sub>
+</p>
 
 **Control** — lights with brightness and colour temperature, thermostats (dial or compact), water heaters and
 humidifiers, covers with position and tilt, fans, vacuums, valves, media players and TVs, tiles and lists.
@@ -79,11 +87,21 @@ the house wants them; a switch gives Home Assistant's pages back.
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/history-light.png" width="49%" alt="The History page">
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/history-scrub.gif" width="720" alt="History: one cursor scrubbed across a chart reads every chart at the same moment">
+  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/history-scrub.mp4">history-scrub.mp4</a></sub>
+</p>
+
 ## The settings panel
 
-**Fluvy** in the sidebar: sixteen palettes in a pastel and an electric line, or your own accent with every
+**Fluvy** in the sidebar: fifteen palettes in a pastel and an electric line, or your own accent with every
 contrast checked; three shapes; where the look applies; the automatic dashboard; and each person's own
 preferences — language, motion, haptics, a palette of their own. Changes apply live on every device, no reload.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="720" alt="The Appearance tab: two presets tried, a custom accent picked, the look applied to the house">
+  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/palette.mp4">palette.mp4</a></sub>
+</p>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-light.png" width="49%" alt="The Appearance tab">

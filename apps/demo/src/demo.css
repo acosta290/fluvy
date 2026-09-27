@@ -1,0 +1,48 @@
+@import '../../playground/src/frame.css';
+
+/* The demo page: the look engine paints the tokens on :root and the page colour behind them, as at home; the
+   frames are the playground's (one dashboard section each). Everything here is drawn in the tokens. */
+@font-face {
+  font-family: Inter;
+  src: url('../../../packages/fonts/files/inter-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: Inter;
+  src: url('../../../packages/fonts/files/inter-italic-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: block;
+}
+html,
+body {
+  margin: 0;
+}
+body {
+  min-height: 100vh;
+  background: var(--fluvy-page, #f3eee4);
+  color: var(--fluvy-text, #1b1712);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* the frames: as many columns as the device has, each a dashboard column wide (never wider than the screen), centred */
+.demo-stage {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--demo-columns, 1),
+    min(var(--demo-frame, 360px), calc(100vw - 32px))
+  );
+  justify-content: center;
+  align-items: start;
+  gap: 24px;
+  padding: 24px 16px 64px;
+}
+.demo-stage > .pg-frame {
+  width: auto;
+}
+/* a page (the settings panel, Activity, History) takes the whole width, as Home Assistant gives it */
+.demo-stage.pg-panel {
+  display: block;
+  padding: 0;
+}

@@ -5,6 +5,27 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A public demo at https://acosta290.github.io/fluvy/: the real cards, pages and settings panel on the simulated
+  home, with the palette, mode, device and language changed live; deployed by `pages.yml` on every push to `main`.
+- Motion clips in the README: the precision dimmer, the energy flow changing pace, a palette applied in the settings
+  panel, a scrub across the History charts. `pnpm clips` records them on the playground (`tools/render/clip.mjs`)
+  with the gestures the interaction suites prove.
+- The settings panel's Dashboard tab lists Fluvy auto in Home Assistant's sidebar, or takes its entry out (an
+  administrator's switch).
+
+### Changed
+
+- Activity: the icons sit 4 px clear of the timeline's spine, as the dots already did.
+- The interaction suites and the clips share one gestures module (`tools/render/lib/gestures.mjs`).
+
+### Fixed
+
+- The documentation counts fifteen palettes (there was never a Cobalt), lists the automatic dashboard's options as
+  the code has them (`dial | compact | ruler`, `ribbons | rail | legs`, eight views) and no longer mentions an
+  Activity card that does not exist; CI measures the two devices sheets by their names.
+
 ## [1.0.2] — 2026-09-27
 
 ### Changed

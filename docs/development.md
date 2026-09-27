@@ -20,6 +20,7 @@ packages/bundle/           @fluvy/bundle   the build: the entry, its chunks, the
 packages/fonts/            Inter (OFL), subset
 packages/demo-home/        @fluvy/demo-home  the fictional house the tests and the playground share
 apps/playground/           the real cards on a simulated hass: screenshots, the measurer, interaction tests
+apps/demo/                 the public demo on GitHub Pages: the playground's sheets and pages behind a landing page
 apps/design-lab/           the approved design sheets (static HTML on packages/ui/styles)
 design/                    the design language and the approved renders
 tools/render/              screenshots, the alignment measurer, interaction tests, contact sheets
@@ -81,6 +82,22 @@ own tokens), `palette=volt`, `shape=round`, `accent=%23ff4a1a&character=vivid&ba
 is a small, honest stand-in: a state store, service calls that change it after a delay, and canned answers for the
 reads the cards make.
 
+## The demo
+
+```sh
+pnpm --filter @fluvy/demo dev            # http://127.0.0.1:5185/fluvy/  (the playground keeps :5183)
+pnpm --filter @fluvy/demo build && pnpm --filter @fluvy/demo preview   # the built site on :4173
+DEMO=http://127.0.0.1:4173/fluvy/ node tools/render/demo-smoke.mjs     # what visitors get, checked
+```
+
+`apps/demo` is the playground as a visitor sees it: its sheets grouped into families, its pages, and the settings
+panel, behind a landing page drawn with the design system's own parts. The look runs on Fluvy's own settings
+machinery kept in memory (`@fluvy/playground/look-memory`): a palette dot on the landing and the Appearance tab
+change the same settings, live. The URL takes the playground's parameters (`sheet`, `panel`, `history`, `activity`,
+`mode`, `width`, `lang`, `palette`, `accent`…) and `device=phone|phone-l|tablet|desktop`; what a card cannot do here
+(a more-info dialog, a page of Home Assistant) becomes a notice. `pages.yml` builds it on every push to `main`,
+smoke-tests the built site and deploys it to https://acosta290.github.io/fluvy/.
+
 ## The tools
 
 ```sh
@@ -92,6 +109,19 @@ node tools/render/render.mjs --page apps/design-lab/sheets/home.html --palette l
 
 The measurer is the quality gate: the 4 px grid at every device pixel ratio, control heights, icon boxes, touch
 targets, baselines, text inside its box, containment, pill sides — **0 violations** or the change is not done.
+
+## Motion clips
+
+```sh
+pnpm clips                                        # every clip → docs/media/*.gif and *.mp4 (the playground on :5183, ffmpeg on the PATH)
+node tools/render/clip.mjs --clip dimmer --keep-frames 1
+```
+
+`tools/render/clip.mjs` plays the gestures the interaction suites prove (`tools/render/lib/gestures.mjs` is one
+module for both) on the playground with a drawn touch indicator, records every paint through Chromium's screencast
+as lossless PNG frames with their timestamps, and encodes them with the system's ffmpeg: an H.264 mp4 and a GIF
+whose palette is computed from what changes. Frames are the screencast's, at CSS pixels; a GIF over 4 MB fails the
+run. Re-record after a change to what a clip shows, and commit the media.
 
 ## The integration
 

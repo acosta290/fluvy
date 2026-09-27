@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fluvy</title>
+    <script>
+      // GitHub Pages serves this for any path under /fluvy/ that is not a file: the settings panel's own routes
+      // (/fluvy/scope) become the demo's ?panel=, anything else is shown as the Home Assistant page it would open.
+      (() => {
+        const base = '/fluvy/';
+        const rest = (location.pathname.startsWith(base) ? location.pathname.slice(base.length) : '').replace(/\/$/, '');
+        const tabs = ['appearance', 'scope', 'dashboard', 'preferences', 'about'];
+        const query = tabs.includes(rest) ? 'panel=' + rest : rest ? 'path=' + encodeURIComponent('/' + rest) : '';
+        location.replace(base + (query ? '?' + query : ''));
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

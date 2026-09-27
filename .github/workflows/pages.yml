@@ -1,0 +1,54 @@
+name: Pages
+
+# The public demo (apps/demo) on GitHub Pages: built and smoke-tested on every push to main, then deployed.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# a deploy in flight finishes; the next one waits
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @fluvy/tokens build
+      - run: pnpm --filter @fluvy/demo typecheck
+      - run: pnpm --filter @fluvy/demo build
+      - run: pnpm --filter @fluvy/render exec playwright install --with-deps chromium
+      - name: Smoke the built site
+        run: |
+          pnpm --filter @fluvy/demo preview > preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/fluvy/ > /dev/null && break; sleep 1; done
+          DEMO=http://127.0.0.1:4173/fluvy/ node tools/render/demo-smoke.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/demo/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: The site answers
+        run: curl -sf --retry 10 --retry-delay 6 --retry-all-errors "${{ steps.deployment.outputs.page_url }}" | grep -q '<title>'

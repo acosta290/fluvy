@@ -1,0 +1,46 @@
+{
+  "name": "@fluvy/demo",
+  "version": "1.0.2",
+  "private": true,
+  "description": "The public demo: the real cards, pages and settings panel on a simulated home, published to GitHub Pages",
+  "license": "GPL-3.0-only",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "apps/demo"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "vite --port 5185 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort"
+  },
+  "dependencies": {
+    "@fluvy/cards": "workspace:*",
+    "@fluvy/core": "workspace:*",
+    "@fluvy/demo-home": "workspace:*",
+    "@fluvy/playground": "workspace:*",
+    "@fluvy/tokens": "workspace:*",
+    "@fluvy/ui": "workspace:*",
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
+  }
+}

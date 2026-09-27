@@ -27,6 +27,40 @@ importers:
         specifier: ^8.46.0
         version: 8.70.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
 
+  apps/demo:
+    dependencies:
+      '@fluvy/cards':
+        specifier: workspace:*
+        version: link:../../packages/cards
+      '@fluvy/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fluvy/demo-home':
+        specifier: workspace:*
+        version: link:../../packages/demo-home
+      '@fluvy/playground':
+        specifier: workspace:*
+        version: link:../playground
+      '@fluvy/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
+      '@fluvy/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.0
+        version: 7.3.6(@types/node@24.13.5)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.5)(happy-dom@20.14.5)(supports-color@7.2.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
+
   apps/design-lab:
     devDependencies:
       '@types/node':
