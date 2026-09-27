@@ -79,13 +79,15 @@ export interface HeadOptions {
   readonly trailing?: TemplateResult | typeof nothing;
   readonly onIconTap?: ((event: Event) => void) | undefined;
   readonly iconLabel?: string;
+  /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
+  readonly name?: boolean;
 }
 
 export function head(o: HeadOptions): TemplateResult {
   return html`<div class="fv-card__head">
     ${ico(o.icon, o.tone ?? 'accent', { onTap: o.onIconTap, ...(o.iconLabel ? { label: o.iconLabel } : {}) })}
     <div class="fv-card__titles">
-      <h3 class="fv-card__title">${o.title}</h3>
+      <h3 class="fv-card__title" data-name=${o.name ? '' : nothing}>${o.title}</h3>
       ${o.sub ? html`<p class="fv-card__sub">${o.sub}</p>` : nothing}
     </div>
     ${o.trailing ?? nothing}

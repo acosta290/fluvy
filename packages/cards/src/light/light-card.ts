@@ -25,9 +25,20 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
-import { boolField, entityField, formLabels, nameIconFields } from '../shared/form.js';
+import {
+  boolField,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+} from '../shared/form.js';
+
+/** How the card is drawn: the full dimmer, or the compact one (its level in the head, the ruler alone); `auto` picks by width. */
+export type LightVariant = 'auto' | 'full' | 'compact';
 
 export interface LightCardConfig extends FluvyCardConfig {
+  variant?: LightVariant;
   /** Send brightness while dragging (throttled) instead of only on release. */
   live_update?: boolean;
   show_temperature?: boolean;
@@ -37,9 +48,16 @@ export interface LightCardConfig extends FluvyCardConfig {
 
 const DIMMABLE = new Set(['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white']);
 
+/** Under this content width the full layout has no room for its value and stepper: the compact one takes over. */
+const COMPACT_BELOW = 260;
+/** Under this width (half of a phone's section) the head has no room for its switch: the ruler alone turns the lamp on and off. */
+const TIGHT_BELOW = 200;
+
 /**
  * The precision dimmer: a big tabular value with its stepper, the ruler underneath (relative drag,
- * slide away to slow down, hold for the 1 % scale), and a second ruler for colour temperature.
+ * slide away to slow down, hold for the 1 % scale), and a second ruler for colour temperature. Half a section wide
+ * (or `variant: compact`) it keeps the head, with the level in its state line, and the brightness ruler alone: two
+ * lamps share a line.
  */
 export class FluvyLightCard extends Card<LightCardConfig> {
   static override styles: CSSResultGroup = [
@@ -52,6 +70,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       } /* the sheet fixes 256 so its five states line up; a colour-temperature ruler makes the card taller */
       .sl-bubble-row {
         pointer-events: none;
+      }
+      .sl-card--compact {
+        min-height: 0;
       }
     `,
   ];
@@ -85,7 +106,10 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       schema: [
         entityField(['light']),
         nameIconFields(),
-        boolField('show_temperature'),
+        fieldRow(
+          selectField('variant', ['auto', 'full', 'compact']),
+          boolField('show_temperature'),
+        ),
         boolField('temperature_tint'),
         boolField('live_update'),
       ],
@@ -108,6 +132,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     if (!config.entity) throw new Error('fluvy-light-card: "entity" is required');
     return {
       ...config,
+      variant: config.variant ?? 'auto',
       show_temperature: config.show_temperature ?? true,
       temperature_tint: config.temperature_tint ?? true,
       live_update: config.live_update ?? false,
@@ -115,10 +140,13 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   }
 
   override getCardSize(): number {
-    return 4;
+    return this.config?.variant === 'compact' ? 2 : 4;
   }
+  /** Half a section is enough (two lamps on a line); a card asked to be compact starts there. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 9 };
+    return this.config?.variant === 'compact'
+      ? { columns: 6, rows: 'auto', min_columns: 4 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   private hold(value: number): void {
@@ -186,19 +214,35 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const shownLevel = this.preview_ ?? level;
     const tone: Tone = unusable ? 'off' : 'light';
     const w = this.contentWidth;
+    const variant = this.config?.variant ?? 'auto';
+    const compact = variant === 'compact' || (variant === 'auto' && w < COMPACT_BELOW);
+    const tight = w < TIGHT_BELOW;
     const win = this.window_?.fine ? this.window_ : null;
     // on the fine scale the labels are the major ticks themselves (whole values); the ones too close to an end are left out
     const ticks: [number, string][] = win
       ? win.marks
           .filter(([f]) => f > 0.06 && f < 0.94)
           .map(([f, v]) => [f, formatNumber(this.hass, v, { digits: 0 })])
-      : [
-          [0, '0'],
-          [0.25, '25'],
-          [0.5, '50'],
-          [0.75, '75'],
-          [1, '100'],
-        ];
+      : compact
+        ? [
+            [0, '0'],
+            [0.5, '50'],
+            [1, '100'],
+          ]
+        : [
+            [0, '0'],
+            [0.25, '25'],
+            [0.5, '50'],
+            [0.75, '75'],
+            [1, '100'],
+          ];
+    // the compact head says the level where the full card has its big value ("On · 70 %")
+    const state = stateText(this.hass, view);
+    const sub = compact
+      ? on && dimmable
+        ? `${state} · ${formatNumber(this.hass, shownLevel, { digits: 0 })} %`
+        : state
+      : view.areaName || state;
 
     const kelvin = view.attr<number | null>('color_temp_kelvin');
     const minK = view.attr<number>('min_color_temp_kelvin') ?? 2000;
@@ -206,34 +250,40 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const hasTemp = modes.includes('color_temp') && this.config?.show_temperature !== false;
 
     return html`<article
-      class="fv-card sl-card ${unusable ? 'is-unavailable is-off' : ''}"
+      class="fv-card sl-card ${unusable ? 'is-unavailable is-off' : ''} ${compact ? 'sl-card--compact' : ''}"
       data-card
     >
       ${head({
         icon: this.config?.icon ?? glyphFor(view),
         tone: on ? tone : unusable ? 'off' : 'neutral',
         title: name,
-        sub: view.areaName || stateText(this.hass, view),
-        trailing: unusable
-          ? nothing
-          : toggle(
-              on,
-              'light',
-              (next) => {
-                this.expect(view.id, next ? 'on' : 'off');
-                this.call('light', next ? 'turn_on' : 'turn_off');
-              },
-              name,
-            ),
+        name: true,
+        sub,
+        trailing:
+          unusable || tight
+            ? nothing
+            : toggle(
+                on,
+                'light',
+                (next) => {
+                  this.expect(view.id, next ? 'on' : 'off');
+                  this.call('light', next ? 'turn_on' : 'turn_off');
+                },
+                name,
+              ),
         onIconTap: () => this.tap(view.id, { action: 'more-info' }),
         iconLabel: name,
       })}
       ${
         dimmable
-          ? html` <div class="sl-value fv-value-row">
-                ${readout({ label: this.t('light.brightness'), value: unusable ? '—' : on || this.preview_ !== null ? formatNumber(this.hass, shownLevel, { digits: 0 }) : this.t('common.off'), unit: unusable || (!on && this.preview_ === null) ? '' : '%', size: 'l' })}
-                ${unusable ? nothing : stepper((d) => this.stepBrightness(d), { decrease: this.t('common.decrease'), increase: this.t('common.increase') })}
-              </div>
+          ? html` ${
+                compact
+                  ? nothing
+                  : html`<div class="sl-value fv-value-row">
+                      ${readout({ label: this.t('light.brightness'), value: unusable ? '—' : on || this.preview_ !== null ? formatNumber(this.hass, shownLevel, { digits: 0 }) : this.t('common.off'), unit: unusable || (!on && this.preview_ === null) ? '' : '%', size: 'l' })}
+                      ${unusable ? nothing : stepper((d) => this.stepBrightness(d), { decrease: this.t('common.decrease'), increase: this.t('common.increase') })}
+                    </div>`
+              }
               <div class="sl-bubble-row"></div>
               <fluvy-ruler
                 .value=${level}
@@ -261,7 +311,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
           : nothing
       }
       ${
-        hasTemp && !unusable
+        hasTemp && !unusable && !compact
           ? html` ${label(this.t('light.temperature'))}
               <fluvy-ruler
                 .value=${kelvin ?? minK}

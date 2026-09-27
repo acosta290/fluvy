@@ -37,5 +37,25 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // half a section each: the compact layout by width (the head says the level, the ruler stands alone)
+    {
+      title: 'Two on a line',
+      width: 480,
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.ceiling', cols: 6 },
+        { type: 'custom:fluvy-light-card', entity: 'light.reading', cols: 6 },
+      ],
+    },
+    {
+      title: 'Two on a phone',
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.ceiling', cols: 6 },
+        { type: 'custom:fluvy-light-card', entity: 'light.porch', cols: 6 },
+      ],
+    },
+    {
+      title: 'Compact by choice',
+      cards: [{ type: 'custom:fluvy-light-card', entity: 'light.ceiling', variant: 'compact' }],
+    },
   ],
 };
