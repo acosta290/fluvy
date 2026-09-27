@@ -145,6 +145,7 @@ export const timelineStyles = css`
     border-radius: 50%;
     border: 2px solid var(--fluvy-border-strong);
     background: var(--av-ground);
+    box-shadow: 0 0 0 4px var(--av-ground);
   }
   .av-row {
     --av-row: var(--av-ground);
@@ -281,10 +282,13 @@ export const timelineStyles = css`
     box-shadow: 0 0 0 4px var(--av-row);
     transition: box-shadow 180ms var(--fv-ease, ease);
   }
+  /* the halo keeps the spine 4 px off the circle (the dots below wear the same one) and follows the row's colour */
   .fv-ico.av-circle {
     flex: 0 0 40px;
     width: 40px;
     height: 40px;
+    box-shadow: 0 0 0 4px var(--av-row);
+    transition: box-shadow 180ms var(--fv-ease, ease);
   }
   .fv-ico.av-circle svg,
   .fv-ico.av-circle ha-icon {
@@ -294,7 +298,9 @@ export const timelineStyles = css`
   }
   .fv-ico--neutral.av-circle {
     background: var(--fluvy-card);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow:
+      inset 0 0 0 1px var(--fluvy-border),
+      0 0 0 4px var(--av-row);
   }
   .av-body {
     display: flex;
