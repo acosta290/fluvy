@@ -1,5 +1,7 @@
 * text=auto eol=lf
 *.png binary
+*.gif binary
+*.mp4 binary
 *.woff2 binary
 pnpm-lock.yaml linguist-generated=true -diff
 packages/ui/src/styles/generated/*.ts linguist-generated=true

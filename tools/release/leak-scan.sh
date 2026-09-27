@@ -14,7 +14,7 @@ files() {
   find . -type f \
     -not -path './node_modules/*' -not -path '*/node_modules/*' -not -path './.git/*' -not -path './.idea/*' -not -path './.vscode/*' -not -path '*/dist/*' \
     -not -path './custom_components/fluvy/frontend/*' -not -path './custom_components/fluvy/themes/*' \
-    -not -path './apps/*/out/*' -not -path './.local/*' -not -path './tools/dev/ha-config/*' -not -name '*.png' -not -name '*.woff2' -not -name 'pnpm-lock.yaml'
+    -not -path './apps/*/out/*' -not -path './.local/*' -not -path './tools/dev/ha-config/*' -not -name '*.png' -not -name '*.gif' -not -name '*.mp4' -not -name '*.woff2' -not -name 'pnpm-lock.yaml'
 }
 
 # 1. Words that belong to a private installation, to the paid-product past, or to the developer's machine.
