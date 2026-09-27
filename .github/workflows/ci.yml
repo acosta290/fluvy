@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm check
+      - run: node tools/release/check.mjs --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: custom_components-fluvy
+          path: custom_components/fluvy
+          if-no-files-found: error
+          retention-days: 7
+
+  python:
+    name: Integration (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install ruff
+      - run: ruff check custom_components
+      - run: ruff format --check custom_components
+
+  visual:
+    name: Measurer and interactions
+    needs: check
+    runs-on: ubuntu-latest
+    # advisory while it settles in CI; it becomes a required check afterwards
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @fluvy/render exec playwright install --with-deps chromium
+      - name: Start the playground
+        run: |
+          FLUVY_NO_HMR=1 pnpm --filter @fluvy/playground dev > playground.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:5183/ > /dev/null && break; sleep 1; done
+      - run: node tools/render/interactions.mjs
+      - name: Measure the sheets
+        run: |
+          mkdir -p out
+          for sheet in home devices energy climate inputs; do
+            node tools/render/measure.mjs --page "http://127.0.0.1:5183/?sheet=$sheet" --frame '[data-frame]' \
+              --width 1400 --out "out/$sheet.json" --md "out/$sheet.md"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-reports
+          path: |
+            out
+            playground.log

@@ -1,0 +1,429 @@
+#!/usr/bin/env node
+/**
+ * Interaction tests for the security cards: lock (slide to unlock), alarm and its keypad, camera — slide-to-unlock only
+ * commits past 85 % on a real release, the keypad never shows or keeps the code, and the camera loop stops off-screen,
+ * in a hidden tab and when the card is removed.
+ * Real cards on the playground's simulated hass. Exit code 1 on any failure.
+ *   node interactions-security.mjs            (expects the playground dev server on :5183)
+ */
+import { calls, frame, moreInfo, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
+
+const suite = await startSuite();
+const { check } = suite;
+const open = (sheet, options) => suite.sheet(sheet, options);
+
+/* ---------- lock: slide to unlock ---------- */
+{
+  const page = await open('devices-security');
+  const lock = frame(page, 'Lock').locator('fluvy-lock-card');
+  const track = lock.locator('.dv-slide');
+  const knob = track.locator('.dv-slide__knob');
+  const tb = await track.boundingBox();
+  const y = tb.y + tb.height / 2;
+  const start = tb.x + 4 + 18;
+  const span = tb.width - 44;
+
+  await page.mouse.click(start, y);
+  await settle(page, 500);
+  check('lock: a tap on the knob does nothing', (await calls(page)).length === 0);
+  await page.mouse.click(tb.x + tb.width / 2, y);
+  await settle(page, 300);
+  check('lock: a tap on the track does nothing', (await calls(page)).length === 0);
+
+  await page.mouse.move(start, y);
+  await page.mouse.down();
+  await page.mouse.move(start + span * 0.6, y, { steps: 12 });
+  await page.mouse.up();
+  await settle(page, 700);
+  let kb = await knob.boundingBox();
+  check(
+    'lock: letting go at 60 % springs back and calls nothing',
+    (await calls(page)).length === 0 && Math.abs(kb.x - (tb.x + 4)) < 2,
+    `knob left ${(kb.x - tb.x).toFixed(1)}`,
+  );
+
+  await page.mouse.move(start, y);
+  await page.mouse.down();
+  await page.mouse.move(start + span * 0.95, y, { steps: 14 });
+  const ready = (await track.getAttribute('class')).includes('is-ready');
+  await page.mouse.up();
+  await settle(page, 100);
+  let c = await calls(page);
+  check(
+    'lock: past 85 % the destination lights up, and the release unlocks — one call',
+    ready && c.length === 1 && c[0].s === 'lock.unlock',
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  check(
+    '…and the badge reads Unlocked before Home Assistant answers',
+    (await lock.locator('.fv-badge').textContent()).trim() === 'Unlocked',
+  );
+  await settle(page, 700);
+  await reset(page);
+  kb = await knob.boundingBox();
+  check(
+    'lock: unlocked, the knob rests at the far end and the control mirrors',
+    Math.abs(kb.x - (tb.x + tb.width - 40)) < 2 &&
+      (await track.getAttribute('class')).includes('dv-slide--reverse'),
+    `knob left ${(kb.x - tb.x).toFixed(1)} of ${tb.width}`,
+  );
+
+  // a cancelled touch (the page starts scrolling) never decides, even past the commit point
+  const end = tb.x + tb.width - 4 - 18;
+  await track.dispatchEvent('pointerdown', {
+    pointerId: 7,
+    pointerType: 'touch',
+    clientX: end,
+    clientY: y,
+    button: 0,
+    isPrimary: true,
+    bubbles: true,
+  });
+  for (let i = 1; i <= 10; i++)
+    await track.dispatchEvent('pointermove', {
+      pointerId: 7,
+      pointerType: 'touch',
+      clientX: end - span * 0.95 * (i / 10),
+      clientY: y,
+      bubbles: true,
+    });
+  await track.dispatchEvent('pointercancel', {
+    pointerId: 7,
+    pointerType: 'touch',
+    clientX: end - span * 0.95,
+    clientY: y,
+    bubbles: true,
+  });
+  await settle(page, 700);
+  check(
+    'lock: a cancelled touch past the commit point locks nothing and springs back',
+    (await calls(page)).length === 0 &&
+      Math.abs((await knob.boundingBox()).x - (tb.x + tb.width - 40)) < 2,
+  );
+
+  await track.focus();
+  await page.keyboard.press('Enter');
+  check(
+    'lock: the first keyboard press only asks',
+    (await calls(page)).length === 0 &&
+      (await track.locator('.dv-slide__hint').textContent()).includes('Press again'),
+  );
+  await page.keyboard.press('Enter');
+  await settle(page, 200);
+  c = await calls(page);
+  check(
+    'lock: the second press within 2 s locks',
+    c.length === 1 && c[0].s === 'lock.lock',
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await settle(page, 500);
+  await reset(page);
+
+  const coded = frame(page, 'Lock · needs a code').locator('fluvy-lock-card');
+  const ct = coded.locator('.dv-slide');
+  const cb = await ct.boundingBox();
+  await page.mouse.move(cb.x + 22, cb.y + 22);
+  await page.mouse.down();
+  await page.mouse.move(cb.x + 22 + (cb.width - 44) * 0.95, cb.y + 22, { steps: 12 });
+  await page.mouse.up();
+  await settle(page, 400);
+  const keypad = coded.locator('fluvy-keypad');
+  const dialog = keypad.locator('dialog');
+  check(
+    'lock: a lock with a code opens the keypad instead of calling',
+    (await calls(page)).length === 0 &&
+      (await dialog.count()) === 1 &&
+      (await dialog.locator('.dv-key').count()) === 11,
+  );
+  check(
+    '…and the knob went home to wait',
+    Math.abs((await ct.locator('.dv-slide__knob').boundingBox()).x - (cb.x + 4)) < 2,
+  );
+  const primary = dialog.locator('.fv-btn--accent');
+  check('lock: Unlock is inert until the code is complete', await primary.isDisabled());
+  for (const d of ['1', '2', '3']) await dialog.locator('.dv-key', { hasText: d }).click();
+  check('…three digits of a four-digit code are not enough', await primary.isDisabled());
+  await dialog.locator('.dv-key', { hasText: '4' }).click();
+  check(
+    '…four digits enable it, and the code appears nowhere in the DOM',
+    !(await primary.isDisabled()) &&
+      !(await keypad.evaluate((el) => el.shadowRoot.innerHTML.includes('1234'))) &&
+      (await dialog.locator('.dv-code__dot.is-on').count()) === 4,
+  );
+  await page.waitForTimeout(400); // past the opening guard
+  await primary.click();
+  await settle(page, 400);
+  c = await calls(page);
+  check(
+    'lock: the keypad sends lock.unlock with the code, once, and closes',
+    c.length === 1 &&
+      c[0].s === 'lock.unlock' &&
+      c[0].d.code === '1234' &&
+      (await dialog.count()) === 0,
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await reset(page);
+
+  const latch = frame(page, 'Lock · unlocked, with a latch').locator('fluvy-lock-card');
+  await latch.locator('.dv-open .fv-btn').click();
+  await settle(page, 300);
+  const ld = latch.locator('fluvy-keypad dialog');
+  check(
+    'lock: the latch asks in a sheet first (no keys, no call yet)',
+    (await calls(page)).length === 0 &&
+      (await ld.count()) === 1 &&
+      (await ld.locator('.dv-key').count()) === 0,
+  );
+  await page.waitForTimeout(400);
+  await ld.locator('.fv-btn--accent').click();
+  await settle(page, 400);
+  c = await calls(page);
+  check(
+    '…and confirming sends lock.open',
+    c.length === 1 && c[0].s === 'lock.open' && (await ld.count()) === 0,
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await page.close();
+}
+
+/* ---------- alarm + keypad ---------- */
+{
+  const page = await open('devices-security');
+  const alarm = frame(page, 'Alarm').locator('fluvy-alarm-card');
+  const tiles = alarm.locator('.fv-option');
+  await tiles.nth(2).click(); // Away — no code needed for arming on this panel
+  check(
+    'alarm: arming lights the chosen tile at once',
+    (await tiles.nth(2).getAttribute('aria-pressed')) === 'true',
+  );
+  await settle(page, 300);
+  let c = await calls(page);
+  check(
+    '…and sends alarm_arm_away without a code',
+    c.length === 1 && c[0].s === 'alarm_control_panel.alarm_arm_away' && c[0].d.code === undefined,
+    JSON.stringify(c),
+  );
+  await reset(page);
+  await tiles.nth(0).click();
+  await settle(page, 300); // Disarm → keypad
+  const keypad = alarm.locator('fluvy-keypad');
+  const dialog = keypad.locator('dialog');
+  check(
+    'alarm: disarming opens the keypad and calls nothing',
+    (await calls(page)).length === 0 && (await dialog.count()) === 1,
+  );
+  const disarm = dialog.locator('.fv-btn--accent');
+  check('alarm: Disarm is inert with no digits', await disarm.isDisabled());
+  await page.keyboard.type('2580');
+  check(
+    'alarm: typed digits fill the dots, the code is nowhere in the DOM',
+    (await dialog.locator('.dv-code__dot.is-on').count()) === 4 &&
+      !(await keypad.evaluate((el) => el.shadowRoot.innerHTML.includes('2580'))) &&
+      !(await keypad.evaluate((el) => el.shadowRoot.textContent.includes('2580'))),
+  );
+  await page.keyboard.press('Backspace');
+  check(
+    'alarm: backspace removes one digit',
+    (await dialog.locator('.dv-code__dot.is-on').count()) === 3,
+  );
+  await page.keyboard.type('0');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Enter');
+  await settle(page, 400);
+  c = await calls(page);
+  check(
+    'alarm: Enter sends alarm_disarm with the code, once, and the sheet closes',
+    c.length === 1 &&
+      c[0].s === 'alarm_control_panel.alarm_disarm' &&
+      c[0].d.code === '2580' &&
+      (await dialog.count()) === 0,
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await reset(page);
+
+  // the scrim closes and forgets; a reopened keypad starts empty
+  await settle(page, 300);
+  await tiles.nth(1).click();
+  await settle(page, 300); // Home (needs the code? no: code_arm_required false) → direct
+  c = await calls(page);
+  check(
+    'alarm: arming home on a panel that needs no arm code sends directly',
+    c.length === 1 && c[0].s === 'alarm_control_panel.alarm_arm_home',
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await reset(page);
+  await settle(page, 300);
+  await tiles.nth(0).click();
+  await settle(page, 300);
+  await page.keyboard.type('12');
+  check('alarm: two digits in', (await dialog.locator('.dv-code__dot.is-on').count()) === 2);
+  await page.waitForTimeout(400);
+  await page.mouse.click(20, 20);
+  await settle(page, 400); // the scrim
+  check('alarm: tapping the scrim closes the sheet', (await dialog.count()) === 0);
+  await tiles.nth(0).click();
+  await settle(page, 300);
+  check(
+    'alarm: a reopened keypad has forgotten the digits',
+    (await dialog.locator('.dv-code__dot.is-on').count()) === 0,
+  );
+  await page.keyboard.press('Escape');
+  await settle(page, 400);
+  check('alarm: Escape closes the sheet', (await dialog.count()) === 0);
+
+  const resting = frame(page, 'Alarm · disarmed, arming needs the code').locator(
+    'fluvy-alarm-card',
+  );
+  await resting.locator('.fv-option').nth(2).click();
+  await settle(page, 300);
+  const rd = resting.locator('fluvy-keypad dialog');
+  check(
+    'alarm: a panel that needs a code to arm asks for it',
+    (await calls(page)).length === 0 &&
+      (await rd.count()) === 1 &&
+      (await rd.locator('.dv-key').count()) === 11,
+  );
+  await page.keyboard.press('Escape');
+  await settle(page, 400);
+
+  const gone = frame(page, 'Alarm · unavailable').locator('fluvy-alarm-card');
+  await gone.locator('.fv-option').nth(1).click({ force: true });
+  await settle(page, 200);
+  check('alarm: an unavailable panel ignores its tiles', (await calls(page)).length === 0);
+  await page.close();
+}
+
+/* ---------- keypad: the 30 s timeout forgets the digits and closes ---------- */
+{
+  const page = await open('devices-security', { clock: true });
+  const alarm = frame(page, 'Alarm').locator('fluvy-alarm-card');
+  await alarm.locator('.fv-option').nth(0).click();
+  await page.clock.runFor(400);
+  const dialog = alarm.locator('fluvy-keypad dialog');
+  await page.keyboard.type('99');
+  await page.clock.runFor(1000);
+  const sub = (await dialog.locator('.fv-card__sub').textContent()).trim();
+  check('keypad: the countdown runs from 30 s', /29 s$/.test(sub), sub);
+  await page.clock.runFor(31_000);
+  await page.waitForTimeout(300);
+  check(
+    'keypad: after 30 s of silence the sheet closes and the digits are gone',
+    (await dialog.count()) === 0 &&
+      (await alarm.evaluate((el) => el.shadowRoot.querySelector('fluvy-keypad').count_)) === 0,
+  );
+  await alarm.locator('.fv-option').nth(0).click();
+  await page.clock.runFor(400);
+  await page.keyboard.type('1');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.runFor(300);
+  await page.waitForTimeout(200);
+  check(
+    'keypad: hiding the tab closes the sheet and forgets the digit',
+    (await dialog.count()) === 0 &&
+      (await alarm.evaluate((el) => el.shadowRoot.querySelector('fluvy-keypad').count_)) === 0,
+  );
+  await page.close();
+}
+
+/* ---------- camera: the refresh loop ---------- */
+{
+  const page = await open('devices-security');
+  const cam = frame(page, 'Camera').locator('fluvy-camera-card');
+  const srcs = () =>
+    cam.evaluate((el) =>
+      Array.from(el.shadowRoot.querySelectorAll('.dv-cam__frame')).map(
+        (i) => i.getAttribute('src') ?? '',
+      ),
+    );
+  const stamp = (list) =>
+    list.map((s) => (s.match(/[?&#]_?=?(\d+)$/) ?? s.match(/(\d+)$/) ?? [])[1] ?? '').join('|');
+  await cam.evaluate((el) => el.scrollIntoView({ block: 'center' })); // the camera sits at the foot of this sheet
+  await page.waitForTimeout(900);
+  const first = await srcs();
+  check(
+    'camera: on screen and in front, the first frame is requested and shown',
+    first.some(Boolean) &&
+      (await cam.locator('.dv-cam__frame.is-on').count()) === 1 &&
+      (await cam.locator('.dv-cam__live').count()) === 1,
+  );
+  await cam.evaluate((el) => {
+    el.config = { ...el.config, refresh: 1 };
+    el.setConfig({ ...el.config, refresh: 1 });
+  });
+  await page.waitForTimeout(2600);
+  const after = await srcs();
+  check(
+    'camera: with refresh 1 s a new still arrives every second, alternating the two images',
+    stamp(after) !== stamp(first) && after.every(Boolean),
+    `${stamp(first)} → ${stamp(after)}`,
+  );
+  const running = await page.evaluate(() => window.__intervals());
+
+  await page.evaluate(() => window.scrollTo(0, 0)); // the camera sits at the foot: the top of the page is away from it
+  await page.waitForTimeout(600);
+  const offA = await srcs();
+  await page.waitForTimeout(1600);
+  const offB = await srcs();
+  const scrolledOut = await cam.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.bottom < 0 || r.top > innerHeight;
+  });
+  check(
+    'camera: off screen the loop stops (no new still in 1.6 s) and the LIVE pill fades',
+    scrolledOut &&
+      stamp(offA) === stamp(offB) &&
+      (await cam.locator('.dv-cam__live.is-stale').count()) === 1,
+    `${stamp(offA)} → ${stamp(offB)}`,
+  );
+  await cam.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(1600);
+  const back = await srcs();
+  check(
+    'camera: back on screen it resumes',
+    stamp(back) !== stamp(offB) && (await cam.locator('.dv-cam__live.is-stale').count()) === 0,
+    `${stamp(offB)} → ${stamp(back)}`,
+  );
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(300);
+  const hidA = await srcs();
+  await page.waitForTimeout(1600);
+  const hidB = await srcs();
+  check(
+    'camera: in a hidden tab the loop stops',
+    stamp(hidA) === stamp(hidB),
+    `${stamp(hidA)} → ${stamp(hidB)}`,
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(1600);
+  check('camera: it resumes when the tab returns', stamp(await srcs()) !== stamp(hidB));
+
+  await cam.locator('.dv-cam__actions .fv-round').nth(0).click();
+  check(
+    'camera: the snapshot round opens more-info',
+    (await moreInfo(page)).join() === 'camera.driveway',
+  );
+  const before = await page.evaluate(() => window.__intervals());
+  await page.evaluate(() => {
+    document.querySelectorAll('fluvy-camera-card').forEach((el) => el.remove());
+  });
+  await page.waitForTimeout(200);
+  const left = await page.evaluate(() => window.__intervals());
+  check(
+    'camera: removing the cards releases the loop',
+    running > 0 && before > 0 && left === PAGE_INTERVALS,
+    `${before} → ${left}`,
+  );
+  await page.close();
+}
+
+await suite.finish();

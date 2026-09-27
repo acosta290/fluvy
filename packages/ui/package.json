@@ -1,0 +1,45 @@
+{
+  "name": "@fluvy/ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fluvy's UI primitives: glyphs, shared styles, templates and the precision controls (ruler, dial), with no Home Assistant coupling",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "packages/ui"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./time-rail": "./src/controls/time-rail.ts",
+    "./time-field": "./src/controls/time-field.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build:styles": "tsx scripts/build-styles.ts"
+  },
+  "dependencies": {
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "@fluvy/tokens": "workspace:*",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "fluvy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A calm theme and card library for Home Assistant: a generated light and dark theme, thirty-nine cards, an automatic dashboard and a settings panel, installed through HACS",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "build": "pnpm --filter @fluvy/tokens build && pnpm --filter @fluvy/theme build && pnpm --filter @fluvy/ui build:styles && pnpm --filter @fluvy/bundle build",
+    "test": "pnpm -r test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && node tools/release/check.mjs",
+    "visual": "node tools/render/interactions.mjs",
+    "render": "pnpm --filter @fluvy/render render",
+    "contact-sheet": "pnpm --filter @fluvy/render contact-sheet",
+    "brand": "node tools/brand/render-brand.mjs",
+    "leak-scan": "bash tools/release/leak-scan.sh",
+    "release:version": "node tools/release/version.mjs",
+    "release:check": "node tools/release/check.mjs --release",
+    "ha:install": "node tools/dev/install.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@mdi/js": "7.4.47",
+    "eslint": "^9.39.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}

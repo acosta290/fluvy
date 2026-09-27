@@ -1,0 +1,33 @@
+{
+  "name": "@fluvy/render",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless Chromium tooling: screenshots of the design lab and the playground, the alignment measurer, interaction tests",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "tools/render"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs",
+    "measure": "node measure.mjs",
+    "contact-sheet": "node contact-sheet.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-palette="sand" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design lab</title>
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body data-filtered="0">
+    <header class="lab-bar" data-lab-chrome>
+      <h1 class="lab-bar__title">Design lab</h1>
+    </header>
+
+    <p class="lab-intro">
+      Static review sheets for the token system. Open any page directly from the filesystem — there
+      is no dev server and no build step beyond
+      <code>pnpm --filter @fluvy/tokens build</code>, which writes the stylesheet and the palette data
+      these pages read. Add
+      <code>?palette=&lt;name&gt;&amp;mode=&lt;light|dark&gt;&amp;width=&lt;px&gt;</code>
+      to render a single framed sheet; that is exactly what the screenshot tool does.
+    </p>
+
+    <ul class="lab-links">
+      <li>
+        <a href="./sheets/palette-gallery.html">Palette gallery</a> — the taste sheet: each palette
+        on one dashboard, light and dark side by side
+      </li>
+      <li>
+        <a href="./sheets/palettes.html">Palette sheets</a> — the spec sheet: every token and every
+        measured ratio
+      </li>
+      <li><a href="./sheets/typography.html">Typography</a> — placeholder</li>
+    </ul>
+  </body>
+</html>

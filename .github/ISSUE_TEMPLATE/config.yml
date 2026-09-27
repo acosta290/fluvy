@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/acosta290/fluvy/security/advisories/new
+    about: Report a security problem privately; see SECURITY.md.
+  - name: Documentation
+    url: https://github.com/acosta290/fluvy/tree/main/docs
+    about: Installation, the settings panel, the cards, the automatic dashboard, troubleshooting.

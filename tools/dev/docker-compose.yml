@@ -1,0 +1,19 @@
+# A throwaway Home Assistant for trying a build of Fluvy (see README.md beside this file).
+#
+#   pnpm build && pnpm ha:install --config tools/dev/ha-config
+#   docker compose -f tools/dev/docker-compose.yml up
+#
+# The configuration folder is `ha-config/` next to this file (ignored by git). Home Assistant writes its first
+# configuration.yaml on the first start; add the themes line from README.md to it and restart.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2026.9
+    container_name: fluvy-dev-homeassistant
+    ports:
+      - '127.0.0.1:8123:8123'
+    volumes:
+      - ./ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      TZ: UTC
+    restart: unless-stopped

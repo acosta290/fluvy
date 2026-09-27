@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-palette="linen" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Energy flow concepts — fluvy design lab</title>
+    <link rel="stylesheet" href="../lab.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/fluvy.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/energy.css" />
+    <style>
+      .lab-row { display: flex; gap: 48px; align-items: flex-start; padding: 32px; }
+      .lab-cell { display: flex; flex-direction: column; gap: 12px; }
+      .lab-caption { margin: 0; font: 500 13px/20px Inter, sans-serif; color: var(--fluvy-text-secondary); }
+      /* concept-only styles (not in the product yet) */
+      .fc-band { stroke-width: 1; }
+      .fc-band--solar { fill: var(--fluvy-state-energy-solar-fill); stroke: var(--fluvy-state-energy-solar-fill-border); }
+      .fc-band--grid { fill: var(--fluvy-state-energy-grid-fill); stroke: var(--fluvy-state-energy-grid-fill-border); }
+      .fc-chev { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .fc-chev--solar { stroke: var(--fluvy-state-energy-solar); }
+      .fc-chev--grid { stroke: var(--fluvy-state-energy-grid); }
+      .fc-dot--solar { fill: var(--fluvy-state-energy-solar); }
+      .fc-dot--grid { fill: var(--fluvy-state-energy-grid); }
+      .fc-house .fv-ico { width: 56px; height: 56px; flex-basis: 56px; }
+      .fc-ring { fill: none; stroke: var(--fluvy-page-alt); stroke-width: 6; }
+      .fc-arc { fill: none; stroke-width: 6; stroke-linecap: round; }
+      .fc-arc--solar { stroke: var(--fluvy-state-energy-solar); }
+      .fc-feed { fill: none; stroke-width: 2.5; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .fc-feed--solar { stroke: var(--fluvy-state-energy-solar); }
+      .fc-feed--grid { stroke: var(--fluvy-state-energy-grid); }
+      .fc-hub { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: var(--fluvy-accent-fill); color: var(--fluvy-accent-on-fill); }
+      .fc-hub__value { font-size: 16px; font-weight: 700; line-height: 20px; font-variant-numeric: tabular-nums; }
+      .fc-hub__value small { font-size: 11px; font-weight: 600; }
+      .fc-hub__label { font-size: 10px; font-weight: 600; line-height: 12px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+      .fc-rail { fill: none; stroke: var(--fluvy-page-alt); stroke-width: 8; stroke-linecap: round; }
+      .fc-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .fc-line--solar { stroke: var(--fluvy-state-energy-solar); }
+      .fc-line--grid { stroke: var(--fluvy-state-energy-grid); }
+    </style>
+  </head>
+  <body class="lab-page">
+    <section class="lab-sheet lab-row" data-sheet="flow-concepts" id="flow"></section>
+    <script src="../fluvy.js"></script>
+    <script src="../flow-concepts.js"></script>
+    <script>
+      Promise.all(['600 13px Inter', '600 15px Inter', '500 13px Inter', '600 16px Inter'].map((f) => document.fonts.load(f))).then(() => {
+        renderFlowConcepts(document.getElementById('flow'));
+        FLUVY.fit(document);
+        document.documentElement.dataset.labReady = '1';
+      });
+    </script>
+  </body>
+</html>

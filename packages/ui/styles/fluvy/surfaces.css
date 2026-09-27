@@ -1,0 +1,325 @@
+/* fluvy · surfaces: Surfaces, the icon circle, the badge and the values (readouts, units). Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- surfaces ---------- */
+.fv-card {
+  padding: 20px;
+  border-radius: var(--fluvy-radius-card);
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+}
+
+/* cards stacked inside a frame; a frame that is itself a card never inherits this */
+.fv-frame .fv-card + .fv-card {
+  margin-top: 16px;
+}
+
+.fv-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+}
+
+.fv-card__titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fv-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-card__sub {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-label {
+  height: 20px;
+  margin-top: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+/* ---------- icon circle ---------- */
+.fv-ico {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  /* a solid palette's fill is loud: a resting circle carries only its wash of it (all of it in a tint palette) */
+  background: color-mix(
+    in srgb,
+    var(--tone-fill) var(--fluvy-wash, 100%),
+    var(--fluvy-wash-base, var(--fluvy-card))
+  );
+  color: var(--tone-ink);
+}
+
+.fv-ico svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-ico--off {
+  outline: 1px dashed var(--tone-border);
+  outline-offset: -1px;
+}
+
+/* hero size: weather condition, confirm sheets */
+.fv-ico--hero {
+  flex-basis: 64px;
+  width: 64px;
+  height: 64px;
+}
+
+.fv-ico--hero svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* ---------- artwork ----------
+   The plate a player's picture sits on: the accent's gradient (a solid palette's primary) under a highlight, the glyph
+   centred in the plate's ink, a hairline drawn again over the picture; with nothing playing it goes neutral (the page's
+   fill). The picture (.fv-art__img: an <img>, or a layer with a background) fades in once it is shown (is-on). */
+.fv-art {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--fluvy-radius-control);
+  background:
+    radial-gradient(circle at 30% 28%, rgb(255 255 255 / 0.55), transparent 42%),
+    linear-gradient(
+      160deg in srgb,
+      color-mix(in srgb, var(--fluvy-primary) var(--fluvy-electric, 0%), var(--fluvy-accent-80)),
+      color-mix(
+        in srgb,
+        var(--fluvy-primary-hover) var(--fluvy-electric, 0%),
+        var(--fluvy-accent-40)
+      )
+    );
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  color: color-mix(
+    in srgb,
+    var(--fluvy-on-primary) var(--fluvy-solid, 0%),
+    var(--fluvy-text-on-accent)
+  );
+}
+
+.fv-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inherit;
+  pointer-events: none;
+}
+
+.fv-art > svg,
+.fv-art > .fv-haicon {
+  width: 24px;
+  height: 24px;
+  --mdc-icon-size: 24px;
+  opacity: 0.9;
+}
+
+.fv-art--idle {
+  background: var(--fluvy-page);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-art__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity var(--fv-slow, 320ms) var(--fv-ease, ease);
+}
+
+.fv-art__img.is-on {
+  opacity: 1;
+}
+
+/* ---------- badge ---------- */
+.fv-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  white-space: nowrap;
+  border-radius: var(--fluvy-radius-pill, 9999px);
+  background: var(--tone-fill);
+  color: var(--tone-on);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-badge--off {
+  outline: 1px dashed var(--tone-border);
+  outline-offset: -1px;
+}
+
+.fv-card.is-off {
+  background: var(--fluvy-page);
+  box-shadow: none;
+  outline: 1px dashed var(--fluvy-unavailable-border);
+  outline-offset: -1px;
+}
+
+/* ---------- values ---------- */
+.fv-unit {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1; /* a unit keeps its own line box: baseline-aligned, never taller than its value's box */
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-big {
+  display: flex;
+  align-items: baseline;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-big .fv-unit {
+  margin-left: 6px;
+  font-size: 16px;
+}
+
+.fv-readout__label {
+  height: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-readout__value {
+  display: flex;
+  align-items: baseline;
+  height: 28px;
+  margin-top: 4px;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-readout--l .fv-readout__value {
+  height: 44px;
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+}
+
+.fv-readout--l .fv-unit {
+  margin-left: 6px;
+  font-size: 16px;
+}
+
+.fv-readout--s .fv-readout__value {
+  height: 24px;
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.fv-readout--xs .fv-readout__value {
+  height: 20px;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+}
+
+.fv-readout--xs .fv-unit {
+  margin-left: 3px;
+  font-size: 12px;
+}
+
+.fv-trend {
+  align-self: center;
+  margin-left: 6px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* readout rows in equal columns: each readout is centred in its column, whatever sits above the row —
+   a chart, a gauge, a list. The row then reads as one evenly distributed set (rule of 2026-09-18:
+   left-aligned figures under a left-aligned chart looked uneven next to the centred gauge rows).
+   The rule belongs to the row, not to a list of its owners: a new page that uses `.fv-cols` is centred
+   because it is that row, never because someone remembered to add its class here. */
+.fv-cols .fv-readout,
+.hm-legend .fv-readout,
+.hm-stats .fv-readout,
+.am-area__stats .fv-readout {
+  text-align: center;
+}
+
+.fv-cols .fv-readout__value,
+.hm-legend .fv-readout__value,
+.hm-stats .fv-readout__value,
+.am-area__stats .fv-readout__value {
+  justify-content: center;
+}
+
+.fv-trend svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-trend--down {
+  color: var(--fluvy-text-disabled);
+}
+
+/* the value row: a card's reading (its big value) at the left and what acts on it at the right, on one 64 row, 16 under
+   the head — the same row in every family (a light's level, the energy's watts, a timer, the solar output); a
+   stepper beside the figure sits on its 44 line box, centred on the figure's ink */
+.fv-frame .fv-value-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 64px;
+  margin-top: 16px;
+}
+
+/* three readouts in columns of 96, 16 apart, 16 under what they qualify (min · max · average, today · month · year) */
+.fv-frame .fv-cols {
+  display: grid;
+  grid-template-columns: 96px 96px 96px;
+  gap: 16px;
+  margin-top: 16px;
+}

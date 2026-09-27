@@ -1,0 +1,797 @@
+/*
+ * Gallery sheet: two phone frames per palette, light and dark, over one realistic
+ * dashboard built entirely from tokens. Loaded after lab.css, which supplies the tokens
+ * and the scoped `[data-mode]` container rule that lets both frames live on one page.
+ *
+ * Geometry rules this file obeys:
+ *   4px grid · control heights 20/28/36/44/56 · icon boxes 40×40 r12 · card radius 20
+ *   card padding 16 · gaps 12 between sections, 8 within · integer pixels everywhere
+ * Borders sit outside that rhythm: a 1px hairline is a hairline, not a spacing step.
+ */
+
+/* --------------------------------------------------------------------- sheet */
+
+.gal-sheet {
+  width: 900px;
+  display: grid;
+  gap: 24px;
+  padding: 32px;
+  background: var(--fluvy-page);
+  color: var(--fluvy-text);
+}
+
+.gal-head {
+  display: grid;
+  gap: 4px;
+}
+
+.gal-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: var(--fluvy-weight-bold);
+  line-height: 32px;
+}
+
+.gal-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* 900 − 2×32 padding = 836; two 392 frames leave exactly 52 between them. */
+.gal-cols {
+  display: grid;
+  grid-template-columns: repeat(2, 392px);
+  gap: 12px 52px;
+}
+
+.gal-col {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.gal-col__label {
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+  line-height: 16px;
+}
+
+/* ------------------------------------------------------------- swatch strips */
+
+.gal-strips {
+  display: grid;
+  gap: 12px;
+}
+
+.gal-strip {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--fluvy-page);
+  border: 1px solid var(--fluvy-border);
+  color: var(--fluvy-text);
+}
+
+.gal-strip__mode {
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+  line-height: 16px;
+}
+
+/* 836 − 2×16 padding − 2 border = 802 = 13 × 58 + 12 × 4. No fractional columns. */
+.gal-strip__items {
+  display: flex;
+  gap: 4px;
+}
+
+.gal-swatch {
+  width: 58px;
+  display: grid;
+  gap: 4px;
+}
+
+.gal-swatch__chip {
+  height: 28px;
+  border-radius: 8px;
+  background: var(--swatch-color);
+  border: 1px solid var(--fluvy-border-strong);
+}
+
+.gal-swatch__name,
+.gal-swatch__hex {
+  font-size: 9px;
+  line-height: 12px;
+  color: var(--fluvy-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gal-swatch__hex {
+  font-variant-numeric: var(--fluvy-numeric);
+}
+
+/* -------------------------------------------------------------------- glyphs */
+
+/*
+ * Every glyph is wrapped in a <span>, and a span has no box of its own — width, height and
+ * centring only take effect once it is a flex container, and the SVG only stops adding a
+ * text baseline once it is a block. Declared before the components so any of them can
+ * override `display` (icon boxes and nav items use grid).
+ */
+.ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ico > svg {
+  display: block;
+}
+
+/* --------------------------------------------------------------------- phone */
+
+/*
+ * 392 outer for a 390px screen: the 1px hairline is the bezel, so the viewport inside is
+ * exactly a phone's 390 CSS px and every interior width divides into whole pixels.
+ * `grid-template-columns: minmax(0, 1fr)` is load-bearing — without it the implicit column
+ * sizes to max-content and the dashboard spills out from under `overflow: hidden`.
+ */
+.phone {
+  width: 392px;
+  min-height: 780px;
+  grid-template-columns: minmax(0, 1fr);
+  border-radius: 40px;
+  border: 1px solid var(--fluvy-border-strong);
+  box-shadow:
+    0 10px 28px -10px rgb(17 17 17 / 26%),
+    0 2px 6px -2px rgb(17 17 17 / 14%);
+  background: var(--fluvy-page);
+  color: var(--fluvy-text);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 28px 1fr auto;
+  font-family: var(--fluvy-font-sans);
+  font-size: 14px;
+  line-height: var(--fluvy-leading-normal);
+}
+
+.ph-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  font-variant-numeric: var(--fluvy-numeric);
+}
+
+.ph-status__icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ph-status svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ph-body {
+  padding: 16px;
+  display: grid;
+  /*
+   * minmax(0, …) on every track in this file is load-bearing. A bare `1fr` is
+   * `minmax(auto, 1fr)`, whose floor is the item's min-content width — one nowrap label is
+   * then enough to push a track past its share and burst the frame from under
+   * `overflow: hidden`. Explicit zero floors let text ellipsise instead.
+   */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-content: start;
+}
+
+.ph-section {
+  margin: 0;
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+  line-height: 16px;
+}
+
+/* ------------------------------------------------------------------ greeting */
+
+.ph-greet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ph-greet__text {
+  display: grid;
+  min-width: 0;
+}
+
+.ph-greet__hello {
+  font-size: 20px;
+  font-weight: var(--fluvy-weight-semibold);
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.ph-greet__date {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+.ph-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--fluvy-radius-pill);
+  background: var(--fluvy-card);
+  border: 1px solid var(--fluvy-border);
+  font-size: 12px;
+  font-weight: var(--fluvy-weight-medium);
+  font-variant-numeric: var(--fluvy-numeric);
+  white-space: nowrap;
+}
+
+.ph-weather svg {
+  width: 16px;
+  height: 16px;
+  color: var(--fluvy-state-energy-solar);
+}
+
+/* --------------------------------------------------------------------- tiles */
+
+.ph-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ph-tile {
+  padding: 12px;
+  border-radius: var(--fluvy-radius-card);
+  background: var(--fluvy-card);
+  border: 1px solid var(--fluvy-border);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: 40px 20px;
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+/* The "on" state: the whole plate fills, the ink darkens with it. Never a tinted glyph
+   left floating on a white card. */
+.ph-tile--on {
+  background: var(--ph-fill);
+  border-color: var(--ph-fill-border);
+  color: var(--ph-ink);
+}
+
+.ph-iconbox {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--fluvy-icon-box-radius);
+  display: grid;
+  place-items: center;
+  background: var(--fluvy-page-alt);
+  color: var(--fluvy-text-secondary);
+}
+
+.ph-iconbox svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ph-tile--on .ph-iconbox {
+  background: var(--ph-fill-border);
+  color: var(--ph-ink);
+}
+
+.ph-tile__text {
+  display: grid;
+  min-width: 0;
+}
+
+.ph-tile__name {
+  font-size: 14px;
+  font-weight: var(--fluvy-weight-semibold);
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ph-tile__state {
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0.82;
+  font-variant-numeric: var(--fluvy-numeric);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ph-tile__foot {
+  grid-column: 1 / -1;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A ruler, not a bar: ticks every 10%, and the value edge drawn in the state ink because
+   a pastel plate alone is too close to the track in luminance to locate. */
+.ph-meter {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ph-track, var(--fluvy-page-alt));
+  border: 1px solid var(--fluvy-border);
+  overflow: hidden;
+}
+
+.ph-meter__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--ph-value);
+  background: var(--ph-meter-fill, var(--fluvy-accent-fill));
+  border-right: 2px solid var(--ph-meter-ink, var(--fluvy-accent));
+}
+
+.ph-meter__ticks {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(10% - 1px),
+    var(--fluvy-border-strong) calc(10% - 1px) 10%
+  );
+  opacity: 0.45;
+}
+
+.ph-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--fluvy-radius-pill);
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  font-variant-numeric: var(--fluvy-numeric);
+  white-space: nowrap;
+  background: var(--ph-chip-fill, var(--fluvy-page-alt));
+  color: var(--ph-chip-ink, var(--fluvy-text-secondary));
+  border: 1px solid var(--ph-chip-border, transparent);
+}
+
+.ph-ghost {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  opacity: 0.75;
+  border: 1px solid currentcolor;
+}
+
+.ph-ghost svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* An unreachable device is not an error: neutral ink at 70%, dashed hairline, never red. */
+.ph-unavail {
+  padding: 12px;
+  border-radius: var(--fluvy-radius-card);
+  background: transparent;
+  border: 1px var(--fluvy-unavailable-border-style) var(--fluvy-unavailable-border);
+  color: var(--fluvy-unavailable);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+}
+
+.ph-unavail .ph-iconbox {
+  background: transparent;
+  border: 1px var(--fluvy-unavailable-border-style) var(--fluvy-unavailable-border);
+  color: inherit;
+}
+
+/* --------------------------------------------------------------------- cards */
+
+.ph-card {
+  padding: 16px;
+  border-radius: var(--fluvy-radius-card);
+  background: var(--fluvy-card);
+  border: 1px solid var(--fluvy-border);
+  display: grid;
+  gap: 12px;
+}
+
+.ph-card__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+  line-height: 16px;
+}
+
+/* ------------------------------------------------------------------- climate */
+
+.ph-climate__body {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.ph-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+}
+
+/* The arc is a masked conic gradient: a 270° sweep from 225°, so the gap sits at the
+   bottom where a dial's gap belongs. The mask is on its own layer, otherwise it would
+   also erase the glyph in the middle. */
+.ph-ring__arc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 225deg,
+    var(--fluvy-state-climate-heat) 0 var(--ph-arc),
+    var(--fluvy-page-alt) var(--ph-arc) 0.75turn,
+    transparent 0.75turn 1turn
+  );
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 59%);
+  mask: radial-gradient(circle, transparent 58%, #000 59%);
+}
+
+.ph-ring__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--fluvy-state-climate-heat);
+}
+
+.ph-climate__read {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ph-climate__value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.ph-climate__num {
+  font-size: 32px;
+  font-weight: var(--fluvy-weight-semibold);
+  line-height: 36px;
+  font-variant-numeric: var(--fluvy-numeric);
+  letter-spacing: -0.01em;
+}
+
+.ph-climate__unit {
+  font-size: 16px;
+  font-weight: var(--fluvy-weight-medium);
+  color: var(--fluvy-text-secondary);
+}
+
+.ph-climate__now {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: var(--fluvy-numeric);
+}
+
+.ph-modes {
+  display: flex;
+  gap: 8px;
+}
+
+.ph-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--fluvy-radius-pill);
+  font-size: 12px;
+  font-weight: var(--fluvy-weight-medium);
+  background: var(--fluvy-page-alt);
+  color: var(--fluvy-text-secondary);
+  border: 1px solid transparent;
+}
+
+.ph-mode svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ph-mode--active {
+  background: var(--fluvy-state-climate-heat-fill);
+  border-color: var(--fluvy-state-climate-heat-fill-border);
+  color: var(--fluvy-state-climate-heat-on-fill);
+  font-weight: var(--fluvy-weight-semibold);
+}
+
+/* --------------------------------------------------------------------- media */
+
+.ph-media__body {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.ph-art {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--fluvy-icon-box-radius);
+  border: 1px solid var(--fluvy-border);
+  background: linear-gradient(
+    140deg,
+    var(--fluvy-accent-fill),
+    var(--fluvy-state-media-playing-fill) 55%,
+    var(--fluvy-state-climate-cool-fill)
+  );
+}
+
+.ph-media__meta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ph-media__title {
+  font-size: 14px;
+  font-weight: var(--fluvy-weight-semibold);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ph-media__artist {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ph-progress {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fluvy-page-alt);
+  overflow: hidden;
+}
+
+.ph-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  background: var(--fluvy-accent);
+}
+
+.ph-media__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  line-height: 12px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: var(--fluvy-numeric);
+}
+
+.ph-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.ph-transport__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fluvy-radius-pill);
+  display: grid;
+  place-items: center;
+  color: var(--fluvy-text-secondary);
+}
+
+.ph-transport__btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ph-transport__btn--primary {
+  width: 44px;
+  height: 44px;
+  background: var(--fluvy-accent-fill);
+  border: 1px solid var(--fluvy-accent-fill-border);
+  color: var(--fluvy-accent-on-fill);
+}
+
+.ph-transport__btn--primary svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* -------------------------------------------------------------------- energy */
+
+.ph-energy__chips {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.ph-echip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: var(--fluvy-radius-pill);
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-medium);
+  font-variant-numeric: var(--fluvy-numeric);
+  white-space: nowrap;
+  background: var(--ph-chip-fill);
+  color: var(--ph-chip-ink);
+  border: 1px solid var(--ph-chip-border);
+}
+
+.ph-echip b {
+  font-weight: var(--fluvy-weight-semibold);
+}
+
+.ph-echip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--fluvy-radius-pill);
+  background: var(--ph-chip-dot);
+}
+
+/* 24 bars of 11px with 2px gaps = 310; the 14px left over in the 324px card content box
+   splits evenly at 7px a side, so every bar lands on a whole pixel. */
+.ph-spark {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 36px;
+}
+
+.ph-spark__bar {
+  flex: 0 0 11px;
+  height: var(--ph-bar);
+  border-radius: 2px 2px 0 0;
+  background: var(--fluvy-accent-fill);
+  border-top: 2px solid var(--fluvy-accent);
+}
+
+/* --------------------------------------------------------------------- stats */
+
+.ph-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ph-stat {
+  padding: 12px;
+  border-radius: var(--fluvy-radius-card);
+  background: var(--fluvy-card);
+  border: 1px solid var(--fluvy-border);
+  display: grid;
+  gap: 4px;
+}
+
+.ph-stat__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--fluvy-text-secondary);
+}
+
+.ph-stat__label svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ph-stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.ph-stat__num {
+  font-size: 20px;
+  font-weight: var(--fluvy-weight-semibold);
+  line-height: 24px;
+  font-variant-numeric: var(--fluvy-numeric);
+}
+
+.ph-stat__unit {
+  font-size: 11px;
+  font-weight: var(--fluvy-weight-medium);
+  color: var(--fluvy-text-secondary);
+}
+
+/* ----------------------------------------------------------------------- nav */
+
+.ph-nav {
+  padding: 8px 16px 16px;
+}
+
+.ph-navpill {
+  height: 56px;
+  border-radius: var(--fluvy-radius-pill);
+  background: var(--fluvy-card);
+  border: 1px solid var(--fluvy-border);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+}
+
+.ph-navitem {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--fluvy-icon-box-radius);
+  display: grid;
+  place-items: center;
+  color: var(--fluvy-text-secondary);
+  border: 1px solid transparent;
+}
+
+.ph-navitem svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ph-navitem--active {
+  background: var(--fluvy-accent-fill);
+  border-color: var(--fluvy-accent-fill-border);
+  color: var(--fluvy-accent-on-fill);
+}

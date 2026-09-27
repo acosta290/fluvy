@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Fluvy does not behave as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. The details below are what makes a bug reproducible in another home.
+  - type: input
+    id: ha
+    attributes:
+      label: Home Assistant version
+      placeholder: 2026.9.3
+    validations:
+      required: true
+  - type: input
+    id: fluvy
+    attributes:
+      label: Fluvy version
+      description: Settings → Devices & services → Fluvy, or the `Fluvy v…` badge in the browser console.
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How Fluvy is installed
+      options: [HACS, Manual (release zip), Development build]
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser or app
+      placeholder: Chrome 140 on Android, the Companion app on iOS, Firefox on the desktop…
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it happens
+      options:
+        [
+          A card,
+          The automatic dashboard,
+          The settings panel,
+          The theme,
+          The shell (a Home Assistant page),
+          Activity page,
+          History page,
+          The integration (setup,
+          Repairs),
+          Somewhere else,
+        ]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what you expected
+      description: A screenshot helps more than a paragraph. Blur anything of your home you do not want to share.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Card configuration (if a card is involved)
+      description: The YAML of the card, with your entity ids replaced by generic ones if you prefer.
+      render: yaml
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console and Home Assistant log
+      description: Any line mentioning `fluvy`. For a shell problem, also the output of `__fluvy.shell.report()` typed in the console.
+      render: text

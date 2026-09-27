@@ -1,0 +1,411 @@
+/* Desktop composition: HA shell (sidebar 256 + toolbar 76, drawn as HA draws it) and a 3 × 352 sections grid. Primitives in fluvy.css. */
+.lab-sheet--wide {
+  grid-template-columns: 1440px;
+  width: 1504px;
+  gap: 48px;
+}
+
+.dk-frame {
+  display: flex;
+  width: 1440px;
+  height: 1024px;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--fluvy-page);
+  box-shadow:
+    0 0 0 1px var(--fluvy-border-strong),
+    0 32px 64px -32px rgb(0 0 0 / 0.35);
+}
+
+/* sidebar (HA shell, our sidebar tokens) */
+.dk-sidebar {
+  display: flex;
+  flex: 0 0 256px;
+  flex-direction: column;
+  width: 256px;
+  padding: 16px 12px 32px; /* foot bottom = sections bottom (992) */
+  background: var(--sidebar-background-color, var(--fluvy-card));
+  box-shadow: inset -1px 0 0 var(--fluvy-border);
+}
+
+/* brand row: HA's logo (a fixed image, not themable) on the nav icon column + the colourable title */
+.dk-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 12px;
+}
+
+.dk-logo {
+  display: block;
+  flex: 0 0 24px;
+}
+
+.dk-sidebar__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sidebar-text-color, var(--fluvy-text));
+}
+
+.dk-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 24px; /* first item at 84 = first card top */
+}
+
+/* HA's item geometry: 40 high, radius 4, 24 icons, 14 text; selection = the selected-icon colour at 12 % */
+.dk-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sidebar-text-color, var(--fluvy-text));
+}
+
+.dk-nav__item svg {
+  width: 24px;
+  height: 24px;
+  color: var(--sidebar-icon-color, var(--fluvy-text-secondary));
+}
+
+.dk-nav__item.is-active {
+  background: color-mix(
+    in srgb,
+    var(--sidebar-selected-icon-color, var(--fluvy-accent)) 12%,
+    transparent
+  );
+  color: var(--sidebar-selected-text-color, var(--fluvy-accent));
+  font-weight: 500;
+}
+
+.dk-nav__item.is-active svg {
+  color: var(--sidebar-selected-icon-color, var(--fluvy-accent));
+}
+
+.dk-sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.dk-avatar {
+  display: block;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--fluvy-accent-70), var(--fluvy-accent-40));
+}
+
+/* main */
+.dk-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 76px; /* 44 rounds and 36 pills land on the grid: (76 − 44) / 2 = 16, (76 − 36) / 2 = 20 */
+  padding: 0 32px;
+  background: var(--fluvy-page);
+}
+
+.dk-toolbar__title {
+  white-space: nowrap;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.015em;
+}
+
+/* HA's view tabs: text with a 2 px selection bar (`--ha-tab-indicator-color`), no pills */
+.dk-tabs {
+  display: flex;
+  gap: 8px;
+  height: 76px;
+}
+
+.dk-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 76px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fluvy-text-secondary);
+}
+
+.dk-tab.is-active {
+  color: var(--fluvy-text);
+}
+
+.dk-tab.is-active::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--fluvy-accent);
+}
+
+.dk-toolbar__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* HA's toolbar buttons are bare icon buttons */
+.dk-iconbtn {
+  background: transparent;
+  color: var(--fluvy-text-secondary);
+}
+
+.dk-sections {
+  display: grid;
+  grid-template-columns: 352px 352px 352px;
+  gap: 32px;
+  padding: 8px 32px 32px;
+}
+
+.dk-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dk-col .fv-card + .fv-card {
+  margin-top: 0;
+}
+
+/* hello */
+.dk-hello__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 52px; /* 44 circle at 4 */
+}
+
+.dk-hello__title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.015em;
+}
+
+.dk-hello__stats {
+  display: grid;
+  grid-template-columns: 96px 96px 96px;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* rooms: 2 × 152 tiles with an 8 gap (152 + 8 + 152 = 312) */
+.dk-grid2 {
+  grid-template-columns: 152px 152px;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dk-grid2 .fv-tile__foot {
+  grid-template-columns: 56px 64px; /* fits the 120 tile content */
+}
+
+.dk-grid2 .fv-tile {
+  min-height: 168px;
+}
+
+.dk-off {
+  width: 352px;
+}
+
+.dk-dial {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* energy */
+.dk-energy__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 64px;
+  margin-top: 16px;
+}
+
+.dk-energy__side {
+  padding-bottom: 3px; /* the 20 px value on the 40 px value's baseline */
+  text-align: right;
+}
+
+.dk-energy__side .fv-readout__value {
+  justify-content: flex-end;
+}
+
+.dk-chart {
+  position: relative;
+  height: 148px;
+  margin-top: 12px;
+}
+
+.dk-cols {
+  display: grid;
+  grid-template-columns: 96px 96px 96px;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* media */
+.dk-media {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-rows: 64px auto;
+  column-gap: 16px;
+}
+
+.dk-art {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 30% 28%, rgb(255 255 255 / 0.55), transparent 42%),
+    linear-gradient(160deg, var(--fluvy-accent-80), var(--fluvy-accent-40));
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+
+.dk-media__titles {
+  align-self: center;
+  min-width: 0;
+}
+
+.dk-media__title {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.dk-progress {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 4px;
+  margin-top: 24px;
+  border-radius: 2px;
+  background: var(--fluvy-page-alt);
+}
+
+.dk-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--fluvy-accent);
+}
+
+.dk-times {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  height: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* five 56 rounds + four 8 gaps = 312, every round on the grid */
+.dk-transport {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  height: 56px;
+  margin-top: 16px;
+}
+
+.dk-transport .fv-round {
+  width: 56px;
+  height: 56px;
+}
+
+.dk-transport .fv-round svg {
+  width: 32px;
+  height: 32px;
+}
+
+.dk-rows {
+  margin-top: 16px;
+}
+
+/* scenes: 2 × 152 tiles of 84 */
+.dk-scenes {
+  display: grid;
+  grid-template-columns: 152px 152px;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dk-scene {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  height: 84px;
+  border-radius: 12px; /* inner tile inside a card: page fill, no hairline */
+  background: var(--fluvy-page);
+  box-shadow: none;
+  padding: 0 12px;
+  text-align: left;
+}
+
+.dk-scene.is-on {
+  box-shadow: none; /* inner tile: the active state is the fill alone, like an option tile */
+}
+
+.dk-scene .fv-row__text {
+  flex: 1 1 auto;
+}
+
+/* presence rows: 44 avatar in the icon column, state once at the right */
+.dk-avatar--l {
+  position: relative;
+  flex-basis: 44px;
+  width: 44px;
+  height: 44px;
+  opacity: 0.55;
+}
+
+.dk-avatar--l.is-home {
+  opacity: 1;
+}
+
+.dk-avatar__dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--fluvy-text-disabled);
+  box-shadow: 0 0 0 2px var(--fluvy-card);
+}
+
+.dk-avatar--l.is-home .dk-avatar__dot {
+  background: var(--fluvy-success);
+}
+
+.fv-row__value--quiet {
+  color: var(--fluvy-text-secondary);
+}

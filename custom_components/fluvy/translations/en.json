@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Installs Fluvy's theme, cards and settings panel. There is nothing to configure."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy is already set up.",
+      "single_instance_allowed": "Fluvy is already set up."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Fluvy's frontend files are missing from custom_components/fluvy/frontend. Reinstall Fluvy through HACS (or run `pnpm build` in a development checkout), then restart Home Assistant."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Remove Fluvy's old lines from configuration.yaml",
+      "description": "Fluvy is now an integration and registers its panel and its module itself. Remove these from configuration.yaml (keep `frontend: themes: !include_dir_merge_named themes`), check the configuration and restart Home Assistant when convenient:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Fluvy's theme is not loaded",
+      "description": "Fluvy wrote its theme to `{path}`, but Home Assistant does not list a theme called Fluvy. Add this to configuration.yaml, then run the action `frontend.reload_themes` (Developer tools → Actions); no restart is needed:\n\n{yaml}\n\nIf the lines are already there, look in Settings → System → Logs for a theme that failed to load."
+    },
+    "resources_yaml_mode": {
+      "title": "Add Fluvy's dashboard resource",
+      "description": "Your dashboard resources are managed in YAML, so Fluvy cannot register its own. Add this under `lovelace: resources:` in configuration.yaml and reload the browser:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy already loads on every page; this resource lets dashboards load it before they render."
+    }
+  }
+}

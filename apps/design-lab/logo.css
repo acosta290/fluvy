@@ -1,0 +1,122 @@
+/* Logo sheet: the mark ("Current") at 16 → 128, app icon, lockup, inverted lockup, squint — light and dark side by side. */
+.lab-sheet--wide {
+  grid-template-columns: 512px 512px;
+  width: 1136px;
+}
+
+.lg-frame {
+  display: grid;
+  grid-template-columns: 448px;
+  gap: 32px;
+  width: 512px;
+  padding: 32px;
+  border-radius: 24px;
+  background: var(--fluvy-page);
+  box-shadow: 0 0 0 1px var(--fluvy-border-strong);
+}
+
+.lg-route {
+  width: 448px;
+}
+
+.lg-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+}
+
+.lg-key {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--fluvy-accent-fill);
+  color: var(--fluvy-accent-on-fill);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lg-head .fv-card__sub {
+  white-space: normal;
+  line-height: 16px;
+}
+
+.lg-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 96px;
+  margin-top: 16px;
+}
+
+.lg-app {
+  display: inline-flex;
+  flex: 0 0 96px;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, var(--fluvy-accent-90), var(--fluvy-accent-70));
+  color: var(--fluvy-accent-on-fill);
+}
+
+.lg-lockup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 132px; /* mark 32 + gap + wordmark, rounded onto the grid */
+  height: 48px;
+  padding: 0;
+  border-radius: 12px;
+  color: var(--fluvy-text);
+}
+
+.lg-lockup--inv {
+  background: var(--fluvy-text);
+  color: var(--fluvy-card);
+}
+
+.lg-word {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.03em;
+}
+
+.lg-sizes {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  height: 128px;
+  margin-top: 16px;
+  color: var(--fluvy-text);
+}
+
+.lg-cell {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.lg-squint {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 96px;
+  margin-top: 16px;
+  color: var(--fluvy-text);
+}
+
+.lg-mark.is-blur {
+  filter: blur(2px);
+}
+
+.lg-mark {
+  display: block;
+}

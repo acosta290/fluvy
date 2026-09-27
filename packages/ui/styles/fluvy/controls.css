@@ -1,0 +1,601 @@
+/* fluvy · controls: The precision controls and the pressables: knob, ruler, dial, stepper, option cards, chips, switch. Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- knob ---------- */
+.fv-frame {
+  --knob-halo: var(
+    --fluvy-card
+  ); /* 4 px of the surface outside the knob ring, so any tick is cut cleanly */
+}
+
+.fv-tile.is-on {
+  --knob-halo: var(--tone-fill);
+}
+
+.fv-knob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: var(--fluvy-card);
+  box-shadow:
+    0 0 0 2px var(--tone-ink),
+    0 4px 10px -2px rgb(0 0 0 / 0.25),
+    0 0 0 6px var(--knob-halo); /* the lift falls on the halo */
+}
+
+.fv-knob::after {
+  content: '';
+  position: absolute;
+  inset: 37.5%;
+  border-radius: 50%;
+  background: var(--tone-ink);
+}
+
+.fv-knob--tinted::after {
+  background: var(--knob-dot, var(--tone-ink));
+}
+
+.fv-knob--marker {
+  box-shadow:
+    0 0 0 2px var(--tone-ink),
+    0 0 0 6px var(--knob-halo); /* read-only: no lift */
+}
+
+.fv-knob--marker::after {
+  display: none;
+}
+
+.fv-knob.is-focus {
+  box-shadow:
+    0 0 0 2px var(--tone-ink),
+    0 4px 10px -2px rgb(0 0 0 / 0.25),
+    0 0 0 6px color-mix(in srgb, var(--tone-ink) 28%, var(--knob-halo));
+}
+
+/* ---------- ruler ---------- */
+.fv-ruler {
+  position: relative;
+}
+
+.fv-ruler svg {
+  overflow: visible; /* end ticks keep their full 2px stroke */
+}
+
+.fv-ruler line,
+.fv-dial line {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.fv-ruler .tk-off,
+.fv-dial .tk-off {
+  stroke: var(--fluvy-border-strong);
+}
+
+.fv-ruler .tk-on,
+.fv-dial .tk-on {
+  stroke: var(--tone-ink);
+}
+
+[data-mode='dark'] .fv-ruler .tk-on,
+[data-mode='dark'] .fv-dial .tk-on {
+  filter: drop-shadow(0 0 3px var(--tk-glow, var(--tone-ink)));
+}
+
+/* a tinted ruler (colour temperature): every tick takes the warm → cool gradient, faintly, instead of lighting up to the knob */
+.fv-ruler .tint-a {
+  stop-color: var(--fluvy-tint-warm, #d1a24c);
+}
+.fv-ruler .tint-b {
+  stop-color: var(--fluvy-tint-cool, #a9bdd0);
+}
+[data-mode='dark'] .fv-ruler .tint-a {
+  stop-color: var(--fluvy-tint-warm, #d9ad5c);
+}
+[data-mode='dark'] .fv-ruler .tint-b {
+  stop-color: var(--fluvy-tint-cool, #7f96ad);
+}
+
+.fv-ruler .tk-tint {
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.fv-ruler--off .tk-off {
+  opacity: 0.55;
+}
+
+.fv-ruler-labels {
+  position: relative;
+  height: 16px;
+  margin-top: 4px;
+}
+
+.fv-ruler-labels span {
+  position: absolute;
+  top: 0;
+  width: 40px;
+  margin-left: -20px;
+  text-align: center;
+}
+
+.fv-ruler-labels span.is-first {
+  margin-left: 0;
+  text-align: left;
+}
+
+.fv-ruler-labels span.is-last {
+  margin-left: 0;
+  text-align: right;
+}
+
+.fv-ruler-labels span {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- dial ---------- */
+.fv-dial {
+  position: relative;
+}
+
+.fv-dial .dl-current {
+  fill: var(--fluvy-text-secondary);
+}
+
+.fv-dial__disc {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px; /* the figure carries more air above its caps than the sub below its baseline: ink centre on the disc centre */
+  border-radius: 50%;
+  background: var(--fluvy-card);
+  box-shadow:
+    0 16px 40px -16px rgb(0 0 0 / 0.35),
+    0 2px 6px -2px rgb(0 0 0 / 0.12),
+    inset 0 0 0 1px var(--fluvy-border);
+}
+
+[data-mode='dark'] .fv-dial__disc {
+  background: var(--fluvy-card-elevated);
+  box-shadow:
+    0 16px 40px -16px rgb(0 0 0 / 0.8),
+    inset 0 0 0 1px var(--fluvy-border);
+}
+
+.fv-frame .fv-dial--gauge .fv-dial__disc {
+  background: transparent;
+  box-shadow: none; /* a gauge has no disc: the value sits in the open centre */
+}
+
+.fv-dial__label-in {
+  height: 16px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-option--stat {
+  cursor: default;
+}
+
+/* bar row: 76 tall, circle on the title/sub pair (text top − 4), the bar spans the text column to the content edge */
+.fv-row.fv-row--bar {
+  align-items: flex-start;
+  height: 76px;
+}
+
+.fv-row--bar .fv-ico {
+  margin-top: 8px;
+}
+
+.fv-row--bar .fv-row__text,
+.fv-row--bar .fv-row__value {
+  margin-top: 12px;
+}
+
+.fv-row--bar .fv-bar {
+  position: absolute;
+  left: 56px;
+  right: 0;
+  top: 56px;
+  margin: 0;
+}
+
+.fv-bar {
+  display: block;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--fluvy-page-alt);
+  overflow: hidden;
+}
+
+.fv-bar__fill {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.fv-bar--accent {
+  background: var(--fluvy-accent);
+}
+.fv-bar--solar {
+  background: var(--fluvy-state-energy-solar);
+}
+.fv-bar--water {
+  background: var(--fluvy-state-energy-water);
+}
+.fv-bar--grid {
+  background: var(--fluvy-state-energy-grid);
+}
+.fv-bar--heat {
+  background: var(--fluvy-state-climate-heat);
+}
+.fv-bar--media {
+  background: var(--fluvy-state-media-playing);
+}
+.fv-bar--warning {
+  background: var(--fluvy-warning);
+}
+.fv-bar--neutral {
+  background: var(--fluvy-border-strong);
+}
+.fv-bar--cool {
+  background: var(--fluvy-state-climate-cool);
+}
+
+/* stacked distribution */
+.fv-stack {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  margin-top: 16px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.fv-stack__seg {
+  display: block;
+  height: 12px;
+}
+
+.fv-legend {
+  margin-top: 12px;
+}
+
+.fv-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+}
+
+.fv-swatch {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.fv-legend__name {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.fv-legend__value {
+  position: relative;
+  top: -1px; /* same 1 px baseline correction as .fv-row__value */
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-dial__value {
+  display: flex;
+  align-items: baseline;
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 52px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-dial__value .fv-unit {
+  margin-left: 6px;
+  font-size: 18px;
+  line-height: 1; /* the unit keeps its own line box; the value box stays one line tall, on whole px */
+}
+
+.fv-dial--s .fv-dial__value {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.02em;
+}
+
+.fv-dial--s .fv-dial__value .fv-unit {
+  margin-left: 4px;
+  font-size: 14px;
+}
+
+.fv-dial__value.is-off {
+  color: var(--fluvy-unavailable);
+  font-weight: 500;
+}
+
+.fv-dial__sub {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-dial--s .fv-dial__sub {
+  font-size: 12px;
+}
+
+.fv-dial__label {
+  position: absolute;
+  width: 40px;
+  height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-dial__label--min {
+  text-align: right;
+}
+
+.fv-dial__label--max {
+  text-align: left;
+}
+
+.fv-dial__stepper {
+  position: absolute;
+}
+
+/* ---------- stepper ---------- */
+.fv-stepper {
+  display: flex;
+  flex: 0 0 96px;
+  width: 96px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--fluvy-page);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  overflow: hidden;
+}
+
+.fv-stepper__half {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 44px;
+  color: var(--fluvy-text);
+}
+
+.fv-stepper__half + .fv-stepper__half::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 1px;
+  height: 20px;
+  background: var(--fluvy-border);
+}
+
+.fv-stepper__half svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-stepper__half[disabled] {
+  color: var(--fluvy-text-disabled);
+}
+
+/* ---------- option cards ---------- */
+.fv-options {
+  display: grid;
+  margin-top: 8px;
+}
+
+.fv-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 12px 8px;
+  border-radius: var(--fluvy-radius-control);
+  background: var(--fluvy-page);
+  text-align: left;
+}
+
+.fv-option__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-option__glyph svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-option__label {
+  flex: 0 0 auto;
+  height: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* a tile's value is never cut: a word the tile cannot hold on one line takes two balanced ones (the rule the
+   Activity page's day title already follows), and the row's tiles keep their common height by stretching */
+.fv-option__value {
+  flex: 0 0 auto;
+  min-height: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  text-wrap: balance;
+}
+
+.fv-option.is-active {
+  background: var(--tone-fill);
+  color: var(--tone-on);
+}
+
+.fv-option.is-active .fv-option__glyph,
+.fv-option.is-active .fv-option__label {
+  color: var(--tone-on);
+}
+
+.fv-option.is-active .fv-option__label {
+  opacity: 0.8;
+}
+
+/* ---------- chips ---------- */
+.fv-chips {
+  display: flex;
+  gap: 8px;
+  height: 44px;
+  margin-top: 8px;
+}
+
+.fv-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: 44px;
+}
+
+/* chips filling the row (the default for presets, fan speeds, suction): equal cells in as many rows as the labels
+   need (`chips()` sets the columns and the spans), the label centred; the ellipsis is only a last resort */
+.fv-chips--fill {
+  display: grid;
+  height: auto;
+  column-gap: 8px;
+  row-gap: 0;
+}
+
+.fv-chips--fill .fv-chip {
+  width: auto;
+  min-width: 0;
+}
+
+.fv-chips--fill .fv-chip__pill {
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fv-chip__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 36px;
+  white-space: nowrap;
+  border-radius: var(--fluvy-radius-pill, 9999px);
+  background: var(--fluvy-page);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-chip__pill svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-chip.is-active .fv-chip__pill {
+  background: var(--fluvy-accent-fill);
+  color: var(--fluvy-accent-on-fill);
+  box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+}
+
+.fv-chip--ink.is-active .fv-chip__pill {
+  background: var(--fluvy-selected, var(--fluvy-text));
+  color: var(--fluvy-on-selected, var(--fluvy-page));
+  box-shadow: none;
+}
+
+/* ---------- switch ---------- */
+.fv-hit {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  width: 56px;
+  height: 44px;
+}
+
+.fv-switch {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--fluvy-page-alt);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border-strong);
+}
+
+.fv-switch__thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--fluvy-card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+.fv-switch.is-on {
+  background: var(--tone-ink, var(--fluvy-accent));
+  box-shadow: none;
+}
+
+/* dark: the off track sits a clear step above the card and the thumb is the light element (on: dark thumb on the tone track) */
+[data-mode='dark'] .fv-switch:not(.is-on) {
+  background: var(--fluvy-border-strong);
+  box-shadow: none;
+}
+
+[data-mode='dark'] .fv-switch:not(.is-on) .fv-switch__thumb {
+  background: var(--fluvy-text-secondary);
+  box-shadow: none;
+}
+
+.fv-switch.is-on .fv-switch__thumb {
+  left: 24px;
+}

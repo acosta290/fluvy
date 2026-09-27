@@ -1,0 +1,43 @@
+{
+  "name": "@fluvy/bundle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds the module Home Assistant loads: the entry, its chunks, the loader and the fonts, into custom_components/fluvy/frontend",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "packages/bundle"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "vite build && node scripts/finish.mjs",
+    "dev": "vite build --watch",
+    "size": "node scripts/size.mjs"
+  },
+  "dependencies": {
+    "@fluvy/cards": "workspace:*",
+    "@fluvy/core": "workspace:*",
+    "@fluvy/fonts": "workspace:*",
+    "@fluvy/ui": "workspace:*",
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "terser": "^5.44.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0"
+  }
+}

@@ -1,0 +1,103 @@
+/* Backgrounds sheet: four phone viewports (392 × 640) with the same cards over different view backgrounds. */
+.lab-sheet--wide {
+  grid-template-columns: 392px 392px;
+  width: 900px;
+  gap: 48px;
+}
+
+.bg-frame {
+  width: 392px;
+}
+
+.bg-caption {
+  display: flex;
+  flex-direction: column;
+  height: 44px;
+  margin-bottom: 12px;
+  color: var(--fluvy-text);
+}
+
+.bg-frame--charcoal .bg-caption,
+.bg-frame--wall .bg-caption {
+  color: #33270b; /* captions sit on the light review canvas */
+}
+
+.bg-caption__name {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.bg-caption__blurb {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #716345;
+}
+
+.bg-viewport {
+  position: relative;
+  height: 640px;
+  padding: 0 16px 16px;
+  overflow: hidden;
+  border-radius: 40px;
+  box-shadow:
+    0 0 0 1px var(--fluvy-border-strong),
+    0 24px 48px -24px rgb(0 0 0 / 0.35);
+  background: var(--fluvy-page);
+}
+
+/* meshes: three radial stops in the palette's own hues over the page colour; opaque, no blur, no image */
+.bg-frame--paper .bg-viewport {
+  background:
+    radial-gradient(120% 80% at 10% 0%, #f6efe3 0%, transparent 60%),
+    radial-gradient(90% 70% at 100% 20%, #e9e2d3 0%, transparent 60%),
+    radial-gradient(100% 80% at 40% 110%, #f2ebdf 0%, transparent 60%), var(--fluvy-page);
+}
+
+.bg-frame--charcoal .bg-viewport {
+  background:
+    radial-gradient(120% 80% at 10% 0%, #2a2216 0%, transparent 60%),
+    radial-gradient(90% 70% at 100% 15%, #1f1a12 0%, transparent 60%),
+    radial-gradient(100% 80% at 40% 110%, #241d12 0%, transparent 60%), var(--fluvy-page);
+}
+
+.bg-frame--wall .bg-viewport {
+  background:
+    radial-gradient(120% 80% at 10% 0%, #1c160d 0%, transparent 60%),
+    radial-gradient(100% 80% at 40% 110%, #17120b 0%, transparent 60%), #100d07;
+}
+
+.bg-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--fluvy-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bg-bar__time {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fluvy-text-secondary);
+}
+
+.bg-cards .fv-grid2 {
+  margin-top: 4px;
+}
+
+.bg-cards .fv-card {
+  margin-top: 16px;
+}
+
+.bg-rows {
+  margin-top: 16px;
+}
+
+.bg-off {
+  margin-top: 16px;
+}

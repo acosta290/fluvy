@@ -1,0 +1,99 @@
+/* fluvy · fields: One text field, as Home Assistant's own fields wear the theme. Part of fluvy.css (its @imports
+ * keep this order).
+ * .fv-field         the box: 44 tall, radius 12, 16 sides, the page's fill and a hairline (the strong hairline on
+ *                   hover); its glyph 20 in the secondary ink and 12 from the words (a leading glyph 2 px out, a
+ *                   trailing one 3 px out: optical), a trailing round button (clear) 36 and 4 from the edge
+ * .fv-field__input  the words: 15/500 in the ink (16 under a finger: iOS zooms into anything smaller), the placeholder
+ *                   in the secondary ink at the regular weight, an ellipsis when they run long
+ * on-page           on the page's ground: the card's fill
+ * Focus draws the 2 px accent ring inside; a value refused on leaving (is-invalid) keeps a danger hairline; a value
+ * refused while it is typed (the input's own :invalid) turns the words to the warning. */
+
+.fv-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--fluvy-radius-control);
+  background: var(--fluvy-page);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  color: var(--fluvy-text-secondary);
+  cursor: text;
+}
+
+.fv-field--on-page {
+  background: var(--fluvy-card);
+}
+
+.fv-field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--fluvy-accent);
+}
+
+.fv-field.is-invalid:not(:focus-within) {
+  box-shadow: inset 0 0 0 1px var(--fluvy-danger);
+}
+
+.fv-field > svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+/* the sides give way to what ends the field: a glyph's ink is narrower than its 20 box (optical), a round button
+   brings its own room */
+.fv-field:has(> svg:first-child) {
+  padding-left: 14px;
+}
+
+.fv-field:has(> svg:last-child) {
+  padding-right: 13px;
+}
+
+.fv-field:has(> .fv-round:last-child) {
+  padding-right: 4px;
+}
+
+.fv-field > .fv-round:last-child {
+  width: 36px;
+  height: 36px;
+}
+
+.fv-field__input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: none;
+  outline: none;
+  appearance: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--fluvy-text);
+}
+
+/* a hint, not a value: the regular weight (what measures it — Activity's search — measures it so) */
+.fv-field__input::placeholder {
+  color: var(--fluvy-text-secondary);
+  font-weight: 400;
+  opacity: 1;
+}
+
+.fv-field__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.fv-field__input:invalid {
+  color: var(--fluvy-warning);
+}
+
+@media (pointer: coarse) {
+  .fv-field__input {
+    font-size: 16px;
+  }
+}

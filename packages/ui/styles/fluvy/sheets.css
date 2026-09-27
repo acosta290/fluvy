@@ -1,0 +1,161 @@
+/* fluvy · sheets: The bottom sheet, the review sheets' chrome, the curve and its value bubble. Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- sheet (bottom sheet) ---------- */
+.fv-sheet {
+  width: 392px;
+  padding: 0 16px 16px;
+  border-radius: var(--fluvy-radius-xl) var(--fluvy-radius-xl) 0 0;
+  background: var(--fluvy-card);
+  box-shadow:
+    0 0 0 1px var(--fluvy-border),
+    0 -24px 48px -24px rgb(0 0 0 / 0.25);
+}
+
+.fv-sheet__grabber {
+  height: 24px;
+  padding-top: 8px;
+  text-align: center;
+}
+
+.fv-sheet__grabber span {
+  display: inline-block;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fluvy-border-strong);
+  vertical-align: top;
+}
+
+.fv-sheet__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+}
+
+.fv-sheet__title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- review sheet chrome ---------- */
+.lab-sheet {
+  display: grid;
+  grid-template-columns: 392px 392px;
+  gap: 48px;
+  justify-content: center;
+  align-items: start;
+  width: 900px;
+  margin: 0 auto;
+  padding: 32px 0;
+  background: #d6d0c4;
+}
+
+.lab-sheet > [data-frame] {
+  justify-self: start;
+}
+
+/* ---------- curve + bubble ---------- */
+.fv-curve .curve-line {
+  fill: none;
+  stroke: var(--fluvy-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.fv-curve .curve-fill-a {
+  stop-color: var(--fluvy-accent);
+  stop-opacity: 0.28;
+}
+
+.fv-curve .curve-fill-b {
+  stop-color: var(--fluvy-accent);
+  stop-opacity: 0;
+}
+
+.fv-curve .curve-cursor {
+  stroke: var(--fluvy-border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+.fv-curve .curve-dot {
+  fill: var(--fluvy-accent);
+  stroke: var(--fluvy-card);
+  stroke-width: 3;
+}
+
+.fv-bubble {
+  position: absolute;
+  top: 4px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--fluvy-text);
+  color: var(--fluvy-page);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 32px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.35);
+}
+
+.fv-bubble b {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* while a chart is scrubbed the bubble also says when: "3.1 kW · 10:15" */
+.fv-bubble__time {
+  margin-left: 4px;
+  opacity: 0.72;
+}
+
+.fv-bubble::after {
+  content: '';
+  position: absolute;
+  left: var(--tail, 34px);
+  bottom: -5px;
+  z-index: -1;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--fluvy-text);
+  transform: rotate(45deg);
+}
+
+.fv-axis {
+  position: relative;
+  height: 16px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+.fv-axis span {
+  position: absolute;
+  top: 0;
+  width: 40px;
+  margin-left: -20px;
+  text-align: center;
+}
+
+.fv-axis span.is-first {
+  margin-left: 0;
+  text-align: left;
+}
+
+.fv-axis span.is-last {
+  margin-left: 0;
+  text-align: right;
+}

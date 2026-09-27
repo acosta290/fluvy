@@ -1,0 +1,326 @@
+/* Ambient sheet composition. Primitives in fluvy.css. */
+.am-card,
+.am-sensors,
+.am-scenes,
+.am-toasts {
+  width: 360px;
+}
+
+/* weather */
+.am-weather__hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 88px; /* label 16 + 4 + value 44 + 4 + sub 20 */
+}
+
+.am-weather__now .fv-card__sub {
+  margin-top: 4px;
+}
+
+.am-hours {
+  display: grid;
+  grid-template-columns: repeat(5, 64px);
+  height: 84px;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-radius: var(--fluvy-radius-control);
+  background: var(--fluvy-page);
+}
+
+.am-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.am-hour svg {
+  width: 24px;
+  height: 24px;
+  color: var(--fluvy-text-secondary);
+}
+
+.am-hour__t {
+  height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.am-hour__v {
+  height: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.am-days {
+  margin-top: 16px;
+}
+
+/* sensors */
+.am-tile__trend {
+  margin-left: 0;
+  align-self: flex-start;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.am-sensors .fv-tile .fv-readout {
+  margin-top: 12px;
+}
+
+.am-spark {
+  height: 24px;
+  margin-top: 8px;
+}
+
+.am-spark .fv-curve .curve-line {
+  stroke: var(--fluvy-state-climate-heat);
+  stroke-width: 2;
+}
+.am-spark .fv-curve .curve-fill-a,
+.am-spark .fv-curve .curve-fill-b {
+  stop-color: var(--fluvy-state-climate-heat);
+}
+.am-spark .fv-curve .curve-dot {
+  fill: var(--fluvy-state-climate-heat);
+  r: 3;
+}
+.am-spark .fv-curve .curve-cursor {
+  display: none;
+}
+.am-spark--water .fv-curve .curve-line {
+  stroke: var(--fluvy-state-energy-water);
+}
+.am-spark--water .fv-curve .curve-fill-a,
+.am-spark--water .fv-curve .curve-fill-b {
+  stop-color: var(--fluvy-state-energy-water);
+}
+.am-spark--water .fv-curve .curve-dot {
+  fill: var(--fluvy-state-energy-water);
+}
+
+.am-wide {
+  margin-top: 16px;
+}
+
+.am-chart {
+  position: relative;
+  height: 120px;
+  margin-top: 16px;
+}
+
+.am-chart .fv-curve .curve-line {
+  stroke: var(--fluvy-state-climate-heat);
+}
+.am-chart .fv-curve .curve-fill-a,
+.am-chart .fv-curve .curve-fill-b {
+  stop-color: var(--fluvy-state-climate-heat);
+}
+.am-chart .fv-curve .curve-dot {
+  fill: var(--fluvy-state-climate-heat);
+}
+
+.am-rows {
+  margin-top: 16px;
+}
+
+/* presence */
+
+.am-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centred in its column like every 3-column set (readout rows, 2026-09-18) */
+  text-align: center;
+}
+
+.am-avatar {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg in srgb,
+    color-mix(in srgb, var(--fluvy-primary) var(--fluvy-electric, 0%), var(--fluvy-accent-70)),
+    color-mix(in srgb, var(--fluvy-primary-hover) var(--fluvy-electric, 0%), var(--fluvy-accent-40))
+  );
+  opacity: 0.55;
+}
+
+.am-avatar.is-home {
+  opacity: 1;
+}
+
+.am-avatar__dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--fluvy-text-disabled);
+  box-shadow: 0 0 0 2px var(--fluvy-card);
+}
+
+.am-avatar.is-home .am-avatar__dot {
+  background: var(--fluvy-success);
+}
+
+.am-person__name {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.am-person__state {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* area */
+.am-card--area {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.am-area__hero {
+  position: relative;
+  height: 160px;
+  margin: 0 -20px;
+  background: linear-gradient(
+    160deg in srgb,
+    var(--fluvy-accent-90),
+    var(--fluvy-accent-70) 60%,
+    var(--fluvy-accent-60)
+  );
+}
+
+.am-area__badge {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--fluvy-radius-pill, 9999px);
+  background: var(--fluvy-card);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.am-area__badge svg {
+  width: 20px;
+  height: 20px;
+  color: var(--fluvy-accent);
+}
+
+.am-area__stats {
+  display: grid;
+  grid-template-columns: 96px 96px 96px;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* scenes */
+.am-scene {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  height: 76px;
+  padding: 0 16px;
+  text-align: left;
+}
+
+.am-scene .fv-row__text {
+  flex: 1 1 auto;
+}
+
+.am-scene__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--tone-on);
+}
+
+.am-scene__check svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* confirm sheet */
+.am-sheet {
+  padding-bottom: 16px;
+}
+
+.am-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.am-confirm__title {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+.am-confirm__sub {
+  margin-top: 8px;
+  white-space: normal;
+  line-height: 20px;
+}
+
+.am-actions {
+  display: grid;
+  grid-template-columns: 172px 172px;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* toasts */
+.am-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 76px;
+  padding: 16px;
+  border-radius: var(--fluvy-radius-lg);
+  background: var(--fluvy-card);
+  box-shadow:
+    0 0 0 1px var(--fluvy-border),
+    0 16px 32px -16px rgb(0 0 0 / 0.35);
+}
+
+.am-toast + .am-toast {
+  margin-top: 16px;
+}
+
+.am-toast .fv-row__text {
+  flex: 1 1 auto;
+}
+
+.am-toast .fv-btn {
+  height: 44px;
+  font-size: 14px;
+}

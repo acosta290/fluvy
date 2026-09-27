@@ -1,0 +1,153 @@
+/* fluvy · lists: The empty state and the list rows. Part of fluvy.css (its @imports keep this order). */
+
+/* ---------- empty state: a 44 ring with a glyph over one secondary line, centred in a 120 panel ---------- */
+.fv-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 120px;
+  padding: 16px;
+  box-sizing: border-box;
+  border-radius: var(--fluvy-radius-lg);
+  background: var(--fluvy-page);
+  text-align: center;
+}
+
+/* why it is empty, under the line that says it is: the same secondary ink every hint takes */
+.fv-empty-state__hint {
+  max-width: 380px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--fluvy-text-secondary);
+  text-wrap: balance;
+}
+
+.fv-empty-state__ring {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border-strong);
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-empty-state__ring svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-empty-state__text {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* ---------- list rows ---------- */
+.fv-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+}
+
+.fv-row + .fv-row::before {
+  content: '';
+  position: absolute;
+  left: 56px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--fluvy-border);
+}
+
+.fv-row__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fv-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-row__sub {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-row__chevron {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  width: 44px;
+  height: 44px;
+  margin-right: -8px; /* box shifted 8 (grid), glyph nudged 2 back: ink lands on the column edge */
+  padding-right: 2px;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-row__chevron svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fv-row__value {
+  position: relative;
+  top: -1px;
+  white-space: nowrap; /* a value never wraps ("Above horizon" stays one line; the sub gives way) */ /* 16 px next to a 15 px title: Blink floors the half-leading, so the value's baseline lands 1 px low in the same 20 px box */
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* beside a title + sub pair the value is centred on the pair, not nudged: the nudge is for one-line rows only (a bar
+   row's value sits on its title's line, and keeps it) */
+.fv-row:not(.fv-row--bar) > .fv-row__text:has(.fv-row__sub) + .fv-row__value {
+  top: 0;
+}
+
+.fv-row__value--warning {
+  color: var(--fluvy-warning);
+}
+
+/* a state written in words ("Grid-Connected, normally"): up to two lines at the right edge, never pushing the
+   name out of its row (the name keeps 40 % of the row, the words 55 %) */
+.fv-row:has(.fv-row__value--text) .fv-row__text {
+  min-width: 40%;
+}
+
+.fv-row__value.fv-row__value--text {
+  top: 0;
+  flex: 0 1 auto;
+  max-width: 55%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: end;
+  font-size: 14px;
+  line-height: 18px;
+}

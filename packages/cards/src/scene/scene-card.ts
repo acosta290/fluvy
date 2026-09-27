@@ -1,0 +1,225 @@
+import {
+  haptic,
+  stateText,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
+} from '@fluvy/core';
+
+import { ico, icon, sheetStyles, type Tone } from '@fluvy/ui';
+
+import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
+
+import { keyed } from 'lit/directives/keyed.js';
+
+import { agoShort } from '../helpers/datetime.js';
+
+import { Card } from '../shared/base.js';
+
+import { glyphFor } from '../shared/domain.js';
+
+import {
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  textField,
+  toneField,
+} from '../shared/form.js';
+
+import { s } from './strings.js';
+
+export interface SceneCardConfig extends FluvyCardConfig {
+  tone?: Tone;
+  /** Line under the name. Defaults to the scene's device count, then to when it last ran. */
+  meta?: string;
+}
+
+const DOMAINS = ['scene', 'script', 'button', 'input_button', 'automation'] as const;
+const DONE_MS = 1200;
+/** Below this width (two tiles in a column under ~340) the tile closes its padding. */
+const TIGHT = 160;
+
+/** The one call that runs each kind of entity — never a blind `homeassistant.turn_on`. */
+const SERVICE: Record<string, readonly [domain: string, service: string]> = {
+  scene: ['scene', 'turn_on'],
+  script: ['script', 'turn_on'],
+  button: ['button', 'press'],
+  input_button: ['input_button', 'press'],
+  automation: ['automation', 'trigger'],
+};
+
+/**
+ * A scene, script, button or automation as the sheet's scene tile (76 tall, radius 16, hairline):
+ * icon circle, name, and one honest line — how many entities the scene sets, or when it last ran.
+ * A scene has no "on", so a press is confirmed by the tile itself: the glyph turns into a check and
+ * the line says "Done" for 1.2 s, then both swap back.
+ */
+export class FluvySceneCard extends Card<SceneCardConfig> {
+  static override styles: CSSResultGroup = [
+    ...(Card.styles as CSSResultGroup[]),
+    sheetStyles.home,
+    css`
+      .fv-scene {
+        width: 100%;
+        min-width: 0;
+        animation: fv-enter 420ms var(--fv-ease-out) both;
+        animation-delay: var(--fv-enter-delay, 0ms);
+      }
+      /* as a button the unavailable tile needs what an <article> has for free */
+      button.fv-tile--off {
+        width: 100%;
+        text-align: left;
+      }
+      /* two-up in a narrow column the tile is ~148 wide: it gives its padding to the words (10 sides, 8 gap — "Unavailable"
+         is 74 px at 13/500), and a name takes a second line before it loses its end ("Good night" is 83 px at 15/600; 2 × 20 + 16 sits in the 76) */
+      .is-tight.fv-scene,
+      .is-tight.fv-tile--off {
+        gap: 8px;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .is-tight .fv-row__title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .fv-ico > span {
+        display: flex;
+      }
+    `,
+  ];
+
+  static override properties = { ...Card.properties, done_: { state: true } };
+
+  /** True for 1.2 s after a press. */
+  declare done_: boolean;
+
+  private doneTimer: number | undefined;
+  /** Swaps animate only once the tile has been pressed: on load the tile's own entrance is the motion. */
+  private swaps = false;
+
+  constructor() {
+    super();
+    this.done_ = false;
+  }
+
+  static getConfigForm(): LovelaceConfigForm {
+    return {
+      schema: [entityField(DOMAINS), nameIconFields(), fieldRow(textField('meta'), toneField())],
+      ...formLabels({
+        meta: 'editor.subtitle',
+      }),
+    };
+  }
+
+  static getStubConfig(_hass: unknown, entities: readonly string[]): SceneCardConfig {
+    return {
+      type: 'custom:fluvy-scene-card',
+      entity: entities.find((id) => id.slice(0, id.indexOf('.')) in SERVICE) ?? '',
+    };
+  }
+
+  protected override prepare(config: SceneCardConfig): SceneCardConfig {
+    if (!config.entity) throw new Error('fluvy-scene-card: "entity" is required');
+    if (!(config.entity.slice(0, config.entity.indexOf('.')) in SERVICE))
+      throw new Error(`fluvy-scene-card: "entity" must be one of ${DOMAINS.join(', ')}`);
+    return config;
+  }
+
+  override getCardSize(): number {
+    return 2;
+  }
+  override getGridOptions(): LovelaceGridOptions {
+    return { columns: 6, rows: 'auto' };
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    clearTimeout(this.doneTimer);
+    this.doneTimer = undefined;
+    this.done_ = false;
+  }
+
+  private run(view: EntityView): void {
+    const call = SERVICE[view.domain];
+    if (!call || this.done_) return; // a second tap inside the "Done" beat is the same gesture, not a second run
+    haptic(this, 'light');
+    this.swaps = true;
+    this.call(call[0], call[1], {}, view.id);
+    this.done_ = true;
+    clearTimeout(this.doneTimer);
+    this.doneTimer = window.setTimeout(() => {
+      this.done_ = false;
+    }, DONE_MS);
+  }
+
+  /** Config text, else what the scene sets, else when it last ran. A scene that never ran has the state `unknown`: that is not an error. */
+  private meta(view: EntityView): string {
+    if (this.config?.meta !== undefined) return this.config.meta;
+    const members = view.attr<readonly string[] | null>('entity_id');
+    if (Array.isArray(members) && members.length > 0) {
+      return members.length === 1
+        ? s(this.hass, 'device')
+        : s(this.hass, 'devices', { count: members.length });
+    }
+    // scenes and buttons keep the time they last ran in their state, scripts and automations in an attribute
+    const last =
+      view.attr<string | null>('last_triggered') ??
+      (view.status === 'ok' && view.domain !== 'script' && view.domain !== 'automation'
+        ? view.state
+        : null);
+    const when = last ? new Date(last) : null;
+    return when && !Number.isNaN(when.getTime())
+      ? agoShort(this.hass, when)
+      : s(this.hass, 'never');
+  }
+
+  protected renderCard(): TemplateResult {
+    const view = this.entity();
+    const name = this.config?.name ?? view.name;
+
+    const tight = this.width < TIGHT ? 'is-tight' : '';
+
+    if (view.status === 'missing' || view.status === 'unavailable') {
+      // "Entity not found" does not fit beside a 44 circle in a half-width tile; the tile says it shorter
+      const why = view.status === 'missing' ? s(this.hass, 'missing') : stateText(this.hass, view);
+      return html`<button
+        class="fv-tile fv-tile--off fv-tile--tap ${tight}"
+        data-card
+        data-target
+        @click=${() => this.tap(view.id, { action: 'more-info' })}
+      >
+        ${ico('ban', 'off')}
+        <span class="fv-row__text"
+          ><span class="fv-row__title">${name}</span><span class="fv-row__sub">${why}</span></span
+        >
+      </button>`;
+    }
+
+    const done = this.done_;
+    const meta = this.meta(view);
+    const line = done && meta ? s(this.hass, 'done') : meta;
+    const swap = this.swaps ? 'fv-swap' : '';
+
+    return html`<button
+        class="fv-scene fv-tile--tap ${tight}"
+        data-card
+        data-target
+        @click=${() => this.run(view)}
+      >
+        <span class="fv-ico fv-ico--${this.config?.tone ?? 'accent'}" data-icon>
+          ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : (this.config?.icon ?? glyphFor(view)))}</span>`)}
+        </span>
+        <span class="fv-row__text">
+          <span class="fv-row__title">${name}</span>
+          ${line ? keyed(line, html`<span class="fv-row__sub ${swap}">${line}</span>`) : nothing}
+        </span>
+      </button>
+      <!-- read out, not shown: a press is confirmed to a screen reader too -->
+      <span class="fv-sr" role="status">${done ? `${name} · ${s(this.hass, 'done')}` : ''}</span>`;
+  }
+}

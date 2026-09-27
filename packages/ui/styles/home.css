@@ -1,0 +1,348 @@
+/* Home sheet composition. Frame 392, side padding 16, content 360. Primitives in fluvy.css. */
+.fv-phone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 392px;
+  padding: 0 16px 16px;
+  border-radius: 40px;
+  background: var(--fluvy-page);
+  box-shadow:
+    0 0 0 1px var(--fluvy-border-strong),
+    0 24px 48px -24px rgb(0 0 0 / 0.35);
+}
+
+.fv-phone .fv-card {
+  margin-top: 16px;
+}
+
+.hm-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-status__icons {
+  display: flex;
+  gap: 4px;
+}
+
+.hm-status__icons svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hm-hello {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* the avatar sits on the block's centre in both tiers (60 and 52 tall) */
+  height: 60px;
+  margin-top: 8px;
+}
+
+.hm-hello__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 16px;
+}
+
+.hm-hello__title {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -0.015em;
+}
+
+.hm-hello__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+.hm-hello__weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hm-hello__weather svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hm-avatar {
+  display: block;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  /* "you": the palette's second brand colour where it has one (ref Volt's lime greeting), else an accent sphere —
+     on an electric palette its primary, never a dark ramp of it (Noir's lime would turn olive). Stops in sRGB: a
+     colour-mix stop would otherwise move the gradient to Oklab */
+  background: var(
+    --fluvy-mark,
+    linear-gradient(
+      135deg in srgb,
+      color-mix(in srgb, var(--fluvy-primary) var(--fluvy-electric, 0%), var(--fluvy-accent-70)),
+      color-mix(
+        in srgb,
+        var(--fluvy-primary-hover) var(--fluvy-electric, 0%),
+        var(--fluvy-accent-40)
+      )
+    )
+  );
+  box-shadow: inset 0 0 0 2px var(--fluvy-card);
+}
+
+.hm-rooms {
+  margin-top: 16px;
+}
+
+.hm-rooms .fv-chips {
+  margin-top: 0;
+}
+
+.hm-rooms .fv-chip__pill {
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  font-size: 14px;
+}
+
+.hm-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 24px;
+  margin-top: 24px;
+}
+
+.hm-section__lead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* a 24 box with a 20 glyph, on the title's cap height: the icon reads as part of the words, not as a badge */
+.hm-section__icon {
+  display: inline-flex;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--fluvy-accent);
+}
+
+.hm-section__icon svg,
+.hm-section__icon .fv-haicon {
+  width: 20px;
+  height: 20px;
+}
+
+.hm-section__title {
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hm-section__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fluvy-text-secondary);
+}
+
+.hm-section__meta svg {
+  width: 16px;
+  height: 16px;
+  margin-right: -5px; /* optical: chevron ink ends ~5px inside its 16px box */
+}
+
+.fv-phone .fv-grid2 {
+  margin-top: 12px;
+}
+
+.hm-dial {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* energy */
+
+.hm-energy__side {
+  padding-bottom: 3px; /* the 20 px value on the 40 px value's baseline */
+  text-align: right;
+}
+
+.hm-energy__side .fv-readout__value {
+  justify-content: flex-end;
+}
+
+.hm-chart {
+  position: relative;
+  height: 120px;
+  margin-top: 12px;
+}
+
+/* media */
+.hm-media {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-rows: 64px auto;
+  column-gap: 16px;
+}
+
+.hm-art {
+  width: 64px;
+  height: 64px;
+}
+
+.hm-media__titles {
+  align-self: center;
+  min-width: 0;
+}
+
+.hm-media__title {
+  font-size: 17px;
+  line-height: 24px;
+}
+
+.hm-progress {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 4px;
+  margin-top: 16px;
+  border-radius: 2px;
+  background: var(--fluvy-page-alt);
+}
+
+.hm-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--fluvy-accent);
+}
+
+.hm-times {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  height: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-transport {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 48px;
+  margin-top: 16px;
+}
+
+.hm-transport__btn {
+  position: absolute;
+  top: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.hm-transport__btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.hm-transport > :nth-child(1) {
+  left: 72px;
+}
+.hm-transport > :nth-child(2) {
+  left: 136px;
+}
+.hm-transport > :nth-child(3) {
+  left: 200px;
+}
+.hm-transport__volume {
+  left: 272px;
+}
+
+/* stats */
+.hm-stats {
+  display: grid;
+  grid-template-columns: 96px 96px 96px;
+  gap: 16px;
+}
+
+/* scenes */
+.hm-scenes {
+  margin-top: 12px !important;
+}
+
+.fv-scene {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 76px;
+  padding: 0 16px;
+  border-radius: var(--fluvy-radius-lg);
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  text-align: left;
+}
+
+.hm-off {
+  margin-top: 16px;
+}
+
+/* nav */
+.hm-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  margin-top: 16px;
+  padding: 0 20px;
+  border-radius: var(--fluvy-radius-pill, 9999px);
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+}
+
+.hm-nav__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--fluvy-text-secondary);
+}
+
+.hm-nav__item svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hm-nav__item.is-active {
+  background: var(--fluvy-accent-fill);
+  color: var(--fluvy-accent-on-fill);
+}

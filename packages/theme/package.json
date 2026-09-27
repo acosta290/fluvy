@@ -1,0 +1,40 @@
+{
+  "name": "@fluvy/theme",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Emits the Home Assistant theme (light + dark) from @fluvy/tokens, validates it offline and writes it into custom_components/fluvy/themes",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "packages/theme"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsx src/build.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fluvy/tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.1"
+  }
+}

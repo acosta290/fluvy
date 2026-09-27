@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Instala el tema, las tarjetas y el panel de ajustes de Fluvy. No hay nada que configurar."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy ya está configurado.",
+      "single_instance_allowed": "Fluvy ya está configurado."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Faltan los ficheros del frontend de Fluvy en custom_components/fluvy/frontend. Reinstala Fluvy desde HACS (o ejecuta `pnpm build` en una copia de desarrollo) y reinicia Home Assistant."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Quita las líneas antiguas de Fluvy de configuration.yaml",
+      "description": "Fluvy ya es una integración y registra su panel y su módulo por sí misma. Quita esto de configuration.yaml (conserva `frontend: themes: !include_dir_merge_named themes`), comprueba la configuración y reinicia Home Assistant cuando te venga bien:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "El tema de Fluvy no está cargado",
+      "description": "Fluvy escribió su tema en `{path}`, pero Home Assistant no lista ningún tema llamado Fluvy. Añade esto a configuration.yaml y ejecuta la acción `frontend.reload_themes` (Herramientas para desarrolladores → Acciones); no hace falta reiniciar:\n\n{yaml}\n\nSi las líneas ya están, busca en Ajustes → Sistema → Registros un tema que no se haya podido cargar."
+    },
+    "resources_yaml_mode": {
+      "title": "Añade el recurso de Fluvy para los paneles",
+      "description": "Tus recursos de Lovelace se gestionan en YAML, así que Fluvy no puede registrar el suyo. Añade esto bajo `lovelace: resources:` en configuration.yaml y recarga el navegador:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy ya se carga en todas las páginas; este recurso permite que los paneles lo carguen antes de dibujarse."
+    }
+  }
+}
