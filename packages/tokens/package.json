@@ -36,7 +36,7 @@
     "@types/culori": "^4.0.1",
     "@types/node": "^24.10.1",
     "culori": "^4.0.2",
-    "tsx": "^4.20.6",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
