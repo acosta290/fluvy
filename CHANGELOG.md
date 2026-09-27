@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-09-27
+
 ### Changed
 
 - The demo opens in the light mode on Blaze, and lays its frames out in lanes filled by height: nothing overlaps,
