@@ -11,7 +11,6 @@
  *   custom_components/fluvy/brand/icon.png (256²), icon@2x.png (512²)
  *                                                    the icon Home Assistant shows for the integration: the mark in
  *                                                    the accent ink on a transparent square, trimmed to the mark
- *   brand/lockup-<mode>@8x.png                       the lockups at 8×, the source of brand/ha-brands (ha-brands.py)
  *
  * Colours come from the tokens' build (`packages/tokens/dist/palettes.json`, palette linen), so a change of ink
  * there reaches the brand files on the next `pnpm brand`. Rasterised with resvg: no browser, no fonts, the same
@@ -100,8 +99,6 @@ for (const mode of ['light', 'dark']) {
   const svg = lockup(ink[mode]);
   await out(join(brand, `lockup-${mode}.svg`), svg);
   await out(join(brand, `lockup-${mode}.png`), png(svg, 2));
-  // the source of the brands repository's logos (ha-brands.py trims and scales it)
-  await out(join(brand, `lockup-${mode}@8x.png`), png(svg, 8));
 }
 await out(join(integration, 'icon.png'), png(icon(256)));
 await out(join(integration, 'icon@2x.png'), png(icon(512)));
