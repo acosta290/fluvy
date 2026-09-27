@@ -22,6 +22,16 @@
     "pnpm": ">=11"
   },
   "type": "module",
+  "exports": {
+    "./scenes": "./src/scenes.ts",
+    "./hass": "./src/hass.ts",
+    "./panel": "./src/panel.ts",
+    "./history": "./src/history.ts",
+    "./activity": "./src/activity.ts",
+    "./clock": "./src/clock.ts",
+    "./look-memory": "./src/look-memory.ts",
+    "./frame.css": "./src/frame.css"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "vite --port 5183 --strictPort",

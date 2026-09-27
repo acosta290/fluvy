@@ -10,6 +10,7 @@ import {
   type PaletteCharacter,
 } from '@fluvy/tokens/runtime';
 import { textWidth } from '@fluvy/ui';
+import { pinClock } from './clock.js';
 import { createHass, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
@@ -81,22 +82,9 @@ const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';
 // the person's preference: the Activity page's timeline on a card
 if (params.get('card') === '1') document.documentElement.setAttribute('fluvy-activity-card', '');
+// the page's clock starts at `at` and runs on (screenshots of "today" that do not change with the day)
 const at = params.get('at');
-if (at && Number.isFinite(Date.parse(at))) {
-  // the page's clock starts at `at` and runs on (screenshots of "today" that do not change with the day)
-  const Real = Date;
-  const offset = Date.parse(at) - Real.now();
-  class Clock extends Real {
-    constructor(...args: [] | ConstructorParameters<DateConstructor>) {
-      if (args.length === 0) super(Real.now() + offset);
-      else super(...(args as ConstructorParameters<DateConstructor>));
-    }
-    static override now(): number {
-      return Real.now() + offset;
-    }
-  }
-  globalThis.Date = Clock as DateConstructor;
-}
+if (at) pinClock(at);
 const panelTab = params.get('panel');
 const panelStates = (params.get('state') ?? '').split(',').filter(Boolean) as PanelState[];
 // the panel stands alone: no sheet frames beside it

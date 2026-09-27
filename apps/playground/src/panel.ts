@@ -1,17 +1,7 @@
 import { DEMO_DASHBOARDS } from '@fluvy/demo-home';
 import '@fluvy/cards/panel';
-import {
-  LookEngine,
-  refreshCards,
-  setLanguageOverride,
-  SettingsStore,
-  type EffectiveSettings,
-  type HomeAssistant,
-  type Look,
-  type LookHandle,
-  type SettingsHass,
-} from '@fluvy/core';
-import { setMotionPreference } from '@fluvy/ui';
+import type { HomeAssistant, Look, LookHandle } from '@fluvy/core';
+import { createMemoryLook, type MemoryLook } from './look-memory.js';
 
 /**
  * A moment of the panel to look at, `?state=`: a look chosen but not applied (`pending`), a custom palette
@@ -37,7 +27,8 @@ export type PanelState =
 /**
  * The settings panel outside Home Assistant: `?panel=appearance` (or scope, dashboard, preferences, about).
  * Its settings live in memory behind the same websocket messages Home Assistant answers, and the live
- * look engine applies them to this page — what the panel does here is what it does at home.
+ * look engine applies them to this page — what the panel does here is what it does at home. A page that already
+ * runs on a `MemoryLook` (the demo) hands it over, so the panel shows that page's settings.
  */
 export function mountPanel(
   stage: HTMLElement,
@@ -45,7 +36,8 @@ export function mountPanel(
   tab: string,
   dark: boolean,
   states: readonly PanelState[] = [],
-): void {
+  look: MemoryLook = createMemoryLook(document, dark),
+): { panel: HTMLElement; look: MemoryLook } {
   const has = (state: PanelState): boolean => states.includes(state);
   // the dashboards as Home Assistant hands them to every frontend (its own Overview, the house's, maybe ours)
   hass = { ...hass, panels: panelsFor(states) } as HomeAssistant;
@@ -56,59 +48,8 @@ export function mountPanel(
       selectedTheme: { theme: 'Fluvy' },
       themes: { ...hass.themes, theme: 'Fluvy' },
     } as HomeAssistant;
-  const data: Record<'system' | 'user', unknown> = { system: null, user: null };
-  const subscribers: Record<'system' | 'user', Set<(message: { value: unknown }) => void>> = {
-    system: new Set(),
-    user: new Set(),
-  };
-  const layer = (type: string): 'system' | 'user' => (type.includes('system') ? 'system' : 'user');
-  const storage: SettingsHass = {
-    connection: {
-      subscribeMessage: async <T>(callback: (message: T) => void, message: { type: string }) => {
-        const key = layer(message.type);
-        const listener = callback as (message: { value: unknown }) => void;
-        subscribers[key].add(listener);
-        setTimeout(() => listener({ value: data[key] }), 0);
-        return () => subscribers[key].delete(listener);
-      },
-    },
-    callWS: async <T>(message: { type: string; [key: string]: unknown }): Promise<T> => {
-      const key = layer(message.type);
-      data[key] = message['value'];
-      for (const listener of subscribers[key]) listener({ value: data[key] });
-      return undefined as T;
-    },
-  } as unknown as SettingsHass;
-
-  const engine = new LookEngine(document, () => new CSSStyleSheet(), undefined);
-  const store = new SettingsStore(() => storage, undefined);
-  const listeners = new Set<(settings: EffectiveSettings) => void>();
-  let previewed: Parameters<LookHandle['preview']>[0] = null;
-  // as at home: the look on the page, and the language and motion the cards use
-  const apply = (): void => {
-    const now = previewed ? { ...store.effective, ...previewed } : store.effective;
-    engine.apply(now, dark);
-    setLanguageOverride(now.language === 'auto' ? undefined : now.language);
-    setMotionPreference(now.motion);
-    refreshCards();
-  };
-  const handle: LookHandle = {
-    store,
-    settings: () => store.effective,
-    preview: (look) => {
-      previewed = look;
-      apply();
-    },
-    onChange: (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    stop: () => store.stop(),
-  };
-  store.start((settings) => {
-    apply();
-    for (const listener of listeners) listener(settings);
-  });
+  const { handle } = look;
+  const { store } = handle;
 
   if (has('own')) void store.savePersonal({ palette: 'blaze', shape: 'round' });
   if (has('everywhere')) void store.saveHouse({ scope: 'everywhere', frame: true });
@@ -155,6 +96,7 @@ export function mountPanel(
     }
     if (has('saved')) panel.notice = hass.language === 'es' ? 'Guardado' : 'Saved';
   }, 50);
+  return { panel, look };
 }
 
 /** The dashboard panels of the demo home (one of them the automatic one, unless `missing`). */
@@ -174,7 +116,10 @@ function panelsFor(states: readonly PanelState[]): HomeAssistant['panels'] {
   };
 }
 
-/** What Home Assistant answers the panel about the dashboards' configs. */
+/** Whether the demo home's dashboards are listed in the sidebar (the panel's switch changes it here). */
+const inSidebar = new Map(DEMO_DASHBOARDS.map((dashboard) => [dashboard.url_path, true]));
+
+/** What Home Assistant answers the panel about the dashboards: their configs and the dashboards collection. */
 export const PANEL_WS: Record<string, (message: Record<string, unknown>) => unknown> = {
   'lovelace/config': (message) =>
     message['url_path'] === 'fluvy-auto'
@@ -182,4 +127,18 @@ export const PANEL_WS: Record<string, (message: Record<string, unknown>) => unkn
       : { views: [] },
   'lovelace/config/save': () => undefined,
   'lovelace/dashboards/create': () => undefined,
+  'lovelace/dashboards/list': () =>
+    DEMO_DASHBOARDS.map((dashboard) => ({
+      id: dashboard.url_path.replace(/-/g, '_'),
+      ...dashboard,
+      show_in_sidebar: inSidebar.get(dashboard.url_path) ?? true,
+      require_admin: false,
+      mode: 'storage',
+    })),
+  'lovelace/dashboards/update': (message) => {
+    const url = String(message['dashboard_id']).replace(/_/g, '-');
+    if (typeof message['show_in_sidebar'] === 'boolean')
+      inSidebar.set(url, message['show_in_sidebar']);
+    return undefined;
+  },
 };
