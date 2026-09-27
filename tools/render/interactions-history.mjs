@@ -8,6 +8,7 @@
  * the series that did not fit; the dates popover and the sources drawer open and leave; nothing is cut at a phone's
  * width, and the page measures its own column.
  */
+import { leaveChart, mousePointer, scrubPlot } from './lib/gestures.mjs';
 import { startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -40,9 +41,8 @@ const inside = (page, fn) =>
   const plots = await page.locator('fluvy-history .hs-plot').count();
   check('a chart per measure is drawn', plots >= 2, `${plots} plots`);
   const box = await page.locator('fluvy-history .hs-plot').first().boundingBox();
-  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.62, box.y + box.height / 2, { steps: 8 });
+  const pointer = mousePointer(page);
+  await scrubPlot(pointer, box, { from: 0.3, to: 0.62 });
   await page.waitForTimeout(220);
   const read = await inside(
     page,
@@ -57,9 +57,8 @@ const inside = (page, fn) =>
   check('every chart reads the same instant', spread < 0.01, `spread ${spread.toFixed(4)}`);
   check('the head says when, not "now"', /\d/.test(read.when), read.when);
   check('a single curve gets its bubble', read.bubbles >= 1, `${read.bubbles} bubbles`);
-  await page.mouse.up();
   // a mouse keeps the reading until it leaves the chart (a finger lets go at once)
-  await page.mouse.move(box.x + box.width / 2, box.y - 60);
+  await leaveChart(pointer, box);
   await page.waitForTimeout(260);
   const back = await inside(
     page,

@@ -63,6 +63,8 @@ export function createHass(
   hass: () => HomeAssistant;
   subscribe: (l: Listener) => () => void;
   calls: Array<{ domain: string; service: string; data: unknown; target: unknown }>;
+  /** Changes a state (and attributes) at once and tells every listener, as a recorder update would. */
+  set: (id: string, state?: string, attributes?: Record<string, unknown>) => void;
 } {
   const now = options.now ?? new Date();
   const states: Record<string, HassEntity> = {};
@@ -468,5 +470,10 @@ export function createHass(
       return () => listeners.delete(l);
     },
     calls,
+    set: (id, state, attributes) => {
+      set(id, state, attributes);
+      current = build();
+      listeners.forEach((l) => l(current));
+    },
   };
 }

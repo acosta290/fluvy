@@ -5,6 +5,7 @@
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   node interactions-media.mjs            (expects the playground dev server on :5183)
  */
+import { mousePointer, seekTo } from './lib/gestures.mjs';
 import { calls, frame, moreInfo, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -49,12 +50,15 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   const seek = card.locator('.md-progress');
   const sb = await seek.boundingBox();
   const sy = sb.y + sb.height / 2;
-  await page.mouse.move(sb.x + sb.width * 0.3, sy);
-  await page.mouse.down();
-  await page.mouse.move(sb.x + sb.width * 0.5, sy, { steps: 6 });
-  await page.mouse.move(sb.x + sb.width * 0.75, sy, { steps: 6 });
-  const during = await seek.locator('.fv-knob').boundingBox();
-  await page.mouse.up();
+  let during = null;
+  await seekTo(mousePointer(page), sb, {
+    from: 0.3,
+    via: 0.5,
+    to: 0.75,
+    phase: async () => {
+      during = await seek.locator('.fv-knob').boundingBox();
+    },
+  });
   await settle(page, 200);
   c = await calls(page);
   const target = Math.round(0.75 * 222);

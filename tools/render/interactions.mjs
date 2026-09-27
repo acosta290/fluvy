@@ -6,6 +6,15 @@
  * the fine scale, the keyboard works, a switch flips before Home Assistant answers, and five taps on
  * a stepper become one service call.
  */
+import {
+  dialTo,
+  dragTo,
+  driftDrag,
+  holdForFine,
+  mousePointer,
+  relativeDrag,
+  rulerGeometry,
+} from './lib/gestures.mjs';
 import { BASE, calls, reset, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -26,20 +35,12 @@ async function open(sheet, width = 360) {
   const ruler = card.locator('fluvy-ruler').first().locator('.fv-ruler');
   const knob = card.locator('fluvy-ruler').first().locator('.fv-knob');
   const readout = card.locator('.fv-readout--l .fv-readout__value span').first();
-  const box = await ruler.boundingBox();
-  const y = box.y + box.height / 2;
-  const at = (pct) => box.x + (box.width * pct) / 100;
-  const knobX = async () => {
-    const k = await knob.boundingBox();
-    return k.x + k.width / 2;
-  };
+  const geo = await rulerGeometry(ruler, knob);
+  const { box, y, knobX } = geo;
+  const pointer = mousePointer(page);
   const settle = () => page.waitForTimeout(450);
 
-  await page.mouse.move(at(70), y);
-  await page.mouse.down();
-  await page.mouse.move(at(80), y, { steps: 6 });
-  await page.mouse.move(at(97), y, { steps: 12 });
-  await page.mouse.up();
+  await dragTo(pointer, geo, { from: 70, via: 80, to: 97 });
   await page.waitForTimeout(80);
   let c = await calls(page);
   check(
@@ -51,11 +52,7 @@ async function open(sheet, width = 360) {
   await reset(page);
 
   // grabbing away from the knob never jumps: the drag is relative
-  await page.mouse.move(at(20), y);
-  await page.mouse.down();
-  await page.mouse.move(at(21), y, { steps: 3 });
-  await page.mouse.move(at(10), y, { steps: 8 });
-  await page.mouse.up();
+  await relativeDrag(pointer, geo, { grab: 20, to: 10 });
   await page.waitForTimeout(80);
   c = await calls(page);
   check(
@@ -68,48 +65,53 @@ async function open(sheet, width = 360) {
 
   // THE PHONE BUG: a thumb drifts vertically while sliding. Drifting must not move the value at all,
   // and coming back to the axis must not make it leap.
-  await page.mouse.move(at(87), y);
-  await page.mouse.down();
-  await page.mouse.move(at(50), y, { steps: 14 });
-  const beforeDrift = (await readout.textContent()).trim();
-  await page.mouse.move(at(50), y + 120, { steps: 10 });
-  const duringDrift = (await readout.textContent()).trim();
-  await page.mouse.move(at(50), y, { steps: 10 });
-  const afterDrift = (await readout.textContent()).trim();
-  check(
-    'vertical drift does not change the value',
-    beforeDrift === '50' && duringDrift === '50' && afterDrift === '50',
-    `${beforeDrift} → ${duringDrift} → ${afterDrift}`,
-  );
-  // sliding away makes it finer: 20 % of travel far from the axis moves only a little
-  await page.mouse.move(at(50), y + 260, { steps: 6 });
-  await page.mouse.move(at(70), y + 260, { steps: 10 });
-  const far = Number((await readout.textContent()).trim());
-  check(
-    'sliding away makes the drag finer',
-    far > 50 && far <= 56,
-    `50 → ${far} for 20 % of travel`,
-  );
-  // …and the finger coming back to the axis keeps that value (no re-scaling of the whole gesture)
-  await page.mouse.move(at(70), y, { steps: 8 });
-  check(
-    'returning to the axis does not leap',
-    Number((await readout.textContent()).trim()) === far,
-    `${far} → ${(await readout.textContent()).trim()}`,
-  );
-  // a pause in the middle of a drag must NOT raise the fine scale
-  await page.waitForTimeout(800);
-  const midLabels = await card
-    .locator('.fv-ruler-labels')
-    .first()
-    .locator('span')
-    .allTextContents();
-  check(
-    'pausing mid-drag keeps the full scale',
-    midLabels.join(' ') === '0 25 50 75 100',
-    midLabels.join(' '),
-  );
-  await page.mouse.up();
+  const value = async () => (await readout.textContent()).trim();
+  let beforeDrift = '';
+  let duringDrift = '';
+  let far = 0;
+  await driftDrag(pointer, geo, {
+    phase: async (name) => {
+      if (name === 'onAxis') beforeDrift = await value();
+      if (name === 'drifted') duringDrift = await value();
+      if (name === 'returned') {
+        const afterDrift = await value();
+        check(
+          'vertical drift does not change the value',
+          beforeDrift === '50' && duringDrift === '50' && afterDrift === '50',
+          `${beforeDrift} → ${duringDrift} → ${afterDrift}`,
+        );
+      }
+      // sliding away makes it finer: 20 % of travel far from the axis moves only a little
+      if (name === 'far') {
+        far = Number(await value());
+        check(
+          'sliding away makes the drag finer',
+          far > 50 && far <= 56,
+          `50 → ${far} for 20 % of travel`,
+        );
+      }
+      // …and the finger coming back to the axis keeps that value (no re-scaling of the whole gesture)
+      if (name === 'back')
+        check(
+          'returning to the axis does not leap',
+          Number(await value()) === far,
+          `${far} → ${await value()}`,
+        );
+      // a pause in the middle of a drag must NOT raise the fine scale
+      if (name === 'paused') {
+        const midLabels = await card
+          .locator('.fv-ruler-labels')
+          .first()
+          .locator('span')
+          .allTextContents();
+        check(
+          'pausing mid-drag keeps the full scale',
+          midLabels.join(' ') === '0 25 50 75 100',
+          midLabels.join(' '),
+        );
+      }
+    },
+  });
   await page.waitForTimeout(60);
   await reset(page);
 
@@ -135,38 +137,41 @@ async function open(sheet, width = 360) {
   await reset(page);
 
   // press-and-hold BEFORE moving raises the fine scale, anchored: the knob does not move a pixel
-  const xHold = await knobX();
-  await page.mouse.move(xHold, y);
-  await page.mouse.down();
-  await page.waitForTimeout(650);
-  const xFine = await knobX();
-  const fineLabels = await card
-    .locator('.fv-ruler-labels')
-    .first()
-    .locator('span')
-    .allTextContents();
-  check(
-    'holding raises the fine scale without moving the knob',
-    Math.abs(xFine - xHold) < 0.6 &&
-      fineLabels.length >= 3 &&
-      fineLabels.every((t) => /^\d+$/.test(t)),
-    `Δ ${(xFine - xHold).toFixed(2)} px · ${fineLabels.join(' ')}`,
-  );
-  const vHold = Number((await readout.textContent()).trim());
-  await page.mouse.move(xHold + box.width * 0.1, y, { steps: 8 });
-  check(
-    'fine scale: 10 % of travel = 1 %',
-    Number((await readout.textContent()).trim()) === vHold + 1,
-    `${vHold} → ${(await readout.textContent()).trim()}`,
-  );
-  await page.mouse.up();
-  await settle();
-  const xBack = await knobX();
-  check(
-    '…and the knob glides back to the value on the full scale',
-    Math.abs(xBack - (box.x + (box.width * (vHold + 1)) / 100)) < 2.5,
-    `${xBack.toFixed(1)} vs ${(box.x + (box.width * (vHold + 1)) / 100).toFixed(1)}`,
-  );
+  let vHold = 0;
+  await holdForFine(pointer, geo, {
+    phase: async (name, xHold) => {
+      if (name === 'held') {
+        const xFine = await knobX();
+        const fineLabels = await card
+          .locator('.fv-ruler-labels')
+          .first()
+          .locator('span')
+          .allTextContents();
+        check(
+          'holding raises the fine scale without moving the knob',
+          Math.abs(xFine - xHold) < 0.6 &&
+            fineLabels.length >= 3 &&
+            fineLabels.every((t) => /^\d+$/.test(t)),
+          `Δ ${(xFine - xHold).toFixed(2)} px · ${fineLabels.join(' ')}`,
+        );
+        vHold = Number(await value());
+      }
+      if (name === 'moved')
+        check(
+          'fine scale: 10 % of travel = 1 %',
+          Number(await value()) === vHold + 1,
+          `${vHold} → ${await value()}`,
+        );
+      if (name === 'released') {
+        const xBack = await knobX();
+        check(
+          '…and the knob glides back to the value on the full scale',
+          Math.abs(xBack - (box.x + (box.width * (vHold + 1)) / 100)) < 2.5,
+          `${xBack.toFixed(1)} vs ${(box.x + (box.width * (vHold + 1)) / 100).toFixed(1)}`,
+        );
+      }
+    },
+  });
   await reset(page);
 
   await ruler.focus();
@@ -369,15 +374,11 @@ async function open(sheet, width = 360) {
   );
   await reset(page);
 
-  const knob = card.locator('fluvy-dial [data-knob="0"]');
-  const kb = await knob.boundingBox();
-  const db = await card.locator('fluvy-dial .fv-dial').boundingBox();
-  const cx = db.x + db.width / 2;
-  const cy = db.y + db.width / 2;
-  await page.mouse.move(kb.x + kb.width / 2, kb.y + kb.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(cx, cy - 84, { steps: 10 }); // straight up = the middle of the sweep = 22.5
-  await page.mouse.up();
+  // straight up = the middle of the sweep = 22.5
+  await dialTo(mousePointer(page), {
+    knob: card.locator('fluvy-dial [data-knob="0"]'),
+    dial: card.locator('fluvy-dial .fv-dial'),
+  });
   await page.waitForTimeout(120);
   c = await calls(page);
   check(
