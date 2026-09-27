@@ -1,6 +1,6 @@
 """Keep the Lovelace resource at the build's URL, so dashboards load Fluvy before they render."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

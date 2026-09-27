@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "The demo home: one fictional house in the registry form Home Assistant hands a dashboard strategy, shared by the strategy's tests, the playground and the documentation",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "GPL-3.0-only",
   "author": {
     "name": "acosta290",
     "url": "https://github.com/acosta290"

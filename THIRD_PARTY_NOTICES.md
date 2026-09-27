@@ -1,7 +1,7 @@
 # Third-party notices
 
-Fluvy is licensed under the PolyForm Noncommercial License 1.0.0 (see `LICENSE`). It is built with, and its
-release ships, work by others under the licences below. Nothing else reaches a Home Assistant instance: the
+Fluvy is licensed under the GNU General Public License v3.0 (see `LICENSE`). It is built with, and its release
+ships, work by others under the licences below, all of them compatible with the GPL. Nothing else reaches a Home Assistant instance: the
 release is the integration folder — Fluvy's own Python and JavaScript, Lit, and the Inter font.
 
 ## Shipped in the release

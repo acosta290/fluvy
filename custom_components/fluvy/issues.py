@@ -1,6 +1,6 @@
 """Say through Repairs what only the person can do: old YAML, a theme not included, resources."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

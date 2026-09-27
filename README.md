@@ -13,32 +13,20 @@
   <a href="https://hacs.xyz"><img alt="HACS custom repository" src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?logo=homeassistantcommunitystore&logoColor=white"></a>
   <a href="https://github.com/acosta290/fluvy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/acosta290/fluvy?sort=semver&display_name=tag"></a>
   <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.9 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-18BCF2.svg?logo=homeassistant&logoColor=white"></a>
-  <a href="LICENSE"><img alt="Licence: PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-4c7bd9"></a>
+  <a href="LICENSE"><img alt="Licence: GPL-3.0" src="https://img.shields.io/github/license/acosta290/fluvy"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/acosta290/fluvy/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml"><img alt="hassfest" src="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml/badge.svg"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml"><img alt="HACS validation" src="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml/badge.svg"></a>
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
-    <img src="docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
-  </picture>
+  <img src="docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
-    <img src="docs/images/activity-light.png" width="32%" alt="The Activity page">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/history-dark.png">
-    <img src="docs/images/history-light.png" width="32%" alt="The History page">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/panel-dark.png">
-    <img src="docs/images/panel-light.png" width="32%" alt="The settings panel">
-  </picture>
+  <img src="docs/images/activity-light.png" width="32%" alt="The Activity page">
+  <img src="docs/images/history-light.png" width="32%" alt="The History page">
+  <img src="docs/images/panel-light.png" width="32%" alt="The settings panel">
 </p>
 
 Fluvy brings one design to the whole of Home Assistant: a theme, thirty-nine cards, an automatic dashboard, a
@@ -75,9 +63,9 @@ frontend:
   themes: !include_dir_merge_named themes
 ```
 
-1. In HACS, open the menu (⋮) → **Custom repositories**, add `https://github.com/acosta290/fluvy` with the type
-   **Integration**, or click the button above. (Fluvy is a custom repository: HACS's default store only lists
-   licences GitHub can identify, and it does not identify the PolyForm Noncommercial licence.)
+1. Until Fluvy is listed in HACS's default store, add it once: in HACS, open the menu (⋮) → **Custom
+   repositories**, add `https://github.com/acosta290/fluvy` with the type **Integration** — or click the button
+   above, which fills the dialog in.
 2. Search for **Fluvy** in HACS and download it.
 3. Restart Home Assistant.
 4. Go to **Settings → Devices & services → Add integration**, search for **Fluvy** and add it. There is nothing to
@@ -137,10 +125,9 @@ licensing terms a contribution accepts; `CODE_OF_CONDUCT.md` applies to every sp
 
 ## Licence
 
-Fluvy is free for personal and other non-commercial use under the
-[PolyForm Noncommercial License 1.0.0](LICENSE): you may use it, change it and share it, but not sell it or use it
-as part of a commercial product or service. Third-party work it ships is listed in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). For a commercial use, open an issue.
+Fluvy is free software under the [GNU General Public License v3.0](LICENSE): use it, change it and share it;
+whatever you distribute that is built on it stays under the same licence, with its source. Third-party work it
+ships is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Acknowledgements
 

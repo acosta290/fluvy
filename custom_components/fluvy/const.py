@@ -1,6 +1,6 @@
 """Constants of the Fluvy integration, and the record of the build it serves."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 # Contributing to Fluvy
 
 Thank you for helping. Fluvy is a theme and card library for Home Assistant with a demanding design language; the
-rules below keep every change at the same level, and keep the project free to change its licence later.
+rules below keep every change at the same level.
 
 ## Before you start
 
@@ -79,7 +79,7 @@ at 0, documentation updated, both languages, nothing from a private instance, an
 
 ## Licensing of contributions
 
-Fluvy is licensed under the PolyForm Noncommercial License 1.0.0 (`LICENSE`). By submitting a contribution you
+Fluvy is licensed under the GNU General Public License v3.0 (`LICENSE`). By submitting a contribution you
 certify the [Developer Certificate of Origin](https://developercertificate.org) — that it is your own work or you
 have the right to submit it — and you agree that it is licensed to the project under `LICENSE`, and you grant the
 maintainer a perpetual, worldwide, non-exclusive, royalty-free licence to use, modify and redistribute it,

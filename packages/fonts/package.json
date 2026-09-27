@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Inter, self-hosted as a variable font (SIL OFL 1.1), subset to Latin + Latin Extended, with its licence",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "GPL-3.0-only",
   "author": {
     "name": "acosta290",
     "url": "https://github.com/acosta290"

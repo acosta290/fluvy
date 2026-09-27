@@ -18,7 +18,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # GitHub cannot identify the PolyForm Noncommercial licence (its licence API says NOASSERTION), and the
-          # check for HACS's default store needs an identified licence. Fluvy is distributed as a custom repository,
-          # so that one check is skipped; everything else (manifest, hacs.json, brands, description, topics) runs.
-          ignore: license

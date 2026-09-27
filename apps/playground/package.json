@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "The cards running outside Home Assistant against a simulated `hass`: visual comparison with the design sheets, the alignment measurer and interaction tests",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "GPL-3.0-only",
   "author": {
     "name": "acosta290",
     "url": "https://github.com/acosta290"

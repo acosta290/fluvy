@@ -1,6 +1,6 @@
 """What a bug report needs to know about this installation."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

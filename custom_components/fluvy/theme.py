@@ -1,6 +1,6 @@
 """Install Fluvy's theme in the folder Home Assistant reads, reload it and check it is listed."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

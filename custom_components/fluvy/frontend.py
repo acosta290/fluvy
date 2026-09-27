@@ -1,6 +1,6 @@
 """Serve the build and put it on every page: the static path, the module, the settings panel."""
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 

@@ -6,7 +6,7 @@ sidebar, keeps the Lovelace resource current and installs the theme. It stores n
 config entry; Fluvy's settings live in the frontend's own system and user data.
 """
 
-# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
 
