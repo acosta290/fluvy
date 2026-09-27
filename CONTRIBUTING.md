@@ -7,9 +7,9 @@ rules below keep every change at the same level.
 
 - For anything larger than a fix, open an issue first and say what you want to change and why. Design questions
   are settled against `design/language.md`, the specification every card is built and reviewed against.
-- Everything is in English: code, comments, commit messages, documentation. Every string the UI shows exists in
-  English **and** Spanish (`createStrings({ en, es })` in a card's `strings.ts`, the shared words in
-  `packages/core/src/i18n/`).
+- Everything is in English: code, comments, commit messages, documentation. Every string the UI shows lives in the
+  catalogues (`packages/core/src/i18n/locales/`, one per language, English first): a new key goes into every
+  language, and `pnpm i18n` checks them (see `docs/translating.md`).
 - Never commit anything from your own Home Assistant: entity ids, names, areas, tokens, screenshots of your home.
   The demo home (`packages/demo-home`) is the house every example, test and screenshot lives in.
 
@@ -37,7 +37,7 @@ pnpm --filter @fluvy/playground dev
 opens the cards on a simulated `hass` at http://127.0.0.1:5183/ (`?sheet=home&mode=dark&width=360&lang=es`;
 also `palette=`, `shape=`, `compare=linen,blaze`, `panel=appearance`, `activity=1`, `history=1`). The card
 contract — base class, styles, markup, states, numbers, strings, actions, editor, layout, registration — is in
-`packages/cards/README.md`. Every card must hold from 300 to 520 px wide, in light and dark, in English and Spanish,
+`packages/cards/README.md`. Every card must hold from 300 to 520 px wide, in light and dark, in every language Fluvy speaks,
 with `unavailable`, `unknown` and missing entities drawn on purpose.
 
 Two tools decide whether a change is done:
@@ -75,7 +75,7 @@ and `ruff format custom_components`.
 ## Pull requests
 
 The template lists what to check: `pnpm check` green, a playground screenshot for a visual change, the measurer
-at 0, documentation updated, both languages, nothing from a private instance, and the sign-off below.
+at 0, documentation updated, every language (`pnpm i18n` clean), nothing from a private instance, and the sign-off below.
 
 ## Licensing of contributions
 

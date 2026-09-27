@@ -22,5 +22,5 @@ range picker offers the usual windows and a custom one; the search and the sourc
 
 - They use Home Assistant's own APIs (`logbook/event_stream`, `history/*`) and remember their pickers where Home
   Assistant remembers its own, so switching back and forth loses nothing.
-- Spanish and English, Home Assistant's own state words.
+- Every language Fluvy speaks (see [translating](translating.md)), Home Assistant's own state words.
 - On a phone the filters fold into a sheet; on a wall tablet the page is one scroll, never a scroll in a scroll.

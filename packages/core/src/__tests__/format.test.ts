@@ -109,12 +109,11 @@ describe('stateText', () => {
     expect(stateText(es, resolveEntity(es, 'sensor.ghost'))).toBe('Entidad no encontrada');
     const en = make('en', 'language', 'unknown');
     expect(stateText(en, resolveEntity(en, 'sensor.x'))).toBe('Unknown');
-    expect(
-      stateText(
-        make('de', 'language', 'unavailable'),
-        resolveEntity(make('de', 'language', 'unavailable'), 'sensor.x'),
-      ),
-    ).toBe('Unavailable');
+    // a language Fluvy speaks says it its own way; one it does not falls back to English
+    const de = make('de', 'language', 'unavailable');
+    expect(stateText(de, resolveEntity(de, 'sensor.x'))).toBe('Offline');
+    const sv = make('sv', 'language', 'unavailable');
+    expect(stateText(sv, resolveEntity(sv, 'sensor.x'))).toBe('Unavailable');
   });
   it('falls back to the raw state when Home Assistant returns nothing usable', () => {
     const h = {

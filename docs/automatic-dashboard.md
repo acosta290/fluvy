@@ -28,7 +28,8 @@ between tabs, and blocks are cut into the columns so that they end on one line.
 
 ## How it reads a home
 
-- **Words**, in English and Spanish, the way people name things: a switch called *Kitchen light* is a light, one
+- **Words**, in every language Fluvy speaks (a house is named in its own language, whatever the UI's), the way people
+  name things: a switch called *Kitchen light* is a light, one
   called *Washing machine* is an appliance; a switch called *boost*, *valve*, *beep* or *timer* is a setting, not an
   appliance.
 - **Twins**: a device with a switch and an outlet of the same name shows once, with the device's power and energy
@@ -48,9 +49,11 @@ In the dashboard's raw configuration, or in the panel's *Dashboard* tab:
 | `tile_size` | `large` (default), `compact` | the tiles' size on the Lights view and the Home view |
 | `flow_style` | `ribbons` (default), `rail`, `legs` | the energy flow's drawing |
 | `hide` | a list of `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` | views left out (Home always stays) |
+| `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR` | the dashboard's words in that language, whoever opens it |
 
-The dashboard's words follow the language of whoever opens it (Home Assistant's, or the one chosen in the panel's
-*Preferences*).
+Without `language`, the dashboard's words follow the language of whoever opens it (Home Assistant's, or the one
+chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or
+*cocina* is a light's room in any of them.
 
 ## Limits
 

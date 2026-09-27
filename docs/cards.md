@@ -5,7 +5,7 @@ the reference for a card's options: it shows what the card does by default, and 
 written into the configuration. In YAML, a card is `type: custom:<tag>` plus the entity or entities it draws and any
 option the editor offers; the *Editor options* column below names them.
 
-Every card holds from 300 to 520 px wide, in light and dark, in English and Spanish; `unavailable`, `unknown` and a
+Every card holds from 300 to 520 px wide, in light and dark, in every language Fluvy speaks; `unavailable`, `unknown` and a
 missing entity are drawn on purpose (a quiet surface, inert controls, a dash for the value), never as an error. Names
 may be shortened with an ellipsis; values never are. A card that takes an action changes on screen first and calls
 the service after; sliders and dials send on release, not per frame.

@@ -11,7 +11,7 @@ packages/tokens/           @fluvy/tokens   palettes (OKLCH → hex), scales, con
                                            src/runtime.ts = the palette engine as the browser runs it
 packages/theme/            @fluvy/theme    the theme file, emitted from the tokens and validated offline
 packages/ui/               @fluvy/ui       glyphs, templates, <fluvy-ruler>, <fluvy-dial>, motion; styles/ = the approved CSS
-packages/core/             @fluvy/core     Home Assistant types, entity resolution, formatting, actions, i18n (en/es), history,
+packages/core/             @fluvy/core     Home Assistant types, entity resolution, formatting, actions, i18n (the catalogues), history,
                                            the card base class; src/shell/ = the sheets for Home Assistant's own pages;
                                            src/settings/ = Fluvy's settings; src/look/ = the look engine
 packages/cards/            @fluvy/cards    one folder per card, registered in src/index.ts (see packages/cards/README.md);

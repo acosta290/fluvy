@@ -6,7 +6,7 @@
 
 - [ ] `pnpm check` passes (formatting, lint, types, tests, the release invariants)
 - [ ] a visual change comes with a playground screenshot, light and dark, and the measurer reports 0 violations
-- [ ] strings exist in English and Spanish
+- [ ] new strings exist in every catalogue (`pnpm i18n` is clean)
 - [ ] documentation and `CHANGELOG.md` (*Unreleased*) are updated where a user would notice the change
 - [ ] nothing from a private Home Assistant instance is included (ids, names, screenshots of a real home)
 - [ ] every commit is signed off (`git commit -s`): I agree to the licensing terms in `CONTRIBUTING.md`
