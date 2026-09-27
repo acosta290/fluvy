@@ -43,7 +43,8 @@ describe('theme yaml', () => {
   });
 
   it('is the reviewed file (a change to any value shows up here as a diff to accept with -u)', () => {
-    expect(yaml).toMatchSnapshot();
+    // the header names the release; a release is not a change to the theme
+    expect(yaml.replace(/^# Fluvy v[^ ]+/, '# Fluvy v<version>')).toMatchSnapshot();
   });
 
   it('writes only names Home Assistant has (vendored from the frontend: scripts/ha-vars.mjs)', () => {
