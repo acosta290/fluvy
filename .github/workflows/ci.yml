@@ -67,6 +67,7 @@ jobs:
           FLUVY_NO_HMR=1 pnpm --filter @fluvy/playground dev > playground.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://127.0.0.1:5183/ > /dev/null && break; sleep 1; done
       - run: node tools/render/interactions.mjs
+      - run: node tools/render/interactions-swipe.mjs
       - name: Measure the sheets
         run: |
           mkdir -p out

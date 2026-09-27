@@ -8,6 +8,7 @@ import { refreshLegacyIcons } from './icons.js';
 import { patchMarqueeOverflow } from './marquee.js';
 import { patchNavigationGlyphs } from './navigation.js';
 import { patchSvgIcons, redrawSvgIcons } from './svg-icons.js';
+import { patchViewSwipe, swipeWanted } from './swipe.js';
 import { configGlyph } from './css/settings.js';
 import { SHEETS, type ShellSheet } from './registry.js';
 
@@ -191,6 +192,15 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     // the icons drawn before the patch (the page's first render) take ours too
     if (done && active && icons) redrawSvgIcons(env.document, true);
   });
+  // the page's dashboards only: a panel frame (HACS) shows no dashboard
+  if (options.frames) {
+    patches['viewSwipe'] = null;
+    void patchViewSwipe(env.customElements, env.document, {
+      enabled: (host) => active === true && swipeWanted(env.document, host),
+    }).then((done) => {
+      patches['viewSwipe'] = done;
+    });
+  }
   const frames = options.frames
     ? new PanelFrames(env, (frameEnv) => {
         const shell = createShell(frameEnv);

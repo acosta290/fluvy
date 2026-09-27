@@ -15,7 +15,7 @@ import {
 import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import { attachToElementClass, browserEnv, onPanelFrame } from '../shell/index.js';
 import { LookEngine } from './engine.js';
-import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
+import { ACTIVITY_CARD, NO_SWIPE, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
 import { markPanels, patchLovelacePanels } from './panels.js';
 import { safeStorage } from '../storage.js';
 
@@ -115,6 +115,8 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
+    // swiping between a dashboard's views, unless this person turned it off (the shell reads the mark at every touch)
+    env.document.documentElement.toggleAttribute(NO_SWIPE, !now.swipe);
     // what is not a card (a page of ours) follows the preferences too
     window.dispatchEvent(new Event(PREFERENCES_EVENT));
   };

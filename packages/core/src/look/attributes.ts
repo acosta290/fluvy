@@ -11,3 +11,6 @@ export const ORIGINAL_HISTORY = 'fluvy-original-history';
 
 /** On `<html>`: this person wants the Activity page's timeline on a card (fluvy's preferences). */
 export const ACTIVITY_CARD = 'fluvy-activity-card';
+
+/** On `<html>`: this person turned off swiping between a dashboard's views (fluvy's preferences). */
+export const NO_SWIPE = 'fluvy-no-swipe';

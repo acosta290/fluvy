@@ -22,6 +22,12 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 It never changes what a page does, never intercepts a click, and never persists anything. Every sheet is attached
 while the shell is on and removed when it is off or when the page's theme is not Fluvy.
 
+The one gesture it adds is **swiping between a dashboard's views** on a phone: the view follows the finger, and
+letting go past a third of the width (or a flick) opens the next tab. A drag that begins on a ruler, a dial, a
+slider, a scrolling row of chips or a map is theirs, a drag that leans vertical stays a scroll, and the screen's
+edges are left to the system's back gesture. It is each person's to turn off in the *Preferences* tab of the
+settings panel, and it only lives on the dashboards that wear the look.
+
 ## After a Home Assistant release
 
 A Home Assistant release can rename or rebuild a page the shell restyles. Nothing breaks: a sheet that no longer

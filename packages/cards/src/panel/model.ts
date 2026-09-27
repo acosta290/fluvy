@@ -31,7 +31,7 @@ export type HouseEdit = Partial<
 >;
 /** A person's preferences, their own to save. */
 export type PersonalEdit = Partial<
-  Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'activityCard'>
+  Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'activityCard' | 'swipe'>
 >;
 /** Options of the automatic dashboard's strategy; `undefined` takes a key away (back to its default). */
 export type StrategyEdit = Readonly<Record<string, unknown>>;
@@ -300,5 +300,6 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(`${t('pref.haptics')} · ${onOff(personal.haptics)}`);
   if (personal.activityCard !== undefined)
     lines.push(`${t('pref.activity_card')} · ${onOff(personal.activityCard)}`);
+  if (personal.swipe !== undefined) lines.push(`${t('pref.swipe')} · ${onOff(personal.swipe)}`);
   return lines;
 }

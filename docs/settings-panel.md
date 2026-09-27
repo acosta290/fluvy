@@ -8,14 +8,19 @@ palette) and Preferences.
 | **Appearance** | palette (fifteen presets or a custom accent), shape (soft, round, crisp), button style; a live preview on real cards | the house; a person may keep their own palette and shape |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
 | **Dashboard** | create or recreate the automatic dashboard; its options | the house |
-| **Preferences** | language of the cards, motion, haptics | each person |
+| **Preferences** | language of the cards, motion, haptics, swiping between views | each person |
 | **About** | version, the shell's health, export and import of the settings | — |
 
 ## House and person
 
 The **house settings** are what an administrator sets: everyone sees them. The **personal settings** are each person's,
-on every device they sign in on: a palette and a shape of their own, or the house's; language; motion; haptics. The
+on every device they sign in on: a palette and a shape of their own, or the house's; language; motion; haptics; swiping between a dashboard's views. The
 look a person sees is the house's, with their own choices on top.
+
+The language chosen here reaches every word Fluvy draws — the cards, the pages, this panel — and, with it, their dates
+and numbers. Home Assistant's own words (entity states, its pages, its dialogs) keep the language of the profile.
+*Automatic* takes Home Assistant's language, and English where Fluvy does not speak it yet (see
+[translating](translating.md)).
 
 ## Where they are stored
 

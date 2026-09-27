@@ -5,6 +5,16 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Swipe between a dashboard's views on a phone: the view follows the finger, and letting go past a third of the
+  width (or a flick) opens the next tab, which slides in from the finger's side. A drag that begins on a ruler, a
+  dial, a slider, a scrolling row of chips or a map is theirs; a drag that leans vertical stays a scroll; the
+  screen's edges are left to the system. Each person's to turn off in Preferences → *Swipe between views*.
+- German, Dutch, French, Italian and Brazilian Portuguese, for every card, page and the settings panel, chosen in
+  Preferences or taken from Home Assistant's language. One catalogue per language, fetched only when spoken; the
+  automatic dashboard reads a house named in any of them.
+
 ## [1.1.2] — 2026-09-27
 
 ### Added
