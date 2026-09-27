@@ -191,6 +191,51 @@ describe('the settings panel', () => {
     expect(row('Fluvy auto')?.querySelector('.fv-switch')?.getAttribute('aria-disabled')).toBe(
       'true',
     );
+    panel.tab = 'dashboard';
+    await panel.updateComplete;
+    // the sidebar switch is an administrator's
+    expect(row('Show in the sidebar')).toBeUndefined();
+    panel.remove();
+  });
+
+  it('lists the automatic dashboard in the sidebar, or takes its entry out', async () => {
+    const updates: Record<string, unknown>[] = [];
+    const { panel, row, settle } = await mount(true, {
+      callWS: async (message: { type: string; url_path?: string | null }) => {
+        if (message.type === 'lovelace/dashboards/update') {
+          updates.push(message);
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') {
+          return [
+            {
+              id: 'fluvy_auto',
+              url_path: 'fluvy-auto',
+              title: 'Fluvy auto',
+              icon: 'fluvy:sun',
+              show_in_sidebar: updates.length === 0,
+            },
+          ];
+        }
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? { strategy: { type: 'custom:fluvy-home' } }
+          : { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    const sidebar = row('Show in the sidebar')!;
+    expect(sidebar.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('true');
+    sidebar.querySelector<HTMLElement>('.fv-hit')!.click();
+    await settle();
+    await settle();
+    expect(updates).toEqual([
+      { type: 'lovelace/dashboards/update', dashboard_id: 'fluvy_auto', show_in_sidebar: false },
+    ]);
+    // the list answers again, and the row shows it
+    expect(
+      row('Show in the sidebar')?.querySelector('.fv-switch')?.getAttribute('aria-checked'),
+    ).toBe('false');
     panel.remove();
   });
 

@@ -38,6 +38,21 @@ export function createAuto(panel: FluvyPanel, ctx: PanelContext): void {
   });
 }
 
+/** Lists the automatic dashboard in Home Assistant's sidebar, or takes its entry out (the dashboard stays). */
+export function showInSidebar(panel: FluvyPanel, ctx: PanelContext, on: boolean): void {
+  const auto = panel.dashboards.find((d) => d.strategy);
+  if (!auto?.id) return;
+  const id = auto.id;
+  ctx.run(async () => {
+    await ctx.hass.callWS({
+      type: 'lovelace/dashboards/update',
+      dashboard_id: id,
+      show_in_sidebar: on,
+    });
+    await panel.loadDashboards();
+  });
+}
+
 /**
  * Everything Fluvy keeps, as a file to carry to another house: the house's settings (look, where it applies,
  * the frame, the menus' icons), this person's, and the automatic dashboard's options.

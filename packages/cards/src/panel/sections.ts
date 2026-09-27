@@ -583,6 +583,8 @@ function styleChoice(
 export interface DashboardActions {
   create(): void;
   open(urlPath: string): void;
+  /** Lists the automatic dashboard in Home Assistant's sidebar, or not. */
+  showInSidebar(on: boolean): void;
   /** The automatic dashboard is being created: the row says so and does not take a second tap. */
   readonly creating: boolean;
 }
@@ -608,6 +610,18 @@ export function dashboard(
                 trailing: 'chevron',
                 onTap: () => actions.open(auto.urlPath),
               })}
+              ${
+                ctx.admin && auto.id
+                  ? listRow({
+                      icon: 'menu',
+                      title: ctx.t('dashboard.sidebar'),
+                      sub: ctx.t('dashboard.sidebar_sub'),
+                      trailing: 'switch',
+                      on: auto.inSidebar ?? false,
+                      onToggle: (on) => actions.showInSidebar(on),
+                    })
+                  : nothing
+              }
             </div>`
           : ctx.admin
             ? html`<div class="pn-rows">

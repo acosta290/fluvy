@@ -28,6 +28,7 @@ import {
   TABS,
   unsaved,
   withEdit,
+  type DashboardEntry,
   type DashboardInfo,
   type HouseEdit,
   type PanelContext,
@@ -52,7 +53,14 @@ import { s } from './strings.js';
 
 import { panelStyles } from './styles.js';
 
-import { aboutFacts, createAuto, exportSettings, importSettings, resetHouse } from './actions.js';
+import {
+  aboutFacts,
+  createAuto,
+  exportSettings,
+  importSettings,
+  resetHouse,
+  showInSidebar,
+} from './actions.js';
 
 /** What Home Assistant hands a custom panel. */
 interface Route {
@@ -427,12 +435,28 @@ export class FluvyPanel extends LitElement {
       const own = hass.localize?.('panel.states');
       return own && own !== 'panel.states' ? own : this.t('scope.overview');
     };
+    // the dashboards collection (an administrator's list): each one's id and whether the sidebar lists it
+    const listed = hass.user?.is_admin
+      ? await hass
+          .callWS<readonly DashboardEntry[]>({ type: 'lovelace/dashboards/list' })
+          .catch(() => [])
+      : [];
+    const entries = new Map(
+      (Array.isArray(listed) ? listed : []).map((entry) => [entry.url_path, entry]),
+    );
     this.dashboards = await Promise.all(
       panels.map(async (panel): Promise<DashboardInfo> => {
+        const entry = entries.get(panel.url_path);
+        // a dashboard kept out of the sidebar has no panel title or icon; the collection still knows them
+        const icon = panel.icon ?? entry?.icon ?? undefined;
         const info: DashboardInfo = {
           urlPath: panel.url_path,
-          title: panel.title || (panel.url_path === 'lovelace' ? overview() : panel.url_path),
-          ...(panel.icon ? { icon: panel.icon } : {}),
+          title:
+            panel.title ||
+            entry?.title ||
+            (panel.url_path === 'lovelace' ? overview() : panel.url_path),
+          ...(icon ? { icon } : {}),
+          ...(entry ? { id: entry.id, inSidebar: entry.show_in_sidebar } : {}),
         };
         const config = await hass
           .callWS<{ strategy?: Record<string, unknown> }>({
@@ -662,6 +686,7 @@ export class FluvyPanel extends LitElement {
           {
             create: () => createAuto(this, ctx),
             open: (urlPath) => navigate(`/${urlPath}`),
+            showInSidebar: (on) => showInSidebar(this, ctx, on),
             creating: this.creating,
           },
         );

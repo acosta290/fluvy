@@ -81,6 +81,18 @@ export interface DashboardInfo {
   readonly icon?: string;
   /** The automatic dashboard's strategy options, when it is one. */
   readonly strategy?: Record<string, unknown>;
+  /** Its id in the dashboards collection and whether the sidebar lists it: what an administrator's list says. */
+  readonly id?: string;
+  readonly inSidebar?: boolean;
+}
+
+/** A dashboard as the dashboards collection lists it (`lovelace/dashboards/list`, an administrator's call). */
+export interface DashboardEntry {
+  readonly id: string;
+  readonly url_path: string;
+  readonly title: string;
+  readonly icon?: string | null;
+  readonly show_in_sidebar: boolean;
 }
 
 /** The presets by line, in presentation order: the launch palette (the one a reset returns to) leads its line. */
