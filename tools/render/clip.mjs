@@ -27,6 +27,7 @@ import {
   relativeDrag,
   rulerGeometry,
   scrubPlot,
+  swipe,
 } from './lib/gestures.mjs';
 import { touchPointer } from './lib/pointer.mjs';
 
@@ -170,6 +171,30 @@ const CLIPS = {
       await pointer.wait(900);
     },
   },
+  swipe: {
+    query: `swipe=1&lang=en&at=${AT}`,
+    viewport: { width: 480, height: 800 },
+    target: '[data-frame="swipe/Phone"]',
+    pad: 16,
+    touch: true,
+    async run(page, pointer) {
+      const root = await page.locator('.pg-phone__root').boundingBox();
+      // the finger lands where it would: on the cards, and stays in the picture
+      const y = root.y + root.height * 0.55;
+      const right = { x: root.x + root.width * 0.64, y };
+      const left = { x: root.x + root.width * 0.36, y };
+      await pointer.wait(400);
+      // the next view, the previous one back, then a drag too short to turn the page
+      await swipe(page, right, { x: right.x - 220, y }, { steps: 16 });
+      await pointer.wait(1100);
+      await swipe(page, left, { x: left.x + 220, y }, { steps: 16 });
+      await pointer.wait(1000);
+      await swipe(page, right, { x: right.x - 56, y }, { steps: 8 });
+      await pointer.wait(700);
+      await pointer.hide();
+      await pointer.wait(500);
+    },
+  },
 };
 
 const wanted = args.clip ? args.clip.split(',') : Object.keys(CLIPS);
@@ -190,6 +215,9 @@ for (const name of wanted) {
     deviceScaleFactor: 1,
     colorScheme: 'light',
     reducedMotion: 'no-preference',
+    // a phone: a touch screen, for the gestures a finger makes
+    hasTouch: clip.touch === true,
+    isMobile: clip.touch === true,
   });
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error)));

@@ -9,6 +9,7 @@
  * scroll stays a scroll; a touch at the screen's edge, a person who turned the gesture off and a right-to-left page
  * each do as they should; with reduced motion the page still turns; nothing is left on the view once it has settled.
  */
+import { between, swipe } from './lib/gestures.mjs';
 import { BASE, calls, reset, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -40,42 +41,12 @@ const settled = async (page) => {
   return transform(page);
 };
 
-/** A finger: down at the first point, through the others (each after `wait` ms), then up. */
-async function finger(page, points, { wait = 16, hold = 0 } = {}) {
-  const cdp = await page.context().newCDPSession(page);
-  const [first, ...rest] = points;
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ x: first.x, y: first.y }],
-  });
-  for (const point of rest) {
-    await page.waitForTimeout(wait);
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: point.x, y: point.y }],
-    });
-  }
-  if (hold) await page.waitForTimeout(hold);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
-}
-
-const between = (from, to, steps) =>
-  Array.from({ length: steps }, (_, i) => ({
-    x: from.x + ((to.x - from.x) * (i + 1)) / steps,
-    y: from.y + ((to.y - from.y) * (i + 1)) / steps,
-  }));
-
 /**
- * A drag from `from` to `to`; slow (a hold before letting go) unless `flick`. Waits for what letting go starts:
- * the leaving view's slide (160 ms) and the navigation behind it.
+ * A drag from `from` to `to`; slow (a hold before letting go) unless `flick` (its moves go as fast as the protocol
+ * carries them). Waits for what letting go starts: the leaving view's slide (160 ms) and the navigation behind it.
  */
-const drag = async (page, from, to, { steps = 10, flick = false } = {}) => {
-  // a flick's moves go as fast as the protocol carries them (a few ms apart, tens of px each)
-  await finger(page, [from, ...between(from, to, steps)], {
-    wait: flick ? 0 : 24,
-    hold: flick ? 0 : 200,
-  });
+const drag = async (page, from, to, options = {}) => {
+  await swipe(page, from, to, options);
   await page.waitForTimeout(400);
 };
 
@@ -105,11 +76,18 @@ const middle = async (page, selector) => {
 
   // where a finger really lands: on a tile, whose tap must not fire on the way
   await reset(page);
-  const tile = await middle(page, '.pg-phone fluvy-tile-card[data-name="Porch"], .pg-phone fluvy-tile-card');
+  const tile = await middle(
+    page,
+    '.pg-phone fluvy-tile-card[data-name="Porch"], .pg-phone fluvy-tile-card',
+  );
   await drag(page, tile, { x: tile.x - 200, y: tile.y });
   const fired = await calls(page);
   check('a drag that starts on a tile turns the page', (await view(page)) === 'lights');
-  check('and never taps the tile', fired.length === 0, fired.map((c) => c.s).join(', ') || 'no calls');
+  check(
+    'and never taps the tile',
+    fired.length === 0,
+    fired.map((c) => c.s).join(', ') || 'no calls',
+  );
   await settled(page);
   await drag(page, at, { x: at.x + 200, y: at.y });
   await settled(page);
