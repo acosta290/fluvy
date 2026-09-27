@@ -17,11 +17,7 @@ import { t } from './strings.js';
  * the page updates it in place.
  */
 const base = import.meta.env.BASE_URL;
-let state: DemoState = parseState(
-  new URLSearchParams(location.search),
-  matchMedia('(prefers-color-scheme: dark)').matches,
-  window.innerWidth,
-);
+let state: DemoState = parseState(new URLSearchParams(location.search), window.innerWidth);
 pinClock(state.at);
 document.documentElement.lang = state.language;
 

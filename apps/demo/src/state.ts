@@ -51,7 +51,8 @@ export interface DemoState {
 
 /** The evening every sheet shows: Thursday 17 September 2026, 21:47. */
 export const AT = '2026-09-17T21:47:12';
-export const DEFAULT_LOOK: Look = { palette: 'linen', shape: 'soft', pills: 'round' };
+/** What the demo opens on: the light mode and Blaze, the electric line's warm palette. */
+export const DEFAULT_LOOK: Look = { palette: 'blaze', shape: 'soft', pills: 'round' };
 export const DEFAULT_SHEET = 'home';
 export const DEFAULT_VIEW: DemoView = { kind: 'sheet', name: DEFAULT_SHEET };
 
@@ -98,12 +99,8 @@ export function deviceFor(viewportWidth: number): DeviceName {
   return viewportWidth >= 400 ? 'phone-l' : 'phone';
 }
 
-/** The state a URL asks for; what it leaves unsaid is the visitor's own (their mode, their screen). */
-export function parseState(
-  params: URLSearchParams,
-  prefersDark: boolean,
-  viewportWidth = 0,
-): DemoState {
+/** The state a URL asks for; what it leaves unsaid is the default (the light mode) or the visitor's screen. */
+export function parseState(params: URLSearchParams, viewportWidth = 0): DemoState {
   const mode = params.get('mode');
   const width = Number(params.get('width'));
   const device = params.get('device');
@@ -111,7 +108,7 @@ export function parseState(
   const path = params.get('path');
   return {
     view: viewOf(params),
-    mode: mode === 'dark' || (mode !== 'light' && prefersDark) ? 'dark' : 'light',
+    mode: mode === 'dark' ? 'dark' : 'light',
     device: isDevice(device) ? device : deviceFor(viewportWidth),
     ...(Number.isInteger(width) && width >= 280 && width <= 1200 ? { frameWidth: width } : {}),
     language: params.get('lang') === 'es' ? 'es' : 'en',

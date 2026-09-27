@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { AT, columns, deviceFor, frameWidth, parseState, serialize } from './state.js';
 
-const parse = (query: string, prefersDark = false) =>
-  parseState(new URLSearchParams(query), prefersDark);
+const parse = (query: string) => parseState(new URLSearchParams(query));
 
 describe('the demo state', () => {
-  it('starts on the home family, a phone, English and Linen, in the visitor’s mode', () => {
+  it('starts on the home family, a phone, English, the light mode and Blaze', () => {
     expect(parse('')).toEqual({
       view: { kind: 'sheet', name: 'home' },
       mode: 'light',
       device: 'phone',
       language: 'en',
-      look: { palette: 'linen', shape: 'soft', pills: 'round' },
+      look: { palette: 'blaze', shape: 'soft', pills: 'round' },
       at: AT,
     });
-    expect(parse('', true).mode).toBe('dark');
+    expect(parse('mode=dark').mode).toBe('dark');
     // the link pins the mode and the device: a shared link opens as it was seen
     expect(serialize(parse('')).toString()).toBe('mode=light&device=phone');
-    expect(parse('mode=light', true).mode).toBe('light');
+    expect(serialize(parse('palette=linen')).toString()).toBe(
+      'mode=light&device=phone&palette=linen',
+    );
   });
 
   it('shows the device the visitor is on, until the link says', () => {
@@ -25,8 +26,8 @@ describe('the demo state', () => {
     expect(deviceFor(1024)).toBe('tablet');
     expect(deviceFor(412)).toBe('phone-l');
     expect(deviceFor(360)).toBe('phone');
-    expect(parseState(new URLSearchParams(''), false, 1440).device).toBe('desktop');
-    expect(parseState(new URLSearchParams('device=phone'), false, 1440).device).toBe('phone');
+    expect(parseState(new URLSearchParams(''), 1440).device).toBe('desktop');
+    expect(parseState(new URLSearchParams('device=phone'), 1440).device).toBe('phone');
   });
 
   it('round-trips every choice through the playground’s parameters', () => {
@@ -55,10 +56,10 @@ describe('the demo state', () => {
     expect(state.view).toEqual({ kind: 'panel', tab: 'appearance' });
     expect(state.device).toBe('phone');
     expect(state.frameWidth).toBeUndefined();
-    expect(state.look).toEqual({ palette: 'linen', shape: 'soft', pills: 'round' });
+    expect(state.look).toEqual({ palette: 'blaze', shape: 'soft', pills: 'round' });
     expect(state.language).toBe('en');
     expect(state.at).toBe(AT);
-    expect(parse('accent=notacolour').look.palette).toBe('linen');
+    expect(parse('accent=notacolour').look.palette).toBe('blaze');
   });
 
   it('carries a Home Assistant path from Pages’ fallback', () => {

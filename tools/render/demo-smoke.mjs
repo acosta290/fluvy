@@ -34,11 +34,6 @@ const accent = (page) =>
     getComputedStyle(document.documentElement).getPropertyValue('--fluvy-accent').trim(),
   );
 const frames = (page) => page.locator('#stage [data-frame]').count();
-const frameWidth = (page) =>
-  page
-    .locator('#stage [data-frame]')
-    .first()
-    .evaluate((el) => el.getBoundingClientRect().width);
 
 {
   const page = await open('');
@@ -59,14 +54,15 @@ const frameWidth = (page) =>
   );
   check('…and the URL says so', page.url().includes('palette=volt'), page.url());
   // the landing opens on the visitor's own device (a desktop here): a chip changes the columns
-  const desktop = await frameWidth(page);
+  const lanes = () => page.locator('#stage .demo-lane').count();
+  const desktop = await lanes();
   await page.locator('fluvy-demo-shell .fv-chip', { hasText: 'Tablet' }).click();
   await page.waitForTimeout(300);
-  const tablet = await frameWidth(page);
+  const tablet = await lanes();
   check(
     'a device changes the columns',
-    desktop === 448 && tablet === 472,
-    `${desktop} → ${tablet}`,
+    desktop === 3 && tablet === 2,
+    `${desktop} → ${tablet} lanes`,
   );
   await page.locator('fluvy-demo-shell .fv-chip', { hasText: 'Dark' }).click();
   await page.waitForTimeout(300);

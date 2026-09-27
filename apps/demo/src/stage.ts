@@ -81,8 +81,16 @@ export function createStage(root: HTMLElement, look: MemoryLook): Stage {
       },
     });
     unsubscribe = mock.subscribe(push);
-    root.style.setProperty('--demo-columns', String(columns(state)));
     root.style.setProperty('--demo-frame', `${frameWidth(state)}px`);
+    // as many columns as the device has; each frame goes to the shortest one, so nothing is left hanging
+    const lanes = Array.from({ length: columns(state) }, () => {
+      const lane = document.createElement('div');
+      lane.className = 'demo-lane';
+      root.append(lane);
+      return lane;
+    });
+    const shortest = (): HTMLElement =>
+      lanes.reduce((low, lane) => (lane.offsetHeight < low.offsetHeight ? lane : low));
     const environment = withEnvironment(mock.hass(), state);
     for (const [name, sheet] of selected)
       for (const frame of sheet.frames) {
@@ -91,7 +99,6 @@ export function createStage(root: HTMLElement, look: MemoryLook): Stage {
         const el = document.createElement('section');
         el.className = 'pg-frame';
         el.dataset['frame'] = `${name}/${frame.title}`;
-        if (frame.width) el.style.width = `${frame.width}px`;
         for (const { cols, ...config } of frame.cards) {
           const tag = String(config.type).replace(/^custom:/, '');
           const card = document.createElement(tag) as LovelaceCard;
@@ -105,7 +112,7 @@ export function createStage(root: HTMLElement, look: MemoryLook): Stage {
           cards.push(card);
           el.append(card);
         }
-        root.append(el);
+        shortest().append(el);
       }
   };
 
@@ -133,13 +140,18 @@ export function createStage(root: HTMLElement, look: MemoryLook): Stage {
       else showPage(state);
     },
     update(state) {
-      if (!shown || !sameView(shown.view, state.view) || state.view.kind !== 'sheet') {
+      // a page, another view or another device: from nothing (the lanes are filled by height)
+      if (
+        !shown ||
+        !sameView(shown.view, state.view) ||
+        state.view.kind !== 'sheet' ||
+        columns(shown) !== columns(state) ||
+        frameWidth(shown) !== frameWidth(state)
+      ) {
         this.show(state);
         return;
       }
       shown = state;
-      root.style.setProperty('--demo-columns', String(columns(state)));
-      root.style.setProperty('--demo-frame', `${frameWidth(state)}px`);
       if (mock) push(mock.hass());
     },
     nameOf: (entityId) => mock?.hass().states[entityId]?.attributes.friendly_name ?? entityId,

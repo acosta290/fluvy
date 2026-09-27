@@ -26,19 +26,22 @@ body {
   font-family: Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-/* the frames: as many columns as the device has, each a dashboard column wide (never wider than the screen), centred */
+/* the frames in lanes: one per column the device has, each a dashboard column wide (the frame's 16 px sides
+   around it, never wider than the screen), filled by height, centred */
 .demo-stage {
-  display: grid;
-  grid-template-columns: repeat(
-    var(--demo-columns, 1),
-    min(var(--demo-frame, 360px), calc(100vw - 32px))
-  );
+  display: flex;
   justify-content: center;
-  align-items: start;
+  align-items: flex-start;
   gap: 24px;
   padding: 24px 16px 64px;
 }
-.demo-stage > .pg-frame {
+.demo-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: min(calc(var(--demo-frame, 360px) + 32px), calc(100vw - 32px));
+}
+.demo-lane > .pg-frame {
   width: auto;
 }
 /* a page (the settings panel, Activity, History) takes the whole width, as Home Assistant gives it */
