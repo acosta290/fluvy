@@ -10,7 +10,7 @@ panel's *Scope* tab offers the theme too.
 
 ## 2. Pick the look
 
-Open **Fluvy** in the sidebar → **Appearance**. Sixteen palettes: a pastel line (Linen is the default) and an electric
+Open **Fluvy** in the sidebar → **Appearance**. Fifteen palettes: a pastel line (Linen is the default) and an electric
 one, or a custom accent on a warm, neutral or cool base. Three shapes (soft, round, crisp). What an administrator
 chooses here is the house's look; anyone can keep a palette of their own in the same tab.
 

@@ -11,9 +11,6 @@ caused it — a person, an automation, a script, a service call — the way Home
 narrows the day; the sources filter keeps only the areas, devices or entities you care about; the date picker and the
 ‹ › arrows move by day. New entries arrive live. **Export** writes the shown day as CSV.
 
-The same view is a card, **Fluvy · Activity**, for a dashboard: a fixed height, the same filters, the same live
-entries.
-
 ## History
 
 The history page as a set of charts and state lines: sensors as curves, on/off things as coloured stretches, grouped

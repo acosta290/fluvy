@@ -13,10 +13,10 @@ file is what paints the first frame and what Home Assistant's own dialogs and pa
 
 ## Palettes
 
-Sixteen presets in two lines, each with a light and a dark mode that are derived, not inverted:
+Fifteen presets in two lines, each with a light and a dark mode that are derived, not inverted:
 
 - **pastel** — Linen (the default), Sand, Sage, Mist, Clay, Slate, Harbour, Dusk, Ember (designed dark first);
-- **electric** — Blaze, Volt, Cobalt, Iris, Flamingo, Mint, Noir (dark first).
+- **electric** — Blaze, Flamingo, Iris, Volt, Mint, Noir (dark first).
 
 Or a **custom** accent: a base (warm, neutral or cool), an accent colour, an optional highlight and a fill (tint or
 solid). Every palette — preset or custom — goes through the same generator and the same contrast gates: text at

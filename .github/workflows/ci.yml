@@ -70,7 +70,7 @@ jobs:
       - name: Measure the sheets
         run: |
           mkdir -p out
-          for sheet in home devices energy climate inputs; do
+          for sheet in home devices-motion devices-security energy climate inputs; do
             node tools/render/measure.mjs --page "http://127.0.0.1:5183/?sheet=$sheet" --frame '[data-frame]' \
               --width 1400 --out "out/$sheet.json" --md "out/$sheet.md"
           done

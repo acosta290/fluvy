@@ -5,7 +5,7 @@ palette) and Preferences.
 
 | Tab | What it holds | Whose |
 | --- | --- | --- |
-| **Appearance** | palette (sixteen presets or a custom accent), shape (soft, round, crisp), button style; a live preview on real cards | the house; a person may keep their own palette and shape |
+| **Appearance** | palette (fifteen presets or a custom accent), shape (soft, round, crisp), button style; a live preview on real cards | the house; a person may keep their own palette and shape |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
 | **Dashboard** | create or recreate the automatic dashboard; its options | the house |
 | **Preferences** | language of the cards, motion, haptics | each person |
