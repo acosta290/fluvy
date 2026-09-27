@@ -5,6 +5,15 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The demo opens in the light mode on Blaze, and lays its frames out in lanes filled by height: nothing overlaps,
+  nothing is left hanging.
+
+### Fixed
+
+- Settings: the first card sits 16 px under the toolbar on a desktop too (it touched it).
+
 ## [1.1.0] — 2026-09-27
 
 ### Added

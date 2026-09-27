@@ -64,15 +64,16 @@ export const configSectionCss = `.header { font-size: 20px; line-height: 24px; f
 
 /**
  * The Settings home: the repairs / updates heads as a card head (16/600, not 16/400); one 16 rhythm between all
- * its cards (HA put 16 after the alerts, 24 between the others); on the phone 20-radius cards inset 16, like
- * every other Settings page, and the first one 16 under the toolbar (HA's −42 was sized for its square
- * full-bleed cards and slid ours 2 px under the bar).
+ * its cards (HA put 16 after the alerts, 24 before and between the others); the first card 16 under the toolbar
+ * at every width (HA's −32 / −42 section margins were sized for its own spacing and put ours 8 px under the bar
+ * on a desktop, 2 px on a phone); on the phone 20-radius cards inset 16, like every other Settings page.
  */
 export const configDashboardCss = `.dashboard-alert-title { font-weight: 600; letter-spacing: -0.006em; }
+.dashboard-alerts { margin-top: 16px; }
+ha-config-section { margin-top: -16px; }
 ha-config-section > ha-card { margin-top: 16px; }
 @media all and (max-width: 600px) {
   ha-card { border-width: 1px; border-radius: var(--ha-card-border-radius); margin-inline: 16px; }
-  ha-config-section { margin-top: -16px; }
 }`;
 
 /** Material list rows (integration entries, network, Z-Wave pages): the label 500 and the supporting line 13/500, as our rows' two lines (HA leaves both at 400). */
