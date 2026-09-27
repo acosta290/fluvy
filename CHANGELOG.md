@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-27
+
 ### Added
 
 - Swipe between a dashboard's views on a phone: the view follows the finger, and letting go past a third of the
