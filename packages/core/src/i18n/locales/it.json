@@ -401,7 +401,14 @@
     "show_volume": "Mostra il volume",
     "favorites": "Preferiti",
     "position": "Posizione",
-    "tilt": "Inclinazione"
+    "tilt": "Inclinazione",
+    "show_rows": "Mostra le righe",
+    "show_zone": "Mostra la zona",
+    "show_time": "Mostra l’ora",
+    "show_weather": "Mostra il meteo",
+    "show_date": "Mostra la data",
+    "show_avatar": "Mostra l’avatar",
+    "action": "Azione"
   },
   "strategy": {
     "home": "Casa",
@@ -945,6 +952,9 @@
     "auto": "Automatico",
     "full": "Completa",
     "compact": "Compatta",
+    "bar": "Barra",
+    "plain": "Semplice",
+    "row": "Riga",
     "mini": "Mini",
     "large": "Grande",
     "hero": "In evidenza",

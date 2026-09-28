@@ -3,6 +3,7 @@ import {
   stateText,
   strings,
   valueParts,
+  type ActionConfig,
   type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceConfigForm,
@@ -18,16 +19,28 @@ import {
   type TemplateResult,
 } from 'lit';
 import { contentWidth } from '../hello/fit.js';
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
-import { entityField, formLabels, numberField, textField } from '../shared/form.js';
+import {
+  accentField,
+  actionField,
+  entitiesField,
+  entityField,
+  fieldRow,
+  formLabels,
+  numberField,
+  selectField,
+  textField,
+} from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 
 const s = strings('readouts');
 
 export interface ReadoutConfig {
   entity: string;
   name?: string;
+  tap_action?: ActionConfig;
 }
 
 export interface ReadoutsCardConfig extends FluvyCardConfig {
@@ -35,6 +48,8 @@ export interface ReadoutsCardConfig extends FluvyCardConfig {
   rows?: ReadonlyArray<string | ReadoutConfig>;
   /** Window the trend is read from. Default 6 h. */
   hours?: number;
+  /** `grid` (default): two columns where four readouts are. `row`: as many across as fit. */
+  variant?: 'grid' | 'row';
 }
 
 /** What the recorder said about the window: the mean of its first quarter, and how far the value travelled. */
@@ -43,6 +58,7 @@ interface Baseline {
   readonly range: number;
 }
 
+const DOMAINS: readonly string[] = ['sensor', 'number', 'input_number', 'counter'];
 const MAX = 4;
 const GAP = 16;
 /** Narrower than this a column cannot hold an 11/600 uppercase label ("TEMPERATURE" is 90 px): the strip drops a column instead of clipping one. */
@@ -161,29 +177,29 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
     new FontsSettled(this);
   }
 
+  /** A strip of readouts has no entity of its own; its colour is its figures' accent. */
+  static override base: readonly BaseKey[] = ['entities', 'color'];
+  static override keys = configKeys<ReadoutsCardConfig>()(['rows', 'hours', 'variant']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'rows',
       alias: 'entities',
       title: 'editor.rows',
-      domains: ['sensor', 'number', 'input_number', 'counter'],
-      schema: [entityField(['sensor', 'number', 'input_number', 'counter']), textField('name')],
+      domains: DOMAINS,
+      keys: ['entity', 'name', 'tap_action'],
+      schema: [entityField(DOMAINS), textField('name'), actionField()],
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override defaults: EditorDefaults = () => ({ hours: 6 });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
-        {
-          name: 'entities',
-          required: true,
-          selector: {
-            entity: { multiple: true, domain: ['sensor', 'number', 'input_number', 'counter'] },
-          },
-        },
-        numberField('hours', 1, 48),
+        entitiesField('entities', DOMAINS, true),
+        fieldRow(numberField('hours', 1, 48), selectField('variant', ['grid', 'row'])),
+        accentField(),
       ],
-      ...formLabels({ entities: 'editor.entities', hours: 'editor.hours' }),
+      ...formLabels({}),
     };
   }
 
@@ -300,7 +316,10 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
   protected renderCard(): TemplateResult {
     const items = this.items();
     const fit = Math.max(1, Math.floor((this.contentWidth + GAP) / (MIN_CELL + GAP)));
-    const columns = Math.min(items.length === 4 ? 2 : items.length, fit);
+    const columns = Math.min(
+      items.length === 4 && this.config?.variant !== 'row' ? 2 : items.length,
+      fit,
+    );
     // three readouts in two columns: the third is centred under the pair, not left under one of them
     const orphan = columns > 1 && items.length % columns === 1 ? items[items.length - 1] : null;
 
@@ -318,7 +337,7 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
           view.status === 'ok'
             ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
             : stateText(this.hass, view);
-        const open = (): void => this.tap(item.entity, { action: 'more-info' });
+        const open = (): void => this.tap(item.entity, item.tap_action);
         const key = (event: KeyboardEvent): void => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();

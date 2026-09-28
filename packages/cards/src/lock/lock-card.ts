@@ -1,5 +1,6 @@
 import {
   haptic,
+  isUsable,
   stateText,
   strings,
   type EntityView,
@@ -36,14 +37,30 @@ import '../alarm/keypad.js';
 import type { FluvyKeypad } from '../alarm/keypad.js';
 import { Card } from '../shared/base.js';
 
-import { entitiesField, entityField, formLabels, nameIconFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  entitiesField,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+  textField,
+} from '../shared/form.js';
 
-import { changedLine, RowsCard, type RowsCardConfig } from './rows.js';
+import { changedLine, ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from './rows.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 
 const s = strings('lock');
 
-export type LockCardConfig = RowsCardConfig;
+export interface LockCardConfig extends RowsCardConfig {
+  subtitle?: string;
+  /** `full` (default): the slide and the rows. `compact`: the head and the slide. */
+  variant?: 'full' | 'compact';
+}
 
 type LockService = 'lock' | 'unlock' | 'open';
 
@@ -168,15 +185,23 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     this.confirming_ = false;
   }
 
+  static override keys = configKeys<LockCardConfig>()(['rows', 'show_rows', 'subtitle', 'variant']);
   static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', schema: [entityField(), nameIconFields()] },
+    { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [entityField(['lock']), nameIconFields(), entitiesField('rows')],
-      ...formLabels({
-        rows: 'editor.entities',
-      }),
+      schema: [
+        entityField(['lock']),
+        nameIconFields(),
+        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
+        boolField('show_rows'),
+        entitiesField('rows'),
+        colourFields(),
+        actionFields(),
+      ],
+      ...formLabels({}),
     };
   }
 
@@ -193,11 +218,18 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     return super.prepare(config);
   }
 
-  override getCardSize(): number {
-    return 3 + this.rowCount;
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
   }
+
+  override getCardSize(): number {
+    return 3 + (this.compact ? 0 : this.rowCount);
+  }
+  /** The full card takes a section, the compact one half of it: a slide still works in a third, like a ruler. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 4 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   override disconnectedCallback(): void {
@@ -477,7 +509,8 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
+    const compact = this.compact;
     const state = this.stateOf(view);
     const atStart = this.atStart;
     const frozen = this.frozen;
@@ -500,9 +533,11 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
           icon: this.config?.icon ?? (atStart ? 'lock' : 'unlock'),
           tone,
           title: name,
-          sub: changedLine(this.hass, view),
+          name: true,
+          sub: this.config?.subtitle ?? changedLine(this.hass, view),
           trailing: badge(shown, tone),
-          onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+          onIconTap: () => this.tap(view.id),
+          onHold: () => this.hold(view.id),
           iconLabel: name,
         })}
         <div
@@ -529,8 +564,14 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
           ${keyed(atStart, html`<span class="dv-slide__end">${glyph(atStart ? 'unlock' : 'lock')}</span>`)}
         </div>
         <span class="fv-sr" role="status" data-measure="skip">${this.confirming_ ? hint : ''}</span>
-        ${latch ? html`<div class="dv-open">${button(s(this.hass, 'open'), 'quiet', () => void this.request('open'), true)}</div>` : nothing}
-        ${this.renderRows()}
+        ${
+          latch && !compact
+            ? html`<div class="dv-open">
+                ${button(s(this.hass, 'open'), 'quiet', () => void this.request('open'), true)}
+              </div>`
+            : nothing
+        }
+        ${compact ? nothing : this.renderRows()}
       </article>
       <fluvy-keypad .hass=${this.hass}></fluvy-keypad>`;
   }

@@ -5,7 +5,8 @@
  * What it proves: the icon circle runs the tap action and a still press on the head the hold action, both
  * more-info by default and anything Home Assistant's actions are when chosen; a hold never also taps (the click
  * that follows is swallowed, on the title and on the icon alike); a tap on the title is nothing; a hold on a ruler
- * is still its fine scale; a tile's whole surface taps and holds the same way, and a tap set to none does nothing.
+ * is still its fine scale; a tile's whole surface taps and holds the same way, and a tap set to none does nothing;
+ * a card of rows holds on its head and a row runs its own tap; the greeting's avatar taps and holds as an icon.
  */
 import { holdForFine, mousePointer, rulerGeometry } from './lib/gestures.mjs';
 import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
@@ -141,6 +142,49 @@ async function hold(page, locator, ms = 650) {
   check(
     'a tile whose tap is none does nothing on tap',
     (await calls(page)).length === 0 && (await moreInfo(page)).length === 0,
+  );
+  await page.close();
+}
+
+/* ---------- a card of rows: the head holds, a row taps on its own ---------- */
+{
+  const page = await suite.sheet('actions');
+  await watchNavigation(page);
+  const card = frame(page, 'Lock').locator('fluvy-lock-card');
+  await hold(page, card.locator('.fv-card__title'));
+  await settle(page, 300);
+  check(
+    'a hold on a lock head opens the details by default',
+    (await moreInfo(page)).length === 1 && (await calls(page)).length === 0,
+  );
+  await reset(page);
+  await card.locator('.fv-row').first().click();
+  await settle(page, 300);
+  const went = await navigations(page);
+  check(
+    'a row runs its own tap action (navigate)',
+    went.length === 1 && went[0] === '/fluvy-auto/rooms' && (await moreInfo(page)).length === 0,
+    went.join(' '),
+  );
+  await page.close();
+}
+
+/* ---------- the greeting's avatar ---------- */
+{
+  const page = await suite.sheet('actions');
+  await watchNavigation(page);
+  const avatar = frame(page, 'Greeting').locator('fluvy-hello-card .hm-avatar');
+  await avatar.click();
+  await settle(page, 300);
+  let went = await navigations(page);
+  check('a tap on the avatar runs the tap action', went.length === 1 && went[0] === '/profile');
+  await hold(page, avatar);
+  await settle(page, 300);
+  went = await navigations(page);
+  check(
+    'a hold on the avatar runs the hold action, and never also taps',
+    went.length === 1 && went[0] === '/fluvy-auto/rooms',
+    went.join(' '),
   );
   await page.close();
 }

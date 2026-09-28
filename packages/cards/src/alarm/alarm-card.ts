@@ -1,5 +1,6 @@
 import {
   haptic,
+  isUsable,
   resolveEntity,
   stateText,
   strings,
@@ -8,6 +9,7 @@ import {
   type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
+  type MessageKey,
 } from '@fluvy/core';
 
 import {
@@ -18,27 +20,49 @@ import {
   options,
   sheetStyles,
   type GlyphName,
+  type ChipItem,
   type OptionItem,
   type Tone,
 } from '@fluvy/ui';
 
 import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
-import { changedLine, RowsCard, type RowsCardConfig } from '../lock/rows.js';
+import { changedLine, ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from '../lock/rows.js';
 
 import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
-import { entitiesField, entityField, formLabels, nameIconFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  editorWord,
+  entitiesField,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+  textField,
+} from '../shared/form.js';
 
 import './keypad.js';
 import type { FluvyKeypad, KeypadAction } from './keypad.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { chipRow, fitsOneRow } from '../shared/chips.js';
+import { TextRuler } from '../shared/fit.js';
 
 const s = strings('alarm');
 
-export type AlarmCardConfig = RowsCardConfig;
+export interface AlarmCardConfig extends RowsCardConfig {
+  subtitle?: string;
+  /** The modes to offer, in this order (`['disarm', 'arm_home', 'arm_away']`). Default: every mode the panel has. */
+  modes?: readonly string[];
+  /** `tiles` (default): the modes as option tiles, then the rows. `compact`: the head and the modes as chips. */
+  variant?: 'tiles' | 'compact';
+}
 
 type SKey = Parameters<typeof s>[1];
 type ModeKey =
@@ -148,6 +172,9 @@ function previewState(hass: HomeAssistant): HassEntity {
  * the badge shows what the panel reports, only the chosen tile lights up while it answers.
  */
 export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
+  /** Widths laid out by the browser in the row's own classes: the compact card's chips are measured with it. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,
@@ -161,6 +188,17 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
       /* a tile too narrow for "Perimeter" keeps the glyph and the mode, and gives the empty line back */
       .is-compact .fv-option__value {
         display: none;
+      }
+      /* the compact card's one row: the modes as chips, 44 under the head's 16 (more where even the words wrap) */
+      .dv-alarm__row {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        margin-top: 16px;
+      }
+      .dv-alarm__row > .fv-chips {
+        flex: 1;
+        margin-top: 0;
       }
     `,
   ];
@@ -177,15 +215,42 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     this.pending_ = '';
   }
 
+  static override keys = configKeys<AlarmCardConfig>()([
+    'rows',
+    'show_rows',
+    'subtitle',
+    'modes',
+    'variant',
+  ]);
   static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', schema: [entityField(), nameIconFields()] },
+    { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [entityField(['alarm_control_panel']), nameIconFields(), entitiesField('rows')],
-      ...formLabels({
-        rows: 'editor.entities',
-      }),
+      schema: [
+        entityField(['alarm_control_panel']),
+        nameIconFields(),
+        fieldRow(textField('subtitle'), selectField('variant', ['tiles', 'compact'])),
+        {
+          name: 'modes',
+          selector: {
+            select: {
+              multiple: true,
+              mode: 'list',
+              options: MODES.map((mode) => ({
+                value: mode.key,
+                label: editorWord(`alarm.${mode.tile}` as MessageKey),
+              })),
+            },
+          },
+        },
+        boolField('show_rows'),
+        entitiesField('rows'),
+        colourFields(),
+        actionFields(),
+      ],
+      ...formLabels({}),
     };
   }
 
@@ -207,11 +272,18 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     return super.prepare(config);
   }
 
-  override getCardSize(): number {
-    return 4 + this.rowCount;
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
   }
+
+  override getCardSize(): number {
+    return this.compact ? 3 : 4 + this.rowCount;
+  }
+  /** The full card takes a section, the compact one half of it: three chips need the whole half. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 6 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   override disconnectedCallback(): void {
@@ -229,9 +301,35 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
 
   /* ---------- model ---------- */
 
+  /**
+   * The compact card's chips, one row whatever the width: the modes with their glyphs while those stand on one
+   * line, the words alone when they do not, the glyphs alone (each named for a reader) when even the words wrap.
+   */
+  private chips(tiles: readonly OptionItem[]): ChipItem[] {
+    const fit = { ruler: this.ruler, width: this.contentWidth };
+    const words = tiles.map((tile) => ({
+      key: tile.key,
+      label: tile.label,
+      active: tile.active ?? false,
+    }));
+    const glyphed: ChipItem[] = words.map((chip, i) => {
+      const glyph = tiles[i]?.glyph;
+      return glyph ? { ...chip, glyph } : chip;
+    });
+    if (fitsOneRow(glyphed, fit)) return glyphed;
+    if (fitsOneRow(words, fit)) return words;
+    return glyphed.map((chip) => (chip.glyph ? { ...chip, short: true } : chip));
+  }
+
+  /** The modes the panel has, in the order the card was given them (all of them, in ours, when it was given none). */
   private modes(view: EntityView): Mode[] {
     const features = view.attr<number | null>('supported_features') || DEFAULT_FEATURES;
-    return MODES.filter((mode) => mode.bit === 0 || (features & mode.bit) !== 0);
+    const has = MODES.filter((mode) => mode.bit === 0 || (features & mode.bit) !== 0);
+    const asked = this.config?.modes;
+    if (!asked?.length) return has;
+    return asked
+      .map((key) => has.find((mode) => mode.key === key))
+      .filter((mode): mode is Mode => mode !== undefined);
   }
 
   /** Disarming always carries the code when the panel has one; arming only when the panel says so. */
@@ -349,7 +447,8 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
+    const compact = this.compact;
     const state = view.state;
     const alerting = state === 'triggered' || state === 'arming' || state === 'pending';
     const tone: Tone = unusable
@@ -366,35 +465,50 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
 
     const columns = optionColumns(modes.length);
     const gap = this.tileGap(this.contentWidth, columns);
-    const compact = (this.contentWidth - (columns - 1) * gap) / columns < 104;
+    const narrow = (this.contentWidth - (columns - 1) * gap) / columns < 104;
     const tiles: OptionItem[] = modes.map((mode) => ({
       key: mode.key,
       label: s(this.hass, mode.tile),
-      value: compact ? '' : s(this.hass, mode.value),
+      value: narrow ? '' : s(this.hass, mode.value),
       glyph: mode.glyph,
       tone: mode.bit === 0 ? 'neutral' : alerting && !this.pending_ ? 'warning' : 'accent',
       active: !unusable && lit === mode.state,
     }));
 
     return html`<article
-        class="fv-card dv-card ${unusable ? 'is-unavailable' : ''} ${compact ? 'is-compact' : ''}"
+        class="fv-card dv-card ${unusable ? 'is-unavailable' : ''} ${narrow ? 'is-compact' : ''}"
         data-card
       >
         ${head({
           icon: this.config?.icon ?? glyphFor(view),
           tone,
           title: name,
-          sub: changedLine(this.hass, view),
+          name: true,
+          sub: this.config?.subtitle ?? changedLine(this.hass, view),
           trailing: badge(
             state.startsWith('armed_') ? s(this.hass, 'armed') : stateText(this.hass, view),
             tone,
           ),
-          onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+          onIconTap: () => this.tap(view.id),
+          onHold: () => this.hold(view.id),
           iconLabel: name,
         })}
-        ${label(s(this.hass, 'mode'))}
-        ${options(tiles, unusable ? null : (key) => this.choose(view, key), gap, compact ? 64 : 84, columns)}
-        ${this.renderRows()}
+        ${
+          compact
+            ? html`<div class="dv-alarm__row">
+                ${chipRow(
+                  this.chips(tiles),
+                  (key) => {
+                    if (!unusable) this.choose(view, key);
+                  },
+                  'full',
+                  { ruler: this.ruler, width: this.contentWidth },
+                )}
+              </div>`
+            : html`${label(s(this.hass, 'mode'))}
+              ${options(tiles, unusable ? null : (key) => this.choose(view, key), gap, narrow ? 64 : 84, columns)}
+              ${this.renderRows()}`
+        }
       </article>
       <fluvy-keypad .hass=${this.hass}></fluvy-keypad>`;
   }

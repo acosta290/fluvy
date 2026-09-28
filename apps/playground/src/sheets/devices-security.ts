@@ -191,6 +191,20 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the head and the slide: 144 tall, half a section; the rows it was given are not drawn
+    {
+      title: 'Lock · compact',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-lock-card',
+          entity: 'lock.front_door',
+          variant: 'compact',
+          subtitle: 'Front of house',
+          rows: ['binary_sensor.front_door'],
+        },
+      ],
+    },
     {
       title: 'Lock · unlocked, with a latch',
       cards: [
@@ -226,6 +240,31 @@ export const sheet: SheetSpec = {
           type: 'custom:fluvy-alarm-card',
           entity: 'alarm_control_panel.house',
           rows: ['binary_sensor.living_motion', 'binary_sensor.back_door'],
+        },
+      ],
+    },
+    // the head and the modes as chips: 144 tall, half a section
+    {
+      title: 'Alarm · compact',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-alarm-card',
+          entity: 'alarm_control_panel.house',
+          variant: 'compact',
+          rows: ['binary_sensor.living_motion'],
+        },
+      ],
+    },
+    // the modes it was asked for, in that order (a mode the panel lacks is left out)
+    {
+      title: 'Alarm · two modes',
+      cards: [
+        {
+          type: 'custom:fluvy-alarm-card',
+          entity: 'alarm_control_panel.house',
+          modes: ['arm_away', 'disarm', 'arm_custom_bypass'],
+          subtitle: 'Perimeter only at night',
         },
       ],
     },

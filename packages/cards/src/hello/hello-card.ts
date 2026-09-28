@@ -12,7 +12,7 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 
-import { glyph, sheetStyles } from '@fluvy/ui';
+import { clickPress, glyph, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
 import {
   css,
   html,
@@ -26,15 +26,24 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { dateLine } from '../helpers/datetime.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { FontsSettled } from '../shared/fonts.js';
 
-import { entityField, fieldRow, formLabels, textField } from '../shared/form.js';
+import {
+  accentField,
+  actionFields,
+  boolField,
+  entityField,
+  fieldRow,
+  formLabels,
+  textField,
+} from '../shared/form.js';
 
 import { overflows } from './fit.js';
 
 import { conditionGlyph, isCondition, isNight } from '../shared/weather.js';
+import { configKeys } from '../shared/config.js';
 
 const weatherWord = strings('weather');
 const s = strings('hello');
@@ -46,6 +55,9 @@ export interface HelloCardConfig extends FluvyCardConfig {
   person?: string;
   /** Weather entity: condition glyph + temperature + condition at the right of the date. */
   weather?: string;
+  show_weather?: boolean;
+  show_date?: boolean;
+  show_avatar?: boolean;
   /** Test hook — freezes "now" at this ISO instant. Not part of the documented config. */
   _now?: string;
 }
@@ -199,6 +211,15 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     new FontsSettled(this);
   }
 
+  /** The greeting names who it greets; its avatar answers a tap and a hold; its colour is its mark's. */
+  static override base: readonly BaseKey[] = ['name', 'tap_action', 'hold_action', 'color'];
+  static override keys = configKeys<HelloCardConfig>()([
+    'person',
+    'weather',
+    'show_weather',
+    'show_date',
+    'show_avatar',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -207,8 +228,12 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
           entityField(['person'], 'person', false),
           entityField(['weather'], 'weather', false),
         ),
+        fieldRow(boolField('show_weather'), boolField('show_date')),
+        boolField('show_avatar'),
+        accentField(),
+        actionFields(),
       ],
-      ...formLabels({ name: 'editor.name', person: 'editor.entity', weather: 'editor.weather' }),
+      ...formLabels({ person: 'editor.entity', weather: 'editor.weather' }),
     };
   }
 
@@ -364,12 +389,17 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
 
     if (!id)
       return html`<span class="hm-avatar" data-icon role="img" aria-label=${label}>${body}</span>`;
+    // the avatar is the greeting's icon: a tap is the tap action, a still press the hold action
     return html`<button
       class="hm-avatar fv-ico--tap"
       data-icon
       data-target
       aria-label=${label}
-      @click=${() => this.tap(id, { action: 'more-info' })}
+      .fvTap=${() => this.tap(id)}
+      .fvHold=${() => this.hold(id)}
+      @pointerdown=${startPress}
+      @contextmenu=${preventMenu}
+      @click=${clickPress}
     >
       ${body}
     </button>`;
@@ -379,7 +409,8 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     const now = this.now();
     const name = this.who();
     const greeting = this.t(greetingKey(now.getHours(), LANGUAGES[languageOf(this.hass)].dayParts));
-    const weatherId = this.config?.weather;
+    const weatherId = this.config?.show_weather === false ? undefined : this.config?.weather;
+    const showDate = this.config?.show_date !== false;
 
     return html`<section class="hm-hello">
       <div class="hm-hello__text">
@@ -387,16 +418,20 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
           ${name ? s(this.hass, 'greeting', { greeting, name }) : greeting}
         </h1>
         <p class="hm-hello__meta">
-          <span class="hm-hello__date hm-hello__date--full"
-            >${sentence(dateLine(this.hass, now, 'full'))}</span
-          >
-          <span class="hm-hello__date hm-hello__date--short"
-            >${sentence(dateLine(this.hass, now, 'short'))}</span
-          >
+          ${
+            showDate
+              ? html`<span class="hm-hello__date hm-hello__date--full"
+                    >${sentence(dateLine(this.hass, now, 'full'))}</span
+                  >
+                  <span class="hm-hello__date hm-hello__date--short"
+                    >${sentence(dateLine(this.hass, now, 'short'))}</span
+                  >`
+              : nothing
+          }
           ${weatherId ? this.weather(this.entity(weatherId)) : nothing}
         </p>
       </div>
-      ${this.avatar(name)}
+      ${this.config?.show_avatar === false ? nothing : this.avatar(name)}
     </section>`;
   }
 }

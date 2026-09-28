@@ -401,7 +401,14 @@
     "show_volume": "Mostrar el volumen",
     "favorites": "Favoritos",
     "position": "Posición",
-    "tilt": "Inclinación"
+    "tilt": "Inclinación",
+    "show_rows": "Mostrar las filas",
+    "show_zone": "Mostrar la zona",
+    "show_time": "Mostrar la hora",
+    "show_weather": "Mostrar el tiempo",
+    "show_date": "Mostrar la fecha",
+    "show_avatar": "Mostrar el avatar",
+    "action": "Acción"
   },
   "strategy": {
     "home": "Inicio",
@@ -945,6 +952,9 @@
     "auto": "Automático",
     "full": "Completa",
     "compact": "Compacta",
+    "bar": "Barra",
+    "plain": "Sencillo",
+    "row": "Fila",
     "mini": "Mini",
     "large": "Grande",
     "hero": "Destacado",

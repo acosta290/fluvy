@@ -401,7 +401,14 @@
     "show_volume": "Afficher le volume",
     "favorites": "Favoris",
     "position": "Position",
-    "tilt": "Inclinaison"
+    "tilt": "Inclinaison",
+    "show_rows": "Afficher les lignes",
+    "show_zone": "Afficher la zone",
+    "show_time": "Afficher l’heure",
+    "show_weather": "Afficher la météo",
+    "show_date": "Afficher la date",
+    "show_avatar": "Afficher l’avatar",
+    "action": "Action"
   },
   "strategy": {
     "home": "Accueil",
@@ -945,6 +952,9 @@
     "auto": "Automatique",
     "full": "Complète",
     "compact": "Compacte",
+    "bar": "Barre",
+    "plain": "Simple",
+    "row": "Ligne",
     "mini": "Mini",
     "large": "Grande",
     "hero": "Mis en avant",

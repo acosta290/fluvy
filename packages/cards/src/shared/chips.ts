@@ -14,24 +14,38 @@ const GAP = 8;
 const SIDES = 16;
 /** A chip's glyph and the gap before its label. */
 const GLYPH = 24;
+/** A chip that is its glyph alone. */
+const GLYPH_ALONE = 20;
+
+/** The widest chip of a row, measured in the row's own classes. */
+const widestOf = (items: readonly ChipItem[], ruler: TextRuler): number =>
+  Math.max(
+    0,
+    ...items.map((item) =>
+      item.short
+        ? SIDES + GLYPH_ALONE
+        : ruler.width('fv-chips fv-chips--fill > fv-chip > fv-chip__pill', item.label) +
+          SIDES +
+          (item.glyph ? GLYPH : 0),
+    ),
+  );
+
+const fitsIn = (columns: number, widest: number, width: number): boolean =>
+  (width - GAP * (columns - 1)) / columns >= widest;
+
+/** Whether every chip stands on one line: a card that must keep one row trades its glyphs, then its words, for it. */
+export const fitsOneRow = (items: readonly ChipItem[], { ruler, width }: ChipFit): boolean =>
+  fitsIn(items.length, widestOf(items, ruler), width);
 
 /**
  * The columns a filled row takes so that no label is cut: as many as the labels are (three at most in one row of
  * five or six, four or two of four: every row full), the widest label measured in the row's own classes.
  */
 function fittedColumns(items: readonly ChipItem[], { ruler, width }: ChipFit): number {
-  const widest = Math.max(
-    0,
-    ...items.map(
-      (item) =>
-        ruler.width('fv-chips fv-chips--fill > fv-chip > fv-chip__pill', item.label) +
-        SIDES +
-        (item.glyph ? GLYPH : 0),
-    ),
-  );
+  const widest = widestOf(items, ruler);
   const count = items.length;
   const candidates = count <= 3 ? [count] : count === 4 ? [4, 2] : [count, 3, 2];
-  for (const n of candidates) if ((width - GAP * (n - 1)) / n >= widest) return n;
+  for (const n of candidates) if (fitsIn(n, widest, width)) return n;
   return 1;
 }
 

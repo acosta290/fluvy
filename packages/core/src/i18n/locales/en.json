@@ -401,7 +401,14 @@
     "show_volume": "Show volume",
     "favorites": "Favourites",
     "position": "Position",
-    "tilt": "Tilt"
+    "tilt": "Tilt",
+    "show_rows": "Show the rows",
+    "show_zone": "Show the zone",
+    "show_time": "Show the time",
+    "show_weather": "Show the weather",
+    "show_date": "Show the date",
+    "show_avatar": "Show the avatar",
+    "action": "Action"
   },
   "strategy": {
     "home": "Home",
@@ -945,6 +952,9 @@
     "auto": "Automatic",
     "full": "Full",
     "compact": "Compact",
+    "bar": "Bar",
+    "plain": "Plain",
+    "row": "Row",
     "mini": "Mini",
     "large": "Large",
     "hero": "Hero",

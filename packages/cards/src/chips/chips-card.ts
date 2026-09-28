@@ -14,14 +14,22 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card } from '../shared/base.js';
-import { entityField, fieldRow, formLabels, iconField, textField } from '../shared/form.js';
+import { Card, type BaseKey } from '../shared/base.js';
+import {
+  actionField,
+  entityField,
+  fieldRow,
+  formLabels,
+  iconField,
+  textField,
+} from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 
 const s = strings('chips');
 
 export interface ChipConfig {
-  label: string;
+  name: string;
   icon?: IconRef | string;
   /** Dashboard path this tab navigates to, e.g. "/fluvy-home/living". The tab whose path is open is the active one. */
   path?: string;
@@ -33,8 +41,6 @@ export interface ChipConfig {
 
 export interface ChipsCardConfig extends FluvyCardConfig {
   chips?: readonly ChipConfig[];
-  /** Accessible name of the row. Defaults to "Rooms". */
-  label?: string;
 }
 
 /** "/fluvy-home/living/", "/fluvy-home/living?edit=1" and "/fluvy-home/living" are the same view. */
@@ -151,22 +157,31 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     this.besideMark_ = false;
   }
 
+  /** The row's accessible name is the base's `name`; the tabs are its own. */
+  static override base: readonly BaseKey[] = ['name'];
+  static override keys = configKeys<ChipsCardConfig>()(['chips']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'chips',
-      idKey: 'label',
+      idKey: 'name',
       title: 'editor.tabs',
+      keys: ['name', 'icon', 'path', 'entity', 'action'],
       schema: [
-        textField('label'),
+        textField('name'),
         fieldRow(iconField(), textField('path')),
         entityField(undefined, 'entity', false),
+        actionField('action'),
       ],
     },
   ];
+  static override aliases: AliasSpec = {
+    keys: [{ from: 'label', to: 'name' }],
+    items: { chips: ITEM_ALIASES },
+  };
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [textField('label'), { name: 'chips', required: true, selector: { object: {} } }],
-      ...formLabels({ label: 'editor.name' }),
+      schema: [textField('name'), { name: 'chips', required: true, selector: { object: {} } }],
+      ...formLabels({}),
     };
   }
 
@@ -174,8 +189,8 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     return {
       type: 'custom:fluvy-chips-card',
       chips: [
-        { label: 'Home', path: viewOf(location.pathname) },
-        { label: 'Energy', path: '/energy' },
+        { name: 'Home', path: viewOf(location.pathname) },
+        { name: 'Energy', path: '/energy' },
       ],
     };
   }
@@ -183,8 +198,8 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
   protected override prepare(config: ChipsCardConfig): ChipsCardConfig {
     if (!Array.isArray(config.chips) || config.chips.length === 0)
       throw new Error('fluvy-chips-card: "chips" needs at least one entry');
-    if (config.chips.some((chip) => typeof chip?.label !== 'string' || chip.label.trim() === ''))
-      throw new Error('fluvy-chips-card: every chip needs a "label"');
+    if (config.chips.some((chip) => typeof chip?.name !== 'string' || chip.name.trim() === ''))
+      throw new Error('fluvy-chips-card: every chip needs a "name"');
     return config;
   }
 
@@ -336,7 +351,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
 
     return html`<nav
       class="hm-rooms ${this.besideMark_ ? 'is-beside-mark' : ''}"
-      aria-label=${this.config?.label ?? s(this.hass, 'rooms')}
+      aria-label=${this.config?.name ?? s(this.hass, 'rooms')}
     >
       <div
         class="fv-chips"
@@ -359,7 +374,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
               }}
             >
               <span class="fv-chip__pill" data-control
-                >${chip.icon ? icon(chip.icon) : nothing}${chip.label}</span
+                >${chip.icon ? icon(chip.icon) : nothing}${chip.name}</span
               >
             </button>`,
         )}

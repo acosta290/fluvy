@@ -304,6 +304,26 @@ export const sheet: SheetSpec = {
         hello({ name: 'Marta', weather: 'weather.no_temperature' }),
       ],
     },
+    // the greeting without its avatar, its date or its weather
+    {
+      title: 'B Greeting · bare',
+      cards: [
+        hello({
+          name: 'Marta',
+          person: 'person.marta',
+          weather: 'weather.flat',
+          show_weather: false,
+          show_date: false,
+          show_avatar: false,
+        }),
+        hello({ name: 'Marta', weather: 'weather.flat', show_avatar: false }),
+        hello({
+          name: 'Marta',
+          person: 'person.marta',
+          tap_action: { action: 'navigate', navigation_path: '/profile' },
+        }),
+      ],
+    },
     {
       title: 'C Sections',
       cards: [
@@ -329,6 +349,21 @@ export const sheet: SheetSpec = {
             { label: 'Blind', icon: 'blinds', entity: 'cover.hall_blind' },
           ],
         },
+      ],
+    },
+    // a plain heading is the title alone, 24 tall: no meta, no chevron, whatever it was given
+    {
+      title: 'C Sections · plain',
+      cards: [
+        heading({ title: 'Scenes', variant: 'plain' }),
+        heading({
+          title: 'Hall',
+          icon: 'fluvy:home',
+          variant: 'plain',
+          entities: ['light.hall_lamp', 'light.hall_strip'],
+          path: '/fluvy-home/hall',
+        }),
+        heading({ title: 'Garden', subtitle: 'Edit', variant: 'plain' }),
       ],
     },
     {
@@ -373,6 +408,33 @@ export const sheet: SheetSpec = {
           hours: 12,
         }),
         readouts({ entities: ['sensor.gone', 'sensor.washer', 'sensor.living_humidity'] }),
+      ],
+    },
+    // four readouts on one row where they fit (a grid pairs them two by two); a readout can answer its own tap
+    {
+      title: 'E Readouts · row',
+      width: 480,
+      cards: [
+        readouts({
+          variant: 'row',
+          rows: [
+            { entity: 'sensor.living_temperature', name: 'Living' },
+            'sensor.living_humidity',
+            {
+              entity: 'sensor.home_power',
+              tap_action: { action: 'navigate', navigation_path: '/energy' },
+            },
+            'sensor.quiet_pressure',
+          ],
+        }),
+        readouts({
+          entities: [
+            'sensor.living_temperature',
+            'sensor.living_humidity',
+            'sensor.home_power',
+            'sensor.quiet_pressure',
+          ],
+        }),
       ],
     },
     {

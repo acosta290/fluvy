@@ -14,6 +14,8 @@ export const sheet: SheetSpec = {
     ],
     ['light.ac_hall', 'on', { friendly_name: 'Hall', supported_color_modes: ['brightness'] }],
     ['switch.ac_heater', 'off', { friendly_name: 'Heater' }],
+    ['lock.ac_front', 'locked', { friendly_name: 'Front door' }],
+    ['person.ac_marta', 'home', { friendly_name: 'Marta' }],
   ],
   frames: [
     // the defaults: the icon opens the details, so does a hold on the head
@@ -43,6 +45,35 @@ export const sheet: SheetSpec = {
             },
             { entity: 'light.ac_desk', tap_action: { action: 'none' } },
           ],
+        },
+      ],
+    },
+    // a card of rows: its head holds like any other, and a row answers its own tap
+    {
+      title: 'Lock',
+      cards: [
+        {
+          type: 'custom:fluvy-lock-card',
+          entity: 'lock.ac_front',
+          rows: [
+            {
+              entity: 'switch.ac_heater',
+              tap_action: { action: 'navigate', navigation_path: '/fluvy-auto/rooms' },
+            },
+          ],
+        },
+      ],
+    },
+    // the greeting's avatar is its icon: a tap goes to the profile, a hold to the rooms
+    {
+      title: 'Greeting',
+      cards: [
+        {
+          type: 'custom:fluvy-hello-card',
+          name: 'Marta',
+          person: 'person.ac_marta',
+          tap_action: { action: 'navigate', navigation_path: '/profile' },
+          hold_action: { action: 'navigate', navigation_path: '/fluvy-auto/rooms' },
         },
       ],
     },

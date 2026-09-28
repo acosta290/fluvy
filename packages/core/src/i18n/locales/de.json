@@ -401,7 +401,14 @@
     "show_volume": "Lautstärke zeigen",
     "favorites": "Favoriten",
     "position": "Position",
-    "tilt": "Neigung"
+    "tilt": "Neigung",
+    "show_rows": "Zeilen zeigen",
+    "show_zone": "Zone zeigen",
+    "show_time": "Zeit zeigen",
+    "show_weather": "Wetter zeigen",
+    "show_date": "Datum zeigen",
+    "show_avatar": "Avatar zeigen",
+    "action": "Aktion"
   },
   "strategy": {
     "home": "Zuhause",
@@ -945,6 +952,9 @@
     "auto": "Automatisch",
     "full": "Vollständig",
     "compact": "Kompakt",
+    "bar": "Leiste",
+    "plain": "Schlicht",
+    "row": "Zeile",
     "mini": "Mini",
     "large": "Groß",
     "hero": "Hervorgehoben",

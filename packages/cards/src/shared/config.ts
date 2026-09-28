@@ -123,8 +123,12 @@ export type KnownKeys<T> = keyof {
   [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
 };
 
-/** A card's own keys: what its config declares beyond the base card's fields (entity, name, icon, the actions, tone, colour) and Home Assistant's envelope. */
-export type OwnKeys<C> = Exclude<KnownKeys<C>, KnownKeys<FluvyCardConfig>>;
+/**
+ * A card's own keys: what its config declares beyond the base card's fields (entity, name, icon, the actions,
+ * tone, colour) and Home Assistant's envelope. A key that starts with `_` (`_now`, the instant a test freezes)
+ * is a hook for the tests, never something an editor shows.
+ */
+export type OwnKeys<C> = Exclude<KnownKeys<C>, KnownKeys<FluvyCardConfig> | `_${string}`>;
 
 type Missing<C, K extends readonly unknown[]> = Exclude<OwnKeys<C>, K[number]>;
 

@@ -271,6 +271,8 @@ export interface ChipItem {
   readonly label: string;
   readonly glyph?: IconRef | string;
   readonly active?: boolean;
+  /** The glyph alone, the label as the chip's accessible name: a row too narrow for its words keeps its one line. */
+  readonly short?: boolean;
 }
 
 /**
@@ -305,7 +307,7 @@ export function chips(
     class="fv-chips ${className} ${fill ? 'fv-chips--fill' : ''}"
     style=${grid ? `grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr))` : nothing}
   >
-    ${items.map((c, index) => html`<button class="fv-chip ${c.active ? 'is-active' : ''}" data-target data-fit=${fill ? nothing : '28'} style=${grid && grid.spans[index] !== 1 ? `grid-column:span ${grid.spans[index]}` : nothing} aria-pressed=${c.active ? 'true' : 'false'} @click=${() => onSelect(c.key)}><span class="fv-chip__pill" data-control>${c.glyph ? icon(c.glyph) : nothing}${c.label}</span></button>`)}
+    ${items.map((c, index) => html`<button class="fv-chip ${c.active ? 'is-active' : ''}" data-target data-fit=${fill ? nothing : '28'} style=${grid && grid.spans[index] !== 1 ? `grid-column:span ${grid.spans[index]}` : nothing} aria-pressed=${c.active ? 'true' : 'false'} aria-label=${c.short ? c.label : nothing} title=${c.short ? c.label : nothing} @click=${() => onSelect(c.key)}><span class="fv-chip__pill" data-control>${c.glyph ? icon(c.glyph) : nothing}${c.short ? nothing : c.label}</span></button>`)}
   </div>`;
 }
 
@@ -374,6 +376,8 @@ export interface ListRowOptions {
   readonly icon?: IconRef | string | undefined;
   readonly tone?: Tone;
   readonly title: string;
+  /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
+  readonly name?: boolean;
   readonly sub?: string;
   readonly trailing?: 'switch' | 'chevron' | 'value' | 'none';
   readonly on?: boolean;
@@ -385,6 +389,10 @@ export interface ListRowOptions {
   readonly readonly?: boolean;
   readonly onTap?: (() => void) | undefined;
   readonly onToggle?: ((next: boolean) => void) | undefined;
+  /** The row's own colour (`data-accent`, derived by the card's accent sheet): the accent inside the row. */
+  readonly accent?: string | undefined;
+  /** The 48 row: a 36 circle, the title alone (no sub). */
+  readonly compact?: boolean;
 }
 
 /** A value that reads as words, not a figure: it may take two lines instead of one. */
@@ -415,7 +423,8 @@ export function listRow(o: ListRowOptions): TemplateResult {
           ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
           : nothing;
   return html`<div
-    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''}"
+    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''}"
+    data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
     tabindex=${o.onTap ? 0 : nothing}
     @click=${o.onTap ?? nothing}
@@ -423,8 +432,8 @@ export function listRow(o: ListRowOptions): TemplateResult {
   >
     <span class="fv-ico fv-ico--${o.tone ?? 'neutral'}" data-icon>${icon(o.icon)}</span>
     <span class="fv-row__text"
-      ><span class="fv-row__title">${o.title}</span
-      >${o.sub ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}</span
+      ><span class="fv-row__title" data-name=${o.name ? '' : nothing}>${o.title}</span
+      >${o.sub && !o.compact ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}</span
     >
     ${tail}
   </div>`;

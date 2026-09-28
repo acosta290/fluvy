@@ -11,8 +11,18 @@ import {
 import { firstFit, head, round, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { agoShort } from '../helpers/datetime.js';
-import { Card } from '../shared/base.js';
-import { fieldRow, formLabels, iconField, selectField, textField } from '../shared/form.js';
+import { Card, type BaseKey } from '../shared/base.js';
+import {
+  accentField,
+  boolField,
+  editorLabels,
+  entitiesField,
+  fieldRow,
+  iconField,
+  selectField,
+  textField,
+} from '../shared/form.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 
 const s = strings('people');
 
@@ -21,9 +31,12 @@ export type PeopleLayout = 'grid' | 'rows';
 export interface PeopleCardConfig extends FluvyCardConfig {
   title?: string;
   /** `grid` = the sheet's avatar columns; `rows` = the desktop composition's 60 rows (avatar, name, time or zone, state at the right). */
-  layout?: PeopleLayout;
+  variant?: PeopleLayout;
   /** Where the map round button goes (default `/map`). */
   map_path?: string;
+  /** Under a name: the zone someone is in (default), and the time they arrived (when there is no zone, or the zone is off). */
+  show_zone?: boolean;
+  show_time?: boolean;
   /** Test hook: an ISO date that freezes "now" (the times in the sub lines). Undocumented. */
   _now?: string;
 }
@@ -152,24 +165,26 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     this.broken_ = new Set();
   }
 
+  /** The people have no entity of their own: the head's icon and the card's colour are the base fields it honours. */
+  static override base: readonly BaseKey[] = ['entities', 'icon', 'color'];
+  static override keys = configKeys<PeopleCardConfig>()([
+    'title',
+    'variant',
+    'map_path',
+    'show_zone',
+    'show_time',
+  ]);
+  static override aliases: AliasSpec = { keys: [{ from: 'layout', to: 'variant' }] };
   static override getConfigForm(): LovelaceConfigForm {
-    const shared = formLabels({
-      layout: 'editor.variant',
-    });
     return {
       schema: [
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['person', 'device_tracker'] } },
-        },
+        entitiesField('entities', ['person', 'device_tracker'], true),
         fieldRow(textField('title'), iconField()),
-        fieldRow(selectField('layout', ['grid', 'rows']), textField('map_path')),
+        fieldRow(selectField('variant', ['grid', 'rows']), textField('map_path')),
+        fieldRow(boolField('show_zone'), boolField('show_time')),
+        accentField(),
       ],
-      computeLabel: (schema, localize) =>
-        schema.name === 'map_path'
-          ? s({ language: document.documentElement.lang || 'en' }, 'editor.map_path')
-          : shared.computeLabel?.(schema, localize),
+      ...editorLabels(s, { map_path: 'editor.map_path' }, {}),
     };
   }
 
@@ -187,7 +202,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
 
   override getCardSize(): number {
     const count = this.config?.entities?.length ?? 1;
-    return this.config?.layout === 'rows' ? 2 + count : 2 + 2 * Math.ceil(count / 3);
+    return this.config?.variant === 'rows' ? 2 + count : 2 + 2 * Math.ceil(count / 3);
   }
 
   override getGridOptions(): LovelaceGridOptions {
@@ -248,6 +263,12 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
   }
 
   /** The sheet: avatar, name, "Home · 18:40" / "Away · School" — the state and its one detail. */
+  /** Under a name: the zone, when shown and there is one; else the time, when shown. */
+  private detail(person: Person): string {
+    const zone = this.config?.show_zone === false ? '' : person.zone;
+    return zone || (this.config?.show_time === false ? '' : person.since);
+  }
+
   private renderGrid(people: readonly Person[]): TemplateResult {
     // as many of the sheet's 96 columns (+ 16 gap) as the card holds, never more than there are people to spread over them
     const columns = Math.max(
@@ -256,7 +277,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     );
     return html`<div class="am-people fv-cols" style="--am-people:${columns}">
       ${people.map((person) => {
-        const detail = person.zone || person.since;
+        const detail = this.detail(person);
         const line = detail ? `${person.word} · ${detail}` : person.word;
         return html`<button
           class="am-person"
@@ -283,7 +304,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
             open();
           }
         };
-        const sub = person.zone || person.since;
+        const sub = this.detail(person);
         return html`<div
           class="fv-row fv-row--tap"
           role="button"
@@ -341,8 +362,10 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
         trailing: round('map', 'quiet', s(this.hass, 'map'), () =>
           navigate(this.config?.map_path ?? '/map'),
         ),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
       })}
-      ${this.config?.layout === 'rows' ? this.renderRows(people) : this.renderGrid(people)}
+      ${this.config?.variant === 'rows' ? this.renderRows(people) : this.renderGrid(people)}
     </article>`;
   }
 }

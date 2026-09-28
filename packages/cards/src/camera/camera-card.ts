@@ -1,6 +1,7 @@
 import {
   formatTime,
   haptic,
+  isUsable,
   stateText,
   strings,
   type LovelaceConfigForm,
@@ -18,22 +19,27 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { RowsCard, type RowsCardConfig } from '../lock/rows.js';
+import { ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from '../lock/rows.js';
 
 import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionFields,
+  boolField,
+  colourFields,
+  editorLabels,
   entitiesField,
   entityField,
   fieldRow,
-  formLabels,
   nameIconFields,
   numberField,
   textField,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('camera');
 
@@ -41,7 +47,7 @@ export interface CameraCardConfig extends RowsCardConfig {
   /** Seconds between two stills (1–300, default 10). */
   refresh?: number;
   /** Second line of the head ("Front of house · 1080p"). Default: area and state. */
-  sub?: string;
+  subtitle?: string;
 }
 
 type Slot = 'a' | 'b';
@@ -206,25 +212,31 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     this.stale_ = false;
   }
 
+  static override keys = configKeys<CameraCardConfig>()([
+    'rows',
+    'show_rows',
+    'refresh',
+    'subtitle',
+  ]);
   static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', schema: [entityField(), nameIconFields()] },
+    { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
+  static override aliases: AliasSpec = {
+    keys: [{ from: 'sub', to: 'subtitle' }],
+    items: { rows: ITEM_ALIASES },
+  };
   static override getConfigForm(): LovelaceConfigForm {
-    const shared = formLabels({
-      sub: 'editor.subtitle',
-      rows: 'editor.entities',
-    });
     return {
       schema: [
         entityField(['camera']),
         nameIconFields(),
-        fieldRow(textField('sub'), numberField('refresh', 1, 300)),
+        fieldRow(textField('subtitle'), numberField('refresh', 1, 300)),
+        boolField('show_rows'),
         entitiesField('rows'),
+        colourFields(),
+        actionFields(),
       ],
-      computeLabel: (schema, localize) =>
-        schema.name === 'refresh'
-          ? s({ language: document.documentElement.lang || 'en' }, 'refresh')
-          : shared.computeLabel?.(schema, localize),
+      ...editorLabels(s, { refresh: 'refresh' }, {}),
     };
   }
 
@@ -399,19 +411,22 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     const height = Math.round((this.contentWidth * 9) / 16 / 4) * 4; // 16:9, landed on the 4 px grid
     const offTop = Math.max(0, Math.round((height - 76) / 2 / 4) * 4);
     const sub =
-      this.config?.sub ?? [view.areaName, stateText(this.hass, view)].filter(Boolean).join(' · ');
+      this.config?.subtitle ??
+      [view.areaName, stateText(this.hass, view)].filter(Boolean).join(' · ');
 
     return html`<article
-      class="fv-card dv-card ${view.status === 'unavailable' ? 'is-unavailable' : ''}"
+      class="fv-card dv-card ${isUsable(view) ? '' : 'is-unavailable'}"
       data-card
     >
       ${head({
         icon: this.config?.icon ?? glyphFor(view),
-        tone: view.status === 'unavailable' ? 'off' : 'accent',
+        tone: isUsable(view) ? toneOf(this.config, 'accent') : 'off',
         title: name,
+        name: true,
         sub,
         trailing: round('dots', 'quiet', this.t('common.more'), () => this.moreInfo()),
-        onIconTap: () => this.moreInfo(),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       <div class="dv-cam ${off ? 'is-off' : ''}" style="height:${height}px">

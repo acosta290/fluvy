@@ -1,6 +1,6 @@
 import {
   isActive,
-  relativeTime,
+  isUsable,
   stateText,
   TOGGLE_DOMAINS,
   toggleEntity,
@@ -11,39 +11,41 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { badge, head, listRow, type Tone } from '@fluvy/ui';
+import { badge, head, listRow } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
 
 import {
+  boolField,
+  colourFields,
   entitiesField,
-  entityField,
+  fieldRow,
   formLabels,
-  iconToneFields,
-  nameIconFields,
+  iconField,
   selectField,
   titleFields,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
+import { secondaryText } from '../shared/secondary.js';
 
-export interface EntityRowConfig {
-  entity: string;
-  name?: string;
-  icon?: string;
-  secondary?: 'area' | 'last-changed' | 'state' | 'none';
-}
+/** A row of the card: the rows every list shares (`RowConfig`). */
+export type EntityRowConfig = RowConfig;
 
 export interface EntitiesCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   rows?: ReadonlyArray<string | EntityRowConfig>;
   /** Show "3 on" / "All off" in the head. */
   show_count?: boolean;
+  /** `rows` (default): 60 px rows with a second line. `compact`: 48 px rows, the name alone. */
+  variant?: 'rows' | 'compact';
 }
 
 /**
@@ -65,29 +67,29 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     `,
   ];
 
+  /** A card of rows has no entity of its own: its icon, tone and colour are the head's and the rows' default. */
+  static override base: readonly BaseKey[] = ['entities', 'icon', 'tone', 'color'];
+  static override keys = configKeys<EntitiesCardConfig>()([
+    'title',
+    'subtitle',
+    'rows',
+    'show_count',
+    'variant',
+  ]);
   static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      schema: [
-        entityField(),
-        nameIconFields(),
-        selectField('secondary', ['area', 'last-changed', 'state', 'none']),
-      ],
-    },
+    { key: 'rows', alias: 'entities', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconToneFields(),
+        fieldRow(iconField(), selectField('variant', ['rows', 'compact'])),
+        colourFields(),
         entitiesField('entities', undefined, true),
-        { name: 'show_count', selector: { boolean: {} } },
+        boolField('show_count'),
       ],
-      ...formLabels({
-        show_count: 'editor.show_count',
-      }),
+      ...formLabels({}),
     };
   }
 
@@ -117,20 +119,12 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
-  private secondary(view: EntityView, row: EntityRowConfig, trailing: string): string {
-    const mode = row.secondary ?? (view.areaName ? 'area' : 'last-changed');
-    if (mode === 'none') return '';
-    if (view.status !== 'ok') return stateText(this.hass, view);
-    if (mode === 'state' && trailing !== 'value') return stateText(this.hass, view);
-    if (mode === 'area' && view.areaName) return view.areaName;
-    return view.stateObj ? relativeTime(this.hass, new Date(view.stateObj.last_changed)) : '';
-  }
-
   protected renderCard(): TemplateResult {
     const rows = this.rows();
     const views = rows.map((row) => this.entity(row.entity));
     const active = views.filter((v) => isActive(v)).length;
-    const tone = this.config?.tone ?? 'accent';
+    const tone = toneOf(this.config, 'accent');
+    const compact = this.config?.variant === 'compact';
     const header = this.config?.title
       ? head({
           icon: this.config.icon ?? 'grid',
@@ -153,7 +147,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       <div class="fv-rows ${this.config?.title ? '' : 'fv-rows--bare'}">
         ${rows.map((row, i) => {
           const view = views[i] as EntityView;
-          const usable = view.status === 'ok' || view.status === 'unknown';
+          const usable = isUsable(view);
           // a row switch is for what is safe to flip by accident: never a lock, and not the things that are not on/off
           const canToggle =
             usable &&
@@ -188,14 +182,18 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             state === view.state ? isActive(view) : !['off', 'closed', 'locked'].includes(state);
           const parts = valueParts(this.hass, view);
           const warn = view.domain === 'binary_sensor' && on && toneFor(view) === 'warning';
+          const rowTone = toneOf(row, toneFor(view));
           return listRow({
             icon: row.icon ?? glyphFor(view),
-            tone: currentTone(view, on ? toneFor(view) : 'neutral'),
+            tone: currentTone(view, on ? rowTone : 'neutral'),
             title: row.name ?? view.name,
-            sub: this.secondary(view, row, trailing),
+            name: true,
+            sub: secondaryText(this.hass, view, row.secondary, trailing === 'value'),
             trailing,
             on,
-            switchTone: toneFor(view) === 'warning' ? 'accent' : toneFor(view),
+            compact,
+            accent: this.accents.item(row.color),
+            switchTone: rowTone === 'warning' ? 'accent' : rowTone,
             value:
               trailing === 'value'
                 ? view.number !== null
@@ -204,7 +202,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
                 : '',
             valueTone: warn ? 'warning' : '',
             unavailable: !usable,
-            onTap: () => this.tap(view.id, { action: 'more-info' }),
+            onTap: () => this.tap(view.id, row.tap_action),
             onToggle: (next) => {
               if (!this.hass) return;
               this.expect(

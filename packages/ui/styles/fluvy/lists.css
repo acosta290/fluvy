@@ -57,6 +57,26 @@
   height: 60px;
 }
 
+/* the compact row: 48 tall, a 40 circle with a 16 glyph, the title alone; its hairline starts at its text */
+.fv-row--compact {
+  height: 48px;
+}
+
+.fv-row--compact > .fv-ico {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.fv-row--compact > .fv-ico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fv-row--compact + .fv-row--compact::before {
+  left: 52px;
+}
+
 .fv-row + .fv-row::before {
   content: '';
   position: absolute;

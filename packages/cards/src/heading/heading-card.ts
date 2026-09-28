@@ -15,26 +15,30 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 import {
   actionField,
   entitiesField,
   fieldRow,
   formLabels,
   iconField,
+  selectField,
   textField,
 } from '../shared/form.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 
 const s = strings('heading');
 
 export interface HeadingCardConfig extends FluvyCardConfig {
   title?: string;
   /** Static text at the right ("Edit"). Wins over `entities`. */
-  meta?: string;
+  subtitle?: string;
   /** Counted instead: "2 of 4 on" while something is on, "4 devices" when nothing is. */
   entities?: readonly string[];
   /** Dashboard path the meta navigates to; it brings the chevron. `tap_action` does the same for any other action. */
   path?: string;
+  /** `bar` (default): the title with its meta at the right. `plain`: the title alone. */
+  variant?: 'bar' | 'plain';
 }
 
 /**
@@ -113,18 +117,20 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
     `,
   ];
 
+  /** A heading has no entity: its icon, the entities it counts and the tap its meta answers are the base fields it honours. */
+  static override base: readonly BaseKey[] = ['icon', 'entities', 'tap_action'];
+  static override keys = configKeys<HeadingCardConfig>()(['title', 'subtitle', 'path', 'variant']);
+  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         fieldRow(textField('title'), iconField()),
-        textField('meta'),
+        fieldRow(textField('subtitle'), selectField('variant', ['bar', 'plain'])),
         entitiesField('entities'),
         textField('path'),
         actionField(),
       ],
-      ...formLabels({
-        meta: 'editor.subtitle',
-      }),
+      ...formLabels({}),
     };
   }
 
@@ -183,18 +189,19 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
 
   protected renderCard(): TemplateResult {
     const title = this.config?.title ?? '';
-    const text = this.config?.meta ?? this.counted();
+    const plain = this.config?.variant === 'plain';
+    const text = plain ? '' : (this.config?.subtitle ?? this.counted());
     const action: ActionConfig | undefined = this.config?.path
       ? { action: 'navigate', navigation_path: this.config.path }
       : this.config?.tap_action;
-    const goes = action !== undefined && action.action !== 'none';
+    const goes = !plain && action !== undefined && action.action !== 'none';
     const words = text ? html`<span class="hm-section__text">${text}</span>` : nothing;
 
     const lead = this.config?.icon;
     return html`<div class="hm-section">
       <div class="hm-section__lead">
         ${lead ? html`<span class="hm-section__icon">${icon(lead)}</span>` : nothing}
-        <h2 class="hm-section__title">${title}</h2>
+        <h2 class="hm-section__title" data-name>${title}</h2>
       </div>
       ${
         goes

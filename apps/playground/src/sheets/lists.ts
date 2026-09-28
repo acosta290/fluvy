@@ -40,5 +40,26 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // 48 px rows, the name alone; a row can wear its own colour, say what its second line would be, and answer its own tap
+    {
+      title: 'Entities · compact',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Kitchen',
+          variant: 'compact',
+          rows: [
+            { entity: 'switch.kitchen_light', color: 'teal' },
+            { entity: 'switch.washer', secondary: 'state' },
+            { entity: 'binary_sensor.kitchen_window', tone: 'warning' },
+            {
+              entity: 'lock.front_door',
+              tap_action: { action: 'navigate', navigation_path: '/fluvy-auto/security' },
+            },
+            'switch.ghost',
+          ],
+        },
+      ],
+    },
   ],
 };

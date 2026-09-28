@@ -1,5 +1,6 @@
 import {
   isActive,
+  isUsable,
   stateText,
   strings,
   type EntityView,
@@ -8,25 +9,36 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { badge, firstFit, head, listRow, sheetStyles, textWidth, type Tone } from '@fluvy/ui';
+import { badge, firstFit, head, listRow, sheetStyles, textWidth } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { agoShort, durationShort } from '../helpers/datetime.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
-import { formLabels, iconToneFields, numberField, titleFields } from '../shared/form.js';
+import {
+  boolField,
+  colourFields,
+  editorLabels,
+  entitiesField,
+  fieldRow,
+  iconField,
+  numberField,
+  titleFields,
+} from '../shared/form.js';
+import { configKeys } from '../shared/config.js';
 
 const s = strings('openings');
 
 export interface OpeningsCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   /** Rows before the "All sensors" row takes over (default 4). */
   max_rows?: number;
+  /** The count in the head's badge ("2 open"). */
+  show_count?: boolean;
   /** Test hook: an ISO date that freezes "now" (the times in the sub lines). Undocumented. */
   _now?: string;
 }
@@ -77,23 +89,24 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     this.expanded_ = false;
   }
 
+  /** The openings have no entity of their own: the head's icon, tone and colour are the base fields it honours. */
+  static override base: readonly BaseKey[] = ['entities', 'icon', 'tone', 'color'];
+  static override keys = configKeys<OpeningsCardConfig>()([
+    'title',
+    'subtitle',
+    'max_rows',
+    'show_count',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
-    const shared = formLabels({});
     return {
       schema: [
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['binary_sensor', 'cover', 'lock'] } },
-        },
+        entitiesField('entities', ['binary_sensor', 'cover', 'lock'], true),
         titleFields(),
-        iconToneFields(),
-        numberField('max_rows', 1, 20),
+        iconField(),
+        colourFields(),
+        fieldRow(numberField('max_rows', 1, 20), boolField('show_count')),
       ],
-      computeLabel: (schema, localize) =>
-        schema.name === 'max_rows'
-          ? s({ language: document.documentElement.lang || 'en' }, 'editor.max_rows')
-          : shared.computeLabel?.(schema, localize),
+      ...editorLabels(s, { max_rows: 'editor.max_rows' }, {}),
     };
   }
 
@@ -207,12 +220,17 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         tone: alerts.length > 0 ? tone : 'neutral',
         title: this.heading(badgeText),
         sub: this.config?.subtitle ?? (roomText ? `${countText} · ${roomText}` : countText),
-        trailing: badge(badgeText, alerts.length > 0 ? tone : 'neutral'),
+        trailing:
+          this.config?.show_count === false
+            ? nothing
+            : badge(badgeText, alerts.length > 0 ? tone : 'neutral'),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
       })}
       <div class="am-rows">
         ${shown.map((view) => {
           const warn = this.alert(view);
-          const dead = view.status === 'unavailable' || view.status === 'missing';
+          const dead = !isUsable(view);
           return listRow({
             icon: view.deviceClass === 'window' ? 'blinds' : glyphFor(view), // the sheet's window glyph
             tone: dead ? 'off' : warn ? tone : 'neutral', // events (motion) stay neutral: only what needs acting on is filled

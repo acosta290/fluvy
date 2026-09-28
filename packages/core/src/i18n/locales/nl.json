@@ -401,7 +401,14 @@
     "show_volume": "Volume tonen",
     "favorites": "Favorieten",
     "position": "Positie",
-    "tilt": "Kanteling"
+    "tilt": "Kanteling",
+    "show_rows": "Rijen tonen",
+    "show_zone": "Zone tonen",
+    "show_time": "Tijd tonen",
+    "show_weather": "Weer tonen",
+    "show_date": "Datum tonen",
+    "show_avatar": "Avatar tonen",
+    "action": "Actie"
   },
   "strategy": {
     "home": "Thuis",
@@ -945,6 +952,9 @@
     "auto": "Automatisch",
     "full": "Volledig",
     "compact": "Compact",
+    "bar": "Balk",
+    "plain": "Eenvoudig",
+    "row": "Rij",
     "mini": "Mini",
     "large": "Groot",
     "hero": "Uitgelicht",
