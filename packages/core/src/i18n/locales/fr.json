@@ -389,7 +389,19 @@
     "live_update": "Mettre à jour pendant le glissement",
     "show_count": "Afficher combien sont allumés",
     "color": "Couleur",
-    "color_help": "Une couleur de la palette, ou saisissez un #rrggbb"
+    "color_help": "Une couleur de la palette, ou saisissez un #rrggbb",
+    "show_tilt": "Afficher l’inclinaison",
+    "show_favorites": "Afficher les favoris",
+    "favorites_style": "Favoris en",
+    "show_oscillation": "Afficher l’oscillation",
+    "show_direction": "Afficher le sens",
+    "show_battery": "Afficher la batterie",
+    "source_style": "Sources en",
+    "show_source": "Afficher les sources",
+    "show_volume": "Afficher le volume",
+    "favorites": "Favoris",
+    "position": "Position",
+    "tilt": "Inclinaison"
   },
   "strategy": {
     "home": "Accueil",

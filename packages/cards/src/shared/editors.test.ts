@@ -13,13 +13,7 @@ import type { FluvyRowsEditor } from './rows-editor.js';
  * the list can only shrink.
  */
 const PENDING = new Set([
-  'fluvy-thermostat-card',
   'fluvy-entities-card',
-  'fluvy-media-card',
-  'fluvy-now-playing-card',
-  'fluvy-cover-card',
-  'fluvy-fan-card',
-  'fluvy-vacuum-card',
   'fluvy-lock-card',
   'fluvy-alarm-card',
   'fluvy-camera-card',

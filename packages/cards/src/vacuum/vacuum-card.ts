@@ -1,6 +1,7 @@
 import {
   formatNumber,
   formatTime,
+  isUsable,
   numberAttr,
   stateText,
   strings,
@@ -14,8 +15,6 @@ import {
 
 import {
   actions,
-  badge,
-  chips,
   clamp,
   head,
   label,
@@ -34,6 +33,9 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionFields,
+  boolField,
+  colourFields,
   editorLabels,
   entityField,
   fieldRow,
@@ -41,12 +43,28 @@ import {
   selectField,
   textField,
 } from '../shared/form.js';
-import { actionGap, headSub, Hold, motionStyles, pretty, shownStateText } from '../cover/common.js';
+import {
+  actionGap,
+  actionsThatFit,
+  headSub,
+  Hold,
+  motionStyles,
+  pretty,
+  shownStateText,
+} from '../cover/common.js';
+import { configKeys, type RowStyle } from '../shared/config.js';
+import { chipRow } from '../shared/chips.js';
+import { HeadFit } from '../energy/head.js';
 
 const vacuumStrings = strings('vacuum');
 
+/** `full` (default): the readouts, the battery, the commands and the suction. `compact`: the head and the commands. */
+export type VacuumVariant = 'full' | 'compact';
+
 export interface VacuumCardConfig extends FluvyCardConfig {
   subtitle?: string;
+  variant?: VacuumVariant;
+  show_battery?: boolean;
   /** Sensors the integration exposes beside the robot itself. A column exists only for what is configured. */
   area_entity?: string;
   duration_entity?: string;
@@ -54,7 +72,7 @@ export interface VacuumCardConfig extends FluvyCardConfig {
   /** The battery sensor. Left out, the card looks for one on the robot's own device. */
   battery_entity?: string;
   /** Suction speeds: chips that fill the row (default) or content-sized chips. */
-  suction_style?: 'full' | 'chips';
+  suction_style?: RowStyle;
 }
 
 type Command = 'start' | 'pause' | 'stop' | 'dock' | 'locate';
@@ -118,6 +136,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   ];
 
   private readonly suctionHold = new Hold<string | null>(this);
+  private readonly head = new HeadFit(this);
   private battery:
     | {
         readonly registry: HomeAssistant['entities'] | undefined;
@@ -126,12 +145,23 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       }
     | undefined;
 
+  static override keys = configKeys<VacuumCardConfig>()([
+    'subtitle',
+    'variant',
+    'show_battery',
+    'area_entity',
+    'duration_entity',
+    'remaining_entity',
+    'battery_entity',
+    'suction_style',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['vacuum', 'lawn_mower']),
         nameIconFields(),
-        fieldRow(textField('subtitle'), entityField(['sensor'], 'battery_entity', false)),
+        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
+        fieldRow(boolField('show_battery'), entityField(['sensor'], 'battery_entity', false)),
         fieldRow(
           entityField(['sensor'], 'area_entity', false),
           entityField(['sensor'], 'duration_entity', false),
@@ -140,6 +170,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
           entityField(['sensor'], 'remaining_entity', false),
           selectField('suction_style', ['full', 'chips']),
         ),
+        colourFields(),
+        actionFields(),
       ],
       ...editorLabels(
         vacuumStrings,
@@ -166,10 +198,13 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   }
 
   override getCardSize(): number {
-    return 6;
+    return this.config?.variant === 'compact' ? 3 : 6;
   }
+  /** The full card needs its ruler's width; the compact one — the head and the commands — half a section at least. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 9 };
+    return this.config?.variant === 'compact'
+      ? { columns: 6, rows: 'auto', min_columns: 6 }
+      : { columns: 12, rows: 'auto', min_columns: 8 };
   }
 
   override disconnectedCallback(): void {
@@ -237,7 +272,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
     const robot = view.domain === 'lawn_mower' ? MOWER : VACUUM;
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
+    const compact = this.config?.variant === 'compact';
     const shown = this.stateOf(view);
     const running = shown === robot.running;
     const tone: Tone = unusable
@@ -263,9 +299,11 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     const level =
       sensor && sensor.status !== 'missing' ? sensor.number : numberAttr(view, 'battery_level');
     const hasBattery =
-      level !== null ||
-      (sensor !== undefined && sensor.status !== 'missing') ||
-      (unusable && has('battery'));
+      !compact &&
+      this.config?.show_battery !== false &&
+      (level !== null ||
+        (sensor !== undefined && sensor.status !== 'missing') ||
+        (unusable && has('battery')));
     const battery = level === null || unusable ? null : clamp(Math.round(level), 0, 100);
 
     const row: ActionItem[] = [];
@@ -305,6 +343,12 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         disabled: unusable,
       });
 
+    if (compact) {
+      // a compact card keeps the commands that fit: start or pause and dock first, then stop and locate
+      const rank = { start: 0, pause: 0, dock: 1, stop: 2, locate: 3 } as const;
+      row.sort((a, b) => rank[a.key as Command] - rank[b.key as Command]);
+      row.splice(actionsThatFit(this.width - 40)); // the card's real width, not the drawing floor
+    }
     const speeds = has('suction')
       ? ((view.attr<unknown>('fan_speed_list') as unknown[] | undefined) ?? []).filter(
           (item): item is string => typeof item === 'string',
@@ -329,6 +373,13 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         ? `${view.areaName} · ${started}`
         : view.areaName || started.charAt(0).toUpperCase() + started.slice(1));
     const batteryText = `${this.t('vacuum.battery')} · ${battery === null ? '—' : `${formatNumber(this.hass, battery, { digits: 0 })} %`}`;
+    // the head fitted to its column: the badge steps aside before the name is cut, then the sub, then the icon
+    const fitted = this.head.fit({
+      width: w,
+      title: name,
+      sub: headSub(sub, w),
+      badge: { text: shownStateText(this.hass, view, shown), tone },
+    });
 
     return html`<article
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''}"
@@ -336,15 +387,19 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? (robot === MOWER ? 'leaf' : glyphFor(view)),
+        icon: fitted.icon
+          ? (this.config?.icon ?? (robot === MOWER ? 'leaf' : glyphFor(view)))
+          : null,
         tone,
         title: name,
-        sub: headSub(sub, w),
-        trailing: badge(shownStateText(this.hass, view, shown), tone),
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        name: true,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
-      ${columns.length ? html`<div class="dv-cols fv-cols">${columns}</div>` : nothing}
+      ${columns.length && !compact ? html`<div class="dv-cols fv-cols">${columns}</div>` : nothing}
       ${
         hasBattery
           ? html` ${label(batteryText)}
@@ -368,16 +423,16 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       }
       ${row.length ? actions(row, (key) => this.command(view, robot, key as Command)) : nothing}
       ${
-        chipItems.length
-          ? html`${label(this.t('vacuum.suction'))}${chips(
+        chipItems.length && !compact
+          ? html`${label(this.t('vacuum.suction'))}${chipRow(
               chipItems,
               (key) => {
                 if (unusable) return;
                 this.suctionHold.set(key);
                 this.call('vacuum', 'set_fan_speed', { fan_speed: key });
               },
-              '',
-              this.config?.suction_style !== 'chips',
+              this.config?.suction_style,
+              { ruler: this.head.ruler, width: this.contentWidth },
             )}`
           : nothing
       }

@@ -389,7 +389,19 @@
     "live_update": "Update while dragging",
     "show_count": "Show how many are on",
     "color": "Colour",
-    "color_help": "A colour of the palette, or type any #rrggbb"
+    "color_help": "A colour of the palette, or type any #rrggbb",
+    "show_tilt": "Show tilt",
+    "show_favorites": "Show favourites",
+    "favorites_style": "Favourites as",
+    "show_oscillation": "Show oscillation",
+    "show_direction": "Show direction",
+    "show_battery": "Show battery",
+    "source_style": "Sources as",
+    "show_source": "Show sources",
+    "show_volume": "Show volume",
+    "favorites": "Favourites",
+    "position": "Position",
+    "tilt": "Tilt"
   },
   "strategy": {
     "home": "Home",

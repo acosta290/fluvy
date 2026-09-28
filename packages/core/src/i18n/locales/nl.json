@@ -389,7 +389,19 @@
     "live_update": "Bijwerken tijdens het slepen",
     "show_count": "Tonen hoeveel er aan zijn",
     "color": "Kleur",
-    "color_help": "Een kleur van het palet, of typ een #rrggbb"
+    "color_help": "Een kleur van het palet, of typ een #rrggbb",
+    "show_tilt": "Kanteling tonen",
+    "show_favorites": "Favorieten tonen",
+    "favorites_style": "Favorieten als",
+    "show_oscillation": "Oscillatie tonen",
+    "show_direction": "Richting tonen",
+    "show_battery": "Batterij tonen",
+    "source_style": "Bronnen als",
+    "show_source": "Bronnen tonen",
+    "show_volume": "Volume tonen",
+    "favorites": "Favorieten",
+    "position": "Positie",
+    "tilt": "Kanteling"
   },
   "strategy": {
     "home": "Thuis",

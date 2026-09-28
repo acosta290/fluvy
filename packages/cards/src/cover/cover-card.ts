@@ -1,6 +1,7 @@
 import { coverClassLabel } from './class-label.js';
 import {
   formatNumber,
+  isUsable,
   numberAttr,
   stateText,
   strings,
@@ -12,8 +13,6 @@ import {
 
 import {
   actions,
-  badge,
-  chips,
   clamp,
   head,
   label,
@@ -35,15 +34,20 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionFields,
+  boolField,
+  colourFields,
   editorLabels,
   entityField,
   fieldRow,
   nameIconFields,
   numberField,
+  selectField,
   textField,
 } from '../shared/form.js';
 import {
   actionGap,
+  actionsThatFit,
   Burst,
   headSub,
   Hold,
@@ -52,19 +56,31 @@ import {
   shownStateText,
   StableTemplate,
 } from './common.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
+import { chipRow } from '../shared/chips.js';
+import { type RowsListSpec } from '../shared/rows-editor.js';
+import { HeadFit } from '../energy/head.js';
 
 const coverStrings = strings('cover');
 
 /** One saved place for a cover: "Morning · 60 %". `position` and `tilt` are percentages, 100 = open. */
 export interface CoverFavorite {
-  label?: string;
+  name?: string;
   position?: number;
   tilt?: number;
 }
 
+/** `full` (default): the position ruler, tilt, the actions and the favourites. `compact`: the head and the actions. */
+export type CoverVariant = 'full' | 'compact';
+
 export interface CoverCardConfig extends FluvyCardConfig {
   subtitle?: string;
+  variant?: CoverVariant;
   favorites?: readonly CoverFavorite[];
+  /** Favourites as chips filling the row (default) or content-sized. */
+  favorites_style?: RowStyle;
+  show_tilt?: boolean;
+  show_favorites?: boolean;
   /** The slats' angle at 100 % tilt. When set, tilt reads and steps in degrees (15°) instead of percent. */
   tilt_angle?: number;
 }
@@ -155,15 +171,44 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     this.fine = null;
   }
 
+  static override keys = configKeys<CoverCardConfig>()([
+    'subtitle',
+    'variant',
+    'favorites',
+    'favorites_style',
+    'show_tilt',
+    'show_favorites',
+    'tilt_angle',
+  ]);
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'favorites',
+      idKey: 'name',
+      title: 'editor.favorites',
+      keys: ['name', 'position', 'tilt'],
+      schema: [
+        textField('name'),
+        fieldRow(numberField('position', 0, 100), numberField('tilt', 0, 100)),
+      ],
+    },
+  ];
+  static override aliases: AliasSpec = { items: { favorites: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['cover', 'valve']),
         nameIconFields(),
         fieldRow(textField('subtitle'), numberField('tilt_angle', 0, 360)),
+        fieldRow(
+          selectField('variant', ['full', 'compact']),
+          selectField('favorites_style', ['full', 'chips']),
+        ),
+        fieldRow(boolField('show_tilt'), boolField('show_favorites')),
         { name: 'favorites', selector: { object: {} } },
+        colourFields(),
+        actionFields(),
       ],
-      ...editorLabels(coverStrings, { tilt_angle: 'tilt_angle', favorites: 'favourites' }, {}),
+      ...editorLabels(coverStrings, { tilt_angle: 'tilt_angle' }, {}),
     };
   }
 
@@ -177,17 +222,27 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
   protected override prepare(config: CoverCardConfig): CoverCardConfig {
     if (!config.entity) throw new Error('fluvy-cover-card: "entity" is required');
     if (config.favorites !== undefined && !Array.isArray(config.favorites))
-      throw new Error('fluvy-cover-card: "favorites" must be a list of { label, position, tilt }');
+      throw new Error('fluvy-cover-card: "favorites" must be a list of { name, position, tilt }');
     return config;
   }
 
+  private readonly head = new HeadFit(this);
+
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
+  }
+
   override getCardSize(): number {
+    if (this.compact) return 3;
     const view = this.entity();
     return 3 + (view.supports(SET_POSITION) ? 4 : 0) + (this.favoritesFor(view).length ? 2 : 0);
   }
 
+  /** The full card needs its ruler's width; the compact one — the head and the actions — half a section at least. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 9 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 6 }
+      : { columns: 12, rows: 'auto', min_columns: 8 };
   }
 
   override disconnectedCallback(): void {
@@ -297,7 +352,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
             ? this.t('common.closed')
             : this.percent(position)
         : `${this.t('cover.tilt')} ${this.percent(favorite.tilt ?? 0)}`;
-    return favorite.label ? `${favorite.label} · ${value.toLowerCase()}` : value;
+    return favorite.name ? `${favorite.name} · ${value.toLowerCase()}` : value;
   }
 
   protected renderCard(): TemplateResult {
@@ -307,7 +362,8 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
     const valve = view.domain === 'valve';
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
+    const compact = this.compact;
     const reported = percentAttr(view, 'current_position');
     // Home Assistant's own rule for the ends: the position when there is one, the state otherwise
     const fullyOpen = reported !== null ? reported >= 100 : view.state === 'open';
@@ -331,7 +387,8 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     const canTilt =
       !valve &&
       (view.supports(SET_TILT_POSITION) || view.supports(OPEN_TILT) || view.supports(CLOSE_TILT));
-    const showTilt = !valve && (canTilt || tilt !== null);
+    const showTilt =
+      !valve && !compact && this.config?.show_tilt !== false && (canTilt || tilt !== null);
     const tight = canPosition && showTilt && this.contentWidth - RULER_COLUMN < 180; // the stepper drops under its readout
 
     // a cover whose state is only assumed (one-way radio) keeps both directions live, as Home Assistant does
@@ -354,7 +411,19 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
         disabled: unusable || (!assumed && (fullyClosed || shown === 'closing')),
       });
 
-    const favorites = this.favoritesFor(view);
+    const favorites =
+      compact || this.config?.show_favorites === false ? [] : this.favoritesFor(view);
+    // a compact card narrower than three cells keeps open and close (stop steps aside); one too narrow for
+    // those keeps its head alone — the card's real width decides, not the drawing floor
+    if (compact) {
+      const fit = actionsThatFit(this.width - 40);
+      if (row.length > fit && row.some((item) => item.key === 'stop'))
+        row.splice(
+          row.findIndex((item) => item.key === 'stop'),
+          1,
+        );
+      if (row.length > fit) row.splice(fit);
+    }
     const chipItems: ChipItem[] = favorites.map((favorite, index) => ({
       key: String(index),
       label: this.favoriteLabel(favorite),
@@ -394,22 +463,33 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
         ? [view.areaName, classLabel].filter(Boolean).join(' · ')
         : classLabel.charAt(0).toUpperCase() + classLabel.slice(1));
 
+    // the head fitted to its column: the badge steps aside before the name is cut, then the sub, then the icon
+    const fitted = this.head.fit({
+      width: this.contentWidth,
+      title: name,
+      sub: headSub(sub, this.contentWidth),
+      badge: { text: shownStateText(this.hass, view, shown), tone },
+    });
     return html`<article
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''}"
       style="--dv-action-gap:${actionGap(this.contentWidth, row.length)}px"
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? CLASS_GLYPH[view.deviceClass] ?? glyphFor(view),
+        icon: fitted.icon
+          ? (this.config?.icon ?? CLASS_GLYPH[view.deviceClass] ?? glyphFor(view))
+          : null,
         tone,
         title: name,
-        sub: headSub(sub, this.contentWidth),
-        trailing: badge(shownStateText(this.hass, view, shown), tone),
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        name: true,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       ${
-        canPosition
+        canPosition && !compact
           ? html` <div class="dv-cover ${tight ? 'dv-cover--tight' : ''}">
               <div class="dv-cover__ruler">
                 <div class="dv-vlabels" style="height:160px">
@@ -453,10 +533,15 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       ${row.length ? actions(row, (key) => this.command(view, key)) : nothing}
       ${
         chipItems.length
-          ? html`${label(coverStrings(this.hass, 'favourites'))}${chips(chipItems, (key) => {
-              const favorite = favorites[Number(key)];
-              if (favorite && !unusable) this.applyFavorite(view, favorite);
-            })}`
+          ? html`${label(coverStrings(this.hass, 'favourites'))}${chipRow(
+              chipItems,
+              (key) => {
+                const favorite = favorites[Number(key)];
+                if (favorite && !unusable) this.applyFavorite(view, favorite);
+              },
+              this.config?.favorites_style,
+              { ruler: this.head.ruler, width: this.contentWidth },
+            )}`
           : nothing
       }
     </article>`;

@@ -288,15 +288,19 @@ export function chipColumns(labels: readonly string[]): number {
 
 /**
  * Chips. Content-sized by default (14 px sides, the row does not stretch); `fill` = equal chips that
- * fill the whole row — every row, the last one splitting the width among its own chips.
+ * fill the whole row — every row, the last one splitting the width among its own chips, in `columns`
+ * (measured by the card) or as many as the labels' lengths suggest.
  */
 export function chips(
   items: readonly ChipItem[],
   onSelect: (key: string) => void,
   className = '',
   fill = false,
+  columns?: number,
 ): TemplateResult {
-  const grid = fill ? optionGrid(items.length, chipColumns(items.map((c) => c.label))) : undefined;
+  const grid = fill
+    ? optionGrid(items.length, columns ?? chipColumns(items.map((c) => c.label)))
+    : undefined;
   return html`<div
     class="fv-chips ${className} ${fill ? 'fv-chips--fill' : ''}"
     style=${grid ? `grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr))` : nothing}

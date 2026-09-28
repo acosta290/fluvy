@@ -137,16 +137,24 @@ export const pretty = (raw: string): string => {
 /**
  * An action row is equal cells that fill the content column — never a left-hugging strip. For the
  * cells to land on the 4 px grid at any card width the gap gives way before the cells do: 16 at the
- * design widths (3 × 96 and 4 × 68 in a 320 column), otherwise the nearest gap that makes them whole.
- * The columns stay `minmax(0, 1fr)`; the card only hands the gap to CSS (`--dv-action-gap`).
+ * design widths (3 × 96 and 4 × 68 in a 320 column), otherwise the nearest gap that makes them whole
+ * (down to 4: three 44 cells in a half-section card). The columns stay `minmax(0, 1fr)`; the card only
+ * hands the gap to CSS (`--dv-action-gap`).
  */
-const GAPS = [16, 12, 20, 24, 8] as const;
+const GAPS = [16, 12, 20, 24, 8, 4] as const;
 
 export function actionGap(contentWidth: number, count: number): number {
   const cell = (gap: number): number => (contentWidth - gap * (count - 1)) / count;
   for (const gap of GAPS) if (cell(gap) >= 44 && cell(gap) % 4 === 0) return gap;
   return cell(16) >= 44 ? 16 : 8; // an odd width: keep the design gap while the cells stay touchable
 }
+
+/**
+ * How many 44 cells a column holds with 4 between them: a compact card keeps the commands that fit, and none
+ * where not one fits (its head alone; `contentWidth` here is the card's real one, never the drawing floor).
+ */
+export const actionsThatFit = (contentWidth: number): number =>
+  Math.max(0, Math.floor((contentWidth + 4) / 48));
 
 /** The CSS the three cards add on top of the sheet: the fluid action row and its unavailable skin. Tokens only. */
 export const motionStyles = css`

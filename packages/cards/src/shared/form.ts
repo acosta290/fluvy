@@ -38,6 +38,9 @@ const editorLanguage = (): Pick<HomeAssistant, 'language'> => ({
 /** A value a select may hold: one the catalogue has a word for (`option.<value>`), in every language. */
 export type OptionWord = KeyOf<'option'>;
 
+/** A word of the catalogue in the editor's language (a select built by hand names its choices with it). */
+export const editorWord = (key: MessageKey): string => localize(editorLanguage(), key);
+
 /** What names an editor's field (`computeLabel` of a config form): a word, or HA's own when undefined. */
 export type FormLabeler = (
   schema: HaFormSchemaItem,

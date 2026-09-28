@@ -389,7 +389,19 @@
     "live_update": "Aggiorna durante il trascinamento",
     "show_count": "Mostra quanti sono accesi",
     "color": "Colore",
-    "color_help": "Un colore della palette, oppure scrivi un #rrggbb"
+    "color_help": "Un colore della palette, oppure scrivi un #rrggbb",
+    "show_tilt": "Mostra l’inclinazione",
+    "show_favorites": "Mostra i preferiti",
+    "favorites_style": "Preferiti come",
+    "show_oscillation": "Mostra l’oscillazione",
+    "show_direction": "Mostra la direzione",
+    "show_battery": "Mostra la batteria",
+    "source_style": "Sorgenti come",
+    "show_source": "Mostra le sorgenti",
+    "show_volume": "Mostra il volume",
+    "favorites": "Preferiti",
+    "position": "Posizione",
+    "tilt": "Inclinazione"
   },
   "strategy": {
     "home": "Casa",

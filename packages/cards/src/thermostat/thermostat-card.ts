@@ -1,32 +1,32 @@
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatNumber,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
-  type MessageKey,
+  isUsable,
   readText,
   stateText,
   writeText,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
+  type MessageKey,
 } from '@fluvy/core';
 
 import {
-  chips,
   clamp,
   decimalsOf,
-  type DialArc,
-  type DialChangeDetail,
-  type GlyphName,
   head,
   label,
-  type OptionItem,
   options,
   readout,
-  type RulerChangeDetail,
   rulerLabels,
   sheetStyles,
   stepper,
   textWidth,
+  type DialArc,
+  type DialChangeDetail,
+  type GlyphName,
+  type OptionItem,
+  type RulerChangeDetail,
   type Tone,
 } from '@fluvy/ui';
 
@@ -37,7 +37,10 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionFields,
   boolField,
+  colourFields,
+  editorWord,
   entityField,
   fieldRow,
   formLabels,
@@ -47,6 +50,8 @@ import {
 
 import { HeadFit } from '../energy/head.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
+import { configKeys } from '../shared/config.js';
+import { chipRow } from '../shared/chips.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
 export type RowStyle = 'chips' | 'full';
@@ -157,6 +162,15 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       ? { modes: hass?.states[config['entity']]?.attributes['hvac_modes'] }
       : {}),
   });
+  static override keys = configKeys<ThermostatCardConfig>()([
+    'show_presets',
+    'show_fan',
+    'variant',
+    'modes',
+    'modes_style',
+    'preset_style',
+    'fan_style',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -172,14 +186,17 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
             select: {
               multiple: true,
               mode: 'list',
-              options: MODE_ORDER.map((value) => ({ value, label: pretty(value) })),
+              options: MODE_ORDER.map((value) => ({
+                value,
+                label: editorWord(`climate.mode.${value}` as MessageKey),
+              })),
             },
           },
         },
-        boolField('show_presets'),
-        selectField('preset_style', ['full', 'chips']),
-        boolField('show_fan'),
-        selectField('fan_style', ['full', 'chips']),
+        fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
+        fieldRow(boolField('show_fan'), selectField('fan_style', ['full', 'chips'])),
+        colourFields(),
+        actionFields(),
       ],
       ...formLabels({
         modes: 'editor.modes',
@@ -210,10 +227,18 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
   }
 
   override getCardSize(): number {
-    return 7;
+    return { dial: 7, ruler: 6, compact: 4 }[this.variant()];
   }
+  /** The dial needs its width; the ruler card half a section; the compact one a quarter. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 9 };
+    switch (this.variant()) {
+      case 'compact':
+        return { columns: 6, rows: 'auto', min_columns: 4 };
+      case 'ruler':
+        return { columns: 12, rows: 'auto', min_columns: 6 };
+      default:
+        return { columns: 12, rows: 'auto', min_columns: 8 };
+    }
   }
 
   /* The setpoint each mode was last used at, so an inactive mode tile can say "Cool · 24°". */
@@ -569,7 +594,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const style = this.config?.modes_style ?? 'tiles';
     const select = (key: string): void => this.setMode(view, m, key);
     if (style === 'tiles') return options(modes, select);
-    return chips(
+    return chipRow(
       modes.map((o) => ({
         key: o.key,
         label: o.label,
@@ -577,8 +602,8 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         ...(o.glyph ? { glyph: o.glyph } : {}),
       })),
       select,
-      '',
-      style === 'full',
+      style,
+      { ruler: this.head.ruler, width: this.contentWidth },
     );
   }
 
@@ -587,7 +612,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const name = this.config?.name ?? view.name;
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
     const m = this.model(view);
     const tone: Tone = unusable ? 'off' : m.tone;
     const humidity = view.attr<number | null>('current_humidity');
@@ -624,7 +649,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       class="fv-card cl-card ${unusable ? 'is-unavailable' : ''} ${this.contentWidth < 292 ? 'is-narrow' : ''}"
       data-card
     >
-      ${head({ icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null, tone, title: name, sub: fitted.sub, trailing: fitted.badge, onIconTap: () => this.tap(view.id, { action: 'more-info' }), iconLabel: name, name: true })}
+      ${head({ icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null, tone, title: name, sub: fitted.sub, trailing: fitted.badge, onIconTap: () => this.tap(view.id), onHold: () => this.hold(view.id), iconLabel: name, name: true })}
       ${
         this.variant() !== 'dial'
           ? this.renderValueRow(view, m, name, unusable, figure, edge, now)
@@ -656,21 +681,21 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       ${modes.length ? html`${label(this.t('climate.mode'))}${this.renderModes(view, m, modes)}` : nothing}
       ${
         m.presets.length && this.config?.show_presets !== false
-          ? html`${label(this.t('climate.preset'))}${chips(
+          ? html`${label(this.t('climate.preset'))}${chipRow(
               m.presets.map((p) => ({ key: p, label: pretty(p), active: p === m.preset })),
               (key) => this.call('climate', 'set_preset_mode', { preset_mode: key }),
-              '',
-              this.config?.preset_style !== 'chips',
+              this.config?.preset_style,
+              { ruler: this.head.ruler, width: this.contentWidth },
             )}`
           : nothing
       }
       ${
         m.fans.length && this.config?.show_fan !== false
-          ? html`${label(this.t('climate.fan'))}${chips(
+          ? html`${label(this.t('climate.fan'))}${chipRow(
               m.fans.map((f) => ({ key: f, label: pretty(f), active: f === m.fan })),
               (key) => this.call('climate', 'set_fan_mode', { fan_mode: key }),
-              '',
-              this.config?.fan_style !== 'chips',
+              this.config?.fan_style,
+              { ruler: this.head.ruler, width: this.contentWidth },
             )}`
           : nothing
       }

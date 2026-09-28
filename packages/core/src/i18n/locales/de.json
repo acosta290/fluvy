@@ -389,7 +389,19 @@
     "live_update": "Beim Ziehen aktualisieren",
     "show_count": "Anzahl der eingeschalteten zeigen",
     "color": "Farbe",
-    "color_help": "Eine Farbe der Palette, oder ein beliebiges #rrggbb"
+    "color_help": "Eine Farbe der Palette, oder ein beliebiges #rrggbb",
+    "show_tilt": "Neigung zeigen",
+    "show_favorites": "Favoriten zeigen",
+    "favorites_style": "Favoriten als",
+    "show_oscillation": "Schwenken zeigen",
+    "show_direction": "Richtung zeigen",
+    "show_battery": "Batterie zeigen",
+    "source_style": "Quellen als",
+    "show_source": "Quellen zeigen",
+    "show_volume": "Lautstärke zeigen",
+    "favorites": "Favoriten",
+    "position": "Position",
+    "tilt": "Neigung"
   },
   "strategy": {
     "home": "Zuhause",

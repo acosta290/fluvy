@@ -1,5 +1,6 @@
 import {
   formatNumber,
+  isUsable,
   numberAttr,
   stateText,
   strings,
@@ -10,8 +11,6 @@ import {
 } from '@fluvy/core';
 
 import {
-  badge,
-  chips,
   clamp,
   head,
   label,
@@ -33,7 +32,17 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
-import { boolField, entityField, formLabels, nameIconFields, textField } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+  textField,
+} from '../shared/form.js';
 import {
   Burst,
   Hold,
@@ -42,12 +51,23 @@ import {
   releasePresses,
   StableTemplate,
 } from '../cover/common.js';
+import { configKeys, type RowStyle } from '../shared/config.js';
+import { chipRow } from '../shared/chips.js';
+import { HeadFit } from '../energy/head.js';
 
 const fanStrings = strings('fan');
 
+/** `full` (default): the speed with its stepper and ruler, the rows and the presets. `compact`: the head and the ruler. */
+export type FanVariant = 'full' | 'compact';
+
 export interface FanCardConfig extends FluvyCardConfig {
   subtitle?: string;
+  variant?: FanVariant;
   show_presets?: boolean;
+  /** Presets as chips filling the row (default) or content-sized. */
+  preset_style?: RowStyle;
+  show_oscillation?: boolean;
+  show_direction?: boolean;
 }
 
 /* fan supported_features */
@@ -81,6 +101,17 @@ export class FluvyFanCard extends Card<FanCardConfig> {
       .dv-card > fluvy-ruler {
         display: block;
         margin-top: 12px;
+      }
+      /* the compact card's one row: the 40 ruler centred in a 44 row, as every row of the language */
+      .dv-fan__row {
+        display: flex;
+        align-items: center;
+        height: 44px;
+        margin-top: 16px;
+      }
+      .dv-fan__row > fluvy-ruler {
+        display: block;
+        margin-top: 0;
       }
       /* an unavailable card already dims as a whole: its rows do not dim a second time */
       .is-unavailable .is-unavailable {
@@ -129,6 +160,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
   private readonly speedHold = new Hold<number | null>(this);
   private readonly oscillatingHold = new Hold<boolean>(this);
   private readonly directionHold = new Hold<Direction | null>(this);
+  private readonly head = new HeadFit(this);
   private readonly presetHold = new Hold<string | null>(this);
   private readonly speedBurst = new Burst();
   private readonly speedStepper = new StableTemplate(this);
@@ -139,13 +171,24 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     this.fine = null;
   }
 
+  static override keys = configKeys<FanCardConfig>()([
+    'subtitle',
+    'variant',
+    'show_presets',
+    'preset_style',
+    'show_oscillation',
+    'show_direction',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['fan']),
         nameIconFields(),
-        textField('subtitle'),
-        boolField('show_presets'),
+        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
+        fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
+        fieldRow(boolField('show_oscillation'), boolField('show_direction')),
+        colourFields(),
+        actionFields(),
       ],
       ...formLabels({
         show_presets: 'fan.preset',
@@ -165,7 +208,12 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     return config;
   }
 
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
+  }
+
   override getCardSize(): number {
+    if (this.compact) return 3;
     const view = this.entity();
     return (
       2 +
@@ -176,8 +224,11 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     );
   }
 
+  /** The full card needs its ruler's width; the compact one — the head and the ruler — a quarter of a section. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 9 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 4 }
+      : { columns: 12, rows: 'auto', min_columns: 8 };
   }
 
   override disconnectedCallback(): void {
@@ -289,7 +340,8 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
+    const compact = this.compact;
     const on = this.stateOf(view) === 'on';
     const count = speedCount(view);
     const step = 100 / count;
@@ -315,10 +367,13 @@ export class FluvyFanCard extends Card<FanCardConfig> {
       active: !unusable && item === preset,
     }));
     const showPresets =
-      chipItems.length > 0 && view.supports(PRESET_MODE) && this.config?.show_presets !== false;
+      !compact &&
+      chipItems.length > 0 &&
+      view.supports(PRESET_MODE) &&
+      this.config?.show_presets !== false;
 
     const rows: TemplateResult[] = [];
-    if (view.supports(OSCILLATE)) {
+    if (!compact && view.supports(OSCILLATE) && this.config?.show_oscillation !== false) {
       rows.push(
         listRow({
           icon: 'swing',
@@ -336,7 +391,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
         }),
       );
     }
-    if (view.supports(DIRECTION)) {
+    if (!compact && view.supports(DIRECTION) && this.config?.show_direction !== false) {
       rows.push(
         listRow({
           icon: 'auto',
@@ -385,63 +440,89 @@ export class FluvyFanCard extends Card<FanCardConfig> {
       : scale.labels;
     const speedLabel = this.t('fan.speed');
 
+    // the head fitted to its column round its switch (a badge when unreachable): the sub steps aside, then the
+    // icon; the compact head says the speed where the full card has its big number ("On · 66 %")
+    const fitted = this.head.fit({
+      width: this.contentWidth,
+      title: name,
+      sub:
+        this.config?.subtitle ??
+        (compact && on && figure !== null
+          ? `${stateText(this.hass, view)} · ${formatNumber(this.hass, figure, { digits: 0 })} %`
+          : view.areaName || (unusable ? '' : stateText(this.hass, view))),
+      ...(unusable
+        ? { badge: { text: stateText(this.hass, view), tone: 'off' as const } }
+        : { trailing: 48 }),
+    });
     return html`<article
       class="fv-card dv-card dv-fan ${unusable ? 'is-unavailable is-off' : ''}"
       style=${turn}
       data-card
     >
       ${head({
-        icon: iconRef,
+        icon: fitted.icon ? iconRef : null,
         tone,
         title: name,
-        sub:
-          this.config?.subtitle ?? (view.areaName || (unusable ? '' : stateText(this.hass, view))),
+        name: true,
+        sub: fitted.sub,
         trailing: unusable
-          ? badge(stateText(this.hass, view), 'off')
+          ? fitted.badge
           : toggle(on, 'fan', (next) => this.power(view, next), name),
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       ${
         view.supports(SET_SPEED)
-          ? html` <div class="dv-value fv-value-row">
-                ${readout({ label: speedLabel, value: figure === null ? '—' : formatNumber(this.hass, figure, { digits: 0 }), unit: figure === null ? '' : '%', size: 'l' })}
-                ${unusable ? nothing : this.speedStepper.get(speedLabel, () => stepper((nudge) => this.stepSpeed(nudge), { decrease: `${speedLabel} · ${this.t('common.decrease')}`, increase: `${speedLabel} · ${this.t('common.increase')}` }))}
+          ? html` ${
+                compact
+                  ? nothing
+                  : html`<div class="dv-value fv-value-row">
+                      ${readout({ label: speedLabel, value: figure === null ? '—' : formatNumber(this.hass, figure, { digits: 0 }), unit: figure === null ? '' : '%', size: 'l' })}
+                      ${unusable ? nothing : this.speedStepper.get(speedLabel, () => stepper((nudge) => this.stepSpeed(nudge), { decrease: `${speedLabel} · ${this.t('common.decrease')}`, increase: `${speedLabel} · ${this.t('common.increase')}` }))}
+                    </div>`
+              }
+              <div class="${compact ? 'dv-fan__row' : ''}">
+                <fluvy-ruler
+                  .value=${Math.round((speed ?? 0) / step) * step}
+                  .min=${0}
+                  .max=${100}
+                  .step=${step}
+                  .length=${compact ? Math.max(24, this.width - 40) : this.contentWidth}
+                  .minor=${scale.minor}
+                  .major=${scale.major}
+                  .tone=${on && !unusable ? 'fan' : 'neutral'}
+                  ?inactive=${speed === null || !on}
+                  ?wake=${!unusable && speed !== null}
+                  ?disabled=${unusable}
+                  unit="%"
+                  .label=${`${name} · ${speedLabel}`}
+                  .format=${(value: number) => formatNumber(this.hass, value, { digits: 0 })}
+                  @fluvy-input=${(event: CustomEvent<RulerChangeDetail>) => {
+                    this.dragged = event.detail.value;
+                  }}
+                  @fluvy-change=${(event: CustomEvent<RulerChangeDetail>) => this.setSpeed(view, event.detail.value, false)}
+                  @fluvy-window=${(event: CustomEvent<RulerWindowDetail>) => {
+                    this.fine = event.detail.fine ? event.detail : null;
+                  }}
+                ></fluvy-ruler>
               </div>
-              <fluvy-ruler
-                .value=${Math.round((speed ?? 0) / step) * step}
-                .min=${0}
-                .max=${100}
-                .step=${step}
-                .length=${this.contentWidth}
-                .minor=${scale.minor}
-                .major=${scale.major}
-                .tone=${on && !unusable ? 'fan' : 'neutral'}
-                ?inactive=${speed === null || !on}
-                ?wake=${!unusable && speed !== null}
-                ?disabled=${unusable}
-                unit="%"
-                .label=${`${name} · ${speedLabel}`}
-                .format=${(value: number) => formatNumber(this.hass, value, { digits: 0 })}
-                @fluvy-input=${(event: CustomEvent<RulerChangeDetail>) => {
-                  this.dragged = event.detail.value;
-                }}
-                @fluvy-change=${(event: CustomEvent<RulerChangeDetail>) => this.setSpeed(view, event.detail.value, false)}
-                @fluvy-window=${(event: CustomEvent<RulerWindowDetail>) => {
-                  this.fine = event.detail.fine ? event.detail : null;
-                }}
-              ></fluvy-ruler>
-              ${rulerLabels(labels)}`
+              ${compact ? nothing : rulerLabels(labels)}`
           : nothing
       }
       ${rows.length ? html`<div class="dv-rows">${rows}</div>` : nothing}
       ${
         showPresets
-          ? html`${label(this.t('fan.preset'))}${chips(chipItems, (key) => {
-              if (unusable) return;
-              this.presetHold.set(key);
-              this.call('fan', 'set_preset_mode', { preset_mode: key });
-            })}`
+          ? html`${label(this.t('fan.preset'))}${chipRow(
+              chipItems,
+              (key) => {
+                if (unusable) return;
+                this.presetHold.set(key);
+                this.call('fan', 'set_preset_mode', { preset_mode: key });
+              },
+              this.config?.preset_style,
+              { ruler: this.head.ruler, width: this.contentWidth },
+            )}`
           : nothing
       }
     </article>`;

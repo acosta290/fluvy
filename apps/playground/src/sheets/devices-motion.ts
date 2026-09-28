@@ -277,6 +277,15 @@ export const sheet: SheetSpec = {
       ],
     },
     { title: 'Valve', cards: [{ type: 'custom:fluvy-cover-card', entity: 'valve.irrigation' }] },
+    // the compact cover: the head and the actions, a quarter of a section
+    {
+      title: 'Cover · compact',
+      width: 392,
+      cards: [
+        { type: 'custom:fluvy-cover-card', entity: 'cover.blinds', variant: 'compact', cols: 6 },
+        { type: 'custom:fluvy-cover-card', entity: 'cover.garage', variant: 'compact', cols: 6 },
+      ],
+    },
 
     {
       title: 'Ceiling fan',
@@ -295,6 +304,15 @@ export const sheet: SheetSpec = {
       cards: [{ type: 'custom:fluvy-fan-card', entity: 'fan.purifier' }],
     },
     { title: 'Fan · unavailable', cards: [{ type: 'custom:fluvy-fan-card', entity: 'fan.gone' }] },
+    // the compact fan: the head says the speed, the ruler alone
+    {
+      title: 'Fan · compact',
+      width: 392,
+      cards: [
+        { type: 'custom:fluvy-fan-card', entity: 'fan.ceiling', variant: 'compact', cols: 6 },
+        { type: 'custom:fluvy-fan-card', entity: 'fan.gone', variant: 'compact', cols: 6 },
+      ],
+    },
 
     {
       title: 'Vacuum',
@@ -337,6 +355,15 @@ export const sheet: SheetSpec = {
           battery_entity: 'sensor.gone_battery',
           area_entity: 'sensor.gone_area',
         },
+      ],
+    },
+    // the compact robot: the head and the commands
+    {
+      title: 'Vacuum · compact',
+      width: 392,
+      cards: [
+        { type: 'custom:fluvy-vacuum-card', entity: 'vacuum.robot', variant: 'compact', cols: 6 },
+        { type: 'custom:fluvy-vacuum-card', entity: 'vacuum.dock', variant: 'compact', cols: 6 },
       ],
     },
     {

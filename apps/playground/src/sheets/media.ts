@@ -206,6 +206,18 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-media-card', entity: 'media_player.tv', variant: 'mini' },
       ],
     },
+    // a player told to show neither its sources nor its volume
+    {
+      title: 'TV · bare',
+      cards: [
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.tv',
+          show_source: false,
+          show_volume: false,
+        },
+      ],
+    },
     {
       title: 'Hero',
       cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.kitchen', variant: 'hero' }],

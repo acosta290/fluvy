@@ -1,6 +1,7 @@
 import {
   formatDuration,
   formatNumber,
+  isUsable,
   numberAttr,
   stateText,
   strings,
@@ -11,7 +12,16 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { glyph, ico, icon, round, sheetStyles } from '@fluvy/ui';
+import {
+  clickPress,
+  glyph,
+  ico,
+  icon,
+  preventMenu,
+  round,
+  sheetStyles,
+  startPress,
+} from '@fluvy/ui';
 
 import {
   css,
@@ -26,7 +36,14 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { Card } from '../shared/base.js';
 
-import { entityField, formLabels, nameIconFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  entityField,
+  formLabels,
+  nameIconFields,
+} from '../shared/form.js';
 import {
   MEDIA,
   playable,
@@ -35,13 +52,19 @@ import {
   playPauseAction,
   trackPosition,
 } from '../shared/media.js';
+import { configKeys } from '../shared/config.js';
 
 const s = strings('now-playing');
 
 export interface NowPlayingCardConfig extends FluvyCardConfig {
   /** Speaker name shown after the artist. Defaults to the entity's name. */
   name?: string;
+  /** The volume round at the end of the transport (it opens the player's dialog). */
+  show_volume?: boolean;
 }
+
+/** The click of a held strip, seen before its buttons': a hold never also taps. */
+const clickHeld = { handleEvent: clickPress, capture: true };
 
 /** Under this content width the centred trio would meet the volume round (W / 2 − 136 < 16). */
 const CENTRED_FROM = 304;
@@ -135,10 +158,17 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
     this.tick_ = 0;
   }
 
+  static override keys = configKeys<NowPlayingCardConfig>()(['show_volume']);
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [entityField(['media_player']), nameIconFields()],
-      ...formLabels({ entity: 'editor.entity', name: 'editor.name', icon: 'editor.icon' }),
+      schema: [
+        entityField(['media_player']),
+        nameIconFields(),
+        boolField('show_volume'),
+        colourFields(),
+        actionFields(),
+      ],
+      ...formLabels({}),
     };
   }
 
@@ -270,7 +300,7 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
         ${keyed(playing, html`<span class="fv-swap">${glyph(playing ? 'pause' : 'play')}</span>`)}
       </button>
       ${round('next', 'quiet', this.t('media.next'), () => this.call('media_player', 'media_next_track'), !(active && view.supports(MEDIA.NEXT)), 'hm-transport__btn')}
-      ${round(muted ? 'volumeOff' : 'volume', 'quiet', volumeText, () => this.tap(view.id, { action: 'more-info' }), false, 'hm-transport__btn hm-transport__volume')}
+      ${this.config?.show_volume === false ? nothing : round(muted ? 'volumeOff' : 'volume', 'quiet', volumeText, () => this.tap(view.id, { action: 'more-info' }), false, 'hm-transport__btn hm-transport__volume')}
     </div>`;
   }
 
@@ -280,7 +310,7 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
     const view = this.entity();
     const speaker = this.config?.name ?? view.name;
 
-    if (view.status === 'missing' || view.status === 'unavailable') {
+    if (!isUsable(view)) {
       return html`<article class="fv-card is-off hm-media--off" data-card>
         ${ico('ban', 'off')}
         <div class="fv-row__text">
@@ -305,8 +335,22 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
         stateText(this.hass, view)
       : `${speaker} · ${stateText(this.hass, view).toLocaleLowerCase()}`;
 
-    return html`<article class="fv-card hm-media ${playing ? 'is-playing' : ''}" data-card>
-      ${this.art(view, active)}
+    // the artwork is the card's icon: a tap is the tap action, a still press on the strip the hold action
+    return html`<article
+      class="fv-card hm-media fv-card__head--hold ${playing ? 'is-playing' : ''}"
+      data-card
+      .fvHold=${() => this.hold(view.id)}
+      @pointerdown=${startPress}
+      @contextmenu=${preventMenu}
+      @click=${clickHeld}
+    >
+      <button
+        class="hm-art-tap fv-ico--tap"
+        aria-label=${speaker}
+        @click=${() => this.tap(view.id)}
+      >
+        ${this.art(view, active)}
+      </button>
       <div class="hm-media__titles">
         <h3 class="fv-card__title hm-media__title">${title}</h3>
         <p class="fv-card__sub">${sub}</p>

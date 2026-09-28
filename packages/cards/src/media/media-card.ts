@@ -2,6 +2,7 @@ import {
   formatDuration,
   formatNumber,
   formatTime,
+  isUsable,
   numberAttr,
   relativeTime,
   stateText,
@@ -14,14 +15,16 @@ import {
 } from '@fluvy/core';
 
 import {
-  chips,
   clamp,
+  clickPress,
   glyph,
   ico,
   icon,
   label,
+  preventMenu,
   round,
   sheetStyles,
+  startPress,
   type ChipItem,
   type IconRef,
   type RulerChangeDetail,
@@ -40,7 +43,16 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { Card } from '../shared/base.js';
 
-import { entityField, formLabels, nameIconFields, selectField } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+} from '../shared/form.js';
 import {
   MEDIA,
   playable,
@@ -50,6 +62,8 @@ import {
   playPauseAction,
   trackPosition,
 } from '../shared/media.js';
+import { configKeys, type RowStyle } from '../shared/config.js';
+import { chipRow } from '../shared/chips.js';
 
 const s = strings('media');
 
@@ -58,7 +72,14 @@ export type MediaVariant = 'full' | 'mini' | 'hero';
 export interface MediaCardConfig extends FluvyCardConfig {
   /** `full` = the player card, `mini` = the 44 row, `hero` = the 200 artwork layout. */
   variant?: MediaVariant;
+  /** Sources as chips filling the row (default) or content-sized. */
+  source_style?: RowStyle;
+  show_source?: boolean;
+  show_volume?: boolean;
 }
+
+/** The click of a held artwork or row, seen before its own buttons': a hold never also taps. */
+const clickHeld = { handleEvent: clickPress, capture: true };
 
 const VARIANTS: readonly MediaVariant[] = ['full', 'mini', 'hero'];
 const SEEK_STEP = 10; // seconds per arrow key
@@ -200,9 +221,22 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     this.scrub_ = null;
   }
 
+  static override keys = configKeys<MediaCardConfig>()([
+    'variant',
+    'source_style',
+    'show_source',
+    'show_volume',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [entityField(['media_player']), nameIconFields(), selectField('variant', VARIANTS)],
+      schema: [
+        entityField(['media_player']),
+        nameIconFields(),
+        fieldRow(selectField('variant', VARIANTS), selectField('source_style', ['full', 'chips'])),
+        fieldRow(boolField('show_source'), boolField('show_volume')),
+        colourFields(),
+        actionFields(),
+      ],
       ...formLabels({}),
     };
   }
@@ -484,6 +518,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
   }
 
   private renderVolume(view: EntityView): TemplateResult | typeof nothing {
+    if (this.config?.show_volume === false) return nothing;
     const canSet = view.supports(MEDIA.VOLUME_SET);
     const canMute = view.supports(MEDIA.VOLUME_MUTE);
     if (!canSet && !canMute) return nothing;
@@ -516,6 +551,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
   }
 
   private renderSources(view: EntityView): TemplateResult | typeof nothing {
+    if (this.config?.show_source === false) return nothing;
     const list = view.attr<readonly string[]>('source_list');
     if (!Array.isArray(list) || !list.length || !view.supports(MEDIA.SELECT_SOURCE)) return nothing;
     const current = textAttr(view, 'source');
@@ -531,7 +567,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
       label: source,
       active: source === current,
     }));
-    return html`${label(this.t('media.source'))}${chips(items, (key) => this.call('media_player', 'select_source', { source: key }))}`;
+    return html`${label(this.t('media.source'))}${chipRow(items, (key) => this.call('media_player', 'select_source', { source: key }), this.config?.source_style)}`;
   }
 
   /* ---------- seek gestures ---------- */
@@ -616,6 +652,9 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     const body = html` ${this.renderSeek(view, hero)} ${this.renderTransport(view, hero && wide)}
     ${this.renderVolume(view)} ${this.renderSources(view)}`;
 
+    // the artwork is the card's icon: a tap is the tap action, a still press the hold action
+    const tap = (): void => this.tap(view.id);
+    const hold = (): void => this.hold(view.id);
     if (hero) {
       const size = Math.min(200, Math.floor(this.contentWidth / 4) * 4);
       return html`<article class=${classes} data-card>
@@ -623,7 +662,11 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
           <button
             class="md-art-tap fv-ico--tap"
             aria-label=${name}
-            @click=${() => this.tap(view.id, { action: 'more-info' })}
+            .fvTap=${tap}
+            .fvHold=${hold}
+            @pointerdown=${startPress}
+            @contextmenu=${preventMenu}
+            @click=${clickPress}
           >
             ${this.art(size, picture, `md-art--l ${active || picture ? '' : 'fv-art--idle'}`)}
           </button>
@@ -638,8 +681,16 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     }
 
     return html`<article class=${classes} data-card>
-      <div class="md-now">
-        ${this.art(80, picture, active || picture ? '' : 'fv-art--idle')}
+      <div
+        class="md-now fv-card__head--hold"
+        .fvHold=${hold}
+        @pointerdown=${startPress}
+        @contextmenu=${preventMenu}
+        @click=${clickHeld}
+      >
+        <button class="md-art-tap fv-ico--tap" aria-label=${name} @click=${tap}>
+          ${this.art(80, picture, active || picture ? '' : 'fv-art--idle')}
+        </button>
         <div class="md-now__text">
           <h3 class="fv-card__title md-title">${title}</h3>
           ${second ? html`<p class="fv-card__sub">${second}</p>` : nothing}
@@ -668,8 +719,27 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
       class="fv-card md-mini__card ${this.isPlaying(view) ? 'is-playing' : ''}"
       data-card
     >
-      <div class="md-mini__row">
-        ${picture ? this.art(44, picture, 'md-art--s') : ico(this.config?.icon ?? 'speaker', active ? 'media' : 'neutral')}
+      <div
+        class="md-mini__row fv-card__head--hold"
+        .fvHold=${() => this.hold(view.id)}
+        @pointerdown=${startPress}
+        @contextmenu=${preventMenu}
+        @click=${clickHeld}
+      >
+        ${
+          picture
+            ? html`<button
+                class="md-art-tap fv-ico--tap"
+                aria-label=${name}
+                @click=${() => this.tap(view.id)}
+              >
+                ${this.art(44, picture, 'md-art--s')}
+              </button>`
+            : ico(this.config?.icon ?? 'speaker', active ? 'media' : 'neutral', {
+                onTap: () => this.tap(view.id),
+                label: name,
+              })
+        }
         <div class="fv-row__text">
           <span class="fv-row__title">${title}</span>
           <span class="fv-row__sub">${sub}</span>
@@ -702,7 +772,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
     const variant = this.variant;
-    if (view.status === 'unavailable') return this.renderOff(view, name, variant);
+    if (!isUsable(view)) return this.renderOff(view, name, variant);
     if (variant === 'mini') return this.renderMini(view, name);
     return this.renderPlayer(view, name, variant === 'hero');
   }
