@@ -16,7 +16,7 @@ import {
 import type { Palette, PaletteMode } from '../types.js';
 import { buildReports } from './contrast.js';
 import { haSharedVars } from '../ha/groups.js';
-import { allPaletteVars, scaleVars } from './vars.js';
+import { allPaletteVars, identityVars, scaleVars } from './vars.js';
 
 function flatten(
   groups: readonly { declarations: readonly (readonly [string, string])[] }[],
@@ -45,7 +45,10 @@ export function emitTokensJson(palettes: readonly Palette[]): string {
       modes: Object.fromEntries(
         (['light', 'dark'] as const).map((mode) => [
           mode,
-          { colors: palette[mode], cssVars: flatten(allPaletteVars(palette[mode])) },
+          {
+            colors: palette[mode],
+            cssVars: flatten([...identityVars(palette), ...allPaletteVars(palette[mode])]),
+          },
         ]),
       ),
     })),

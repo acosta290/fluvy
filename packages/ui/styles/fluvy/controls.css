@@ -226,33 +226,7 @@
   border-radius: 2px;
 }
 
-.fv-bar--accent {
-  background: var(--fluvy-accent);
-}
-.fv-bar--solar {
-  background: var(--fluvy-state-energy-solar);
-}
-.fv-bar--water {
-  background: var(--fluvy-state-energy-water);
-}
-.fv-bar--grid {
-  background: var(--fluvy-state-energy-grid);
-}
-.fv-bar--heat {
-  background: var(--fluvy-state-climate-heat);
-}
-.fv-bar--media {
-  background: var(--fluvy-state-media-playing);
-}
-.fv-bar--warning {
-  background: var(--fluvy-warning);
-}
-.fv-bar--neutral {
-  background: var(--fluvy-border-strong);
-}
-.fv-bar--cool {
-  background: var(--fluvy-state-climate-cool);
-}
+/* a bar's colour (.fv-bar--X) comes from the generated tones.css */
 
 /* stacked distribution */
 .fv-stack {

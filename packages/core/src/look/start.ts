@@ -16,7 +16,7 @@ import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import { attachToElementClass, browserEnv, onPanelFrame } from '../shell/index.js';
 import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
-import { markPanels, patchLovelacePanels } from './panels.js';
+import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
 import { safeStorage } from '../storage.js';
 
 /**
@@ -124,6 +124,9 @@ export function startLook(): LookHandle | undefined {
   void attachToElementClass('ha-panel-lovelace', engine.panelSheet, env);
   // a card connects before its panel is marked: the cards look again whenever a mark moves
   void patchLovelacePanels(env.customElements, wears, resyncCardThemes);
+  // the card editor's colour swatches show the palette's colours: the dialog wears the look of its dashboard
+  void attachToElementClass('hui-dialog-edit-card', engine.panelSheet, env);
+  void patchEditDialog(env.customElements, wears);
   const offFrames = onPanelFrame((frame) =>
     engine.addDocument(frame.document, frame.createSheet()),
   );

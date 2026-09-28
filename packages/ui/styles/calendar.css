@@ -216,31 +216,7 @@
   background: var(--tone-ink);
 }
 
-.cd-block--water {
-  --tone-ink: var(--fluvy-state-energy-water);
-  --tone-fill: var(--fluvy-state-energy-water-fill);
-  --tone-on: var(--fluvy-state-energy-water-on-fill);
-}
-.cd-block--heat {
-  --tone-ink: var(--fluvy-state-climate-heat);
-  --tone-fill: var(--fluvy-state-climate-heat-fill);
-  --tone-on: var(--fluvy-state-climate-heat-on-fill);
-}
-.cd-block--media {
-  --tone-ink: var(--fluvy-state-media-playing);
-  --tone-fill: var(--fluvy-state-media-playing-fill);
-  --tone-on: var(--fluvy-state-media-playing-on-fill);
-}
-.cd-block--cool {
-  --tone-ink: var(--fluvy-state-climate-cool);
-  --tone-fill: var(--fluvy-state-climate-cool-fill);
-  --tone-on: var(--fluvy-state-climate-cool-on-fill);
-}
-.cd-block--grid {
-  --tone-ink: var(--fluvy-state-energy-grid);
-  --tone-fill: var(--fluvy-state-energy-grid-fill);
-  --tone-on: var(--fluvy-state-energy-grid-on-fill);
-}
+/* a block's tone comes from the carrier it wears (fv-tone--X, generated tones.css) */
 
 .cd-block__title {
   font-size: 13px;

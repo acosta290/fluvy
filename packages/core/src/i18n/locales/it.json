@@ -388,7 +388,8 @@
     "days": "Giorni a venire",
     "live_update": "Aggiorna durante il trascinamento",
     "show_count": "Mostra quanti sono accesi",
-    "color": "Colore"
+    "color": "Colore",
+    "color_help": "Un colore della palette, oppure scrivi un #rrggbb"
   },
   "strategy": {
     "home": "Casa",
@@ -990,6 +991,11 @@
     "solar": "Solare",
     "grid": "Rete",
     "media": "Media",
+    "presence": "Presenza",
+    "armed": "Inserita",
+    "battery": "Batteria",
+    "house": "Casa",
+    "gas": "Gas",
     "neutral": "Neutro",
     "warning": "Avviso"
   },

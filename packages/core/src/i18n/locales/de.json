@@ -388,7 +388,8 @@
     "days": "Tage im Voraus",
     "live_update": "Beim Ziehen aktualisieren",
     "show_count": "Anzahl der eingeschalteten zeigen",
-    "color": "Farbe"
+    "color": "Farbe",
+    "color_help": "Eine Farbe der Palette, oder ein beliebiges #rrggbb"
   },
   "strategy": {
     "home": "Zuhause",
@@ -990,6 +991,11 @@
     "solar": "Solar",
     "grid": "Netz",
     "media": "Medien",
+    "presence": "Anwesenheit",
+    "armed": "Scharf",
+    "battery": "Batterie",
+    "house": "Haus",
+    "gas": "Gas",
     "neutral": "Neutral",
     "warning": "Warnung"
   },

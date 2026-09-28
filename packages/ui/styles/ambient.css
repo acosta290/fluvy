@@ -81,30 +81,15 @@
   margin-top: 8px;
 }
 
+/* a sparkline's colour is the tone its wrapper carries (fv-tone--heat, fv-tone--water) */
 .am-spark .fv-curve .curve-line {
-  stroke: var(--fluvy-state-climate-heat);
   stroke-width: 2;
 }
-.am-spark .fv-curve .curve-fill-a,
-.am-spark .fv-curve .curve-fill-b {
-  stop-color: var(--fluvy-state-climate-heat);
-}
 .am-spark .fv-curve .curve-dot {
-  fill: var(--fluvy-state-climate-heat);
   r: 3;
 }
 .am-spark .fv-curve .curve-cursor {
   display: none;
-}
-.am-spark--water .fv-curve .curve-line {
-  stroke: var(--fluvy-state-energy-water);
-}
-.am-spark--water .fv-curve .curve-fill-a,
-.am-spark--water .fv-curve .curve-fill-b {
-  stop-color: var(--fluvy-state-energy-water);
-}
-.am-spark--water .fv-curve .curve-dot {
-  fill: var(--fluvy-state-energy-water);
 }
 
 .am-wide {
@@ -115,17 +100,6 @@
   position: relative;
   height: 120px;
   margin-top: 16px;
-}
-
-.am-chart .fv-curve .curve-line {
-  stroke: var(--fluvy-state-climate-heat);
-}
-.am-chart .fv-curve .curve-fill-a,
-.am-chart .fv-curve .curve-fill-b {
-  stop-color: var(--fluvy-state-climate-heat);
-}
-.am-chart .fv-curve .curve-dot {
-  fill: var(--fluvy-state-climate-heat);
 }
 
 .am-rows {

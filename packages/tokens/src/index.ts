@@ -7,6 +7,7 @@ export {
   DEFAULT_PALETTE,
   PALETTE_MODES,
   PALETTE_NAMES,
+  PALETTE_TOKEN,
   THEME_NAME,
   THEME_SENTINEL,
   type PaletteName,
@@ -62,11 +63,16 @@ export {
   type StructuralResult,
 } from './emit/contrast.js';
 export {
+  accentFamilyVars,
   allPaletteVars,
   brandColorVars,
+  identityVars,
   scaleVars,
   type CssDeclaration,
   type VarGroup,
 } from './emit/vars.js';
+export { HA_COLOR_NAMES, NAMED_COLORS, resolveAccent, THEME_COLOR_NAMES } from './ha/named.js';
+export { paletteKey, parsePaletteKey, type PaletteChoice } from './palettes/key.js';
+export { accentFamily, type AccentFamily } from './build/accent-family.js';
 export { HA_GROUPS, haModeVars, haSharedVars, type HaGroup } from './ha/groups.js';
 export { RELEASE_VERSION } from './release.js';

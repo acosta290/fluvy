@@ -169,6 +169,8 @@ export type FillStyle = 'tint' | 'solid';
 
 export interface Palette {
   readonly name: string;
+  /** The choice this palette stands for (`paletteKey`): a preset's name, or a custom palette's fields. */
+  readonly key: string;
   readonly title: string;
   readonly description: string;
   readonly character: PaletteCharacter;
@@ -189,6 +191,8 @@ export interface Palette {
  */
 export interface PaletteSeed {
   readonly name: string;
+  /** A custom palette's key (`paletteKey`); a preset's is its name. */
+  readonly key?: string;
   readonly title: string;
   readonly description: string;
   readonly baseMode: PaletteMode;

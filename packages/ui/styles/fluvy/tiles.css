@@ -133,24 +133,7 @@
   opacity: 0.28;
 }
 
-.fv-tile--light.is-on {
-  --tone-ink: var(--fluvy-state-light-active);
-  --tone-fill: var(--fluvy-state-light-active-fill);
-  --tone-border: var(--fluvy-state-light-active-fill-border);
-  --tone-on: var(--fluvy-state-light-active-on-fill);
-}
-.fv-tile--accent.is-on {
-  --tone-ink: var(--fluvy-accent);
-  --tone-fill: var(--fluvy-accent-fill);
-  --tone-border: var(--fluvy-accent-fill-border);
-  --tone-on: var(--fluvy-accent-on-fill);
-}
-.fv-tile--heat.is-on {
-  --tone-ink: var(--fluvy-state-climate-heat);
-  --tone-fill: var(--fluvy-state-climate-heat-fill);
-  --tone-border: var(--fluvy-state-climate-heat-fill-border);
-  --tone-on: var(--fluvy-state-climate-heat-on-fill);
-}
+/* an on tile's four tone variables (.fv-tile--X.is-on) come from the generated tones.css */
 
 .fv-tile.is-on .fv-ico {
   color: var(--tone-ink);

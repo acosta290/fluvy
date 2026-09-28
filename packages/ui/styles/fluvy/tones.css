@@ -1,0 +1,326 @@
+/* Generated from packages/ui/src/tones.ts by scripts/build-styles.ts — do not edit. */
+/* Every tone: its ink, fill, fill hairline and on-fill ink, on every carrier of a tone; and its bar. */
+
+.fv-tone--accent,
+.fv-ico--accent,
+.fv-badge--accent,
+.fv-option.is-active.fv-option--accent,
+.fv-tile--accent.is-on,
+.fv-ruler--accent,
+.fv-dial--accent,
+.fv-knob--accent,
+.fv-switch--accent {
+  --tone-ink: var(--fluvy-accent);
+  --tone-fill: var(--fluvy-accent-fill);
+  --tone-border: var(--fluvy-accent-fill-border);
+  --tone-on: var(--fluvy-accent-on-fill);
+}
+.fv-bar--accent {
+  background: var(--fluvy-accent);
+}
+
+.fv-tone--light,
+.fv-ico--light,
+.fv-badge--light,
+.fv-option.is-active.fv-option--light,
+.fv-tile--light.is-on,
+.fv-ruler--light,
+.fv-dial--light,
+.fv-knob--light,
+.fv-switch--light {
+  --tone-ink: var(--fluvy-state-light-active);
+  --tone-fill: var(--fluvy-state-light-active-fill);
+  --tone-border: var(--fluvy-state-light-active-fill-border);
+  --tone-on: var(--fluvy-state-light-active-on-fill);
+}
+.fv-bar--light {
+  background: var(--fluvy-state-light-active);
+}
+
+.fv-tone--heat,
+.fv-ico--heat,
+.fv-badge--heat,
+.fv-option.is-active.fv-option--heat,
+.fv-tile--heat.is-on,
+.fv-ruler--heat,
+.fv-dial--heat,
+.fv-knob--heat,
+.fv-switch--heat {
+  --tone-ink: var(--fluvy-state-climate-heat);
+  --tone-fill: var(--fluvy-state-climate-heat-fill);
+  --tone-border: var(--fluvy-state-climate-heat-fill-border);
+  --tone-on: var(--fluvy-state-climate-heat-on-fill);
+}
+.fv-bar--heat {
+  background: var(--fluvy-state-climate-heat);
+}
+
+.fv-tone--cool,
+.fv-ico--cool,
+.fv-badge--cool,
+.fv-option.is-active.fv-option--cool,
+.fv-tile--cool.is-on,
+.fv-ruler--cool,
+.fv-dial--cool,
+.fv-knob--cool,
+.fv-switch--cool {
+  --tone-ink: var(--fluvy-state-climate-cool);
+  --tone-fill: var(--fluvy-state-climate-cool-fill);
+  --tone-border: var(--fluvy-state-climate-cool-fill-border);
+  --tone-on: var(--fluvy-state-climate-cool-on-fill);
+}
+.fv-bar--cool {
+  background: var(--fluvy-state-climate-cool);
+}
+
+.fv-tone--dry,
+.fv-ico--dry,
+.fv-badge--dry,
+.fv-option.is-active.fv-option--dry,
+.fv-tile--dry.is-on,
+.fv-ruler--dry,
+.fv-dial--dry,
+.fv-knob--dry,
+.fv-switch--dry {
+  --tone-ink: var(--fluvy-state-climate-dry);
+  --tone-fill: var(--fluvy-state-climate-dry-fill);
+  --tone-border: var(--fluvy-state-climate-dry-fill-border);
+  --tone-on: var(--fluvy-state-climate-dry-on-fill);
+}
+.fv-bar--dry {
+  background: var(--fluvy-state-climate-dry);
+}
+
+.fv-tone--fan,
+.fv-ico--fan,
+.fv-badge--fan,
+.fv-option.is-active.fv-option--fan,
+.fv-tile--fan.is-on,
+.fv-ruler--fan,
+.fv-dial--fan,
+.fv-knob--fan,
+.fv-switch--fan {
+  --tone-ink: var(--fluvy-state-climate-fan);
+  --tone-fill: var(--fluvy-state-climate-fan-fill);
+  --tone-border: var(--fluvy-state-climate-fan-fill-border);
+  --tone-on: var(--fluvy-state-climate-fan-on-fill);
+}
+.fv-bar--fan {
+  background: var(--fluvy-state-climate-fan);
+}
+
+.fv-tone--water,
+.fv-ico--water,
+.fv-badge--water,
+.fv-option.is-active.fv-option--water,
+.fv-tile--water.is-on,
+.fv-ruler--water,
+.fv-dial--water,
+.fv-knob--water,
+.fv-switch--water {
+  --tone-ink: var(--fluvy-state-energy-water);
+  --tone-fill: var(--fluvy-state-energy-water-fill);
+  --tone-border: var(--fluvy-state-energy-water-fill-border);
+  --tone-on: var(--fluvy-state-energy-water-on-fill);
+}
+.fv-bar--water {
+  background: var(--fluvy-state-energy-water);
+}
+
+.fv-tone--solar,
+.fv-ico--solar,
+.fv-badge--solar,
+.fv-option.is-active.fv-option--solar,
+.fv-tile--solar.is-on,
+.fv-ruler--solar,
+.fv-dial--solar,
+.fv-knob--solar,
+.fv-switch--solar {
+  --tone-ink: var(--fluvy-state-energy-solar);
+  --tone-fill: var(--fluvy-state-energy-solar-fill);
+  --tone-border: var(--fluvy-state-energy-solar-fill-border);
+  --tone-on: var(--fluvy-state-energy-solar-on-fill);
+}
+.fv-bar--solar {
+  background: var(--fluvy-state-energy-solar);
+}
+
+.fv-tone--grid,
+.fv-ico--grid,
+.fv-badge--grid,
+.fv-option.is-active.fv-option--grid,
+.fv-tile--grid.is-on,
+.fv-ruler--grid,
+.fv-dial--grid,
+.fv-knob--grid,
+.fv-switch--grid {
+  --tone-ink: var(--fluvy-state-energy-grid);
+  --tone-fill: var(--fluvy-state-energy-grid-fill);
+  --tone-border: var(--fluvy-state-energy-grid-fill-border);
+  --tone-on: var(--fluvy-state-energy-grid-on-fill);
+}
+.fv-bar--grid {
+  background: var(--fluvy-state-energy-grid);
+}
+
+.fv-tone--media,
+.fv-ico--media,
+.fv-badge--media,
+.fv-option.is-active.fv-option--media,
+.fv-tile--media.is-on,
+.fv-ruler--media,
+.fv-dial--media,
+.fv-knob--media,
+.fv-switch--media {
+  --tone-ink: var(--fluvy-state-media-playing);
+  --tone-fill: var(--fluvy-state-media-playing-fill);
+  --tone-border: var(--fluvy-state-media-playing-fill-border);
+  --tone-on: var(--fluvy-state-media-playing-on-fill);
+}
+.fv-bar--media {
+  background: var(--fluvy-state-media-playing);
+}
+
+.fv-tone--presence,
+.fv-ico--presence,
+.fv-badge--presence,
+.fv-option.is-active.fv-option--presence,
+.fv-tile--presence.is-on,
+.fv-ruler--presence,
+.fv-dial--presence,
+.fv-knob--presence,
+.fv-switch--presence {
+  --tone-ink: var(--fluvy-state-presence-home);
+  --tone-fill: var(--fluvy-state-presence-home-fill);
+  --tone-border: var(--fluvy-state-presence-home-fill-border);
+  --tone-on: var(--fluvy-state-presence-home-on-fill);
+}
+.fv-bar--presence {
+  background: var(--fluvy-state-presence-home);
+}
+
+.fv-tone--armed,
+.fv-ico--armed,
+.fv-badge--armed,
+.fv-option.is-active.fv-option--armed,
+.fv-tile--armed.is-on,
+.fv-ruler--armed,
+.fv-dial--armed,
+.fv-knob--armed,
+.fv-switch--armed {
+  --tone-ink: var(--fluvy-state-security-armed);
+  --tone-fill: var(--fluvy-state-security-armed-fill);
+  --tone-border: var(--fluvy-state-security-armed-fill-border);
+  --tone-on: var(--fluvy-state-security-armed-on-fill);
+}
+.fv-bar--armed {
+  background: var(--fluvy-state-security-armed);
+}
+
+.fv-tone--battery,
+.fv-ico--battery,
+.fv-badge--battery,
+.fv-option.is-active.fv-option--battery,
+.fv-tile--battery.is-on,
+.fv-ruler--battery,
+.fv-dial--battery,
+.fv-knob--battery,
+.fv-switch--battery {
+  --tone-ink: var(--fluvy-state-energy-battery);
+  --tone-fill: var(--fluvy-state-energy-battery-fill);
+  --tone-border: var(--fluvy-state-energy-battery-fill-border);
+  --tone-on: var(--fluvy-state-energy-battery-on-fill);
+}
+.fv-bar--battery {
+  background: var(--fluvy-state-energy-battery);
+}
+
+.fv-tone--house,
+.fv-ico--house,
+.fv-badge--house,
+.fv-option.is-active.fv-option--house,
+.fv-tile--house.is-on,
+.fv-ruler--house,
+.fv-dial--house,
+.fv-knob--house,
+.fv-switch--house {
+  --tone-ink: var(--fluvy-state-energy-home);
+  --tone-fill: var(--fluvy-state-energy-home-fill);
+  --tone-border: var(--fluvy-state-energy-home-fill-border);
+  --tone-on: var(--fluvy-state-energy-home-on-fill);
+}
+.fv-bar--house {
+  background: var(--fluvy-state-energy-home);
+}
+
+.fv-tone--gas,
+.fv-ico--gas,
+.fv-badge--gas,
+.fv-option.is-active.fv-option--gas,
+.fv-tile--gas.is-on,
+.fv-ruler--gas,
+.fv-dial--gas,
+.fv-knob--gas,
+.fv-switch--gas {
+  --tone-ink: var(--fluvy-state-energy-gas);
+  --tone-fill: var(--fluvy-state-energy-gas-fill);
+  --tone-border: var(--fluvy-state-energy-gas-fill-border);
+  --tone-on: var(--fluvy-state-energy-gas-on-fill);
+}
+.fv-bar--gas {
+  background: var(--fluvy-state-energy-gas);
+}
+
+.fv-tone--neutral,
+.fv-ico--neutral,
+.fv-badge--neutral,
+.fv-option.is-active.fv-option--neutral,
+.fv-tile--neutral.is-on,
+.fv-ruler--neutral,
+.fv-dial--neutral,
+.fv-knob--neutral,
+.fv-switch--neutral {
+  --tone-ink: var(--fluvy-text-secondary);
+  --tone-fill: var(--fluvy-page);
+  --tone-border: var(--fluvy-border);
+  --tone-on: var(--fluvy-text-secondary);
+}
+.fv-bar--neutral {
+  background: var(--fluvy-border-strong);
+}
+
+.fv-tone--warning,
+.fv-ico--warning,
+.fv-badge--warning,
+.fv-option.is-active.fv-option--warning,
+.fv-tile--warning.is-on,
+.fv-ruler--warning,
+.fv-dial--warning,
+.fv-knob--warning,
+.fv-switch--warning {
+  --tone-ink: var(--fluvy-warning);
+  --tone-fill: var(--fluvy-warning-fill);
+  --tone-border: var(--fluvy-warning-fill-border);
+  --tone-on: var(--fluvy-warning-on-fill);
+}
+.fv-bar--warning {
+  background: var(--fluvy-warning);
+}
+
+.fv-tone--off,
+.fv-ico--off,
+.fv-badge--off,
+.fv-option.is-active.fv-option--off,
+.fv-tile--off.is-on,
+.fv-ruler--off,
+.fv-dial--off,
+.fv-knob--off,
+.fv-switch--off {
+  --tone-ink: var(--fluvy-unavailable);
+  --tone-fill: transparent;
+  --tone-border: var(--fluvy-unavailable-border);
+  --tone-on: var(--fluvy-unavailable);
+}
+.fv-bar--off {
+  background: transparent;
+}

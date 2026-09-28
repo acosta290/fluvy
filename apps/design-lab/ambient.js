@@ -39,12 +39,12 @@
   const sensorsFrame = () => `
 <div class="fv-frame am-sensors" data-frame data-mode="light" data-palette="linen">
   <div class="fv-grid2">
-    <article class="fv-tile" data-card><div class="fv-tile__head">${F.ico('thermo', 'heat')}<span class="fv-trend am-tile__trend">${G.trendUp}</span></div>${F.readout({ label: 'Temperature', value: '21.4', unit: '°C', group: 't' })}${spark([20.1, 20.4, 20.9, 21.5, 21.2, 21.4], 'am-s1')}</article>
-    <article class="fv-tile" data-card><div class="fv-tile__head">${F.ico('drop', 'water')}<span class="fv-trend fv-trend--down am-tile__trend">${G.trendDown}</span></div>${F.readout({ label: 'Humidity', value: '46', unit: '%', group: 'h' })}${spark([52, 50, 49, 47, 48, 46], 'am-s2', 'am-spark--water')}</article>
+    <article class="fv-tile" data-card><div class="fv-tile__head">${F.ico('thermo', 'heat')}<span class="fv-trend am-tile__trend">${G.trendUp}</span></div>${F.readout({ label: 'Temperature', value: '21.4', unit: '°C', group: 't' })}${spark([20.1, 20.4, 20.9, 21.5, 21.2, 21.4], 'am-s1', 'fv-tone--heat')}</article>
+    <article class="fv-tile" data-card><div class="fv-tile__head">${F.ico('drop', 'water')}<span class="fv-trend fv-trend--down am-tile__trend">${G.trendDown}</span></div>${F.readout({ label: 'Humidity', value: '46', unit: '%', group: 'h' })}${spark([52, 50, 49, 47, 48, 46], 'am-s2', 'fv-tone--water')}</article>
   </div>
   <article class="fv-card am-wide" data-card>
     ${F.head({ glyph: 'thermo', tone: 'heat', title: 'Living room', sub: 'Temperature · last 24 h', trailing: F.round('dots', 'fv-round--quiet', 'More') })}
-    <div class="am-chart">${F.curve([19.8, 19.5, 19.2, 19.4, 20.2, 21.1, 21.8, 22.4, 22.0, 21.6, 21.2, 21.4, 21.4], { extent: (21 * 60 + 47) / (24 * 60), padTop: 44, id: 'am-c1' })}${F.bubble(((21 * 60 + 47) / (24 * 60)) * 320, '21.4', ' °C')}</div>
+    <div class="am-chart fv-tone--heat">${F.curve([19.8, 19.5, 19.2, 19.4, 20.2, 21.1, 21.8, 22.4, 22.0, 21.6, 21.2, 21.4, 21.4], { extent: (21 * 60 + 47) / (24 * 60), padTop: 44, id: 'am-c1' })}${F.bubble(((21 * 60 + 47) / (24 * 60)) * 320, '21.4', ' °C')}</div>
     ${F.axis(
       [
         [0, '00:00'],

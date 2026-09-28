@@ -13,8 +13,19 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   Preferences tab's language is the first to use it (eight chips before): *Automatic* with the language it
   resolves to, then Fluvy's languages by their own names with the English name beside.
 - Preferences: a *Help improve this translation* row that opens the translating guide.
+- Colour per card: every card takes a `color` — one of Home Assistant's colour names (`teal`, `deep-orange`…) or
+  any `#rrggbb` — that stands in for the palette's accent inside it: its chart, its lit light, its icon circle,
+  its dial. The colour is derived on the very palette the card wears, in light and in dark, through the same
+  arithmetic that makes the palette (its ink readable on the card, its fill legible under its ink, twelve graph
+  series apart), so a red card on Linen is Linen's red. The editor offers Home Assistant's colour picker, whose
+  swatches show the palette's colours. Device tones (a fan, a heater, a speaker) keep their own.
 
 ### Changed
+
+- The theme's named colours follow the tone Home Assistant gives each: pink is the armed alarm's rose, cyan the
+  water, teal the presence green, lime the dehumidifier's green, light green the battery, deep purple the house,
+  brown the gas (it was the accent). Every surface Home Assistant paints through them moves with them.
+- The theme says which palette it is (`--fluvy-palette`), and so does a look applied live.
 
 - Card editors: the choices of a dropdown (a variant, a forecast, a first weekday…) and the tones are said in the
   dashboard's language; they were English words whatever the language.

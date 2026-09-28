@@ -1,4 +1,6 @@
-import { cssVar, DEFAULT_MODE, DEFAULT_PALETTE } from '../config.js';
+import { composite } from '../color/contrast.js';
+import { cssVar, DEFAULT_MODE, DEFAULT_PALETTE, PALETTE_TOKEN } from '../config.js';
+import type { AccentFamily } from '../build/derive/accent.js';
 import {
   DEFAULT_PILL,
   DEFAULT_SHAPE,
@@ -112,6 +114,57 @@ export function scaleVars(
         ]),
       ],
     },
+  ];
+}
+
+/** Which palette this is, in both modes alike: what a card reads to derive its own colour on this very palette. */
+export function identityVars(palette: Pick<Palette, 'key'>): readonly VarGroup[] {
+  return [{ title: 'Identity', declarations: [[PALETTE_TOKEN, palette.key]] }];
+}
+
+/**
+ * What a card's own colour redefines inside it: the accent's seven, the ink on the solid accent, the primary
+ * action, the highlight where the palette has none of its own, the accent ramp, the twelve graph series and the
+ * lit light (the accent's twin) — and nothing else: surfaces, text, the neutral ramp, the other states, the marks
+ * and every Home Assistant name stay the palette's.
+ */
+export function accentFamilyVars(
+  family: AccentFamily,
+  colors: PaletteModeColors,
+): readonly CssDeclaration[] {
+  const wash =
+    colors.fillStyle === 'solid'
+      ? composite(family.fill, colors.washBase, colors.washShare)
+      : family.fill;
+  return [
+    [cssVar('text-on-accent'), family.onAccent],
+    [cssVar('accent'), family.ink],
+    [cssVar('accent-hover'), family.hover],
+    [cssVar('accent-text'), family.text],
+    [cssVar('accent-fill'), family.fill],
+    [cssVar('accent-fill-border'), family.fillBorder],
+    [cssVar('accent-wash'), wash],
+    [cssVar('accent-on-fill'), family.onFill],
+    [cssVar('primary'), family.primary.fill],
+    [cssVar('primary-hover'), family.primary.hover],
+    ...(colors.fillStyle === 'solid' && colors.mode === 'light'
+      ? ([[cssVar('primary-edge'), family.fillBorder]] as const)
+      : []),
+    [cssVar('on-primary'), family.primary.on],
+    ...(colors.mark
+      ? []
+      : ([
+          [cssVar('highlight'), family.ink],
+          [cssVar('highlight-fill'), family.fill],
+          [cssVar('highlight-fill-border'), family.fillBorder],
+          [cssVar('highlight-on-fill'), family.onFill],
+        ] as const)),
+    ...RAMP_STEPS.map((step): CssDeclaration => [cssVar(`accent-${step}`), family.ramp[step]]),
+    ...family.graph.map((hex, index): CssDeclaration => [cssVar(`graph-${index + 1}`), hex]),
+    [cssVar('state-light-active'), family.ink],
+    [cssVar('state-light-active-fill'), family.fill],
+    [cssVar('state-light-active-fill-border'), family.fillBorder],
+    [cssVar('state-light-active-on-fill'), family.onFill],
   ];
 }
 

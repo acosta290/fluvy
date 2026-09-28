@@ -41,7 +41,8 @@ export interface FittedHead {
  * measured again when a web font lands. One instance per card: `private readonly head = new HeadFit(this)`.
  */
 export class HeadFit implements ReactiveController {
-  private readonly ruler: TextRuler;
+  /** The card's text ruler (measured again when a font lands): what else the card fits may share it. */
+  readonly ruler: TextRuler;
 
   constructor(private readonly host: LitElement) {
     this.ruler = new TextRuler(() => host.renderRoot as ParentNode | undefined);

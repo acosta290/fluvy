@@ -128,7 +128,7 @@
         trailing: F.badge('Producing', 'solar'),
       }) +
         `<div class="ef-top fv-value-row">${F.readout({ label: 'Right now', value: '3.2', unit: 'kW', size: 'l', group: 's' })}<div class="ef-top__side">${F.readout({ label: 'Today', value: '11.2', unit: 'kWh', size: 's', group: 's' })}</div></div>` +
-        `<div class="ef-chart ef-chart--solar">${F.curve([0, 0.1, 0.3, 0.8, 1.5, 2.2, 2.9, 3.4, 3.8, 4.0, 4.1, 3.8, 3.2], { extent: SOLAR_NOW, padTop: 44, id: 'ef-fill-2' })}${F.bubble(SOLAR_NOW * 320, '3.2', ' kW')}</div>` +
+        `<div class="ef-chart fv-tone--solar">${F.curve([0, 0.1, 0.3, 0.8, 1.5, 2.2, 2.9, 3.4, 3.8, 4.0, 4.1, 3.8, 3.2], { extent: SOLAR_NOW, padTop: 44, id: 'ef-fill-2' })}${F.bubble(SOLAR_NOW * 320, '3.2', ' kW')}</div>` +
         F.axis(
           [
             [0, '06:00'],

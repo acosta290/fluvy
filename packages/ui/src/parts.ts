@@ -15,20 +15,8 @@ import { glyph, isGlyph, type GlyphName } from './glyphs.js';
  * Nothing here knows about Home Assistant: values in, callbacks out.
  */
 
-export type Tone =
-  | 'accent'
-  | 'light'
-  | 'heat'
-  | 'cool'
-  | 'dry'
-  | 'fan'
-  | 'water'
-  | 'solar'
-  | 'grid'
-  | 'media'
-  | 'neutral'
-  | 'off'
-  | 'warning';
+export type { Tone } from './tones.js';
+import type { Tone } from './tones.js';
 
 /** Either a fluvy glyph name or a Home Assistant icon id (`mdi:…`), which `<ha-icon>` draws. */
 export type IconRef = GlyphName | `${string}:${string}`;

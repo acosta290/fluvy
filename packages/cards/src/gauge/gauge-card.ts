@@ -28,6 +28,7 @@ import {
   numberField,
   textField,
 } from '../shared/form.js';
+import { statsSize } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
 import { baseOf, ceilingFor, figure, scaleFor, toBase } from './units.js';
@@ -279,13 +280,18 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const box = Math.ceil((radius + TICK + 12) / 4) * 8; // the dial's own box: twice its half, which sits on the 4 grid
     const inset = Math.max(0, Math.floor((width - box) / 2));
 
-    const stat = (label: MessageKey, raw: number | undefined): TemplateResult =>
-      readout({
-        label: this.t(label),
-        value: raw === undefined ? '—' : shown(raw * base.value),
-        unit: raw === undefined ? '' : scale.unit,
-        size: 's',
-      });
+    const stats = (
+      [
+        ['common.min', series?.min],
+        ['common.max', series?.max],
+        ['common.average', series?.average],
+      ] as const
+    ).map(([label, raw]) => ({
+      label: this.t(label),
+      value: raw === undefined ? '—' : shown(raw * base.value),
+      unit: raw === undefined ? '' : scale.unit,
+    }));
+    const size = statsSize(this.head.ruler, width, stats);
     const fitted = this.head.fit({
       width,
       title: name,
@@ -330,8 +336,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         ></fluvy-dial>
       </div>
       <div class="so-cols fv-cols so-cols--center" data-align="center">
-        ${stat('common.min', series?.min)} ${stat('common.max', series?.max)}
-        ${stat('common.average', series?.average)}
+        ${stats.map((stat) => readout({ ...stat, size }))}
       </div>
     </article>`;
   }

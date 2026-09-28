@@ -175,19 +175,3 @@ export function stateSkin(view: EntityView, tone: Tone = toneFor(view)): StateSk
     className: usable ? '' : 'is-unavailable is-off',
   };
 }
-
-/** The tones a card or an item may be given (`off` is a skin, never a choice), each with its word in the catalogue. */
-export const TONES = [
-  'accent',
-  'light',
-  'heat',
-  'cool',
-  'dry',
-  'fan',
-  'water',
-  'solar',
-  'grid',
-  'media',
-  'neutral',
-  'warning',
-] as const satisfies readonly Tone[];

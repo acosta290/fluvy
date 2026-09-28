@@ -52,6 +52,7 @@ type Entry = string | Item;
 
 /** Editor words for the fields an item may carry; a card adds its own through `computeLabel`. */
 export const itemLabels: Labeler = formLabels({
+  color: 'editor.color',
   sub: 'editor.sub',
   secondary: 'editor.secondary',
   low: 'editor.low',

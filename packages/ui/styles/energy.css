@@ -97,17 +97,6 @@
   margin-top: 12px;
 }
 
-.ef-chart--solar .fv-curve .curve-line {
-  stroke: var(--fluvy-state-energy-solar);
-}
-.ef-chart--solar .fv-curve .curve-fill-a,
-.ef-chart--solar .fv-curve .curve-fill-b {
-  stop-color: var(--fluvy-state-energy-solar);
-}
-.ef-chart--solar .fv-curve .curve-dot {
-  fill: var(--fluvy-state-energy-solar);
-}
-
 .ef-gauge {
   margin-top: 12px;
 }

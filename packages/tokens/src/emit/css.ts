@@ -2,7 +2,7 @@ import { BRAND, DEFAULT_MODE, DEFAULT_PALETTE } from '../config.js';
 import { RELEASE_VERSION } from '../release.js';
 import type { Palette } from '../types.js';
 import { haSharedVars } from '../ha/groups.js';
-import { allPaletteVars, defaultColors, scaleVars, type VarGroup } from './vars.js';
+import { allPaletteVars, defaultColors, identityVars, scaleVars, type VarGroup } from './vars.js';
 
 const INDENT = '  ';
 
@@ -40,16 +40,16 @@ export function emitLabCss(palettes: readonly Palette[]): string {
 
   const blocks = [
     renderBlock(':root', [...scaleVars(), ...haSharedVars()]),
-    renderBlock(
-      `:root /* defaults: ${DEFAULT_PALETTE} ${DEFAULT_MODE} */`,
-      allPaletteVars(defaultColors(palettes)),
-    ),
+    renderBlock(`:root /* defaults: ${DEFAULT_PALETTE} ${DEFAULT_MODE} */`, [
+      ...identityVars({ key: DEFAULT_PALETTE }),
+      ...allPaletteVars(defaultColors(palettes)),
+    ]),
     ...palettes.flatMap((palette) =>
       (['light', 'dark'] as const).map((mode) =>
-        renderBlock(
-          `[data-palette='${palette.name}'][data-mode='${mode}']`,
-          allPaletteVars(palette[mode]),
-        ),
+        renderBlock(`[data-palette='${palette.name}'][data-mode='${mode}']`, [
+          ...identityVars(palette),
+          ...allPaletteVars(palette[mode]),
+        ]),
       ),
     ),
   ];

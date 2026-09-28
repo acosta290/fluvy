@@ -55,33 +55,6 @@ export const calendarStyles = css`
     box-shadow: inset 0 -1px 0 var(--fluvy-card);
   }
 
-  /* the tones the sheet's five calendars never needed */
-  .fv-bar--fan {
-    background: var(--fluvy-state-climate-fan);
-  }
-
-  .fv-bar--dry {
-    background: var(--fluvy-state-climate-dry);
-  }
-
-  .cd-block--fan {
-    --tone-ink: var(--fluvy-state-climate-fan);
-    --tone-fill: var(--fluvy-state-climate-fan-fill);
-    --tone-on: var(--fluvy-state-climate-fan-on-fill);
-  }
-
-  .cd-block--dry {
-    --tone-ink: var(--fluvy-state-climate-dry);
-    --tone-fill: var(--fluvy-state-climate-dry-fill);
-    --tone-on: var(--fluvy-state-climate-dry-on-fill);
-  }
-
-  .cd-block--solar {
-    --tone-ink: var(--fluvy-state-energy-solar);
-    --tone-fill: var(--fluvy-state-energy-solar-fill);
-    --tone-on: var(--fluvy-state-energy-solar-on-fill);
-  }
-
   /* ---------- tiles ---------- */
   .cd-tile {
     display: block;

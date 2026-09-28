@@ -59,20 +59,21 @@
 }
 
 /* ---------- curve + bubble ---------- */
+/* a curve is drawn in the tone its wrapper carries (fv-tone--X), the accent where it carries none */
 .fv-curve .curve-line {
   fill: none;
-  stroke: var(--fluvy-accent);
+  stroke: var(--tone-ink, var(--fluvy-accent));
   stroke-width: 2.5;
   stroke-linecap: round;
 }
 
 .fv-curve .curve-fill-a {
-  stop-color: var(--fluvy-accent);
+  stop-color: var(--tone-ink, var(--fluvy-accent));
   stop-opacity: 0.28;
 }
 
 .fv-curve .curve-fill-b {
-  stop-color: var(--fluvy-accent);
+  stop-color: var(--tone-ink, var(--fluvy-accent));
   stop-opacity: 0;
 }
 
@@ -83,7 +84,7 @@
 }
 
 .fv-curve .curve-dot {
-  fill: var(--fluvy-accent);
+  fill: var(--tone-ink, var(--fluvy-accent));
   stroke: var(--fluvy-card);
   stroke-width: 3;
 }

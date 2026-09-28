@@ -138,7 +138,7 @@
     const blocks = DAYS[TODAY].map(([a, b, t, , tone]) => {
       const top = Math.round(y(a) / 4) * 4;
       const h = Math.max(12, Math.floor((y(b) - y(a)) / 4) * 4); // snap the end down, never up
-      return `<span class="cd-block cd-block--${tone} ${h <= 12 ? 'cd-block--thin' : ''}" style="top:${top}px;height:${h}px"><span class="cd-block__title">${t}</span></span>`;
+      return `<span class="cd-block fv-tone--${tone} ${h <= 12 ? 'cd-block--thin' : ''}" style="top:${top}px;height:${h}px"><span class="cd-block__title">${t}</span></span>`;
     }).join('');
     return card(
       'light',

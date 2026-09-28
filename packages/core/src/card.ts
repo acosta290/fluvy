@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
-import { THEME_SENTINEL } from '@fluvy/tokens/config';
+import { PALETTE_TOKEN, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { motionPreference, type Tone } from '@fluvy/ui';
 import { runAction, type ActionConfig } from './actions.js';
 import { resolveEntity, type EntityView } from './entity.js';
@@ -11,6 +11,7 @@ import type {
   LovelaceGridOptions,
 } from './ha/types.js';
 import { languageOverride, localize, onWords, type MessageKey } from './i18n/index.js';
+import { AccentSheet } from './look/accent.js';
 
 /**
  * What every card's config may carry. `tone` is the role a card's parts are drawn in (a palette tone); `color` is
@@ -128,6 +129,8 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   declare layout?: string;
 
   private resizeObserver: ResizeObserver | undefined;
+  /** The card's own colour and its items', derived on the palette the card wears. */
+  protected readonly accents = new AccentSheet();
 
   constructor() {
     super();
@@ -172,6 +175,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
       if (next > 0 && next !== this.width) this.width = next;
     });
     this.resizeObserver.observe(this);
+    if (this.renderRoot instanceof ShadowRoot) this.accents.adopt(this.renderRoot);
     this.syncTheme();
   }
 
@@ -231,11 +235,29 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     }
   }
 
-  /** Reads dark mode and whether a fluvy look reaches this card (its sentinel); the fallback tokens apply where none does. */
+  /**
+   * Reads dark mode, whether a fluvy look reaches this card (its sentinel; the fallback tokens apply where none
+   * does) and which palette it wears (its own colours are derived on it).
+   */
   syncTheme(): void {
     this.dark = this.hass?.themes?.darkMode ?? false;
+    const computed = getComputedStyle(this);
     // The theme carries a sentinel the fallback never defines, so this cannot feed back on itself.
-    this.noTheme = getComputedStyle(this).getPropertyValue(THEME_SENTINEL).trim() === '';
+    this.noTheme = computed.getPropertyValue(THEME_SENTINEL).trim() === '';
+    if (
+      this.accents.wears(
+        computed.getPropertyValue(PALETTE_TOKEN).trim(),
+        this.dark ? 'dark' : 'light',
+      )
+    )
+      this.requestUpdate();
+  }
+
+  /** The card's colour and its items' are written once the render has asked for them. */
+  protected override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    this.accents.host(this.config?.color);
+    this.accents.commit();
   }
 
   /* ---------- optimistic state ---------- */
@@ -325,6 +347,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
 
   protected override render(): TemplateResult | typeof nothing {
     if (!this.config) return nothing;
+    this.accents.begin();
     return this.renderCard();
   }
 }

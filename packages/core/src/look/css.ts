@@ -2,6 +2,7 @@ import {
   declarationsCss,
   derivePalette,
   lookDeclarations,
+  paletteKey,
   seedOf,
   type Palette,
   type CssDeclaration,
@@ -11,18 +12,13 @@ import {
   type ShapeName,
 } from '@fluvy/tokens/runtime';
 
+export { paletteKey };
+
 /** What a user picks: a palette (a preset's name or a custom one), a shape, and how round the pills are. */
 export interface Look {
   readonly palette: PaletteChoice;
   readonly shape: ShapeName;
   readonly pills: PillName;
-}
-
-/** A stable key for a palette choice: a preset's name, or a custom palette's fields in a fixed order. */
-export function paletteKey(choice: PaletteChoice): string {
-  if (typeof choice === 'string') return choice;
-  const { character, base, accent, fill = '', highlight = '' } = choice;
-  return `custom:${character}:${base}:${accent.toLowerCase()}:${fill}:${highlight.toLowerCase()}`;
 }
 
 const palettes = new Map<string, Palette>();

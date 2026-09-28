@@ -5,7 +5,9 @@
  * Tones map to tokens; every tone has ink, fill, fill-border and on-fill.
  */
 
-/* The language, one file per family (in this order: later families refine earlier ones). */
+/* The language, one file per family (in this order: later families refine earlier ones). The tones come first:
+   they only declare a carrier's four variables, which every family reads. */
+@import url('fluvy/tones.css');
 @import url('fluvy/foundation.css');
 @import url('fluvy/surfaces.css');
 @import url('fluvy/buttons.css');

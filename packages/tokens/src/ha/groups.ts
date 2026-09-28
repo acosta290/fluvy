@@ -1,5 +1,4 @@
-import { fromHex } from '../color/oklch.js';
-import { buildRamp, peakChromaFrom } from '../color/ramp.js';
+import { NAMED_COLORS, statusRamp, THEME_COLOR_NAMES } from './named.js';
 import { cssVar, THEME_SENTINEL } from '../config.js';
 import { fontFamily, fontSize, fontWeight, lineHeight, type RadiusName } from '../scales/index.js';
 import { RAMP_STEPS, STATE_KEYS, type PaletteModeColors, type StateKey } from '../types.js';
@@ -57,49 +56,14 @@ const STATUS_SCALES = [
   ['red', 'danger'],
 ] as const;
 
-/** An 11-step ramp from the hue and chroma of one of our status inks (the accent ramp's recipe). */
-function statusRamp(
-  colors: PaletteModeColors,
-  role: 'success' | 'warning' | 'danger' | 'info',
-): Readonly<Record<string, string>> {
-  const ink = fromHex(colors.semantic[role].ink);
-  return buildRamp({ hue: ink.h, peakChroma: peakChromaFrom(ink.l, ink.c) });
-}
-
 /**
- * Home Assistant's named palette (`--amber-color`, `--blue-color` …). Every per-domain state colour
- * (`--state-light-active-color: var(--amber-color)`, the timelines, logbook dots, tile icons, the
- * 2026 summary cards, the weather timeline) resolves through these 21 names, so mapping them moves
- * the whole Material palette onto the brand in one place.
+ * Home Assistant's named palette (`--amber-color`, `--blue-color` …), each name the colour of ours it stands for
+ * (`ha/named.ts`, the one table a card's `color` reads too). Every per-domain state colour, the timelines, logbook
+ * dots, tile icons, the 2026 summary cards and the weather timeline resolve through these names, so mapping them
+ * moves the whole Material palette onto the brand in one place.
  */
 function namedPalette(colors: PaletteModeColors): readonly CssDeclaration[] {
-  const { state, accent, neutralRamp, semantic } = colors;
-  const red = statusRamp(colors, 'danger');
-  const orange = statusRamp(colors, 'warning');
-  const green = statusRamp(colors, 'success');
-  return [
-    ['--red-color', red['50'] as string],
-    ['--pink-color', red['60'] as string],
-    ['--orange-color', orange['50'] as string],
-    ['--deep-orange-color', state['climate-heat'].ink],
-    ['--amber-color', state['light-active'].ink],
-    ['--yellow-color', state['energy-solar'].ink],
-    ['--lime-color', green['60'] as string],
-    ['--green-color', green['50'] as string],
-    ['--light-green-color', green['60'] as string],
-    ['--teal-color', state['energy-battery'].ink],
-    ['--cyan-color', state['climate-fan'].ink],
-    ['--blue-color', state['climate-cool'].ink],
-    ['--light-blue-color', semantic.info.ink],
-    ['--indigo-color', state['energy-grid'].ink],
-    ['--purple-color', state['media-playing'].ink],
-    ['--deep-purple-color', state['energy-grid'].ink],
-    ['--brown-color', accent.ink],
-    ['--light-grey-color', neutralRamp['80']],
-    ['--grey-color', neutralRamp['60']],
-    ['--dark-grey-color', neutralRamp['40']],
-    ['--blue-grey-color', neutralRamp['50']],
-  ];
+  return THEME_COLOR_NAMES.map((name) => [`--${name}-color`, NAMED_COLORS[name](colors)]);
 }
 
 /**

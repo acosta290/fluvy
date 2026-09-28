@@ -210,6 +210,7 @@ exports[`sand snapshot > matches the recorded palette 1`] = `
     "washShare": 1,
   },
   "description": "Warm neutral paper with a toasted-caramel accent. The default.",
+  "key": "sand",
   "light": {
     "accent": {
       "fill": "#f2e2ce",

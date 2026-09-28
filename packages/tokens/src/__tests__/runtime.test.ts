@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GATES } from '../build/derive.js';
 import { fromHex, hueDistance, maxChroma, toHex } from '../color/oklch.js';
 import { checkContrast, checkStructure } from '../emit/contrast.js';
-import { allPaletteVars, OPTIONAL_BRAND_VARS, scaleVars } from '../emit/vars.js';
+import { allPaletteVars, identityVars, OPTIONAL_BRAND_VARS, scaleVars } from '../emit/vars.js';
 import { haSharedVars } from '../ha/groups.js';
 import {
   CUSTOM_BASES,
@@ -117,9 +117,12 @@ describe('lookDeclarations', () => {
     for (const name of PALETTE_NAMES) {
       const palette = derivePalette(seedOf(name));
       for (const mode of ['light', 'dark'] as const) {
-        const theme = [...scaleVars(), ...haSharedVars(), ...allPaletteVars(palette[mode])].flatMap(
-          (group) => group.declarations,
-        );
+        const theme = [
+          ...scaleVars(),
+          ...haSharedVars(),
+          ...identityVars(palette),
+          ...allPaletteVars(palette[mode]),
+        ].flatMap((group) => group.declarations);
         const look = lookDeclarations(palette, mode);
         expect(look.slice(0, theme.length), `${name} ${mode}`).toEqual(theme);
         for (const [key, value] of look.slice(theme.length)) {

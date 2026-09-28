@@ -5,16 +5,18 @@
  * the value.
  */
 import { derivePalette } from './build/derive.js';
-import { PALETTE_NAMES, type PaletteName } from './config.js';
+import { PALETTE_NAMES } from './config.js';
 import {
   brandColorVars,
+  identityVars,
   OPTIONAL_BRAND_VARS,
   scaleVars,
   type CssDeclaration,
 } from './emit/vars.js';
 import { haModeVars, haSharedVars } from './ha/groups.js';
-import { customSeed, type CustomPalette } from './palettes/custom.js';
+import { customSeed } from './palettes/custom.js';
 import { seeds } from './palettes/index.js';
+import type { PaletteChoice } from './palettes/key.js';
 import {
   DEFAULT_PILL,
   DEFAULT_SHAPE,
@@ -29,6 +31,7 @@ export {
   DEFAULT_MODE,
   DEFAULT_PALETTE,
   PALETTE_NAMES,
+  PALETTE_TOKEN,
   THEME_SENTINEL,
   type PaletteName,
 } from './config.js';
@@ -59,12 +62,10 @@ export {
   type CustomPalette,
 } from './palettes/custom.js';
 
-/** A preset by name, or a custom palette. */
-export type PaletteChoice = PaletteName | CustomPalette;
-
-export function isPaletteName(value: unknown): value is PaletteName {
-  return typeof value === 'string' && (PALETTE_NAMES as readonly string[]).includes(value);
-}
+export { isPaletteName, paletteKey, parsePaletteKey, type PaletteChoice } from './palettes/key.js';
+export { HA_COLOR_NAMES, NAMED_COLORS, resolveAccent, type HaColorName } from './ha/named.js';
+export { accentFamily, type AccentFamily } from './build/accent-family.js';
+export { accentFamilyVars, identityVars } from './emit/vars.js';
 
 export function isShapeName(value: unknown): value is ShapeName {
   return typeof value === 'string' && (SHAPE_NAMES as readonly string[]).includes(value);
@@ -88,10 +89,10 @@ function rgb(hex: string): string {
 }
 
 /**
- * Everything one mode of a look declares: our scale in its shape, Home Assistant's mode-independent names,
- * the palette's brand layer and Home Assistant's names for that mode — then, as Home Assistant does for a
- * theme it applies, an `--rgb-*` triplet for each of its own names that holds a plain hex (its CSS feeds
- * them to rgba()).
+ * Everything one mode of a look declares: our scale in its shape, Home Assistant's mode-independent names, which
+ * palette this is, the palette's brand layer and Home Assistant's names for that mode — then, as Home Assistant
+ * does for a theme it applies, an `--rgb-*` triplet for each of its own names that holds a plain hex (its CSS
+ * feeds them to rgba()).
  */
 export function lookDeclarations(
   palette: Palette,
@@ -103,6 +104,7 @@ export function lookDeclarations(
   const groups = [
     ...scaleVars(shape, pill),
     ...haSharedVars(),
+    ...identityVars(palette),
     ...brandColorVars(colors),
     ...haModeVars(colors),
   ];

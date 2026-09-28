@@ -42,6 +42,10 @@ import {
 
 import { Card } from '../shared/base.js';
 
+import { toneOf } from '../shared/colour.js';
+import { TextRuler } from '../shared/fit.js';
+import { statsSize } from '../shared/readouts.js';
+import { FontsSettled } from '../shared/fonts.js';
 import { glyphFor } from '../shared/domain.js';
 import {
   boolField,
@@ -173,22 +177,6 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       .am-chart .fv-curve {
         overflow: visible;
       } /* a rolling window ends at the edge: the dot at "now" stays whole */
-      /* the sheet paints a heat and a water curve; here the curve takes the card's tone, which the
-         wrapper carries as --tone-ink through the same tone class the icon circle uses */
-      .am-chart .fv-curve .curve-line,
-      .am-spark .fv-curve .curve-line {
-        stroke: var(--tone-ink);
-      }
-      .am-chart .fv-curve .curve-fill-a,
-      .am-chart .fv-curve .curve-fill-b,
-      .am-spark .fv-curve .curve-fill-a,
-      .am-spark .fv-curve .curve-fill-b {
-        stop-color: var(--tone-ink);
-      }
-      .am-chart .fv-curve .curve-dot,
-      .am-spark .fv-curve .curve-dot {
-        fill: var(--tone-ink);
-      }
       /* the bubble arrives with the dot it belongs to, once the line has drawn itself */
       .am-chart .fv-bubble {
         animation: fv-fade 500ms var(--fv-ease) both;
@@ -309,9 +297,21 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
 
   /* ---------- pieces ---------- */
 
+  /** The card's tone: the one asked for, the accent where a colour of its own was given, else the measure's. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
+  constructor() {
+    super();
+    // a web font landing after the first render changes what fits: measure again
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
+  }
+
   private toneOf(view: EntityView): Tone {
     if (view.status === 'unavailable') return 'off';
-    return this.config?.tone ?? sensorTone(view);
+    return toneOf(this.config, sensorTone(view));
   }
 
   /** Decimals of the statistics: the entity's display precision, else what the state itself carries. */
@@ -321,8 +321,9 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     return Math.min(3, view.state.split('.')[1]?.length ?? 0);
   }
 
-  private stat(label: string, value: number | null, view: EntityView): TemplateResult {
-    if (value === null) return readout({ label, value: '—', size: 's' });
+  /** A statistic as the row says it: its number in the entity's precision (a scaled unit's own), and its unit. */
+  private statText(value: number | null, view: EntityView): { value: string; unit: string } {
+    if (value === null) return { value: '—', unit: '' };
     const scaled = scaleUnit(value, view.unit);
     const magnitude = Math.abs(scaled.value);
     const digits =
@@ -333,12 +334,24 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           : magnitude >= 10
             ? 1
             : 2;
-    return readout({
-      label,
+    return {
       value: formatNumber(this.hass, scaled.value, { digits, minDigits: digits }),
       unit: scaled.unit,
-      size: 's',
-    });
+    };
+  }
+
+  /** The three statistics share the content width in equal columns, at the readout size they fit (`statsSize`). */
+  private statsRow(series: Series | null | undefined, view: EntityView): TemplateResult {
+    const stats = [
+      [this.t('common.min'), series?.min ?? null],
+      [this.t('common.max'), series?.max ?? null],
+      [this.t('common.average'), series?.average ?? null],
+    ] as const;
+    const texts = stats.map(([label, value]) => ({ label, ...this.statText(value, view) }));
+    const size = statsSize(this.ruler, this.contentWidth, texts);
+    return html`<div class="am-cols fv-cols">
+      ${texts.map(({ label, value, unit }) => readout({ label, value, unit, size }))}
+    </div>`;
   }
 
   /** History is up to five minutes old: the curve ends on the reading the card quotes, and the extremes count it. */
@@ -481,7 +494,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       ${
         !numeric || series === null
           ? nothing
-          : html`<div class="am-spark fv-ico--${tone}">
+          : html`<div class="am-spark fv-tone--${tone}">
               ${values.length > 1 ? curve(values, { w: down4(inner - 8), h: 24, pad: 4 }) : html`<div class="fv-skeleton"></div>`}
             </div>`
       }
@@ -496,6 +509,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       icon: this.config?.icon ?? glyphFor(view),
       tone,
       title,
+      name: true, // the entity's name, or one typed for it: a name may end in an ellipsis
       // "Unavailable" is said once, here; a sensor that is a word has no window to speak of
       sub:
         view.status !== 'ok'
@@ -559,7 +573,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           };
     return html`<article class="fv-card am-card" data-card>
       ${header}
-      <div class="am-chart fv-ico--${tone}" ${scrub(this.scrubber)}>
+      <div class="am-chart fv-tone--${tone}" ${scrub(this.scrubber)}>
         ${
           series
             ? html`${curve(values, { w: width, h: CHART_HEIGHT, padTop: HEADROOM, cursor: at?.cursor })}${chartBubble(
@@ -577,16 +591,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
             : html`<div class="fv-skeleton"></div>`
         }
       </div>
-      ${axis(this.axisItems(hours))}
-      ${
-        stats
-          ? html`<div class="am-cols fv-cols">
-              ${this.stat(this.t('common.min'), series?.min ?? null, view)}
-              ${this.stat(this.t('common.max'), series?.max ?? null, view)}
-              ${this.stat(this.t('common.average'), series?.average ?? null, view)}
-            </div>`
-          : nothing
-      }
+      ${axis(this.axisItems(hours))} ${stats ? this.statsRow(series, view) : nothing}
     </article>`;
   }
 

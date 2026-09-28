@@ -3,6 +3,7 @@ import {
   brandColorVars,
   haModeVars,
   haSharedVars,
+  identityVars,
   RELEASE_VERSION,
   scaleVars,
   THEME_NAME,
@@ -38,9 +39,9 @@ export function modeDeclarations(colors: PaletteModeColors): readonly CssDeclara
   return entries([...brandColorVars(colors), ...haModeVars(colors)]);
 }
 
-/** The top level of the theme: our scale, then the mode-independent half of Home Assistant's names. */
-export function sharedDeclarations(): readonly CssDeclaration[] {
-  return entries([...scaleVars(), ...haSharedVars()]);
+/** The top level of the theme: our scale, the mode-independent half of Home Assistant's names, which palette this is. */
+export function sharedDeclarations(palette: Palette): readonly CssDeclaration[] {
+  return entries([...scaleVars(), ...haSharedVars(), ...identityVars(palette)]);
 }
 
 /** YAML double-quoted scalar. Values are hex colours, lengths and font stacks: only `\` and `"` need escaping. */
@@ -71,7 +72,7 @@ export const BUILD_KEY = 'fluvy-theme-build';
 export function emitThemeYaml(palette: Palette): string {
   const name = THEME_NAME;
   const body = [
-    block(sharedDeclarations(), '  '),
+    block(sharedDeclarations(palette), '  '),
     '  modes:',
     '    light:',
     block(modeDeclarations(palette.light), '      '),

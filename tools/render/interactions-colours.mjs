@@ -1,0 +1,144 @@
+#!/usr/bin/env node
+/**
+ * Colour per card, in a real Chromium against the playground's `colours` sheet. Exit code 1 on any failure.
+ *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-colours.mjs
+ * What it proves: a card's `color` becomes its accent — six charts in six colours, each line the computed accent
+ * of its own card, all distinct, each at least 3:1 on the card; a card without a colour keeps the palette's; a red
+ * card's lit light turns red (the accent's twin) while its fan keeps its tone and its off light stays quiet; the
+ * colours are derived again in dark mode and on another palette; a page without the theme derives on Linen, as
+ * the theme would.
+ */
+import { contrastRatio, toHex } from './lib/colour.mjs';
+import { frame, startSuite } from './lib/suite.mjs';
+
+const suite = await startSuite();
+const { check } = suite;
+
+/** A computed custom property on the first child of a card's shadow root (where a card's colour is written). */
+const varOf = (card, name) =>
+  card.evaluate((el, prop) => {
+    const inner = el.shadowRoot?.firstElementChild;
+    return inner ? getComputedStyle(inner).getPropertyValue(prop).trim() : '';
+  }, name);
+const styleOf = (locator, prop) => locator.evaluate((el, p) => getComputedStyle(el)[p], prop);
+
+/* ---------- six charts, six colours ---------- */
+{
+  const page = await suite.sheet('colours', { width: 412 });
+  const cards = frame(page, 'Six colours').locator('fluvy-sensor-card');
+  check('six sensor cards', (await cards.count()) === 6);
+  const accents = [];
+  for (let i = 0; i < 6; i += 1) {
+    const card = cards.nth(i);
+    const accent = toHex(await varOf(card, '--fluvy-accent'));
+    const surface = toHex(await varOf(card, '--fluvy-card'));
+    const line = toHex(await styleOf(card.locator('.curve-line').first(), 'stroke'));
+    const dot = toHex(await styleOf(card.locator('.curve-dot').first(), 'fill'));
+    const ico = toHex(await styleOf(card.locator('.fv-ico').first(), 'color'));
+    check(`chart ${i + 1}: the line is the card's accent`, line === accent, `${line} vs ${accent}`);
+    check(
+      `chart ${i + 1}: the dot and the icon circle too`,
+      dot === accent && ico === accent,
+      `${dot} ${ico}`,
+    );
+    check(
+      `chart ${i + 1}: readable on the card (≥ 3:1)`,
+      accent && surface && contrastRatio(accent, surface) >= 3,
+      `${accent} on ${surface}: ${accent && surface ? contrastRatio(accent, surface).toFixed(2) : '?'}`,
+    );
+    accents.push(accent);
+  }
+  check('six different accents', new Set(accents).size === 6, accents.join(' '));
+  const plain = frame(page, 'No colour').locator('fluvy-sensor-card');
+  const palette = toHex(await varOf(plain, '--fluvy-accent'));
+  const pageAccent = toHex(
+    await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--fluvy-accent'),
+    ),
+  );
+  check(
+    'a card without a colour keeps the palette’s accent',
+    palette === pageAccent,
+    `${palette} vs ${pageAccent}`,
+  );
+  check(
+    'the coloured cards differ from it',
+    accents.every((a) => a !== palette),
+  );
+  // the card reads which palette it wears from the page
+  check(
+    'the page says which palette it wears',
+    (await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--fluvy-palette').trim(),
+    )) === 'linen',
+  );
+  await page.close();
+}
+
+/* ---------- a red card: the lit light turns red, the fan keeps its tone ---------- */
+{
+  const page = await suite.sheet('colours');
+  const red = frame(page, 'Red tiles').locator('fluvy-tiles-card');
+  const plain = frame(page, 'Plain tiles').locator('fluvy-tiles-card');
+  const lightFill = toHex(await varOf(red, '--fluvy-state-light-active-fill'));
+  const plainLightFill = toHex(await varOf(plain, '--fluvy-state-light-active-fill'));
+  const redLamp = red.locator('.fv-tile--light.is-on').first();
+  const plainLamp = plain.locator('.fv-tile--light.is-on').first();
+  check(
+    'the red card’s lit light fills with its own colour',
+    toHex(await styleOf(redLamp, 'backgroundColor')) === lightFill && lightFill !== plainLightFill,
+    `${lightFill} vs ${plainLightFill}`,
+  );
+  check(
+    'the plain card’s lit light keeps the palette’s',
+    toHex(await styleOf(plainLamp, 'backgroundColor')) === plainLightFill,
+  );
+  const redFan = red.locator('.fv-tile--fan.is-on').first();
+  const plainFan = plain.locator('.fv-tile--fan.is-on').first();
+  const fanFill = toHex(await styleOf(redFan, 'backgroundColor'));
+  check(
+    'a fan that is on has a fill of its own tone',
+    fanFill !== null && fanFill !== toHex(await varOf(red, '--fluvy-card')),
+    `${fanFill}`,
+  );
+  check(
+    'the fan’s tone is not the card’s colour',
+    fanFill === toHex(await styleOf(plainFan, 'backgroundColor')) && fanFill !== lightFill,
+  );
+  const off = red.locator('.fv-tile--light:not(.is-on)').first();
+  check('an off light stays quiet', toHex(await styleOf(off, 'backgroundColor')) !== lightFill);
+  await page.close();
+}
+
+/* ---------- derived again: dark mode, another palette, no theme ---------- */
+{
+  const light = await suite.sheet('colours', { width: 412 });
+  const dark = await suite.sheet('colours', { width: 412, extra: '&mode=dark' });
+  const volt = await suite.sheet('colours', { width: 412, extra: '&palette=volt' });
+  const off = await suite.sheet('colours', { width: 412, extra: '&theme=off' });
+  const first = (page) => frame(page, 'Six colours').locator('fluvy-sensor-card').first();
+  const on = {
+    light: toHex(await varOf(first(light), '--fluvy-accent')),
+    dark: toHex(await varOf(first(dark), '--fluvy-accent')),
+    volt: toHex(await varOf(first(volt), '--fluvy-accent')),
+    off: toHex(await varOf(first(off), '--fluvy-accent')),
+  };
+  check(
+    'dark mode derives the colour again',
+    on.dark !== on.light && on.dark !== null,
+    JSON.stringify(on),
+  );
+  check('another palette derives it again', on.volt !== on.light && on.volt !== null);
+  check('a page without the theme derives on Linen, as the theme would', on.off === on.light);
+  const darkLine = toHex(await styleOf(first(dark).locator('.curve-line').first(), 'stroke'));
+  check('the dark line is the dark accent', darkLine === on.dark);
+  const darkCard = toHex(await varOf(first(dark), '--fluvy-card'));
+  check(
+    'and readable on the dark card',
+    contrastRatio(on.dark, darkCard) >= 3,
+    `${on.dark} on ${darkCard}`,
+  );
+  for (const page of [light, dark, volt, off]) await page.close();
+}
+
+await suite.finish();

@@ -3,6 +3,7 @@ import { accentDistance, hueNeighbours, stateHues } from '../build/separation.js
 import { deltaE } from '../color/delta-e.js';
 import { fromHex, maxChroma, normalizeHue, toHex, type Oklch } from '../color/oklch.js';
 import { PALETTE_MODES } from '../config.js';
+import { paletteKey } from './key.js';
 import {
   SEMANTIC_ROLES,
   STATE_KEYS,
@@ -44,11 +45,13 @@ export const PAGES: Readonly<Record<PaletteCharacter, Readonly<Record<CustomBase
  * gamut, and the status and device colours step aside from it (see `makeRoom`).
  */
 export function customSeed(custom: CustomPalette): PaletteSeed {
-  const key = JSON.stringify(custom);
+  const key = paletteKey(custom);
   const known = remembered.get(key);
   if (known) return known;
-  const seed =
-    custom.character === 'vivid' ? makeRoom(keepShare(plainSeed(custom))) : plainSeed(custom);
+  const seed = {
+    ...(custom.character === 'vivid' ? makeRoom(keepShare(plainSeed(custom))) : plainSeed(custom)),
+    key,
+  };
   remembered.set(key, seed);
   // the panel asks again for every colour a picker passes through: keep the last few
   if (remembered.size > REMEMBERED) remembered.delete(remembered.keys().next().value as string);
@@ -65,18 +68,38 @@ const remembered = new Map<string, PaletteSeed>();
  */
 const GREY_CHROMA = 0.03;
 
-function plainSeed(custom: CustomPalette): PaletteSeed {
-  const pick = fromHex(custom.accent);
+/** What a picked colour gives an accent to start from: its ink, its fill and the ink on that fill (in OKLCH). */
+export interface AccentAnchors {
+  readonly ink: Oklch;
+  readonly fill: Oklch;
+  readonly onFill: Oklch;
+}
+
+/**
+ * The starting points a picked colour gives an accent — the derivation fits every one of them to its gate: a soft
+ * ink no lighter than mid, a vivid one as picked; a tint's fill pale and its ink deep, a solid's fill the colour
+ * itself with near-black on it. A pick this close to grey is a grey (see `GREY_CHROMA`).
+ */
+export function accentAnchors(
+  pick: Oklch,
+  character: PaletteCharacter,
+  fillStyle: FillStyle = 'tint',
+): AccentAnchors {
   const accent = pick.c < GREY_CHROMA ? { ...pick, c: 0 } : pick;
+  const vivid = character === 'vivid';
+  const solid = vivid && fillStyle === 'solid';
+  return {
+    ink: vivid ? accent : { ...accent, l: Math.min(accent.l, 0.5) },
+    fill: solid
+      ? { l: 0.84, c: Math.min(accent.c, 0.16), h: accent.h }
+      : { l: 0.93, c: Math.min(accent.c * 0.25, 0.05), h: accent.h },
+    onFill: solid ? { l: 0.2, c: 0.02, h: accent.h } : { l: 0.33, c: accent.c * 0.6, h: accent.h },
+  };
+}
+
+function plainSeed(custom: CustomPalette): PaletteSeed {
   const vivid = custom.character === 'vivid';
-  const solid = vivid && custom.fill === 'solid';
-  // starting points only: the derivation fits every one of them to its gate
-  const fill = solid
-    ? { l: 0.84, c: Math.min(accent.c, 0.16), h: accent.h }
-    : { l: 0.93, c: Math.min(accent.c * 0.25, 0.05), h: accent.h };
-  const onFill = solid
-    ? { l: 0.2, c: 0.02, h: accent.h }
-    : { l: 0.33, c: accent.c * 0.6, h: accent.h };
+  const anchors = accentAnchors(fromHex(custom.accent), custom.character, custom.fill);
   return {
     name: 'custom',
     title: 'Custom',
@@ -87,9 +110,9 @@ function plainSeed(custom: CustomPalette): PaletteSeed {
     ...(vivid && custom.highlight ? { highlight: custom.highlight } : {}),
     page: PAGES[custom.character][custom.base],
     card: '#ffffff',
-    accentInk: toHex(vivid ? accent : { ...accent, l: Math.min(accent.l, 0.5) }),
-    accentFill: toHex(fill),
-    accentOnFill: toHex(onFill),
+    accentInk: toHex(anchors.ink),
+    accentFill: toHex(anchors.fill),
+    accentOnFill: toHex(anchors.onFill),
   };
 }
 

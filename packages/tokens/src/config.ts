@@ -53,3 +53,9 @@ export const THEME_NAME = 'Fluvy';
  * cards read it to fall back to their own tokens, the shell to switch itself on and off.
  */
 export const THEME_SENTINEL = cssVar('theme');
+
+/**
+ * Which palette a look wears, written with its colours (`--fluvy-palette: linen`, or a custom palette's key): a
+ * card reads it to derive its own colour's family from the very palette it sits on.
+ */
+export const PALETTE_TOKEN = cssVar('palette');

@@ -388,7 +388,8 @@
     "days": "Días por delante",
     "live_update": "Actualizar al arrastrar",
     "show_count": "Mostrar cuántos están encendidos",
-    "color": "Color"
+    "color": "Color",
+    "color_help": "Un color de la paleta, o escribe cualquier #rrggbb"
   },
   "strategy": {
     "home": "Inicio",
@@ -990,6 +991,11 @@
     "solar": "Solar",
     "grid": "Red",
     "media": "Multimedia",
+    "presence": "Presencia",
+    "armed": "Armada",
+    "battery": "Batería",
+    "house": "Casa",
+    "gas": "Gas",
     "neutral": "Neutro",
     "warning": "Aviso"
   },

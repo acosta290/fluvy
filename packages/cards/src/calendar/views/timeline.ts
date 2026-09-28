@@ -140,7 +140,7 @@ export function timelineView(ctx: ViewContext): TemplateResult {
                   ? ''
                   : `left:${GUTTER + block.column * (width + 4)}px;${block.column < block.columns - 1 ? `width:${width}px;` : ''}`;
               return html`<button
-                class="cd-block cd-block--${ctx.toneOf(block.item.event.calendar)} ${block.height <= MIN_BLOCK ? 'cd-block--thin' : ''} ${abuts ? 'cd-block--abuts' : ''}"
+                class="cd-block fv-tone--${ctx.toneOf(block.item.event.calendar)} ${block.height <= MIN_BLOCK ? 'cd-block--thin' : ''} ${abuts ? 'cd-block--abuts' : ''}"
                 style="${side}top:${block.top}px;height:${block.height}px"
                 aria-label=${eventAria(ctx, block.item)}
                 @click=${() => ctx.open(block.item.event.calendar)}

@@ -7,7 +7,7 @@ import {
   type LovelaceConfigForm,
   type MessageKey,
 } from '@fluvy/core';
-import { TONES } from './domain.js';
+import { TONES } from '@fluvy/ui';
 
 /** The words every card's editor shares, by field name: a card maps only its own fields (or another word). */
 export const SHARED_LABELS: Readonly<Record<string, MessageKey>> = {
@@ -150,6 +150,18 @@ export const fieldRow = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
 
 /** A card's tone, from the palette's tones. */
 export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: toneSelector() });
+
+/**
+ * A card's or an item's own colour: Home Assistant's colour picker — its named swatches, shown in the palette's
+ * colours where the look reaches the editor, or any hex typed — with the palette's accent as its default.
+ */
+export const accentField = (name = 'color'): HaFormSchemaItem => ({
+  name,
+  selector: { ui_color: { default_color: 'primary', include_none: false, include_state: false } },
+});
+
+/** A tone and a colour, on one row. */
+export const colourFields = (): HaFormSchemaItem => fieldRow(toneField(), accentField());
 
 /** A card's head: its title and its subtitle, on one row. */
 export const titleFields = (): HaFormSchemaItem =>

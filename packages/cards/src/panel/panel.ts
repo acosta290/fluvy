@@ -1,15 +1,16 @@
 import {
+  type EffectiveSettings,
+  type HomeAssistant,
   localize,
+  type Look,
   lookHandle,
+  type LookHandle,
+  type LookPreview,
   lookRule,
   navigate,
   onWords,
+  resyncCardThemes,
   strings,
-  type EffectiveSettings,
-  type HomeAssistant,
-  type Look,
-  type LookHandle,
-  type LookPreview,
 } from '@fluvy/core';
 import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 
@@ -288,6 +289,7 @@ export class FluvyPanel extends LitElement {
     // the whole panel wears the look being chosen: a tap on a palette re-skins the page it was made on
     if ((changed.has('draft') || changed.has('dark')) && this.draft)
       this.lookSheet.replaceSync(lookRule(this.draft, this.dark ? 'dark' : 'light', ':host'));
+    resyncCardThemes(); // the preview's cards derive their colours on the look being chosen
     if (
       changed.has('tryOnApp') ||
       changed.has('houseEdit') ||

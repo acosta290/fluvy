@@ -388,7 +388,8 @@
     "days": "Dagen vooruit",
     "live_update": "Bijwerken tijdens het slepen",
     "show_count": "Tonen hoeveel er aan zijn",
-    "color": "Kleur"
+    "color": "Kleur",
+    "color_help": "Een kleur van het palet, of typ een #rrggbb"
   },
   "strategy": {
     "home": "Thuis",
@@ -990,6 +991,11 @@
     "solar": "Zon",
     "grid": "Net",
     "media": "Media",
+    "presence": "Aanwezigheid",
+    "armed": "Ingeschakeld",
+    "battery": "Batterij",
+    "house": "Huis",
+    "gas": "Gas",
     "neutral": "Neutraal",
     "warning": "Waarschuwing"
   },

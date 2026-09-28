@@ -18,14 +18,18 @@ import { fileURLToPath } from 'node:url';
 import {
   brandColorVars,
   derivePalettes,
+  identityVars,
   scaleVars,
   DEFAULT_PALETTE,
   type VarGroup,
 } from '@fluvy/tokens';
+import { renderTonesCss } from '../src/tones.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'styles');
 const OUT = join(ROOT, 'src', 'styles', 'generated');
+/** The one sheet written into `styles/` rather than read from it: the tones, from `src/tones.ts`. */
+export const TONES_SHEET = join(SRC, 'fluvy', 'tones.css');
 
 interface Rule {
   readonly prelude: string;
@@ -151,7 +155,7 @@ function declarations(groups: readonly VarGroup[]): string {
 export function tokenFallback(): string {
   const palette = derivePalettes().find((p) => p.name === DEFAULT_PALETTE);
   if (!palette) throw new Error(`palette ${DEFAULT_PALETTE} not found`);
-  const scale = declarations(scaleVars());
+  const scale = declarations([...scaleVars(), ...identityVars(palette)]);
   return `:host([no-theme]){${scale};${declarations(brandColorVars(palette.light))}}:host([no-theme][dark]){${declarations(brandColorVars(palette.dark))}}`;
 }
 
@@ -189,6 +193,7 @@ export async function build(): Promise<Record<string, string>> {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await writeFile(TONES_SHEET, renderTonesCss(), 'utf8');
   const outputs = await build();
   await mkdir(OUT, { recursive: true });
   for (const [file, content] of Object.entries(outputs))

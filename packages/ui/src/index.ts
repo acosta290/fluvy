@@ -8,6 +8,7 @@ export * from './motion.js';
 export * from './haptics.js';
 export * from './clock.js';
 export * from './text.js';
+export * from './tones.js';
 export { baseStyles, setFallbackTokens, sheetStyles } from './styles/index.js';
 export {
   clamp,

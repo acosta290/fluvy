@@ -388,7 +388,8 @@
     "days": "Days ahead",
     "live_update": "Update while dragging",
     "show_count": "Show how many are on",
-    "color": "Colour"
+    "color": "Colour",
+    "color_help": "A colour of the palette, or type any #rrggbb"
   },
   "strategy": {
     "home": "Home",
@@ -990,6 +991,11 @@
     "solar": "Solar",
     "grid": "Grid",
     "media": "Media",
+    "presence": "Presence",
+    "armed": "Armed",
+    "battery": "Battery",
+    "house": "House",
+    "gas": "Gas",
     "neutral": "Neutral",
     "warning": "Warning"
   },

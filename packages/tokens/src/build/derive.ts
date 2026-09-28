@@ -1,11 +1,10 @@
 import { composite, contrastRatio } from '../color/contrast.js';
 import { deltaE } from '../color/delta-e.js';
 import { ensureContrast, type FitDirection } from '../color/fit.js';
-import { fromHex, maxChroma, mixHue, normalizeHue, type Oklch, toHex } from '../color/oklch.js';
+import { fromHex, mixHue, type Oklch, toHex } from '../color/oklch.js';
 import { buildRamp, chromaEnvelope } from '../color/ramp.js';
 import {
   type FillStyle,
-  GRAPH_SERIES_COUNT,
   type Hex,
   type Palette,
   type PaletteMode,
@@ -18,6 +17,7 @@ import {
   STATE_KEYS,
   type StateKey,
 } from '../types.js';
+import { deriveAccent, legibleUnder } from './derive/accent.js';
 import { fitComposited, inkOn, type PaletteIdentity, readIdentity } from './derive/identity.js';
 import { GATES, STATUS_INK_DEPTH, UNAVAILABLE_ALPHA } from './derive/limits.js';
 import {
@@ -25,10 +25,9 @@ import {
   profileOf,
   SOLID_FILL,
   SOLID_STATUS_STEP,
-  solidHover,
   washShareFor,
 } from './derive/profiles.js';
-import { GRAPH_HARMONY, type RoleTuning, STATE_TUNING } from './derive/roles.js';
+import { type RoleTuning, STATE_TUNING } from './derive/roles.js';
 
 export { GATES, UNAVAILABLE_ALPHA } from './derive/limits.js';
 export { SECONDARY_ON_FILL } from './derive/profiles.js';
@@ -42,11 +41,6 @@ function deriveMode(
 ): PaletteModeColors {
   // Direction an ink has to move to gain contrast: darker on light grounds, lighter on dark.
   const inkDirection: FitDirection = mode === 'light' ? 'darker' : 'lighter';
-  // Ink placed on the solid accent runs the other way, because the accent itself is
-  // dark in light mode and light in dark mode — unless it is not: a vivid accent can be
-  // light in light mode (an electric orange takes black ink), so the far end is the fallback.
-  const onSolidDirection: FitDirection = mode === 'light' ? 'lighter' : 'darker';
-
   const neutralPeak = identity.neutralPeakChroma * p.neutralChromaScale;
   const accentPeak = identity.accentPeakChroma * p.accentChromaScale;
   const rolePeak = identity.rolePeakChroma * p.roleChromaScale;
@@ -57,20 +51,6 @@ function deriveMode(
     c: neutralPeak * chromaEnvelope(l) * chromaScale,
     h: identity.neutralHue,
   });
-  const accentAt = (l: number, chromaScale = 1): Oklch => ({
-    l,
-    c: accentPeak * chromaEnvelope(l) * chromaScale,
-    h: identity.accentHue,
-  });
-
-  /**
-   * A tint is the plate an icon of its ink sits on (a resting icon circle): it steps away from the ink until
-   * the glyph reads (the icon gate). A solid fill is the colour itself; its resting circles take a wash of it.
-   */
-  const legibleUnder = (fill: Oklch, ink: Oklch): Oklch =>
-    fillStyle === 'solid'
-      ? fill
-      : ensureContrast(fill, toHex(ink), GATES.icon, fill.l > ink.l ? 'lighter' : 'darker');
 
   // --- Surfaces -------------------------------------------------------------
   // Cards are more neutral than the page: the tint belongs to the background, not
@@ -134,83 +114,38 @@ function deriveMode(
   );
 
   // --- Accent ---------------------------------------------------------------
-  // A derived electric accent asks for nearly all the chroma its hue holds at that lightness (a green holds
-  // far less than an orange): the palette stays electric in the mode nobody drew.
-  function derivedAccent(): Oklch {
-    const base = accentAt(p.accentL);
-    if (identity.character !== 'vivid' || identity.accentPeakChroma === 0) return base;
-    return { ...base, c: Math.max(base.c, 0.9 * maxChroma(base.l, base.h)) };
-  }
-  // An accent too light to be a line on white (Noir's lime) keeps its colour as the fill in the derived light
-  // mode and draws its lines in the ink: black, lime and white is Noir; an olive lime is not.
-  const neutralLines = !anchor && mode === 'light' && identity.lightAccent;
-  const accentInkOklch = neutralLines
-    ? fromHex(textPrimary)
-    : ensureContrast(
-        anchor ? fromHex(anchor.accentInk) : derivedAccent(),
-        inkBackground,
-        identity.limits.accentInkGate,
-        inkDirection,
-      );
-  const accentInk = toHex(accentInkOklch);
-  // hover moves away from the end of the scale the ink is near (a lime would turn white, a black blacker)
-  const hoverDelta =
-    accentInkOklch.l > 0.85
-      ? -Math.abs(p.accentHoverDelta)
-      : accentInkOklch.l < 0.3
-        ? Math.abs(p.accentHoverDelta)
-        : p.accentHoverDelta;
-  const accentHover = toHex({ ...accentInkOklch, l: accentInkOklch.l + hoverDelta });
-  // a filled button under the pointer steps away from the ink on it (a black glyph on hot orange: the orange
-  // lightens), so the glyph never loses contrast to the hover
-  const awayFrom = (fill: Oklch, on: Hex): Oklch => ({
-    ...fill,
-    l: fill.l + (fromHex(on).l > fill.l ? -1 : 1) * Math.abs(p.accentHoverDelta),
-  });
-  // a soft ink already clears the text gate and comes back unchanged; a vivid one is taken deeper
-  const accentText = toHex(ensureContrast(accentInkOklch, inkBackground, GATES.text, inkDirection));
-
-  const accentFillOklch = legibleUnder(
-    anchor
-      ? fromHex(anchor.accentFill)
-      : neutralLines
-        ? identity.accentFill
-        : accentAt(p.fillL, p.fillChromaScale),
-    accentInkOklch,
+  const family = deriveAccent(
+    {
+      mode,
+      profile: p,
+      character: identity.character,
+      limits: identity.limits,
+      fillStyle,
+      inkBackground,
+      card,
+      textPrimary,
+      neutralHue: identity.neutralHue,
+      neutralPeakChroma: neutralPeak,
+    },
+    {
+      hue: identity.accentHue,
+      peakChroma: accentPeak,
+      graphPeakChroma: graphPeak,
+      lightAccent: identity.lightAccent,
+      fill: identity.accentFill,
+      ...(anchor ? { anchor } : {}),
+    },
   );
-  const accentFill = toHex(accentFillOklch);
-  const accentFillBorder = toHex(
-    ensureContrast(
-      { ...accentFillOklch, l: accentFillOklch.l + p.fillBorderDelta },
-      accentFill,
-      GATES.borderVsCard,
-      inkOn(accentFillOklch),
-    ),
-  );
-  const accentOnFill = toHex(
-    ensureContrast(
-      anchor ? fromHex(anchor.accentOnFill) : accentAt(p.onFillL, p.onFillChromaScale),
-      accentFill,
-      GATES.onFill,
-      inkOn(accentFillOklch),
-    ),
-  );
-  const onSolid = ensureContrast(
-    neutralAt(p.onAccentL, 0.4),
-    accentInk,
-    GATES.text,
-    onSolidDirection,
-  );
-  const textOnAccent = toHex(
-    contrastRatio(toHex(onSolid), accentInk) >= GATES.text
-      ? onSolid
-      : ensureContrast(
-          neutralAt(1 - p.onAccentL, 0.4),
-          accentInk,
-          GATES.text,
-          onSolidDirection === 'lighter' ? 'darker' : 'lighter',
-        ),
-  );
+  const {
+    ink: accentInk,
+    text: accentText,
+    fill: accentFill,
+    fillBorder: accentFillBorder,
+    onFill: accentOnFill,
+    onAccent: textOnAccent,
+    ramp: accentRamp,
+    graph,
+  } = family;
 
   // --- Highlight ------------------------------------------------------------
   // The second brand colour is a solid pop (a lime greeting): its fill as the seed gives it in the seeded
@@ -280,7 +215,11 @@ function deriveMode(
     const inkOklch = ensureContrast(at(inkL), inkBackground, minInkRatio, inkDirection);
     const ink = toHex(inkOklch);
     const step = assertive && fillStyle === 'solid' ? SOLID_STATUS_STEP[mode] : { l: 0, chroma: 1 };
-    const fillOklch = legibleUnder(at(p.fillL + step.l, p.fillChromaScale * step.chroma), inkOklch);
+    const fillOklch = legibleUnder(
+      fillStyle,
+      at(p.fillL + step.l, p.fillChromaScale * step.chroma),
+      inkOklch,
+    );
     const fill = toHex(fillOklch);
     const fillBorder = toHex(
       ensureContrast(
@@ -334,35 +273,6 @@ function deriveMode(
     border: composite(borderStrong, card, UNAVAILABLE_ALPHA),
   };
 
-  const accentRamp = buildRamp({ hue: identity.accentHue, peakChroma: accentPeak });
-
-  // --- Graph series ---------------------------------------------------------
-  // Two tone rows over the six harmony hues: row one mid, row two one step deeper. The
-  // small per-hue stagger inside each row is what keeps neighbours 30° apart legible.
-  const graph: Hex[] = [];
-  for (const row of [0, 1]) {
-    GRAPH_HARMONY.forEach((entry) => {
-      const l = p.graphBaseL + entry.lightnessOffset - row * p.graphToneDelta;
-      graph.push(
-        toHex(
-          ensureContrast(
-            {
-              l,
-              c: graphPeak * entry.chromaScale * chromaEnvelope(l),
-              h: normalizeHue(identity.accentHue + entry.hueOffset),
-            },
-            card,
-            GATES.icon,
-            inkDirection,
-          ),
-        ),
-      );
-    });
-  }
-  if (graph.length !== GRAPH_SERIES_COUNT) {
-    throw new Error(`Harmony yields ${graph.length} series, expected ${GRAPH_SERIES_COUNT}`);
-  }
-
   return {
     mode,
     surface: { page, pageAlt, card, cardElevated, border, borderStrong },
@@ -374,7 +284,7 @@ function deriveMode(
     },
     accent: {
       ink: accentInk,
-      hover: accentHover,
+      hover: family.hover,
       text: accentText,
       wash: fillStyle === 'solid' ? composite(accentFill, washBase, washShare) : accentFill,
       fill: accentFill,
@@ -385,14 +295,7 @@ function deriveMode(
     selected: identity.highlight
       ? { fill: highlight.fill, on: highlight.onFill }
       : { fill: textPrimary, on: page },
-    primary:
-      fillStyle === 'solid'
-        ? { fill: accentFill, hover: toHex(solidHover(accentFillOklch)), on: accentOnFill }
-        : {
-            fill: accentInk,
-            hover: toHex(awayFrom(accentInkOklch, textOnAccent)),
-            on: textOnAccent,
-          },
+    primary: family.primary,
     ...(identity.highlight ? { mark: { fill: highlight.fill, on: highlight.onFill } } : {}),
     buttons: (() => {
       // Home Assistant's own ramp steps (95 / 90 in light, 10 / 20 in dark), or the next pair when a palette's ramp
@@ -495,6 +398,7 @@ export function derivePalette(seed: PaletteSeed): Palette {
   const identity = readIdentity(seed);
   return {
     name: seed.name,
+    key: seed.key ?? seed.name,
     title: seed.title,
     description: seed.description,
     character: seed.character ?? 'soft',
