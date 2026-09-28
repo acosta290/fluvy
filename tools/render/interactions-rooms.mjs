@@ -97,12 +97,17 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
   const page = await suite.sheet('ambient');
   const zones = frame(page, 'Map · zones').locator('fluvy-map-card').first();
   const labels = await zones.locator('.mp-zone__label').allTextContents();
-  const counts = await zones.locator('.mp-zone__count').allTextContents();
+  const faces = await zones
+    .locator('.mp-zone')
+    .evaluateAll((columns) =>
+      columns.map((column) => column.querySelectorAll('.mp-face:not(.mp-more)').length),
+    );
   check(
-    'the zones as columns: home, the zone Ona is in, away, and unknown for Noa',
+    'the zones as columns: home, the zone Ona is in, away, and unknown for Noa — two faces at home, one elsewhere',
     labels.map((l) => l.trim().toLowerCase()).join(',') === 'home,school,away,unknown' &&
-      counts.map((c) => c.trim()).join(',') === '2,1,1,1',
-    `${labels.join(',')} · ${counts.join(',')}`,
+      faces.join(',') === '2,1,1,1' &&
+      (await zones.locator('.mp-more').count()) === 0,
+    `${labels.join(',')} · ${faces.join(',')}`,
   );
   const rows = frame(page, 'Map · rows').locator('fluvy-map-card').first();
   const words = await rows.locator('.fv-row__value').allTextContents();

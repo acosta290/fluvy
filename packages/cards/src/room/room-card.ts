@@ -11,7 +11,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { emptyState, head, icon, listRow, readout, round, sheetStyles } from '@fluvy/ui';
+import { emptyState, head, icon, listRow, readout, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { Crossfade } from '../shared/crossfade.js';
 import { counted } from '../shared/counted.js';
@@ -62,8 +62,10 @@ export interface RoomCardConfig extends TileCardConfig {
 }
 
 const HERO = 160;
-const STATS = 76; // 20 above three readouts of 56
+const STATS = 80; // 20 above three readouts of 60
 const TILES = 4;
+/** An inner tile (a compact tile inside a card) is 84 tall. */
+const INNER = 84;
 
 /**
  * A room of the house, from its area: what the registry knows of it (its picture, its climate) and what it holds
@@ -77,7 +79,7 @@ export class FluvyRoomCard extends FluvyTileCard {
       config.controls === 'none'
         ? 0
         : config.controls === 'tiles'
-          ? 16 + rowsOf(tiles, 2) * 84 - 8
+          ? 16 + rowsOf(tiles, 2) * (INNER + 8) - 8
           : 16 + ROW * 4;
     if (config.variant === 'tile') return 20 + 44 + controls + 20;
     const stats = config.show_climate === false && config.show_count === false ? 0 : STATS;
@@ -271,8 +273,11 @@ export class FluvyRoomCard extends FluvyTileCard {
     if (this.room?.show_climate !== false && temperature) {
       const view = this.entity(temperature);
       if (isUsable(view)) {
+        // a compact surface writes degrees without the unit: "21.4°" (the readouts keep "°C")
         const value = valueParts(this.hass, view);
-        parts.push(`${value.value} ${value.unit}`.trim());
+        parts.push(
+          value.unit.startsWith('°') ? `${value.value}°` : `${value.value} ${value.unit}`.trim(),
+        );
       }
     }
     // the count stays; the climate leaves when the line would be cut
@@ -305,7 +310,7 @@ export class FluvyRoomCard extends FluvyTileCard {
     if (!stats.length) return nothing;
     // three readouts in the column: the size the widest still fits (m → s → xs)
     const size = statsSize(this.roomRuler, this.contentWidth, stats);
-    return html`<div class="am-area__stats fv-cols">
+    return html`<div class="am-area__stats" data-align="center">
       ${stats.map((stat) => readout({ ...stat, size }))}
     </div>`;
   }
@@ -382,7 +387,7 @@ export class FluvyRoomCard extends FluvyTileCard {
     const tiles = this.tiles();
     if (!tiles.length) return nothing;
     return html`<div class="rm-controls">
-      ${tiles.map((tile) => this.renderTile(tile, 'compact'))}
+      ${tiles.map((tile) => this.renderTile(tile, 'compact', true))}
     </div>`;
   }
 
@@ -449,7 +454,16 @@ export class FluvyRoomCard extends FluvyTileCard {
           title: name,
           name: true,
           sub: this.roomLine(ids, summary.on),
-          trailing: to ? round('chevron', 'quiet', name, () => this.open()) : nothing,
+          // "opens" is the bare chevron the rows use, its ink on the column edge
+          trailing: to
+            ? html`<button
+                class="fv-hit fv-head__open"
+                aria-label=${name}
+                @click=${() => this.open()}
+              >
+                ${icon('chevron')}
+              </button>`
+            : nothing,
           onIconTap: () => this.tap(),
           onHold: () => this.hold(),
         })}

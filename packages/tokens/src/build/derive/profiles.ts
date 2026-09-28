@@ -197,7 +197,7 @@ const VIVID: Readonly<Record<PaletteMode, ModeProfile>> = {
 };
 
 /** Secondary text on a filled surface: its on-fill ink at this opacity (a tile's state line, a scene's time). */
-export const SECONDARY_ON_FILL = 0.72;
+export const SECONDARY_ON_FILL = 0.8;
 
 /**
  * A status on a solid palette: its fill one step away from the device colours' (which all sit at the solid fill's

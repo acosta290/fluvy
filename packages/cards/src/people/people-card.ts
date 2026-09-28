@@ -102,10 +102,6 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
       .am-person__name {
         transition: color var(--fv-base) var(--fv-ease);
       }
-      /* rows (the desktop composition): the state once at the right, quiet when it is not "Home" */
-      .fv-row__value--quiet {
-        color: var(--fluvy-text-secondary);
-      }
       @media (hover: hover) {
         .am-person:hover .am-person__name {
           color: var(--fluvy-accent);

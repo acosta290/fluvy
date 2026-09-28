@@ -57,10 +57,12 @@
 
 /* ---------- the map ---------- */
 
+/* zone columns on whole pixels (the card computes them: 4 × 80 in 320, 3 × 104 with 4 between): a stack of two
+   faces fills an 80 column exactly */
 .mp-zones {
   display: grid;
-  grid-template-columns: repeat(var(--mp-zones, 3), minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(var(--mp-zones, 3), var(--mp-col, minmax(0, 1fr)));
+  column-gap: var(--mp-gap, 0px);
   margin-top: 16px;
 }
 
@@ -72,7 +74,7 @@
 }
 
 .mp-zone__label {
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
@@ -81,7 +83,9 @@
   color: var(--fluvy-text-secondary);
 }
 
-/* the faces, overlapped by 12: four at most, then a count */
+/* the faces: two at most, overlapped by 8 (two initials stay whole under the next face); three or more fold to one
+   face and a "+N" disc of the same size; the card's ring keeps each apart. The column already says where everyone
+   is, so a stacked face carries no presence dot (a dashed face still says "unknown") */
 .mp-stack {
   display: flex;
   align-items: center;
@@ -104,27 +108,53 @@
 }
 
 .mp-face + .mp-face {
-  margin-left: -12px;
+  margin-left: -8px;
 }
 
 .mp-face .am-avatar {
   box-shadow: 0 0 0 2px var(--fluvy-card);
 }
 
+.mp-face .am-avatar__face {
+  font-size: 13px;
+}
+
+.mp-face .am-avatar__dot {
+  display: none;
+}
+
 .mp-more {
-  margin-left: 4px;
+  position: relative; /* painted after the face it follows, like a face (an avatar is positioned) */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--fluvy-page);
+  box-shadow: 0 0 0 2px var(--fluvy-card);
   font-size: 13px;
   font-weight: 600;
   line-height: 16px;
   color: var(--fluvy-text-secondary);
+  cursor: default;
 }
 
-.mp-zone__count {
-  margin-top: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 20px;
-  font-variant-numeric: tabular-nums;
+/* a head that opens: the bare chevron the rows use, its ink on the column edge */
+.fv-head__open {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  width: 44px;
+  height: 44px;
+  margin-right: -8px;
+  padding-right: 2px;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-head__open svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* who is where, under the map */

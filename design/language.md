@@ -112,6 +112,42 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - Analog face = the ruler's ticks bent into a circle: majors R/10 in ink, minors R/20 in border-strong (majors only at R 56); hour hand 0.52 R inside the numerals, minute 0.85 R and second 0.88 R over the numerals to the tick ring, widths 6/4/2 (R ≥ 96) · 5/3/2 (72) · 4/3/2 (56), round caps; only the second hand carries a counterweight (cap radius + 8); the cap is the Fluvy knob without halo or lift, 28 / 20 / 16. Numerals 14/600 secondary at 0.75 R (12/600 at R 56). Plain clocks are accent; a weather clock takes the sky's tone (accent at night, solar by day). Digital time 64/72 at −0.03 em, tabular, ink pulled onto the column (−0.06 em, declared `data-align="optical"`); seconds or AM/PM as a 24 unit on the baseline; date 14/500 secondary — the full date in a 320 column, "Thu 17 Sep" in narrow columns and tiles.
 - Calendar: one table of events drives every view. Event rows 60 (time 40 right-aligned + 4 px tone bar 44 + title/sub, past rows quiet); month cells 44 radius 12 on a 46 pitch (today = accent fill, weekends secondary, one 4 px dot per day with events); week columns 44 × 72 with the same one-dot rule; timeline 24 px per hour, true block heights (12 minimum), pastel blocks with dark ink and a 4 px tone bar, a 2 px accent now-line on the true minute; a block never shows more time than the event has. Calendars never use the accent (accent = today, selection, now, the primary action). A trailing slot may hold a 44 + 8 + 44 command pair.
 
+## Room
+
+- The area card of the ambient sheet, as a card: a **160 hero** bleeding to the card's edges (the room's photo,
+  cross-faded in once decoded, under a scrim `rgb(0 0 0 / 0.28) → transparent 55 %` from the foot; without a photo,
+  the accent's gradient 90 → 70 → 60), the **name pill** at 20 / 16 from the hero's corner (36 tall, card fill, 15/600,
+  a 20 glyph in the accent, 12 before the glyph and 16 after the text, sized to its words on the 4 grid), then **three
+  readouts** 20 under the hero in equal columns (m → s → xs by measure), then the room's controls: **category rows**
+  (Lights, Climate, Media, All devices — 60, chevron, the hairline from the text's left edge) or **inner tiles** two a
+  row. The hero and the rows open the room's page (`path`), or the area's settings for an administrator; nowhere to
+  go, no chevron.
+- **Inner tile** = a compact tile inside a card: 84 tall, radius 12, page fill, no hairline; on = the tone's fill
+  alone with the tone's ink and a card-fill circle; off = a card-fill circle with the text ink (a pastel circle on
+  the page ground would read as lit). Two a row, 8 apart; a name steps to 14 under 200 and may end in an ellipsis
+  (long names belong to `controls: rows`).
+- Compact surfaces write degrees without the unit — "4 of 10 on · 21.4°", "Idle · 22.8°" — the readouts keep "°C".
+- The **tile** variant is a head (44 icon circle, the name, the count and the climate as its sub, "opens" as the
+  bare 44 chevron with its ink on the column edge) over the inner tiles; the **row** variant is the compact tile
+  itself (76), two a row on the automatic dashboards.
+- Compact tiles measure their container's content box: the name steps to 14 under 168 inside (200 outside), the
+  icon leaves under 96 inside (128 outside).
+
+## Map
+
+- The head is about the people (a person glyph in the leading circle); the map is what the trailing round does
+  (`/map`). The sub counts who is home.
+- **Zones as columns** of whole pixels computed from the content width (320: 4 × 80 with no gap, 3 × 104 with 4
+  between, 2 × 160): a 44 icon circle (home = presence tone, a zone = its own icon or the pin, away = the walking
+  figure, unknown = a person outline in the dashed off ring), 12, an 11/600 uppercase label, 12, a stack of faces 44
+  high. Two faces at most, overlapping by 8 with the card's 2 px ring, initials 13/600; three or more fold to one
+  face and a "+N" disc of the same size (page fill, 13/600 secondary). No presence dots in a stack (the column says
+  where) and no count row (the fold's number and the sub carry it). Card 228.
+- **Rows**: one a person — the 44 avatar with its presence dot, the name, where they are as the value ("Home",
+  the zone's name, "Away · 26 km" only when distance is asked for and the fix is good, "Unknown").
+- The **map** variant is Home Assistant's own map card on a plate (16 radius, 1.6:1 or square); it falls back to the
+  columns in silence where the card helpers are missing.
+
 ## Readouts and text
 
 - Readout = 11/600 uppercase label (0.06 em) + tabular value + unit on the baseline; a unit has its own line box (`line-height: 1`) so it never grows the value's box. Sizes: xs 16/20 (tile foot), s 20/24, m 24/28, l 40/44.

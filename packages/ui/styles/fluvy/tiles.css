@@ -73,10 +73,11 @@
   color: var(--tone-on);
 }
 
+/* the state line on the on-fill: the fill's ink at 80 % (4.5 on every palette's fill; the tokens' gates hold it) */
 .fv-tile.is-on .fv-tile__state,
 .fv-tile.is-on .fv-row__sub {
   color: var(--tone-on);
-  opacity: 0.72;
+  opacity: 0.8;
 }
 
 /* A solid fill is the colour itself: what is drawn on it takes the fill's ink (a black track with a thumb in the
@@ -119,7 +120,7 @@
 .fv-tile.is-on :is(.fv-readout__label, .fv-unit) {
   color: color-mix(
     in srgb,
-    color-mix(in srgb, var(--tone-on) 72%, transparent) var(--fluvy-solid, 0%),
+    color-mix(in srgb, var(--tone-on) 80%, transparent) var(--fluvy-solid, 0%),
     var(--fluvy-text-secondary)
   );
 }
@@ -239,23 +240,45 @@
 }
 
 /* two compact tiles side by side on a phone leave the name 98 px: one step smaller there, so a word like
-   "Temperatura" fits instead of ending in an ellipsis */
+   "Temperatura" fits instead of ending in an ellipsis. A container query measures the content box: a tile under
+   200 wide is one under 168 inside its 16 px sides */
 .fv-tile--compact {
   container-type: inline-size;
 }
 
-@container (max-width: 199px) {
+@container (max-width: 167px) {
   .fv-tile--compact .fv-tile__name {
     font-size: 14px;
   }
 }
 
-/* a compact tile squeezed under 128 (a narrow dashboard cell) gives its name the icon's room: the fill still says
-   on or off (a mini tile is never narrower than 84: its group lays out fewer columns instead) */
-@container (max-width: 127px) {
+/* a compact tile squeezed under 128 (a narrow dashboard cell; 96 inside) gives its name the icon's room: the fill
+   still says on or off (a mini tile is never narrower than 84: its group lays out fewer columns instead) */
+@container (max-width: 95px) {
   .fv-tile--compact > .fv-ico {
     display: none;
   }
+}
+
+/* the inner tile: a compact tile inside a card (a room's controls) — 84 tall, the control radius, the page's fill
+   and no hairline; on, the tone's fill alone (like an option tile) */
+.fv-tile--inner {
+  height: 84px;
+  border-radius: var(--fluvy-radius-control);
+  background: var(--fluvy-page);
+  box-shadow: none;
+}
+
+.fv-tile--inner.is-on {
+  box-shadow: none;
+}
+
+/* off, on the page's fill, the icon circle is the card's fill with the text's ink — one step off its ground, as
+   the empty state's ring; only an on tile keeps the tone and its ink (a pastel circle on this ground reads as lit) */
+.fv-tile--inner:not(.is-on) > .fv-ico {
+  background: var(--fluvy-card);
+  color: var(--fluvy-text);
+  box-shadow: none;
 }
 
 .fv-tile--compact .fv-tile__state {

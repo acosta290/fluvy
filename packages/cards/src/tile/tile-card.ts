@@ -356,13 +356,16 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return textWidth(name, `600 16px ${family}`) <= this.tileWidth() - 32 - 2;
   }
 
-  /** One tile of the given size — the single card, or each item of a tiles group. */
-  protected renderTile(item: TileItem, size: TileSize): TemplateResult {
+  /**
+   * One tile of the given size — the single card, or each item of a tiles group. `inside`: the tile sits inside a
+   * card (a room's controls): an inner tile, 84 tall, the control radius, page fill, no hairline.
+   */
+  protected renderTile(item: TileItem, size: TileSize, inside = false): TemplateResult {
     const view = this.entity(item.entity);
     const name = item.name ?? view.name;
     const glyph = item.icon ?? glyphFor(view);
     const small = size !== 'large';
-    const sizeClass = small ? ` fv-tile--${size}` : '';
+    const sizeClass = small ? ` fv-tile--${size}${inside ? ' fv-tile--inner' : ''}` : '';
 
     // a missing or unreachable entity wears the off skin; an unknown one is a live tile whose word is "Unknown"
     if (!isUsable(view)) {

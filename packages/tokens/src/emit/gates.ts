@@ -226,7 +226,7 @@ export function contrastGates(colors: PaletteModeColors): readonly ContrastGate[
 
   // a resting icon circle: the role's ink on its fill (tint) or on a wash of it over its ground (solid);
   // an "on" surface: what sits on it (a switch, a ruler, an icon) in the fill's own ink, and its secondary
-  // text (the on-fill ink at 72 %)
+  // text (the on-fill ink at 80 %: a tile's state line on its on-fill, read at 4.5 in every palette)
   const solid = colors.fillStyle === 'solid';
   const wash = (fill: Hex): Hex => composite(fill, colors.washBase, colors.washShare);
   for (const [id, value] of [
@@ -240,6 +240,12 @@ export function contrastGates(colors: PaletteModeColors): readonly ContrastGate[
       background: wash(value.fill),
       min: GATES.icon,
     });
+    gates.push({
+      id: `${id}-secondary-on-fill`,
+      foreground: composite(value.onFill, value.fill, SECONDARY_ON_FILL),
+      background: value.fill,
+      min: GATES.text,
+    });
     // the electric line's rules (round 1 of its review); the approved soft line keeps its values — a pass of
     // its own would raise the few plates that sit at 4.4 here
     if (colors.character !== 'vivid') continue;
@@ -248,12 +254,6 @@ export function contrastGates(colors: PaletteModeColors): readonly ContrastGate[
       foreground: solid ? value.onFill : value.ink,
       background: value.fill,
       min: GATES.icon,
-    });
-    gates.push({
-      id: `${id}-on-fill-72-on-fill`,
-      foreground: composite(value.onFill, value.fill, SECONDARY_ON_FILL),
-      background: value.fill,
-      min: GATES.text,
     });
   }
 

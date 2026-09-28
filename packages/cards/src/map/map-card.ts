@@ -71,10 +71,12 @@ export interface MapCardConfig extends FluvyCardConfig {
   _now?: string;
 }
 
-/** Zone columns: the plan's 252 (a 44 icon, a label, a stack of 44, a count). */
-const ZONES_HEIGHT = 252;
-/** The stack shows this many faces; the rest are one count. */
-const FACES = 4;
+/** Zone columns: 20 + a 44 head + 16 + a column of 128 (a 44 icon, 12, a label, 12, a stack of 44) + 20. */
+const ZONES_HEIGHT = 228;
+/** A stack shows two faces; three or more fold to one face and a "+N" disc, so a column stays 80 wide. */
+const FACES = 2;
+/** A zone column: two faces overlapping by 8. */
+const COLUMN = 80;
 
 type MapElement = HTMLElement & {
   hass?: HomeAssistant;
@@ -340,11 +342,15 @@ export class FluvyMapCard extends Card<MapCardConfig> {
       this.zoneSpecs(),
       this.config?.show_empty ?? false,
     );
-    const columns = Math.max(
-      1,
-      Math.min(4, Math.floor((this.contentWidth + 16) / 112), groups.length),
-    );
-    return html`<div class="mp-zones fv-cols" data-align="center" style="--mp-zones:${columns}">
+    const columns = Math.max(1, Math.min(4, Math.floor(this.contentWidth / COLUMN), groups.length));
+    // whole-pixel columns on the 4 grid, the remainder as the gaps between them (320: 4 × 80, 3 × 104 + 2 × 4)
+    const width = Math.floor(this.contentWidth / columns / 4) * 4;
+    const gap = columns > 1 ? (this.contentWidth - columns * width) / (columns - 1) : 0;
+    return html`<div
+      class="mp-zones"
+      data-align="center"
+      style="--mp-zones:${columns};--mp-col:${width}px;--mp-gap:${gap}px"
+    >
       ${groups.map((group) => {
         const glyph =
           group.where === 'home'
@@ -352,7 +358,7 @@ export class FluvyMapCard extends Card<MapCardConfig> {
             : group.where === 'away'
               ? 'away'
               : group.where === 'unknown'
-                ? 'ban'
+                ? 'person'
                 : (this.zoneSpecs().find((zone) => zone.entity === group.key)?.icon ??
                   group.zone?.attr<string | null>('icon') ??
                   'pin');
@@ -364,7 +370,7 @@ export class FluvyMapCard extends Card<MapCardConfig> {
               : group.where === 'unknown'
                 ? s(this.hass, 'unknown')
                 : this.zoneName(group.key);
-        const shown = group.people.slice(0, FACES);
+        const shown = group.people.slice(0, group.people.length > FACES ? 1 : FACES);
         const rest = group.people.length - shown.length;
         return html`<div class="mp-zone" data-target>
           <span
@@ -375,11 +381,8 @@ export class FluvyMapCard extends Card<MapCardConfig> {
           <span class="mp-zone__label">${label}</span>
           <div class="mp-stack ${group.people.length ? '' : 'is-empty'}">
             ${shown.map((person) => html`<button class="mp-face" aria-label=${`${person.view.name} · ${this.wordFor(person)}`} @click=${() => this.tap(person.view.id, { action: 'more-info' })}>${this.avatar(person)}</button>`)}
-            ${rest > 0 ? html`<span class="mp-more">${s(this.hass, 'more', { count: rest })}</span>` : nothing}
+            ${rest > 0 ? html`<span class="mp-face mp-more">${s(this.hass, 'more', { count: rest })}</span>` : nothing}
           </div>
-          <span class="mp-zone__count"
-            >${formatNumber(this.hass, group.people.length, { digits: 0 })}</span
-          >
         </div>`;
       })}
     </div>`;
@@ -438,7 +441,8 @@ export class FluvyMapCard extends Card<MapCardConfig> {
     });
     return html`<article class="fv-card" data-card>
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'map') : null,
+        // the people are what the card is about; the map is what the round does
+        icon: fitted.icon ? (this.config?.icon ?? 'person') : null,
         tone: home > 0 ? 'accent' : 'neutral',
         title,
         sub: fitted.sub,
