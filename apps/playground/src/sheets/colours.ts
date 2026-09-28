@@ -132,6 +132,20 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a tile's own colour: the lamp red and the speaker a green typed, each drawn in its colour; the fan as it is
+    {
+      title: 'Tiles with their own colours',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          tiles: [
+            { entity: 'light.co_lamp', color: 'red' },
+            'fan.co_fan',
+            { entity: 'media_player.co_player', color: '#00b894' },
+          ],
+        },
+      ],
+    },
     {
       title: 'Plain tiles',
       cards: [{ type: 'custom:fluvy-tiles-card', tiles: ['light.co_lamp', 'fan.co_fan'] }],

@@ -131,11 +131,12 @@ type Missing<C, K extends readonly unknown[]> = Exclude<OwnKeys<C>, K[number]>;
 /**
  * `static keys = configKeys<MyConfig>()(['variant', 'columns'])`: the keys the editor shows, checked against the
  * config's interface both ways — a key the interface does not declare is refused, and one it declares that the
- * list forgets fails the call with the missing name in the type it asks for (`{ missing: "columns" }`).
+ * list forgets fails the call with the missing name in the type it asks for (`{ missing: "columns" }`). What comes
+ * back is plain strings: a card's keys widen along its config, so a subclass declares its own without a clash.
  */
 export const configKeys =
   <C>() =>
   <const K extends readonly OwnKeys<C>[]>(
     keys: K & ([Missing<C, K>] extends [never] ? unknown : { readonly missing: Missing<C, K> }),
-  ): readonly OwnKeys<C>[] =>
+  ): readonly string[] =>
     keys;

@@ -9,27 +9,34 @@ import {
 } from '../tile/tile-card.js';
 
 import {
+  actionFields,
+  colourFields,
   entitiesField,
   entityField,
   fieldRow,
   formLabels,
   nameIconFields,
   selectField,
-  toneField,
 } from '../shared/form.js';
+import type { BaseKey } from '../shared/base.js';
+import {
+  columnsOf,
+  configKeys,
+  ITEM_ALIASES,
+  type AliasSpec,
+  type Columns,
+} from '../shared/config.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 
-export type TilesColumns = 2 | 3 | 4 | 'auto';
-
 export interface TilesCardConfig extends TileCardConfig {
-  /** Entity ids, or tiles with their own name / icon / tone / actions. */
+  /** Entity ids, or tiles with their own name / icon / tone / colour / actions. */
   tiles?: readonly TileItem[];
-  /** 2, 3, 4 per row, or `auto` — as many as fit (148 px compact and large, 84 px mini). Default: 2, 3 mini. */
-  columns?: TilesColumns | string;
+  /** 1 to 4 per row, or `auto` — as many as fit (148 px compact and large, 84 px mini). Default: 2, 3 mini. */
+  columns?: Columns;
 }
 
 const SIZES: readonly TileSize[] = ['compact', 'mini', 'large'];
-const COLUMNS = ['2', '3', '4', 'auto'] as const;
+const COLUMNS = ['1', '2', '3', '4', 'auto'] as const;
 /** The tiles' column gap (the theme's section grid gap). */
 const GAP = 16;
 /** The narrowest a grouped tile draws whole: a group too narrow for the columns asked lays out fewer, in more rows. */
@@ -61,24 +68,35 @@ export class FluvyTilesCard extends FluvyTileCard {
     `,
   ];
 
+  /** The group has no entity of its own: its tone and colour are its tiles' default. */
+  static override base: readonly BaseKey[] = ['entities', 'tone', 'color'];
+  static override keys = configKeys<TilesCardConfig>()(['size', 'readouts', 'tiles', 'columns']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'tiles',
       alias: 'entities',
       title: 'editor.tiles',
-      schema: [entityField(), nameIconFields(), toneField(), entitiesField('readouts', ['sensor'])],
+      keys: ['entity', 'name', 'icon', 'tone', 'color', 'readouts', 'tap_action', 'hold_action'],
+      schema: [
+        entityField(),
+        nameIconFields(),
+        colourFields(),
+        entitiesField('readouts', ['sensor']),
+        actionFields(),
+      ],
     },
   ];
+  static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
   static override defaults: EditorDefaults = () => ({ size: 'compact' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entitiesField('entities', undefined, true),
         fieldRow(selectField('size', SIZES), selectField('columns', COLUMNS)),
+        colourFields(),
+        entitiesField('readouts', ['sensor']),
       ],
-      ...formLabels({
-        columns: 'editor.columns',
-      }),
+      ...formLabels({ readouts: 'editor.readouts' }),
     };
   }
 
@@ -109,13 +127,14 @@ export class FluvyTilesCard extends FluvyTileCard {
   }
 
   /** The columns asked for, as many as the group's width holds (`auto` fits 148 px compact, 84 px mini). */
-  private columns(): TilesColumns | 1 {
-    const raw = String((this.config as TilesCardConfig | undefined)?.columns ?? '');
-    if (raw === 'auto') return 'auto';
-    const n = Number(raw);
-    const asked = n === 2 || n === 3 || n === 4 ? n : this.size() === 'mini' ? 3 : 2;
+  private columns(): Columns {
+    const asked = columnsOf(
+      (this.config as TilesCardConfig | undefined)?.columns,
+      this.size() === 'mini' ? 3 : 2,
+    );
+    if (asked === 'auto') return 'auto';
     const room = Math.floor((this.width + GAP) / (MIN_TILE[this.size()] + GAP));
-    return Math.max(1, Math.min(asked, room)) as TilesColumns | 1;
+    return Math.max(1, Math.min(asked, room)) as Columns;
   }
 
   /** A tile's share of the row: the group's width less the gaps (auto fits 148 px tiles). */

@@ -110,6 +110,43 @@ const styleOf = (locator, prop) => locator.evaluate((el, p) => getComputedStyle(
   await page.close();
 }
 
+/* ---------- a tile's own colour ---------- */
+{
+  const page = await suite.sheet('colours');
+  const group = frame(page, 'Tiles with their own colours').locator('fluvy-tiles-card');
+  const coloured = group.locator('[data-accent]');
+  check('a tile with a colour carries it as data-accent', (await coloured.count()) === 2);
+  // a colour without a tone is the accent: the coloured lamp and speaker are accent tiles in their own colours
+  const lamp = coloured.nth(0);
+  const speaker = coloured.nth(1);
+  const ownFill = (tile) =>
+    tile.evaluate((el) => getComputedStyle(el).getPropertyValue('--fluvy-accent-fill').trim());
+  const groupFill = toHex(await varOf(group, '--fluvy-accent-fill'));
+  for (const [name, tile] of [
+    ['lamp', lamp],
+    ['speaker', speaker],
+  ]) {
+    const fill = toHex(await styleOf(tile, 'backgroundColor'));
+    check(
+      `the ${name} is drawn in its own colour (an accent tile, filled with its own accent fill)`,
+      (await tile.evaluate(
+        (el) => el.classList.contains('fv-tile--accent') && el.classList.contains('is-on'),
+      )) &&
+        fill === toHex(await ownFill(tile)) &&
+        fill !== groupFill,
+      `${fill} vs group ${groupFill}`,
+    );
+  }
+  check('the two colours differ', (await ownFill(lamp)) !== (await ownFill(speaker)));
+  const fan = group.locator('.fv-tile--fan.is-on').first();
+  check(
+    'the fan keeps its tone',
+    toHex(await styleOf(fan, 'backgroundColor')) ===
+      toHex(await varOf(group, '--fluvy-state-climate-fan-fill')),
+  );
+  await page.close();
+}
+
 /* ---------- derived again: dark mode, another palette, no theme ---------- */
 {
   const light = await suite.sheet('colours', { width: 412 });

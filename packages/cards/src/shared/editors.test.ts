@@ -13,9 +13,6 @@ import type { FluvyRowsEditor } from './rows-editor.js';
  * the list can only shrink.
  */
 const PENDING = new Set([
-  'fluvy-tile-card',
-  'fluvy-tiles-card',
-  'fluvy-light-card',
   'fluvy-thermostat-card',
   'fluvy-entities-card',
   'fluvy-media-card',
@@ -65,9 +62,13 @@ const names = (schema: readonly HaFormSchemaItem[]): string[] =>
 const cards = CATALOGUE.map(([tag, element]) => ({ tag, card: element as unknown as CardClass }));
 
 describe('the editors’ contract', () => {
-  it('names every card of the catalogue, once', () => {
-    expect(cards.map((c) => c.tag).sort()).toEqual([...PENDING].sort());
+  it('names each card of the catalogue once, and pending ones that exist', () => {
     expect(new Set(cards.map((c) => c.tag)).size).toBe(cards.length);
+    for (const tag of PENDING)
+      expect(
+        cards.some((c) => c.tag === tag),
+        tag,
+      ).toBe(true);
   });
 
   it.each(cards)(

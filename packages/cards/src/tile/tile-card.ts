@@ -1,11 +1,12 @@
 import {
+  formatNumber,
   isActive,
+  isUsable,
+  relativeTime,
   stateText,
   TOGGLE_DOMAINS,
   toggleEntity,
   valueParts,
-  formatNumber,
-  relativeTime,
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
@@ -36,15 +37,16 @@ import { fitLine, TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 
 import {
-  actionField,
+  actionFields,
+  colourFields,
   entitiesField,
   entityField,
-  fieldRow,
   formLabels,
   nameIconFields,
   selectField,
-  toneField,
 } from '../shared/form.js';
+import { toneOf } from '../shared/colour.js';
+import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 
 export type TileSize = 'large' | 'compact' | 'mini';
@@ -56,6 +58,8 @@ export interface TileItem {
   name?: string;
   icon?: string;
   tone?: Tone;
+  /** The tile's own colour (a Home Assistant colour name or `#rrggbb`): the accent inside it. */
+  color?: string;
   /** Entities shown as small readouts in the foot of a large tile (a plug's power, its energy today, its cost): two, or three when the tile is wide; the first one joins the state line of a small tile. */
   readouts?: readonly string[];
   tap_action?: ActionConfig;
@@ -149,21 +153,19 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     `,
   ];
 
+  static override keys = configKeys<TileCardConfig>()(['size', 'readouts']);
   static override defaults: EditorDefaults = () => ({ size: 'large' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(),
         nameIconFields(),
-        fieldRow(selectField('size', TILE_SIZES), toneField()),
+        selectField('size', TILE_SIZES),
+        colourFields(),
         entitiesField('readouts', ['sensor']),
-        actionField(),
-        actionField('hold_action'),
+        actionFields(),
       ],
-      ...formLabels({
-        readouts: 'editor.readouts',
-        hold_action: 'editor.hold_action',
-      }),
+      ...formLabels({ readouts: 'editor.readouts' }),
     };
   }
 
@@ -357,7 +359,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const small = size !== 'large';
     const sizeClass = small ? ` fv-tile--${size}` : '';
 
-    if (view.status === 'missing' || view.status === 'unavailable') {
+    // a missing or unreachable entity wears the off skin; an unknown one is a live tile whose word is "Unknown"
+    if (!isUsable(view)) {
       const open = (): void => this.tap(view.id, item.tap_action ?? MORE_INFO);
       const line = this.stateLine(view, false, null, false, small);
       return html`<article
@@ -382,7 +385,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       state === view.state
         ? isActive(view)
         : !['off', 'closed', 'locked', 'idle', 'docked', 'paused'].includes(state);
-    const tone = item.tone ?? toneFor(view);
+    const tone = toneOf(item, toneFor(view));
+    // a grouped tile's own colour sits on its article (the lone card's is the card's, written by the base)
+    const accent = item === this.config ? undefined : this.accents.item(item.color);
     const level = this.level(view);
     const canToggle = TOGGLE_DOMAINS.has(view.domain);
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
@@ -403,6 +408,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       return html`<article
         class=${classes}
         data-card
+        data-accent=${accent ?? nothing}
         role="button"
         tabindex="0"
         aria-label=${name}
@@ -496,6 +502,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return html`<article
       class=${`${classes}${foot === nothing ? ' fv-tile--footless' : this.nameFits(name) ? '' : ' fv-tile--tight'}`}
       data-card
+      data-accent=${accent ?? nothing}
       role="button"
       tabindex="0"
       aria-label=${name}

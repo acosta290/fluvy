@@ -1,5 +1,6 @@
 import {
   formatNumber,
+  isUsable,
   stateText,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -22,11 +23,14 @@ import {
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { Card } from '../shared/base.js';
+import { configKeys } from '../shared/config.js';
 
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionFields,
   boolField,
+  colourFields,
   entityField,
   fieldRow,
   formLabels,
@@ -101,6 +105,12 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     this.window_ = null;
   }
 
+  static override keys = configKeys<LightCardConfig>()([
+    'variant',
+    'live_update',
+    'show_temperature',
+    'temperature_tint',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -112,6 +122,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
         ),
         boolField('temperature_tint'),
         boolField('live_update'),
+        colourFields(),
+        actionFields(),
       ],
       ...formLabels({
         show_temperature: 'light.temperature',
@@ -201,7 +213,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const name = this.config?.name ?? view.name;
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
     const on = this.stateOf(view) === 'on' || (this.held !== null && this.held.value > 0);
     const modes = view.attr<string[]>('supported_color_modes') ?? [];
     const dimmable = modes.some((m) => DIMMABLE.has(m));
@@ -272,7 +284,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
                 },
                 name,
               ),
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       ${
