@@ -63,6 +63,7 @@ export const itemLabels: Labeler = formLabels({
   path: 'editor.path',
   meta: 'editor.meta',
   readouts: 'editor.readouts',
+  presets: 'editor.presets',
 }).computeLabel;
 
 /**

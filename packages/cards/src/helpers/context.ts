@@ -2,6 +2,7 @@ import { stateText, type EntityView, type HomeAssistant } from '@fluvy/core';
 import type { IconRef } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { glyphFor } from '../shared/domain.js';
+import { type TextRuler } from '../shared/fit.js';
 
 export interface HelperRowConfig {
   entity: string;
@@ -21,6 +22,8 @@ export interface HelperHost {
   readonly hass: HomeAssistant | undefined;
   /** Width of the card's content column: rulers are drawn to it. */
   readonly contentWidth: number;
+  /** Widths laid out by the browser in the card's own classes: a filled chip row measures its columns with it. */
+  readonly ruler: TextRuler;
   /** The state to draw: the expected one while a change is in flight. */
   state(view: EntityView): string;
   expect(entityId: string, state: string): void;

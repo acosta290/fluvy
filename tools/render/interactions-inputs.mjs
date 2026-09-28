@@ -9,7 +9,7 @@
  * hour timer are released on disconnect, and so are the weather forecast and to-do subscriptions; a tab
  * row tracks the open view; a double tap on an action is one run.
  */
-import { BASE, calls, reset, startSuite } from './lib/suite.mjs';
+import { BASE, calls, frame, reset, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { browser, check } = suite;
@@ -156,7 +156,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await reset(page);
 
   // hard states: unavailable helpers are inert, a long select is a row that opens more-info
-  const edge = page.locator('fluvy-helpers-card').nth(3);
+  const edge = frame(page, 'Helpers · hard states').locator('fluvy-helpers-card').first();
   const zone = edge.locator('.in-value').first();
   check(
     'a 12-option select is one row with its value',
@@ -235,13 +235,14 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await page.waitForTimeout(100);
   check('Escape closes the composer', (await composer.count()) === 0);
 
-  const empty = page.locator('fluvy-todo-card').nth(1);
+  const hard = frame(page, 'To-do · hard states');
+  const empty = hard.locator('fluvy-todo-card').nth(0);
   check(
     'an empty list says so, in the empty-state idiom (the ring and one line)',
     (await empty.locator('.fv-empty-state__text').textContent()).trim() === 'Nothing left' &&
       (await empty.locator('.fv-empty-state__ring').count()) === 1,
   );
-  const readonly = page.locator('fluvy-todo-card').nth(2);
+  const readonly = hard.locator('fluvy-todo-card').nth(1);
   check(
     'a read-only list has no "+" and no checkboxes',
     (await readonly.locator('.in-add').count()) === 0 &&

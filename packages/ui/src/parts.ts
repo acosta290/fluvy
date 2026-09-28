@@ -40,6 +40,8 @@ export function icon(
 export interface IcoOptions {
   readonly hero?: boolean;
   readonly onTap?: ((event: Event) => void) | undefined;
+  /** A still press of 500 ms on the circle (a card's hold action); the click that follows is swallowed. */
+  readonly onHold?: (() => void) | undefined;
   readonly label?: string;
   /** The circle is itself a switch in this state (a tile too narrow for one beside it): role switch, aria-checked. */
   readonly checked?: boolean;
@@ -59,7 +61,11 @@ export function ico(
       role=${options.checked === undefined ? nothing : 'switch'}
       aria-checked=${options.checked === undefined ? nothing : String(options.checked)}
       aria-label=${options.label ?? nothing}
-      @click=${options.onTap}
+      .fvTap=${(options.onHold ? options.onTap : undefined) as PressTarget['fvTap']}
+      .fvHold=${options.onHold as PressTarget['fvHold']}
+      @pointerdown=${options.onHold ? startPress : nothing}
+      @contextmenu=${options.onHold ? preventMenu : nothing}
+      @click=${options.onHold ? clickPress : options.onTap}
     >
       ${icon(ref)}
     </button>`;

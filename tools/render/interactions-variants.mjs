@@ -8,7 +8,8 @@
  * and a compact alarm the head and its modes as chips, both 144; an alarm offers the modes it was asked for, in that
  * order; compact entity rows are 48 tall with the name alone, and a row wears its own colour; four readouts stand
  * on one row when asked; a plain heading is its title alone, 24 tall; a greeting can go without its avatar, date
- * and weather.
+ * and weather; a select's options fill their row unless asked for chips; a to-do list, a timer and a weather card
+ * go without their extras when told; scenes stand one a row when asked and a scene tile without its subtitle.
  */
 import { frame, startSuite } from './lib/suite.mjs';
 
@@ -250,6 +251,72 @@ const heightOf = async (card) =>
     (await second.locator('.hm-avatar').count()) === 0 &&
       (await second.locator('.hm-hello__date').count()) === 2 &&
       (await second.locator('.hm-hello__weather').count()) === 1,
+  );
+  await page.close();
+}
+
+/* ---------- inputs: options as chips, a bare list, a bare timer ---------- */
+{
+  const page = await suite.sheet('inputs');
+  const full = frame(page, 'Helpers').locator('fluvy-helpers-card').first();
+  const asChips = frame(page, 'Helpers · options as chips').locator('fluvy-helpers-card').first();
+  check(
+    "a select's options fill their row by default, and are content-sized chips when asked",
+    (await full.locator('.fv-chips.fv-chips--fill').count()) === 1 &&
+      (await asChips.locator('.fv-chips.fv-chips--fill').count()) === 0 &&
+      (await asChips.locator('.fv-chips').count()) === 2,
+  );
+  const list = frame(page, 'Groceries').locator('fluvy-todo-card').first();
+  const bare = frame(page, 'To-do · bare').locator('fluvy-todo-card').first();
+  check(
+    'a bare to-do list has no composer, no due dates and no ticked items',
+    (await list.locator('.in-add').count()) === 1 &&
+      (await list.locator('.in-todo__row.is-done').count()) > 0 &&
+      (await bare.locator('.in-add').count()) === 0 &&
+      (await bare.locator('.fv-row__sub').count()) === 0 &&
+      (await bare.locator('.in-todo__row.is-done').count()) === 0,
+  );
+  const timer = frame(page, 'Timer · bare').locator('fluvy-timer-card').first();
+  check(
+    'a bare timer is its readout alone',
+    (await timer.locator('.in-timer__cmds').count()) === 0 &&
+      (await timer.locator('.in-gauge').count()) === 0 &&
+      (await timer.locator('.fv-readout').count()) === 1,
+  );
+  await page.close();
+}
+
+/* ---------- ambient: the weather hero alone, scenes one a row ---------- */
+{
+  const page = await suite.sheet('ambient');
+  const weather = frame(page, 'Weather').locator('fluvy-weather-card').first();
+  const hero = frame(page, 'Weather · no forecast').locator('fluvy-weather-card').first();
+  check(
+    'a weather card told not to show the forecast keeps its hero alone',
+    (await weather.locator('.am-days').count()) === 1 &&
+      (await weather.locator('.am-hours').count()) === 1 &&
+      (await hero.locator('.am-days').count()) === 0 &&
+      (await hero.locator('.am-hours').count()) === 0,
+  );
+  const colsOf = (card) =>
+    card.locator('.fv-grid2').evaluate((el) => el.style.getPropertyValue('--am-cols'));
+  check(
+    'scenes stand two a row where their names fit, one a row when asked',
+    (await colsOf(frame(page, 'Scenes').locator('fluvy-scenes-card').first())) === '2' &&
+      (await colsOf(frame(page, 'Scenes · one column').locator('fluvy-scenes-card').first())) ===
+        '1',
+  );
+  await page.close();
+}
+
+/* ---------- a scene tile without its subtitle ---------- */
+{
+  const page = await suite.sheet('home-extras');
+  const tiles = frame(page, 'D Scenes · 236').locator('fluvy-scene-card');
+  check(
+    'a scene tile told not to show its subtitle is its name alone',
+    (await tiles.nth(0).locator('.fv-row__sub').count()) === 1 &&
+      (await tiles.nth(4).locator('.fv-row__sub').count()) === 0,
   );
   await page.close();
 }

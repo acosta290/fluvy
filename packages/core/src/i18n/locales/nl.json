@@ -330,8 +330,7 @@
     "all_done": "Alles klaar",
     "close": "Sluiten",
     "done": "Klaar",
-    "todo": "Te doen",
-    "hide_completed": "Afgeronde items verbergen"
+    "todo": "Te doen"
   },
   "battery": {
     "low": "{count} laag",
@@ -364,7 +363,9 @@
     "flow_style": "Stroomtekening",
     "modes": "Getoonde modi",
     "modes_style": "Modi als",
+    "options_style": "Opties als",
     "preset_style": "Presets als",
+    "presets": "Sneltijden",
     "fan_style": "Ventilatorstanden als",
     "suction_style": "Zuigstanden als",
     "temperature_tint": "Kleurtemperatuurliniaal kleuren",
@@ -404,6 +405,12 @@
     "tilt": "Kanteling",
     "show_rows": "Rijen tonen",
     "show_zone": "Zone tonen",
+    "show_completed": "Afgeronde items tonen",
+    "show_add": "Toevoegknop tonen",
+    "show_due": "Vervaldatums tonen",
+    "show_actions": "Knoppen tonen",
+    "show_forecast": "Verwachting tonen",
+    "show_subtitle": "Ondertitel tonen",
     "show_time": "Tijd tonen",
     "show_weather": "Weer tonen",
     "show_date": "Datum tonen",
@@ -933,7 +940,8 @@
     "working": "installeert",
     "versions": "{from} → {to}",
     "show_up_to_date": "Tonen wat up-to-date is",
-    "toggle": "Schakelaar onder de lijst"
+    "toggle": "Schakelaar onder de lijst",
+    "toggle_secondary": "Context van de schakelaar"
   },
   "time": {
     "minutes_ago": "{n} min geleden",

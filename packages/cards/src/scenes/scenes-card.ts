@@ -2,19 +2,20 @@ import {
   stateText,
   strings,
   toggleEntity,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { ico, linesNeeded, sheetStyles } from '@fluvy/ui';
+import { clickPress, ico, linesNeeded, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { agoShort } from '../helpers/datetime.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
@@ -22,24 +23,47 @@ import { TextRuler } from '../shared/fit.js';
 
 import { FontsSettled } from '../shared/fonts.js';
 
-import { entityField, formLabels, nameIconFields, textField } from '../shared/form.js';
+import {
+  accentField,
+  actionField,
+  entitiesField,
+  entityField,
+  fieldRow,
+  formLabels,
+  nameIconFields,
+  selectField,
+  textField,
+} from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import {
+  columnsOf,
+  configKeys,
+  ITEM_ALIASES,
+  type AliasSpec,
+  type Columns,
+} from '../shared/config.js';
 
 const s = strings('scenes');
+
+const DOMAINS: readonly string[] = ['scene', 'script', 'button', 'input_button', 'automation'];
 
 export interface SceneItemConfig {
   entity: string;
   name?: string;
   icon?: string;
   /** The second line ("All off", "Lock & arm"). Defaults to what the scene touches, else when it last ran. */
-  meta?: string;
+  subtitle?: string;
+  /** What a tap does instead of running the scene. */
+  tap_action?: ActionConfig;
 }
 
 export interface ScenesCardConfig extends FluvyCardConfig {
   /** A section title above the tiles (the heading card's face). */
   title?: string;
-  /** The object form, for a per-scene `name`, `icon` and `meta`. Wins over `entities`. */
+  /** The object form, for a per-scene `name`, `icon`, `subtitle` and `tap_action`. Wins over `entities`. */
   scenes?: ReadonlyArray<string | SceneItemConfig>;
+  /** `auto` (default): two a row while every name fits its two lines; `1` or `2` to say so (two at most). */
+  columns?: Columns;
   /** Test hook: an ISO date that freezes "now" (the "applied … ago" lines). Undocumented. */
   _now?: string;
 }
@@ -106,35 +130,28 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
     `,
   ];
 
+  /** A grid of scenes has no entity of its own: its colour is the lit tile's, a hold on a tile is the base's. */
+  static override base: readonly BaseKey[] = ['entities', 'color', 'hold_action'];
+  static override keys = configKeys<ScenesCardConfig>()(['title', 'scenes', 'columns']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'scenes',
       alias: 'entities',
       title: 'editor.scenes',
-      domains: ['scene', 'script', 'button', 'input_button', 'automation'],
-      schema: [
-        entityField(['scene', 'script', 'button', 'input_button', 'automation']),
-        nameIconFields(),
-        textField('meta'),
-      ],
+      domains: DOMAINS,
+      keys: ['entity', 'name', 'icon', 'subtitle', 'tap_action'],
+      schema: [entityField(DOMAINS), nameIconFields(), textField('subtitle'), actionField()],
     },
   ];
+  static override aliases: AliasSpec = { items: { scenes: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
-        textField('title'),
-        {
-          name: 'entities',
-          required: true,
-          selector: {
-            entity: {
-              multiple: true,
-              domain: ['scene', 'script', 'button', 'input_button', 'automation'],
-            },
-          },
-        },
+        fieldRow(textField('title'), selectField('columns', ['auto', '1', '2'])),
+        entitiesField('entities', DOMAINS, true),
+        fieldRow(accentField(), actionField('hold_action')),
       ],
-      ...formLabels({ title: 'editor.title', entities: 'editor.entities' }),
+      ...formLabels({}),
     };
   }
 
@@ -160,7 +177,9 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
    * when a name would not ("Encender Luz Porche & Patio" in a 352 column), rather than cutting it.
    */
   private columns(names: readonly string[]): 1 | 2 {
-    if (this.width < 344) return 1;
+    const asked = columnsOf(this.config?.columns, 'auto');
+    if (asked === 1 || this.width < 344) return 1;
+    if (asked !== 'auto') return 2;
     const room = (this.width - GRID_GAP) / 2 - TILE_CHROME; // a half tile, less its padding, circle and gap
     const fits = names.every(
       (name) => linesNeeded(name, room, (text) => this.ruler.width('fv-row__title', text)) <= 2,
@@ -201,7 +220,7 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
   }
 
   private meta(item: SceneItemConfig, view: EntityView, at: number, now: Date): string {
-    if (item.meta !== undefined) return item.meta;
+    if (item.subtitle !== undefined) return item.subtitle;
     const members = view.attr<readonly string[] | null>('entity_id');
     const count = Array.isArray(members) ? members.length : 0;
     if (count > 0)
@@ -259,7 +278,11 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
             data-card
             data-target
             aria-pressed=${active ? 'true' : 'false'}
-            @click=${() => this.run(view)}
+            .fvTap=${() => (item.tap_action ? this.tap(view.id, item.tap_action) : this.run(view))}
+            .fvHold=${() => this.hold(view.id)}
+            @pointerdown=${startPress}
+            @contextmenu=${preventMenu}
+            @click=${clickPress}
           >
             ${ico(item.icon ?? view.attr<string | null>('icon') ?? glyphFor(view), active ? 'accent' : 'neutral')}
             <span class="fv-row__text">

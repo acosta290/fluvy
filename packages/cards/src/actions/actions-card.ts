@@ -12,10 +12,12 @@ import { glyph, head, icon, round, sheetStyles, type IconRef } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { relativeAgo } from '../helpers/datetime.js';
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 import {
-  actionField,
+  actionFields,
+  colourFields,
+  entitiesField,
   entityField,
   fieldRow,
   formLabels,
@@ -26,6 +28,8 @@ import {
   titleFields,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('actions');
 
@@ -132,26 +136,35 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     this.done_ = new Set();
   }
 
+  /** A card of many actions has no entity of its own: its head's icon, tone and colour, its tap ("…") and its hold. */
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'tone',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
+  static override keys = configKeys<ActionsCardConfig>()(['title', 'subtitle', 'rows', 'columns']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'rows',
       alias: 'entities',
       title: 'editor.rows',
       domains: ACTION_DOMAINS,
+      keys: ['entity', 'name', 'icon', 'secondary'],
       schema: [entityField(ACTION_DOMAINS), nameIconFields(), textField('secondary')],
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
         fieldRow(iconField(), numberField('columns', 1, 3)),
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ACTION_DOMAINS } },
-        },
-        actionField(),
+        colourFields(),
+        entitiesField('entities', ACTION_DOMAINS, true),
+        actionFields(),
       ],
       ...formLabels({}),
     };
@@ -288,7 +301,7 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     return html`<article class="fv-card" data-card>
       ${head({
         icon: this.config?.icon ?? 'bolt',
-        tone: 'accent',
+        tone: toneOf(this.config, 'accent'),
         title: this.config?.title ?? s(this.hass, 'title'),
         sub: this.config?.subtitle ?? s(this.hass, 'subtitle'),
         // "…" appears when it has somewhere to go: a card of many entities has no more-info of its own
@@ -296,6 +309,7 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
           action && action.action !== 'none'
             ? round('dots', 'quiet', this.t('common.more'), () => this.tap(undefined, action))
             : nothing,
+        onHold: () => this.hold(),
       })}
       <div
         class="in-actions ${columns > 1 ? 'in-actions--grid' : ''}"

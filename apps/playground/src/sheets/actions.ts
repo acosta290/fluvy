@@ -16,6 +16,12 @@ export const sheet: SheetSpec = {
     ['switch.ac_heater', 'off', { friendly_name: 'Heater' }],
     ['lock.ac_front', 'locked', { friendly_name: 'Front door' }],
     ['person.ac_marta', 'home', { friendly_name: 'Marta' }],
+    ['scene.ac_evening', '2026-09-17T20:00:00+00:00', { friendly_name: 'Evening' }],
+    [
+      'sensor.ac_office',
+      '21.5',
+      { friendly_name: 'Office', unit_of_measurement: '°C', device_class: 'temperature' },
+    ],
   ],
   frames: [
     // the defaults: the icon opens the details, so does a hold on the head
@@ -61,6 +67,30 @@ export const sheet: SheetSpec = {
               tap_action: { action: 'navigate', navigation_path: '/fluvy-auto/rooms' },
             },
           ],
+        },
+      ],
+    },
+    // a scene tile: a tap runs the scene, a hold goes to the rooms and never also runs it
+    {
+      title: 'Scene',
+      cards: [
+        {
+          type: 'custom:fluvy-scene-card',
+          entity: 'scene.ac_evening',
+          hold_action: { action: 'navigate', navigation_path: '/fluvy-auto/rooms' },
+        },
+      ],
+    },
+    // a sensor tile: its whole surface taps and holds
+    {
+      title: 'Sensor tile',
+      cards: [
+        {
+          type: 'custom:fluvy-sensor-card',
+          entity: 'sensor.ac_office',
+          variant: 'tile',
+          tap_action: { action: 'navigate', navigation_path: '/energy' },
+          hold_action: { action: 'navigate', navigation_path: '/fluvy-auto/rooms' },
         },
       ],
     },

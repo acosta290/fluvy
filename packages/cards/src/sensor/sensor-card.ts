@@ -3,6 +3,7 @@ import {
   fetchHistory,
   formatNumber,
   formatTime,
+  isUsable,
   scaleUnit,
   stateText,
   strings,
@@ -17,17 +18,20 @@ import {
 import {
   axis,
   chartBubble,
+  clickPress,
   curve,
   firstFit,
   glyph,
   head,
   ico,
+  preventMenu,
   readout,
   round,
   sampleAt,
   scrub,
   ScrubController,
   sheetStyles,
+  startPress,
   type Tone,
 } from '@fluvy/ui';
 
@@ -48,16 +52,19 @@ import { statsSize } from '../shared/readouts.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { glyphFor } from '../shared/domain.js';
 import {
+  actionFields,
   boolField,
+  colourFields,
+  editorLabels,
   entityField,
   fieldRow,
-  formLabels,
-  iconToneFields,
+  iconField,
   numberField,
   selectField,
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
+import { configKeys } from '../shared/config.js';
 
 const s = strings('sensor');
 
@@ -66,7 +73,6 @@ export type SensorVariant = 'chart' | 'tile';
 export interface SensorCardConfig extends FluvyCardConfig {
   /** Context in the sub line, before the window ("Temperature · last 24 h"). Defaults to the device class, as Home Assistant names it. */
   subtitle?: string;
-  tone?: Tone;
   /** Rolling window of history in hours (default 24), ending at "now". */
   hours?: number;
   show_stats?: boolean;
@@ -220,20 +226,24 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   /** The window (hours) the series on screen was asked for: the curve and its axis stay one picture while a newer one loads. */
   private drawn: number | null = null;
 
+  static override keys = configKeys<SensorCardConfig>()([
+    'subtitle',
+    'hours',
+    'show_stats',
+    'variant',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
-    const shared = formLabels({});
     return {
       schema: [
         entityField(['sensor', 'number', 'input_number', 'counter']),
         fieldRow(textField('name'), textField('subtitle')),
-        iconToneFields(),
+        iconField(),
+        colourFields(),
         fieldRow(selectField('variant', ['chart', 'tile']), numberField('hours', 1, 168)),
         boolField('show_stats'),
+        actionFields(),
       ],
-      computeLabel: (schema, localize) =>
-        schema.name === 'show_stats'
-          ? s({ language: document.documentElement.lang || 'en' }, 'editor.show_stats')
-          : shared.computeLabel?.(schema, localize),
+      ...editorLabels(s, { show_stats: 'editor.show_stats' }, {}),
     };
   }
 
@@ -310,7 +320,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   }
 
   private toneOf(view: EntityView): Tone {
-    if (view.status === 'unavailable') return 'off';
+    if (!isUsable(view)) return 'off';
     return toneOf(this.config, sensorTone(view));
   }
 
@@ -452,7 +462,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   /* ---------- variants ---------- */
 
   private renderTile(view: EntityView): TemplateResult {
-    const open = (): void => this.tap(view.id, { action: 'more-info' });
+    const open = (): void => this.tap(view.id);
     const key = (event: KeyboardEvent): void => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -469,11 +479,15 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const values = series?.values ?? [];
     // unavailable keeps the tile's own anatomy (the 76 "off" tile cannot hold a name in a half column): dashed outline, page fill, dashed ring, "—"
     return html`<article
-      class="fv-tile fv-tile--tap ${view.status === 'unavailable' ? 'is-unavailable is-off' : ''}"
+      class="fv-tile fv-tile--tap ${isUsable(view) ? '' : 'is-unavailable is-off'}"
       data-card
       role="button"
       tabindex="0"
-      @click=${open}
+      .fvTap=${open}
+      .fvHold=${() => this.hold(view.id)}
+      @pointerdown=${startPress}
+      @contextmenu=${preventMenu}
+      @click=${clickPress}
       @keydown=${key}
     >
       <div class="fv-tile__head">
@@ -504,12 +518,15 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   private renderChart(view: EntityView): TemplateResult {
     const tone = this.toneOf(view);
     const title = this.config?.name ?? view.name;
-    const usable = view.status !== 'unavailable';
+    const usable = isUsable(view);
     const header = head({
       icon: this.config?.icon ?? glyphFor(view),
       tone,
       title,
       name: true, // the entity's name, or one typed for it: a name may end in an ellipsis
+      onIconTap: () => this.tap(view.id),
+      onHold: () => this.hold(view.id),
+      iconLabel: title,
       // "Unavailable" is said once, here; a sensor that is a word has no window to speak of
       sub:
         view.status !== 'ok'

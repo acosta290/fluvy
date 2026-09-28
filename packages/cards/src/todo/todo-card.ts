@@ -27,15 +27,29 @@ import { textField as inputField } from '../helpers/text.js';
 
 import { Card } from '../shared/base.js';
 
-import { boolField, entityField, formLabels, iconField, titleFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  entityField,
+  fieldRow,
+  formLabels,
+  iconField,
+  textField,
+} from '../shared/form.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('todo');
 
 export interface TodoCardConfig extends FluvyCardConfig {
-  title?: string;
   subtitle?: string;
-  /** Drop the ticked items instead of quieting them at the end of the list. */
-  hide_completed?: boolean;
+  /** The ticked items, quieted at the end of the list (default) — or dropped. */
+  show_completed?: boolean;
+  /** The "+" that opens the composer (default), for a list that accepts new items. */
+  show_add?: boolean;
+  /** The due date under an item (default). */
+  show_due?: boolean;
 }
 
 export type TodoStatus = 'needs_action' | 'completed';
@@ -174,15 +188,34 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     this.adding_ = false;
   }
 
+  static override keys = configKeys<TodoCardConfig>()([
+    'subtitle',
+    'show_completed',
+    'show_add',
+    'show_due',
+  ]);
+  /**
+   * The list's name is the base's `name` (`title` was the older word for it); `hide_completed: true` was the way to
+   * drop the ticked items: it reads as `show_completed: false`.
+   */
+  static override aliases: AliasSpec = {
+    keys: [
+      { from: 'title', to: 'name' },
+      { from: 'hide_completed', to: 'show_completed', map: (value) => !value },
+    ],
+  };
   static override getConfigForm(): LovelaceConfigForm {
-    const labels = formLabels({});
     return {
-      schema: [entityField(['todo']), titleFields(), iconField(), boolField('hide_completed')],
-      // the shared labels cover the shared fields; this card's own option is worded by its own strings
-      computeLabel: (schema, localize) =>
-        schema.name === 'hide_completed'
-          ? s({ language: document.documentElement.lang }, 'hide_completed')
-          : labels.computeLabel?.(schema, localize),
+      schema: [
+        entityField(['todo']),
+        fieldRow(textField('name'), textField('subtitle')),
+        iconField(),
+        colourFields(),
+        fieldRow(boolField('show_completed'), boolField('show_add')),
+        boolField('show_due'),
+        actionFields(),
+      ],
+      ...formLabels({}),
     };
   }
 
@@ -363,7 +396,7 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     const check = html`<span class="in-check ${done ? 'is-on' : ''}" data-control
       >${done ? glyph('check') : nothing}</span
     >`;
-    const due = this.due(item, done);
+    const due = this.config?.show_due === false ? nothing : this.due(item, done);
     const text = html`<span class="in-todo__text">${item.summary}</span>`;
     return html`<div class="in-todo__row ${done ? 'is-done' : ''}" role="listitem">
       ${
@@ -415,7 +448,7 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
 
   protected renderCard(): TemplateResult {
     const view = this.entity();
-    const name = this.config?.title ?? this.config?.name ?? view.name;
+    const name = this.config?.name ?? view.name;
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
     const unusable = view.status === 'unavailable';
@@ -425,7 +458,7 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     const items = this.items_ ?? [];
     const open = items.filter((item) => this.statusOf(item) === 'needs_action');
     const closed = items.filter((item) => this.statusOf(item) === 'completed');
-    const shown = this.config?.hide_completed ? open : [...open, ...closed];
+    const shown = this.config?.show_completed === false ? open : [...open, ...closed];
     const sub =
       this.config?.subtitle ??
       (unusable
@@ -435,15 +468,16 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
           : open.length
             ? this.t('todo.left', { left: open.length, total: items.length })
             : s(this.hass, 'all_done'));
-    const adding = this.adding_ && canCreate;
+    const adds = canCreate && this.config?.show_add !== false;
+    const adding = this.adding_ && adds;
 
     return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: this.config?.icon ?? 'list',
-        tone: unusable ? 'off' : 'accent',
+        tone: unusable ? 'off' : toneOf(this.config, 'accent'),
         title: name,
         sub,
-        trailing: canCreate
+        trailing: adds
           ? round(
               'plus',
               'accent',
@@ -453,7 +487,8 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
               `in-add ${adding ? 'is-open' : ''}`,
             )
           : nothing,
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       ${

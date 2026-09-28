@@ -414,6 +414,45 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a select's options as content-sized chips, and the quick-set times under a time helper
+    {
+      title: 'Helpers · options as chips',
+      cards: [
+        {
+          type: 'custom:fluvy-helpers-card',
+          options_style: 'chips',
+          rows: [
+            { entity: 'input_select.house_mode', secondary: '' },
+            { entity: 'input_datetime.wake_up', presets: ['06:15', '07:15'] },
+          ],
+        },
+      ],
+    },
+    // a list without its composer, its due dates or its ticked items
+    {
+      title: 'To-do · bare',
+      cards: [
+        {
+          type: 'custom:fluvy-todo-card',
+          entity: 'todo.groceries',
+          show_add: false,
+          show_due: false,
+          show_completed: false,
+        },
+      ],
+    },
+    // the readout alone: no buttons, no gauge
+    {
+      title: 'Timer · bare',
+      cards: [
+        {
+          type: 'custom:fluvy-timer-card',
+          entity: 'timer.kitchen',
+          show_actions: false,
+          show_gauge: false,
+        },
+      ],
+    },
     {
       title: 'Helpers · hard states',
       cards: [

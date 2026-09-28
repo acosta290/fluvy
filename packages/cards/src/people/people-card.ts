@@ -14,6 +14,7 @@ import { agoShort } from '../helpers/datetime.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import {
   accentField,
+  actionFields,
   boolField,
   editorLabels,
   entitiesField,
@@ -166,7 +167,13 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
   }
 
   /** The people have no entity of their own: the head's icon and the card's colour are the base fields it honours. */
-  static override base: readonly BaseKey[] = ['entities', 'icon', 'color'];
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
   static override keys = configKeys<PeopleCardConfig>()([
     'title',
     'variant',
@@ -183,6 +190,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
         fieldRow(selectField('variant', ['grid', 'rows']), textField('map_path')),
         fieldRow(boolField('show_zone'), boolField('show_time')),
         accentField(),
+        actionFields(),
       ],
       ...editorLabels(s, { map_path: 'editor.map_path' }, {}),
     };

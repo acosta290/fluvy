@@ -8,7 +8,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { ico, icon, sheetStyles, type Tone } from '@fluvy/ui';
+import { clickPress, ico, icon, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -16,25 +16,29 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { agoShort } from '../helpers/datetime.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionField,
+  boolField,
+  colourFields,
   entityField,
   fieldRow,
   formLabels,
   nameIconFields,
   textField,
-  toneField,
 } from '../shared/form.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('scene');
 
 export interface SceneCardConfig extends FluvyCardConfig {
-  tone?: Tone;
   /** Line under the name. Defaults to the scene's device count, then to when it last ran. */
-  meta?: string;
+  subtitle?: string;
+  show_subtitle?: boolean;
 }
 
 const DOMAINS = ['scene', 'script', 'button', 'input_button', 'automation'] as const;
@@ -108,12 +112,27 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     this.done_ = false;
   }
 
+  /** A tap on the tile runs the scene: of the base it honours the entity, its name and icon, its colours and a hold. */
+  static override base: readonly BaseKey[] = [
+    'entity',
+    'name',
+    'icon',
+    'tone',
+    'color',
+    'hold_action',
+  ];
+  static override keys = configKeys<SceneCardConfig>()(['subtitle', 'show_subtitle']);
+  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [entityField(DOMAINS), nameIconFields(), fieldRow(textField('meta'), toneField())],
-      ...formLabels({
-        meta: 'editor.subtitle',
-      }),
+      schema: [
+        entityField(DOMAINS),
+        nameIconFields(),
+        fieldRow(textField('subtitle'), boolField('show_subtitle')),
+        colourFields(),
+        actionField('hold_action'),
+      ],
+      ...formLabels({}),
     };
   }
 
@@ -160,7 +179,7 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
 
   /** Config text, else what the scene sets, else when it last ran. A scene that never ran has the state `unknown`: that is not an error. */
   private meta(view: EntityView): string {
-    if (this.config?.meta !== undefined) return this.config.meta;
+    if (this.config?.subtitle !== undefined) return this.config.subtitle;
     const members = view.attr<readonly string[] | null>('entity_id');
     if (Array.isArray(members) && members.length > 0) {
       return members.length === 1
@@ -202,17 +221,22 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     }
 
     const done = this.done_;
-    const meta = this.meta(view);
+    const meta = this.config?.show_subtitle === false ? '' : this.meta(view);
     const line = done && meta ? s(this.hass, 'done') : meta;
     const swap = this.swaps ? 'fv-swap' : '';
 
+    // the tile is the scene's button: a tap runs it, a still press is the hold action (its details by default)
     return html`<button
         class="fv-scene fv-tile--tap ${tight}"
         data-card
         data-target
-        @click=${() => this.run(view)}
+        .fvTap=${() => this.run(view)}
+        .fvHold=${() => this.hold(view.id)}
+        @pointerdown=${startPress}
+        @contextmenu=${preventMenu}
+        @click=${clickPress}
       >
-        <span class="fv-ico fv-ico--${this.config?.tone ?? 'accent'}" data-icon>
+        <span class="fv-ico fv-ico--${toneOf(this.config, 'accent')}" data-icon>
           ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : (this.config?.icon ?? glyphFor(view)))}</span>`)}
         </span>
         <span class="fv-row__text">

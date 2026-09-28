@@ -13,15 +13,6 @@ import type { FluvyRowsEditor } from './rows-editor.js';
  * the list can only shrink.
  */
 const PENDING = new Set([
-  'fluvy-weather-card',
-  'fluvy-sensor-card',
-  'fluvy-scene-card',
-  'fluvy-scenes-card',
-  'fluvy-actions-card',
-  'fluvy-helpers-card',
-  'fluvy-todo-card',
-  'fluvy-timer-card',
-  'fluvy-updates-card',
   'fluvy-energy-card',
   'fluvy-energy-flow-card',
   'fluvy-energy-devices-card',
@@ -82,8 +73,9 @@ describe('the editors’ contract', () => {
       const shown = new Set(names(card.getConfigForm().schema));
       const defaults = card.defaults?.({ type: 'custom:x' }, undefined) ?? {};
       for (const key of Object.keys(defaults)) expect(shown.has(key), key).toBe(true);
+      // a conditional move (`forecast: none` → `show_forecast: false`) keeps its key: `forecast` is still a field
       for (const move of card.aliases?.keys ?? [])
-        expect(shown.has(move.from), move.from).toBe(false);
+        if (!move.when) expect(shown.has(move.from), move.from).toBe(false);
     },
   );
 

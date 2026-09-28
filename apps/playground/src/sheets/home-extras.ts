@@ -388,6 +388,7 @@ export const sheet: SheetSpec = {
         scene('scene.hue_relax', 'leaf'),
         scene('scene.away', 'away'),
         { ...scene('scene.cinema', 'film'), meta: '' },
+        { ...scene('scene.evening', 'moon'), subtitle: 'Living room', show_subtitle: false },
       ],
     },
     {

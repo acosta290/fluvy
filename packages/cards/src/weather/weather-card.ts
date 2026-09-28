@@ -23,29 +23,37 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import {
+  accentField,
+  actionFields,
+  boolField,
+  editorLabels,
   entityField,
   fieldRow,
-  formLabels,
+  nameIconFields,
   numberField,
   selectField,
-  textField,
 } from '../shared/form.js';
 
 import { compassKey, conditionGlyph, isCondition } from '../shared/weather.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 
 const s = strings('weather');
 
 type ForecastType = 'daily' | 'hourly';
-export type ForecastMode = ForecastType | 'both' | 'none';
+export type ForecastMode = ForecastType | 'both';
+/** What the card draws under the hero: a mode, or nothing when the forecast is not shown. */
+type Drawn = ForecastMode | 'none';
 
 export interface WeatherCardConfig extends FluvyCardConfig {
-  /** What to draw under the hero: day rows (default), hour columns, both as the design sheet shows them, or nothing. */
+  /** What to draw under the hero: day rows (default), hour columns, or both as the design sheet shows them. */
   forecast?: ForecastMode;
   /** Day rows (1–10, default 5). Hour columns are decided by the card's width. */
   days?: number;
+  /** The forecast under the hero (default); `false` keeps the hero alone. */
+  show_forecast?: boolean;
   /** Test hook: an ISO date that freezes "now" (day labels, the hours ahead). Undocumented. */
   _now?: string;
 }
@@ -162,24 +170,41 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     this.forecasts_ = {};
   }
 
+  /** The hero's icon is the condition, tinted by the day: of the base it honours the entity, name, icon, colour and actions. */
+  static override base: readonly BaseKey[] = [
+    'entity',
+    'name',
+    'icon',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
+  static override keys = configKeys<WeatherCardConfig>()(['forecast', 'days', 'show_forecast']);
+  /** `forecast: none` was the way to keep the hero alone: it reads as `show_forecast: false`. */
+  static override aliases: AliasSpec = {
+    keys: [
+      {
+        from: 'forecast',
+        to: 'show_forecast',
+        when: (value) => value === 'none',
+        map: () => false,
+      },
+    ],
+  };
   static override getConfigForm(): LovelaceConfigForm {
-    const shared = formLabels({
-      entity: 'editor.weather',
-      days: 'editor.days',
-    });
     return {
       schema: [
         entityField(['weather']),
-        textField('name'),
-        fieldRow(
-          selectField('forecast', ['daily', 'hourly', 'both', 'none']),
-          numberField('days', 1, 10),
-        ),
+        nameIconFields(),
+        fieldRow(selectField('forecast', ['daily', 'hourly', 'both']), numberField('days', 1, 10)),
+        fieldRow(boolField('show_forecast'), accentField()),
+        actionFields(),
       ],
-      computeLabel: (schema, localize) =>
-        schema.name === 'forecast'
-          ? s({ language: document.documentElement.lang || 'en' }, 'editor.forecast')
-          : shared.computeLabel?.(schema, localize),
+      ...editorLabels(
+        s,
+        { forecast: 'editor.forecast' },
+        { entity: 'editor.weather', days: 'editor.days' },
+      ),
     };
   }
 
@@ -212,9 +237,10 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     return [this.config?.entity ?? '', 'sun.sun'];
   }
 
-  private mode(): ForecastMode {
+  private mode(): Drawn {
+    if (this.config?.show_forecast === false) return 'none';
     const mode = this.config?.forecast;
-    return mode === 'hourly' || mode === 'both' || mode === 'none' ? mode : 'daily';
+    return mode === 'hourly' || mode === 'both' ? mode : 'daily';
   }
 
   private dayCount(): number {
@@ -519,7 +545,8 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
           {
             hero: true,
             label: condition,
-            onTap: () => this.tap(view.id, { action: 'more-info' }),
+            onTap: () => this.tap(view.id),
+            onHold: () => this.hold(view.id),
           },
         )}
         ${context ? html`<p class="fv-card__sub">${context}</p>` : nothing}

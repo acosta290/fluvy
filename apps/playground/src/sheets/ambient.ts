@@ -471,6 +471,18 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-weather-card', entity: 'weather.am_night', forecast: 'none', _now },
       ],
     },
+    // the hero alone
+    {
+      title: 'Weather · no forecast',
+      cards: [
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_home',
+          show_forecast: false,
+          _now,
+        },
+      ],
+    },
     {
       title: 'Weather · edges',
       cards: [
@@ -605,6 +617,25 @@ export const sheet: SheetSpec = {
           type: 'custom:fluvy-openings-card',
           entities: ['binary_sensor.am_front_door', 'binary_sensor.am_garage_door'],
           _now,
+        },
+      ],
+    },
+    // one a row when asked, with the second lines and a tap of their own
+    {
+      title: 'Scenes · one column',
+      cards: [
+        {
+          type: 'custom:fluvy-scenes-card',
+          _now,
+          columns: 1,
+          scenes: [
+            { entity: 'scene.am_morning', icon: 'sun', subtitle: 'Blinds up, radio on' },
+            {
+              entity: 'scene.am_cinema',
+              icon: 'film',
+              tap_action: { action: 'navigate', navigation_path: '/fluvy-auto/media' },
+            },
+          ],
         },
       ],
     },

@@ -1,5 +1,5 @@
 import type { EntityView } from '@fluvy/core';
-import { chips, type ChipItem } from '@fluvy/ui';
+import { type ChipItem } from '@fluvy/ui';
 import { nothing, type TemplateResult } from 'lit';
 import {
   contextOf,
@@ -10,6 +10,8 @@ import {
   type HelperRowConfig,
 } from './context.js';
 import { valueRow } from './rows.js';
+import { chipRow } from '../shared/chips.js';
+import { type RowStyle } from '../shared/config.js';
 
 /** Beyond six, chips stop being a glance: the row carries the value and Home Assistant's own list opens. */
 const MAX_CHIPS = 6;
@@ -34,7 +36,12 @@ export type SelectPiece =
   { readonly blocks: readonly TemplateResult[] } | { readonly row: TemplateResult };
 
 /** `input_select` / `select`: the label and its options as chips; a long list becomes a row that opens Home Assistant's list. */
-export function selectPiece(host: HelperHost, view: EntityView, row: HelperRowConfig): SelectPiece {
+export function selectPiece(
+  host: HelperHost,
+  view: EntityView,
+  row: HelperRowConfig,
+  style: RowStyle = 'full',
+): SelectPiece {
   const raw = view.attr<unknown>('options');
   const options = Array.isArray(raw)
     ? raw.filter((option): option is string => typeof option === 'string')
@@ -55,11 +62,16 @@ export function selectPiece(host: HelperHost, view: EntityView, row: HelperRowCo
   return {
     blocks: [
       field(nameOf(view, row), contextOf(host, view, row), nothing, false),
-      chips(items, (option) => {
-        if (option === state) return;
-        host.expect(view.id, option);
-        host.call(view.domain, 'select_option', { option }, view.id);
-      }),
+      chipRow(
+        items,
+        (option) => {
+          if (option === state) return;
+          host.expect(view.id, option);
+          host.call(view.domain, 'select_option', { option }, view.id);
+        },
+        style,
+        { ruler: host.ruler, width: host.contentWidth },
+      ),
     ],
   };
 }

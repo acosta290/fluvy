@@ -330,8 +330,7 @@
     "all_done": "Todo hecho",
     "close": "Cerrar",
     "done": "Hecho",
-    "todo": "Pendiente",
-    "hide_completed": "Ocultar los completados"
+    "todo": "Pendiente"
   },
   "battery": {
     "low": "{count} bajas",
@@ -364,7 +363,9 @@
     "flow_style": "Dibujo del flujo",
     "modes": "Modos visibles",
     "modes_style": "Modos como",
+    "options_style": "Opciones como",
     "preset_style": "Preajustes como",
+    "presets": "Horas rápidas",
     "fan_style": "Velocidades como",
     "suction_style": "Succión como",
     "temperature_tint": "Teñir la regla de temperatura de color",
@@ -404,6 +405,12 @@
     "tilt": "Inclinación",
     "show_rows": "Mostrar las filas",
     "show_zone": "Mostrar la zona",
+    "show_completed": "Mostrar los completados",
+    "show_add": "Mostrar el botón de añadir",
+    "show_due": "Mostrar las fechas límite",
+    "show_actions": "Mostrar los botones",
+    "show_forecast": "Mostrar la previsión",
+    "show_subtitle": "Mostrar el subtítulo",
     "show_time": "Mostrar la hora",
     "show_weather": "Mostrar el tiempo",
     "show_date": "Mostrar la fecha",
@@ -933,7 +940,8 @@
     "working": "instalando",
     "versions": "{from} → {to}",
     "show_up_to_date": "Mostrar lo que está al día",
-    "toggle": "Interruptor bajo la lista"
+    "toggle": "Interruptor bajo la lista",
+    "toggle_secondary": "Contexto del interruptor"
   },
   "time": {
     "minutes_ago": "hace {n} min",

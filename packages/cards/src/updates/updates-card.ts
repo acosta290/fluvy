@@ -17,11 +17,24 @@ import { rowButton } from '../helpers/rows.js';
 
 import { rowStyles } from '../helpers/styles.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
-import { boolField, entityField, formLabels, iconField, titleFields } from '../shared/form.js';
+import {
+  actionField,
+  boolField,
+  colourFields,
+  editorLabels,
+  entitiesField,
+  entityField,
+  fieldRow,
+  iconField,
+  textField,
+  titleFields,
+} from '../shared/form.js';
+import { configKeys } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('updates');
 
@@ -83,25 +96,39 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     `,
   ];
 
+  /** A card of many updates has no entity of its own: its head's icon, tone and colour, and a hold on the head. */
+  static override base: readonly BaseKey[] = ['entities', 'icon', 'tone', 'color', 'hold_action'];
+  static override keys = configKeys<UpdatesCardConfig>()([
+    'title',
+    'subtitle',
+    'show_up_to_date',
+    'toggle',
+    'toggle_secondary',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
-    const labels = formLabels({});
     return {
       schema: [
         titleFields(),
         iconField(),
+        colourFields(),
         boolField('show_up_to_date'),
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['update'] } },
-        },
-        entityField(['input_boolean', 'switch', 'automation'], 'toggle', false),
+        entitiesField('entities', ['update'], true),
+        fieldRow(
+          entityField(['input_boolean', 'switch', 'automation'], 'toggle', false),
+          textField('toggle_secondary'),
+        ),
+        actionField('hold_action'),
       ],
-      // the shared labels cover the shared fields; this card's own options are worded by its own strings
-      computeLabel: (schema, localize) =>
-        schema.name === 'show_up_to_date' || schema.name === 'toggle'
-          ? s({ language: document.documentElement.lang }, schema.name)
-          : labels.computeLabel?.(schema, localize),
+      // this card's own options are worded by its own strings
+      ...editorLabels(
+        s,
+        {
+          show_up_to_date: 'show_up_to_date',
+          toggle: 'toggle',
+          toggle_secondary: 'toggle_secondary',
+        },
+        {},
+      ),
     };
   }
 
@@ -274,10 +301,11 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     return html`<article class="fv-card" data-card>
       ${head({
         icon: this.config?.icon ?? 'update',
-        tone: 'accent',
+        tone: toneOf(this.config, 'accent'),
         title: this.config?.title ?? s(this.hass, 'title'),
         sub: narrow ? count : (this.config?.subtitle ?? checked),
         trailing: narrow ? nothing : badge(count, waiting.length ? 'accent' : 'neutral'),
+        onHold: () => this.hold(),
       })}
       ${
         shown.length

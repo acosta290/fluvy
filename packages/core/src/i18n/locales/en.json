@@ -330,8 +330,7 @@
     "all_done": "All done",
     "close": "Close",
     "done": "Done",
-    "todo": "To do",
-    "hide_completed": "Hide completed items"
+    "todo": "To do"
   },
   "battery": {
     "low": "{count} low",
@@ -364,7 +363,9 @@
     "flow_style": "Flow drawing",
     "modes": "Modes shown",
     "modes_style": "Modes as",
+    "options_style": "Options as",
     "preset_style": "Presets as",
+    "presets": "Quick-set times",
     "fan_style": "Fan speeds as",
     "suction_style": "Suction speeds as",
     "temperature_tint": "Tint the colour temperature ruler",
@@ -404,6 +405,12 @@
     "tilt": "Tilt",
     "show_rows": "Show the rows",
     "show_zone": "Show the zone",
+    "show_completed": "Show completed items",
+    "show_add": "Show the add button",
+    "show_due": "Show due dates",
+    "show_actions": "Show the buttons",
+    "show_forecast": "Show the forecast",
+    "show_subtitle": "Show the subtitle",
     "show_time": "Show the time",
     "show_weather": "Show the weather",
     "show_date": "Show the date",
@@ -933,7 +940,8 @@
     "working": "installing",
     "versions": "{from} → {to}",
     "show_up_to_date": "Show what is up to date",
-    "toggle": "Switch under the list"
+    "toggle": "Switch under the list",
+    "toggle_secondary": "Switch context"
   },
   "time": {
     "minutes_ago": "{n} min ago",

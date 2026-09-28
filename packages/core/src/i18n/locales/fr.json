@@ -330,8 +330,7 @@
     "all_done": "Tout est fait",
     "close": "Fermer",
     "done": "Fait",
-    "todo": "À faire",
-    "hide_completed": "Masquer les éléments terminés"
+    "todo": "À faire"
   },
   "battery": {
     "low": "{count} faibles",
@@ -364,7 +363,9 @@
     "flow_style": "Dessin du flux",
     "modes": "Modes affichés",
     "modes_style": "Modes en",
+    "options_style": "Options en",
     "preset_style": "Préréglages en",
+    "presets": "Heures rapides",
     "fan_style": "Vitesses de ventilation en",
     "suction_style": "Puissances d’aspiration en",
     "temperature_tint": "Teinter la règle de température de couleur",
@@ -404,6 +405,12 @@
     "tilt": "Inclinaison",
     "show_rows": "Afficher les lignes",
     "show_zone": "Afficher la zone",
+    "show_completed": "Afficher les éléments terminés",
+    "show_add": "Afficher le bouton d’ajout",
+    "show_due": "Afficher les échéances",
+    "show_actions": "Afficher les boutons",
+    "show_forecast": "Afficher les prévisions",
+    "show_subtitle": "Afficher le sous-titre",
     "show_time": "Afficher l’heure",
     "show_weather": "Afficher la météo",
     "show_date": "Afficher la date",
@@ -933,7 +940,8 @@
     "working": "installation",
     "versions": "{from} → {to}",
     "show_up_to_date": "Afficher ce qui est à jour",
-    "toggle": "Interrupteur sous la liste"
+    "toggle": "Interrupteur sous la liste",
+    "toggle_secondary": "Contexte de l’interrupteur"
   },
   "time": {
     "minutes_ago": "il y a {n} min",

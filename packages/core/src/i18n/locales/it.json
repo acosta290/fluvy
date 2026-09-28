@@ -330,8 +330,7 @@
     "all_done": "Tutto fatto",
     "close": "Chiudi",
     "done": "Fatto",
-    "todo": "Da fare",
-    "hide_completed": "Nascondi gli elementi completati"
+    "todo": "Da fare"
   },
   "battery": {
     "low": "{count} scariche",
@@ -364,7 +363,9 @@
     "flow_style": "Disegno del flusso",
     "modes": "Modalità mostrate",
     "modes_style": "Modalità come",
+    "options_style": "Opzioni come",
     "preset_style": "Preimpostazioni come",
+    "presets": "Orari rapidi",
     "fan_style": "Velocità ventola come",
     "suction_style": "Potenze di aspirazione come",
     "temperature_tint": "Colora il righello della temperatura colore",
@@ -404,6 +405,12 @@
     "tilt": "Inclinazione",
     "show_rows": "Mostra le righe",
     "show_zone": "Mostra la zona",
+    "show_completed": "Mostra gli elementi completati",
+    "show_add": "Mostra il pulsante Aggiungi",
+    "show_due": "Mostra le scadenze",
+    "show_actions": "Mostra i pulsanti",
+    "show_forecast": "Mostra le previsioni",
+    "show_subtitle": "Mostra il sottotitolo",
     "show_time": "Mostra l’ora",
     "show_weather": "Mostra il meteo",
     "show_date": "Mostra la data",
@@ -933,7 +940,8 @@
     "working": "installazione",
     "versions": "{from} → {to}",
     "show_up_to_date": "Mostra ciò che è aggiornato",
-    "toggle": "Interruttore sotto l’elenco"
+    "toggle": "Interruttore sotto l’elenco",
+    "toggle_secondary": "Contesto dell’interruttore"
   },
   "time": {
     "minutes_ago": "{n} min fa",

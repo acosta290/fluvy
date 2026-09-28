@@ -17,13 +17,25 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
-import { boolField, entityField, formLabels, nameIconFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  editorLabels,
+  entityField,
+  fieldRow,
+  nameIconFields,
+} from '../shared/form.js';
+import { configKeys } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('timer');
 
 export interface TimerCardConfig extends FluvyCardConfig {
   /** The elapsed gauge under the readout (on by default, as the sheet draws it). */
   show_gauge?: boolean;
+  /** The start, pause and cancel buttons beside the readout (on by default). */
+  show_actions?: boolean;
 }
 
 /** Below this content width the state badge gives its place to the name and the state joins the sub line. */
@@ -68,14 +80,17 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
     this.tick_ = 0;
   }
 
+  static override keys = configKeys<TimerCardConfig>()(['show_gauge', 'show_actions']);
   static override getConfigForm(): LovelaceConfigForm {
-    const labels = formLabels({});
     return {
-      schema: [entityField(['timer']), nameIconFields(), boolField('show_gauge')],
-      computeLabel: (schema, localize) =>
-        schema.name === 'show_gauge'
-          ? s({ language: document.documentElement.lang }, 'elapsed')
-          : labels.computeLabel?.(schema, localize),
+      schema: [
+        entityField(['timer']),
+        nameIconFields(),
+        colourFields(),
+        fieldRow(boolField('show_gauge'), boolField('show_actions')),
+        actionFields(),
+      ],
+      ...editorLabels(s, { show_gauge: 'elapsed' }, {}),
     };
   }
 
@@ -178,7 +193,11 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
     const state = this.stateOf(view);
     const active = !unusable && state === 'active';
     const paused = !unusable && state === 'paused';
-    const tone: Tone = unusable ? 'off' : active || paused ? 'accent' : 'neutral';
+    const tone: Tone = unusable
+      ? 'off'
+      : active || paused
+        ? toneOf(this.config, 'accent')
+        : 'neutral';
 
     const duration = parseDuration(view.attr('duration'));
     const left = unusable ? null : this.remaining(view, state);
@@ -219,31 +238,36 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
         title: name,
         sub,
         trailing: narrow ? nothing : badge(status, tone),
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
       <div class="in-timer fv-value-row">
         ${readout({ label: this.t('timer.remaining'), value: left === null ? '—' : formatDuration(left), size: 'l' })}
-        <div class="in-timer__cmds">
-          ${
-            active
-              ? round(
-                  'pause',
-                  'accent',
-                  `${name} · ${s(this.hass, 'pause')}`,
-                  () => this.command(view, 'pause', 'paused', left),
-                  unusable,
-                )
-              : round(
-                  'play',
-                  'accent',
-                  `${name} · ${s(this.hass, paused ? 'resume' : 'start')}`,
-                  () => this.command(view, 'start', 'active', left),
-                  unusable,
-                )
-          }
-          ${active || paused ? round('stop', 'quiet', `${name} · ${s(this.hass, 'cancel')}`, () => this.command(view, 'cancel', 'idle', left)) : nothing}
-        </div>
+        ${
+          this.config?.show_actions === false
+            ? nothing
+            : html`<div class="in-timer__cmds">
+                ${
+                  active
+                    ? round(
+                        'pause',
+                        'accent',
+                        `${name} · ${s(this.hass, 'pause')}`,
+                        () => this.command(view, 'pause', 'paused', left),
+                        unusable,
+                      )
+                    : round(
+                        'play',
+                        'accent',
+                        `${name} · ${s(this.hass, paused ? 'resume' : 'start')}`,
+                        () => this.command(view, 'start', 'active', left),
+                        unusable,
+                      )
+                }
+                ${active || paused ? round('stop', 'quiet', `${name} · ${s(this.hass, 'cancel')}`, () => this.command(view, 'cancel', 'idle', left)) : nothing}
+              </div>`
+        }
       </div>
       ${
         gauge

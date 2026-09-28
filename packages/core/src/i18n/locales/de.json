@@ -330,8 +330,7 @@
     "all_done": "Alles erledigt",
     "close": "Schließen",
     "done": "Erledigt",
-    "todo": "Zu erledigen",
-    "hide_completed": "Erledigte ausblenden"
+    "todo": "Zu erledigen"
   },
   "battery": {
     "low": "{count} schwach",
@@ -364,7 +363,9 @@
     "flow_style": "Flussdarstellung",
     "modes": "Gezeigte Modi",
     "modes_style": "Modi als",
+    "options_style": "Optionen als",
     "preset_style": "Voreinstellungen als",
+    "presets": "Schnellwahl-Zeiten",
     "fan_style": "Lüfterstufen als",
     "suction_style": "Saugstufen als",
     "temperature_tint": "Farbtemperatur-Lineal einfärben",
@@ -404,6 +405,12 @@
     "tilt": "Neigung",
     "show_rows": "Zeilen zeigen",
     "show_zone": "Zone zeigen",
+    "show_completed": "Erledigte zeigen",
+    "show_add": "Hinzufügen-Knopf zeigen",
+    "show_due": "Fälligkeiten zeigen",
+    "show_actions": "Knöpfe zeigen",
+    "show_forecast": "Vorhersage zeigen",
+    "show_subtitle": "Untertitel zeigen",
     "show_time": "Zeit zeigen",
     "show_weather": "Wetter zeigen",
     "show_date": "Datum zeigen",
@@ -933,7 +940,8 @@
     "working": "installiert",
     "versions": "{from} → {to}",
     "show_up_to_date": "Aktuelles zeigen",
-    "toggle": "Schalter unter der Liste"
+    "toggle": "Schalter unter der Liste",
+    "toggle_secondary": "Kontext des Schalters"
   },
   "time": {
     "minutes_ago": "vor {n} min",

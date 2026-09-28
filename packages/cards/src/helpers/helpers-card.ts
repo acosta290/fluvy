@@ -16,15 +16,19 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import {
-  actionField,
+  actionFields,
+  colourFields,
   entitiesField,
   entityField,
+  fieldRow,
   formLabels,
   iconField,
   nameIconFields,
+  selectField,
+  textField,
   titleFields,
 } from '../shared/form.js';
 
@@ -39,6 +43,10 @@ import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
+import { TextRuler } from '../shared/fit.js';
+import { FontsSettled } from '../shared/fonts.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('helpers');
 
@@ -49,6 +57,8 @@ export interface HelpersCardConfig extends FluvyCardConfig {
   subtitle?: string;
   /** The same helpers as `entities`, with a name, an icon, a context line or quick-set times per row (YAML). */
   rows?: ReadonlyArray<string | HelperRowConfig>;
+  /** A select's options: chips that fill the row (`full`, the default) or content-sized ones (`chips`). */
+  options_style?: RowStyle;
 }
 
 const NUMBERS = new Set(['input_number', 'number', 'counter']);
@@ -124,9 +134,16 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
   /** Value under the finger while a ruler drag is in flight, per entity. */
   declare preview_: Readonly<Record<string, number>>;
 
+  /** Widths laid out by the browser in the card's own classes: a select's filled chips measure their columns with it. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
   constructor() {
     super();
     this.preview_ = {};
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
   }
 
   /** The card as its controls see it for this render (its own helpers are protected). */
@@ -134,6 +151,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     return {
       hass: this.hass,
       contentWidth: this.contentWidth,
+      ruler: this.ruler,
       state: (view) => this.stateOf(view),
       expect: (id, state) => this.expect(id, state),
       call: (domain, service, data, id) => this.call(domain, service, data, id),
@@ -151,23 +169,49 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     };
   }
 
+  /** A card of many helpers has no entity of its own: its head's icon, tone and colour, its tap ("…") and its hold. */
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'tone',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
+  static override keys = configKeys<HelpersCardConfig>()([
+    'title',
+    'subtitle',
+    'rows',
+    'options_style',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'rows',
       alias: 'entities',
       title: 'editor.rows',
-      schema: [entityField(), nameIconFields()],
+      keys: ['entity', 'name', 'icon', 'secondary', 'presets'],
+      schema: [
+        entityField(),
+        nameIconFields(),
+        textField('secondary'),
+        {
+          name: 'presets',
+          selector: { select: { multiple: true, custom_value: true, options: [] } },
+        },
+      ],
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconField(),
+        fieldRow(iconField(), selectField('options_style', ['full', 'chips'])),
+        colourFields(),
         entitiesField('entities', undefined, true),
-        actionField(),
+        actionFields(),
       ],
-      ...formLabels({}),
+      ...formLabels({ options_style: 'editor.options_style' }),
     };
   }
 
@@ -260,7 +304,9 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     rows.forEach((row, index) => {
       const view = views[index] as EntityView;
       const domain = view.domain;
-      const select = SELECTS.has(domain) ? selectPiece(host, view, row) : undefined;
+      const select = SELECTS.has(domain)
+        ? selectPiece(host, view, row, this.config?.options_style)
+        : undefined;
       if (NUMBERS.has(domain)) {
         flush();
         blocks.push(...numberBlocks(host, view, row));
@@ -286,7 +332,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     return html`<article class="fv-card" data-card>
       ${head({
         icon: this.config?.icon ?? 'sliders',
-        tone: 'accent',
+        tone: toneOf(this.config, 'accent'),
         title: this.config?.title ?? s(this.hass, 'title'),
         sub:
           this.config?.subtitle ??
@@ -296,6 +342,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
           action && action.action !== 'none'
             ? round('dots', 'quiet', this.t('common.more'), () => this.tap(undefined, action))
             : nothing,
+        onHold: () => this.hold(),
       })}
       ${blocks}
     </article>`;

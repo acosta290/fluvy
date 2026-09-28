@@ -6,7 +6,8 @@
  * more-info by default and anything Home Assistant's actions are when chosen; a hold never also taps (the click
  * that follows is swallowed, on the title and on the icon alike); a tap on the title is nothing; a hold on a ruler
  * is still its fine scale; a tile's whole surface taps and holds the same way, and a tap set to none does nothing;
- * a card of rows holds on its head and a row runs its own tap; the greeting's avatar taps and holds as an icon.
+ * a card of rows holds on its head and a row runs its own tap; the greeting's avatar taps and holds as an icon;
+ * a scene tile runs on a tap and holds without running; a sensor tile's whole surface taps and holds.
  */
 import { holdForFine, mousePointer, rulerGeometry } from './lib/gestures.mjs';
 import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
@@ -164,6 +165,52 @@ async function hold(page, locator, ms = 650) {
   check(
     'a row runs its own tap action (navigate)',
     went.length === 1 && went[0] === '/fluvy-auto/rooms' && (await moreInfo(page)).length === 0,
+    went.join(' '),
+  );
+  await page.close();
+}
+
+/* ---------- a scene tile: a tap runs it, a hold never does ---------- */
+{
+  const page = await suite.sheet('actions');
+  await watchNavigation(page);
+  const tile = frame(page, 'Scene').locator('fluvy-scene-card .fv-scene');
+  await tile.click();
+  await settle(page, 300);
+  const ran = await calls(page);
+  check(
+    'a tap on a scene tile runs the scene',
+    ran.length === 1 && ran[0].s === 'scene.turn_on',
+    JSON.stringify(ran.map((x) => x.s)),
+  );
+  await reset(page);
+  await page.waitForTimeout(1300); // past the "Done" beat, so a run would count again
+  await hold(page, tile);
+  await settle(page, 300);
+  const went = await navigations(page);
+  check(
+    'a hold on a scene tile runs the hold action and never also runs the scene',
+    went.length === 1 && went[0] === '/fluvy-auto/rooms' && (await calls(page)).length === 0,
+    `${went.join(' ')} · ${(await calls(page)).length} calls`,
+  );
+  await page.close();
+}
+
+/* ---------- a sensor tile's whole surface ---------- */
+{
+  const page = await suite.sheet('actions');
+  await watchNavigation(page);
+  const tile = frame(page, 'Sensor tile').locator('fluvy-sensor-card .fv-tile');
+  await tile.click();
+  await settle(page, 300);
+  let went = await navigations(page);
+  check('a tap on a sensor tile runs the tap action', went.length === 1 && went[0] === '/energy');
+  await hold(page, tile);
+  await settle(page, 300);
+  went = await navigations(page);
+  check(
+    'a hold on a sensor tile runs the hold action, and never also taps',
+    went.length === 1 && went[0] === '/fluvy-auto/rooms',
     went.join(' '),
   );
   await page.close();

@@ -19,6 +19,7 @@ import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 import {
+  actionFields,
   boolField,
   colourFields,
   editorLabels,
@@ -90,7 +91,14 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
   }
 
   /** The openings have no entity of their own: the head's icon, tone and colour are the base fields it honours. */
-  static override base: readonly BaseKey[] = ['entities', 'icon', 'tone', 'color'];
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'tone',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
   static override keys = configKeys<OpeningsCardConfig>()([
     'title',
     'subtitle',
@@ -105,6 +113,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         iconField(),
         colourFields(),
         fieldRow(numberField('max_rows', 1, 20), boolField('show_count')),
+        actionFields(),
       ],
       ...editorLabels(s, { max_rows: 'editor.max_rows' }, {}),
     };
