@@ -2,6 +2,7 @@ import {
   formatDuration,
   formatTime,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -17,7 +18,8 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import { boolField, entityField, formLabels, nameIconFields } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('timer');
 
 export interface TimerCardConfig extends FluvyCardConfig {
   /** The elapsed gauge under the readout (on by default, as the sheet draws it). */

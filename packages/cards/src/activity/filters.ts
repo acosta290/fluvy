@@ -3,14 +3,15 @@ import { html, nothing, type TemplateResult } from 'lit';
 
 import { keyed } from 'lit/directives/keyed.js';
 
-import { countFilters, countTargets } from '@fluvy/core';
+import { countFilters, countTargets, type KeyOf } from '@fluvy/core';
 
 import { faceOf, firstFit, glyph, reducedMotion, sideScroll } from '@fluvy/ui';
 import type { ActivityModel } from './model.js';
 import { openSources, singleEntity } from './sources.js';
 
-import type { ActivityString } from './strings.js';
 import type { FluvyActivity } from './view.js';
+
+type ActivityString = KeyOf<'activity' | 'page'>;
 
 export function renderTools(page: FluvyActivity): TemplateResult {
   const sources = countTargets(page.target) + countFilters(page.sourceFilters);

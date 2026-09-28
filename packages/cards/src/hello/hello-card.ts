@@ -1,14 +1,15 @@
 import {
-  type DayParts,
-  type EntityView,
-  type FluvyCardConfig,
   formatNumber,
   languageOf,
   LANGUAGES,
+  stateText,
+  strings,
+  type DayParts,
+  type EntityView,
+  type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
-  stateText,
 } from '@fluvy/core';
 
 import { glyph, sheetStyles } from '@fluvy/ui';
@@ -31,12 +32,12 @@ import { FontsSettled } from '../shared/fonts.js';
 
 import { entityField, fieldRow, formLabels, textField } from '../shared/form.js';
 
-import { s as weatherWord } from '../weather/strings.js';
-
 import { overflows } from './fit.js';
 
-import { s } from './strings.js';
 import { conditionGlyph, isCondition, isNight } from '../shared/weather.js';
+
+const weatherWord = strings('weather');
+const s = strings('hello');
 
 export interface HelloCardConfig extends FluvyCardConfig {
   /** Who is greeted. Falls back to the first word of the signed-in user's name. */

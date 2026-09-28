@@ -5,6 +5,16 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Tiles: a mini tile is never narrower than 84 px (a group asked for more columns lays out fewer), so its icon
+  circle is always the 44 of every other tile; a small tile's state line is fitted to the tile — "Open · 40 %"
+  loses its figure before it is cut, and an unavailable tile shows "—" where the word cannot fit — and a large
+  unavailable tile drops its "· 11 days ago" the same way.
+- Energy flow, gauge, bars and the other chart cards: in a column too narrow for the icon circle and the title,
+  the circle goes and the title stays whole (a typed title may end in an ellipsis, as a name does).
+- The cards' words arriving in a new language refreshed every card twice.
+
 ## [1.2.1] — 2026-09-28
 
 ### Removed

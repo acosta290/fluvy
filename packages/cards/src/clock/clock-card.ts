@@ -1,11 +1,12 @@
 import {
+  isTimeZone,
+  reducedMotion,
+  strings,
+  wallClock,
   type FluvyCardConfig,
   type HaFormSchemaItem,
-  isTimeZone,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  reducedMotion,
-  wallClock,
 } from '@fluvy/core';
 import { isoWeek, sheetStyles, type Tone } from '@fluvy/ui';
 import {
@@ -30,7 +31,6 @@ import { formEditor } from '../shared/rows-editor.js';
 import { TextRuler } from '../shared/fit.js';
 import { heroAnalog, heroDigital, side, tile, type ClockModel } from './layouts.js';
 import { ForecastFeed, readSky } from './sky.js';
-import { s } from './strings.js';
 import {
   calendarDate,
   clockParts,
@@ -43,6 +43,8 @@ import {
   type ClockFormat,
   type ClockParts,
 } from './time.js';
+
+const s = strings('clock', 'weather');
 
 export interface ClockCardConfig extends FluvyCardConfig {
   /** The analog face, or big tabular digits. */

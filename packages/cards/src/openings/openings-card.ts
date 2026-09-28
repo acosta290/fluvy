@@ -1,6 +1,7 @@
 import {
   isActive,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -17,7 +18,8 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 import { formLabels, iconToneFields, numberField, titleFields } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('openings');
 
 export interface OpeningsCardConfig extends FluvyCardConfig {
   title?: string;

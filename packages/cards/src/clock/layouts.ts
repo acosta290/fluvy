@@ -1,11 +1,12 @@
-import { formatNumber, localize, type HomeAssistant } from '@fluvy/core';
+import { formatNumber, localize, strings, type HomeAssistant } from '@fluvy/core';
 import { clockFace, ico, readout, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { firstFit, fitLine, type Segment, type TextRuler } from '../shared/fit.js';
 import type { Forecast, Sky } from './sky.js';
-import { s } from './strings.js';
 import type { ClockParts } from './time.js';
+
+const s = strings('clock', 'weather');
 
 /** Everything a layout draws, resolved by the card: a layout only decides where it goes and what fits. */
 export interface ClockModel {

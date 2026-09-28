@@ -1,15 +1,16 @@
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatDuration,
   formatNumber,
   formatTime,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
   numberAttr,
   relativeTime,
   stateText,
+  strings,
   textAttr,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
 } from '@fluvy/core';
 
 import {
@@ -50,7 +51,7 @@ import {
   trackPosition,
 } from '../shared/media.js';
 
-import { s } from './strings.js';
+const s = strings('media');
 
 export type MediaVariant = 'full' | 'mini' | 'hero';
 

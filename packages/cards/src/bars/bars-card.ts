@@ -1,11 +1,12 @@
 import {
   stateText,
+  strings as words,
   valueParts,
   type EntityView,
   type FluvyCardConfig,
+  type HaFormSchemaItem,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HaFormSchemaItem,
 } from '@fluvy/core';
 
 import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
@@ -37,7 +38,7 @@ import {
   toneField,
 } from '../shared/form.js';
 
-import { strings } from './strings.js';
+const strings = words('bars');
 
 const anyNumber = (name: string): HaFormSchemaItem => ({
   name,
@@ -323,7 +324,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     });
 
     return html`<article class="fv-card so-card" data-card>
-      ${head({ icon: this.config?.icon ?? 'sliders', tone, title, sub: fitted.sub, trailing: fitted.badge })}
+      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null, tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
       <div class="so-rows" @keydown=${this.onRowsKey}>${body}</div>
     </article>`;
   }

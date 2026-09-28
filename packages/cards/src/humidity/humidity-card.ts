@@ -2,6 +2,7 @@ import {
   fetchHistory,
   formatNumber,
   stateText,
+  strings as words,
   toggleEntity,
   valueParts,
   type FluvyCardConfig,
@@ -35,7 +36,8 @@ import {
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import { strings } from './strings.js';
+
+const strings = words('humidity');
 
 export interface HumidityCardConfig extends FluvyCardConfig {
   subtitle?: string;
@@ -323,13 +325,14 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? glyphFor(view),
+        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
         tone,
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
         onIconTap: openInfo,
         iconLabel: name,
+        name: true,
       })}
       <div class="so-top fv-value-row">
         ${readout({ label: strings(this.hass, 'relative'), value: parts.value, unit: value === null ? '' : parts.unit || '%', size: 'l' })}

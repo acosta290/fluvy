@@ -268,22 +268,10 @@
 }
 
 /* a compact tile squeezed under 128 (a narrow dashboard cell) gives its name the icon's room: the fill still says
-   on or off; a mini tile under 60 draws a 36 circle so it stays inside its tile */
+   on or off (a mini tile is never narrower than 84: its group lays out fewer columns instead) */
 @container (max-width: 127px) {
   .fv-tile--compact > .fv-ico {
     display: none;
-  }
-}
-
-.fv-tile--mini {
-  container-type: inline-size;
-}
-
-@container (max-width: 59px) {
-  .fv-tile--mini > .fv-ico {
-    flex-basis: 36px;
-    width: 36px;
-    height: 36px;
   }
 }
 

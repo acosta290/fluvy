@@ -1,4 +1,5 @@
 import {
+  strings,
   type ActionConfig,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -16,7 +17,8 @@ import {
 import { Card } from '../shared/base.js';
 import { entityField, fieldRow, formLabels, iconField, textField } from '../shared/form.js';
 import { listsEditor } from '../shared/rows-editor.js';
-import { s } from './strings.js';
+
+const s = strings('chips');
 
 export interface ChipConfig {
   label: string;

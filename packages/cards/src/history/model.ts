@@ -1,3 +1,4 @@
+import { type KeyOf } from '@fluvy/core';
 /**
  * What the History page draws, worked out from the window it read: one chart per measure (everything in the same
  * unit), the state lines under them, and what had to be left out. The page itself keeps no data of its own.
@@ -7,7 +8,8 @@ import { byActivity, byRange } from '@fluvy/core/history';
 import type { HomeAssistant } from '@fluvy/core';
 import type { GlyphName } from '@fluvy/ui';
 import { glyphForClass } from '../shared/domain.js';
-import type { HistoryString } from './strings.js';
+
+type HistoryString = KeyOf<'history' | 'page'>;
 
 /** How many series one chart draws before the rest are counted as "+N more". */
 export const SERIES_LIMIT = 6;

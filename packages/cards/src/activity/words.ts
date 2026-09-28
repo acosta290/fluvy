@@ -1,7 +1,14 @@
 /** The Activity page's words: what an entry is and how it reads — a state, a moment, a cause, a trigger, a name. */
 import { html, type TemplateResult } from 'lit';
 
-import { dateFormat, domainOf, type EntityView, resolveEntity, stateText } from '@fluvy/core';
+import {
+  dateFormat,
+  domainOf,
+  resolveEntity,
+  stateText,
+  type EntityView,
+  type KeyOf,
+} from '@fluvy/core';
 import type { ActivityCause, ActivityEvent } from '@fluvy/core/activity';
 import { glyph, type GlyphName } from '@fluvy/ui';
 
@@ -9,8 +16,9 @@ import { currentTone, glyphFor } from '../shared/domain.js';
 
 import { type Look, MINOR, MOMENTS, TRIGGER_KEYS, TRIGGERS } from './shared.js';
 
-import type { ActivityString } from './strings.js';
 import type { FluvyActivity } from './view.js';
+
+type ActivityString = KeyOf<'activity' | 'page'>;
 
 /** Entity ids in a message read as their names. */
 export function withNames(page: FluvyActivity, text: string): string {

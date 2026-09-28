@@ -1,13 +1,9 @@
-import { languageOf, speaks, strings, type HomeAssistant } from '@fluvy/core';
+import { languageOf, speaks, strings, type HomeAssistant, type KeyOf } from '@fluvy/core';
 
-/**
- * Labels the cover card owns. Shared words (Position, Tilt, Open, Stop, Close, Open / Closed) come
- * from `@fluvy/core` through `this.t()`; what lives here is the card's own copy and the device
- * classes Home Assistant reports for covers and valves — lowercase, because they follow a "·".
- */
-export const coverStrings = strings('cover');
+/** The device classes Home Assistant reports for covers and valves, as the sub line's word — lowercase, after a "·". */
+const coverStrings = strings('cover');
 
-export type CoverStringKey = Parameters<typeof coverStrings>[1];
+type CoverStringKey = KeyOf<'cover'>;
 
 const CLASSES = new Set([
   'awning',

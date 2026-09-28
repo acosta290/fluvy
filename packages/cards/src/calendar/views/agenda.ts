@@ -1,11 +1,13 @@
+import { strings } from '@fluvy/core';
 import { badge, head, listRow } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { addDays, dayKey, sameDay } from '../../shared/dates.js';
 import { FACE, badgeWidth, fitText } from '../fit.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
 import { dayList, headRoom, headTone, notice, outage, surface } from './shared.js';
+
+const s = strings('calendar');
 
 /** "2 events · first at 08:15" — then without the words, when the row is too narrow for them. */
 function daySummary(ctx: ViewContext, day: Date, room: number): string {

@@ -1,11 +1,12 @@
 import {
   clock12,
   dateFormat,
-  type FluvyCardConfig,
   formatNumber,
+  stateText,
+  strings as words,
+  type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  stateText,
 } from '@fluvy/core';
 
 import { axis, head, readout, scrub, ScrubController, sheetStyles, type Tone } from '@fluvy/ui';
@@ -31,7 +32,7 @@ import { loadDay, startOfDay, type DayRecord } from './day.js';
 
 import { hourlyForecast } from './forecast.js';
 
-import { strings } from './strings.js';
+const strings = words('production');
 
 export interface ProductionCardConfig extends FluvyCardConfig {
   title?: string;
@@ -311,13 +312,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? 'sun',
+        icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
         tone,
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
         onIconTap: () => this.tap(view.id, { action: 'more-info' }),
         iconLabel: name,
+        name: true,
       })}
       <div class="so-top fv-value-row">
         ${

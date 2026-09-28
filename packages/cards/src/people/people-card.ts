@@ -2,6 +2,7 @@ import {
   formatTime,
   navigate,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -12,7 +13,8 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { agoShort } from '../helpers/datetime.js';
 import { Card } from '../shared/base.js';
 import { fieldRow, formLabels, iconField, selectField, textField } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('people');
 
 export type PeopleLayout = 'grid' | 'rows';
 

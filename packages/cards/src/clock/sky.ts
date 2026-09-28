@@ -1,16 +1,18 @@
 import {
-  type EntityView,
-  type HomeAssistant,
-  type UnsubscribeFunc,
   formatNumber,
   languageOf,
   numberAttr,
   speaks,
   stateText,
+  strings,
+  type EntityView,
+  type HomeAssistant,
+  type UnsubscribeFunc,
 } from '@fluvy/core';
 import type { GlyphName } from '@fluvy/ui';
 import { compassKey, conditionGlyph, isCondition, isNight } from '../shared/weather.js';
-import { s } from './strings.js';
+
+const s = strings('clock', 'weather');
 
 /** What a clock shows of the weather: the sky's state in words and as a glyph, and the air outside. */
 export interface Sky {

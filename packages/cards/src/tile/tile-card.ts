@@ -32,6 +32,8 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { Card } from '../shared/base.js';
 
 import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
+import { fitLine, TextRuler } from '../shared/fit.js';
+import { FontsSettled } from '../shared/fonts.js';
 
 import {
   actionField,
@@ -265,6 +267,41 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       : text;
   }
 
+  /** Widths laid out by the browser in the tile's own classes (a mini's 12 px, a compact's 13), never guessed. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
+  constructor() {
+    super();
+    // a web font arriving changes every width: measure afresh and lay the small tiles out again
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
+  }
+
+  /**
+   * A tile's state line fitted to its tile: what does not fit loses its " · " segments from the end (a large tile's
+   * "· 11 days ago", a small one's reading); a word that cannot fit at all is a dash on a tile without a reading
+   * (unavailable, unknown) and nothing on one with — never a cut. The room is the tile's width less its sides (16 on a
+   * large tile, 12 on a small one, or what a narrower tile can spare around its 44 circle) and, on a large tile, the
+   * circle its line sits beside.
+   */
+  private fitState(line: string, size: TileSize, dash: boolean): string {
+    const width = Math.floor(this.tileWidth());
+    const small = size !== 'large';
+    const sides = !small ? 16 : width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12;
+    const room = width - 2 * sides - (small ? 0 : 44 + 12);
+    const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
+    const measure = (text: string): number => this.ruler.width(cls, text);
+    const fitted = fitLine(
+      line.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
+      room,
+      measure,
+    );
+    if (fitted && measure(fitted) <= room) return fitted;
+    return dash ? '—' : '';
+  }
+
   /** The reading of the first readout ("142 W"), for a small tile's state line. */
   private readoutText(item: TileItem): string {
     const id = item.readouts?.[0];
@@ -326,6 +363,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
 
     if (view.status === 'missing' || view.status === 'unavailable') {
       const open = (): void => this.tap(view.id, item.tap_action ?? MORE_INFO);
+      const line = this.stateLine(view, false, null, false, small);
       return html`<article
         class="fv-tile fv-tile--off fv-tile--tap${sizeClass}"
         data-card
@@ -338,7 +376,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         ${ico('ban', 'off')}
         <div class="${small ? 'fv-tile__text' : 'fv-row__text'}">
           <h3 class="fv-tile__name">${name}</h3>
-          <p class="fv-tile__state">${this.stateLine(view, false, null, false, small)}</p>
+          <p class="fv-tile__state">${this.fitState(line, size, true)}</p>
         </div>
       </article>`;
     }
@@ -365,6 +403,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       let line = this.stateLine(view, on, level ? level.value : null, false);
       const reading = this.readoutText(item);
       if (reading) line = `${line} · ${reading}`;
+      line = this.fitState(line, size, false);
       return html`<article
         class=${classes}
         data-card

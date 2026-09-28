@@ -1,11 +1,13 @@
+import { coverClassLabel } from './class-label.js';
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatNumber,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
   numberAttr,
   stateText,
+  strings,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
 } from '@fluvy/core';
 
 import {
@@ -51,7 +53,7 @@ import {
   StableTemplate,
 } from './common.js';
 
-import { coverClassLabel, coverStrings } from './strings.js';
+const coverStrings = strings('cover');
 
 /** One saved place for a cover: "Morning · 60 %". `position` and `tilt` are percentages, 100 = open. */
 export interface CoverFavorite {

@@ -1,5 +1,6 @@
 import {
   stateText,
+  strings,
   valueParts,
   type EntityView,
   type FluvyCardConfig,
@@ -43,7 +44,7 @@ import {
   type Family,
 } from '../energy/power.js';
 
-import { s } from './strings.js';
+const s = strings('energy-devices');
 
 export interface DeviceRowConfig {
   entity: string;
@@ -231,7 +232,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     });
 
     return html`<article class="fv-card ef-card ${none ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({ icon: this.config?.icon ?? 'plug', tone: none ? 'off' : tone, title, sub: fitted.sub, trailing: fitted.badge })}
+      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'plug') : null, tone: none ? 'off' : tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
       <div class="ef-rows">
         ${repeat(
           rows,

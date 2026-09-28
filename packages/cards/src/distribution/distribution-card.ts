@@ -1,5 +1,6 @@
 import {
   stateText,
+  strings as words,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -32,7 +33,7 @@ import {
   toneField,
 } from '../shared/form.js';
 
-import { strings } from './strings.js';
+const strings = words('distribution');
 
 export interface DistributionEntityConfig {
   entity: string;
@@ -253,7 +254,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     });
 
     return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({ icon: this.config?.icon ?? 'plug', tone, title, sub: fitted.sub, trailing: fitted.badge })}
+      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'plug') : null, tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
       <div class="fv-stack ${segments.length ? '' : 'so-empty'}">
         ${repeat(
           segments,

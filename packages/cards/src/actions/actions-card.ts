@@ -2,6 +2,7 @@ import {
   formatTime,
   haptic,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -25,7 +26,8 @@ import {
   titleFields,
 } from '../shared/form.js';
 import { listsEditor } from '../shared/rows-editor.js';
-import { s } from './strings.js';
+
+const s = strings('actions');
 
 export interface ActionRowConfig {
   entity: string;

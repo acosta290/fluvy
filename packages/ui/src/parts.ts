@@ -72,7 +72,8 @@ export function ico(
 }
 
 export interface HeadOptions {
-  readonly icon?: IconRef | string | undefined;
+  /** `null`: no icon circle at all — a chart card in a column too narrow for the circle and its title. */
+  readonly icon?: IconRef | string | null | undefined;
   readonly tone?: Tone;
   readonly title: string;
   readonly sub?: string;
@@ -85,7 +86,14 @@ export interface HeadOptions {
 
 export function head(o: HeadOptions): TemplateResult {
   return html`<div class="fv-card__head">
-    ${ico(o.icon, o.tone ?? 'accent', { onTap: o.onIconTap, ...(o.iconLabel ? { label: o.iconLabel } : {}) })}
+    ${
+      o.icon === null
+        ? nothing
+        : ico(o.icon, o.tone ?? 'accent', {
+            onTap: o.onIconTap,
+            ...(o.iconLabel ? { label: o.iconLabel } : {}),
+          })
+    }
     <div class="fv-card__titles">
       <h3 class="fv-card__title" data-name=${o.name ? '' : nothing}>${o.title}</h3>
       ${o.sub ? html`<p class="fv-card__sub">${o.sub}</p>` : nothing}

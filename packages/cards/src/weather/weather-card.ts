@@ -1,8 +1,4 @@
 import {
-  type FluvyCardConfig,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
-  type UnsubscribeFunc,
   clock12,
   dateFormat,
   formatNumber,
@@ -10,6 +6,11 @@ import {
   languageOf,
   speaks,
   stateText,
+  strings,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
+  type UnsubscribeFunc,
 } from '@fluvy/core';
 
 import { firstFit, glyph, ico, listRow, sheetStyles, textWidth, type Tone } from '@fluvy/ui';
@@ -33,8 +34,9 @@ import {
   textField,
 } from '../shared/form.js';
 
-import { s } from './strings.js';
 import { compassKey, conditionGlyph, isCondition } from '../shared/weather.js';
+
+const s = strings('weather');
 
 type ForecastType = 'daily' | 'hourly';
 export type ForecastMode = ForecastType | 'both' | 'none';

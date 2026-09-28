@@ -2,6 +2,7 @@ import {
   haptic,
   resolveEntity,
   stateText,
+  strings,
   type EntityView,
   type HassEntity,
   type HomeAssistant,
@@ -34,7 +35,8 @@ import { listsEditor } from '../shared/rows-editor.js';
 
 import './keypad.js';
 import type { FluvyKeypad, KeypadAction } from './keypad.js';
-import { s } from './strings.js';
+
+const s = strings('alarm');
 
 export type AlarmCardConfig = RowsCardConfig;
 

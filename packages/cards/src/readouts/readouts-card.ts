@@ -1,6 +1,7 @@
 import {
   fetchHistory,
   stateText,
+  strings,
   valueParts,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -21,7 +22,8 @@ import { Card } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { entityField, formLabels, numberField, textField } from '../shared/form.js';
 import { listsEditor } from '../shared/rows-editor.js';
-import { s } from './strings.js';
+
+const s = strings('readouts');
 
 export interface ReadoutConfig {
   entity: string;

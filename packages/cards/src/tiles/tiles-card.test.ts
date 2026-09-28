@@ -66,4 +66,20 @@ describe('a group of tiles', () => {
     expect(root.querySelectorAll('.fv-tile .fv-ico').length).toBe(2);
     expect(card.getCardSize()).toBe(3);
   });
+
+  it('lays out fewer mini columns than asked while the group cannot hold 84 px tiles', async () => {
+    const card = await group({
+      size: 'mini',
+      columns: 4,
+      entities: ['switch.kitchen', 'switch.porch', 'switch.kitchen', 'switch.porch'],
+    });
+    const sized = card as unknown as { width: number };
+    const grid = (): string => card.shadowRoot!.querySelector('.fv-tiles')!.className;
+    sized.width = 360;
+    await card.updateComplete;
+    expect(grid()).toContain('fv-tiles--3');
+    sized.width = 412;
+    await card.updateComplete;
+    expect(grid()).toContain('fv-tiles--4');
+  });
 });

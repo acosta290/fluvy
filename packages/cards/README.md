@@ -1,7 +1,8 @@
 # @fluvy/cards — how a card is built
 
-Every card is one folder: `src/<name>/<name>-card.ts` (+ `strings.ts` for its own labels). The approved
-design sheets are the specification; a card is that sheet's markup, rendered by Lit, fed by Home Assistant.
+Every card is one folder: `src/<name>/<name>-card.ts` and its parts; its words are `strings('<name>')` in the file
+that says them (the catalogues in `packages/core/src/i18n/locales/`). The approved design sheets are the
+specification; a card is that sheet's markup, rendered by Lit, fed by Home Assistant.
 
 ## The contract
 

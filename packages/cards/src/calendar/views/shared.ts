@@ -1,10 +1,12 @@
+import { strings } from '@fluvy/core';
 import { listRow, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { sameDay } from '../../shared/dates.js';
 import { FACE, textWidth } from '../fit.js';
 import type { DayEvent } from '../model.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
+
+const s = strings('calendar');
 
 /** Rows a day lists before the rest folds into "+N more": nine events must leave a usable card. */
 export const MAX_ROWS = 6;

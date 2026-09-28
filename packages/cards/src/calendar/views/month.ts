@@ -1,10 +1,10 @@
+import { strings } from '@fluvy/core';
 import { head, label, round } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { dayKey, sameDay } from '../../shared/dates.js';
 import { monthGrid } from '../../shared/days.js';
 import { FACE, fitText } from '../fit.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
 import {
   columnStyle,
@@ -16,6 +16,8 @@ import {
   sevenColumns,
   surface,
 } from './shared.js';
+
+const s = strings('calendar');
 
 const NAV = 96; // the ‹ › pair: 44 + 8 + 44
 

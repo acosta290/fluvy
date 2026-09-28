@@ -1,14 +1,15 @@
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatNumber,
   formatTime,
+  numberAttr,
+  stateText,
+  strings,
+  valueParts,
+  type EntityView,
+  type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  numberAttr,
-  stateText,
-  valueParts,
 } from '@fluvy/core';
 
 import {
@@ -42,7 +43,7 @@ import {
 } from '../shared/form.js';
 import { actionGap, headSub, Hold, motionStyles, pretty, shownStateText } from '../cover/common.js';
 
-import { vacuumStrings } from './strings.js';
+const vacuumStrings = strings('vacuum');
 
 export interface VacuumCardConfig extends FluvyCardConfig {
   subtitle?: string;

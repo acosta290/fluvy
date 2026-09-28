@@ -1,16 +1,17 @@
 import {
   clock12,
-  type EntityView,
   fetchHistory,
-  type FluvyCardConfig,
   formatNumber,
   formatTime,
+  scaleUnit,
+  stateText,
+  strings,
+  valueParts,
+  type EntityView,
+  type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  scaleUnit,
   type Series,
-  stateText,
-  valueParts,
 } from '@fluvy/core';
 
 import {
@@ -53,7 +54,8 @@ import {
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import { s } from './strings.js';
+
+const s = strings('sensor');
 
 export type SensorVariant = 'chart' | 'tile';
 

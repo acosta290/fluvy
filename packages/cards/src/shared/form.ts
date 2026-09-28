@@ -45,8 +45,8 @@ export function formLabels(map: Readonly<Record<string, MessageKey>> = {}): {
 }
 
 /**
- * Editor labels for a card with words of its own: a field it owns is named from its `strings.ts` (`own`), the rest
- * from the shared editor words (the defaults, and `shared` for another word).
+ * Editor labels for a card with words of its own: a field it owns is named from its own namespace (`own`, the
+ * card's `strings('<name>')`), the rest from the shared editor words (the defaults, and `shared` for another word).
  */
 export function editorLabels<K extends string>(
   strings: (hass: Pick<HomeAssistant, 'language'> | undefined, key: K) => string,

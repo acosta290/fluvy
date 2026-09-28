@@ -1,9 +1,11 @@
+import { strings } from '@fluvy/core';
 import { ico, isoWeek } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { FACE, fitText, textWidth } from '../fit.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
 import { onActivate, titleOf } from './shared.js';
+
+const s = strings('calendar');
 
 /** How far ahead the next-event tile looks — the window the card reads for it. */
 export const NEXT_DAYS = 8;

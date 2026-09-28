@@ -1,6 +1,7 @@
 import {
   localize,
   stateText,
+  strings,
   type HaFormSchemaItem,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
@@ -33,7 +34,6 @@ import {
 import { fetchEvents, stampOf, type Fetched } from './events.js';
 import { useFamily } from './fit.js';
 import { Agenda } from './model.js';
-import { s } from './strings.js';
 import { calendarStyles } from './styles.js';
 import { agendaView } from './views/agenda.js';
 import type { Status, ViewContext } from './views/context.js';
@@ -43,6 +43,8 @@ import { NEXT_DAYS, tileView } from './views/tile.js';
 import { upcomingView } from './views/upcoming.js';
 import { weekView } from './views/week.js';
 import { Words } from './words.js';
+
+const s = strings('calendar');
 
 export type { CalendarCardConfig, CalendarView } from './config.js';
 

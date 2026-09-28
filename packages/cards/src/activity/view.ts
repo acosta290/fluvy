@@ -5,15 +5,17 @@ import {
   countTargets,
   formatDate,
   formatTime,
-  type HomeAssistant,
   languageOf,
   navigate,
   PREFERENCES_EVENT,
   readStored,
   sourceEntities,
+  strings,
+  targetFromSearch,
+  type HomeAssistant,
+  type KeyOf,
   type SourceFilters,
   type SourceTarget,
-  targetFromSearch,
 } from '@fluvy/core';
 import {
   type ActivityEvent,
@@ -64,10 +66,12 @@ import {
 import { renderFresh, renderList } from './rows.js';
 import { type Anchor, COMPACT, EXIT, FILTERS, HOUR, HOUR_HEAD, PICKED, ROW } from './shared.js';
 import { renderNarrowed, renderSources } from './sources.js';
-import { type ActivityString, s } from './strings.js';
 import { activityStyles } from './styles/index.js';
 import '@fluvy/ui/time-rail';
 import '../shared/date-picker.js';
+
+type ActivityString = KeyOf<'activity' | 'page'>;
+const s = strings('activity', 'page');
 
 /**
  * Fluvy's Activity: a day of the house, legible. A bar, the day (‹ Today › and any dates), search, the sources and a

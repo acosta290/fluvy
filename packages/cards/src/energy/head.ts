@@ -24,6 +24,8 @@ export interface FittedHead {
   readonly sub: string;
   /** The badge to put in the trailing slot — `nothing` when it had to step aside. */
   readonly badge: TemplateResult | typeof nothing;
+  /** False when the title needed the icon circle's room too: `head({ icon: null })` draws none. */
+  readonly icon: boolean;
 }
 
 /**
@@ -31,7 +33,9 @@ export interface FittedHead {
  * is the card's name and stays whole — the badge steps aside if the title needs the room; the sub is
  * context and gives up its trailing " · " segments first ("South roof · 5.4 kWp" → "South roof"); a
  * sub that cannot fit beside the badge even as its first segment sends the badge aside too, since the
- * state a badge carries is one every card of this family also shows in its body.
+ * state a badge carries is one every card of this family also shows in its body. The icon circle is
+ * the last to go: a title that still does not fit in a column of 172 takes its room (a chart card's
+ * icon is decoration; the chart says what the card is).
  *
  * Widths are laid out by the browser in the card's own classes (`TextRuler`), never guessed, and
  * measured again when a web font lands. One instance per card: `private readonly head = new HeadFit(this)`.
@@ -54,7 +58,9 @@ export class HeadFit implements ReactiveController {
   fit(o: HeadFitOptions): FittedHead {
     const pill = o.badge ? this.ruler.pill('fv-badge', o.badge.text, BADGE_SIDES) : 0;
     let trailing = o.badge ? pill : (o.trailing ?? 0);
-    const room = (): number => o.width - ICON - (trailing > 0 ? trailing + GAP : 0);
+    let keepIcon = true;
+    const room = (): number =>
+      o.width - (keepIcon ? ICON : 0) - (trailing > 0 ? trailing + GAP : 0);
     let keepBadge = Boolean(o.badge);
 
     if (keepBadge && this.ruler.width('fv-card__title', o.title) > room()) {
@@ -69,7 +75,16 @@ export class HeadFit implements ReactiveController {
       sub = this.fitSub(o.sub ?? '', room());
     }
 
-    return { sub, badge: keepBadge && o.badge ? badge(o.badge.text, o.badge.tone) : nothing };
+    if (this.ruler.width('fv-card__title', o.title) > room()) {
+      keepIcon = false;
+      sub = o.sub ? this.fitSub(o.sub, room()) : '';
+    }
+
+    return {
+      sub,
+      badge: keepBadge && o.badge ? badge(o.badge.text, o.badge.tone) : nothing,
+      icon: keepIcon,
+    };
   }
 
   /** "A · B · C" keeps A, then as many of the rest as the room holds. */

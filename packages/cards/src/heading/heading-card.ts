@@ -1,5 +1,6 @@
 import {
   isActive,
+  strings,
   type ActionConfig,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -23,7 +24,8 @@ import {
   iconField,
   textField,
 } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('heading');
 
 export interface HeadingCardConfig extends FluvyCardConfig {
   title?: string;

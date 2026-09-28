@@ -54,8 +54,6 @@ export function refreshCards(): void {
 }
 // a language's words arriving are a preference change too: every card says them at once
 onWords(refreshCards);
-// a language's words arriving are a preference change too: every card says them at once
-onWords(refreshCards);
 
 /** Every card on the page looks again for the theme: the look arrived, moved or left. */
 export function resyncCardThemes(): void {

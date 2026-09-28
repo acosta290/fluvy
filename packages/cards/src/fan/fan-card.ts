@@ -1,11 +1,12 @@
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatNumber,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
   numberAttr,
   stateText,
+  strings,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
 } from '@fluvy/core';
 
 import {
@@ -42,7 +43,7 @@ import {
   StableTemplate,
 } from '../cover/common.js';
 
-import { fanStrings } from './strings.js';
+const fanStrings = strings('fan');
 
 export interface FanCardConfig extends FluvyCardConfig {
   subtitle?: string;

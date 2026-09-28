@@ -1,6 +1,7 @@
 import {
   haptic,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -28,7 +29,7 @@ import {
   toneField,
 } from '../shared/form.js';
 
-import { s } from './strings.js';
+const s = strings('scene');
 
 export interface SceneCardConfig extends FluvyCardConfig {
   tone?: Tone;

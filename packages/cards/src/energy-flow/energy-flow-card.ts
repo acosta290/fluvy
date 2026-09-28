@@ -1,6 +1,7 @@
 import {
   relativeTime,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -54,7 +55,7 @@ import {
   type Point,
 } from './path.js';
 
-import { s } from './strings.js';
+const s = strings('energy-flow');
 
 export interface EnergyFlowReadout {
   entity: string;
@@ -761,11 +762,12 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
     return html`<article class="fv-card ef-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
-        icon: this.config?.icon ?? 'bolt',
+        icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
         tone: dead ? 'off' : 'solar',
         title: this.config?.title ?? s(this.hass, 'title'),
         sub: fitted.sub,
         trailing: fitted.badge,
+        name: Boolean(this.config?.title),
       })}
       ${
         narrow

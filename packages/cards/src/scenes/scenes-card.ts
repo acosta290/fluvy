@@ -1,5 +1,6 @@
 import {
   stateText,
+  strings,
   toggleEntity,
   type EntityView,
   type FluvyCardConfig,
@@ -24,7 +25,7 @@ import { FontsSettled } from '../shared/fonts.js';
 import { entityField, formLabels, nameIconFields, textField } from '../shared/form.js';
 import { listsEditor } from '../shared/rows-editor.js';
 
-import { s } from './strings.js';
+const s = strings('scenes');
 
 export interface SceneItemConfig {
   entity: string;

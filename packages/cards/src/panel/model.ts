@@ -1,12 +1,13 @@
 import {
-  type EffectiveSettings,
-  type HomeAssistant,
   LANGUAGES,
-  type Look,
-  type LookHandle,
   lookKey,
   paletteKey,
   paletteOf,
+  type EffectiveSettings,
+  type HomeAssistant,
+  type KeyOf,
+  type Look,
+  type LookHandle,
 } from '@fluvy/core';
 import {
   DEFAULT_PALETTE,
@@ -18,12 +19,11 @@ import {
   type PaletteMode,
   type PaletteName,
 } from '@fluvy/tokens/runtime';
-import { s } from './strings.js';
 
 export type Tab = 'appearance' | 'scope' | 'dashboard' | 'preferences' | 'about';
 export const TABS: readonly Tab[] = ['appearance', 'scope', 'dashboard', 'preferences', 'about'];
 
-export type StringKey = Parameters<typeof s>[1];
+export type StringKey = KeyOf<'panel'>;
 
 /** The house's settings the Scope tab edits (an administrator's to save). */
 export type HouseEdit = Partial<

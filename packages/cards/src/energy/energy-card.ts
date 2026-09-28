@@ -1,18 +1,19 @@
 import {
   clock12,
   dateFormat,
-  type EntityView,
   fetchHistory,
-  type FluvyCardConfig,
   formatNumber,
   formatTime,
-  type HomeAssistant,
   houseZone,
+  stateText,
+  strings,
+  wallClock,
+  type EntityView,
+  type FluvyCardConfig,
+  type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
-  stateText,
-  wallClock,
 } from '@fluvy/core';
 
 import {
@@ -59,7 +60,7 @@ import { legendReadouts } from './legend.js';
 
 import { costParts, readoutParts } from './power.js';
 
-import { s } from './strings.js';
+const s = strings('energy');
 
 export interface EnergyLegendItem {
   entity: string;
@@ -407,13 +408,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
     return html`<article class="fv-card ef-card ${off ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
-        icon: this.config?.icon ?? 'bolt',
+        icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
         tone: off ? 'off' : (this.config?.tone ?? 'solar'),
         title,
         sub: fitted.sub,
         trailing: round('dots', 'quiet', this.t('common.more'), () =>
           this.tap(view.id, { action: 'more-info' }),
         ),
+        name: Boolean(this.config?.title),
       })}
       <div class="ef-top fv-value-row">
         ${readout({ label: at ? at.time : s(this.hass, 'right_now'), value: at ? at.parts.value : parts.value, unit: at ? at.parts.unit : parts.unit, size: live === null && view.status === 'ok' ? 'm' : 'l' })}

@@ -2,6 +2,7 @@ import {
   fetchHistory,
   formatNumber,
   stateText,
+  strings as words,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -29,9 +30,9 @@ import {
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
 
-import { strings } from './strings.js';
-
 import { baseOf, ceilingFor, figure, scaleFor, toBase } from './units.js';
+
+const strings = words('gauge');
 
 export interface GaugeCardConfig extends FluvyCardConfig {
   subtitle?: string;
@@ -297,13 +298,14 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? glyphFor(view),
+        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
         tone: headTone,
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
         onIconTap: () => this.tap(view.id, { action: 'more-info' }),
         iconLabel: name,
+        name: true,
       })}
       <div class="so-gauge">
         <fluvy-dial

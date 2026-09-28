@@ -1,3 +1,4 @@
+import { strings } from '@fluvy/core';
 import type {
   EntityView,
   FluvyCardConfig,
@@ -35,11 +36,11 @@ import { buttonRow, momentRow, plainRow, switchRow } from './rows.js';
 
 import { selectPiece } from './select.js';
 
-import { s } from './strings.js';
-
 import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
+
+const s = strings('helpers');
 
 export type { HelperRowConfig } from './context.js';
 

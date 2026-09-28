@@ -6,16 +6,18 @@ import {
   countTargets,
   dateFormat,
   formatTime,
-  type HomeAssistant,
   languageOf,
   navigate,
   onWords,
   readStored,
   sourceEntities,
-  type SourceFilters,
-  type SourceTarget,
+  strings,
   targetFromSearch,
   writeStored,
+  type HomeAssistant,
+  type KeyOf,
+  type SourceFilters,
+  type SourceTarget,
 } from '@fluvy/core';
 import {
   buildWindow,
@@ -55,7 +57,9 @@ import { renderBar, renderBody, renderHead } from './parts.js';
 import { renderDates, renderSources } from './layers.js';
 import { spokenStates } from './states.js';
 import { historyStyles } from './styles.js';
-import { s, type HistoryString } from './strings.js';
+
+type HistoryString = KeyOf<'history' | 'page'>;
+const s = strings('history', 'page');
 
 /** Where Home Assistant's own History page keeps what was picked: our page reads and writes the same. */
 const PICKED = 'historyPickedValue';

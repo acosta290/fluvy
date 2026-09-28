@@ -2,10 +2,11 @@
 import { html, nothing, type TemplateResult } from 'lit';
 import {
   domainOf,
-  type EntityView,
   formatDate,
   moreInfo,
   navigate,
+  type EntityView,
+  type KeyOf,
   type SourceTarget,
 } from '@fluvy/core';
 import type { ActivityCause, ActivityItem } from '@fluvy/core/activity';
@@ -13,9 +14,10 @@ import { glyph, textWidth } from '@fluvy/ui';
 import { changeOf } from './rows.js';
 import { HOUR, keepDay, type Place } from './shared.js';
 import { focusOn } from './sources.js';
-import type { ActivityString } from './strings.js';
 import type { FluvyActivity } from './view.js';
 import { causeGlyph, causeName, isMoment, triggerOf } from './words.js';
+
+type ActivityString = KeyOf<'activity' | 'page'>;
 
 export function renderDetail(
   page: FluvyActivity,

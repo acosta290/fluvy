@@ -1,13 +1,14 @@
 import {
-  type EntityView,
-  type FluvyCardConfig,
   formatDuration,
   formatNumber,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
   numberAttr,
   stateText,
+  strings,
   textAttr,
+  type EntityView,
+  type FluvyCardConfig,
+  type LovelaceConfigForm,
+  type LovelaceGridOptions,
 } from '@fluvy/core';
 
 import { glyph, ico, icon, round, sheetStyles } from '@fluvy/ui';
@@ -35,7 +36,7 @@ import {
   trackPosition,
 } from '../shared/media.js';
 
-import { s } from './strings.js';
+const s = strings('now-playing');
 
 export interface NowPlayingCardConfig extends FluvyCardConfig {
   /** Speaker name shown after the artist. Defaults to the entity's name. */

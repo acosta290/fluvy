@@ -1,9 +1,9 @@
+import { strings } from '@fluvy/core';
 import { head } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { daysOf } from '../config.js';
 import { addDays } from '../../shared/dates.js';
 import type { DayEvent } from '../model.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
 import {
   eventAria,
@@ -19,6 +19,8 @@ import {
   titleOf,
   whenOf,
 } from './shared.js';
+
+const s = strings('calendar');
 
 const MAX_ROWS = 8;
 

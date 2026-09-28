@@ -2,6 +2,7 @@ import {
   formatNumber,
   formatTime,
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -21,7 +22,8 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import { boolField, entityField, formLabels, iconField, titleFields } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('updates');
 
 export interface UpdatesCardConfig extends FluvyCardConfig {
   title?: string;

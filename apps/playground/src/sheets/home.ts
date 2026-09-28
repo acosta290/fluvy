@@ -158,5 +158,18 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a phone's 412 holds four 84 px minis (at 360 the same group lays out three); one of them unavailable
+    {
+      title: 'Four mini tiles',
+      width: 412,
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'mini',
+          columns: 4,
+          entities: ['switch.office', 'switch.patio', 'switch.printer', 'switch.garden_led'],
+        },
+      ],
+    },
   ],
 };

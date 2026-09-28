@@ -2,6 +2,7 @@ import {
   formatTime,
   haptic,
   stateText,
+  strings,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -34,7 +35,7 @@ import {
 } from '../shared/form.js';
 import { listsEditor } from '../shared/rows-editor.js';
 
-import { s } from './strings.js';
+const s = strings('camera');
 
 export interface CameraCardConfig extends RowsCardConfig {
   /** Seconds between two stills (1–300, default 10). */

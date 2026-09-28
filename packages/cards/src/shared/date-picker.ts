@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
-import { clock12, dateFormat, dayPeriods, type HomeAssistant } from '@fluvy/core';
+import { clock12, dateFormat, dayPeriods, type HomeAssistant, type KeyOf } from '@fluvy/core';
 import { baseStyles, glyph } from '@fluvy/ui';
 import '@fluvy/ui/time-field';
 import type { TimeFieldDetail } from '@fluvy/ui/time-field';
@@ -14,7 +14,8 @@ import {
 } from './dates.js';
 import { monthGrid } from './days.js';
 import { dayRange, sameRange, shiftRange, type ActivityRange } from './range.js';
-import type { ActivityString } from '../activity/strings.js';
+
+type ActivityString = KeyOf<'activity' | 'page'>;
 
 /** A period picked: where to go, and which way that is from where the page is. */
 export interface DatesDetail {

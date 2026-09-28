@@ -2,14 +2,16 @@ import {
   clock12,
   dateFormat,
   formatDate,
-  type HomeAssistant,
   localize,
+  strings,
+  type HomeAssistant,
   type MessageKey,
 } from '@fluvy/core';
 import { isoWeek } from '@fluvy/ui';
 import { dateLocale, dateText } from '../clock/time.js';
 import { addDays, sameDay } from '../shared/dates.js';
-import { s } from './strings.js';
+
+const s = strings('calendar');
 
 /**
  * The card's wording: times, weekday and month names, date lines, counts. Everything is rendered in

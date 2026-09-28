@@ -1,10 +1,10 @@
+import { strings } from '@fluvy/core';
 import { badge, head } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { hoursOf } from '../config.js';
 import { wallHours } from '../../shared/dates.js';
 import { FACE, badgeWidth, fitText, textWidth } from '../fit.js';
 import type { DayEvent } from '../model.js';
-import { s } from '../strings.js';
 import type { ViewContext } from './context.js';
 import {
   dayList,
@@ -17,6 +17,8 @@ import {
   surface,
   titleOf,
 } from './shared.js';
+
+const s = strings('calendar');
 
 const PPH = 24; // px per hour
 const GUTTER = 64; // hour labels live in 56; blocks start at 64

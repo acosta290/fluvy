@@ -34,7 +34,7 @@ const COLUMNS: readonly string[] = ['2', '3', '4', 'auto'];
 /** The tiles' column gap (the theme's section grid gap). */
 const GAP = 16;
 /** The narrowest a grouped tile draws whole: a group too narrow for the columns asked lays out fewer, in more rows. */
-const MIN_TILE: Readonly<Record<TileSize, number>> = { large: 100, compact: 128, mini: 64 };
+const MIN_TILE: Readonly<Record<TileSize, number>> = { large: 100, compact: 128, mini: 84 };
 
 function toItem(item: unknown): TileItem | null {
   if (typeof item === 'string') return item ? { entity: item } : null;

@@ -1,3 +1,4 @@
+import { strings } from '@fluvy/core';
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import type { Group, HistoryWindow, Line, Track } from '@fluvy/core/history';
@@ -5,8 +6,9 @@ import type { Group, HistoryWindow, Line, Track } from '@fluvy/core/history';
 import { describePeriod } from '../shared/period.js';
 import { axisLabels, cardWidth, CARD_PADDING, scaleOf } from './chart.js';
 import { chartsOf, coloursOf, linesOf, shownOf, GRAPH_COLOURS, SERIES_LIMIT } from './model.js';
-import { s } from './strings.js';
 import { FluvyHistory } from './view.js';
+
+const s = strings('history', 'page');
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;

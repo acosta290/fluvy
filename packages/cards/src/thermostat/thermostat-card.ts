@@ -627,7 +627,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       class="fv-card cl-card ${unusable ? 'is-unavailable' : ''} ${this.contentWidth < 292 ? 'is-narrow' : ''}"
       data-card
     >
-      ${head({ icon: this.config?.icon ?? glyphFor(view), tone, title: name, sub: fitted.sub, trailing: fitted.badge, onIconTap: () => this.tap(view.id, { action: 'more-info' }), iconLabel: name })}
+      ${head({ icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null, tone, title: name, sub: fitted.sub, trailing: fitted.badge, onIconTap: () => this.tap(view.id, { action: 'more-info' }), iconLabel: name, name: true })}
       ${
         this.variant() !== 'dial'
           ? this.renderValueRow(view, m, name, unusable, figure, edge, now)

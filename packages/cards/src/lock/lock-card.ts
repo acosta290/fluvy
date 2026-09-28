@@ -1,6 +1,7 @@
 import {
   haptic,
   stateText,
+  strings,
   type EntityView,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
@@ -40,7 +41,7 @@ import { listsEditor } from '../shared/rows-editor.js';
 
 import { changedLine, RowsCard, type RowsCardConfig } from './rows.js';
 
-import { s } from './strings.js';
+const s = strings('lock');
 
 export type LockCardConfig = RowsCardConfig;
 

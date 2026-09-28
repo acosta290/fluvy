@@ -1,4 +1,4 @@
-import { type EntityView, formatNumber, localize, numberAttr } from '@fluvy/core';
+import { formatNumber, localize, numberAttr, strings, type EntityView } from '@fluvy/core';
 import { ico, stepper, type RulerChangeDetail } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import {
@@ -10,7 +10,8 @@ import {
   type HelperHost,
   type HelperRowConfig,
 } from './context.js';
-import { s } from './strings.js';
+
+const s = strings('helpers');
 
 /** Past this many stops a scale stops being a slider (Home Assistant's own rule for `mode: auto`). */
 const MAX_STOPS = 256;

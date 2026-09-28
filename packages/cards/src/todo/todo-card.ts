@@ -1,5 +1,6 @@
 import {
   stateText,
+  strings,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -27,7 +28,8 @@ import { textField as inputField } from '../helpers/text.js';
 import { Card } from '../shared/base.js';
 
 import { boolField, entityField, formLabels, iconField, titleFields } from '../shared/form.js';
-import { s } from './strings.js';
+
+const s = strings('todo');
 
 export interface TodoCardConfig extends FluvyCardConfig {
   title?: string;

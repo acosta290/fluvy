@@ -1,5 +1,6 @@
 import {
   stateText,
+  strings as words,
   valueParts,
   type EntityView,
   type FluvyCardConfig,
@@ -42,7 +43,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 
-import { strings } from './strings.js';
+const strings = words('stat-tiles');
 
 export interface StatTileConfig {
   entity: string;
@@ -282,7 +283,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? (lead ? glyphFor(lead) : 'grid'),
+        icon: fitted.icon ? (this.config?.icon ?? (lead ? glyphFor(lead) : 'grid')) : null,
         tone: headTone,
         title,
         sub: fitted.sub,
@@ -293,6 +294,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
               iconLabel: lead.name,
             }
           : {}),
+        name: Boolean(this.config?.title),
       })}
       ${lead && leadParts ? html`<div class="so-top fv-value-row">${readout({ label: this.config?.name ?? lead.name, value: leadParts.value, unit: leadParts.unit, size: 'l' })}</div>` : nothing}
       <div class="so-tiles" style="gap:${gap}px">

@@ -1,14 +1,15 @@
 import {
-  type EffectiveSettings,
-  type HomeAssistant,
   localize,
-  type Look,
   lookHandle,
-  type LookHandle,
-  type LookPreview,
   lookRule,
   navigate,
   onWords,
+  strings,
+  type EffectiveSettings,
+  type HomeAssistant,
+  type Look,
+  type LookHandle,
+  type LookPreview,
 } from '@fluvy/core';
 import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 
@@ -49,8 +50,6 @@ import {
   scope,
 } from './sections.js';
 
-import { s } from './strings.js';
-
 import { panelStyles } from './styles.js';
 
 import {
@@ -61,6 +60,8 @@ import {
   resetHouse,
   showInSidebar,
 } from './actions.js';
+
+const s = strings('panel');
 
 /** What Home Assistant hands a custom panel. */
 interface Route {

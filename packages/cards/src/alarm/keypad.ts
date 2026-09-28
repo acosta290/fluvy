@@ -1,4 +1,4 @@
-import { haptic, localize, type HomeAssistant } from '@fluvy/core';
+import { haptic, localize, strings, type HomeAssistant } from '@fluvy/core';
 import { baseStyles, glyph, round, sheetStyles } from '@fluvy/ui';
 import {
   LitElement,
@@ -9,7 +9,8 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { k } from './strings.js';
+
+const k = strings('keypad');
 
 export interface KeypadAction {
   readonly key: string;

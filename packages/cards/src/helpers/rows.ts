@@ -1,4 +1,4 @@
-import { isActive, stateText, valueParts, type EntityView } from '@fluvy/core';
+import { isActive, stateText, strings, valueParts, type EntityView } from '@fluvy/core';
 import { chips, icon, listRow, type ChipItem, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { currentTone, toneFor } from '../shared/domain.js';
@@ -20,7 +20,8 @@ import {
   timeText,
   type Moment,
 } from './datetime.js';
-import { s } from './strings.js';
+
+const s = strings('helpers');
 
 /** Below this content width a row's extras stop indenting to the text column. */
 const NARROW = 300;
