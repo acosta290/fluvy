@@ -832,6 +832,8 @@
     "pref.haptics_sub": "Een tik die je voelt in de app",
     "pref.activity_card": "Activiteit op een kaart",
     "pref.activity_card_sub": "De tijdlijn in een eigen vak, zoals de dashboards; uit: op de pagina",
+    "pref.translate": "Help deze vertaling verbeteren",
+    "pref.translate_sub": "Hoe Fluvy’s woorden worden bijgehouden, op GitHub",
     "about.title": "Fluvy",
     "about.version": "Versie {version}",
     "about.look": "Gebruikte look",

@@ -35,11 +35,12 @@ function compactCssLiterals(): Plugin {
 }
 
 /**
- * The date picker both pages open, with the time field inside it: fetched with whichever page opens first, never by
- * a dashboard (it is the only thing a page's chunk and the Activity chunk share, and core must not reach for it —
- * a static import from core would drag a whole page's chunk onto every dashboard).
+ * What the pages and the settings panel share and a dashboard never needs: the date picker both pages open, the
+ * time field inside it, the dropdown. Fetched with whichever of them opens first; core must not reach for any of
+ * it (a static import from core would drag the chunk onto every dashboard — `finish.mjs` refuses such a build).
  */
-const PAGES = /\/packages\/(cards\/src\/shared\/date-picker\.ts|ui\/src\/controls\/time-field\.ts)/;
+const PAGES =
+  /\/packages\/(cards\/src\/shared\/date-picker\.ts|ui\/src\/controls\/(time-field|select)\.ts)/;
 
 /** What only the Activity page uses (all of its folder but the takeover): fetched the first time `/logbook` is opened. */
 const ACTIVITY =

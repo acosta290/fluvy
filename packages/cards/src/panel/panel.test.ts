@@ -110,11 +110,22 @@ async function mount(admin = true, extra: Record<string, unknown> = {}) {
     );
   const chip = (text: string) =>
     [...root.querySelectorAll<HTMLElement>('.fv-chip')].find((c) => c.textContent?.trim() === text);
+  /** Opens the tab's dropdown and chooses the row with this name, as a finger would. */
+  const pick = async (name: string) => {
+    const select = root.querySelector('fluvy-select')!;
+    const inside = select.shadowRoot!;
+    inside.querySelector<HTMLButtonElement>('.fv-select')!.click();
+    await select.updateComplete;
+    [...inside.querySelectorAll<HTMLElement>('.fv-menu__item')]
+      .find((r) => r.querySelector('.fv-menu__name')?.textContent?.trim() === name)!
+      .click();
+    await select.updateComplete;
+  };
   const settle = async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await panel.updateComplete;
   };
-  return { ...f, panel, root, swatch, button, row, chip, settle };
+  return { ...f, panel, root, swatch, button, row, chip, pick, settle };
 }
 
 describe('the settings panel', () => {
@@ -285,16 +296,28 @@ describe('the settings panel', () => {
   });
 
   it('shows a language on the panel before it is saved, and discards it back', async () => {
-    const { panel, chip, button, written, previews, settle } = await mount();
+    const { panel, root, pick, button, written, previews, settle } = await mount();
     panel.tab = 'preferences';
     await panel.updateComplete;
-    chip('Español')!.click();
+    const shown = () =>
+      root
+        .querySelector('fluvy-select')
+        ?.shadowRoot?.querySelector('.fv-select__value')
+        ?.textContent?.trim();
+    expect(shown()).toBe('Automatic');
+    await pick('Español');
     await settle();
     expect(written).toEqual([]);
     expect(previews.at(-1)).toEqual({ language: 'es' });
-    button('Discard')!.click();
+    // the panel speaks the chosen language as soon as its words arrive (a chunk of their own)
+    expect(shown()).toBe('Español');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toMatch(
+      /^(Language|Idioma) · Español$/,
+    );
+    (button('Descartar') ?? button('Discard'))!.click();
     await settle();
     expect(previews.at(-1)).toBeNull();
+    expect(shown()).toBe('Automatic');
     panel.remove();
   });
 

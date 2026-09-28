@@ -5,6 +5,15 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The dropdown: the cards' text field as a button, opening its list in the browser's top layer — over Home
+  Assistant's sidebar and dialogs — under the field, or over it near the foot of the page, as wide as the field;
+  keys, letters and the pointer as a native select's, a hint beside each name, the chosen row marked. The
+  Preferences tab's language is the first to use it (eight chips before): *Automatic* with the language it
+  resolves to, then Fluvy's languages by their own names with the English name beside.
+- Preferences: a *Help improve this translation* row that opens the translating guide.
+
 ### Fixed
 
 - Tiles: a mini tile is never narrower than 84 px (a group asked for more columns lays out fewer), so its icon

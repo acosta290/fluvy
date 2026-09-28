@@ -1,0 +1,174 @@
+/* fluvy · menus: The dropdown (<fluvy-select>) — a field that opens a list of what it may hold. Part of fluvy.css
+ * (its @imports keep this order: menus float over every family, so they come last).
+ * .fv-select       the field (.fv-field, as a button): the chosen label at 15/500 in the ink, a chevron 20 in the
+ *                  secondary ink that turns over while the menu is open; the 2 px accent ring while focused or open
+ * .fv-menu         the list, in the top layer (a popover) or fixed under the field where there is no top layer:
+ *                  4 under the field, as wide as the field (192 at least, the viewport less 32 at most), padding 4,
+ *                  radius 16 on the card's fill with the hairline and the lift shadow; 360 tall at most, or what
+ *                  the side it opens on allows (the element measures: --fv-menu-top/left/w/h), the rest scrolls
+ *                  without a bar. Placed from above when the field is near the foot of the page.
+ * .fv-menu__item   a row 44 tall, radius 12 (concentric with the 16 at a 4 inset), its name at 15/500 and its hint
+ *                  at 13/500 in the secondary ink (the hint leaves under 280: a name reads whole, a hint never cut);
+ *                  the row under the pointer or the keys takes the page's fill, the chosen one the accent fill with
+ *                  a check; a row that cannot be chosen fades
+ * Enters in 240 ms on the spring from 6 px off its field, leaves in 160 ms; reduced motion shows and hides. */
+
+.fv-select {
+  width: 100%;
+  border: 0;
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fv-select:disabled {
+  cursor: default;
+  color: var(--fluvy-unavailable);
+}
+
+.fv-select[aria-expanded='true'] {
+  box-shadow: inset 0 0 0 2px var(--fluvy-accent);
+}
+
+.fv-select > svg {
+  color: var(--fluvy-text-secondary);
+  transition: transform 180ms var(--fv-ease, ease);
+}
+
+.fv-select[aria-expanded='true'] > svg {
+  transform: rotate(180deg);
+}
+
+/* the words are a span, not an input: their own 20 line, centred by the field */
+.fv-select__value {
+  height: auto;
+}
+
+.fv-select:disabled .fv-select__value {
+  color: var(--fluvy-unavailable);
+}
+
+.fv-menu {
+  position: fixed;
+  inset: auto;
+  top: var(--fv-menu-top, 0);
+  left: var(--fv-menu-left, 0);
+  z-index: 6;
+  box-sizing: border-box;
+  width: var(--fv-menu-w, 192px);
+  max-height: var(--fv-menu-h, 360px);
+  margin: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--fluvy-radius-lg);
+  background: var(--fluvy-card);
+  box-shadow:
+    0 0 0 1px var(--fluvy-border),
+    var(--fluvy-shadow-lift);
+  color: var(--fluvy-text);
+  overflow-y: auto;
+  scrollbar-width: none;
+  outline: none;
+  container-type: inline-size;
+  transform-origin: top left;
+  animation: fv-menu-in 240ms var(--fv-spring, var(--fv-ease-out, ease-out)) both;
+  --fv-menu-from: -6px;
+}
+
+.fv-menu::-webkit-scrollbar {
+  display: none;
+}
+
+.fv-menu[data-placement='above'] {
+  transform-origin: bottom left;
+  --fv-menu-from: 6px;
+}
+
+.fv-menu.is-leaving {
+  animation: fv-menu-out 160ms var(--fv-ease, ease-in) both;
+  pointer-events: none;
+}
+
+.fv-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.fv-menu__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fv-menu__hint {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* a hint beside the longest name needs 280 of menu: narrower, the name alone */
+@container (max-width: 279px) {
+  .fv-menu__hint {
+    display: none;
+  }
+}
+
+.fv-menu__item > svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.fv-menu__item.is-active {
+  background: var(--fluvy-page);
+}
+
+.fv-menu__item[aria-selected='true'] {
+  background: var(--fluvy-accent-fill);
+  box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+  color: var(--fluvy-accent-on-fill);
+}
+
+.fv-menu__item[aria-selected='true'] .fv-menu__hint {
+  color: inherit;
+}
+
+.fv-menu__item[aria-disabled='true'] {
+  color: var(--fluvy-unavailable);
+  pointer-events: none;
+}
+
+@keyframes fv-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(var(--fv-menu-from, -6px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fv-menu-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+[data-motion='reduced'] .fv-menu {
+  animation: none;
+}

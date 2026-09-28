@@ -36,6 +36,7 @@ import { NOW, SHEETS } from './scenes.js';
  * ?compare=linen,volt    the sheet once per palette, side by side (each column scoped to its palette)
  * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | preferences | about)
  * &state=pending,guest     …at a moment of its own (see `PanelState` in panel.ts)
+ * &nopopover=1             …in a browser without the Popover API (the dropdown's fixed fallback)
  * ?history=1             Fluvy's History page on a made-up house (&moment=week|month|states|many|empty|loading|sources|dates)
  * ?activity=1            Fluvy's Activity page on a made-up house (&live=0 without live entries,
  *                        &at=2026-09-17T21:47 the clock set to that moment, still running,
@@ -48,6 +49,12 @@ const width = Number(params.get('width') ?? 360);
 const only = params.get('sheet');
 const language = params.get('lang') ?? 'en';
 
+// a WebView without the top layer: the dropdown must place its menu itself
+if (params.get('nopopover') === '1')
+  Object.defineProperty(HTMLElement.prototype, 'showPopover', {
+    value: undefined,
+    configurable: true,
+  });
 document.documentElement.dataset['mode'] = dark ? 'dark' : 'light';
 document.documentElement.lang = language;
 // the language's words before anything is drawn: a screenshot never catches the English fallback

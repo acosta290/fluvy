@@ -1,12 +1,16 @@
 import {
   type CardLanguage,
   HOUSE_DEFAULTS,
+  LANGUAGES,
   offeredLanguages,
   parsePalette,
+  resolveLanguage,
   type Scope,
   wearsLook,
 } from '@fluvy/core';
 import { chips, emptyState, head, icon, listRow, options } from '@fluvy/ui';
+import '@fluvy/ui/select';
+import type { SelectChangeDetail, SelectOption } from '@fluvy/ui/select';
 import {
   CUSTOM_BASES,
   PILL_NAMES,
@@ -31,6 +35,7 @@ import {
   swatchColors,
   type PanelContext,
   type StringKey,
+  TRANSLATING_URL,
 } from './model.js';
 
 /** A short choice (a variant, a language): one full row of chips, the chosen one on the accent fill. */
@@ -699,17 +704,13 @@ export function preferences(ctx: PanelContext): TemplateResult {
   return html`<section class="fv-card pn-card">
     ${head({ icon: 'person', title: ctx.t('pref.title'), sub: ctx.t('pref.sub') })}
     <p class="fv-label pn-label">${ctx.t('pref.language')}</p>
-    ${choice(
-      [
-        { key: 'auto', label: ctx.t('pref.auto'), active: shown.language === 'auto' },
-        ...offeredLanguages().map((language) => ({
-          key: language.code,
-          label: language.name,
-          active: shown.language === language.code,
-        })),
-      ],
-      (key) => ctx.editPersonal({ language: key as CardLanguage }),
-    )}
+    <fluvy-select
+      .label=${ctx.t('pref.language')}
+      .value=${shown.language}
+      .options=${languageOptions(ctx)}
+      @fluvy-change=${(event: CustomEvent<SelectChangeDetail>) =>
+        ctx.editPersonal({ language: event.detail.value as CardLanguage })}
+    ></fluvy-select>
     <div class="pn-rows">
       ${listRow({
         icon: 'motion',
@@ -735,8 +736,27 @@ export function preferences(ctx: PanelContext): TemplateResult {
         on: shown.activityCard,
         onToggle: (on) => ctx.editPersonal({ activityCard: on }),
       })}
+      ${listRow({
+        icon: 'globe',
+        title: ctx.t('pref.translate'),
+        sub: ctx.t('pref.translate_sub'),
+        onTap: () => window.open(TRANSLATING_URL, '_blank', 'noopener'),
+      })}
     </div>
   </section>`;
+}
+
+/** Automatic (with the language it resolves to now), then Fluvy's languages by their own names, English beside. */
+function languageOptions(ctx: PanelContext): SelectOption[] {
+  const resolved = LANGUAGES[resolveLanguage(ctx.hass.language)];
+  return [
+    { value: 'auto', label: ctx.t('pref.auto'), hint: resolved.name },
+    ...offeredLanguages().map((language) => ({
+      value: language.code,
+      label: language.name,
+      ...(language.english !== language.name ? { hint: language.english } : {}),
+    })),
+  ];
 }
 
 /* ---------- about ---------- */

@@ -8,7 +8,7 @@ palette) and Preferences.
 | **Appearance** | palette (fifteen presets or a custom accent), shape (soft, round, crisp), button style; a live preview on real cards | the house; a person may keep their own palette and shape |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
 | **Dashboard** | create or recreate the automatic dashboard; its options | the house |
-| **Preferences** | language of the cards, motion, haptics | each person |
+| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, haptics, a link to improving a translation | each person |
 | **About** | version, the shell's health, export and import of the settings | — |
 
 ## House and person

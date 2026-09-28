@@ -25,7 +25,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./time-rail": "./src/controls/time-rail.ts",
-    "./time-field": "./src/controls/time-field.ts"
+    "./time-field": "./src/controls/time-field.ts",
+    "./select": "./src/controls/select.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

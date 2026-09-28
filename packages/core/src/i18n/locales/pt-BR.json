@@ -832,6 +832,8 @@
     "pref.haptics_sub": "Um toque que você sente no app",
     "pref.activity_card": "Atividade em um cartão",
     "pref.activity_card_sub": "A linha do tempo na sua própria caixa, como os painéis; desligado, na página",
+    "pref.translate": "Ajude a melhorar esta tradução",
+    "pref.translate_sub": "Como as palavras do Fluvy são cuidadas, no GitHub",
     "about.title": "Fluvy",
     "about.version": "Versão {version}",
     "about.look": "Visual em uso",

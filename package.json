@@ -30,7 +30,7 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r --if-present typecheck",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @fluvy/i18n check && node tools/release/check.mjs",
-    "visual": "node tools/render/interactions.mjs",
+    "visual": "node tools/render/visual.mjs",
     "clips": "node tools/render/clip.mjs",
     "i18n": "pnpm --filter @fluvy/i18n check",
     "render": "pnpm --filter @fluvy/render render",

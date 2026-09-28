@@ -20,6 +20,9 @@ import {
   type PaletteName,
 } from '@fluvy/tokens/runtime';
 
+/** Where a person who speaks a language better than we do can help. */
+export const TRANSLATING_URL = 'https://github.com/acosta290/fluvy/blob/main/docs/translating.md';
+
 export type Tab = 'appearance' | 'scope' | 'dashboard' | 'preferences' | 'about';
 export const TABS: readonly Tab[] = ['appearance', 'scope', 'dashboard', 'preferences', 'about'];
 

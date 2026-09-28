@@ -106,10 +106,12 @@ function audit(opts) {
     return parts.join(' > ');
   };
 
+  /** The card an element sits on; a floating surface (a menu fixed over the page) is the card of what it holds. */
   const cardOf = (el, frame) => {
     for (let node = up(el); node && node !== frame; node = up(node)) {
       if (node.hasAttribute('data-card')) return node;
       if (/card/i.test(typeof node.className === 'string' ? node.className : '')) return node;
+      if (globalThis.getComputedStyle(node).position === 'fixed') return node;
     }
     return null;
   };
@@ -515,12 +517,14 @@ function audit(opts) {
       }
 
       // containment: a painted, in-flow box must stay inside the padding box of its nearest padded ancestor
-      // (optical negative margins and absolutely positioned pieces — bubbles, knobs, labels — are exempt)
+      // (optical negative margins and absolutely positioned pieces — bubbles, knobs, labels — are exempt, and so
+      // is a surface fixed over the page: a menu is placed against the viewport, and holds its own rows)
       if (
         sized &&
         paints(el, cs) &&
         !isValue &&
         cs.position !== 'absolute' &&
+        cs.position !== 'fixed' &&
         parseFloat(cs.marginLeft) >= 0 &&
         parseFloat(cs.marginRight) >= 0
       ) {

@@ -247,6 +247,10 @@ export const panelStyles = css`
   .pn-card .fv-chips {
     margin-top: -4px;
   }
+  /* a dropdown under its label, the same 8 */
+  .pn-label + fluvy-select {
+    margin-top: -4px;
+  }
   .pn-card .fv-chips--fill {
     column-gap: 8px;
   }

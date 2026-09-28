@@ -832,6 +832,8 @@
     "pref.haptics_sub": "Un tocco che senti nell’app",
     "pref.activity_card": "Attività in una scheda",
     "pref.activity_card_sub": "La linea del tempo in un riquadro proprio, come le dashboard; spento, nella pagina",
+    "pref.translate": "Aiuta a migliorare questa traduzione",
+    "pref.translate_sub": "Come si curano le parole di Fluvy, su GitHub",
     "about.title": "Fluvy",
     "about.version": "Versione {version}",
     "about.look": "Look in uso",

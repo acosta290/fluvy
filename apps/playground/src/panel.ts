@@ -9,7 +9,7 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * dashboard (`missing`), Reset armed (`armed`), the notice after a save (`saved`), a person wearing their own
  * look (`own`), the look on the whole of Home Assistant (`everywhere`, with the frame), a look tried on the whole
  * app with nothing changed (`trial`), a profile that chose the Fluvy theme (`themed`), edits on the other tabs
- * waiting to be saved (`edits`). Several join with commas.
+ * waiting to be saved (`edits`), the language menu open (`menu`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -22,7 +22,8 @@ export type PanelState =
   | 'everywhere'
   | 'trial'
   | 'themed'
-  | 'edits';
+  | 'edits'
+  | 'menu';
 
 /**
  * The settings panel outside Home Assistant: `?panel=appearance` (or scope, dashboard, preferences, about).
@@ -95,6 +96,11 @@ export function mountPanel(
       panel.personalEdit = { haptics: false };
     }
     if (has('saved')) panel.notice = hass.language === 'es' ? 'Guardado' : 'Saved';
+    if (has('menu'))
+      void panel.updateComplete.then(() => {
+        const select = panel.shadowRoot?.querySelector('fluvy-select');
+        if (select) select.open = true;
+      });
   }, 50);
   return { panel, look };
 }
