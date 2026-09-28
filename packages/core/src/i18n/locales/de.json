@@ -418,7 +418,20 @@
     "show_weather": "Wetter zeigen",
     "show_date": "Datum zeigen",
     "show_avatar": "Avatar zeigen",
-    "action": "Aktion"
+    "action": "Aktion",
+    "zones": "Zonen",
+    "map_shape": "Kartenform",
+    "default_zoom": "Zoom",
+    "fit_zones": "An die Zonen anpassen",
+    "show_empty": "Leere Zonen zeigen",
+    "show_distance": "Entfernung von zu Hause zeigen",
+    "map_path": "Kartenpfad",
+    "area": "Bereich",
+    "controls": "Bedienelemente",
+    "show_climate": "Klima zeigen",
+    "picture": "Bild",
+    "temperature_entity": "Temperatur",
+    "humidity_entity": "Luftfeuchtigkeit"
   },
   "strategy": {
     "home": "Zuhause",
@@ -442,7 +455,9 @@
     "agenda": "Agenda",
     "covers": "Rollos",
     "today": "Heute",
-    "actions": "Aktionen"
+    "actions": "Aktionen",
+    "rooms": "Räume",
+    "all_rooms": "Alle Räume"
   },
   "page": {
     "menu": "Menü öffnen",
@@ -883,7 +898,11 @@
     "change.off": "Aus",
     "change.dashboards": "Nur auf Dashboards",
     "change.everywhere": "In ganz Home Assistant",
-    "saved": "Gespeichert"
+    "saved": "Gespeichert",
+    "dashboard.rooms": "Räume",
+    "dashboard.photo": "Foto",
+    "dashboard.tile": "Kachel",
+    "dashboard.row": "Zeile"
   },
   "people": {
     "title": "Wer ist zuhause",
@@ -891,6 +910,23 @@
     "updated": "aktualisiert {when}",
     "map": "Karte öffnen",
     "editor.map_path": "Pfad der Karte"
+  },
+  "map": {
+    "title": "Wo alle sind",
+    "unknown": "Unbekannt",
+    "more": "+{count}",
+    "km": "{distance} km",
+    "mi": "{distance} mi"
+  },
+  "room": {
+    "no_area": "Bereich nicht gefunden",
+    "nothing": "Noch nichts in diesem Raum",
+    "devices_on": "Eingeschaltet",
+    "of": "von {count}",
+    "all_devices": "Alle Geräte",
+    "unavailable": "{count} nicht verfügbar",
+    "temperature": "Temperatur",
+    "humidity": "Luftfeuchtigkeit"
   },
   "production": {
     "production": "Erzeugung",
@@ -1010,7 +1046,12 @@
     "friday": "Freitag",
     "saturday": "Samstag",
     "date": "Das Datum",
-    "next": "Der nächste Termin"
+    "next": "Der nächste Termin",
+    "map": "Karte",
+    "zones": "Zonen",
+    "wide": "Breit",
+    "square": "Quadratisch",
+    "photo": "Foto"
   },
   "tone": {
     "accent": "Akzent",

@@ -1,0 +1,135 @@
+/*
+ * Rooms and the map (ambient family): a room's card wears the ambient area card's anatomy (a hero with the room's
+ * name pill, its readouts, its rows); the map card lays its zones out as columns of faces.
+ */
+
+/* the room's photo on the hero: the plate under the pill */
+.rm-hero {
+  position: relative;
+  height: 160px;
+  margin: 0 -20px;
+  overflow: hidden;
+  background: linear-gradient(
+    160deg in srgb,
+    var(--fluvy-accent-90),
+    var(--fluvy-accent-70) 60%,
+    var(--fluvy-accent-60)
+  );
+}
+
+.rm-hero .fv-plate__img {
+  border-radius: 0;
+}
+
+/* a scrim so the pill reads on any photo: from the foot, the accent's ink over a dark wash, never over the whole picture */
+.rm-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 55%);
+}
+
+.rm-hero .am-area__badge {
+  z-index: 2;
+  padding: 0 16px 0 12px;
+}
+
+/* the hero as a button: the whole picture opens the room */
+.rm-hero--tap {
+  cursor: pointer;
+}
+
+/* the tile variant: a compact tile's anatomy with the room's icon and its count */
+.rm-tile .fv-tile__state {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* the room's controls: compact tiles two a row, 8 apart, under the rows */
+.rm-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ---------- the map ---------- */
+
+.mp-zones {
+  display: grid;
+  grid-template-columns: repeat(var(--mp-zones, 3), minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.mp-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mp-zone__label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+/* the faces, overlapped by 12: four at most, then a count */
+.mp-stack {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  margin-top: 12px;
+}
+
+.mp-stack.is-empty {
+  opacity: 0;
+}
+
+.mp-face {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.mp-face + .mp-face {
+  margin-left: -12px;
+}
+
+.mp-face .am-avatar {
+  box-shadow: 0 0 0 2px var(--fluvy-card);
+}
+
+.mp-more {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+.mp-zone__count {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* who is where, under the map */
+.mp-who {
+  flex-wrap: wrap;
+  height: auto;
+  margin-top: 16px;
+}

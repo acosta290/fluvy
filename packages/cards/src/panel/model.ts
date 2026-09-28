@@ -219,6 +219,7 @@ const OPTION_VALUES: Readonly<Record<string, readonly string[]>> = {
   thermostat_variant: ['dial', 'compact', 'ruler'],
   tile_size: ['large', 'compact'],
   flow_style: ['ribbons', 'rail', 'legs'],
+  room_variant: ['photo', 'tile', 'row'],
 };
 
 /**
@@ -275,6 +276,7 @@ const STRATEGY_LABELS: Readonly<Record<string, StringKey>> = {
   thermostat_variant: 'dashboard.thermostat',
   tile_size: 'dashboard.tiles',
   flow_style: 'dashboard.flow',
+  room_variant: 'dashboard.rooms',
 };
 
 /** Every pending change as a line of the apply bar, in the order of the tabs. */

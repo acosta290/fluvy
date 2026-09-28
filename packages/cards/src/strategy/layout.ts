@@ -80,11 +80,14 @@ export const helloCard = (weather: string | undefined, person: string | undefine
 });
 export const tabsCard = (base: string, views: readonly View[]): Card => ({
   type: 'custom:fluvy-chips-card',
-  chips: views.map((view) => ({
-    label: view.title,
-    icon: view.icon,
-    path: `${base}/${view.path}`,
-  })),
+  // a subview (a room) is reached from its rooms, never from the tabs
+  chips: views
+    .filter((view) => !view.subview)
+    .map((view) => ({
+      label: view.title,
+      icon: view.icon,
+      path: `${base}/${view.path}`,
+    })),
 });
 
 /** The greeting and the tabs above the first column (60 + 16 + 44 + 16). */

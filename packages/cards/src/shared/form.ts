@@ -111,6 +111,12 @@ export const entityField = (
 
 export const textField = (name: string): HaFormSchemaItem => ({ name, selector: { text: {} } });
 export const iconField = (name = 'icon'): HaFormSchemaItem => ({ name, selector: { icon: {} } });
+/** An area of the house, from Home Assistant's own picker. */
+export const areaField = (name = 'area'): HaFormSchemaItem => ({
+  name,
+  required: true,
+  selector: { area: {} },
+});
 export const boolField = (name: string): HaFormSchemaItem => ({ name, selector: { boolean: {} } });
 export const numberField = (
   name: string,

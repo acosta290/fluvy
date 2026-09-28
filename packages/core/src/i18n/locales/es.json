@@ -418,7 +418,20 @@
     "show_weather": "Mostrar el tiempo",
     "show_date": "Mostrar la fecha",
     "show_avatar": "Mostrar el avatar",
-    "action": "Acción"
+    "action": "Acción",
+    "zones": "Zonas",
+    "map_shape": "Forma del mapa",
+    "default_zoom": "Zoom",
+    "fit_zones": "Ajustar a las zonas",
+    "show_empty": "Mostrar las zonas vacías",
+    "show_distance": "Mostrar la distancia a casa",
+    "map_path": "Ruta del mapa",
+    "area": "Área",
+    "controls": "Controles",
+    "show_climate": "Mostrar el clima",
+    "picture": "Imagen",
+    "temperature_entity": "Temperatura",
+    "humidity_entity": "Humedad"
   },
   "strategy": {
     "home": "Inicio",
@@ -442,7 +455,9 @@
     "agenda": "Agenda",
     "covers": "Persianas",
     "today": "Hoy",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "rooms": "Habitaciones",
+    "all_rooms": "Todas las habitaciones"
   },
   "page": {
     "menu": "Abrir el menú",
@@ -883,7 +898,11 @@
     "change.off": "No",
     "change.dashboards": "Solo en los paneles",
     "change.everywhere": "En todo Home Assistant",
-    "saved": "Guardado"
+    "saved": "Guardado",
+    "dashboard.rooms": "Habitaciones",
+    "dashboard.photo": "Foto",
+    "dashboard.tile": "Tarjeta",
+    "dashboard.row": "Fila"
   },
   "people": {
     "title": "En casa",
@@ -891,6 +910,23 @@
     "updated": "actualizado {when}",
     "map": "Abrir el mapa",
     "editor.map_path": "Ruta del mapa"
+  },
+  "map": {
+    "title": "Dónde está cada uno",
+    "unknown": "Desconocido",
+    "more": "+{count}",
+    "km": "{distance} km",
+    "mi": "{distance} mi"
+  },
+  "room": {
+    "no_area": "Área no encontrada",
+    "nothing": "Nada en esta habitación todavía",
+    "devices_on": "Encendidos",
+    "of": "de {count}",
+    "all_devices": "Todos los dispositivos",
+    "unavailable": "{count} no disponibles",
+    "temperature": "Temperatura",
+    "humidity": "Humedad"
   },
   "production": {
     "production": "Producción",
@@ -1010,7 +1046,12 @@
     "friday": "Viernes",
     "saturday": "Sábado",
     "date": "La fecha",
-    "next": "El próximo evento"
+    "next": "El próximo evento",
+    "map": "Mapa",
+    "zones": "Zonas",
+    "wide": "Ancho",
+    "square": "Cuadrado",
+    "photo": "Foto"
   },
   "tone": {
     "accent": "Acento",

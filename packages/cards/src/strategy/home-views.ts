@@ -13,7 +13,14 @@ import {
   tileRows,
   when,
 } from './layout.js';
-import type { EnergyPrefs, EnergyRoles, Section, StrategyContext, ViewSpec } from './types.js';
+import type {
+  Card,
+  EnergyPrefs,
+  EnergyRoles,
+  Section,
+  StrategyContext,
+  ViewSpec,
+} from './types.js';
 import {
   BATTERY_POWER,
   GRID,
@@ -24,6 +31,7 @@ import {
   TODAY,
   type HomeRegistry,
 } from './home-registry.js';
+import { roomsOf, roomsView } from './rooms.js';
 
 /*
  * The five views of the automatic dashboard, in the layout of the approved `/fluvy-home`: each one is
@@ -313,6 +321,7 @@ function agendaView({ home, t }: StrategyContext): Section[] {
 }
 
 function sensorsView({ home, t }: StrategyContext): Section[] {
+  const zones = home.zones.filter((id) => id !== 'zone.home');
   const { batteries, phones, openings, plants, helpers, people, updates } = home;
   // what runs on batteries, who is home, what is open, then the helpers and the updates
   return flowed([
@@ -330,6 +339,16 @@ function sensorsView({ home, t }: StrategyContext): Section[] {
     ]),
     when(people.length, () => [
       full('people', { title: t('strategy.people'), entities: [...people] }),
+      ...(zones.length && home.people.length
+        ? [
+            {
+              type: 'custom:fluvy-map-card',
+              entities: [...home.people],
+              variant: 'zones',
+              grid_options: { columns: 12 },
+            } as Card,
+          ]
+        : []),
     ]),
     // with a security view the openings live there
     when(!secured(home) && openings.length, () => [
@@ -351,6 +370,14 @@ function sensorsView({ home, t }: StrategyContext): Section[] {
 /** The views in tab order. Home is always there; the others only when the house has what they show. */
 export const VIEWS: readonly ViewSpec[] = [
   { key: 'home', icon: 'fluvy:home', title: 'strategy.home', build: homeView, when: () => true },
+  {
+    key: 'rooms',
+    icon: 'fluvy:door',
+    title: 'strategy.rooms',
+    build: roomsView,
+    // one room is the home view; the rooms need two to be a view
+    when: ({ home }) => roomsOf(home).length >= 2,
+  },
   {
     key: 'lights',
     icon: 'fluvy:bulb',

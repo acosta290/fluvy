@@ -22,6 +22,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "path": "/fluvy-home/home",
                 },
                 {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
                   "icon": "fluvy:bulb",
                   "label": "Lights",
                   "path": "/fluvy-home/lights",
@@ -195,6 +200,98 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
       "type": "sections",
     },
     {
+      "icon": "fluvy:door",
+      "max_columns": 3,
+      "path": "rooms",
+      "sections": [
+        {
+          "cards": [
+            {
+              "type": "custom:fluvy-hello-card",
+              "weather": "weather.home",
+            },
+            {
+              "chips": [
+                {
+                  "icon": "fluvy:home",
+                  "label": "Home",
+                  "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
+                  "icon": "fluvy:bulb",
+                  "label": "Lights",
+                  "path": "/fluvy-home/lights",
+                },
+                {
+                  "icon": "fluvy:thermo",
+                  "label": "Climate",
+                  "path": "/fluvy-home/climate",
+                },
+                {
+                  "icon": "fluvy:bolt",
+                  "label": "Energy",
+                  "path": "/fluvy-home/energy",
+                },
+                {
+                  "icon": "fluvy:speaker",
+                  "label": "Media",
+                  "path": "/fluvy-home/media",
+                },
+                {
+                  "icon": "fluvy:signal",
+                  "label": "Sensors",
+                  "path": "/fluvy-home/sensors",
+                },
+              ],
+              "type": "custom:fluvy-chips-card",
+            },
+            {
+              "area": "kitchen",
+              "grid_options": {
+                "columns": 12,
+              },
+              "path": "/fluvy-home/room-kitchen",
+              "type": "custom:fluvy-room-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
+            {
+              "area": "living_room",
+              "grid_options": {
+                "columns": 12,
+              },
+              "path": "/fluvy-home/room-living_room",
+              "type": "custom:fluvy-room-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
+            {
+              "area": "garden",
+              "grid_options": {
+                "columns": 12,
+              },
+              "path": "/fluvy-home/room-garden",
+              "type": "custom:fluvy-room-card",
+            },
+          ],
+          "type": "grid",
+        },
+      ],
+      "title": "Rooms",
+      "type": "sections",
+    },
+    {
       "icon": "fluvy:bulb",
       "max_columns": 3,
       "path": "lights",
@@ -211,6 +308,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "icon": "fluvy:home",
                   "label": "Home",
                   "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
                 },
                 {
                   "icon": "fluvy:bulb",
@@ -324,6 +426,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "path": "/fluvy-home/home",
                 },
                 {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
                   "icon": "fluvy:bulb",
                   "label": "Lights",
                   "path": "/fluvy-home/lights",
@@ -416,6 +523,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "icon": "fluvy:home",
                   "label": "Home",
                   "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
                 },
                 {
                   "icon": "fluvy:bulb",
@@ -551,6 +663,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "path": "/fluvy-home/home",
                 },
                 {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
                   "icon": "fluvy:bulb",
                   "label": "Lights",
                   "path": "/fluvy-home/lights",
@@ -617,6 +734,11 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                   "icon": "fluvy:home",
                   "label": "Home",
                   "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
                 },
                 {
                   "icon": "fluvy:bulb",
@@ -727,6 +849,277 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
         },
       ],
       "title": "Sensors",
+      "type": "sections",
+    },
+    {
+      "back_path": "/fluvy-home/rooms",
+      "icon": "mdi:silverware-fork-knife",
+      "max_columns": 3,
+      "path": "room-kitchen",
+      "sections": [
+        {
+          "cards": [
+            {
+              "type": "custom:fluvy-hello-card",
+              "weather": "weather.home",
+            },
+            {
+              "chips": [
+                {
+                  "icon": "fluvy:home",
+                  "label": "Home",
+                  "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
+                  "icon": "fluvy:bulb",
+                  "label": "Lights",
+                  "path": "/fluvy-home/lights",
+                },
+                {
+                  "icon": "fluvy:thermo",
+                  "label": "Climate",
+                  "path": "/fluvy-home/climate",
+                },
+                {
+                  "icon": "fluvy:bolt",
+                  "label": "Energy",
+                  "path": "/fluvy-home/energy",
+                },
+                {
+                  "icon": "fluvy:speaker",
+                  "label": "Media",
+                  "path": "/fluvy-home/media",
+                },
+                {
+                  "icon": "fluvy:signal",
+                  "label": "Sensors",
+                  "path": "/fluvy-home/sensors",
+                },
+              ],
+              "type": "custom:fluvy-chips-card",
+            },
+            {
+              "icon": "fluvy:home",
+              "path": "/fluvy-home/rooms",
+              "title": "All rooms",
+              "type": "custom:fluvy-heading-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
+            {
+              "entities": [
+                "switch.kitchen_light",
+              ],
+              "icon": "fluvy:bulb",
+              "title": "Lights",
+              "type": "custom:fluvy-heading-card",
+            },
+            {
+              "entity": "switch.kitchen_light",
+              "grid_options": {
+                "columns": 12,
+              },
+              "size": "compact",
+              "type": "custom:fluvy-tile-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [],
+          "type": "grid",
+        },
+      ],
+      "subview": true,
+      "title": "Kitchen",
+      "type": "sections",
+    },
+    {
+      "back_path": "/fluvy-home/rooms",
+      "icon": "mdi:sofa",
+      "max_columns": 3,
+      "path": "room-living_room",
+      "sections": [
+        {
+          "cards": [
+            {
+              "type": "custom:fluvy-hello-card",
+              "weather": "weather.home",
+            },
+            {
+              "chips": [
+                {
+                  "icon": "fluvy:home",
+                  "label": "Home",
+                  "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
+                  "icon": "fluvy:bulb",
+                  "label": "Lights",
+                  "path": "/fluvy-home/lights",
+                },
+                {
+                  "icon": "fluvy:thermo",
+                  "label": "Climate",
+                  "path": "/fluvy-home/climate",
+                },
+                {
+                  "icon": "fluvy:bolt",
+                  "label": "Energy",
+                  "path": "/fluvy-home/energy",
+                },
+                {
+                  "icon": "fluvy:speaker",
+                  "label": "Media",
+                  "path": "/fluvy-home/media",
+                },
+                {
+                  "icon": "fluvy:signal",
+                  "label": "Sensors",
+                  "path": "/fluvy-home/sensors",
+                },
+              ],
+              "type": "custom:fluvy-chips-card",
+            },
+            {
+              "icon": "fluvy:home",
+              "path": "/fluvy-home/rooms",
+              "title": "All rooms",
+              "type": "custom:fluvy-heading-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
+            {
+              "entities": [
+                "light.living_room_lamp",
+              ],
+              "icon": "fluvy:bulb",
+              "title": "Lights",
+              "type": "custom:fluvy-heading-card",
+            },
+            {
+              "entity": "light.living_room_lamp",
+              "grid_options": {
+                "columns": 12,
+              },
+              "name": "Living room lamp",
+              "size": "compact",
+              "type": "custom:fluvy-tile-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [],
+          "type": "grid",
+        },
+      ],
+      "subview": true,
+      "title": "Living room",
+      "type": "sections",
+    },
+    {
+      "back_path": "/fluvy-home/rooms",
+      "icon": "fluvy:home",
+      "max_columns": 3,
+      "path": "room-garden",
+      "sections": [
+        {
+          "cards": [
+            {
+              "type": "custom:fluvy-hello-card",
+              "weather": "weather.home",
+            },
+            {
+              "chips": [
+                {
+                  "icon": "fluvy:home",
+                  "label": "Home",
+                  "path": "/fluvy-home/home",
+                },
+                {
+                  "icon": "fluvy:door",
+                  "label": "Rooms",
+                  "path": "/fluvy-home/rooms",
+                },
+                {
+                  "icon": "fluvy:bulb",
+                  "label": "Lights",
+                  "path": "/fluvy-home/lights",
+                },
+                {
+                  "icon": "fluvy:thermo",
+                  "label": "Climate",
+                  "path": "/fluvy-home/climate",
+                },
+                {
+                  "icon": "fluvy:bolt",
+                  "label": "Energy",
+                  "path": "/fluvy-home/energy",
+                },
+                {
+                  "icon": "fluvy:speaker",
+                  "label": "Media",
+                  "path": "/fluvy-home/media",
+                },
+                {
+                  "icon": "fluvy:signal",
+                  "label": "Sensors",
+                  "path": "/fluvy-home/sensors",
+                },
+              ],
+              "type": "custom:fluvy-chips-card",
+            },
+            {
+              "icon": "fluvy:home",
+              "path": "/fluvy-home/rooms",
+              "title": "All rooms",
+              "type": "custom:fluvy-heading-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
+            {
+              "rows": [
+                {
+                  "entity": "sensor.garden_temperature",
+                  "name": "Garden",
+                },
+                {
+                  "entity": "sensor.garden_humidity",
+                  "name": "Garden",
+                },
+              ],
+              "type": "custom:fluvy-readouts-card",
+            },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [],
+          "type": "grid",
+        },
+      ],
+      "subview": true,
+      "title": "Garden",
       "type": "sections",
     },
   ],

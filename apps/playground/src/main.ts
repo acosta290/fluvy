@@ -18,7 +18,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
-import { createHass, type StateSeed } from './hass.js';
+import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
@@ -111,10 +111,20 @@ const selected =
 const states = new Map<string, StateSeed>();
 for (const [, sheet] of selected) for (const seed of sheet.states) states.set(seed[0], seed);
 
+const registry = selected.reduce<NonNullable<MockOptions['registry']>>(
+  (all, [, sheet]) => ({
+    entities: { ...all.entities, ...sheet.registry?.entities },
+    devices: { ...all.devices, ...sheet.registry?.devices },
+    areas: { ...all.areas, ...sheet.registry?.areas },
+    floors: { ...all.floors, ...sheet.registry?.floors },
+  }),
+  { entities: {}, devices: {}, areas: {}, floors: {} },
+);
 const mock = createHass([...states.values()], {
   dark,
   language,
   now: NOW,
+  registry,
   history: Object.assign({}, ...selected.map(([, s]) => s.history ?? {})) as Record<
     string,
     readonly number[]

@@ -66,6 +66,11 @@ export class HomeRegistry {
   /** Answers already computed: the registries do not change while a dashboard is generated. */
   private readonly cache = new Map<string, unknown>();
 
+  /** The registries as core's readers take them (`areaEntities`, `areaClimate`). */
+  get registries(): Registry {
+    return this.hass;
+  }
+
   constructor(private readonly hass: Registry) {
     for (const id of Object.keys(hass.states).sort()) {
       const domain = id.slice(0, id.indexOf('.'));

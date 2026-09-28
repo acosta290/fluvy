@@ -39,6 +39,8 @@ import { FluvyTodoCard } from './todo/todo-card.js';
 import { FluvyUpdatesCard } from './updates/updates-card.js';
 import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
+import { FluvyRoomCard } from './room/room-card.js';
+import { FluvyMapCard } from './map/map-card.js';
 import { FluvyRowsEditor } from './shared/rows-editor.js';
 import { defineHomeStrategy } from './strategy/define.js';
 
@@ -256,6 +258,18 @@ const CATALOGUE: ReadonlyArray<
     FluvyDistributionCard,
     'Fluvy · Distribution',
     'One stacked bar and a legend: who draws what.',
+  ],
+  [
+    'fluvy-room-card',
+    FluvyRoomCard,
+    'Fluvy · Room',
+    'A room of the house from its area: its picture, its climate, what is on, and its controls.',
+  ],
+  [
+    'fluvy-map-card',
+    FluvyMapCard,
+    'Fluvy · Map',
+    'Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate.',
   ],
   [
     'fluvy-humidity-card',

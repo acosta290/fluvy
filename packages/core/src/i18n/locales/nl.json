@@ -418,7 +418,20 @@
     "show_weather": "Weer tonen",
     "show_date": "Datum tonen",
     "show_avatar": "Avatar tonen",
-    "action": "Actie"
+    "action": "Actie",
+    "zones": "Zones",
+    "map_shape": "Kaartvorm",
+    "default_zoom": "Zoom",
+    "fit_zones": "Op de zones passen",
+    "show_empty": "Lege zones tonen",
+    "show_distance": "Afstand tot thuis tonen",
+    "map_path": "Kaartpad",
+    "area": "Ruimte",
+    "controls": "Bediening",
+    "show_climate": "Klimaat tonen",
+    "picture": "Afbeelding",
+    "temperature_entity": "Temperatuur",
+    "humidity_entity": "Luchtvochtigheid"
   },
   "strategy": {
     "home": "Thuis",
@@ -442,7 +455,9 @@
     "agenda": "Agenda",
     "covers": "Rolluiken",
     "today": "Vandaag",
-    "actions": "Acties"
+    "actions": "Acties",
+    "rooms": "Kamers",
+    "all_rooms": "Alle kamers"
   },
   "page": {
     "menu": "Menu openen",
@@ -883,7 +898,11 @@
     "change.off": "Uit",
     "change.dashboards": "Alleen op dashboards",
     "change.everywhere": "In heel Home Assistant",
-    "saved": "Opgeslagen"
+    "saved": "Opgeslagen",
+    "dashboard.rooms": "Kamers",
+    "dashboard.photo": "Foto",
+    "dashboard.tile": "Tegel",
+    "dashboard.row": "Rij"
   },
   "people": {
     "title": "Wie is thuis",
@@ -891,6 +910,23 @@
     "updated": "bijgewerkt {when}",
     "map": "Kaart openen",
     "editor.map_path": "Pad van de kaart"
+  },
+  "map": {
+    "title": "Waar iedereen is",
+    "unknown": "Onbekend",
+    "more": "+{count}",
+    "km": "{distance} km",
+    "mi": "{distance} mi"
+  },
+  "room": {
+    "no_area": "Ruimte niet gevonden",
+    "nothing": "Nog niets in deze kamer",
+    "devices_on": "Aan",
+    "of": "van {count}",
+    "all_devices": "Alle apparaten",
+    "unavailable": "{count} niet beschikbaar",
+    "temperature": "Temperatuur",
+    "humidity": "Luchtvochtigheid"
   },
   "production": {
     "production": "Opwek",
@@ -1010,7 +1046,12 @@
     "friday": "Vrijdag",
     "saturday": "Zaterdag",
     "date": "De datum",
-    "next": "De volgende afspraak"
+    "next": "De volgende afspraak",
+    "map": "Kaart",
+    "zones": "Zones",
+    "wide": "Breed",
+    "square": "Vierkant",
+    "photo": "Foto"
   },
   "tone": {
     "accent": "Accent",

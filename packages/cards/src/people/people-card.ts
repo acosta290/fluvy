@@ -102,48 +102,6 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
       .am-person__name {
         transition: color var(--fv-base) var(--fv-ease);
       }
-      .am-avatar {
-        flex: 0 0 44px;
-        transition:
-          transform var(--fv-fast) var(--fv-ease),
-          opacity var(--fv-slow) var(--fv-ease);
-      }
-      .am-person:active .am-avatar,
-      .fv-row--tap:active .am-avatar {
-        transform: scale(0.94);
-      }
-      .am-avatar__face {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-        font-size: 15px;
-        font-weight: 600;
-        line-height: 20px;
-        letter-spacing: 0.02em;
-      }
-      /* no picture: initials in the icon circle's own terms — accent fill at home, neutral away (a picture dims instead, as the sheet does) */
-      .am-avatar.is-initials {
-        opacity: 1;
-        background: var(--fluvy-page);
-        color: var(--fluvy-text-secondary);
-      }
-      .am-avatar.is-initials.is-home {
-        background: var(--fluvy-accent-fill);
-        color: var(--fluvy-accent-on-fill);
-      }
-      /* unavailable / unknown: the dashed ring of the language, no fill, no presence to report */
-      .am-avatar.is-off {
-        background: none;
-        outline: 1px dashed var(--fluvy-unavailable-border);
-        outline-offset: -1px;
-        color: var(--fluvy-unavailable);
-      }
       /* rows (the desktop composition): the state once at the right, quiet when it is not "Home" */
       .fv-row__value--quiet {
         color: var(--fluvy-text-secondary);

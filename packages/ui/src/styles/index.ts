@@ -11,6 +11,7 @@ import { inputsCss } from './generated/inputs.js';
 import { interactionCss } from './generated/interaction.js';
 import { mediaCss } from './generated/media.js';
 import { pageCss } from './generated/page.js';
+import { roomsCss } from './generated/rooms.js';
 import { sliderCss } from './generated/slider.js';
 import { solarCss } from './generated/solar.js';
 import { tokensCss } from './generated/tokens.js';
@@ -47,6 +48,7 @@ export const sheetStyles = {
   solar: sheet(solarCss),
   clocks: sheet(clocksCss),
   calendar: sheet(calendarCss),
+  rooms: sheet(roomsCss),
   /** Page chrome (the bar and the floating layers): the Activity and History pages, never a card. */
   page: sheet(pageCss),
 } as const;

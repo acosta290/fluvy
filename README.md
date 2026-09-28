@@ -22,7 +22,7 @@
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, thirty-nine cards, an automatic dashboard, a
+Fluvy brings one design to the whole of Home Assistant: a theme, forty-one cards, an automatic dashboard, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in seven languages.

@@ -1,5 +1,6 @@
 import { FluvyOpeningsCard } from '../../../../packages/cards/src/openings/openings-card.js';
 import { FluvyPeopleCard } from '../../../../packages/cards/src/people/people-card.js';
+import { FluvyMapCard } from '../../../../packages/cards/src/map/map-card.js';
 import { FluvyScenesCard } from '../../../../packages/cards/src/scenes/scenes-card.js';
 import { FluvySensorCard } from '../../../../packages/cards/src/sensor/sensor-card.js';
 import { FluvyWeatherCard } from '../../../../packages/cards/src/weather/weather-card.js';
@@ -14,6 +15,7 @@ if (!customElements.get('fluvy-people-card'))
   customElements.define('fluvy-people-card', FluvyPeopleCard);
 if (!customElements.get('fluvy-openings-card'))
   customElements.define('fluvy-openings-card', FluvyOpeningsCard);
+if (!customElements.get('fluvy-map-card')) customElements.define('fluvy-map-card', FluvyMapCard);
 if (!customElements.get('fluvy-scenes-card'))
   customElements.define('fluvy-scenes-card', FluvyScenesCard);
 
@@ -290,7 +292,22 @@ export const sheet: SheetSpec = {
       'School',
       { friendly_name: 'Ona', source: 'device_tracker.ona_phone', latitude: 41.4, longitude: 2.17 },
     ],
-    ['person.am_jan', 'not_home', { friendly_name: 'Jan Oliver' }],
+    [
+      'person.am_jan',
+      'not_home',
+      { friendly_name: 'Jan Oliver', latitude: 41.6, longitude: 2.3, gps_accuracy: 30 },
+    ],
+    [
+      'zone.home',
+      '2',
+      { friendly_name: 'Home', latitude: 41.39, longitude: 2.16, radius: 100, icon: 'mdi:home' },
+    ],
+    [
+      'zone.am_school',
+      '1',
+      { friendly_name: 'School', latitude: 41.4, longitude: 2.17, radius: 150, icon: 'mdi:school' },
+    ],
+    ['zone.am_work', '0', { friendly_name: 'Work', latitude: 41.5, longitude: 2.2, radius: 200 }],
     ['person.am_noa', 'unknown', { friendly_name: 'Noa' }],
     ['person.am_guest', 'unavailable', { friendly_name: 'Guest' }],
 
@@ -438,6 +455,61 @@ export const sheet: SheetSpec = {
           type: 'custom:fluvy-people-card',
           entities: ['person.am_marta', 'person.am_pau', 'person.am_ona'],
           _now,
+        },
+      ],
+    },
+    // where everyone is: the zones as columns (nothing fetched), a row a person, and Home Assistant's map (which
+    // the playground cannot make: the zones stand in, silently)
+    {
+      title: 'Map · zones',
+      cards: [
+        {
+          type: 'custom:fluvy-map-card',
+          entities: [
+            'person.am_marta',
+            'person.am_pau',
+            'person.am_ona',
+            'person.am_jan',
+            'person.am_noa',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Map · rows',
+      cards: [
+        {
+          type: 'custom:fluvy-map-card',
+          variant: 'rows',
+          show_distance: true,
+          entities: [
+            'person.am_marta',
+            'person.am_ona',
+            'person.am_jan',
+            'person.am_noa',
+            'person.am_guest',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Map · map',
+      cards: [
+        {
+          type: 'custom:fluvy-map-card',
+          variant: 'map',
+          entities: ['person.am_marta', 'person.am_ona'],
+        },
+      ],
+    },
+    {
+      title: 'Map · chosen zones, empty ones kept',
+      cards: [
+        {
+          type: 'custom:fluvy-map-card',
+          entities: ['person.am_marta', 'person.am_ona'],
+          zones: [{ entity: 'zone.am_work', name: 'Office', icon: 'briefcase' }, 'zone.am_school'],
+          show_empty: true,
         },
       ],
     },

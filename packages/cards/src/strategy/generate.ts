@@ -1,6 +1,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { buildContext, COLUMNS, framed, withCards } from './context.js';
 import { VIEWS } from './home-views.js';
+import { roomsOf, roomView } from './rooms.js';
 import type { FluvyHomeStrategyConfig, View, ViewKey } from './types.js';
 
 /** The `custom:fluvy-home` dashboard: its views built from the house, each framed. Fetched when a dashboard asks. */
@@ -21,5 +22,10 @@ export async function generate(
       max_columns: COLUMNS,
       sections,
     }));
-  return { views: views.map((view) => framed(view, ctx, views)) };
+  const framedViews = views.map((view) => framed(view, ctx, views));
+  // a subview per room: reached from the rooms (never a tab), with the same header
+  const rooms = views.some((view) => view.path === 'rooms')
+    ? roomsOf(ctx.home).map((area) => framed(roomView(ctx, area, COLUMNS), ctx, views))
+    : [];
+  return { views: [...framedViews, ...rooms] };
 }

@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest';
 import '../index.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 
-import { DEMO_EXTRAS, DEMO_HEAT_PUMP_READINGS, demoHass, type DemoEntity } from '@fluvy/demo-home';
+import {
+  DEMO_EXTRAS,
+  DEMO_HEAT_PUMP_READINGS,
+  DEMO_ROOMS,
+  demoHass,
+  type DemoEntity,
+} from '@fluvy/demo-home';
 
 /** The demo home as a strategy sees it, with what a test adds on top. */
 function house(more: readonly DemoEntity[] = [], consumption?: readonly string[]) {
@@ -82,7 +88,10 @@ describe("custom:fluvy-home strategy — the grid meter's sign", () => {
 
 /** The demo home with one of everything the library has a card for. */
 const everything = () =>
-  house(DEMO_EXTRAS, ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today']);
+  house(
+    [...DEMO_EXTRAS, ...DEMO_ROOMS],
+    ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
+  );
 
 describe('custom:fluvy-home strategy', () => {
   it('writes only configs its cards accept', async () => {
@@ -138,8 +147,9 @@ describe('custom:fluvy-home strategy', () => {
 
   it('builds a view for each thing the house has, with the greeting and the tabs on every one', async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
-    expect(views.map((v) => v.path)).toEqual([
+    expect(views.filter((v) => !v.subview).map((v) => v.path)).toEqual([
       'home',
+      'rooms',
       'lights',
       'climate',
       'energy',
@@ -153,13 +163,14 @@ describe('custom:fluvy-home strategy', () => {
     };
     expect(chips.chips.map((c) => c.label)).toEqual([
       'Home',
+      'Rooms',
       'Lights',
       'Climate',
       'Energy',
       'Media',
       'Sensors',
     ]);
-    expect(chips.chips[1]!.path.endsWith('/lights')).toBe(true);
+    expect(chips.chips[2]!.path.endsWith('/lights')).toBe(true);
     expect(chips.chips.every((c) => c.icon.startsWith('fluvy:'))).toBe(true);
   });
 
@@ -204,6 +215,62 @@ describe('custom:fluvy-home strategy', () => {
     ).toBe(true);
   });
 
+  it('adds a Rooms view when the house has two rooms with something in them, and a subview per room', async () => {
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home' },
+      house(DEMO_ROOMS),
+    );
+    const rooms = views.find((view) => view.path === 'rooms');
+    expect(rooms).toBeDefined();
+    const cards = rooms!.sections.flatMap((section) => section.cards);
+    const areas = cards
+      .filter((card) => card.type === 'custom:fluvy-room-card')
+      .map((card) => card['area']);
+    expect(areas).toEqual(['kitchen', 'living_room', 'bedroom', 'garden']); // ground floor, upstairs, then the garden on no floor
+    expect(
+      cards
+        .filter((card) => card.type === 'custom:fluvy-heading-card')
+        .map((card) => card['title']),
+    ).toEqual(['Ground floor', 'Upstairs', 'Rooms']);
+    const subviews = views.filter((view) => view.subview);
+    expect(subviews.map((view) => view.path)).toEqual(areas.map((area) => `room-${area}`));
+    expect(subviews[0]?.back_path).toBe('/fluvy-home/rooms');
+    // a subview is not a tab
+    const tabs = views[0]!.sections[0]!.cards.find(
+      (card) => card.type === 'custom:fluvy-chips-card',
+    ) as unknown as { chips: { path: string }[] };
+    expect(tabs.chips.some((chip) => chip.path.includes('room-'))).toBe(false);
+    // a room's subview opens with the way back to every room, then what the room holds
+    const living = subviews.find((view) => view.path === 'room-living_room')!;
+    const livingCards = living.sections
+      .flatMap((section) => section.cards)
+      .filter(
+        (card) =>
+          card.type !== 'custom:fluvy-hello-card' && card.type !== 'custom:fluvy-chips-card',
+      );
+    expect(livingCards[0]).toMatchObject({
+      type: 'custom:fluvy-heading-card',
+      title: 'All rooms',
+      path: '/fluvy-home/rooms',
+    });
+    expect(
+      livingCards.some(
+        (card) =>
+          card.type === 'custom:fluvy-tile-card' && card['entity'] === 'light.living_room_lamp',
+      ),
+    ).toBe(true);
+  });
+
+  it('puts the map beside the people once the house has a zone', async () => {
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home' },
+      house(DEMO_ROOMS),
+    );
+    const sensors = views.find((view) => view.path === 'sensors')!;
+    const cards = sensors.sections.flatMap((section) => section.cards);
+    expect(cards.some((card) => card.type === 'custom:fluvy-map-card')).toBe(true);
+  });
+
   it('gives every view three columns, so the header never moves between tabs', async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
     for (const v of views) {
@@ -239,7 +306,7 @@ describe('custom:fluvy-home strategy', () => {
 
   it('groups the lights by area, dimmable ones as light cards', async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
-    const lights = views[1]!;
+    const lights = views.find((v) => v.path === 'lights')!;
     const headings = lights.sections.flatMap((s) =>
       s.cards.filter((c) => c.type === 'custom:fluvy-heading-card').map((c) => c['title']),
     );
@@ -277,7 +344,7 @@ describe('custom:fluvy-home strategy', () => {
 
   it("leaves the weather service's sensors out of the climate view and pairs humidity with its temperature", async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
-    const climate = views[2]!.sections.flatMap((s) => s.cards);
+    const climate = views.find((v) => v.path === 'climate')!.sections.flatMap((s) => s.cards);
     expect(climate.some((c) => c['entity'] === 'sensor.met_temperature')).toBe(false);
     const humidity = climate.find((c) => c.type === 'custom:fluvy-humidity-card') as unknown as {
       temperature_entity?: string;
@@ -287,7 +354,7 @@ describe('custom:fluvy-home strategy', () => {
 
   it("finds solar and grid power for the flow and the energy dashboard's devices", async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
-    const energy = views[3]!.sections.flatMap((s) => s.cards);
+    const energy = views.find((v) => v.path === 'energy')!.sections.flatMap((s) => s.cards);
     const flow = energy.find((c) => c.type === 'custom:fluvy-energy-flow-card') as unknown as {
       solar_power: string;
       grid_power: string;
@@ -347,6 +414,12 @@ describe('custom:fluvy-home strategy', () => {
       { type: 'custom:fluvy-home', hide: ['energy', 'media'] },
       hass as never,
     );
-    expect(views.map((v) => v.title)).toEqual(['Inicio', 'Luces', 'Clima', 'Sensores']);
+    expect(views.filter((v) => !v.subview).map((v) => v.title)).toEqual([
+      'Inicio',
+      'Habitaciones',
+      'Luces',
+      'Clima',
+      'Sensores',
+    ]);
   });
 });

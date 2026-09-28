@@ -1,5 +1,5 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
-import type { StateSeed } from './hass.js';
+import type { MockOptions, StateSeed } from './hass.js';
 
 /**
  * The playground's content. One module per design sheet in `./sheets/` — same house as the sheets
@@ -17,6 +17,8 @@ export interface FrameSpec {
 export interface SheetSpec {
   readonly states: readonly StateSeed[];
   readonly frames: readonly FrameSpec[];
+  /** Registries the sheet's cards read (areas, floors, devices, entity entries); merged with every other sheet's. */
+  readonly registry?: MockOptions['registry'];
   /** entity id → series returned for `history/history_during_period`. */
   readonly history?: Record<string, readonly number[]>;
   /** WebSocket message type → canned answer (also used for `subscribeMessage`). */

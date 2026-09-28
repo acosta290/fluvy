@@ -2,6 +2,7 @@ import type { LanguageCode, LovelaceCardConfig, MessageKey } from '@fluvy/core';
 import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
 import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
 import type { HomeRegistry } from './home-registry.js';
+import { type RoomVariant } from '../room/room-card.js';
 
 /*
  * What the automatic dashboard is made of: its config, the cards and sections it lays out, the house's energy
@@ -20,6 +21,8 @@ export interface FluvyHomeStrategyConfig {
   tile_size?: 'large' | 'compact';
   /** How the energy flow draws its lines (default: ribbons). */
   flow_style?: FlowStyle;
+  /** The rooms' cards (default: a photo where the area has one, else a tile). */
+  room_variant?: RoomVariant;
   /** The dashboard's words in one language, whoever opens it (default: each person's). */
   language?: LanguageCode;
 }
@@ -30,7 +33,7 @@ export interface Section {
   readonly cards: Card[];
 }
 export type ViewKey =
-  'home' | 'lights' | 'climate' | 'energy' | 'security' | 'media' | 'agenda' | 'sensors';
+  'home' | 'rooms' | 'lights' | 'climate' | 'energy' | 'security' | 'media' | 'agenda' | 'sensors';
 export interface View {
   title: string;
   path: string;
@@ -38,6 +41,9 @@ export interface View {
   type: 'sections';
   max_columns: number;
   sections: Section[];
+  /** A view reached from another (a room from the rooms), not from the tabs; `back_path` is where its back arrow goes. */
+  subview?: boolean;
+  back_path?: string;
 }
 
 /** What `energy/get_prefs` answers: the energy dashboard's sources and devices. */
@@ -78,6 +84,7 @@ export interface CardStyle {
   readonly thermostat?: ThermostatVariant;
   readonly tiles?: 'large' | 'compact';
   readonly flow?: FlowStyle;
+  readonly room?: RoomVariant;
 }
 
 export interface StrategyContext {

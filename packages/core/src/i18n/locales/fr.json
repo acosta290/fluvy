@@ -418,7 +418,20 @@
     "show_weather": "Afficher la météo",
     "show_date": "Afficher la date",
     "show_avatar": "Afficher l’avatar",
-    "action": "Action"
+    "action": "Action",
+    "zones": "Zones",
+    "map_shape": "Forme de la carte",
+    "default_zoom": "Zoom",
+    "fit_zones": "Ajuster aux zones",
+    "show_empty": "Afficher les zones vides",
+    "show_distance": "Afficher la distance de la maison",
+    "map_path": "Chemin de la carte",
+    "area": "Zone",
+    "controls": "Commandes",
+    "show_climate": "Afficher le climat",
+    "picture": "Image",
+    "temperature_entity": "Température",
+    "humidity_entity": "Humidité"
   },
   "strategy": {
     "home": "Accueil",
@@ -442,7 +455,9 @@
     "agenda": "Agenda",
     "covers": "Volets",
     "today": "Aujourd'hui",
-    "actions": "Actions"
+    "actions": "Actions",
+    "rooms": "Pièces",
+    "all_rooms": "Toutes les pièces"
   },
   "page": {
     "menu": "Ouvrir le menu",
@@ -883,7 +898,11 @@
     "change.off": "Désactivé",
     "change.dashboards": "Seulement sur les tableaux de bord",
     "change.everywhere": "Sur tout Home Assistant",
-    "saved": "Enregistré"
+    "saved": "Enregistré",
+    "dashboard.rooms": "Pièces",
+    "dashboard.photo": "Photo",
+    "dashboard.tile": "Tuile",
+    "dashboard.row": "Ligne"
   },
   "people": {
     "title": "Qui est là",
@@ -891,6 +910,23 @@
     "updated": "mis à jour {when}",
     "map": "Ouvrir la carte",
     "editor.map_path": "Chemin de la carte"
+  },
+  "map": {
+    "title": "Où est chacun",
+    "unknown": "Inconnu",
+    "more": "+{count}",
+    "km": "{distance} km",
+    "mi": "{distance} mi"
+  },
+  "room": {
+    "no_area": "Zone introuvable",
+    "nothing": "Rien dans cette pièce pour l’instant",
+    "devices_on": "Allumés",
+    "of": "sur {count}",
+    "all_devices": "Tous les appareils",
+    "unavailable": "{count} indisponibles",
+    "temperature": "Température",
+    "humidity": "Humidité"
   },
   "production": {
     "production": "Production",
@@ -1010,7 +1046,12 @@
     "friday": "Vendredi",
     "saturday": "Samedi",
     "date": "La date",
-    "next": "Le prochain événement"
+    "next": "Le prochain événement",
+    "map": "Carte",
+    "zones": "Zones",
+    "wide": "Large",
+    "square": "Carré",
+    "photo": "Photo"
   },
   "tone": {
     "accent": "Accent",

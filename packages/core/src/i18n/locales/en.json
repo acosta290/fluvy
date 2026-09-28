@@ -418,7 +418,20 @@
     "show_weather": "Show the weather",
     "show_date": "Show the date",
     "show_avatar": "Show the avatar",
-    "action": "Action"
+    "action": "Action",
+    "zones": "Zones",
+    "map_shape": "Map shape",
+    "default_zoom": "Zoom",
+    "fit_zones": "Fit the zones",
+    "show_empty": "Show empty zones",
+    "show_distance": "Show the distance from home",
+    "map_path": "Map path",
+    "area": "Area",
+    "controls": "Controls",
+    "show_climate": "Show the climate",
+    "picture": "Picture",
+    "temperature_entity": "Temperature",
+    "humidity_entity": "Humidity"
   },
   "strategy": {
     "home": "Home",
@@ -442,7 +455,9 @@
     "agenda": "Agenda",
     "covers": "Blinds",
     "today": "Today",
-    "actions": "Actions"
+    "actions": "Actions",
+    "rooms": "Rooms",
+    "all_rooms": "All rooms"
   },
   "page": {
     "menu": "Open the menu",
@@ -883,7 +898,11 @@
     "change.off": "Off",
     "change.dashboards": "Only on dashboards",
     "change.everywhere": "On all of Home Assistant",
-    "saved": "Saved"
+    "saved": "Saved",
+    "dashboard.rooms": "Rooms",
+    "dashboard.photo": "Photo",
+    "dashboard.tile": "Tile",
+    "dashboard.row": "Row"
   },
   "people": {
     "title": "Who is home",
@@ -891,6 +910,23 @@
     "updated": "updated {when}",
     "map": "Open the map",
     "editor.map_path": "Map path"
+  },
+  "map": {
+    "title": "Where everyone is",
+    "unknown": "Unknown",
+    "more": "+{count}",
+    "km": "{distance} km",
+    "mi": "{distance} mi"
+  },
+  "room": {
+    "no_area": "Area not found",
+    "nothing": "Nothing in this room yet",
+    "devices_on": "Devices on",
+    "of": "of {count}",
+    "all_devices": "All devices",
+    "unavailable": "{count} unavailable",
+    "temperature": "Temperature",
+    "humidity": "Humidity"
   },
   "production": {
     "production": "Production",
@@ -1010,7 +1046,12 @@
     "friday": "Friday",
     "saturday": "Saturday",
     "date": "The date",
-    "next": "The next event"
+    "next": "The next event",
+    "map": "Map",
+    "zones": "Zones",
+    "wide": "Wide",
+    "square": "Square",
+    "photo": "Photo"
   },
   "tone": {
     "accent": "Accent",
