@@ -170,8 +170,7 @@
     "low": "Confort desde (%)",
     "high": "Confort hasta (%)",
     "temperature_entity": "Entidad de temperatura (punto de rocío)",
-    "humidifier_entity": "Humidificador",
-    "trend_hours": "Ventana de la tendencia en horas (0 la oculta)"
+    "humidifier_entity": "Humidificador"
   },
   "plants": {
     "thirsty": "{count} con sed",
@@ -370,6 +369,7 @@
     "suction_style": "Succión como",
     "temperature_tint": "Teñir la regla de temperatura de color",
     "rows": "Filas",
+    "max_rows": "Filas como máximo",
     "tabs": "Pestañas",
     "scenes": "Escenas",
     "label": "Etiqueta",
@@ -384,6 +384,7 @@
     "high": "Avisar por encima de",
     "highlight": "Destacar",
     "secondary": "Texto secundario",
+    "sub_entity": "Entidades en la segunda línea",
     "plain": "Sin barra",
     "sub": "Contexto",
     "days": "Días por delante",
@@ -411,6 +412,9 @@
     "show_actions": "Mostrar los botones",
     "show_forecast": "Mostrar la previsión",
     "show_subtitle": "Mostrar el subtítulo",
+    "show_cost": "Mostrar el coste",
+    "show_peak": "Mostrar el pico",
+    "show_trend": "Mostrar la tendencia",
     "show_time": "Mostrar la hora",
     "show_weather": "Mostrar el tiempo",
     "show_date": "Mostrar la fecha",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Distribución",
     "other": "Otros",
+    "share_of_total": "{percent} % del total",
     "max_rows": "Filas antes de agrupar el resto en «Otros»"
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Barra",
     "plain": "Sencillo",
     "row": "Fila",
+    "ring": "Anillo",
+    "stack": "Barra apilada",
     "mini": "Mini",
     "large": "Grande",
     "hero": "Destacado",

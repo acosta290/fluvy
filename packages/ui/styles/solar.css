@@ -62,10 +62,18 @@
 }
 
 .so-bar__fill {
-  background: var(--fluvy-state-energy-solar);
+  background: var(
+    --tone-ink,
+    var(--fluvy-state-energy-solar)
+  ); /* the card's tone (fv-tone--X on .so-bars) */
 }
 
 /* humidity comfort band behind the marker ruler */
+/* the gauge's bar variant: a 4 px level under the reading, its min and max under it */
+.so-level {
+  margin-top: 8px;
+}
+
 .so-band {
   position: relative;
   margin-top: 8px;

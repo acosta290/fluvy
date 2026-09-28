@@ -170,8 +170,7 @@
     "low": "Komfort ab (%)",
     "high": "Komfort bis (%)",
     "temperature_entity": "Temperatur-Entität (Taupunkt)",
-    "humidifier_entity": "Luftbefeuchter",
-    "trend_hours": "Trendfenster in Stunden (0 blendet es aus)"
+    "humidifier_entity": "Luftbefeuchter"
   },
   "plants": {
     "thirsty": "{count} durstig",
@@ -370,6 +369,7 @@
     "suction_style": "Saugstufen als",
     "temperature_tint": "Farbtemperatur-Lineal einfärben",
     "rows": "Zeilen",
+    "max_rows": "Höchstens Zeilen",
     "tabs": "Tabs",
     "scenes": "Szenen",
     "label": "Beschriftung",
@@ -384,6 +384,7 @@
     "high": "Warnen über",
     "highlight": "Hervorheben",
     "secondary": "Zweiter Text",
+    "sub_entity": "Entitäten in der zweiten Zeile",
     "plain": "Ohne Balken",
     "sub": "Kontext",
     "days": "Tage im Voraus",
@@ -411,6 +412,9 @@
     "show_actions": "Knöpfe zeigen",
     "show_forecast": "Vorhersage zeigen",
     "show_subtitle": "Untertitel zeigen",
+    "show_cost": "Kosten zeigen",
+    "show_peak": "Spitze zeigen",
+    "show_trend": "Trend zeigen",
     "show_time": "Zeit zeigen",
     "show_weather": "Wetter zeigen",
     "show_date": "Datum zeigen",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Verteilung",
     "other": "Sonstige",
+    "share_of_total": "{percent} % vom Gesamten",
     "max_rows": "Zeilen, bevor der Rest „Sonstige“ wird"
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Leiste",
     "plain": "Schlicht",
     "row": "Zeile",
+    "ring": "Ring",
+    "stack": "Gestapelter Balken",
     "mini": "Mini",
     "large": "Groß",
     "hero": "Hervorgehoben",

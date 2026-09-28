@@ -9,7 +9,9 @@
  * order; compact entity rows are 48 tall with the name alone, and a row wears its own colour; four readouts stand
  * on one row when asked; a plain heading is its title alone, 24 tall; a greeting can go without its avatar, date
  * and weather; a select's options fill their row unless asked for chips; a to-do list, a timer and a weather card
- * go without their extras when told; scenes stand one a row when asked and a scene tile without its subtitle.
+ * go without their extras when told; scenes stand one a row when asked and a scene tile without its subtitle;
+ * a compact energy card and a compact production card are the head, the chart and its axis; a gauge's bar variant
+ * is a level, not a dial; a distribution can be rows, one wearing its own colour; a humidity card can drop its trend.
  */
 import { frame, startSuite } from './lib/suite.mjs';
 
@@ -317,6 +319,92 @@ const heightOf = async (card) =>
     'a scene tile told not to show its subtitle is its name alone',
     (await tiles.nth(0).locator('.fv-row__sub').count()) === 1 &&
       (await tiles.nth(4).locator('.fv-row__sub').count()) === 0,
+  );
+  await page.close();
+}
+
+/* ---------- energy: the compact chart ---------- */
+{
+  const page = await suite.sheet('energy');
+  const full = frame(page, 'Energy').locator('fluvy-energy-card').first();
+  const compact = frame(page, 'Energy · compact').locator('fluvy-energy-card').first();
+  const height = await heightOf(compact);
+  check(
+    'a compact energy card is the head, the chart and its axis',
+    (await full.locator('.ef-top').count()) === 1 &&
+      (await full.locator('.ef-cols').count()) === 1 &&
+      (await compact.locator('.ef-top').count()) === 0 &&
+      (await compact.locator('.ef-cols').count()) === 0 &&
+      (await compact.locator('.ef-chart').count()) === 1,
+    `${height} tall`,
+  );
+  const grid = await gridOf(compact);
+  check(
+    'a compact energy card asks for half a section',
+    grid.columns === 6 && grid.min_columns === 6,
+    JSON.stringify(grid),
+  );
+  check(
+    "the chart wears the card's tone",
+    (await compact.locator('.ef-chart.fv-tone--solar').count()) === 1,
+  );
+  await page.close();
+}
+
+/* ---------- solar: the gauge's bar, the compact production, distribution rows, no trend ---------- */
+{
+  const page = await suite.sheet('solar');
+  const ring = frame(page, 'Solar power').locator('fluvy-gauge-card').first();
+  const bar = frame(page, 'Gauge · bar').locator('fluvy-gauge-card').first();
+  const fill = await bar
+    .locator('.fv-bar__fill')
+    .first()
+    .evaluate((el) => el.style.width);
+  check(
+    "a gauge's bar variant is a level under the reading, not a dial",
+    (await ring.locator('fluvy-dial').count()) === 1 &&
+      (await bar.locator('fluvy-dial').count()) === 0 &&
+      (await bar.locator('.fv-bar').count()) === 1 &&
+      /^\d+%$/.test(fill) &&
+      (await bar.locator('.so-cols .fv-readout').count()) === 3,
+    `${await heightOf(bar)} tall · level ${fill}`,
+  );
+  const barGrid = await gridOf(bar);
+  check(
+    "a gauge's bar asks for half a section, a third at the least",
+    barGrid.columns === 6 && barGrid.min_columns === 4,
+    JSON.stringify(barGrid),
+  );
+  const production = frame(page, 'Production').locator('fluvy-production-card').first();
+  const compact = frame(page, 'Production · compact').locator('fluvy-production-card').first();
+  check(
+    'a compact production card is the head, the bars and their axis',
+    (await production.locator('.so-top').count()) === 1 &&
+      (await production.locator('.so-cols').count()) === 1 &&
+      (await compact.locator('.so-top').count()) === 0 &&
+      (await compact.locator('.so-cols').count()) === 0 &&
+      (await compact.locator('.so-bars.fv-tone--solar').count()) === 1,
+    `${await heightOf(compact)} tall`,
+  );
+  const stack = frame(page, 'Distribution').locator('fluvy-distribution-card').first();
+  const rows = frame(page, 'Distribution · rows').locator('fluvy-distribution-card').first();
+  const accentOf = (locator) =>
+    locator.evaluate((el) => getComputedStyle(el).getPropertyValue('--fluvy-accent').trim());
+  const teal = rows.locator('.fv-row[data-accent]');
+  check(
+    'a distribution as rows is one row per source, one wearing its own colour',
+    (await stack.locator('.fv-stack').count()) === 1 &&
+      (await rows.locator('.fv-stack').count()) === 0 &&
+      (await rows.locator('.fv-row').count()) === 4 &&
+      (await teal.count()) === 1 &&
+      (await accentOf(teal)) !== (await accentOf(rows.locator('.fv-row').first())),
+  );
+  const humidity = frame(page, 'Humidity').locator('fluvy-humidity-card').first();
+  const noTrend = frame(page, 'Humidity · no trend').locator('fluvy-humidity-card').first();
+  check(
+    'a humidity card told not to show its trend keeps its humidifier row alone',
+    (await humidity.locator('.so-rows .fv-row').count()) === 2 &&
+      (await noTrend.locator('.so-rows .fv-row').count()) === 1,
   );
   await page.close();
 }

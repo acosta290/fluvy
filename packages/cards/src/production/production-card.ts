@@ -2,6 +2,7 @@ import {
   clock12,
   dateFormat,
   formatNumber,
+  isUsable,
   stateText,
   strings as words,
   type FluvyCardConfig,
@@ -26,22 +27,37 @@ import { baseOf, ceilingFor, figure, scaleFor, toBase } from '../gauge/units.js'
 
 import { Card } from '../shared/base.js';
 
-import { editorLabels, entityField, iconToneFields, titleFields } from '../shared/form.js';
+import {
+  actionFields,
+  boolField,
+  colourFields,
+  editorLabels,
+  entityField,
+  fieldRow,
+  iconField,
+  selectField,
+  textField,
+} from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
 import { loadDay, startOfDay, type DayRecord } from './day.js';
 
 import { hourlyForecast } from './forecast.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const strings = words('production');
 
 export interface ProductionCardConfig extends FluvyCardConfig {
-  title?: string;
   subtitle?: string;
-  tone?: Tone;
   /** Today's forecast: its state is the day's total, its attributes may carry the hours (Solcast, Open-Meteo, a template). */
   forecast_entity?: string;
+  show_forecast?: boolean;
   /** A power sensor that holds today's peak. Without it the best hour stands in. */
   peak_entity?: string;
+  /** The peak and its hour under the bars (default). */
+  show_peak?: boolean;
+  /** `full` (default): the total, the bars, their axis and the figures. `compact`: the head, the bars and their axis. */
+  variant?: 'full' | 'compact';
   /** Test hook, as in the clock cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
@@ -107,14 +123,30 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     this.day_ = undefined;
   }
 
+  static override keys = configKeys<ProductionCardConfig>()([
+    'subtitle',
+    'forecast_entity',
+    'show_forecast',
+    'peak_entity',
+    'show_peak',
+    'variant',
+  ]);
+  /** The card's head is its meter's name (`title` was the older word for it). */
+  static override aliases: AliasSpec = { keys: [{ from: 'title', to: 'name' }] };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor']),
-        titleFields(),
-        iconToneFields(),
-        { name: 'forecast_entity', selector: { entity: { domain: ['sensor'] } } },
-        { name: 'peak_entity', selector: { entity: { domain: ['sensor'] } } },
+        fieldRow(textField('name'), textField('subtitle')),
+        iconField(),
+        colourFields(),
+        fieldRow(
+          { name: 'forecast_entity', selector: { entity: { domain: ['sensor'] } } },
+          { name: 'peak_entity', selector: { entity: { domain: ['sensor'] } } },
+        ),
+        fieldRow(boolField('show_forecast'), boolField('show_peak')),
+        selectField('variant', ['full', 'compact']),
+        actionFields(),
       ],
       ...editorLabels(
         strings,
@@ -147,7 +179,13 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return 7;
   }
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 6 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
+  }
+
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
   }
 
   protected override watched(): readonly string[] {
@@ -201,12 +239,13 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
   protected renderCard(): TemplateResult {
     const view = this.entity();
-    const name = this.config?.title ?? view.name;
+    const name = this.config?.name ?? view.name;
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
-    const tone: Tone = unusable ? 'off' : (this.config?.tone ?? 'solar');
+    const unusable = !isUsable(view);
+    const tone: Tone = unusable ? 'off' : toneOf(this.config, 'solar');
+    const compact = this.compact;
     const now = this.now();
     const hourNow = now.getHours();
     const base = toBase(1, view.unit);
@@ -227,9 +266,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const hovered = known ? this.scrubber.value : null;
     const total = sum(produced);
 
-    const forecastView = this.config?.forecast_entity
-      ? this.entity(this.config.forecast_entity)
-      : null;
+    const forecastView =
+      this.config?.forecast_entity && this.config.show_forecast !== false
+        ? this.entity(this.config.forecast_entity)
+        : null;
     const hourly =
       forecastView && forecastView.status === 'ok'
         ? hourlyForecast(forecastView, startOfDay(now))
@@ -317,39 +357,44 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
         name: true,
       })}
-      <div class="so-top fv-value-row">
-        ${
-          hovered !== null
-            ? readout({
-                label: `${this.hourLabel(hovered)} – ${this.hourLabel(hovered + 1)}`,
-                value: shown(produced[hovered] ?? 0),
-                unit: scale.unit,
-                size: 'l',
-              })
-            : readout({
-                label: strings(this.hass, 'so_far'),
-                value: known ? shown(total) : '—',
-                unit: known ? scale.unit : '',
-                size: 'l',
-              })
-        }
-        ${
-          forecastTotal !== null && forecastTotal > 0
-            ? html`<div class="so-top__side">
-                ${readout({ label: strings(this.hass, 'forecast'), value: shown(forecastTotal), unit: scale.unit, size: 's' })}
-              </div>`
-            : nothing
-        }
-      </div>
+      ${
+        compact
+          ? nothing
+          : html`<div class="so-top fv-value-row">
+              ${
+                hovered !== null
+                  ? readout({
+                      label: `${this.hourLabel(hovered)} – ${this.hourLabel(hovered + 1)}`,
+                      value: shown(produced[hovered] ?? 0),
+                      unit: scale.unit,
+                      size: 'l',
+                    })
+                  : readout({
+                      label: strings(this.hass, 'so_far'),
+                      value: known ? shown(total) : '—',
+                      unit: known ? scale.unit : '',
+                      size: 'l',
+                    })
+              }
+              ${
+                forecastTotal !== null && forecastTotal > 0
+                  ? html`<div class="so-top__side">
+                      ${readout({ label: strings(this.hass, 'forecast'), value: shown(forecastTotal), unit: scale.unit, size: 's' })}
+                    </div>`
+                  : nothing
+              }
+            </div>`
+      }
       ${
         loading
           ? html`<div class="fv-skeleton so-skeleton"></div>`
           : html`<div
-              class="so-bars fv-ruler--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''}"
+              class="so-bars fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''}"
               role="img"
               aria-label=${known ? `${strings(this.hass, 'so_far')}: ${shown(total)} ${scale.unit}` : name}
               ${scrub(this.scrubber)}
@@ -375,11 +420,19 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         [boundary(18), this.hourLabel(18)],
         [1, this.hour12 ? this.hourLabel(24) : '24:00'],
       ])}
-      <div class="so-cols fv-cols">
-        ${readout({ label: strings(this.hass, 'peak'), value: peak.value, unit: peak.unit, size: 's' })}
-        ${readout({ label: strings(this.hass, 'peak_at'), value: known && peakValue > 0 ? this.hourLabel(peakHour) : '—', size: 's' })}
-        ${readout({ label: strings(this.hass, 'sun_hours'), value: known ? formatNumber(this.hass, sunHours, { digits: 1 }) : '—', unit: known ? strings(this.hass, 'hour') : '', size: 's' })}
-      </div>
+      ${
+        compact
+          ? nothing
+          : html`<div class="so-cols fv-cols">
+              ${
+                this.config?.show_peak === false
+                  ? nothing
+                  : html`${readout({ label: strings(this.hass, 'peak'), value: peak.value, unit: peak.unit, size: 's' })}
+                    ${readout({ label: strings(this.hass, 'peak_at'), value: known && peakValue > 0 ? this.hourLabel(peakHour) : '—', size: 's' })}`
+              }
+              ${readout({ label: strings(this.hass, 'sun_hours'), value: known ? formatNumber(this.hass, sunHours, { digits: 1 }) : '—', unit: known ? strings(this.hass, 'hour') : '', size: 's' })}
+            </div>`
+      }
     </article>`;
   }
 }

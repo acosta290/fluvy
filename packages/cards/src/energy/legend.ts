@@ -3,10 +3,10 @@ import { readout } from '@fluvy/ui';
 import type { TemplateResult } from 'lit';
 import { legendParts, shortName } from './power.js';
 
-/** A legend's item: a sensor, and the label the card was given for it. */
+/** A legend's item: a sensor, and the name the card was given for it. */
 export interface LegendItem {
   readonly entity: string;
-  readonly label?: string;
+  readonly name?: string;
 }
 
 /**
@@ -23,7 +23,7 @@ export function legendReadouts(
   const parts = legendParts(hass, views);
   return items.map((item, index) =>
     readout({
-      label: item.label ?? shortName(views[index] as EntityView),
+      label: item.name ?? shortName(views[index] as EntityView),
       value: parts[index]?.value ?? '—',
       unit: parts[index]?.unit ?? '',
       size: 's',

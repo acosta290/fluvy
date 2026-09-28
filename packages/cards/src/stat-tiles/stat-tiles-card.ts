@@ -1,7 +1,9 @@
 import {
+  isUsable,
   stateText,
   strings as words,
   valueParts,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -29,12 +31,15 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionField,
+  actionFields,
   boolField,
+  colourFields,
   editorLabels,
   entitiesField,
   entityField,
   fieldRow,
-  iconToneFields,
+  iconField,
   idsOnly,
   nameIconFields,
   textField,
@@ -42,6 +47,8 @@ import {
   toneField,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const strings = words('stat-tiles');
 
@@ -60,12 +67,14 @@ export interface StatRowConfig {
   icon?: string;
   /** The line under the name ("This month"). Defaults to the entity's area. */
   secondary?: string;
+  tone?: Tone;
+  color?: string;
+  tap_action?: ActionConfig;
 }
 
 export interface StatTilesCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   /** Head badge: the entity's value, with `badge_label` in front of it ("Health 92 %"). */
   badge_entity?: string;
   badge_label?: string;
@@ -105,27 +114,46 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
 
   private readonly head = new HeadFit(this);
 
+  static override keys = configKeys<StatTilesCardConfig>()([
+    'title',
+    'subtitle',
+    'badge_entity',
+    'badge_label',
+    'tiles',
+    'rows',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'tiles',
       title: 'editor.tiles',
-      schema: [entityField(), nameIconFields(), toneField(), boolField('highlight')],
+      keys: ['entity', 'name', 'icon', 'tone', 'highlight'],
+      schema: [entityField(), nameIconFields(), fieldRow(toneField(), boolField('highlight'))],
     },
     {
       key: 'rows',
       title: 'editor.rows',
-      schema: [entityField(), nameIconFields(), textField('secondary')],
+      keys: ['entity', 'name', 'icon', 'secondary', 'tone', 'color', 'tap_action'],
+      schema: [
+        entityField(),
+        nameIconFields(),
+        textField('secondary'),
+        colourFields(),
+        actionField(),
+      ],
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES, tiles: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconToneFields(),
+        iconField(),
+        colourFields(),
         entitiesField('tiles', undefined, true),
-        entityField(undefined, 'entity', false),
+        fieldRow(entityField(undefined, 'entity', false), textField('name')),
         fieldRow({ name: 'badge_entity', selector: { entity: {} } }, textField('badge_label')),
         entitiesField('rows'),
+        actionFields(),
       ],
       ...idsOnly('tiles', 'rows'),
       ...editorLabels(
@@ -211,9 +239,8 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     const tiles = this.tiles();
     const views = tiles.map((tile) => this.entity(tile.entity));
     const lead = this.config?.entity ? this.entity(this.config.entity) : null;
-    const tone: Tone = this.config?.tone ?? 'accent';
-    const gone = (view: EntityView): boolean =>
-      view.status === 'unavailable' || view.status === 'missing';
+    const tone: Tone = toneOf(this.config, 'accent');
+    const gone = (view: EntityView): boolean => !isUsable(view);
     const unusable = views.every(gone) && (!lead || gone(lead));
     const headTone: Tone = unusable ? 'off' : tone;
 
@@ -267,7 +294,8 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         trailing: fitted.badge,
         ...(lead
           ? {
-              onIconTap: (): void => this.tap(lead.id, { action: 'more-info' }),
+              onIconTap: (): void => this.tap(lead.id),
+              onHold: (): void => this.hold(lead.id),
               iconLabel: lead.name,
             }
           : {}),
@@ -282,12 +310,14 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
           ? html`<div class="so-rows">
               ${rows.map((row) => {
                 const view = this.entity(row.entity);
-                const usable = view.status === 'ok' || view.status === 'unknown';
+                const usable = isUsable(view);
                 const value = this.text(view);
                 return listRow({
                   icon: row.icon ?? glyphFor(view),
-                  tone: usable ? 'neutral' : 'off',
+                  tone: usable ? toneOf(row, 'neutral') : 'off',
+                  accent: this.accents.item(row.color),
                   title: row.name ?? view.name,
+                  name: true,
                   sub: this.head.fitRowSub(
                     usable ? (row.secondary ?? view.areaName) : stateText(this.hass, view),
                     this.head.rowRoom(width, value),
@@ -295,7 +325,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
                   trailing: 'value',
                   value,
                   unavailable: !usable,
-                  onTap: () => this.tap(view.id, { action: 'more-info' }),
+                  onTap: () => this.tap(view.id, row.tap_action),
                 });
               })}
             </div>`

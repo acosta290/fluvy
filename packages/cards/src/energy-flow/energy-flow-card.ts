@@ -20,10 +20,12 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import {
+  actionFields,
   boolField,
+  colourFields,
   editorLabels,
   entitiesField,
   entityField,
@@ -53,12 +55,15 @@ import {
   type Point,
 } from './path.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
+import { fitLine, type Segment } from '../shared/fit.js';
 
 const s = strings('energy-flow');
 
 export interface EnergyFlowReadout {
   entity: string;
-  label?: string;
+  name?: string;
 }
 
 export interface EnergyFlowCardConfig extends FluvyCardConfig {
@@ -92,6 +97,7 @@ const BOTTOM = 30; // air under the last node's centre (8 px past its circle)
 const TEXT_LEFT = 56; // 44 icon + 12
 const TEXT_MAX = 120; // the sheet's text column
 const TEXT_MIN = 88; // "Battery · 78 %" still fits
+const HOUSE_TEXT = 120; // the house's text column (energy.css)
 /** The text column and where every tail starts: 120 wide on the sheet, narrower before the links would be. */
 function textColumn(w: number): { text: number; tailX: number } {
   const text = Math.min(TEXT_MAX, Math.max(TEXT_MIN, w - TEXT_LEFT - 108)); // 108 = 44 house + 64 of link
@@ -120,7 +126,7 @@ const DOTS: ReadonlyArray<readonly [phase: number, levels: readonly number[]]> =
 
 interface Source {
   readonly key: 'solar' | 'grid' | 'battery';
-  readonly cls: 'solar' | 'grid' | 'water';
+  readonly cls: 'solar' | 'grid' | 'battery';
   readonly tone: Tone;
   readonly glyph: GlyphName;
   readonly label: string;
@@ -219,6 +225,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       .ef-node__label {
         max-width: 100%;
       }
+      /* three totals in a column too narrow for three words: one a line */
+      .ef-cols--stack {
+        grid-template-columns: minmax(0, 1fr);
+      }
       .ef-link {
         transition: opacity var(--fv-slow) var(--fv-ease);
       }
@@ -301,14 +311,31 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   /** The freshness text on screen, so the ticker only asks for a render when it would change. */
   private shownFreshness = '';
 
+  /** A diagram of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
+  static override base: readonly BaseKey[] = ['icon', 'tone', 'color', 'tap_action', 'hold_action'];
+  static override keys = configKeys<EnergyFlowCardConfig>()([
+    'title',
+    'subtitle',
+    'solar_power',
+    'grid_power',
+    'grid_invert',
+    'battery_power',
+    'battery_invert',
+    'battery_level',
+    'home_power',
+    'readouts',
+    'flow_style',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'readouts',
       title: 'editor.rows',
       domains: ['sensor'],
-      schema: [entityField(['sensor']), textField('label')],
+      keys: ['entity', 'name'],
+      schema: [entityField(['sensor']), textField('name')],
     },
   ];
+  static override aliases: AliasSpec = { items: { readouts: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -324,6 +351,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         fieldRow(entityField(['sensor'], 'battery_level', false), iconField()),
         selectField('flow_style', FLOW_STYLES),
         entitiesField('readouts', ['sensor']),
+        colourFields(),
+        actionFields(),
       ],
       ...editorLabels(
         s,
@@ -510,8 +539,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         percent === null ? this.t('energy.battery') : `${this.t('energy.battery')} · ${percent} %`;
       out.push({
         key: 'battery',
-        cls: 'water',
-        tone: 'water',
+        cls: 'battery',
+        tone: 'battery',
         glyph: 'battery',
         label,
         ...read(c.battery_power, c.battery_invert ?? false),
@@ -719,9 +748,9 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       case 'exporting':
         return { text: this.t('energy.exporting'), tone: 'grid' };
       case 'charging':
-        return { text: s(this.hass, 'charging'), tone: 'water' };
+        return { text: s(this.hass, 'charging'), tone: 'battery' };
       case 'discharging':
-        return { text: s(this.hass, 'discharging'), tone: 'water' };
+        return { text: s(this.hass, 'discharging'), tone: 'battery' };
       case 'idle':
         return { text: this.t('energy.idle'), tone: 'neutral' };
     }
@@ -744,6 +773,18 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
     const w = this.contentWidth;
     const totals = this.readouts();
+    // a node's label is measured in its own class: "Battery · 78 %" keeps "Battery" in a narrow column, and a
+    // column too narrow even for the word keeps the icon with its reading. The list is laid out on the card's
+    // real width (`contentWidth` never says less than 120): below Home Assistant's own minimum, where not even a
+    // reading fits beside a circle, the rows drop their circles and keep their readings
+    const real = Math.max(0, this.width - 40);
+    const readings = [...sources.map((source) => figure(source.power)), figure(home)];
+    const bare =
+      narrow &&
+      real - TEXT_LEFT <
+        Math.max(0, ...readings.map((text) => this.head.ruler.width('ef-node__value', text)));
+    const room = narrow ? (bare ? real : real - TEXT_LEFT) : textColumn(w).text;
+    const label = (text: string, width = room): string => this.nodeLabel(text, width);
     // the head is measured, not guessed: at 300 px, in Spanish, with a long title, the badge is what gives way —
     // a clipped card title is a defect, a state the diagram already shows is not
     const fitted = this.head.fit({
@@ -758,11 +799,13 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     return html`<article class="fv-card ef-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-        tone: dead ? 'off' : 'solar',
+        tone: dead ? 'off' : toneOf(this.config, 'solar'),
         title: this.config?.title ?? s(this.hass, 'title'),
         sub: fitted.sub,
         trailing: fitted.badge,
         name: Boolean(this.config?.title),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
       })}
       ${
         narrow
@@ -770,18 +813,22 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
               ${sources.map(
                 (source) =>
                   html`<div class="ef-list__row">
-                    ${ico(source.glyph, source.power === null ? 'off' : Math.abs(source.power) < IDLE ? 'neutral' : source.tone, { onTap: () => this.tap(source.view.id, { action: 'more-info' }), label: source.label })}
+                    ${bare ? nothing : ico(source.glyph, source.power === null ? 'off' : Math.abs(source.power) < IDLE ? 'neutral' : source.tone, { onTap: () => this.tap(source.view.id, { action: 'more-info' }), label: source.label })}
                     <div class="ef-node__text ef-list__text">
-                      <span class="ef-node__label">${source.label}</span
-                      ><span class="ef-node__value">${figure(source.power)}</span>
+                      ${label(source.label) ? html`<span class="ef-node__label">${label(source.label)}</span>` : nothing}<span
+                        class="ef-node__value"
+                        >${figure(source.power)}</span
+                      >
                     </div>
                   </div>`,
               )}
               <div class="ef-list__row">
-                ${ico('home', dead ? 'off' : 'accent', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
+                ${bare ? nothing : ico('home', dead ? 'off' : 'house', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
                 <div class="ef-node__text ef-list__text">
-                  <span class="ef-node__label">${s(this.hass, 'house')}</span
-                  ><span class="ef-node__value">${figure(home)}</span>
+                  ${label(s(this.hass, 'house')) ? html`<span class="ef-node__label">${label(s(this.hass, 'house'))}</span>` : nothing}<span
+                    class="ef-node__value"
+                    >${figure(home)}</span
+                  >
                 </div>
               </div>
             </div>`
@@ -819,7 +866,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
                       class="ef-node__text"
                       style="left:${TEXT_LEFT}px;top:${y - 18}px;width:${textColumn(w).text}px"
                     >
-                      <span class="ef-node__label">${source.label}</span>
+                      ${label(source.label) ? html`<span class="ef-node__label">${label(source.label)}</span>` : nothing}
                       <span class="ef-node__value">${figure(source.power)}</span>
                     </div>`,
               )}
@@ -827,24 +874,34 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
                 class="ef-node ef-node--house ${style === 'ribbons' ? 'ef-node--big' : ''}"
                 style="left:${houseX - (style === 'ribbons' ? 28 : 22)}px;top:${houseY - (style === 'ribbons' ? 28 : 22)}px"
               >
-                ${ico('home', dead ? 'off' : 'accent', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
+                ${ico('home', dead ? 'off' : 'house', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
               </div>
               <div
                 class="ef-node__text ef-node__text--house"
                 style="right:0;top:${houseY + (style === 'ribbons' ? 36 : 30)}px"
               >
-                <span class="ef-node__label">${s(this.hass, 'house')}</span>
+                ${label(s(this.hass, 'house'), HOUSE_TEXT) ? html`<span class="ef-node__label">${label(s(this.hass, 'house'), HOUSE_TEXT)}</span>` : nothing}
                 <span class="ef-node__value">${figure(home)}</span>
               </div>
             </div>`
       }
       ${
         totals.length
-          ? html`<div class="ef-cols fv-cols">
+          ? html`<div class="ef-cols fv-cols ${narrow ? 'ef-cols--stack' : ''}">
               ${legendReadouts(this.hass, totals, (id) => this.entity(id))}
             </div>`
           : nothing
       }
     </article>`;
+  }
+
+  /** A node's label fitted to its column: its first words stay while they fit, the rest go from the end; nothing when even those would be cut. */
+  private nodeLabel(text: string, room: number): string {
+    const segments: Segment[] = text
+      .split(' · ')
+      .map((part, index) => ({ text: part, optional: index > 0 }));
+    const first = segments[0];
+    if (!first || this.head.ruler.width('ef-node__label', first.text) > room) return '';
+    return fitLine(segments, room, (part) => this.head.ruler.width('ef-node__label', part));
   }
 }

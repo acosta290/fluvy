@@ -2,6 +2,7 @@ import {
   stateText,
   strings,
   valueParts,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -15,19 +16,24 @@ import { css, html, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { repeat } from 'lit/directives/repeat.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionField,
+  actionFields,
   boolField,
+  colourFields,
   editorLabels,
+  entitiesField,
   entityField,
   fieldRow,
-  iconToneFields,
+  formLabels,
+  iconField,
   nameIconFields,
+  numberField,
   titleFields,
-  toneField,
 } from '../shared/form.js';
 
 import { HeadFit } from '../energy/head.js';
@@ -42,6 +48,8 @@ import {
   type Family,
 } from '../energy/power.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('energy-devices');
 
@@ -52,15 +60,18 @@ export interface DeviceRowConfig {
   /** A monetary sensor for this device, quoted after its share on the row's second line. */
   cost_entity?: string;
   tone?: Tone;
+  color?: string;
+  tap_action?: ActionConfig;
 }
 
 export interface EnergyDevicesCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   rows?: ReadonlyArray<string | DeviceRowConfig>;
   /** `false` keeps the configured order; by default the biggest consumer leads. */
   sort?: boolean;
+  /** Rows shown at most (the biggest, when sorted). */
+  max_rows?: number;
 }
 
 interface DeviceRow {
@@ -105,32 +116,50 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
 
   private readonly head = new HeadFit(this);
 
+  /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'tone',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
+  static override keys = configKeys<EnergyDevicesCardConfig>()([
+    'title',
+    'subtitle',
+    'rows',
+    'sort',
+    'max_rows',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'rows',
       alias: 'entities',
       title: 'editor.rows',
       domains: ['sensor'],
+      keys: ['entity', 'name', 'icon', 'cost_entity', 'tone', 'color', 'tap_action'],
       schema: [
         entityField(['sensor']),
         nameIconFields(),
-        fieldRow(toneField(), entityField(['sensor'], 'cost_entity', false)),
+        colourFields(),
+        fieldRow(entityField(['sensor'], 'cost_entity', false), actionField()),
       ],
+      computeLabel: formLabels({ cost_entity: 'energy.cost' }).computeLabel,
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconToneFields(),
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['sensor'] } },
-        },
-        boolField('sort'),
+        iconField(),
+        colourFields(),
+        entitiesField('entities', ['sensor'], true),
+        fieldRow(boolField('sort'), numberField('max_rows', 1, 20)),
+        actionFields(),
       ],
-      ...editorLabels(s, { sort: 'editor_sort' }, {}),
+      ...editorLabels(s, { sort: 'editor_sort' }, { max_rows: 'editor.max_rows' }),
     };
   }
 
@@ -185,8 +214,12 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         value: family(view) === kind ? baseValue(view) : null,
       };
     });
-    if (this.config?.sort === false) return rows;
-    return rows.sort((a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity)); // unusable rows sink, in their configured order
+    const shown =
+      this.config?.sort === false
+        ? rows
+        : rows.sort((a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity)); // unusable rows sink, in their configured order
+    const limit = this.config?.max_rows;
+    return typeof limit === 'number' && limit >= 1 ? shown.slice(0, Math.round(limit)) : shown;
   }
 
   /** Second line: the state when there is no figure, otherwise the share of the total and what it cost. */
@@ -210,7 +243,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     const total = values.reduce((sum, value) => sum + value, 0);
     const peak = Math.max(0, ...values);
     const scale = scaleOf([...values, total], kind === 'power' ? 'W' : 'Wh');
-    const tone: Tone = this.config?.tone ?? 'accent';
+    const tone: Tone = toneOf(this.config, 'accent');
     const none = values.length === 0;
     const first = rows[0]?.view;
     const width = this.contentWidth;
@@ -227,18 +260,29 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     });
 
     return html`<article class="fv-card ef-card ${none ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'plug') : null, tone: none ? 'off' : tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
+        tone: none ? 'off' : tone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
+      })}
       <div class="ef-rows">
         ${repeat(
           rows,
           (row) => row.key,
           (row) => {
-            const rowTone = row.config.tone ?? tone;
+            const rowTone = toneOf(row.config, tone);
             const usable = row.view.status === 'ok';
             const shared = {
               icon: row.config.icon ?? glyphFor(row.view),
               title: row.config.name ?? row.view.name,
-              onTap: (): void => this.tap(row.view.id, { action: 'more-info' }),
+              name: true,
+              accent: this.accents.item(row.config.color),
+              onTap: (): void => this.tap(row.view.id, row.config.tap_action),
             };
             if (row.value === null && usable) {
               // a sensor of another family: its own figure, no share, no bar

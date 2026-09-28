@@ -170,8 +170,7 @@
     "low": "Comfort da (%)",
     "high": "Comfort fino a (%)",
     "temperature_entity": "Entità temperatura (punto di rugiada)",
-    "humidifier_entity": "Umidificatore",
-    "trend_hours": "Finestra della tendenza in ore (0 la nasconde)"
+    "humidifier_entity": "Umidificatore"
   },
   "plants": {
     "thirsty": "{count} assetate",
@@ -370,6 +369,7 @@
     "suction_style": "Potenze di aspirazione come",
     "temperature_tint": "Colora il righello della temperatura colore",
     "rows": "Righe",
+    "max_rows": "Righe al massimo",
     "tabs": "Schede",
     "scenes": "Scene",
     "label": "Etichetta",
@@ -384,6 +384,7 @@
     "high": "Avvisa sopra",
     "highlight": "Evidenzia",
     "secondary": "Testo secondario",
+    "sub_entity": "Entità sulla seconda riga",
     "plain": "Senza barra",
     "sub": "Contesto",
     "days": "Giorni a venire",
@@ -411,6 +412,9 @@
     "show_actions": "Mostra i pulsanti",
     "show_forecast": "Mostra le previsioni",
     "show_subtitle": "Mostra il sottotitolo",
+    "show_cost": "Mostra il costo",
+    "show_peak": "Mostra il picco",
+    "show_trend": "Mostra la tendenza",
     "show_time": "Mostra l’ora",
     "show_weather": "Mostra il meteo",
     "show_date": "Mostra la data",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Distribuzione",
     "other": "Altro",
+    "share_of_total": "{percent} % del totale",
     "max_rows": "Righe prima che il resto diventi “Altro”"
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Barra",
     "plain": "Semplice",
     "row": "Riga",
+    "ring": "Anello",
+    "stack": "Barra impilata",
     "mini": "Mini",
     "large": "Grande",
     "hero": "In evidenza",

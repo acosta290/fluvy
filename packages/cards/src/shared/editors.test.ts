@@ -12,19 +12,7 @@ import type { FluvyRowsEditor } from './rows-editor.js';
  * `base ∪ keys`. The cards not yet under contract are named here, so a card cannot lose its keys unnoticed and
  * the list can only shrink.
  */
-const PENDING = new Set([
-  'fluvy-energy-card',
-  'fluvy-energy-flow-card',
-  'fluvy-energy-devices-card',
-  'fluvy-gauge-card',
-  'fluvy-stat-tiles-card',
-  'fluvy-production-card',
-  'fluvy-bars-card',
-  'fluvy-distribution-card',
-  'fluvy-humidity-card',
-  'fluvy-clock-card',
-  'fluvy-calendar-card',
-]);
+const PENDING = new Set(['fluvy-clock-card', 'fluvy-calendar-card']);
 
 type CardClass = typeof Card & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;

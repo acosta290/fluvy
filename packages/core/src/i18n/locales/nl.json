@@ -170,8 +170,7 @@
     "low": "Comfort vanaf (%)",
     "high": "Comfort tot (%)",
     "temperature_entity": "Temperatuurentiteit (dauwpunt)",
-    "humidifier_entity": "Luchtbevochtiger",
-    "trend_hours": "Trendvenster in uren (0 verbergt het)"
+    "humidifier_entity": "Luchtbevochtiger"
   },
   "plants": {
     "thirsty": "{count} dorstig",
@@ -370,6 +369,7 @@
     "suction_style": "Zuigstanden als",
     "temperature_tint": "Kleurtemperatuurliniaal kleuren",
     "rows": "Rijen",
+    "max_rows": "Hoogstens rijen",
     "tabs": "Tabbladen",
     "scenes": "Scènes",
     "label": "Label",
@@ -384,6 +384,7 @@
     "high": "Waarschuwen boven",
     "highlight": "Uitlichten",
     "secondary": "Tweede tekst",
+    "sub_entity": "Entiteiten op de tweede regel",
     "plain": "Geen balk",
     "sub": "Context",
     "days": "Dagen vooruit",
@@ -411,6 +412,9 @@
     "show_actions": "Knoppen tonen",
     "show_forecast": "Verwachting tonen",
     "show_subtitle": "Ondertitel tonen",
+    "show_cost": "Kosten tonen",
+    "show_peak": "Piek tonen",
+    "show_trend": "Trend tonen",
     "show_time": "Tijd tonen",
     "show_weather": "Weer tonen",
     "show_date": "Datum tonen",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Verdeling",
     "other": "Overig",
+    "share_of_total": "{percent} % van het totaal",
     "max_rows": "Rijen voordat de rest “Overig” wordt"
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Balk",
     "plain": "Eenvoudig",
     "row": "Rij",
+    "ring": "Ring",
+    "stack": "Gestapelde balk",
     "mini": "Mini",
     "large": "Groot",
     "hero": "Uitgelicht",

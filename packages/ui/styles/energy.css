@@ -22,8 +22,8 @@
 .ef-link--grid {
   stroke: var(--fluvy-state-energy-grid);
 }
-.ef-link--water {
-  stroke: var(--fluvy-state-energy-water);
+.ef-link--battery {
+  stroke: var(--fluvy-state-energy-battery);
 }
 
 .ef-arrow {
@@ -39,8 +39,8 @@
 .ef-arrow--grid {
   stroke: var(--fluvy-state-energy-grid);
 }
-.ef-arrow--water {
-  stroke: var(--fluvy-state-energy-water);
+.ef-arrow--battery {
+  stroke: var(--fluvy-state-energy-battery);
 }
 
 .ef-node {
@@ -134,8 +134,8 @@
   border-radius: 4px;
 }
 
-.ef-bar__fill--water {
-  background: var(--fluvy-state-energy-water);
+.ef-bar__fill--battery {
+  background: var(--fluvy-state-energy-battery);
 }
 .ef-bar__fill--solar {
   background: var(--fluvy-state-energy-solar);
@@ -167,9 +167,9 @@
   fill: var(--fluvy-state-energy-grid-fill);
   stroke: var(--fluvy-state-energy-grid-fill-border);
 }
-.ef-band--water {
-  fill: var(--fluvy-state-energy-water-fill);
-  stroke: var(--fluvy-state-energy-water-fill-border);
+.ef-band--battery {
+  fill: var(--fluvy-state-energy-battery-fill);
+  stroke: var(--fluvy-state-energy-battery-fill-border);
 }
 .ef-band--idle {
   opacity: 0.45;
@@ -196,8 +196,8 @@
 .ef-join--grid {
   stroke: var(--fluvy-state-energy-grid);
 }
-.ef-join--water {
-  stroke: var(--fluvy-state-energy-water);
+.ef-join--battery {
+  stroke: var(--fluvy-state-energy-battery);
 }
 .ef-join--idle {
   opacity: 0.4;
@@ -216,8 +216,8 @@
 .ef-chev--grid {
   stroke: var(--fluvy-state-energy-grid);
 }
-.ef-chev--water {
-  stroke: var(--fluvy-state-energy-water);
+.ef-chev--battery {
+  stroke: var(--fluvy-state-energy-battery);
 }
 .ef-chev--house {
   stroke: var(--fluvy-text-secondary);

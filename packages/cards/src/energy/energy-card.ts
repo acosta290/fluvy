@@ -5,6 +5,7 @@ import {
   formatNumber,
   formatTime,
   houseZone,
+  isUsable,
   stateText,
   strings,
   wallClock,
@@ -43,13 +44,17 @@ import {
 import { Card } from '../shared/base.js';
 
 import {
+  actionFields,
+  boolField,
+  colourFields,
   editorLabels,
+  entitiesField,
   entityField,
   fieldRow,
-  iconToneFields,
+  iconField,
   numberField,
+  selectField,
   textField,
-  titleFields,
 } from '../shared/form.js';
 
 import { HeadFit } from './head.js';
@@ -58,29 +63,34 @@ import { legendReadouts } from './legend.js';
 
 import { costParts, readoutParts } from './power.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const s = strings('energy');
 
 export interface EnergyLegendItem {
   entity: string;
-  label?: string;
+  name?: string;
 }
 
 export interface EnergyCardConfig extends FluvyCardConfig {
-  title?: string;
   subtitle?: string;
-  tone?: Tone;
   /** Window of the curve. 24 (the default) draws today on a 00:00 … 24:00 axis; anything else rolls. */
   hours?: number;
   /** A price or running-cost sensor shown beside the big value (€/h, €/kWh, …). */
   cost_entity?: string;
+  show_cost?: boolean;
   /** Up to three sensors under the chart (grid / solar / house energy today). */
   legend?: ReadonlyArray<string | EnergyLegendItem>;
+  /** `full` (default): the reading, the chart, its axis and the legend. `compact`: the head, the chart and its axis. */
+  variant?: 'full' | 'compact';
   /** Test hook, as in the clock and calendar cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
 
 const CHART_HEIGHT = 120;
+/** Narrower than this, three legend readouts would cut their words: they stack, one a line. */
+const STACK_BELOW = 240;
 const HEADROOM = 44; // the bubble's room: the chart rule in design/language.md
 const POINTS = 48; // a full window: one point per half hour of a day
 const REFRESH = 5 * 60_000; // how long the shared history cache keeps an answer
@@ -123,6 +133,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       } /* the sheet fixes 360; a card takes the column it is given */
       .ef-cols {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      /* three totals in a column too narrow for three words: one a line */
+      .ef-cols--stack {
+        grid-template-columns: minmax(0, 1fr);
       }
       .ef-cols .fv-readout {
         min-width: 0;
@@ -175,22 +189,39 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     this.loaded_ = false;
   }
 
+  static override keys = configKeys<EnergyCardConfig>()([
+    'subtitle',
+    'hours',
+    'cost_entity',
+    'show_cost',
+    'legend',
+    'variant',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'legend',
       title: 'editor.rows',
       domains: ['sensor'],
-      schema: [entityField(['sensor']), textField('label')],
+      keys: ['entity', 'name'],
+      schema: [entityField(['sensor']), textField('name')],
     },
   ];
+  /** The card's head is its sensor's name (`title` was the older word for it); a legend item's `label` is its name. */
+  static override aliases: AliasSpec = {
+    keys: [{ from: 'title', to: 'name' }],
+    items: { legend: ITEM_ALIASES },
+  };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor']),
-        titleFields(),
-        iconToneFields(),
-        fieldRow(numberField('hours', 1, 168), entityField(['sensor'], 'cost_entity', false)),
-        { name: 'legend', selector: { entity: { multiple: true, domain: ['sensor'] } } },
+        fieldRow(textField('name'), textField('subtitle')),
+        iconField(),
+        colourFields(),
+        fieldRow(numberField('hours', 1, 168), selectField('variant', ['full', 'compact'])),
+        fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
+        entitiesField('legend', ['sensor']),
+        actionFields(),
       ],
       ...editorLabels(s, { cost_entity: 'cost', legend: 'editor_legend' }, {}),
     };
@@ -213,11 +244,18 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return config;
   }
 
-  override getCardSize(): number {
-    return this.legend().length ? 7 : 6;
+  private get compact(): boolean {
+    return this.config?.variant === 'compact';
   }
+
+  override getCardSize(): number {
+    return this.compact ? 4 : this.legend().length ? 7 : 6;
+  }
+  /** The full card takes a section, the compact one half of it: a chart still reads in a half. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return this.compact
+      ? { columns: 6, rows: 'auto', min_columns: 6 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   protected override watched(): readonly string[] {
@@ -347,6 +385,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     value: string,
     unit: string,
     at: { cursor: number; parts: { value: string; unit: string }; time: string } | null,
+    tone: Tone,
   ): TemplateResult {
     if (!this.loaded_) return html`<div class="ef-chart"><div class="fv-skeleton"></div></div>`;
     const values = [...(this.series_?.values ?? [])];
@@ -357,7 +396,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     if (live !== null) values[values.length - 1] = live;
     const w = this.contentWidth;
     const family = getComputedStyle(this).fontFamily;
-    return html`<div class="ef-chart" ${scrub(this.scrubber)}>
+    // the chart wears the card's tone: its curve is drawn in the same ink as the head
+    return html`<div class="ef-chart fv-tone--${tone}" ${scrub(this.scrubber)}>
       ${curve(values, { w, h: CHART_HEIGHT, padTop: HEADROOM, extent, cursor: at?.cursor })}
       ${
         at
@@ -379,11 +419,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const title =
-      this.config?.title ?? (view.status === 'missing' ? s(this.hass, 'title') : view.name);
+      this.config?.name ?? (view.status === 'missing' ? s(this.hass, 'title') : view.name);
     if (view.status === 'missing')
       return this.renderEmpty(`${title} · ${stateText(this.hass, view)}`);
 
-    const off = view.status === 'unavailable';
+    const off = !isUsable(view);
+    const compact = this.compact;
+    const tone: Tone = off ? 'off' : toneOf(this.config, 'solar');
     const live = view.status === 'ok' ? view.number : null;
     const { day, hours, extent } = this.chartWindow();
     const parts = readoutParts(this.hass, view);
@@ -392,9 +434,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       (day
         ? `${view.areaName || this.t('energy.home')} · ${this.t('common.today').toLowerCase()}`
         : s(this.hass, 'last_hours', { hours: formatNumber(this.hass, hours, { digits: 0 }) }));
-    const cost = this.config?.cost_entity
-      ? costParts(this.hass, this.entity(this.config.cost_entity))
-      : null;
+    const cost =
+      this.config?.cost_entity && this.config.show_cost !== false
+        ? costParts(this.hass, this.entity(this.config.cost_entity))
+        : null;
     const legend = this.legend();
     const fitted = this.head.fit({ width: this.contentWidth, title, sub, trailing: 44 });
     const curveValues = [...(this.series_?.values ?? [])];
@@ -404,23 +447,32 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return html`<article class="fv-card ef-card ${off ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-        tone: off ? 'off' : (this.config?.tone ?? 'solar'),
+        tone,
         title,
         sub: fitted.sub,
         trailing: round('dots', 'quiet', this.t('common.more'), () =>
           this.tap(view.id, { action: 'more-info' }),
         ),
-        name: Boolean(this.config?.title),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
+        iconLabel: title,
+        name: true,
       })}
-      <div class="ef-top fv-value-row">
-        ${readout({ label: at ? at.time : s(this.hass, 'right_now'), value: at ? at.parts.value : parts.value, unit: at ? at.parts.unit : parts.unit, size: live === null && view.status === 'ok' ? 'm' : 'l' })}
-        ${cost ? html`<div class="ef-top__side">${readout({ label: s(this.hass, 'cost'), value: cost.value, unit: cost.unit, size: 's' })}</div>` : nothing}
-      </div>
-      ${this.renderChart(extent, live, parts.value, parts.unit, at)}
+      ${
+        compact
+          ? nothing
+          : html`<div class="ef-top fv-value-row">
+              ${readout({ label: at ? at.time : s(this.hass, 'right_now'), value: at ? at.parts.value : parts.value, unit: at ? at.parts.unit : parts.unit, size: live === null && view.status === 'ok' ? 'm' : 'l' })}
+              ${cost ? html`<div class="ef-top__side">${readout({ label: s(this.hass, 'cost'), value: cost.value, unit: cost.unit, size: 's' })}</div>` : nothing}
+            </div>`
+      }
+      ${this.renderChart(extent, live, parts.value, parts.unit, at, off ? 'neutral' : tone)}
       ${axis(day ? this.dayAxis() : this.rollingAxis(hours))}
       ${
-        legend.length
-          ? html`<div class="ef-cols fv-cols">
+        legend.length && !compact
+          ? html`<div
+              class="ef-cols fv-cols ${this.contentWidth < STACK_BELOW ? 'ef-cols--stack' : ''}"
+            >
               ${legendReadouts(this.hass, legend, (id) => this.entity(id))}
             </div>`
           : nothing

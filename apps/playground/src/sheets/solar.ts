@@ -256,6 +256,21 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the reading over a level bar, for a half column
+    {
+      title: 'Gauge · bar',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.so_solar_power',
+          icon: 'sun',
+          variant: 'bar',
+          subtitle: 'South roof · 5.4 kWp',
+          max_entity: 'sensor.so_solar_capacity',
+        },
+      ],
+    },
     {
       title: 'Total capacity',
       cards: [
@@ -296,6 +311,20 @@ export const sheet: SheetSpec = {
           entity: 'sensor.so_energy_today',
           forecast_entity: 'sensor.so_forecast_today',
           peak_entity: 'sensor.so_peak_today',
+          _now: SHEET_NOW,
+        },
+      ],
+    },
+    // the head, the bars and their axis: half a section
+    {
+      title: 'Production · compact',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-production-card',
+          entity: 'sensor.so_energy_today',
+          forecast_entity: 'sensor.so_forecast_today',
+          variant: 'compact',
           _now: SHEET_NOW,
         },
       ],
@@ -363,6 +392,22 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a row per source, its share under its name; a source can wear its own colour
+    {
+      title: 'Distribution · rows',
+      cards: [
+        {
+          type: 'custom:fluvy-distribution-card',
+          variant: 'rows',
+          entities: [
+            'sensor.so_heat_pump_power',
+            'sensor.so_dishwasher_power',
+            { entity: 'sensor.so_media_power', color: 'teal' },
+            'sensor.so_fridge_power',
+          ],
+        },
+      ],
+    },
     {
       title: 'Humidity',
       cards: [
@@ -371,6 +416,18 @@ export const sheet: SheetSpec = {
           entity: 'sensor.so_living_humidity',
           subtitle: 'Living room',
           temperature_entity: 'sensor.so_living_temperature',
+          humidifier_entity: 'humidifier.so_living',
+        },
+      ],
+    },
+    // the band and its humidifier, no trend
+    {
+      title: 'Humidity · no trend',
+      cards: [
+        {
+          type: 'custom:fluvy-humidity-card',
+          entity: 'sensor.so_living_humidity',
+          show_trend: false,
           humidifier_entity: 'humidifier.so_living',
         },
       ],

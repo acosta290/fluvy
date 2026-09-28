@@ -7,9 +7,9 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { head, sheetStyles, type Tone } from '@fluvy/ui';
+import { head, listRow, sheetStyles, type IconRef, type Tone } from '@fluvy/ui';
 
-import { css, html, type CSSResultGroup, type TemplateResult } from 'lit';
+import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -17,20 +17,26 @@ import { HeadFit } from '../energy/head.js';
 
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import {
+  actionFields,
+  colourFields,
   editorLabels,
+  entitiesField,
   entityField,
   fieldRow,
-  iconToneFields,
+  iconField,
   idsOnly,
   numberField,
+  selectField,
   textField,
   titleFields,
-  toneField,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
+import { glyphFor } from '../shared/domain.js';
 
 const strings = words('distribution');
 
@@ -38,15 +44,17 @@ export interface DistributionEntityConfig {
   entity: string;
   name?: string;
   tone?: Tone;
+  color?: string;
 }
 
 /** `entities` holds the power sensors: ids, or `{ entity, name, tone }` objects where YAML wants a name or a tone per segment. */
 export interface DistributionCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   /** Rows the legend shows; when there are more, the smallest are summed into one neutral "Other". */
   max_rows?: number;
+  /** `stack` (default): one bar of shares and a legend. `rows`: a 60 px row per source, its share under its name. */
+  variant?: 'stack' | 'rows';
 }
 
 interface Part {
@@ -55,6 +63,11 @@ interface Part {
   /** Base-unit value; null when the entity has no usable number. */
   readonly value: number | null;
   readonly tone: Tone;
+  /** The source's own colour, as `AccentSheet` reads it; none for "Other". */
+  readonly accent: string | undefined;
+  readonly glyph: IconRef | string;
+  /** The source's entity; \"Other\" has none. */
+  readonly entity?: string;
 }
 
 const isSource = (row: unknown): row is DistributionEntityConfig =>
@@ -97,25 +110,40 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
 
   private readonly head = new HeadFit(this);
 
+  /** A share of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
+  static override base: readonly BaseKey[] = [
+    'entities',
+    'icon',
+    'tone',
+    'color',
+    'tap_action',
+    'hold_action',
+  ];
+  static override keys = configKeys<DistributionCardConfig>()([
+    'title',
+    'subtitle',
+    'max_rows',
+    'variant',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'entities',
       title: 'editor.entities',
       domains: ['sensor'],
-      schema: [entityField(['sensor']), fieldRow(textField('name'), toneField())],
+      keys: ['entity', 'name', 'tone', 'color'],
+      schema: [entityField(['sensor']), textField('name'), colourFields()],
     },
   ];
+  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconToneFields(),
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['sensor'] } },
-        },
-        numberField('max_rows', 2, 10),
+        iconField(),
+        colourFields(),
+        entitiesField('entities', ['sensor'], true),
+        fieldRow(numberField('max_rows', 2, 10), selectField('variant', ['stack', 'rows'])),
+        actionFields(),
       ],
       ...idsOnly('entities'),
       ...editorLabels(strings, { max_rows: 'max_rows' }, {}),
@@ -191,7 +219,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
       const next = sources
         .slice(index + 1)
         .find((_later, offset) => kept.has(index + 1 + offset))?.tone;
-      let tone = source.tone;
+      let tone = source.tone ?? (source.color ? 'accent' : undefined);
       while (!tone) {
         // never two equal neighbours, whatever the config pinned on either side
         const candidate = CYCLE[cursor++ % CYCLE.length] as Tone;
@@ -202,6 +230,9 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         label: source.name ?? (views[index] as EntityView).name,
         value: values[index] ?? null,
         tone,
+        accent: this.accents.item(source.color),
+        glyph: glyphFor(views[index] as EntityView),
+        entity: source.entity,
       });
     });
     if (kept.size < sources.length) {
@@ -213,6 +244,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
           ? rest.reduce<number>((total, value) => total + (value ?? 0), 0)
           : null,
         tone: 'neutral',
+        accent: undefined,
+        glyph: 'plug',
       });
     }
     return parts;
@@ -225,7 +258,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
       .map((view) => (view.status === 'ok' ? baseOf(view)?.unit : undefined))
       .find((found) => found !== undefined);
     const dead = unit === undefined;
-    const tone: Tone = dead ? 'off' : (this.config?.tone ?? 'accent');
+    const tone: Tone = dead ? 'off' : toneOf(this.config, 'accent');
+    const asRows = this.config?.variant === 'rows';
 
     const parts = this.parts(sources, views, unit ?? '');
     const total = parts.reduce((count, part) => count + (part.value ?? 0), 0);
@@ -244,31 +278,68 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     });
 
     return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'plug') : null, tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
-      <div class="fv-stack ${segments.length ? '' : 'so-empty'}">
-        ${repeat(
-          segments,
-          (part) => part.key,
-          (part) =>
-            html`<span
-              class="fv-stack__seg fv-bar--${part.tone}"
-              data-measure="value"
-              style="width:${(((part.value ?? 0) / total) * 100).toFixed(2)}%"
-            ></span>`,
-        )}
-      </div>
-      <div class="fv-legend">
-        ${repeat(
-          parts,
-          (part) => part.key,
-          (part) =>
-            html`<div class="fv-legend__row">
-              <i class="fv-swatch fv-bar--${part.tone}"></i
-              ><span class="fv-legend__name">${part.label}</span
-              ><span class="fv-legend__value">${text(part.value)}</span>
-            </div>`,
-        )}
-      </div>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
+      })}
+      ${
+        asRows
+          ? html`<div class="so-rows">
+              ${repeat(
+                parts,
+                (part) => part.key,
+                (part) =>
+                  listRow({
+                    icon: part.glyph,
+                    tone: part.value === null ? 'off' : part.tone,
+                    accent: part.accent,
+                    title: part.label,
+                    name: true,
+                    sub:
+                      part.value !== null && total > 0
+                        ? strings(this.hass, 'share_of_total', {
+                            percent: Math.round((part.value / total) * 100),
+                          })
+                        : '',
+                    trailing: 'value',
+                    value: text(part.value),
+                    unavailable: part.value === null,
+                    ...(part.entity ? { onTap: () => this.tap(part.entity) } : {}),
+                  }),
+              )}
+            </div>`
+          : html`<div class="fv-stack ${segments.length ? '' : 'so-empty'}">
+                ${repeat(
+                  segments,
+                  (part) => part.key,
+                  (part) =>
+                    html`<span
+                      class="fv-stack__seg fv-bar--${part.tone}"
+                      data-accent=${part.accent ?? nothing}
+                      data-measure="value"
+                      style="width:${(((part.value ?? 0) / total) * 100).toFixed(2)}%"
+                    ></span>`,
+                )}
+              </div>
+              <div class="fv-legend">
+                ${repeat(
+                  parts,
+                  (part) => part.key,
+                  (part) =>
+                    html`<div class="fv-legend__row" data-accent=${part.accent ?? nothing}>
+                      <i class="fv-swatch fv-bar--${part.tone}"></i
+                      ><span class="fv-legend__name">${part.label}</span
+                      ><span class="fv-legend__value">${text(part.value)}</span>
+                    </div>`,
+                )}
+              </div>`
+      }
     </article>`;
   }
 }

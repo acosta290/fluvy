@@ -170,8 +170,7 @@
     "low": "Comfort from (%)",
     "high": "Comfort up to (%)",
     "temperature_entity": "Temperature entity (dew point)",
-    "humidifier_entity": "Humidifier",
-    "trend_hours": "Trend window in hours (0 hides it)"
+    "humidifier_entity": "Humidifier"
   },
   "plants": {
     "thirsty": "{count} thirsty",
@@ -370,6 +369,7 @@
     "suction_style": "Suction speeds as",
     "temperature_tint": "Tint the colour temperature ruler",
     "rows": "Rows",
+    "max_rows": "Rows at most",
     "tabs": "Tabs",
     "scenes": "Scenes",
     "label": "Label",
@@ -384,6 +384,7 @@
     "high": "Warn above",
     "highlight": "Highlight",
     "secondary": "Secondary text",
+    "sub_entity": "Entities on the second line",
     "plain": "No bar",
     "sub": "Context",
     "days": "Days ahead",
@@ -411,6 +412,9 @@
     "show_actions": "Show the buttons",
     "show_forecast": "Show the forecast",
     "show_subtitle": "Show the subtitle",
+    "show_cost": "Show the cost",
+    "show_peak": "Show the peak",
+    "show_trend": "Show the trend",
     "show_time": "Show the time",
     "show_weather": "Show the weather",
     "show_date": "Show the date",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Distribution",
     "other": "Other",
+    "share_of_total": "{percent} % of total",
     "max_rows": "Rows before the rest becomes \"Other\""
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Bar",
     "plain": "Plain",
     "row": "Row",
+    "ring": "Ring",
+    "stack": "Stacked bar",
     "mini": "Mini",
     "large": "Large",
     "hero": "Hero",

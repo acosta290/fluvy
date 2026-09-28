@@ -164,6 +164,19 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the head, the chart and its axis: half a section
+    {
+      title: 'Energy · compact',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          entity: 'sensor.ef_house_power',
+          variant: 'compact',
+          _now: SHEET_NOW,
+        },
+      ],
+    },
     {
       title: 'Flow',
       cards: [

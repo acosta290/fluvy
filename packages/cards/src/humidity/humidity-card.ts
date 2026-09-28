@@ -1,6 +1,7 @@
 import {
   fetchHistory,
   formatNumber,
+  isUsable,
   stateText,
   strings as words,
   toggleEntity,
@@ -28,28 +29,34 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 import {
+  actionFields,
+  boolField,
+  colourFields,
   editorLabels,
   entityField,
   fieldRow,
-  iconToneFields,
+  iconField,
   numberField,
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const strings = words('humidity');
 
 export interface HumidityCardConfig extends FluvyCardConfig {
   subtitle?: string;
-  tone?: Tone;
   /** Bottom of the comfort band (30 %). */
   low?: number;
   /** Top of the comfort band (60 %). */
   high?: number;
   /** Room temperature; with it the card can say the dew point. */
   temperature_entity?: string;
-  /** Hours the Trend row looks back (6); 0 hides the row. */
-  trend_hours?: number;
+  /** Hours the Trend row looks back (6). */
+  hours?: number;
+  /** The Trend row (default). */
+  show_trend?: boolean;
   /** A humidifier, dehumidifier or plain switch shown as a row with its switch. */
   humidifier_entity?: string;
 }
@@ -104,12 +111,24 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     this.series_ = undefined;
   }
 
+  static override keys = configKeys<HumidityCardConfig>()([
+    'subtitle',
+    'low',
+    'high',
+    'temperature_entity',
+    'hours',
+    'show_trend',
+    'humidifier_entity',
+  ]);
+  /** `trend_hours` was the window's older name; `trend_hours: 0` still hides the row. */
+  static override aliases: AliasSpec = { keys: [{ from: 'trend_hours', to: 'hours' }] };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor', 'number', 'input_number']),
         fieldRow(textField('name'), textField('subtitle')),
-        iconToneFields(),
+        iconField(),
+        colourFields(),
         fieldRow(numberField('low', 0, 100), numberField('high', 0, 100)),
         {
           name: 'temperature_entity',
@@ -119,7 +138,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
           name: 'humidifier_entity',
           selector: { entity: { domain: ['humidifier', 'switch', 'fan', 'input_boolean'] } },
         },
-        numberField('trend_hours', 0, 48),
+        fieldRow(numberField('hours', 1, 48), boolField('show_trend')),
+        actionFields(),
       ],
       ...editorLabels(
         strings,
@@ -128,7 +148,6 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
           high: 'high',
           temperature_entity: 'temperature_entity',
           humidifier_entity: 'humidifier_entity',
-          trend_hours: 'trend_hours',
         },
         {},
       ),
@@ -170,8 +189,10 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     ].filter(Boolean);
   }
 
+  /** The Trend window; 0 when the row is not shown. */
   private get trendHours(): number {
-    const hours = this.config?.trend_hours;
+    if (this.config?.show_trend === false) return 0;
+    const hours = this.config?.hours;
     return typeof hours === 'number' && hours >= 0 ? Math.min(48, hours) : 6;
   }
 
@@ -234,6 +255,7 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
       icon: glyphFor(view),
       tone: !usable ? 'off' : on ? 'water' : 'neutral',
       title: view.name,
+      name: true,
       sub: this.head.fitRowSub(usable ? context : stateText(this.hass, view), room),
       trailing: 'switch',
       on,
@@ -253,13 +275,13 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
     const value = view.number;
     const low = clampPercent(this.config?.low ?? 30);
     const high = Math.max(low, clampPercent(this.config?.high ?? 60));
     const dry = value !== null && value < low;
     const humid = value !== null && value > high;
-    const markerTone: Tone = this.config?.tone ?? 'water';
+    const markerTone: Tone = toneOf(this.config, 'water');
     const tone: Tone = unusable
       ? 'off'
       : value === null
@@ -330,7 +352,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
-        onIconTap: openInfo,
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
         name: true,
       })}

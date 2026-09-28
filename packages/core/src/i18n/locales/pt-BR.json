@@ -170,8 +170,7 @@
     "low": "Conforto a partir de (%)",
     "high": "Conforto até (%)",
     "temperature_entity": "Entidade de temperatura (ponto de orvalho)",
-    "humidifier_entity": "Umidificador",
-    "trend_hours": "Janela da tendência em horas (0 oculta)"
+    "humidifier_entity": "Umidificador"
   },
   "plants": {
     "thirsty": "{count} com sede",
@@ -370,6 +369,7 @@
     "suction_style": "Potências de sucção como",
     "temperature_tint": "Colorir a régua de temperatura de cor",
     "rows": "Linhas",
+    "max_rows": "Linhas no máximo",
     "tabs": "Abas",
     "scenes": "Cenas",
     "label": "Rótulo",
@@ -384,6 +384,7 @@
     "high": "Avisar acima de",
     "highlight": "Destacar",
     "secondary": "Texto secundário",
+    "sub_entity": "Entidades na segunda linha",
     "plain": "Sem barra",
     "sub": "Contexto",
     "days": "Dias à frente",
@@ -411,6 +412,9 @@
     "show_actions": "Mostrar os botões",
     "show_forecast": "Mostrar a previsão",
     "show_subtitle": "Mostrar o subtítulo",
+    "show_cost": "Mostrar o custo",
+    "show_peak": "Mostrar o pico",
+    "show_trend": "Mostrar a tendência",
     "show_time": "Mostrar a hora",
     "show_weather": "Mostrar o tempo",
     "show_date": "Mostrar a data",
@@ -588,6 +592,7 @@
   "distribution": {
     "distribution": "Distribuição",
     "other": "Outros",
+    "share_of_total": "{percent} % do total",
     "max_rows": "Linhas antes de o resto virar “Outros”"
   },
   "energy-devices": {
@@ -963,6 +968,8 @@
     "bar": "Barra",
     "plain": "Simples",
     "row": "Linha",
+    "ring": "Anel",
+    "stack": "Barra empilhada",
     "mini": "Mini",
     "large": "Grande",
     "hero": "Em destaque",

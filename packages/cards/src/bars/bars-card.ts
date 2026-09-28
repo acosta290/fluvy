@@ -2,6 +2,7 @@ import {
   stateText,
   strings as words,
   valueParts,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type HaFormSchemaItem,
@@ -18,24 +19,29 @@ import { HeadFit } from '../energy/head.js';
 
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 
 import {
+  actionField,
+  actionFields,
   boolField,
+  colourFields,
   editorLabels,
   entitiesField,
   entityField,
   fieldRow,
-  iconToneFields,
+  formLabels,
+  iconField,
   idsOnly,
   nameIconFields,
   textField,
   titleFields,
-  toneField,
 } from '../shared/form.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const strings = words('bars');
 
@@ -49,7 +55,7 @@ export interface BarRowConfig {
   name?: string;
   icon?: string;
   /** Static context in front of the live secondary text ("6 panels"). */
-  sub?: string;
+  secondary?: string;
   /** One or more entities read into the row's secondary line (a string's temperature, a plant's note). */
   sub_entity?: string | readonly string[];
   /** The bar's range, in the entity's unit. Defaults: 0–100 for a percentage, 0–largest row otherwise. */
@@ -63,12 +69,14 @@ export interface BarRowConfig {
   tone?: Tone;
   /** No bar: a plain 60 px row with its value at the right (the inverter under its strings). */
   plain?: boolean;
+  /** The row's own colour: its circle and its bar, in the palette's family. */
+  color?: string;
+  tap_action?: ActionConfig;
 }
 
 export interface BarsCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  tone?: Tone;
   rows?: ReadonlyArray<string | BarRowConfig>;
   /** "All good" by default. */
   badge_ok?: string;
@@ -115,27 +123,57 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
 
   private readonly head = new HeadFit(this);
 
+  /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
+  static override base: readonly BaseKey[] = ['icon', 'tone', 'color', 'tap_action', 'hold_action'];
+  static override keys = configKeys<BarsCardConfig>()([
+    'title',
+    'subtitle',
+    'rows',
+    'badge_ok',
+    'badge_warn',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'rows',
       title: 'editor.rows',
+      keys: [
+        'entity',
+        'name',
+        'icon',
+        'secondary',
+        'sub_entity',
+        'min',
+        'max',
+        'low',
+        'high',
+        'tone',
+        'color',
+        'plain',
+        'tap_action',
+      ],
       schema: [
         entityField(),
         nameIconFields(),
-        fieldRow(toneField(), textField('sub')),
+        textField('secondary'),
+        entitiesField('sub_entity'),
+        colourFields(),
         fieldRow(anyNumber('min'), anyNumber('max')),
         fieldRow(anyNumber('low'), anyNumber('high')),
-        boolField('plain'),
+        fieldRow(boolField('plain'), actionField()),
       ],
+      computeLabel: formLabels({ sub_entity: 'editor.sub_entity' }).computeLabel,
     },
   ];
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconToneFields(),
+        iconField(),
+        colourFields(),
         entitiesField('rows', undefined, true),
         fieldRow(textField('badge_ok'), textField('badge_warn')),
+        actionFields(),
       ],
       ...idsOnly('rows'),
       ...editorLabels(
@@ -189,10 +227,10 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     const target = event.target;
     if (!(target instanceof HTMLElement) || !target.classList.contains('fv-row')) return;
     const index = [...(event.currentTarget as HTMLElement).children].indexOf(target);
-    const id = this.rows()[index]?.entity;
-    if (!id) return;
+    const row = this.rows()[index];
+    if (!row) return;
     event.preventDefault();
-    this.tap(id, { action: 'more-info' });
+    this.tap(row.entity, row.tap_action);
   };
 
   /**
@@ -201,7 +239,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
    * In a narrow column the context gives way from the end — the word that says why there is no value never does.
    */
   private context(row: BarRowConfig, view: EntityView, usable: boolean, room: number): string {
-    const segments: Segment[] = row.sub ? [{ text: row.sub, optional: true }] : [];
+    const segments: Segment[] = row.secondary ? [{ text: row.secondary, optional: true }] : [];
     const lower = (state: string): string =>
       segments.length
         ? state.charAt(0).toLocaleLowerCase(this.hass?.language) + state.slice(1)
@@ -228,7 +266,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   protected renderCard(): TemplateResult {
     const rows = this.rows();
     const views = rows.map((row) => this.entity(row.entity));
-    const tone: Tone = this.config?.tone ?? 'accent';
+    const tone: Tone = toneOf(this.config, 'accent');
 
     // rows that measure the same thing are written in one unit; a bar nobody bounded is measured against the largest bar
     const setPeak = new Map<string, number>();
@@ -273,23 +311,27 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
           : parts.unit
             ? `${parts.value} ${parts.unit}`
             : parts.value;
-      const iconTone: Tone = !usable ? 'off' : warn ? 'warning' : (row.tone ?? 'neutral');
+      // a row's own tone, or its colour as the accent; without either the circle stays neutral and the bar takes the measure's tone
+      const own: Tone | undefined = row.tone ?? (row.color ? 'accent' : undefined);
+      const iconTone: Tone = !usable ? 'off' : warn ? 'warning' : (own ?? 'neutral');
       const valueTone: 'warning' | '' = warn ? 'warning' : '';
 
       const shared = {
         icon: row.icon ?? glyphFor(view),
         tone: iconTone,
         title: row.name ?? view.name,
+        name: true,
+        accent: this.accents.item(row.color),
         sub: this.context(row, view, usable, this.head.rowRoom(width, value)),
         value,
         valueTone,
-        onTap: (): void => this.tap(row.entity, { action: 'more-info' }),
+        onTap: (): void => this.tap(row.entity, row.tap_action),
       };
       return row.plain
         ? listRow({ ...shared, trailing: 'value' })
         : barRow({
             ...shared,
-            barTone: warn ? 'warning' : (row.tone ?? barToneFor(view)),
+            barTone: warn ? 'warning' : (own ?? barToneFor(view)),
             fraction: quantity === null || max <= min ? 0 : (quantity.value - min) / (max - min),
           });
     });
@@ -310,7 +352,16 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     });
 
     return html`<article class="fv-card so-card" data-card>
-      ${head({ icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null, tone, title, sub: fitted.sub, trailing: fitted.badge, name: Boolean(this.config?.title) })}
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        onIconTap: () => this.tap(),
+        onHold: () => this.hold(),
+      })}
       <div class="so-rows" @keydown=${this.onRowsKey}>${body}</div>
     </article>`;
   }

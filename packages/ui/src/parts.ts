@@ -458,6 +458,10 @@ export interface BarRowOptions {
   readonly icon?: IconRef | string | undefined;
   readonly tone?: Tone;
   readonly title: string;
+  /** The title is a name (a device's, a plant's): it may end in an ellipsis in a narrow column, as names do. */
+  readonly name?: boolean;
+  /** The row's own colour (`#rrggbb`): its accent inside this row, as `AccentSheet` reads `data-accent`. */
+  readonly accent?: string | undefined;
   readonly sub?: string;
   readonly value?: string;
   readonly fraction: number;
@@ -487,6 +491,7 @@ export function barRow(o: BarRowOptions): TemplateResult {
     : 0;
   return html`<div
     class="fv-row fv-row--bar ${o.onTap ? 'fv-row--tap' : ''}"
+    data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
     tabindex=${o.onTap ? 0 : nothing}
     @click=${o.onTap ?? nothing}
@@ -494,7 +499,7 @@ export function barRow(o: BarRowOptions): TemplateResult {
   >
     <span class="fv-ico fv-ico--${o.tone ?? 'neutral'}" data-icon>${icon(o.icon)}</span>
     <span class="fv-row__text"
-      ><span class="fv-row__title">${o.title}</span
+      ><span class="fv-row__title" data-name=${o.name ? '' : nothing}>${o.title}</span
       >${o.sub ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}<span class="fv-bar"
         ><span
           class="fv-bar__fill fv-bar--${o.barTone ?? o.tone ?? 'neutral'}"

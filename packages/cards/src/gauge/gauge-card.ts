@@ -1,6 +1,7 @@
 import {
   fetchHistory,
   formatNumber,
+  isUsable,
   stateText,
   strings as words,
   type EntityView,
@@ -11,7 +12,7 @@ import {
   type Series,
 } from '@fluvy/core';
 
-import { head, readout, sheetStyles, type Tone } from '@fluvy/ui';
+import { head, readout, rulerLabels, sheetStyles, type Tone } from '@fluvy/ui';
 
 import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
@@ -21,23 +22,29 @@ import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
 import {
+  actionFields,
+  colourFields,
   editorLabels,
   entityField,
   fieldRow,
-  iconToneFields,
+  iconField,
   numberField,
+  selectField,
   textField,
 } from '../shared/form.js';
 import { statsSize } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
 import { baseOf, ceilingFor, figure, scaleFor, toBase } from './units.js';
+import { configKeys } from '../shared/config.js';
+import { toneOf } from '../shared/colour.js';
 
 const strings = words('gauge');
 
 export interface GaugeCardConfig extends FluvyCardConfig {
   subtitle?: string;
-  tone?: Tone;
+  /** `ring` (default): the dial. `bar`: the reading over a level bar, for a half column. */
+  variant?: 'ring' | 'bar';
   /** Bottom of the ring, in the sensor's unit. */
   min?: number;
   /** Top of the ring, in the sensor's unit. Without it: the entity's `max` attribute, `max_entity`, or the window's peak rounded up. */
@@ -118,12 +125,23 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     this.series_ = undefined;
   }
 
+  static override keys = configKeys<GaugeCardConfig>()([
+    'subtitle',
+    'variant',
+    'min',
+    'max',
+    'max_entity',
+    'label',
+    'hours',
+    'badge',
+  ]);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor', 'number', 'input_number', 'counter']),
         fieldRow(textField('name'), textField('subtitle')),
-        iconToneFields(),
+        fieldRow(iconField(), selectField('variant', ['ring', 'bar'])),
+        colourFields(),
         fieldRow(
           numberField('min', -1_000_000, 1_000_000, 0.1),
           numberField('max', -1_000_000, 1_000_000, 0.1),
@@ -134,6 +152,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         },
         fieldRow(textField('label'), textField('badge')),
         numberField('hours', 1, 168),
+        actionFields(),
       ],
       ...editorLabels(strings, { max_entity: 'max_entity', label: 'label', badge: 'badge' }, {}),
     };
@@ -159,11 +178,18 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return config;
   }
 
-  override getCardSize(): number {
-    return 8;
+  private get bar(): boolean {
+    return this.config?.variant === 'bar';
   }
+
+  override getCardSize(): number {
+    return this.bar ? 5 : 8;
+  }
+  /** The ring takes a section; the bar half of one, and reads in a third. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return this.bar
+      ? { columns: 6, rows: 'auto', min_columns: 4 }
+      : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   protected override watched(): readonly string[] {
@@ -235,7 +261,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
 
-    const unusable = view.status === 'unavailable';
+    const unusable = !isUsable(view);
     const base = toBase(1, view.unit);
     const value = view.number === null ? null : view.number * base.value;
     const min = (this.config?.min ?? 0) * base.value;
@@ -263,7 +289,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       formatNumber(this.hass, raw / scale.divisor, { digits: edgeDigits, minDigits: edgeDigits });
 
     const active = value !== null && value > min + (max === null ? 0 : (max - min) * IDLE);
-    const tone: Tone = this.config?.tone ?? 'solar';
+    const tone: Tone = toneOf(this.config, 'solar');
     const headTone: Tone = unusable ? 'off' : active ? tone : 'neutral';
     const badgeText =
       unusable || value === null
@@ -309,32 +335,52 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         title: name,
         sub: fitted.sub,
         trailing: fitted.badge,
-        onIconTap: () => this.tap(view.id, { action: 'more-info' }),
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
         iconLabel: name,
         name: true,
       })}
-      <div class="so-gauge">
-        <fluvy-dial
-          gauge
-          style="margin-left:${inset}px"
-          .radius=${radius}
-          .tick=${TICK}
-          .large=${true}
-          .stepper=${false}
-          .tone=${unusable ? 'neutral' : tone}
-          .min=${min}
-          .max=${max ?? min + 1}
-          .fill=${value === null || max === null ? 0 : (value - min) / (max - min)}
-          .value=${value ?? undefined}
-          .unit=${value === null ? '' : scale.unit}
-          .label=${this.innerLabel(view)}
-          .text=${value === null ? '—' : undefined}
-          .minLabel=${edge(min)}
-          .maxLabel=${max === null ? '—' : edge(max)}
-          ?disabled=${value === null}
-          .format=${shown}
-        ></fluvy-dial>
-      </div>
+      ${
+        this.bar
+          ? html`<div class="so-top fv-value-row">
+                ${readout({ label: this.innerLabel(view), value: value === null ? '—' : shown(value), unit: value === null ? '' : scale.unit, size: 'l' })}
+              </div>
+              <div class="so-level">
+                <span class="fv-bar"
+                  ><span
+                    class="fv-bar__fill fv-bar--${unusable || !active ? 'neutral' : tone}"
+                    data-measure="value"
+                    style="width:${value === null || max === null ? 0 : Math.round(Math.min(1, Math.max(0, (value - min) / (max - min))) * 100)}%"
+                  ></span
+                ></span>
+              </div>
+              ${rulerLabels([
+                [0, edge(min)],
+                [1, max === null ? '—' : edge(max)],
+              ])}`
+          : html`<div class="so-gauge">
+              <fluvy-dial
+                gauge
+                style="margin-left:${inset}px"
+                .radius=${radius}
+                .tick=${TICK}
+                .large=${true}
+                .stepper=${false}
+                .tone=${unusable ? 'neutral' : tone}
+                .min=${min}
+                .max=${max ?? min + 1}
+                .fill=${value === null || max === null ? 0 : (value - min) / (max - min)}
+                .value=${value ?? undefined}
+                .unit=${value === null ? '' : scale.unit}
+                .label=${this.innerLabel(view)}
+                .text=${value === null ? '—' : undefined}
+                .minLabel=${edge(min)}
+                .maxLabel=${max === null ? '—' : edge(max)}
+                ?disabled=${value === null}
+                .format=${shown}
+              ></fluvy-dial>
+            </div>`
+      }
       <div class="so-cols fv-cols so-cols--center" data-align="center">
         ${stats.map((stat) => readout({ ...stat, size }))}
       </div>
