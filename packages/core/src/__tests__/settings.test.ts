@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   HOUSE_DEFAULTS,
+  MAX_SAVED_PALETTES,
   parseHouse,
   parsePalette,
   parsePersonal,
+  parseSavedPalettes,
+  parseWall,
   PERSONAL_DEFAULTS,
   resolveSettings,
   SettingsStore,
   pageScope,
+  WALL_DEFAULTS,
   wearsLook,
   type SettingsHass,
 } from '../settings/index.js';
@@ -47,7 +51,7 @@ describe('parsing stored settings', () => {
         extra: true,
       }),
     ).toEqual({
-      version: 1,
+      version: 2,
       palette: 'volt',
       shape: 'round',
       pills: 'crisp',
@@ -57,7 +61,63 @@ describe('parsing stored settings', () => {
       icons: false,
       activity: false,
       history: false,
+      palettes: [],
+      wall: WALL_DEFAULTS,
     });
+  });
+
+  it('reads the wall settings field by field, each broken one as its default', () => {
+    expect(parseWall(undefined)).toEqual(WALL_DEFAULTS);
+    expect(
+      parseWall({
+        dashboards: ['fluvy-wall', 7],
+        after: 5,
+        clock: false,
+        dim: true,
+        wakeEntity: 'binary_sensor.hall_motion',
+        theme: 'hours',
+        from: '23:30',
+        to: '06:15',
+        nightDim: 40,
+        background: 'wall',
+      }),
+    ).toEqual({
+      dashboards: ['fluvy-wall'],
+      after: 5,
+      clock: false,
+      dim: true,
+      wakeEntity: 'binary_sensor.hall_motion',
+      theme: 'hours',
+      from: '23:30',
+      to: '06:15',
+      nightDim: 40,
+      background: 'wall',
+    });
+    expect(
+      parseWall({
+        after: 7,
+        wakeEntity: 'light.hall',
+        theme: 'night',
+        from: '25:00',
+        to: '7:00',
+        nightDim: 50,
+        background: 'photo',
+      }),
+    ).toEqual(WALL_DEFAULTS);
+  });
+
+  it('keeps the well-formed saved palettes, the first of each name, twelve at most', () => {
+    const file = (name: string) => ({
+      fluvy_palette: 1,
+      name,
+      title: name,
+      palette: { character: 'soft', base: 'warm', accent: '#4f7a4a' },
+    });
+    expect(parseSavedPalettes(undefined)).toEqual([]);
+    const kept = parseSavedPalettes([file('moss'), { name: 'broken' }, file('moss'), file('plum')]);
+    expect(kept.map((entry) => entry.name)).toEqual(['moss', 'plum']);
+    const many = parseSavedPalettes(Array.from({ length: 14 }, (_, i) => file(`p${i}`)));
+    expect(many).toHaveLength(MAX_SAVED_PALETTES);
   });
 
   it('accepts a custom palette only whole, and drops what its character does not use', () => {
@@ -180,6 +240,23 @@ describe('the settings store', () => {
       type: 'frontend/set_user_data',
       key: 'fluvy',
       value: { ...PERSONAL_DEFAULTS, language: 'es' },
+    });
+  });
+
+  it('keeps a field of a newer version through a save, and parses what it knows', async () => {
+    const { hass, listeners, sent } = fakeHass();
+    const store = new SettingsStore(() => hass, undefined);
+    store.start(() => undefined);
+    listeners.get('frontend/subscribe_system_data')?.({
+      value: { version: 3, palette: 'volt', rooms: { order: ['kitchen'] }, wall: { after: 5 } },
+    });
+    await store.saveHouse({ shape: 'round' });
+    expect(sent[0]?.value).toEqual({
+      ...HOUSE_DEFAULTS,
+      palette: 'volt',
+      shape: 'round',
+      wall: { ...WALL_DEFAULTS, after: 5 },
+      rooms: { order: ['kitchen'] },
     });
   });
 });

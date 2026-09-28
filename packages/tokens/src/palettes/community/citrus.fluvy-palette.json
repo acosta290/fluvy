@@ -1,0 +1,14 @@
+{
+  "fluvy_palette": 1,
+  "name": "citrus",
+  "title": "Citrus",
+  "author": "Fluvy",
+  "description": "Electric orange, solid fills, a blue highlight for you and today.",
+  "palette": {
+    "character": "vivid",
+    "base": "neutral",
+    "accent": "#ff8a00",
+    "fill": "solid",
+    "highlight": "#2f6df6"
+  }
+}

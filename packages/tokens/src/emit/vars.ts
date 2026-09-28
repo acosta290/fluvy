@@ -1,3 +1,4 @@
+import { meshOf } from '../build/mesh.js';
 import { composite } from '../color/contrast.js';
 import { cssVar, DEFAULT_MODE, DEFAULT_PALETTE, PALETTE_TOKEN } from '../config.js';
 import type { AccentFamily } from '../build/derive/accent.js';
@@ -170,6 +171,7 @@ export function accentFamilyVars(
 
 /** The brand layer: every colour the product owns, complete for one palette × mode. */
 export function brandColorVars(colors: PaletteModeColors): readonly VarGroup[] {
+  const mesh = meshOf(colors.surface.page, colors.mode);
   return [
     {
       title: 'Surfaces',
@@ -180,6 +182,14 @@ export function brandColorVars(colors: PaletteModeColors): readonly VarGroup[] {
         [cssVar('card-elevated'), colors.surface.cardElevated],
         [cssVar('border'), colors.surface.border],
         [cssVar('border-strong'), colors.surface.borderStrong],
+      ],
+    },
+    {
+      title:
+        'Mesh — three stops over the page in its own hue (`.fv-bg--mesh`), and one step deeper for a wall (`.fv-bg--wall`)',
+      declarations: [
+        ...mesh.mesh.map((hex, index): CssDeclaration => [cssVar(`mesh-${index + 1}`), hex]),
+        ...mesh.wall.map((hex, index): CssDeclaration => [cssVar(`mesh-wall-${index + 1}`), hex]),
       ],
     },
     {

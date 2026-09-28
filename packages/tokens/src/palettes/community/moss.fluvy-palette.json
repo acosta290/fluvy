@@ -1,0 +1,12 @@
+{
+  "fluvy_palette": 1,
+  "name": "moss",
+  "title": "Moss",
+  "author": "Fluvy",
+  "description": "A soft moss green over warm paper: the first palette shared with the house.",
+  "palette": {
+    "character": "soft",
+    "base": "warm",
+    "accent": "#4f7a4a"
+  }
+}

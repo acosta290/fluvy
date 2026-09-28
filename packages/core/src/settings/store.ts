@@ -39,8 +39,13 @@ export function cachedSettings(
  * value, then every change — a palette picked on the phone recolours the wall panel), parsed, resolved and
  * handed to the listener. Writes go through the same storage; an admin writes the house's.
  */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 export class SettingsStore {
   private houseValue: HouseSettings = HOUSE_DEFAULTS;
+  /** The house's value as it was stored: what this version does not know survives a save. */
+  private houseRaw: unknown = undefined;
   private personalValue: PersonalSettings = PERSONAL_DEFAULTS;
   private readonly unsubscribes: Promise<UnsubscribeFunc>[] = [];
 
@@ -76,6 +81,7 @@ export class SettingsStore {
       );
     this.unsubscribes.push(
       listen('frontend/subscribe_system_data', (value) => {
+        this.houseRaw = value;
         this.houseValue = parseHouse(value);
       }),
       listen('frontend/subscribe_user_data', (value) => {
@@ -89,9 +95,10 @@ export class SettingsStore {
       void unsubscribe.then((off) => off()).catch(() => undefined);
   }
 
-  /** Changes the house's settings (Home Assistant refuses it to a non-admin). */
+  /** Changes the house's settings (Home Assistant refuses it to a non-admin); a field of a newer version is kept as it was. */
   async saveHouse(patch: Patch<HouseSettings>): Promise<void> {
-    const next = parseHouse({ ...this.houseValue, ...patch });
+    const raw = isRecord(this.houseRaw) ? this.houseRaw : {};
+    const next = { ...raw, ...parseHouse({ ...this.houseValue, ...patch }) };
     await this.hass()?.callWS({ type: 'frontend/set_system_data', key: SETTINGS_KEY, value: next });
   }
 

@@ -33,6 +33,30 @@ export interface CustomPalette {
   readonly highlight?: Hex;
 }
 
+const HEX = /^#[0-9a-f]{6}$/i;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+const oneOf = <T extends string>(value: unknown, options: readonly T[]): value is T =>
+  typeof value === 'string' && (options as readonly string[]).includes(value);
+
+/** A well-formed custom palette out of anything (stored settings, a shared file); anything else is undefined. */
+export function parseCustomPalette(value: unknown): CustomPalette | undefined {
+  if (!isRecord(value)) return undefined;
+  const { character, base, accent, fill, highlight } = value;
+  if (!oneOf(character, ['soft', 'vivid'] as const)) return undefined;
+  if (!oneOf(base, CUSTOM_BASES) || typeof accent !== 'string' || !HEX.test(accent))
+    return undefined;
+  return {
+    character,
+    base,
+    accent: accent.toLowerCase() as Hex,
+    ...(character === 'vivid' && oneOf(fill, ['tint', 'solid'] as const) ? { fill } : {}),
+    ...(character === 'vivid' && typeof highlight === 'string' && HEX.test(highlight)
+      ? { highlight: highlight.toLowerCase() as Hex }
+      : {}),
+  };
+}
+
 /** Page greys per character and base: the soft ones carry a tint, the vivid ones are nearly neutral. */
 export const PAGES: Readonly<Record<PaletteCharacter, Readonly<Record<CustomBase, Hex>>>> = {
   soft: { warm: '#f5f2ec', neutral: '#f2f2f0', cool: '#eef1f4' },

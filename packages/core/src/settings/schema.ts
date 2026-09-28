@@ -1,13 +1,14 @@
 import {
-  CUSTOM_BASES,
   DEFAULT_PALETTE,
   DEFAULT_PILL,
   DEFAULT_SHAPE,
   isPaletteName,
   isPillName,
   isShapeName,
-  type CustomPalette,
+  parseCustomPalette,
+  parsePaletteFile,
   type PaletteChoice,
+  type PaletteFile,
   type PillName,
   type ShapeName,
 } from '@fluvy/tokens/runtime';
@@ -28,7 +29,43 @@ export type Motion = 'system' | 'reduced';
 export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
-export const SETTINGS_VERSION = 1;
+/**
+ * 2 since 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own
+ * (it parses field by field and ignores the rest) but a save from it drops what it does not know; from 2 on a
+ * save keeps every field it does not know (`SettingsStore.saveHouse`).
+ */
+export const SETTINGS_VERSION = 2;
+
+/** A palette saved to the house: a palette file as it was shared. */
+export type SavedPalette = PaletteFile;
+export const MAX_SAVED_PALETTES = 12;
+
+/** When a wall is dark: always, as Home Assistant is, by the sun, or between two hours. */
+export type WallTheme = 'dark' | 'follow' | 'sun' | 'hours';
+export const WALL_AFTER = [0, 2, 5, 10, 30] as const;
+export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
+
+/** How the house's wall panels behave (a device says it is one: `DeviceSettings`). */
+export interface WallSettings {
+  /** Dashboards (url paths) that are walls; empty: any dashboard that wears the look. */
+  readonly dashboards: readonly string[];
+  /** Minutes before the screensaver; 0 never. */
+  readonly after: (typeof WALL_AFTER)[number];
+  /** The clock on the screensaver. */
+  readonly clock: boolean;
+  /** The screensaver dims to black. */
+  readonly dim: boolean;
+  /** A `binary_sensor.` (motion, occupancy) that wakes the wall; '' none. */
+  readonly wakeEntity: string;
+  readonly theme: WallTheme;
+  /** `hours`: when the night starts and ends, as `HH:MM`. */
+  readonly from: string;
+  readonly to: string;
+  /** How much the wall darkens at night, in percent of black over it. */
+  readonly nightDim: (typeof WALL_NIGHT_DIM)[number];
+  /** The page colour alone, or the wall mesh. */
+  readonly background: 'plain' | 'wall';
+}
 
 /** What the house decides (an admin). */
 export interface HouseSettings {
@@ -47,6 +84,9 @@ export interface HouseSettings {
   readonly activity: boolean;
   /** Our History view in place of Home Assistant's history page (where the look reaches it); false keeps Home Assistant's. */
   readonly history: boolean;
+  /** The palettes the house keeps (shared files), up to twelve. */
+  readonly palettes: readonly SavedPalette[];
+  readonly wall: WallSettings;
 }
 
 /** What each person may choose for themselves. */
@@ -91,7 +131,21 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   icons: true,
   activity: true,
   history: true,
+  palettes: [],
+  wall: {
+    dashboards: [],
+    after: 10,
+    clock: true,
+    dim: false,
+    wakeEntity: '',
+    theme: 'follow',
+    from: '22:00',
+    to: '07:00',
+    nightDim: 0,
+    background: 'plain',
+  },
 };
+export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
 export const PERSONAL_DEFAULTS: PersonalSettings = {
   version: SETTINGS_VERSION,
@@ -101,30 +155,55 @@ export const PERSONAL_DEFAULTS: PersonalSettings = {
   activityCard: false,
 };
 
-const HEX = /^#[0-9a-f]{6}$/i;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 const oneOf = <T extends string>(value: unknown, options: readonly T[]): value is T =>
   typeof value === 'string' && (options as readonly string[]).includes(value);
+const oneOfNumbers = <T extends number>(value: unknown, options: readonly T[]): value is T =>
+  typeof value === 'number' && (options as readonly number[]).includes(value);
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** A preset's name, or a well-formed custom palette; anything else is undefined. */
 export function parsePalette(value: unknown): PaletteChoice | undefined {
-  if (isPaletteName(value)) return value;
-  if (!isRecord(value)) return undefined;
-  const { character, base, accent, fill, highlight } = value;
-  if (!oneOf(character, ['soft', 'vivid'] as const)) return undefined;
-  if (!oneOf(base, CUSTOM_BASES) || typeof accent !== 'string' || !HEX.test(accent))
-    return undefined;
-  const custom: CustomPalette = {
-    character,
-    base,
-    accent: accent.toLowerCase(),
-    ...(character === 'vivid' && oneOf(fill, ['tint', 'solid'] as const) ? { fill } : {}),
-    ...(character === 'vivid' && typeof highlight === 'string' && HEX.test(highlight)
-      ? { highlight: highlight.toLowerCase() }
-      : {}),
+  return isPaletteName(value) ? value : parseCustomPalette(value);
+}
+
+/** The house's saved palettes: the well-formed ones, the first of each name, twelve at most. */
+export function parseSavedPalettes(value: unknown): SavedPalette[] {
+  if (!Array.isArray(value)) return [];
+  const out: SavedPalette[] = [];
+  for (const raw of value) {
+    const file = parsePaletteFile(raw);
+    if (file && !out.some((kept) => kept.name === file.name)) out.push(file);
+    if (out.length === MAX_SAVED_PALETTES) break;
+  }
+  return out;
+}
+
+/** The wall settings, field by field: anything missing or broken is the default. */
+export function parseWall(raw: unknown): WallSettings {
+  const value = isRecord(raw) ? raw : {};
+  const d = WALL_DEFAULTS;
+  const wake = value['wakeEntity'];
+  return {
+    dashboards: Array.isArray(value['dashboards'])
+      ? value['dashboards'].filter((path): path is string => typeof path === 'string')
+      : d.dashboards,
+    after: oneOfNumbers(value['after'], WALL_AFTER) ? value['after'] : d.after,
+    clock: typeof value['clock'] === 'boolean' ? value['clock'] : d.clock,
+    dim: typeof value['dim'] === 'boolean' ? value['dim'] : d.dim,
+    wakeEntity: typeof wake === 'string' && wake.startsWith('binary_sensor.') ? wake : d.wakeEntity,
+    theme: oneOf(value['theme'], ['dark', 'follow', 'sun', 'hours'] as const)
+      ? value['theme']
+      : d.theme,
+    from:
+      typeof value['from'] === 'string' && CLOCK_TIME.test(value['from']) ? value['from'] : d.from,
+    to: typeof value['to'] === 'string' && CLOCK_TIME.test(value['to']) ? value['to'] : d.to,
+    nightDim: oneOfNumbers(value['nightDim'], WALL_NIGHT_DIM) ? value['nightDim'] : d.nightDim,
+    background: oneOf(value['background'], ['plain', 'wall'] as const)
+      ? value['background']
+      : d.background,
   };
-  return custom;
 }
 
 export function parseHouse(raw: unknown): HouseSettings {
@@ -143,6 +222,8 @@ export function parseHouse(raw: unknown): HouseSettings {
     icons: typeof value['icons'] === 'boolean' ? value['icons'] : d.icons,
     activity: typeof value['activity'] === 'boolean' ? value['activity'] : d.activity,
     history: typeof value['history'] === 'boolean' ? value['history'] : d.history,
+    palettes: parseSavedPalettes(value['palettes']),
+    wall: parseWall(value['wall']),
   };
 }
 

@@ -53,8 +53,9 @@ const ACTIVITY =
 const HISTORY =
   /\/packages\/(cards\/src\/history\/(?!takeover\.ts)|core\/src\/history\/(?!series\.ts))/;
 
-/** Fluvy's settings panel (all of its folder but the switch that fetches it): fetched when `/fluvy` is opened. */
-const PANEL = /\/packages\/cards\/src\/panel\/(?!on-demand\.ts)/;
+/** Fluvy's settings panel (all of its folder but the switch that fetches it) and the community palettes its gallery lists: fetched when `/fluvy` is opened. */
+const PANEL =
+  /\/packages\/(cards\/src\/panel\/(?!on-demand\.ts)|tokens\/src\/palettes\/community\/)/;
 
 /** The automatic dashboard's strategy (all of its folder but the definer): fetched when a dashboard asks for it. */
 const STRATEGY = /\/packages\/cards\/src\/strategy\/(?!define\.ts)/;

@@ -18,10 +18,16 @@
   <article class="fv-tile fv-tile--off bg-off" data-card>${F.ico('ban', 'off')}<div class="fv-row__text"><span class="fv-row__title">Porch light</span><span class="fv-row__sub">Unavailable · 2 h</span></div></article>
 </div>`;
 
+  const background = {
+    paper: 'fv-bg--mesh',
+    charcoal: 'fv-bg--mesh',
+    wall: 'fv-bg--wall',
+    plain: '',
+  };
   const view = (mode, kind, name, blurb) => `
 <div class="fv-frame bg-frame bg-frame--${kind}" data-frame data-mode="${mode}" data-palette="linen">
   <div class="bg-caption"><span class="bg-caption__name">${name}</span><span class="bg-caption__blurb">${blurb}</span></div>
-  <div class="bg-viewport">
+  <div class="bg-viewport ${background[kind]}">
     <header class="bg-bar"><span class="bg-bar__title">Home</span><span class="bg-bar__time">21:47</span></header>
     ${cards()}
   </div>

@@ -1,0 +1,12 @@
+{
+  "fluvy_palette": 1,
+  "name": "plum",
+  "title": "Plum",
+  "author": "Fluvy",
+  "description": "A quiet plum over cool grey, for rooms that read at night.",
+  "palette": {
+    "character": "soft",
+    "base": "cool",
+    "accent": "#7a4f8a"
+  }
+}

@@ -1,0 +1,21 @@
+/*
+ * View backgrounds: the page colour alone by default; `.fv-bg--mesh` lays three radial stops over it in the palette's
+ * own hue (`--fluvy-mesh-1..3`, derived from the page: warm paper in light, charcoal with a breath of amber in dark);
+ * `.fv-bg--wall` is the dark mesh one step deeper, for a wall panel that is always on (two stops over its own ground).
+ * Opaque, no blur, no image: legibility is the page's, not the gradient's.
+ */
+
+.fv-bg--mesh {
+  background:
+    radial-gradient(120% 80% at 10% 0%, var(--fluvy-mesh-1) 0%, transparent 60%),
+    radial-gradient(90% 70% at 100% 20%, var(--fluvy-mesh-2) 0%, transparent 60%),
+    radial-gradient(100% 80% at 40% 110%, var(--fluvy-mesh-3) 0%, transparent 60%),
+    var(--fluvy-page);
+}
+
+.fv-bg--wall {
+  background:
+    radial-gradient(120% 80% at 10% 0%, var(--fluvy-mesh-wall-1) 0%, transparent 60%),
+    radial-gradient(100% 80% at 40% 110%, var(--fluvy-mesh-wall-2) 0%, transparent 60%),
+    var(--fluvy-mesh-wall-3);
+}

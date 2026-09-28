@@ -47,26 +47,7 @@
   background: var(--fluvy-page);
 }
 
-/* meshes: three radial stops in the palette's own hues over the page colour; opaque, no blur, no image */
-.bg-frame--paper .bg-viewport {
-  background:
-    radial-gradient(120% 80% at 10% 0%, #f6efe3 0%, transparent 60%),
-    radial-gradient(90% 70% at 100% 20%, #e9e2d3 0%, transparent 60%),
-    radial-gradient(100% 80% at 40% 110%, #f2ebdf 0%, transparent 60%), var(--fluvy-page);
-}
-
-.bg-frame--charcoal .bg-viewport {
-  background:
-    radial-gradient(120% 80% at 10% 0%, #2a2216 0%, transparent 60%),
-    radial-gradient(90% 70% at 100% 15%, #1f1a12 0%, transparent 60%),
-    radial-gradient(100% 80% at 40% 110%, #241d12 0%, transparent 60%), var(--fluvy-page);
-}
-
-.bg-frame--wall .bg-viewport {
-  background:
-    radial-gradient(120% 80% at 10% 0%, #1c160d 0%, transparent 60%),
-    radial-gradient(100% 80% at 40% 110%, #17120b 0%, transparent 60%), #100d07;
-}
+/* the meshes are the design system's own (`.fv-bg--mesh`, `.fv-bg--wall`), in the palette's derived stops */
 
 .bg-bar {
   display: flex;

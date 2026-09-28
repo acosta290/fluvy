@@ -25,10 +25,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
-    "./runtime": "./src/runtime.ts"
+    "./runtime": "./src/runtime.ts",
+    "./community": "./src/palettes/community/index.ts"
   },
   "scripts": {
-    "build": "tsc --noEmit -p tsconfig.json && tsx src/build/run.ts",
+    "build": "tsc --noEmit -p tsconfig.json && tsx scripts/community.ts && tsx src/build/run.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },

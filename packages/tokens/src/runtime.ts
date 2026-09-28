@@ -63,6 +63,15 @@ export {
 } from './palettes/custom.js';
 
 export { isPaletteName, paletteKey, parsePaletteKey, type PaletteChoice } from './palettes/key.js';
+export { parseCustomPalette } from './palettes/custom.js';
+export {
+  PALETTE_FILE_VERSION,
+  PALETTE_NAME,
+  paletteFileName,
+  parsePaletteFile,
+  type PaletteFile,
+} from './palettes/file.js';
+export { meshOf, type Mesh } from './build/mesh.js';
 export { HA_COLOR_NAMES, NAMED_COLORS, resolveAccent, type HaColorName } from './ha/named.js';
 export { accentFamily, type AccentFamily } from './build/accent-family.js';
 export { accentFamilyVars, identityVars } from './emit/vars.js';
