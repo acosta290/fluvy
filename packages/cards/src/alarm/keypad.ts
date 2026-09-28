@@ -355,7 +355,7 @@ export class FluvyKeypad extends LitElement {
     const code = action.code ? this.#code : undefined;
     this.forget(); // handed over once, kept nowhere
     this.busy_ = true;
-    let done = false;
+    let done: boolean;
     try {
       done = await request.run(action.key, code);
     } catch {

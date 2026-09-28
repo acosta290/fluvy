@@ -11,6 +11,9 @@ updates:
       # pinned to the versions Home Assistant's frontend ships
       - dependency-name: lit
       - dependency-name: '@mdi/js'
+      # the types follow the runtime in .nvmrc: bumped with the Node major, never ahead of it
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

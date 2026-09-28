@@ -42,9 +42,9 @@
     "ha:install": "node tools/dev/install.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.0",
+    "@eslint/js": "^10.0.1",
     "@mdi/js": "7.4.47",
-    "eslint": "^9.39.0",
+    "eslint": "^10.11.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0"

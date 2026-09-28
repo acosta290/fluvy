@@ -78,12 +78,10 @@ export async function houseEnergy(
   hass: HomeAssistant,
   home = new HomeRegistry(hass),
 ): Promise<EnergyRoles> {
-  let prefs: EnergyPrefs | null = null;
-  try {
-    prefs = await hass.callWS<EnergyPrefs>({ type: 'energy/get_prefs' });
-  } catch {
-    prefs = null;
-  }
+  // a house without the energy dashboard answers with an error: then there are no preferences
+  const prefs = await hass
+    .callWS<EnergyPrefs>({ type: 'energy/get_prefs' })
+    .catch((): null => null);
   return signedEnergyRoles(hass, findEnergyRoles(home, prefs));
 }
 

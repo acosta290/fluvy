@@ -18,17 +18,20 @@ interface PanelPrototype {
 
 type FrameShell = (env: ShellEnv) => ShellHandle;
 
+/** A frame's document, or null: a cross-origin frame throws on the read. */
+function contentDocument(frame: HTMLIFrameElement): Document | null {
+  try {
+    return frame.contentDocument;
+  } catch {
+    return null;
+  }
+}
+
 /** The environment of a frame's document; the registry is read when used, so a registry the frame's own code installs later is the one the shell sees. */
 function frameEnv(frame: HTMLIFrameElement): ShellEnv | undefined {
   const view = frame.contentWindow as (Window & typeof globalThis) | null;
-  let doc: Document | null = null;
-  try {
-    doc = frame.contentDocument;
-  } catch {
-    doc = null;
-  }
-  if (!view || !doc) return undefined;
-  const document = doc;
+  const document = contentDocument(frame);
+  if (!view || !document) return undefined;
   return {
     document,
     get customElements() {

@@ -22,7 +22,7 @@ export async function ffmpegVersion() {
     if (!stdout.includes('--enable-libx264')) throw new Error('ffmpeg is built without libx264');
     return line;
   } catch (error) {
-    throw new Error(`ffmpeg is needed to encode the clips (${error.message})`);
+    throw new Error(`ffmpeg is needed to encode the clips (${error.message})`, { cause: error });
   }
 }
 

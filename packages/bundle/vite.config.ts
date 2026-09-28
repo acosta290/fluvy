@@ -59,6 +59,23 @@ const PANEL = /\/packages\/cards\/src\/panel\/(?!on-demand\.ts)/;
 const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.json/;
 
 /**
+ * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
+ * page, the settings panel, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays
+ * in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ */
+const GROUPS: ReadonlyArray<{
+  name: string | ((id: string) => string);
+  test: RegExp | ((id: string) => boolean);
+}> = [
+  { name: (id) => `lang-${LANGUAGE.exec(id)?.[1]}`, test: LANGUAGE },
+  { name: 'pages', test: PAGES },
+  { name: 'activity', test: ACTIVITY },
+  { name: 'history', test: HISTORY },
+  { name: 'panel', test: PANEL },
+  { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
+];
+
+/**
  * The build Home Assistant loads (the integration serves it from `custom_components/fluvy/frontend`, under a URL
  * named after the build) and what it shares with the pages loaded on demand. The entry keeps only its own code and
  * imports the rest from `chunks/core-<hash>.js`; the pages fetched on demand (Activity, History, the settings panel)
@@ -75,24 +92,17 @@ export default defineConfig({
     emptyOutDir: true,
     minify: 'terser',
     terserOptions: { format: { comments: /^!/ }, compress: { passes: 2 } },
-    rollupOptions: {
+    rolldownOptions: {
+      // the entry's exports stay as written (the loader reads `version`); a group may then hold only what its test names
+      preserveEntrySignatures: 'allow-extension',
       output: {
         inlineDynamicImports: false,
         chunkFileNames: 'chunks/[name]-[hash].js',
-        manualChunks: (id) =>
-          id.includes('/packages/bundle/src/')
-            ? undefined
-            : LANGUAGE.test(id)
-              ? `lang-${LANGUAGE.exec(id)?.[1]}`
-              : PAGES.test(id)
-                ? 'pages'
-                : ACTIVITY.test(id)
-                  ? 'activity'
-                  : HISTORY.test(id)
-                    ? 'history'
-                    : PANEL.test(id)
-                      ? 'panel'
-                      : 'core',
+        codeSplitting: {
+          // a group holds what its test names, nothing it imports: the imports keep their own chunk (the old Rollup rule)
+          includeDependenciesRecursively: false,
+          groups: GROUPS.map((group, index) => ({ ...group, priority: GROUPS.length - index })),
+        },
         banner: `/*! Fluvy v${version} · a theme and card library for Home Assistant · SPDX-License-Identifier: ${license} · https://github.com/acosta290/fluvy */`,
       },
     },

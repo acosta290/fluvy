@@ -15,7 +15,7 @@ import {
   relativeDrag,
   rulerGeometry,
 } from './lib/gestures.mjs';
-import { BASE, calls, reset, startSuite } from './lib/suite.mjs';
+import { BASE, calls, frame, reset, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { browser, check } = suite;
@@ -285,7 +285,9 @@ async function open(sheet, width = 360) {
     );
   });
   const opened = () => page.evaluate(() => window.__moreInfo.splice(0));
-  const group = page.locator('fluvy-tiles-card').first();
+  // the frames are found by their titles: the home sheet gains frames, and a position would move
+  const compact = frame(page, 'Compact tiles');
+  const group = compact.locator('fluvy-tiles-card').first();
   const hall = group.locator('article').nth(1); // Hall, off
   await hall.click();
   check(
@@ -327,7 +329,7 @@ async function open(sheet, width = 360) {
   check('a press that moves 50 px is not a hold', (await opened()).length === 0);
   await reset(page);
 
-  const sensors = page.locator('fluvy-tiles-card').nth(2);
+  const sensors = compact.locator('fluvy-tiles-card').nth(2);
   await sensors.locator('article').first().click();
   await page.waitForTimeout(100);
   const sensorOpened = await opened();
@@ -339,7 +341,11 @@ async function open(sheet, width = 360) {
     JSON.stringify(sensorOpened),
   );
 
-  const mini = page.locator('fluvy-tiles-card').nth(4).locator('article').nth(0); // Office mini, off
+  const mini = frame(page, 'Mini tiles')
+    .locator('fluvy-tiles-card')
+    .nth(1)
+    .locator('article')
+    .nth(0); // Office mini, off
   await mini.focus();
   await page.keyboard.press('Enter');
   await page.waitForTimeout(400);

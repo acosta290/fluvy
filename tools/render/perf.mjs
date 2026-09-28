@@ -54,7 +54,7 @@ const result = await page.evaluate(async (count) => {
   observer.observe({ type: 'longtask', buffered: false });
   const updateTimes = [];
   let frames = 0;
-  let rafId = 0;
+  let rafId;
   const countFrames = () => {
     frames++;
     rafId = requestAnimationFrame(countFrames);
