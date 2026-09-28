@@ -40,7 +40,7 @@ import { FluvyUpdatesCard } from './updates/updates-card.js';
 import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
 import { FluvyRowsEditor } from './shared/rows-editor.js';
-import { FluvyHomeStrategy } from './strategy/home-strategy.js';
+import { defineHomeStrategy } from './strategy/define.js';
 
 /**
  * The fluvy card catalogue. Registration happens while the module evaluates — never after an
@@ -281,18 +281,12 @@ for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
 if (!customElements.get('fluvy-rows-editor'))
   customElements.define('fluvy-rows-editor', FluvyRowsEditor);
-// the dashboard strategy a fresh install starts with: `strategy: { type: custom:fluvy-home }`
-if (!customElements.get('ll-strategy-dashboard-fluvy-home'))
-  customElements.define(
-    'll-strategy-dashboard-fluvy-home',
-    class extends HTMLElement {
-      static generate = FluvyHomeStrategy.generate;
-    },
-  );
+// the dashboard strategy a fresh install starts with: `strategy: { type: custom:fluvy-home }` (its file is fetched when asked)
+defineHomeStrategy();
 
 // fluvy's settings: the element of the `panel_custom` Home Assistant shows in the sidebar
 
-export { CATALOGUE, FluvyHomeStrategy };
+export { CATALOGUE };
 export { loadPanel, panelOnDemand } from './panel/on-demand.js';
 export { activityIsOurs, takeOverActivity } from './activity/takeover.js';
 export { historyIsOurs, takeOverHistory } from './history/takeover.js';

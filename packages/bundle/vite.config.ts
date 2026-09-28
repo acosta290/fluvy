@@ -56,6 +56,9 @@ const HISTORY =
 /** Fluvy's settings panel (all of its folder but the switch that fetches it): fetched when `/fluvy` is opened. */
 const PANEL = /\/packages\/cards\/src\/panel\/(?!on-demand\.ts)/;
 
+/** The automatic dashboard's strategy (all of its folder but the definer): fetched when a dashboard asks for it. */
+const STRATEGY = /\/packages\/cards\/src\/strategy\/(?!define\.ts)/;
+
 /** A language's catalogue (English ships in core): fetched the first time that language is spoken. */
 const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.json/;
 
@@ -73,6 +76,7 @@ const GROUPS: ReadonlyArray<{
   { name: 'activity', test: ACTIVITY },
   { name: 'history', test: HISTORY },
   { name: 'panel', test: PANEL },
+  { name: 'strategy', test: STRATEGY },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];
 

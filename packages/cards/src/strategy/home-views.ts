@@ -1,6 +1,19 @@
-import type { LovelaceCardConfig, MessageKey } from '@fluvy/core';
-import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
-import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
+import {
+  applianceTile,
+  balanced,
+  deviceRow,
+  energyFlow,
+  entityRow,
+  flowed,
+  full,
+  headed,
+  heading,
+  sizedTile,
+  thermostat,
+  tileRows,
+  when,
+} from './layout.js';
+import type { EnergyPrefs, EnergyRoles, Section, StrategyContext, ViewSpec } from './types.js';
 import {
   BATTERY_POWER,
   GRID,
@@ -18,303 +31,18 @@ import {
  * a big house still reads.
  */
 
-export type Card = LovelaceCardConfig & { grid_options?: { columns?: number } };
-export interface Section {
-  readonly type: 'grid';
-  readonly cards: Card[];
-}
-export type ViewKey =
-  'home' | 'lights' | 'climate' | 'energy' | 'security' | 'media' | 'agenda' | 'sensors';
-export interface View {
-  title: string;
-  path: string;
-  icon: string;
-  type: 'sections';
-  max_columns: number;
-  sections: Section[];
-}
-
-/** What `energy/get_prefs` answers: the energy dashboard's sources and devices. */
-export interface EnergyPrefs {
-  energy_sources?: ReadonlyArray<{
-    type: string;
-    stat_energy_from?: string;
-    stat_energy_to?: string;
-    flow_from?: ReadonlyArray<{ stat_energy_from: string }>;
-    flow_to?: ReadonlyArray<{ stat_energy_to: string }>;
-    /** The source's power sensor (HA 2025.12+); for grid and battery, `power_config` says how it is signed. */
-    stat_rate?: string;
-    power_config?: { stat_rate?: string; stat_rate_inverted?: string };
-  }>;
-  device_consumption?: ReadonlyArray<{ stat_consumption: string; name?: string }>;
-}
-
-/** The energy readings found once, each by its role. */
-export interface EnergyRoles {
-  readonly solarPower: string | undefined;
-  readonly gridPower: string | undefined;
-  readonly batteryPower: string | undefined;
-  readonly homePower: string | undefined;
-  /** The grid / battery meter counts towards the house as negative (the card's `grid_invert` / `battery_invert`). */
-  readonly gridInvert: boolean;
-  readonly batteryInvert: boolean;
-  /** The grid meter came from the energy dashboard's preferences, with its sign: nothing left to find out. */
-  readonly gridSigned: boolean;
-  readonly solarToday: string | undefined;
-  /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
-  readonly consumption: readonly string[];
-  readonly consumptionPowers: readonly string[];
-  readonly any: boolean;
-}
-
-/** How the generated cards are drawn: the dashboard's options (fluvy's panel edits them). */
-export interface CardStyle {
-  readonly thermostat?: ThermostatVariant;
-  readonly tiles?: 'large' | 'compact';
-  readonly flow?: FlowStyle;
-}
-
-export interface StrategyContext {
-  readonly home: HomeRegistry;
-  readonly t: (key: MessageKey) => string;
-  /** The dashboard's url path (`/fluvy-home`): the tabs and "see all" links navigate inside it. */
-  readonly base: string;
-  readonly weather: string | undefined;
-  readonly energy: EnergyRoles;
-  readonly style: CardStyle;
-}
-
-export interface ViewSpec {
-  readonly key: ViewKey;
-  readonly icon: string;
-  readonly title: MessageKey;
-  readonly build: (ctx: StrategyContext) => Section[];
-  /** Whether the house has anything for the view; default: some section has cards. */
-  readonly when?: (ctx: StrategyContext) => boolean;
-}
-
-/* ---------- cards ---------- */
-
-const tile = (entity: string, extra: Record<string, unknown> = {}): Card => ({
-  type: 'custom:fluvy-tile-card',
-  entity,
-  ...extra,
-  grid_options: { columns: 6 },
-});
-const full = (type: string, extra: Record<string, unknown> = {}): Card => ({
-  type: `custom:fluvy-${type}-card`,
-  ...extra,
-  grid_options: { columns: 12 },
-});
-const heading = (
-  title: string,
-  icon: string,
-  entities: readonly string[],
-  path?: string,
-): Card => ({
-  type: 'custom:fluvy-heading-card',
-  title,
-  icon,
-  ...(entities.length ? { entities: [...entities] } : {}),
-  ...(path ? { path } : {}),
-});
-const section = (...cards: Card[]): Section => ({ type: 'grid', cards });
-/** `...when(value, (v) => [cards])`: the cards only when the house has the thing. */
-const when = <V, T = Card>(
-  value: V | undefined | null | false | 0 | '',
-  build: (value: V) => T[],
-): T[] => (value ? build(value) : []);
-
-const entityRow = (home: HomeRegistry, entity: string) => ({ entity, ...home.named(entity) });
-const deviceRow = (home: HomeRegistry, entity: string) => ({
-  entity,
-  name: home.deviceLabel(entity),
-});
-const applianceTile = (home: HomeRegistry, id: string): Card => {
-  const readouts = home.readoutsOf(id);
-  return tile(id, { ...home.named(id), ...(readouts.length ? { readouts: [...readouts] } : {}) });
-};
-const energyFlow = (
-  { solarPower, gridPower, batteryPower, homePower, gridInvert, batteryInvert }: EnergyRoles,
-  style: CardStyle,
-): Card =>
-  full('energy-flow', {
-    ...(style.flow ? { flow_style: style.flow } : {}),
-    ...(solarPower ? { solar_power: solarPower } : {}),
-    ...(gridPower ? { grid_power: gridPower, ...(gridInvert ? { grid_invert: true } : {}) } : {}),
-    ...(batteryPower
-      ? { battery_power: batteryPower, ...(batteryInvert ? { battery_invert: true } : {}) }
-      : {}),
-    ...(homePower ? { home_power: homePower } : {}),
-  });
-
-/** A thermostat in the dashboard's variant. */
-const thermostat = (id: string, style: CardStyle): Card =>
-  full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });
-/** A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`). */
-const sizedTile = (id: string, extra: Record<string, unknown>, style: CardStyle): Card =>
-  tile(id, { ...extra, ...(style.tiles === 'compact' ? { size: 'compact' } : {}) });
-
-/** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
-export const helloCard = (weather: string | undefined, person: string | undefined): Card => ({
-  type: 'custom:fluvy-hello-card',
-  ...(person ? { person } : {}),
-  ...(weather ? { weather } : {}),
-});
-export const tabsCard = (base: string, views: readonly View[]): Card => ({
-  type: 'custom:fluvy-chips-card',
-  chips: views.map((view) => ({
-    label: view.title,
-    icon: view.icon,
-    path: `${base}/${view.path}`,
-  })),
-});
-
-/**
- * The heights of the cards the strategy places, measured at a 360 column (the 16 px gap is added where they
- * stack), so the columns of a view can be cut to end on one line. A large tile is half a column: two share a row.
- */
-const HEIGHTS: Readonly<Record<string, number>> = {
-  heading: 24,
-  light: 368,
-  thermostat: 660,
-  weather: 444,
-  clock: 196,
-  humidity: 312,
-  sensor: 304,
-  'energy-flow': 256,
-  energy: 320,
-  gauge: 384,
-  production: 344,
-  media: 76,
-  vacuum: 388,
-  todo: 220,
-  camera: 280,
-  cover: 330,
-  fan: 380,
-  lock: 300,
-  alarm: 320,
-  calendar: 560,
-  timer: 252,
-  'now-playing': 212,
-  'stat-tiles': 200,
-  scene: 76,
-  // the calm state: everything up to date is one row
-  updates: 160,
-};
-/** Cards whose height follows their list: a head, then a rhythm of rows up to what the card shows. */
-const LIST_HEIGHTS: Readonly<Record<string, (rows: number) => number>> = {
-  bars: (n) => 100 + 76 * n,
-  entities: (n) => 92 + 60 * n,
-  // four rows, then the "All sensors" row
-  openings: (n) => 100 + 60 * Math.min(n, 5),
-  people: (n) => 84 + 104 * Math.ceil(n / 3),
-  helpers: (n) => 100 + 80 * n,
-  // automations have long names: one a line
-  scenes: (n) => 80 + 64 * n,
-  distribution: (n) => 124 + 36 * Math.min(n, 5),
-  // compact tiles two a row, 8 apart
-  tiles: (n) => Math.ceil(n / 2) * 84 - 8,
-  // two a row
-  actions: (n) => 76 + 76 * Math.ceil(n / 2),
-  readouts: (n) => (n > 3 ? 152 : 88),
-};
-/** The greeting and the tabs above the first column (60 + 16 + 44 + 16). */
-const HEADER = 136;
-const GAP = 16;
-const listLength = (card: Card): number => {
-  for (const key of ['rows', 'entities', 'scenes', 'tiles'] as const) {
-    const value = card[key];
-    if (Array.isArray(value)) return value.length;
-  }
-  return 0;
-};
-const heightOf = (card: Card): number => {
-  const kind = card.type.replace(/^custom:fluvy-/, '').replace(/-card$/, '');
-  if (kind === 'tile') return card['size'] === 'compact' ? 76 : 168;
-  if (kind === 'thermostat')
-    return card['variant'] === 'compact' ? 470 : card['variant'] === 'ruler' ? 460 : 660;
-  return LIST_HEIGHTS[kind]?.(listLength(card)) ?? HEIGHTS[kind] ?? 100 + 64 * listLength(card);
-};
-const halfColumn = (card: Card): boolean => card.grid_options?.columns === 6;
-/** A run of cards stacked in one column; half-column cards side by side, two a row. */
-function heightOfAll(cards: readonly Card[]): number {
-  let height = 0;
-  let pending: number | undefined;
-  for (const card of cards) {
-    const own = heightOf(card) + GAP;
-    if (!halfColumn(card)) height += own;
-    else if (pending === undefined) pending = own;
-    else {
-      height += Math.max(pending, own);
-      pending = undefined;
-    }
-  }
-  return height + (pending ?? 0);
-}
-
-/** Every way to cut `count` blocks into `parts` non-empty runs, as the indices where the runs after the first begin. */
-function* cutsOf(count: number, parts: number, from = 1): Generator<number[]> {
-  if (parts <= 1) {
-    yield [];
-    return;
-  }
-  for (let cut = from; cut <= count - parts + 1; cut++)
-    for (const rest of cutsOf(count, parts - 1, cut + 1)) yield [cut, ...rest];
-}
-
-/**
- * A view's columns, level at the foot. The blocks are laid down column after column in reading order (a
- * block — a heading with its first row, a pair of tiles — never splits); then each loose card goes to the foot
- * of the column that is shortest by then. Of every way to cut the blocks into the columns, the one whose
- * columns end closest to one line once the loose cards are in (the first column carries the header).
- */
-function flowed(
-  blocks: readonly (readonly Card[])[],
-  loose: readonly Card[] = [],
-  columns = 3,
-): Section[] {
-  const runs = blocks.filter((block) => block.length > 0);
-  let best: { columns: Card[][]; spread: number } | undefined;
-  for (const cuts of cutsOf(runs.length, Math.min(columns, runs.length))) {
-    const bounds = [0, ...cuts, runs.length];
-    const laid = Array.from({ length: columns }, (_, i) => {
-      const cards = runs.slice(bounds[i] ?? runs.length, bounds[i + 1] ?? runs.length).flat();
-      return { cards, height: (i === 0 ? HEADER : 0) + heightOfAll(cards) };
-    });
-    for (const card of loose) {
-      const shortest = laid.reduce((low, next) => (next.height < low.height ? next : low));
-      shortest.cards.push(card);
-      shortest.height += heightOf(card) + GAP;
-    }
-    const heights = laid.map((column) => column.height);
-    const spread = Math.max(...heights) - Math.min(...heights);
-    if (!best || spread < best.spread)
-      best = { columns: laid.map((column) => column.cards), spread };
-  }
-  return (best?.columns ?? []).map((cards) => section(...cards));
-}
-
-/** Cards shared out over the columns: the lead card under the header, every other one where the columns are shortest. */
-const balanced = ([lead, ...rest]: readonly Card[]): Section[] =>
-  flowed(lead ? [[lead]] : [], rest);
-
-/** Tiles two a row; an odd one out closes the run as a compact tile across the column, so no row is half empty. */
-function tileRows(tiles: readonly Card[]): Card[][] {
-  const rows = Array.from({ length: Math.ceil(tiles.length / 2) }, (_, i) =>
-    tiles.slice(i * 2, i * 2 + 2),
-  );
-  const [odd, pair] = rows.at(-1) ?? [];
-  if (odd && !pair)
-    rows[rows.length - 1] = [{ ...odd, size: 'compact', grid_options: { columns: 12 } }];
-  return rows;
-}
-
-/** A heading and its rows as blocks: the heading rides with the first row, never alone at a column's foot. */
-function headed(head: Card, rows: readonly Card[][]): Card[][] {
-  const [first = [], ...rest] = rows;
-  return [[head, ...first], ...rest];
-}
+export type {
+  Card,
+  CardStyle,
+  EnergyPrefs,
+  EnergyRoles,
+  Section,
+  StrategyContext,
+  View,
+  ViewKey,
+  ViewSpec,
+} from './types.js';
+export { helloCard, tabsCard } from './layout.js';
 
 /* ---------- energy roles ---------- */
 

@@ -41,8 +41,8 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages}-<hash>.js` on demand — the Activity page, the History page, the settings panel,
-and the date picker they share. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
+`chunks/{activity,history,panel,pages,strategy}-<hash>.js` on demand — the Activity page, the History page, the
+settings panel, the date picker they share, and the automatic dashboard's strategy (when a dashboard asks for it). Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
 over **220 KB gzip**.
 
