@@ -406,10 +406,12 @@ export class FluvySelect extends LitElement {
 
   /* ---------- markup ---------- */
 
+  /** The list; out of the tab order (a list that scrolls — nine languages — would otherwise be a tab stop of its own). */
   private renderMenu(): TemplateResult {
     return html`<div
       id="menu"
       class="fv-menu"
+      tabindex="-1"
       role="listbox"
       popover=${topLayer() ? 'manual' : nothing}
       aria-label=${this.label}

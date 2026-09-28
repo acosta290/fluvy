@@ -46,28 +46,38 @@ subview: it opens from its card, never from the tabs, and its heading leads back
 - **Twins**: a device with a switch and an outlet of the same name shows once, with the device's power and energy
   readings beside it.
 - **Places**: an entity whose name only says what it measures (*Temperature*) is named after its device or area.
+- **Rooms**: an entity belongs to its own area, else to its device's; hidden and configuration entities stay out, and
+  a room's climate comes from the area's own temperature and humidity sensors when they are set, else from the first
+  of each in the room.
 - **The weather service's sensors** (the platform is a weather integration) stay out of the climate view.
 - **Solar, grid, battery**: power sensors whose words say so; a grid meter that reads negative through the night is
   understood as exporting-positive and inverted. The energy dashboard's preferences win when they exist.
 
 ## Options
 
-In the dashboard's raw configuration, or in the panel's *Dashboard* tab:
+In a dashboard's raw configuration, or in the panel's *Dashboards* tab (each dashboard has its own card of options
+there; *Recreate* takes them all back to their defaults):
 
-| Option | Values | What it does |
-| --- | --- | --- |
-| `thermostat_variant` | `dial` (default), `compact`, `ruler` | how the thermostats are drawn |
-| `tile_size` | `large` (default), `compact` | the tiles' size on the Lights view and the Home view |
-| `flow_style` | `ribbons` (default), `rail`, `legs` | the energy flow's drawing |
-| `hide` | a list of `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` | views left out (Home always stays) |
-| `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR` | the dashboard's words in that language, whoever opens it |
+| Option | Values | Templates | What it does |
+| --- | --- | --- | --- |
+| `hide` | view names: `rooms`, `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` (home); `production`, `devices`, `meters` (energy); `cameras`, `openings` (security) | home, energy, security | views left out (the first view always stays) |
+| `thermostat_variant` | `dial` (default), `compact`, `ruler` | home, rooms, wall | how the thermostats are drawn |
+| `tile_size` | `large` (default), `compact` | home, rooms | the tiles' size on the Lights view, the Home view and a room's page |
+| `flow_style` | `ribbons` (default), `rail`, `legs` | home, energy | the energy flow's drawing |
+| `room_variant` | `photo` (default: a photo where the area has one, else a tile), `tile`, `row` | home, rooms | the rooms' cards |
+| `areas` | a list of area ids | wall | the rooms the wall shows, in that order (default: every room with something in it) |
+| `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
+| `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
+| `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
+| `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `tr` | all | the dashboard's words in that language, whoever opens it |
 
 Without `language`, the dashboard's words follow the language of whoever opens it (Home Assistant's, or the one
 chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or
-*cocina* is a light's room in any of them.
+*cocina* is a light's room in any of them. The settings file the *About* tab exports carries every dashboard's options
+under `dashboards`, by url path; a file from Fluvy 1.2 (one `dashboard` key) still lands on the home dashboard.
 
 ## Limits
 
-It never invents: a house without a weather entity gets no forecast, a house without energy preferences gets a flow
-only if the words find its meters. A dashboard you want to shape by hand is better started by hand — add the cards
-from the picker; each is documented in [the cards](cards.md).
+They never invent: a house without a weather entity gets no forecast, a house without energy preferences gets a flow
+only if the words find its meters, a wall without scenes has no scene chips. A dashboard you want to shape by hand is
+better started by hand — add the cards from the picker; each is documented in [the cards](cards.md).

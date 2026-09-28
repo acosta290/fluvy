@@ -65,7 +65,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await settle(page, 300);
   check('a click opens the menu', (await d.expanded()) && (await d.menu.count()) === 1);
   check('the menu floats in the top layer', await d.inTopLayer());
-  check('it holds Automatic and the seven languages', (await d.rows.count()) === 8);
+  check('it holds Automatic and the eight languages', (await d.rows.count()) === 9);
   const chosen = d.select.locator('.fv-menu__item[aria-selected="true"]');
   check(
     'the chosen row is marked, once',

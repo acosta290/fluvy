@@ -22,10 +22,10 @@
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, forty-one cards, an automatic dashboard, a
+Fluvy brings one design to the whole of Home Assistant: a theme, forty-one cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
-by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in seven languages.
+by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in eight languages.
 
 ## The whole app, one design
 
@@ -108,28 +108,30 @@ preferences — language, motion, haptics, a palette of their own. Changes apply
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-scope.png" width="49%" alt="The Scope tab">
 </p>
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-dashboard.png" width="49%" alt="The Dashboard tab">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-dashboard.png" width="49%" alt="The Dashboards tab">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-preferences.png" width="49%" alt="The Preferences tab">
 </p>
 
-## The automatic dashboard
+## The automatic dashboards
 
 One line — `strategy: { type: custom:fluvy-home }` — and Fluvy reads your areas, devices, entities and energy
-preferences and builds Home, Lights, Climate, Energy, Media and Sensors: lights grouped by room, appliances with
-their readings, the running thermostat first, the home's forecast, the energy flow found by its words, batteries
-and phones told apart. It is rebuilt every time it opens, so a new device simply shows up.
-[How it reads a home](docs/automatic-dashboard.md).
+preferences and builds Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors: lights grouped by
+room, a card a room that opens the room's own page, appliances with their readings, the running thermostat first,
+the home's forecast, the energy flow found by its words, batteries and phones told apart. Four more templates build
+a dashboard each — **Rooms** (a tab a floor), **Energy**, **Security** and a **Wall** for a tablet — and the panel
+creates any of them with one tap. Every one is rebuilt every time it opens, so a new device simply shows up.
+[How they read a home](docs/automatic-dashboard.md).
 
 ## What you get
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with.
-- **Thirty-nine cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Forty-one cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose.
-- **An automatic dashboard** built from your registries.
+- **Five automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall.
 - **A settings panel** for the house and for each person.
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.
-- **Seven languages** — English, Spanish, German, Dutch, French, Italian and Brazilian Portuguese — in every card,
+- **Eight languages** — English, Spanish, German, Dutch, French, Italian, Brazilian Portuguese and Turkish — in every card,
   page and dialog, each fetched only when spoken.
 - **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.
 

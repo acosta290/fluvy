@@ -7,6 +7,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Turkish (`tr`): the eighth language, in every card, page, dialog and editor form, with the words the automatic
+  dashboards read a Turkish-named house by.
 - The dropdown: the cards' text field as a button, opening its list in the browser's top layer — over Home
   Assistant's sidebar and dialogs — under the field, or over it near the foot of the page, as wide as the field;
   keys, letters and the pointer as a native select's, a hint beside each name, the chosen row marked. The

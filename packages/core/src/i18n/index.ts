@@ -33,6 +33,7 @@ const LOADERS: Record<Exclude<LanguageCode, 'en'>, () => Promise<{ default: Load
   fr: () => import('./locales/fr.json'),
   it: () => import('./locales/it.json'),
   'pt-BR': () => import('./locales/pt-BR.json'),
+  tr: () => import('./locales/tr.json'),
 };
 
 let override: LanguageCode | undefined;

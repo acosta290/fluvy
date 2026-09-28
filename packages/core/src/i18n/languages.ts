@@ -4,7 +4,7 @@
  * this table; adding a language is one entry here, one catalogue, one integration translation file.
  */
 
-export const LANGUAGE_CODES = ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR'] as const;
+export const LANGUAGE_CODES = ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr'] as const;
 
 /** A code as Home Assistant reports `hass.language` for it (`pt-BR`, not `pt_BR`). */
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
@@ -74,6 +74,13 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     name: 'Português',
     english: 'Portuguese (Brazil)',
     dayParts: { morning: 5, afternoon: 12, evening: 19, night: 24 },
+  },
+  tr: {
+    code: 'tr',
+    name: 'Türkçe',
+    english: 'Turkish',
+    // "günaydın" until noon, "iyi günler" through the afternoon, "iyi akşamlar" from 18:00, "iyi geceler" late
+    dayParts: { morning: 5, afternoon: 12, evening: 18, night: 22 },
   },
 };
 

@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Fluvy’nin temasını, kartlarını ve ayar panelini kurar. Yapılandırılacak bir şey yok."
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvy zaten kurulu.",
+      "single_instance_allowed": "Fluvy zaten kurulu."
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "Fluvy’nin ön yüz dosyaları custom_components/fluvy/frontend içinde yok. Fluvy’yi HACS üzerinden yeniden kurun (ya da bir geliştirme kopyasında `pnpm build` çalıştırın), sonra Home Assistant’ı yeniden başlatın."
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "Fluvy’nin eski satırlarını configuration.yaml dosyasından kaldırın",
+      "description": "Fluvy artık bir entegrasyon; panelini ve modülünü kendisi kaydeder. Bunları configuration.yaml dosyasından kaldırın (`frontend: themes: !include_dir_merge_named themes` satırını koruyun), yapılandırmayı denetleyin ve uygun olduğunda Home Assistant’ı yeniden başlatın:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Fluvy teması yüklü değil",
+      "description": "Fluvy temasını `{path}` konumuna yazdı, ancak Home Assistant Fluvy adında bir tema listelemiyor. Bunu configuration.yaml dosyasına ekleyin, sonra `frontend.reload_themes` eylemini çalıştırın (Geliştirici araçları → Eylemler); yeniden başlatma gerekmez:\n\n{yaml}\n\nSatırlar zaten oradaysa, yüklenemeyen bir tema için Ayarlar → Sistem → Günlükler bölümüne bakın."
+    },
+    "resources_yaml_mode": {
+      "title": "Fluvy’nin panel kaynağını ekleyin",
+      "description": "Panel kaynaklarınız YAML ile yönetiliyor, bu yüzden Fluvy kendi kaynağını kaydedemiyor. Bunu configuration.yaml dosyasında `lovelace: resources:` altına ekleyin ve tarayıcıyı yeniden yükleyin:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvy zaten her sayfada yükleniyor; bu kaynak, panellerin onu çizilmeden önce yüklemesini sağlar."
+    }
+  }
+}

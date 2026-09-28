@@ -13,6 +13,7 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
 | `fr` | French | `packages/core/src/i18n/locales/fr.json` |
 | `it` | Italian | `packages/core/src/i18n/locales/it.json` |
 | `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` and `pt-PT` read it too |
+| `tr` | Turkish | `packages/core/src/i18n/locales/tr.json` |
 
 ## How a language works
 

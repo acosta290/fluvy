@@ -221,7 +221,47 @@ const ptBR: Table = {
     'O painel automático é construído dentro do Home Assistant; a aba Painel mostra uma prévia',
 };
 
-const TABLES: Readonly<Record<LanguageCode, Table>> = { en, es, de, nl, fr, it, 'pt-BR': ptBR };
+const tr: Table = {
+  'brand.sub': 'Canlı demo',
+  'family.home': 'Ev',
+  'family.devices': 'Cihazlar',
+  'family.climate': 'İklim',
+  'family.energy': 'Enerji',
+  'family.media': 'Medya',
+  'family.time': 'Zaman',
+  'family.helpers': 'Yardımcılar',
+  'page.panel': 'Ayarlar',
+  'page.activity': 'Etkinlik',
+  'page.history': 'Geçmiş',
+  'mode.light': 'Açık',
+  'mode.dark': 'Koyu',
+  'device.phone': 'Telefon',
+  'device.phone-l': 'Büyük telefon',
+  'device.tablet': 'Tablet',
+  'device.desktop': 'Masaüstü',
+  'palette.title': 'Palet',
+  'palette.custom': 'Ayarlar panelinde kendi vurgu renginiz',
+  'links.install': 'Kur',
+  'links.github': 'GitHub',
+  'banner.text':
+    'Simüle edilmiş bir ev: bir perşembe akşamı Marta’nın dairesi. Buradaki her kart, sayfa ve ayar gerçek olandır; Home Assistant’ın yerini, bir eylem çağrısından 140 ms sonra durum değiştiren küçük bir vekil tutar. Hiçbir şey bağlı değil.',
+  'banner.ok': 'Anladım',
+  'notice.more_info': '{entity} ayrıntılarını Home Assistant’ta açar',
+  'notice.navigate': '{path} yolunu Home Assistant’ta açar',
+  'notice.auto':
+    'Otomatik panel Home Assistant içinde kurulur; Paneller sekmesi onun ön izlemesini gösterir',
+} as const;
+
+const TABLES: Readonly<Record<LanguageCode, Table>> = {
+  en,
+  es,
+  de,
+  nl,
+  fr,
+  it,
+  'pt-BR': ptBR,
+  tr,
+};
 
 /** A word of the demo in `language`. */
 export const t = (
