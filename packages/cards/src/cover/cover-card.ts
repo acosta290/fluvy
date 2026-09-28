@@ -60,6 +60,7 @@ import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shar
 import { chipRow } from '../shared/chips.js';
 import { type RowsListSpec } from '../shared/rows-editor.js';
 import { HeadFit } from '../energy/head.js';
+import { COMPACT, listLength } from '../shared/heights.js';
 
 const coverStrings = strings('cover');
 
@@ -124,6 +125,13 @@ const percentAttr = (view: EntityView, key: string): Percent => {
  * cover says it is travelling, instead of snapping back to where the motor happens to be.
  */
 export class FluvyCoverCard extends Card<CoverCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: CoverCardConfig): number {
+    if (config.variant === 'compact') return COMPACT;
+    const favorites = config.show_favorites !== false && listLength(config, ['favorites']) ? 88 : 0;
+    return 328 + favorites;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,

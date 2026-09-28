@@ -24,6 +24,8 @@ import {
   textField,
 } from '../shared/form.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
+import { renderAvatar } from '../shared/avatar.js';
+import { listLength, rowsOf, ROW } from '../shared/heights.js';
 
 const s = strings('people');
 
@@ -56,14 +58,6 @@ interface Person {
   readonly picture: string;
 }
 
-/** Two letters from the name: the face of a person without a picture. */
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  const first = words[0] ?? '';
-  const last = words.length > 1 ? (words[words.length - 1] ?? '') : '';
-  return `${[...first][0] ?? '?'}${[...last][0] ?? ''}`.toLocaleUpperCase();
-}
-
 const sameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
@@ -76,6 +70,12 @@ const sameDay = (a: Date, b: Date): boolean =>
  * shown: where a person is, is a zone name or nothing.
  */
 export class FluvyPeopleCard extends Card<PeopleCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: PeopleCardConfig): number {
+    const n = listLength(config, ['entities']);
+    return config.variant === 'rows' ? 84 + ROW * n : 84 + 104 * rowsOf(n, 3);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,
@@ -248,26 +248,15 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
 
   private renderAvatar(person: Person): TemplateResult {
     const { view, presence, picture } = person;
-    const shown = picture !== '' && !this.broken_.has(picture);
-    return html`<span
-      class="am-avatar ${presence === 'home' ? 'is-home' : ''} ${shown ? '' : 'is-initials'} ${presence === 'off' ? 'is-off' : ''}"
-      data-icon
-    >
-      ${
-        shown
-          ? html`<img
-              class="am-avatar__face"
-              src=${picture}
-              alt=""
-              draggable="false"
-              @error=${() => {
-                this.broken_ = new Set([...this.broken_, picture]);
-              }}
-            />`
-          : html`<span class="am-avatar__face" aria-hidden="true">${initials(view.name)}</span>`
-      }
-      ${presence === 'off' ? nothing : html`<i class="am-avatar__dot"></i>`}
-    </span>`;
+    return renderAvatar({
+      name: view.name,
+      picture,
+      presence,
+      broken: this.broken_,
+      onBroken: (failed) => {
+        this.broken_ = new Set([...this.broken_, failed]);
+      },
+    });
   }
 
   /** The sheet: avatar, name, "Home · 18:40" / "Away · School" — the state and its one detail. */

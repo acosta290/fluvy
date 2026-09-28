@@ -54,6 +54,7 @@ import {
 import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
+import { COMPACT } from '../shared/heights.js';
 
 const fanStrings = strings('fan');
 
@@ -92,6 +93,11 @@ function speedCount(view: EntityView): number {
  * percentage sent is the one Home Assistant maps back onto that speed. The head glyph turns while it runs.
  */
 export class FluvyFanCard extends Card<FanCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: FanCardConfig): number {
+    return config.variant === 'compact' ? COMPACT : 364;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,

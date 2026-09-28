@@ -34,6 +34,7 @@ import {
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { listLength } from '../shared/heights.js';
 
 const s = strings('readouts');
 
@@ -96,6 +97,12 @@ function baselineOf(values: readonly number[], min: number, max: number): Baseli
  * readout size (m → s → xs) at which every value fits its column — a value is never clipped.
  */
 export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ReadoutsCardConfig): number {
+    const n = listLength(config, ['rows', 'entities']);
+    return n >= 3 && config.variant !== 'row' ? 152 : 88;
+  }
+
   static override still = true;
 
   static override styles: CSSResultGroup = [

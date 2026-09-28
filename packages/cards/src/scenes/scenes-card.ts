@@ -42,6 +42,7 @@ import {
   type AliasSpec,
   type Columns,
 } from '../shared/config.js';
+import { listLength, rowsOf } from '../shared/heights.js';
 
 const s = strings('scenes');
 
@@ -93,6 +94,13 @@ const GRID_GAP = 16;
 const TILE_CHROME = 88;
 
 export class FluvyScenesCard extends Card<ScenesCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ScenesCardConfig): number {
+    const n = listLength(config, ['scenes', 'entities']);
+    const perRow = columnsOf(config.columns, 'auto') === 1 ? 1 : 2;
+    return (config.title ? 40 : 0) + Math.max(1, rowsOf(n, perRow)) * 84 - 8; // no scenes yet: the empty state's row
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,

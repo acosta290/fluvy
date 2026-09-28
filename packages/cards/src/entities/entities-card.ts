@@ -34,6 +34,7 @@ import { ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { secondaryText } from '../shared/secondary.js';
+import { listLength, ROW_COMPACT, ROW } from '../shared/heights.js';
 
 /** A row of the card: the rows every list shares (`RowConfig`). */
 export type EntityRowConfig = RowConfig;
@@ -54,6 +55,12 @@ export interface EntitiesCardConfig extends FluvyCardConfig {
  * State is said once: the trailing element carries it, the sub line carries context (area or time).
  */
 export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: EntitiesCardConfig): number {
+    const n = listLength(config, ['rows', 'entities']);
+    return 92 + (config.variant === 'compact' ? ROW_COMPACT : ROW) * n;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     css`

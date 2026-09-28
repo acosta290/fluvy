@@ -106,6 +106,16 @@ function release(subscription: Subscription): void {
  * changes. An entity that does not offer a type answers with an error, and that strip stays away.
  */
 export class FluvyWeatherCard extends Card<WeatherCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: WeatherCardConfig): number {
+    // the hero (128); hour columns (100) and day rows (60 each, 16 above them) as asked
+    if (config.show_forecast === false) return 128;
+    const days = Math.min(10, Math.max(1, Math.round(config.days ?? 5)));
+    const hours = config.forecast === 'hourly' || config.forecast === 'both' ? 100 : 0;
+    const rows = config.forecast === 'hourly' ? 0 : 16 + 60 * days;
+    return 128 + hours + rows;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,

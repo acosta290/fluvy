@@ -104,32 +104,17 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
               "type": "custom:fluvy-tile-card",
             },
             {
-              "entity": "media_player.tv",
-              "grid_options": {
-                "columns": 12,
-              },
-              "type": "custom:fluvy-media-card",
-              "variant": "mini",
-            },
-            {
-              "entity": "todo.groceries",
-              "grid_options": {
-                "columns": 12,
-              },
-              "type": "custom:fluvy-todo-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
-            {
               "entity": "climate.heat_pump",
               "grid_options": {
                 "columns": 12,
               },
               "type": "custom:fluvy-thermostat-card",
             },
+          ],
+          "type": "grid",
+        },
+        {
+          "cards": [
             {
               "rows": [
                 {
@@ -145,6 +130,21 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                 "columns": 12,
               },
               "type": "custom:fluvy-weather-card",
+            },
+            {
+              "entity": "media_player.tv",
+              "grid_options": {
+                "columns": 12,
+              },
+              "type": "custom:fluvy-media-card",
+              "variant": "mini",
+            },
+            {
+              "entity": "todo.groceries",
+              "grid_options": {
+                "columns": 12,
+              },
+              "type": "custom:fluvy-todo-card",
             },
           ],
           "type": "grid",
@@ -464,6 +464,23 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
               "title": "Consumption",
               "type": "custom:fluvy-distribution-card",
             },
+            {
+              "grid_options": {
+                "columns": 12,
+              },
+              "rows": [
+                {
+                  "entity": "sensor.washing_machine_energy_today",
+                  "name": "washing_machine_energy_today",
+                },
+                {
+                  "entity": "sensor.heat_pump_energy_today",
+                  "name": "heat_pump_energy_today",
+                },
+              ],
+              "title": "Appliances",
+              "type": "custom:fluvy-energy-devices-card",
+            },
           ],
           "type": "grid",
         },
@@ -507,23 +524,6 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
                 "columns": 12,
               },
               "type": "custom:fluvy-gauge-card",
-            },
-            {
-              "grid_options": {
-                "columns": 12,
-              },
-              "rows": [
-                {
-                  "entity": "sensor.washing_machine_energy_today",
-                  "name": "washing_machine_energy_today",
-                },
-                {
-                  "entity": "sensor.heat_pump_energy_today",
-                  "name": "heat_pump_energy_today",
-                },
-              ],
-              "title": "Appliances",
-              "type": "custom:fluvy-energy-devices-card",
             },
           ],
           "type": "grid",

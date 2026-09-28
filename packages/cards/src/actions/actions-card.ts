@@ -30,6 +30,7 @@ import {
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { listLength, rowsOf } from '../shared/heights.js';
 
 const s = strings('actions');
 
@@ -82,6 +83,12 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * the surface gives under the finger and the glyph becomes a check for a beat.
  */
 export class FluvyActionsCard extends Card<ActionsCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ActionsCardConfig): number {
+    const columns = Math.min(3, Math.max(1, Math.round(Number(config.columns ?? 1)) || 1));
+    return 92 + 68 * rowsOf(listLength(config, ['rows', 'entities']), columns);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.inputs,

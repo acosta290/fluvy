@@ -37,6 +37,7 @@ import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { glyphFor } from '../shared/domain.js';
+import { listLength, HEAD, ROW } from '../shared/heights.js';
 
 const strings = words('distribution');
 
@@ -86,6 +87,12 @@ const SLIVER = 0.005;
  * set in the same unit, so the legend reads as one column.
  */
 export class FluvyDistributionCard extends Card<DistributionCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: DistributionCardConfig): number {
+    const n = Math.min(listLength(config, ['entities']), 5);
+    return config.variant === 'rows' ? HEAD + ROW * n : 124 + 36 * n;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

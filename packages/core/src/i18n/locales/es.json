@@ -20,7 +20,10 @@
     "events": "{count} eventos",
     "event": "1 evento",
     "no_events": "Sin eventos",
-    "left": "Quedan {count}"
+    "left": "Quedan {count}",
+    "on_of": "{on} de {count} encendidos",
+    "device": "1 dispositivo",
+    "devices": "{count} dispositivos"
   },
   "state": {
     "unavailable": "No disponible",
@@ -624,11 +627,7 @@
     "label": "Texto dentro del anillo",
     "badge": "Texto de la insignia"
   },
-  "heading": {
-    "devices": "{count} dispositivos",
-    "device": "1 dispositivo",
-    "on_of": "{on} de {count} encendidos"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Perfil"

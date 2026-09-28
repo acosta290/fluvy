@@ -97,6 +97,14 @@ const cssUrl = (url: string): string => url.replace(/["\\]/g, '');
  * unreachable speaker (the dead Cast device every instance has) reads as calm, not broken.
  */
 export class FluvyMediaCard extends Card<MediaCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: MediaCardConfig): number {
+    // artwork, title and controls (264), the volume under them (88); the sources a player has are its own
+    if (config.variant === 'hero') return 600;
+    if (config.variant === 'mini') return 76;
+    return config.show_volume === false ? 264 : 352;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.media,

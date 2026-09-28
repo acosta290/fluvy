@@ -20,7 +20,10 @@
     "events": "{count} events",
     "event": "1 event",
     "no_events": "No events",
-    "left": "{count} left"
+    "left": "{count} left",
+    "on_of": "{on} of {count} on",
+    "device": "1 device",
+    "devices": "{count} devices"
   },
   "state": {
     "unavailable": "Unavailable",
@@ -624,11 +627,7 @@
     "label": "Label inside the ring",
     "badge": "Badge text"
   },
-  "heading": {
-    "devices": "{count} devices",
-    "device": "1 device",
-    "on_of": "{on} of {count} on"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Profile"

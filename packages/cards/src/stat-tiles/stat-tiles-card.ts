@@ -49,6 +49,7 @@ import {
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { listLength, rowsOf, ROW } from '../shared/heights.js';
 
 const strings = words('stat-tiles');
 
@@ -107,6 +108,12 @@ const chunk = <T>(items: readonly T[], size: number): T[][] => {
  * sits above them, optional plain rows below.
  */
 export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: StatTilesCardConfig): number {
+    const tiles = rowsOf(listLength(config, ['tiles']), 2);
+    return 84 + 92 * tiles - 8 + (config.entity ? 56 : 0) + ROW * listLength(config, ['rows']);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

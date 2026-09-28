@@ -75,6 +75,20 @@ const EDITOR_LABELS = {
  * that one table, which is why a dot, a count and a row can never tell different stories.
  */
 export class FluvyCalendarCard extends Card<CalendarCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: CalendarCardConfig): number {
+    const heights = {
+      agenda: 416,
+      month: 360,
+      week: 428,
+      'month-day': 644,
+      timeline: 476,
+      upcoming: 340,
+      tile: 168,
+    };
+    return heights[viewOf(config)];
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.calendar,

@@ -27,6 +27,8 @@ import {
   type Columns,
 } from '../shared/config.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { listLength, rowsOf } from '../shared/heights.js';
+import { type LovelaceCardConfig } from '@fluvy/core';
 
 export interface TilesCardConfig extends TileCardConfig {
   /** Entity ids, or tiles with their own name / icon / tone / colour / actions. */
@@ -56,6 +58,14 @@ function toItem(item: unknown): TileItem | null {
  * large ones keep the section's own gaps, as lone large tiles would.
  */
 export class FluvyTilesCard extends FluvyTileCard {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: LovelaceCardConfig): number {
+    const n = listLength(config, ['tiles', 'entities']);
+    // a mini tile is 108 tall three a row, a compact one 76 two a row, a large one 168; 8 between rows
+    if (config.size === 'mini') return rowsOf(n, 3) * 116 - 8;
+    return rowsOf(n, 2) * (config.size === 'compact' ? 84 : 176) - 8;
+  }
+
   static override styles: CSSResultGroup = [
     ...(FluvyTileCard.styles as CSSResultGroup[]),
     css`

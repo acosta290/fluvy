@@ -20,7 +20,10 @@
     "events": "{count} eventos",
     "event": "1 evento",
     "no_events": "Nenhum evento",
-    "left": "{count} restantes"
+    "left": "{count} restantes",
+    "on_of": "{on} de {count} ligados",
+    "device": "1 dispositivo",
+    "devices": "{count} dispositivos"
   },
   "state": {
     "unavailable": "Indisponível",
@@ -624,11 +627,7 @@
     "label": "Rótulo dentro do anel",
     "badge": "Texto do selo"
   },
-  "heading": {
-    "devices": "{count} dispositivos",
-    "device": "1 dispositivo",
-    "on_of": "{on} de {count} ligados"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Perfil"

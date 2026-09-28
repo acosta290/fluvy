@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { demoHass } from '@fluvy/demo-home';
 import { describe, expect, it } from 'vitest';
+// the cards register their heights with core: the strategy lays columns out with them
+import '../index.js';
 import { defineHomeStrategy } from './define.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 

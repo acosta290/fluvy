@@ -49,6 +49,8 @@ export interface MockOptions {
   readonly dark?: boolean;
   readonly language?: string;
   readonly now?: Date;
+  /** The registries a sheet needs beyond its states (areas, floors, devices, entity entries). */
+  readonly registry?: Partial<Pick<HomeAssistant, 'entities' | 'devices' | 'areas' | 'floors'>>;
   readonly history?: Record<string, readonly number[]>;
   readonly ws?: Record<string, (message: Record<string, unknown>) => unknown>;
   readonly api?: (method: string, path: string) => unknown;
@@ -381,9 +383,10 @@ export function createHass(
   const build = (): HomeAssistant =>
     ({
       states: { ...states },
-      entities: {},
-      devices: {},
-      areas: {},
+      entities: options.registry?.entities ?? {},
+      devices: options.registry?.devices ?? {},
+      areas: options.registry?.areas ?? {},
+      ...(options.registry?.floors ? { floors: options.registry.floors } : {}),
       themes: {
         default_theme: 'Fluvy',
         themes: {},

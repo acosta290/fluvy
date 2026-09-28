@@ -95,6 +95,15 @@ const isOwnLabel = (name: string): name is keyof typeof OWN_LABELS => name in OW
  * re-renders the text; it stops with the tab and with the element.
  */
 export class FluvyClockCard extends Card<ClockCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ClockCardConfig): number {
+    const weather = Boolean(config.weather);
+    if (config.variant === 'tile') return 168;
+    if (config.variant === 'side') return weather ? 268 : 208;
+    if (config.face === 'digital') return weather && config.show_forecast !== false ? 196 : 136;
+    return weather ? 352 : 340;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.clocks,

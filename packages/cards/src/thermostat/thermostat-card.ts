@@ -135,6 +135,11 @@ const pretty = (raw: string): string => {
  * tiles and presets / fan speeds as chips. Every null the integrations send is survived.
  */
 export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ThermostatCardConfig): number {
+    return config.variant === 'compact' ? 292 : config.variant === 'ruler' ? 356 : 484;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.climate,

@@ -20,7 +20,10 @@
     "events": "{count} eventi",
     "event": "1 evento",
     "no_events": "Nessun evento",
-    "left": "{count} rimasti"
+    "left": "{count} rimasti",
+    "on_of": "{on} su {count} accesi",
+    "device": "1 dispositivo",
+    "devices": "{count} dispositivi"
   },
   "state": {
     "unavailable": "Offline",
@@ -624,11 +627,7 @@
     "label": "Etichetta nell’anello",
     "badge": "Testo del badge"
   },
-  "heading": {
-    "devices": "{count} dispositivi",
-    "device": "1 dispositivo",
-    "on_of": "{on} su {count} accesi"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Profilo"

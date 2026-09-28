@@ -98,6 +98,11 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * last resort.
  */
 export class FluvyHelloCard extends Card<HelloCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 60;
+  }
+
   static override still = true;
 
   static override styles: CSSResultGroup = [

@@ -20,6 +20,18 @@ export interface DemoEntity {
 export interface DemoArea {
   readonly area_id: string;
   readonly name: string;
+  readonly floor_id?: string;
+  readonly icon?: string;
+  /** A photo of the room (a data URI here: nothing is fetched). */
+  readonly picture?: string;
+  readonly temperature_entity_id?: string;
+  readonly humidity_entity_id?: string;
+}
+
+export interface DemoFloor {
+  readonly floor_id: string;
+  readonly name: string;
+  readonly level: number;
 }
 
 export interface DemoDevice {
@@ -34,10 +46,27 @@ export interface DemoDashboard {
   readonly icon: string;
 }
 
+/** The living room's photo: a drawing, so the demo fetches nothing. */
+export const LIVING_ROOM_PICTURE = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c7a8"/><stop offset="1" stop-color="#8c6f4e"/></linearGradient></defs><rect width="320" height="200" fill="url(#g)"/><rect x="40" y="110" width="150" height="50" rx="10" fill="#5b4632"/><circle cx="250" cy="70" r="30" fill="#f3e6c8" opacity="0.8"/></svg>',
+)}`;
+
+export const DEMO_FLOORS: readonly DemoFloor[] = [
+  { floor_id: 'ground', name: 'Ground floor', level: 0 },
+  { floor_id: 'upstairs', name: 'Upstairs', level: 1 },
+];
+
 export const DEMO_AREAS: readonly DemoArea[] = [
-  { area_id: 'living_room', name: 'Living room' },
-  { area_id: 'kitchen', name: 'Kitchen' },
-  { area_id: 'garden', name: 'Garden' },
+  {
+    area_id: 'living_room',
+    name: 'Living room',
+    floor_id: 'ground',
+    icon: 'mdi:sofa',
+    picture: LIVING_ROOM_PICTURE,
+  },
+  { area_id: 'kitchen', name: 'Kitchen', floor_id: 'ground', icon: 'mdi:silverware-fork-knife' },
+  { area_id: 'bedroom', name: 'Bedroom', floor_id: 'upstairs', icon: 'mdi:bed' },
+  { area_id: 'garden', name: 'Garden', temperature_entity_id: 'sensor.garden_temperature' },
 ];
 
 export const DEMO_DEVICES: readonly DemoDevice[] = [
@@ -221,6 +250,48 @@ export const DEMO_HEAT_PUMP_READINGS: readonly DemoEntity[] = [
 /** The devices the energy dashboard tracks in the ordinary house (its `device_consumption` statistics). */
 export const DEMO_CONSUMPTION: readonly string[] = ['sensor.washing_machine_energy_today'];
 
+/** Rooms and people beyond the ordinary day: a bedroom upstairs, a second person at work (for the room and map cards). */
+export const DEMO_ROOMS: readonly DemoEntity[] = [
+  {
+    id: 'light.bedroom_ceiling',
+    state: 'off',
+    attributes: { friendly_name: 'Bedroom ceiling', supported_color_modes: ['brightness'] },
+    registry: { area_id: 'bedroom' },
+  },
+  {
+    id: 'sensor.bedroom_temperature',
+    state: '19.5',
+    attributes: {
+      friendly_name: 'Bedroom temperature',
+      device_class: 'temperature',
+      unit_of_measurement: '°C',
+    },
+    registry: { area_id: 'bedroom' },
+  },
+  {
+    id: 'zone.work',
+    state: '1',
+    attributes: {
+      friendly_name: 'Work',
+      latitude: 41.39,
+      longitude: 2.17,
+      radius: 100,
+      icon: 'mdi:briefcase',
+    },
+  },
+  {
+    id: 'person.pau',
+    state: 'Work',
+    attributes: {
+      friendly_name: 'Pau',
+      user_id: 'u-pau',
+      latitude: 41.39,
+      longitude: 2.17,
+      gps_accuracy: 20,
+    },
+  },
+];
+
 /** The dashboards the house has: its own home, the automatic one, and one of Home Assistant's. */
 export const DEMO_DASHBOARDS: readonly DemoDashboard[] = [
   { url_path: 'fluvy-home', title: 'Home', icon: 'mdi:home' },
@@ -242,7 +313,9 @@ export interface DemoHass {
   states: Record<string, { state: string; attributes: Record<string, unknown> }>;
   entities: Record<string, Record<string, unknown>>;
   devices: Record<string, { id: string; area_id: string | null; name?: string }>;
-  areas: Record<string, { area_id: string; name: string }>;
+  areas: Record<string, DemoArea>;
+  floors: Record<string, DemoFloor>;
+  user: { id: string; name: string; is_admin: boolean };
   callWS: (message: { type: string }) => Promise<unknown>;
 }
 
@@ -264,6 +337,8 @@ export function demoHass(options: DemoHassOptions = {}): DemoHass {
     entities,
     devices: Object.fromEntries(DEMO_DEVICES.map((device) => [device.id, { ...device }])),
     areas: Object.fromEntries(DEMO_AREAS.map((area) => [area.area_id, { ...area }])),
+    floors: Object.fromEntries(DEMO_FLOORS.map((floor) => [floor.floor_id, { ...floor }])),
+    user: { id: 'u-marta', name: 'Marta', is_admin: true },
     callWS: async () => ({
       device_consumption: consumption.map((stat) => ({ stat_consumption: stat })),
     }),

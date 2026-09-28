@@ -42,6 +42,7 @@ import {
 import { Refresher } from '../shared/refresh.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { ROW } from '../shared/heights.js';
 
 const strings = words('humidity');
 
@@ -85,6 +86,13 @@ const clampPercent = (value: number): number => Math.min(100, Math.max(0, value)
  * underneath where it is heading and the humidifier that answers it.
  */
 export class FluvyHumidityCard extends Card<HumidityCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: HumidityCardConfig): number {
+    const trend = config.show_trend === false || config.hours === 0 ? 0 : 1;
+    const rows = trend + (config.humidifier_entity ? 1 : 0);
+    return 236 + (rows ? 16 + ROW * rows : 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

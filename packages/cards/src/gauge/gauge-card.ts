@@ -95,6 +95,11 @@ const PRODUCES = new Set(['power', 'energy', 'current']);
  * window below — centred in their columns, so the row mirrors the ring above it.
  */
 export class FluvyGaugeCard extends Card<GaugeCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: GaugeCardConfig): number {
+    return config.variant === 'bar' ? 256 : 384;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

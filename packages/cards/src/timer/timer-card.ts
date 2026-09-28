@@ -61,6 +61,11 @@ function parseDuration(raw: unknown): number | null {
  * idle, paused, at zero, or while the card is off the page.
  */
 export class FluvyTimerCard extends Card<TimerCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: TimerCardConfig): number {
+    return config.show_gauge === false ? 164 : 252;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.inputs,

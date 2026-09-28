@@ -42,6 +42,7 @@ import {
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { HEAD, listLength, ROW_BAR } from '../shared/heights.js';
 
 const strings = words('bars');
 
@@ -116,6 +117,11 @@ const subEntities = (row: BarRowConfig): string[] =>
  * badge ("1 shaded", "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card.
  */
 export class FluvyBarsCard extends Card<BarsCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: BarsCardConfig): number {
+    return HEAD + ROW_BAR * listLength(config, ['rows']);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

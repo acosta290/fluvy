@@ -1,3 +1,4 @@
+import { areaOf } from './areas.js';
 import type { HassEntity, HomeAssistant } from './ha/types.js';
 
 /**
@@ -53,8 +54,7 @@ export function resolveEntity(hass: HomeAssistant | undefined, id: string | unde
         ? 'unknown'
         : 'ok';
   const registry = hass?.entities?.[entityId]; // may be absent: some states never enter the registry
-  const device = registry?.device_id ? hass?.devices?.[registry.device_id] : undefined;
-  const areaId = registry?.area_id ?? device?.area_id ?? undefined;
+  const areaId = areaOf(hass, entityId);
   // `Number('')` and `Number('  ')` are 0: only a state with digits in it is a number
   const parsed =
     stateObj && status === 'ok' && /\d/.test(stateObj.state) ? Number(stateObj.state) : NaN;

@@ -63,6 +63,14 @@ export interface AreaRegistryEntry {
   humidity_entity_id?: string | null;
 }
 
+export interface FloorRegistryEntry {
+  floor_id: string;
+  name: string;
+  /** Storeys count up from the ground; absent: unordered, after the numbered ones. */
+  level?: number | null;
+  icon?: string | null;
+}
+
 export interface FrontendLocaleData {
   language: string;
   number_format: 'language' | 'system' | 'comma_decimal' | 'decimal_comma' | 'space_comma' | 'none';
@@ -112,6 +120,8 @@ export interface HomeAssistant {
   entities: Record<string, EntityRegistryDisplayEntry>;
   devices: Record<string, DeviceRegistryEntry>;
   areas: Record<string, AreaRegistryEntry>;
+  /** Absent before Home Assistant 2024.4, which had no floors. */
+  floors?: Record<string, FloorRegistryEntry>;
   themes: HassThemes;
   /** The theme this person chose in their profile (`theme: ''` or none: the house's default theme). */
   selectedTheme?: { theme?: string; dark?: boolean } | null;

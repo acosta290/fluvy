@@ -20,7 +20,10 @@
     "events": "{count} événements",
     "event": "1 événement",
     "no_events": "Aucun événement",
-    "left": "{count} restants"
+    "left": "{count} restants",
+    "on_of": "{on} sur {count} allumés",
+    "device": "1 appareil",
+    "devices": "{count} appareils"
   },
   "state": {
     "unavailable": "Indisponible",
@@ -624,11 +627,7 @@
     "label": "Étiquette dans l’anneau",
     "badge": "Texte du badge"
   },
-  "heading": {
-    "devices": "{count} appareils",
-    "device": "1 appareil",
-    "on_of": "{on} sur {count} allumés"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Profil"

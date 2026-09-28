@@ -1,6 +1,4 @@
 import {
-  isActive,
-  strings,
   type ActionConfig,
   type FluvyCardConfig,
   type LovelaceConfigForm,
@@ -26,8 +24,7 @@ import {
   textField,
 } from '../shared/form.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
-
-const s = strings('heading');
+import { counted } from '../shared/counted.js';
 
 export interface HeadingCardConfig extends FluvyCardConfig {
   title?: string;
@@ -51,6 +48,11 @@ export interface HeadingCardConfig extends FluvyCardConfig {
  * it keeps the column's top line, so the columns still start level.
  */
 export class FluvyHeadingCard extends Card<HeadingCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 24;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,
@@ -177,20 +179,13 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
   }
 
   /** "2 of 4 on" while something is on, otherwise the plain count. Unreachable entities count as devices, never as on. */
-  private counted(): string {
-    const ids = this.config?.entities ?? [];
-    if (ids.length === 0) return '';
-    const on = ids.filter((id) => isActive(this.entity(id))).length;
-    if (on > 0) return s(this.hass, 'on_of', { on, count: ids.length });
-    return ids.length === 1
-      ? s(this.hass, 'device')
-      : s(this.hass, 'devices', { count: ids.length });
-  }
-
   protected renderCard(): TemplateResult {
     const title = this.config?.title ?? '';
     const plain = this.config?.variant === 'plain';
-    const text = plain ? '' : (this.config?.subtitle ?? this.counted());
+    const text = plain
+      ? ''
+      : (this.config?.subtitle ??
+        counted(this.hass, this.config?.entities ?? [], (id) => this.entity(id)));
     const action: ActionConfig | undefined = this.config?.path
       ? { action: 'navigate', navigation_path: this.config.path }
       : this.config?.tap_action;

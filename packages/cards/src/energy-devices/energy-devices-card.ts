@@ -50,6 +50,7 @@ import {
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { HEAD, listLength, ROW_BAR } from '../shared/heights.js';
 
 const s = strings('energy-devices');
 
@@ -104,6 +105,11 @@ const BAR_TONES: ReadonlySet<Tone> = new Set<Tone>([
  * plain 60 px row with its own figure: it has no share of the total and draws no bar.
  */
 export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: EnergyDevicesCardConfig): number {
+    return HEAD + ROW_BAR * listLength(config, ['rows', 'entities']);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.energy,

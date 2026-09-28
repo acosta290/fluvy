@@ -20,7 +20,10 @@
     "events": "{count} afspraken",
     "event": "1 afspraak",
     "no_events": "Geen afspraken",
-    "left": "{count} over"
+    "left": "{count} over",
+    "on_of": "{on} van {count} aan",
+    "device": "1 apparaat",
+    "devices": "{count} apparaten"
   },
   "state": {
     "unavailable": "Offline",
@@ -624,11 +627,7 @@
     "label": "Label in de ring",
     "badge": "Badgetekst"
   },
-  "heading": {
-    "devices": "{count} apparaten",
-    "device": "1 apparaat",
-    "on_of": "{on} van {count} aan"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Profiel"

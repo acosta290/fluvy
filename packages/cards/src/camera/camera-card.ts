@@ -10,14 +10,7 @@ import {
 
 import { glyph, head, round, sheetStyles } from '@fluvy/ui';
 
-import {
-  css,
-  html,
-  nothing,
-  type CSSResultGroup,
-  type PropertyValues,
-  type TemplateResult,
-} from 'lit';
+import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
 import { ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from '../lock/rows.js';
 
@@ -40,6 +33,8 @@ import {
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { Crossfade } from '../shared/crossfade.js';
+import { listLength, ROW } from '../shared/heights.js';
 
 const s = strings('camera');
 
@@ -49,8 +44,6 @@ export interface CameraCardConfig extends RowsCardConfig {
   /** Second line of the head ("Front of house · 1080p"). Default: area and state. */
   subtitle?: string;
 }
-
-type Slot = 'a' | 'b';
 
 /** A request that has not answered after this long no longer holds the next one back. */
 const STALL_MS = 30_000;
@@ -64,6 +57,12 @@ const GIVE_UP = 3;
  * while the card is on screen and the tab is in front, and is gone with the card.
  */
 export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: CameraCardConfig): number {
+    const rows = config.show_rows === false ? 0 : listLength(config, ['rows']);
+    return 280 + (rows ? 16 + ROW * rows : 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,
@@ -73,22 +72,6 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
       }
       .dv-cam {
         background: none;
-      }
-      .dv-cam__frame {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0;
-      }
-      .dv-cam__frame.is-under {
-        opacity: 1;
-      }
-      .dv-cam__frame.is-on {
-        z-index: 1;
-        opacity: 1;
-        animation: fv-fade 360ms var(--fv-ease) both;
       }
       /* the sheet's vignette, over the picture instead of under it, so the pills stay legible on a bright frame */
       .dv-cam__shade {
@@ -134,7 +117,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
         outline: 1px dashed var(--fluvy-unavailable-border);
         outline-offset: -1px;
       }
-      .dv-cam.is-off .dv-cam__frame {
+      .dv-cam.is-off .fv-plate__img {
         display: none;
       }
       .dv-cam__off {
@@ -161,7 +144,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
         border-radius: 0;
         background: var(--fluvy-neutral-05);
       }
-      .dv-cam:fullscreen .dv-cam__frame {
+      .dv-cam:fullscreen .fv-plate__img {
         object-fit: contain;
       }
       .dv-cam:fullscreen .dv-cam__shade {
@@ -172,19 +155,23 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
 
   static override properties = {
     ...Card.properties,
-    a_: { state: true },
-    b_: { state: true },
-    front_: { state: true },
     stamp_: { state: true },
     failed_: { state: true },
     stale_: { state: true },
   };
 
-  /** The two stacked images' sources. Only the one behind is ever given a new URL. */
-  declare a_: string;
-  declare b_: string;
-  /** Which image is the one being shown ('' until the first frame lands). */
-  declare front_: Slot | '';
+  /** The two stacked frames: the next one loads behind and shows once decoded. */
+  private readonly frames = new Crossfade(
+    this,
+    () => {
+      this.inFlight = 0;
+      this.failures = 0;
+      this.stamp_ = Date.now();
+      this.failed_ = false;
+      this.stale_ = false;
+    },
+    () => this.onError(),
+  );
   /** When the shown frame arrived. */
   declare stamp_: number;
   /** No frame to show: none ever came, or the camera kept failing. */
@@ -204,9 +191,6 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
 
   constructor() {
     super();
-    this.a_ = '';
-    this.b_ = '';
-    this.front_ = '';
     this.stamp_ = 0;
     this.failed_ = false;
     this.stale_ = false;
@@ -335,24 +319,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     const url = base.startsWith('data:')
       ? `${base}#${now}`
       : `${base}${base.includes('?') ? '&' : '?'}_=${now}`;
-    if (this.front_ === 'a') this.b_ = url;
-    else this.a_ = url;
-  }
-
-  private onLoad(slot: Slot, event: Event): void {
-    const image = event.currentTarget as HTMLImageElement;
-    const show = (): void => {
-      if (!this.isConnected) return;
-      this.inFlight = 0;
-      this.failures = 0;
-      this.front_ = slot;
-      this.stamp_ = Date.now();
-      this.failed_ = false;
-      this.stale_ = false;
-    };
-    if (typeof image.decode === 'function')
-      image.decode().then(show, show); // fade in a decoded frame, not a half-painted one
-    else show();
+    this.frames.show(url);
   }
 
   private onError(): void {
@@ -429,25 +396,8 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
         onHold: () => this.hold(view.id),
         iconLabel: name,
       })}
-      <div class="dv-cam ${off ? 'is-off' : ''}" style="height:${height}px">
-        <img
-          class="dv-cam__frame ${this.front_ === 'a' ? 'is-on' : this.front_ ? 'is-under' : ''}"
-          alt=""
-          decoding="async"
-          draggable="false"
-          src=${this.a_ || nothing}
-          @load=${(event: Event) => this.onLoad('a', event)}
-          @error=${() => this.onError()}
-        />
-        <img
-          class="dv-cam__frame ${this.front_ === 'b' ? 'is-on' : this.front_ ? 'is-under' : ''}"
-          alt=""
-          decoding="async"
-          draggable="false"
-          src=${this.b_ || nothing}
-          @load=${(event: Event) => this.onLoad('b', event)}
-          @error=${() => this.onError()}
-        />
+      <div class="dv-cam fv-plate ${off ? 'is-off' : ''}" style="height:${height}px">
+        ${this.frames.render()}
         ${
           off
             ? html`<div class="dv-cam__off" style="top:${offTop}px;height:76px">

@@ -100,6 +100,11 @@ const THREE_READOUTS = 292;
  * Active = the tone's pastel fill in every size.
  */
 export class FluvyTileCard extends Card<TileCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: TileCardConfig): number {
+    return config.size === 'compact' || config.size === 'mini' ? 76 : 168;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,

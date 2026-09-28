@@ -329,3 +329,30 @@
   gap: 16px;
   margin-top: 16px;
 }
+
+/* a plate: a picture's surface (a camera's frames, a room's photo, a map), 16 radius, its images stacked and cross-fading */
+.fv-plate {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--fluvy-radius-control);
+  background: var(--fluvy-page-alt);
+}
+
+.fv-plate__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+.fv-plate__img.is-under {
+  opacity: 1;
+}
+
+.fv-plate__img.is-on {
+  z-index: 1;
+  opacity: 1;
+  animation: fv-fade 360ms var(--fv-ease) both;
+}

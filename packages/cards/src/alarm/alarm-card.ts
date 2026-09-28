@@ -53,6 +53,7 @@ import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { chipRow, fitsOneRow } from '../shared/chips.js';
 import { TextRuler } from '../shared/fit.js';
+import { COMPACT, listLength, ROW } from '../shared/heights.js';
 
 const s = strings('alarm');
 
@@ -172,6 +173,13 @@ function previewState(hass: HomeAssistant): HassEntity {
  * the badge shows what the panel reports, only the chosen tile lights up while it answers.
  */
 export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: AlarmCardConfig): number {
+    if (config.variant === 'compact') return COMPACT;
+    const rows = config.show_rows === false ? 0 : listLength(config, ['rows']);
+    return 300 + (rows ? 16 + ROW * rows : 0);
+  }
+
   /** Widths laid out by the browser in the row's own classes: the compact card's chips are measured with it. */
   private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
 

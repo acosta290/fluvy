@@ -62,6 +62,11 @@ const ROW_INSET = 4;
  * keeps the active tab in view.
  */
 export class FluvyChipsCard extends Card<ChipsCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 44;
+  }
+
   static override still = true;
 
   static override styles: CSSResultGroup = [

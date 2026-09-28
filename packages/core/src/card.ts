@@ -97,6 +97,9 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   /** Cards that are the dashboard's chrome (greeting, tabs, the readouts strip) draw at once, without the entrance, so they read as fixed while the views below them change. */
   static still = false;
 
+  /** The card's height at a 360 column for this config, for whoever lays cards out before they are drawn. */
+  static layoutHeight?(config: LovelaceCardConfig): number;
+
   static override properties = {
     hass: { attribute: false, noAccessor: true },
     config: { state: true },

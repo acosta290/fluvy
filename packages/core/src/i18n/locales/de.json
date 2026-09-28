@@ -20,7 +20,10 @@
     "events": "{count} Termine",
     "event": "1 Termin",
     "no_events": "Keine Termine",
-    "left": "{count} übrig"
+    "left": "{count} übrig",
+    "on_of": "{on} von {count} an",
+    "device": "1 Gerät",
+    "devices": "{count} Geräte"
   },
   "state": {
     "unavailable": "Offline",
@@ -624,11 +627,7 @@
     "label": "Beschriftung im Ring",
     "badge": "Badge-Text"
   },
-  "heading": {
-    "devices": "{count} Geräte",
-    "device": "1 Gerät",
-    "on_of": "{on} von {count} an"
-  },
+  "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
     "profile": "Profil"

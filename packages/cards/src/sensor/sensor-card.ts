@@ -136,6 +136,11 @@ function sizeFor(
  * five minutes, when the sensor itself changes — no timer.
  */
 export class FluvySensorCard extends Card<SensorCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: SensorCardConfig): number {
+    return config.variant === 'tile' ? 168 : config.show_stats === false ? 244 : 304;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,

@@ -30,6 +30,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
+import { HEAD, listLength, ROW } from '../shared/heights.js';
 
 const s = strings('openings');
 
@@ -70,6 +71,13 @@ const HAZARD = new Set(['smoke', 'gas', 'carbon_monoxide']);
  * carry fluvy's own wording so a door never reads "On".
  */
 export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: OpeningsCardConfig): number {
+    const n = listLength(config, ['entities']);
+    const max = Math.max(1, Math.round(config.max_rows ?? 4));
+    return HEAD + ROW * (n > max ? max + 1 : n);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,

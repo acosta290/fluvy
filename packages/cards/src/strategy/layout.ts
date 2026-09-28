@@ -1,5 +1,6 @@
 import type { HomeRegistry } from './home-registry.js';
 import type { Card, CardStyle, EnergyRoles, Section, View } from './types.js';
+import { layoutHeightOf } from '@fluvy/core';
 
 /*
  * The cards the strategy places and how a view's columns are cut so they end on one line: the small builders the
@@ -86,55 +87,6 @@ export const tabsCard = (base: string, views: readonly View[]): Card => ({
   })),
 });
 
-/**
- * The heights of the cards the strategy places, measured at a 360 column (the 16 px gap is added where they
- * stack), so the columns of a view can be cut to end on one line. A large tile is half a column: two share a row.
- */
-const HEIGHTS: Readonly<Record<string, number>> = {
-  heading: 24,
-  light: 368,
-  thermostat: 660,
-  weather: 444,
-  clock: 196,
-  humidity: 312,
-  sensor: 304,
-  'energy-flow': 256,
-  energy: 320,
-  gauge: 384,
-  production: 344,
-  media: 76,
-  vacuum: 388,
-  todo: 220,
-  camera: 280,
-  cover: 330,
-  fan: 380,
-  lock: 300,
-  alarm: 320,
-  calendar: 560,
-  timer: 252,
-  'now-playing': 212,
-  'stat-tiles': 200,
-  scene: 76,
-  // the calm state: everything up to date is one row
-  updates: 160,
-};
-/** Cards whose height follows their list: a head, then a rhythm of rows up to what the card shows. */
-const LIST_HEIGHTS: Readonly<Record<string, (rows: number) => number>> = {
-  bars: (n) => 100 + 76 * n,
-  entities: (n) => 92 + 60 * n,
-  // four rows, then the "All sensors" row
-  openings: (n) => 100 + 60 * Math.min(n, 5),
-  people: (n) => 84 + 104 * Math.ceil(n / 3),
-  helpers: (n) => 100 + 80 * n,
-  // automations have long names: one a line
-  scenes: (n) => 80 + 64 * n,
-  distribution: (n) => 124 + 36 * Math.min(n, 5),
-  // compact tiles two a row, 8 apart
-  tiles: (n) => Math.ceil(n / 2) * 84 - 8,
-  // two a row
-  actions: (n) => 76 + 76 * Math.ceil(n / 2),
-  readouts: (n) => (n > 3 ? 152 : 88),
-};
 /** The greeting and the tabs above the first column (60 + 16 + 44 + 16). */
 const HEADER = 136;
 const GAP = 16;
@@ -145,13 +97,8 @@ const listLength = (card: Card): number => {
   }
   return 0;
 };
-export const heightOf = (card: Card): number => {
-  const kind = card.type.replace(/^custom:fluvy-/, '').replace(/-card$/, '');
-  if (kind === 'tile') return card['size'] === 'compact' ? 76 : 168;
-  if (kind === 'thermostat')
-    return card['variant'] === 'compact' ? 470 : card['variant'] === 'ruler' ? 460 : 660;
-  return LIST_HEIGHTS[kind]?.(listLength(card)) ?? HEIGHTS[kind] ?? 100 + 64 * listLength(card);
-};
+export /** A card's height: what the card declares for its config (`static layoutHeight`), else a head and 64 a row. */
+const heightOf = (card: Card): number => layoutHeightOf(card, 100 + 64 * listLength(card));
 const halfColumn = (card: Card): boolean => card.grid_options?.columns === 6;
 /** A run of cards stacked in one column; half-column cards side by side, two a row. */
 function heightOfAll(cards: readonly Card[]): number {

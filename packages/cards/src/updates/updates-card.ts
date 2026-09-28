@@ -35,6 +35,7 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { listLength, ROW } from '../shared/heights.js';
 
 const s = strings('updates');
 
@@ -62,6 +63,11 @@ const NARROW = 300;
  * sheet draws it. Entities that are current are hidden unless asked for; an empty card says so.
  */
 export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: UpdatesCardConfig): number {
+    return 84 + ROW * listLength(config, ['entities']) + (config.toggle ? 48 : 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.inputs,

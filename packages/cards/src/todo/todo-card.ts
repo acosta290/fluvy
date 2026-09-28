@@ -84,6 +84,11 @@ const MAX_PLACEHOLDERS = 8;
  * subscription is refused, or stays silent, the list is read again whenever the entity changes.
  */
 export class FluvyTodoCard extends Card<TodoCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 400; // a list of five
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.inputs,

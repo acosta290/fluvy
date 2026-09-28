@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
+// the cards register their heights with core: the strategy lays columns out with them
+import '../index.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 
 import { DEMO_EXTRAS, DEMO_HEAT_PUMP_READINGS, demoHass, type DemoEntity } from '@fluvy/demo-home';
@@ -212,7 +214,7 @@ describe('custom:fluvy-home strategy', () => {
 
   it('tells lights from appliances by their words and gives plugs their readings', async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
-    const home = views[0]!.sections[0]!.cards;
+    const home = views[0]!.sections.flatMap((section) => section.cards); // wherever the columns cut
     const lights = home.find((c) => c.type === 'custom:fluvy-heading-card') as unknown as {
       entities: string[];
     };

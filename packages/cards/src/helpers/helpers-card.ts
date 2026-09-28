@@ -47,6 +47,7 @@ import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shar
 import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { toneOf } from '../shared/colour.js';
+import { HEAD, ROW } from '../shared/heights.js';
 
 const s = strings('helpers');
 
@@ -75,6 +76,32 @@ const BUTTONS = new Set(['input_button', 'button']);
  * One control per module: `number.ts`, `select.ts`, `text.ts`, `rows.ts`.
  */
 export class FluvyHelpersCard extends Card<HelpersCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: HelpersCardConfig): number {
+    const rows = (config.rows ?? config.entities ?? []).map((row) =>
+      typeof row === 'string' ? row : row.entity,
+    );
+    // one number or counter and no title: the compact figure (see `compactNumber`)
+    if (
+      rows.length === 1 &&
+      !config.title &&
+      /^(counter|number|input_number)\./.test(rows[0] ?? '')
+    )
+      return 76;
+    // a row by its kind: a field with its ruler (96), a select with its chips (108), a text field (96), a moment (76), a switch or button (60)
+    const height = (id: string): number =>
+      /^(input_number|number|counter)\./.test(id)
+        ? 96
+        : /^(input_select|select)\./.test(id)
+          ? 108
+          : /^(input_text|text)\./.test(id)
+            ? 96
+            : /^(input_datetime|datetime|date|time)\./.test(id)
+              ? 76
+              : ROW;
+    return HEAD + rows.reduce((total, id) => total + height(id), 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.inputs,

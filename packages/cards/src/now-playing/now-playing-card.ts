@@ -77,6 +77,11 @@ const CENTRED_FROM = 304;
  * to the entity's own dialog.
  */
 export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 212;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,

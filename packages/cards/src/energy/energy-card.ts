@@ -65,6 +65,7 @@ import { costParts, readoutParts } from './power.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { listLength } from '../shared/heights.js';
 
 const s = strings('energy');
 
@@ -124,6 +125,12 @@ interface ChartWindow {
  * Any other window rolls: the series spans the full width and the axis counts back in hours.
  */
 export class FluvyEnergyCard extends Card<EnergyCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: EnergyCardConfig): number {
+    if (config.variant === 'compact') return 240;
+    return 320 + (listLength(config, ['legend']) ? 60 : 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.energy,

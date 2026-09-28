@@ -55,6 +55,7 @@ import {
 import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
+import { COMPACT } from '../shared/heights.js';
 
 const vacuumStrings = strings('vacuum');
 
@@ -123,6 +124,11 @@ const GAUGE: ReadonlyArray<readonly [number, number]> = [
  * suction as chips. Lawn mowers are served by the same card.
  */
 export class FluvyVacuumCard extends Card<VacuumCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: VacuumCardConfig): number {
+    return config.variant === 'compact' ? COMPACT : 448;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,

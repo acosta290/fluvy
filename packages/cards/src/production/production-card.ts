@@ -75,6 +75,11 @@ const sum = (values: readonly number[]): number =>
  * figures above and its peak below.
  */
 export class FluvyProductionCard extends Card<ProductionCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: ProductionCardConfig): number {
+    return config.variant === 'compact' ? 236 : 344;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,

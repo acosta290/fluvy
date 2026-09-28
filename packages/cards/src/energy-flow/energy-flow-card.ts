@@ -58,6 +58,7 @@ import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { fitLine, type Segment } from '../shared/fit.js';
+import { listLength } from '../shared/heights.js';
 
 const s = strings('energy-flow');
 
@@ -197,6 +198,16 @@ const chevronPath = (c: Chevron): string => {
  * motion, but no browser animates `offset-distance` off the main thread: see the cost in the report.)
  */
 export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: EnergyFlowCardConfig): number {
+    const sources = [config.solar_power, config.grid_power, config.battery_power].filter(
+      Boolean,
+    ).length;
+    const ribbons = !config.flow_style || config.flow_style === 'ribbons';
+    const stage = sources >= 3 ? (ribbons ? 332 : 292) : ribbons ? 256 : 216;
+    return stage + (listLength(config, ['readouts']) ? 60 : 0);
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.energy,

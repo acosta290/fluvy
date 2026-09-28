@@ -53,6 +53,7 @@ import {
 import { changedLine, ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from './rows.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { listLength, COMPACT, ROW } from '../shared/heights.js';
 
 const s = strings('lock');
 
@@ -84,6 +85,13 @@ const NUMERIC = /^\^?(?:\\d|\[0-9\])(?:\{(\d+)(?:,(\d*))?\}|[+*])?\$?$/;
  * keyboard asks twice, the latch asks in a sheet, and a lock with a code asks for it on the keypad.
  */
 export class FluvyLockCard extends RowsCard<LockCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: LockCardConfig): number {
+    if (config.variant === 'compact') return COMPACT;
+    const rows = config.show_rows === false ? 0 : listLength(config, ['rows']);
+    return rows ? COMPACT + 16 + ROW * rows : COMPACT;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.devices,

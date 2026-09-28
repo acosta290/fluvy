@@ -1,4 +1,14 @@
-import { localize, type HomeAssistant, type MessageKey } from '@fluvy/core';
+import {
+  areaOf,
+  areasInOrder,
+  floorsInOrder,
+  localize,
+  usableEntity,
+  type AreaRegistryEntry,
+  type FloorRegistryEntry,
+  type HomeAssistant,
+  type MessageKey,
+} from '@fluvy/core';
 import {
   BATTERY_POWER,
   GENERIC,
@@ -47,7 +57,8 @@ const TWIN_SWITCH = /outlet|usb|child|lock/i;
 export type Registry = Pick<
   HomeAssistant,
   'states' | 'entities' | 'devices' | 'areas' | 'language' | 'user'
->;
+> &
+  Partial<Pick<HomeAssistant, 'floors'>>;
 
 export class HomeRegistry {
   /** Entity ids by domain, sorted: every query starts from one domain's list. */
@@ -145,11 +156,17 @@ export class HomeRegistry {
   }
 
   areaOf(id: string): string | undefined {
-    const entry = this.reg(id);
-    const area =
-      entry?.area_id ??
-      (entry?.device_id ? this.hass.devices?.[entry.device_id]?.area_id : undefined);
-    return area ?? undefined;
+    return areaOf(this.hass, id);
+  }
+  /** The areas floor by floor, the ones on no floor last. */
+  get areas(): readonly AreaRegistryEntry[] {
+    return this.memo('areas', () => areasInOrder(this.hass));
+  }
+  get floors(): readonly FloorRegistryEntry[] {
+    return this.memo('floors', () => floorsInOrder(this.hass));
+  }
+  get zones(): readonly string[] {
+    return this.domain('zone');
   }
   areaName(areaId: string | undefined): string | undefined {
     return areaId ? this.hass.areas?.[areaId]?.name : undefined;
@@ -157,12 +174,7 @@ export class HomeRegistry {
 
   /** An entity a dashboard should show: known, not hidden, not a config or diagnostic entity unless asked for. */
   usable(id: string, allowDiagnostic = false): boolean {
-    const entry = this.reg(id);
-    if (!this.hass.states[id] || entry?.hidden) return false;
-    const category = entry?.entity_category;
-    if (category === 'config') return false;
-    if (category === 'diagnostic' && !allowDiagnostic) return false;
-    return true;
+    return usableEntity(this.hass, id, { diagnostic: allowDiagnostic });
   }
 
   dimmable(id: string): boolean {

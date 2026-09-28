@@ -62,6 +62,11 @@ const SERVICE: Record<string, readonly [domain: string, service: string]> = {
  * the line says "Done" for 1.2 s, then both swap back.
  */
 export class FluvySceneCard extends Card<SceneCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(): number {
+    return 76;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,

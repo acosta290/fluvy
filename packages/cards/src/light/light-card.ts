@@ -64,6 +64,11 @@ const TIGHT_BELOW = 200;
  * lamps share a line.
  */
 export class FluvyLightCard extends Card<LightCardConfig> {
+  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  static override layoutHeight(config: LightCardConfig): number {
+    return config.variant === 'compact' ? 188 : 268;
+  }
+
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.slider,
