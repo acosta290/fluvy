@@ -832,8 +832,6 @@
     "pref.haptics_sub": "Une vibration au toucher dans l’application",
     "pref.activity_card": "Activité sur une carte",
     "pref.activity_card_sub": "La frise dans son propre cadre, comme les tableaux de bord ; désactivé, sur la page",
-    "pref.swipe": "Balayer entre les vues",
-    "pref.swipe_sub": "Sur un téléphone, un glissement à gauche ou à droite change d'onglet",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Look en cours",

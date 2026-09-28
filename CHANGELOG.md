@@ -5,6 +5,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+
+- The swipe between a dashboard's views (1.2.0). Home Assistant draws one view at a time, so the arriving view
+  could only appear once it was on the page — a slide out, a gap, a slide in — and rendering the neighbouring
+  view ourselves proved neither light nor safe. A gesture that cannot show what is coming is worse than none;
+  the tabs stay, and the *Swipe between views* preference goes with it.
+
 ## [1.2.0] — 2026-09-27
 
 ### Added

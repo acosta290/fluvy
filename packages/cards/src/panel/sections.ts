@@ -735,14 +735,6 @@ export function preferences(ctx: PanelContext): TemplateResult {
         on: shown.activityCard,
         onToggle: (on) => ctx.editPersonal({ activityCard: on }),
       })}
-      ${listRow({
-        icon: 'swipe',
-        title: ctx.t('pref.swipe'),
-        sub: ctx.t('pref.swipe_sub'),
-        trailing: 'switch',
-        on: shown.swipe,
-        onToggle: (on) => ctx.editPersonal({ swipe: on }),
-      })}
     </div>
   </section>`;
 }

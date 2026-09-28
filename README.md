@@ -92,18 +92,6 @@ the house wants them; a switch gives Home Assistant's pages back.
   <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/history-scrub.mp4">history-scrub.mp4</a></sub>
 </p>
 
-## On a phone
-
-A drag left or right turns a dashboard's tabs: the view follows the finger, lets go past a third of the width or on
-a flick, and the next view slides in from the finger's side. A drag that begins on a ruler, a dial, a slider or a
-scrolling row of chips is theirs; a drag that leans vertical stays a scroll. Each person's to turn off in
-*Preferences*.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/swipe.gif" width="422" alt="Swiping between a dashboard's views on a phone: the next view, the previous one back, a short drag that springs back">
-  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/swipe.mp4">swipe.mp4</a></sub>
-</p>
-
 ## The settings panel
 
 **Fluvy** in the sidebar: fifteen palettes in a pastel and an electric line, or your own accent with every
@@ -141,8 +129,6 @@ and phones told apart. It is rebuilt every time it opens, so a new device simply
 - **A settings panel** for the house and for each person.
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.
-- **Swipe between views** on a phone: the view follows the finger; a ruler, a dial or a chip row under it keeps
-  the touch for itself.
 - **Seven languages** — English, Spanish, German, Dutch, French, Italian and Brazilian Portuguese — in every card,
   page and dialog, each fetched only when spoken.
 - **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.

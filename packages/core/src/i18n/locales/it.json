@@ -832,8 +832,6 @@
     "pref.haptics_sub": "Un tocco che senti nell’app",
     "pref.activity_card": "Attività in una scheda",
     "pref.activity_card_sub": "La linea del tempo in un riquadro proprio, come le dashboard; spento, nella pagina",
-    "pref.swipe": "Scorri tra le viste",
-    "pref.swipe_sub": "Sul telefono, un trascinamento a sinistra o a destra cambia scheda",
     "about.title": "Fluvy",
     "about.version": "Versione {version}",
     "about.look": "Look in uso",

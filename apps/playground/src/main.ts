@@ -23,7 +23,6 @@ import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { NOW, SHEETS } from './scenes.js';
-import { mountSwipe, SWIPE_STATES } from './swipe.js';
 
 /**
  * ?sheet=home            which design sheet to mount (default: all)
@@ -42,8 +41,6 @@ import { mountSwipe, SWIPE_STATES } from './swipe.js';
  *                        &at=2026-09-17T21:47 the clock set to that moment, still running,
  *                        &card=1 its timeline on a card,
  *                        &moment=detail|burst|dates|sources|lights|week|nomatch|fresh|drop|loading|empty)
- * ?swipe=1               a phone with tabs on a stand-in for hui-root, the swipe between views on it
- *                        (&pref=off the gesture turned off by this person, &dir=rtl a right-to-left page)
  */
 const params = new URLSearchParams(location.search);
 const dark = params.get('mode') === 'dark';
@@ -92,7 +89,6 @@ if (look) {
 
 const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';
-const swipe = params.get('swipe') === '1';
 // the person's preference: the Activity page's timeline on a card
 if (params.get('card') === '1') document.documentElement.setAttribute('fluvy-activity-card', '');
 // the page's clock starts at `at` and runs on (screenshots of "today" that do not change with the day)
@@ -102,12 +98,11 @@ const panelTab = params.get('panel');
 const panelStates = (params.get('state') ?? '').split(',').filter(Boolean) as PanelState[];
 // the panel stands alone: no sheet frames beside it
 const selected =
-  panelTab || activity || history || swipe
+  panelTab || activity || history
     ? []
     : Object.entries(SHEETS).filter(([name]) => !only || only === name);
 const states = new Map<string, StateSeed>();
 for (const [, sheet] of selected) for (const seed of sheet.states) states.set(seed[0], seed);
-if (swipe) for (const seed of SWIPE_STATES) states.set(seed[0], seed);
 
 const mock = createHass([...states.values()], {
   dark,
@@ -152,12 +147,6 @@ if (activity)
     params.get('live') !== '0',
     (params.get('moment') ?? undefined) as ActivityMoment | undefined,
   );
-if (swipe)
-  mountSwipe(stage, mock, {
-    language,
-    enabled: params.get('pref') !== 'off',
-    rtl: params.get('dir') === 'rtl',
-  });
 const compare = (params.get('compare') ?? '').split(',').filter(isPaletteName);
 const shape = params.get('shape');
 /** Where the frames go: the stage, or one column per compared palette with its look scoped to it. */

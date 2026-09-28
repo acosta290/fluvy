@@ -832,8 +832,6 @@
     "pref.haptics_sub": "Um toque que você sente no app",
     "pref.activity_card": "Atividade em um cartão",
     "pref.activity_card_sub": "A linha do tempo na sua própria caixa, como os painéis; desligado, na página",
-    "pref.swipe": "Deslizar entre visualizações",
-    "pref.swipe_sub": "No celular, arrastar para o lado troca de aba",
     "about.title": "Fluvy",
     "about.version": "Versão {version}",
     "about.look": "Visual em uso",

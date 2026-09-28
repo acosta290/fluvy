@@ -832,8 +832,6 @@
     "pref.haptics_sub": "Ein Tippen, das du in der App spürst",
     "pref.activity_card": "Aktivität auf einer Karte",
     "pref.activity_card_sub": "Die Zeitleiste in ihrem eigenen Kasten, wie die Dashboards; aus: auf der Seite",
-    "pref.swipe": "Wischen zwischen Ansichten",
-    "pref.swipe_sub": "Am Handy wechselt ein Wischen nach links oder rechts den Tab",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Verwendeter Look",

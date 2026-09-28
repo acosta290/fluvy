@@ -832,8 +832,6 @@
     "pref.haptics_sub": "A tap you can feel in the app",
     "pref.activity_card": "Activity on a card",
     "pref.activity_card_sub": "The timeline in its own box, like the dashboards; off, on the page",
-    "pref.swipe": "Swipe between views",
-    "pref.swipe_sub": "On a phone, a drag left or right turns the tabs",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Look in use",

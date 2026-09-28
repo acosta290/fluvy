@@ -61,8 +61,6 @@ export interface PersonalSettings {
   readonly haptics: boolean;
   /** The Activity page's timeline on a card (like a dashboard's); false: on the page itself. */
   readonly activityCard: boolean;
-  /** A drag left or right on a phone opens the next view of a dashboard. */
-  readonly swipe: boolean;
 }
 
 /** The two layers resolved: what this person sees. */
@@ -80,7 +78,6 @@ export interface EffectiveSettings {
   readonly motion: Motion;
   readonly haptics: boolean;
   readonly activityCard: boolean;
-  readonly swipe: boolean;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -102,7 +99,6 @@ export const PERSONAL_DEFAULTS: PersonalSettings = {
   motion: 'system',
   haptics: true,
   activityCard: false,
-  swipe: true,
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -164,7 +160,6 @@ export function parsePersonal(raw: unknown): PersonalSettings {
     haptics: typeof value['haptics'] === 'boolean' ? value['haptics'] : d.haptics,
     activityCard:
       typeof value['activityCard'] === 'boolean' ? value['activityCard'] : d.activityCard,
-    swipe: typeof value['swipe'] === 'boolean' ? value['swipe'] : d.swipe,
   };
 }
 
@@ -191,7 +186,6 @@ export function resolveSettings(
     motion: personal.motion,
     haptics: personal.haptics,
     activityCard: personal.activityCard,
-    swipe: personal.swipe,
   };
 }
 
