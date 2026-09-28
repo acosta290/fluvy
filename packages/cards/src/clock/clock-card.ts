@@ -27,7 +27,6 @@ import {
   selectField,
   textField,
 } from '../shared/form.js';
-import { formEditor } from '../shared/rows-editor.js';
 import { TextRuler } from '../shared/fit.js';
 import { heroAnalog, heroDigital, side, tile, type ClockModel } from './layouts.js';
 import { ForecastFeed, readSky } from './sky.js';
@@ -43,6 +42,7 @@ import {
   type ClockFormat,
   type ClockParts,
 } from './time.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('clock', 'weather');
 
@@ -160,7 +160,21 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     });
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override defaults: EditorDefaults = (config, hass) => {
+    const analog = config['variant'] !== 'digital';
+    const hero = config['layout'] !== 'side' && config['layout'] !== 'tile';
+    return {
+      variant: 'analog',
+      layout: 'hero',
+      numerals: 'none',
+      seconds: analog && hero,
+      hour12: resolveHour12(hass, undefined),
+      date: true,
+      week: false,
+      forecast: Boolean(config['weather']),
+    };
+  };
+  static override getConfigForm(): LovelaceConfigForm {
     const core = formLabels(CORE_LABELS);
     const grid = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
       type: 'grid',
@@ -192,23 +206,6 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     };
   }
 
-  /** The editor shows the face the card draws by default: analog hero, a second hand on the hero, the date, the forecast row when a weather entity is set. */
-  static getConfigElement(): HTMLElement {
-    return formEditor(this.getConfigForm(), (config, hass) => {
-      const analog = config['variant'] !== 'digital';
-      const hero = config['layout'] !== 'side' && config['layout'] !== 'tile';
-      return {
-        variant: 'analog',
-        layout: 'hero',
-        numerals: 'none',
-        seconds: analog && hero,
-        hour12: resolveHour12(hass, undefined),
-        date: true,
-        week: false,
-        forecast: Boolean(config['weather']),
-      };
-    });
-  }
   static getStubConfig(_hass: unknown, entities: readonly string[]): ClockCardConfig {
     const weather = entities.find((id) => id.startsWith('weather.'));
     return {

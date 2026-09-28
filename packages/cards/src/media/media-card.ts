@@ -200,7 +200,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     this.scrub_ = null;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [entityField(['media_player']), nameIconFields(), selectField('variant', VARIANTS)],
       ...formLabels({}),

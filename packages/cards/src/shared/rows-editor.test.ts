@@ -1,13 +1,17 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import {
+  FluvyRowsEditor,
   compact,
   itemsOf,
   moved,
   toItem,
   withList,
   withoutUntouchedDefaults,
+  listsEditor,
   type RowsListSpec,
 } from './rows-editor.js';
+import { inverted } from './config.js';
 
 const rows: RowsListSpec = {
   key: 'rows',
@@ -85,5 +89,25 @@ describe('editor defaults', () => {
       ),
     ).toEqual({ variant: 'dial', fan_style: 'chips', show_fan: false, modes: ['off'] });
     expect(withoutUntouchedDefaults({ title: 'x' }, config, defaults)).toEqual({ title: 'x' });
+  });
+});
+
+describe('an editor with aliases', () => {
+  it('shows an older name in its newer field and writes the newer one on the first change', () => {
+    if (!customElements.get('fluvy-rows-editor'))
+      customElements.define('fluvy-rows-editor', FluvyRowsEditor);
+    const editor = listsEditor(
+      {
+        schema: [
+          { name: 'subtitle', selector: { text: {} } },
+          { name: 'show_done', selector: { boolean: {} } },
+        ],
+      },
+      [],
+      undefined,
+      [{ keys: [{ from: 'sub', to: 'subtitle' }, inverted('hide_done', 'show_done')] }],
+    ) as FluvyRowsEditor;
+    editor.setConfig({ type: 'custom:x', sub: 'Upstairs', hide_done: true });
+    expect(editor.config).toEqual({ type: 'custom:x', subtitle: 'Upstairs', show_done: false });
   });
 });

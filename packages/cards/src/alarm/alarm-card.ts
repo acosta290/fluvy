@@ -31,10 +31,10 @@ import { Card } from '../shared/base.js';
 import { glyphFor } from '../shared/domain.js';
 
 import { entitiesField, entityField, formLabels, nameIconFields } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
 
 import './keypad.js';
 import type { FluvyKeypad, KeypadAction } from './keypad.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('alarm');
 
@@ -177,24 +177,16 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     this.pending_ = '';
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    { key: 'rows', title: 'editor.rows', schema: [entityField(), nameIconFields()] },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [entityField(['alarm_control_panel']), nameIconFields(), entitiesField('rows')],
       ...formLabels({
         rows: 'editor.entities',
       }),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        title: 'editor.rows',
-        schema: [entityField(), nameIconFields()],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): AlarmCardConfig {

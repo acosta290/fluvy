@@ -155,7 +155,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     this.fine = null;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['cover', 'valve']),

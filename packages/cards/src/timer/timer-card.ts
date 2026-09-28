@@ -68,7 +68,7 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
     this.tick_ = 0;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const labels = formLabels({});
     return {
       schema: [entityField(['timer']), nameIconFields(), boolField('show_gauge')],

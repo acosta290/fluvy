@@ -21,6 +21,12 @@
   height: 44px;
 }
 
+/* a head that answers a still press: no text selection or callout under the finger while it is held */
+.fv-card__head--hold {
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .fv-card__titles {
   flex: 1 1 auto;
   min-width: 0;

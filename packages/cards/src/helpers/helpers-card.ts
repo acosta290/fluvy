@@ -27,7 +27,6 @@ import {
   nameIconFields,
   titleFields,
 } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
 
 import type { HelperHost, HelperRowConfig } from './context.js';
 import { compactNumber, isBoxedNumber, numberBlocks } from './number.js';
@@ -39,6 +38,7 @@ import { selectPiece } from './select.js';
 import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('helpers');
 
@@ -151,7 +151,15 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     };
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      schema: [entityField(), nameIconFields()],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -161,18 +169,6 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       ],
       ...formLabels({}),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        alias: 'entities',
-        title: 'editor.rows',
-        schema: [entityField(), nameIconFields()],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): HelpersCardConfig {

@@ -1,13 +1,67 @@
-import { FluvyCard, type FluvyCardConfig } from '@fluvy/core';
+import {
+  FluvyCard,
+  type FluvyCardConfig,
+  type LovelaceCardConfig,
+  type LovelaceConfigForm,
+} from '@fluvy/core';
 import { baseStyles, fitPills } from '@fluvy/ui';
 import type { CSSResultGroup, PropertyValues } from 'lit';
+import { normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
+import { listsEditor, type EditorDefaults, type RowsListSpec } from './rows-editor.js';
+
+/** The base card's fields every editor may show; a card names the ones it honours. */
+export type BaseKey = KnownKeys<FluvyCardConfig>;
+
+/** What a card of one entity honours of the base: the entity, its name and icon, both actions, its tone and colour. */
+export const ENTITY_BASE: readonly BaseKey[] = [
+  'entity',
+  'name',
+  'icon',
+  'tap_action',
+  'hold_action',
+  'tone',
+  'color',
+];
 
 /**
- * What every card in this package shares on top of the core base class: the fluvy stylesheets and
- * the pill-fitting pass (badges and chips sized from their laid-out text, on the 4 px grid).
+ * What every card in this package shares on top of the core base class: the fluvy stylesheets, the pill-fitting pass
+ * (badges and chips sized from their laid-out text, on the 4 px grid), and the editors' contract.
+ *
+ * The contract: a card declares what its editor shows — `base` (the base fields it honours), `keys` (its own, checked
+ * against its config's interface by `configKeys`), `lists` (the lists edited item by item), `defaults` (what it does
+ * for a key left out) and `aliases` (the older names it still reads) — and the base builds the editor from its
+ * `getConfigForm()`. `editors.test.ts` holds every card to it: what the form and the lists show is exactly
+ * `base ∪ keys`, and no older name is ever shown. A card's aliases are read on `setConfig`, so the card itself only
+ * ever sees the newer names. (The names every card shares, `COMMON_ALIASES`, join here once every card reads them.)
  */
 export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends FluvyCard<C> {
   static override styles: CSSResultGroup = [...baseStyles];
+
+  static base: readonly BaseKey[] = ENTITY_BASE;
+  static keys: readonly string[] = [];
+  static lists: readonly RowsListSpec[] = [];
+  static defaults: EditorDefaults | undefined = undefined;
+  static aliases: AliasSpec | undefined = undefined;
+
+  /** The fields of the card's visual editor; every card has one. */
+  static getConfigForm(): LovelaceConfigForm {
+    return { schema: [] };
+  }
+
+  /** The visual editor: the card's form, its lists item by item, its defaults shown, its older names read. */
+  static getConfigElement(): HTMLElement {
+    return listsEditor(
+      this.getConfigForm(),
+      this.lists,
+      this.defaults,
+      this.aliases ? [this.aliases] : [],
+    );
+  }
+
+  override setConfig(config: LovelaceCardConfig): void {
+    const { aliases } = this.constructor as typeof Card;
+    super.setConfig(aliases ? normaliseConfig(config, aliases) : config);
+  }
 
   private refit: (() => void) | undefined;
   private fontTimer = 0;

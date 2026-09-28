@@ -1,6 +1,6 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { THEME_SENTINEL } from '@fluvy/tokens/config';
-import { motionPreference } from '@fluvy/ui';
+import { motionPreference, type Tone } from '@fluvy/ui';
 import { runAction, type ActionConfig } from './actions.js';
 import { resolveEntity, type EntityView } from './entity.js';
 import { ensureFonts } from './fonts.js';
@@ -12,12 +12,20 @@ import type {
 } from './ha/types.js';
 import { languageOverride, localize, onWords, type MessageKey } from './i18n/index.js';
 
+/**
+ * What every card's config may carry. `tone` is the role a card's parts are drawn in (a palette tone); `color` is
+ * the card's own colour — a Home Assistant colour name or `#rrggbb` — standing in for the palette's accent inside
+ * it. `tap_action` answers the icon circle, `hold_action` a still press on the head; both default to more-info.
+ */
 export interface FluvyCardConfig extends LovelaceCardConfig {
   entity?: string;
   entities?: readonly string[];
   name?: string;
   icon?: string;
+  tone?: Tone;
+  color?: string;
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
 }
 
 /** One `hass` per Home Assistant update, in the language fluvy's settings chose (shared by every card). */
@@ -294,6 +302,14 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   protected tap(
     entityId: string | undefined = this.config?.entity,
     action: ActionConfig | undefined = this.config?.tap_action,
+  ): void {
+    if (this.hass) void runAction(this, this.hass, action, entityId);
+  }
+
+  /** A still press of 500 ms on the head: the `hold_action` (more-info by default), as a tap is the `tap_action`. */
+  protected hold(
+    entityId: string | undefined = this.config?.entity,
+    action: ActionConfig | undefined = this.config?.hold_action,
   ): void {
     if (this.hass) void runAction(this, this.hass, action, entityId);
   }

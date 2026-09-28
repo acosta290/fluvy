@@ -117,7 +117,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     this.series_ = undefined;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor', 'number', 'input_number', 'counter']),

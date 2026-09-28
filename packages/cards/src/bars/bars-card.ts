@@ -16,8 +16,6 @@ import { html, type CSSResultGroup, type TemplateResult } from 'lit';
 import type { Segment } from '../shared/fit.js';
 import { HeadFit } from '../energy/head.js';
 
-import { rowsEditor } from '../shared/rows-editor.js';
-
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
 import { Card } from '../shared/base.js';
@@ -37,6 +35,7 @@ import {
   titleFields,
   toneField,
 } from '../shared/form.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const strings = words('bars');
 
@@ -116,7 +115,21 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      title: 'editor.rows',
+      schema: [
+        entityField(),
+        nameIconFields(),
+        fieldRow(toneField(), textField('sub')),
+        fieldRow(anyNumber('min'), anyNumber('max')),
+        fieldRow(anyNumber('low'), anyNumber('high')),
+        boolField('plain'),
+      ],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -131,33 +144,6 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         {},
       ),
     };
-  }
-
-  /** The visual editor: the card's fields, then one form per row (entity, name, icon, tone, context, range, warnings, plain). */
-  static getConfigElement(): HTMLElement {
-    const labels = editorLabels(strings, { badge_ok: 'badge_ok', badge_warn: 'badge_warn' }, {});
-    return rowsEditor({
-      schema: [
-        titleFields(),
-        iconToneFields(),
-        fieldRow(textField('badge_ok'), textField('badge_warn')),
-      ],
-      lists: [
-        {
-          key: 'rows',
-          title: 'editor.rows',
-          schema: [
-            entityField(),
-            nameIconFields(),
-            fieldRow(toneField(), textField('sub')),
-            fieldRow(anyNumber('min'), anyNumber('max')),
-            fieldRow(anyNumber('low'), anyNumber('high')),
-            boolField('plain'),
-          ],
-        },
-      ],
-      computeLabel: labels.computeLabel,
-    });
   }
 
   static getStubConfig(

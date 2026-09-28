@@ -30,8 +30,6 @@ import {
   toneField,
 } from '../shared/form.js';
 
-import { listsEditor } from '../shared/rows-editor.js';
-
 import { HeadFit } from '../energy/head.js';
 
 import {
@@ -43,6 +41,7 @@ import {
   share,
   type Family,
 } from '../energy/power.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('energy-devices');
 
@@ -106,7 +105,20 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      domains: ['sensor'],
+      schema: [
+        entityField(['sensor']),
+        nameIconFields(),
+        fieldRow(toneField(), entityField(['sensor'], 'cost_entity', false)),
+      ],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -120,23 +132,6 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       ],
       ...editorLabels(s, { sort: 'editor_sort' }, {}),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        alias: 'entities',
-        title: 'editor.rows',
-        domains: ['sensor'],
-        schema: [
-          entityField(['sensor']),
-          nameIconFields(),
-          fieldRow(toneField(), entityField(['sensor'], 'cost_entity', false)),
-        ],
-      },
-    ]);
   }
 
   static getStubConfig(

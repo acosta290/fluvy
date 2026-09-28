@@ -1,5 +1,12 @@
 import { html, nothing, type TemplateResult } from 'lit';
-import { startStepRepeat, stopStepRepeat } from './controls/pointer.js';
+import {
+  clickPress,
+  preventMenu,
+  startPress,
+  startStepRepeat,
+  stopStepRepeat,
+  type PressTarget,
+} from './controls/pointer.js';
 import { glyph, isGlyph, type GlyphName } from './glyphs.js';
 
 /**
@@ -82,10 +89,21 @@ export interface HeadOptions {
   readonly iconLabel?: string;
   /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
   readonly name?: boolean;
+  /** A still press of 500 ms anywhere on the head (a card's hold action); the click that follows is swallowed. */
+  readonly onHold?: (() => void) | undefined;
 }
 
+/** The click of a held head, seen before the icon's own: a hold never also taps. */
+const clickHead = { handleEvent: clickPress, capture: true };
+
 export function head(o: HeadOptions): TemplateResult {
-  return html`<div class="fv-card__head">
+  return html`<div
+    class="fv-card__head ${o.onHold ? 'fv-card__head--hold' : ''}"
+    .fvHold=${o.onHold as PressTarget['fvHold']}
+    @pointerdown=${o.onHold ? startPress : nothing}
+    @contextmenu=${o.onHold ? preventMenu : nothing}
+    @click=${o.onHold ? clickHead : nothing}
+  >
     ${
       o.icon === null
         ? nothing
@@ -520,8 +538,20 @@ function placed(
 
 export const axis = (items: readonly (readonly [number, string])[]): TemplateResult =>
   placed('fv-axis', items);
-export const rulerLabels = (items: readonly (readonly [number, string])[]): TemplateResult =>
-  placed('fv-ruler-labels', items);
+/**
+ * The labels along a ruler, each at its fraction. Given the ruler's width, one under 240 px keeps only its first,
+ * its middle and its last label, so none crowds another.
+ */
+export const rulerLabels = (
+  items: readonly (readonly [number, string])[],
+  width?: number,
+): TemplateResult =>
+  placed(
+    'fv-ruler-labels',
+    width !== undefined && width < 240 && items.length > 3
+      ? [items[0]!, items[Math.floor((items.length - 1) / 2)]!, items[items.length - 1]!]
+      : items,
+  );
 
 const up4 = (n: number): number => Math.ceil(n / 4) * 4;
 

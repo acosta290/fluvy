@@ -124,7 +124,7 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
 
   /* ---------- Lovelace ---------- */
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const language = { language: document.documentElement.lang || 'en' };
     const own = (name: string): name is keyof typeof EDITOR_LABELS => name in EDITOR_LABELS;
     return {

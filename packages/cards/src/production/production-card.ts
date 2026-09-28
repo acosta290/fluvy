@@ -107,7 +107,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     this.day_ = undefined;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['sensor']),

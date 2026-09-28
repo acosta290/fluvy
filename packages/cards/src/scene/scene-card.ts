@@ -108,7 +108,7 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     this.done_ = false;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [entityField(DOMAINS), nameIconFields(), fieldRow(textField('meta'), toneField())],
       ...formLabels({

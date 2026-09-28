@@ -45,8 +45,7 @@ import {
   selectField,
   toneField,
 } from '../shared/form.js';
-
-import { formEditor } from '../shared/rows-editor.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 export type TileSize = 'large' | 'compact' | 'mini';
 export const TILE_SIZES: readonly TileSize[] = ['large', 'compact', 'mini'];
@@ -150,7 +149,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override defaults: EditorDefaults = () => ({ size: 'large' });
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(),
@@ -167,10 +167,6 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     };
   }
 
-  /** The editor shows the size the card draws by default. */
-  static getConfigElement(): HTMLElement {
-    return formEditor(this.getConfigForm(), () => ({ size: 'large' }));
-  }
   static getStubConfig(_hass: unknown, entities: readonly string[]): TileCardConfig {
     const entity =
       entities.find((id) => /^(light|switch|cover|fan)\./.test(id)) ?? entities[0] ?? '';

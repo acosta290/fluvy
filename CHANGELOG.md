@@ -14,6 +14,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   resolves to, then Fluvy's languages by their own names with the English name beside.
 - Preferences: a *Help improve this translation* row that opens the translating guide.
 
+### Changed
+
+- Card editors: the choices of a dropdown (a variant, a forecast, a first weekday…) and the tones are said in the
+  dashboard's language; they were English words whatever the language.
+
 ### Fixed
 
 - Tiles: a mini tile is never narrower than 84 px (a group asked for more columns lays out fewer), so its icon

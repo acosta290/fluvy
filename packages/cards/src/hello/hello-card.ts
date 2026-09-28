@@ -199,7 +199,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     new FontsSettled(this);
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         textField('name'),

@@ -33,7 +33,7 @@ import {
   numberField,
   textField,
 } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('camera');
 
@@ -206,7 +206,10 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     this.stale_ = false;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    { key: 'rows', title: 'editor.rows', schema: [entityField(), nameIconFields()] },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     const shared = formLabels({
       sub: 'editor.subtitle',
       rows: 'editor.entities',
@@ -223,17 +226,6 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
           ? s({ language: document.documentElement.lang || 'en' }, 'refresh')
           : shared.computeLabel?.(schema, localize),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        title: 'editor.rows',
-        schema: [entityField(), nameIconFields()],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): CameraCardConfig {

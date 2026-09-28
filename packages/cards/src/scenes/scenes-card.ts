@@ -23,7 +23,7 @@ import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 
 import { entityField, formLabels, nameIconFields, textField } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('scenes');
 
@@ -106,7 +106,20 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'scenes',
+      alias: 'entities',
+      title: 'editor.scenes',
+      domains: ['scene', 'script', 'button', 'input_button', 'automation'],
+      schema: [
+        entityField(['scene', 'script', 'button', 'input_button', 'automation']),
+        nameIconFields(),
+        textField('meta'),
+      ],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         textField('title'),
@@ -123,23 +136,6 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
       ],
       ...formLabels({ title: 'editor.title', entities: 'editor.entities' }),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'scenes',
-        alias: 'entities',
-        title: 'editor.scenes',
-        domains: ['scene', 'script', 'button', 'input_button', 'automation'],
-        schema: [
-          entityField(['scene', 'script', 'button', 'input_button', 'automation']),
-          nameIconFields(),
-          textField('meta'),
-        ],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ScenesCardConfig {

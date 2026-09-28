@@ -21,7 +21,7 @@ import { contentWidth } from '../hello/fit.js';
 import { Card } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { entityField, formLabels, numberField, textField } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('readouts');
 
@@ -161,7 +161,17 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
     new FontsSettled(this);
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      domains: ['sensor', 'number', 'input_number', 'counter'],
+      schema: [entityField(['sensor', 'number', 'input_number', 'counter']), textField('name')],
+    },
+  ];
+  static override defaults: EditorDefaults = () => ({ hours: 6 });
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         {
@@ -175,23 +185,6 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
       ],
       ...formLabels({ entities: 'editor.entities', hours: 'editor.hours' }),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(
-      this.getConfigForm(),
-      [
-        {
-          key: 'rows',
-          alias: 'entities',
-          title: 'editor.rows',
-          domains: ['sensor', 'number', 'input_number', 'counter'],
-          schema: [entityField(['sensor', 'number', 'input_number', 'counter']), textField('name')],
-        },
-      ],
-      () => ({ hours: 6 }),
-    );
   }
 
   static getStubConfig(

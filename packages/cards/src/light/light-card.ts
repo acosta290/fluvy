@@ -101,7 +101,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     this.window_ = null;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['light']),
@@ -149,7 +149,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
-  private hold(value: number): void {
+  /** Shows `value` for five seconds — what the finger set — while Home Assistant catches up. */
+  private pin(value: number): void {
     this.held = { value, expires: Date.now() + 5000 };
     clearTimeout(this.heldTimer);
     this.heldTimer = window.setTimeout(() => {
@@ -166,7 +167,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
 
   /** From the ruler: the choice is final, send it now. */
   private setBrightness(value: number): void {
-    this.hold(value);
+    this.pin(value);
     clearTimeout(this.sendTimer);
     this.send(value);
   }
@@ -174,7 +175,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   /** From the stepper: every tap counts from what is on screen, and a burst of taps is one call. */
   private stepBrightness(direction: 1 | -1): void {
     const next = Math.min(100, Math.max(0, this.level + direction));
-    this.hold(next);
+    this.pin(next);
     clearTimeout(this.sendTimer);
     this.sendTimer = window.setTimeout(() => this.send(next), 650); // longer than the 530 ms before a held button starts repeating
   }

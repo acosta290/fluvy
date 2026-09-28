@@ -126,7 +126,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       }
     | undefined;
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['vacuum', 'lawn_mower']),

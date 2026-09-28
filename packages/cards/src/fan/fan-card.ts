@@ -139,7 +139,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     this.fine = null;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['fan']),

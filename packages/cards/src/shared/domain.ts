@@ -1,4 +1,4 @@
-import { isActive, type EntityView } from '@fluvy/core';
+import { isActive, isUsable, type EntityView } from '@fluvy/core';
 import type { GlyphName, Tone } from '@fluvy/ui';
 
 /** Default glyph for an entity: device class first, then domain. A config `icon` always wins. */
@@ -150,7 +150,34 @@ export function currentTone(view: EntityView, tone: Tone = toneFor(view)): Tone 
   return isActive(view) ? tone : 'neutral';
 }
 
-export const TONES: readonly Tone[] = [
+/** How a surface draws an entity's state, the same on every card. */
+export interface StateSkin {
+  /** The card may draw its state and offer its controls. */
+  readonly usable: boolean;
+  /** The tone to draw with now (`currentTone`). */
+  readonly tone: Tone;
+  /** What stands in for a state that cannot be shown ("—"); undefined when the card formats its own. */
+  readonly value: string | undefined;
+  /** Classes of the surface: the dashed off skin when the entity cannot be reached, nothing otherwise. */
+  readonly className: string;
+}
+
+/**
+ * One rule for the states no card may assume away: `unknown` is a live surface (the entity is there, its value is
+ * not) in the neutral tone showing "—"; `unavailable` and `missing` wear the dashed off skin and show "—".
+ */
+export function stateSkin(view: EntityView, tone: Tone = toneFor(view)): StateSkin {
+  const usable = isUsable(view);
+  return {
+    usable,
+    tone: currentTone(view, tone),
+    value: view.status === 'ok' ? undefined : '—',
+    className: usable ? '' : 'is-unavailable is-off',
+  };
+}
+
+/** The tones a card or an item may be given (`off` is a skin, never a choice), each with its word in the catalogue. */
+export const TONES = [
   'accent',
   'light',
   'heat',
@@ -163,14 +190,4 @@ export const TONES: readonly Tone[] = [
   'media',
   'neutral',
   'warning',
-];
-
-export const toneSelector = {
-  select: {
-    mode: 'dropdown',
-    options: TONES.map((value) => ({
-      value,
-      label: value.charAt(0).toUpperCase() + value.slice(1),
-    })),
-  },
-} as const;
+] as const satisfies readonly Tone[];

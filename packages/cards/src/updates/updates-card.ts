@@ -83,7 +83,7 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const labels = formLabels({});
     return {
       schema: [

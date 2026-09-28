@@ -16,7 +16,7 @@ import {
 } from 'lit';
 import { Card } from '../shared/base.js';
 import { entityField, fieldRow, formLabels, iconField, textField } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('chips');
 
@@ -151,27 +151,23 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     this.besideMark_ = false;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'chips',
+      idKey: 'label',
+      title: 'editor.tabs',
+      schema: [
+        textField('label'),
+        fieldRow(iconField(), textField('path')),
+        entityField(undefined, 'entity', false),
+      ],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [textField('label'), { name: 'chips', required: true, selector: { object: {} } }],
       ...formLabels({ label: 'editor.name' }),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'chips',
-        idKey: 'label',
-        title: 'editor.tabs',
-        schema: [
-          textField('label'),
-          fieldRow(iconField(), textField('path')),
-          entityField(undefined, 'entity', false),
-        ],
-      },
-    ]);
   }
 
   static getStubConfig(): ChipsCardConfig {

@@ -22,13 +22,11 @@ import { html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
 
-import { rowsEditor } from '../shared/rows-editor.js';
-
 import { baseOf, figure, figureText, scaleFor, type Scale } from '../gauge/units.js';
 
 import { Card } from '../shared/base.js';
 
-import { glyphFor, toneSelector } from '../shared/domain.js';
+import { glyphFor } from '../shared/domain.js';
 
 import {
   boolField,
@@ -41,7 +39,9 @@ import {
   nameIconFields,
   textField,
   titleFields,
+  toneField,
 } from '../shared/form.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const strings = words('stat-tiles');
 
@@ -105,7 +105,19 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'tiles',
+      title: 'editor.tiles',
+      schema: [entityField(), nameIconFields(), toneField(), boolField('highlight')],
+    },
+    {
+      key: 'rows',
+      title: 'editor.rows',
+      schema: [entityField(), nameIconFields(), textField('secondary')],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -122,41 +134,6 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         {},
       ),
     };
-  }
-
-  /** The visual editor: the card's fields, then one form per stat tile and per plain row. */
-  static getConfigElement(): HTMLElement {
-    const labels = editorLabels(
-      strings,
-      { badge_entity: 'badge_entity', badge_label: 'badge_label' },
-      {},
-    );
-    return rowsEditor({
-      schema: [
-        titleFields(),
-        iconToneFields(),
-        entityField(undefined, 'entity', false),
-        fieldRow({ name: 'badge_entity', selector: { entity: {} } }, textField('badge_label')),
-      ],
-      lists: [
-        {
-          key: 'tiles',
-          title: 'editor.tiles',
-          schema: [
-            entityField(),
-            nameIconFields(),
-            { name: 'tone', selector: toneSelector },
-            boolField('highlight'),
-          ],
-        },
-        {
-          key: 'rows',
-          title: 'editor.rows',
-          schema: [entityField(), nameIconFields(), textField('secondary')],
-        },
-      ],
-      computeLabel: labels.computeLabel,
-    });
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): StatTilesCardConfig {

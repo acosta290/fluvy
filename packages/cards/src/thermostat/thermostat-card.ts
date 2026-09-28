@@ -44,9 +44,9 @@ import {
   nameIconFields,
   selectField,
 } from '../shared/form.js';
-import { formEditor } from '../shared/rows-editor.js';
 
 import { HeadFit } from '../energy/head.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
 export type RowStyle = 'chips' | 'full';
@@ -145,7 +145,19 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override defaults: EditorDefaults = (config, hass) => ({
+    variant: 'dial',
+    modes_style: 'tiles',
+    preset_style: 'full',
+    fan_style: 'full',
+    show_presets: true,
+    show_fan: true,
+    ...(typeof config['entity'] === 'string' &&
+    Array.isArray(hass?.states[config['entity']]?.attributes['hvac_modes'])
+      ? { modes: hass?.states[config['entity']]?.attributes['hvac_modes'] }
+      : {}),
+  });
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['climate', 'water_heater', 'humidifier']),
@@ -180,21 +192,6 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     };
   }
 
-  /** The editor shows what the card does when a key is unset: the dial, mode tiles, full chip rows, every mode the device offers. */
-  static getConfigElement(): HTMLElement {
-    return formEditor(this.getConfigForm(), (config, hass) => ({
-      variant: 'dial',
-      modes_style: 'tiles',
-      preset_style: 'full',
-      fan_style: 'full',
-      show_presets: true,
-      show_fan: true,
-      ...(typeof config['entity'] === 'string' &&
-      Array.isArray(hass?.states[config['entity']]?.attributes['hvac_modes'])
-        ? { modes: hass?.states[config['entity']]?.attributes['hvac_modes'] }
-        : {}),
-    }));
-  }
   static getStubConfig(_hass: unknown, entities: readonly string[]): ThermostatCardConfig {
     return {
       type: 'custom:fluvy-thermostat-card',

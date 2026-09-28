@@ -152,7 +152,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     this.broken_ = new Set();
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const shared = formLabels({
       layout: 'editor.variant',
     });

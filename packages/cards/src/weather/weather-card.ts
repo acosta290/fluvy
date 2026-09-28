@@ -162,7 +162,7 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     this.forecasts_ = {};
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const shared = formLabels({
       entity: 'editor.weather',
       days: 'editor.days',

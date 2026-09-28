@@ -77,7 +77,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     this.expanded_ = false;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const shared = formLabels({});
     return {
       schema: [

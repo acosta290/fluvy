@@ -34,8 +34,6 @@ import {
   titleFields,
 } from '../shared/form.js';
 
-import { listsEditor } from '../shared/rows-editor.js';
-
 import { HeadFit } from '../energy/head.js';
 
 import { legendReadouts } from '../energy/legend.js';
@@ -54,6 +52,7 @@ import {
   type Cubic,
   type Point,
 } from './path.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('energy-flow');
 
@@ -302,7 +301,15 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   /** The freshness text on screen, so the ticker only asks for a render when it would change. */
   private shownFreshness = '';
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'readouts',
+      title: 'editor.rows',
+      domains: ['sensor'],
+      schema: [entityField(['sensor']), textField('label')],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -335,18 +342,6 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         },
       ),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'readouts',
-        title: 'editor.rows',
-        domains: ['sensor'],
-        schema: [entityField(['sensor']), textField('label')],
-      },
-    ]);
   }
 
   static getStubConfig(

@@ -232,7 +232,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   /** The window (hours) the series on screen was asked for: the curve and its axis stay one picture while a newer one loads. */
   private drawn: number | null = null;
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const shared = formLabels({});
     return {
       schema: [

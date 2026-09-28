@@ -25,7 +25,7 @@ import {
   textField,
   titleFields,
 } from '../shared/form.js';
-import { listsEditor } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('actions');
 
@@ -132,7 +132,16 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     this.done_ = new Set();
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      domains: ACTION_DOMAINS,
+      schema: [entityField(ACTION_DOMAINS), nameIconFields(), textField('secondary')],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -146,19 +155,6 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
       ],
       ...formLabels({}),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        alias: 'entities',
-        title: 'editor.rows',
-        domains: ACTION_DOMAINS,
-        schema: [entityField(ACTION_DOMAINS), nameIconFields(), textField('secondary')],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ActionsCardConfig {

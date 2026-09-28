@@ -28,8 +28,7 @@ import {
   selectField,
   titleFields,
 } from '../shared/form.js';
-
-import { listsEditor } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 export interface EntityRowConfig {
   entity: string;
@@ -66,7 +65,19 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      schema: [
+        entityField(),
+        nameIconFields(),
+        selectField('secondary', ['area', 'last-changed', 'state', 'none']),
+      ],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -78,22 +89,6 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         show_count: 'editor.show_count',
       }),
     };
-  }
-
-  /** The visual editor: the card's own fields, then one form per item — a name, an icon, a tone, whatever the item may carry. */
-  static getConfigElement(): HTMLElement {
-    return listsEditor(this.getConfigForm(), [
-      {
-        key: 'rows',
-        alias: 'entities',
-        title: 'editor.rows',
-        schema: [
-          entityField(),
-          nameIconFields(),
-          selectField('secondary', ['area', 'last-changed', 'state', 'none']),
-        ],
-      },
-    ]);
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): EntitiesCardConfig {

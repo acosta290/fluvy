@@ -135,7 +135,7 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
     this.tick_ = 0;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [entityField(['media_player']), nameIconFields()],
       ...formLabels({ entity: 'editor.entity', name: 'editor.name', icon: 'editor.icon' }),

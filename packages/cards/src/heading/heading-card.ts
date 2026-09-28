@@ -113,7 +113,7 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
     `,
   ];
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         fieldRow(textField('title'), iconField()),

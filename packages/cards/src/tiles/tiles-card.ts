@@ -15,10 +15,9 @@ import {
   formLabels,
   nameIconFields,
   selectField,
+  toneField,
 } from '../shared/form.js';
-import { toneSelector } from '../shared/domain.js';
-
-import { listsEditor } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 
 export type TilesColumns = 2 | 3 | 4 | 'auto';
 
@@ -30,7 +29,7 @@ export interface TilesCardConfig extends TileCardConfig {
 }
 
 const SIZES: readonly TileSize[] = ['compact', 'mini', 'large'];
-const COLUMNS: readonly string[] = ['2', '3', '4', 'auto'];
+const COLUMNS = ['2', '3', '4', 'auto'] as const;
 /** The tiles' column gap (the theme's section grid gap). */
 const GAP = 16;
 /** The narrowest a grouped tile draws whole: a group too narrow for the columns asked lays out fewer, in more rows. */
@@ -62,6 +61,15 @@ export class FluvyTilesCard extends FluvyTileCard {
     `,
   ];
 
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'tiles',
+      alias: 'entities',
+      title: 'editor.tiles',
+      schema: [entityField(), nameIconFields(), toneField(), entitiesField('readouts', ['sensor'])],
+    },
+  ];
+  static override defaults: EditorDefaults = () => ({ size: 'compact' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -72,27 +80,6 @@ export class FluvyTilesCard extends FluvyTileCard {
         columns: 'editor.columns',
       }),
     };
-  }
-
-  /** The visual editor: the card's own fields (the compact size shown as the default), then one form per item — a name, an icon, a tone, its readouts. */
-  static override getConfigElement(): HTMLElement {
-    return listsEditor(
-      this.getConfigForm(),
-      [
-        {
-          key: 'tiles',
-          alias: 'entities',
-          title: 'editor.tiles',
-          schema: [
-            entityField(),
-            nameIconFields(),
-            { name: 'tone', selector: toneSelector },
-            entitiesField('readouts', ['sensor']),
-          ],
-        },
-      ],
-      () => ({ size: 'compact' }),
-    );
   }
 
   static override getStubConfig(_hass: unknown, entities: readonly string[]): TilesCardConfig {

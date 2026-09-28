@@ -15,8 +15,6 @@ import { repeat } from 'lit/directives/repeat.js';
 
 import { HeadFit } from '../energy/head.js';
 
-import { rowsEditor } from '../shared/rows-editor.js';
-
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
 
 import { Card } from '../shared/base.js';
@@ -32,6 +30,7 @@ import {
   titleFields,
   toneField,
 } from '../shared/form.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const strings = words('distribution');
 
@@ -98,7 +97,15 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'entities',
+      title: 'editor.entities',
+      domains: ['sensor'],
+      schema: [entityField(['sensor']), fieldRow(textField('name'), toneField())],
+    },
+  ];
+  static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
@@ -113,23 +120,6 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
       ...idsOnly('entities'),
       ...editorLabels(strings, { max_rows: 'max_rows' }, {}),
     };
-  }
-
-  /** The visual editor: the card's fields, then one form per segment (entity, name, tone). */
-  static getConfigElement(): HTMLElement {
-    const labels = editorLabels(strings, { max_rows: 'max_rows' }, {});
-    return rowsEditor({
-      schema: [titleFields(), iconToneFields(), numberField('max_rows', 2, 10)],
-      lists: [
-        {
-          key: 'entities',
-          title: 'editor.entities',
-          domains: ['sensor'],
-          schema: [entityField(['sensor']), fieldRow(textField('name'), toneField())],
-        },
-      ],
-      computeLabel: labels.computeLabel,
-    });
   }
 
   static getStubConfig(

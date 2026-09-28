@@ -174,7 +174,7 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     this.adding_ = false;
   }
 
-  static getConfigForm(): LovelaceConfigForm {
+  static override getConfigForm(): LovelaceConfigForm {
     const labels = formLabels({});
     return {
       schema: [entityField(['todo']), titleFields(), iconField(), boolField('hide_completed')],

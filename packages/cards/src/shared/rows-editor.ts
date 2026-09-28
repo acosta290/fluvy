@@ -8,6 +8,7 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
+import { normaliseConfig, type AliasSpec } from './config.js';
 import { type FormLabeler, formLabels } from './form.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
@@ -20,8 +21,12 @@ export interface RowsListSpec {
   readonly schema: readonly HaFormSchemaItem[];
   /** Domains the add-picker offers; default: those of the schema's entity field. */
   readonly domains?: readonly string[];
-  /** The field that identifies an item: `entity` (an entity picker adds items) or a text field such as a chip's `label`. */
+  /** The field that identifies an item: `entity` (an entity picker adds items) or a text field such as a chip's `name`. */
   readonly idKey?: string;
+  /** The keys an item may carry, as its interface declares them: what the editors' contract checks the schema against. */
+  readonly keys?: readonly string[];
+  /** Words for the item's own fields; the card's, then the shared item words, name the rest. */
+  readonly computeLabel?: FormLabeler;
 }
 
 type Labeler = FormLabeler;
@@ -38,6 +43,8 @@ export interface RowsEditorSpec {
   readonly lists: readonly RowsListSpec[];
   readonly computeLabel: Labeler;
   readonly defaults?: EditorDefaults;
+  /** The older names the card still reads: shown as the newer ones, and written as them on the first change. */
+  readonly aliases?: readonly AliasSpec[];
 }
 
 type Item = Record<string, unknown>;
@@ -228,14 +235,17 @@ export class FluvyRowsEditor extends LitElement {
 
   /** The add-picker's schema per list: built once, so its `ha-form` is not handed a new schema on every render. */
   private readonly pickers = new WeakMap<RowsListSpec, HaFormSchemaItem[]>();
+  /** The words of each list's item forms: built once per list, for the same reason. */
+  private readonly labelers = new WeakMap<RowsListSpec, Labeler>();
 
   constructor() {
     super();
     this.ready = false;
   }
 
+  /** The config as the card reads it: an older name shows in its newer field, and leaves the config once anything is saved. */
   setConfig(config: LovelaceCardConfig): void {
-    this.config = config;
+    this.config = normaliseConfig(config, ...(this.spec?.aliases ?? []));
   }
 
   override connectedCallback(): void {
@@ -342,6 +352,20 @@ export class FluvyRowsEditor extends LitElement {
 
   private readonly addLabel: Labeler = () => this.t('editor.add');
 
+  /** An item's field is named by its list, else by the card, else by the shared item words. */
+  private labeler(list: RowsListSpec): Labeler {
+    let labeler = this.labelers.get(list);
+    if (!labeler) {
+      const own = this.spec?.computeLabel;
+      labeler = (schema, localize) =>
+        list.computeLabel?.(schema, localize) ??
+        own?.(schema, localize) ??
+        itemLabels(schema, localize);
+      this.labelers.set(list, labeler);
+    }
+    return labeler;
+  }
+
   private renderList(list: RowsListSpec): TemplateResult {
     const items = itemsOf(this.config, list);
     return html`<div class="list">
@@ -361,7 +385,7 @@ export class FluvyRowsEditor extends LitElement {
                   .hass=${this.hass}
                   .data=${item}
                   .schema=${list.schema}
-                  .computeLabel=${itemLabels}
+                  .computeLabel=${this.labeler(list)}
                   @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
                 ></ha-form>
                 <ha-icon-button
@@ -430,11 +454,15 @@ function withoutLists(
   });
 }
 
-/** `static getConfigElement()` for a card that already has a form: the same fields and labels, plus its lists edited item by item, and its defaults shown. */
+/**
+ * `static getConfigElement()` for a card that already has a form: the same fields and labels, plus its lists edited
+ * item by item, its defaults shown, and its older names read as the newer ones.
+ */
 export function listsEditor(
   form: LovelaceConfigForm,
   lists: readonly RowsListSpec[],
   defaults?: EditorDefaults,
+  aliases?: readonly AliasSpec[],
 ): HTMLElement {
   const keys = new Set(lists.flatMap((list) => [list.key, ...(list.alias ? [list.alias] : [])]));
   return rowsEditor({
@@ -442,6 +470,7 @@ export function listsEditor(
     lists,
     computeLabel: (schema, localize) => form.computeLabel?.(schema, localize),
     ...(defaults ? { defaults } : {}),
+    ...(aliases?.length ? { aliases } : {}),
   });
 }
 
