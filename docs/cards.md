@@ -1,6 +1,6 @@
 # The cards
 
-Thirty-nine cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Forty-one cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. In YAML, a card is `type: custom:<tag>` plus the entity or entities it draws and any
 option the editor offers; the *Editor options* column below names them.

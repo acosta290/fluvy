@@ -193,8 +193,11 @@ describe('the settings panel', () => {
     panel.tab = 'dashboard';
     await new Promise((resolve) => setTimeout(resolve, 0));
     await panel.updateComplete;
-    expect(row('Fluvy auto')).toBeDefined();
-    expect(root.textContent).not.toContain('Not created yet');
+    // the house's home dashboard as it is; the templates it does not have, said plainly and without a button
+    expect(row('Fluvy auto')?.textContent).not.toContain('Not created yet');
+    expect(row('Rooms')?.textContent).toContain('Not created yet');
+    expect(row('Rooms')?.querySelector('.fv-row__btn')).toBeNull();
+    expect(root.textContent).not.toContain('Create');
     panel.tab = 'scope';
     await panel.updateComplete;
     // their own Overview under its Home Assistant name, and the automatic dashboard, as they are
@@ -247,6 +250,149 @@ describe('the settings panel', () => {
     expect(
       row('Show in the sidebar')?.querySelector('.fv-switch')?.getAttribute('aria-checked'),
     ).toBe('false');
+    panel.remove();
+  });
+
+  it('creates a template’s dashboard with one tap: the dashboard, then its bare strategy, then the list again', async () => {
+    const calls: Record<string, unknown>[] = [];
+    let made = false;
+    const { panel, row, settle } = await mount(true, {
+      callWS: async (message: { type: string; url_path?: string | null }) => {
+        if (
+          message.type === 'lovelace/dashboards/create' ||
+          message.type === 'lovelace/config/save'
+        ) {
+          calls.push(message);
+          if (message.type === 'lovelace/config/save') made = true;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type === 'lovelace/config')
+          return message.url_path === 'fluvy-auto'
+            ? { strategy: { type: 'custom:fluvy-home' } }
+            : message.url_path === 'fluvy-energy' && made
+              ? { strategy: { type: 'custom:fluvy-energy' } }
+              : { views: [] };
+        return { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    const energy = row('Energy')!;
+    expect(energy.querySelector('.fv-row__btn')?.textContent?.trim()).toBe('Create');
+    energy.click();
+    await settle();
+    await settle();
+    expect(calls).toEqual([
+      {
+        type: 'lovelace/dashboards/create',
+        url_path: 'fluvy-energy',
+        title: 'Fluvy · Energy',
+        icon: 'fluvy:bolt',
+        show_in_sidebar: true,
+        require_admin: false,
+        mode: 'storage',
+      },
+      {
+        type: 'lovelace/config/save',
+        url_path: 'fluvy-energy',
+        config: { strategy: { type: 'custom:fluvy-energy' } },
+      },
+    ]);
+    // once Home Assistant lists it, the row opens it and its options card appears
+    panel.hass = {
+      ...panel.hass,
+      panels: {
+        ...panel.hass.panels,
+        'fluvy-energy': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-energy',
+          title: 'Fluvy · Energy',
+          icon: 'fluvy:bolt',
+        },
+      },
+    } as HomeAssistant;
+    await settle();
+    await settle();
+    expect(row('Fluvy · Energy')?.querySelector('.fv-row__chevron')).not.toBeNull();
+    expect(row('Production')?.querySelector('.fv-switch')).not.toBeNull();
+    panel.remove();
+  });
+
+  it('edits each dashboard’s options apart and saves them with one Apply; Recreate takes two taps', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    const { panel, root, row, chip, button, settle } = await mount(true, {
+      panels: {
+        lovelace: { component_name: 'lovelace', url_path: 'lovelace', title: null, icon: null },
+        'fluvy-auto': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-auto',
+          title: 'Fluvy auto',
+          icon: 'fluvy:sun',
+        },
+        'fluvy-security': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-security',
+          title: 'Fluvy · Security',
+          icon: 'fluvy:shield',
+        },
+      },
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type === 'lovelace/config')
+          return message.url_path === 'fluvy-auto'
+            ? { strategy: { type: 'custom:fluvy-home' } }
+            : message.url_path === 'fluvy-security'
+              ? { strategy: { type: 'custom:fluvy-security', camera_refresh: 30 } }
+              : { views: [] };
+        return { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    // the security dashboard's own chips: 30 s chosen as saved; the home's thermostats untouched
+    expect(chip('30 s')?.classList.contains('is-active')).toBe(true);
+    chip('Ruler')!.click();
+    chip('5 s')!.click();
+    await settle();
+    // two dashboards edited: the bar counts them and saves both
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('2 changes');
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved).toEqual([
+      {
+        type: 'lovelace/config/save',
+        url_path: 'fluvy-auto',
+        config: { strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler' } },
+      },
+      {
+        type: 'lovelace/config/save',
+        url_path: 'fluvy-security',
+        config: { strategy: { type: 'custom:fluvy-security' } },
+      },
+    ]);
+    // Recreate: the first tap arms the row, the second writes the bare strategy
+    const recreate = [...root.querySelectorAll<HTMLElement>('.fv-row')].filter(
+      (r) => r.querySelector('.fv-row__title')?.textContent?.trim() === 'Recreate this dashboard',
+    );
+    expect(recreate.length).toBe(2);
+    recreate[1]!.click();
+    await settle();
+    expect(row('Tap again to recreate')).toBeDefined();
+    expect(saved.length).toBe(2);
+    row('Tap again to recreate')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)).toEqual({
+      type: 'lovelace/config/save',
+      url_path: 'fluvy-security',
+      config: { strategy: { type: 'custom:fluvy-security' } },
+    });
     panel.remove();
   });
 
@@ -435,7 +581,9 @@ describe('the settings panel', () => {
       frame: false,
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
-    expect(exported['dashboard']).toEqual({ thermostat_variant: 'ruler', hide: ['media'] });
+    expect(exported['dashboards']).toEqual({
+      'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'] },
+    });
     // another house, reset; the file brings it all back
     await handle.store.saveHouse({ palette: 'linen', shape: 'soft', pills: 'round', frame: true });
     await handle.store.savePersonal({ language: 'auto', haptics: true });
@@ -449,6 +597,18 @@ describe('the settings panel', () => {
     expect(handle.settings().language).toBe('es');
     expect(saved.at(-1)?.config).toEqual({
       strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] },
+    });
+    // a 1.2 file names only the home dashboard's options: they land on it too
+    importSettings(
+      panel as unknown as FluvyPanel,
+      new File(
+        [JSON.stringify({ fluvy: 1, dashboard: { tile_size: 'compact', flow_style: 'legs' } })],
+        'fluvy-settings.json',
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(saved.at(-1)?.config).toEqual({
+      strategy: { type: 'custom:fluvy-home', tile_size: 'compact', flow_style: 'legs' },
     });
     panel.remove();
   });

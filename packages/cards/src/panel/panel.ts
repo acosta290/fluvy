@@ -1,7 +1,6 @@
 import {
   type EffectiveSettings,
   type HomeAssistant,
-  localize,
   type Look,
   lookHandle,
   type LookHandle,
@@ -22,7 +21,7 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { houseEnergy } from '../strategy/home-strategy.js';
 
-import { VIEWS } from '../strategy/home-views.js';
+import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.js';
 
 import {
   changeLines,
@@ -36,6 +35,7 @@ import {
   type PanelContext,
   type PersonalEdit,
   type StrategyEdit,
+  type StrategyEdits,
   type StringKey,
   type Tab,
 } from './model.js';
@@ -45,7 +45,7 @@ import {
   about,
   appearance,
   appearancePreview,
-  dashboard,
+  dashboards,
   dashboardPreview,
   preferences,
   scope,
@@ -55,10 +55,11 @@ import { panelStyles } from './styles.js';
 
 import {
   aboutFacts,
-  createAuto,
+  createDashboard,
   exportSettings,
   importSettings,
   resetHouse,
+  recreateDashboard,
   showInSidebar,
 } from './actions.js';
 
@@ -96,11 +97,12 @@ export class FluvyPanel extends LitElement {
     draft: { state: true },
     houseEdit: { state: true },
     personalEdit: { state: true },
-    strategyEdit: { state: true },
+    strategyEdits: { state: true },
     tryOnApp: { state: true },
     dashboards: { state: true },
     notice: { state: true },
     resetArmed: { state: true },
+    recreateArmed: { state: true },
     wide: { state: true },
     side: { state: true },
     meters: { state: true },
@@ -122,11 +124,13 @@ export class FluvyPanel extends LitElement {
   declare draft: Look | undefined;
   declare houseEdit: HouseEdit;
   declare personalEdit: PersonalEdit;
-  declare strategyEdit: StrategyEdit;
+  declare strategyEdits: StrategyEdits;
   declare tryOnApp: boolean;
   declare dashboards: readonly DashboardInfo[];
   declare notice: string;
   declare resetArmed: boolean;
+  /** The url path of the dashboard whose Recreate row is armed ('' when none). */
+  declare recreateArmed: string;
   declare wide: boolean;
   /** The preview sits in a side column, on every tab. */
   declare side: boolean;
@@ -134,8 +138,8 @@ export class FluvyPanel extends LitElement {
   declare meters: EnergyMeters | null | undefined;
   /** The apply bar is on its way out (it keeps its last words while it goes). */
   declare leaving: boolean;
-  /** The automatic dashboard is being created (two writes, then the list reloads). */
-  declare creating: boolean;
+  /** The url path of the dashboard being created ('' when none: two writes, then the list reloads). */
+  declare creating: string;
   declare dark: boolean;
   declare noTheme: boolean;
 
@@ -149,6 +153,9 @@ export class FluvyPanel extends LitElement {
   private readonly lookSheet = new CSSStyleSheet();
   private noticeTimer = 0;
   resetTimer = 0;
+  recreateTimer = 0;
+  /** The dashboard whose options were touched last: the one the preview draws. */
+  private lastEdited = '';
   private barTimer = 0;
   private stillTimer = 0;
   private fontTimer = 0;
@@ -179,15 +186,16 @@ export class FluvyPanel extends LitElement {
     this.tab = 'appearance';
     this.houseEdit = {};
     this.personalEdit = {};
-    this.strategyEdit = {};
+    this.strategyEdits = {};
     this.tryOnApp = false;
     this.dashboards = [];
     this.notice = '';
     this.resetArmed = false;
+    this.recreateArmed = '';
     this.wide = false;
     this.side = false;
     this.leaving = false;
-    this.creating = false;
+    this.creating = '';
     this.dark = false;
     this.noTheme = false;
   }
@@ -247,6 +255,7 @@ export class FluvyPanel extends LitElement {
     for (const timer of [
       this.noticeTimer,
       this.resetTimer,
+      this.recreateTimer,
       this.barTimer,
       this.stillTimer,
       this.fontTimer,
@@ -380,6 +389,8 @@ export class FluvyPanel extends LitElement {
         solar: this.t('preview.solar'),
         grid: this.t('preview.grid'),
         battery: this.t('preview.battery'),
+        alarm: this.t('preview.alarm'),
+        door: this.t('preview.door'),
       });
       if (this.hass) this.preview.update(this.hass);
     }
@@ -393,7 +404,7 @@ export class FluvyPanel extends LitElement {
       (!!this.draft && !!this.settings && !sameLook(this.draft, this.settings.look)) ||
       Object.keys(this.houseEdit).length > 0 ||
       Object.keys(this.personalEdit).length > 0 ||
-      Object.keys(this.strategyEdit).length > 0
+      Object.keys(this.strategyEdits).length > 0
     );
   }
 
@@ -473,11 +484,25 @@ export class FluvyPanel extends LitElement {
           })
           .catch(() => undefined);
         const strategy = config?.strategy;
-        return strategy?.['type'] === 'custom:fluvy-home' ? { ...info, strategy } : info;
+        const template = templateOf(strategy?.['type']);
+        return strategy && template ? { ...info, strategy, template } : info;
       }),
     );
-    const saved = this.dashboards.find((d) => d.strategy)?.strategy;
-    this.strategyEdit = saved ? this.unsavedStrategy(this.strategyEdit, saved) : {};
+    // the edits that still change something, dashboard by dashboard
+    const edits: Record<string, StrategyEdit> = {};
+    for (const dashboard of this.dashboards) {
+      const edit = this.strategyEdits[dashboard.urlPath];
+      if (!edit || !dashboard.strategy) continue;
+      const kept = this.unsavedStrategy(edit, dashboard.strategy);
+      if (Object.keys(kept).length) edits[dashboard.urlPath] = kept;
+    }
+    this.strategyEdits = edits;
+  }
+
+  /** The dashboard the Dashboards tab previews: the one touched last, else the first of ours. */
+  private previewed(): DashboardInfo | undefined {
+    const ours = this.dashboards.filter((d) => d.template);
+    return ours.find((d) => d.urlPath === this.lastEdited) ?? ours[0];
   }
 
   /**
@@ -523,7 +548,8 @@ export class FluvyPanel extends LitElement {
     const settings = this.settings;
     if (!handle || !hass || !settings || !this.draft) return undefined;
     const draft = this.draft;
-    const auto = this.dashboards.find((d) => d.strategy);
+    const savedStrategy = (urlPath: string): Record<string, unknown> | undefined =>
+      this.dashboards.find((d) => d.urlPath === urlPath)?.strategy;
     return {
       hass,
       t: this.t,
@@ -537,10 +563,13 @@ export class FluvyPanel extends LitElement {
       dirty: !sameLook(draft, settings.look),
       houseEdit: this.houseEdit,
       personalEdit: this.personalEdit,
-      strategyEdit: this.strategyEdit,
+      strategyEdits: this.strategyEdits,
       tryOnApp: this.tryOnApp,
       dashboards: this.dashboards,
-      strategy: auto?.strategy && withEdit(auto.strategy, this.strategyEdit),
+      strategyOf: (urlPath) => {
+        const saved = savedStrategy(urlPath);
+        return saved && withEdit(saved, this.strategyEdits[urlPath] ?? {});
+      },
       setDraft: (look) => {
         this.draft = { ...(this.draft ?? draft), ...look };
       },
@@ -551,12 +580,18 @@ export class FluvyPanel extends LitElement {
         if (this.settings)
           this.personalEdit = unsaved({ ...this.personalEdit, ...edit }, this.settings);
       },
-      editStrategy: (edit) => {
-        if (auto?.strategy)
-          this.strategyEdit = this.unsavedStrategy(
-            { ...this.strategyEdit, ...edit },
-            auto.strategy,
-          );
+      editStrategy: (urlPath, edit) => {
+        const saved = savedStrategy(urlPath);
+        if (!saved) return;
+        const kept = this.unsavedStrategy(
+          { ...(this.strategyEdits[urlPath] ?? {}), ...edit },
+          saved,
+        );
+        const next: Record<string, StrategyEdit> = { ...this.strategyEdits };
+        if (Object.keys(kept).length) next[urlPath] = kept;
+        else delete next[urlPath];
+        this.strategyEdits = next;
+        this.lastEdited = urlPath;
       },
       setTryOnApp: (on) => {
         this.tryOnApp = on;
@@ -566,7 +601,7 @@ export class FluvyPanel extends LitElement {
         this.draft = this.settings?.look;
         this.houseEdit = {};
         this.personalEdit = {};
-        this.strategyEdit = {};
+        this.strategyEdits = {};
         this.tryOnApp = false;
       },
       run: (task) => this.run(task),
@@ -593,15 +628,18 @@ export class FluvyPanel extends LitElement {
     }
     if (Object.keys(this.houseEdit).length) await store.saveHouse(this.houseEdit);
     if (Object.keys(this.personalEdit).length) await store.savePersonal(this.personalEdit);
-    const auto = this.dashboards.find((d) => d.strategy);
-    if (auto?.strategy && Object.keys(this.strategyEdit).length) {
+    let written = false;
+    for (const [urlPath, edit] of Object.entries(this.strategyEdits)) {
+      const saved = this.dashboards.find((d) => d.urlPath === urlPath)?.strategy;
+      if (!saved || !Object.keys(edit).length) continue;
       await this.hass?.callWS({
         type: 'lovelace/config/save',
-        url_path: auto.urlPath,
-        config: { strategy: withEdit(auto.strategy, this.strategyEdit) },
+        url_path: urlPath,
+        config: { strategy: withEdit(saved, edit) },
       });
-      await this.loadDashboards();
+      written = true;
     }
+    if (written) await this.loadDashboards();
     this.tryOnApp = false;
   }
 
@@ -684,20 +722,14 @@ export class FluvyPanel extends LitElement {
         );
       }
       case 'dashboard':
-        return dashboard(
-          ctx,
-          VIEWS.map((view) => ({
-            key: view.key,
-            icon: view.icon,
-            title: localize(ctx.hass, view.title),
-          })),
-          {
-            create: () => createAuto(this, ctx),
-            open: (urlPath) => navigate(`/${urlPath}`),
-            showInSidebar: (on) => showInSidebar(this, ctx, on),
-            creating: this.creating,
-          },
-        );
+        return dashboards(ctx, {
+          create: (template) => createDashboard(this, ctx, template),
+          recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
+          open: (urlPath) => navigate(`/${urlPath}`),
+          showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),
+          creating: this.creating,
+          recreateArmed: this.recreateArmed,
+        });
       case 'preferences':
         return preferences(ctx);
       case 'about':
@@ -717,23 +749,16 @@ export class FluvyPanel extends LitElement {
   private previewCard(ctx: PanelContext): TemplateResult | undefined {
     const house = this.previewHouse();
     if (this.tab === 'dashboard') {
+      const previewed = this.previewed();
+      if (!previewed) return undefined;
       void this.loadMeters();
-      const strategy = ctx.strategy ?? {};
-      const size = strategy['tile_size'] === 'compact' ? 'compact' : 'large';
-      const variant =
-        typeof strategy['thermostat_variant'] === 'string'
-          ? strategy['thermostat_variant']
-          : 'dial';
-      const flow = typeof strategy['flow_style'] === 'string' ? strategy['flow_style'] : 'ribbons';
       return dashboardPreview(
         ctx,
-        html`<div class="pn-preview pn-preview--dash">
-          <div class="pn-preview__tiles">
-            ${house.tile('living', size)}${house.tile('kitchen', size)}
-          </div>
-          <div class="pn-preview__side">${house.thermostat(variant)}</div>
-          ${house.energy(flow, this.meters ?? null)}
-        </div>`,
+        this.templatePreview(
+          previewed.template ?? HOME_TEMPLATE,
+          ctx.strategyOf(previewed.urlPath) ?? {},
+        ),
+        previewed.title,
       );
     }
     if (this.tab !== 'appearance' && !this.side) return undefined;
@@ -749,6 +774,53 @@ export class FluvyPanel extends LitElement {
         ${house.thermostat('compact')}
       </div>`,
     );
+  }
+
+  /** A template's cards as its dashboard will draw them, in the options chosen. */
+  private templatePreview(
+    template: Template,
+    strategy: Readonly<Record<string, unknown>>,
+  ): TemplateResult {
+    const house = this.previewHouse();
+    const word = (key: string, fallback: string): string =>
+      typeof strategy[key] === 'string' ? (strategy[key] as string) : fallback;
+    const size = word('tile_size', 'large') === 'compact' ? 'compact' : 'large';
+    const variant = word('thermostat_variant', 'dial');
+    const flow = word('flow_style', 'ribbons');
+    const room = word('room_variant', 'tile');
+    switch (template.id) {
+      case 'rooms':
+        return html`<div class="pn-preview pn-preview--dash">
+          <div class="pn-preview__tiles">
+            ${house.room('living', room)}${house.room('kitchen', room)}
+          </div>
+          <div class="pn-preview__side">${house.thermostat(variant)}</div>
+          ${house.tile('living', size)}
+        </div>`;
+      case 'energy':
+        return html`<div class="pn-preview">${house.energy(flow, this.meters ?? null)}</div>`;
+      case 'security':
+        return html`<div class="pn-preview pn-preview--dash">
+          <div class="pn-preview__tiles">${house.tile('blinds')}${house.lock()}</div>
+          <div class="pn-preview__side">${house.alarm()}</div>
+        </div>`;
+      case 'wall':
+        return html`<div class="pn-preview pn-preview--dash">
+          <div class="pn-preview__tiles">
+            ${house.room('living', 'tile')}${house.room('kitchen', 'tile')}
+          </div>
+          <div class="pn-preview__side">${house.thermostat(variant)}</div>
+          ${house.clock()}
+        </div>`;
+      default:
+        return html`<div class="pn-preview pn-preview--dash">
+          <div class="pn-preview__tiles">
+            ${house.tile('living', size)}${house.tile('kitchen', size)}
+          </div>
+          <div class="pn-preview__side">${house.thermostat(variant)}</div>
+          ${house.energy(flow, this.meters ?? null)}
+        </div>`;
+    }
   }
 
   /**

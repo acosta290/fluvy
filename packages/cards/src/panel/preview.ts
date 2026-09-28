@@ -71,6 +71,22 @@ const STATES = (names: PreviewNames) => ({
     last_updated: new Date().toISOString(),
     context: { id: 'fluvy-preview', user_id: null, parent_id: null },
   },
+  'alarm_control_panel.fluvy_preview_alarm': {
+    entity_id: 'alarm_control_panel.fluvy_preview_alarm',
+    state: 'disarmed',
+    attributes: { friendly_name: names.alarm, supported_features: 3, code_arm_required: false },
+    last_changed: new Date().toISOString(),
+    last_updated: new Date().toISOString(),
+    context: { id: 'fluvy-preview', user_id: null, parent_id: null },
+  },
+  'lock.fluvy_preview_door': {
+    entity_id: 'lock.fluvy_preview_door',
+    state: 'locked',
+    attributes: { friendly_name: names.door },
+    last_changed: new Date().toISOString(),
+    last_updated: new Date().toISOString(),
+    context: { id: 'fluvy-preview', user_id: null, parent_id: null },
+  },
   'climate.fluvy_preview_bedroom': {
     entity_id: 'climate.fluvy_preview_bedroom',
     state: 'heat',
@@ -119,7 +135,24 @@ export interface PreviewNames {
   readonly solar: string;
   readonly grid: string;
   readonly battery: string;
+  readonly alarm: string;
+  readonly door: string;
 }
+
+/** The preview's two rooms: the living room holds the light and the temperature, the kitchen its switch. */
+const AREAS = (names: PreviewNames) => ({
+  fluvy_preview_living: { area_id: 'fluvy_preview_living', name: names.living, icon: 'mdi:sofa' },
+  fluvy_preview_kitchen: {
+    area_id: 'fluvy_preview_kitchen',
+    name: names.kitchen,
+    icon: 'mdi:stove',
+  },
+});
+const IN_AREAS: Readonly<Record<string, string>> = {
+  'light.fluvy_preview_living': 'fluvy_preview_living',
+  'sensor.fluvy_preview_temperature': 'fluvy_preview_living',
+  'switch.fluvy_preview_kitchen': 'fluvy_preview_kitchen',
+};
 
 /** The meters an energy flow is drawn on (the card's own keys). */
 export type EnergyMeters = Readonly<Record<string, string | boolean>>;
@@ -139,9 +172,12 @@ const ENTITY = {
   blinds: 'cover.fluvy_preview_blinds',
   temperature: 'sensor.fluvy_preview_temperature',
   bedroom: 'climate.fluvy_preview_bedroom',
+  alarm: 'alarm_control_panel.fluvy_preview_alarm',
+  door: 'lock.fluvy_preview_door',
 } as const;
 
-export type TileEntity = Exclude<keyof typeof ENTITY, 'bedroom'>;
+export type TileEntity = Exclude<keyof typeof ENTITY, 'bedroom' | 'alarm' | 'door'>;
+export type RoomArea = 'living' | 'kitchen';
 
 /** The preview's cards, each made once for its config; `update` hands every one the latest `hass`. */
 export class PreviewHouse {
@@ -149,9 +185,11 @@ export class PreviewHouse {
   private preview: HomeAssistant | undefined;
   // made once: the same state objects every update, so the cards redraw only for the look
   private readonly states: ReturnType<typeof STATES>;
+  private readonly areas: ReturnType<typeof AREAS>;
 
   constructor(names: PreviewNames) {
     this.states = STATES(names);
+    this.areas = AREAS(names);
   }
 
   private card(config: Record<string, unknown>): LovelaceCard {
@@ -200,10 +238,44 @@ export class PreviewHouse {
     return this.card({ type: 'custom:fluvy-hello-card' });
   }
 
+  /** One of the preview's rooms, in the rooms dashboard's variant (a dashboard's six columns). */
+  room(area: RoomArea, variant: string): LovelaceCard {
+    return this.card({
+      type: 'custom:fluvy-room-card',
+      area: `fluvy_preview_${area}`,
+      variant,
+      grid_options: { columns: 6 },
+    });
+  }
+
+  alarm(): LovelaceCard {
+    return this.card({ type: 'custom:fluvy-alarm-card', entity: ENTITY.alarm, variant: 'compact' });
+  }
+
+  lock(): LovelaceCard {
+    return this.card({
+      type: 'custom:fluvy-lock-card',
+      entity: ENTITY.door,
+      variant: 'compact',
+      grid_options: { columns: 6 },
+    });
+  }
+
+  /** The wall's clock, beside its readings. */
+  clock(): LovelaceCard {
+    return this.card({ type: 'custom:fluvy-clock-card', variant: 'side' });
+  }
+
   update(hass: HomeAssistant): void {
+    // the preview's entities sit in the preview's rooms, so a room card finds them (the house's registry stays)
+    const entities = { ...hass.entities };
+    for (const [id, area] of Object.entries(IN_AREAS))
+      entities[id] = { ...(entities[id] ?? { entity_id: id }), area_id: area } as never;
     this.preview = {
       ...hass,
       states: { ...hass.states, ...this.states },
+      entities,
+      areas: { ...hass.areas, ...this.areas },
       callService: async () => undefined,
     } as unknown as HomeAssistant;
     for (const card of this.made.values()) card.hass = this.preview;

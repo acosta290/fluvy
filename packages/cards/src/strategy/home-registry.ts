@@ -25,7 +25,7 @@ import {
 /*
  * What a house looks like to the automatic dashboard: the entity, device and area registries read
  * through word rules (the way people name things, in every language Fluvy ships: `words.generated.ts`, from
- * the catalogues) and device classes. Pure queries, no cards — `home-views.ts` turns them into views.
+ * the catalogues) and device classes. Pure queries, no cards — the views (`views/`) turn them into cards.
  */
 
 export { BATTERY_POWER, GRID, HOME_POWER, LIGHT_WORDS, OUTDOOR, SOLAR, TODAY };

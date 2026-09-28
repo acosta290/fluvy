@@ -131,6 +131,15 @@
   height: 20px;
 }
 
+/* a row that offers one action: a 36 quiet button at its end (the whole row is the tap target) */
+.fv-row__btn {
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  pointer-events: none;
+}
+
 .fv-row__value {
   position: relative;
   top: -1px;

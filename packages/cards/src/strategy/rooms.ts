@@ -25,7 +25,7 @@ export function roomsOf(home: HomeRegistry): AreaRegistryEntry[] {
 
 const roomPath = (base: string, area: AreaRegistryEntry): string => `${base}/room-${area.area_id}`;
 
-const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card => ({
+export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card => ({
   type: 'custom:fluvy-room-card',
   area: area.area_id,
   path: roomPath(ctx.base, area),
@@ -64,9 +64,20 @@ export function roomsView(ctx: StrategyContext): Section[] {
   ]);
 }
 
-/** One room: what it holds, in the home view's reading order, under a way back to every room. */
-export function roomSections(ctx: StrategyContext, area: AreaRegistryEntry): Section[] {
-  const { home, t, base } = ctx;
+/** Where a room's heading leads back to, and what it says ("All rooms", or the wall's home). */
+export interface RoomBack {
+  readonly path: string;
+  readonly title: string;
+}
+
+/** One room: what it holds, in the home view's reading order, under a way back to where it was opened from. */
+export function roomSections(
+  ctx: StrategyContext,
+  area: AreaRegistryEntry,
+  back: RoomBack,
+  columns = 3,
+): Section[] {
+  const { home, t } = ctx;
   const inRoom = (ids: readonly string[]): string[] =>
     ids.filter((id) => home.areaOf(id) === area.area_id);
   const lights = inRoom(home.lights);
@@ -77,58 +88,65 @@ export function roomSections(ctx: StrategyContext, area: AreaRegistryEntry): Sec
   const cameras = inRoom(home.cameras);
   const readings = inRoom([...home.temperatures, ...home.humidities]).slice(0, 3);
   const found = areaClimate(home.registries, area.area_id);
-  const sections = flowed([
-    [heading(t('strategy.all_rooms'), 'fluvy:home', [], `${base}/rooms`)],
-    ...(climate[0] ? [[thermostat(climate[0], ctx.style)]] : []),
-    ...(lights.length
-      ? headed(
-          heading(t('strategy.lights'), 'fluvy:bulb', lights),
-          tileRows(lights.slice(0, 6).map((id) => sizedTile(id, home.named(id), ctx.style))),
-        )
-      : []),
-    ...(covers.length
-      ? [
-          [
-            heading(t('strategy.covers'), 'fluvy:blinds', covers),
-            full('tiles', {
-              size: 'compact',
-              columns: 2,
-              tiles: covers.slice(0, 6).map((id) => ({ entity: id, ...home.named(id) })),
-            }),
-          ],
-        ]
-      : []),
-    ...(players.length
-      ? [[full('media', { entity: players[0], ...home.named(players[0] ?? '') })]]
-      : []),
-    ...(appliances.length
-      ? headed(
-          heading(t('strategy.appliances'), 'fluvy:plug', appliances),
-          tileRows(appliances.slice(0, 4).map((id) => applianceTile(home, id))),
-        )
-      : []),
-    ...(readings.length || found.temperature
-      ? [
-          [
-            {
-              type: 'custom:fluvy-readouts-card',
-              rows: (readings.length ? readings : [found.temperature as string]).map((id) => ({
-                entity: id,
-                name: home.placeName(id),
-              })),
-            } as Card,
-          ],
-        ]
-      : []),
-    ...(cameras.length ? [[full('camera', { entity: cameras[0] })]] : []),
-  ]);
-  return sections.length
-    ? sections
-    : [section(heading(t('strategy.all_rooms'), 'fluvy:home', [], `${base}/rooms`))];
+  const sections = flowed(
+    [
+      [heading(back.title, 'fluvy:home', [], back.path)],
+      ...(climate[0] ? [[thermostat(climate[0], ctx.style)]] : []),
+      ...(lights.length
+        ? headed(
+            heading(t('strategy.lights'), 'fluvy:bulb', lights),
+            tileRows(lights.slice(0, 6).map((id) => sizedTile(id, home.named(id), ctx.style))),
+          )
+        : []),
+      ...(covers.length
+        ? [
+            [
+              heading(t('strategy.covers'), 'fluvy:blinds', covers),
+              full('tiles', {
+                size: 'compact',
+                columns: 2,
+                tiles: covers.slice(0, 6).map((id) => ({ entity: id, ...home.named(id) })),
+              }),
+            ],
+          ]
+        : []),
+      ...(players.length
+        ? [[full('media', { entity: players[0], ...home.named(players[0] ?? '') })]]
+        : []),
+      ...(appliances.length
+        ? headed(
+            heading(t('strategy.appliances'), 'fluvy:plug', appliances),
+            tileRows(appliances.slice(0, 4).map((id) => applianceTile(home, id))),
+          )
+        : []),
+      ...(readings.length || found.temperature
+        ? [
+            [
+              {
+                type: 'custom:fluvy-readouts-card',
+                rows: (readings.length ? readings : [found.temperature as string]).map((id) => ({
+                  entity: id,
+                  name: home.placeName(id),
+                })),
+              } as Card,
+            ],
+          ]
+        : []),
+      ...(cameras.length ? [[full('camera', { entity: cameras[0] })]] : []),
+    ],
+    [],
+    columns,
+  );
+  return sections.length ? sections : [section(heading(back.title, 'fluvy:home', [], back.path))];
 }
 
 /** The subview of a room. */
-export function roomView(ctx: StrategyContext, area: AreaRegistryEntry, columns: number): View {
+export function roomView(
+  ctx: StrategyContext,
+  area: AreaRegistryEntry,
+  columns: number,
+  back: RoomBack,
+): View {
   return {
     title: area.name,
     icon: area.icon ?? 'fluvy:home',
@@ -136,7 +154,7 @@ export function roomView(ctx: StrategyContext, area: AreaRegistryEntry, columns:
     type: 'sections',
     max_columns: columns,
     subview: true,
-    back_path: `${ctx.base}/rooms`,
-    sections: roomSections(ctx, area),
+    back_path: back.path,
+    sections: roomSections(ctx, area, back, columns),
   };
 }

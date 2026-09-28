@@ -5,16 +5,27 @@ import type { HomeRegistry } from './home-registry.js';
 import { type RoomVariant } from '../room/room-card.js';
 
 /*
- * What the automatic dashboard is made of: its config, the cards and sections it lays out, the house's energy
- * roles, and the context every view is built from. Types only: the definer in core reads them without the strategy.
+ * What the automatic dashboards are made of: their configs, the cards and sections they lay out, the house's
+ * energy roles, and the context every view is built from. Types only: the definer in core reads them without the
+ * strategy.
  */
 
-export interface FluvyHomeStrategyConfig {
-  type: 'custom:fluvy-home';
+/** The dashboards Fluvy builds by itself, each a template: `custom:fluvy-<id>`. */
+export type TemplateId = 'home' | 'rooms' | 'energy' | 'security' | 'wall';
+export type StrategyType = `custom:fluvy-${TemplateId}`;
+
+/** Seconds between a camera's stills on the security dashboard. */
+export type CameraRefresh = 5 | 10 | 30;
+/** How many scenes a wall shows as chips. */
+export type ScenesMax = 4 | 6 | 8;
+
+/** What any of the automatic dashboards reads from its raw configuration; each template honours its own keys. */
+export interface FluvyStrategyConfig {
+  type: StrategyType;
   /** The weather entity of the greeting and the clock; default: the first `weather.*`. */
   weather?: string;
-  /** Views to leave out: any but `home`, which always stays. */
-  hide?: ReadonlyArray<Exclude<ViewKey, 'home'>>;
+  /** Views to leave out: any but the first, which always stays. */
+  hide?: readonly string[];
   /** The thermostats' variant (default: each card's own, the dial). */
   thermostat_variant?: ThermostatVariant;
   /** The lights' tiles: large (default, with their ruler) or compact rows. */
@@ -23,8 +34,20 @@ export interface FluvyHomeStrategyConfig {
   flow_style?: FlowStyle;
   /** The rooms' cards (default: a photo where the area has one, else a tile). */
   room_variant?: RoomVariant;
+  /** The rooms a wall shows (default: every room with something in it). */
+  areas?: readonly string[];
+  /** Seconds between the cameras' stills (default 10). */
+  camera_refresh?: CameraRefresh;
+  /** How many scenes a wall offers (default 6). */
+  scenes_max?: ScenesMax;
   /** The dashboard's words in one language, whoever opens it (default: each person's). */
   language?: LanguageCode;
+}
+
+/** The home dashboard's config: the same keys, its views by name. */
+export interface FluvyHomeStrategyConfig extends FluvyStrategyConfig {
+  type: 'custom:fluvy-home';
+  hide?: ReadonlyArray<Exclude<ViewKey, 'home'>>;
 }
 
 export type Card = LovelaceCardConfig & { grid_options?: { columns?: number } };
@@ -85,6 +108,8 @@ export interface CardStyle {
   readonly tiles?: 'large' | 'compact';
   readonly flow?: FlowStyle;
   readonly room?: RoomVariant;
+  readonly refresh?: CameraRefresh;
+  readonly scenes?: ScenesMax;
 }
 
 export interface StrategyContext {
@@ -95,12 +120,17 @@ export interface StrategyContext {
   readonly weather: string | undefined;
   readonly energy: EnergyRoles;
   readonly style: CardStyle;
+  /** The rooms the dashboard was asked to show (undefined: every room with something in it). */
+  readonly areas: readonly string[] | undefined;
 }
 
 export interface ViewSpec {
-  readonly key: ViewKey;
+  /** The view's path inside its dashboard (`hide` names it). */
+  readonly key: string;
   readonly icon: string;
   readonly title: MessageKey;
+  /** A title of its own (a floor's name) instead of the word. */
+  readonly name?: string;
   readonly build: (ctx: StrategyContext) => Section[];
   /** Whether the house has anything for the view; default: some section has cards. */
   readonly when?: (ctx: StrategyContext) => boolean;

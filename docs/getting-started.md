@@ -22,10 +22,11 @@ the theme Home Assistant wears for you is Fluvy; another theme keeps its pages a
 
 ## 4. Let it build a dashboard
 
-**Dashboard** → *Create*. The automatic dashboard reads your areas, devices, entities and energy preferences and
-builds Home, Lights, Climate, Energy, Media and Sensors. It is a normal dashboard: open its raw configuration and it
-is one line, `strategy: { type: custom:fluvy-home }`, with the options [the page about it](automatic-dashboard.md)
-lists.
+**Dashboards** → *Create* beside **Home**. The automatic dashboard reads your areas, devices, entities and energy
+preferences and builds Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors — each when your
+house has what it shows. It is a normal dashboard: open its raw configuration and it is one line,
+`strategy: { type: custom:fluvy-home }`, with the options [the page about them](automatic-dashboard.md) lists. Four
+more templates sit under it — Rooms, Energy, Security and a Wall for a tablet — each a dashboard of its own.
 
 ## 5. Add a card by hand
 

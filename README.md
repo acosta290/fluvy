@@ -41,7 +41,7 @@ radii and hairlines.
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-tablet.png" width="640" alt="The same dashboard on a wall tablet">
 </p>
 
-## Thirty-nine cards
+## Forty-one cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
@@ -170,8 +170,9 @@ Open **Fluvy** in the sidebar.
 - **Appearance** — the palette, the shape and the buttons, for the house; each person can keep their own.
 - **Scope** — where the look applies: your dashboards only, or everywhere in Home Assistant; whether the frame,
   the icons and the pages are Fluvy's.
-- **Dashboard** — create the automatic dashboard with one button, or add a dashboard of your own with
-  `strategy: { type: custom:fluvy-home }` in its raw configuration.
+- **Dashboards** — create any of the five automatic dashboards with one tap and set its options, or add a
+  dashboard of your own with `strategy: { type: custom:fluvy-home }` (or `fluvy-rooms`, `fluvy-energy`,
+  `fluvy-security`, `fluvy-wall`) in its raw configuration.
 - **Preferences** — language, motion and haptics, per person.
 
 The cards are in the card picker under **Fluvy · …**, each with a preview; `docs/cards.md` lists them with their
@@ -186,7 +187,7 @@ options.
 | [The settings panel](docs/settings-panel.md) | the five tabs, house and personal settings, where they are stored |
 | [The theme](docs/theme.md) | palettes, custom accents, shapes, the tokens |
 | [The cards](docs/cards.md) | every card, with its configuration |
-| [The automatic dashboard](docs/automatic-dashboard.md) | what it builds from your home, and how to steer it |
+| [The automatic dashboards](docs/automatic-dashboard.md) | what the five templates build from your home, and how to steer them |
 | [Activity and History](docs/pages.md) | the two pages |
 | [Everywhere](docs/shell.md) | what the shell restyles, and what to expect after a Home Assistant release |
 | [Troubleshooting](docs/troubleshooting.md) | when something looks wrong |

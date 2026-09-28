@@ -1,35 +1,52 @@
 import { wordsIn, type HomeAssistant } from '@fluvy/core';
 import { gridExportPositive } from './energy-sign.js';
 import { HomeRegistry } from './home-registry.js';
-import { findEnergyRoles, helloCard, tabsCard } from './home-views.js';
+import { findEnergyRoles } from './energy-roles.js';
+import { helloCard, tabsCard } from './layout.js';
+import type { Template } from './templates.js';
 import type {
   EnergyPrefs,
   EnergyRoles,
-  FluvyHomeStrategyConfig,
+  FluvyStrategyConfig,
   Section,
   StrategyContext,
   View,
 } from './types.js';
 
 /*
- * The house as the automatic dashboard reads it: its energy roles, the context every view is built from, and the
- * frame every view is given (the greeting and the tabs first, three columns).
+ * The house as an automatic dashboard reads it: its energy roles, the context every view is built from, and the
+ * frame every view is given (the greeting and the tabs first, the template's columns).
  */
 
-/** Columns of every generated view: the widest layout, kept on every tab (an empty section still takes its column). */
+/** Columns of the home dashboard's views: the widest layout, kept on every tab (an empty section still takes its column). */
 export const COLUMNS = 3;
 
 export const withCards = (sections: readonly Section[]): Section[] =>
   sections.filter((section) => section.cards.length > 0);
 
-/** The greeting and the tabs first in the first section; empty sections up to the three columns. */
-export function framed(view: View, ctx: StrategyContext, views: readonly View[]): View {
-  const header = [helloCard(ctx.weather, ctx.home.me), tabsCard(ctx.base, views)];
+/**
+ * The template's frame: the greeting and the tabs first in the first section (the tabs only when there is more
+ * than one; a wall opens with neither), then empty sections up to the template's columns.
+ */
+export function framed(
+  view: View,
+  ctx: StrategyContext,
+  views: readonly View[],
+  template: Pick<Template, 'header' | 'columns'> = { header: 'hello', columns: COLUMNS },
+): View {
+  const tabs = views.filter((other) => !other.subview);
+  const header =
+    template.header === 'hello'
+      ? [
+          helloCard(ctx.weather, ctx.home.me),
+          ...(tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
+        ]
+      : [];
   const [first, ...rest] = view.sections;
   const sections: Section[] = first
     ? [{ ...first, cards: [...header, ...first.cards] }, ...rest]
     : [{ type: 'grid', cards: header }];
-  while (sections.length < COLUMNS) sections.push({ type: 'grid', cards: [] });
+  while (sections.length < template.columns) sections.push({ type: 'grid', cards: [] });
   return { ...view, sections };
 }
 
@@ -59,7 +76,7 @@ export async function houseEnergy(
 
 /** The context a dashboard is generated in: the house, its words, its base path, its weather and energy, and the cards' style. */
 export async function buildContext(
-  config: FluvyHomeStrategyConfig,
+  config: FluvyStrategyConfig,
   hass: HomeAssistant,
   base = `/${(typeof location !== 'undefined' ? location.pathname.split('/')[1] : '') || 'fluvy-home'}`,
 ): Promise<StrategyContext> {
@@ -76,7 +93,10 @@ export async function buildContext(
       ...(config.tile_size ? { tiles: config.tile_size } : {}),
       ...(config.flow_style ? { flow: config.flow_style } : {}),
       ...(config.room_variant ? { room: config.room_variant } : {}),
+      ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),
+      ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
     },
+    areas: config.areas,
   };
   return ctx;
 }

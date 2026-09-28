@@ -385,9 +385,11 @@ export interface ListRowOptions {
   /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
   readonly name?: boolean;
   readonly sub?: string;
-  readonly trailing?: 'switch' | 'chevron' | 'value' | 'none';
+  readonly trailing?: 'switch' | 'chevron' | 'value' | 'button' | 'none';
   readonly on?: boolean;
   readonly value?: string;
+  /** The word on the small quiet button at the row's end (`trailing: 'button'`); the row's tap is the action. */
+  readonly button?: string;
   readonly valueTone?: 'warning' | '';
   readonly switchTone?: Tone;
   readonly unavailable?: boolean;
@@ -427,7 +429,9 @@ export function listRow(o: ListRowOptions): TemplateResult {
           >`
         : trailing === 'chevron'
           ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
-          : nothing;
+          : trailing === 'button'
+            ? html`<span class="fv-btn fv-btn--quiet fv-row__btn">${o.button ?? ''}</span>`
+            : nothing;
   return html`<div
     class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''}"
     data-accent=${o.accent ?? nothing}

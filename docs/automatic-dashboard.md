@@ -1,30 +1,41 @@
-# The automatic dashboard
+# The automatic dashboards
 
-A dashboard whose configuration is one line:
+Five dashboards Fluvy builds by itself, each from one line of configuration:
 
 ```yaml
 strategy:
-  type: custom:fluvy-home
+  type: custom:fluvy-home      # or fluvy-rooms, fluvy-energy, fluvy-security, fluvy-wall
 ```
 
-The panel's *Dashboard* tab creates it as `/fluvy-auto` with one button; any dashboard with that raw configuration
-is the same thing. It is rebuilt every time it opens, from the registries, so a new device shows up by itself.
+The panel's *Dashboards* tab creates any of them with one tap (as `/fluvy-auto`, `/fluvy-rooms`, `/fluvy-energy`,
+`/fluvy-security`, `/fluvy-wall`); any dashboard with that raw configuration is the same thing. Each is rebuilt every
+time it opens, from the registries, so a new device shows up by itself.
 
-## What it builds
+| Template | What it is for |
+| --- | --- |
+| **Home** (`custom:fluvy-home`) | the whole house: Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors, each when the house has what it shows |
+| **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page |
+| **Energy** (`custom:fluvy-energy`) | Now (the flow and the day's curve), Production, Devices, Meters |
+| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first cameras), Cameras, Openings room by room |
+| **Wall** (`custom:fluvy-wall`) | two columns for a tablet on the wall, read from a metre away: the greeting, the clock, the readings, the scenes and the rooms; the thermostat, the security rows and who is home |
+
+## What the home dashboard builds
 
 | View | What goes in it |
 | --- | --- |
 | **Home** | the greeting (your person, the date, the weather), the tabs, the lights under one heading, the appliances with their power and energy readings, the covers, the running thermostat, the temperatures, the weather and the clock, the energy flow and the solar or home energy curve, the locks and openings, and at the columns' feet the first media player, the vacuum, a to-do list and the first scene |
+| **Rooms** | a card a room (its photo where the area has one), headed by floor when the house has more than one; each room opens its own page with its thermostat, lights, covers, media, appliances, readings and camera — when the house has two rooms with something in them |
 | **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the light automations as scenes last |
 | **Climate** | thermostats, water heaters and humidifiers, the weather, the temperature and humidity sensors that are not the weather service's — humidity paired with its temperature |
 | **Energy** | the energy flow (solar, grid, battery, house — found by their words and by the energy dashboard's preferences), production, the energy dashboard's devices, their distribution |
-| **Security** | alarm panels, locks, gates and garage doors, the openings, the cameras — only when the house has an alarm, a lock, a gate or openings |
+| **Security** | alarm panels, locks, gates and garage doors, the openings, the cameras — when the house has an alarm, a lock, a camera or a gate |
 | **Media** | what plays now, then every other player |
 | **Agenda** | the calendars in a month view, the to-do lists, the timers, the scripts and automations to run by hand — when there are calendars, timers, things to run, or more than one list |
-| **Sensors** | device batteries, phones, the people, the openings (when there is no Security view), the plants, the helpers, the updates, the first camera |
+| **Sensors** | device batteries, phones, the people and the map of their zones, the openings (when there is no Security view), the plants, the helpers, the updates, the first camera |
 
-Views a house has nothing for are left out. Every view keeps the same three columns, so the header never moves
-between tabs, and blocks are cut into the columns so that they end on one line.
+Views a house has nothing for are left out. Every view keeps the same three columns (two on the wall), so the header
+never moves between tabs, and blocks are cut into the columns so that they end on one line. A room's page is a
+subview: it opens from its card, never from the tabs, and its heading leads back.
 
 ## How it reads a home
 

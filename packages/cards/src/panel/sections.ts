@@ -2,13 +2,14 @@ import {
   type CardLanguage,
   HOUSE_DEFAULTS,
   LANGUAGES,
+  localize,
   offeredLanguages,
   parsePalette,
   resolveLanguage,
   type Scope,
   wearsLook,
 } from '@fluvy/core';
-import { chips, emptyState, head, icon, listRow, options } from '@fluvy/ui';
+import { chips, head, icon, listRow, options } from '@fluvy/ui';
 import '@fluvy/ui/select';
 import type { SelectChangeDetail, SelectOption } from '@fluvy/ui/select';
 import {
@@ -24,6 +25,12 @@ import {
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
+  optionalViews,
+  TEMPLATES,
+  type Template,
+  type TemplateOption,
+} from '../strategy/templates.js';
+import {
   ACCENTS,
   accentFor,
   DEFAULT_CUSTOM,
@@ -33,6 +40,7 @@ import {
   lookTitle,
   paletteTitle,
   swatchColors,
+  type DashboardInfo,
   type PanelContext,
   type StringKey,
   TRANSLATING_URL,
@@ -329,10 +337,14 @@ export function appearancePreview(ctx: PanelContext, preview: TemplateResult): T
   </section>`;
 }
 
-/** The automatic dashboard's cards as its options draw them. */
-export function dashboardPreview(ctx: PanelContext, preview: TemplateResult): TemplateResult {
+/** A dashboard's cards as its options draw them. */
+export function dashboardPreview(
+  ctx: PanelContext,
+  preview: TemplateResult,
+  dashboard: string,
+): TemplateResult {
   return html`<section class="fv-card pn-card pn-card--preview">
-    ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('dashboard.preview_sub') })}
+    ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('dashboard.preview_of', { dashboard }) })}
     ${preview}
   </section>`;
 }
@@ -563,138 +575,202 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
     }`;
 }
 
-/* ---------- the automatic dashboard ---------- */
+/* ---------- the dashboards ---------- */
 
-/** One choice of the dashboard's cards: the default writes nothing (the key goes). */
-function styleChoice(
+/** One choice of a dashboard's option: the first value is the default and writes nothing (the key goes). */
+function optionChoice(
   ctx: PanelContext,
-  key: string,
+  urlPath: string,
+  option: Extract<TemplateOption, { kind: 'choice' }>,
   current: unknown,
-  choices: readonly { readonly value: string; readonly label: StringKey }[],
 ): TemplateResult {
-  const [fallback] = choices;
-  const chosen = typeof current === 'string' ? current : fallback?.value;
+  const [fallback] = option.values;
+  const chosen = option.values.some((known) => known.value === current) ? current : fallback?.value;
   return choice(
-    choices.map((option) => ({
-      key: option.value,
-      label: ctx.t(option.label),
-      active: chosen === option.value,
+    option.values.map((known) => ({
+      key: String(known.value),
+      label: ctx.t(
+        known.label,
+        typeof known.value === 'number' ? { count: known.value } : undefined,
+      ),
+      active: chosen === known.value,
     })),
     ctx.admin
-      ? (value) => ctx.editStrategy({ [key]: value === fallback?.value ? undefined : value })
+      ? (key) => {
+          const value = option.values.find((known) => String(known.value) === key)?.value;
+          ctx.editStrategy(urlPath, {
+            [option.key]: value === fallback?.value ? undefined : value,
+          });
+        }
+      : null,
+  );
+}
+
+/** Which rooms a dashboard shows, a chip a room; every room chosen (the default) writes nothing. */
+function areasChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
+  const rooms = Object.values(ctx.hass.areas ?? {}).sort((a, b) => a.name.localeCompare(b.name));
+  const chosen = Array.isArray(current) ? new Set(current as readonly string[]) : null;
+  return choice(
+    rooms.map((area) => ({
+      key: area.area_id,
+      label: area.name,
+      active: chosen ? chosen.has(area.area_id) : true,
+    })),
+    ctx.admin
+      ? (key) => {
+          const next = new Set(chosen ?? rooms.map((area) => area.area_id));
+          if (next.has(key)) next.delete(key);
+          else next.add(key);
+          const every = next.size === 0 || rooms.every((area) => next.has(area.area_id));
+          ctx.editStrategy(urlPath, {
+            areas: every ? undefined : rooms.map((a) => a.area_id).filter((id) => next.has(id)),
+          });
+        }
       : null,
   );
 }
 
 export interface DashboardActions {
-  create(): void;
+  create(template: Template): void;
+  recreate(urlPath: string): void;
   open(urlPath: string): void;
-  /** Lists the automatic dashboard in Home Assistant's sidebar, or not. */
-  showInSidebar(on: boolean): void;
-  /** The automatic dashboard is being created: the row says so and does not take a second tap. */
-  readonly creating: boolean;
+  /** Lists a dashboard in Home Assistant's sidebar, or not. */
+  showInSidebar(urlPath: string, on: boolean): void;
+  /** The url path of the dashboard being created ('' when none): its row says so and takes no second tap. */
+  readonly creating: string;
+  /** The url path of the dashboard whose Recreate row is armed ('' when none). */
+  readonly recreateArmed: string;
 }
 
-export function dashboard(
+/** A dashboard's options: its template's, each as rows (the views) or chips (a choice, the rooms), then its rows. */
+function dashboardOptions(
   ctx: PanelContext,
-  views: readonly { readonly key: string; readonly title: string; readonly icon: string }[],
+  dashboard: DashboardInfo,
   actions: DashboardActions,
 ): TemplateResult {
-  const auto = ctx.dashboards.find((d) => d.strategy);
-  const strategy = ctx.strategy ?? {};
+  const template = dashboard.template as Template;
+  const strategy = ctx.strategyOf(dashboard.urlPath) ?? {};
   const hidden = new Set(Array.isArray(strategy['hide']) ? (strategy['hide'] as string[]) : []);
+  const armed = actions.recreateArmed === dashboard.urlPath;
+  const [first] = typeof template.views === 'function' ? [] : template.views;
+  return html`<section class="fv-card pn-card ${armed ? 'is-armed' : ''}">
+    ${head({
+      icon: template.icon,
+      title: dashboard.title,
+      sub: ctx.t(ctx.admin ? 'dashboard.cards_sub' : 'scope.admin_only'),
+    })}
+    ${template.options.map((option) => {
+      // a house without areas has no rooms to choose from
+      if (option.kind === 'areas' && !Object.keys(ctx.hass.areas ?? {}).length) return nothing;
+      if (option.kind === 'views')
+        return html`<p class="fv-label pn-label">${ctx.t(option.label)}</p>
+          <div class="pn-rows">
+            ${
+              first
+                ? listRow({
+                    icon: first.icon,
+                    title: localize(ctx.hass, first.title),
+                    trailing: 'value',
+                    value: ctx.t('dashboard.always'),
+                  })
+                : nothing
+            }
+            ${optionalViews(template).map((view) =>
+              listRow({
+                icon: view.icon,
+                title: localize(ctx.hass, view.title),
+                trailing: 'switch',
+                on: !hidden.has(view.key),
+                readonly: !ctx.admin,
+                onToggle: (on) => {
+                  const hide = on
+                    ? [...hidden].filter((key) => key !== view.key)
+                    : [...hidden, view.key];
+                  ctx.editStrategy(dashboard.urlPath, { hide: hide.length ? hide : undefined });
+                },
+              }),
+            )}
+          </div>`;
+      return html`<p class="fv-label pn-label">${ctx.t(option.label)}</p>
+        ${
+          option.kind === 'areas'
+            ? areasChoice(ctx, dashboard.urlPath, strategy['areas'])
+            : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
+        }`;
+    })}
+    ${
+      ctx.admin
+        ? html`<div class="pn-rows">
+            ${
+              dashboard.id
+                ? listRow({
+                    icon: 'menu',
+                    title: ctx.t('dashboard.sidebar'),
+                    sub: ctx.t('dashboard.sidebar_sub'),
+                    trailing: 'switch',
+                    on: dashboard.inSidebar ?? false,
+                    onToggle: (on) => actions.showInSidebar(dashboard.urlPath, on),
+                  })
+                : nothing
+            }
+            ${listRow({
+              icon: 'auto',
+              tone: armed ? 'warning' : 'neutral',
+              title: ctx.t(armed ? 'dashboard.recreate_armed' : 'dashboard.recreate'),
+              sub: ctx.t(armed ? 'about.reset_cancels' : 'dashboard.recreate_sub'),
+              trailing: 'none',
+              onTap: () => actions.recreate(dashboard.urlPath),
+            })}
+          </div>`
+        : nothing
+    }
+  </section>`;
+}
+
+/**
+ * The Dashboards tab: the five templates as rows (a created one opens; an administrator creates the others with
+ * one tap), then a card of options per dashboard the house has.
+ */
+export function dashboards(ctx: PanelContext, actions: DashboardActions): TemplateResult {
   return html`<section class="fv-card pn-card">
       ${head({ icon: 'grid', title: ctx.t('dashboard.title'), sub: ctx.t('dashboard.sub') })}
-      ${
-        auto
-          ? html`<div class="pn-rows">
-              ${listRow({
-                icon: auto.icon ?? 'fluvy:sun',
-                tone: 'accent',
-                title: auto.title,
-                sub: `/${auto.urlPath}`,
-                trailing: 'chevron',
-                onTap: () => actions.open(auto.urlPath),
-              })}
-              ${
-                ctx.admin && auto.id
-                  ? listRow({
-                      icon: 'menu',
-                      title: ctx.t('dashboard.sidebar'),
-                      sub: ctx.t('dashboard.sidebar_sub'),
-                      trailing: 'switch',
-                      on: auto.inSidebar ?? false,
-                      onToggle: (on) => actions.showInSidebar(on),
-                    })
-                  : nothing
-              }
-            </div>`
-          : ctx.admin
-            ? html`<div class="pn-rows">
-                ${listRow({
-                  icon: actions.creating ? 'auto' : 'plus',
-                  tone: 'accent',
-                  title: ctx.t(actions.creating ? 'dashboard.creating' : 'dashboard.create'),
-                  sub: ctx.t('dashboard.create_sub'),
-                  // it acts at once (it opens nothing): no chevron
-                  trailing: 'none',
-                  onTap: actions.creating ? undefined : actions.create,
-                })}
-              </div>`
-            : emptyState('grid', ctx.t('dashboard.missing'))
-      }
+      <div class="pn-rows">
+        ${TEMPLATES.map((template) => {
+          const dashboard = ctx.dashboards.find((d) => d.template?.id === template.id);
+          if (dashboard)
+            return listRow({
+              icon: dashboard.icon ?? template.icon,
+              tone: 'accent',
+              title: dashboard.title,
+              sub: `/${dashboard.urlPath}`,
+              trailing: 'chevron',
+              onTap: () => actions.open(dashboard.urlPath),
+            });
+          const creating = actions.creating === template.url;
+          return listRow({
+            icon: template.icon,
+            title: ctx.t(template.title),
+            sub: ctx.t(
+              creating
+                ? 'dashboard.creating'
+                : ctx.admin
+                  ? template.description
+                  : 'dashboard.missing',
+            ),
+            ...(ctx.admin
+              ? {
+                  trailing: 'button' as const,
+                  button: ctx.t('dashboard.create'),
+                  onTap: creating ? undefined : () => actions.create(template),
+                }
+              : { trailing: 'none' as const }),
+          });
+        })}
+      </div>
     </section>
-    ${
-      auto
-        ? html`<section class="fv-card pn-card">
-              ${head({ icon: 'list', title: ctx.t('dashboard.views'), ...(ctx.admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
-              <div class="pn-rows">
-                ${views.map((view) =>
-                  view.key === 'home'
-                    ? listRow({
-                        icon: view.icon,
-                        title: view.title,
-                        trailing: 'value',
-                        value: ctx.t('dashboard.always'),
-                      })
-                    : listRow({
-                        icon: view.icon,
-                        title: view.title,
-                        trailing: 'switch',
-                        on: !hidden.has(view.key),
-                        readonly: !ctx.admin,
-                        onToggle: (on) => {
-                          const hide = on
-                            ? [...hidden].filter((key) => key !== view.key)
-                            : [...hidden, view.key];
-                          ctx.editStrategy({ hide: hide.length ? hide : undefined });
-                        },
-                      }),
-                )}
-              </div>
-            </section>
-            <section class="fv-card pn-card">
-              ${head({ icon: 'sliders', title: ctx.t('dashboard.cards'), sub: ctx.t(ctx.admin ? 'dashboard.cards_sub' : 'scope.admin_only') })}
-              <p class="fv-label pn-label">${ctx.t('dashboard.thermostat')}</p>
-              ${styleChoice(ctx, 'thermostat_variant', strategy['thermostat_variant'], [
-                { value: 'dial', label: 'dashboard.dial' },
-                { value: 'compact', label: 'dashboard.compact' },
-                { value: 'ruler', label: 'dashboard.ruler' },
-              ])}
-              <p class="fv-label pn-label">${ctx.t('dashboard.tiles')}</p>
-              ${styleChoice(ctx, 'tile_size', strategy['tile_size'], [
-                { value: 'large', label: 'dashboard.large' },
-                { value: 'compact', label: 'dashboard.rows' },
-              ])}
-              <p class="fv-label pn-label">${ctx.t('dashboard.flow')}</p>
-              ${styleChoice(ctx, 'flow_style', strategy['flow_style'], [
-                { value: 'ribbons', label: 'dashboard.ribbons' },
-                { value: 'rail', label: 'dashboard.rail' },
-                { value: 'legs', label: 'dashboard.legs' },
-              ])}
-            </section>`
-        : nothing
-    }`;
+    ${ctx.dashboards
+      .filter((dashboard) => dashboard.template)
+      .map((dashboard) => dashboardOptions(ctx, dashboard, actions))}`;
 }
 
 /* ---------- preferences ---------- */

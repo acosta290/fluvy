@@ -3,21 +3,30 @@ import { demoHass } from '@fluvy/demo-home';
 import { describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
 import '../index.js';
-import { defineHomeStrategy } from './define.js';
-import { FluvyHomeStrategy } from './home-strategy.js';
+import { defineStrategies, TEMPLATE_IDS } from './define.js';
+import { generate } from './generate.js';
+import { TEMPLATES } from './templates.js';
 
-describe('the strategy defined for Home Assistant', () => {
-  it('answers with the strategy’s own views once its file has arrived', async () => {
-    defineHomeStrategy();
-    defineHomeStrategy(); // a second definition is not an error: the tag is defined once
-    const defined = customElements.get('ll-strategy-dashboard-fluvy-home') as unknown as {
-      generate: (config: unknown, hass: unknown) => Promise<unknown>;
-    };
-    expect(defined).toBeDefined();
-    const config = { type: 'custom:fluvy-home' as const };
+describe('the strategies defined for Home Assistant', () => {
+  it('defines one element per template, and names the same five the templates do', () => {
+    defineStrategies();
+    defineStrategies(); // a second definition is not an error: each tag is defined once
+    for (const id of TEMPLATE_IDS)
+      expect(customElements.get(`ll-strategy-dashboard-fluvy-${id}`)).toBeDefined();
+    expect(TEMPLATES.map((template) => template.id)).toEqual(TEMPLATE_IDS);
+  });
+
+  it('answers with the template’s own views once its file has arrived', async () => {
+    defineStrategies();
     const hass = demoHass() as never;
-    await expect(defined.generate(config, hass)).resolves.toEqual(
-      await FluvyHomeStrategy.generate(config, hass),
-    );
+    for (const template of TEMPLATES) {
+      const defined = customElements.get(
+        `ll-strategy-dashboard-fluvy-${template.id}`,
+      ) as unknown as {
+        generate: (config: unknown, hass: unknown) => Promise<unknown>;
+      };
+      const config = { type: template.type };
+      await expect(defined.generate(config, hass)).resolves.toEqual(await generate(config, hass));
+    }
   });
 });

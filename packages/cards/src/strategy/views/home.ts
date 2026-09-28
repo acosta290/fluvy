@@ -12,118 +12,18 @@ import {
   thermostat,
   tileRows,
   when,
-} from './layout.js';
-import type {
-  Card,
-  EnergyPrefs,
-  EnergyRoles,
-  Section,
-  StrategyContext,
-  ViewSpec,
-} from './types.js';
-import {
-  BATTERY_POWER,
-  GRID,
-  HOME_POWER,
-  LIGHT_WORDS,
-  OUTDOOR,
-  SOLAR,
-  TODAY,
-  type HomeRegistry,
-} from './home-registry.js';
-import { roomsOf, roomsView } from './rooms.js';
+} from '../layout.js';
+import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
+import { LIGHT_WORDS, OUTDOOR, TODAY, type HomeRegistry } from '../home-registry.js';
+import { roomsOf, roomsView } from '../rooms.js';
 
 /*
- * The five views of the automatic dashboard, in the layout of the approved `/fluvy-home`: each one is
- * a small builder from the house (`HomeRegistry`) to sections of fluvy cards. Every list is capped so
- * a big house still reads.
+ * The views of the home dashboard (`custom:fluvy-home`), in the layout of the approved `/fluvy-home`: each one is
+ * a small builder from the house (`HomeRegistry`) to sections of fluvy cards. Every list is capped so a big house
+ * still reads. The other templates borrow these builders.
  */
 
-export type {
-  Card,
-  CardStyle,
-  EnergyPrefs,
-  EnergyRoles,
-  Section,
-  StrategyContext,
-  View,
-  ViewKey,
-  ViewSpec,
-} from './types.js';
-export { helloCard, tabsCard } from './layout.js';
-
-/* ---------- energy roles ---------- */
-
-/** A source's power sensor from the energy preferences and whether it counts towards the house as negative. */
-function preferredPower(
-  home: HomeRegistry,
-  prefs: EnergyPrefs | null,
-  type: 'solar' | 'grid' | 'battery',
-): { id: string; inverted: boolean } | undefined {
-  for (const source of prefs?.energy_sources ?? []) {
-    if (source.type !== type) continue;
-    const inverted = source.power_config?.stat_rate_inverted;
-    if (inverted) {
-      if (home.hasState(inverted)) return { id: inverted, inverted: true };
-      continue;
-    }
-    const plain = source.power_config?.stat_rate ?? source.stat_rate;
-    if (plain && home.hasState(plain)) return { id: plain, inverted: false };
-  }
-  return undefined;
-}
-
-export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): EnergyRoles {
-  const { powers, energies } = home;
-  // the energy dashboard's own power sensors first (they carry their sign); otherwise the readings by their words
-  const solarPref = preferredPower(home, prefs, 'solar');
-  const gridPref = preferredPower(home, prefs, 'grid');
-  const batteryPref = preferredPower(home, prefs, 'battery');
-  const solarPower = solarPref?.id ?? home.pick(powers, SOLAR);
-  const gridPower = gridPref?.id ?? home.pick(powers, GRID);
-  const batteryPower =
-    batteryPref?.id ??
-    home.pick(
-      powers.filter((id) => id !== solarPower && id !== gridPower),
-      BATTERY_POWER,
-    );
-  const homePower = home.pick(
-    powers.filter((id) => ![solarPower, gridPower, batteryPower].includes(id)),
-    HOME_POWER,
-  );
-  const solarToday =
-    home.pick(
-      energies.filter((id) => SOLAR.test(home.label(id))),
-      TODAY,
-    ) ?? prefs?.energy_sources?.find((s) => s.type === 'solar')?.stat_energy_from;
-  const consumption = (prefs?.device_consumption ?? [])
-    .map((d) => d.stat_consumption)
-    .filter((id) => home.hasState(id));
-  // each device's power: the power sensor beside its energy statistic (same device, or the same name stem);
-  // without devices in the energy dashboard, the appliances' own plugs
-  const powerBeside = (id: string): string | undefined =>
-    home.readoutsOf(id).find((reading) => home.deviceClass(reading) === 'power');
-  const consumptionPowers = (consumption.length ? consumption : home.appliances)
-    .map(powerBeside)
-    .filter((p): p is string => Boolean(p));
-  return {
-    solarPower,
-    gridPower,
-    batteryPower,
-    homePower,
-    gridInvert: gridPref?.inverted ?? false,
-    batteryInvert: batteryPref?.inverted ?? false,
-    gridSigned: gridPref !== undefined,
-    solarToday,
-    consumption,
-    consumptionPowers,
-    any: Boolean(solarPower || gridPower || consumption.length || energies.length),
-  };
-}
-
-/* ---------- views ---------- */
-
-function homeView(ctx: StrategyContext): Section[] {
+export function homeView(ctx: StrategyContext): Section[] {
   const { home, t, base, weather, energy } = ctx;
   const { lights, appliances, climate, temperatures } = home;
   const secured = [...home.domain('lock'), ...home.openings];
@@ -187,7 +87,7 @@ function homeView(ctx: StrategyContext): Section[] {
 }
 
 /** By area when areas are assigned, else indoor / outdoor; the biggest group first; light automations as scenes last. */
-function lightsView(ctx: StrategyContext): Section[] {
+export function lightsView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   const groups = new Map<string, string[]>();
   for (const id of home.lights) {
@@ -220,7 +120,7 @@ function lightsView(ctx: StrategyContext): Section[] {
 }
 
 /** Thermostats first, then the forecast, humidity and temperatures, shared out so the three columns end level. */
-function climateView(ctx: StrategyContext): Section[] {
+export function climateView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
   return balanced([
     ...home.climate.slice(0, 4).map((id) => thermostat(id, ctx.style)),
@@ -241,7 +141,7 @@ function climateView(ctx: StrategyContext): Section[] {
 }
 
 /** The flow and the day's curve first, then what the sun makes and what the house draws, shared out over three level columns. */
-function energyView(ctx: StrategyContext): Section[] {
+export function energyView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { solarPower, gridPower, solarToday, consumption, consumptionPowers } = energy;
   return balanced([
@@ -276,11 +176,11 @@ function energyView(ctx: StrategyContext): Section[] {
 }
 
 /** Whether the house has a security view: an alarm, a lock, a camera or a way in (the openings then move there). */
-const secured = (home: HomeRegistry): boolean =>
+export const secured = (home: HomeRegistry): boolean =>
   Boolean(home.alarms.length || home.locks.length || home.cameras.length || home.gateways.length);
 
 /** The alarm first, then what opens (locks, garage doors and gates), what is open, and the cameras. */
-function securityView({ home, t }: StrategyContext): Section[] {
+export function securityView({ home, t }: StrategyContext): Section[] {
   return balanced([
     ...home.alarms.slice(0, 2).map((id) => full('alarm', { entity: id, ...home.named(id) })),
     ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
@@ -293,7 +193,7 @@ function securityView({ home, t }: StrategyContext): Section[] {
 }
 
 /** What plays now (only while something does), then every other player of the house. */
-function mediaView({ home }: StrategyContext): Section[] {
+export function mediaView({ home }: StrategyContext): Section[] {
   const players = home.players.slice(0, 6);
   const playing =
     players.find((id) => home.state(id) === 'playing') ??
@@ -307,7 +207,7 @@ function mediaView({ home }: StrategyContext): Section[] {
 }
 
 /** The calendars, the lists, the timers and what a person runs by hand. */
-function agendaView({ home, t }: StrategyContext): Section[] {
+export function agendaView({ home, t }: StrategyContext): Section[] {
   return balanced([
     ...when(home.calendars.length, () => [
       full('calendar', { entities: home.calendars.slice(0, 3), view: 'month-day' }),
@@ -320,7 +220,7 @@ function agendaView({ home, t }: StrategyContext): Section[] {
   ]);
 }
 
-function sensorsView({ home, t }: StrategyContext): Section[] {
+export function sensorsView({ home, t }: StrategyContext): Section[] {
   const zones = home.zones.filter((id) => id !== 'zone.home');
   const { batteries, phones, openings, plants, helpers, people, updates } = home;
   // what runs on batteries, who is home, what is open, then the helpers and the updates
@@ -367,8 +267,8 @@ function sensorsView({ home, t }: StrategyContext): Section[] {
   ]);
 }
 
-/** The views in tab order. Home is always there; the others only when the house has what they show. */
-export const VIEWS: readonly ViewSpec[] = [
+/** The home dashboard's views in tab order. Home is always there; the others only when the house has what they show. */
+export const HOME_VIEWS: readonly ViewSpec[] = [
   { key: 'home', icon: 'fluvy:home', title: 'strategy.home', build: homeView, when: () => true },
   {
     key: 'rooms',

@@ -42,7 +42,7 @@ import { FluvyWeatherCard } from './weather/weather-card.js';
 import { FluvyRoomCard } from './room/room-card.js';
 import { FluvyMapCard } from './map/map-card.js';
 import { FluvyRowsEditor } from './shared/rows-editor.js';
-import { defineHomeStrategy } from './strategy/define.js';
+import { defineStrategies } from './strategy/define.js';
 
 /**
  * The fluvy card catalogue. Registration happens while the module evaluates — never after an
@@ -295,8 +295,8 @@ for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
 if (!customElements.get('fluvy-rows-editor'))
   customElements.define('fluvy-rows-editor', FluvyRowsEditor);
-// the dashboard strategy a fresh install starts with: `strategy: { type: custom:fluvy-home }` (its file is fetched when asked)
-defineHomeStrategy();
+// the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
+defineStrategies();
 
 // fluvy's settings: the element of the `panel_custom` Home Assistant shows in the sidebar
 

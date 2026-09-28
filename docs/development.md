@@ -15,7 +15,7 @@ packages/core/             @fluvy/core     Home Assistant types, entity resoluti
                                            the card base class; src/shell/ = the sheets for Home Assistant's own pages;
                                            src/settings/ = Fluvy's settings; src/look/ = the look engine
 packages/cards/            @fluvy/cards    one folder per card, registered in src/index.ts (see packages/cards/README.md);
-                                           src/strategy/ = the automatic dashboard; src/panel/ = the settings panel
+                                           src/strategy/ = the automatic dashboards (the templates); src/panel/ = the settings panel
 packages/bundle/           @fluvy/bundle   the build: the entry, its chunks, the loader and the fonts
 packages/fonts/            Inter (OFL), subset
 packages/demo-home/        @fluvy/demo-home  the fictional house the tests and the playground share
@@ -79,7 +79,8 @@ pnpm --filter @fluvy/playground dev      # http://127.0.0.1:5183/
 `?sheet=home` mounts one sheet (default: all); `mode=dark`, `width=392`, `lang=es`, `theme=off` (the cards on their
 own tokens), `palette=volt`, `shape=round`, `accent=%23ff4a1a&character=vivid&base=cool`, `compare=linen,volt`,
 `panel=appearance&state=pending,guest` (`panel=preferences&state=menu` opens the language menu; `nopopover=1` takes
-the Popover API away, as an older WebView has none), `activity=1&moment=burst`, `history=1&moment=week`. The
+the Popover API away, as an older WebView has none; `panel=dashboard&state=dashboards` has every template's dashboard
+created, `recreate` its Recreate row armed), `activity=1&moment=burst`, `history=1&moment=week`. The
 playground's `hass` is a small, honest stand-in: a state store, service calls that change it after a delay, and
 canned answers for the reads the cards make.
 

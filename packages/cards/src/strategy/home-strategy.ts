@@ -1,7 +1,8 @@
 /**
- * `custom:fluvy-home` — the dashboard a new install gets without configuring anything: five views
- * (Home, Lights, Climate, Energy, Sensors) built from the entity, device and area registries and
- * from the energy dashboard's own preferences, in the layout of the approved `/fluvy-home`.
+ * `custom:fluvy-home` — the dashboard a new install gets without configuring anything: its views (Home, Rooms,
+ * Lights, Climate, Energy, Security, Media, Agenda, Sensors — each when the house has what it shows) built from
+ * the entity, device and area registries and from the energy dashboard's own preferences, in the layout of the
+ * approved `/fluvy-home`. The other templates (`templates.ts`) are built the same way.
  *
  * Every card is a fluvy card. A section that would be empty is left out, a view without content is
  * left out. Every view opens with the greeting and the tabs and is three columns wide, so the header

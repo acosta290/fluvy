@@ -19,6 +19,7 @@ import {
   type PaletteMode,
   type PaletteName,
 } from '@fluvy/tokens/runtime';
+import type { Template } from '../strategy/templates.js';
 
 /** Where a person who speaks a language better than we do can help. */
 export const TRANSLATING_URL = 'https://github.com/acosta290/fluvy/blob/main/docs/translating.md';
@@ -36,8 +37,10 @@ export type HouseEdit = Partial<
 export type PersonalEdit = Partial<
   Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'activityCard'>
 >;
-/** Options of the automatic dashboard's strategy; `undefined` takes a key away (back to its default). */
+/** Options of a dashboard's strategy; `undefined` takes a key away (back to its default). */
 export type StrategyEdit = Readonly<Record<string, unknown>>;
+/** The pending edits of every dashboard, by its url path. */
+export type StrategyEdits = Readonly<Record<string, StrategyEdit>>;
 
 /**
  * What every section renders from, and the panel's actions it may call. Nothing a tab changes is saved at once:
@@ -62,15 +65,15 @@ export interface PanelContext {
   readonly dirty: boolean;
   readonly houseEdit: HouseEdit;
   readonly personalEdit: PersonalEdit;
-  readonly strategyEdit: StrategyEdit;
+  readonly strategyEdits: StrategyEdits;
   readonly tryOnApp: boolean;
   readonly dashboards: readonly DashboardInfo[];
-  /** The automatic dashboard's strategy as saved, with its edits on top (undefined: there is none). */
-  readonly strategy: Readonly<Record<string, unknown>> | undefined;
+  /** A dashboard's strategy as saved, with its edits on top (undefined: it is not one of ours). */
+  strategyOf(urlPath: string): Readonly<Record<string, unknown>> | undefined;
   setDraft(look: Partial<Look>): void;
   editHouse(edit: HouseEdit): void;
   editPersonal(edit: PersonalEdit): void;
-  editStrategy(edit: StrategyEdit): void;
+  editStrategy(urlPath: string, edit: StrategyEdit): void;
   setTryOnApp(on: boolean): void;
   /** Saves every edit; a changed look for the house or for this person. */
   apply(to: 'house' | 'me'): void;
@@ -83,8 +86,9 @@ export interface DashboardInfo {
   readonly title: string;
   /** Its sidebar icon (`mdi:…`, `fluvy:…`), when it has one. */
   readonly icon?: string;
-  /** The automatic dashboard's strategy options, when it is one. */
+  /** Its strategy as saved (`type` and the options), and the template that type names, when it is one of ours. */
   readonly strategy?: Record<string, unknown>;
+  readonly template?: Template;
   /** Its id in the dashboards collection and whether the sidebar lists it: what an administrator's list says. */
   readonly id?: string;
   readonly inSidebar?: boolean;
@@ -215,35 +219,6 @@ export function withEdit(
 
 export const sameLook = (a: Look, b: Look): boolean => lookKey(a) === lookKey(b);
 
-const OPTION_VALUES: Readonly<Record<string, readonly string[]>> = {
-  thermostat_variant: ['dial', 'compact', 'ruler'],
-  tile_size: ['large', 'compact'],
-  flow_style: ['ribbons', 'rail', 'legs'],
-  room_variant: ['photo', 'tile', 'row'],
-};
-
-/**
- * The automatic dashboard's options from a settings file: only the keys its strategy knows, each well formed (a
- * house's own entities, such as its weather, do not travel).
- */
-export function strategyOptions(raw: unknown, views: readonly string[]): Record<string, unknown> {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-  const value = raw as Record<string, unknown>;
-  const options: Record<string, unknown> = {};
-  for (const [key, allowed] of Object.entries(OPTION_VALUES)) {
-    const option = value[key];
-    if (typeof option === 'string' && allowed.includes(option)) options[key] = option;
-  }
-  const hide = value['hide'];
-  if (Array.isArray(hide)) {
-    const known = hide.filter(
-      (key): key is string => typeof key === 'string' && key !== 'home' && views.includes(key),
-    );
-    if (known.length) options['hide'] = known;
-  }
-  return options;
-}
-
 /** A palette's name: a preset's own (the same in every language), or "Custom". */
 export const paletteTitle = (choice: PaletteChoice, t: PanelContext['t']): string =>
   isCustom(choice)
@@ -270,15 +245,6 @@ export function changeTitle(from: Look, to: Look, t: PanelContext['t']): string 
   return parts.join(' · ');
 }
 
-/** The strategy options by the label the Dashboard tab gives them. */
-const STRATEGY_LABELS: Readonly<Record<string, StringKey>> = {
-  hide: 'dashboard.views',
-  thermostat_variant: 'dashboard.thermostat',
-  tile_size: 'dashboard.tiles',
-  flow_style: 'dashboard.flow',
-  room_variant: 'dashboard.rooms',
-};
-
 /** Every pending change as a line of the apply bar, in the order of the tabs. */
 export function changeLines(ctx: PanelContext): string[] {
   const { t, shown } = ctx;
@@ -293,8 +259,13 @@ export function changeLines(ctx: PanelContext): string[] {
   if (house.icons !== undefined) lines.push(`${t('scope.icons')} · ${onOff(house.icons)}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
-  for (const key of Object.keys(ctx.strategyEdit))
-    lines.push(`${t('dashboard.title')} · ${t(STRATEGY_LABELS[key] ?? 'dashboard.cards')}`);
+  for (const [urlPath, edit] of Object.entries(ctx.strategyEdits)) {
+    const dashboard = ctx.dashboards.find((d) => d.urlPath === urlPath);
+    for (const key of Object.keys(edit)) {
+      const label = dashboard?.template?.options.find((option) => option.key === key)?.label;
+      lines.push(`${dashboard?.title ?? urlPath} · ${t(label ?? 'dashboard.cards')}`);
+    }
+  }
   const personal = ctx.personalEdit;
   if (personal.language)
     lines.push(
