@@ -334,7 +334,7 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   const cam = frame(page, 'Camera').locator('fluvy-camera-card');
   const srcs = () =>
     cam.evaluate((el) =>
-      Array.from(el.shadowRoot.querySelectorAll('.dv-cam__frame')).map(
+      Array.from(el.shadowRoot.querySelectorAll('.fv-plate__img')).map(
         (i) => i.getAttribute('src') ?? '',
       ),
     );
@@ -346,7 +346,7 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   check(
     'camera: on screen and in front, the first frame is requested and shown',
     first.some(Boolean) &&
-      (await cam.locator('.dv-cam__frame.is-on').count()) === 1 &&
+      (await cam.locator('.fv-plate__img.is-on').count()) === 1 &&
       (await cam.locator('.dv-cam__live').count()) === 1,
   );
   await cam.evaluate((el) => {
