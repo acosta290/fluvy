@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-09-28
+
 ### Removed
 
 - The swipe between a dashboard's views (1.2.0). Home Assistant draws one view at a time, so the arriving view
