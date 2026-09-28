@@ -1,5 +1,6 @@
 import type { FluvyCardConfig } from '@fluvy/core';
 import type { FirstWeekday } from '../shared/dates.js';
+import { type Tone } from '@fluvy/ui';
 
 export const VIEWS = [
   'agenda',
@@ -28,15 +29,23 @@ export const CALENDAR_TONES = [
 ] as const;
 export type CalendarTone = (typeof CALENDAR_TONES)[number];
 
+/** One calendar of the card: its entity, and a name, a tone or a colour of its own. */
+export interface CalendarItem {
+  entity: string;
+  name?: string;
+  /** One of the calendar tones; anything else (the accent included) is ignored: the accent means today. */
+  tone?: string;
+  /** Its own colour instead: the palette's family of it paints its events. */
+  color?: string;
+}
+
 export interface CalendarCardConfig extends FluvyCardConfig {
-  /** One or more `calendar.*` entities. */
-  entities: readonly string[];
-  view?: CalendarView;
+  /** One or more `calendar.*` entities, as ids or with a name, a tone or a colour each. */
+  calendars?: ReadonlyArray<string | CalendarItem>;
+  variant?: CalendarView;
   /** Which of the two tiles the `tile` view draws. */
   tile?: 'date' | 'next';
   title?: string;
-  /** entity id → tone. Calendars without one take the tones in order; anything else (the accent included) is ignored. */
-  tones?: Readonly<Record<string, string>>;
   first_weekday?: FirstWeekday;
   /** `upcoming`: how many days ahead (default 7). */
   days?: number;
@@ -50,7 +59,17 @@ export interface CalendarCardConfig extends FluvyCardConfig {
 }
 
 export const viewOf = (config: CalendarCardConfig | undefined): CalendarView =>
-  config?.view && VIEWS.includes(config.view) ? config.view : 'agenda';
+  config?.variant && VIEWS.includes(config.variant) ? config.variant : 'agenda';
+
+/** The card's calendars as items, in order; a bare id is an item with nothing of its own. */
+export const calendarsOf = (config: CalendarCardConfig | undefined): CalendarItem[] =>
+  (config?.calendars ?? [])
+    .map((item) => (typeof item === 'string' ? { entity: item } : item))
+    .filter((item) => typeof item.entity === 'string' && item.entity !== '');
+
+/** The ids of the card's calendars, in order. */
+export const idsOf = (config: CalendarCardConfig | undefined): string[] =>
+  calendarsOf(config).map((item) => item.entity);
 
 const whole = (value: unknown, fallback: number, min: number, max: number): number => {
   const number = Number(value);
@@ -70,10 +89,16 @@ export function hoursOf(config: CalendarCardConfig | undefined): {
   return { start, end: Math.max(start + 1, end) };
 }
 
-export function toneOf(config: CalendarCardConfig | undefined, entityId: string): CalendarTone {
-  const configured = config?.tones?.[entityId];
-  const known = CALENDAR_TONES.find((tone) => tone === configured);
+/** A calendar's tone: its own, else the accent when it has a colour of its own, else the next of the cycle. */
+export function toneOf(config: CalendarCardConfig | undefined, entityId: string): Tone {
+  const items = calendarsOf(config);
+  const index = Math.max(
+    0,
+    items.findIndex((item) => item.entity === entityId),
+  );
+  const item = items[index];
+  const known = CALENDAR_TONES.find((tone) => tone === item?.tone);
   if (known) return known;
-  const index = Math.max(0, config?.entities.indexOf(entityId) ?? 0);
+  if (item?.color) return 'accent';
   return CALENDAR_TONES[index % CALENDAR_TONES.length] ?? 'cool';
 }

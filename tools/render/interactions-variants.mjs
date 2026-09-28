@@ -11,7 +11,8 @@
  * and weather; a select's options fill their row unless asked for chips; a to-do list, a timer and a weather card
  * go without their extras when told; scenes stand one a row when asked and a scene tile without its subtitle;
  * a compact energy card and a compact production card are the head, the chart and its axis; a gauge's bar variant
- * is a level, not a dial; a distribution can be rows, one wearing its own colour; a humidity card can drop its trend.
+ * is a level, not a dial; a distribution can be rows, one wearing its own colour; a humidity card can drop its trend;
+ * a clock reads its older words as the newer ones; a calendar's events wear their calendar's own colour.
  */
 import { frame, startSuite } from './lib/suite.mjs';
 
@@ -407,6 +408,30 @@ const heightOf = async (card) =>
       (await noTrend.locator('.so-rows .fv-row').count()) === 1,
   );
   await page.close();
+}
+
+/* ---------- clocks and calendars: older words read as newer, a calendar's own colour ---------- */
+{
+  const page = await suite.sheet('clocks');
+  const older = frame(page, 'A4 side').locator('fluvy-clock-card').first();
+  const newer = frame(page, 'A4 side · newer words').locator('fluvy-clock-card').first();
+  check(
+    'a clock written in the older words draws the same side face as one in the newer',
+    (await older.locator('.ck-side__face').count()) === 1 &&
+      (await newer.locator('.ck-side__face').count()) === 1,
+  );
+  await page.close();
+  const calendars = await suite.sheet('calendar');
+  const coloured = frame(calendars, 'Calendars · named and coloured')
+    .locator('fluvy-calendar-card')
+    .first();
+  const plain = frame(calendars, 'Agenda').locator('fluvy-calendar-card').first();
+  check(
+    "a calendar's events wear their calendar's own colour",
+    (await coloured.locator('.cd-event__bar[data-accent]').count()) > 0 &&
+      (await plain.locator('.cd-event__bar[data-accent]').count()) === 0,
+  );
+  await calendars.close();
 }
 
 await suite.finish();

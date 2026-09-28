@@ -283,7 +283,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
       2,
       Math.min(4, Math.floor((this.contentWidth + 16) / 112), people.length),
     );
-    return html`<div class="am-people fv-cols" style="--am-people:${columns}">
+    return html`<div class="am-people fv-cols" data-align="center" style="--am-people:${columns}">
       ${people.map((person) => {
         const detail = this.detail(person);
         const line = detail ? `${person.word} · ${detail}` : person.word;

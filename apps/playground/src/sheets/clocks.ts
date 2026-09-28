@@ -122,6 +122,11 @@ export const sheet: SheetSpec = {
     { title: 'A3 all numerals', cards: [{ ...CLOCK, variant: 'analog', numerals: 'all' }] },
     { title: 'D3 12 h', cards: [{ ...CLOCK, variant: 'digital', hour12: true }] },
     { title: 'A4 side', cards: [{ ...CLOCK, variant: 'analog', layout: 'side' }] },
+    // the same side clock in the newer words (the other frames keep the older ones: they are read as before)
+    {
+      title: 'A4 side · newer words',
+      cards: [{ ...CLOCK, face: 'analog', variant: 'side', show_seconds: false, show_week: true }],
+    },
     {
       title: 'D4 weather beside the date',
       cards: [{ ...CLOCK, variant: 'digital', weather: 'weather.home', forecast: false }],

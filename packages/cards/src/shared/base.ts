@@ -6,7 +6,7 @@ import {
 } from '@fluvy/core';
 import { baseStyles, fitPills } from '@fluvy/ui';
 import type { CSSResultGroup, PropertyValues } from 'lit';
-import { normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
+import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { listsEditor, type EditorDefaults, type RowsListSpec } from './rows-editor.js';
 
 /** The base card's fields every editor may show; a card names the ones it honours. */
@@ -31,8 +31,8 @@ export const ENTITY_BASE: readonly BaseKey[] = [
  * against its config's interface by `configKeys`), `lists` (the lists edited item by item), `defaults` (what it does
  * for a key left out) and `aliases` (the older names it still reads) — and the base builds the editor from its
  * `getConfigForm()`. `editors.test.ts` holds every card to it: what the form and the lists show is exactly
- * `base ∪ keys`, and no older name is ever shown. A card's aliases are read on `setConfig`, so the card itself only
- * ever sees the newer names. (The names every card shares, `COMMON_ALIASES`, join here once every card reads them.)
+ * `base ∪ keys`, and no older name is ever shown. A card's aliases are read on `setConfig` — its own first, then
+ * the names every card shares (`COMMON_ALIASES`) — so the card itself only ever sees the newer names.
  */
 export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends FluvyCard<C> {
   static override styles: CSSResultGroup = [...baseStyles];
@@ -50,17 +50,19 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
 
   /** The visual editor: the card's form, its lists item by item, its defaults shown, its older names read. */
   static getConfigElement(): HTMLElement {
-    return listsEditor(
-      this.getConfigForm(),
-      this.lists,
-      this.defaults,
-      this.aliases ? [this.aliases] : [],
-    );
+    return listsEditor(this.getConfigForm(), this.lists, this.defaults, [
+      ...(this.aliases ? [this.aliases] : []),
+      COMMON_ALIASES,
+    ]);
   }
 
   override setConfig(config: LovelaceCardConfig): void {
     const { aliases } = this.constructor as typeof Card;
-    super.setConfig(aliases ? normaliseConfig(config, aliases) : config);
+    super.setConfig(
+      aliases
+        ? normaliseConfig(config, aliases, COMMON_ALIASES)
+        : normaliseConfig(config, COMMON_ALIASES),
+    );
   }
 
   private refit: (() => void) | undefined;

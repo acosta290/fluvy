@@ -3,24 +3,34 @@ import type { HaFormSchemaItem, LovelaceCardConfig } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { CATALOGUE } from '../index.js';
 import type { Card } from './base.js';
-import type { FluvyRowsEditor } from './rows-editor.js';
+import { COMMON_ALIASES } from './config.js';
+import { itemLabels, type FluvyRowsEditor } from './rows-editor.js';
 
 /**
  * The editors' contract (see `Card` in base.ts), held for every card of the catalogue: the editor is the base's,
  * built from the card's form, lists and defaults; the form never shows a list twice, nor an older name; a default
  * is for a field the editor shows; and, for a card under contract, what the form and the lists show is exactly
- * `base ∪ keys`. The cards not yet under contract are named here, so a card cannot lose its keys unnoticed and
- * the list can only shrink.
+ * `base ∪ keys`, and every field it shows has a word. A card not yet under contract would be named here, so a
+ * card cannot lose its keys unnoticed and the list can only shrink: every card is under it, and the set is empty.
  */
-const PENDING = new Set(['fluvy-clock-card', 'fluvy-calendar-card']);
+const PENDING = new Set<string>();
 
 type CardClass = typeof Card & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;
 };
 
+/** Every field a schema shows, through its grids. */
+const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+  schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
 /** Every field name a schema shows, through its grids. */
 const names = (schema: readonly HaFormSchemaItem[]): string[] =>
-  schema.flatMap((item) => (item.schema ? names(item.schema) : item.name ? [item.name] : []));
+  fields(schema).map((item) => item.name);
+/** A label that is a word: not the field's own name, not a catalogue key handed back for a word that is missing. */
+const isWord = (label: string | undefined, name: string): boolean =>
+  typeof label === 'string' &&
+  /\S/.test(label) &&
+  label !== name &&
+  !/^[a-z_-]+(\.[a-z_-]+)+$/.test(label);
 
 const cards = CATALOGUE.map(([tag, element]) => ({ tag, card: element as unknown as CardClass }));
 
@@ -64,8 +74,29 @@ describe('the editors’ contract', () => {
       // a conditional move (`forecast: none` → `show_forecast: false`) keeps its key: `forecast` is still a field
       for (const move of card.aliases?.keys ?? [])
         if (!move.when) expect(shown.has(move.from), move.from).toBe(false);
+      // the names every card reads as something else are never shown either
+      for (const move of COMMON_ALIASES.keys ?? [])
+        expect(shown.has(move.from), `${move.from} is a shared older name`).toBe(false);
     },
   );
+
+  it.each(cards)('$tag: every field the editor shows has a word', ({ card }) => {
+    const form = card.getConfigForm();
+    const key = (name: string): string => name;
+    for (const item of fields(form.schema))
+      expect(isWord(form.computeLabel?.(item, key), item.name), item.name).toBe(true);
+    for (const list of card.lists)
+      for (const item of fields(list.schema))
+        expect(
+          isWord(
+            list.computeLabel?.(item, key) ??
+              form.computeLabel?.(item, key) ??
+              itemLabels(item, key),
+            item.name,
+          ),
+          `${list.key}.${item.name}`,
+        ).toBe(true);
+  });
 
   it.each(cards)('$tag: what the form and the lists show is base ∪ keys', ({ tag, card }) => {
     if (!card.keys.length) {

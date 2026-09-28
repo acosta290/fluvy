@@ -181,7 +181,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [textField('name'), { name: 'chips', required: true, selector: { object: {} } }],
-      ...formLabels({}),
+      ...formLabels({ chips: 'editor.tabs' }),
     };
   }
 

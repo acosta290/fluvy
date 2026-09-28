@@ -1,4 +1,5 @@
 import {
+  english,
   localize,
   type HaFormSchemaItem,
   type HomeAssistant,
@@ -48,12 +49,16 @@ export type FormLabeler = (
 ) => string | undefined;
 
 /** Editor labels in the dashboard's language. `getConfigForm()` is static, so the language comes from the document. */
+/** A field's own editor word, when the catalogue has one (`show_rows` → `editor.show_rows`). */
+const editorKey = (name: string): MessageKey | undefined =>
+  Object.hasOwn(english.editor, name) ? (`editor.${name}` as MessageKey) : undefined;
+
 export function formLabels(map: Readonly<Record<string, MessageKey>> = {}): {
   readonly computeLabel: FormLabeler;
 } {
   return {
     computeLabel: (schema: HaFormSchemaItem) => {
-      const key = map[schema.name] ?? SHARED_LABELS[schema.name];
+      const key = map[schema.name] ?? SHARED_LABELS[schema.name] ?? editorKey(schema.name);
       if (!key) return undefined;
       return localize(editorLanguage(), key);
     },

@@ -158,7 +158,10 @@ export function eventRow(ctx: ViewContext, item: DayEvent): TemplateResult {
     eventAria(ctx, item),
     () => ctx.open(item.event.calendar),
     html`<span class="cd-event__time">${time}</span>
-      <span class="cd-event__bar fv-bar--${ctx.toneOf(item.event.calendar)}"></span>
+      <span
+        class="cd-event__bar fv-bar--${ctx.toneOf(item.event.calendar)}"
+        data-accent=${ctx.accentOf(item.event.calendar) ?? nothing}
+      ></span>
       <span class="fv-row__text"
         ><span class="fv-row__title">${titleOf(ctx, item)}</span
         ><span class="fv-row__sub">${placeOf(ctx, item)}</span></span

@@ -280,6 +280,19 @@ export const sheet: SheetSpec = {
       ],
     },
     { title: 'Six weeks', cards: [base('month-day', { _now: '2026-08-17T21:47:12' })] },
+    // calendars with a name, a tone or a colour of their own (`calendars` wins over the sheet's `entities`)
+    {
+      title: 'Calendars · named and coloured',
+      cards: [
+        base('agenda', {
+          calendars: [
+            { entity: SHEET[0], name: 'Home', color: 'teal' },
+            { entity: SHEET[1], tone: 'heat' },
+            SHEET[2],
+          ],
+        }),
+      ],
+    },
     {
       title: 'Week from Sunday',
       cards: [

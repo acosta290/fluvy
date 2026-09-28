@@ -4,6 +4,7 @@ import { html, nothing, type TemplateResult } from 'lit';
 import { FACE, fitText, textWidth } from '../fit.js';
 import type { ViewContext } from './context.js';
 import { onActivate, titleOf } from './shared.js';
+import { idsOf } from '../config.js';
 
 const s = strings('calendar');
 
@@ -153,6 +154,6 @@ function nextTile(ctx: ViewContext): TemplateResult {
 
 export function tileView(ctx: ViewContext): TemplateResult {
   if (ctx.status === 'unavailable' || ctx.status === 'failed')
-    return offTile(ctx, ctx.config.title ?? ctx.nameOf(ctx.config.entities[0] ?? ''));
+    return offTile(ctx, ctx.config.title ?? ctx.nameOf(idsOf(ctx.config)[0] ?? ''));
   return ctx.config.tile === 'next' ? nextTile(ctx) : dateTile(ctx);
 }

@@ -67,6 +67,7 @@ export function weekView(ctx: ViewContext): TemplateResult {
         broken ??
         html` <div
             class="fv-days cd-week"
+            data-align="center"
             role="group"
             aria-label=${title}
             @keydown=${(event: KeyboardEvent) => onStripKey(event, days, ctx.first)}

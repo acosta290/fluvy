@@ -17,9 +17,10 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
 import {
+  accentField,
   actionField,
   boolField,
   entityField,
@@ -43,44 +44,42 @@ import {
   type ClockParts,
 } from './time.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 
 const s = strings('clock', 'weather');
 
 export interface ClockCardConfig extends FluvyCardConfig {
   /** The analog face, or big tabular digits. */
-  variant?: 'analog' | 'digital';
+  face?: 'analog' | 'digital';
   /** hero = the big face / big digits · side = the compact face with the time beside it · tile = the 172 × 168 tile. */
-  layout?: 'hero' | 'side' | 'tile';
+  variant?: 'hero' | 'side' | 'tile';
   numerals?: 'none' | 'quarters' | 'all';
   /** Analog: the second hand (default: on the hero face). Digital: the seconds as the unit on the baseline. */
-  seconds?: boolean;
+  show_seconds?: boolean;
   /** Undefined follows Home Assistant's time format. AM / PM is set as the unit. */
   hour12?: boolean;
   /** A `weather.*` entity: the condition, the temperature, and the sky's tone on the face. */
   weather?: string;
   /** The Outside · Tonight · Tomorrow row from the daily forecast (default true). Off: glyph and temperature beside the date. */
-  forecast?: boolean;
+  show_forecast?: boolean;
   /** The ISO week after the date. */
-  week?: boolean;
+  show_week?: boolean;
   /** IANA name, e.g. `America/New_York`. Default: Home Assistant's zone or the browser's, as the profile says. */
   time_zone?: string;
   /** A label for this clock: a second city, a room. */
   title?: string;
-  date?: boolean;
+  show_date?: boolean;
   /** Test hook (undocumented): an ISO instant that freezes the clock, so a render can be held against the sheet. */
   _now?: string;
 }
 
 const CORE_LABELS = {
   weather: 'editor.weather',
-  seconds: 'editor.seconds',
+  show_seconds: 'editor.seconds',
 } as const;
 const OWN_LABELS = {
-  layout: 'editor.layout',
   numerals: 'editor.numerals',
-  date: 'editor.date',
-  week: 'editor.week',
-  forecast: 'editor.forecast',
+  show_week: 'editor.week',
   hour12: 'editor.hour12',
   time_zone: 'editor.time_zone',
 } as const;
@@ -160,18 +159,46 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     });
   }
 
+  /** A clock has no entity: it honours a tap and the card's colour (the face's accent). */
+  static override base: readonly BaseKey[] = ['tap_action', 'color'];
+  static override keys = configKeys<ClockCardConfig>()([
+    'face',
+    'variant',
+    'numerals',
+    'show_seconds',
+    'hour12',
+    'weather',
+    'show_forecast',
+    'show_week',
+    'time_zone',
+    'title',
+    'show_date',
+  ]);
+  /**
+   * The older names: `variant` said analog or digital (now `face`) and `layout` the look (now `variant`, read by
+   * the shared aliases after these); `seconds`, `date`, `week` and `forecast` are the `show_*` toggles.
+   */
+  static override aliases: AliasSpec = {
+    keys: [
+      { from: 'variant', to: 'face', when: (value) => value === 'analog' || value === 'digital' },
+      { from: 'seconds', to: 'show_seconds' },
+      { from: 'date', to: 'show_date' },
+      { from: 'week', to: 'show_week' },
+      { from: 'forecast', to: 'show_forecast' },
+    ],
+  };
   static override defaults: EditorDefaults = (config, hass) => {
-    const analog = config['variant'] !== 'digital';
-    const hero = config['layout'] !== 'side' && config['layout'] !== 'tile';
+    const analog = config['face'] !== 'digital';
+    const hero = config['variant'] !== 'side' && config['variant'] !== 'tile';
     return {
-      variant: 'analog',
-      layout: 'hero',
+      face: 'analog',
+      variant: 'hero',
       numerals: 'none',
-      seconds: analog && hero,
+      show_seconds: analog && hero,
       hour12: resolveHour12(hass, undefined),
-      date: true,
-      week: false,
-      forecast: Boolean(config['weather']),
+      show_date: true,
+      show_week: false,
+      show_forecast: Boolean(config['weather']),
     };
   };
   static override getConfigForm(): LovelaceConfigForm {
@@ -185,17 +212,18 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     return {
       schema: [
         grid(
-          selectField('variant', ['analog', 'digital']),
-          selectField('layout', ['hero', 'side', 'tile']),
+          selectField('face', ['analog', 'digital']),
+          selectField('variant', ['hero', 'side', 'tile']),
         ),
         grid(selectField('numerals', ['none', 'quarters', 'all']), textField('title')),
-        boolField('seconds'),
+        boolField('show_seconds'),
         boolField('hour12'),
-        boolField('date'),
-        boolField('week'),
+        boolField('show_date'),
+        boolField('show_week'),
         entityField(['weather'], 'weather', false),
-        boolField('forecast'),
+        boolField('show_forecast'),
         textField('time_zone'),
+        accentField(),
         actionField(),
       ],
       computeLabel: (schema, localize) =>
@@ -210,7 +238,7 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     const weather = entities.find((id) => id.startsWith('weather.'));
     return {
       type: 'custom:fluvy-clock-card',
-      variant: 'analog',
+      face: 'analog',
       layout: 'hero',
       numerals: 'quarters',
       ...(weather ? { weather } : {}),
@@ -228,7 +256,7 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
   override getCardSize(): number {
     const look = this.look;
     if (look === 'tile') return 4;
-    const row = this.config?.weather && this.config.forecast !== false ? 1 : 0;
+    const row = this.config?.weather && this.config.show_forecast !== false ? 1 : 0;
     if (look === 'side') return (this.analog ? 4 : 3) + row;
     return (this.analog ? 7 : 3) + row;
   }
@@ -297,19 +325,19 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
   /* ---------- the configuration, resolved ---------- */
 
   private get analog(): boolean {
-    return this.config?.variant !== 'digital';
+    return this.config?.face !== 'digital';
   }
 
-  /** The config's `layout` — not the `layout` property Lovelace sets on the element. */
+  /** The config's `variant` (the look) — not the `layout` property Lovelace sets on the element. */
   private get look(): 'hero' | 'side' | 'tile' {
-    const value = this.config?.layout;
+    const value = this.config?.variant;
     return value === 'side' || value === 'tile' ? value : 'hero';
   }
 
   /** The sheet's defaults: a second hand on the hero face only; digital seconds on request, never in a tile. */
   private get seconds(): boolean {
-    if (this.analog) return this.config?.seconds ?? this.look === 'hero';
-    return (this.config?.seconds ?? false) && this.look !== 'tile';
+    if (this.analog) return this.config?.show_seconds ?? this.look === 'hero';
+    return (this.config?.show_seconds ?? false) && this.look !== 'tile';
   }
 
   private get frozen(): Date | undefined {
@@ -318,7 +346,7 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
   }
 
   private get forecastEntity(): string {
-    return this.config?.weather && this.config.forecast !== false ? this.config.weather : '';
+    return this.config?.weather && this.config.show_forecast !== false ? this.config.weather : '';
   }
 
   private get tappable(): boolean {
@@ -381,10 +409,10 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
       clock: clockParts(now, format, !this.analog && this.seconds),
       title: config.title ?? '',
       date:
-        config.date === false
+        config.show_date === false
           ? null
           : { full: dateText(now, dates, 'full'), short: dateText(now, dates, 'short') },
-      week: config.week && config.date !== false ? isoWeek(calendarDate(wall)) : null,
+      week: config.show_week && config.show_date !== false ? isoWeek(calendarDate(wall)) : null,
       sky,
       forecast: sky?.ok && this.forecastEntity ? this.feed.forecast : { status: 'none' },
       sun: this.sun(format),

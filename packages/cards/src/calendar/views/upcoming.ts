@@ -38,7 +38,10 @@ function upcomingRow(ctx: ViewContext, day: Date, item: DayEvent): TemplateResul
         ><span class="cd-up__wd">${words.weekday(day, 'short')}</span
         ><span class="cd-up__d">${day.getDate()}</span></span
       >
-      <span class="cd-event__bar fv-bar--${ctx.toneOf(item.event.calendar)}"></span>
+      <span
+        class="cd-event__bar fv-bar--${ctx.toneOf(item.event.calendar)}"
+        data-accent=${ctx.accentOf(item.event.calendar) ?? nothing}
+      ></span>
       <span class="fv-row__text"
         ><span class="fv-row__title">${titleOf(ctx, item)}</span
         ><span class="fv-row__sub">${when} · ${placeOf(ctx, item)}</span></span

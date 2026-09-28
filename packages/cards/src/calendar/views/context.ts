@@ -1,8 +1,9 @@
 import type { HomeAssistant } from '@fluvy/core';
 import type { ReactiveElement } from 'lit';
-import type { CalendarCardConfig, CalendarTone } from '../config.js';
+import type { CalendarCardConfig } from '../config.js';
 import type { Agenda } from '../model.js';
 import type { Words } from '../words.js';
+import { type Tone } from '@fluvy/ui';
 
 /** ok · still reading · every read failed · every calendar is unavailable or gone */
 export type Status = 'ok' | 'loading' | 'failed' | 'unavailable';
@@ -33,7 +34,9 @@ export interface ViewContext {
   readonly focus: Date;
   /** The card: the grid's focus follows the tab stop once it has drawn a move. */
   readonly host: ReactiveElement;
-  toneOf(entityId: string): CalendarTone;
+  toneOf(entityId: string): Tone;
+  /** A calendar's own colour, as `AccentSheet` reads `data-accent`; nothing for one without. */
+  accentOf(entityId: string): string | undefined;
   nameOf(entityId: string): string;
   select(day: Date): void;
   stepMonth(direction: 1 | -1): void;

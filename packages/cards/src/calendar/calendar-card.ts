@@ -1,23 +1,28 @@
-import {
-  localize,
-  stateText,
-  strings,
-  type HaFormSchemaItem,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
-} from '@fluvy/core';
+import { stateText, strings, type LovelaceConfigForm, type LovelaceGridOptions } from '@fluvy/core';
 import { forgetTextWidths, sheetStyles } from '@fluvy/ui';
 import { nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
-import { Card } from '../shared/base.js';
+import { Card, type BaseKey } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
-import { fieldRow, numberField, selectField, textField } from '../shared/form.js';
 import {
-  CALENDAR_TONES,
-  VIEWS,
+  accentField,
+  colourFields,
+  editorLabels,
+  entitiesField,
+  entityField,
+  fieldRow,
+  numberField,
+  selectField,
+  textField,
+} from '../shared/form.js';
+import {
+  calendarsOf,
   daysOf,
+  idsOf,
   toneOf,
   viewOf,
+  VIEWS,
   type CalendarCardConfig,
+  type CalendarItem,
   type CalendarView,
 } from './config.js';
 import {
@@ -43,6 +48,8 @@ import { NEXT_DAYS, tileView } from './views/tile.js';
 import { upcomingView } from './views/upcoming.js';
 import { weekView } from './views/week.js';
 import { Words } from './words.js';
+import { configKeys } from '../shared/config.js';
+import { type RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('calendar');
 
@@ -53,9 +60,7 @@ const RETRY = 60_000; // a calendar that failed is asked again after a minute, t
 const IDLE = 10 * 60_000; // a day someone picked gives way to today again after this long
 
 const EDITOR_LABELS = {
-  view: 'editor_view',
   tile: 'editor_tile',
-  tones: 'editor_tones',
   first_weekday: 'editor_first_weekday',
   start_hour: 'editor_start_hour',
   end_hour: 'editor_end_hour',
@@ -124,37 +129,41 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
 
   /* ---------- Lovelace ---------- */
 
+  /** A calendar card has no entity of its own: its calendars are its list, its colour the accent (today, the selection). */
+  static override base: readonly BaseKey[] = ['entities', 'color'];
+  static override keys = configKeys<CalendarCardConfig>()([
+    'calendars',
+    'variant',
+    'tile',
+    'title',
+    'first_weekday',
+    'days',
+    'start_hour',
+    'end_hour',
+  ]);
+  static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'calendars',
+      alias: 'entities',
+      title: 'editor.rows',
+      domains: ['calendar'],
+      keys: ['entity', 'name', 'tone', 'color'],
+      schema: [entityField(['calendar']), textField('name'), colourFields()],
+    },
+  ];
   static override getConfigForm(): LovelaceConfigForm {
-    const language = { language: document.documentElement.lang || 'en' };
-    const own = (name: string): name is keyof typeof EDITOR_LABELS => name in EDITOR_LABELS;
     return {
       schema: [
-        {
-          name: 'entities',
-          required: true,
-          selector: { entity: { multiple: true, domain: ['calendar'] } },
-        },
-        fieldRow(selectField('view', VIEWS), textField('title')),
+        entitiesField('entities', ['calendar'], true),
+        fieldRow(selectField('variant', VIEWS), textField('title')),
         fieldRow(
           selectField('tile', ['date', 'next']),
           selectField('first_weekday', ['language', ...WEEKDAYS]),
         ),
         fieldRow(numberField('days', 1, 31), numberField('start_hour', 0, 23)),
-        fieldRow(numberField('end_hour', 1, 24)),
-        { name: 'tones', selector: { object: {} } },
+        fieldRow(numberField('end_hour', 1, 24), accentField()),
       ],
-      computeLabel: (schema: HaFormSchemaItem) =>
-        own(schema.name)
-          ? s(language, EDITOR_LABELS[schema.name])
-          : schema.name === 'entities'
-            ? localize(language, 'editor.entities')
-            : schema.name === 'title'
-              ? localize(language, 'editor.title')
-              : schema.name === 'days'
-                ? localize(language, 'editor.days')
-                : undefined,
-      computeHelper: (schema: HaFormSchemaItem) =>
-        schema.name === 'tones' ? CALENDAR_TONES.join(' · ') : undefined,
+      ...editorLabels(s, EDITOR_LABELS, { days: 'editor.days' }),
     };
   }
 
@@ -175,15 +184,42 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
         this.touchedAt = Date.now(); // held like a tap: the idle beat lets it go after ten minutes
       }
     }
-    const listed: readonly unknown[] = Array.isArray(config.entities)
-      ? config.entities
-      : config.entity
-        ? [config.entity]
-        : [];
-    const entities = listed.filter((id): id is string => typeof id === 'string' && id.length > 0);
-    const stranger = entities.find((id) => !id.startsWith('calendar.'));
-    if (stranger) throw new Error(`fluvy-calendar-card: "${stranger}" is not a calendar entity`);
-    return { ...config, entities: [...new Set(entities)] };
+    // `calendars` (ids or items); else the older `entities` with their `tones`; else one `entity`
+    const older = config as CalendarCardConfig & { entities?: unknown; tones?: unknown };
+    const listed: readonly unknown[] = Array.isArray(config.calendars)
+      ? config.calendars
+      : Array.isArray(older.entities)
+        ? older.entities
+        : config.entity
+          ? [config.entity]
+          : [];
+    const tones: Record<string, unknown> =
+      older.tones && typeof older.tones === 'object'
+        ? (older.tones as Record<string, unknown>)
+        : {};
+    const seen = new Set<string>();
+    const calendars: CalendarItem[] = [];
+    for (const raw of listed) {
+      const item: CalendarItem | null =
+        typeof raw === 'string'
+          ? { entity: raw }
+          : raw && typeof raw === 'object'
+            ? (raw as CalendarItem)
+            : null;
+      if (!item || typeof item.entity !== 'string' || !item.entity || seen.has(item.entity))
+        continue;
+      if (!item.entity.startsWith('calendar.'))
+        throw new Error(`fluvy-calendar-card: "${item.entity}" is not a calendar entity`);
+      seen.add(item.entity);
+      const tone = tones[item.entity];
+      calendars.push(
+        item.tone === undefined && typeof tone === 'string' ? { ...item, tone } : item,
+      );
+    }
+    const out = { ...older, calendars };
+    delete out.entities;
+    delete out.tones;
+    return out;
   }
 
   override getCardSize(): number {
@@ -351,7 +387,7 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
 
   /** Calendars that can be read right now. */
   private usable(): string[] {
-    return (this.config?.entities ?? []).filter((id) => {
+    return idsOf(this.config).filter((id) => {
       const status = this.entity(id).status;
       return status === 'ok' || status === 'unknown';
     });
@@ -366,7 +402,7 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
 
   /** Some calendars are readable and some are not: the list is true but not whole, and says so. */
   private notice(): string {
-    const ids = this.config?.entities ?? [];
+    const ids = idsOf(this.config);
     const usable = this.usable();
     const out = ids.filter((id) => !usable.includes(id) || this.loaded?.failed.includes(id));
     if (!out.length || out.length === ids.length) return '';
@@ -409,9 +445,10 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
   protected renderCard(): TemplateResult | typeof nothing {
     const config = this.config;
     if (!config || !this.hass) return nothing;
-    if (!config.entities.length) return this.renderEmpty(s(this.hass, 'no_calendar'));
-    if (config.entities.every((id) => this.entity(id).status === 'missing')) {
-      const first = this.entity(config.entities[0]);
+    const ids = idsOf(config);
+    if (!ids.length) return this.renderEmpty(s(this.hass, 'no_calendar'));
+    if (ids.every((id) => this.entity(id).status === 'missing')) {
+      const first = this.entity(ids[0] as string);
       return this.renderEmpty(`${first.name} · ${stateText(this.hass, first)}`);
     }
     const view = this.view;
@@ -430,11 +467,14 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
       focus: this.focused ?? this.day,
       host: this,
       toneOf: (id) => toneOf(config, id),
-      nameOf: (id) => this.entity(id).name,
+      accentOf: (id) =>
+        this.accents.item(calendarsOf(config).find((item) => item.entity === id)?.color),
+      nameOf: (id) =>
+        calendarsOf(config).find((item) => item.entity === id)?.name ?? this.entity(id).name,
       select: (day) => this.select(day),
       stepMonth: (direction) => this.stepMonth(direction),
       moveFocus: (day) => this.moveFocus(day),
-      open: (id) => this.tap(id ?? config.entities[0], { action: 'more-info' }),
+      open: (id) => this.tap(id ?? ids[0], { action: 'more-info' }),
     };
     switch (view) {
       case 'month':
