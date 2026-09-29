@@ -11,7 +11,7 @@
  *                  at 13/500 in the secondary ink (the hint leaves under 280: a name reads whole, a hint never cut);
  *                  the row under the pointer or the keys takes the page's fill, the chosen one the accent fill with
  *                  a check; a row that cannot be chosen fades
- * Enters in 240 ms on the spring from 6 px off its field, leaves in 160 ms; reduced motion shows and hides. */
+ * Unfolds from its field's edge in 200 ms (no overshoot), leaves in a 120 ms fade; reduced motion shows and hides. */
 
 .fv-select {
   width: 100%;
