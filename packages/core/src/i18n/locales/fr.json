@@ -939,6 +939,7 @@
     "wall.address_sub": "Ouvrez-la une fois sur la tablette : elle s’en souvient",
     "wall.copy": "Copier l’adresse",
     "wall.copied": "Adresse copiée",
+    "wall.copy_failed": "Copie impossible : sélectionnez l’adresse et copiez-la",
     "wall.dashboards": "Tableaux de bord muraux",
     "wall.dashboards_sub": "Quels tableaux de bord sont des murs",
     "wall.dashboards_auto": "Automatique : tout tableau qui porte le look",

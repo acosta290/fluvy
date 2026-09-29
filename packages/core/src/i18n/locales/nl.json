@@ -939,6 +939,7 @@
     "wall.address_sub": "Open het één keer op de tablet: hij onthoudt het",
     "wall.copy": "Adres kopiëren",
     "wall.copied": "Adres gekopieerd",
+    "wall.copy_failed": "Kopiëren mislukt: selecteer het adres en kopieer het",
     "wall.dashboards": "Wanddashboards",
     "wall.dashboards_sub": "Welke dashboards wanden zijn",
     "wall.dashboards_auto": "Automatisch: elk dashboard dat de look draagt",

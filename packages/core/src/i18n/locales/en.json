@@ -939,6 +939,7 @@
     "wall.address_sub": "Open it once on the tablet: it remembers",
     "wall.copy": "Copy the address",
     "wall.copied": "Address copied",
+    "wall.copy_failed": "Could not copy: select the address and copy it",
     "wall.dashboards": "Wall dashboards",
     "wall.dashboards_sub": "Which dashboards are walls",
     "wall.dashboards_auto": "Automatic: any that wears the look",

@@ -939,6 +939,7 @@
     "wall.address_sub": "Tablette bir kez açın: hatırlar",
     "wall.copy": "Adresi kopyala",
     "wall.copied": "Adres kopyalandı",
+    "wall.copy_failed": "Kopyalanamadı: adresi seçip kopyalayın",
     "wall.dashboards": "Duvar panelleri",
     "wall.dashboards_sub": "Hangi paneller duvar",
     "wall.dashboards_auto": "Otomatik: görünümü taşıyan her panel",

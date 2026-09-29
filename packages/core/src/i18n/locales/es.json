@@ -939,6 +939,7 @@
     "wall.address_sub": "Ábrela una vez en la tableta: lo recuerda",
     "wall.copy": "Copiar la dirección",
     "wall.copied": "Dirección copiada",
+    "wall.copy_failed": "No se pudo copiar: selecciona la dirección y cópiala",
     "wall.dashboards": "Paneles de pared",
     "wall.dashboards_sub": "Qué paneles son paredes",
     "wall.dashboards_auto": "Automático: cualquiera que lleve el aspecto",

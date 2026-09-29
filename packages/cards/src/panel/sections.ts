@@ -1,6 +1,7 @@
 import {
   type CardLanguage,
   clock12,
+  copyText,
   dayPeriods,
   type HomeAssistant,
   HOUSE_DEFAULTS,
@@ -1007,7 +1008,8 @@ export function wall(ctx: PanelContext): TemplateResult {
           button: ctx.t('wall.copy'),
           onTap: () =>
             ctx.run(async () => {
-              await navigator.clipboard.writeText(address);
+              // a plain-HTTP address has no Clipboard API: the older way, and honest words when neither works
+              if (!(await copyText(address))) throw new Error(ctx.t('wall.copy_failed'));
               ctx.notify('wall.copied');
             }),
         })}

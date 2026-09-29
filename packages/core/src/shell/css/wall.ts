@@ -1,7 +1,9 @@
 import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../../look/attributes.js';
 
 /*
- * A wall panel (`<html fluvy-wall>`): the page does not bounce or select, the drawer is gone with its width, the
+ * A wall panel (`<html fluvy-wall>`): the page does not bounce or select, the drawer is gone with its width (the
+ * variable Home Assistant pads its content by — `--ha-sidebar-width` today, `--mdc-drawer-width` before — and the
+ * padding itself), the
  * dashboard has no header and fills the tablet inside its safe area, and its view takes the wall's background
  * (the wall mesh, or Home Assistant's own when the house keeps the page plain). These sheets fill on the
  * attribute alone, whatever the theme: a wall is a wall in every scope.
@@ -18,11 +20,15 @@ html[${WALL_ATTRIBUTE}] {
 
 export const wallDrawerCss = `
 :host {
+  --ha-sidebar-width: 0px;
   --mdc-drawer-width: 0px;
 }
 .sidebar-shell,
 wa-drawer::part(dialog) {
   display: none;
+}
+.app-content {
+  padding-inline-start: 0;
 }
 `;
 

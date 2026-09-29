@@ -1,9 +1,11 @@
-import type { HomeAssistant, LovelaceCard } from '@fluvy/core';
+import type { HassEntity, HomeAssistant, LovelaceCard } from '@fluvy/core';
+import { simulate } from '@fluvy/demo-home/simulate';
 
 /**
  * The preview's own little house: a few real cards on made-up entities, so the look is judged on the
- * product itself. Its `hass` is the real one with these states on top and every call a no-op (a tap in
- * the preview changes nothing at home).
+ * product itself. Its `hass` is the real one with these states on top, and a tap changes nothing at home: the
+ * preview's house answers it itself, a moment later, the way Home Assistant would (`simulate`), and keeps the
+ * answer while the panel is open — a light switched off stays off through every update from the real house.
  */
 const STATES = (names: PreviewNames) => ({
   'light.fluvy_preview_living': {
@@ -180,11 +182,16 @@ export type TileEntity = Exclude<keyof typeof ENTITY, 'bedroom' | 'alarm' | 'doo
 export type RoomArea = 'living' | 'kitchen';
 
 /** The preview's cards, each made once for its config; `update` hands every one the latest `hass`. */
+/** How long the preview's house takes to answer a tap: a real one is not instant, and a switch that flips before its state lands reads as alive. */
+const ANSWER_MS = 120;
+
 export class PreviewHouse {
   private readonly made = new Map<string, LovelaceCard>();
   private preview: HomeAssistant | undefined;
-  // made once: the same state objects every update, so the cards redraw only for the look
-  private readonly states: ReturnType<typeof STATES>;
+  private real: HomeAssistant | undefined;
+  // made once, changed only by a tap in the preview: the same state objects every update, so the cards redraw
+  // only for the look
+  private readonly states: Record<string, HassEntity>;
   private readonly areas: ReturnType<typeof AREAS>;
 
   constructor(names: PreviewNames) {
@@ -267,6 +274,7 @@ export class PreviewHouse {
   }
 
   update(hass: HomeAssistant): void {
+    this.real = hass;
     // the preview's entities sit in the preview's rooms, so a room card finds them (the house's registry stays)
     const entities = { ...hass.entities };
     for (const [id, area] of Object.entries(IN_AREAS))
@@ -276,8 +284,23 @@ export class PreviewHouse {
       states: { ...hass.states, ...this.states },
       entities,
       areas: { ...hass.areas, ...this.areas },
-      callService: async () => undefined,
+      callService: this.answer,
     } as unknown as HomeAssistant;
     for (const card of this.made.values()) card.hass = this.preview;
   }
+
+  /** A tap on a preview card: the house's own answer, a moment later; the real house hears nothing. */
+  private readonly answer: HomeAssistant['callService'] = async (domain, service, data, target) => {
+    const call = {
+      domain,
+      service,
+      data: (data ?? {}) as Record<string, unknown>,
+      target: target as { entity_id?: string | string[] } | undefined,
+    };
+    window.setTimeout(() => {
+      Object.assign(this.states, simulate(this.states, call));
+      if (this.real) this.update(this.real);
+    }, ANSWER_MS);
+    return undefined as never;
+  };
 }

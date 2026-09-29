@@ -939,6 +939,7 @@
     "wall.address_sub": "Einmal auf dem Tablet öffnen: es merkt es sich",
     "wall.copy": "Adresse kopieren",
     "wall.copied": "Adresse kopiert",
+    "wall.copy_failed": "Kopieren nicht möglich: Adresse markieren und kopieren",
     "wall.dashboards": "Wand-Dashboards",
     "wall.dashboards_sub": "Welche Dashboards Wände sind",
     "wall.dashboards_auto": "Automatisch: jedes, das den Look trägt",

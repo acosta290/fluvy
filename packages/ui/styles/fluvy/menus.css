@@ -71,9 +71,9 @@
   scrollbar-width: none;
   outline: none;
   container-type: inline-size;
-  transform-origin: top left;
-  animation: fv-menu-in 240ms var(--fv-spring, var(--fv-ease-out, ease-out)) both;
-  --fv-menu-from: -6px;
+  transform-origin: top center;
+  animation: fv-menu-in 200ms var(--fv-ease-out, ease-out) both;
+  --fv-menu-from: -4px;
 }
 
 .fv-menu::-webkit-scrollbar {
@@ -82,11 +82,11 @@
 
 .fv-menu[data-placement='above'] {
   transform-origin: bottom left;
-  --fv-menu-from: 6px;
+  --fv-menu-from: 4px;
 }
 
 .fv-menu.is-leaving {
-  animation: fv-menu-out 160ms var(--fv-ease, ease-in) both;
+  animation: fv-menu-out 120ms var(--fv-ease, ease-in) both;
   pointer-events: none;
 }
 
@@ -151,10 +151,12 @@
   pointer-events: none;
 }
 
+/* in: unfolds from the field's edge (a breath of scale, 4 px of travel, no overshoot); out: a plain fade — a
+   surface that shrinks as it leaves reads as flinching */
 @keyframes fv-menu-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(var(--fv-menu-from, -6px));
+    transform: scale(0.98) translateY(var(--fv-menu-from, -4px));
   }
   to {
     opacity: 1;
@@ -165,7 +167,6 @@
 @keyframes fv-menu-out {
   to {
     opacity: 0;
-    transform: scale(0.98);
   }
 }
 

@@ -1,4 +1,5 @@
 import type { HomeAssistant } from '../ha/types.js';
+import { WALL_ATTRIBUTE } from '../look/attributes.js';
 import type { LookHandle } from '../look/start.js';
 import { appHass } from '../look/start.js';
 import { latchFromUrl, readDevice } from '../settings/device.js';
@@ -41,6 +42,9 @@ export function startWall(options: WallStartOptions): WallFacade {
     url.searchParams.delete('kiosk');
     history.replaceState(history.state, '', url.toString());
   }
+  // the loader marks the page a wall before anything is drawn, from what the device remembered: an address that
+  // says `kiosk=0` (or a memory the panel's switch cleared) takes the mark off now, not at the next reload
+  if (!readDevice().wall) document.documentElement.removeAttribute(WALL_ATTRIBUTE);
   const listeners = new Set<(phase: WallPhase) => void>();
   let inner: WallHandle | undefined;
   let loading = false;
