@@ -77,7 +77,9 @@
 }
 
 /* a field that is a button (the dropdown) is a field: it opens, it never shrinks under the finger */
-:where(button:not(.fv-chip, .fv-stepper__half, .fv-tile, .fv-tile--tap, .fv-scene, .fv-field)):active {
+:where(
+  button:not(.fv-chip, .fv-stepper__half, .fv-tile, .fv-tile--tap, .fv-scene, .fv-field)
+):active {
   transform: scale(0.94);
 }
 
