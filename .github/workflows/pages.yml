@@ -37,7 +37,7 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/fluvy/ > /dev/null && break; sleep 1; done
           DEMO=http://127.0.0.1:4173/fluvy/ node tools/render/demo-smoke.mjs
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/demo/dist
 
