@@ -36,8 +36,8 @@ jobs:
           pnpm --filter @fluvy/demo preview > preview.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/fluvy/ > /dev/null && break; sleep 1; done
           DEMO=http://127.0.0.1:4173/fluvy/ node tools/render/demo-smoke.mjs
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/demo/dist
 
@@ -49,6 +49,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
       - name: The site answers
         run: curl -sf --retry 10 --retry-delay 6 --retry-all-errors "${{ steps.deployment.outputs.page_url }}" | grep -q '<title>'

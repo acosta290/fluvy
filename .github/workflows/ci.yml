@@ -29,7 +29,7 @@ jobs:
       - run: git diff --exit-code -- packages/tokens/src/palettes/community/index.ts
       - run: pnpm check
       - run: node tools/release/check.mjs --release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: custom_components-fluvy
           path: custom_components/fluvy
@@ -71,7 +71,7 @@ jobs:
       - run: node tools/render/heights.mjs
       # every sheet and every panel tab at 360, 412 and 1400: 0 violations each
       - run: pnpm measure --out out/measure
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: visual-reports
