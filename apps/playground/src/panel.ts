@@ -1,6 +1,7 @@
 import { DEMO_AREAS, DEMO_DASHBOARDS } from '@fluvy/demo-home';
+import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import '@fluvy/cards/panel';
-import type { HomeAssistant, Look, LookHandle } from '@fluvy/core';
+import { writeDevice, type HomeAssistant, type Look, type LookHandle } from '@fluvy/core';
 import { createMemoryLook, type MemoryLook } from './look-memory.js';
 
 /**
@@ -10,7 +11,8 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * look (`own`), the look on the whole of Home Assistant (`everywhere`, with the frame), a look tried on the whole
  * app with nothing changed (`trial`), a profile that chose the Fluvy theme (`themed`), edits on the other tabs
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created
- * (`dashboards`), a dashboard's Recreate row armed (`recreate`). Several join with commas.
+ * (`dashboards`), a dashboard's Recreate row armed (`recreate`), this browser a wall panel (`wall`), three palettes
+ * saved by the house (`palettes`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -26,7 +28,9 @@ export type PanelState =
   | 'edits'
   | 'menu'
   | 'dashboards'
-  | 'recreate';
+  | 'recreate'
+  | 'wall'
+  | 'palettes';
 
 /** The dashboards our templates create, as the panel would (the home's is `fluvy-auto` in the demo home already). */
 const TEMPLATE_DASHBOARDS = [
@@ -92,8 +96,20 @@ export function mountPanel(
   const { store } = handle;
 
   if (has('own')) void store.savePersonal({ palette: 'blaze', shape: 'round' });
+  // three palettes the house keeps (the community's, renamed, so "Yours" shows apart from "Community")
+  if (has('palettes'))
+    void store.saveHouse({
+      palettes: COMMUNITY_PALETTES.map((file) => ({
+        ...file,
+        name: `ours-${file.name}`,
+        title: `Our ${file.title.toLowerCase()}`,
+        author: 'Marta',
+      })),
+    });
   if (has('everywhere')) void store.saveHouse({ scope: 'everywhere', frame: true });
 
+  // what this browser is: the panel reads its memory when it is made
+  writeDevice({ wall: has('wall') });
   const panel = document.createElement('fluvy-panel') as HTMLElement & {
     hass: HomeAssistant;
     handle: LookHandle;

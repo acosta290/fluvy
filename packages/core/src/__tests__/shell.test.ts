@@ -88,7 +88,13 @@ function page() {
     else attributes.delete('fluvy-look');
     observed?.();
   };
-  return { env, document, input, classes, theme, look, isDisconnected: () => disconnected };
+  /** This device is a wall panel on a wall dashboard (`<html fluvy-wall>`). */
+  const wall = (on: boolean): void => {
+    if (on) attributes.add('fluvy-wall');
+    else attributes.delete('fluvy-wall');
+    observed?.();
+  };
+  return { env, document, input, classes, theme, look, wall, isDisconnected: () => disconnected };
 }
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
@@ -120,13 +126,33 @@ describe('shell lifecycle', () => {
     const { env, document, input, classes } = page();
     running = startShell(env)!;
     await settle();
-    expect(document.adoptedStyleSheets).toHaveLength(1);
+    // the page's sheet and the wall's page sheet, both on the document
+    expect(document.adoptedStyleSheets).toHaveLength(2);
     expect((document.adoptedStyleSheets[0] as FakeSheet).css).toBe('');
+    expect((document.adoptedStyleSheets[1] as FakeSheet).css).toBe('');
     const inputClass = classes.get('ha-input')!.elementStyles;
     expect(inputClass).toHaveLength(2);
     expect(inputClass[0]).toBe('theirs'); // ours goes last: it wins at equal specificity
     expect(input.shadowRoot!.adoptedStyleSheets).toContain(inputClass[1]); // the live instance got it too
     expect(running.report().active).toBe(false);
+  });
+
+  it('fills the wall sheets on the wall attribute alone, whatever the theme, and empties them without it', async () => {
+    const { env, document, wall, theme } = page();
+    running = startShell(env)!;
+    await settle();
+    const pageSheet = document.adoptedStyleSheets[0] as FakeSheet;
+    const wallSheet = document.adoptedStyleSheets[1] as FakeSheet;
+    wall(true);
+    expect(wallSheet.css).toBe(SHEETS.find((s) => s.id === 'wall:page')!.css);
+    expect(pageSheet.css).toBe(''); // the theme is not on: the rest stay empty
+    theme(true);
+    expect(pageSheet.css).toBe(SHEETS.find((s) => s.id === 'page')!.css);
+    expect(wallSheet.css).not.toBe('');
+    wall(false);
+    expect(wallSheet.css).toBe('');
+    expect(pageSheet.css).not.toBe('');
+    expect(running.report().sheets.filter((s) => s.id.startsWith('wall:'))).toHaveLength(3);
   });
 
   it('fills the sheets when the theme arrives and empties them when it leaves', async () => {

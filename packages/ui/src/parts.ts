@@ -430,7 +430,9 @@ export function listRow(o: ListRowOptions): TemplateResult {
         : trailing === 'chevron'
           ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
           : trailing === 'button'
-            ? html`<span class="fv-btn fv-btn--quiet fv-row__btn">${o.button ?? ''}</span>`
+            ? html`<span class="fv-btn fv-btn--quiet fv-row__btn" data-fit="28"
+                >${o.button ?? ''}</span
+              >`
             : nothing;
   return html`<div
     class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''}"

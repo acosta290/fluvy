@@ -1,0 +1,49 @@
+# Wall mode
+
+A tablet on the wall shows a dashboard and nothing else: no sidebar, no header, the screen kept awake, a
+screensaver with the clock after a while, dark at night. Wall mode is two decisions:
+
+- **The house says how its walls behave** — in the panel's *Wall* tab (an administrator): which dashboards are
+  walls, the screensaver, the day and night, the background. These settings travel with the house, like the look.
+- **The device says it is a wall** — the tablet itself, once: open the dashboard's address with `?kiosk` on it
+  (`https://your-home/fluvy-wall?kiosk`; the *Wall* tab shows the address and copies it), or switch *Use this device
+  as a wall panel* on in the *Wall* tab from the tablet. The tablet remembers; a phone that opens the same dashboard
+  is not a wall. `?kiosk=0` makes it a device again.
+
+A page is a wall while both hold and the page is one of the house's walls: the dashboards chosen in *Wall
+dashboards*, or, with none chosen, any dashboard that wears the look. Fluvy's own panel and Home Assistant's
+Settings are never walls, so a tablet can always be administered from itself.
+
+## On the wall
+
+- The sidebar and the dashboard header are gone; the dashboard fills the screen inside the tablet's safe area.
+  There is no swipe between views and no gesture of Fluvy's: the dashboard's own tabs remain.
+- **Screensaver**: after 2, 5, 10 or 30 minutes without a touch (or never), the screen shows the clock and the weather
+  over the wall background, or dims to black. Any touch wakes it — that touch does nothing else. A motion or
+  occupancy sensor chosen as *Wake on motion* wakes it too.
+- **Day and night**: the wall is always dark, follows Home Assistant's own mode, follows the sun (`sun.sun`), or a
+  pair of hours; at night it may darken further (20, 40 or 60 % of black over the page) for a dim room.
+- **Background**: the page colour alone, or the wall mesh (the palette's own hues, one step deeper than the dashboards'
+  Paper and Charcoal).
+- The screen is kept awake with a screen wake lock while the wall is awake; the API exists only on a secure page
+  (HTTPS), so over plain HTTP the tablet's own screen timeout rules.
+
+## Leaving the wall
+
+Press and hold the top-right corner for a second and a half: a ring fills, the tablet taps back, and the wall
+pauses — the sidebar and the header return with a toast, *Wall paused · Resume*. The pause lasts until *Resume*,
+or until the screensaver would have started (with the screensaver set to *Never*, until a reload). The device stays
+a wall: the pause is for the person standing there, not a setting.
+
+## Details
+
+- The first visit with `?kiosk` paints the sidebar for an instant before the wall takes over; every reload after
+  it starts as a wall (the device's memory is read before Home Assistant's pages exist). `?kiosk` is dropped from
+  the address once read.
+- Wall mode fails open: if Home Assistant's pages change under Fluvy's feet, the sidebar and the header simply
+  return (see [troubleshooting](troubleshooting.md)).
+- The wall's settings are the house's (`wall` in the settings file the *About* tab exports); what this device is
+  stays in the browser (`localStorage`, `fluvy:device`), and a pause in the session (`sessionStorage`,
+  `fluvy:wall-paused`).
+- The wall's own pieces — the controller, the screensaver, the corner and the toast — load only on a device that
+  is a wall (their own chunk); a phone never pays for them.

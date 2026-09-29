@@ -7,7 +7,8 @@ import {
   type LookHandle,
   type SettingsHass,
 } from '@fluvy/core';
-import { exportSettings, importSettings } from './actions.js';
+import { exportSettings, importPalette, importSettings } from './actions.js';
+import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import type { PanelContext } from './model.js';
 import type { FluvyPanel } from './panel.js';
 
@@ -48,6 +49,7 @@ function fixture(admin = true, extra: Record<string, unknown> = {}) {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    setWall: () => undefined,
     stop: () => undefined,
   };
   store.start((settings) => listeners.forEach((listener) => listener(settings)));
@@ -394,6 +396,166 @@ describe('the settings panel', () => {
       config: { strategy: { type: 'custom:fluvy-security' } },
     });
     panel.remove();
+  });
+
+  it('edits the wall whole and this device apart: the screensaver minutes saved with the house, the device on Save', async () => {
+    localStorage.removeItem('fluvy:device');
+    const { panel, root, row, chip, button, handle, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    // this device is not a wall; the house's wall waits ten minutes
+    expect(row('Wall panel')?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    expect(chip('10 min')?.classList.contains('is-active')).toBe(true);
+    chip('5 min')!.click();
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('Wall · Screensaver after');
+    row('Wall panel')!.querySelector<HTMLElement>('.fv-hit')!.click();
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('2 changes');
+    button('Save')!.click();
+    // the house's write, the store's echo and the device's memory take a few ticks
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    // the house keeps every other wall setting as it was; the device remembers itself
+    expect(handle.settings().wall).toMatchObject({
+      after: 5,
+      clock: true,
+      theme: 'follow',
+      background: 'plain',
+    });
+    expect(JSON.parse(localStorage.getItem('fluvy:device') ?? '{}')).toMatchObject({ wall: true });
+    expect(root.querySelector('.pn-bar')).toBeNull();
+    panel.remove();
+    localStorage.removeItem('fluvy:device');
+  });
+
+  it('lists the house’s palettes under Yours and the community’s with their authors; a matching draft is that palette', async () => {
+    const { panel, root, swatch, handle, settle } = await mount();
+    const moss = COMMUNITY_PALETTES.find((file) => file.name === 'moss')!;
+    // the house's own copy of the community's moss, under the same name: it stands in for it
+    await handle.store.saveHouse({ palettes: [{ ...moss, title: 'My moss', author: 'Marta' }] });
+    await settle();
+    expect(root.textContent).toContain('Yours');
+    expect(swatch('My moss')).toBeDefined();
+    expect(swatch('My moss').querySelector('.pn-swatch__by')?.textContent?.trim()).toBe('by Marta');
+    expect(swatch('Citrus').querySelector('.pn-swatch__by')?.textContent?.trim()).toBe('by Fluvy');
+    // the house's copy of moss stands in for the community's
+    expect(swatch('Moss')).toBeUndefined();
+    swatch('My moss').click();
+    await panel.updateComplete;
+    expect(swatch('My moss').classList.contains('is-active')).toBe(true);
+    expect(root.querySelector('.pn-custom.is-active')).toBeNull();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('Linen → My moss');
+    panel.remove();
+  });
+
+  it('shares a custom palette as a file named after its title, and reads one back', async () => {
+    const { panel, root, settle } = await mount();
+    (panel as unknown as { draft: unknown }).draft = {
+      palette: { character: 'vivid', base: 'cool', accent: '#ff4a1a', fill: 'tint' },
+      shape: 'soft',
+      pills: 'round',
+    };
+    await settle();
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('.pn-text input')];
+    expect(inputs).toHaveLength(2);
+    const type = (input: HTMLInputElement, value: string): void => {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    type(inputs[0]!, 'Warm Sand');
+    type(inputs[1]!, 'Marta');
+    await settle();
+    let file: Blob | undefined;
+    let name = '';
+    const create = URL.createObjectURL;
+    URL.createObjectURL = (blob: Blob) => ((file = blob), 'blob:fluvy');
+    const click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      name = this.download;
+    };
+    [...root.querySelectorAll<HTMLButtonElement>('.fv-btn')]
+      .find((b) => b.textContent?.trim() === 'Share this palette')!
+      .click();
+    URL.createObjectURL = create;
+    HTMLAnchorElement.prototype.click = click;
+    expect(name).toBe('warm-sand.fluvy-palette.json');
+    const shared = JSON.parse(await file!.text()) as Record<string, unknown>;
+    expect(shared).toMatchObject({
+      fluvy_palette: 1,
+      name: 'warm-sand',
+      title: 'Warm Sand',
+      author: 'Marta',
+      palette: { character: 'vivid', base: 'cool', accent: '#ff4a1a', fill: 'tint' },
+    });
+    // a file back in: its palette is the draft and its words are the card's; a foreign file is refused
+    const ops = panel as unknown as { context(): PanelContext };
+    const citrus = COMMUNITY_PALETTES.find((f) => f.name === 'citrus')!;
+    importPalette(
+      panel as unknown as FluvyPanel,
+      ops.context(),
+      new File(
+        [JSON.stringify({ ...citrus, name: 'sunny', title: 'Sunny' })],
+        'sunny.fluvy-palette.json',
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect((panel as unknown as { draft: { palette: unknown } }).draft.palette).toEqual(
+      citrus.palette,
+    );
+    expect(root.querySelector<HTMLInputElement>('.pn-text input')?.value).toBe('Sunny');
+    importPalette(
+      panel as unknown as FluvyPanel,
+      ops.context(),
+      new File([JSON.stringify({ hello: 1 })], 'x.json'),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(root.textContent).toContain('That file holds no Fluvy palette');
+    panel.remove();
+  });
+
+  it('saves a palette to the house and removes it (an administrator), stops at twelve, and shows a guest no such row', async () => {
+    const { panel, root, row, handle, settle } = await mount();
+    const draft = {
+      palette: { character: 'soft', base: 'warm', accent: '#6b5a3c' },
+      shape: 'soft',
+      pills: 'round',
+    };
+    (panel as unknown as { draft: unknown }).draft = draft;
+    await settle();
+    const inputs = root.querySelectorAll<HTMLInputElement>('.pn-text input');
+    inputs[0]!.value = 'Garden';
+    inputs[0]!.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    row('Save to the house’s palettes')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.palettes.map((f) => f.name)).toEqual(['garden']);
+    expect(row('Remove from the house’s palettes')).toBeDefined();
+    row('Remove from the house’s palettes')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.palettes).toEqual([]);
+    // twelve kept: a thirteenth has no row, only the reason
+    const moss = COMMUNITY_PALETTES.find((file) => file.name === 'moss')!;
+    await handle.store.saveHouse({
+      palettes: Array.from({ length: 12 }, (_, i) => ({ ...moss, name: `p${i}`, title: `P${i}` })),
+    });
+    await settle();
+    expect(row('Save to the house’s palettes')).toBeUndefined();
+    expect(root.textContent).toContain('The house keeps twelve palettes');
+    panel.remove();
+    const guest = await mount(false);
+    (guest.panel as unknown as { draft: unknown }).draft = draft;
+    await guest.settle();
+    // a guest may still share and import (a palette for their own look), never save for the house
+    expect(guest.row('Save to the house’s palettes')).toBeUndefined();
+    expect(guest.root.querySelector('.pn-file')).not.toBeNull();
+    guest.panel.remove();
   });
 
   it('lets the house keep Home Assistant’s own icons in its menus, shown before it is saved', async () => {

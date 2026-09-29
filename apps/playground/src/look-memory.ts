@@ -53,10 +53,11 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
   const listeners = new Set<(settings: EffectiveSettings) => void>();
   let previewed: Parameters<LookHandle['preview']>[0] = null;
   let mode = dark;
+  let wallDark: boolean | undefined;
   // as at home: the look on the page, and the language and motion the cards use
   const apply = (): void => {
     const now = previewed ? { ...store.effective, ...previewed } : store.effective;
-    engine.apply(now, mode);
+    engine.apply(now, wallDark ?? mode);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
     setMotionPreference(now.motion);
     refreshCards();
@@ -71,6 +72,10 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
     onChange: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    setWall: (state) => {
+      wallDark = state.dark;
+      apply();
     },
     stop: () => store.stop(),
   };

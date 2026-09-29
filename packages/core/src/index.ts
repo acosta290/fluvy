@@ -16,3 +16,12 @@ export { ICON_SET, iconNames, registerIcons } from './icons/index.js';
 export { startShell, themed, type ShellHandle, type ShellReport } from './shell/index.js';
 export * from './look/index.js';
 export * from './settings/index.js';
+export { startWall } from './wall/start.js';
+export type { WallFacade, WallStartOptions } from './wall/start.js';
+export type {
+  ScreensaverOptions,
+  WallHandle,
+  WallPhase,
+  WallState,
+  WallUi,
+} from './wall/controller.js';

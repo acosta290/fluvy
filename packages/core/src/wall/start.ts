@@ -1,0 +1,82 @@
+import type { HomeAssistant } from '../ha/types.js';
+import type { LookHandle } from '../look/start.js';
+import { appHass } from '../look/start.js';
+import { latchFromUrl, readDevice } from '../settings/device.js';
+import type { WallHandle, WallPhase, WallUi } from './controller.js';
+
+/*
+ * The wall's switch, in every page's bundle: reads `?kiosk` off the address (and drops it), and on a device that
+ * is a wall fetches the controller and its pieces. Everywhere else it answers "off" and costs nothing more.
+ */
+
+export interface WallStartOptions {
+  readonly look: LookHandle | undefined;
+  /** Fetches the wall's pieces (the cards package's screensaver, corner and toast). */
+  ui(): Promise<WallUi>;
+  /** Home Assistant's app object (default: the page's `<home-assistant>`); the playground hands its own. */
+  hass?(): HomeAssistant | undefined;
+}
+
+/** The wall as the page sees it: the controller's answers, or "off" until (and unless) it loads. */
+export interface WallFacade {
+  on(): boolean;
+  phase(): WallPhase;
+  dark(): boolean | undefined;
+  pause(): void;
+  resume(): void;
+  sleep(): void;
+  wake(): void;
+  onChange(listener: (phase: WallPhase) => void): () => void;
+  /** Whether the controller was fetched: this device is a wall. */
+  loaded(): boolean;
+  /** Fetches the controller if the device became a wall since the page loaded (the panel's switch). */
+  refresh(): void;
+}
+
+export function startWall(options: WallStartOptions): WallFacade {
+  const latched = latchFromUrl(location.search);
+  if (latched !== undefined) {
+    // the address is read once; the device remembers, and the address stays clean
+    const url = new URL(location.href);
+    url.searchParams.delete('kiosk');
+    history.replaceState(history.state, '', url.toString());
+  }
+  const listeners = new Set<(phase: WallPhase) => void>();
+  let inner: WallHandle | undefined;
+  let loading = false;
+  const { look } = options;
+  const load = (): void => {
+    if (inner || loading || !look || !readDevice().wall) return;
+    loading = true;
+    void import('./controller.js').then((m) => {
+      inner = m.createWall({
+        doc: document,
+        win: window,
+        hass: options.hass ?? appHass,
+        settings: () => look.settings(),
+        onSettings: (listener) => look.onChange(() => listener()),
+        setWall: (state) => look.setWall(state),
+        ui: options.ui,
+        onPhase: (phase) => {
+          for (const listener of listeners) listener(phase);
+        },
+      });
+    });
+  };
+  load();
+  return {
+    on: () => inner?.on() ?? false,
+    phase: () => inner?.phase() ?? 'off',
+    dark: () => inner?.dark(),
+    pause: () => inner?.pause(),
+    resume: () => inner?.resume(),
+    sleep: () => inner?.sleep(),
+    wake: () => inner?.wake(),
+    onChange: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    loaded: () => inner !== undefined,
+    refresh: load,
+  };
+}

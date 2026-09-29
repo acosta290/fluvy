@@ -8,6 +8,7 @@
 | [The theme](theme.md) | palettes, custom accents, shapes and buttons, the tokens, using the theme on its own |
 | [The cards](cards.md) | every card with its purpose, a minimal configuration and its options |
 | [The automatic dashboards](automatic-dashboard.md) | the five templates (`custom:fluvy-home`, rooms, energy, security, wall), what they build from your home, and their options |
+| [Wall mode](wall.md) | a tablet on the wall: no sidebar or header, the screensaver, day and night, how to leave it |
 | [Activity and History](pages.md) | the two pages that stand in for the logbook and the history |
 | [Everywhere](shell.md) | what the shell restyles, how to switch pieces off, what to expect after a Home Assistant release |
 | [Troubleshooting](troubleshooting.md) | when something looks wrong, and how to collect a report |

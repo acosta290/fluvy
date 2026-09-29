@@ -1,0 +1,41 @@
+import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../../look/attributes.js';
+
+/*
+ * A wall panel (`<html fluvy-wall>`): the page does not bounce or select, the drawer is gone with its width, the
+ * dashboard has no header and fills the tablet inside its safe area, and its view takes the wall's background
+ * (the wall mesh, or Home Assistant's own when the house keeps the page plain). These sheets fill on the
+ * attribute alone, whatever the theme: a wall is a wall in every scope.
+ */
+
+export const wallPageCss = `
+html[${WALL_ATTRIBUTE}] {
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+`;
+
+export const wallDrawerCss = `
+:host {
+  --mdc-drawer-width: 0px;
+}
+.sidebar-shell,
+wa-drawer::part(dialog) {
+  display: none;
+}
+`;
+
+export const wallDashboardCss = `
+:host {
+  --header-height: 0px;
+}
+.header {
+  display: none;
+}
+#view {
+  min-height: 100vh;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(${WALL_BACKGROUND_VAR}, var(--lovelace-background, var(--primary-background-color))) !important;
+}
+`;

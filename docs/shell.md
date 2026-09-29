@@ -17,6 +17,15 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 - **Panels in a frame** (HACS): they get Inter and a shell of their own.
 - **The Activity and History pages** (see [pages](pages.md)), with their own switches.
 
+## The wall's sheets
+
+A device that is a wall panel ([wall mode](wall.md)) carries `fluvy-wall` on `<html>`, and three more sheets fill
+only while it does, whatever the theme: the page (no overscroll, no text selection), the drawer (`ha-drawer`: the
+sidebar shell hidden, the drawer's width zero) and the dashboard (`hui-root`: the header hidden, the view padded by
+the tablet's safe area, the wall mesh as the view's background when the house asks for it). Each has a probe like
+the others, so a Home Assistant release that renames what they find leaves the sidebar and the header in place —
+the wall fails open, never trapped.
+
 ## What it never does
 
 It never changes what a page does, never intercepts a click, and never persists anything. Every sheet is attached

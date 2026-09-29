@@ -22,6 +22,7 @@ import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
+import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
 import { NOW, SHEETS } from './scenes.js';
 
 /**
@@ -163,6 +164,17 @@ if (activity)
     language,
     params.get('live') !== '0',
     (params.get('moment') ?? undefined) as ActivityMoment | undefined,
+  );
+// the wall: this page as a wall panel over the sheet's frames (`?sheet=home&wall=1&moment=asleep`)
+const wallMoment =
+  params.get('wall') === '1' ? ((params.get('moment') ?? 'awake') as WallMoment) : undefined;
+if (wallMoment)
+  void mountWall(
+    document,
+    () => mock.hass(),
+    dark,
+    wallMoment,
+    wallSettingsFor(params, wallMoment),
   );
 const compare = (params.get('compare') ?? '').split(',').filter(isPaletteName);
 const shape = params.get('shape');

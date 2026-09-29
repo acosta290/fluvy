@@ -148,6 +148,43 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - The **map** variant is Home Assistant's own map card on a plate (16 radius, 1.6:1 or square); it falls back to the
   columns in silence where the card helpers are missing.
 
+## Dashboards (the panel's tab)
+
+- Five templates as rows in one card: a created one is a row that opens (accent circle, its url as the sub, the bare
+  chevron); a missing one carries its description as the sub and a small quiet button at its end ("Create", 36 tall,
+  radius 12) — the row is the tap target, the button says what the tap does; while it is being made the sub says so
+  and the row takes no second tap. Then one card of options per dashboard the house has, headed by the dashboard's
+  own name: its views as rows (the first "Always", the others switches), each choice as a full chip row, the wall's
+  rooms as chips that toggle, then the sidebar switch and *Recreate* in two taps (the armed row in the warning tone,
+  "Cancels in 4 seconds"). The preview draws the template touched last.
+
+## Wall
+
+- A wall is the dashboard alone: no sidebar, no header, the view padded by the tablet's safe area and, when the house
+  asks, the wall mesh behind the cards. Nothing of Fluvy's is a gesture on it but the **corner**: a 44 square at the
+  top right, invisible until pressed; a hold fills a 2 px ring (radius 18, the accent, its track at 20 %) over a
+  second and a half and the tablet taps back once — letting go before cancels. The pause it makes returns the chrome
+  with a **toast** at the foot: 44 tall, card fill, hairline and lift, radius 12, "Wall paused" 14/600 and a 32 accent
+  button "Resume"; it stays as long as the pause does.
+- The **screensaver** is a modal in the top layer: the wall mesh (or black), the digital clock in its hero size with
+  the date under it in a 480 column, centred; dimmed, the clock is white at 60 %. It fades in over 320 ms and out over
+  200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over
+  the page while awake.
+- The panel's Wall tab: *This device* (the wall switch and the address with a copy button), *Wall dashboards* (the
+  Scope list's idiom), *Screen* (the minutes as chips — five, in two rows on a phone —, two switch rows, the motion
+  sensors as chips), *Day and night* (four option tiles in 2 × 2 with a value line each, two time fields for the
+  hours, the veil's share as chips), *Background* (two chips) and a preview of the clock over two tiles on the
+  background chosen.
+
+## Palettes that travel
+
+- Two more gallery lines after Electric: *Yours* (the house's saved palettes) and *Community* (the shipped ones, six
+  shown and a "Show all (n)" chip), each swatch titled by its file with "by <author>" under the name (11/500,
+  secondary, 16 line); the Custom entry is active only when the draft equals none of them. The *Share* card follows
+  the custom editor: two labelled text fields (title, author) in a pair, the pair "Share this palette" (disabled until
+  a title) | "Import a palette", and for an administrator one row — save (accent circle) or remove (its title as the
+  sub) — or the reason there is no room.
+
 ## Readouts and text
 
 - Readout = 11/600 uppercase label (0.06 em) + tabular value + unit on the baseline; a unit has its own line box (`line-height: 1`) so it never grows the value's box. Sizes: xs 16/20 (tile foot), s 20/24, m 24/28, l 40/44.
@@ -242,5 +279,5 @@ Generated, opaque, no images: the page colour plus three radial stops in the pal
 
 - **Phone** 392: side padding 16, content 360; status bar 44, hello 60, room tab chips (14 px, ink active, content-sized), section titles 24 with a "4 devices ›" meta, tiles 2 × 172, cards 360, bottom nav 60.
 - **Desktop** 1440 × 1024: the HA shell drawn as HA draws it and only coloured by our tokens — sidebar 256 with HA's fixed logo on the icon column and a colourable title (brand row 44), items 40 high / radius 4 / 24 icons, selection = the selected-icon colour at 12 %, foot ending on the sections' bottom line; toolbar 76 with the dashboard name sized by content, view tabs as text with a 2 px accent selection bar, bare 44 icon buttons at the right. Content 1184 with 32 padding → three 352 columns (content 312) and 32 gaps, 16 between cards; first nav item top = first card top (84); all three columns end on one line (992). Cards stretch to the column: tiles 152 + 8 + 152, rulers 120 / 312, options 3 × 96 + 2 × 12, readout columns 96 with 12 gaps, five 56 transport rounds with 8 gaps, scene tiles 84, presence as three 60 rows (success dot = presence), the plug foot 56 + 64.
-- **Tablet / wall** 1024 × 768 (HA's header 76 kept — title, text tabs, bare icon buttons; no invented bar): 8 between the header and the first row, 24 at the bottom; content 960 → two 464 columns (content 424) ending on one line (84–744, 660 of content); tiles 208 + 8 + 208, rulers 176 / 424, readout columns 128 with 20 gaps. Type tiers for a panel read from 1–2 m: glance = the clock 40/44 in the hello card and the dial value 48 (dial drawn large at R 88), approach = 24 readouts and the 22 greeting (card titles stay 16, rows 15), touch = 13 subs. Dark is the default for a wall panel; a day/night theme schedule is a product setting, not a design.
+- **Tablet / wall** 1024 × 768 (HA's header 76 kept when the tablet is not a wall — title, text tabs, bare icon buttons; no invented bar; as a wall the header and the sidebar are gone and the dashboard fills the tablet, the wall template's two columns): 8 between the header and the first row, 24 at the bottom; content 960 → two 464 columns (content 424) ending on one line (84–744, 660 of content); tiles 208 + 8 + 208, rulers 176 / 424, readout columns 128 with 20 gaps. Type tiers for a panel read from 1–2 m: glance = the clock 40/44 in the hello card and the dial value 48 (dial drawn large at R 88), approach = 24 readouts and the 22 greeting (card titles stay 16, rows 15), touch = 13 subs. Dark is the default for a wall panel; a day/night theme schedule is a product setting, not a design.
 - **Review sheets**: explicit 392 / 392 grid with a 48 gap on a 900 canvas (1504 / 1088 for the compositions); frames start-aligned; rows top-aligned. Sheets are the storybook of the implementation. Every sheet also renders with `--frame dark`.

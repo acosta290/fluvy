@@ -34,6 +34,15 @@ try {
   // no storage or a stale value: the build applies the look once the settings arrive
 }
 
+// A wall panel starts as one: the shell hides the sidebar and the header on this attribute before Home
+// Assistant renders (the build's wall controller confirms, or takes it off, once it knows the page).
+try {
+  const device = JSON.parse(localStorage.getItem('fluvy:device') ?? 'null');
+  if (device && device.wall === true) document.documentElement.setAttribute('fluvy-wall', '');
+} catch {
+  // no storage: a device that is not a wall
+}
+
 // The `fluvy:` icon set exists before the app renders: `<ha-icon>` marks an icon of an unknown set
 // "legacy" for good, and the sidebar and the view tabs render before the build arrives. Until then
 // each request waits; the build's registerIcons() replaces this stand-in and hands the real set over.

@@ -53,6 +53,12 @@ function withLanguage(hass: HomeAssistant | undefined): HomeAssistant | undefine
 /** Said on the window when a person's preferences change: what is not a card (a page of ours) follows too. */
 export const PREFERENCES_EVENT = 'fluvy-preferences';
 
+/** A mode forced on every card (a wall at night); undefined lets Home Assistant's own mode through. */
+let darkOverride: boolean | undefined;
+export function setDarkOverride(dark: boolean | undefined): void {
+  darkOverride = dark;
+}
+
 /** Hands every card on the page the person's preferences now chosen (fluvy's settings changed): language, motion. */
 export function refreshCards(): void {
   for (const card of live) {
@@ -243,7 +249,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
    * does) and which palette it wears (its own colours are derived on it).
    */
   syncTheme(): void {
-    this.dark = this.hass?.themes?.darkMode ?? false;
+    this.dark = darkOverride ?? this.hass?.themes?.darkMode ?? false;
     const computed = getComputedStyle(this);
     // The theme carries a sentinel the fallback never defines, so this cannot feed back on itself.
     this.noTheme = computed.getPropertyValue(THEME_SENTINEL).trim() === '';

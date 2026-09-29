@@ -80,7 +80,8 @@ pnpm --filter @fluvy/playground dev      # http://127.0.0.1:5183/
 own tokens), `palette=volt`, `shape=round`, `accent=%23ff4a1a&character=vivid&base=cool`, `compare=linen,volt`,
 `panel=appearance&state=pending,guest` (`panel=preferences&state=menu` opens the language menu; `nopopover=1` takes
 the Popover API away, as an older WebView has none; `panel=dashboard&state=dashboards` has every template's dashboard
-created, `recreate` its Recreate row armed), `activity=1&moment=burst`, `history=1&moment=week`. The
+created, `recreate` its Recreate row armed; `panel=wall&state=wall` makes this browser a wall panel), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
+wall panel on the real controller: `after=` minutes, `bg=wall` the mesh), `activity=1&moment=burst`, `history=1&moment=week`. The
 playground's `hass` is a small, honest stand-in: a state store, service calls that change it after a delay, and
 canned answers for the reads the cards make.
 

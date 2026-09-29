@@ -71,7 +71,13 @@ const gzip = (names) => [...names].reduce((sum, name) => sum + files[name].gzip,
 const onDemand = chunks.filter((name) => !initial.has(name));
 // page controls live in the chunks a page fetches, and the strategy's reading of the energy dashboard in its own:
 // one of them in what every dashboard loads is a leak
-const NEVER_INITIAL = ['fluvy-select', 'fluvy-time-field', 'fluvy-panel', 'energy/get_prefs'];
+const NEVER_INITIAL = [
+  'fluvy-select',
+  'fluvy-time-field',
+  'fluvy-panel',
+  'energy/get_prefs',
+  'fluvy-wall-corner',
+];
 for (const name of initial) {
   const code = await readFile(join(dist, name), 'utf8');
   const leaked = NEVER_INITIAL.find(

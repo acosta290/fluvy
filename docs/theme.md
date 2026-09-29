@@ -23,6 +23,15 @@ solid). Every palette — preset or custom — goes through the same generator a
 4.5:1 at least, icons and large text at 3:1, cards separated from the page and from their borders. An accent that
 cannot carry text at 4.5:1 gets a darker ink for text and keeps its full colour for icons and charts.
 
+## Share a palette
+
+A custom palette travels as a file. In the panel's *Appearance* tab, with a custom accent chosen, the *Share* card
+takes a title and an author and writes `<name>.fluvy-palette.json`; *Import a palette* reads one back onto the
+gallery, where it is the palette chosen. An administrator may **save** it to the house's palettes — up to twelve,
+shown under *Yours* in every browser of the house — or remove it. The palettes the community has contributed ship
+with Fluvy under *Community* (six shown, *Show all* for the rest), each with its author beside it; a draft that equals
+one of them is that palette, not "Custom". [How to contribute one](../CONTRIBUTING.md#contributing-a-palette).
+
 ## Shape and buttons
 
 Three shapes set the radii of cards, tiles and controls: **soft** (20 / 16 / 12 px, the default), **round**

@@ -3,7 +3,9 @@ import {
   lookKey,
   paletteKey,
   paletteOf,
+  type DeviceSettings,
   type EffectiveSettings,
+  type WallSettings,
   type HomeAssistant,
   type KeyOf,
   type Look,
@@ -16,27 +18,46 @@ import {
   type CustomPalette,
   type Hex,
   type PaletteChoice,
+  type PaletteFile,
   type PaletteMode,
   type PaletteName,
 } from '@fluvy/tokens/runtime';
+import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import type { Template } from '../strategy/templates.js';
+import { knownPalettes, matchOf } from './palettes.js';
 
 /** Where a person who speaks a language better than we do can help. */
 export const TRANSLATING_URL = 'https://github.com/acosta290/fluvy/blob/main/docs/translating.md';
 
-export type Tab = 'appearance' | 'scope' | 'dashboard' | 'preferences' | 'about';
-export const TABS: readonly Tab[] = ['appearance', 'scope', 'dashboard', 'preferences', 'about'];
+export type Tab = 'appearance' | 'scope' | 'dashboard' | 'wall' | 'preferences' | 'about';
+export const TABS: readonly Tab[] = [
+  'appearance',
+  'scope',
+  'dashboard',
+  'wall',
+  'preferences',
+  'about',
+];
 
 export type StringKey = KeyOf<'panel'>;
 
-/** The house's settings the Scope tab edits (an administrator's to save). */
+/** The house's settings the Scope and Wall tabs edit (an administrator's to save); `wall` always whole. */
 export type HouseEdit = Partial<
-  Pick<EffectiveSettings, 'scope' | 'dashboards' | 'frame' | 'icons' | 'activity' | 'history'>
+  Pick<
+    EffectiveSettings,
+    'scope' | 'dashboards' | 'frame' | 'icons' | 'activity' | 'history' | 'wall'
+  >
 >;
 /** A person's preferences, their own to save. */
 export type PersonalEdit = Partial<
   Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'activityCard'>
 >;
+/** The words a shared palette carries: what the Share card's fields hold. */
+export interface ShareDraft {
+  readonly title: string;
+  readonly author: string;
+}
+
 /** Options of a dashboard's strategy; `undefined` takes a key away (back to its default). */
 export type StrategyEdit = Readonly<Record<string, unknown>>;
 /** The pending edits of every dashboard, by its url path. */
@@ -66,6 +87,15 @@ export interface PanelContext {
   readonly houseEdit: HouseEdit;
   readonly personalEdit: PersonalEdit;
   readonly strategyEdits: StrategyEdits;
+  /** What this browser is (a wall panel or not), as remembered, and the change waiting in the apply bar. */
+  readonly device: DeviceSettings;
+  readonly deviceEdit: boolean | undefined;
+  /** The house's saved palettes (an administrator's to change). */
+  readonly saved: readonly PaletteFile[];
+  /** The Share card's title and author for the custom palette in the draft. */
+  readonly share: ShareDraft;
+  /** Every community palette is listed (six by default). */
+  readonly showAllCommunity: boolean;
   readonly tryOnApp: boolean;
   readonly dashboards: readonly DashboardInfo[];
   /** A dashboard's strategy as saved, with its edits on top (undefined: it is not one of ours). */
@@ -74,7 +104,13 @@ export interface PanelContext {
   editHouse(edit: HouseEdit): void;
   editPersonal(edit: PersonalEdit): void;
   editStrategy(urlPath: string, edit: StrategyEdit): void;
+  /** This device as a wall panel, or not (its own memory, saved from the apply bar like the rest). */
+  editDevice(wall: boolean): void;
   setTryOnApp(on: boolean): void;
+  /** A word for a moment (the notice under the bar). */
+  notify(key: StringKey): void;
+  setShare(patch: Partial<ShareDraft>): void;
+  setShowAllCommunity(on: boolean): void;
   /** Saves every edit; a changed look for the house or for this person. */
   apply(to: 'house' | 'me'): void;
   discard(): void;
@@ -219,38 +255,67 @@ export function withEdit(
 
 export const sameLook = (a: Look, b: Look): boolean => lookKey(a) === lookKey(b);
 
-/** A palette's name: a preset's own (the same in every language), or "Custom". */
-export const paletteTitle = (choice: PaletteChoice, t: PanelContext['t']): string =>
+/**
+ * A palette's name: a preset's own (the same in every language), a saved or community palette's title when the
+ * choice equals one (`known`: the house's palettes and the community's), else "Custom".
+ */
+export const paletteTitle = (
+  choice: PaletteChoice,
+  t: PanelContext['t'],
+  known: readonly PaletteFile[] = COMMUNITY_PALETTES,
+): string =>
   isCustom(choice)
-    ? t('palette.custom')
+    ? (matchOf(choice, known)?.title ?? t('palette.custom'))
     : (presetSeeds.find((seed) => seed.name === choice)?.title ?? choice);
 
 export const shapeTitle = (look: Look, t: PanelContext['t']): string =>
   t(`shape.${look.shape}` as StringKey);
 
 /** "Linen · Soft". */
-export const lookTitle = (look: Look, t: PanelContext['t']): string =>
-  `${paletteTitle(look.palette, t)} · ${shapeTitle(look, t)}`;
+export const lookTitle = (
+  look: Look,
+  t: PanelContext['t'],
+  known: readonly PaletteFile[] = COMMUNITY_PALETTES,
+): string => `${paletteTitle(look.palette, t, known)} · ${shapeTitle(look, t)}`;
 
 export const pillTitle = (look: Look, t: PanelContext['t']): string =>
   t(`pills.${look.pills}` as StringKey);
 
 /** What a look change is, in a line: what moved, each from → to ("Linen → Volt · Soft → Round"). */
-export function changeTitle(from: Look, to: Look, t: PanelContext['t']): string {
+export function changeTitle(
+  from: Look,
+  to: Look,
+  t: PanelContext['t'],
+  known: readonly PaletteFile[] = COMMUNITY_PALETTES,
+): string {
   const parts: string[] = [];
   if (paletteKey(from.palette) !== paletteKey(to.palette))
-    parts.push(`${paletteTitle(from.palette, t)} → ${paletteTitle(to.palette, t)}`);
+    parts.push(`${paletteTitle(from.palette, t, known)} → ${paletteTitle(to.palette, t, known)}`);
   if (from.shape !== to.shape) parts.push(`${shapeTitle(from, t)} → ${shapeTitle(to, t)}`);
   if (from.pills !== to.pills) parts.push(`${pillTitle(from, t)} → ${pillTitle(to, t)}`);
   return parts.join(' · ');
 }
+
+/** The wall's settings by the label the Wall tab gives them (the hours share the day-and-night line). */
+const WALL_LABELS: ReadonlyArray<readonly [keyof WallSettings, StringKey]> = [
+  ['dashboards', 'wall.dashboards'],
+  ['after', 'wall.after'],
+  ['clock', 'wall.clock'],
+  ['dim', 'wall.dim'],
+  ['wakeEntity', 'wall.wake'],
+  ['theme', 'wall.day_night'],
+  ['from', 'wall.day_night'],
+  ['to', 'wall.day_night'],
+  ['nightDim', 'wall.night_dim'],
+  ['background', 'wall.background'],
+];
 
 /** Every pending change as a line of the apply bar, in the order of the tabs. */
 export function changeLines(ctx: PanelContext): string[] {
   const { t, shown } = ctx;
   const onOff = (on: boolean): string => t(on ? 'change.on' : 'change.off');
   const lines: string[] = [];
-  if (ctx.dirty) lines.push(changeTitle(ctx.settings.look, ctx.draft, t));
+  if (ctx.dirty) lines.push(changeTitle(ctx.settings.look, ctx.draft, t, knownPalettes(ctx.saved)));
   const house = ctx.houseEdit;
   if (house.scope)
     lines.push(t(house.scope === 'everywhere' ? 'change.everywhere' : 'change.dashboards'));
@@ -259,6 +324,12 @@ export function changeLines(ctx: PanelContext): string[] {
   if (house.icons !== undefined) lines.push(`${t('scope.icons')} · ${onOff(house.icons)}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
+  if (ctx.deviceEdit !== undefined)
+    lines.push(`${t('tab.wall')} · ${t('wall.use')} · ${onOff(ctx.deviceEdit)}`);
+  if (house.wall)
+    for (const [key, label] of WALL_LABELS)
+      if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))
+        lines.push(`${t('tab.wall')} · ${t(label)}`);
   for (const [urlPath, edit] of Object.entries(ctx.strategyEdits)) {
     const dashboard = ctx.dashboards.find((d) => d.urlPath === urlPath);
     for (const key of Object.keys(edit)) {

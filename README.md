@@ -128,6 +128,8 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 - **Forty-one cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose.
 - **Five automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall.
+- **Wall mode** for a tablet: no sidebar, no header, a screensaver with the clock, dark at night, the screen kept
+  awake — `?kiosk` on the dashboard's address and the tablet remembers.
 - **A settings panel** for the house and for each person.
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.
@@ -175,6 +177,7 @@ Open **Fluvy** in the sidebar.
 - **Dashboards** — create any of the five automatic dashboards with one tap and set its options, or add a
   dashboard of your own with `strategy: { type: custom:fluvy-home }` (or `fluvy-rooms`, `fluvy-energy`,
   `fluvy-security`, `fluvy-wall`) in its raw configuration.
+- **Wall** — what this tablet is, which dashboards are walls, the screensaver, day and night, the background.
 - **Preferences** — language, motion and haptics, per person.
 
 The cards are in the card picker under **Fluvy · …**, each with a preview; `docs/cards.md` lists them with their
@@ -190,6 +193,7 @@ options.
 | [The theme](docs/theme.md) | palettes, custom accents, shapes, the tokens |
 | [The cards](docs/cards.md) | every card, with its configuration |
 | [The automatic dashboards](docs/automatic-dashboard.md) | what the five templates build from your home, and how to steer them |
+| [Wall mode](docs/wall.md) | a tablet on the wall: the kiosk, the screensaver, day and night |
 | [Activity and History](docs/pages.md) | the two pages |
 | [Everywhere](docs/shell.md) | what the shell restyles, and what to expect after a Home Assistant release |
 | [Troubleshooting](docs/troubleshooting.md) | when something looks wrong |

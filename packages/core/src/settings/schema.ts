@@ -118,6 +118,8 @@ export interface EffectiveSettings {
   readonly motion: Motion;
   readonly haptics: boolean;
   readonly activityCard: boolean;
+  /** How the house's walls behave (the device says whether this page is one). */
+  readonly wall: WallSettings;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -267,6 +269,7 @@ export function resolveSettings(
     motion: personal.motion,
     haptics: personal.haptics,
     activityCard: personal.activityCard,
+    wall: house.wall,
   };
 }
 

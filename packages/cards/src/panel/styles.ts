@@ -282,6 +282,46 @@ export const panelStyles = css`
   .pn-chips--static .fv-chip {
     pointer-events: none;
   }
+  /* a saved or community swatch: its author under the name, in the secondary ink */
+  .pn-swatch__by {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 16px;
+    color: var(--fluvy-text-secondary);
+  }
+  .pn-swatch.is-active .pn-swatch__by {
+    color: inherit;
+    opacity: 0.8;
+  }
+  /* the Share card's two text fields: a label over a 44 field */
+  .pn-text {
+    display: block;
+  }
+  .pn-text .pn-label {
+    display: block;
+    margin: 0;
+  }
+  .pn-text .fv-field {
+    display: flex;
+    margin-top: 8px;
+  }
+  .pn-fields {
+    margin-top: 4px;
+  }
+  /* the wall's preview: the clock over two tiles on the wall's background (or the card's) */
+  .pn-preview--wall {
+    padding: 16px;
+    border-radius: var(--fluvy-radius-lg);
+  }
+  .pn-preview--wall fluvy-clock-card {
+    display: block;
+    margin-bottom: 16px;
+  }
+  /* the night's two times, side by side */
+  .pn-times {
+    margin-top: 12px;
+  }
   .pn-rows {
     display: flex;
     flex-direction: column;

@@ -80,6 +80,7 @@ import {
 } from './css/more-info.js';
 import { headerBarCss, notificationItemCss, notificationsCss } from './css/notifications.js';
 import { pageCss } from './css/page.js';
+import { wallDashboardCss, wallDrawerCss, wallPageCss } from './css/wall.js';
 import {
   dateRangeNavCss,
   debugViewportCss,
@@ -185,9 +186,10 @@ export interface ShellSheet {
   readonly instead?: string;
   /**
    * A choice the house can turn off: `icons`, our icons in Home Assistant's own menus (the sidebar's glyphs,
-   * Settings' icon circles). Off, the sheet stays empty and Home Assistant draws its own.
+   * Settings' icon circles) — off, the sheet stays empty and Home Assistant draws its own. `wall`: the sheet fills
+   * only while `<html>` carries the wall attribute, and then whatever the theme.
    */
-  readonly choice?: 'icons';
+  readonly choice?: 'icons' | 'wall';
 }
 
 /** Every touch of the shell. Adding a Home Assistant component is one line here plus its CSS in `css/`. */
@@ -209,6 +211,22 @@ export const SHEETS: readonly ShellSheet[] = [
     probe: '.title',
   },
   { id: 'dashboard-root', target: 'hui-root', css: `${subpageCss}\n${editBarCss}` },
+  // a wall panel: no chrome (fills on `<html fluvy-wall>` alone)
+  { id: 'wall:page', target: 'document', css: wallPageCss, choice: 'wall' },
+  {
+    id: 'wall:drawer',
+    target: 'ha-drawer',
+    css: wallDrawerCss,
+    probe: '.sidebar-shell',
+    choice: 'wall',
+  },
+  {
+    id: 'wall:dashboard',
+    target: 'hui-root',
+    css: wallDashboardCss,
+    probe: '.header',
+    choice: 'wall',
+  },
   { id: 'view-header', target: 'hui-view-header', css: viewHeaderCss },
   { id: 'view-badges', target: 'hui-view-badges', css: viewBadgesCss },
   { id: 'section-edit', target: 'hui-section-edit-mode', css: sectionEditCss },

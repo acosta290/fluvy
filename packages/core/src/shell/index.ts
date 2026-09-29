@@ -1,5 +1,5 @@
 import { THEME_SENTINEL } from '@fluvy/tokens/config';
-import { PAGE_ATTRIBUTE } from '../look/attributes.js';
+import { PAGE_ATTRIBUTE, WALL_ATTRIBUTE } from '../look/attributes.js';
 import { patchChartFont, patchChartSeries } from './charts.js';
 import { adoptLast, walkShadow } from './dom.js';
 import { ORIGINAL_ICONS } from './css/chrome.js';
@@ -142,16 +142,28 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
 
   let active: boolean | null = null;
   let icons: boolean | null = null;
+  let wall: boolean | null = null;
   const sync = (): void => {
     const on = themed(env.document);
     const ours = !env.document.documentElement.hasAttribute(ORIGINAL_ICONS);
-    if (on === active && ours === icons) return;
+    const walled = env.document.documentElement.hasAttribute(WALL_ATTRIBUTE);
+    if (on === active && ours === icons && walled === wall) return;
     const drawn = active === true && icons === true;
     const first = active === null;
     active = on;
     icons = ours;
+    wall = walled;
+    // a wall sheet follows the wall attribute alone (a wall is a wall in every scope); the rest follow the theme
     for (const { spec, sheet } of entries)
-      sheet.replaceSync(on && (spec.choice !== 'icons' || ours) ? spec.css : '');
+      sheet.replaceSync(
+        spec.choice === 'wall'
+          ? walled
+            ? spec.css
+            : ''
+          : on && (spec.choice !== 'icons' || ours)
+            ? spec.css
+            : '',
+      );
     // Home Assistant's Material icons drawn as ours (or back) on what is already on the page
     if (!first && drawn !== (on && ours)) redrawSvgIcons(env.document, on && ours);
   };
@@ -209,7 +221,7 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
   const observer = new env.MutationObserver(sync);
   observer.observe(env.document.documentElement, {
     attributes: true,
-    attributeFilter: ['style', PAGE_ATTRIBUTE, ORIGINAL_ICONS],
+    attributeFilter: ['style', PAGE_ATTRIBUTE, ORIGINAL_ICONS, WALL_ATTRIBUTE],
     subtree: true,
   });
 

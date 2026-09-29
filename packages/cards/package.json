@@ -26,7 +26,8 @@
     ".": "./src/index.ts",
     "./activity": "./src/activity/view.ts",
     "./history": "./src/history/view.ts",
-    "./panel": "./src/panel/define.ts"
+    "./panel": "./src/panel/define.ts",
+    "./wall": "./src/wall/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

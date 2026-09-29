@@ -1,15 +1,18 @@
 import {
+  type DeviceSettings,
   type EffectiveSettings,
   type HomeAssistant,
   type Look,
-  lookHandle,
   type LookHandle,
+  lookHandle,
   type LookPreview,
   lookRule,
   navigate,
   onWords,
+  readDevice,
   resyncCardThemes,
   strings,
+  writeDevice,
 } from '@fluvy/core';
 import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 
@@ -22,6 +25,7 @@ import { keyed } from 'lit/directives/keyed.js';
 import { houseEnergy } from '../strategy/home-strategy.js';
 
 import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.js';
+import { knownPalettes, matchOf } from './palettes.js';
 
 import {
   changeLines,
@@ -35,6 +39,7 @@ import {
   type PanelContext,
   type PersonalEdit,
   type StrategyEdit,
+  type ShareDraft,
   type StrategyEdits,
   type StringKey,
   type Tab,
@@ -46,6 +51,8 @@ import {
   appearance,
   appearancePreview,
   dashboards,
+  wall,
+  wallPreview,
   dashboardPreview,
   preferences,
   scope,
@@ -56,6 +63,10 @@ import { panelStyles } from './styles.js';
 import {
   aboutFacts,
   createDashboard,
+  exportPalette,
+  importPalette,
+  removePalette,
+  savePalette,
   exportSettings,
   importSettings,
   resetHouse,
@@ -98,6 +109,9 @@ export class FluvyPanel extends LitElement {
     houseEdit: { state: true },
     personalEdit: { state: true },
     strategyEdits: { state: true },
+    deviceEdit: { state: true },
+    share: { state: true },
+    showAllCommunity: { state: true },
     tryOnApp: { state: true },
     dashboards: { state: true },
     notice: { state: true },
@@ -125,6 +139,11 @@ export class FluvyPanel extends LitElement {
   declare houseEdit: HouseEdit;
   declare personalEdit: PersonalEdit;
   declare strategyEdits: StrategyEdits;
+  /** This device as a wall panel, or not: the change waiting in the apply bar (undefined: none). */
+  declare deviceEdit: boolean | undefined;
+  /** The Share card's words for the custom palette in the draft. */
+  declare share: ShareDraft;
+  declare showAllCommunity: boolean;
   declare tryOnApp: boolean;
   declare dashboards: readonly DashboardInfo[];
   declare notice: string;
@@ -144,6 +163,8 @@ export class FluvyPanel extends LitElement {
   declare noTheme: boolean;
 
   private settings?: EffectiveSettings;
+  /** What this browser is, as remembered. */
+  private device: DeviceSettings = readDevice();
   private off: (() => void) | undefined;
   private preview?: PreviewHouse;
   /** The language the preview's cards were named in (they are made again in another). */
@@ -192,6 +213,8 @@ export class FluvyPanel extends LitElement {
     this.notice = '';
     this.resetArmed = false;
     this.recreateArmed = '';
+    this.share = { title: '', author: '' };
+    this.showAllCommunity = false;
     this.wide = false;
     this.side = false;
     this.leaving = false;
@@ -404,7 +427,8 @@ export class FluvyPanel extends LitElement {
       (!!this.draft && !!this.settings && !sameLook(this.draft, this.settings.look)) ||
       Object.keys(this.houseEdit).length > 0 ||
       Object.keys(this.personalEdit).length > 0 ||
-      Object.keys(this.strategyEdits).length > 0
+      Object.keys(this.strategyEdits).length > 0 ||
+      this.deviceEdit !== undefined
     );
   }
 
@@ -564,6 +588,11 @@ export class FluvyPanel extends LitElement {
       houseEdit: this.houseEdit,
       personalEdit: this.personalEdit,
       strategyEdits: this.strategyEdits,
+      device: this.device,
+      deviceEdit: this.deviceEdit,
+      saved: handle.store.house.palettes,
+      share: this.share,
+      showAllCommunity: this.showAllCommunity,
       tryOnApp: this.tryOnApp,
       dashboards: this.dashboards,
       strategyOf: (urlPath) => {
@@ -572,6 +601,11 @@ export class FluvyPanel extends LitElement {
       },
       setDraft: (look) => {
         this.draft = { ...(this.draft ?? draft), ...look };
+        // a palette that is a saved or community one brings its words to the Share card
+        if (look.palette !== undefined) {
+          const match = matchOf(look.palette, knownPalettes(handle.store.house.palettes));
+          if (match) this.share = { title: match.title, author: match.author ?? '' };
+        }
       },
       editHouse: (edit) => {
         if (this.settings) this.houseEdit = unsaved({ ...this.houseEdit, ...edit }, this.settings);
@@ -593,8 +627,18 @@ export class FluvyPanel extends LitElement {
         this.strategyEdits = next;
         this.lastEdited = urlPath;
       },
+      editDevice: (wall) => {
+        this.deviceEdit = wall === this.device.wall ? undefined : wall;
+      },
       setTryOnApp: (on) => {
         this.tryOnApp = on;
+      },
+      notify: (key) => this.show(this.t(key)),
+      setShare: (patch) => {
+        this.share = { ...this.share, ...patch };
+      },
+      setShowAllCommunity: (on) => {
+        this.showAllCommunity = on;
       },
       apply: (to) => this.run(() => this.save(to)),
       discard: () => {
@@ -602,6 +646,7 @@ export class FluvyPanel extends LitElement {
         this.houseEdit = {};
         this.personalEdit = {};
         this.strategyEdits = {};
+        this.deviceEdit = undefined;
         this.tryOnApp = false;
       },
       run: (task) => this.run(task),
@@ -640,6 +685,12 @@ export class FluvyPanel extends LitElement {
       written = true;
     }
     if (written) await this.loadDashboards();
+    if (this.deviceEdit !== undefined) {
+      // the device's own memory; the wall's controller, in every page, reads it again
+      this.device = writeDevice({ wall: this.deviceEdit });
+      this.deviceEdit = undefined;
+      (window as { __fluvy?: { wall?: { refresh?: () => void } } }).__fluvy?.wall?.refresh?.();
+    }
     this.tryOnApp = false;
   }
 
@@ -713,7 +764,12 @@ export class FluvyPanel extends LitElement {
   private body(ctx: PanelContext): TemplateResult {
     switch (this.tab) {
       case 'appearance':
-        return appearance(ctx);
+        return appearance(ctx, {
+          exportPalette,
+          importPalette: (file) => importPalette(this, ctx, file),
+          savePalette: (file) => savePalette(this, ctx, file),
+          removePalette: (name) => removePalette(this, ctx, name),
+        });
       case 'scope': {
         const source = this.themeSource();
         return scope(
@@ -730,6 +786,8 @@ export class FluvyPanel extends LitElement {
           creating: this.creating,
           recreateArmed: this.recreateArmed,
         });
+      case 'wall':
+        return wall(ctx);
       case 'preferences':
         return preferences(ctx);
       case 'about':
@@ -759,6 +817,16 @@ export class FluvyPanel extends LitElement {
           ctx.strategyOf(previewed.urlPath) ?? {},
         ),
         previewed.title,
+      );
+    }
+    if (this.tab === 'wall') {
+      const mesh = ctx.shown.wall.background === 'wall';
+      return wallPreview(
+        ctx,
+        html`<div class="pn-preview pn-preview--wall ${mesh ? 'fv-bg--wall' : ''}">
+          ${house.clock()}
+          <div class="pn-preview__tiles">${house.tile('living')}${house.tile('kitchen')}</div>
+        </div>`,
       );
     }
     if (this.tab !== 'appearance' && !this.side) return undefined;

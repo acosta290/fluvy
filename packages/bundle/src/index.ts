@@ -9,6 +9,7 @@ import {
   setFontFolder,
   startLook,
   startShell,
+  startWall,
   type LookHandle,
   type ShellHandle,
 } from '@fluvy/core';
@@ -47,10 +48,13 @@ if (host.__fluvy) {
   const here: string = import.meta.url;
   setFontFolder(new URL('fonts/', here).href);
   ensureFonts();
+  const look = startLook();
   const fluvy = {
     version,
     shell: startShell(),
-    look: startLook(),
+    look,
+    // the wall: its controller and its pieces load only on a device that is one
+    wall: startWall({ look, ui: () => import('@fluvy/cards/wall') }),
     activity: null as boolean | null,
     history: null as boolean | null,
   };

@@ -11,3 +11,8 @@ export const ORIGINAL_HISTORY = 'fluvy-original-history';
 
 /** On `<html>`: this person wants the Activity page's timeline on a card (fluvy's preferences). */
 export const ACTIVITY_CARD = 'fluvy-activity-card';
+
+/** On `<html>`: this device is a wall panel and the page is one of the house's walls (the shell hides the chrome). */
+export const WALL_ATTRIBUTE = 'fluvy-wall';
+/** On `<html>`: the wall's background for the dashboard's view (the wall mesh), read by the shell's wall sheet. */
+export const WALL_BACKGROUND_VAR = '--fluvy-wall-bg';

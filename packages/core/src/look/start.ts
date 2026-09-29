@@ -39,6 +39,12 @@ export type LookPreview = Partial<
   >
 >;
 
+/** What the wall tells the look: whether this page is a wall (no frame) and the mode it forces (undefined: Home Assistant's). */
+export interface WallState {
+  readonly on: boolean;
+  readonly dark: boolean | undefined;
+}
+
 export interface LookHandle {
   /** The settings, live; the panel reads and writes them here. */
   readonly store: SettingsStore;
@@ -48,12 +54,15 @@ export interface LookHandle {
   preview(preview: LookPreview | null): void;
   /** Calls `listener` whenever the settings change (here or on another device). */
   onChange(listener: (settings: EffectiveSettings) => void): () => void;
+  /** The wall's say: on, the frame goes; a forced mode re-derives the look. */
+  setWall(state: WallState): void;
   stop(): void;
 }
 
 type HassElement = Element & { hass?: HomeAssistant };
 
-const appHass = (): HomeAssistant | undefined =>
+/** Home Assistant's app object as its root element holds it (undefined before the app renders). */
+export const appHass = (): HomeAssistant | undefined =>
   (document.querySelector('home-assistant') as HassElement | null)?.hass;
 
 /** Home Assistant's app once it has connected (it connects before any panel renders). */
@@ -87,6 +96,7 @@ export function startLook(): LookHandle | undefined {
   const prefersDark = (): boolean =>
     typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
   let previewed: LookPreview | null = null;
+  let wall: WallState = { on: false, dark: undefined };
   const listeners = new Set<(settings: EffectiveSettings) => void>();
   /**
    * What this page wears: the settings, or the settings being previewed on it — "everywhere" only while Home
@@ -98,7 +108,10 @@ export function startLook(): LookHandle | undefined {
     return scope === now.scope ? now : { ...now, scope };
   };
   const apply = (): void => {
-    const changed = engine.apply(current(), appHass()?.themes?.darkMode ?? prefersDark());
+    const changed = engine.apply(
+      current(),
+      wall.dark ?? appHass()?.themes?.darkMode ?? prefersDark(),
+    );
     if (changed) resyncCardThemes();
   };
   const wears = (urlPath: string | undefined): boolean =>
@@ -108,7 +121,8 @@ export function startLook(): LookHandle | undefined {
     setMotionPreference(now.motion);
     setHaptics(now.haptics);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
-    env.document.querySelector('home-assistant')?.toggleAttribute(NO_FRAME, !now.frame);
+    // a wall has no frame whatever the house says: the dashboard fills the tablet
+    env.document.querySelector('home-assistant')?.toggleAttribute(NO_FRAME, !now.frame || wall.on);
     // Home Assistant's own icons in its menus, if the house keeps them (the shell empties its icon sheets)
     env.document.documentElement.toggleAttribute(ORIGINAL_ICONS, !now.icons);
     // Home Assistant's own Activity page, if the house keeps it (the takeover gives the page back)
@@ -170,6 +184,11 @@ export function startLook(): LookHandle | undefined {
     onChange: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    setWall: (state) => {
+      wall = state;
+      preferences();
+      apply();
     },
     stop: () => {
       observer.disconnect();

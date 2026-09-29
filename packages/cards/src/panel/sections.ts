@@ -1,5 +1,8 @@
 import {
   type CardLanguage,
+  clock12,
+  dayPeriods,
+  type HomeAssistant,
   HOUSE_DEFAULTS,
   LANGUAGES,
   localize,
@@ -7,20 +10,36 @@ import {
   parsePalette,
   resolveLanguage,
   type Scope,
+  WALL_AFTER,
+  WALL_NIGHT_DIM,
+  type WallSettings,
   wearsLook,
 } from '@fluvy/core';
 import { chips, head, icon, listRow, options } from '@fluvy/ui';
 import '@fluvy/ui/select';
+import '@fluvy/ui/time-field';
+import type { TimeFieldDetail } from '@fluvy/ui/time-field';
+import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
+import {
+  choiceKey,
+  COMMUNITY_SHOWN,
+  entriesOf,
+  knownPalettes,
+  matchOf,
+  paletteFileOf,
+  roomFor,
+} from './palettes.js';
 import type { SelectChangeDetail, SelectOption } from '@fluvy/ui/select';
 import {
   CUSTOM_BASES,
-  PILL_NAMES,
-  SHAPE_NAMES,
   type CustomPalette,
   type FillStyle,
   type Hex,
   type PaletteChoice,
+  type PaletteFile,
+  PILL_NAMES,
   type PillName,
+  SHAPE_NAMES,
   type ShapeName,
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
@@ -50,8 +69,15 @@ import {
 function choice(
   items: readonly { readonly key: string; readonly label: string; readonly active: boolean }[],
   onSelect: ((key: string) => void) | null,
+  columns?: number,
 ): TemplateResult {
-  return chips(items, onSelect ?? (() => undefined), onSelect ? '' : 'pn-chips--static', true);
+  return chips(
+    items,
+    onSelect ?? (() => undefined),
+    onSelect ? '' : 'pn-chips--static',
+    true,
+    columns,
+  );
 }
 
 /** One rhythm for every choice inside a card: 8 between cells on a phone, 12 on a wide panel. */
@@ -105,11 +131,13 @@ function miniature(
   >`;
 }
 
+/** A swatch: a preset by its name, or a palette file by its title with its author under it. */
 function swatch(
   choice: PaletteChoice,
   active: boolean,
   ctx: PanelContext,
   onPick: () => void,
+  named?: { readonly title: string; readonly author?: string },
 ): TemplateResult {
   return html`<button
     class="pn-swatch ${active ? 'is-active' : ''}"
@@ -119,9 +147,14 @@ function swatch(
   >
     ${miniature(choice, ctx, ctx.wide ? 'wide' : 'phone')}
     <span class="pn-swatch__name"
-      ><span class="pn-swatch__label">${paletteTitle(choice, ctx.t)}</span
+      ><span class="pn-swatch__label">${named?.title ?? paletteTitle(choice, ctx.t)}</span
       >${active ? icon('check') : nothing}</span
     >
+    ${
+      named?.author
+        ? html`<span class="pn-swatch__by">${ctx.t('palette.by', { author: named.author })}</span>`
+        : nothing
+    }
   </button>`;
 }
 
@@ -130,7 +163,8 @@ function customEntry(ctx: PanelContext): TemplateResult {
   const current = ctx.draft.palette;
   const applied = ctx.settings.look.palette;
   const known = isCustom(current) ? current : isCustom(applied) ? applied : null;
-  const active = isCustom(current);
+  // a custom palette that equals a saved or community one is that palette, not "Custom"
+  const active = isCustom(current) && !matchOf(current, knownPalettes(ctx.saved));
   return html`<button
     class="pn-custom ${active ? 'is-active' : ''}"
     data-target
@@ -146,8 +180,35 @@ function customEntry(ctx: PanelContext): TemplateResult {
   </button>`;
 }
 
+/** A line of palette files (the house's, the community's): a swatch each, active when the draft equals it. */
+function fileLine(
+  ctx: PanelContext,
+  label: StringKey,
+  files: readonly PaletteFile[],
+  more?: TemplateResult,
+): TemplateResult {
+  const key = choiceKey(ctx.draft.palette);
+  return html`<p class="fv-label pn-line">${ctx.t(label)}</p>
+    <div class="pn-gallery" data-fill-row>
+      ${entriesOf(files).map((entry) =>
+        swatch(
+          entry.file.palette,
+          entry.key === key,
+          ctx,
+          () => ctx.setDraft({ palette: entry.file.palette }),
+          entry.file,
+        ),
+      )}
+    </div>
+    ${more ?? nothing}`;
+}
+
 function gallery(ctx: PanelContext): TemplateResult {
   const current = ctx.draft.palette;
+  const community = COMMUNITY_PALETTES.filter(
+    (file) => !ctx.saved.some((own) => own.name === file.name),
+  );
+  const shown = ctx.showAllCommunity ? community : community.slice(0, COMMUNITY_SHOWN);
   return html`${LINES.map(
     (line) =>
       html`<p class="fv-label pn-line">
@@ -158,6 +219,18 @@ function gallery(ctx: PanelContext): TemplateResult {
             swatch(name, current === name, ctx, () => ctx.setDraft({ palette: name })),
           )}
         </div>`,
+  )}
+  ${ctx.saved.length ? fileLine(ctx, 'palette.yours', ctx.saved) : nothing}
+  ${fileLine(
+    ctx,
+    'palette.community',
+    shown,
+    community.length > shown.length
+      ? chips(
+          [{ key: 'more', label: ctx.t('palette.more', { n: community.length }), active: false }],
+          () => ctx.setShowAllCommunity(true),
+        )
+      : undefined,
   )}
   ${customEntry(ctx)}`;
 }
@@ -349,7 +422,94 @@ export function dashboardPreview(
   </section>`;
 }
 
-export function appearance(ctx: PanelContext): TemplateResult {
+export interface ShareActions {
+  exportPalette(file: PaletteFile): void;
+  importPalette(file: File): void;
+  savePalette(file: PaletteFile): void;
+  removePalette(name: string): void;
+}
+
+/** A palette as a file: its words, the file out and in, and (an administrator) the house's copy of it. */
+function shareCard(
+  palette: CustomPalette,
+  ctx: PanelContext,
+  actions: ShareActions,
+): TemplateResult {
+  const { share, admin, saved } = ctx;
+  const file = paletteFileOf(palette, share.title, share.author);
+  const own = matchOf(palette, saved);
+  const field = (key: 'title' | 'author', label: StringKey, max: number) =>
+    html`<label class="pn-text">
+      <span class="fv-label pn-label">${ctx.t(label)}</span>
+      <span class="fv-field"
+        ><input
+          class="fv-field__input"
+          type="text"
+          maxlength=${max}
+          .value=${share[key]}
+          @input=${(event: Event) =>
+            ctx.setShare({ [key]: (event.target as HTMLInputElement).value })}
+      /></span>
+    </label>`;
+  return html`<section class="fv-card pn-card">
+    ${head({ icon: 'upload', title: ctx.t('share.title'), sub: ctx.t('share.sub') })}
+    <div class="pn-pair pn-fields">
+      ${field('title', 'share.name', 32)}${field('author', 'share.author', 40)}
+    </div>
+    <div class="pn-pair" data-fill-row>
+      <button
+        class="fv-btn fv-btn--quiet"
+        data-target
+        ?disabled=${!file}
+        @click=${() => file && actions.exportPalette(file)}
+      >
+        ${ctx.t('share.export')}
+      </button>
+      <label class="fv-btn fv-btn--quiet pn-file" data-target
+        >${ctx.t('share.import')}
+        <input
+          type="file"
+          accept="application/json,.json"
+          @change=${(event: Event) => {
+            const input = event.target as HTMLInputElement;
+            const chosen = input.files?.[0];
+            if (chosen) actions.importPalette(chosen);
+            input.value = '';
+          }}
+      /></label>
+    </div>
+    ${
+      admin
+        ? own
+          ? html`<div class="pn-rows">
+              ${listRow({
+                icon: 'trash',
+                title: ctx.t('share.remove'),
+                sub: own.title,
+                trailing: 'none',
+                onTap: () => actions.removePalette(own.name),
+              })}
+            </div>`
+          : file && roomFor(saved, file.name)
+            ? html`<div class="pn-rows">
+                ${listRow({
+                  icon: 'download',
+                  tone: 'accent',
+                  title: ctx.t('share.save'),
+                  sub: ctx.t('share.save_sub'),
+                  trailing: 'none',
+                  onTap: () => actions.savePalette(file),
+                })}
+              </div>`
+            : file
+              ? html`<p class="pn-hint">${ctx.t('share.full')}</p>`
+              : nothing
+        : nothing
+    }
+  </section>`;
+}
+
+export function appearance(ctx: PanelContext, share: ShareActions): TemplateResult {
   const { settings } = ctx;
   const palette = ctx.draft.palette;
   return html`<section class="fv-card pn-card">
@@ -361,6 +521,7 @@ export function appearance(ctx: PanelContext): TemplateResult {
       ${gallery(ctx)}
     </section>
     ${isCustom(palette) ? customEditor(palette, ctx) : nothing}
+    ${isCustom(palette) ? shareCard(palette, ctx, share) : nothing}
     <section class="fv-card pn-card">
       ${head({ icon: SHAPE_GLYPH[ctx.draft.shape], title: ctx.t('shape.title'), sub: ctx.t('shape.sub') })}
       ${options(
@@ -773,6 +934,235 @@ export function dashboards(ctx: PanelContext, actions: DashboardActions): Templa
       .map((dashboard) => dashboardOptions(ctx, dashboard, actions))}`;
 }
 
+/* ---------- the wall ---------- */
+
+/** The binary sensors that see a person: motion, occupancy and presence, by their names. */
+function motionSensors(hass: HomeAssistant): readonly { id: string; name: string }[] {
+  return Object.values(hass.states)
+    .filter(
+      (state) =>
+        state.entity_id.startsWith('binary_sensor.') &&
+        ['motion', 'occupancy', 'presence'].includes(
+          String(state.attributes['device_class'] ?? ''),
+        ),
+    )
+    .map((state) => ({
+      id: state.entity_id,
+      name: String(state.attributes['friendly_name'] ?? state.entity_id),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const minutesOf = (hhmm: string): number => {
+  const [h = 0, m = 0] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+const hhmm = (minutes: number): string =>
+  `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+/**
+ * The Wall tab: what this device is (its own memory), which dashboards are walls, the screensaver, the day and
+ * night, the background. Every house setting is edited whole (`wall` is one object) and saved from the apply bar.
+ */
+export function wall(ctx: PanelContext): TemplateResult {
+  const { shown, admin, hass } = ctx;
+  const settings = shown.wall;
+  const edit = (patch: Partial<WallSettings>): void =>
+    ctx.editHouse({ wall: { ...settings, ...patch } });
+  const isWall = ctx.deviceEdit ?? ctx.device.wall;
+  const first =
+    settings.dashboards[0] ?? ctx.dashboards.find((d) => d.template)?.urlPath ?? 'fluvy-auto';
+  const address = `${location.origin}/${first}?kiosk`;
+  const walls = ctx.dashboards.filter((d) => d.urlPath !== 'fluvy');
+  const isWallDashboard = (urlPath: string): boolean =>
+    settings.dashboards.length ? settings.dashboards.includes(urlPath) : wearsLook(shown, urlPath);
+  const toggleWall = (urlPath: string, on: boolean): void => {
+    const current = settings.dashboards.length
+      ? settings.dashboards
+      : walls.map((d) => d.urlPath).filter((path) => isWallDashboard(path));
+    edit({
+      dashboards: on ? [...new Set([...current, urlPath])] : current.filter((p) => p !== urlPath),
+    });
+  };
+  const sensors = motionSensors(hass);
+  const chip = (label: string, key: string, active: boolean) => ({ key, label, active });
+  return html`<section class="fv-card pn-card">
+      ${head({ icon: 'frame', title: ctx.t('wall.device'), sub: ctx.t('wall.device_sub') })}
+      <div class="pn-rows">
+        ${listRow({
+          icon: 'frame',
+          tone: isWall ? 'accent' : 'neutral',
+          title: ctx.t('wall.use'),
+          sub: ctx.t('wall.use_sub'),
+          trailing: 'switch',
+          on: isWall,
+          onToggle: (on) => ctx.editDevice(on),
+        })}
+        ${listRow({
+          icon: 'copy',
+          title: address,
+          name: true,
+          sub: ctx.t('wall.address_sub'),
+          trailing: 'button',
+          button: ctx.t('wall.copy'),
+          onTap: () =>
+            ctx.run(async () => {
+              await navigator.clipboard.writeText(address);
+              ctx.notify('wall.copied');
+            }),
+        })}
+      </div>
+    </section>
+    <section class="fv-card pn-card">
+      ${head({
+        icon: 'grid',
+        title: ctx.t('wall.dashboards'),
+        sub: settings.dashboards.length
+          ? ctx.t('scope.list_chosen', { n: settings.dashboards.length })
+          : ctx.t('wall.dashboards_auto'),
+      })}
+      <div class="pn-rows">
+        ${walls.map((d) =>
+          listRow({
+            icon: d.icon ?? 'grid',
+            title: d.title,
+            sub: `/${d.urlPath}`,
+            trailing: 'switch',
+            on: isWallDashboard(d.urlPath),
+            readonly: !admin,
+            onToggle: (on) => toggleWall(d.urlPath, on),
+          }),
+        )}
+      </div>
+    </section>
+    <section class="fv-card pn-card">
+      ${head({ icon: 'clock', title: ctx.t('wall.screen'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
+      <p class="fv-label pn-label">${ctx.t('wall.after')}</p>
+      ${choice(
+        WALL_AFTER.map((minutes) =>
+          chip(
+            minutes === 0 ? ctx.t('wall.never') : ctx.t('wall.minutes', { count: minutes }),
+            String(minutes),
+            settings.after === minutes,
+          ),
+        ),
+        admin ? (key) => edit({ after: Number(key) as WallSettings['after'] }) : null,
+        // five words in a phone's column read in two rows (3 + 2), one on a wide panel
+        ctx.wide ? 5 : 3,
+      )}
+      <div class="pn-rows">
+        ${listRow({
+          icon: 'clock',
+          title: ctx.t('wall.clock'),
+          sub: ctx.t('wall.clock_sub'),
+          trailing: 'switch',
+          on: settings.clock,
+          readonly: !admin,
+          onToggle: (on) => edit({ clock: on }),
+        })}
+        ${listRow({
+          icon: 'moon',
+          title: ctx.t('wall.dim'),
+          sub: ctx.t('wall.dim_sub'),
+          trailing: 'switch',
+          on: settings.dim,
+          readonly: !admin,
+          onToggle: (on) => edit({ dim: on }),
+        })}
+      </div>
+      ${
+        sensors.length
+          ? html`<p class="fv-label pn-label">${ctx.t('wall.wake')}</p>
+              <p class="pn-hint">${ctx.t('wall.wake_sub')}</p>
+              ${choice(
+                [
+                  chip(ctx.t('wall.wake_none'), '', settings.wakeEntity === ''),
+                  ...sensors
+                    .slice(0, 6)
+                    .map((sensor) =>
+                      chip(sensor.name, sensor.id, settings.wakeEntity === sensor.id),
+                    ),
+                ],
+                admin ? (key) => edit({ wakeEntity: key }) : null,
+                ctx.wide ? 4 : 2,
+              )}`
+          : nothing
+      }
+    </section>
+    <section class="fv-card pn-card">
+      ${head({ icon: 'sun', title: ctx.t('wall.day_night'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
+      ${options(
+        (['dark', 'follow', 'sun', 'hours'] as const).map((theme) => ({
+          key: theme,
+          glyph:
+            theme === 'dark'
+              ? 'moon'
+              : theme === 'follow'
+                ? 'ha'
+                : theme === 'sun'
+                  ? 'sun'
+                  : 'clock',
+          label: ctx.t(`wall.theme_${theme}`),
+          value: ctx.t(`wall.theme_${theme}_sub`),
+          active: settings.theme === theme,
+        })),
+        admin ? (key: string) => edit({ theme: key as WallSettings['theme'] }) : null,
+        gap(ctx),
+      )}
+      ${
+        settings.theme === 'hours'
+          ? html`<div class="pn-pair pn-times">
+              <fluvy-time-field
+                .value=${minutesOf(settings.from)}
+                .hour12=${clock12(hass)}
+                .periods=${dayPeriods(hass)}
+                .label=${ctx.t('wall.from')}
+                .disabled=${!admin}
+                @fluvy-time=${(event: CustomEvent<TimeFieldDetail>) => edit({ from: hhmm(event.detail.value) })}
+              ></fluvy-time-field>
+              <fluvy-time-field
+                .value=${minutesOf(settings.to)}
+                .hour12=${clock12(hass)}
+                .periods=${dayPeriods(hass)}
+                .label=${ctx.t('wall.to')}
+                .disabled=${!admin}
+                @fluvy-time=${(event: CustomEvent<TimeFieldDetail>) => edit({ to: hhmm(event.detail.value) })}
+              ></fluvy-time-field>
+            </div>`
+          : nothing
+      }
+      <p class="fv-label pn-label">${ctx.t('wall.night_dim')}</p>
+      ${choice(
+        WALL_NIGHT_DIM.map((share) =>
+          chip(
+            share === 0 ? ctx.t('wall.off') : ctx.t('wall.percent', { count: share }),
+            String(share),
+            settings.nightDim === share,
+          ),
+        ),
+        admin ? (key) => edit({ nightDim: Number(key) as WallSettings['nightDim'] }) : null,
+      )}
+    </section>
+    <section class="fv-card pn-card">
+      ${head({ icon: 'palette', title: ctx.t('wall.background'), sub: ctx.t(admin ? 'wall.background_sub' : 'scope.admin_only') })}
+      ${choice(
+        [
+          chip(ctx.t('wall.plain'), 'plain', settings.background === 'plain'),
+          chip(ctx.t('wall.mesh'), 'wall', settings.background === 'wall'),
+        ],
+        admin ? (key) => edit({ background: key as WallSettings['background'] }) : null,
+      )}
+    </section>`;
+}
+
+/** The wall's clock and two tiles on the background chosen. */
+export function wallPreview(ctx: PanelContext, preview: TemplateResult): TemplateResult {
+  return html`<section class="fv-card pn-card pn-card--preview">
+    ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('wall.preview_sub') })}
+    ${preview}
+  </section>`;
+}
+
 /* ---------- preferences ---------- */
 
 export function preferences(ctx: PanelContext): TemplateResult {
@@ -858,7 +1248,7 @@ export function about(ctx: PanelContext, info: AboutInfo, actions: AboutActions)
   return html`<section class="fv-card pn-card">
       ${head({ icon: 'info', title: ctx.t('about.title'), sub: ctx.t('about.version', { version: info.version || '—' }) })}
       <div class="pn-rows">
-        ${listRow({ icon: 'palette', title: ctx.t('about.look'), trailing: 'value', value: lookTitle(ctx.settings.look, ctx.t) })}
+        ${listRow({ icon: 'palette', title: ctx.t('about.look'), trailing: 'value', value: lookTitle(ctx.settings.look, ctx.t, knownPalettes(ctx.saved)) })}
         ${listRow({
           icon: 'ha',
           title: ctx.t('about.shell'),

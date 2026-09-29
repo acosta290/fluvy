@@ -1,7 +1,9 @@
 /** The fluvy panel's actions beyond the look: the automatic dashboards, the settings file, the reset, the facts. */
 import { HOUSE_DEFAULTS, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
+import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
 import type { PanelContext } from './model.js';
+import { withoutPalette, withPalette } from './palettes.js';
 import type { FluvyPanel } from './panel.js';
 
 interface FluvyHost {
@@ -151,6 +153,43 @@ export function importSettings(panel: FluvyPanel, file: File): void {
     }
     if (written) await panel.loadDashboards();
   }, 'about.imported');
+}
+
+/* ---------- palettes that travel ---------- */
+
+/** A palette as a file, downloaded under its own name. */
+export function exportPalette(file: PaletteFile): void {
+  const blob = new Blob([`${JSON.stringify(file, null, 2)}\n`], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = paletteFileName(file);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+/** A palette file read back: its palette becomes the draft, its words the Share card's. */
+export function importPalette(panel: FluvyPanel, ctx: PanelContext, file: File): void {
+  panel.run(async () => {
+    const parsed = parsePaletteFile(JSON.parse(await file.text()));
+    if (!parsed) throw new Error(panel.t('share.invalid'));
+    ctx.setDraft({ palette: parsed.palette });
+    ctx.setShare({ title: parsed.title, author: parsed.author ?? '' });
+  }, 'share.imported');
+}
+
+/** The house keeps this palette (replacing the one of its name); an administrator's write. */
+export function savePalette(panel: FluvyPanel, ctx: PanelContext, file: PaletteFile): void {
+  panel.run(
+    () => ctx.handle.store.saveHouse({ palettes: withPalette(ctx.saved, file) }),
+    'share.saved',
+  );
+}
+
+export function removePalette(panel: FluvyPanel, ctx: PanelContext, name: string): void {
+  panel.run(
+    () => ctx.handle.store.saveHouse({ palettes: withoutPalette(ctx.saved, name) }),
+    'share.removed',
+  );
 }
 
 /** Two taps within four seconds: the first arms it (the row says so, in the warning tone), the second resets. */

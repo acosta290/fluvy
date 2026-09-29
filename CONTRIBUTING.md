@@ -57,6 +57,16 @@ them — never edit a generated file (`packages/ui/src/styles/generated/`, `pack
 Assistant's own pages live in `packages/core/src/shell/`; after a Home Assistant release, open an issue with what
 the shell no longer matches (`docs/shell.md` says how to look).
 
+## Contributing a palette
+
+A palette is a file: `packages/tokens/src/palettes/community/<name>.fluvy-palette.json`, the same file the panel's
+*Share this palette* writes (make one there: choose a custom accent, give it a title and your name, share it).
+The file names its palette (`name`, lower case, dashes), a `title`, an `author`, an optional `description` and the
+`palette` itself (a base, an accent, a fill, an optional highlight). `pnpm build` in `packages/tokens` checks it —
+the file is named after its `name`, no other palette has that name, and both modes pass the contrast gates every
+preset passes (an accent that cannot carry text at 4.5:1 gets a darker ink, as a preset's would) — and regenerates
+`index.ts`, which the pull request includes. The panel lists it under *Community* with your name beside it.
+
 ## Trying it in Home Assistant
 
 `tools/dev/README.md`: a throwaway instance in Docker, or `pnpm ha:install --config <folder>` for any

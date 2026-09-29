@@ -41,6 +41,19 @@ and open an issue with the output.
 
 HACS runs in a frame of its own; the shell reaches it, but only once the frame has finished loading. Reload the page.
 
+## The wall shows the sidebar again
+
+Wall mode hides the sidebar and the dashboard header through the shell's sheets; each one probes for what it
+restyles and stands down when a Home Assistant release changes it (`__fluvy.shell.report()` in the browser console
+lists the `wall:` sheets and whether their probe matched). Until Fluvy follows the release, the wall is a plain
+dashboard. If the sidebar came back after a hold on the corner, the wall is only paused: *Resume* on the toast, or
+wait for the screensaver's time.
+
+## The wall's screen goes dark by itself
+
+The screen wake lock exists only on a secure page (HTTPS). Over plain HTTP the tablet's own screen timeout rules;
+Fluvy cannot keep it awake.
+
 ## Collecting a report
 
 **Settings → Devices & services → Fluvy → ⋮ → Download diagnostics** gives the build served, its URLs, the dashboard
