@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.1] — 2026-09-29
+
 ### Fixed
 
 - A light card in half a phone's column (two lamps on a line) had no switch: under 200 px its head dropped it and
@@ -202,7 +204,8 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/acosta290/fluvy/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/acosta290/fluvy/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/acosta290/fluvy/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/acosta290/fluvy/compare/v1.1.2...v1.2.0
