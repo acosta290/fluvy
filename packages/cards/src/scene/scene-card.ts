@@ -19,6 +19,8 @@ import { agoShort } from '../helpers/datetime.js';
 import { Card, type BaseKey } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
+import { TextRuler } from '../shared/fit.js';
+import { FontsSettled } from '../shared/fonts.js';
 
 import {
   actionField,
@@ -45,6 +47,9 @@ const DOMAINS = ['scene', 'script', 'button', 'input_button', 'automation'] as c
 const DONE_MS = 1200;
 /** Below this width (two tiles in a column under ~340) the tile closes its padding. */
 const TIGHT = 160;
+/** The words' room: the tile less its sides, its 44 circle and the gap after it (16 · 12 on the sheet, 10 · 8 tight). */
+const wordsRoom = (width: number, tight: boolean): number =>
+  width - (tight ? 20 + 44 + 8 : 32 + 44 + 12);
 
 /** The one call that runs each kind of entity — never a blind `homeassistant.turn_on`. */
 const SERVICE: Record<string, readonly [domain: string, service: string]> = {
@@ -112,9 +117,21 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
   /** Swaps animate only once the tile has been pressed: on load the tile's own entrance is the motion. */
   private swaps = false;
 
+  /** The line under the name is measured in its own class, so a state is dropped rather than cut. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
   constructor() {
     super();
     this.done_ = false;
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
+  }
+
+  /** A state under the name only while it fits the tile's words column: "Never run" is dropped, never "Never r…". */
+  private fitted(line: string, tight: boolean): string {
+    return this.ruler.width('fv-row__sub', line) <= wordsRoom(this.width, tight) ? line : '';
   }
 
   /** A tap on the tile runs the scene: of the base it honours the entity, its name and icon, its colours and a hold. */
@@ -207,11 +224,16 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     const view = this.entity();
     const name = this.config?.name ?? view.name;
 
-    const tight = this.width < TIGHT ? 'is-tight' : '';
+    const isTight = this.width < TIGHT;
+    const tight = isTight ? 'is-tight' : '';
 
     if (view.status === 'missing' || view.status === 'unavailable') {
-      // "Entity not found" does not fit beside a 44 circle in a half-width tile; the tile says it shorter
-      const why = view.status === 'missing' ? s(this.hass, 'missing') : stateText(this.hass, view);
+      // "Entity not found" does not fit beside a 44 circle in a half-width tile; the tile says it shorter, and a
+      // tile too narrow even for that says it with its dashed skin alone
+      const why = this.fitted(
+        view.status === 'missing' ? s(this.hass, 'missing') : stateText(this.hass, view),
+        isTight,
+      );
       return html`<button
         class="fv-tile fv-tile--off fv-tile--tap ${tight}"
         data-card
@@ -220,14 +242,17 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
       >
         ${ico('ban', 'off')}
         <span class="fv-row__text"
-          ><span class="fv-row__title">${name}</span><span class="fv-row__sub">${why}</span></span
+          ><span class="fv-row__title" data-name>${name}</span
+          >${why ? html`<span class="fv-row__sub">${why}</span>` : nothing}</span
         >
       </button>`;
     }
 
     const done = this.done_;
+    // a typed subtitle is the person's own words: a name, which may end in an ellipsis; a state is fitted or dropped
+    const typed = this.config?.subtitle !== undefined;
     const meta = this.config?.show_subtitle === false ? '' : this.meta(view);
-    const line = done && meta ? s(this.hass, 'done') : meta;
+    const line = done && meta ? s(this.hass, 'done') : typed ? meta : this.fitted(meta, isTight);
     const swap = this.swaps ? 'fv-swap' : '';
 
     // the tile is the scene's button: a tap runs it, a still press is the hold action (its details by default)
@@ -245,8 +270,8 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
           ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : (this.config?.icon ?? glyphFor(view)))}</span>`)}
         </span>
         <span class="fv-row__text">
-          <span class="fv-row__title">${name}</span>
-          ${line ? keyed(line, html`<span class="fv-row__sub ${swap}">${line}</span>`) : nothing}
+          <span class="fv-row__title" data-name>${name}</span>
+          ${line ? keyed(line, html`<span class="fv-row__sub ${swap}" data-name=${typed && !done ? '' : nothing}>${line}</span>`) : nothing}
         </span>
       </button>
       <!-- read out, not shown: a press is confirmed to a screen reader too -->

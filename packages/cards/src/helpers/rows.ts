@@ -57,6 +57,7 @@ function row(
 /**
  * The sheet's content-sized row button (44 in a row, text + 16 px sides on the 4 grid). `label` is the
  * accessible name: a card holds several "Run" and several "Install", each must say what it acts on.
+ * `name`: the words are a name (a select's chosen option) and may end in an ellipsis where the row is narrow.
  */
 export function rowButton(
   kind: 'quiet' | 'link',
@@ -64,6 +65,7 @@ export function rowButton(
   label: string,
   onClick: () => void,
   disabled = false,
+  name = false,
 ): TemplateResult {
   return html`<button
     class="fv-btn fv-btn--${kind} in-value"
@@ -74,7 +76,7 @@ export function rowButton(
     ?disabled=${disabled}
     @click=${onClick}
   >
-    <span class="in-value__text">${text}</span>
+    <span class="in-value__text" data-name=${name ? '' : nothing}>${text}</span>
   </button>`;
 }
 
@@ -85,7 +87,14 @@ const valueButton = (
   name: string,
   value: string,
 ): TemplateResult =>
-  rowButton('link', value, `${name} · ${value}`, () => host.moreInfo(view.id), isUnusable(view));
+  rowButton(
+    'link',
+    value,
+    `${name} · ${value}`,
+    () => host.moreInfo(view.id),
+    isUnusable(view),
+    true,
+  );
 
 /** A value too rich for the card (a select with a long list): the row says where it stands and opens the list. */
 export function valueRow(

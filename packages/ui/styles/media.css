@@ -123,6 +123,21 @@
   height: 32px;
 }
 
+/* a column too narrow for three 48 rounds: the language's 44 round with its 20 glyph */
+.md-controls--44 {
+  height: 44px;
+}
+
+.md-controls--44 .fv-round {
+  width: 44px;
+  height: 44px;
+}
+
+.md-controls--44 .fv-round svg {
+  width: 20px;
+  height: 20px;
+}
+
 .md-volume {
   display: flex;
   align-items: center;

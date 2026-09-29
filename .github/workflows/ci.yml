@@ -52,8 +52,6 @@ jobs:
     name: Measurer and interactions
     needs: check
     runs-on: ubuntu-latest
-    # advisory while it settles in CI; it becomes a required check afterwards
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -71,13 +69,8 @@ jobs:
       - run: pnpm visual
       # advisory: every card's declared height against what it measures at 360
       - run: node tools/render/heights.mjs
-      - name: Measure the sheets
-        run: |
-          mkdir -p out
-          for sheet in home devices-motion devices-security energy climate inputs; do
-            node tools/render/measure.mjs --page "http://127.0.0.1:5183/?sheet=$sheet" --frame '[data-frame]' \
-              --width 1400 --out "out/$sheet.json" --md "out/$sheet.md"
-          done
+      # every sheet and every panel tab at 360, 412 and 1400: 0 violations each
+      - run: pnpm measure --out out/measure
       - uses: actions/upload-artifact@v4
         if: always()
         with:

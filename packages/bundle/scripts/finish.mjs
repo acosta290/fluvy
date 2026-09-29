@@ -69,14 +69,15 @@ const initial = new Set(['fluvy.js']);
 for (const name of initial) for (const next of await statics(name)) initial.add(next);
 const gzip = (names) => [...names].reduce((sum, name) => sum + files[name].gzip, 0);
 const onDemand = chunks.filter((name) => !initial.has(name));
-// page controls live in the chunks a page fetches, and the strategy's reading of the energy dashboard in its own:
-// one of them in what every dashboard loads is a leak
+// page controls live in the chunks a page fetches, the strategy's reading of the energy dashboard in its own, the
+// cards' editor in the one the card editor fetches: one of them in what every dashboard loads is a leak
 const NEVER_INITIAL = [
   'fluvy-select',
   'fluvy-time-field',
   'fluvy-panel',
   'energy/get_prefs',
   'fluvy-wall-corner',
+  'fluvy-rows-editor',
 ];
 for (const name of initial) {
   const code = await readFile(join(dist, name), 'utf8');

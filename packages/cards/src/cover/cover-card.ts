@@ -58,7 +58,7 @@ import {
 } from './common.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
-import { type RowsListSpec } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 import { HeadFit } from '../energy/head.js';
 import { COMPACT, listLength } from '../shared/heights.js';
 
@@ -152,6 +152,9 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       }
       .dv-cover--tight .dv-cover__tilt .fv-stepper {
         margin-top: 8px;
+      }
+      .dv-cover--narrow {
+        gap: 16px;
       }
     `,
   ];
@@ -398,6 +401,8 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     const showTilt =
       !valve && !compact && this.config?.show_tilt !== false && (canTilt || tilt !== null);
     const tight = canPosition && showTilt && this.contentWidth - RULER_COLUMN < 180; // the stepper drops under its readout
+    // the 24 gap between the ruler column and the readouts closes to 16 where the 96 stepper would not fit beside it
+    const narrow = canPosition && showTilt && this.contentWidth < RULER_COLUMN + 96;
 
     // a cover whose state is only assumed (one-way radio) keeps both directions live, as Home Assistant does
     const assumed = view.attr<boolean>('assumed_state') === true;
@@ -424,7 +429,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     // a compact card narrower than three cells keeps open and close (stop steps aside); one too narrow for
     // those keeps its head alone — the card's real width decides, not the drawing floor
     if (compact) {
-      const fit = actionsThatFit(this.width - 40);
+      const fit = actionsThatFit(this.contentWidth);
       if (row.length > fit && row.some((item) => item.key === 'stop'))
         row.splice(
           row.findIndex((item) => item.key === 'stop'),
@@ -498,7 +503,9 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       })}
       ${
         canPosition && !compact
-          ? html` <div class="dv-cover ${tight ? 'dv-cover--tight' : ''}">
+          ? html` <div
+              class="dv-cover ${tight ? 'dv-cover--tight' : ''} ${narrow ? 'dv-cover--narrow' : ''}"
+            >
               <div class="dv-cover__ruler">
                 <div class="dv-vlabels" style="height:160px">
                   <span style="top:0">${fine ? this.percent(fine.max) : this.t('common.open')}</span

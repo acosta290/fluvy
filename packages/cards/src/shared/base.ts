@@ -7,7 +7,7 @@ import {
 import { baseStyles, fitPills } from '@fluvy/ui';
 import type { CSSResultGroup, PropertyValues } from 'lit';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
-import { listsEditor, type EditorDefaults, type RowsListSpec } from './rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from './rows-editor.js';
 
 /** The base card's fields every editor may show; a card names the ones it honours. */
 export type BaseKey = KnownKeys<FluvyCardConfig>;
@@ -48,8 +48,12 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     return { schema: [] };
   }
 
-  /** The visual editor: the card's form, its lists item by item, its defaults shown, its older names read. */
-  static getConfigElement(): HTMLElement {
+  /**
+   * The visual editor: the card's form, its lists item by item, its defaults shown, its older names read. The
+   * editor is fetched the first time a card is edited (Home Assistant awaits this): a dashboard never loads it.
+   */
+  static async getConfigElement(): Promise<HTMLElement> {
+    const { listsEditor } = await import('./rows-editor.js');
     return listsEditor(this.getConfigForm(), this.lists, this.defaults, [
       ...(this.aliases ? [this.aliases] : []),
       COMMON_ALIASES,

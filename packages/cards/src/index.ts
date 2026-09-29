@@ -41,7 +41,6 @@ import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
 import { FluvyRoomCard } from './room/room-card.js';
 import { FluvyMapCard } from './map/map-card.js';
-import { FluvyRowsEditor } from './shared/rows-editor.js';
 import { defineStrategies } from './strategy/define.js';
 
 /**
@@ -293,8 +292,6 @@ const CATALOGUE: ReadonlyArray<
 
 for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
-if (!customElements.get('fluvy-rows-editor'))
-  customElements.define('fluvy-rows-editor', FluvyRowsEditor);
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
 defineStrategies();
 

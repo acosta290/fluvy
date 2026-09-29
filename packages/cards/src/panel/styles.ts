@@ -341,6 +341,14 @@ export const panelStyles = css`
       grid-template-columns: repeat(2, round(down, calc((100% - 12px) / 2), 1px));
     }
   }
+  /* a pair of worded buttons ("Export a palette" | "Import a palette") stacks where a phone's column (under 380)
+     cannot hold both words side by side — never a smaller face, never a word cut */
+  @container pn (max-width: 379px) {
+    .pn-pair--words:has(> :nth-child(2)) {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 8px;
+    }
+  }
   .pn-file {
     position: relative;
     overflow: hidden;

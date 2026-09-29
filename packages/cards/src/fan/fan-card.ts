@@ -494,7 +494,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
                   .min=${0}
                   .max=${100}
                   .step=${step}
-                  .length=${compact ? Math.max(24, this.width - 40) : this.contentWidth}
+                  .length=${this.contentWidth}
                   .minor=${scale.minor}
                   .major=${scale.major}
                   .tone=${on && !unusable ? 'fan' : 'neutral'}

@@ -41,6 +41,17 @@
   text-overflow: ellipsis;
 }
 
+/* a title that is a sentence (a note's) wraps instead of ending in an ellipsis; its head grows past 44 with it */
+.fv-card__head--wrap {
+  height: auto;
+  min-height: 44px;
+}
+
+.fv-card__title--wrap {
+  white-space: normal;
+  text-wrap: balance;
+}
+
 .fv-card__sub {
   font-size: 13px;
   font-weight: 500;

@@ -128,11 +128,12 @@
   box-shadow: none;
 }
 
+/* 72 keys 24 apart; a sheet too narrow for that (a 232 column) closes the gaps, on the 4 grid */
 .dv-keys {
   display: grid;
   grid-template-columns: repeat(3, 72px);
   justify-content: center;
-  gap: 16px 24px;
+  gap: 16px min(24px, round(down, calc((100% - 216px) / 2), 4px));
   margin-top: 24px;
 }
 

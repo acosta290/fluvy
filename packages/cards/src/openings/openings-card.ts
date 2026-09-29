@@ -236,6 +236,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         icon: this.config?.icon ?? 'door',
         tone: alerts.length > 0 ? tone : 'neutral',
         title: this.heading(badgeText),
+        name: true, // a typed title, or the card's own: a name, as the list rows' are
         sub: this.config?.subtitle ?? (roomText ? `${countText} · ${roomText}` : countText),
         trailing:
           this.config?.show_count === false
@@ -252,6 +253,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
             icon: view.deviceClass === 'window' ? 'blinds' : glyphFor(view), // the sheet's window glyph
             tone: dead ? 'off' : warn ? tone : 'neutral', // events (motion) stay neutral: only what needs acting on is filled
             title: view.name,
+            name: true,
             sub: dead ? stateText(this.hass, view) : this.when(view, warn, now), // "Unavailable" is said once, where the time would be
             trailing: 'value',
             value: dead ? '—' : this.valueText(view),

@@ -438,42 +438,56 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     );
   }
 
+  /**
+   * The transport: five equal rounds 20 apart on the sheet. A column that cannot hold them 8 apart loses the ends
+   * (shuffle and repeat: the modes, which more-info still offers) before the three that move the track; one that
+   * cannot hold even those steps the rounds down to 44.
+   */
   private renderTransport(view: EntityView, big: boolean): TemplateResult | typeof nothing {
     const active = this.isActive(view);
     const canPlay = playable(view);
-    const items: TemplateResult[] = [];
+    const items: { readonly round: TemplateResult; readonly mode?: boolean }[] = [];
     if (active && view.supports(MEDIA.SHUFFLE)) {
       const on = view.attr<boolean>('shuffle') === true;
-      items.push(
-        this.transportRound('shuffle', on, this.t('media.shuffle'), () =>
+      items.push({
+        round: this.transportRound('shuffle', on, this.t('media.shuffle'), () =>
           this.call('media_player', 'shuffle_set', { shuffle: !on }),
         ),
-      );
+        mode: true,
+      });
     }
     if (active && view.supports(MEDIA.PREVIOUS)) {
-      items.push(
-        round('prev', 'quiet', this.t('media.previous'), () =>
+      items.push({
+        round: round('prev', 'quiet', this.t('media.previous'), () =>
           this.call('media_player', 'media_previous_track'),
         ),
-      );
+      });
     }
-    if (canPlay) items.push(this.playRound(view));
+    if (canPlay) items.push({ round: this.playRound(view) });
     if (active && view.supports(MEDIA.NEXT)) {
-      items.push(
-        round('next', 'quiet', this.t('media.next'), () =>
+      items.push({
+        round: round('next', 'quiet', this.t('media.next'), () =>
           this.call('media_player', 'media_next_track'),
         ),
-      );
+      });
     }
-    if (active && view.supports(MEDIA.REPEAT)) items.push(this.repeatRound(view));
+    if (active && view.supports(MEDIA.REPEAT))
+      items.push({ round: this.repeatRound(view), mode: true });
     if (!items.length) return nothing;
-    const size = big ? 56 : 48;
+    const width = this.contentWidth;
+    const needs = (count: number, size: number): number => count * size + (count - 1) * 8;
+    let size = big ? 56 : 48;
+    const shown = needs(items.length, size) <= width ? items : items.filter((item) => !item.mode);
+    if (needs(shown.length, size) > width) size = 44;
     const gap =
-      items.length > 1
-        ? `min(20px, calc((100% - ${items.length * size}px) / ${items.length - 1}))`
+      shown.length > 1
+        ? `min(20px, calc((100% - ${shown.length * size}px) / ${shown.length - 1}))`
         : '0px';
-    return html`<div class="md-controls ${big ? 'md-controls--56' : ''}" style="gap:${gap}">
-      ${items}
+    return html`<div
+      class="md-controls ${size === 48 ? '' : `md-controls--${size}`}"
+      style="gap:${gap}"
+    >
+      ${shown.map((item) => item.round)}
     </div>`;
   }
 
@@ -680,7 +694,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
           </button>
         </div>
         <div class="md-hero__text" data-align="center">
-          <h3 class="md-hero__title">${title}</h3>
+          <h3 class="md-hero__title" data-name>${title}</h3>
           ${second ? html`<p class="fv-card__sub">${second}</p>` : nothing}
           ${saysSpeaker ? html`<p class="fv-card__sub md-source">${glyph('speaker')}<span class="md-source__text">${speaker}</span></p>` : nothing}
         </div>
@@ -700,7 +714,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
           ${this.art(80, picture, active || picture ? '' : 'fv-art--idle')}
         </button>
         <div class="md-now__text">
-          <h3 class="fv-card__title md-title">${title}</h3>
+          <h3 class="fv-card__title md-title" data-name>${title}</h3>
           ${second ? html`<p class="fv-card__sub">${second}</p>` : nothing}
           ${saysSpeaker ? html`<p class="fv-card__sub md-source">${glyph('speaker')}<span class="md-source__text">${speaker}</span></p>` : nothing}
         </div>
@@ -749,7 +763,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
               })
         }
         <div class="fv-row__text">
-          <span class="fv-row__title">${title}</span>
+          <span class="fv-row__title" data-name>${title}</span>
           <span class="fv-row__sub">${sub}</span>
         </div>
         ${canPlay ? this.playRound(view) : nothing}
@@ -761,7 +775,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
   /** Unreachable: the calm dashed row every instance needs for its dead Cast devices. */
   private renderOff(view: EntityView, name: string, variant: MediaVariant): TemplateResult {
     const text = html`<div class="fv-row__text">
-      <span class="fv-row__title">${name}</span>
+      <span class="fv-row__title" data-name>${name}</span>
       <span class="fv-row__sub">${this.unavailableLine(view)}</span>
     </div>`;
     if (variant === 'mini') {

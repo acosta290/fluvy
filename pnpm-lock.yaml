@@ -267,6 +267,28 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
 
+  tools/docs:
+    dependencies:
+      '@fluvy/cards':
+        specifier: workspace:*
+        version: link:../../packages/cards
+      '@fluvy/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      '@happy-dom/global-registrator':
+        specifier: ^20.14.5
+        version: 20.14.5
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.13.5
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.13
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   tools/i18n:
     devDependencies:
       '@types/node':
@@ -490,6 +512,10 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@happy-dom/global-registrator@20.14.5':
+    resolution: {integrity: sha512-B05ID9DhSwLs6mlm1fzlkAtTIvB3duCvjJjfr19LBrlTK7VZtRjDqoTRIVv13GuYuNdhByu8LSZgThwV3Rkj7g==}
+    engines: {node: '>=20.0.0'}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1561,6 +1587,14 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@happy-dom/global-registrator@20.14.5':
+    dependencies:
+      '@types/node': 24.13.5
+      happy-dom: 20.14.5
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@humanfs/core@0.19.2':
     dependencies:

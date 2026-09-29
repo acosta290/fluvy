@@ -480,3 +480,7 @@ export function listsEditor(
 export function formEditor(form: LovelaceConfigForm, defaults: EditorDefaults): HTMLElement {
   return listsEditor(form, [], defaults);
 }
+
+// defined here, with the module a card's `getConfigElement` fetches: the element exists exactly when an editor is asked for
+if (!customElements.get('fluvy-rows-editor'))
+  customElements.define('fluvy-rows-editor', FluvyRowsEditor);

@@ -94,8 +94,6 @@ describe('editor defaults', () => {
 
 describe('an editor with aliases', () => {
   it('shows an older name in its newer field and writes the newer one on the first change', () => {
-    if (!customElements.get('fluvy-rows-editor'))
-      customElements.define('fluvy-rows-editor', FluvyRowsEditor);
     const editor = listsEditor(
       {
         schema: [

@@ -386,9 +386,18 @@ export class FluvyRoomCard extends FluvyTileCard {
     if (controls === 'rows') return this.renderRows(ids);
     const tiles = this.tiles();
     if (!tiles.length) return nothing;
-    return html`<div class="rm-controls">
+    const column = this.tileWidth();
+    return html`<div
+      class="rm-controls"
+      style="--rm-col:${column}px;--rm-gap:${this.contentWidth - 2 * column}px"
+    >
       ${tiles.map((tile) => this.renderTile(tile, 'compact', true))}
     </div>`;
+  }
+
+  /** An inner tile's column: two on the 4 grid, whole pixels, the remainder between them (320: 156 + 8 + 156; 276: 132 + 12 + 132). */
+  protected override tileWidth(): number {
+    return Math.floor((this.contentWidth - 8) / 2 / 4) * 4;
   }
 
   /** The room's picture on the hero, cross-faded in once decoded; without one, the accent's gradient. */

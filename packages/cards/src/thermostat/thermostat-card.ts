@@ -49,6 +49,7 @@ import {
 } from '../shared/form.js';
 
 import { HeadFit } from '../energy/head.js';
+import { optionColumnsFor } from '../shared/options.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 import { configKeys } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
@@ -561,13 +562,25 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         ])}`;
     // "Target · Now 20.8°" beside the stepper when it fits on its one line (11/600 caps, 0.06em apart), else "Target"
     const target = this.t('climate.target');
-    const room = w - (idle || range || shown === undefined ? 0 : 96 + 12) - 2;
+    const beside = idle || range || shown === undefined ? 0 : 96 + 12; // the stepper and the gap before it
+    const room = w - beside - 2;
     const caps = (text: string): number =>
       textWidth(text.toUpperCase(), `600 11px ${getComputedStyle(this).fontFamily}`) +
       text.length * 0.66;
     const heading = now && caps(`${target} · ${now}`) <= room ? `${target} · ${now}` : target;
+    // the large figure ("21.5 °C", a range's "18 – 22 °C") beside its stepper: one size down where the row cannot hold it
+    const size =
+      this.head.ruler.width(
+        'fv-readout fv-readout--l > fv-readout__value',
+        text,
+        'fv-unit',
+        unit,
+      ) <=
+      w - beside
+        ? 'l'
+        : 'm';
     return html`<div class="cl-value fv-value-row">
-        ${readout({ label: heading, value: text, unit, size: 'l' })}
+        ${readout({ label: heading, value: text, unit, size })}
         ${idle || range || shown === undefined ? nothing : stepper((direction) => this.nudge(view, m, direction), nav)}
       </div>
       ${
@@ -598,7 +611,19 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
   private renderModes(view: EntityView, m: Model, modes: readonly OptionItem[]): TemplateResult {
     const style = this.config?.modes_style ?? 'tiles';
     const select = (key: string): void => this.setMode(view, m, key);
-    if (style === 'tiles') return options(modes, select);
+    if (style === 'tiles')
+      return options(
+        modes,
+        select,
+        4,
+        84,
+        optionColumnsFor(
+          modes.map((o) => o.label),
+          this.contentWidth,
+          4,
+          (text) => this.head.ruler.width('fv-option__label', text),
+        ),
+      );
     return chipRow(
       modes.map((o) => ({
         key: o.key,

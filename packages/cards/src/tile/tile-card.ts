@@ -286,14 +286,17 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * A tile's state line fitted to its tile: what does not fit loses its " · " segments from the end (a large tile's
    * "· 11 days ago", a small one's reading); a word that cannot fit at all is a dash on a tile without a reading
    * (unavailable, unknown) and nothing on one with — never a cut. The room is the tile's width less its sides (16 on a
-   * large tile, 12 on a small one, or what a narrower tile can spare around its 44 circle) and, on a large tile, the
-   * circle its line sits beside.
+   * large or compact tile, 12 on a mini, or what a narrower mini can spare around its 44 circle) and, where the line
+   * sits beside the circle (a large tile, a compact one 128 or wider), the circle and its gap.
    */
   private fitState(line: string, size: TileSize, dash: boolean): string {
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
-    const sides = !small ? 16 : width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12;
-    const room = width - 2 * sides - (small ? 0 : 44 + 12);
+    const mini = size === 'mini';
+    const sides = mini ? (width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12) : 16;
+    // a compact tile under 128 hides its circle (tiles.css) and gives the words its room
+    const beside = !mini && (size === 'large' || width >= 128) ? 44 + 12 : 0;
+    const room = width - 2 * sides - beside;
     const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
     const measure = (text: string): number => this.ruler.width(cls, text);
     const fitted = fitLine(

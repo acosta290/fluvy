@@ -189,7 +189,7 @@ options.
 | --- | --- |
 | [Installation](docs/installation.md) | HACS or the release zip, updating, uninstalling, what the integration registers, the Repairs it can raise |
 | [Getting started](docs/getting-started.md) | the first ten minutes |
-| [The settings panel](docs/settings-panel.md) | the five tabs, house and personal settings, where they are stored |
+| [The settings panel](docs/settings-panel.md) | the six tabs, house and personal settings, where they are stored |
 | [The theme](docs/theme.md) | palettes, custom accents, shapes, the tokens |
 | [The cards](docs/cards.md) | every card, with its configuration |
 | [The automatic dashboards](docs/automatic-dashboard.md) | what the five templates build from your home, and how to steer them |

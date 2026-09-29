@@ -146,7 +146,7 @@ export function timelineView(ctx: ViewContext): TemplateResult {
                 aria-label=${eventAria(ctx, block.item)}
                 @click=${() => ctx.open(block.item.event.calendar)}
               >
-                <span class="cd-block__title">${titleOf(ctx, block.item)}</span>
+                <span class="cd-block__title" data-name>${titleOf(ctx, block.item)}</span>
               </button>`;
             })}
             ${now >= start && now <= end ? html`<span class="cd-now" data-measure="value" style="top:${(y(now) - 1).toFixed(2)}px"></span>` : nothing}

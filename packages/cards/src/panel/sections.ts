@@ -456,7 +456,7 @@ function shareCard(
     <div class="pn-pair pn-fields">
       ${field('title', 'share.name', 32)}${field('author', 'share.author', 40)}
     </div>
-    <div class="pn-pair" data-fill-row>
+    <div class="pn-pair pn-pair--words" data-fill-row>
       <button
         class="fv-btn fv-btn--quiet"
         data-target
@@ -607,7 +607,7 @@ function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
             : 'scope.theme_house_guest',
       );
   return html`<section class="fv-card pn-card pn-note">
-    ${head({ icon: 'warn', tone: 'warning', title: ctx.t(title) })}
+    ${head({ icon: 'warn', tone: 'warning', title: ctx.t(title), wrap: true })}
     <p class="pn-note__text">${text}</p>
     ${
       can

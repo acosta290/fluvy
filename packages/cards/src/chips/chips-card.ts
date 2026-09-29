@@ -304,7 +304,11 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     if (active && (glide || !this.hands)) {
       const room = scroller.getBoundingClientRect();
       const chip = active.getBoundingClientRect();
-      if (chip.left < room.left || chip.right > room.right) {
+      // in full view, clear of the fade at a side that has more behind it
+      const more = scroller.scrollWidth - scroller.clientWidth;
+      const clearLeft = room.left + (scroller.scrollLeft > 1 ? FADE : 0);
+      const clearRight = room.right - (more - scroller.scrollLeft > 1 ? FADE : 0);
+      if (chip.left < clearLeft || chip.right > clearRight) {
         const left = scroller.scrollLeft + chip.left - room.left - (room.width - chip.width) / 2;
         scroller.scrollTo({
           left: Math.max(0, left),
@@ -360,6 +364,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     >
       <div
         class="fv-chips"
+        data-scroll-row
         @scroll=${this.onScroll}
         @pointerdown=${this.onHands}
         @wheel=${this.onHands}

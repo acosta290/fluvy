@@ -785,10 +785,9 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const w = this.contentWidth;
     const totals = this.readouts();
     // a node's label is measured in its own class: "Battery · 78 %" keeps "Battery" in a narrow column, and a
-    // column too narrow even for the word keeps the icon with its reading. The list is laid out on the card's
-    // real width (`contentWidth` never says less than 120): below Home Assistant's own minimum, where not even a
-    // reading fits beside a circle, the rows drop their circles and keep their readings
-    const real = Math.max(0, this.width - 40);
+    // column too narrow even for the word keeps the icon with its reading. Below Home Assistant's own minimum,
+    // where not even a reading fits beside a circle, the rows drop their circles and keep their readings
+    const real = w;
     const readings = [...sources.map((source) => figure(source.power)), figure(home)];
     const bare =
       narrow &&

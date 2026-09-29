@@ -151,7 +151,7 @@ export function actionGap(contentWidth: number, count: number): number {
 
 /**
  * How many 44 cells a column holds with 4 between them: a compact card keeps the commands that fit, and none
- * where not one fits (its head alone; `contentWidth` here is the card's real one, never the drawing floor).
+ * where not one fits (its head alone).
  */
 export const actionsThatFit = (contentWidth: number): number =>
   Math.max(0, Math.floor((contentWidth + 4) / 48));

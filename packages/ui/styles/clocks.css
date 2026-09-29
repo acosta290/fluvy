@@ -113,6 +113,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* beside the smallest face, where not even "10:08 PM" fits at 40: one step down */
+.ck-time--s {
+  font-size: 32px;
+  line-height: 36px;
+}
+
 .ck-big {
   display: flex;
   align-items: baseline;

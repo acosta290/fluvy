@@ -353,7 +353,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       // a compact card keeps the commands that fit: start or pause and dock first, then stop and locate
       const rank = { start: 0, pause: 0, dock: 1, stop: 2, locate: 3 } as const;
       row.sort((a, b) => rank[a.key as Command] - rank[b.key as Command]);
-      row.splice(actionsThatFit(this.width - 40)); // the card's real width, not the drawing floor
+      row.splice(actionsThatFit(this.contentWidth));
     }
     const speeds = has('suction')
       ? ((view.attr<unknown>('fan_speed_list') as unknown[] | undefined) ?? []).filter(

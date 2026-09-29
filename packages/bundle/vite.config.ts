@@ -63,13 +63,17 @@ const STRATEGY = /\/packages\/cards\/src\/strategy\/(?!define\.ts)/;
 /** Wall mode (the controller in core — its switch stays in core's chunk — and the screensaver, corner and toast in cards): fetched only on a device that is a wall. */
 const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 
+/** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
+const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
+
 /** A language's catalogue (English ships in core): fetched the first time that language is spoken. */
 const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.json/;
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy, the wall, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays
- * in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * page, the settings panel, the strategy, the wall, the cards' editor, and everything else (Fluvy's packages and Lit)
+ * in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities
+ * only say so out loud.
  */
 const GROUPS: ReadonlyArray<{
   name: string | ((id: string) => string);
@@ -82,6 +86,7 @@ const GROUPS: ReadonlyArray<{
   { name: 'panel', test: PANEL },
   { name: 'strategy', test: STRATEGY },
   { name: 'wall', test: WALL },
+  { name: 'editor', test: EDITOR },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];
 

@@ -7,40 +7,84 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Five automatic dashboards, each a template and a strategy of its own: **Home** (the dashboard of before, with a
+  Rooms view when the house has two rooms with something in them, and a page per room), **Rooms** (a tab a floor,
+  a card a room), **Energy** (now, production, devices, meters), **Security** (the alarm, the cameras, the openings
+  room by room) and **Wall** (two columns for a tablet, without tabs). The panel's *Dashboards* tab lists them,
+  creates any with one tap, edits each one's options apart, lists it in the sidebar or not, and recreates it in two
+  taps; the settings file carries every dashboard's options.
+- Two cards, forty-one in all: **Room** — an area as the approved area card (its photo under the name pill, its
+  temperature, humidity and how many devices are on, its lights, climate, media and devices as rows or as inner
+  tiles; as a tile, or as a compact row) — and **Map** — where everyone is, as columns of zones with the faces in
+  each (two, then a "+N" disc), as rows, or as Home Assistant's own map on a plate.
+- Wall mode for a tablet on the wall: no sidebar, no header, the screen kept awake, a screensaver with the clock (or
+  black) after a while that any touch or a motion sensor wakes, day and night by Home Assistant's mode, the sun or
+  a pair of hours with a night veil, the wall mesh behind the cards. The house sets it in the panel's *Wall* tab;
+  the tablet becomes a wall with `?kiosk` on the address (or the tab's switch) and remembers; a hold of the top-right
+  corner pauses it. Everything of the wall loads only on a device that is one.
+- Palettes that travel: a custom palette shared as a file (`<name>.fluvy-palette.json`) with a title and an author,
+  read back onto the gallery, saved to the house (twelve, under *Yours*) or removed; the palettes the community has
+  contributed ship under *Community* with their authors. A draft that equals one of them is that palette.
 - Turkish (`tr`): the eighth language, in every card, page, dialog and editor form, with the words the automatic
   dashboards read a Turkish-named house by.
-- The dropdown: the cards' text field as a button, opening its list in the browser's top layer — over Home
-  Assistant's sidebar and dialogs — under the field, or over it near the foot of the page, as wide as the field;
-  keys, letters and the pointer as a native select's, a hint beside each name, the chosen row marked. The
-  Preferences tab's language is the first to use it (eight chips before): *Automatic* with the language it
-  resolves to, then Fluvy's languages by their own names with the English name beside.
-- Preferences: a *Help improve this translation* row that opens the translating guide.
+- Every card under one editors' contract: what to show (`show_*`), which items and in which order (subset lists
+  with Fluvy's rows editor), at least one other layout (`variant`), the chip rows filling by default
+  (`<x>_style: full | chips`), a `tap_action` and a `hold_action` (a still press on the head) on every entity card,
+  a `tone` and a `color` on the card and on each item, `unknown` drawn as a live surface. New variants: compact cover,
+  fan, vacuum, lock and alarm (144 tall), a camera tile, a gauge bar, compact energy and production, distribution
+  rows, readouts grid, a plain heading, compact entities, the clock's face and layout apart, the calendar's
+  calendars as items.
 - Colour per card: every card takes a `color` — one of Home Assistant's colour names (`teal`, `deep-orange`…) or
   any `#rrggbb` — that stands in for the palette's accent inside it: its chart, its lit light, its icon circle,
   its dial. The colour is derived on the very palette the card wears, in light and in dark, through the same
   arithmetic that makes the palette (its ink readable on the card, its fill legible under its ink, twelve graph
   series apart), so a red card on Linen is Linen's red. The editor offers Home Assistant's colour picker, whose
   swatches show the palette's colours. Device tones (a fan, a heater, a speaker) keep their own.
+- The dropdown: the cards' text field as a button, opening its list in the browser's top layer — over Home
+  Assistant's sidebar and dialogs — under the field, or over it near the foot of the page, as wide as the field;
+  keys, letters and the pointer as a native select's, a hint beside each name, the chosen row marked. The
+  Preferences tab's language is the first to use it (eight chips before): *Automatic* with the language it
+  resolves to, then Fluvy's languages by their own names with the English name beside.
+- Preferences: a *Help improve this translation* row that opens the translating guide.
+- View backgrounds: the wall mesh (`--fluvy-mesh-*`), derived from the palette's own page colour.
 
 ### Changed
 
+- The cards' options share one vocabulary: `subtitle` (`sub`, `meta` before), `variant` (`layout`, `view`),
+  `hours` (`trend_hours`), `color` (`accent`), `name` on an entity card (`title` before on the to-do, energy and
+  production cards), `show_*` for every switch (`hide_completed` before), `calendars` as items on the calendar
+  (`entities` + `tones`). Every older name is still read, for good; it is never written back.
+- The settings are version 2: the house keeps its shared palettes and its wall. A house that goes back to 1.2 keeps
+  them unread; a 1.2 save keeps what it does not know once the house has been saved by 1.3.
+- The panel has six tabs — *Dashboards* (it was *Dashboard*) and *Wall* are new.
+- The automatic dashboards' strategy, the wall, the community palettes and the cards' visual editor load on demand
+  (their own chunks); a dashboard page pays only for the cards. The automatic dashboards cut their columns by every card's declared
+  height, measured at a phone's column — the layouts are level where the old table left them uneven.
 - The theme's named colours follow the tone Home Assistant gives each: pink is the armed alarm's rose, cyan the
   water, teal the presence green, lime the dehumidifier's green, light green the battery, deep purple the house,
   brown the gas (it was the accent). Every surface Home Assistant paints through them moves with them.
 - The theme says which palette it is (`--fluvy-palette`), and so does a look applied live.
-
 - Card editors: the choices of a dropdown (a variant, a forecast, a first weekday…) and the tones are said in the
   dashboard's language; they were English words whatever the language.
+- A compact tile inside a card (a room's controls) is an inner tile: 84 tall, the control radius, the page's fill,
+  no hairline; off, its icon circle is the card's fill with the text ink. The state line on an on-fill is the fill's
+  ink at 80 % (4.5:1 on every palette; the palette gates hold it).
+- The docs' card tables are generated from the code (`pnpm docs:cards`), and the release refuses a chunk over its budget.
 
 ### Fixed
 
 - Tiles: a mini tile is never narrower than 84 px (a group asked for more columns lays out fewer), so its icon
   circle is always the 44 of every other tile; a small tile's state line is fitted to the tile — "Open · 40 %"
   loses its figure before it is cut, and an unavailable tile shows "—" where the word cannot fit — and a large
-  unavailable tile drops its "· 11 days ago" the same way.
+  unavailable tile drops its "· 11 days ago" the same way. A compact tile's icon left under 160 px, not under 128:
+  the size queries measured the content box.
 - Energy flow, gauge, bars and the other chart cards: in a column too narrow for the icon circle and the title,
-  the circle goes and the title stays whole (a typed title may end in an ellipsis, as a name does).
+  the circle goes and the title stays whole (a typed title may end in an ellipsis, as a name does). The energy
+  card's curve draws in the card's colour again (its chart lacked a tone carrier).
 - The cards' words arriving in a new language refreshed every card twice.
+- The dropdown's list, once it scrolls (nine languages), was a tab stop of its own.
+- The docs said "five tabs", listed the automatic dashboard's options without `weather` and `language`, and gave
+  the Security view a rule it does not follow (it needs an alarm, a lock, a camera or a gate).
 
 ## [1.2.1] — 2026-09-28
 

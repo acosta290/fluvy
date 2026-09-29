@@ -262,6 +262,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
       return {
         key: tile.entity,
         label: tile.name ?? view.name,
+        name: true,
         value: this.text(view, scales),
         glyph: tile.icon ?? glyphFor(view),
         tone: tile.tone ?? tone,

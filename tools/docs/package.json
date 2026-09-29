@@ -1,0 +1,40 @@
+{
+  "name": "@fluvy/docs",
+  "version": "1.2.1",
+  "private": true,
+  "description": "The documentation generated from the code: the cards' tables in docs/cards.md from the catalogue and the editors' contract",
+  "license": "GPL-3.0-only",
+  "author": {
+    "name": "acosta290",
+    "url": "https://github.com/acosta290"
+  },
+  "homepage": "https://github.com/acosta290/fluvy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acosta290/fluvy.git",
+    "directory": "tools/docs"
+  },
+  "bugs": {
+    "url": "https://github.com/acosta290/fluvy/issues"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsx src/cards.ts",
+    "check": "tsx src/cards.ts --check"
+  },
+  "dependencies": {
+    "@fluvy/cards": "workspace:*",
+    "@fluvy/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^20.14.5",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

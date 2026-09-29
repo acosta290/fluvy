@@ -16,7 +16,6 @@ import {
   badge,
   head,
   label,
-  optionColumns,
   options,
   sheetStyles,
   type GlyphName,
@@ -52,6 +51,7 @@ import type { FluvyKeypad, KeypadAction } from './keypad.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { chipRow, fitsOneRow } from '../shared/chips.js';
+import { optionColumnsFor } from '../shared/options.js';
 import { TextRuler } from '../shared/fit.js';
 import { COMPACT, listLength, ROW } from '../shared/heights.js';
 
@@ -471,7 +471,12 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
       ? MODES.find((mode) => mode.key === this.pending_)?.state
       : this.activeState(view);
 
-    const columns = optionColumns(modes.length);
+    const columns = optionColumnsFor(
+      modes.map((mode) => s(this.hass, mode.tile)),
+      this.contentWidth,
+      (n) => this.tileGap(this.contentWidth, n),
+      (text) => this.ruler.width('fv-option__label', text),
+    );
     const gap = this.tileGap(this.contentWidth, columns);
     const narrow = (this.contentWidth - (columns - 1) * gap) / columns < 104;
     const tiles: OptionItem[] = modes.map((mode) => ({

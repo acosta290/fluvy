@@ -47,11 +47,12 @@
   text-overflow: ellipsis;
 }
 
-/* the room's controls: compact tiles two a row, 8 apart, under the rows */
+/* the room's controls: compact tiles two a row under the rows — whole-pixel columns on the 4 grid (the card computes
+   them: 156 + 8 + 156 in 320, 132 + 12 + 132 in 276), the odd pixels in the gap between them */
 .rm-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, var(--rm-col, minmax(0, 1fr)));
+  gap: 8px var(--rm-gap, 8px);
   margin-top: 16px;
 }
 

@@ -43,7 +43,7 @@ function upcomingRow(ctx: ViewContext, day: Date, item: DayEvent): TemplateResul
         data-accent=${ctx.accentOf(item.event.calendar) ?? nothing}
       ></span>
       <span class="fv-row__text"
-        ><span class="fv-row__title">${titleOf(ctx, item)}</span
+        ><span class="fv-row__title" data-name>${titleOf(ctx, item)}</span
         ><span class="fv-row__sub">${when} · ${placeOf(ctx, item)}</span></span
       >`,
   );

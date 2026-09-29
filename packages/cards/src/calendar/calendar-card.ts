@@ -49,7 +49,7 @@ import { upcomingView } from './views/upcoming.js';
 import { weekView } from './views/week.js';
 import { Words } from './words.js';
 import { configKeys } from '../shared/config.js';
-import { type RowsListSpec } from '../shared/rows-editor.js';
+import type { RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('calendar');
 

@@ -9,7 +9,7 @@ import type { ViewContext } from './context.js';
 import {
   columnStyle,
   dayList,
-  headRoom,
+  fitHead,
   headTone,
   notice,
   outage,
@@ -57,18 +57,16 @@ export function monthView(ctx: ViewContext, withDay: boolean): TemplateResult {
   const list = withDay && !broken ? dayList(ctx, day, { afterLabel: true }) : null;
   const count = ready ? agenda.count(day) : null;
 
+  const title = ctx.config.title ?? words.month(ctx.month);
+  const fit = fitHead(ctx, 'calendar', title, broken ? 0 : NAV);
   return surface(
     ctx,
     html`
       ${head({
-        icon: 'calendar',
+        icon: fit.icon,
         tone: headTone(ctx),
-        title: ctx.config.title ?? words.month(ctx.month),
-        sub: fitText(
-          words.weeks(day, ctx.month.getFullYear()),
-          headRoom(ctx, broken ? 0 : NAV),
-          FACE.sub,
-        ),
+        title,
+        sub: fitText(words.weeks(day, ctx.month.getFullYear()), fit.room, FACE.sub),
         trailing: broken
           ? nothing
           : html`<div class="cd-nav">

@@ -38,6 +38,20 @@ export function surface(
 export const headRoom = (ctx: ViewContext, trailing: number): number =>
   ctx.width - 56 - (trailing > 0 ? trailing + 12 : 0) - 1;
 
+/**
+ * A head whose title stays whole: the icon circle gives its room to a title that would not fit beside the trailing
+ * slot (a month's name beside the ‹ › pair in a narrow column), as the energy heads do; the sub then has that room too.
+ */
+export function fitHead(
+  ctx: ViewContext,
+  icon: 'calendar' | 'clock' | 'list',
+  title: string,
+  trailing: number,
+): { readonly icon: 'calendar' | 'clock' | 'list' | null; readonly room: number } {
+  const room = headRoom(ctx, trailing);
+  return textWidth(title, FACE.title) <= room ? { icon, room } : { icon: null, room: room + 56 };
+}
+
 /** The time column is the sheet's 40 on a 24-hour clock; "12:30 PM" needs more, on the grid. */
 function timeColumn(ctx: ViewContext): number {
   if (!ctx.words.hour12) return 40;
@@ -163,7 +177,7 @@ export function eventRow(ctx: ViewContext, item: DayEvent): TemplateResult {
         data-accent=${ctx.accentOf(item.event.calendar) ?? nothing}
       ></span>
       <span class="fv-row__text"
-        ><span class="fv-row__title">${titleOf(ctx, item)}</span
+        ><span class="fv-row__title" data-name>${titleOf(ctx, item)}</span
         ><span class="fv-row__sub">${placeOf(ctx, item)}</span></span
       >`,
   );

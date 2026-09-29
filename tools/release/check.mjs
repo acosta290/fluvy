@@ -19,6 +19,22 @@ import { readJson, workspaceManifests } from './lib.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const args = process.argv.slice(2);
 const release = args.includes('--release') || args.includes('--tag');
+
+/** Each chunk's gzip budget in bytes (`core` is what every page loads; the rest come on demand). */
+const BUDGETS = {
+  'fluvy.js': 2048,
+  core: 225_280,
+  panel: 40_960,
+  strategy: 24_576,
+  wall: 16_384,
+  editor: 8192,
+  pages: 8192,
+  activity: 32_768,
+  history: 16_384,
+  lang: 14_336,
+  'rolldown-runtime': 2048,
+  'loader.js': 4096,
+};
 const tag = args[args.indexOf('--tag') + 1];
 const problems = [];
 const problem = (text) => problems.push(text);
@@ -68,6 +84,17 @@ if (release) {
     if (built.version !== version)
       problem(`frontend/manifest.json: version ${built.version} ≠ ${version}`);
     if (!/^[0-9a-f]{8}$/.test(built.build ?? '')) problem('frontend/manifest.json: no build stamp');
+    // every script under its budget (gzip): what a page pays for what it opens. A chunk is named before its
+    // eight-character hash (`chunks/strategy-6-wdQvpS.js` → `strategy`; a language's catalogue is `lang`); the
+    // fonts are not scripts and have no budget here
+    for (const [file, { gzip }] of Object.entries(built.files ?? {})) {
+      if (!/^(fluvy\.js|loader\.js|chunks\/.+\.js)$/.test(file)) continue;
+      const name = file.replace(/^chunks\//, '').replace(/-[\w-]{8}\.js$/, '');
+      const budget = BUDGETS[name.startsWith('lang-') ? 'lang' : name];
+      if (budget === undefined)
+        problem(`${file}: no budget for this chunk (tools/release/check.mjs)`);
+      else if (gzip > budget) problem(`${file}: ${gzip} B gzip over its budget of ${budget} B`);
+    }
   }
   const sidecars = [];
   const walk = async (dir) => {

@@ -189,12 +189,17 @@ function sunLine(m: ClockModel): string {
 export function side(m: ClockModel): TemplateResult {
   const { time } = m.clock;
   const all = units(m);
-  const timeWidth = (unit: string): number =>
-    m.ruler.width('ck-time', widest(time), 'fv-unit', unit);
+  const timeWidth = (unit: string, cls = 'ck-time'): number =>
+    m.ruler.width(cls, widest(time), 'fv-unit', unit);
   // The face yields to the time, never the reverse: 72 on the sheet, down to 48 in a 300 px column on a 12 h clock.
   const R = clamp(floor4((m.width - 20 - timeWidth(all[0] ?? '')) / 2), 48, 72);
   const available = m.analog ? m.width - (2 * R + 20) : m.width; // the face box is 2R + 24, pulled 12 out, 8 from the text
-  const unit = firstFit(all, (candidate) => timeWidth(candidate) <= available) ?? '';
+  // a column where not even "10:08 PM" fits beside the smallest face steps the time down to 32 (the tile's small time)
+  const fits = all.find((candidate) => timeWidth(candidate) <= available);
+  const small = fits === undefined;
+  const unit = small
+    ? (firstFit(all, (candidate) => timeWidth(candidate, 'ck-time ck-time--s') <= available) ?? '')
+    : fits;
   const sub = (segments: Segment[]): string =>
     fitLine(segments, available, (text) => m.ruler.width('fv-card__sub', text));
 
@@ -211,7 +216,7 @@ export function side(m: ClockModel): TemplateResult {
     m.sky ? sub(skySegments(m, true, false)) : sunLine(m),
   ];
   const text = html`<div class="ck-side__text">
-    <p class="ck-time" data-align="optical">
+    <p class="ck-time ${small ? 'ck-time--s' : ''}" data-align="optical">
       ${time}${unit ? html`<span class="fv-unit">${unit}</span>` : nothing}
     </p>
     ${lines.filter(Boolean).map((line) => html`<p class="fv-card__sub">${line}</p>`)}
@@ -278,7 +283,8 @@ function tileFoot(m: ClockModel): Part {
 }
 
 export function tile(m: ClockModel): TemplateResult {
-  if (m.analog) return html`${face(m, clamp(floor4((m.width - 24) / 2), 40, 56))}`;
+  // the face box is 2R + 24: R from the tile's own width, 56 at most (a 172 tile), never wider than the tile
+  if (m.analog) return html`${face(m, clamp(floor4((m.width - 24) / 2), 24, 56))}`;
   const { time } = m.clock;
   const unit =
     firstFit(

@@ -50,9 +50,10 @@ export const rowStyles = css`
     -webkit-line-clamp: 3;
   }
 
-  /* an editable value wears the link-button shape; a very long one gives way to the name, never the reverse */
+  /* an editable value wears the link-button shape; a very long one gives way to the name, never the reverse — its
+     cap on the 4 grid, so a capped button keeps whole pixels */
   .in-value {
-    max-width: calc(68% - 68px);
+    max-width: round(down, calc(68% - 68px), 4px);
   }
 
   .in-value__text {

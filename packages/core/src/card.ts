@@ -312,9 +312,9 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     return localize(this.hass, key, values);
   }
 
-  /** Content width of a padded card (20 px sides). Whole pixels, so ticks land crisp. */
+  /** Content width of a padded card (20 px sides): the measured width less the padding, whole pixels, so ticks land crisp. */
   protected get contentWidth(): number {
-    return Math.max(120, this.width - 40);
+    return Math.max(0, this.width - 40);
   }
 
   protected call(

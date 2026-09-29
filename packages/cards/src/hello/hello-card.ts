@@ -93,9 +93,9 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * the sheet draws it. One timer aligned to the hour re-renders it; nothing runs per second.
  *
  * The block never clips what it says: after each render `fit()` steps the greeting from 28 to 22
- * when the name is long, the date from "Thursday, September 17" to "Thu, Sep 17" when the weather
- * needs the room, and in the narrowest columns the weather to glyph + degrees. Ellipsis is only the
- * last resort.
+ * when the name is long, then to the greeting alone; the date from "Thursday, September 17" to
+ * "Thu, Sep 17" when the weather needs the room, and in the narrowest columns the weather to glyph +
+ * degrees, then away, then the date too. Nothing is ever cut.
  */
 export class FluvyHelloCard extends Card<HelloCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -148,6 +148,15 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
         text-overflow: ellipsis;
       }
       .is-compact .hm-hello__word {
+        display: none;
+      }
+      /* the narrowest columns: the weather leaves the date its line, then the date leaves too */
+      .is-dateonly .hm-hello__weather,
+      .is-nodate .hm-hello__date {
+        display: none;
+      }
+      /* even the small tier cannot hold the name: the greeting alone (the avatar says who) */
+      .is-bare .hm-hello__name {
         display: none;
       }
 
@@ -314,14 +323,32 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   private fit(): void {
     const block = this.renderRoot.querySelector<HTMLElement>('.hm-hello');
     const title = block?.querySelector<HTMLElement>('.hm-hello__title');
-    const date = block?.querySelector<HTMLElement>('.hm-hello__date--full');
-    const short = block?.querySelector<HTMLElement>('.hm-hello__date--short');
-    if (!block || !title || !date || !short) return;
-    block.classList.remove('is-small', 'is-short', 'is-compact');
-    block.classList.toggle('is-small', overflows(title));
-    // the date gives way in steps: the short form first, then the weather drops its word and keeps glyph + degrees
+    if (!block || !title) return;
+    block.classList.remove(
+      'is-small',
+      'is-bare',
+      'is-short',
+      'is-compact',
+      'is-dateonly',
+      'is-nodate',
+    );
+    // the greeting gives way in steps: the small tier, then the greeting without the name — which takes the
+    // full tier back when it fits alone, since the small one exists for a long name
+    if (overflows(title)) block.classList.add('is-small');
+    if (overflows(title)) {
+      block.classList.add('is-bare');
+      block.classList.remove('is-small');
+      if (overflows(title)) block.classList.add('is-small');
+    }
+    // the date too (when it is shown): the short form first, then the weather drops its word and keeps glyph +
+    // degrees, then leaves the line to the date, and a column too narrow even for the short date shows neither
+    const date = block.querySelector<HTMLElement>('.hm-hello__date--full');
+    const short = block.querySelector<HTMLElement>('.hm-hello__date--short');
+    if (!date || !short) return;
     if (overflows(date)) block.classList.add('is-short');
     if (overflows(short)) block.classList.add('is-compact');
+    if (overflows(short)) block.classList.add('is-dateonly');
+    if (overflows(short)) block.classList.add('is-nodate');
   }
 
   /* ---------- content ---------- */
@@ -417,10 +444,15 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     const weatherId = this.config?.show_weather === false ? undefined : this.config?.weather;
     const showDate = this.config?.show_date !== false;
 
+    // "Good morning" and ", Marta" as two spans: the name (with what joins it) is what leaves a narrow column first
+    const said = name ? s(this.hass, 'greeting', { greeting, name }) : greeting;
+    const at = name ? said.indexOf(name) : -1;
+    const greet = at > 0 ? said.slice(0, at).replace(/[\s,]+$/, '') : said;
     return html`<section class="hm-hello">
       <div class="hm-hello__text">
         <h1 class="hm-hello__title">
-          ${name ? s(this.hass, 'greeting', { greeting, name }) : greeting}
+          <span class="hm-hello__greet">${greet}</span
+          >${at > 0 ? html`<span class="hm-hello__name">${said.slice(greet.length)}</span>` : nothing}
         </h1>
         <p class="hm-hello__meta">
           ${

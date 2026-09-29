@@ -26,7 +26,8 @@ design/                    the design language and the approved renders
 tools/render/              screenshots, the alignment measurer, interaction tests, contact sheets
 tools/icons/               the glyph outliner and the Material icon map
 tools/brand/               the brand files, derived from brand/mark.svg
-tools/release/             version bump, release invariants, the leak scan
+tools/release/             version bump, release invariants (with every chunk's budget), the leak scan
+tools/docs/                the card reference, generated from the code into docs/cards.md
 tools/dev/                 a throwaway Home Assistant, and the installer for any configuration folder
 ```
 
@@ -41,10 +42,12 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy}-<hash>.js` on demand — the Activity page, the History page, the
-settings panel, the date picker they share, and the automatic dashboard's strategy (when a dashboard asks for it). Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
+`chunks/{activity,history,panel,pages,strategy,wall,editor,lang-*}-<hash>.js` on demand — the Activity page, the
+History page, the settings panel, the date picker they share, the automatic dashboards' strategy (when a dashboard
+asks for it), wall mode (on a device that is a wall), the cards' visual editor (when a card is edited) and a
+language's catalogue (English ships in core). Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
-over **220 KB gzip**.
+over **220 KB gzip**; `tools/release/check.mjs --release` holds every chunk to its own budget.
 
 ## How it reaches Home Assistant
 
@@ -106,7 +109,9 @@ smoke-tests the built site and deploys it to https://acosta290.github.io/fluvy/.
 ```sh
 node tools/render/shot.mjs --sheet home --mode dark --width 360 --out apps/playground/out/home-dark.png
 node tools/render/measure.mjs --page "http://127.0.0.1:5183/?sheet=home" --frame '[data-frame]' --width 1400
+pnpm measure                                             # the measurer on every sheet and every panel tab, at 360, 412 and 1400
 pnpm visual                                              # every interaction suite
+pnpm docs:cards                                          # the card tables of docs/cards.md, from the code (pnpm check fails when they drift)
 node tools/render/render.mjs --page apps/design-lab/sheets/home.html --palette linen --mode all --width 900
 ```
 

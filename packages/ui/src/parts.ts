@@ -83,6 +83,8 @@ export interface HeadOptions {
   readonly iconLabel?: string;
   /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
   readonly name?: boolean;
+  /** The title is a sentence (a note's): it takes the lines it needs, and the head grows with it. */
+  readonly wrap?: boolean;
   /** A still press of 500 ms anywhere on the head (a card's hold action); the click that follows is swallowed. */
   readonly onHold?: (() => void) | undefined;
 }
@@ -91,8 +93,9 @@ export interface HeadOptions {
 const clickHead = { handleEvent: clickPress, capture: true };
 
 export function head(o: HeadOptions): TemplateResult {
+  const titleClass = `fv-card__title ${o.wrap ? 'fv-card__title--wrap' : ''}`;
   return html`<div
-    class="fv-card__head ${o.onHold ? 'fv-card__head--hold' : ''}"
+    class="fv-card__head ${o.onHold ? 'fv-card__head--hold' : ''} ${o.wrap ? 'fv-card__head--wrap' : ''}"
     .fvHold=${o.onHold as PressTarget['fvHold']}
     @pointerdown=${o.onHold ? startPress : nothing}
     @contextmenu=${o.onHold ? preventMenu : nothing}
@@ -107,7 +110,7 @@ export function head(o: HeadOptions): TemplateResult {
           })
     }
     <div class="fv-card__titles">
-      <h3 class="fv-card__title" data-name=${o.name ? '' : nothing}>${o.title}</h3>
+      <h3 class=${titleClass} data-name=${o.name ? '' : nothing}>${o.title}</h3>
       ${o.sub ? html`<p class="fv-card__sub">${o.sub}</p>` : nothing}
     </div>
     ${o.trailing ?? nothing}
@@ -203,6 +206,8 @@ export function stepper(
 export interface OptionItem {
   readonly key: string;
   readonly label: string;
+  /** The label is a name (an entity's): it may end in an ellipsis in a narrow tile, as names do. */
+  readonly name?: boolean;
   readonly value?: string;
   readonly glyph?: IconRef | string;
   readonly tone?: Tone;
@@ -253,7 +258,7 @@ export function options(
     ${items.map((o, index) => {
       const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
       const body = html`<span class="fv-option__glyph">${icon(o.glyph)}</span
-        ><span class="fv-option__label">${o.label}</span
+        ><span class="fv-option__label" data-name=${o.name ? '' : nothing}>${o.label}</span
         ><span class="fv-option__value">${o.value ?? ''}</span>`;
       // a minimum, not a height: a tile whose value takes two lines grows, and its row grows with it
       const style = `min-height:${height}px${grid.spans[index] === 1 ? '' : `;grid-column:span ${grid.spans[index]}`}`;
@@ -325,13 +330,14 @@ export interface ActionItem {
   readonly disabled?: boolean;
 }
 
-/** Action row: glyph buttons in equal cells that fill the column (16 gap, 44 tall, radius 12). */
+/** Action row: glyph buttons in equal cells that fill the column (16 gap, 44 tall, radius 12) — a row whose cells share its width. */
 export function actions(
   items: readonly ActionItem[],
   onAction: (key: string) => void,
 ): TemplateResult {
   return html`<div
     class="fv-actions"
+    data-fill-row
     style="grid-template-columns:repeat(${items.length}, minmax(0, 1fr))"
   >
     ${items.map((a) => html`<button class="fv-action ${a.primary ? 'fv-action--accent' : ''}" data-control data-target aria-label=${a.label} title=${a.label} ?disabled=${a.disabled ?? false} @click=${() => onAction(a.key)}>${icon(a.glyph)}</button>`)}

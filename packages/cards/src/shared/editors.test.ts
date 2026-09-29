@@ -46,8 +46,8 @@ describe('the editors’ contract', () => {
 
   it.each(cards)(
     '$tag: the editor is the base’s, from the form, the lists and the defaults',
-    ({ card }) => {
-      const element = card.getConfigElement() as FluvyRowsEditor;
+    async ({ card }) => {
+      const element = (await card.getConfigElement()) as FluvyRowsEditor;
       expect(element.tagName.toLowerCase()).toBe('fluvy-rows-editor');
       const spec = element.spec!;
       expect(spec.lists).toBe(card.lists);

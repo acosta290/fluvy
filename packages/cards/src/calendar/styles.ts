@@ -122,6 +122,7 @@ export const calendarStyles = css`
 
   .cd-tile .cd-sk--title {
     width: 96px;
+    max-width: 100%;
   }
 
   .cd-tile .cd-sk--sub {
