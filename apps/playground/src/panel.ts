@@ -1,7 +1,14 @@
 import { DEMO_AREAS, DEMO_DASHBOARDS } from '@fluvy/demo-home';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import '@fluvy/cards/panel';
-import { writeDevice, type HomeAssistant, type Look, type LookHandle } from '@fluvy/core';
+import {
+  WALL_DEFAULTS,
+  writeDevice,
+  type HassEntity,
+  type HomeAssistant,
+  type Look,
+  type LookHandle,
+} from '@fluvy/core';
 import { createMemoryLook, type MemoryLook } from './look-memory.js';
 
 /**
@@ -12,7 +19,7 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * app with nothing changed (`trial`), a profile that chose the Fluvy theme (`themed`), edits on the other tabs
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created
  * (`dashboards`), a dashboard's Recreate row armed (`recreate`), this browser a wall panel (`wall`), three palettes
- * saved by the house (`palettes`). Several join with commas.
+ * saved by the house (`palettes`), the wall dark with a veil on the mesh (`night`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -30,7 +37,8 @@ export type PanelState =
   | 'dashboards'
   | 'recreate'
   | 'wall'
-  | 'palettes';
+  | 'palettes'
+  | 'night';
 
 /** The dashboards our templates create, as the panel would (the home's is `fluvy-auto` in the demo home already). */
 const TEMPLATE_DASHBOARDS = [
@@ -83,6 +91,8 @@ export function mountPanel(
       areas: Object.fromEntries(DEMO_AREAS.map((area) => [area.area_id, { ...area }])),
     } as HomeAssistant;
   }
+  // two sensors that see a person, so the Screen card offers its wake-on-motion dropdown (a room as the hint)
+  if (has('wall')) hass = withMotionSensors(hass);
   // the dashboards as Home Assistant hands them to every frontend (its own Overview, the house's, maybe ours)
   hass = { ...hass, panels: panelsFor(states) } as HomeAssistant;
   if (has('guest')) hass = { ...hass, user: { ...hass.user, is_admin: false } } as HomeAssistant;
@@ -107,6 +117,11 @@ export function mountPanel(
       })),
     });
   if (has('everywhere')) void store.saveHouse({ scope: 'everywhere', frame: true });
+  // the wall at night: always dark, veiled at 40 %, on the mesh (the tab's preview shows it so)
+  if (has('night'))
+    void store.saveHouse({
+      wall: { ...WALL_DEFAULTS, theme: 'dark', nightDim: 40, background: 'wall' },
+    });
 
   // what this browser is: the panel reads its memory when it is made
   writeDevice({ wall: has('wall') });
@@ -166,6 +181,33 @@ export function mountPanel(
 }
 
 /** The dashboard panels of the demo home (one of them the home template's, unless `missing`) and the created ones. */
+const MOTION_SENSORS = [
+  ['binary_sensor.pg_hall_motion', 'Hallway motion', 'motion', 'pg_hall', 'Hallway'],
+  ['binary_sensor.pg_porch_occupancy', 'Porch occupancy', 'occupancy', undefined, undefined],
+] as const;
+
+/** The house with two sensors that see a person, one of them in a room. */
+function withMotionSensors(hass: HomeAssistant): HomeAssistant {
+  const states = { ...hass.states };
+  const entities = { ...hass.entities };
+  const areas = { ...hass.areas };
+  const stamp = new Date().toISOString();
+  for (const [id, name, cls, area, areaName] of MOTION_SENSORS) {
+    states[id] = {
+      entity_id: id,
+      state: 'off',
+      attributes: { friendly_name: name, device_class: cls },
+      last_changed: stamp,
+      last_updated: stamp,
+    } as HassEntity;
+    if (area) {
+      entities[id] = { entity_id: id, area_id: area } as never;
+      areas[area] = { area_id: area, name: areaName } as never;
+    }
+  }
+  return { ...hass, states, entities, areas } as HomeAssistant;
+}
+
 function panelsFor(states: readonly PanelState[]): HomeAssistant['panels'] {
   const dashboards = [
     ...DEMO_DASHBOARDS.filter(

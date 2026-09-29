@@ -6,7 +6,11 @@ import {
   type LookHandle,
   lookHandle,
   type LookPreview,
+  firstWeather,
   lookRule,
+  type SunLike,
+  type WallSettings,
+  wallDark,
   navigate,
   onWords,
   readDevice,
@@ -265,6 +269,7 @@ export class FluvyPanel extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.closeSaver?.();
     this.offWords?.();
     this.offWords = undefined;
     this.off?.();
@@ -320,7 +325,11 @@ export class FluvyPanel extends LitElement {
     }
     // the whole panel wears the look being chosen: a tap on a palette re-skins the page it was made on
     if ((changed.has('draft') || changed.has('dark')) && this.draft)
-      this.lookSheet.replaceSync(lookRule(this.draft, this.dark ? 'dark' : 'light', ':host'));
+      this.lookSheet.replaceSync(
+        // the panel in the app's mode; a wall preview at night in the dark one, scoped to it
+        lookRule(this.draft, this.dark ? 'dark' : 'light', ':host') +
+          lookRule(this.draft, 'dark', '.pn-night'),
+      );
     resyncCardThemes(); // the preview's cards derive their colours on the look being chosen
     if (
       changed.has('tryOnApp') ||
@@ -610,6 +619,11 @@ export class FluvyPanel extends LitElement {
       editHouse: (edit) => {
         if (this.settings) this.houseEdit = unsaved({ ...this.houseEdit, ...edit }, this.settings);
       },
+      editWall: (patch) => {
+        if (!this.settings) return;
+        const wall = { ...(this.houseEdit.wall ?? this.settings.wall), ...patch };
+        this.houseEdit = unsaved({ ...this.houseEdit, wall }, this.settings);
+      },
       editPersonal: (edit) => {
         if (this.settings)
           this.personalEdit = unsaved({ ...this.personalEdit, ...edit }, this.settings);
@@ -630,6 +644,7 @@ export class FluvyPanel extends LitElement {
       editDevice: (wall) => {
         this.deviceEdit = wall === this.device.wall ? undefined : wall;
       },
+      previewScreensaver: () => this.previewScreensaver(),
       setTryOnApp: (on) => {
         this.tryOnApp = on;
       },
@@ -820,15 +835,26 @@ export class FluvyPanel extends LitElement {
       );
     }
     if (this.tab === 'wall') {
-      const mesh = ctx.shown.wall.background === 'wall';
+      // the wall as it would be now: its background, its night (the dark tokens scoped to the preview, the
+      // cards told the mode) and the veil the night darkens it with
+      const wall = ctx.shown.wall;
+      const night = this.wallNight(wall);
+      house.setDark(night);
+      const classes = [
+        'pn-preview pn-preview--wall',
+        wall.background === 'wall' ? 'fv-bg--wall' : '',
+        night ? 'pn-night' : '',
+      ].join(' ');
       return wallPreview(
         ctx,
-        html`<div class="pn-preview pn-preview--wall ${mesh ? 'fv-bg--wall' : ''}">
+        html`<div class=${classes}>
           ${house.clock()}
           <div class="pn-preview__tiles">${house.tile('living')}${house.tile('kitchen')}</div>
+          ${night && wall.nightDim > 0 ? html`<div class="pn-preview__veil" style="opacity:${wall.nightDim / 100}"></div>` : nothing}
         </div>`,
       );
     }
+    house.setDark(undefined);
     if (this.tab !== 'appearance' && !this.side) return undefined;
     return appearancePreview(
       ctx,
@@ -842,6 +868,50 @@ export class FluvyPanel extends LitElement {
         ${house.thermostat('compact')}
       </div>`,
     );
+  }
+
+  /** Whether the wall would be dark now, by the settings shown: its own rule, else the app's mode. */
+  private wallNight(wall: WallSettings): boolean {
+    const sun = this.hass?.states['sun.sun'] as SunLike | undefined;
+    return wallDark(wall, new Date(), sun) ?? this.dark;
+  }
+
+  private closeSaver: (() => void) | undefined;
+
+  /**
+   * The screensaver as the wall would show it now, over this page until a tap: the settings shown (the clock or
+   * black, the wall's background, its day or night), the real piece, mounted under the panel's look — in the
+   * night's tokens when it is night — and taken down by the tap that would wake the wall.
+   */
+  private previewScreensaver(): void {
+    this.closeSaver?.();
+    const wall = { ...this.settings?.wall, ...this.houseEdit.wall } as WallSettings;
+    const hass = this.hass;
+    if (!hass || !this.settings) return;
+    const night = this.wallNight(wall);
+    const host = document.createElement('div');
+    host.className = night ? 'pn-night' : '';
+    this.renderRoot.append(host);
+    const shown = (): HomeAssistant | undefined =>
+      this.hass &&
+      ({ ...this.hass, themes: { ...this.hass.themes, darkMode: night } } as HomeAssistant);
+    void import('../wall/index.js').then(({ sleep }) => {
+      if (!host.isConnected) return; // the panel left meanwhile
+      const close = sleep({
+        clock: wall.clock,
+        dim: wall.dim,
+        weather: firstWeather(hass),
+        hass: shown,
+        host,
+        preview: true,
+        onWake: () => this.closeSaver?.(),
+      });
+      this.closeSaver = () => {
+        this.closeSaver = undefined;
+        close();
+        host.remove();
+      };
+    });
   }
 
   /** A template's cards as its dashboard will draw them, in the options chosen. */

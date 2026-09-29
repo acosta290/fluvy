@@ -1,5 +1,6 @@
 import {
   type CardLanguage,
+  areaOf,
   clock12,
   copyText,
   dayPeriods,
@@ -937,8 +938,10 @@ export function dashboards(ctx: PanelContext, actions: DashboardActions): Templa
 
 /* ---------- the wall ---------- */
 
-/** The binary sensors that see a person: motion, occupancy and presence, by their names. */
-function motionSensors(hass: HomeAssistant): readonly { id: string; name: string }[] {
+/** The binary sensors that see a person: motion, occupancy and presence, by their names, with their rooms. */
+function motionSensors(
+  hass: HomeAssistant,
+): readonly { id: string; name: string; area: string | undefined }[] {
   return Object.values(hass.states)
     .filter(
       (state) =>
@@ -950,6 +953,7 @@ function motionSensors(hass: HomeAssistant): readonly { id: string; name: string
     .map((state) => ({
       id: state.entity_id,
       name: String(state.attributes['friendly_name'] ?? state.entity_id),
+      area: hass.areas?.[areaOf(hass, state.entity_id) ?? '']?.name,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -968,8 +972,7 @@ const hhmm = (minutes: number): string =>
 export function wall(ctx: PanelContext): TemplateResult {
   const { shown, admin, hass } = ctx;
   const settings = shown.wall;
-  const edit = (patch: Partial<WallSettings>): void =>
-    ctx.editHouse({ wall: { ...settings, ...patch } });
+  const edit = (patch: Partial<WallSettings>): void => ctx.editWall(patch);
   const isWall = ctx.deviceEdit ?? ctx.device.wall;
   const first =
     settings.dashboards[0] ?? ctx.dashboards.find((d) => d.template)?.urlPath ?? 'fluvy-auto';
@@ -1071,23 +1074,34 @@ export function wall(ctx: PanelContext): TemplateResult {
           readonly: !admin,
           onToggle: (on) => edit({ dim: on }),
         })}
+        ${listRow({
+          icon: 'eye',
+          title: ctx.t('wall.try'),
+          sub: ctx.t('wall.try_sub'),
+          trailing: 'button',
+          button: ctx.t('wall.try_btn'),
+          onTap: () => ctx.previewScreensaver(),
+        })}
       </div>
       ${
         sensors.length
           ? html`<p class="fv-label pn-label">${ctx.t('wall.wake')}</p>
               <p class="pn-hint">${ctx.t('wall.wake_sub')}</p>
-              ${choice(
-                [
-                  chip(ctx.t('wall.wake_none'), '', settings.wakeEntity === ''),
-                  ...sensors
-                    .slice(0, 6)
-                    .map((sensor) =>
-                      chip(sensor.name, sensor.id, settings.wakeEntity === sensor.id),
-                    ),
-                ],
-                admin ? (key) => edit({ wakeEntity: key }) : null,
-                ctx.wide ? 4 : 2,
-              )}`
+              <fluvy-select
+                .label=${ctx.t('wall.wake')}
+                .value=${settings.wakeEntity}
+                .options=${[
+                  { value: '', label: ctx.t('wall.wake_none') },
+                  ...sensors.map((sensor) => ({
+                    value: sensor.id,
+                    label: sensor.name,
+                    ...(sensor.area ? { hint: sensor.area } : {}),
+                  })),
+                ]}
+                .disabled=${!admin}
+                @fluvy-change=${(event: CustomEvent<SelectChangeDetail>) =>
+                  edit({ wakeEntity: event.detail.value })}
+              ></fluvy-select>`
           : nothing
       }
     </section>

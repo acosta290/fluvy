@@ -102,10 +102,14 @@ export interface PanelContext {
   strategyOf(urlPath: string): Readonly<Record<string, unknown>> | undefined;
   setDraft(look: Partial<Look>): void;
   editHouse(edit: HouseEdit): void;
+  /** A wall setting, on the latest of the wall's (two taps before a render never lose the first). */
+  editWall(patch: Partial<WallSettings>): void;
   editPersonal(edit: PersonalEdit): void;
   editStrategy(urlPath: string, edit: StrategyEdit): void;
   /** This device as a wall panel, or not (its own memory, saved from the apply bar like the rest). */
   editDevice(wall: boolean): void;
+  /** The screensaver as the wall would show it now, over this page until a tap. */
+  previewScreensaver(): void;
   setTryOnApp(on: boolean): void;
   /** A word for a moment (the notice under the bar). */
   notify(key: StringKey): void;

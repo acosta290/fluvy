@@ -1,5 +1,6 @@
 import { resyncCardThemes, setDarkOverride } from '../card.js';
 import type { HomeAssistant } from '../ha/types.js';
+import { firstWeather } from '../entity.js';
 import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../look/attributes.js';
 import { readDevice } from '../settings/device.js';
 import type { EffectiveSettings } from '../settings/schema.js';
@@ -34,6 +35,10 @@ export interface ScreensaverOptions {
   readonly hass: () => HomeAssistant | undefined;
   /** The touch that wakes the wall (it does nothing else). */
   readonly onWake: () => void;
+  /** Where the piece mounts (default: where the look's tokens reach it, the dashboard panel's shadow root or the body). */
+  readonly host?: ParentNode;
+  /** A look at it from the settings panel: the pointer stays. */
+  readonly preview?: boolean;
 }
 
 /** The wall's pieces, made by the cards package and fetched with the controller. */
@@ -182,7 +187,7 @@ export function createWall(deps: WallDeps): WallHandle {
     setPhase('asleep');
     veil();
     const settings = wall();
-    const weather = Object.keys(deps.hass()?.states ?? {}).find((id) => id.startsWith('weather.'));
+    const weather = firstWeather(deps.hass());
     void ui().then((pieces) => {
       if (phase !== 'asleep') return;
       closeSaver?.();

@@ -20,7 +20,8 @@ Settings are never walls, so a tablet can always be administered from itself.
   There is no swipe between views and no gesture of Fluvy's: the dashboard's own tabs remain.
 - **Screensaver**: after 2, 5, 10 or 30 minutes without a touch (or never), the screen shows the clock and the weather
   over the wall background, or dims to black. Any touch wakes it — that touch does nothing else. A motion or
-  occupancy sensor chosen as *Wake on motion* wakes it too.
+  occupancy sensor chosen as *Wake on motion* (a dropdown of every one the house has, with its room) wakes it too.
+  *See the screensaver → Preview* shows it over the settings, as the wall would show it now, until a tap.
 - **Day and night**: the wall is always dark, follows Home Assistant's own mode, follows the sun (`sun.sun`), or a
   pair of hours; at night it may darken further (20, 40 or 60 % of black over the page) for a dim room.
 - **Background**: the page colour alone, or the wall mesh (the palette's own hues, one step deeper than the dashboards'

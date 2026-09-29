@@ -19,9 +19,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   each (two, then a "+N" disc), as rows, or as Home Assistant's own map on a plate.
 - Wall mode for a tablet on the wall: no sidebar, no header, the screen kept awake, a screensaver with the clock (or
   black) after a while that any touch or a motion sensor wakes, day and night by Home Assistant's mode, the sun or
-  a pair of hours with a night veil, the wall mesh behind the cards. The house sets it in the panel's *Wall* tab;
-  the tablet becomes a wall with `?kiosk` on the address (or the tab's switch) and remembers; a hold of the top-right
-  corner pauses it. Everything of the wall loads only on a device that is one.
+  a pair of hours with a night veil, the wall mesh behind the cards. The house sets it in the panel's *Wall* tab,
+  whose preview shows the wall as it would be now (its night included) and which shows the screensaver itself on a
+  tap; the tablet becomes a wall with `?kiosk` on the address (or the tab's switch) and remembers; a hold of the
+  top-right corner pauses it. Everything of the wall loads only on a device that is one.
 - Palettes that travel: a custom palette shared as a file (`<name>.fluvy-palette.json`) with a title and an author,
   read back onto the gallery, saved to the house (twelve, under *Yours*) or removed; the palettes the community has
   contributed ship under *Community* with their authors. A draft that equals one of them is that palette.

@@ -171,10 +171,13 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over
   the page while awake.
 - The panel's Wall tab: *This device* (the wall switch and the address with a copy button), *Wall dashboards* (the
-  Scope list's idiom), *Screen* (the minutes as chips — five, in two rows on a phone —, two switch rows, the motion
-  sensors as chips), *Day and night* (four option tiles in 2 × 2 with a value line each, two time fields for the
-  hours, the veil's share as chips), *Background* (two chips) and a preview of the clock over two tiles on the
-  background chosen.
+  Scope list's idiom), *Screen* (the minutes as chips — five, in two rows on a phone —, two switch rows, a row
+  whose button shows the screensaver itself over the page until a tap, and the motion sensor as a dropdown of every
+  one the house has, its room as the hint), *Day and night* (four option tiles in 2 × 2 with a value line each, two
+  time fields for the hours, the veil's share as chips), *Background* (two chips) and a preview of the clock over
+  two tiles on the background chosen — in the night's tokens, under the night's veil, when the settings would make
+  it night now. Every wall control edits the latest wall (`editWall`): two taps before a render never lose the
+  first.
 
 ## Palettes that travel
 

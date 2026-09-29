@@ -8,7 +8,7 @@ palette) and Preferences.
 | **Appearance** | palette (fifteen presets, the house's saved palettes, the community's, or a custom accent — shared as a file), shape (soft, round, crisp), button style; a live preview on real cards (its little house answers a tap itself: nothing at home changes) | the house; a person may keep their own palette and shape |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
-| **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver, day and night, the background — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
+| **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
 | **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, haptics, a link to improving a translation | each person |
 | **About** | version, the shell's health, export and import of the settings | — |
 

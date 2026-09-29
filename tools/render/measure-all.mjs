@@ -38,6 +38,7 @@ const PANEL = [
   ['scope', 'scope'],
   ['dashboard', 'dashboard&state=dashboards'],
   ['wall', 'wall&state=wall'],
+  ['wall-night', 'wall&state=wall,night'],
   ['preferences', 'preferences'],
   ['preferences-menu', 'preferences&state=menu'],
   ['about', 'about'],

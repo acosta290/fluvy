@@ -189,6 +189,8 @@ export class PreviewHouse {
   private readonly made = new Map<string, LovelaceCard>();
   private preview: HomeAssistant | undefined;
   private real: HomeAssistant | undefined;
+  /** A mode of the preview's own (the wall's night), or the app's. */
+  private dark: boolean | undefined;
   // made once, changed only by a tap in the preview: the same state objects every update, so the cards redraw
   // only for the look
   private readonly states: Record<string, HassEntity>;
@@ -273,6 +275,13 @@ export class PreviewHouse {
     return this.card({ type: 'custom:fluvy-clock-card', variant: 'side' });
   }
 
+  /** The preview in a mode of its own — the wall as it would be tonight — or back to the app's (undefined). */
+  setDark(dark: boolean | undefined): void {
+    if (dark === this.dark) return;
+    this.dark = dark;
+    if (this.real) this.update(this.real);
+  }
+
   update(hass: HomeAssistant): void {
     this.real = hass;
     // the preview's entities sit in the preview's rooms, so a room card finds them (the house's registry stays)
@@ -281,6 +290,7 @@ export class PreviewHouse {
       entities[id] = { ...(entities[id] ?? { entity_id: id }), area_id: area } as never;
     this.preview = {
       ...hass,
+      ...(this.dark === undefined ? {} : { themes: { ...hass.themes, darkMode: this.dark } }),
       states: { ...hass.states, ...this.states },
       entities,
       areas: { ...hass.areas, ...this.areas },

@@ -309,10 +309,23 @@ export const panelStyles = css`
   .pn-fields {
     margin-top: 4px;
   }
-  /* the wall's preview: the clock over two tiles on the wall's background (or the card's) */
+  /* the wall's preview: the clock over two tiles on the wall's background (the mesh, or the page's plain fill),
+     in the night's tokens when it is night, under the veil the night darkens it with */
   .pn-preview--wall {
+    position: relative;
+    overflow: hidden;
     padding: 16px;
     border-radius: var(--fluvy-radius-lg);
+    background: var(--fluvy-page);
+  }
+  .pn-preview__veil {
+    position: absolute;
+    inset: 0;
+    background: #000; /* the wall's veil is black: a screen going dark, whatever the palette */
+    pointer-events: none;
+  }
+  .pn-hint + fluvy-select {
+    margin-top: 12px;
   }
   .pn-preview--wall fluvy-clock-card {
     display: block;

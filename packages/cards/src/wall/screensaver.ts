@@ -36,6 +36,10 @@ export class FluvyWallScreensaver extends LitElement {
       dialog::backdrop {
         background: transparent;
       }
+      /* a look at it from the settings panel: a desktop keeps its pointer */
+      :host([preview]) dialog {
+        cursor: default;
+      }
       dialog.is-on {
         opacity: 1;
       }

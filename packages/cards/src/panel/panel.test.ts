@@ -431,6 +431,90 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
   });
 
+  it('offers every motion sensor in a dropdown to wake the wall, its room as the hint', async () => {
+    const sensor = (id: string, device_class: string, friendly_name: string) => ({
+      entity_id: id,
+      state: 'off',
+      attributes: { device_class, friendly_name },
+      last_changed: '',
+      last_updated: '',
+    });
+    const { panel, root, settle } = await mount(true, {
+      states: {
+        'binary_sensor.porch': sensor('binary_sensor.porch', 'occupancy', 'Porch'),
+        'binary_sensor.hall': sensor('binary_sensor.hall', 'motion', 'Hall motion'),
+        'binary_sensor.door': sensor('binary_sensor.door', 'door', 'Front door'),
+      },
+      entities: { 'binary_sensor.hall': { entity_id: 'binary_sensor.hall', area_id: 'hall' } },
+      areas: { hall: { area_id: 'hall', name: 'Hall' } },
+    });
+    panel.tab = 'wall';
+    await settle();
+    const select = root.querySelector('fluvy-select') as HTMLElement & {
+      value: string;
+      options: readonly { value: string; label: string; hint?: string }[];
+    };
+    expect(select.value).toBe('');
+    // None first, then the sensors that see a person by name (a door is not one), each with its room
+    expect(select.options.map((o) => [o.value, o.label, o.hint ?? ''])).toEqual([
+      ['', 'None', ''],
+      ['binary_sensor.hall', 'Hall motion', 'Hall'],
+      ['binary_sensor.porch', 'Porch', ''],
+    ]);
+    select.dispatchEvent(
+      new CustomEvent('fluvy-change', { detail: { value: 'binary_sensor.porch' }, bubbles: true }),
+    );
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('Wake on motion');
+    panel.remove();
+  });
+
+  it('shows the screensaver as the wall would, over the panel, until a tap', async () => {
+    const { panel, root, row, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    row('See the screensaver')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 80)); // the wall's pieces are fetched
+    await settle();
+    const saver = root.querySelector('fluvy-wall-screensaver') as HTMLElement & {
+      clock: boolean;
+      dim: boolean;
+    };
+    expect(saver).not.toBeNull();
+    expect(saver.hasAttribute('preview')).toBe(true); // a desktop keeps its pointer
+    expect(saver.clock).toBe(true);
+    expect(saver.dim).toBe(false);
+    saver.shadowRoot!.querySelector('dialog')!.dispatchEvent(new MouseEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 260)); // its fade
+    expect(root.querySelector('fluvy-wall-screensaver')).toBeNull();
+    panel.remove();
+  });
+
+  it('draws the wall preview in the night the settings give, veiled as the night darkens it', async () => {
+    const { panel, root, chip, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    const preview = () => root.querySelector('.pn-preview--wall')!;
+    expect(preview().classList.contains('pn-night')).toBe(false); // Follow: the app's mode, which is light
+    const option = [...root.querySelectorAll<HTMLElement>('.fv-option')].find((o) =>
+      o.textContent?.includes('Always'),
+    )!;
+    option.click();
+    chip('40 %')!.click();
+    await settle();
+    expect(preview().classList.contains('pn-night')).toBe(true);
+    expect(preview().querySelector<HTMLElement>('.pn-preview__veil')?.style.opacity).toBe('0.4');
+    // the preview's cards are told the night too
+    const tile = preview().querySelector('fluvy-tile-card') as HTMLElement & {
+      hass?: { themes: { darkMode: boolean } };
+    };
+    expect(tile.hass?.themes.darkMode).toBe(true);
+    chip('Off')!.click();
+    await settle();
+    expect(preview().querySelector('.pn-preview__veil')).toBeNull();
+    panel.remove();
+  });
+
   it('lists the house’s palettes under Yours and the community’s with their authors; a matching draft is that palette', async () => {
     const { panel, root, swatch, handle, settle } = await mount();
     const moss = COMMUNITY_PALETTES.find((file) => file.name === 'moss')!;

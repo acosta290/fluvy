@@ -35,8 +35,9 @@ export function sleep(options: ScreensaverOptions): () => void {
   saver.dim = options.dim;
   saver.weather = options.weather;
   saver.onWake = options.onWake;
+  saver.toggleAttribute('preview', options.preview === true);
   const unfollow = follow(saver, options.hass);
-  wallHost(document).append(saver);
+  (options.host ?? wallHost(document)).append(saver);
   return () => {
     unfollow();
     void saver.close();
