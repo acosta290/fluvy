@@ -74,7 +74,10 @@ export class FluvyWallCorner extends LitElement {
       height: 32px;
       border-radius: 50%;
       background: color-mix(in srgb, var(--fluvy-card) 88%, transparent);
-      box-shadow: inset 0 0 0 1px var(--fluvy-border);
+      /* it floats over whatever the dashboard has in its corner: the knob's drop says so */
+      box-shadow:
+        inset 0 0 0 1px var(--fluvy-border),
+        var(--fluvy-shadow-knob);
       transition:
         transform 120ms ease,
         color 180ms ease;
@@ -92,7 +95,8 @@ export class FluvyWallCorner extends LitElement {
     .leave:focus-visible .disc {
       box-shadow:
         inset 0 0 0 1px var(--fluvy-border),
-        0 0 0 2px var(--fluvy-accent);
+        0 0 0 2px var(--fluvy-accent),
+        var(--fluvy-shadow-knob);
     }
     @media (hover: hover) {
       .leave:hover .disc {
