@@ -271,7 +271,7 @@ export const panelStyles = css`
   }
   /* what a value means, under it (the address: open it once on the tablet) */
   .pn-hint--after {
-    margin: 8px 0 0;
+    margin: -4px 0 0; /* one step (8) under the button, with the card's 12 between children */
   }
   /* a chip row binds to the label above it (8 from the label's box to the pill, as in the gallery) */
   .pn-card .fv-chips {
@@ -362,7 +362,7 @@ export const panelStyles = css`
   .pn-address {
     display: grid;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: -4px; /* the dropdowns' distance under their label: 4 from the label's box */
   }
   .pn-address .fv-btn {
     justify-self: start;
