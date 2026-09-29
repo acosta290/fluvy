@@ -1,7 +1,8 @@
 /**
  * The wall in a real Chromium against the playground: the page as a wall panel on the real controller —
  * no chrome attribute without a touch, the screensaver after the minutes, the touch that wakes it reaching no
- * card, the corner's hold that pauses (the toast, the way back), a shorter hold that does nothing, and the night.
+ * card, the corner's button that leaves (there while someone is, gone at rest, the notice and the way back), the
+ * corner's hold that pauses when the house chose it (a shorter hold does nothing), and the night.
  *
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-wall.mjs
  */
@@ -10,6 +11,7 @@ import { calls, settle, startSuite } from './lib/suite.mjs';
 const suite = await startSuite();
 const { check } = suite;
 const WALL = 'sheet=home&wall=1&after=10';
+const HOLD = `${WALL}&exit=hold`;
 const VIEWPORT = { width: 1024, height: 768 };
 
 const phase = (page) => page.evaluate(() => window.fluvyWall?.phase() ?? 'none');
@@ -19,9 +21,65 @@ const ready = async (page) => {
   await settle(page, 200);
 };
 
-/* ---------- awake: the corner alone ---------- */
+/* ---------- the way out by default: a button in the corner ---------- */
 {
   const page = await suite.page(WALL, { viewport: VIEWPORT, clock: true });
+  await ready(page);
+  const button = page.locator('fluvy-wall-corner button');
+  const shown = () =>
+    button.evaluate(
+      (el) => getComputedStyle(el).opacity === '1' && getComputedStyle(el).pointerEvents !== 'none',
+    );
+  await page.clock.runFor(400);
+  check(
+    'the wall comes with its way out: a × in the corner',
+    (await button.count()) === 1 && (await shown()),
+  );
+  await page.clock.runFor(7000);
+  await settle(page, 300);
+  check('at rest the × is gone, and takes no touch', !(await shown()));
+  await page.mouse.move(400, 300);
+  await page.mouse.move(420, 320);
+  await page.clock.runFor(400);
+  await settle(page, 300);
+  check('a pointer that moves brings it back', await shown());
+  const device = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem('fluvy:device') ?? '{}').wall);
+  await button.click();
+  await page.clock.runFor(300);
+  await settle(page, 300);
+  check(
+    'a tap leaves the wall: the chrome back, the device out, the notice with the way back',
+    (await phase(page)) === 'off' &&
+      !(await walled(page)) &&
+      (await device()) === false &&
+      ((await page.locator('fluvy-wall-toast .toast').textContent()) ?? '').includes(
+        'Wall mode off',
+      ),
+    `${await phase(page)} · device ${await device()}`,
+  );
+  await page.locator('fluvy-wall-toast button').click();
+  await page.clock.runFor(300);
+  await settle(page, 300);
+  check(
+    '"Back to the wall" makes it a wall again',
+    (await phase(page)) === 'awake' && (await walled(page)) && (await device()) === true,
+  );
+  await page.locator('fluvy-wall-corner button').click();
+  await page.clock.runFor(8500);
+  await settle(page, 300);
+  check(
+    'left alone, the notice goes and the device stays out',
+    (await page.locator('fluvy-wall-toast').count()) === 0 &&
+      (await phase(page)) === 'off' &&
+      (await device()) === false,
+  );
+  await page.close();
+}
+
+/* ---------- awake: the corner alone (the house chose the hold) ---------- */
+{
+  const page = await suite.page(HOLD, { viewport: VIEWPORT, clock: true });
   await ready(page);
   check(
     'the page is a wall: the attribute, awake',

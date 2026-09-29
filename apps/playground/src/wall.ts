@@ -12,9 +12,10 @@ import { createMemoryLook } from './look-memory.js';
  * The wall outside Home Assistant, `?wall=1` with a sheet's frames as the dashboard: the real controller on a memory
  * look, this page made a wall (`fluvy:device`) on a dashboard the mock's panels list. `moment=` puts it where a
  * screenshot wants it: awake (the corner alone), asleep (the screensaver), dim (the screensaver in black),
- * paused (the toast), corner (the corner mid-hold), night (dark with the night veil).
+ * paused (the toast), corner (the corner mid-hold), left (out of the wall, the notice with the way back), night
+ * (dark with the night veil). `exit=hold` chooses the hidden hold; the button is the default.
  */
-export type WallMoment = 'awake' | 'asleep' | 'dim' | 'paused' | 'corner' | 'night';
+export type WallMoment = 'awake' | 'asleep' | 'dim' | 'paused' | 'corner' | 'left' | 'night';
 
 export const WALL_PANELS: HomeAssistant['panels'] = {
   lovelace: { component_name: 'lovelace', url_path: 'lovelace', title: null, icon: null },
@@ -47,6 +48,11 @@ export function wallSettingsFor(
   return {
     after,
     background: params.get('bg') === 'wall' ? 'wall' : 'plain',
+    // a pause and a hold in progress are the hold's moments
+    exit:
+      params.get('exit') === 'hold' || moment === 'corner' || moment === 'paused'
+        ? 'hold'
+        : 'button',
     ...(moment === 'dim' ? { dim: true } : {}),
     ...(moment === 'night' ? { theme: 'dark' as const, nightDim: 40 as const } : {}),
   };
@@ -81,6 +87,9 @@ export async function mountWall(
       break;
     case 'paused':
       facade.pause();
+      break;
+    case 'left':
+      facade.exit();
       break;
     case 'corner': {
       await until(() => Boolean(cornerIn(doc)));

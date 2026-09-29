@@ -458,6 +458,21 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('lets the house choose the wall\u2019s way out: the button by default, or the long press', async () => {
+    const { panel, root, chip, button, handle, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    expect(chip('Button')?.classList.contains('is-active')).toBe(true);
+    chip('Long press')!.click();
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('Wall · Way out');
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    expect(handle.settings().wall.exit).toBe('hold');
+    panel.remove();
+  });
+
   it('offers every motion sensor in a dropdown to wake the wall, its room as the hint', async () => {
     const sensor = (id: string, device_class: string, friendly_name: string) => ({
       entity_id: id,

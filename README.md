@@ -129,7 +129,7 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
   drawn on purpose.
 - **Five automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall.
 - **Wall mode** for a tablet: no sidebar, no header, a screensaver with the clock, dark at night, the screen kept
-  awake — `?kiosk` on the dashboard's address and the tablet remembers.
+  awake — `?kiosk` on the dashboard's address and the tablet remembers, a × in the corner is the way out.
 - **A settings panel** for the house and for each person.
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.

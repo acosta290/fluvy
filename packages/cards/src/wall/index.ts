@@ -1,4 +1,10 @@
-import type { HomeAssistant, ScreensaverOptions, WallUi } from '@fluvy/core';
+import type {
+  CornerOptions,
+  HomeAssistant,
+  NoticeOptions,
+  ScreensaverOptions,
+  WallUi,
+} from '@fluvy/core';
 import { FluvyWallCorner } from './corner.js';
 import { wallHost } from './host.js';
 import { FluvyWallScreensaver } from './screensaver.js';
@@ -44,18 +50,23 @@ export function sleep(options: ScreensaverOptions): () => void {
   };
 }
 
-export function corner(onLeave: () => void, hass: () => HomeAssistant | undefined): () => void {
+export function corner(options: CornerOptions): () => void {
   const element = document.createElement('fluvy-wall-corner') as FluvyWallCorner;
-  element.onLeave = onLeave;
-  void hass;
+  element.mode = options.mode;
+  element.onLeave = options.onLeave;
+  const unfollow = follow(element, options.hass);
   wallHost(document).append(element);
-  return () => element.remove();
+  return () => {
+    unfollow();
+    element.remove();
+  };
 }
 
-export function paused(onResume: () => void, hass: () => HomeAssistant | undefined): () => void {
+export function notice(options: NoticeOptions): () => void {
   const toast = document.createElement('fluvy-wall-toast') as FluvyWallToast;
-  toast.onResume = onResume;
-  const unfollow = follow(toast, hass);
+  toast.kind = options.kind;
+  toast.onAction = options.onAction;
+  const unfollow = follow(toast, options.hass);
   wallHost(document).append(toast);
   return () => {
     unfollow();
@@ -63,4 +74,4 @@ export function paused(onResume: () => void, hass: () => HomeAssistant | undefin
   };
 }
 
-export const ui: WallUi = { sleep, corner, paused };
+export const ui: WallUi = { sleep, corner, notice };

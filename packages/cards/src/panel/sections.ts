@@ -1112,6 +1112,15 @@ export function wall(ctx: PanelContext): TemplateResult {
               ></fluvy-select>`
           : nothing
       }
+      <p class="fv-label pn-label">${ctx.t('wall.exit')}</p>
+      <p class="pn-hint">${ctx.t('wall.exit_sub')}</p>
+      ${choice(
+        [
+          chip(ctx.t('wall.exit_button'), 'button', settings.exit === 'button'),
+          chip(ctx.t('wall.exit_hold'), 'hold', settings.exit === 'hold'),
+        ],
+        admin ? (key) => edit({ exit: key as WallSettings['exit'] }) : null,
+      )}
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'sun', title: ctx.t('wall.day_night'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}

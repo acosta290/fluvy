@@ -46,8 +46,12 @@ HACS runs in a frame of its own; the shell reaches it, but only once the frame h
 Wall mode hides the sidebar and the dashboard header through the shell's sheets; each one probes for what it
 restyles and stands down when a Home Assistant release changes it (`__fluvy.shell.report()` in the browser console
 lists the `wall:` sheets and whether their probe matched). Until Fluvy follows the release, the wall is a plain
-dashboard. If the sidebar came back after a hold on the corner, the wall is only paused: *Resume* on the toast, or
-wait for the screensaver's time.
+dashboard.
+
+If the sidebar came back after a tap on the × in the corner, the device left wall mode: *Back to the wall* on the
+notice, the switch of the *Wall* tab, or `?kiosk` on the address make it a wall again. If it came back after a hold
+on the corner (a house that chose *Long press*), the wall is only paused: *Resume* on the toast, or wait for the
+screensaver's time.
 
 ## The wall's screen goes dark by itself
 

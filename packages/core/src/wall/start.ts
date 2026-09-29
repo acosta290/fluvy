@@ -25,6 +25,7 @@ export interface WallFacade {
   dark(): boolean | undefined;
   pause(): void;
   resume(): void;
+  exit(): void;
   sleep(): void;
   wake(): void;
   onChange(listener: (phase: WallPhase) => void): () => void;
@@ -74,6 +75,7 @@ export function startWall(options: WallStartOptions): WallFacade {
     dark: () => inner?.dark(),
     pause: () => inner?.pause(),
     resume: () => inner?.resume(),
+    exit: () => inner?.exit(),
     sleep: () => inner?.sleep(),
     wake: () => inner?.wake(),
     onChange: (listener) => {

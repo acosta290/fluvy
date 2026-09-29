@@ -42,6 +42,8 @@ export const MAX_SAVED_PALETTES = 12;
 
 /** When a wall is dark: always, as Home Assistant is, by the sun, or between two hours. */
 export type WallTheme = 'dark' | 'follow' | 'sun' | 'hours';
+/** The way out of a wall: a small button in the corner (a tap leaves), or a hidden hold of the corner (it pauses). */
+export type WallExit = 'button' | 'hold';
 export const WALL_AFTER = [0, 2, 5, 10, 30] as const;
 export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
 
@@ -65,6 +67,8 @@ export interface WallSettings {
   readonly nightDim: (typeof WALL_NIGHT_DIM)[number];
   /** The page colour alone, or the wall mesh. */
   readonly background: 'plain' | 'wall';
+  /** How a person leaves the wall on the device. */
+  readonly exit: WallExit;
 }
 
 /** What the house decides (an admin). */
@@ -145,6 +149,7 @@ export const HOUSE_DEFAULTS: HouseSettings = {
     to: '07:00',
     nightDim: 0,
     background: 'plain',
+    exit: 'button',
   },
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
@@ -205,6 +210,7 @@ export function parseWall(raw: unknown): WallSettings {
     background: oneOf(value['background'], ['plain', 'wall'] as const)
       ? value['background']
       : d.background,
+    exit: oneOf(value['exit'], ['button', 'hold'] as const) ? value['exit'] : d.exit,
   };
 }
 

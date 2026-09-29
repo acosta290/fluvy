@@ -80,6 +80,7 @@ describe('parsing stored settings', () => {
         to: '06:15',
         nightDim: 40,
         background: 'wall',
+        exit: 'hold',
       }),
     ).toEqual({
       dashboards: ['fluvy-wall'],
@@ -92,6 +93,7 @@ describe('parsing stored settings', () => {
       to: '06:15',
       nightDim: 40,
       background: 'wall',
+      exit: 'hold',
     });
     expect(
       parseWall({
@@ -102,8 +104,11 @@ describe('parsing stored settings', () => {
         to: '7:00',
         nightDim: 50,
         background: 'photo',
+        exit: 'door',
       }),
     ).toEqual(WALL_DEFAULTS);
+    // a wall saved before the way out could be chosen has the button
+    expect(parseWall({ after: 5 }).exit).toBe('button');
   });
 
   it('keeps the well-formed saved palettes, the first of each name, twelve at most', () => {

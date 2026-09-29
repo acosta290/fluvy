@@ -5,11 +5,17 @@ import { css, html, LitElement } from 'lit';
 const s = strings('panel');
 
 /*
- * "Wall paused · Resume": a small bar at the foot of the page while the wall is paused, the way back. It stays as
- * long as the pause does (the pause ends by itself when the screensaver would have come).
+ * The wall's notice, a small bar at the foot of the page with the way back: "Wall paused · Resume" while the wall
+ * is paused (it stays as long as the pause does, which ends by itself when the screensaver would have come), or
+ * "Wall mode off · Back to the wall" for a moment after the device left it.
  */
+const WORDS = {
+  paused: ['wall.paused', 'wall.resume'],
+  left: ['wall.left', 'wall.return'],
+} as const;
+
 export class FluvyWallToast extends LitElement {
-  static override properties = { hass: { attribute: false } };
+  static override properties = { hass: { attribute: false }, kind: {} };
 
   static override styles = [
     ...baseStyles,
@@ -58,12 +64,19 @@ export class FluvyWallToast extends LitElement {
   ];
 
   declare hass: HomeAssistant | undefined;
-  onResume: () => void = () => undefined;
+  declare kind: keyof typeof WORDS;
+  onAction: () => void = () => undefined;
+
+  constructor() {
+    super();
+    this.kind = 'paused';
+  }
 
   protected override render() {
+    const [text, action] = WORDS[this.kind];
     return html`<div class="toast" role="status">
-      <span>${s(this.hass, 'wall.paused')}</span>
-      <button @click=${() => this.onResume()}>${s(this.hass, 'wall.resume')}</button>
+      <span>${s(this.hass, text)}</span>
+      <button @click=${() => this.onAction()}>${s(this.hass, action)}</button>
     </div>`;
   }
 }

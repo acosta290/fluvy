@@ -2,8 +2,8 @@ import { resyncCardThemes, setDarkOverride } from '../card.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { firstWeather } from '../entity.js';
 import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../look/attributes.js';
-import { readDevice } from '../settings/device.js';
-import type { EffectiveSettings } from '../settings/schema.js';
+import { readDevice, writeDevice } from '../settings/device.js';
+import type { EffectiveSettings, WallExit } from '../settings/schema.js';
 import { createIdle, type Idle } from './idle.js';
 import { urlPathOf, wallOn } from './on.js';
 import { nextChange, wallDark, type SunLike } from './schedule.js';
@@ -41,14 +41,28 @@ export interface ScreensaverOptions {
   readonly preview?: boolean;
 }
 
+export interface CornerOptions {
+  /** A small × that a tap answers, or the corner that answers a hold of a second and a half. */
+  readonly mode: WallExit;
+  readonly onLeave: () => void;
+  readonly hass: () => HomeAssistant | undefined;
+}
+
+export interface NoticeOptions {
+  /** "Wall paused · Resume" (it stays while the pause does) or "Wall mode off · Back to the wall". */
+  readonly kind: 'paused' | 'left';
+  readonly onAction: () => void;
+  readonly hass: () => HomeAssistant | undefined;
+}
+
 /** The wall's pieces, made by the cards package and fetched with the controller. */
 export interface WallUi {
   /** Shows the screensaver; returns how to close it. */
   sleep(options: ScreensaverOptions): () => void;
-  /** Shows the exit corner (a hold leaves the wall); returns how to remove it. */
-  corner(onLeave: () => void, hass: () => HomeAssistant | undefined): () => void;
-  /** Shows "Wall paused · Resume"; returns how to remove it. */
-  paused(onResume: () => void, hass: () => HomeAssistant | undefined): () => void;
+  /** Shows the way out in the corner; returns how to remove it. */
+  corner(options: CornerOptions): () => void;
+  /** Shows the notice at the foot of the page, with its way back; returns how to remove it. */
+  notice(options: NoticeOptions): () => void;
 }
 
 export interface WallDeps {
@@ -73,6 +87,8 @@ export interface WallHandle {
   /** Leaves the wall until `resume` (or the screensaver's time): the chrome returns, the device stays a wall. */
   pause(): void;
   resume(): void;
+  /** Takes the device out of the wall (it forgets it is one); a notice offers the way back for a moment. */
+  exit(): void;
   /** The screensaver now (an automation's night, a test), and back. */
   sleep(): void;
   wake(): void;
@@ -81,6 +97,8 @@ export interface WallHandle {
 
 export const PAUSED_KEY = 'fluvy:wall-paused';
 const MINUTE = 60_000;
+/** How long "Wall mode off · Back to the wall" stays. */
+const LEFT_NOTICE_MS = 8000;
 
 /** The wall mesh (as `.fv-bg--wall` draws it), set on the page for the dashboard's view. */
 const WALL_MESH =
@@ -107,6 +125,7 @@ export function createWall(deps: WallDeps): WallHandle {
   let dimLayer: HTMLElement | undefined;
   let darkTimer = 0;
   let resumeTimer = 0;
+  let leftTimer = 0;
   let uiPromise: Promise<WallUi> | undefined;
   const ui = (): Promise<WallUi> => (uiPromise ??= deps.ui());
 
@@ -248,7 +267,12 @@ export function createWall(deps: WallDeps): WallHandle {
     void ui().then((pieces) => {
       if (phase === 'off' || phase === 'paused') return;
       stopCorner?.();
-      stopCorner = pieces.corner(pause, deps.hass);
+      // the house chooses the way out: a button that leaves, or a hidden hold that pauses
+      stopCorner = pieces.corner({
+        mode: settings.exit,
+        onLeave: settings.exit === 'hold' ? pause : exit,
+        hass: deps.hass,
+      });
     });
   };
 
@@ -273,7 +297,7 @@ export function createWall(deps: WallDeps): WallHandle {
       void ui().then((pieces) => {
         if (phase !== 'paused') return;
         stopToast?.();
-        stopToast = pieces.paused(resume, deps.hass);
+        stopToast = pieces.notice({ kind: 'paused', onAction: resume, hass: deps.hass });
       });
     } else {
       stopToast?.();
@@ -297,6 +321,27 @@ export function createWall(deps: WallDeps): WallHandle {
   function resume(): void {
     win.clearTimeout(resumeTimer);
     session(win)?.removeItem(PAUSED_KEY);
+    evaluate();
+  }
+  /** The device stops being a wall: its chrome returns for good, and a notice offers the way back for a moment. */
+  function exit(): void {
+    writeDevice({ wall: false });
+    session(win)?.removeItem(PAUSED_KEY);
+    evaluate();
+    void ui().then((pieces) => {
+      if (readDevice().wall) return;
+      stopToast?.();
+      stopToast = pieces.notice({ kind: 'left', onAction: comeBack, hass: deps.hass });
+      win.clearTimeout(leftTimer);
+      leftTimer = win.setTimeout(() => {
+        stopToast?.();
+        stopToast = undefined;
+      }, LEFT_NOTICE_MS);
+    });
+  }
+  function comeBack(): void {
+    win.clearTimeout(leftTimer);
+    writeDevice({ wall: true });
     evaluate();
   }
 
@@ -323,6 +368,7 @@ export function createWall(deps: WallDeps): WallHandle {
     dark: () => dark,
     pause,
     resume,
+    exit,
     sleep,
     wake: () => idle?.poke(),
     stop: () => {
@@ -330,6 +376,7 @@ export function createWall(deps: WallDeps): WallHandle {
       win.removeEventListener('popstate', onLocation);
       offSettings();
       win.clearTimeout(resumeTimer);
+      win.clearTimeout(leftTimer);
       leaveWall();
       stopToast?.();
       stopToast = undefined;

@@ -5,6 +5,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A visible way out of wall mode: a small × in the top-right corner, there when the wall comes and whenever
+  someone touches the screen, gone when it rests. A tap takes the device out of the wall, and a notice offers the
+  way back for a few seconds. The house chooses in the *Wall* tab (*Way out*) between this button, the default,
+  and the hidden long press of before, which pauses the wall instead.
+
 ## [1.3.1] — 2026-09-29
 
 ### Fixed

@@ -313,6 +313,7 @@ const WALL_LABELS: ReadonlyArray<readonly [keyof WallSettings, StringKey]> = [
   ['to', 'wall.day_night'],
   ['nightDim', 'wall.night_dim'],
   ['background', 'wall.background'],
+  ['exit', 'wall.exit'],
 ];
 
 /** Every pending change as a line of the apply bar, in the order of the tabs. */

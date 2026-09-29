@@ -6,6 +6,8 @@ import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../look/attributes.js';
 import {
   createWall,
   PAUSED_KEY,
+  type CornerOptions,
+  type NoticeOptions,
   type WallPhase,
   type WallState,
   type WallUi,
@@ -29,18 +31,22 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
   const phases: WallPhase[] = [];
   const shown = { sleep: 0, closed: 0, corner: 0, toast: 0 };
   let wakeUp: (() => void) | undefined;
+  let corner: CornerOptions | undefined;
+  let notice: NoticeOptions | undefined;
   const ui: WallUi = {
     sleep: (options) => {
       shown.sleep++;
       wakeUp = options.onWake;
       return () => shown.closed++;
     },
-    corner: () => {
+    corner: (options) => {
       shown.corner++;
+      corner = options;
       return () => shown.corner--;
     },
-    paused: () => {
+    notice: (options) => {
       shown.toast++;
+      notice = options;
       return () => shown.toast--;
     },
   };
@@ -67,7 +73,16 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
     settings = { ...settings, wall: { ...settings.wall, ...patch } };
     for (const listener of listeners) listener();
   };
-  return { wall, states, phases, shown, change, wake: () => wakeUp?.() };
+  return {
+    wall,
+    states,
+    phases,
+    shown,
+    change,
+    wake: () => wakeUp?.(),
+    corner: () => corner,
+    notice: () => notice,
+  };
 }
 
 describe('the wall controller', () => {
@@ -131,6 +146,48 @@ describe('the wall controller', () => {
     wall.pause();
     await vi.advanceTimersByTimeAsync(5 * 60_000 + 1);
     expect(wall.phase()).toBe('awake');
+    wall.stop();
+  });
+
+  it('leaves for good on the corner’s button: the device forgets it is a wall, a notice offers the way back', async () => {
+    const { wall, shown, corner, notice } = setup();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(corner()?.mode).toBe('button'); // the default way out
+    const device = (): { wall: boolean } =>
+      JSON.parse(localStorage.getItem(DEVICE_KEY) ?? '{}') as { wall: boolean };
+
+    corner()!.onLeave();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(wall.phase()).toBe('off');
+    expect(document.documentElement.hasAttribute(WALL_ATTRIBUTE)).toBe(false);
+    expect(device().wall).toBe(false);
+    expect(sessionStorage.getItem(PAUSED_KEY)).toBeNull(); // left, not paused: it does not come back by itself
+    expect(notice()?.kind).toBe('left');
+    expect(shown.toast).toBe(1);
+
+    notice()!.onAction(); // "Back to the wall"
+    await vi.advanceTimersByTimeAsync(1);
+    expect(wall.phase()).toBe('awake');
+    expect(device().wall).toBe(true);
+    expect(shown.toast).toBe(0);
+
+    corner()!.onLeave(); // and left alone, the notice goes after a moment; the device stays out
+    await vi.advanceTimersByTimeAsync(8001);
+    expect(shown.toast).toBe(0);
+    expect(wall.phase()).toBe('off');
+    expect(device().wall).toBe(false);
+    wall.stop();
+  });
+
+  it('pauses on the corner when the house chose the hold', async () => {
+    const { wall, corner, notice } = setup({ exit: 'hold' });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(corner()?.mode).toBe('hold');
+    corner()!.onLeave();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(wall.phase()).toBe('paused');
+    expect(notice()?.kind).toBe('paused');
+    expect(JSON.parse(localStorage.getItem(DEVICE_KEY) ?? '{}')).toMatchObject({ wall: true });
     wall.stop();
   });
 

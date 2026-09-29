@@ -162,11 +162,16 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 ## Wall
 
 - A wall is the dashboard alone: no sidebar, no header, the view padded by the tablet's safe area and, when the house
-  asks, the wall mesh behind the cards. Nothing of Fluvy's is a gesture on it but the **corner**: a 44 square at the
-  top right, invisible until pressed; a hold fills a 2 px ring (radius 18, the accent, its track at 20 %) over a
-  second and a half and the tablet taps back once — letting go before cancels. The pause it makes returns the chrome
-  with a **toast** at the foot: 44 tall, card fill, hairline and lift, radius 12, "Wall paused" 14/600 and a 32 accent
-  button "Resume"; it stays as long as the pause does.
+  asks, the wall mesh behind the cards. Nothing of Fluvy's is on it but the **corner**, the way out, a 44 square at the
+  top right in one of two presentations the house chooses. The **button** (the default — nobody is locked in a
+  wall): a 32 disc on the card's fill at 88 %, hairline, the × glyph 16 in the secondary ink; it is there when the
+  wall comes (6 s) and while someone is (a touch, a pointer that moves, a key; 4 s after the last), fades in 200 ms
+  and takes no touch while away — the tap that brings it back is the dashboard's, the next one leaves. A tap takes
+  the device out of the wall and a **toast** at the foot says "Wall mode off" with "Back to the wall" for 8 s. The
+  **hold**: invisible until pressed; a hold fills a 2 px ring (radius 18, the accent, its track at 20 %) over a
+  second and a half and the tablet taps back once — letting go before cancels; it pauses the wall, and the toast
+  says "Wall paused" with "Resume" for as long as the pause lasts. The toast: 44 tall, card fill, hairline and lift,
+  radius 12, its words 14/600 and a 32 accent button.
 - The **screensaver** is a modal in the top layer: the wall mesh (or black), the digital clock in its hero size with
   the date under it in a 480 column, centred; dimmed, the clock is white at 60 %. It fades in over 320 ms and out over
   200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over
