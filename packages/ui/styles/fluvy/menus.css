@@ -4,7 +4,8 @@
  *                  secondary ink that turns over while the menu is open; the 2 px accent ring while focused or open
  * .fv-menu         the list, in the top layer (a popover) or fixed under the field where there is no top layer:
  *                  4 under the field, as wide as the field (192 at least, the viewport less 32 at most), padding 4,
- *                  radius 16 on the card's fill with the hairline and the lift shadow; 360 tall at most, or what
+ *                  radius 16 on the card's fill with the hairline and the lift shadow; every row up to nine (from
+ *                  ten, eight and a half: the cut row says there is more), or what
  *                  the side it opens on allows (the element measures: --fv-menu-top/left/w/h), the rest scrolls
  *                  without a bar. Placed from above when the field is near the foot of the page.
  * .fv-menu__item   a row 44 tall, radius 12 (concentric with the 16 at a 4 inset), its name at 15/500 and its hint

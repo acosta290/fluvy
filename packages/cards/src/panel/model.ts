@@ -118,7 +118,8 @@ export interface PanelContext {
   /** Saves every edit; a changed look for the house or for this person. */
   apply(to: 'house' | 'me'): void;
   discard(): void;
-  run(task: () => Promise<unknown>): void;
+  /** Runs a change against Home Assistant; `done` is the word shown when it succeeds ("Saved" by default). */
+  run(task: () => Promise<unknown>, done?: StringKey): void;
 }
 
 export interface DashboardInfo {

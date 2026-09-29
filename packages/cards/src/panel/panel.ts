@@ -664,7 +664,7 @@ export class FluvyPanel extends LitElement {
         this.deviceEdit = undefined;
         this.tryOnApp = false;
       },
-      run: (task) => this.run(task),
+      run: (task, done) => this.run(task, done),
     };
   }
 

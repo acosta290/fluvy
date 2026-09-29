@@ -398,8 +398,8 @@ const PILL_GLYPH: Readonly<Record<PillName, string>> = {
 /** The look on the real cards, and the switch that tries it on the whole app. */
 export function appearancePreview(ctx: PanelContext, preview: TemplateResult): TemplateResult {
   return html`<section class="fv-card pn-card pn-card--preview">
-    ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('preview.sub') })} ${preview}
-    <div class="pn-rows">
+    ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('preview.sub') })}
+    <div class="pn-rows pn-rows--lead">
       ${listRow({
         icon: 'expand',
         title: ctx.t('preview.app'),
@@ -409,6 +409,7 @@ export function appearancePreview(ctx: PanelContext, preview: TemplateResult): T
         onToggle: (on) => ctx.setTryOnApp(on),
       })}
     </div>
+    ${preview}
   </section>`;
 }
 
@@ -608,19 +609,22 @@ function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
             ? 'scope.theme_house_sub'
             : 'scope.theme_house_guest',
       );
-  return html`<section class="fv-card pn-card pn-note">
-    ${head({ icon: 'warn', tone: 'warning', title: ctx.t(title), wrap: true })}
-    <p class="pn-note__text">${text}</p>
+  return html`<div class="pn-status pn-status--warning" role="status">
+    <p class="pn-status__title">${ctx.t(title)}</p>
+    <p class="pn-status__text">${text}</p>
     ${
       can
-        ? html`<div class="pn-pair" data-fill-row>
-            <button class="fv-btn fv-btn--quiet" data-target @click=${theme.leave}>
-              ${ctx.t(other ? 'scope.theme_use_fluvy' : profile ? 'scope.theme_use' : 'scope.theme_use_ha')}
-            </button>
-          </div>`
+        ? html`<button
+            class="fv-btn fv-btn--quiet pn-status__btn"
+            data-fit="32"
+            data-target
+            @click=${theme.leave}
+          >
+            ${ctx.t(other ? 'scope.theme_use_fluvy' : profile ? 'scope.theme_use' : 'scope.theme_use_ha')}
+          </button>`
         : nothing
     }
-  </section>`;
+  </div>`;
 }
 
 export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResult {
@@ -703,13 +707,14 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
             </div>`
           : nothing
       }
+      ${
+        // Fluvy's own theme defeats "only dashboards"; another theme keeps "everywhere" to Fluvy's dashboards:
+        // said where the choice is made, under it
+        theme && (theme.source === 'other') === (shown.scope === 'everywhere')
+          ? themeNote(ctx, theme)
+          : nothing
+      }
     </section>
-    ${
-      // Fluvy's own theme defeats "only dashboards"; another theme keeps "everywhere" to Fluvy's dashboards
-      theme && (theme.source === 'other') === (shown.scope === 'everywhere')
-        ? themeNote(ctx, theme)
-        : nothing
-    }
     ${
       shown.scope === 'dashboards'
         ? html`<section class="fv-card pn-card">
@@ -820,7 +825,7 @@ function dashboardOptions(
     ${head({
       icon: template.icon,
       title: dashboard.title,
-      sub: ctx.t(ctx.admin ? 'dashboard.cards_sub' : 'scope.admin_only'),
+      ...(ctx.admin ? {} : { sub: ctx.t('scope.admin_only') }),
     })}
     ${template.options.map((option) => {
       // a house without areas has no rooms to choose from
@@ -835,6 +840,7 @@ function dashboardOptions(
                     title: localize(ctx.hass, first.title),
                     trailing: 'value',
                     value: ctx.t('dashboard.always'),
+                    quiet: true,
                   })
                 : nothing
             }
@@ -869,7 +875,6 @@ function dashboardOptions(
                 ? listRow({
                     icon: 'menu',
                     title: ctx.t('dashboard.sidebar'),
-                    sub: ctx.t('dashboard.sidebar_sub'),
                     trailing: 'switch',
                     on: dashboard.inSidebar ?? false,
                     onToggle: (on) => actions.showInSidebar(dashboard.urlPath, on),
@@ -881,7 +886,8 @@ function dashboardOptions(
               tone: armed ? 'warning' : 'neutral',
               title: ctx.t(armed ? 'dashboard.recreate_armed' : 'dashboard.recreate'),
               sub: ctx.t(armed ? 'about.reset_cancels' : 'dashboard.recreate_sub'),
-              trailing: 'none',
+              trailing: 'button',
+              button: ctx.t('dashboard.recreate_btn'),
               onTap: () => actions.recreate(dashboard.urlPath),
             })}
           </div>`
@@ -1002,21 +1008,24 @@ export function wall(ctx: PanelContext): TemplateResult {
           on: isWall,
           onToggle: (on) => ctx.editDevice(on),
         })}
-        ${listRow({
-          icon: 'copy',
-          title: address,
-          name: true,
-          sub: ctx.t('wall.address_sub'),
-          trailing: 'button',
-          button: ctx.t('wall.copy'),
-          onTap: () =>
+      </div>
+      <p class="fv-label pn-label">${ctx.t('wall.address')}</p>
+      <div class="pn-address">
+        <span class="pn-address__url" data-name>${address}</span>
+        <button
+          class="fv-btn fv-btn--quiet"
+          data-fit="32"
+          data-target
+          @click=${() =>
             ctx.run(async () => {
               // a plain-HTTP address has no Clipboard API: the older way, and honest words when neither works
               if (!(await copyText(address))) throw new Error(ctx.t('wall.copy_failed'));
-              ctx.notify('wall.copied');
-            }),
-        })}
+            }, 'wall.copied')}
+        >
+          ${ctx.t('wall.copy')}
+        </button>
       </div>
+      <p class="pn-hint pn-hint--after">${ctx.t('wall.address_sub')}</p>
     </section>
     <section class="fv-card pn-card">
       ${head({
@@ -1086,7 +1095,6 @@ export function wall(ctx: PanelContext): TemplateResult {
       ${
         sensors.length
           ? html`<p class="fv-label pn-label">${ctx.t('wall.wake')}</p>
-              <p class="pn-hint">${ctx.t('wall.wake_sub')}</p>
               <fluvy-select
                 .label=${ctx.t('wall.wake')}
                 .value=${settings.wakeEntity}
@@ -1309,15 +1317,9 @@ export function about(ctx: PanelContext, info: AboutInfo, actions: AboutActions)
               title: armed ? ctx.t('about.reset_armed') : ctx.t('about.reset'),
               sub: armed
                 ? ctx.t('about.reset_cancels')
-                : ctx.t('about.reset_sub', {
-                    look: defaults,
-                    scope: ctx.t(
-                      HOUSE_DEFAULTS.scope === 'everywhere'
-                        ? 'scope.summary_everywhere'
-                        : 'scope.summary_dashboards',
-                    ),
-                  }),
-              trailing: 'none',
+                : ctx.t('about.reset_sub', { look: defaults }),
+              trailing: 'button',
+              button: ctx.t('about.reset_btn'),
               onTap: actions.reset,
             })}
           </section>`

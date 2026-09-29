@@ -23,7 +23,9 @@ const PAD = 4;
 const GAP = 4;
 const MARGIN = 16;
 const MIN_WIDTH = 192;
-const MAX_HEIGHT = 360;
+/** Every row up to nine is shown whole; from ten, eight and a half — the cut row says there is more. */
+const MAX_ROWS = 9;
+const capRows = (count: number): number => (count <= MAX_ROWS ? count : MAX_ROWS - 0.5);
 const LEAVE_MS = 160;
 /** Letters typed closer than this spell one word. */
 const TYPE_AHEAD_MS = 500;
@@ -193,7 +195,7 @@ export class FluvySelect extends LitElement {
     const field = this.field;
     if (!field) return;
     const rect = field.getBoundingClientRect();
-    const wanted = Math.min(PAD * 2 + ROW * Math.max(1, this.options.length), MAX_HEIGHT);
+    const wanted = PAD * 2 + ROW * capRows(Math.max(1, this.options.length));
     const below = window.innerHeight - MARGIN - (rect.bottom + GAP);
     const above = rect.top - GAP - MARGIN;
     const placement = wanted <= below || below >= above ? 'below' : 'above';

@@ -236,12 +236,42 @@ export const panelStyles = css`
     color: var(--fluvy-text-secondary);
     text-wrap: pretty;
   }
-  /* a note in a card of its own: a head, a few lines, the way out as a full-width button */
-  .pn-note__text {
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--fluvy-text-secondary);
+  /* a status panel inside a card: what qualifies the choice above it (the theme in use), in its role's fill, the
+     way out as a button beneath */
+  .pn-status {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: var(--fluvy-radius-control);
     text-wrap: pretty;
+  }
+  .pn-status--warning {
+    background: var(--fluvy-warning-fill);
+    box-shadow: inset 0 0 0 1px var(--fluvy-warning-fill-border);
+    color: var(--fluvy-warning-on-fill);
+  }
+  .pn-status__title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+  .pn-status__text {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+  .pn-status__btn {
+    justify-self: start;
+    margin-top: 4px;
+  }
+  /* the rows that lead a card (a switch under the head, before what it changes): the preview's own margin follows */
+  .pn-rows--lead {
+    margin-bottom: 0;
+  }
+  /* what a value means, under it (the address: open it once on the tablet) */
+  .pn-hint--after {
+    margin: 8px 0 0;
   }
   /* a chip row binds to the label above it (8 from the label's box to the pill, as in the gallery) */
   .pn-card .fv-chips {
@@ -326,6 +356,36 @@ export const panelStyles = css`
   }
   .pn-hint + fluvy-select {
     margin-top: 12px;
+  }
+  /* the wall's address: a value that wraps in a read-only box, its copy button under it — beside it where a
+     panel is wide enough for both (the button keeps its content width) */
+  .pn-address {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .pn-address .fv-btn {
+    justify-self: start;
+  }
+  .pn-address__url {
+    display: block;
+    min-height: 44px;
+    padding: 12px 16px;
+    border-radius: var(--fluvy-radius-control);
+    background: var(--fluvy-page);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+  @container pn (min-width: 648px) {
+    .pn-address {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
   }
   .pn-preview--wall fluvy-clock-card {
     display: block;
@@ -744,7 +804,7 @@ export const panelStyles = css`
   }
   .pn-bar__text {
     grid-area: text;
-    padding-left: 8px;
+    padding-left: 0;
     font-size: 15px;
     font-weight: 600;
     line-height: 20px;

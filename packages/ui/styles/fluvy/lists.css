@@ -152,6 +152,11 @@
 
 /* beside a title + sub pair the value is centred on the pair, not nudged: the nudge is for one-line rows only (a bar
    row's value sits on its title's line, and keeps it) */
+/* a value in words that is a state, not a figure (a person's zone when it is not home, a view always shown): the secondary ink */
+.fv-row__value--quiet {
+  color: var(--fluvy-text-secondary);
+}
+
 .fv-row:not(.fv-row--bar) > .fv-row__text:has(.fv-row__sub) + .fv-row__value {
   top: 0;
 }

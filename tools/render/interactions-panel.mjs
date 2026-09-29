@@ -139,9 +139,9 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await page.close();
 }
 
-/* ---------- a tap outside, a scroll ---------- */
+/* ---------- a tap outside, a scroll (a viewport the tab overflows: a page that cannot scroll closes nothing) ---------- */
 {
-  const page = await suite.page(PREFERENCES, { viewport: { width: 360, height: 640 } });
+  const page = await suite.page(PREFERENCES, { viewport: { width: 360, height: 560 } });
   const d = dropdown(page);
   await d.field.click();
   await settle(page, 300);
@@ -173,8 +173,8 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
     `field ${field.x},${field.width} menu ${menu.x},${menu.width} gap ${menu.y - field.y - field.height}`,
   );
   check(
-    'eight rows: 8 + 8 × 44 tall',
-    Math.abs(menu.height - 360) < 1 && (await d.menu.getAttribute('data-placement')) === 'below',
+    'nine rows, whole: 8 + 9 × 44 tall',
+    Math.abs(menu.height - 404) < 1 && (await d.menu.getAttribute('data-placement')) === 'below',
     `${menu.height}`,
   );
   await page.close();
@@ -291,9 +291,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
       return null;
     };
   });
-  await page
-    .locator('fluvy-panel .fv-row--tap', { hasText: 'Help improve this translation' })
-    .click();
+  await page.locator('fluvy-panel .fv-row--tap', { hasText: 'Translations' }).click();
   const opened = await page.evaluate(() => window.__opened);
   check(
     'the help row opens the translating guide in a new tab',

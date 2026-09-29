@@ -394,6 +394,8 @@ export interface ListRowOptions {
   readonly trailing?: 'switch' | 'chevron' | 'value' | 'button' | 'none';
   readonly on?: boolean;
   readonly value?: string;
+  /** The value is a state in words, not a figure: the secondary ink (a person's zone, a view that is always shown). */
+  readonly quiet?: boolean;
   /** The word on the small quiet button at the row's end (`trailing: 'button'`); the row's tap is the action. */
   readonly button?: string;
   readonly valueTone?: 'warning' | '';
@@ -430,7 +432,7 @@ export function listRow(o: ListRowOptions): TemplateResult {
         )
       : trailing === 'value'
         ? html`<span
-            class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${wordsClass(o.value)}"
+            class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${wordsClass(o.value)}"
             >${o.value ?? ''}</span
           >`
         : trailing === 'chevron'

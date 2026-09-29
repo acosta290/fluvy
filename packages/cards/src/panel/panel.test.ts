@@ -380,14 +380,14 @@ describe('the settings panel', () => {
     ]);
     // Recreate: the first tap arms the row, the second writes the bare strategy
     const recreate = [...root.querySelectorAll<HTMLElement>('.fv-row')].filter(
-      (r) => r.querySelector('.fv-row__title')?.textContent?.trim() === 'Recreate this dashboard',
+      (r) => r.querySelector('.fv-row__title')?.textContent?.trim() === 'Start over',
     );
     expect(recreate.length).toBe(2);
     recreate[1]!.click();
     await settle();
-    expect(row('Tap again to recreate')).toBeDefined();
+    expect(row('Tap again')).toBeDefined();
     expect(saved.length).toBe(2);
-    row('Tap again to recreate')!.click();
+    row('Tap again')!.click();
     await settle();
     await settle();
     expect(saved.at(-1)).toEqual({
@@ -429,6 +429,33 @@ describe('the settings panel', () => {
     expect(root.querySelector('.pn-bar')).toBeNull();
     panel.remove();
     localStorage.removeItem('fluvy:device');
+  });
+
+  it('copies the wall\u2019s address and says so, or says what to do when it cannot', async () => {
+    const { panel, root, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    expect(root.querySelector('.pn-address__url')?.textContent?.trim().endsWith('?kiosk')).toBe(
+      true,
+    );
+    const address = root.querySelector<HTMLElement>('.pn-address button')!;
+    address.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
+    expect(root.querySelector('.pn-notice')?.textContent).toContain('Address copied');
+    // a plain-HTTP page has no Clipboard API, and a browser may refuse the selection command too: honest words
+    const clipboard = Object.getOwnPropertyDescriptor(Navigator.prototype, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    const exec = document.execCommand;
+    document.execCommand = () => false;
+    address.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
+    expect(root.querySelector('.pn-notice')?.textContent).toContain('Could not copy');
+    document.execCommand = exec;
+    if (clipboard) Object.defineProperty(Navigator.prototype, 'clipboard', clipboard);
+    else delete (navigator as { clipboard?: unknown }).clipboard;
+    panel.remove();
   });
 
   it('offers every motion sensor in a dropdown to wake the wall, its room as the hint', async () => {
@@ -720,12 +747,12 @@ describe('the settings panel', () => {
     });
     panel.tab = 'scope';
     await settle();
-    expect(root.querySelector('.pn-note')?.textContent).toContain(
+    expect(root.querySelector('.pn-status')?.textContent).toContain(
       'Your profile uses the Fluvy theme',
     );
     const asked: unknown[] = [];
     panel.addEventListener('settheme', (event) => asked.push((event as CustomEvent).detail));
-    root.querySelector<HTMLButtonElement>('.pn-note .fv-btn')!.click();
+    root.querySelector<HTMLButtonElement>('.pn-status .fv-btn')!.click();
     expect(asked).toEqual([{ theme: '' }]);
     panel.remove();
   });
@@ -738,10 +765,10 @@ describe('the settings panel', () => {
     await handle.store.saveHouse({ scope: 'everywhere' });
     panel.tab = 'scope';
     await settle();
-    expect(root.querySelector('.pn-note')?.textContent).toContain('Your theme is Home Assistant');
+    expect(root.querySelector('.pn-status')?.textContent).toContain('Your theme is Home Assistant');
     const asked: unknown[] = [];
     panel.addEventListener('settheme', (event) => asked.push((event as CustomEvent).detail));
-    root.querySelector<HTMLButtonElement>('.pn-note .fv-btn')!.click();
+    root.querySelector<HTMLButtonElement>('.pn-status .fv-btn')!.click();
     expect(asked).toEqual([{ theme: 'Fluvy' }]);
     panel.remove();
   });
@@ -784,11 +811,11 @@ describe('the settings panel', () => {
     const { panel, row, written } = await mount();
     panel.tab = 'about';
     await panel.updateComplete;
-    row('Reset the house’s settings')!.click();
+    row('House settings')!.click();
     await panel.updateComplete;
-    expect(row('Tap again to reset')).toBeDefined();
+    expect(row('Tap again')).toBeDefined();
     expect(written).toEqual([]);
-    row('Tap again to reset')!.click();
+    row('Tap again')!.click();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(written.at(-1)?.type).toBe('frontend/set_system_data');
     panel.remove();
