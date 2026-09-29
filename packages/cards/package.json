@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@fluvy/demo-home": "workspace:*",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.19.0",
     "happy-dom": "^20.14.5",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"
