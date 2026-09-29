@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A light card in half a phone's column (two lamps on a line) had no switch: under 200 px its head dropped it and
+  left the ruler to turn the lamp on and off. The head is now fitted round the switch, as the fan's is — the sub
+  steps aside, then the icon circle, never the switch — and the card keeps its height.
+
 ## [1.3.0] — 2026-09-29
 
 ### Added

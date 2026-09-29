@@ -23,6 +23,7 @@ import {
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { Card } from '../shared/base.js';
+import { HeadFit } from '../energy/head.js';
 import { configKeys } from '../shared/config.js';
 
 import { glyphFor } from '../shared/domain.js';
@@ -54,16 +55,18 @@ const DIMMABLE = new Set(['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw',
 
 /** Under this content width the full layout has no room for its value and stepper: the compact one takes over. */
 const COMPACT_BELOW = 260;
-/** Under this width (half of a phone's section) the head has no room for its switch: the ruler alone turns the lamp on and off. */
-const TIGHT_BELOW = 200;
 
 /**
  * The precision dimmer: a big tabular value with its stepper, the ruler underneath (relative drag,
  * slide away to slow down, hold for the 1 % scale), and a second ruler for colour temperature. Half a section wide
  * (or `variant: compact`) it keeps the head, with the level in its state line, and the brightness ruler alone: two
- * lamps share a line.
+ * lamps share a line. The switch is never what a narrow column costs: the head is fitted round it (the sub steps
+ * aside, then the icon circle), as the fan's is.
  */
 export class FluvyLightCard extends Card<LightCardConfig> {
+  /** The head, measured: what gives way in a narrow column is the sub, then the icon — never the switch. */
+  private readonly head = new HeadFit(this);
+
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: LightCardConfig): number {
     return config.variant === 'compact' ? 188 : 268;
@@ -234,7 +237,6 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const w = this.contentWidth;
     const variant = this.config?.variant ?? 'auto';
     const compact = variant === 'compact' || (variant === 'auto' && w < COMPACT_BELOW);
-    const tight = w < TIGHT_BELOW;
     const win = this.window_?.fine ? this.window_ : null;
     // on the fine scale the labels are the major ticks themselves (whole values); the ones too close to an end are left out
     const ticks: [number, string][] = win
@@ -267,28 +269,36 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const maxK = view.attr<number>('max_color_temp_kelvin') ?? 6500;
     const hasTemp = modes.includes('color_temp') && this.config?.show_temperature !== false;
 
+    // the head fitted to its column round its switch: the sub steps aside, then the icon — never the switch (half
+    // a phone's section leaves 136: the name and the switch, and the ruler under them)
+    const fitted = this.head.fit({
+      width: w,
+      title: name,
+      sub,
+      ...(unusable ? {} : { trailing: 48 }),
+    });
+
     return html`<article
       class="fv-card sl-card ${unusable ? 'is-unavailable is-off' : ''} ${compact ? 'sl-card--compact' : ''}"
       data-card
     >
       ${head({
-        icon: this.config?.icon ?? glyphFor(view),
+        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
         tone: on ? tone : unusable ? 'off' : 'neutral',
         title: name,
         name: true,
-        sub,
-        trailing:
-          unusable || tight
-            ? nothing
-            : toggle(
-                on,
-                'light',
-                (next) => {
-                  this.expect(view.id, next ? 'on' : 'off');
-                  this.call('light', next ? 'turn_on' : 'turn_off');
-                },
-                name,
-              ),
+        sub: fitted.sub,
+        trailing: unusable
+          ? nothing
+          : toggle(
+              on,
+              'light',
+              (next) => {
+                this.expect(view.id, next ? 'on' : 'off');
+                this.call('light', next ? 'turn_on' : 'turn_off');
+              },
+              name,
+            ),
         onIconTap: () => this.tap(view.id),
         onHold: () => this.hold(view.id),
         iconLabel: name,

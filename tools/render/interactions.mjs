@@ -231,6 +231,34 @@ async function open(sheet, width = 360) {
   await page.close();
 }
 
+/* ---------- two lamps on a phone's line: the switch is never what the column costs ---------- */
+for (const width of [360, 412]) {
+  const page = await open('slider', width);
+  const lamp = frame(page, 'Two on a phone').locator('fluvy-light-card').first();
+  const box = await lamp.boundingBox();
+  const toggle = lamp.locator('[role="switch"]');
+  check(
+    `half a column at ${width}: the lamp keeps its switch beside its name`,
+    (await toggle.count()) === 1 && (await lamp.locator('.fv-card__title').count()) === 1,
+    `card ${Math.round(box?.width ?? 0)} wide`,
+  );
+  check(
+    `…and its name is whole (the icon circle gave it the room)`,
+    await lamp
+      .locator('.fv-card__title')
+      .evaluate((title) => title.scrollWidth <= title.clientWidth),
+  );
+  await lamp.locator('.fv-hit').click();
+  await page.waitForTimeout(80);
+  const c = await calls(page);
+  check(
+    `…a tap on it turns the lamp off`,
+    c.length === 1 && c[0].s === 'light.turn_off',
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await page.close();
+}
+
 /* ---------- colour temperature: tinted ticks, a tinted dot, off on request ---------- */
 {
   const page = await open('slider');

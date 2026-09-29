@@ -37,6 +37,7 @@ Code follows the same bar: clean, ordered, reusable, one place per concern.
 
 44 icon circle (20 glyph) · title 16/600 · sub 13/500 secondary · trailing = **one** of: 28 badge (state, content-sized: 14 px sides, text + 28 → 4-grid, tabular numerals), 48×28 switch, 44 round ("…", map, add).
 Sub = context or time (`Living room · 46 % RH`, `21:40 by Marta`). Badge = state, once. Never repeat the state in sub + badge + row.
+In a narrow column the head is fitted by measure (`HeadFit`), and what gives way has an order: a badge (its state is in the body too), the sub's trailing segments, then the icon circle. **A control never gives way**: a switch stays at every width — two lamps on a phone's line (172 each) read "name · switch" over their ruler.
 
 ## Icon circles
 
