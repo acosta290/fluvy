@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-09-29
+
 ### Added
 
 - Five automatic dashboards, each a template and a strategy of its own: **Home** (the dashboard of before, with a
@@ -194,7 +196,13 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/acosta290/fluvy/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/acosta290/fluvy/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/acosta290/fluvy/compare/v1.1.2...v1.2.0
+[1.1.2]: https://github.com/acosta290/fluvy/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/acosta290/fluvy/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/acosta290/fluvy/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/acosta290/fluvy/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/acosta290/fluvy/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/acosta290/fluvy/releases/tag/v1.0.0
