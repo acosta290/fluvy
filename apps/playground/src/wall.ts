@@ -6,6 +6,7 @@ import {
   type WallFacade,
   type WallSettings,
 } from '@fluvy/core';
+import { isPaletteName } from '@fluvy/tokens/runtime';
 import { createMemoryLook } from './look-memory.js';
 
 /*
@@ -71,7 +72,15 @@ export async function mountWall(
   if (!location.pathname.startsWith('/fluvy-wall'))
     history.replaceState(null, '', `/fluvy-wall/wall${location.search}`);
   const look = createMemoryLook(doc, dark);
-  await look.handle.store.saveHouse({ scope: 'everywhere', wall: { ...WALL_DEFAULTS, ...wall } });
+  // the playground's canvas stands for Home Assistant's view: on a wall it wears the wall's background, as `#view` does
+  doc.body.style.background = 'var(--fluvy-wall-bg, var(--fluvy-page))';
+  // `?palette=` as the rest of the playground reads it: the wall wears the house's look, so the house wears it
+  const palette = new URLSearchParams(location.search).get('palette');
+  await look.handle.store.saveHouse({
+    scope: 'everywhere',
+    wall: { ...WALL_DEFAULTS, ...wall },
+    ...(isPaletteName(palette) ? { palette } : {}),
+  });
   const facade = startWall({
     look: look.handle,
     ui: () => import('@fluvy/cards/wall'),
