@@ -10,6 +10,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - `fire-dom-event` as a card action, as Home Assistant's own cards take it: the whole action leaves the card as
   `ll-custom`, so browser_mod's popups (with `browser_id: THIS`) and other frontend integrations answer a
   Fluvy card's tap and hold.
+- `assist` as a card action (it opens Home Assistant's Assist), and `navigation_replace` on a `navigate`.
+
+### Fixed
+
+- An action with a `confirmation` ran without asking. Home Assistant's own dialog now asks first, with its words
+  and its exemptions, and a tile no longer flips before the answer.
+- `call-service`, as `perform-action` was written before Home Assistant 2024.8 (with `service` and
+  `service_data`), did nothing.
 
 ## [1.3.2] — 2026-09-30
 

@@ -7,7 +7,8 @@
  * that follows is swallowed, on the title and on the icon alike); a tap on the title is nothing; a hold on a ruler
  * is still its fine scale; a tile's whole surface taps and holds the same way, and a tap set to none does nothing;
  * a card of rows holds on its head and a row runs its own tap; the greeting's avatar taps and holds as an icon;
- * a scene tile runs on a tap and holds without running; a sensor tile's whole surface taps and holds.
+ * a scene tile runs on a tap and holds without running; a sensor tile's whole surface taps and holds; a tap to be
+ * asked about first goes to Home Assistant and moves nothing, and a `fire-dom-event` reaches the page's listeners.
  */
 import { holdForFine, mousePointer, rulerGeometry } from './lib/gestures.mjs';
 import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
@@ -143,6 +144,48 @@ async function hold(page, locator, ms = 650) {
   check(
     'a tile whose tap is none does nothing on tap',
     (await calls(page)).length === 0 && (await moreInfo(page)).length === 0,
+  );
+  await page.close();
+}
+
+/* ---------- what Home Assistant answers: a tap asked about first, a frontend integration's event ---------- */
+{
+  const page = await suite.sheet('actions');
+  await page.evaluate(() => {
+    window.__handed = [];
+    window.__custom = [];
+    // where Home Assistant's root and a frontend integration listen
+    document.body.addEventListener('hass-action', (event) => window.__handed.push(event.detail));
+    document.body.addEventListener('ll-custom', (event) => window.__custom.push(event.detail));
+  });
+  const group = frame(page, 'Asked first').locator('fluvy-tiles-card');
+  const heater = group.locator('.fv-tile').nth(0);
+  await heater.click();
+  await settle(page, 300);
+  const handed = await page.evaluate(() => window.__handed);
+  const asked = handed[0]?.config?.tap_action;
+  check(
+    'a tap to be asked about goes to Home Assistant as the service it is, and nothing moves before the answer',
+    handed.length === 1 &&
+      handed[0].action === 'tap' &&
+      handed[0].config.entity === 'switch.ac_heater' &&
+      asked.action === 'perform-action' &&
+      asked.perform_action === 'switch.turn_on' &&
+      asked.confirmation === true &&
+      (await calls(page)).length === 0 &&
+      !(await heater.evaluate((el) => el.classList.contains('is-on'))),
+    JSON.stringify(handed),
+  );
+  await group.locator('.fv-tile').nth(1).click();
+  await settle(page, 200);
+  const custom = await page.evaluate(() => window.__custom);
+  check(
+    "a tap set to fire-dom-event reaches the page's listeners with the whole action",
+    custom.length === 1 &&
+      custom[0].action === 'fire-dom-event' &&
+      custom[0].browser_mod?.service === 'browser_mod.popup' &&
+      (await calls(page)).length === 0,
+    JSON.stringify(custom),
   );
   await page.close();
 }

@@ -1,41 +1,224 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest';
-import { runAction, type ActionConfig } from '../actions.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { runAction, toggleService, type ActionConfig } from '../actions.js';
 import type { HomeAssistant } from '../ha/types.js';
 
-const hass = { states: {}, callService: vi.fn() } as unknown as HomeAssistant;
+const callService = vi.fn(() => Promise.resolve());
+
+/** A house of states only: `{ 'lock.front': 'locked' }`. */
+const house = (states: Record<string, string> = {}): HomeAssistant =>
+  ({
+    states: Object.fromEntries(
+      Object.entries(states).map(([id, state]) => [id, { entity_id: id, state, attributes: {} }]),
+    ),
+    callService,
+  }) as unknown as HomeAssistant;
+
+let card: HTMLElement;
+const stops: (() => void)[] = [];
+
+/** What an event says on its way past the body, where Home Assistant and browser_mod listen; taken down after the test. */
+function listen(type: string): unknown[] {
+  const heard: unknown[] = [];
+  const on = (event: Event): void => {
+    heard.push((event as CustomEvent).detail);
+  };
+  document.body.addEventListener(type, on);
+  stops.push(() => document.body.removeEventListener(type, on));
+  return heard;
+}
+
+beforeEach(() => {
+  card = document.createElement('div');
+  document.body.append(card);
+  callService.mockClear();
+});
+
+afterEach(() => {
+  card.remove();
+  for (const stop of stops.splice(0)) stop();
+  vi.restoreAllMocks();
+});
 
 describe('runAction', () => {
+  it('opens the details when nothing else is asked', async () => {
+    const details = listen('hass-more-info');
+
+    await runAction(card, house(), undefined, 'light.desk');
+
+    expect(details).toEqual([{ entityId: 'light.desk' }]);
+    expect(callService).not.toHaveBeenCalled();
+  });
+
   it('fire-dom-event: the whole action leaves the card as ll-custom, as Home Assistant sends it', async () => {
-    const card = document.createElement('div');
-    document.body.append(card);
-    const heard: unknown[] = [];
-    document.body.addEventListener('ll-custom', (event) =>
-      heard.push((event as CustomEvent).detail),
-    );
+    const heard = listen('ll-custom');
     const action: ActionConfig = {
       action: 'fire-dom-event',
       browser_mod: { service: 'browser_mod.popup', data: { title: 'Lights' } },
     };
 
-    await runAction(card, hass, action);
+    await runAction(card, house(), action);
 
     expect(heard).toEqual([action]);
-    expect(hass.callService).not.toHaveBeenCalled();
-    card.remove();
+    expect(callService).not.toHaveBeenCalled();
   });
 
   it('fire-dom-event crosses shadow roots, as the card sits in one', async () => {
     const host = document.createElement('div');
     document.body.append(host);
-    const card = document.createElement('div');
-    host.attachShadow({ mode: 'open' }).append(card);
-    const heard = vi.fn();
-    document.body.addEventListener('ll-custom', heard);
+    const inner = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).append(inner);
+    const heard = listen('ll-custom');
 
-    await runAction(card, hass, { action: 'fire-dom-event' });
+    await runAction(inner, house(), { action: 'fire-dom-event' });
 
-    expect(heard).toHaveBeenCalledOnce();
+    expect(heard).toHaveLength(1);
     host.remove();
+  });
+
+  it('reads call-service, service and service_data: perform-action as it was written before', async () => {
+    await runAction(card, house(), {
+      action: 'call-service',
+      service: 'light.turn_on',
+      service_data: { brightness_pct: 40 },
+      target: { entity_id: 'light.desk' },
+    });
+
+    expect(callService).toHaveBeenCalledExactlyOnceWith(
+      'light',
+      'turn_on',
+      { brightness_pct: 40 },
+      { entity_id: 'light.desk' },
+    );
+  });
+
+  it('a navigation may replace the page it leaves', async () => {
+    const replace = vi.spyOn(history, 'replaceState');
+    const push = vi.spyOn(history, 'pushState');
+
+    await runAction(card, house(), {
+      action: 'navigate',
+      navigation_path: '/fluvy-auto/rooms',
+      navigation_replace: true,
+    });
+
+    expect(replace).toHaveBeenCalledExactlyOnceWith(null, '', '/fluvy-auto/rooms');
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  describe('an action to be asked about first', () => {
+    it('goes to Home Assistant whole, and runs nothing itself', async () => {
+      const handed = listen('hass-action');
+      const details = listen('hass-more-info');
+      const action: ActionConfig = {
+        action: 'perform-action',
+        perform_action: 'cover.open_cover',
+        target: { entity_id: 'cover.garage' },
+        confirmation: { text: 'Open the garage?' },
+      };
+
+      await runAction(card, house(), action, 'cover.garage');
+
+      expect(handed).toEqual([
+        { config: { entity: 'cover.garage', tap_action: action }, action: 'tap' },
+      ]);
+      expect(callService).not.toHaveBeenCalled();
+      expect(details).toEqual([]);
+    });
+
+    it('a toggle goes as the service Fluvy would have called', async () => {
+      const handed = listen('hass-action');
+
+      await runAction(
+        card,
+        house({ 'vacuum.robot': 'cleaning' }),
+        { action: 'toggle', confirmation: true },
+        'vacuum.robot',
+      );
+
+      expect(handed).toEqual([
+        {
+          config: {
+            entity: 'vacuum.robot',
+            tap_action: {
+              action: 'perform-action',
+              perform_action: 'vacuum.pause',
+              target: { entity_id: 'vacuum.robot' },
+              confirmation: true,
+            },
+          },
+          action: 'tap',
+        },
+      ]);
+      expect(callService).not.toHaveBeenCalled();
+    });
+
+    it('a toggle of nothing asks nothing', async () => {
+      const handed = listen('hass-action');
+
+      await runAction(card, house(), { action: 'toggle', confirmation: true });
+
+      expect(handed).toEqual([]);
+      expect(callService).not.toHaveBeenCalled();
+    });
+
+    it('nothing to do is nothing to ask', async () => {
+      const handed = listen('hass-action');
+
+      await runAction(card, house(), { action: 'none', confirmation: true }, 'light.desk');
+
+      expect(handed).toEqual([]);
+    });
+
+    it('an answer of "no confirmation" runs here', async () => {
+      const handed = listen('hass-action');
+
+      await runAction(
+        card,
+        house({ 'light.desk': 'on' }),
+        { action: 'toggle', confirmation: false },
+        'light.desk',
+      );
+
+      expect(handed).toEqual([]);
+      expect(callService).toHaveBeenCalledExactlyOnceWith(
+        'light',
+        'turn_off',
+        {},
+        { entity_id: 'light.desk' },
+      );
+    });
+  });
+
+  it('assist is Home Assistant’s to open', async () => {
+    const handed = listen('hass-action');
+    const action: ActionConfig = { action: 'assist', start_listening: true };
+
+    await runAction(card, house(), action);
+
+    expect(handed).toEqual([{ config: { entity: undefined, tap_action: action }, action: 'tap' }]);
+    expect(callService).not.toHaveBeenCalled();
+  });
+});
+
+describe('toggleService', () => {
+  it.each([
+    ['cover.blinds', 'closed', 'cover', 'open_cover'],
+    ['cover.blinds', 'open', 'cover', 'close_cover'],
+    ['valve.garden', 'closed', 'valve', 'open_valve'],
+    ['lock.front', 'locked', 'lock', 'unlock'],
+    ['lock.front', 'unlocked', 'lock', 'lock'],
+    ['vacuum.robot', 'docked', 'vacuum', 'start'],
+    ['vacuum.robot', 'cleaning', 'vacuum', 'pause'],
+    ['media_player.tv', 'playing', 'media_player', 'media_play_pause'],
+    ['scene.evening', '2026-09-17T20:00:00+00:00', 'scene', 'turn_on'],
+    ['script.goodnight', 'off', 'script', 'turn_on'],
+    ['input_button.bell', 'unknown', 'input_button', 'press'],
+    ['automation.porch', 'on', 'automation', 'toggle'],
+    ['light.desk', 'on', 'light', 'turn_off'],
+    ['switch.heater', 'off', 'switch', 'turn_on'],
+    ['group.downstairs', 'on', 'homeassistant', 'turn_off'],
+  ])('%s that is %s: %s.%s', (entity, state, domain, service) => {
+    expect(toggleService(house({ [entity]: state }), entity)).toEqual([domain, service]);
   });
 });

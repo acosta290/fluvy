@@ -337,9 +337,12 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     void toggleEntity(this.hass, view.id);
   }
 
-  /** Runs a tile action; a toggle goes through the optimistic flip so the fill answers under the finger. */
+  /**
+   * Runs a tile action; a toggle goes through the optimistic flip so the fill answers under the finger — unless it
+   * is to be asked about first: then nothing moves before the answer.
+   */
   private act(view: EntityView, on: boolean, action: ActionConfig): void {
-    if (action.action === 'toggle' && !action.entity) this.flip(view, !on);
+    if (action.action === 'toggle' && !action.entity && !action.confirmation) this.flip(view, !on);
     else this.tap(view.id, action);
   }
 

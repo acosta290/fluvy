@@ -54,6 +54,25 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // what Home Assistant answers: a tap to be asked about first, and a tap that is a frontend integration's event
+    {
+      title: 'Asked first',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          tiles: [
+            { entity: 'switch.ac_heater', tap_action: { action: 'toggle', confirmation: true } },
+            {
+              entity: 'light.ac_hall',
+              tap_action: {
+                action: 'fire-dom-event',
+                browser_mod: { service: 'browser_mod.popup', data: { title: 'Hall' } },
+              },
+            },
+          ],
+        },
+      ],
+    },
     // a card of rows: its head holds like any other, and a row answers its own tap
     {
       title: 'Lock',

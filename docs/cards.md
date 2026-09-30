@@ -13,6 +13,12 @@ missing entity are drawn on purpose (a quiet surface, inert controls, a dash for
 may be shortened with an ellipsis; values never are. A card that takes an action changes on screen first and calls
 the service after; sliders and dials send on release, not per frame.
 
+`tap_action` and `hold_action` are Home Assistant's actions: `more-info` (the default), `toggle`, `navigate`, `url`,
+`perform-action` (and `call-service`, as it was written before Home Assistant 2024.8), `assist`, `fire-dom-event`
+and `none`. The icon circle answers the tap and a still press on the head the hold; a tile answers both on its whole
+surface. An action with a `confirmation` is asked about first, by Home Assistant's own dialog, and nothing on the
+card moves before the answer.
+
 ## Customisation
 
 Every card exposes what to show (section switches such as `show_fan`), which items appear and in which order (subset
