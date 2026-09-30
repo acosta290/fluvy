@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `fire-dom-event` as a card action, as Home Assistant's own cards take it: the whole action leaves the card as
+  `ll-custom`, so browser_mod's popups (with `browser_id: THIS`) and other frontend integrations answer a
+  Fluvy card's tap and hold.
+
 ## [1.3.2] — 2026-09-30
 
 ### Added
