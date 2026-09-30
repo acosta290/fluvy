@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.3] — 2026-09-30
+
 ### Added
 
 - `fire-dom-event` as a card action, as Home Assistant's own cards take it: the whole action leaves the card as
@@ -227,7 +229,8 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/acosta290/fluvy/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/acosta290/fluvy/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/acosta290/fluvy/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/acosta290/fluvy/compare/v1.2.1...v1.3.0
