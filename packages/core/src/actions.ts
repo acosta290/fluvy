@@ -21,13 +21,16 @@ export function navigate(path: string, replace = false): void {
 }
 
 export interface ActionConfig {
-  action: 'more-info' | 'toggle' | 'navigate' | 'url' | 'perform-action' | 'none';
+  action:
+    'more-info' | 'toggle' | 'navigate' | 'url' | 'perform-action' | 'fire-dom-event' | 'none';
   entity?: string;
   navigation_path?: string;
   url_path?: string;
   perform_action?: string;
   data?: Record<string, unknown>;
   target?: ServiceTarget;
+  /** `fire-dom-event` hands the whole action on, so it carries whatever its listener reads (`browser_mod: {…}`). */
+  [key: string]: unknown;
 }
 
 /** Domain-aware toggle: a cover opens, a lock unlocks, a vacuum starts — never a blind `homeassistant.toggle`. */
@@ -125,6 +128,11 @@ export async function runAction(
       return;
     case 'url':
       if (config.url_path) window.open(config.url_path, '_blank', 'noopener');
+      return;
+    case 'fire-dom-event':
+      // Home Assistant's own: the action as `ll-custom`'s detail, from the card, for the frontend
+      // integrations that listen for it (browser_mod's popups, with `browser_id: THIS` resolved there).
+      fireEvent(node, 'll-custom', config);
       return;
     case 'perform-action': {
       const [domain, service] = (config.perform_action ?? '').split('.', 2);
