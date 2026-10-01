@@ -186,13 +186,15 @@ const drawing = (card) =>
     window.__ws.filter((m) => m.type === 'recorder/statistics_during_period'),
   );
   const start = asked[0] ? new Date(asked[0].start_time) : null;
+  // the house's midnight six days back, in the browser's own zone (a runner in UTC and a desk in Madrid differ)
+  const weekStart = await page.evaluate(() => new Date(2026, 8, 11).toISOString());
   check(
     'Week: the chip is chosen, the head says so, and the last 7 days are asked for day by day',
     (await text(card.locator('.fv-chip.is-active'))) === 'Week' &&
       (await text(card.locator('.fv-card__sub'))).startsWith('Last 7 days · ') &&
       asked.length === 1 &&
       asked[0].period === 'day' &&
-      start?.toISOString() === '2026-09-10T22:00:00.000Z',
+      start?.toISOString() === weekStart,
     JSON.stringify(asked.map((m) => [m.period, m.start_time])),
   );
   const said = Object.fromEntries((await labels(card)).map((x) => [x.name, x.value]));
@@ -347,6 +349,7 @@ const drawing = (card) =>
   const fossil = await page.evaluate(() =>
     window.__ws.filter((m) => m.type === 'energy/fossil_energy_consumption'),
   );
+  const monthStart = await page.evaluate(() => new Date(2026, 8, 1).toISOString());
   check(
     'Month: energy/fossil_energy_consumption with the grid’s import meters, the house’s CO₂ signal, day by day from the 1st',
     (await text(month.locator('.fv-card__sub'))) === 'This month' &&
@@ -354,7 +357,7 @@ const drawing = (card) =>
       JSON.stringify(fossil[0].energy_statistic_ids) === '["sensor.fl_grid_in_energy"]' &&
       fossil[0].co2_statistic_id === 'sensor.sk_co2' &&
       fossil[0].period === 'day' &&
-      fossil[0].start_time === '2026-08-31T22:00:00.000Z' &&
+      fossil[0].start_time === monthStart &&
       typeof fossil[0].end_time === 'string',
     JSON.stringify(fossil),
   );
