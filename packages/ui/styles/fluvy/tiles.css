@@ -260,6 +260,14 @@
   }
 }
 
+/* an inner tile one a row in half a column (under 136 wide, 104 inside) gives its name the icon's room: "Floor
+   lamp", not "Floo…" (the fill still says on or off) */
+@container (max-width: 103px) {
+  .fv-tile--inner > .fv-ico {
+    display: none;
+  }
+}
+
 /* the inner tile: a compact tile inside a card (a room's controls) — 84 tall, the control radius, the page's fill
    and no hairline; on, the tone's fill alone (like an option tile) */
 .fv-tile--inner {

@@ -1,3 +1,4 @@
+import { devicesHeight } from '../energy-family.js';
 import {
   stateText,
   strings,
@@ -12,9 +13,14 @@ import {
 
 import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
 
-import { css, html, type CSSResultGroup, type TemplateResult } from 'lit';
-
-import { repeat } from 'lit/directives/repeat.js';
+import {
+  css,
+  html,
+  nothing,
+  type CSSResultGroup,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
@@ -36,6 +42,9 @@ import {
   titleFields,
 } from '../shared/form.js';
 
+import { fetchPrefs } from '../energy-model/house.js';
+import { fetchPeriod, type PeriodEnergy } from '../energy-model/period.js';
+import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
 import { HeadFit } from '../energy/head.js';
 
 import {
@@ -44,20 +53,39 @@ import {
   family,
   scaled,
   scaleOf,
-  share,
+  shortName,
   type Family,
+  type Scale,
 } from '../energy/power.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { HEAD, listLength, ROW_BAR } from '../shared/heights.js';
+import type { Segment } from '../shared/fit.js';
+import {
+  barOf,
+  deviceTree,
+  percentOf,
+  type DeviceItem,
+  type DeviceNode,
+  type DeviceTree,
+} from './tree.js';
 
 const s = strings('energy-devices');
+/** Below this a row's name needs its circle's room: the rows go bare (the flow's list does the same). */
+const BARE = 280;
+/** Below this even a bare row cannot hold a name beside its figure: the figure leads the second line. */
+const STACK = 200;
+/** A level of the tree is indented by this much (the spine centred on its parent's circle), bare by 12. */
+const INDENT = 40;
+const INDENT_BARE = 12;
+const flow = strings('energy-flow');
 
 export interface DeviceRowConfig {
   entity: string;
   name?: string;
   icon?: string;
+  /** Another row's sensor this device is part of: it is drawn under that row, and its share is of that row. */
+  parent?: string;
   /** A monetary sensor for this device, quoted after its share on the row's second line. */
   cost_entity?: string;
   tone?: Tone;
@@ -68,19 +96,23 @@ export interface DeviceRowConfig {
 export interface EnergyDevicesCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
+  /** The devices. Empty: the Energy dashboard's own (their meters over today, nested as it nests them). */
   rows?: ReadonlyArray<string | DeviceRowConfig>;
+  /** The house's own meter, of the rows' kind: every bar on its scale, and what the devices leave unmeasured. */
+  total?: string;
   /** `false` keeps the configured order; by default the biggest consumer leads. */
   sort?: boolean;
-  /** Rows shown at most (the biggest, when sorted). */
+  /** Top-level rows shown at most (the biggest, when sorted); a row's devices follow it. */
   max_rows?: number;
+  /** The tests' clock: "now" for today's midnight. */
+  _now?: string;
 }
 
-interface DeviceRow {
-  readonly key: string;
+interface DeviceRow extends DeviceItem {
   readonly config: DeviceRowConfig;
   readonly view: EntityView;
-  /** Base-unit value (W or Wh) when the row belongs to the card's family and is usable; `null` otherwise. */
-  readonly value: number | null;
+  readonly label: string;
+  readonly glyph: string;
 }
 
 /** The bar colours the language defines; any other tone draws its bar in the accent. */
@@ -97,17 +129,18 @@ const BAR_TONES: ReadonlySet<Tone> = new Set<Tone>([
 ]);
 
 /**
- * Where the energy went: one 76 px bar row per appliance — icon circle, name, its share of the total
- * (and its cost, when there is a sensor for it), a 4 px bar normalised to the biggest consumer, and
- * the figure on the right. The head badge carries the total, so the card answers "how much" before
- * "what". Rows may mix units (Wh, kWh, MWh — or W and kW): they are compared in one base unit and
- * written in one display unit. A sensor of another kind (a water meter among energy meters) is a
- * plain 60 px row with its own figure: it has no share of the total and draws no bar.
+ * Where the energy goes: one 76 px bar row per device — its circle, its name, its share, a bar in ink and its figure
+ * — every bar on ONE scale (the house's meter, else the biggest device), so a glance compares them all. A device may
+ * be part of another (`parent`): it is drawn under it, on a spine from its parent's circle, and its share is of that
+ * parent; a parent that reads more than its devices shows the rest as "Not measured", and the house's meter (`total`)
+ * what no device accounts for, with how much of the house is measured in the badge. Without rows the Energy
+ * dashboard's devices are read, over today, nested as it nests them. A sensor of another kind (a water meter among
+ * energy meters) is a plain row with its own figure: no share, no bar.
  */
 export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: EnergyDevicesCardConfig): number {
-    return HEAD + ROW_BAR * listLength(config, ['rows', 'entities']);
+    return devicesHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -121,6 +154,11 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
   ];
 
   private readonly head = new HeadFit(this);
+  private prefs: EnergyPrefs | null | undefined;
+  private prefsAsked = false;
+  private period: PeriodEnergy | null | undefined;
+  private periodKey = '';
+  private ticker: number | undefined;
 
   /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
   static override base: readonly BaseKey[] = [
@@ -135,6 +173,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     'title',
     'subtitle',
     'rows',
+    'total',
     'sort',
     'max_rows',
   ]);
@@ -144,14 +183,21 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       alias: 'entities',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name', 'icon', 'cost_entity', 'tone', 'color', 'tap_action'],
+      keys: ['entity', 'name', 'icon', 'parent', 'cost_entity', 'tone', 'color', 'tap_action'],
       schema: [
         entityField(['sensor']),
         nameIconFields(),
+        fieldRow(
+          entityField(['sensor'], 'parent', false),
+          entityField(['sensor'], 'cost_entity', false),
+        ),
         colourFields(),
-        fieldRow(entityField(['sensor'], 'cost_entity', false), actionField()),
+        actionField(),
       ],
-      computeLabel: formLabels({ cost_entity: 'energy.cost' }).computeLabel,
+      computeLabel: formLabels({
+        cost_entity: 'energy.cost',
+        parent: 'energy-devices.editor_parent',
+      }).computeLabel,
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
@@ -161,11 +207,16 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         titleFields(),
         iconField(),
         colourFields(),
-        entitiesField('entities', ['sensor'], true),
+        entitiesField('entities', ['sensor']),
+        entityField(['sensor'], 'total', false),
         fieldRow(boolField('sort'), numberField('max_rows', 1, 20)),
         actionFields(),
       ],
-      ...editorLabels(s, { sort: 'editor_sort' }, { max_rows: 'editor.max_rows' }),
+      ...editorLabels(
+        s,
+        { sort: 'editor_sort', total: 'editor_total' },
+        { max_rows: 'editor.max_rows' },
+      ),
     };
   }
 
@@ -181,90 +232,197 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     };
   }
 
-  protected override prepare(config: EnergyDevicesCardConfig): EnergyDevicesCardConfig {
-    if (!config.rows?.length && !config.entities?.length)
-      throw new Error('fluvy-energy-devices-card: add at least one sensor');
-    return config;
-  }
-
   override getCardSize(): number {
-    return 1 + Math.ceil((this.configured().length * 76) / 50);
+    return Math.ceil(FluvyEnergyDevicesCard.layoutHeight(this.config ?? { type: '' }) / 50);
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
-  private configured(): DeviceRowConfig[] {
+  /* ---------- configuration ---------- */
+
+  private own(): DeviceRowConfig[] {
     const source = this.config?.rows ?? this.config?.entities ?? [];
-    return source.map((row) => (typeof row === 'string' ? { entity: row } : row));
+    return source
+      .map((row) => (typeof row === 'string' ? { entity: row } : row))
+      .filter((row) => typeof row.entity === 'string' && row.entity !== '');
+  }
+
+  /** With no rows of its own, the card is the Energy dashboard's devices over today. */
+  private get fromPrefs(): boolean {
+    return this.own().length === 0;
+  }
+
+  private configured(): DeviceRowConfig[] {
+    if (!this.fromPrefs) return this.own();
+    return readPrefs(this.prefs).devices.map((d) => ({
+      entity: d.stat,
+      ...(d.name ? { name: d.name } : {}),
+      ...(d.parent ? { parent: d.parent } : {}),
+    }));
   }
 
   protected override watched(): readonly string[] {
-    return this.configured().flatMap((row) =>
-      row.cost_entity ? [row.entity, row.cost_entity] : [row.entity],
-    );
+    return [
+      ...this.configured().flatMap((row) =>
+        row.cost_entity ? [row.entity, row.cost_entity] : [row.entity],
+      ),
+      this.config?.total,
+    ].filter((id): id is string => !!id);
   }
+
+  private now(): Date {
+    const pinned = this.config?._now ? Date.parse(this.config._now) : NaN;
+    return new Date(Number.isFinite(pinned) ? pinned : Date.now());
+  }
+
+  /* ---------- the Energy dashboard's devices ---------- */
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (this.config && this.fromPrefs) this.tick();
+  }
+
+  /** A day's statistics grow every hour and the day turns at midnight: read again every five minutes. */
+  private tick(): void {
+    this.ticker ??= window.setInterval(() => this.requestUpdate(), 300_000);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.clearInterval(this.ticker);
+    this.ticker = undefined;
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    super.willUpdate(changed);
+    const hass = this.hass;
+    if (!this.config || !hass || !this.fromPrefs) return;
+    if (this.isConnected) this.tick();
+    if (!this.prefsAsked) {
+      this.prefsAsked = true;
+      void fetchPrefs(hass).then((prefs) => {
+        this.prefs = prefs;
+        this.requestUpdate();
+      });
+    }
+    if (this.prefs === undefined) return;
+    // today's change of every device meter (and the house's own, when given), the Energy dashboard's arithmetic
+    const now = this.now();
+    const house = readPrefs(this.prefs);
+    const extra = [...house.devices.map((d) => d.stat), this.config.total].filter(
+      (id): id is string => !!id,
+    );
+    const key = `${Math.floor(now.getTime() / 300_000)}|${extra.join(',')}`;
+    if (key === this.periodKey) return;
+    this.periodKey = key;
+    void fetchPeriod(hass, house.sources, 'day', now, extra).then((data) => {
+      if (this.periodKey !== key) return;
+      this.period = data;
+      this.requestUpdate();
+    });
+  }
+
+  /* ---------- the rows ---------- */
 
   /** The card is either "energy today" or "power now": the first sensor that says which decides for all. */
   private kind(views: readonly EntityView[]): Family {
+    if (this.fromPrefs) return 'energy';
     return views.map(family).find((kind) => kind !== null) ?? 'energy';
   }
 
-  private rows(kind: Family): DeviceRow[] {
-    const rows: DeviceRow[] = this.configured().map((config, index) => {
-      const view = this.entity(config.entity);
-      return {
-        key: `${config.entity}#${index}`,
-        config,
-        view,
-        value: family(view) === kind ? baseValue(view) : null,
-      };
-    });
-    const shown =
-      this.config?.sort === false
-        ? rows
-        : rows.sort((a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity)); // unusable rows sink, in their configured order
-    const limit = this.config?.max_rows;
-    return typeof limit === 'number' && limit >= 1 ? shown.slice(0, Math.round(limit)) : shown;
+  /** A row's reading in the card's base unit: its sensor's (or, from the Energy dashboard, today's change). */
+  private readingOf(id: string, view: EntityView, kind: Family): number | null {
+    if (this.fromPrefs) {
+      const kwh = this.period?.byStat.get(id);
+      return kwh === undefined ? null : kwh * 1000;
+    }
+    return family(view) === kind ? baseValue(view) : null;
   }
 
-  /** Second line: the state when there is no figure, otherwise the share of the total and what it cost. */
-  private secondary(row: DeviceRow, total: number): string {
-    if (row.view.status !== 'ok') return stateText(this.hass, row.view);
-    if (row.value === null) return row.view.areaName;
-    const cost = row.config.cost_entity
-      ? costParts(this.hass, this.entity(row.config.cost_entity))
-      : null;
-    const money =
-      cost && cost.value !== '—' ? [cost.value, cost.unit].filter(Boolean).join(' ') : '';
-    if (total <= 0) return money;
-    const percent = Math.round(share(row.value, total) * 100);
-    return money ? `${percent} % · ${money}` : s(this.hass, 'share_of_total', { percent });
+  /** The house's meter: its sensor's reading, its change today, or what the Energy dashboard's sources add up to. */
+  private houseTotal(kind: Family): number | null {
+    const id = this.config?.total;
+    if (id) return this.readingOf(id, this.entity(id), kind);
+    if (!this.fromPrefs || !this.period) return null;
+    const sources = readPrefs(this.prefs).sources;
+    return sources.some((p) => p.energyIn.length) ? this.period.allocation.usedTotal * 1000 : null;
   }
 
   protected renderCard(): TemplateResult {
-    const kind = this.kind(this.configured().map((row) => this.entity(row.entity)));
-    const rows = this.rows(kind);
-    const values = rows.flatMap((row) => (row.value === null ? [] : [Math.max(0, row.value)]));
-    const total = values.reduce((sum, value) => sum + value, 0);
-    const peak = Math.max(0, ...values);
-    const scale = scaleOf([...values, total], kind === 'power' ? 'W' : 'Wh');
+    const configs = this.configured();
+    const views = configs.map((c) => this.entity(c.entity));
+    const kind = this.kind(views);
+    const rows: DeviceRow[] = configs.map((config, index) => {
+      const view = views[index] as EntityView;
+      return {
+        key: `${config.entity}#${index}`,
+        id: config.entity,
+        parent: config.parent,
+        config,
+        view,
+        label: config.name ?? (this.fromPrefs ? shortName(view) : view.name),
+        glyph: config.icon ?? (this.fromPrefs ? 'plug' : glyphFor(view)),
+        value: this.readingOf(config.entity, view, kind),
+      };
+    });
+    // a sensor of another kind is its own plain row, outside the tree and its sums
+    const other = (row: DeviceRow): boolean =>
+      !this.fromPrefs && row.view.status === 'ok' && family(row.view) !== kind;
+    const total = this.houseTotal(kind);
+    const tree = deviceTree(
+      rows.filter((row) => !other(row)),
+      {
+        total,
+        sort: this.config?.sort !== false,
+        ...(typeof this.config?.max_rows === 'number' ? { limit: this.config.max_rows } : {}),
+      },
+    );
+    const plain = rows.filter(other);
+
+    const values = rows.flatMap((row) => (row.value === null ? [] : [row.value]));
+    const scale = scaleOf([...values, total, tree.sum], kind === 'power' ? 'W' : 'Wh');
+    const figure = (v: number | null): string =>
+      v === null ? '—' : `${scaled(this.hass, v, scale)} ${scale.unit}`;
+    const house = total ?? tree.sum;
+
     const tone: Tone = toneOf(this.config, 'accent');
-    const none = values.length === 0;
+    const waiting = this.fromPrefs && this.prefs === undefined;
+    const empty = this.fromPrefs && !waiting && !rows.length;
+    const none = !this.fromPrefs && values.length === 0;
     const first = rows[0]?.view;
     const width = this.contentWidth;
     const title = this.config?.title ?? s(this.hass, 'title');
+    const when = this.t(kind === 'power' ? 'energy.drawing_now' : 'common.today');
     const fitted = this.head.fit({
       width,
       title,
       sub:
         none && first
           ? stateText(this.hass, first)
-          : (this.config?.subtitle ??
-            this.t(kind === 'power' ? 'energy.drawing_now' : 'common.today')),
-      badge: none ? null : { text: `${scaled(this.hass, total, scale)} ${scale.unit}`, tone },
+          : [this.config?.subtitle ?? when, house === null ? '' : figure(house)]
+              .filter(Boolean)
+              .join(' · '),
+      // a share measured says something only when there are devices to measure it by
+      badge:
+        tree.measured === null || none || tree.measured <= 0
+          ? null
+          : {
+              text: s(this.hass, 'measured', { percent: Math.round(tree.measured * 100) }),
+              tone: 'neutral',
+            },
     });
 
+    const context: Context = {
+      tree,
+      total,
+      scale,
+      figure,
+      width,
+      tone,
+      bare: width < BARE,
+      stack: width < STACK,
+    };
     return html`<article class="fv-card ef-card ${none ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
@@ -276,45 +434,227 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         onIconTap: () => this.tap(),
         onHold: () => this.hold(),
       })}
-      <div class="ef-rows">
-        ${repeat(
-          rows,
-          (row) => row.key,
-          (row) => {
-            const rowTone = toneOf(row.config, tone);
-            const usable = row.view.status === 'ok';
-            const shared = {
-              icon: row.config.icon ?? glyphFor(row.view),
-              title: row.config.name ?? row.view.name,
-              name: true,
-              accent: this.accents.item(row.config.color),
-              onTap: (): void => this.tap(row.view.id, row.config.tap_action),
-            };
-            if (row.value === null && usable) {
-              // a sensor of another family: its own figure, no share, no bar
-              const own = valueParts(this.hass, row.view);
-              const value = [own.value, own.unit].filter(Boolean).join(' ');
-              return listRow({
-                ...shared,
-                tone: 'neutral',
-                sub: this.head.fitRowSub(row.view.areaName, this.head.rowRoom(width, value)),
-                trailing: 'value',
-                value,
-              });
-            }
-            const value =
-              row.value === null ? '—' : `${scaled(this.hass, row.value, scale)} ${scale.unit}`;
-            return barRow({
-              ...shared,
-              tone: !usable ? 'off' : row.value !== null && row.value > 0 ? rowTone : 'neutral',
-              sub: this.head.fitRowSub(this.secondary(row, total), this.head.rowRoom(width, value)),
-              value,
-              fraction: row.value === null ? 0 : share(row.value, peak),
-              barTone: BAR_TONES.has(rowTone) ? rowTone : 'accent',
-            });
-          },
-        )}
-      </div>
+      ${
+        empty
+          ? this.head.empty(
+              'plug',
+              s(this.hass, 'no_devices'),
+              s(this.hass, 'no_devices_hint'),
+              this.contentWidth,
+            )
+          : html`<div
+              class="ef-rows en-tree ${context.bare ? 'ef-rows--bare' : ''} ${context.stack ? 'ef-rows--stack' : ''}"
+            >
+              ${tree.roots.map((node) => this.renderNode(node, null, 0, context))}
+              ${plain.map((row) => this.renderPlain(row, context))}
+              ${
+                tree.rest !== null
+                  ? this.renderRest(
+                      tree.rest,
+                      s(this.hass, 'rest_of_house', {
+                        percent: percentOf(tree.rest, total) ?? 0,
+                      }),
+                      0,
+                      context,
+                    )
+                  : nothing
+              }
+            </div>`
+      }
     </article>`;
   }
+
+  /** A device, and under it (on the spine from its circle) its own devices and what they leave unmeasured. */
+  private renderNode(
+    node: DeviceNode<DeviceRow>,
+    parent: DeviceRow | null,
+    depth: number,
+    c: Context,
+  ): TemplateResult {
+    const row = node.item;
+    const kids = node.children.length || node.rest !== null;
+    return html`${this.renderDevice(row, parent, node.children.length, depth, c)}
+    ${
+      kids
+        ? html`<div class="en-tree__kids">
+            ${node.children.map((child) => this.renderNode(child, row, depth + 1, c))}
+            ${
+              node.rest !== null
+                ? this.renderRest(
+                    node.rest,
+                    c.stack
+                      ? s(this.hass, 'share', { percent: percentOf(node.rest, row.value) ?? 0 })
+                      : s(this.hass, 'share_of', {
+                          percent: percentOf(node.rest, row.value) ?? 0,
+                          name: row.label,
+                        }),
+                    depth + 1,
+                    c,
+                  )
+                : nothing
+            }
+          </div>`
+        : nothing
+    }`;
+  }
+
+  private renderDevice(
+    row: DeviceRow,
+    parent: DeviceRow | null,
+    devices: number,
+    depth: number,
+    c: Context,
+  ): TemplateResult {
+    // a device of the Energy dashboard is read from its statistics, whatever its sensor says now
+    const usable = this.fromPrefs || row.view.status === 'ok';
+    // an item's own tone or colour paints its circle and bar; by default a destination is ink
+    const own = row.config.tone !== undefined || !!row.config.color;
+    const rowTone = toneOf(row.config, c.tone);
+    return this.bar(c, depth, {
+      icon: row.glyph,
+      tone: !usable ? 'off' : own && row.value !== null && row.value > 0 ? rowTone : 'neutral',
+      title: row.label,
+      accent: this.accents.item(row.config.color),
+      segments: this.secondary(row, parent, devices, c),
+      value: c.figure(row.value),
+      fraction: barOf(row.value, c.tree.scale),
+      barTone: row.config.color ? 'accent' : own && BAR_TONES.has(rowTone) ? rowTone : 'ink',
+      onTap: (): void => this.tap(row.view.id, row.config.tap_action),
+    });
+  }
+
+  /**
+   * A bar row at its depth of the tree, its second line fitted to what the row leaves it: the indent of its level,
+   * its figure — and, bare, the circle's room too. Stacked (half a column), the figure leads the second line.
+   */
+  private bar(
+    c: Context,
+    depth: number,
+    o: {
+      readonly icon: string;
+      readonly tone: Tone;
+      readonly title: string;
+      readonly accent?: string | undefined;
+      readonly segments: readonly Segment[];
+      readonly value: string;
+      readonly fraction: number;
+      readonly barTone: Tone | 'ink';
+      readonly onTap?: () => void;
+    },
+  ): TemplateResult {
+    const width = c.width - depth * (c.bare ? INDENT_BARE : INDENT);
+    const value = c.stack ? '' : o.value;
+    const segments: readonly Segment[] = c.stack
+      ? [{ text: o.value }, ...o.segments.map((segment) => ({ ...segment, optional: true }))]
+      : o.segments;
+    return barRow({
+      icon: o.icon,
+      tone: o.tone,
+      title: o.title,
+      // "Not measured" stands where a device's name stands, and gives way like one in a narrow column
+      name: true,
+      accent: o.accent,
+      sub: this.head.fitRowSegments(
+        segments,
+        this.head.rowRoom(width, value) + (c.bare ? 56 : 0) + (c.stack ? 12 : 0),
+      ),
+      value,
+      fraction: o.fraction,
+      barTone: o.barTone,
+      ...(o.onTap ? { onTap: o.onTap } : {}),
+    });
+  }
+
+  /**
+   * Second line: its state when it has no figure; otherwise its share — of its parent, of the house, or of the
+   * devices' sum — then how many devices it holds, then what it cost (the last two go first when narrow).
+   */
+  private secondary(
+    row: DeviceRow,
+    parent: DeviceRow | null,
+    devices: number,
+    c: Context,
+  ): Segment[] {
+    if (!this.fromPrefs && row.view.status !== 'ok')
+      return [{ text: stateText(this.hass, row.view) }];
+    if (row.value === null) return [];
+    const segments: Segment[] = [];
+    const share = parent
+      ? percentOf(row.value, parent.value)
+      : percentOf(row.value, c.total ?? c.tree.sum);
+    // stacked (half a column) the figure leads the line and every row says its share alike: "5.1 kWh · 38 %"
+    if (share !== null)
+      segments.push({
+        text: c.stack
+          ? s(this.hass, 'share', { percent: share })
+          : parent
+            ? s(this.hass, 'share_of', { percent: share, name: parent.label })
+            : devices
+              ? s(this.hass, 'share', { percent: share })
+              : c.total !== null
+                ? flow(this.hass, 'share_of_house', { percent: share })
+                : s(this.hass, 'share_of_total', { percent: share }),
+      });
+    if (devices)
+      segments.push({
+        text:
+          devices === 1 ? this.t('common.device') : this.t('common.devices', { count: devices }),
+        optional: segments.length > 0,
+      });
+    const cost = row.config.cost_entity
+      ? costParts(this.hass, this.entity(row.config.cost_entity))
+      : null;
+    if (cost && cost.value !== '—')
+      segments.push({
+        text: [cost.value, cost.unit].filter(Boolean).join(' '),
+        optional: segments.length > 0,
+      });
+    return segments;
+  }
+
+  /** What is not measured: a parent's rest among its devices, or the house's after every device. */
+  private renderRest(value: number, sub: string, depth: number, c: Context): TemplateResult {
+    return this.bar(c, depth, {
+      icon: 'dots',
+      tone: 'neutral',
+      title: s(this.hass, 'not_measured'),
+      segments: sub.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
+      value: c.figure(value),
+      fraction: barOf(value, c.tree.scale),
+      barTone: 'ink',
+    });
+  }
+
+  /** A sensor of another kind: its own figure, no share, no bar. */
+  private renderPlain(row: DeviceRow, c: Context): TemplateResult {
+    const own = valueParts(this.hass, row.view);
+    const value = [own.value, own.unit].filter(Boolean).join(' ');
+    return listRow({
+      icon: row.glyph,
+      tone: 'neutral',
+      title: row.label,
+      name: true,
+      accent: this.accents.item(row.config.color),
+      sub: this.head.fitRowSub(
+        row.view.areaName,
+        this.head.rowRoom(c.width, value) + (c.bare ? 56 : 0),
+      ),
+      trailing: 'value',
+      value,
+      onTap: () => this.tap(row.view.id, row.config.tap_action),
+    });
+  }
+}
+
+interface Context {
+  readonly tree: DeviceTree<DeviceRow>;
+  readonly total: number | null;
+  readonly scale: Scale;
+  readonly figure: (v: number | null) => string;
+  readonly width: number;
+  readonly tone: Tone;
+  /** The rows have no circles (a narrow column). */
+  readonly bare: boolean;
+  /** The figure leads the second line (half a column). */
+  readonly stack: boolean;
 }

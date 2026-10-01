@@ -45,11 +45,27 @@ describe('a fitted head', () => {
     expect(fitted.icon).toBe(true);
   });
 
+  it('lets the badge go before a single segment of the sub does', () => {
+    // 300 − 56 − 56 leaves 188: "Peak price · 0.42 €/kWh" (184) fits beside it; at 280 (168) the badge goes, the sub stays whole
+    const peak = { width: 280, title: 'Energy flow', sub: 'Peak price · 0.42 €/kWh', badge };
+    expect(fitter().fit({ ...peak, width: 300 }).badge).not.toBe(nothing);
+    const fitted = fitter().fit(peak);
+    expect(fitted.badge).toBe(nothing);
+    expect(fitted.sub).toBe('Peak price · 0.42 €/kWh');
+  });
+
   it('lets the icon go last, and the sub takes the room back', () => {
     // 132 − 56 leaves 76 for an 88 px title: the circle goes; 132 then holds title and sub in full
     const fitted = fitter().fit({ width: 132, title: 'Energy flow', sub: 'Live · 5 s ago', badge });
     expect(fitted.icon).toBe(false);
     expect(fitted.badge).toBe(nothing);
     expect(fitted.sub).toBe('Live · 5 s ago');
+  });
+
+  it('lets the icon go for a sub whose first segment the column cannot hold beside it', () => {
+    // 158 − 56 leaves 102: "Where" (40) fits, "Desde medianoche" (128) does not; 158 holds it
+    const fitted = fitter().fit({ width: 158, title: 'Where', sub: 'Desde medianoche · 17,7 kWh' });
+    expect(fitted.icon).toBe(false);
+    expect(fitted.sub).toBe('Desde medianoche');
   });
 });

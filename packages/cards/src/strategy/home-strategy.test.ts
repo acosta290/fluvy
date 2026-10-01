@@ -5,6 +5,7 @@ import '../index.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 
 import {
+  DEMO_ENERGY_SOURCES,
   DEMO_EXTRAS,
   DEMO_HEAT_PUMP_READINGS,
   DEMO_ROOMS,
@@ -71,9 +72,10 @@ describe("custom:fluvy-home strategy — the grid meter's sign", () => {
       { type: 'custom:fluvy-home' },
       withMeter(-1200),
     );
-    expect(flow(views)).toMatchObject({
-      grid_power: 'sensor.grid_meter_power',
-      grid_invert: true,
+    expect(flow(views)?.['sources']).toContainEqual({
+      type: 'grid',
+      power: 'sensor.grid_meter_power',
+      invert: true,
     });
   });
 
@@ -82,20 +84,24 @@ describe("custom:fluvy-home strategy — the grid meter's sign", () => {
       { type: 'custom:fluvy-home' },
       withMeter(1200),
     );
-    expect(flow(views)?.['grid_invert']).toBeUndefined();
+    expect(flow(views)?.['sources']).toContainEqual({
+      type: 'grid',
+      power: 'sensor.grid_meter_power',
+    });
   });
 });
 
 /** The demo home with one of everything the library has a card for. */
 const everything = () =>
-  house(
-    [...DEMO_EXTRAS, ...DEMO_ROOMS],
-    ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
-  );
+  demoHass({
+    more: [...DEMO_EXTRAS, ...DEMO_ROOMS],
+    consumption: ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
+    sources: DEMO_ENERGY_SOURCES,
+  }) as never;
 
 describe('custom:fluvy-home strategy', () => {
   it('writes only configs its cards accept', async () => {
-    await import('../index.js');
+    await (await import('../index.js')).catalogue(); // the energy family too
     const rejected: string[] = [];
     for (const hass of [house(), everything()]) {
       const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass);
@@ -137,7 +143,7 @@ describe('custom:fluvy-home strategy', () => {
   });
 
   it('puts every card of the library to use in a house that has one of everything', async () => {
-    const { CATALOGUE } = await import('../index.js');
+    const CATALOGUE = await (await import('../index.js')).catalogue();
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, everything());
     const used = new Set(
       views.flatMap((v) => v.sections.flatMap((s) => s.cards.map((c) => c.type))),
@@ -356,11 +362,12 @@ describe('custom:fluvy-home strategy', () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
     const energy = views.find((v) => v.path === 'energy')!.sections.flatMap((s) => s.cards);
     const flow = energy.find((c) => c.type === 'custom:fluvy-energy-flow-card') as unknown as {
-      solar_power: string;
-      grid_power: string;
+      sources: { type: string; power: string }[];
     };
-    expect(flow.solar_power).toBe('sensor.solar_inverter_power');
-    expect(flow.grid_power).toBe('sensor.grid_meter_power');
+    expect(flow.sources.map((s) => [s.type, s.power])).toEqual([
+      ['solar', 'sensor.solar_inverter_power'],
+      ['grid', 'sensor.grid_meter_power'],
+    ]);
     expect(
       energy.some(
         (c) =>
@@ -372,6 +379,55 @@ describe('custom:fluvy-home strategy', () => {
       (c) => c.type === 'custom:fluvy-energy-devices-card',
     ) as unknown as { rows: { entity: string }[] };
     expect(devices.rows.map((r) => r.entity)).toEqual(['sensor.washing_machine_energy_today']);
+  });
+
+  it('reads an export meter as the grid’s second sensor, never as the grid', async () => {
+    const hass = house([
+      entity('sensor.grid_import_power', '1900', {
+        unit_of_measurement: 'W',
+        device_class: 'power',
+        friendly_name: 'Grid import power',
+      }),
+      entity('sensor.grid_export_power', '400', {
+        unit_of_measurement: 'W',
+        device_class: 'power',
+        friendly_name: 'Grid export power',
+      }),
+    ]);
+    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass);
+    const cards = views.flatMap((v) => v.sections.flatMap((s) => s.cards));
+    const flow = cards.find((c) => c.type === 'custom:fluvy-energy-flow-card') as unknown as {
+      sources: Record<string, unknown>[];
+    };
+    // the ordinary house's own meter is named for the grid too: the one named for the export is never it
+    expect(JSON.stringify(flow.sources)).not.toContain('"power":"sensor.grid_export_power"');
+    expect(flow.sources).toContainEqual({
+      type: 'grid',
+      import: expect.any(String),
+      export: 'sensor.grid_export_power',
+    });
+  });
+
+  it('reads a grid named by its phases as one source summed per phase', async () => {
+    const phase = (n: number, w: string) =>
+      entity(`sensor.grid_power_l${n}`, w, {
+        unit_of_measurement: 'W',
+        device_class: 'power',
+        friendly_name: `Grid power L${n}`,
+      });
+    const hass = house([phase(1, '-400'), phase(2, '1000'), phase(3, '900')]);
+    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass);
+    const cards = views.flatMap((v) => v.sections.flatMap((s) => s.cards));
+    const flow = cards.find((c) => c.type === 'custom:fluvy-energy-flow-card') as unknown as {
+      sources: Record<string, unknown>[];
+    };
+    expect(flow.sources).toContainEqual({
+      type: 'grid',
+      phases: ['sensor.grid_power_l1', 'sensor.grid_power_l2', 'sensor.grid_power_l3'],
+    });
+    expect(cards.find((c) => c.type === 'custom:fluvy-grid-card')).toMatchObject({
+      phases: ['sensor.grid_power_l1', 'sensor.grid_power_l2', 'sensor.grid_power_l3'],
+    });
   });
 
   it("draws the distribution of the energy dashboard's devices from the power sensor beside each statistic", async () => {

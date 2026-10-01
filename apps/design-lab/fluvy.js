@@ -43,6 +43,15 @@
       '<path d="M4 12a8 8 0 0 1 13.7-5.6"/><path d="M20 12a8 8 0 0 1-13.7 5.6"/><path d="M17.5 3v3.8h-3.8"/><path d="M6.5 21v-3.8h3.8"/>',
     ),
     bolt: svg('<path d="M13 3 5 13.5h6L11 21l8-10.5h-6Z"/>'),
+    tower: svg(
+      '<path d="M12 3 7.5 21"/><path d="M12 3l4.5 18"/><path d="M6 7.5h12"/><path d="M8.2 13h7.6"/><path d="M9.6 7.5 15 13"/><path d="M14.4 7.5 9 13"/><path d="M8.9 18.5 12 16l3.1 2.5"/>',
+    ),
+    generator: svg(
+      '<path d="M7 4h6l5 5v10.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19.5V5a1 1 0 0 1 1-1Z"/><path d="M9.5 4V2.5h3V4"/><path d="M9 11.5l6 5"/><path d="M15 11.5l-6 5"/>',
+    ),
+    swap: svg(
+      '<path d="M4 8h14"/><path d="M15 5l3 3-3 3"/><path d="M20 16H6"/><path d="M9 13l-3 3 3 3"/>',
+    ),
     speaker: svg(
       '<rect x="6" y="3" width="12" height="18" rx="3"/><circle cx="12" cy="14" r="3.2"/><circle cx="12" cy="7.5" r="1"/>',
     ),

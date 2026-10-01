@@ -27,11 +27,13 @@ const BUDGETS = {
   panel: 40_960,
   strategy: 24_576,
   wall: 16_384,
+  // the energy family: every energy card, the flow's drawing and motion, the model they share
+  energy: 65_536,
   editor: 8192,
   pages: 8192,
   activity: 32_768,
   history: 16_384,
-  lang: 14_336,
+  lang: 16_384,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

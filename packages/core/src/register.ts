@@ -14,8 +14,24 @@ export function registerCard(meta: CardMeta, element: CustomElementConstructor):
   if (!customElements.get(meta.tag)) customElements.define(meta.tag, element);
   // a card that knows its height at a 360 column says so here, for whoever lays cards out
   const { layoutHeight } = element as { layoutHeight?: unknown };
-  if (typeof layoutHeight === 'function')
-    declareHeight(meta.tag, layoutHeight as (config: LovelaceCardConfig) => number);
+  announceCard(
+    meta,
+    typeof layoutHeight === 'function'
+      ? (layoutHeight as (config: LovelaceCardConfig) => number)
+      : undefined,
+  );
+}
+
+/**
+ * A card whose element arrives with a chunk fetched at start (the energy family): its place in the card picker and
+ * its height now, its element when the chunk lands. Home Assistant keeps a card of a tag not yet defined hidden and
+ * builds it again the moment the tag is defined (`customElements.whenDefined`), so nothing is lost on the way.
+ */
+export function announceCard(
+  meta: CardMeta,
+  layoutHeight?: (config: LovelaceCardConfig) => number,
+): void {
+  if (layoutHeight) declareHeight(meta.tag, layoutHeight);
   const cards = (window.customCards ??= []);
   if (!cards.some((card) => card.type === meta.tag)) {
     const { tag, ...rest } = meta;

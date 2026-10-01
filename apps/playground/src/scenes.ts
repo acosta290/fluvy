@@ -1,4 +1,4 @@
-import type { LovelaceCardConfig } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import type { MockOptions, StateSeed } from './hass.js';
 
 /**
@@ -12,6 +12,11 @@ export interface FrameSpec {
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   readonly cards: ReadonlyArray<LovelaceCardConfig & { cols?: number }>;
+  /**
+   * The house as this frame's cards see it, when it is not the sheet's: another house's Energy dashboard, one with
+   * none, statistics that cannot be read. Keep what the cards key their caches on (the connection) stable.
+   */
+  readonly hass?: (hass: HomeAssistant) => HomeAssistant;
 }
 
 export interface SheetSpec {
@@ -28,6 +33,36 @@ export interface SheetSpec {
 }
 
 export const NOW = new Date(2026, 8, 17, 21, 47, 12);
+
+type Answer = (message: Record<string, unknown>) => unknown;
+
+/**
+ * Several sheets' canned answers as one. A message more than one sheet answers is asked of each: statistics are
+ * merged id by id (the first series with data kept — each sheet answers its own ids, and an empty one for the
+ * others), anything else is the first sheet's answer.
+ */
+export function mergeWs(
+  answers: ReadonlyArray<Readonly<Record<string, Answer>> | undefined>,
+): Record<string, Answer> {
+  const types = new Set(answers.flatMap((ws) => Object.keys(ws ?? {})));
+  return Object.fromEntries(
+    [...types].map((type) => {
+      const handlers = answers.flatMap((ws) => (ws?.[type] ? [ws[type]] : []));
+      if (handlers.length === 1) return [type, handlers[0] as Answer];
+      const merged: Answer = async (message) => {
+        const replies = await Promise.all(handlers.map((handler) => handler(message)));
+        if (type !== 'recorder/statistics_during_period')
+          return replies.find((reply) => reply !== undefined && reply !== null);
+        const out: Record<string, unknown[]> = {};
+        for (const reply of replies)
+          for (const [id, rows] of Object.entries((reply ?? {}) as Record<string, unknown[]>))
+            if (!out[id]?.length) out[id] = rows;
+        return out;
+      };
+      return [type, merged];
+    }),
+  );
+}
 
 const modules = import.meta.glob<{ sheet: SheetSpec }>('./sheets/*.ts', { eager: true });
 

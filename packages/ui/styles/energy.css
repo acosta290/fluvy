@@ -3,81 +3,6 @@
   width: 360px;
 }
 
-.ef-stage {
-  position: relative;
-  width: 320px;
-  height: 204px;
-  margin-top: 16px;
-}
-
-.ef-link {
-  fill: none;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-}
-
-.ef-link--solar {
-  stroke: var(--fluvy-state-energy-solar);
-}
-.ef-link--grid {
-  stroke: var(--fluvy-state-energy-grid);
-}
-.ef-link--battery {
-  stroke: var(--fluvy-state-energy-battery);
-}
-
-.ef-arrow {
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ef-arrow--solar {
-  stroke: var(--fluvy-state-energy-solar);
-}
-.ef-arrow--grid {
-  stroke: var(--fluvy-state-energy-grid);
-}
-.ef-arrow--battery {
-  stroke: var(--fluvy-state-energy-battery);
-}
-
-.ef-node {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-}
-
-.ef-node__text {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  width: 120px;
-  height: 36px;
-}
-
-.ef-node__text--house {
-  align-items: flex-end;
-  text-align: right; /* shares the content column's right edge with the badge */
-}
-
-.ef-node__label {
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fluvy-text-secondary);
-}
-
-.ef-node__value {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 20px;
-  font-variant-numeric: tabular-nums;
-}
-
 .ef-top__side {
   padding-bottom: 3px; /* puts the 20px value on the 40px value's baseline */
   text-align: right;
@@ -85,6 +10,41 @@
 
 .ef-top__side .fv-readout__value {
   justify-content: flex-end;
+}
+
+/* a value row too narrow for its side readout (half a phone's column): the side goes under the value, on the
+   column's start, 12 below */
+.ef-top.is-stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 12px;
+  height: auto;
+}
+
+.ef-top.is-stacked .ef-top__side {
+  padding-bottom: 0;
+  text-align: left;
+}
+
+.ef-top.is-stacked .ef-top__side .fv-readout__value {
+  justify-content: flex-start;
+}
+
+/* rows in a column too narrow for their circles: the circle goes and the words take the row (the card puts the
+   figure at the head of the second line), the bar under them, 8 under the second line where the row's own bar is */
+.ef-rows.is-bare .fv-row > .fv-ico,
+.ef-rows.is-bare .fv-row > .fv-row__value {
+  display: none;
+}
+
+.ef-rows.is-bare .fv-row + .fv-row::before {
+  left: 0;
+}
+
+.ef-rows.is-bare .fv-row--bar .fv-bar {
+  position: static;
+  margin-top: 8px;
 }
 
 .ef-cost {
@@ -140,6 +100,12 @@
 .ef-bar__fill--solar {
   background: var(--fluvy-state-energy-solar);
 }
+.ef-bar__fill--water {
+  background: var(--fluvy-state-energy-water);
+}
+.ef-bar__fill--gas {
+  background: var(--fluvy-state-energy-gas);
+}
 
 .ef-meter__note {
   font-size: 12px;
@@ -153,117 +119,972 @@
   margin-top: 16px;
 }
 
-/* flow styles beside the dashed legs: ribbons (a band as thick as its power) and the rail (one track, connectors join it) */
-.ef-band {
-  stroke-width: 1;
-  transition: opacity var(--fv-slow) var(--fv-ease);
+/* a narrow column: a row's name needs its circle's room (the flow's list does the same); the tree's levels step in
+   by 12 on a spine at the column's edge */
+.ef-rows--bare .fv-row > .fv-ico {
+  display: none;
 }
 
-.ef-band--solar {
-  fill: var(--fluvy-state-energy-solar-fill);
-  stroke: var(--fluvy-state-energy-solar-fill-border);
-}
-.ef-band--grid {
-  fill: var(--fluvy-state-energy-grid-fill);
-  stroke: var(--fluvy-state-energy-grid-fill-border);
-}
-.ef-band--battery {
-  fill: var(--fluvy-state-energy-battery-fill);
-  stroke: var(--fluvy-state-energy-battery-fill-border);
-}
-.ef-band--idle {
-  opacity: 0.45;
+.ef-rows--bare .fv-row + .fv-row::before,
+.ef-rows--bare .fv-row--bar .fv-bar {
+  left: 0;
 }
 
-.ef-rail {
+.ef-rows--bare .en-tree__kids {
+  margin-left: 0;
+  padding-left: 12px;
+}
+
+/* half a column: the figure leads the second line, and the name has the whole row */
+.ef-rows--stack .fv-row--bar > .fv-row__value {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Energy, 1.4: one colour rule. A lane is coloured by where its energy came from (the sun's surplus to the grid is
+   gold, the grid charging the battery is lilac); destinations — the house, every consumer — are ink; figures and
+   words are never coloured (the direction lives in the unit: "0.4 kW out"). A meter that cannot know where its energy
+   came from (a phase, a signed gauge) draws the grid's colour both ways.
+   ------------------------------------------------------------------------------------------------------------------ */
+
+.en-ink--solar {
+  --ink: var(--fluvy-state-energy-solar);
+}
+.en-ink--grid {
+  --ink: var(--fluvy-state-energy-grid);
+}
+.en-ink--battery {
+  --ink: var(--fluvy-state-energy-battery);
+}
+.en-ink--gas {
+  --ink: var(--fluvy-state-energy-gas);
+}
+.en-ink--water,
+.en-ink--vehicle {
+  --ink: var(--fluvy-state-energy-water);
+}
+.en-ink--accent {
+  --ink: var(--fluvy-accent);
+}
+.en-ink--home {
+  --ink: color-mix(in srgb, var(--fluvy-text) 62%, var(--fluvy-card));
+}
+
+/* ---------------------------------------------------------------------------------------------------- the flow */
+
+.en-stage {
+  position: relative;
+  margin-top: 16px;
+}
+
+.en-stage > svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+
+/* A lane: 6 px of its origin's colour at 40 % over the card, one body per direction (each stops 7 px before its
+   head); a flow that reverses crossfades its body, its head and its colour in 400 ms. At rest (nothing flows, or
+   below its threshold) the lane is at 50 % and its head at 35 %; nothing is taken away, so nothing reshuffles. */
+.en-flow {
+  --in: 1;
+  --out: 0;
+  --lane: 1;
+  --tip: 1;
+  transition: opacity 400ms var(--fv-ease);
+}
+
+.en-flow.is-out {
+  --in: 0;
+  --out: 1;
+}
+
+.en-flow.is-rest {
+  --lane: 0.5;
+  --tip: 0.35;
+}
+
+/* the grid's second lane: there only while it imports and exports at the same moment */
+.en-flow.is-hidden {
+  opacity: 0;
+}
+
+.en-body {
   fill: none;
-  stroke: var(--fluvy-page-alt);
+  stroke: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
   stroke-width: 6;
   stroke-linecap: round;
+  transition:
+    opacity 400ms var(--fv-ease),
+    stroke 400ms var(--fv-ease);
 }
 
-.ef-join {
+.en-body--in {
+  opacity: calc(var(--in) * var(--lane));
+}
+
+.en-body--out {
+  opacity: calc(var(--out) * var(--lane));
+}
+
+/* the arrowhead: solid, its corners rounded by its own 1.5 px stroke; its tip IS the flow's end */
+.en-head {
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  transition:
+    opacity 400ms var(--fv-ease),
+    fill 400ms var(--fv-ease),
+    stroke 400ms var(--fv-ease);
+}
+
+.en-head--in {
+  opacity: calc(var(--in) * var(--tip));
+}
+
+.en-head--out {
+  opacity: calc(var(--out) * var(--tip));
+}
+
+/* legs: a 2.5 px dashed lane with its small head */
+.en-flow--thin .en-body {
+  stroke-width: 2.5;
+  stroke-dasharray: 6 6;
+}
+
+/* an unreadable source: the unavailable idiom, a 1 px dashed hairline and no head */
+.en-hairline {
   fill: none;
+  stroke: var(--fluvy-border-strong, var(--fluvy-border));
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* where the grid → house lane crosses the sun → battery lane (the cross): a card-coloured bridge */
+.en-knockout {
+  fill: none;
+  stroke: var(--fluvy-card);
+  stroke-width: 12;
+  transition: opacity 400ms var(--fv-ease);
+}
+
+.en-knockout.is-hidden {
+  opacity: 0;
+}
+
+/* the rail: 2.5 px connectors; what comes in joins one track into the house */
+.en-rail {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 55%, var(--fluvy-card));
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: opacity var(--fv-slow) var(--fv-ease);
+  transition: opacity 400ms var(--fv-ease);
 }
 
-.ef-join--solar {
-  stroke: var(--fluvy-state-energy-solar);
-}
-.ef-join--grid {
-  stroke: var(--fluvy-state-energy-grid);
-}
-.ef-join--battery {
-  stroke: var(--fluvy-state-energy-battery);
-}
-.ef-join--idle {
-  opacity: 0.4;
+.en-rail.is-rest {
+  opacity: 0.5;
 }
 
-.ef-chev {
+/* the track into the house is a lane, the lanes' 40 % */
+.en-rail.is-track {
+  stroke: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+}
+
+.en-head.is-rest {
+  opacity: 0.35;
+}
+
+/* the house: a 44 neutral disc, its supply as 3 px arcs at r 26.5 in the sources' colours; the arcs slide to a new
+   mix in 700 ms (the one dash animation, declared) */
+.en-arc-track {
   fill: none;
-  stroke-width: 2;
+  stroke: var(--fluvy-page-alt, var(--fluvy-border));
+  stroke-width: 3;
+}
+
+/* in the dark the page's second surface sits a hair from the card: a track takes the hairline's ink to read */
+[data-mode='dark'] .en-arc-track,
+[data-mode='dark'] .en-score__track {
+  stroke: var(--fluvy-border);
+}
+
+[data-mode='dark'] .en-phase__bar,
+[data-mode='dark'] .ef-bar {
+  background: var(--fluvy-border);
+}
+
+.en-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
   stroke-linecap: round;
-  stroke-linejoin: round;
+  transition:
+    stroke-dasharray 700ms var(--fv-ease),
+    stroke-dashoffset 700ms var(--fv-ease);
 }
 
-.ef-chev--solar {
-  stroke: var(--fluvy-state-energy-solar);
-}
-.ef-chev--grid {
-  stroke: var(--fluvy-state-energy-grid);
-}
-.ef-chev--battery {
-  stroke: var(--fluvy-state-energy-battery);
-}
-.ef-chev--house {
-  stroke: var(--fluvy-text-secondary);
+.en-arc[data-empty] {
+  stroke-linecap: butt;
 }
 
-/* the flow card narrower than 240 px of content: no diagram, one row per source and one for the house */
-.ef-list {
+.en-arcs.is-dim {
+  opacity: 0.5;
+}
+
+/* the pulses: a comet — its head the lane's round cap in full ink, its tail fading into the lane — carried along the
+   lane by the compositor (transform and opacity, sampled once per lane) */
+.en-pulses {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms var(--fv-ease);
+}
+
+.en-pulses.is-on {
+  opacity: 1;
+}
+
+.en-comet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 6px;
+  border-radius: 3px;
+  transform-origin: 23px 3px;
+  background: linear-gradient(to right, transparent, var(--ink) 85%);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.en-comet--thin {
+  width: 16px;
+  height: 2.5px;
+  border-radius: 1.25px;
+  transform-origin: 14.75px 1.25px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .en-pulses {
+    display: none;
+  }
+}
+
+/* a node: a 44 circle (what flows' colour, neutral at rest) */
+.en-node {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+}
+
+.en-node .fv-ico {
+  transition:
+    background-color 200ms var(--fv-ease),
+    color 200ms var(--fv-ease);
+}
+
+/* a source that cannot be read: a dashed ring, the icon quiet */
+.en-node.is-outage .fv-ico {
+  background: transparent;
+  box-shadow: none;
+  outline: 1.5px dashed var(--fluvy-text-secondary);
+  outline-offset: -1.5px;
+}
+
+.en-place {
+  position: absolute;
+}
+
+/* a node's words: LABEL (11/600 caps) · value 16/600 with its unit and direction 12/600 in the secondary ink · a
+   second value for the other direction; lines 16 · 20 · 20, the block centred on its circle */
+.en-words {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.en-words--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.en-words--center {
+  align-items: center;
+  text-align: center;
+}
+
+.en-words__label {
+  height: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-words__value {
+  height: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+  transition: color 200ms var(--fv-ease);
+}
+
+.en-words__unit {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-words__dir {
+  height: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-words.is-dim .en-words__value {
+  color: var(--fluvy-text-secondary);
+}
+
+/* the flow too narrow for lanes: one row per node */
+.en-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 16px;
 }
 
-.ef-list__row {
+.en-list__row {
   display: flex;
-  align-items: center;
   gap: 12px;
-  height: 44px;
+  align-items: center;
+  min-height: 52px;
 }
 
-.ef-list__text {
-  position: static;
-  flex: 1 1 auto;
-  width: auto;
+.en-list__row .fv-ico {
+  flex: 0 0 44px;
+}
+
+.en-list__row .en-words {
   min-width: 0;
 }
 
-/* a reading is one line: "3.2 kW" never breaks between the figure and its unit */
-.ef-list__text .ef-node__value {
+/* a column below Home Assistant's own minimum: no circle, the figures keep the width */
+.en-list__row.is-bare {
+  min-height: 0;
+}
+
+.en-period {
+  margin-top: 16px;
+}
+
+/* an empty card's panel keeps the body's rhythm: 16 under the head, as any body does */
+.ef-card > .fv-empty-state,
+.en-card > .fv-empty-state {
+  margin-top: 16px;
+}
+
+/* -------------------------------------------------------------------- bars and legends (Distribution's idiom) */
+
+.en-bar12 {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+}
+
+.en-bar12 > span {
+  min-width: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: flex-grow 700ms var(--fv-ease);
+}
+
+.en-bar12 > span:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.en-bar12 > span:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.en-legend {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin-top: 12px;
+}
+
+.en-legend__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.en-legend__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* a legend whose names are up to 2 px wider than their columns lets them overhang (they are centred, their
+     neighbours narrower): `--en-slack` is set by the legend that measured it */
+  max-width: calc(100% + var(--en-slack, 0px));
+  height: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-legend__text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.en-legend__value {
+  height: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fluvy-text);
+}
+
+.en-sq {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+
+.en-unit {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fluvy-text-secondary);
+}
+
+/* a block: LABEL … total, then its bar and legend */
+.en-block {
+  margin-top: 20px;
+}
+
+.en-block__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 20px;
+  margin-bottom: 8px;
+}
+
+.en-block__title {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-block__total {
+  height: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+/* ------------------------------------------------------------------- phases (a meter: the grid's colour both ways) */
+
+.en-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.en-phase {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.en-phase__name {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--fluvy-text);
+}
+
+.en-phase__name small {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-phase__bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fluvy-page-alt, var(--fluvy-border));
+}
+
+.en-phase__zero {
+  position: absolute;
+  left: calc(50% - 1px);
+  top: -4px;
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+  background: var(--fluvy-text-secondary);
+}
+
+.en-phase__fill {
+  position: absolute;
+  top: 0;
+  height: 8px;
+  background: var(--fluvy-state-energy-grid);
+  transition: width 700ms var(--fv-ease);
+}
+
+.en-phase__fill--out {
+  right: 50%;
+  border-radius: 4px 0 0 4px;
+}
+
+.en-phase__fill--in {
+  left: 50%;
+  border-radius: 0 4px 4px 0;
+}
+
+.en-phase__value {
+  text-align: right;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fluvy-text);
+}
+
+.en-phase-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 108px 0 52px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+/* the Grid card: In / Out beside the big value, on its baselines */
+.en-top--end {
+  align-items: last baseline;
+}
+
+.en-inout {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 12px;
+  align-items: baseline;
+  justify-items: end;
+}
+
+.en-inout span {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-inout b {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fluvy-text);
+}
+
+/* ------------------------------------------------------------------------------ rulers: a mark at a value */
+
+.en-mark {
+  position: relative;
+}
+
+.en-mark::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--at) - 1px);
+  width: 2px;
+  height: 44px;
+  border-radius: 1px;
+  background: var(--fluvy-text);
+  pointer-events: none;
+}
+
+/* the marker over the mark: the mark goes under it (its word under the ruler still says where it is) */
+.en-mark.is-covered::after {
+  opacity: 0;
+}
+
+/* the labels under a ruler with a mark: each a box of its measured width — the ends flush with the ruler's, the
+   others centred on their value and kept inside it; a number the mark's word would meet gives way */
+.en-mark-labels .en-mark-label {
+  position: absolute;
+  top: 0;
+  width: auto;
+  min-width: 0;
+  margin-left: 0;
+  transform: none;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------------------------------- sankey */
+
+.en-sankey {
+  position: relative;
+  margin-top: 16px;
+}
+
+.en-sankey > svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.en-ribbon {
+  fill: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+}
+
+/* the house's ribbons: quieter than the sources' */
+.en-ribbon.en-ink--home {
+  fill: color-mix(in srgb, var(--ink) 24%, var(--fluvy-card));
+}
+
+.en-node-bar {
+  fill: var(--ink);
+}
+
+.en-node-bar.is-dashed {
+  fill: none;
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+/* the house's bar continued under its words: a quiet stem its devices' ribbons leave from */
+.en-node-bar.is-stem {
+  opacity: 0.5;
+}
+
+.en-sk-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
   white-space: nowrap;
 }
 
-/* the ribbons' house: a 56 circle, so three bands keep their shares */
-.ef-node--big {
-  width: 56px;
-  height: 56px;
+.en-sk-label.is-end {
+  align-items: flex-end;
+  text-align: right;
 }
 
-.ef-node--big .fv-ico {
-  flex-basis: 56px;
-  width: 56px;
-  height: 56px;
+.en-sk-name {
+  height: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
 }
 
-/* its glyph one step up (24, the circle's proportion), which also keeps it on the 4 px grid inside the 56 */
-.ef-node--big .fv-ico svg {
-  width: 24px;
-  height: 24px;
+.en-sk-value {
+  height: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+/* ----------------------------------------------------------------------------------------------------- score */
+
+.en-scores {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.en-score {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.en-score svg {
+  display: block;
+}
+
+.en-score__track {
+  fill: none;
+  stroke: var(--fluvy-page-alt, var(--fluvy-border));
+  stroke-width: 6;
+}
+
+.en-score__arc {
+  fill: none;
+  stroke: var(--fluvy-accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray 700ms var(--fv-ease);
+}
+
+.en-score__value {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+.en-score__label {
+  width: 96px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------------------------------- charts */
+
+.en-chart {
+  position: relative;
+  margin-top: 16px;
+}
+
+.en-chart > svg {
+  display: block;
+}
+
+.en-area {
+  fill: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+}
+
+.en-area-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.en-area.is-out,
+.en-area-line.is-out {
+  opacity: 0.6;
+}
+
+.en-zero {
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.en-chart__tag {
+  position: absolute;
+  left: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-cursor {
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.en-cursor-dot {
+  fill: var(--fluvy-card);
+  stroke: var(--fluvy-text);
+  stroke-width: 2;
+}
+
+.en-bar {
+  fill: var(--ink);
+}
+
+.en-bar.is-second {
+  fill: color-mix(in srgb, var(--ink) 45%, var(--fluvy-card));
+}
+
+/* an array's step on the ink's ramp, toward the card: 100 · 45 (the approved pair) · 72 · 30 — alternating dark and
+   light, so two neighbours in a stack always differ by a quarter or more */
+.en-bar.is-third {
+  fill: color-mix(in srgb, var(--ink) 72%, var(--fluvy-card));
+}
+
+.en-bar.is-fourth {
+  fill: color-mix(in srgb, var(--ink) 30%, var(--fluvy-card));
+}
+
+/* the arrays' forecast: hollow, so no step of the ramp is mistaken for hours still to come */
+.en-bar.is-forecast {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, var(--fluvy-card));
+  stroke-width: 1.5;
+}
+
+.en-bar.is-future {
+  opacity: 0.25;
+}
+
+.en-sq.is-second {
+  background: color-mix(in srgb, var(--ink) 45%, var(--fluvy-card));
+}
+
+.en-sq.is-third {
+  background: color-mix(in srgb, var(--ink) 72%, var(--fluvy-card));
+}
+
+.en-sq.is-fourth {
+  background: color-mix(in srgb, var(--ink) 30%, var(--fluvy-card));
+}
+
+.en-sq.is-out {
+  opacity: 0.6;
+}
+
+/* -------------------------------------------------------------------------------------------- nested list */
+
+.en-tree__kids {
+  position: relative;
+  margin-left: 20px;
+  padding-left: 20px;
+}
+
+/* the spine: 2 px, centred on the parent's circle (x 22) */
+.en-tree__kids::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--fluvy-border);
+}
+
+/* a row of the house's own consumption: ink bars on one scale */
+.en-bar--ink {
+  background: color-mix(in srgb, var(--fluvy-text) 62%, var(--fluvy-card));
+}
+
+/* ------------------------------------------------------------------------------------------- signed gauge */
+
+.en-gauge {
+  position: relative;
+  height: 220px;
+  margin-top: 8px;
+}
+
+.en-gauge > svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.en-tick {
+  stroke: var(--fluvy-border-strong, var(--fluvy-border));
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 200ms var(--fv-ease);
+}
+
+.en-tick.is-lit {
+  stroke: var(--fluvy-state-energy-grid);
+}
+
+.en-gauge__label {
+  position: absolute;
+  top: 88px;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-gauge__value {
+  position: absolute;
+  top: 104px;
+  width: 100%;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 44px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+.en-gauge__value small {
+  margin-left: 3px;
+  font-size: 16px;
+  color: var(--fluvy-text-secondary);
+}
+
+.en-gauge__end,
+.en-gauge__zero {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fluvy-text-secondary);
 }

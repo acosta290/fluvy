@@ -98,8 +98,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - **Tiles squeezed narrow (2026-09-19):** a large tile whose inner width cannot hold its icon circle, 8 and the switch (under 132 px) folds the switch into the circle (the circle becomes the switch, as Home Assistant's own tile's icon is); a sensor's value that would not fit beside the circle goes to the state line; a foot keeps one readout under 120 px of inner width and the ruler is drawn to the inner width. A group of tiles lays out fewer columns when its width cannot hold the ones asked (large 100, compact 128, mini 64 at least); a lone compact tile under 128 gives its name the circle's room, a mini tile under 60 draws a 36 circle. A thermostat's "Target · Now 20.8°" label keeps one line: the "· now" part goes when it would not fit beside the stepper.
 - **Names that must read:** two compact tiles side by side under 200 px step the name to 14 px; a large tile's name that would end in an ellipsis steps to 14 px, and a large tile with nothing under its state line lets the name take two balanced lines; a scenes card goes one tile a row when a name would not read in two lines of a half tile; a pill sized to its text is padded on both sides from the measured text, so its label never ends in an ellipsis; in a list row a state in words wraps between its words once the name is down to its third, figures never wrap.
 - **Customisation principle (user, 2026-09-18):** every card exposes what to show (section toggles such as `show_fan`), which items appear and in which order (subset lists such as `modes: [off, heat, cool]`), and at least two more layouts through `variant`. Chip rows fill the row by default and are content-sized on request (`preset_style`, `fan_style`, `suction_style: chips`). Editors show what the card does by default (`formEditor` / `listsEditor` with defaults): the dial, the mode tiles, every mode the device offers; a default the user leaves as it was is never written into the config. The thermostat is the reference: `variant: dial | compact | ruler`, `modes`, `modes_style: tiles | chips | full`, `preset_style`, `fan_style`.
-- Energy flow, three drawings (`flow_style`, chosen 2026-09-18), all leaving from the row centres with the house facing the middle of the sources (44 circle, label under it): **ribbons** (default) — a band per source, 14 px at least (the 6 px dot with its 2 px halo keeps 2 px of band on either side), 24 at most, the rest of the house's 44 px shared by power; pastel fill with a hairline edge, dots on the centreline, an 8 px chevron with 3 px of margin at its destination (the house for imports, the source's tail for exports); **rail** — a 2.5 px connector per source runs straight and turns with two 12 px arcs just before a 48 px shared track (6 px, page-alt) into the house, every source's dots share the track, one neutral chevron into the house, export chevrons at the tails; **legs** — the approved dashed curves with arrowheads: two legs mirror each other at ∓40°, three meet the house at −40° / 0° / +40°.
-- Energy flow: the nodes sit one pitch (80) under the head's icon centre, so head, Solar and Grid are evenly spaced.
+- Energy: see § Energy (1.4) below — the flow, its motion and the companion cards.
 - Charts are scrubbable: a mouse over a curve or a bar strip reads the value under it (a finger while pressing; a vertical swipe still scrolls) — the dot, the dashed cursor and the bubble follow, the bubble adds the time ("3.1 kW · 10:15"), the card's big readout shows the scrubbed figure with the time as its label; on leaving, everything returns to now.
 - The colour-temperature ruler tints its ticks with a faint warm → cool gradient (amber → cool grey-blue, opacity 0.85) and the knob's dot takes the colour under it; the ring keeps the tone. `temperature_tint: false` gives the neutral ticks of the brightness ruler.
 - A row that grows (a wrapped sub, a multi-line to-do) keeps its icon, check and chevron centred on the whole text block (`align-items: center`, never `flex-start` with padding); a control beside a large figure (stepper, play/pause) sits on the figure's 44 line box (`align-items: flex-end` on the row), which centres it on the figure's ink. A row value never wraps; the sub gives way (ellipsis).
@@ -194,6 +193,119 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   a title) | "Import a palette", and for an administrator one row — save (accent circle) or remove (its title as the
   sub) — or the reason there is no room.
 
+## Energy (1.4, approved 2026-09-30 after four judge rounds)
+
+**One colour rule.** A lane is coloured by where its energy came from: the sun's surplus going to the grid is gold,
+the grid charging a battery is lilac, a battery selling to the grid is green. Destinations — the house, its
+consumers — are ink (`--fluvy-text` at 62 % over the card). Figures and words are never coloured; the direction lives
+in the unit slot, in the secondary ink ("0.4 kW out", "0.6 kW charging"). *In / out* is said of the grid only; a
+battery or a car is *charging / discharging* (*charged / discharged* over a period, in kWh). A meter that cannot know
+where its energy came from (a phase, a signed gauge) uses the grid's colour both ways. Head icons use the accent (the
+lilac `energy-home` tone no longer marks a head).
+
+**The house.** A 44 neutral disc; its supply as 3 px arcs at r 26.5 (outer edge 28), one per origin, in the order
+sun · battery · generator · car · grid, 4 px apart; they slide to a new mix in 700 ms (the one dash animation,
+declared). Nothing is estimated: when a source cannot be read and the house has no meter of its own, the house reads
+"—" and the arcs rest.
+
+**Lanes and arrowheads.** A lane is 6 px, its origin's ink at 40 % over the card, round caps. Its arrowhead is a
+solid triangle 9 long and 11 wide, its corners rounded by its own 1.5 px stroke (the vertex at −0.75 so the tip is
+the true end): the head's tip IS the lane's end, 6 px off what it reaches, and the lane stops 7 px before the tip
+(split by de Casteljau), so its round cap ends inside the head and nothing shows past it. Legs and rail: a 2.5 px
+lane with a 6 × 7 head, trimmed 5. A lane that reverses (a battery, a car, the grid) draws a body and a head for each
+way and crossfades them — and its colour — in 400 ms.
+
+**States.** At rest (below the source's threshold, 10 W by default): the lane at 50 %, its head at 35 %, no pulse,
+the node's circle neutral, its figure in the secondary ink. Stale (no reading for 10 minutes): everything rests, the
+arcs at 50 %, the sub says "Updated 12 min ago", no badge. Unreadable: a 1 px dashed hairline with no head, the node
+a dashed ring, its figure "—", the sub "Grid unavailable since 19:47", the badge "Unavailable". Nothing is taken
+away in any state, so nothing reshuffles.
+
+**Rows (the default).** Sources stacked on the left, one pitch (80) apart from TOP 42 (one pitch under the head's
+icon centre); words centred on their circle (lines 16 · 20 · 20); every lane leaves 12 px after the widest words of
+the column (measured) and meets the house's ring (34 = 28 + 6) at a slot: 20 px of arc between neighbours (lane 6 +
+head 8 + 6 clear); a grid that can import and export at once (read per phase, or by two sensors) is a pair of
+parallel lanes 16 px apart, its second lane shown only while it does both; the window is 90° above the house's left
+point and 48° below it (its words hang there); when the slots cannot fit, a pair shares one contact; a pair level
+with the house arrives level at ±8. A lane shorter than 56 px is no lane: the card lists its nodes (the direction
+drops to its own line only when its line would not fit, and then every line of that node does; a label keeps its
+first segment — "Battery · 62 %" → "Battery"); below Home Assistant's own minimum the rows drop their circles.
+Consumers (≥ 560 of content) mirror the sources on the right, the house in the middle, their lanes in ink; narrower,
+they are rows with ink bars, "64 % of the house", and the rest of the house as its own row.
+
+**Cross.** Home Assistant's arrangement: sun above, grid left, house right, battery below, mirror-symmetric about the
+middle of the grid and the house; diagonals leave at ±45° and arrive radially with one pull (44). Each source's lane
+into the house is always there (at rest when idle); the lanes between sources (sun → grid, sun → battery,
+grid ↔ battery) appear only while they carry energy. The grid → house lane bridges the sun → battery lane: it is
+drawn over it with a 12 px card-coloured edge, and its pulses travel over the other's.
+
+**Motion.** Pulses are comets (a 26 × 6 capsule, its head the lane's cap in full ink, its tail fading into the lane)
+carried by the Web Animations API — transform and opacity only, the lane sampled once — at a constant pace in px/s:
+24 → 72 px/s as the flow's share of the house's peak (`max_power`, 6 kW by default; square root, so a trickle still
+moves), one pulse under 1 kW, two under 3 kW, three above, one more per 140 px of lane, eight on a card at most
+(the strongest flows first). A new reading retunes the pace without moving a pulse (`updatePlaybackRate`); a lane
+that changes its way or colour fades its pulses out and the new ones in (400 ms). Off screen and in a hidden tab
+every pulse pauses. `motion: calm` keeps one slower pulse a lane; `off` and reduced motion keep none (the lanes and
+heads stay). A figure animates only when its text changes.
+
+**Legends and blocks.** Distribution's idiom: a 12 px bar of segments with 2 px gaps and 6 px end radii; 12 × 12
+squares, the name 14/500 and the figure 16/600 under it, in equal centred columns — measured: when a name does not
+fit its column the row folds (four into two by two, three or fewer into one a line). A block is its LABEL (11/600
+caps) and total on one 20 px line, the bar 8 under, the legend 12 under that.
+
+**Phases.** A row per phase: its name (and voltage) in 40, a bar centred on zero in the grid's colour both ways
+(out to the left, in to the right, a 2 × 16 zero mark), the figure in 96 on the right; the axis "← out · in →" under
+them.
+
+**Sankey.** One px-per-kWh scale for every bar and ribbon (true proportions); rows Grid · Battery · Solar → House ·
+Charged · Exported, so no ribbon crosses another; the house's own ribbons leave 56 px under its bar, under its words,
+at 24 %; labels packed by their measured width (at the bar's start, else its end, else a second tier), 16 px apart.
+
+**Glyphs.** `tower` is the grid in every state (the head keeps the bolt), `generator` a fuel can, `swap` two opposed
+arrows (the balance), `oven`.
+
+**Honest figures (2026-10-01).** A group's state of charge is weighted by capacity, so batteries that do not all state
+theirs have no group charge ("—", the ruler asleep), and a group whose batteries go opposite ways has no "full in"
+or "empty in": at those powers it never gets there. A row of a meter that cannot be read at all is the unavailable
+row (the dashed ring, "Unavailable" opening its line); a state after "·" is lower case. A signed meter that is not
+power (a temperature) has no default badge: "Active" is not a state of −4.2 °C. One precision runs through a row of
+figures ("1.0 kW out" beside "2.2 kW out").
+
+**Modes.** An option Home Assistant does not translate is worded, never shown as an id ("pv" → "PV", "minpv" →
+"Min PV"); a mode with no meaning to say puts its name on the tile's value line, so the values share a baseline. A
+chip chosen in half a column takes the same tone as its tile (the sun's for a solar mode).
+
+**Stacks of arrays.** Four steps of the ink (100 · 45 · 72 · 30); the forecast of a stack is hollow (a 1.5 px outline
+at 45 %), so no array is mistaken for hours to come. A legend of arrays folds by the legend rule, names and figures
+measured.
+
+**Empty.** An energy card's empty panel sits 16 under its head and says what is missing in one line ("No batteries
+yet"), with how to fix it as the hint under it ("Add them here, or give the Energy dashboard its batteries").
+
+## Room lights (1.4)
+
+A room's lights on one card. **Row** (the default): the head's anatomy — the room's own icon (the area's, else `home`:
+never a light's glyph), its name and "2 of 3 on · 63 %" — with a 44 round a light at its end, 8 apart. The room's
+switch is a button under the whole card (a tap: every light off when one is on, else every light on, in one call; the
+card gives under the finger, `scale` 0.985 — its entrance holds `transform`); the head lets a tap through to it, the
+rounds and the gaps between them take their own — a round's hit reaches 4 px into the gaps, the rest of a gap is dead,
+so a near miss never switches the room. The card is a group of the room's button and a switch a light (never a switch
+inside a button). A lit round takes its colour's fill and ink, as a chosen chip or an on tile — its bulb's colour when
+the bulb has one (hs, rgb, xy: derived as an accent family, so its ink holds 3:1), else the palette's light — and a 2
+px ring 4 inside its edge (on its fill, in its ink) to its level from the top, all the way round for a light that does
+not dim or when the level is not shown: every lit round has a ring, no off one has. The ring follows a new level in
+`--fv-base` (its one animation, declared). An off round is the neutral circle; an unreadable one the dashed ring,
+which takes no tap and gives nothing under the finger (a hold still opens its details). Rounds that would leave the
+name less than 96 (its own width when shorter) take their own line, 16 below the head, on whole pixels: the first
+under the head's icon, the last on the content's edge, six a line at most, the lines balanced and sharing one set of
+columns; the icon circle gives way first. **Chips**: the room's switch in the head (its hit is 56: the head keeps that
+room), a filled chip a light (its glyph and name, chosen in its colour; an unreadable one the dashed ring), columns as
+the names hold whole (three: two and one). **Tiles**: the room card's inner tiles (84), two a row; an odd last one
+takes the row; one a row where a tile would be under 120, and under 136 a tile gives its name the icon's room.
+`show_brightness` puts one ruler for the room under the head (16 + 44 + 20; the 16 above it is the ruler's own, never
+the room's): the average of what is on; a change sets what is on (everything when nothing is). An empty card's panel
+sits 16 under its head.
+
 ## Readouts and text
 
 - Readout = 11/600 uppercase label (0.06 em) + tabular value + unit on the baseline; a unit has its own line box (`line-height: 1`) so it never grows the value's box. Sizes: xs 16/20 (tile foot), s 20/24, m 24/28, l 40/44.
@@ -204,8 +316,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - Compact family (tile + row): value `22°`, sub `Heating · 21.1°`. Dial family: value `21.5 °C`, sub `Now 20.8°`.
 - Segments after `·` are lowercase unless proper nouns. Never ellipsis on a value.
 - Chart bubbles: dark pill, tail on the cursor; charts reserve 44 px headroom so the bubble never touches the curve; the cursor sits at "now" and the fill stops there; the axis is the full 24 h (`00:00 … 24:00`) with labels placed by value (`axis()`), first left-aligned, last right-aligned — same rule as ruler labels.
-- Legends without dots unless each dot is a plotted series. Empty states: a 44 neutral ring on the card fill + one line of secondary text, centred in a 120 page-filled panel.
-- Flow diagrams: links meet the destination ring at three separate contact points 6 px off the ring (−40° / 0° / +40°), so every arrowhead stays visible; all tails start on one x.
+- Legends without dots unless each dot is a plotted series. Empty states: a 44 neutral ring on the card fill + one line of secondary text, centred in a 120 page-filled panel; the way out, when there is one, is the hint under it (it may wrap). An unavailable icon circle is the dashed ring alone, unfilled in every palette.
+- Flow diagrams: see § Energy (1.4) — contacts on the house are slots 20 px of arc apart, every arrowhead ends its lane.
 
 ## Colour — one theme, palettes chosen live
 
@@ -277,7 +389,7 @@ lowest reading, and nothing is read past the end of the record.)*
 
 - On/active = filled pastel surface with dark ink. Never a tinted icon on white.
 - Warning is an amber (`--fluvy-warning`, hue 58, chroma ×1.15), distinct from the gold accent; used for open sensors, unreachable devices, and the `⚠` glyph, which is reserved for alerts.
-- Energy tones: solar gold, grid lilac, battery/water teal, house accent. Flow links carry arrowheads at the destination; battery link runs house → battery while charging.
+- Energy tones: solar gold, grid lilac, battery green, generator the gas tone, a car the vehicle teal; destinations (the house, its consumers) are ink. See § Energy (1.4).
 - Dark mode is re-derived, not inverted; glow on filled ticks only; no neon; no backdrop blur.
 
 ## View backgrounds

@@ -1,7 +1,15 @@
-import { fetchHistory, type HomeAssistant, type StatisticsRow } from '@fluvy/core';
+import {
+  fetchHistory,
+  houseZone,
+  wallClock,
+  type HomeAssistant,
+  type StatisticsRow,
+} from '@fluvy/core';
+import { houseMidnight } from '../energy-model/period.js';
 
 /**
- * One day of a growing meter, hour by hour.
+ * One day of a growing meter, hour by hour, on the house's clock: "today" begins at the midnight Home Assistant
+ * shows (its zone when the user reads the server's time), whatever zone the browser is in.
  *
  * Long-term statistics first. They are read here rather than through core's `fetchStatistics`,
  * which returns the rows as a bare list: an inverter that sleeps at night leaves no row for those
@@ -21,8 +29,15 @@ export interface DayRecord {
 
 const ENERGY_UNITS = new Set(['Wh', 'kWh', 'MWh', 'GJ']);
 
-export const startOfDay = (now: Date): Date =>
-  new Date(now.getFullYear(), now.getMonth(), now.getDate());
+/** The hour of the house's day an instant falls in (0–23). */
+export const houseHour = (hass: HomeAssistant | undefined, at: Date): number =>
+  wallClock(at, houseZone(hass)).hour;
+
+/** The house's date of an instant, as a key ("2026-9-17"): a new one is a new day to read. */
+export function houseDay(hass: HomeAssistant | undefined, at: Date): string {
+  const wall = wallClock(at, houseZone(hass));
+  return `${wall.year}-${wall.month}-${wall.day}`;
+}
 
 const finite = (raw: unknown): number | null =>
   typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
@@ -33,7 +48,7 @@ async function fromStatistics(
   unit: string,
   now: Date,
 ): Promise<DayRecord | null> {
-  const midnight = startOfDay(now).getTime();
+  const midnight = houseMidnight(hass, now).getTime();
   // one hour early: the last row of yesterday carries the reading the first hour of today starts from
   const result = await hass.callWS<Record<string, StatisticsRow[]>>({
     type: 'recorder/statistics_during_period',
@@ -52,7 +67,7 @@ async function fromStatistics(
     const start = finite(row.start);
     if (start === null) continue;
     if (start >= midnight) {
-      const hour = new Date(start).getHours();
+      const hour = houseHour(hass, new Date(start));
       const change = finite(row.change);
       if (change !== null) hours[hour] = (hours[hour] ?? 0) + Math.max(0, change); // a 25-hour day folds its repeated hour
     }
@@ -66,7 +81,7 @@ async function fromHistory(
   entityId: string,
   now: Date,
 ): Promise<DayRecord | null> {
-  const midnight = startOfDay(now).getTime();
+  const midnight = houseMidnight(hass, now).getTime();
   const elapsed = Math.max(BUCKET, now.getTime() - midnight);
   const count = Math.max(1, Math.round(elapsed / BUCKET));
   const series = await fetchHistory(hass, entityId, elapsed / HOUR, count);
@@ -97,4 +112,48 @@ export async function loadDay(
 ): Promise<DayRecord | null> {
   const recorded = await fromStatistics(hass, entityId, unit, now).catch(() => null);
   return recorded ?? fromHistory(hass, entityId, now);
+}
+
+/**
+ * A power sensor's day, in Wh per hour of the house's day: each compiled hour's mean power (the recorder's
+ * time-weighted mean) over its hour, and the hour in progress from the five-minute statistics compiled since.
+ * `null` without statistics: a power sensor's history is not integrated here.
+ */
+export async function loadPowerDay(
+  hass: HomeAssistant,
+  entityId: string,
+  now: Date,
+): Promise<DayRecord | null> {
+  const midnight = houseMidnight(hass, now).getTime();
+  const ask = (period: 'hour' | '5minute', from: number) =>
+    hass.callWS<Record<string, StatisticsRow[]>>({
+      type: 'recorder/statistics_during_period',
+      start_time: new Date(from).toISOString(),
+      end_time: now.toISOString(),
+      statistic_ids: [entityId],
+      period,
+      types: ['mean'],
+      units: { power: 'W' },
+    });
+  const hourly = (await ask('hour', midnight))[entityId] ?? [];
+  const lastEnd = hourly.reduce(
+    (end, row) => Math.max(end, finite(row.end) ?? (finite(row.start) ?? 0) + HOUR),
+    midnight,
+  );
+  const fine = (await ask('5minute', lastEnd))[entityId] ?? [];
+  if (!hourly.length && !fine.length) return null;
+  const hours = new Array<number | null>(24).fill(null);
+  const add = (rows: readonly StatisticsRow[], length: number): void => {
+    for (const row of rows) {
+      const start = finite(row.start);
+      const mean = finite(row.mean);
+      if (start === null || mean === null || start < midnight) continue;
+      const span = ((finite(row.end) ?? start + length) - start) / HOUR;
+      const hour = houseHour(hass, new Date(start));
+      hours[hour] = (hours[hour] ?? 0) + Math.max(0, mean) * span;
+    }
+  };
+  add(hourly, HOUR);
+  add(fine, BUCKET);
+  return { hours, baseline: null };
 }

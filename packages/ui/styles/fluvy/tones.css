@@ -271,6 +271,24 @@
   background: var(--fluvy-state-energy-gas);
 }
 
+.fv-tone--vehicle,
+.fv-ico--vehicle,
+.fv-badge--vehicle,
+.fv-option.is-active.fv-option--vehicle,
+.fv-tile--vehicle.is-on,
+.fv-ruler--vehicle,
+.fv-dial--vehicle,
+.fv-knob--vehicle,
+.fv-switch--vehicle {
+  --tone-ink: var(--fluvy-state-energy-water);
+  --tone-fill: var(--fluvy-state-energy-water-fill);
+  --tone-border: var(--fluvy-state-energy-water-fill-border);
+  --tone-on: var(--fluvy-state-energy-water-on-fill);
+}
+.fv-bar--vehicle {
+  background: var(--fluvy-state-energy-water);
+}
+
 .fv-tone--neutral,
 .fv-ico--neutral,
 .fv-badge--neutral,

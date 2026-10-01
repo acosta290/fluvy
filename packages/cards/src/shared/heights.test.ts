@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { declaredHeights, layoutHeightOf, type LovelaceCardConfig } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
-import { CATALOGUE } from '../index.js';
+import { catalogue } from '../index.js';
+
+const CATALOGUE = await catalogue();
 
 type CardClass = {
   layoutHeight?: (config: LovelaceCardConfig) => number;

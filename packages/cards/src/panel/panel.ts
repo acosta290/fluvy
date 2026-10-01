@@ -27,6 +27,7 @@ import { html, LitElement, nothing, type PropertyValues, type TemplateResult } f
 import { keyed } from 'lit/directives/keyed.js';
 
 import { houseEnergy } from '../strategy/home-strategy.js';
+import { energySources, hasSources } from '../strategy/layout.js';
 
 import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.js';
 import { knownPalettes, matchOf } from './palettes.js';
@@ -547,19 +548,11 @@ export class FluvyPanel extends LitElement {
     if (!hass || this.meters !== undefined) return;
     this.meters = null;
     const roles = await houseEnergy(hass).catch(() => undefined);
-    if (!roles || (!roles.solarPower && !roles.gridPower)) return;
+    if (!roles || !hasSources(roles)) return;
+    const sources = energySources(roles);
     this.meters = {
-      ...(roles.solarPower ? { solar_power: roles.solarPower } : {}),
-      ...(roles.gridPower
-        ? { grid_power: roles.gridPower, ...(roles.gridInvert ? { grid_invert: true } : {}) }
-        : {}),
-      ...(roles.batteryPower
-        ? {
-            battery_power: roles.batteryPower,
-            ...(roles.batteryInvert ? { battery_invert: true } : {}),
-          }
-        : {}),
-      ...(roles.homePower ? { home_power: roles.homePower } : {}),
+      ...(sources.length ? { sources } : {}),
+      ...(roles.homePower ? { home: roles.homePower } : {}),
     };
   }
 
@@ -924,7 +917,7 @@ export class FluvyPanel extends LitElement {
       typeof strategy[key] === 'string' ? (strategy[key] as string) : fallback;
     const size = word('tile_size', 'large') === 'compact' ? 'compact' : 'large';
     const variant = word('thermostat_variant', 'dial');
-    const flow = word('flow_style', 'ribbons');
+    const flow = word('flow_style', 'stream');
     const room = word('room_variant', 'tile');
     switch (template.id) {
       case 'rooms':

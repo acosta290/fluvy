@@ -164,3 +164,156 @@
   height: auto;
   margin-top: 16px;
 }
+
+/* ---------- room lights ---------- */
+
+/* the row: the room's switch is a button under the whole card; the head lets a tap through to it, the rounds take
+   their own (and the gaps between them: a near miss never switches the room) */
+.lt-card--row {
+  position: relative;
+  transition: scale var(--fv-fast) var(--fv-ease);
+}
+
+/* `scale`: the card's entrance holds `transform` */
+.lt-card--row:has(> .lt-room:active) {
+  scale: 0.985;
+}
+
+/* a card whose lights cannot be read keeps its own controls reachable: the room's action, a round's details */
+.lt-card--row.is-unavailable .lt-room,
+.lt-card--row.is-unavailable .lt-bulb {
+  pointer-events: auto;
+}
+
+.lt-room {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.lt-room:active {
+  transform: none;
+}
+
+.lt-room:focus-visible {
+  outline: 2px solid var(--fluvy-accent);
+  outline-offset: 2px;
+}
+
+.lt-card--row > .fv-card__head,
+.lt-card--row > .lt-bulbs,
+.lt-card--row > .lt-ruler {
+  position: relative;
+}
+
+.lt-card--row > .fv-card__head {
+  pointer-events: none;
+}
+
+.lt-card--row .lt-bulbs,
+.lt-card--row > .lt-ruler {
+  pointer-events: auto;
+}
+
+/* a light a round: beside the name, 8 apart; on a line of their own, placed by the card on whole pixels */
+.lt-bulbs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.lt-bulbs--line {
+  display: block;
+  margin-top: 16px;
+}
+
+.lt-bulbs--line > .lt-bulb {
+  position: absolute;
+}
+
+.lt-bulb {
+  position: relative;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform var(--fv-fast) var(--fv-ease),
+    background-color var(--fv-base) var(--fv-ease),
+    color var(--fv-base) var(--fv-ease);
+}
+
+/* its hit reaches 4 px into the gaps round it */
+.lt-bulb::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+}
+
+/* lit: its colour's fill and ink, as a chosen chip or an on tile (a resting circle's wash would be too quiet) */
+.lt-bulb.is-on {
+  background: var(--tone-fill);
+  color: var(--tone-on);
+}
+
+.lt-bulb[aria-disabled='true'] {
+  cursor: default;
+}
+
+.lt-bulb[aria-disabled='true']:active {
+  transform: none;
+}
+
+.lt-bulb:focus-visible {
+  outline: 2px solid var(--fluvy-accent);
+  outline-offset: 2px;
+}
+
+/* a lit round's level: a 2 px ring 4 inside its edge (on its fill, in its ink), from the top — all the way round when
+   the light does not dim. Its one animation (declared in the language): the ring follows a new level in --fv-base */
+.lt-bulb .lt-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.lt-ring circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--fv-base) var(--fv-ease);
+}
+
+.lt-chips {
+  margin-top: 16px;
+}
+
+/* the ruler's 16 above it is its own (padding, not margin): a press a little high is the ruler's, never the room's */
+.lt-ruler {
+  padding-top: 16px;
+}
+
+/* an odd last tile takes the whole row */
+.lt-span {
+  display: grid;
+  grid-column: 1 / -1;
+}
+
+/* an empty card's panel keeps the body's rhythm: 16 under its head */
+.lt-card > .fv-empty-state {
+  margin-top: 16px;
+}

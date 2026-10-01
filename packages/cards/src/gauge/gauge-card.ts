@@ -14,7 +14,15 @@ import {
 
 import { head, readout, rulerLabels, sheetStyles, type Tone } from '@fluvy/ui';
 
-import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  svg,
+  type CSSResultGroup,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 
 import { HeadFit } from '../energy/head.js';
 
@@ -35,17 +43,34 @@ import {
 import { statsSize } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
-import { baseOf, ceilingFor, figure, scaleFor, toBase } from './units.js';
+import { baseOf, ceilingFor, figure, scaleFor, toBase, type Scale } from './units.js';
+import {
+  fractionOf,
+  labelRoom,
+  signedGeometry,
+  ticksOf,
+  valueBox,
+  valueRoom,
+  type ValueSize,
+} from './signed.js';
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 
 const strings = words('gauge');
+const ways = words('energy-flow');
+
+export type GaugeVariant = 'ring' | 'bar' | 'signed';
+export const GAUGE_VARIANTS: readonly GaugeVariant[] = ['ring', 'bar', 'signed'];
 
 export interface GaugeCardConfig extends FluvyCardConfig {
   subtitle?: string;
-  /** `ring` (default): the dial. `bar`: the reading over a level bar, for a half column. */
-  variant?: 'ring' | 'bar';
-  /** Bottom of the ring, in the sensor's unit. */
+  /**
+   * `ring` (default): the dial. `bar`: the reading over a level bar, for a half column. `signed`: a value that can
+   * be negative (a grid meter) on a ring with zero at the top, lit from zero to the value; a power meter says its
+   * direction in the unit ("1.8 kW out").
+   */
+  variant?: GaugeVariant;
+  /** Bottom of the ring, in the sensor's unit (signed: the left end, `-max` by default). */
   min?: number;
   /** Top of the ring, in the sensor's unit. Without it: the entity's `max` attribute, `max_entity`, or the window's peak rounded up. */
   max?: number;
@@ -97,13 +122,50 @@ const PRODUCES = new Set(['power', 'energy', 'current']);
 export class FluvyGaugeCard extends Card<GaugeCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: GaugeCardConfig): number {
-    return config.variant === 'bar' ? 256 : 384;
+    return config.variant === 'bar' ? 256 : config.variant === 'signed' ? 372 : 384;
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,
+    sheetStyles.energy,
     css`
+      /* the signed ring: its size fitted to the column, its lit ticks in the card's tone (the grid's by default) */
+      .en-gauge .en-tick.is-lit {
+        stroke: var(--tone-ink);
+      }
+      .en-gauge__zero,
+      .en-gauge__label,
+      .en-gauge__value {
+        left: 0;
+        width: 100%;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .en-gauge__value--m {
+        font-size: 24px;
+        line-height: 28px;
+      }
+      .en-gauge__unit {
+        margin-left: 3px;
+        font-size: 16px;
+        color: var(--fluvy-text-secondary);
+      }
+      .en-gauge__value--m .en-gauge__unit {
+        font-size: 12px;
+      }
+      .en-gauge__end {
+        white-space: nowrap;
+      }
+      /* a label longer than the ring's opening is a name: it ends in an ellipsis inside it */
+      .en-gauge__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* the directions make the figures long: in a narrow column they stand one above the other */
+      .so-cols.so-cols--stack {
+        grid-template-columns: minmax(0, 1fr);
+      }
       /* the ring is placed on a whole pixel (its ticks stay crisp in an odd column) instead of centred on a half */
       .so-gauge {
         justify-content: flex-start;
@@ -145,7 +207,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       schema: [
         entityField(['sensor', 'number', 'input_number', 'counter']),
         fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), selectField('variant', ['ring', 'bar'])),
+        fieldRow(iconField(), selectField('variant', GAUGE_VARIANTS)),
         colourFields(),
         fieldRow(
           numberField('min', -1_000_000, 1_000_000, 0.1),
@@ -180,11 +242,19 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     if (!config.entity) throw new Error('fluvy-gauge-card: "entity" is required');
     if (typeof config.max === 'number' && config.max <= (config.min ?? 0))
       throw new Error('fluvy-gauge-card: "max" must be greater than "min"');
+    if (config.variant === 'signed' && typeof config.min === 'number' && config.min >= 0)
+      throw new Error('fluvy-gauge-card: a signed gauge’s "min" is below 0 (or left out: −max)');
+    if (config.variant === 'signed' && typeof config.max === 'number' && config.max <= 0)
+      throw new Error('fluvy-gauge-card: a signed gauge’s "max" is above 0');
     return config;
   }
 
   private get bar(): boolean {
     return this.config?.variant === 'bar';
+  }
+
+  private get signed(): boolean {
+    return this.config?.variant === 'signed';
   }
 
   override getCardSize(): number {
@@ -265,6 +335,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const name = this.config?.name ?? view.name;
     if (view.status === 'missing')
       return this.renderEmpty(`${name} · ${stateText(this.hass, view)}`);
+    if (this.signed) return this.renderSigned(view, name);
 
     const unusable = !isUsable(view);
     const base = toBase(1, view.unit);
@@ -388,6 +459,237 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       }
       <div class="so-cols fv-cols so-cols--center" data-align="center">
         ${stats.map((stat) => readout({ ...stat, size }))}
+      </div>
+    </article>`;
+  }
+
+  /* ---------- signed ---------- */
+
+  /**
+   * The signed ring's ends in the base unit: `max` from the config, the entity's own, a companion entity, or the
+   * window's largest swing either way rounded up; `min` from the config, else `-max`. Null while that window loads.
+   */
+  private extent(
+    view: EntityView,
+    factor: number,
+    value: number | null,
+  ): { min: number; max: number } | null {
+    const positive = (v: unknown): v is number =>
+      typeof v === 'number' && Number.isFinite(v) && v > 0;
+    const configured = this.config?.max;
+    const own = view.attr<number | null>('max');
+    const rated = this.config?.max_entity ? baseOf(this.entity(this.config.max_entity)) : null;
+    let max: number | null = positive(configured)
+      ? configured * factor
+      : positive(own)
+        ? own * factor
+        : rated && positive(rated.value)
+          ? rated.value
+          : null;
+    if (max === null) {
+      if (this.series_ === undefined) return null;
+      const swing = Math.max(
+        Math.abs((this.series_?.min ?? 0) * factor),
+        Math.abs((this.series_?.max ?? 0) * factor),
+        Math.abs(value ?? 0),
+      );
+      if (!(swing > 0)) return null;
+      max = ceilingFor(swing);
+    }
+    const min = this.config?.min;
+    return { min: typeof min === 'number' && min < 0 ? min * factor : -max, max };
+  }
+
+  /**
+   * A value that can be negative, on a ring with zero at the top: lit from zero to the value in the card's tone (the
+   * grid's by default: a meter cannot know where its energy came from); a power meter says its direction in the unit
+   * slot ("1.8 kW out"), any other unit its sign.
+   */
+  private renderSigned(view: EntityView, name: string): TemplateResult {
+    const unusable = !isUsable(view);
+    const base = toBase(1, view.unit);
+    const value = view.number === null || unusable ? null : view.number * base.value;
+    const power = base.unit === 'W';
+    const ends = this.extent(view, base.value, value);
+    const series = unusable ? null : this.series_;
+    const scale: Scale = scaleFor(
+      Math.max(
+        Math.abs(ends?.min ?? 0),
+        Math.abs(ends?.max ?? 0),
+        Math.abs(value ?? 0),
+        Math.abs((series?.min ?? 0) * base.value),
+        Math.abs((series?.max ?? 0) * base.value),
+      ),
+      base.unit,
+    );
+    const precision =
+      scale.divisor === 1 ? this.hass?.entities?.[view.id]?.display_precision : undefined;
+    const way = (v: number): string =>
+      v > 0 ? ways(this.hass, 'way_in') : v < 0 ? ways(this.hass, 'way_out') : '';
+    // one precision for the value and its min / max / average — the entity's own, else the largest figure's — so
+    // "1.0 kW out" stands beside "2.2 kW out" and "−0.9 °C" beside "−4.2 °C"
+    const largest = Math.max(
+      0,
+      ...[
+        value,
+        ...[series?.min, series?.max, series?.average].map((v) =>
+          typeof v === 'number' ? v * base.value : null,
+        ),
+      ]
+        .filter((v): v is number => typeof v === 'number')
+        .map((v) => Math.abs(v) / scale.divisor),
+    );
+    const digits = precision ?? (largest >= 100 ? 0 : largest >= 1 ? 1 : 2);
+    // a power meter: the magnitude, its direction after the unit; anything else: the signed figure
+    const said = (v: number | null): { value: string; unit: string } => {
+      if (v === null) return { value: '—', unit: '' };
+      if (!power) return { value: figure(this.hass, v, scale, digits), unit: scale.unit };
+      const direction = way(v);
+      return {
+        value: figure(this.hass, Math.abs(v), scale, digits),
+        unit: direction ? `${scale.unit} ${direction}` : scale.unit,
+      };
+    };
+    const edgeDigits =
+      ends &&
+      Number.isInteger(ends.min / scale.divisor) &&
+      Number.isInteger(ends.max / scale.divisor)
+        ? 0
+        : 1;
+    const edge = (v: number): string => {
+      const shown = formatNumber(this.hass, (power ? Math.abs(v) : v) / scale.divisor, {
+        digits: edgeDigits,
+        minDigits: edgeDigits,
+      }).replace(/^-/, '−');
+      return [shown, scale.unit, power ? way(v) : ''].filter(Boolean).join(' ');
+    };
+
+    const fraction = value === null || !ends ? null : fractionOf(value, ends.min, ends.max);
+    const active = fraction !== null && Math.abs(fraction) > IDLE;
+    const tone: Tone = toneOf(this.config, 'grid');
+    const headTone: Tone = unusable ? 'off' : active ? tone : 'neutral';
+    // "Importing" / "Exporting" say a power's way; any other signed value (a temperature) has no state to name:
+    // only a badge the card is given shows
+    const badgeText =
+      unusable || value === null
+        ? stateText(this.hass, view)
+        : (this.config?.badge ??
+          (!power
+            ? ''
+            : !active
+              ? this.t('energy.idle')
+              : value > 0
+                ? this.t('energy.importing')
+                : this.t('energy.exporting')));
+
+    const width = this.contentWidth;
+    const r = this.head.ruler;
+    const left = ends ? edge(ends.min) : '—';
+    const right = ends ? edge(ends.max) : '—';
+    const g = signedGeometry(
+      width,
+      Math.max(r.width('en-gauge__end', left), r.width('en-gauge__end', right)),
+    );
+    const shown = said(value);
+    const fits = (size: ValueSize): boolean =>
+      r.width(
+        size === 'l' ? 'en-gauge__value' : 'en-gauge__value en-gauge__value--m',
+        shown.value,
+        'en-gauge__unit',
+        shown.unit,
+      ) <= valueRoom(g, size);
+    const size: ValueSize = fits('l') ? 'l' : 'm';
+    const box = valueBox(g, size);
+    const label = this.innerLabel(view);
+    const room = labelRoom(g, size);
+    const labelFits = r.width('en-gauge__label', label) <= room;
+
+    const stats = (
+      [
+        ['common.min', series?.min],
+        ['common.max', series?.max],
+        ['common.average', series?.average],
+      ] as const
+    ).map(([name, raw]) => ({
+      label: this.t(name),
+      ...said(raw === undefined ? null : raw * base.value),
+    }));
+    // three columns while the figures hold in them (small, else extra small); else one above the other
+    const column = (width - 32) / 3;
+    const stack = !stats.every(
+      (stat) =>
+        r.width(
+          'fv-readout fv-readout--xs > fv-readout__value',
+          stat.value,
+          'fv-unit',
+          stat.unit,
+        ) <= column,
+    );
+    const statSize = statsSize(this.head.ruler, width, stats, stack ? 1 : 3);
+    const fitted = this.head.fit({
+      width,
+      title: name,
+      sub: this.config?.subtitle ?? view.areaName,
+      badge: badgeText ? { text: badgeText, tone: headTone } : null,
+    });
+
+    return html`<article
+      class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
+      data-card
+    >
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        tone: headTone,
+        title: name,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        onIconTap: () => this.tap(view.id),
+        onHold: () => this.hold(view.id),
+        iconLabel: name,
+        name: true,
+      })}
+      <div class="en-gauge fv-tone--${tone}" style="height:${g.height}px">
+        <svg
+          width=${width}
+          height=${g.height}
+          viewBox="0 0 ${width} ${g.height}"
+          aria-hidden="true"
+        >
+          ${ticksOf(g, unusable ? null : fraction).map(
+            (t) =>
+              svg`<line x1=${t.x1.toFixed(1)} y1=${t.y1.toFixed(1)} x2=${t.x2.toFixed(1)} y2=${t.y2.toFixed(1)} class="en-tick ${t.lit ? 'is-lit' : ''}"></line>`,
+          )}
+        </svg>
+        <span class="en-gauge__zero" data-align="center" style="top:0">0</span>
+        ${
+          // a label someone wrote is a name and may end in an ellipsis; Home Assistant's own word ("Temperature") is
+          // never cut: it leaves the ring when it does not fit
+          labelFits || this.config?.label !== undefined
+            ? html`<span
+                class="en-gauge__label"
+                data-align="center"
+                data-name=${labelFits ? nothing : ''}
+                style=${labelFits ? `top:${box.label}px` : `top:${box.label}px;left:${g.cx - room / 2}px;width:${room}px`}
+                >${label}</span
+              >`
+            : nothing
+        }
+        <span
+          class="en-gauge__value ${size === 'm' ? 'en-gauge__value--m' : ''}"
+          data-align="center"
+          style="top:${box.value}px"
+          >${shown.value}${shown.unit ? html`<span class="en-gauge__unit">${shown.unit}</span>` : nothing}</span
+        >
+        <span class="en-gauge__end" style="left:${g.endsLeft}px;top:${g.endsTop}px">${left}</span>
+        <span class="en-gauge__end" style="right:${g.endsRight}px;top:${g.endsTop}px"
+          >${right}</span
+        >
+      </div>
+      <div
+        class="so-cols fv-cols so-cols--center ${stack ? 'so-cols--stack' : ''}"
+        data-align="center"
+      >
+        ${stats.map((stat) => readout({ ...stat, size: statSize }))}
       </div>
     </article>`;
   }

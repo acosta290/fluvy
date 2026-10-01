@@ -36,6 +36,15 @@
     "warm": "Sıcak",
     "cool": "Soğuk"
   },
+  "lights": {
+    "title": "Işıklar",
+    "no_lights": "Henüz ışık yok",
+    "no_lights_hint": "Buraya ekleyin ya da karta bir alan verin",
+    "editor_lights": "Işıklar (yoksa: alanınkiler)",
+    "editor_show_level": "Seviyeyi göster",
+    "editor_show_brightness": "Oda için tek parlaklık",
+    "editor_light_colors": "Açık her ışık kendi ampulünün renginde"
+  },
   "climate": {
     "mode": "Mod",
     "standby": "Beklemede",
@@ -145,7 +154,11 @@
     "hours_ago": "−{count} sa",
     "days_ago": "−{count} g",
     "no_history": "Henüz geçmiş yok",
-    "editor_legend": "Grafiğin altındaki toplamlar (en fazla 3)"
+    "editor_legend": "Grafiğin altındaki toplamlar (en fazla 3)",
+    "house_power": "Evin gücü",
+    "by_source": "Bugün · kaynağa göre",
+    "used": "Kullanılan",
+    "exported": "Verilen"
   },
   "sensor": {
     "last_24h": "Son 24 sa",
@@ -464,7 +477,8 @@
     "meters": "Sayaçlar",
     "cameras": "Kameralar",
     "openings": "Açıklıklar",
-    "other_rooms": "Diğer odalar"
+    "other_rooms": "Diğer odalar",
+    "water_gas": "Su ve gaz"
   },
   "page": {
     "menu": "Menüyü aç",
@@ -614,12 +628,23 @@
     "distribution": "Dağılım",
     "other": "Diğer",
     "share_of_total": "toplamın %{percent}’i",
-    "max_rows": "Geri kalanı \"Diğer\" olmadan önceki satır sayısı"
+    "max_rows": "Geri kalanı \"Diğer\" olmadan önceki satır sayısı",
+    "not_measured": "Ölçülmeyen",
+    "editor_total": "Toplamın kendi sayacı (ölçülmeyeni gösterir)"
   },
   "energy-devices": {
     "title": "Ev aletleri",
     "share_of_total": "toplamın %{percent}’i",
-    "editor_sort": "En çok tüketen önce"
+    "editor_sort": "En çok tüketen önce",
+    "not_measured": "Ölçülmeyen",
+    "measured": "Ölçülen %{percent}",
+    "share": "%{percent}",
+    "share_of": "{name} içinde %{percent}",
+    "rest_of_house": "%{percent} · evin geri kalanı",
+    "editor_total": "Evin kendi sayacı (isteğe bağlı: ölçülmeyeni gösterir)",
+    "editor_parent": "Şunun parçası (başka bir satırın sensörü)",
+    "no_devices": "Henüz cihaz yok",
+    "no_devices_hint": "Satır ekleyin ya da Enerji panosuna cihazlarını verin"
   },
   "energy-flow": {
     "title": "Enerji akışı",
@@ -629,11 +654,59 @@
     "charging": "Şarj oluyor",
     "discharging": "Deşarj oluyor",
     "house": "Ev",
-    "editor_grid_invert": "Şebeke: pozitif değer, veriliyor demek",
-    "editor_battery_invert": "Batarya: pozitif değer, şarj oluyor demek",
-    "editor_battery_level": "Batarya seviyesi",
     "editor_home": "Ev gücü (isteğe bağlı: boşsa hesaplanır)",
-    "editor_readouts": "Şemanın altındaki toplamlar (en fazla 3)"
+    "editor_readouts": "Şemanın altındaki toplamlar (en fazla 3)",
+    "self_powered": "%{percent} öz yeterli",
+    "import_export": "Alım + veriş",
+    "unavailable_since": "{name} {time} itibarıyla kullanılamıyor",
+    "updated": "Güncellendi: {when}",
+    "rest_of_house": "Evin geri kalanı",
+    "share_of_house": "evin %{percent}’i",
+    "period_day": "Gece yarısından beri",
+    "period_week": "Son 7 gün",
+    "period_month": "Bu ay",
+    "chip_day": "Gün",
+    "chip_week": "Hafta",
+    "chip_month": "Ay",
+    "way_in": "alınan",
+    "way_out": "verilen",
+    "way_charging": "şarj oluyor",
+    "way_discharging": "deşarj oluyor",
+    "way_charged": "şarj edildi",
+    "way_discharged": "deşarj edildi",
+    "kind_solar": "Güneş",
+    "kind_grid": "Şebeke",
+    "kind_battery": "Batarya",
+    "kind_generator": "Jeneratör",
+    "kind_vehicle": "Araç",
+    "no_sources": "Henüz güç sensörü yok",
+    "no_sources_hint": "Kaynak ekleyin ya da Enerji panosuna güç sensörlerini verin",
+    "no_period": "Henüz Enerji panosu yok",
+    "no_period_hint": "Bu toplamları görmek için Enerji panosunu kurun",
+    "badge_solar": "Güneş payı",
+    "badge_self_powered": "Öz yeterlilik",
+    "badge_grid": "Şebeke yönü",
+    "editor_sources": "Kaynaklar (yoksa: Enerji panosununkiler)",
+    "editor_consumers": "Nereye gidiyor",
+    "editor_type": "Tür",
+    "editor_power": "Güç (tek sensör, + giren)",
+    "editor_phases": "Faz başına (her biri işaretli, toplanır)",
+    "editor_import": "Giren (alım, deşarj)",
+    "editor_export": "Çıkan (veriş, şarj)",
+    "editor_invert": "Sensör çıkanı pozitif sayar",
+    "editor_level": "Şarj durumu",
+    "editor_capacity": "Kapasite (kWh)",
+    "editor_threshold": "Şunun altında durur (W)",
+    "editor_arrows": "Oklar",
+    "editor_show": "Göster",
+    "editor_max_power": "Evin tepe gücü (W): hızı belirler",
+    "editor_badge": "Rozet",
+    "editor_motion": "Hareket",
+    "editor_period": "Ne gösterir",
+    "editor_show_period": "Gün · Hafta · Ay çipleri",
+    "selling": "Satılıyor",
+    "on_the_car": "Araçtan",
+    "on_the_battery": "Bataryadan"
   },
   "gauge": {
     "value": "Değer",
@@ -865,7 +938,6 @@
     "dashboard.large": "Büyük",
     "dashboard.rows": "Satırlar",
     "dashboard.flow": "Enerji akışı",
-    "dashboard.ribbons": "Şeritler",
     "dashboard.rail": "Ray",
     "dashboard.legs": "Çizgiler",
     "pref.title": "Yalnızca sizin için",
@@ -1002,7 +1074,8 @@
     "share.invalid": "Bu dosyada Fluvy paleti yok",
     "share.imported": "Palet içe aktarıldı",
     "share.saved": "Palet kaydedildi",
-    "share.removed": "Palet kaldırıldı"
+    "share.removed": "Palet kaldırıldı",
+    "dashboard.stream": "Akış"
   },
   "people": {
     "title": "Kim evde",
@@ -1038,7 +1111,8 @@
     "sun_hours": "Güneşli saat",
     "hour": "sa",
     "forecast_entity": "Tahmin varlığı",
-    "peak_entity": "Zirve güç varlığı"
+    "peak_entity": "Zirve güç varlığı",
+    "editor_arrays": "Panel dizileri (her biri kendi güç ya da enerji sensörüyle)"
   },
   "readouts": {
     "rising": "yükseliyor",
@@ -1151,7 +1225,22 @@
     "zones": "Bölgeler",
     "wide": "Geniş",
     "square": "Kare",
-    "photo": "Fotoğraf"
+    "photo": "Fotoğraf",
+    "cross": "Çapraz",
+    "list": "Liste",
+    "stream": "Akış",
+    "calm": "Sakin",
+    "off": "Kapalı",
+    "live": "Canlı",
+    "day": "Gün",
+    "arrival": "Varışta",
+    "always": "Her zaman",
+    "active": "Etkinken",
+    "never": "Asla",
+    "sources": "Kaynağa göre",
+    "signed": "Sıfır ortada",
+    "water": "Su",
+    "gas": "Gaz"
   },
   "tone": {
     "accent": "Vurgu",
@@ -1170,7 +1259,8 @@
     "house": "Ev",
     "gas": "Gaz",
     "neutral": "Nötr",
-    "warning": "Uyarı"
+    "warning": "Uyarı",
+    "vehicle": "Araç"
   },
   "words": {
     "light": [
@@ -1235,7 +1325,16 @@
       "panel"
     ],
     "grid": ["şebeke", "sebeke", "sayaç", "sayac", "ithal", "alım\\b", "net_"],
+    "grid_export": ["veriş", "veris", "verilen", "ihracat", "satış", "satis"],
     "battery": ["batarya", "pil\\b", "akü", "aku\\b", "depolama"],
+    "charger": [
+      "şarj istasyonu",
+      "sarj istasyonu",
+      "şarj cihazı",
+      "sarj cihazi",
+      "şarj ünitesi",
+      "sarj unitesi"
+    ],
     "home": [
       "ev\\b",
       "evin\\b",
@@ -1323,5 +1422,124 @@
       "nemi",
       "termostat"
     ]
+  },
+  "energy-balance": {
+    "title": "Enerji dengesi",
+    "coming_in": "Gelen",
+    "going_out": "Giden",
+    "came_in": "Gelen",
+    "went_out": "Giden",
+    "per_phase": "Faz başına",
+    "phase": "L{n}",
+    "sub_day": "Bugün · gece yarısından beri",
+    "feed_in": "Satış",
+    "net": "Net",
+    "editor_show_phases": "Faz başına (faz faz ölçülen şebeke)",
+    "editor_show_cost": "Maliyet ve satış (bir dönem için)"
+  },
+  "grid": {
+    "title": "Şebeke",
+    "phases": "{count} faz",
+    "phase": "L{n}",
+    "net": "Net",
+    "net_import": "Net alım",
+    "net_export": "Net veriş",
+    "in": "Alınan",
+    "out": "Verilen",
+    "price_now": "Şu anki fiyat",
+    "imported": "Alınan",
+    "exported": "Verilen",
+    "net_cost": "Net maliyet",
+    "no_grid": "Henüz şebeke sensörü yok",
+    "no_grid_hint": "Bir tane ekleyin ya da Enerji panosuna şebekenin gücünü verin",
+    "editor_voltages": "Faz başına gerilim (fazlarla aynı sırada)",
+    "editor_price": "Şu anki fiyat (bir sensör)",
+    "editor_readouts": "Altındaki toplamlar (en fazla 3; yoksa bugünkü)"
+  },
+  "batteries": {
+    "title": "Bataryalar",
+    "title_one": "Batarya",
+    "count": "{count} batarya",
+    "state_of_charge": "Şarj durumu",
+    "full_in": "Dolmasına",
+    "empty_in": "Bitmesine",
+    "reserve": "Rezerv",
+    "charging_at": "{power} şarj",
+    "discharging_at": "{power} deşarj",
+    "idle": "boşta",
+    "unavailable": "kullanılamıyor",
+    "mode": "Mod",
+    "no_batteries": "Henüz batarya yok",
+    "no_batteries_hint": "Buraya ekleyin ya da Enerji panosuna bataryalarını verin",
+    "editor_batteries": "Bataryalar (yoksa: Enerji panosununkiler)",
+    "editor_reserve": "Rezerv (%): “bitmesine” sayacının durduğu yer",
+    "editor_mode": "Mod (bir seçim varlığı)",
+    "charge": "Şarj"
+  },
+  "ev-charger": {
+    "title": "Araç şarjı",
+    "target": "Hedef",
+    "by": "%{percent} hazır",
+    "ready_by": "Hazır",
+    "added": "Eklenen",
+    "for": "Süre",
+    "from_sun": "Güneşten",
+    "powering_house": "Evi besliyor",
+    "mode": "Mod",
+    "mode_off": "Duraklatıldı",
+    "mode_sun": "Fazla üretim",
+    "mode_fast": "Tam güç",
+    "editor_entity": "Şarj gücü (+ aracı şarj ediyor)",
+    "editor_invert": "Sensör şarjı negatif sayar",
+    "editor_level": "Aracın şarj durumu",
+    "editor_target": "Hedef: bir % ya da bir varlık",
+    "editor_ready_by": "Hazır: bir saat (07:00) ya da bir varlık",
+    "editor_session_energy": "Bu oturumda eklenen enerji",
+    "editor_status": "Durum (şarj oluyor, bağlı)",
+    "editor_vehicle": "Aracın adı",
+    "editor_solar_share": "Güneşten gelen pay (%)",
+    "editor_mode": "Mod (bir seçim varlığı)"
+  },
+  "meters": {
+    "title": "Su ve gaz",
+    "kind_water": "Su",
+    "kind_gas": "Gaz",
+    "vs_typical": "olağan bir güne göre",
+    "now": "şu an {value}",
+    "typical": "olağan {value}",
+    "checked": "{time} kontrol edildi",
+    "no_meters": "Henüz su ya da gaz sayacı yok",
+    "no_meters_hint": "Sayaç ekleyin ya da Enerji panosuna su ve gaz sayaçlarını verin",
+    "editor_meters": "Sayaçlar (yoksa: Enerji panosunun su ve gazı)",
+    "editor_rows": "Sayaçların altında (sızıntı sensörü, vana)",
+    "editor_rate": "Şu anki akış (isteğe bağlı)",
+    "editor_typical": "Olağan bir gün (boşsa: son 7 günün ortalaması)",
+    "editor_kind": "Tür",
+    "no_statistics": "Henüz istatistik yok"
+  },
+  "energy-sankey": {
+    "title": "Nereye gitti",
+    "charged": "Şarj edilen",
+    "exported": "Verilen",
+    "other_devices": "Diğer cihazlar",
+    "not_measured": "Ölçülmeyen",
+    "nothing_yet": "Bu dönem için henüz kayıt yok",
+    "no_statistics": "İstatistikler kullanılamıyor",
+    "no_statistics_hint": "Enerji panosunun istatistikleri şu anda okunamıyor",
+    "editor_devices": "Cihazlar (yoksa: Enerji panosununkiler)",
+    "editor_parent": "Şunun parçası (başka bir cihazın sayacı)",
+    "editor_max_devices": "Geri kalanı “Diğer cihazlar” olmadan önceki cihaz sayısı",
+    "editor_period": "Dönem"
+  },
+  "energy-score": {
+    "title": "Enerji karnesi",
+    "self_powered": "Öz yeterli",
+    "sun_used": "Öz tüketim",
+    "low_carbon": "Düşük CO₂",
+    "imported": "Alınan",
+    "exported": "Verilen",
+    "net": "Net",
+    "editor_period": "Dönem",
+    "editor_co2": "Şebekenin fosil payı, % (boşsa: evin CO₂ sinyali)"
   }
 }

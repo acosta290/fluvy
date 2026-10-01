@@ -92,30 +92,31 @@ const CLIPS = {
     },
   },
   'energy-flow': {
-    query: `sheet=energy&width=360&at=${AT}`,
+    query: `sheet=flow&width=360&at=${AT}`,
     viewport: { width: 600, height: 720 },
-    target: '[data-frame="energy/Flow"]',
+    target: '[data-frame="flow/The #19 house"]',
     only: true,
     pad: 16,
     async run(page) {
-      // the day rises: dawn on the grid, then the sun carrying the house, then a surplus charging the battery and
-      // going out; every line's pace and its dots follow the power, without a jump
-      const readings = (solarKw, gridW, batteryW) =>
+      // a day on the #19 house: midday, importing on two phases while the third exports; then all sun, the battery
+      // filling and the surplus going out; then the evening, the battery running the house — every lane in its
+      // origin's colour, the pulses' pace following the power, the arcs sliding to the new mix
+      const readings = (solar, l1, l2, l3, battery) =>
         page.evaluate(
-          ([solar, grid, battery]) => {
-            window.fluvyMock.set('sensor.ef_solar_power', solar);
-            window.fluvyMock.set('sensor.ef_grid_power', grid);
-            window.fluvyMock.set('sensor.ef_battery_power', battery);
+          ([s, a, b, c, d]) => {
+            window.fluvyMock.set('sensor.fl_solar', s);
+            window.fluvyMock.set('sensor.fl_l1', a);
+            window.fluvyMock.set('sensor.fl_l2', b);
+            window.fluvyMock.set('sensor.fl_l3', c);
+            window.fluvyMock.set('sensor.fl_battery', d);
           },
-          [solarKw, gridW, batteryW],
+          [solar, l1, l2, l3, battery],
         );
-      await page.waitForTimeout(600);
-      await readings('0.05', '2450', '0');
-      await page.waitForTimeout(3000);
-      await readings('1.5', '1000', '0');
-      await page.waitForTimeout(3000);
-      await readings('5', '-1400', '-1100');
       await page.waitForTimeout(3200);
+      await readings('4.8', '-2.1', '100', '0.1', '-1400');
+      await page.waitForTimeout(3600);
+      await readings('0', '0.1', '150', '0.15', '1200');
+      await page.waitForTimeout(3600);
     },
   },
   palette: {

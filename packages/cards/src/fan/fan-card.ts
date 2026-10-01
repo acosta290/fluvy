@@ -53,7 +53,7 @@ import {
 } from '../cover/common.js';
 import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
-import { HeadFit } from '../energy/head.js';
+import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { COMPACT } from '../shared/heights.js';
 
 const fanStrings = strings('fan');
@@ -458,7 +458,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
           : view.areaName || (unusable ? '' : stateText(this.hass, view))),
       ...(unusable
         ? { badge: { text: stateText(this.hass, view), tone: 'off' as const } }
-        : { trailing: 48 }),
+        : { trailing: SWITCH_SLOT }),
     });
     return html`<article
       class="fv-card dv-card dv-fan ${unusable ? 'is-unavailable is-off' : ''}"

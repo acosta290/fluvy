@@ -4,7 +4,7 @@ import { createHass, type StateSeed } from '@fluvy/playground/hass';
 import { mountHistory, type HistoryMoment } from '@fluvy/playground/history';
 import type { MemoryLook } from '@fluvy/playground/look-memory';
 import { mountPanel, PANEL_WS } from '@fluvy/playground/panel';
-import { NOW, SHEETS, type SheetSpec } from '@fluvy/playground/scenes';
+import { mergeWs, NOW, SHEETS, type SheetSpec } from '@fluvy/playground/scenes';
 import { sheetsOf } from './families.js';
 import { columns, frameWidth, sameView, type DemoState } from './state.js';
 
@@ -68,10 +68,7 @@ export function createStage(root: HTMLElement, look: MemoryLook): Stage {
         string,
         readonly number[]
       >,
-      ws: Object.assign({}, ...selected.map(([, sheet]) => sheet.ws ?? {})) as Record<
-        string,
-        (message: Record<string, unknown>) => unknown
-      >,
+      ws: mergeWs(selected.map(([, sheet]) => sheet.ws)),
       api: (method, path) => {
         for (const [, sheet] of selected) {
           const answer = sheet.api?.(method, path);

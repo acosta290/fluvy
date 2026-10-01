@@ -40,7 +40,13 @@ const SPANISH: Record<string, string> = {
   'climate.heat': 'Calor',
   'climate.off': 'Apagado',
 };
-export type StateSeed = [entityId: string, state: string, attributes?: Record<string, unknown>];
+export type StateSeed = [
+  entityId: string,
+  state: string,
+  attributes?: Record<string, unknown>,
+  /** How long ago it was last reported, in seconds (a reading that went quiet). */
+  ago?: number,
+];
 
 type Listener = (hass: HomeAssistant) => void;
 
@@ -71,14 +77,16 @@ export function createHass(
 } {
   const now = options.now ?? new Date();
   const states: Record<string, HassEntity> = {};
-  for (const [entity_id, state, attributes] of seeds) {
+  for (const [entity_id, state, attributes, ago] of seeds) {
+    const reported = new Date(now.getTime() - (ago ?? 0) * 1000);
     states[entity_id] = {
       entity_id,
       state,
       attributes: { friendly_name: entity_id, ...attributes },
-      last_changed: iso(new Date(now.getTime() - 2 * 3600_000)),
-      last_updated: iso(now),
-    };
+      last_changed: iso(new Date(reported.getTime() - (ago === undefined ? 2 * 3600_000 : 0))),
+      last_updated: iso(reported),
+      ...(ago === undefined ? {} : { last_reported: iso(reported) }),
+    } as HassEntity;
   }
   const listeners = new Set<Listener>();
   const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
@@ -173,6 +181,14 @@ export function createHass(
         const raw = stateObj.state;
         const unit = stateObj.attributes.unit_of_measurement;
         if (unit && Number.isFinite(Number(raw))) return `${raw} ${unit}`;
+        // a leak sensor in Home Assistant's own English words (its moisture class)
+        if (
+          (options.language ?? 'en') === 'en' &&
+          stateObj.entity_id.startsWith('binary_sensor.') &&
+          stateObj.attributes['device_class'] === 'moisture' &&
+          (raw === 'on' || raw === 'off')
+        )
+          return raw === 'on' ? 'Wet' : 'Dry';
         // Home Assistant's own words in Spanish (the longest of them are what a pill has to hold)
         if ((options.language ?? 'en') === 'es') {
           const domain = stateObj.entity_id.split('.')[0] ?? '';

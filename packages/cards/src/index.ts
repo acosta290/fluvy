@@ -1,4 +1,4 @@
-import { registerCard } from '@fluvy/core';
+import { announceCard, registerCard } from '@fluvy/core';
 import '@fluvy/ui';
 import { FluvyActionsCard } from './actions/actions-card.js';
 import { FluvyAlarmCard } from './alarm/alarm-card.js';
@@ -9,9 +9,6 @@ import { FluvyChipsCard } from './chips/chips-card.js';
 import { FluvyClockCard } from './clock/clock-card.js';
 import { FluvyCoverCard } from './cover/cover-card.js';
 import { FluvyDistributionCard } from './distribution/distribution-card.js';
-import { FluvyEnergyCard } from './energy/energy-card.js';
-import { FluvyEnergyDevicesCard } from './energy-devices/energy-devices-card.js';
-import { FluvyEnergyFlowCard } from './energy-flow/energy-flow-card.js';
 import { FluvyEntitiesCard } from './entities/entities-card.js';
 import { FluvyFanCard } from './fan/fan-card.js';
 import { FluvyGaugeCard } from './gauge/gauge-card.js';
@@ -25,7 +22,6 @@ import { FluvyMediaCard } from './media/media-card.js';
 import { FluvyNowPlayingCard } from './now-playing/now-playing-card.js';
 import { FluvyOpeningsCard } from './openings/openings-card.js';
 import { FluvyPeopleCard } from './people/people-card.js';
-import { FluvyProductionCard } from './production/production-card.js';
 import { FluvyReadoutsCard } from './readouts/readouts-card.js';
 import { FluvySceneCard } from './scene/scene-card.js';
 import { FluvyScenesCard } from './scenes/scenes-card.js';
@@ -40,8 +36,10 @@ import { FluvyUpdatesCard } from './updates/updates-card.js';
 import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
 import { FluvyRoomCard } from './room/room-card.js';
+import { FluvyLightsCard } from './lights/lights-card.js';
 import { FluvyMapCard } from './map/map-card.js';
 import { defineStrategies } from './strategy/define.js';
+import { ENERGY_FAMILY } from './energy-family.js';
 
 /**
  * The fluvy card catalogue. Registration happens while the module evaluates — never after an
@@ -69,6 +67,12 @@ const CATALOGUE: ReadonlyArray<
     FluvyLightCard,
     'Fluvy · Light',
     'The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature.',
+  ],
+  [
+    'fluvy-lights-card',
+    FluvyLightsCard,
+    'Fluvy · Room lights',
+    'A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour.',
   ],
   [
     'fluvy-thermostat-card',
@@ -211,40 +215,16 @@ const CATALOGUE: ReadonlyArray<
     'Pending updates with install buttons and progress.',
   ],
   [
-    'fluvy-energy-card',
-    FluvyEnergyCard,
-    'Fluvy · Energy',
-    'Power right now, the day curve and the energy legend.',
-  ],
-  [
-    'fluvy-energy-flow-card',
-    FluvyEnergyFlowCard,
-    'Fluvy · Energy flow',
-    'Solar, grid, battery and home with animated flows.',
-  ],
-  [
-    'fluvy-energy-devices-card',
-    FluvyEnergyDevicesCard,
-    'Fluvy · Energy devices',
-    'Consumption per appliance as bar rows.',
-  ],
-  [
     'fluvy-gauge-card',
     FluvyGaugeCard,
     'Fluvy · Gauge',
-    'A ring gauge for any numeric sensor with min, max and average.',
+    'A ring gauge for any numeric sensor with min, max and average, or centred on zero for a meter that runs both ways.',
   ],
   [
     'fluvy-stat-tiles-card',
     FluvyStatTilesCard,
     'Fluvy · Stat tiles',
     'A headline value and a grid of read-only stat tiles.',
-  ],
-  [
-    'fluvy-production-card',
-    FluvyProductionCard,
-    'Fluvy · Production',
-    'Hourly production bars with the forecast behind.',
   ],
   [
     'fluvy-bars-card',
@@ -292,6 +272,20 @@ const CATALOGUE: ReadonlyArray<
 
 for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
+// the energy family: listed and measured now, its elements fetched at once and defined as they land
+for (const [tag, name, description, height] of ENERGY_FAMILY)
+  announceCard({ tag, name, description }, height);
+void import('./energy-cards.js');
+
+/** Every card with its element: the eager ones and the energy family (for the docs and the tests). */
+export async function catalogue(): Promise<
+  ReadonlyArray<
+    readonly [tag: string, element: CustomElementConstructor, name: string, description: string]
+  >
+> {
+  const { ENERGY_CATALOGUE } = await import('./energy-cards.js');
+  return [...CATALOGUE, ...ENERGY_CATALOGUE];
+}
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
 defineStrategies();
 
@@ -311,9 +305,6 @@ export {
   FluvyClockCard,
   FluvyCoverCard,
   FluvyDistributionCard,
-  FluvyEnergyCard,
-  FluvyEnergyDevicesCard,
-  FluvyEnergyFlowCard,
   FluvyEntitiesCard,
   FluvyFanCard,
   FluvyGaugeCard,
@@ -327,7 +318,6 @@ export {
   FluvyNowPlayingCard,
   FluvyOpeningsCard,
   FluvyPeopleCard,
-  FluvyProductionCard,
   FluvyReadoutsCard,
   FluvySceneCard,
   FluvyScenesCard,

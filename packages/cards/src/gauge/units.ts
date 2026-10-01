@@ -49,9 +49,14 @@ export function figure(
 ): string {
   const shown = value / scale.divisor;
   const size = Math.abs(shown);
-  return formatNumber(hass, shown, {
-    digits: precision ?? (size >= 100 ? 0 : size >= 1 ? 1 : 2),
-  }).replace(/^-/, '−'); // the design's minus, not a hyphen
+  const digits = precision ?? (size >= 100 ? 0 : size >= 1 ? 1 : 2);
+  // a scaled figure keeps its one decimal (1.0 kW beside 2.2 kW; 0.4 and 0 stay as they are), as does a precision
+  // the entity asks for
+  const fixed = precision !== undefined || (scale.divisor > 1 && size >= 1 && size < 100);
+  return formatNumber(hass, shown, { digits, ...(fixed ? { minDigits: digits } : {}) }).replace(
+    /^-/,
+    '−',
+  ); // the design's minus, not a hyphen
 }
 
 /** "3.2 kW" for rows, tiles and legends that set value and unit in one run. */

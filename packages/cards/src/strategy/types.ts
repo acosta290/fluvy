@@ -30,7 +30,7 @@ export interface FluvyStrategyConfig {
   thermostat_variant?: ThermostatVariant;
   /** The lights' tiles: large (default, with their ruler) or compact rows. */
   tile_size?: 'large' | 'compact';
-  /** How the energy flow draws its lines (default: ribbons). */
+  /** How the energy flow draws its lanes (default: stream; 1.3's `ribbons` reads as it). */
   flow_style?: FlowStyle;
   /** The rooms' cards (default: a photo where the area has one, else a tile). */
   room_variant?: RoomVariant;
@@ -69,27 +69,24 @@ export interface View {
   back_path?: string;
 }
 
-/** What `energy/get_prefs` answers: the energy dashboard's sources and devices. */
-export interface EnergyPrefs {
-  energy_sources?: ReadonlyArray<{
-    type: string;
-    stat_energy_from?: string;
-    stat_energy_to?: string;
-    flow_from?: ReadonlyArray<{ stat_energy_from: string }>;
-    flow_to?: ReadonlyArray<{ stat_energy_to: string }>;
-    /** The source's power sensor (HA 2025.12+); for grid and battery, `power_config` says how it is signed. */
-    stat_rate?: string;
-    power_config?: { stat_rate?: string; stat_rate_inverted?: string };
-  }>;
-  device_consumption?: ReadonlyArray<{ stat_consumption: string; name?: string }>;
-}
+/** What `energy/get_prefs` answers, in every shape it has had (the energy model reads it). */
+export type { EnergyPrefs } from '../energy-model/prefs.js';
 
 /** The energy readings found once, each by its role. */
 export interface EnergyRoles {
   readonly solarPower: string | undefined;
   readonly gridPower: string | undefined;
+  /** The grid read by two sensors found by their words: what comes in (the grid meter) and what goes out. */
+  readonly gridImport: string | undefined;
+  readonly gridExport: string | undefined;
+  /** The grid read per phase: its meters named L1, L2, L3 (then there is no net meter to read). */
+  readonly gridPhases: readonly string[];
   readonly batteryPower: string | undefined;
+  /** The battery's state of charge: the energy dashboard's, else the battery sensor beside its power. */
+  readonly batteryLevel: string | undefined;
   readonly homePower: string | undefined;
+  /** A car charger's power sensor, found by its words. */
+  readonly charger: string | undefined;
   /** The grid / battery meter counts towards the house as negative (the card's `grid_invert` / `battery_invert`). */
   readonly gridInvert: boolean;
   readonly batteryInvert: boolean;
@@ -99,6 +96,12 @@ export interface EnergyRoles {
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];
+  /** The energy dashboard's sources carry their power: the energy cards read them without being told. */
+  readonly prefsPower: boolean;
+  /** The energy dashboard meters its sources: a day's flow, where it went, the score, the house by source. */
+  readonly prefsMeters: boolean;
+  /** Water and gas meters: the energy dashboard's, else the house's own. */
+  readonly meters: readonly string[];
   readonly any: boolean;
 }
 

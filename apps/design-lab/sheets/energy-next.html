@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" data-palette="linen" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Energy, next — fluvy design lab</title>
+    <link rel="stylesheet" href="../lab.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/fluvy.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/energy.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/solar.css" />
+    <link rel="stylesheet" href="../../../packages/tokens/dist/lab.css" />
+    <link rel="stylesheet" href="../energy-next.css" />
+  </head>
+  <body class="lab-page">
+    <section class="lab-sheet en-sheet" data-sheet="energy-next" id="energy-next"></section>
+    <script src="../fluvy.js"></script>
+    <script src="../energy-next.js"></script>
+    <script src="../energy-next-cards.js"></script>
+    <script>
+      Promise.all(['600 11px Inter', '600 13px Inter', '600 14px Inter', '500 13px Inter', '600 16px Inter', '600 40px Inter'].map((f) => document.fonts.load(f)))
+        .then((faces) => document.fonts.ready.then(() => faces))
+        .then(() => {
+          const root = document.getElementById('energy-next');
+          const only = new URLSearchParams(location.search).get('part');
+          if (!only || only === 'flow') renderEnergyFlow(root);
+          if (!only || only === 'cards') root.insertAdjacentHTML('beforeend', renderEnergyCards());
+          FLUVY.fit(document);
+          document.documentElement.dataset.labReady = '1';
+        });
+    </script>
+  </body>
+</html>

@@ -1,11 +1,12 @@
-import type { EntityView } from '@fluvy/core';
+import { wallClock, type EntityView, type WallClock } from '@fluvy/core';
 
 /**
  * A forecast sensor's day, hour by hour, as the integrations publish it in their attributes:
  * Solcast ships `detailedHourly: [{ period_start, pv_estimate }]` in kWh, Open-Meteo Solar Forecast
  * and the Forecast.Solar templates ship `wh_period` / `wh_hours: { "2026-09-17T07:00:00+02:00": 120 }`
  * in Wh, a template sensor ships a plain list of 24 numbers in its own unit. Anything else gives
- * null: the card then shows the day's total and draws no forecast bars.
+ * null: the card then shows the day's total and draws no forecast bars. Hours are the house's: an instant belongs
+ * to the hour and the day a clock in the house's zone shows for it.
  */
 
 export interface HourlyForecast {
@@ -37,12 +38,14 @@ const asNumber = (raw: unknown): number | null => {
   return Number.isFinite(value) ? value : null;
 };
 
-/** The hour of `day` an ISO instant falls in, or null when it is another day (or no date at all). */
-const hourOf = (raw: unknown, day: Date): number | null => {
+/** The hour of `day` an ISO instant falls in on the house's clock, or null when it is another day (or no date). */
+const hourOf = (raw: unknown, day: WallClock, zone: string | undefined): number | null => {
   if (typeof raw !== 'string') return null;
   const date = new Date(raw);
-  if (Number.isNaN(date.getTime()) || date.toDateString() !== day.toDateString()) return null;
-  return date.getHours();
+  if (Number.isNaN(date.getTime())) return null;
+  const wall = wallClock(date, zone);
+  if (wall.year !== day.year || wall.month !== day.month || wall.day !== day.day) return null;
+  return wall.hour;
 };
 
 const pick = (row: Record<string, unknown>, keys: readonly string[]): unknown => {
@@ -50,7 +53,7 @@ const pick = (row: Record<string, unknown>, keys: readonly string[]): unknown =>
   return undefined;
 };
 
-function parse(raw: unknown, day: Date): number[] | null {
+function parse(raw: unknown, day: WallClock, zone: string | undefined): number[] | null {
   if (
     Array.isArray(raw) &&
     raw.length === HOURS &&
@@ -70,7 +73,7 @@ function parse(raw: unknown, day: Date): number[] | null {
       : [];
   let seen = false;
   for (const [time, amount] of pairs) {
-    const hour = hourOf(time, day);
+    const hour = hourOf(time, day, zone);
     const value = asNumber(amount);
     if (hour === null || value === null) continue;
     hours[hour] = (hours[hour] ?? 0) + Math.max(0, value);
@@ -79,9 +82,15 @@ function parse(raw: unknown, day: Date): number[] | null {
   return seen ? hours : null;
 }
 
-export function hourlyForecast(view: EntityView, day: Date): HourlyForecast | null {
+/** Today's forecast hour by hour: `now` in the house's `zone` (`houseZone(hass)`; the browser's when undefined). */
+export function hourlyForecast(
+  view: EntityView,
+  now: Date,
+  zone: string | undefined,
+): HourlyForecast | null {
+  const day = wallClock(now, zone);
   for (const [attribute, unit] of SOURCES) {
-    const hours = parse(view.attr(attribute), day);
+    const hours = parse(view.attr(attribute), day, zone);
     if (hours) return { hours, unit: unit || view.unit };
   }
   return null;

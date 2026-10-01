@@ -146,6 +146,11 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         display: flex;
         height: 76px;
       }
+      /* a compact tile inside a card (a room's controls) is 84 tall: the sheet's rule, which the line above would
+         otherwise override */
+      .fv-tile--compact.fv-tile--inner {
+        height: 84px;
+      }
       .fv-tile--mini {
         display: flex;
         height: 108px;
@@ -287,15 +292,16 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * "· 11 days ago", a small one's reading); a word that cannot fit at all is a dash on a tile without a reading
    * (unavailable, unknown) and nothing on one with — never a cut. The room is the tile's width less its sides (16 on a
    * large or compact tile, 12 on a mini, or what a narrower mini can spare around its 44 circle) and, where the line
-   * sits beside the circle (a large tile, a compact one 128 or wider), the circle and its gap.
+   * sits beside the circle (a large tile, a compact one 128 or wider, an inner one 136 or wider), the circle and its
+   * gap.
    */
-  private fitState(line: string, size: TileSize, dash: boolean): string {
+  private fitState(line: string, size: TileSize, dash: boolean, inside = false): string {
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
     const mini = size === 'mini';
     const sides = mini ? (width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12) : 16;
-    // a compact tile under 128 hides its circle (tiles.css) and gives the words its room
-    const beside = !mini && (size === 'large' || width >= 128) ? 44 + 12 : 0;
+    // a compact tile under 128 (an inner one under 136) hides its circle (tiles.css) and gives the words its room
+    const beside = !mini && (size === 'large' || width >= (inside ? 136 : 128)) ? 44 + 12 : 0;
     const room = width - 2 * sides - beside;
     const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
     const measure = (text: string): number => this.ruler.width(cls, text);
@@ -389,7 +395,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         ${ico('ban', 'off')}
         <div class="${small ? 'fv-tile__text' : 'fv-row__text'}">
           <h3 class="fv-tile__name">${name}</h3>
-          <p class="fv-tile__state">${this.fitState(line, size, true)}</p>
+          <p class="fv-tile__state">${this.fitState(line, size, true, inside)}</p>
         </div>
       </article>`;
     }
@@ -418,7 +424,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       let line = this.stateLine(view, on, level ? level.value : null, false);
       const reading = this.readoutText(item);
       if (reading) line = `${line} · ${reading}`;
-      line = this.fitState(line, size, false);
+      line = this.fitState(line, size, false, inside);
       return html`<article
         class=${classes}
         data-card

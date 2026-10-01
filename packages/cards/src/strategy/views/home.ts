@@ -6,6 +6,7 @@ import {
   entityRow,
   flowed,
   full,
+  hasSources,
   headed,
   heading,
   sizedTile,
@@ -16,6 +17,7 @@ import {
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 import { LIGHT_WORDS, OUTDOOR, TODAY, type HomeRegistry } from '../home-registry.js';
 import { roomsOf, roomsView } from '../rooms.js';
+import { liveCards, metersCards, todayCards } from './energy.js';
 
 /*
  * The views of the home dashboard (`custom:fluvy-home`), in the layout of the approved `/fluvy-home`: each one is
@@ -61,7 +63,7 @@ export function homeView(ctx: StrategyContext): Section[] {
       ...(weather
         ? [[full('weather', { entity: weather })], [full('clock', { variant: 'digital', weather })]]
         : [[full('clock', { variant: 'digital' })]]),
-      when(energy.solarPower || energy.gridPower, () => [energyFlow(energy, ctx.style)]),
+      when(hasSources(energy), () => [energyFlow(energy, ctx.style)]),
       energy.solarPower
         ? [full('energy', { entity: energy.solarPower, title: t('energy.solar') })]
         : energy.homePower
@@ -96,11 +98,13 @@ export function lightsView(ctx: StrategyContext): Section[] {
       (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor'));
     groups.set(key, [...(groups.get(key) ?? []), id]);
   }
-  // a dimmable light is a full card (a row of its own); the switches after it are tiles, two a row
+  // a room of two lights or more starts with all of them on one card (the room in one tap, a round a light); a
+  // dimmable light is a full card (a row of its own); the switches after it are tiles, two a row
   const blocks = [...groups.entries()]
     .sort((a, b) => b[1].length - a[1].length)
     .flatMap(([name, ids]) =>
       headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', ids), [
+        ...(ids.length > 1 ? [[full('lights', { lights: ids })]] : []),
         ...ids
           .filter((id) => home.dimmable(id))
           .map((id) => [full('light', { entity: id, ...home.named(id) })]),
@@ -140,17 +144,24 @@ export function climateView(ctx: StrategyContext): Section[] {
   ]);
 }
 
-/** The flow and the day's curve first, then what the sun makes and what the house draws, shared out over three level columns. */
+/**
+ * The house's energy, shared out over three level columns: the live cards first (the flow, the balance, the day by
+ * source, the grid, the batteries, the charger), then the day's totals, what the sun makes, what the house draws,
+ * and water and gas.
+ */
 export function energyView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { solarPower, gridPower, solarToday, consumption, consumptionPowers } = energy;
   return balanced([
-    ...when(solarPower || gridPower, () => [energyFlow(energy, ctx.style)]),
-    ...(solarPower
-      ? [full('energy', { entity: solarPower, title: t('energy.solar') })]
-      : gridPower
-        ? [full('energy', { entity: gridPower, title: t('energy.grid') })]
-        : []),
+    ...liveCards(ctx),
+    ...(energy.prefsMeters
+      ? []
+      : solarPower
+        ? [full('energy', { entity: solarPower, title: t('energy.solar') })]
+        : gridPower
+          ? [full('energy', { entity: gridPower, title: t('energy.grid') })]
+          : []),
+    ...todayCards(ctx),
     ...when(
       home.energies.filter((id) => TODAY.test(home.label(id))),
       (todays) =>
@@ -164,6 +175,7 @@ export function energyView(ctx: StrategyContext): Section[] {
       full('distribution', {
         title: t('strategy.consumption'),
         entities: consumptionPowers.slice(0, 8),
+        ...(energy.homePower ? { total: energy.homePower } : {}),
       }),
     ]),
     ...when(consumption.length, () => [
@@ -172,6 +184,7 @@ export function energyView(ctx: StrategyContext): Section[] {
         rows: consumption.slice(0, 8).map((id) => deviceRow(home, id)),
       }),
     ]),
+    ...metersCards(ctx),
   ]);
 }
 

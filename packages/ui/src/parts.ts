@@ -129,11 +129,13 @@ export interface ReadoutOptions {
   readonly unit?: string;
   readonly size?: 'xs' | 's' | 'm' | 'l';
   readonly trend?: 'up' | 'down' | undefined;
+  /** The label is a name (a sensor's, a device's): it may end in an ellipsis in a narrow column, as names do. */
+  readonly name?: boolean;
 }
 
 export function readout(o: ReadoutOptions): TemplateResult {
   return html`<div class="fv-readout fv-readout--${o.size ?? 'm'}">
-    <p class="fv-readout__label">${o.label}</p>
+    <p class="fv-readout__label" data-name=${o.name ? '' : nothing}>${o.label}</p>
     <p class="fv-readout__value">
       <span>${o.value}</span
       >${o.unit ? html`<span class="fv-unit">${o.unit}</span>` : nothing}${o.trend ? html`<span class="fv-trend ${o.trend === 'down' ? 'fv-trend--down' : ''}">${glyph(o.trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
@@ -284,6 +286,17 @@ export interface ChipItem {
   readonly active?: boolean;
   /** The glyph alone, the label as the chip's accessible name: a row too narrow for its words keeps its one line. */
   readonly short?: boolean;
+  /** Chosen, it fills in this tone instead of the accent (a mode's own: the sun's for a solar mode). */
+  readonly tone?: Tone;
+  /** Its own colour (`data-accent`, derived by the card's accent sheet), drawn with `tone: 'accent'`. */
+  readonly accent?: string;
+  /** A still press of 500 ms (a light's details); the click that follows is swallowed. */
+  readonly onHold?: () => void;
+  /** The label is a name (a device's): in a column too narrow for it, it ends in an ellipsis, as names do. */
+  readonly name?: boolean;
+  /** What it stands for cannot be read: the dashed ring, no tap (a hold still opens it). */
+  readonly unavailable?: boolean;
+  readonly disabled?: boolean;
 }
 
 /**
@@ -318,7 +331,7 @@ export function chips(
     class="fv-chips ${className} ${fill ? 'fv-chips--fill' : ''}"
     style=${grid ? `grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr))` : nothing}
   >
-    ${items.map((c, index) => html`<button class="fv-chip ${c.active ? 'is-active' : ''}" data-target data-fit=${fill ? nothing : '28'} style=${grid && grid.spans[index] !== 1 ? `grid-column:span ${grid.spans[index]}` : nothing} aria-pressed=${c.active ? 'true' : 'false'} aria-label=${c.short ? c.label : nothing} title=${c.short ? c.label : nothing} @click=${() => onSelect(c.key)}><span class="fv-chip__pill" data-control>${c.glyph ? icon(c.glyph) : nothing}${c.short ? nothing : c.label}</span></button>`)}
+    ${items.map((c, index) => html`<button class="fv-chip ${c.active ? 'is-active' : ''} ${c.tone ? `fv-chip--toned fv-tone--${c.tone}` : ''} ${c.unavailable ? 'is-unavailable' : ''}" data-target data-fit=${fill ? nothing : '28'} data-accent=${c.accent ?? nothing} style=${grid && grid.spans[index] !== 1 ? `grid-column:span ${grid.spans[index]}` : nothing} aria-pressed=${c.active ? 'true' : 'false'} aria-disabled=${c.unavailable ? 'true' : nothing} aria-label=${c.short ? c.label : nothing} title=${c.short ? c.label : nothing} ?disabled=${c.disabled ?? false} .fvTap=${c.onHold && !c.unavailable ? () => onSelect(c.key) : undefined} .fvHold=${c.onHold} @pointerdown=${c.onHold ? startPress : nothing} @contextmenu=${c.onHold ? preventMenu : nothing} @click=${c.onHold ? clickPress : c.unavailable ? nothing : () => onSelect(c.key)}><span class="fv-chip__pill" data-control>${c.glyph ? icon(c.glyph) : nothing}${c.short ? nothing : c.name ? html`<span class="fv-chip__name" data-name>${c.label}</span>` : c.label}</span></button>`)}
   </div>`;
 }
 
@@ -479,7 +492,8 @@ export interface BarRowOptions {
   readonly sub?: string;
   readonly value?: string;
   readonly fraction: number;
-  readonly barTone?: Tone;
+  /** The bar's colour: a tone, or `ink` (a destination's, no colour of its own). */
+  readonly barTone?: Tone | 'ink';
   readonly valueTone?: 'warning' | '';
   readonly onTap?: (() => void) | undefined;
 }

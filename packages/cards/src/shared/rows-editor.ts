@@ -19,10 +19,19 @@ export interface RowsListSpec {
   readonly title: MessageKey;
   /** The item's fields; the id field (`entity`, or `idKey`) is the first and required. */
   readonly schema: readonly HaFormSchemaItem[];
+  /**
+   * The fields one item shows, when they depend on the item (a grid source has no state of charge): a part of
+   * `schema`, the same array for the same answer so its form is not rebuilt on every render.
+   */
+  readonly schemaOf?: (item: Readonly<Record<string, unknown>>) => readonly HaFormSchemaItem[];
   /** Domains the add-picker offers; default: those of the schema's entity field. */
   readonly domains?: readonly string[];
   /** The field that identifies an item: `entity` (an entity picker adds items) or a text field such as a chip's `name`. */
   readonly idKey?: string;
+  /** Other fields that identify an item as well (a battery read by two sensors has no `power`): an entry that carries one is kept. */
+  readonly also?: readonly string[];
+  /** The add field when it is neither an entity nor text (a source's kind, from a list): its name is the `idKey`. */
+  readonly picker?: HaFormSchemaItem;
   /** The keys an item may carry, as its interface declares them: what the editors' contract checks the schema against. */
   readonly keys?: readonly string[];
   /** Words for the item's own fields; the card's, then the shared item words, name the rest. */
@@ -89,11 +98,24 @@ async function ensureEditorElements(): Promise<void> {
 
 export const idKeyOf = (list: RowsListSpec): string => list.idKey ?? 'entity';
 
-/** A config entry as an item: a bare id becomes `{ [idKey]: id }`; anything without an id is dropped. */
-export const toItem = (raw: unknown, idKey: string): Item | null => {
+/** An item whose first field is an entity picker (its box under a label): the handle and the cross line up with the box. */
+const pickedFirst = (list: RowsListSpec): boolean =>
+  (list.schema[0]?.selector as { entity?: unknown } | undefined)?.entity !== undefined;
+
+/** Whether a field holds an id: a non-empty text, or a list of them (a source's phases). */
+const holdsId = (value: unknown): boolean =>
+  (typeof value === 'string' && value !== '') ||
+  (Array.isArray(value) && value.some((v) => typeof v === 'string' && v !== ''));
+
+/**
+ * A config entry as an item: a bare id becomes `{ [idKey]: id }`; anything without an id — its `idKey`, or one of
+ * the fields that identify it as well (`also`) — is dropped.
+ */
+export const toItem = (raw: unknown, idKey: string, also: readonly string[] = []): Item | null => {
   if (typeof raw === 'string') return raw ? { [idKey]: raw } : null;
-  if (typeof raw === 'object' && raw !== null && typeof (raw as Item)[idKey] === 'string')
-    return raw as Item;
+  if (typeof raw !== 'object' || raw === null) return null;
+  const item = raw as Item;
+  if (typeof item[idKey] === 'string' || also.some((key) => holdsId(item[key]))) return item;
   return null;
 };
 
@@ -112,7 +134,9 @@ export const itemsOf = (config: LovelaceCardConfig | undefined, list: RowsListSp
   const own = config?.[list.key];
   const raw = Array.isArray(own) && own.length ? own : list.alias ? config?.[list.alias] : own;
   return Array.isArray(raw)
-    ? raw.map((entry) => toItem(entry, idKeyOf(list))).filter((item): item is Item => item !== null)
+    ? raw
+        .map((entry) => toItem(entry, idKeyOf(list), list.also))
+        .filter((item): item is Item => item !== null)
     : [];
 };
 
@@ -336,6 +360,10 @@ export class FluvyRowsEditor extends LitElement {
 
   private picker(list: RowsListSpec): HaFormSchemaItem[] {
     let schema = this.pickers.get(list);
+    if (!schema && list.picker) {
+      schema = [list.picker];
+      this.pickers.set(list, schema);
+    }
     if (!schema) {
       const idKey = idKeyOf(list);
       const domains =
@@ -379,14 +407,14 @@ export class FluvyRowsEditor extends LitElement {
         <div class="items">
           ${items.map(
             (item, index) =>
-              html`<div class="item ${idKeyOf(list) === 'entity' ? 'item--entity' : ''}">
+              html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
                 <div class="handle" aria-hidden="true">
                   <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
                 </div>
                 <ha-form
                   .hass=${this.hass}
                   .data=${item}
-                  .schema=${list.schema}
+                  .schema=${list.schemaOf?.(item) ?? list.schema}
                   .computeLabel=${this.labeler(list)}
                   @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
                 ></ha-form>

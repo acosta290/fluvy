@@ -9,11 +9,17 @@ export const OUTDOOR = /garten|terrasse|balkon|hof|einfahrt|außen|aussen|drauß
 /** solar: 34 stems in de, en, es, fr, it, nl, pt-BR, tr. */
 export const SOLAR = /wechselrichter|photovoltaik|solar|inverter|pv\b|photovolt|inversor|fotovolt|solaire|onduleur|panneaux|photovolta|solare|fotovoltaico|pannelli|zonnepanelen|omvormer|zonne|pv|painéis|paineis|güneş|gunes|invertör|invertor|fotovoltaik|panel/i;
 
-/** grid: 45 stems in de, en, es, fr, it, nl, pt-BR, tr. */
-export const GRID = /netz|zähler|zaehler|bezug|einspeis|power_meter|grid|meter|import|net_|contador|red_|_red\b|réseau|reseau|compteur|linky|soutirage|injection|rete|contatore|prelievo|immissione|net|netstroom|slimme meter|afname|teruglever|rede|medidor|relógio|relogio|consumo da rede|importação|importacao|exportação|exportacao|şebeke|sebeke|sayaç|sayac|ithal|alım\b/i;
+/** grid: 40 stems in de, en, es, fr, it, nl, pt-BR, tr. */
+export const GRID = /netz|zähler|zaehler|bezug|power_meter|grid|meter|import|net_|contador|red_|_red\b|importa|réseau|reseau|compteur|linky|soutirage|rete|contatore|prelievo|net|netstroom|slimme meter|afname|rede|medidor|relógio|relogio|consumo da rede|importação|importacao|şebeke|sebeke|sayaç|sayac|ithal|alım\b/i;
+
+/** grid_export: 40 stems in de, en, es, fr, it, nl, pt-BR, tr. */
+export const GRID_EXPORT = /einspeis|rückspeis|rueckspeis|export|feed_in|feed-in|feedin|returned|return_to_grid|exporta|vertido|excedente|inyecta|inyección|inyeccion|injection|injecté|injecte|revente|immissione|immessa|esporta|cessione|teruglever|terug_|exportação|exportacao|injeção|injecao|injetada|veriş|veris|verilen|ihracat|satış|satis/i;
 
 /** battery: 20 stems in de, en, es, fr, it, nl, pt-BR, tr. */
 export const BATTERY_POWER = /akku|speicher|battery|storage|bater|batterie|accumulateur|stockage|batteria|accumulo|accu|thuisbatterij|batterij|bateria|armazenamento|batarya|pil\b|akü|aku\b|depolama/i;
+
+/** charger: 37 stems in de, en, es, fr, it, nl, pt-BR, tr. */
+export const CHARGER = /wallbox|ladestation|ladepunkt|ladesäule|ladesaeule|charger|evse|ev_charg|ev charg|charge_point|chargepoint|charging_station|cargador|punto de carga|punto_de_carga|estación de carga|borne|chargeur|point de charge|colonnina|stazione di ricarica|caricatore|laadpaal|laadpunt|laadstation|carregador|estação de recarga|estacao de recarga|şarj istasyonu|sarj istasyonu|şarj cihazı|sarj cihazi|şarj ünitesi|sarj unitesi/i;
 
 /** home: 36 stems in de, en, es, fr, it, nl, pt-BR, tr. */
 export const HOME_POWER = /haus|wohnung|gesamtverbrauch|hausverbrauch|house|home|load|total_consum|casa|consumo_total|maison|logement|consommation totale|conso|abitazione|consumo totale|consumo casa|huis|woning|totaal verbruik|totaalverbruik|residência|residencia|consumo total|consumo da casa|ev\b|evin\b|toplam tüketim|toplam tuketim|tüketim|tuketim|yük\b|yuk\b|konut/i;

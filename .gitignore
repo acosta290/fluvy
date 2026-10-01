@@ -5,6 +5,8 @@ node_modules/
 dist/
 apps/design-lab/out/
 apps/playground/out/
+# the measurer's reports (`pnpm measure`)
+/out/
 # the build the integration ships: written by `pnpm build`, zipped by the release
 /custom_components/fluvy/frontend/
 /custom_components/fluvy/themes/

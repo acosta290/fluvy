@@ -7,6 +7,7 @@
 | [The settings panel](settings-panel.md) | the six tabs, house and personal settings, where they are stored |
 | [The theme](theme.md) | palettes, custom accents, shapes and buttons, the tokens, using the theme on its own |
 | [The cards](cards.md) | every card with its purpose, a minimal configuration and its options |
+| [Energy](energy.md) | how the energy cards read a house (the Energy dashboard, or your sources: one sensor, two, per phase), and every case |
 | [The automatic dashboards](automatic-dashboard.md) | the five templates (`custom:fluvy-home`, rooms, energy, security, wall), what they build from your home, and their options |
 | [Wall mode](wall.md) | a tablet on the wall: no sidebar or header, the screensaver, day and night, how to leave it |
 | [Activity and History](pages.md) | the two pages that stand in for the logbook and the history |

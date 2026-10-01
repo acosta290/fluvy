@@ -1,15 +1,15 @@
+import { flowHeight } from '../energy-family.js';
 import {
+  formatTime,
   relativeTime,
-  stateText,
   strings,
-  type EntityView,
   type FluvyCardConfig,
+  type HaFormSchemaItem,
   type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-
-import { head, ico, sheetStyles, type GlyphName, type Tone } from '@fluvy/ui';
+import { barRow, head, ico, sheetStyles, type Tone } from '@fluvy/ui';
 import {
   css,
   html,
@@ -20,192 +20,288 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card, type BaseKey } from '../shared/base.js';
-
+import { allocate, type Allocation, type Totals } from '../energy-model/allocate.js';
+import { fetchPrefs } from '../energy-model/house.js';
+import { fetchPeriod, PERIODS, type Period, type PeriodEnergy } from '../energy-model/period.js';
 import {
+  readPrefs,
+  type EnergyPrefs,
+  type PrefSource,
+  type SourceKind,
+} from '../energy-model/prefs.js';
+import { readMeasure, type Directed } from '../energy-model/reading.js';
+import {
+  ARROWS,
+  bothWays,
+  DEFAULT_THRESHOLD,
+  KIND,
+  legacySources,
+  measureOfSource,
+  prefSources,
+  SHOWS,
+  SOURCE_KEYS,
+  SOURCE_KINDS,
+  sourceIds,
+  type LegacyFlowKeys,
+  type SourceConfig,
+} from '../energy-model/sources.js';
+import { HeadFit } from '../energy/head.js';
+import { legendReadouts } from '../energy/legend.js';
+import { scaled, scaleOf, shortName, watts, type Scale } from '../energy/power.js';
+import { Card, type BaseKey } from '../shared/base.js';
+import { chipRow } from '../shared/chips.js';
+import { fitLine } from '../shared/fit.js';
+import { toneOf } from '../shared/colour.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec, type Move } from '../shared/config.js';
+import {
+  accentField,
   actionFields,
   boolField,
   colourFields,
   editorLabels,
+  editorWord,
   entitiesField,
   entityField,
   fieldRow,
   iconField,
+  numberField,
+  pickFields,
   selectField,
   textField,
   titleFields,
 } from '../shared/form.js';
-
-import { HeadFit } from '../energy/head.js';
-
-import { legendReadouts } from '../energy/legend.js';
-
-import { scaled, scaleOf, watts } from '../energy/power.js';
-import { flowStatus, houseBalance, IDLE, intensity, type FlowStatus } from './model.js';
-
+import type { RowsListSpec } from '../shared/rows-editor.js';
 import {
-  alongPoints,
-  arcPoints,
-  cubicPoints,
-  pathData,
-  reversed,
-  travelKeyframes,
-  trimEnd,
+  arcs,
+  crossLayout,
+  drawn,
+  headPath,
+  HOUSE_R,
+  pathOf,
+  railIn,
+  railTrack,
+  reverse,
+  rowsLayout,
+  TEXT,
+  type CrossKey,
   type Cubic,
   type Point,
-} from './path.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import { toneOf } from '../shared/colour.js';
-import { fitLine, type Segment } from '../shared/fit.js';
-import { listLength } from '../shared/heights.js';
+} from './geometry.js';
+import { MOTION_MODES, PulseEngine, type MotionMode, type Pulse } from './motion.js';
+import {
+  houseShares,
+  KIND_INK,
+  lanesOf,
+  oneWay,
+  said,
+  type Ink,
+  type LaneState,
+  type Origins,
+  type SceneNode,
+  type WayWords,
+} from './scene.js';
 
 const s = strings('energy-flow');
+
+export type FlowVariant = 'rows' | 'cross' | 'list';
+export const FLOW_VARIANTS: readonly FlowVariant[] = ['rows', 'cross', 'list'];
+export type FlowStyle = 'stream' | 'legs' | 'rail';
+export const FLOW_STYLES: readonly FlowStyle[] = ['stream', 'legs', 'rail'];
+export type FlowBadge = 'solar' | 'self_powered' | 'grid' | 'none';
+export const FLOW_BADGES: readonly FlowBadge[] = ['solar', 'self_powered', 'grid', 'none'];
+export type FlowPeriod = 'live' | Period;
+export const FLOW_PERIODS: readonly FlowPeriod[] = ['live', ...PERIODS];
 
 export interface EnergyFlowReadout {
   entity: string;
   name?: string;
 }
 
+export interface EnergyFlowConsumer {
+  entity: string;
+  name?: string;
+  icon?: string;
+  color?: string;
+}
+
 export interface EnergyFlowCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  /** Production. Always flows towards the house. */
-  solar_power?: string;
-  /** Positive = importing from the grid; `grid_invert` flips a meter that signs it the other way. */
-  grid_power?: string;
-  grid_invert?: boolean;
-  /** Positive = discharging into the house; `battery_invert` flips it. */
-  battery_power?: string;
-  battery_invert?: boolean;
-  battery_level?: string;
-  /** The house's own meter. Absent: solar + grid (import − export) + battery (discharge − charge). */
-  home_power?: string;
-  /** Up to three totals under the diagram (self-use, exported, imported today). */
-  readouts?: ReadonlyArray<string | EnergyFlowReadout>;
-  /** How the flows are drawn: `ribbons` (default: a band as thick as its power), `legs` (dashed curves with arrowheads) or `rail` (one track every source joins). */
+  /** Where the energy comes from. Empty: the Energy dashboard's own (every grid connection, array and battery). */
+  sources?: readonly SourceConfig[];
+  /** The house's own meter. Absent: what the sources add up to. */
+  home?: string;
+  /** Where it goes: the house's biggest consumers, and the rest of the house. */
+  consumers?: ReadonlyArray<string | EnergyFlowConsumer>;
+  /** `rows` (sources left, house right), `cross` (Home Assistant's arrangement) or `list`; narrow cards list. */
+  variant?: FlowVariant;
+  /** `stream` (lanes with pulses of light), `legs` (thin dashed lanes) or `rail` (one quiet track). */
   flow_style?: FlowStyle;
+  motion?: MotionMode;
+  /** The house's peak in watts: a flow's pace is its share of it (default 6 000 W). */
+  max_power?: number;
+  badge?: FlowBadge;
+  /** `live` (power) or a period's totals (energy, from the Energy dashboard's meters). */
+  period?: FlowPeriod;
+  /** Day · Week · Month chips over a period's diagram. */
+  show_period?: boolean;
+  /** Up to three totals under the diagram. */
+  readouts?: ReadonlyArray<string | EnergyFlowReadout>;
+  /** The tests' clock: "now" for the freshness words. */
+  _now?: string;
 }
 
-export type FlowStyle = 'ribbons' | 'legs' | 'rail';
-export const FLOW_STYLES: readonly FlowStyle[] = ['ribbons', 'legs', 'rail'];
+const DEFAULT_PEAK = 6000;
+/** A reading older than this and the diagram says so: everything rests. */
+const STALE_MS = 10 * 60_000;
+/** Consumers drawn beside the house need this much room; below it they are listed under the diagram. */
+const CONSUMERS_WIDE = 560;
+/** Over a period, a figure under 50 Wh rests. */
+const PERIOD_THRESHOLD = 50;
 
-/* geometry of the sheet: 44 nodes stacked on one x, the house ring on the right, tails on one x */
-const RING = 28; // contact radius: the 22 ring + 6 px clearance
-const PITCH = 80; // node to node
-const TOP = 42; // centre of the first node: one PITCH under the head's icon centre (20 + 22 + 16 + 42 = 122 = 42 + 80), so head, first and second node are evenly spaced
-const BOTTOM = 30; // air under the last node's centre (8 px past its circle)
-const TEXT_LEFT = 56; // 44 icon + 12
-const TEXT_MAX = 120; // the sheet's text column
-const TEXT_MIN = 88; // "Battery · 78 %" still fits
-const HOUSE_TEXT = 120; // the house's text column (energy.css)
-/** The text column and where every tail starts: 120 wide on the sheet, narrower before the links would be. */
-function textColumn(w: number): { text: number; tailX: number } {
-  const text = Math.min(TEXT_MAX, Math.max(TEXT_MIN, w - TEXT_LEFT - 108)); // 108 = 44 house + 64 of link
-  return { text, tailX: TEXT_LEFT + text };
-}
-const CONTACT = [-40, 0, 40] as const; // three separate contact points, so every arrowhead stays visible
-const PULL = [0.4376, 0.358] as const; // control-point pull of the sheet's links (44 and 36 of a 100.55 span)
-
-/* the travelling dots */
-const LAP = 3; // seconds a dot takes from tail to arrowhead at playback rate 1
-const DOT = 6; // px
-const BAND_STACK = 56; // the ribbons' house is a 56 circle (44 elsewhere): three bands still show their shares on it
-const BAND_MIN = 14; // room for the 6 px dot with its 2 px halo and 2 px of band on either side
-const BAND_MAX = 24; // a lone source is a band, not a block
-const RAIL_TRACK = 48; // the shared track before the house: the connectors carry the colour most of the way
-const DIAGRAM_MIN = 240; // narrower than this (a 6-column card) there is no room for a diagram: the sources and the house become a list
-const STEPS = 24; // keyframe stops per link: 6 px chords on the sheet's curves, a quarter of a pixel off the true line at most
-const SPACING = 32; // px between dots at least: a short link carries fewer
-/** Phase of each dot and the density level that shows it: 1 → one dot, 2 → two halves apart, 3 → three thirds apart. */
-const DOTS: ReadonlyArray<readonly [phase: number, levels: readonly number[]]> = [
-  [0, [1, 2, 3]],
-  [1 / 2, [2]],
-  [1 / 3, [3]],
-  [2 / 3, [3]],
-];
-
-interface Source {
-  readonly key: 'solar' | 'grid' | 'battery';
-  readonly cls: 'solar' | 'grid' | 'battery';
-  readonly tone: Tone;
-  readonly glyph: GlyphName;
-  readonly label: string;
-  readonly view: EntityView;
-  /** Signed watts, + towards the house and − away from it (export, charging); `null` when unusable. */
-  readonly power: number | null;
-}
-
-interface Chevron {
-  readonly x: number;
-  readonly y: number;
-  readonly left: boolean;
-  readonly cls: Source['cls'] | 'house';
-  /** half height: 4 on a leg or the rail, less inside a thin ribbon */ readonly h: number;
-}
-
-interface Link {
-  readonly source: Source;
-  readonly y: number;
-  /** What the style draws: the dashed leg or the rail connector (`d`), or the ribbon's outline (`band`). */
-  readonly d: string;
-  readonly band: string;
-  /** What the dots' way depends on (style, geometry, direction): when it changes, the keyframes are rebuilt. */
+/** One node of the diagram, resolved: what it is, how it reads, how it is drawn. */
+interface Node extends SceneNode {
   readonly key: string;
-  /** The dots' way, from where the energy comes from to where it goes, equally spaced by arc length. */
-  readonly points: readonly Point[];
-  readonly chevrons: readonly Chevron[];
-  readonly idle: boolean;
-  /** How many dots travel: 1 … 3, by power and by how much room the link has. */
-  readonly level: number;
-  /** Playback rate of the dots: 0.6 (a trickle, 5 s a lap) … 1.8 (5 kW and up, 1.7 s a lap). */
-  readonly rate: number;
+  readonly label: string;
+  readonly glyph: string;
+  readonly tone: Tone;
+  readonly accent: string | undefined;
+  readonly level: number | null;
+  readonly arrows: boolean;
+  readonly entity: string | undefined;
+  readonly lanes: readonly LaneState[];
+  readonly dead: boolean;
 }
 
-interface Stage {
-  readonly sources: readonly Source[];
-  readonly links: readonly Link[];
-  readonly houseX: number;
-  readonly houseY: number;
-  readonly height: number;
-  readonly style: FlowStyle;
-  /** The rail's track (rail style), and its arrow into the house when something comes in. */
-  readonly track: string;
-  readonly inward: Chevron | null;
-  /** Too narrow for the diagram: the card lists the sources and the house instead (no links, no dots). */
-  readonly narrow: boolean;
+interface Words {
+  readonly label: string;
+  readonly value: string;
+  readonly unit: string;
+  readonly way: string;
+  readonly second?: { readonly value: string; readonly unit: string; readonly way: string };
+  readonly dim: boolean;
 }
 
-const f = (n: number): string => n.toFixed(1);
-const chevronPath = (c: Chevron): string => {
-  const w = c.h * 1.25;
-  return c.left
-    ? `M${f(c.x + w)},${f(c.y - c.h)} L${f(c.x)},${f(c.y)} L${f(c.x + w)},${f(c.y + c.h)}`
-    : `M${f(c.x - w)},${f(c.y - c.h)} L${f(c.x)},${f(c.y)} L${f(c.x - w)},${f(c.y + c.h)}`;
+interface Consumer {
+  readonly key: string;
+  readonly label: string;
+  readonly glyph: string;
+  readonly accent: string | undefined;
+  readonly watts: number | null;
+  readonly entity: string | undefined;
+}
+
+interface Scene {
+  readonly nodes: readonly Node[];
+  readonly words: readonly Words[];
+  readonly house: Words;
+  readonly houseValue: number | null;
+  readonly consumers: readonly Consumer[];
+  readonly consumerWords: readonly Words[];
+  readonly allocation: Allocation | null;
+  readonly origins: Origins;
+  readonly stale: boolean;
+  readonly period: Period | null;
+  readonly empty: 'sources' | 'period' | null;
+  readonly scale: Scale;
+}
+
+/** The keys 1.3 read the sources from, read into `sources` (and never written). */
+const LEGACY_KEYS = [
+  'solar_power',
+  'grid_power',
+  'grid_invert',
+  'battery_power',
+  'battery_invert',
+  'battery_level',
+] as const;
+
+const moves: readonly Move[] = [{ from: 'home_power', to: 'home' }];
+
+const KIND_OPTIONS = {
+  select: {
+    mode: 'dropdown' as const,
+    options: SOURCE_KINDS.map((value) => ({
+      value,
+      label: editorWord(`energy-flow.kind_${value}`),
+    })),
+  },
 };
 
+/** Every field a source may carry, in the order its form shows them. */
+const SOURCE_FIELDS: HaFormSchemaItem[] = [
+  { name: 'type', selector: KIND_OPTIONS },
+  entityField(['sensor'], 'power', false),
+  { name: 'phases', selector: { entity: { domain: ['sensor'], multiple: true } } },
+  fieldRow(entityField(['sensor'], 'import', false), entityField(['sensor'], 'export', false)),
+  boolField('invert'),
+  fieldRow(entityField(['sensor'], 'level', false), numberField('capacity', 0, 1000, 0.1)),
+  fieldRow(textField('name'), iconField()),
+  fieldRow(accentField(), numberField('threshold', 0, 10000, 1)),
+  fieldRow(selectField('arrows', ARROWS), selectField('show', SHOWS)),
+];
+
 /**
- * The flow diagram: solar, grid and battery as icon circles feeding the house, each link carrying an
- * arrowhead at its destination and dots travelling along it, faster and denser with its power.
- * Direction follows the sign of the sensor, so a house that exports or a battery that charges reads
- * correctly in a still frame as well as in motion.
- *
- * Motion is CSS and runs on the compositor: every link gets one `@keyframes` rule that carries a dot
- * along the curve with `transform` (the curve sampled at equal arc lengths) and fades it at both ends
- * with `opacity`. It is paused while the link carries nothing and absent under reduced motion. The
- * only script is `updatePlaybackRate()` when a reading changes, which retunes the speed without
- * moving the dot — a changed `animation-duration` would make it jump. (`offset-path` draws the same
- * motion, but no browser animates `offset-distance` off the main thread: see the cost in the report.)
+ * What each kind is read by, beyond the fields every source has: two sensors for what can flow both ways, phases
+ * for what a house meters per phase, a charge for what stores energy. A field the item already carries stays shown.
+ */
+const KIND_FIELDS: Readonly<Record<SourceKind, readonly string[]>> = {
+  solar: ['phases'],
+  grid: ['phases', 'import', 'export'],
+  battery: ['import', 'export', 'level', 'capacity'],
+  generator: ['phases'],
+  vehicle: ['import', 'export', 'level', 'capacity'],
+};
+const EVERY_SOURCE = new Set([
+  'type',
+  'power',
+  'invert',
+  'name',
+  'icon',
+  'color',
+  'threshold',
+  'arrows',
+  'show',
+]);
+const sourceForms = new Map<string, HaFormSchemaItem[]>();
+
+function sourceSchema(item: Readonly<Record<string, unknown>>): readonly HaFormSchemaItem[] {
+  const own = KIND_FIELDS[item.type as SourceKind] as readonly string[] | undefined;
+  if (!own) return SOURCE_FIELDS;
+  const shown = (name: string): boolean =>
+    EVERY_SOURCE.has(name) ||
+    own.includes(name) ||
+    (item[name] !== undefined && item[name] !== '' && item[name] !== null);
+  const key = SOURCE_KEYS.filter(shown).join(',');
+  let form = sourceForms.get(key);
+  if (!form) {
+    form = pickFields(SOURCE_FIELDS, shown);
+    sourceForms.set(key, form);
+  }
+  return form;
+}
+
+/** 1.3's config in 1.4's words: the flat source keys become `sources`, and its ribbons (its default) the stream. */
+function upgrade(config: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> {
+  let next = config;
+  const legacy = legacySources(config as LegacyFlowKeys);
+  const listed = config['sources'];
+  if (legacy.length && !(Array.isArray(listed) && listed.length))
+    next = { ...next, sources: legacy };
+  if (config['flow_style'] === 'ribbons') next = { ...next, flow_style: 'stream' };
+  return next;
+}
+
+/**
+ * The flow diagram: where the house's energy comes from and where it goes, live or over a period. Sources are
+ * read the way their meters are — one signed sensor, two sensors (in and out), or one per phase summed per sign —
+ * so a house that imports on two phases and exports on the third shows both flows at once; with no sources given,
+ * the Energy dashboard's own are read. Every lane is coloured by where its energy came from, its arrowhead ends
+ * the lane, and pulses of light travel it at a pace set by its share of the house's peak.
  */
 export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: EnergyFlowCardConfig): number {
-    const sources = [config.solar_power, config.grid_power, config.battery_power].filter(
-      Boolean,
-    ).length;
-    const ribbons = !config.flow_style || config.flow_style === 'ribbons';
-    const stage = sources >= 3 ? (ribbons ? 332 : 292) : ribbons ? 256 : 216;
-    return stage + (listLength(config, ['readouts']) ? 60 : 0);
+    return flowHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -214,12 +310,6 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     css`
       .ef-card {
         width: 100%;
-      } /* the sheet fixes 360; a card takes the column it is given */
-      .ef-stage {
-        width: 100%;
-      }
-      .ef-stage svg {
-        display: block;
       }
       .ef-cols {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -227,117 +317,68 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       .ef-cols .fv-readout {
         min-width: 0;
       }
-      .ef-cols .fv-readout__label,
-      .ef-node__label {
+      .ef-cols .fv-readout__label {
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-      } /* names may ellipsize, values never */
-      .ef-node__label {
-        max-width: 100%;
       }
-      /* three totals in a column too narrow for three words: one a line */
       .ef-cols--stack {
         grid-template-columns: minmax(0, 1fr);
       }
-      .ef-link {
-        transition: opacity var(--fv-slow) var(--fv-ease);
-      }
-      .ef-link--idle {
-        opacity: 0.4;
-      }
-
-      /* the travelling energy: a mover carried along the link by its keyframes (see syncMotion), and the disc it carries */
-      .ef-dots {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-      }
-      .ef-dots--solar {
-        --ef-ink: var(--fluvy-state-energy-solar);
-      }
-      .ef-dots--grid {
-        --ef-ink: var(--fluvy-state-energy-grid);
-      }
-      .ef-dots--water {
-        --ef-ink: var(--fluvy-state-energy-water);
-      }
-      .ef-flow {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: ${DOT}px;
-        height: ${DOT}px;
-        opacity: 0;
-        animation: var(--ef-run) ${LAP}s linear infinite;
-        animation-delay: var(--ef-delay, 0s);
-      }
-      .ef-dots.is-idle .ef-flow {
-        animation-play-state: paused;
-      }
-      .ef-flow::before {
-        content: '';
-        display: block;
-        width: ${DOT}px;
-        height: ${DOT}px;
-        border-radius: 50%;
-        background: var(--ef-ink);
-        box-shadow: 0 0 0 2px var(--fluvy-card); /* the dash is cut around the dot, so it reads as one travelling packet */
-        transform: scale(0);
-        transition: transform var(--fv-slow) var(--fv-ease);
-      }
-      .ef-flow.is-on::before {
-        transform: none;
-      }
-
-      /* the global reduced-motion rule shortens animations to 1 ms; a loop has to go away instead —
-         the dashes and the arrowheads are the still the sheet was approved as */
-      @media (prefers-reduced-motion: reduce) {
-        .ef-dots {
-          display: none;
-        }
+      .en-list__row .en-words__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     `,
   ];
-
-  private ticker: number | undefined;
-  private readonly head = new HeadFit(this);
-  /** The card's own `<style>`: one `@keyframes` rule per link, rewritten only when a link's geometry changes. */
-  private motion: HTMLStyleElement | undefined;
-  private motionKey = '';
-  /** What this update draws, worked out once in `willUpdate`: `render` reads it, `updated` writes its keyframes. */
-  private scene: Stage = {
-    sources: [],
-    links: [],
-    houseX: 0,
-    houseY: 0,
-    height: 0,
-    style: 'ribbons',
-    track: '',
-    inward: null,
-    narrow: false,
-  };
-  /** Links sampled for the keyframes, by path data: a reading changes far more often than a curve does. */
-  private readonly sampled = new Map<string, { points: Point[]; length: number }>();
-  /** The freshness text on screen, so the ticker only asks for a render when it would change. */
-  private shownFreshness = '';
 
   /** A diagram of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
   static override base: readonly BaseKey[] = ['icon', 'tone', 'color', 'tap_action', 'hold_action'];
   static override keys = configKeys<EnergyFlowCardConfig>()([
     'title',
     'subtitle',
-    'solar_power',
-    'grid_power',
-    'grid_invert',
-    'battery_power',
-    'battery_invert',
-    'battery_level',
-    'home_power',
-    'readouts',
+    'sources',
+    'home',
+    'consumers',
+    'variant',
     'flow_style',
+    'motion',
+    'max_power',
+    'badge',
+    'period',
+    'show_period',
+    'readouts',
   ]);
   static override lists: readonly RowsListSpec[] = [
+    {
+      key: 'sources',
+      title: 'energy-flow.editor_sources',
+      idKey: 'type',
+      picker: { name: 'type', selector: KIND_OPTIONS },
+      keys: SOURCE_KEYS,
+      schema: SOURCE_FIELDS,
+      schemaOf: sourceSchema,
+      computeLabel: editorLabels(s, {
+        type: 'editor_type',
+        power: 'editor_power',
+        phases: 'editor_phases',
+        import: 'editor_import',
+        export: 'editor_export',
+        invert: 'editor_invert',
+        level: 'editor_level',
+        capacity: 'editor_capacity',
+        threshold: 'editor_threshold',
+        arrows: 'editor_arrows',
+        show: 'editor_show',
+      }).computeLabel,
+    },
+    {
+      key: 'consumers',
+      title: 'energy-flow.editor_consumers',
+      domains: ['sensor'],
+      keys: ['entity', 'name', 'icon', 'color'],
+      schema: [entityField(['sensor']), fieldRow(textField('name'), iconField()), accentField()],
+    },
     {
       key: 'readouts',
       title: 'editor.rows',
@@ -346,21 +387,41 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       schema: [entityField(['sensor']), textField('name')],
     },
   ];
-  static override aliases: AliasSpec = { items: { readouts: ITEM_ALIASES } };
+  static override aliases: AliasSpec = {
+    keys: moves,
+    items: {
+      readouts: ITEM_ALIASES,
+      consumers: ITEM_ALIASES,
+      sources: [{ from: 'power', to: 'phases', when: Array.isArray }],
+    },
+    upgrade,
+    drop: LEGACY_KEYS,
+  };
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
+        fieldRow(iconField(), entityField(['sensor'], 'home', false)),
+        fieldRow(selectField('variant', FLOW_VARIANTS), selectField('flow_style', FLOW_STYLES)),
+        fieldRow(selectField('motion', MOTION_MODES), numberField('max_power', 100, 100000, 100)),
         fieldRow(
-          entityField(['sensor'], 'solar_power', false),
-          entityField(['sensor'], 'home_power', false),
+          {
+            name: 'badge',
+            selector: {
+              select: {
+                mode: 'dropdown',
+                options: FLOW_BADGES.map((value) => ({
+                  value,
+                  label: editorWord(
+                    value === 'none' ? 'option.none' : `energy-flow.badge_${value}`,
+                  ),
+                })),
+              },
+            },
+          },
+          selectField('period', FLOW_PERIODS),
         ),
-        entityField(['sensor'], 'grid_power', false),
-        boolField('grid_invert'),
-        entityField(['sensor'], 'battery_power', false),
-        boolField('battery_invert'),
-        fieldRow(entityField(['sensor'], 'battery_level', false), iconField()),
-        selectField('flow_style', FLOW_STYLES),
+        boolField('show_period'),
         entitiesField('readouts', ['sensor']),
         colourFields(),
         actionFields(),
@@ -368,18 +429,15 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       ...editorLabels(
         s,
         {
-          grid_invert: 'editor_grid_invert',
-          battery_invert: 'editor_battery_invert',
-          battery_level: 'editor_battery_level',
-          home_power: 'editor_home',
+          home: 'editor_home',
           readouts: 'editor_readouts',
+          max_power: 'editor_max_power',
+          badge: 'editor_badge',
+          motion: 'editor_motion',
+          period: 'editor_period',
+          show_period: 'editor_show_period',
         },
-        {
-          flow_style: 'editor.flow_style',
-          solar_power: 'energy.solar',
-          grid_power: 'energy.grid',
-          battery_power: 'energy.battery',
-        },
+        { flow_style: 'editor.flow_style' },
       ),
     };
   }
@@ -394,48 +452,45 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const pick = (word: RegExp): string | undefined => power.find((id) => word.test(id));
     const solar = pick(/solar|pv|inverter/i);
     const battery = pick(/batter/i);
-    const grid =
-      pick(/grid|mains|red/i) ??
-      power.find((id) => id !== solar && id !== battery) ??
-      entities.find((id) => id.startsWith('sensor.')) ??
-      '';
-    return {
-      type: 'custom:fluvy-energy-flow-card',
-      grid_power: grid,
-      ...(solar ? { solar_power: solar } : {}),
-      ...(battery ? { battery_power: battery } : {}),
-    };
+    const grid = pick(/grid|mains|red|net/i);
+    const sources: SourceConfig[] = [
+      ...(solar ? [{ type: 'solar' as const, power: solar }] : []),
+      ...(grid ? [{ type: 'grid' as const, power: grid }] : []),
+      ...(battery ? [{ type: 'battery' as const, power: battery }] : []),
+    ];
+    // nothing recognisable: the Energy dashboard's own sources
+    return { type: 'custom:fluvy-energy-flow-card', ...(sources.length ? { sources } : {}) };
   }
 
-  protected override prepare(config: EnergyFlowCardConfig): EnergyFlowCardConfig {
-    if (!config.solar_power && !config.grid_power && !config.battery_power) {
-      throw new Error(
-        'fluvy-energy-flow-card: set at least one of "solar_power", "grid_power", "battery_power"',
-      );
-    }
-    return config;
-  }
+  private readonly head = new HeadFit(this);
+  private readonly pulses = new PulseEngine(this);
+  private ticker: number | undefined;
+  private prefs: EnergyPrefs | null | undefined;
+  private prefsAsked = false;
+  private chosen: Period | undefined;
+  private periodData: PeriodEnergy | null | undefined;
+  private periodKey = '';
+  private shownFreshness = '';
+  private scene: Scene | undefined;
 
   override getCardSize(): number {
-    return 2 + 2 * this.sourceIds().length + (this.readouts().length ? 1 : 0);
+    return Math.ceil(FluvyEnergyFlowCard.layoutHeight(this.config ?? { type: '' }) / 50);
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
-  private sourceIds(): string[] {
-    const c = this.config;
-    return [c?.solar_power, c?.grid_power, c?.battery_power].filter((id): id is string => !!id);
+  /* ---------- configuration ---------- */
+
+  private sourceList(): readonly SourceConfig[] {
+    const own = this.config?.sources ?? [];
+    return own.length ? own : prefSources(this.prefs);
   }
 
-  protected override watched(): readonly string[] {
-    const c = this.config;
-    return [
-      ...this.sourceIds(),
-      c?.battery_level,
-      c?.home_power,
-      ...this.readouts().map((r) => r.entity),
-    ].filter((id): id is string => !!id);
+  private consumerList(): EnergyFlowConsumer[] {
+    return (this.config?.consumers ?? [])
+      .map((c) => (typeof c === 'string' ? { entity: c } : c))
+      .filter((c) => typeof c.entity === 'string' && c.entity !== '');
   }
 
   private readouts(): EnergyFlowReadout[] {
@@ -444,373 +499,506 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       .map((r) => (typeof r === 'string' ? { entity: r } : r));
   }
 
+  private periodOf(): Period | null {
+    const period = this.config?.period;
+    if (!period || period === 'live' || !PERIODS.includes(period)) return null;
+    return this.chosen ?? period;
+  }
+
+  protected override watched(): readonly string[] {
+    return [
+      ...this.sourceList().flatMap(sourceIds),
+      this.config?.home,
+      ...this.consumerList().map((c) => c.entity),
+      ...this.readouts().map((r) => r.entity),
+    ].filter((id): id is string => !!id);
+  }
+
   /* ---------- lifecycle ---------- */
 
   override connectedCallback(): void {
     super.connectedCallback();
-    // "Live · 5 s ago" is a claim about the clock: checked every 5 s, rendered only when its words change
+    this.pulses.connect();
+    // "Live · 5 s ago" is a claim about the clock: checked every 5 s, drawn only when its words change
     this.ticker = window.setInterval(() => {
-      if (
-        this.config &&
-        this.config.subtitle === undefined &&
-        this.freshness() !== this.shownFreshness
-      )
+      if (!this.config) return;
+      if (this.periodOf()) {
+        this.requestUpdate(); // a period's totals are asked for again when their cache runs out
+        return;
+      }
+      if (this.config.subtitle === undefined && this.freshness() !== this.shownFreshness)
         this.requestUpdate();
     }, 5000);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.pulses.disconnect();
     window.clearInterval(this.ticker);
     this.ticker = undefined;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
+    if (!this.config) return;
+    this.askPrefs();
+    this.askPeriod();
     this.shownFreshness = this.freshness();
-    this.scene = this.stage(this.sources());
+    this.scene = this.build();
   }
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
-    this.syncMotion();
+    const stage = this.renderRoot.querySelector<HTMLElement>('.en-stage');
+    this.pulses.sync(
+      stage,
+      this.pulseList(),
+      this.config?.motion ?? 'full',
+      this.config?.max_power ?? DEFAULT_PEAK,
+      stage ? [stage.offsetWidth, stage.offsetHeight] : [0, 0],
+    );
   }
 
-  /** The dots' way along a path, sampled once per geometry (a resize or a new reading builds a new one). */
-  private trail(key: string, fine: () => readonly Point[]): { points: Point[]; length: number } {
-    let hit = this.sampled.get(key);
-    if (!hit) {
-      if (this.sampled.size > 12) this.sampled.clear(); // a resize leaves old widths behind
-      this.sampled.set(key, (hit = alongPoints(fine(), STEPS)));
-    }
-    return hit;
+  /** The Energy dashboard's preferences: read when a card has no sources of its own or shows a period. */
+  private askPrefs(): void {
+    if (this.prefsAsked || !this.hass) return;
+    if ((this.config?.sources ?? []).length && !this.periodOf()) return;
+    this.prefsAsked = true;
+    void fetchPrefs(this.hass).then((prefs) => {
+      this.prefs = prefs;
+      this.requestUpdate();
+    });
   }
 
-  /** Writes the keyframes of the links just rendered, then sets each link's pace. */
-  private syncMotion(): void {
-    // a ribbon's centreline moves with its share of the flow: the key carries the geometry, not just the path data
-    const key = this.scene.links.map((link) => link.key).join('|');
-    if (key !== this.motionKey) {
-      this.motionKey = key;
-      this.motion ??= this.renderRoot.appendChild(document.createElement('style'));
-      this.motion.textContent = this.scene.links
-        .map((link, i) => travelKeyframes(`ef-run-${i}`, link.points, DOT))
-        .join('\n');
-    }
-    // speed follows power without a jump: the running animation keeps its progress and only changes pace
-    for (const group of this.renderRoot.querySelectorAll<HTMLElement>('.ef-dots')) {
-      const rate = Number(group.dataset['rate']);
-      if (!(rate > 0) || group.classList.contains('is-idle')) continue;
-      for (const dot of group.children) {
-        for (const animation of dot.getAnimations()) {
-          if (animation instanceof CSSAnimation && Math.abs(animation.playbackRate - rate) > 0.01)
-            animation.updatePlaybackRate(rate);
-        }
-      }
-    }
+  private askPeriod(): void {
+    const period = this.periodOf();
+    if (!period || !this.hass || this.prefs === undefined) return;
+    const now = new Date(this.now());
+    const key = `${period}|${Math.floor(now.getTime() / 300_000)}|${this.prefs ? 'p' : ''}`;
+    if (key === this.periodKey) return;
+    this.periodKey = key;
+    const house = readPrefs(this.prefs);
+    void fetchPeriod(this.hass, house.sources, period, now).then((data) => {
+      this.periodData = data;
+      this.requestUpdate();
+    });
   }
 
-  /* ---------- model ---------- */
+  /* ---------- the scene ---------- */
 
-  private sources(): Source[] {
-    const c = this.config;
-    const read = (id: string, invert: boolean): { view: EntityView; power: number | null } => {
-      const view = this.entity(id);
-      const raw = watts(view);
-      return { view, power: raw === null ? null : invert ? -raw : raw };
+  private ways(): WayWords {
+    return {
+      in: s(this.hass, 'way_in'),
+      out: s(this.hass, 'way_out'),
+      charging: s(this.hass, 'way_charging'),
+      discharging: s(this.hass, 'way_discharging'),
+      charged: s(this.hass, 'way_charged'),
+      discharged: s(this.hass, 'way_discharged'),
     };
-    const out: Source[] = [];
-    if (c?.solar_power) {
-      const { view, power } = read(c.solar_power, false);
-      // an inverter asleep reports a few watts of its own draw as negative production: that is not a flow
-      out.push({
-        key: 'solar',
-        cls: 'solar',
-        tone: 'solar',
-        glyph: 'sun',
-        label: this.t('energy.solar'),
-        view,
-        power: power === null ? null : Math.max(0, power),
-      });
+  }
+
+  private kindName(kind: SourceKind): string {
+    return s(this.hass, `kind_${kind}`);
+  }
+
+  private build(): Scene {
+    const period = this.periodOf();
+    const ways = this.ways();
+    const base = period ? 'Wh' : 'W';
+    let nodes: Omit<Node, 'lanes'>[];
+    let allocation: Allocation | null;
+    let empty: Scene['empty'] = null;
+
+    if (period) {
+      const house = readPrefs(this.prefs);
+      const data = this.periodData;
+      const sources = house.sources.filter((p) => p.energyIn.length || p.energyOut.length);
+      nodes = sources.map((p, i) => this.periodNode(p, i, sources, data));
+      allocation = data ? data.allocation : null;
+      if (allocation) allocation = scaleAllocation(allocation, 1000);
+      if (!sources.length && this.prefs !== undefined) empty = 'period';
+    } else {
+      const configs = this.sourceList();
+      nodes = configs.map((c, i) => this.liveNode(c, i, configs));
+      const readable = nodes.every((n) => !n.dead);
+      allocation = readable && nodes.length ? allocate(totalsOf(nodes)) : null;
+      if (!configs.length && (this.config?.sources?.length || this.prefs !== undefined))
+        empty = 'sources';
     }
-    if (c?.grid_power) {
+
+    const origins: Origins = {
+      allocation,
+      solar: nodes.find((n) => n.kind === 'solar')?.ink,
+      grid: nodes.find((n) => n.kind === 'grid')?.ink,
+      battery: nodes.find((n) => n.kind === 'battery')?.ink,
+    };
+    const stale = !period && this.isStale();
+    const shown = nodes
+      .map((n) => ({ ...n, lanes: lanesOf(n, origins) }))
+      .filter((n) => {
+        const show = this.sourceList()[Number(n.key.split('-')[1])]?.show ?? 'always';
+        if (period || show === 'always') return true;
+        if (show === 'never') return false;
+        return n.lanes.some((l) => !l.rest);
+      })
+      .map((n) => (stale ? { ...n, lanes: n.lanes.map((l) => ({ ...l, rest: true })) } : n));
+
+    // the house: its own meter, else what the sources add up to (known only when every source reads)
+    const homeId = this.config?.home;
+    const houseValue = period
+      ? (allocation?.usedTotal ?? null)
+      : homeId
+        ? watts(this.entity(homeId))
+        : (allocation?.usedTotal ?? null);
+
+    const consumers = period ? [] : this.consumers(houseValue);
+    const figures = [
+      ...shown.flatMap((n) => [n.reading.in, n.reading.out]),
+      houseValue,
+      ...consumers.map((c) => c.watts),
+    ];
+    const scale = scaleOf(figures, base);
+    const fig = (v: number | null): { value: string; unit: string } =>
+      v === null
+        ? { value: '—', unit: '' }
+        : { value: scaled(this.hass, v, scale), unit: scale.unit };
+
+    const words = shown.map((n): Words => {
+      const say = said(n, ways, Boolean(period));
+      const first = fig(say.first.value);
+      return {
+        label: n.label,
+        ...first,
+        way: say.first.way,
+        ...(say.second ? { second: { ...fig(say.second.value), way: say.second.way } } : {}),
+        dim: say.idle || stale,
+      };
+    });
+    const houseWords: Words = {
+      label: s(this.hass, 'house'),
+      ...fig(houseValue),
+      way: '',
+      dim: stale,
+    };
+    const consumerWords = consumers.map((c): Words => ({
+      label: c.label,
+      ...fig(c.watts),
+      way: '',
+      dim: stale,
+    }));
+    return {
+      nodes: shown,
+      words,
+      house: houseWords,
+      houseValue,
+      consumers,
+      consumerWords,
+      allocation,
+      origins,
+      stale,
+      period,
+      empty,
+      scale,
+    };
+  }
+
+  private inkOf(
+    kind: SourceKind,
+    color: unknown,
+  ): { ink: Ink; tone: Tone; accent: string | undefined } {
+    const accent = color !== undefined && color !== '' ? this.accents.item(color) : undefined;
+    if (accent) return { ink: { tone: 'accent', accent }, tone: 'accent', accent };
+    return { ink: { tone: KIND_INK[kind] }, tone: KIND[kind].tone, accent: undefined };
+  }
+
+  private liveNode(c: SourceConfig, i: number, all: readonly SourceConfig[]): Omit<Node, 'lanes'> {
+    const measure = measureOfSource(c);
+    const reading: Directed = measure
+      ? readMeasure(measure, (id) => this.entity(id))
+      : { in: null, out: null };
+    // an inverter asleep reports its own few watts as negative production: that is not a flow
+    const clean: Directed = oneWay(c.type)
+      ? { in: reading.in, out: reading.in === null ? null : 0 }
+      : reading;
+    const levelView = c.level ? this.entity(c.level) : undefined;
+    const level = levelView?.number ?? null;
+    const same = all.filter((o) => o.type === c.type).length;
+    const name = c.name ?? (same > 1 ? this.nameOf(c) : this.kindName(c.type));
+    const { ink, tone, accent } = this.inkOf(c.type, c.color);
+    return {
+      key: `source-${i}`,
+      kind: c.type,
+      ink,
+      reading: clean,
+      threshold: c.threshold ?? DEFAULT_THRESHOLD,
+      pair: bothWays(c),
+      label: level === null ? name : `${name} · ${Math.round(Math.min(100, Math.max(0, level)))} %`,
+      glyph: c.icon ?? KIND[c.type].glyph,
+      tone,
+      accent,
+      level,
+      arrows: (c.arrows ?? 'arrival') !== 'none',
+      entity: sourceIds(c)[0],
+      dead: clean.in === null || clean.out === null,
+    };
+  }
+
+  /** A source's name when there are several of its kind: its sensor's, short. */
+  private nameOf(c: SourceConfig): string {
+    const id = sourceIds(c)[0];
+    return id ? shortName(this.entity(id)) : this.kindName(c.type);
+  }
+
+  private periodNode(
+    p: PrefSource,
+    i: number,
+    all: readonly PrefSource[],
+    data: PeriodEnergy | null | undefined,
+  ): Omit<Node, 'lanes'> {
+    const sum = (ids: readonly string[]): number | null =>
+      data ? ids.reduce((acc, id) => acc + (data.byStat.get(id) ?? 0), 0) * 1000 : null;
+    const same = all.filter((o) => o.kind === p.kind).length;
+    const first = p.energyIn[0] ?? p.energyOut[0];
+    const name =
+      p.name ?? (same > 1 && first ? shortName(this.entity(first)) : this.kindName(p.kind));
+    const { ink, tone, accent } = this.inkOf(p.kind, undefined);
+    const into = sum(p.energyIn);
+    const out = oneWay(p.kind) ? (into === null ? null : 0) : sum(p.energyOut);
+    return {
+      key: `source-${i}`,
+      kind: p.kind,
+      ink,
+      reading: { in: into, out },
+      threshold: PERIOD_THRESHOLD,
+      pair: !oneWay(p.kind) && p.energyIn.length > 0 && p.energyOut.length > 0,
+      label: name,
+      glyph: KIND[p.kind].glyph,
+      tone,
+      accent,
+      level: null,
+      arrows: true,
+      entity: first,
+      dead: false,
+    };
+  }
+
+  private consumers(house: number | null): Consumer[] {
+    const list = this.consumerList();
+    if (!list.length) return [];
+    const out: Consumer[] = list.map((c, i) => {
+      const view = this.entity(c.entity);
+      return {
+        key: `consumer-${i}`,
+        label: c.name ?? shortName(view),
+        glyph: c.icon ?? 'plug',
+        accent: c.color !== undefined && c.color !== '' ? this.accents.item(c.color) : undefined,
+        watts: watts(view),
+        entity: c.entity,
+      };
+    });
+    // the rest of the house: what its meter says the named ones do not account for
+    const named = out.reduce<number | null>(
+      (sum, c) => (sum === null || c.watts === null ? null : sum + c.watts),
+      0,
+    );
+    if (house !== null && named !== null && house - named >= DEFAULT_THRESHOLD)
       out.push({
-        key: 'grid',
-        cls: 'grid',
-        tone: 'grid',
-        glyph: 'bolt',
-        label: this.t('energy.grid'),
-        ...read(c.grid_power, c.grid_invert ?? false),
+        key: 'rest',
+        label: s(this.hass, 'rest_of_house'),
+        glyph: 'plug',
+        accent: undefined,
+        watts: house - named,
+        entity: undefined,
       });
-    }
-    if (c?.battery_power) {
-      const level = c.battery_level ? this.entity(c.battery_level).number : null;
-      const percent = level === null ? null : Math.round(Math.min(100, Math.max(0, level)));
-      const label =
-        percent === null ? this.t('energy.battery') : `${this.t('energy.battery')} · ${percent} %`;
-      out.push({
-        key: 'battery',
-        cls: 'battery',
-        tone: 'battery',
-        glyph: 'battery',
-        label,
-        ...read(c.battery_power, c.battery_invert ?? false),
-      });
-    }
     return out;
   }
 
-  private flowStyle(): FlowStyle {
-    const style = this.config?.flow_style;
-    return style && FLOW_STYLES.includes(style) ? style : 'ribbons';
-  }
-
-  /** The stage: where each node sits, and each flow drawn from where its energy comes from to where it goes — in the configured style. */
-  private stage(sources: readonly Source[]): Stage {
-    const count = sources.length;
-    const style = this.flowStyle();
-    if (this.contentWidth < DIAGRAM_MIN)
-      return {
-        sources,
-        links: [],
-        houseX: 0,
-        houseY: 0,
-        height: 0,
-        style,
-        track: '',
-        inward: null,
-        narrow: true,
-      };
-    const legs = style === 'legs';
-    const houseR = style === 'ribbons' ? 28 : 22; // the ribbons land on a 56 circle
-    const houseX = this.contentWidth - houseR;
-    const houseEdge = houseX - houseR - 1; // where a ribbon or the rail meets the house's circle
-    // every style: the house faces the middle of the sources; every leg, ribbon or connector leaves from its row's centre
-    // (the approved sheet: two legs mirror each other at ∓40°, three meet the house at −40° / 0° / +40°)
-    // …with its circle's top on the 4 px grid (the 56 house facing two rows sits 2 px under their middle)
-    const houseY = Math.round((TOP + (PITCH / 2) * (count - 1) - houseR) / 4) * 4 + houseR;
-    // the house label hangs 30 (36 on the big house) + 36 under its centre; the stage ends on the grid too
-    const height =
-      Math.ceil(
-        Math.max(TOP + PITCH * (count - 1) + BOTTOM, houseY + (style === 'ribbons' ? 72 : 66)) / 4,
-      ) * 4;
-    const angles: readonly number[] =
-      count >= 3 ? CONTACT : count === 2 ? [CONTACT[0], CONTACT[2]] : [CONTACT[1]]; // two legs meet the house at ∓40°: concave and convex, mirrored
-    const { tailX } = textColumn(this.contentWidth);
-    // ribbons: every band is as thick as its share of what flows (a thread at least); they stack on the house, centred on it
-    const powers = sources.map((source) => Math.abs(source.power ?? 0));
-    const flowing = powers.map((power) => (power >= IDLE ? power : 0));
-    const total = flowing.reduce((sum, power) => sum + power, 0);
-    // every band keeps BAND_MIN; what is left of the house's height is shared by power, so the stack fits the circle
-    const budget = Math.max(0, BAND_STACK - BAND_MIN * count);
-    const thickness = flowing.map((power) =>
-      Math.min(BAND_MAX, BAND_MIN + (total > 0 ? Math.round((budget * power) / total) : 0)),
-    );
-    let slot = Math.round(houseY - thickness.reduce((sum, t) => sum + t, 0) / 2); // whole pixels: crisp band edges at 1×
-    const railY = houseY;
-    const junction = Math.max(tailX + 40, houseEdge - RAIL_TRACK); // the connectors join just before the short shared track
-    let inward: Chevron | null = null;
-
-    const links = sources.map((source, i): Link => {
-      const y = TOP + i * PITCH;
-      const power = powers[i] ?? 0;
-      const out = (source.power ?? 0) < 0;
-      const idle = power < IDLE;
-      const chevrons: Chevron[] = [];
-      let d = '';
-      let band = '';
-      let fine: () => Point[];
-      if (legs) {
-        const ly = y;
-        const angle = ((angles[i] ?? 0) * Math.PI) / 180;
-        const ex = houseX - RING * Math.cos(angle);
-        const ey = houseY + RING * Math.sin(angle);
-        const span = Math.max(16, ex - tailX);
-        const in_: Cubic = {
-          from: [tailX, ly],
-          c1: [tailX + span * PULL[0], ly],
-          c2: [ex - span * PULL[1], ey],
-          to: [ex, ey],
-        };
-        const curve = out ? reversed(in_) : in_;
-        d = pathData(curve);
-        fine = () => cubicPoints(curve);
-      } else if (style === 'ribbons') {
-        const t = thickness[i] ?? BAND_MIN;
-        const s0 = slot;
-        const s1 = slot + t;
-        slot = s1;
-        const c = Math.max(24, (houseEdge - tailX) * 0.45);
-        const top: Cubic = {
-          from: [tailX, y - t / 2],
-          c1: [tailX + c, y - t / 2],
-          c2: [houseEdge - c, s0],
-          to: [houseEdge, s0],
-        };
-        const bottom: Cubic = {
-          from: [tailX, y + t / 2],
-          c1: [tailX + c, y + t / 2],
-          c2: [houseEdge - c, s1],
-          to: [houseEdge, s1],
-        };
-        band = `${pathData(top)} L${f(houseEdge)},${f(s1)} ${pathData(reversed(bottom)).replace('M', 'L')} Z`;
-        fine = () => {
-          const a = cubicPoints(top);
-          const b = cubicPoints(bottom);
-          const mid = a.map((pt, k): Point => [
-            (pt[0] + (b[k]?.[0] ?? pt[0])) / 2,
-            (pt[1] + (b[k]?.[1] ?? pt[1])) / 2,
-          ]);
-          // the trail stops 12 px short of the chevron, so a dot never crosses it
-          const way = out ? mid.reverse() : mid;
-          return trimEnd(way, 12);
-        };
-        const h = Math.min(4, t / 2 - 3); // the chevron keeps 3 px of band above and below
-        if (!idle)
-          chevrons.push(
-            out
-              ? { x: tailX + 2, y, left: true, cls: source.cls, h }
-              : { x: houseEdge - 2, y: (s0 + s1) / 2, left: false, cls: source.cls, h },
-          );
-      } else {
-        const dy = railY - y;
-        let way: Point[];
-        const x0 = out ? tailX + 1 : tailX; // an export's arrow tip sits on tailX: the line stops just behind it
-        if (Math.abs(dy) < 1) {
-          d = `M${f(x0)},${f(y)} H${f(junction)}`;
-          way = [
-            [tailX, y],
-            [junction, y],
-          ];
-        } else if (dy > 0) {
-          // the row is above the rail: right, down, right
-          const bend = junction - 24; // where the connector turns: a 12 arc down, a 12 arc back to the right
-          d = `M${f(x0)},${f(y)} H${f(bend - 12)} a12,12 0 0 1 12,12 V${f(railY - 12)} a12,12 0 0 0 12,12`;
-          way = [
-            [tailX, y],
-            [bend - 12, y],
-            ...arcPoints(bend - 12, y + 12, 12, -90, 0),
-            [bend, railY - 12],
-            ...arcPoints(bend + 12, railY - 12, 12, 180, 90),
-          ];
-        } else {
-          // below the rail: right, up, right
-          const bend = junction - 24;
-          d = `M${f(x0)},${f(y)} H${f(bend - 12)} a12,12 0 0 0 12,-12 V${f(railY + 12)} a12,12 0 0 1 12,-12`;
-          way = [
-            [tailX, y],
-            [bend - 12, y],
-            ...arcPoints(bend - 12, y - 12, 12, 90, 0),
-            [bend, railY + 12],
-            ...arcPoints(bend + 12, railY + 12, 12, 180, 270),
-          ];
-        }
-        way.push([houseEdge, railY]);
-        fine = () => (out ? [...way].reverse() : way);
-        if (!idle && out) chevrons.push({ x: tailX, y, left: true, cls: source.cls, h: 4 }); // the tip ends the connector
-        if (!idle && !out) inward = { x: houseEdge, y: railY, left: false, cls: 'house', h: 4 }; // the tip ends the track
-      }
-      const key = `${style}|${d}${band}|${out ? 'out' : 'in'}`;
-      const trail = this.trail(key, fine);
-      const strength = intensity(power);
-      const room = Math.max(1, Math.floor(trail.length / SPACING));
-      return {
-        source,
-        y,
-        d,
-        band,
-        key,
-        points: trail.points,
-        chevrons,
-        idle,
-        level: Math.min(room, 1 + Math.min(2, Math.floor(strength * 3))),
-        rate: 0.6 + 1.2 * strength,
-      };
-    });
-    const track =
-      style === 'rail' && count
-        ? `M${f(junction - 3)},${f(railY)} H${f(inward ? houseEdge - 1 : houseEdge)}`
-        : ''; // the track stops behind the arrow's tip
-    return { sources, links, houseX, houseY, height, style, track, inward, narrow: false };
-  }
-
-  /** "Live · 5 s ago" while the readings are fresh, "12 min ago" once they are not: "live" is only said when true. */
-  private freshness(): string {
+  /** The newest reading of every source: "live" is only said when it is true. */
+  private newest(): number {
     let newest = 0;
-    for (const id of [...this.sourceIds(), this.config?.home_power]) {
-      const at = Date.parse((id && this.hass?.states[id]?.last_updated) || '');
+    for (const id of [...this.sourceList().flatMap(sourceIds), this.config?.home]) {
+      const state = id ? this.hass?.states[id] : undefined;
+      const at = Date.parse(
+        (state as { last_reported?: string } | undefined)?.last_reported ??
+          state?.last_updated ??
+          '',
+      );
       if (at > newest) newest = at;
     }
-    const live = s(this.hass, 'live');
-    if (!newest) return live;
-    const age = Math.max(0, Math.floor((Date.now() - newest) / 5000) * 5);
-    if (age < 5) return `${live} · ${this.t('common.now').toLowerCase()}`;
-    if (age < 60) return `${live} · ${s(this.hass, 'seconds_ago', { count: age })}`;
-    const text = relativeTime(this.hass, new Date(newest));
-    return text.charAt(0).toUpperCase() + text.slice(1);
+    return newest;
   }
 
-  private badge(status: FlowStatus): { text: string; tone: Tone } {
-    switch (status.kind) {
-      case 'solar':
-        return { text: s(this.hass, 'solar_share', { percent: status.percent }), tone: 'solar' };
-      case 'importing':
-        return { text: this.t('energy.importing'), tone: 'grid' };
-      case 'exporting':
-        return { text: this.t('energy.exporting'), tone: 'grid' };
-      case 'charging':
-        return { text: s(this.hass, 'charging'), tone: 'battery' };
-      case 'discharging':
-        return { text: s(this.hass, 'discharging'), tone: 'battery' };
-      case 'idle':
-        return { text: this.t('energy.idle'), tone: 'neutral' };
+  private now(): number {
+    const pinned = this.config?._now ? Date.parse(this.config._now) : NaN;
+    return Number.isFinite(pinned) ? pinned : Date.now();
+  }
+
+  private isStale(): boolean {
+    const newest = this.newest();
+    return newest > 0 && this.now() - newest > STALE_MS;
+  }
+
+  private freshness(): string {
+    const period = this.periodOf();
+    if (period) return s(this.hass, `period_${period}`);
+    const newest = this.newest();
+    const live = s(this.hass, 'live');
+    if (!newest) return live;
+    const age = Math.max(0, Math.floor((this.now() - newest) / 5000) * 5);
+    if (age < 5) return `${live} · ${this.t('common.now').toLowerCase()}`;
+    if (age < 60) return `${live} · ${s(this.hass, 'seconds_ago', { count: age })}`;
+    const text = relativeTime(this.hass, new Date(newest), new Date(this.now()));
+    return age * 1000 > STALE_MS
+      ? s(this.hass, 'updated', { when: text })
+      : text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /** The head's badge: how much of the house runs on sun (or its self-sufficiency, or the grid's way). */
+  private badge(scene: Scene): { text: string; tone: Tone } | null {
+    const dead = scene.nodes.find((n) => n.dead);
+    if (dead) return { text: this.t('state.unavailable'), tone: 'warning' };
+    if (scene.stale) return null;
+    const kind = this.config?.badge ?? 'solar';
+    if (kind === 'none') return null;
+    const a = scene.allocation;
+    const total = a?.usedTotal ?? 0;
+    const percent = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 100);
+    const grid = scene.nodes.filter((n) => n.kind === 'grid');
+    const importing = grid.some((n) => (n.reading.in ?? 0) >= n.threshold);
+    const exporting = grid.some((n) => (n.reading.out ?? 0) >= n.threshold);
+    const gridBadge = (): { text: string; tone: Tone } | null =>
+      importing && exporting
+        ? { text: s(this.hass, 'import_export'), tone: 'grid' }
+        : importing
+          ? { text: this.t('energy.importing'), tone: 'grid' }
+          : exporting
+            ? { text: this.t('energy.exporting'), tone: 'grid' }
+            : null;
+    if (!a || total <= 0) return kind === 'grid' && !scene.period ? gridBadge() : null;
+    // over a period the badge is a share of it, never a live state ("Importing" is a moment, not a day)
+    if (scene.period) {
+      const solar = scene.nodes.some((n) => n.kind === 'solar');
+      return kind === 'solar' && solar
+        ? {
+            text: s(this.hass, 'solar_share', { percent: percent(a.usedSolar / total) }),
+            tone: 'solar',
+          }
+        : {
+            text: s(this.hass, 'self_powered', { percent: percent(1 - a.usedGrid / total) }),
+            tone: 'solar',
+          };
     }
+    if (kind === 'grid') return gridBadge();
+    if (kind === 'self_powered')
+      return {
+        text: s(this.hass, 'self_powered', { percent: percent(1 - a.usedGrid / total) }),
+        tone: 'solar',
+      };
+    // the news, in this order: the battery selling to the grid, a generator carrying the house, the sun's share, the
+    // car or the battery carrying it, the grid filling the battery, the battery's way
+    const t = DEFAULT_THRESHOLD;
+    if (a.batteryToGrid >= t) return { text: s(this.hass, 'selling'), tone: 'battery' };
+    if (a.usedGenerator >= t && a.usedGenerator >= a.usedSolar)
+      return { text: s(this.hass, 'kind_generator'), tone: 'gas' };
+    if (scene.nodes.some((n) => n.kind === 'solar') && a.usedSolar > 0)
+      return {
+        text: s(this.hass, 'solar_share', { percent: percent(a.usedSolar / total) }),
+        tone: 'solar',
+      };
+    if (a.usedVehicle >= total / 2) return { text: s(this.hass, 'on_the_car'), tone: 'vehicle' };
+    if (a.usedBattery >= total / 2)
+      return { text: s(this.hass, 'on_the_battery'), tone: 'battery' };
+    if (a.gridToBattery >= t) return { text: s(this.hass, 'charging'), tone: 'grid' };
+    const battery = scene.nodes.filter((n) => n.kind === 'battery');
+    if (battery.some((n) => (n.reading.out ?? 0) >= n.threshold))
+      return { text: s(this.hass, 'charging'), tone: 'battery' };
+    if (battery.some((n) => (n.reading.in ?? 0) >= n.threshold))
+      return { text: s(this.hass, 'discharging'), tone: 'battery' };
+    return gridBadge() ?? { text: this.t('energy.idle'), tone: 'neutral' };
+  }
+
+  /** The head's second line: the freshness, or which source cannot be read and since when. */
+  private sub(scene: Scene): string {
+    if (this.config?.subtitle !== undefined) return this.config.subtitle;
+    const dead = scene.nodes.find((n) => n.dead);
+    if (dead && dead.entity) {
+      const changed = Date.parse(this.hass?.states[dead.entity]?.last_changed ?? '');
+      return Number.isFinite(changed)
+        ? s(this.hass, 'unavailable_since', {
+            name: dead.label,
+            time: formatTime(this.hass, new Date(changed)),
+          })
+        : `${dead.label} · ${this.t('state.unavailable').toLocaleLowerCase(this.hass?.language)}`;
+    }
+    return this.shownFreshness;
+  }
+
+  /* ---------- measuring ---------- */
+
+  private lineWidth(value: string, unit: string, way: string): number {
+    return this.head.ruler.width(
+      'en-words__value',
+      value,
+      'en-words__unit',
+      `${unit}${way ? ` ${way}` : ''}`,
+    );
+  }
+
+  private wordsWidth(w: Words): number {
+    return Math.max(
+      this.head.ruler.width('en-words__label', w.label),
+      this.lineWidth(w.value, w.unit, w.way),
+      w.second ? this.lineWidth(w.second.value, w.second.unit, w.second.way) : 0,
+    );
   }
 
   /* ---------- render ---------- */
 
+  private arrangement(scene: Scene): 'rows' | 'cross' | 'list' {
+    const variant = this.config?.variant ?? 'rows';
+    if (variant === 'list') return 'list';
+    if (variant === 'cross') {
+      const kinds = scene.nodes.map((n) => n.kind);
+      const fits =
+        kinds.every((k) => k === 'solar' || k === 'grid' || k === 'battery') &&
+        new Set(kinds).size === kinds.length &&
+        kinds.includes('grid') &&
+        this.contentWidth >= 280;
+      if (fits) return 'cross';
+    }
+    return 'rows';
+  }
+
   protected renderCard(): TemplateResult {
-    const { sources, links, houseX, houseY, height, style, track, inward, narrow } = this.scene;
-    const power = (key: Source['key']): number | null | undefined =>
-      sources.find((source) => source.key === key)?.power;
-    const flows = { solar: power('solar'), grid: power('grid'), battery: power('battery') };
-    const homeId = this.config?.home_power;
-    const home = homeId ? watts(this.entity(homeId)) : houseBalance(flows);
-    const dead = home === null && sources.every((source) => source.power === null);
-
-    const scale = scaleOf([...sources.map((source) => source.power), home], 'W');
-    const figure = (value: number | null): string =>
-      value === null ? '—' : `${scaled(this.hass, Math.abs(value), scale)} ${scale.unit}`;
-
+    const scene = this.scene ?? this.build();
+    this.scene = scene;
     const w = this.contentWidth;
+    const title = this.config?.title ?? s(this.hass, 'title');
+    const badge = this.badge(scene);
+    const fitted = this.head.fit({ width: w, title, sub: this.sub(scene), badge });
+    const period = scene.period;
+    const body =
+      scene.empty === 'sources'
+        ? this.head.empty(
+            'bolt',
+            s(this.hass, 'no_sources'),
+            s(this.hass, 'no_sources_hint'),
+            this.contentWidth,
+          )
+        : scene.empty === 'period'
+          ? this.head.empty(
+              'bolt',
+              s(this.hass, 'no_period'),
+              s(this.hass, 'no_period_hint'),
+              this.contentWidth,
+            )
+          : this.renderBody(scene, w);
     const totals = this.readouts();
-    // a node's label is measured in its own class: "Battery · 78 %" keeps "Battery" in a narrow column, and a
-    // column too narrow even for the word keeps the icon with its reading. Below Home Assistant's own minimum,
-    // where not even a reading fits beside a circle, the rows drop their circles and keep their readings
-    const real = w;
-    const readings = [...sources.map((source) => figure(source.power)), figure(home)];
-    const bare =
-      narrow &&
-      real - TEXT_LEFT <
-        Math.max(0, ...readings.map((text) => this.head.ruler.width('ef-node__value', text)));
-    const room = narrow ? (bare ? real : real - TEXT_LEFT) : textColumn(w).text;
-    const label = (text: string, width = room): string => this.nodeLabel(text, width);
-    // the head is measured, not guessed: at 300 px, in Spanish, with a long title, the badge is what gives way —
-    // a clipped card title is a defect, a state the diagram already shows is not
-    const fitted = this.head.fit({
-      width: w,
-      title: this.config?.title ?? s(this.hass, 'title'),
-      sub: dead
-        ? stateText(this.hass, sources[0]?.view ?? this.entity(homeId))
-        : (this.config?.subtitle ?? this.shownFreshness),
-      badge: dead ? null : this.badge(flowStatus(flows, home)),
-    });
-
-    return html`<article class="fv-card ef-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
+    return html`<article class="fv-card ef-card en-card" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-        tone: dead ? 'off' : toneOf(this.config, 'solar'),
-        title: this.config?.title ?? s(this.hass, 'title'),
+        tone: toneOf(this.config, 'accent'),
+        title,
         sub: fitted.sub,
         trailing: fitted.badge,
         name: Boolean(this.config?.title),
@@ -818,86 +1006,29 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         onHold: () => this.hold(),
       })}
       ${
-        narrow
-          ? html`<div class="ef-list">
-              ${sources.map(
-                (source) =>
-                  html`<div class="ef-list__row">
-                    ${bare ? nothing : ico(source.glyph, source.power === null ? 'off' : Math.abs(source.power) < IDLE ? 'neutral' : source.tone, { onTap: () => this.tap(source.view.id, { action: 'more-info' }), label: source.label })}
-                    <div class="ef-node__text ef-list__text">
-                      ${label(source.label) ? html`<span class="ef-node__label">${label(source.label)}</span>` : nothing}<span
-                        class="ef-node__value"
-                        >${figure(source.power)}</span
-                      >
-                    </div>
-                  </div>`,
+        period && this.config?.show_period !== false
+          ? html`<div class="en-period">
+              ${chipRow(
+                PERIODS.map((p) => ({
+                  key: p,
+                  label: s(this.hass, `chip_${p}`),
+                  active: p === period,
+                })),
+                (key) => {
+                  this.chosen = key as Period;
+                  this.periodKey = '';
+                  this.requestUpdate();
+                },
+                'full',
+                { ruler: this.head.ruler, width: w },
               )}
-              <div class="ef-list__row">
-                ${bare ? nothing : ico('home', dead ? 'off' : 'house', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
-                <div class="ef-node__text ef-list__text">
-                  ${label(s(this.hass, 'house')) ? html`<span class="ef-node__label">${label(s(this.hass, 'house'))}</span>` : nothing}<span
-                    class="ef-node__value"
-                    >${figure(home)}</span
-                  >
-                </div>
-              </div>
             </div>`
-          : html` <div class="ef-stage" style="height:${height}px">
-              <svg width=${w} height=${height} viewBox="0 0 ${w} ${height}" aria-hidden="true">
-                ${
-                  style === 'legs'
-                    ? svg`<defs>${links.map(({ source: { cls } }) => svg`<marker id="ef-arrow-${cls}" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M1.5 1 6.5 4 1.5 7" class="ef-arrow ef-arrow--${cls}" /></marker>`)}</defs>
-            ${links.map(({ source, d, idle }) => svg`<path d=${d} class="ef-link ef-link--${source.cls} ${idle ? 'ef-link--idle' : ''}" stroke-dasharray="6 8" marker-end="url(#ef-arrow-${source.cls})" />`)}`
-                    : nothing
-                }
-                ${style === 'ribbons' ? links.map(({ source, band, idle }) => svg`<path d=${band} class="ef-band ef-band--${source.cls} ${idle ? 'ef-band--idle' : ''}" />`) : nothing}
-                ${style === 'rail' ? svg`<path d=${track} class="ef-rail" />${links.map(({ source, d, idle }) => svg`<path d=${d} class="ef-join ef-join--${source.cls} ${idle ? 'ef-join--idle' : ''}" />`)}` : nothing}
-                ${links.flatMap((link) => link.chevrons).map((c) => svg`<path d=${chevronPath(c)} class="ef-chev ef-chev--${c.cls}" />`)}
-                ${inward ? svg`<path d=${chevronPath(inward)} class="ef-chev ef-chev--house" />` : nothing}
-              </svg>
-              ${links.map(
-                ({ source, idle, level, rate }, i) =>
-                  html`<div
-                    class="ef-dots ef-dots--${source.cls} ${idle ? 'is-idle' : ''}"
-                    data-measure="skip"
-                    data-rate=${rate.toFixed(2)}
-                    aria-hidden="true"
-                    style="--ef-run:ef-run-${i}"
-                  >
-                    ${DOTS.map(([phase, levels]) => html`<span class="ef-flow ${!idle && levels.includes(level) ? 'is-on' : ''}" style="--ef-delay:${(-phase * LAP).toFixed(2)}s"></span>`)}
-                  </div>`,
-              )}
-              ${links.map(
-                ({ source, y }) =>
-                  html` <div class="ef-node" style="left:0;top:${y - 22}px">
-                      ${ico(source.glyph, source.power === null ? 'off' : Math.abs(source.power) < IDLE ? 'neutral' : source.tone, { onTap: () => this.tap(source.view.id, { action: 'more-info' }), label: source.label })}
-                    </div>
-                    <div
-                      class="ef-node__text"
-                      style="left:${TEXT_LEFT}px;top:${y - 18}px;width:${textColumn(w).text}px"
-                    >
-                      ${label(source.label) ? html`<span class="ef-node__label">${label(source.label)}</span>` : nothing}
-                      <span class="ef-node__value">${figure(source.power)}</span>
-                    </div>`,
-              )}
-              <div
-                class="ef-node ef-node--house ${style === 'ribbons' ? 'ef-node--big' : ''}"
-                style="left:${houseX - (style === 'ribbons' ? 28 : 22)}px;top:${houseY - (style === 'ribbons' ? 28 : 22)}px"
-              >
-                ${ico('home', dead ? 'off' : 'house', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
-              </div>
-              <div
-                class="ef-node__text ef-node__text--house"
-                style="right:0;top:${houseY + (style === 'ribbons' ? 36 : 30)}px"
-              >
-                ${label(s(this.hass, 'house'), HOUSE_TEXT) ? html`<span class="ef-node__label">${label(s(this.hass, 'house'), HOUSE_TEXT)}</span>` : nothing}
-                <span class="ef-node__value">${figure(home)}</span>
-              </div>
-            </div>`
+          : nothing
       }
+      ${body}
       ${
         totals.length
-          ? html`<div class="ef-cols fv-cols ${narrow ? 'ef-cols--stack' : ''}">
+          ? html`<div class="ef-cols fv-cols ${w < 240 ? 'ef-cols--stack' : ''}">
               ${legendReadouts(this.hass, totals, (id) => this.entity(id))}
             </div>`
           : nothing
@@ -905,13 +1036,579 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     </article>`;
   }
 
-  /** A node's label fitted to its column: its first words stay while they fit, the rest go from the end; nothing when even those would be cut. */
-  private nodeLabel(text: string, room: number): string {
-    const segments: Segment[] = text
-      .split(' · ')
-      .map((part, index) => ({ text: part, optional: index > 0 }));
-    const first = segments[0];
-    if (!first || this.head.ruler.width('ef-node__label', first.text) > room) return '';
-    return fitLine(segments, room, (part) => this.head.ruler.width('ef-node__label', part));
+  private renderBody(scene: Scene, w: number): TemplateResult {
+    const layout = this.arrangement(scene);
+    if (layout === 'cross') return this.renderCross(scene, w);
+    const wide = scene.consumers.length > 0 && w >= CONSUMERS_WIDE && layout === 'rows';
+    const rows =
+      layout === 'rows'
+        ? rowsLayout({
+            width: w,
+            nodes: scene.nodes.map((n, i) => ({
+              wordsH: blockH(scene.words[i]),
+              wordsW: this.wordsWidth(scene.words[i] as Words),
+              pair: n.pair,
+            })),
+            houseWordsH: 36,
+            ...(wide
+              ? {
+                  consumers: scene.consumerWords.map((cw) => ({
+                    wordsH: blockH(cw),
+                    wordsW: this.wordsWidth(cw),
+                  })),
+                }
+              : {}),
+          })
+        : null;
+    if (!rows || rows.narrow)
+      return html`${this.renderList(scene, w)}${this.renderConsumerRows(scene)}`;
+    return html`${this.renderRows(scene, w, rows, wide)}${wide ? nothing : this.renderConsumerRows(scene)}`;
+  }
+
+  /* the lanes */
+
+  private flowStyle(): FlowStyle {
+    const style = this.config?.flow_style;
+    return style && FLOW_STYLES.includes(style) ? style : 'stream';
+  }
+
+  /** One lane: both of its bodies and heads when it can reverse, the one way otherwise. */
+  private lane(
+    path: Cubic,
+    state: LaneState,
+    o: { reversible: boolean; heads: boolean; thin: boolean },
+  ): TemplateResult {
+    const size = o.thin ? 'thin' : 'lane';
+    const inward = drawn(path, size, o.heads);
+    const outward = o.reversible ? drawn(reverse(path), size, o.heads) : null;
+    const d = headPath(size);
+    return svg`<g class="en-flow ${o.thin ? 'en-flow--thin' : ''} en-ink--${state.ink.tone} ${state.way === 'out' ? 'is-out' : ''} ${state.rest ? 'is-rest' : ''} ${state.hidden ? 'is-hidden' : ''}" data-accent=${state.ink.accent ?? nothing}>
+      <path class="en-body en-body--in" d=${inward.body}></path>
+      ${outward ? svg`<path class="en-body en-body--out" d=${outward.body}></path>` : nothing}
+      ${o.heads ? svg`<path class="en-head en-head--in" d=${d} transform=${inward.head}></path>` : nothing}
+      ${o.heads && outward ? svg`<path class="en-head en-head--out" d=${d} transform=${outward.head}></path>` : nothing}
+    </g>`;
+  }
+
+  private houseArcs(c: Point, scene: Scene): TemplateResult {
+    const inks: Record<string, Ink | undefined> = {
+      solar: scene.origins.solar,
+      grid: scene.origins.grid,
+      battery: scene.origins.battery,
+      gas: scene.nodes.find((n) => n.kind === 'generator')?.ink,
+      vehicle: scene.nodes.find((n) => n.kind === 'vehicle')?.ink,
+    };
+    const list = arcs(houseShares(scene.allocation));
+    return svg`<circle class="en-arc-track" cx=${c[0]} cy=${c[1]} r=${HOUSE_R}></circle>
+      <g class="en-arcs ${scene.stale ? 'is-dim' : ''}">
+        ${list.map((a) => {
+          const ink = inks[a.key] ?? { tone: a.key as Ink['tone'] };
+          return svg`<circle class="en-arc en-ink--${ink.tone}" data-accent=${ink.accent ?? nothing} data-empty=${a.dash.startsWith('0.00 ') ? '' : nothing} cx=${c[0]} cy=${c[1]} r=${HOUSE_R} stroke-dasharray=${a.dash} stroke-dashoffset=${a.offset} transform="rotate(-90 ${c[0]} ${c[1]})"></circle>`;
+        })}
+      </g>`;
+  }
+
+  private nodeIcon(n: Node, c: Point): TemplateResult {
+    const active = n.lanes.some((l) => !l.rest && !l.hidden);
+    return html`<div
+      class="en-node ${n.dead ? 'is-outage' : ''}"
+      data-accent=${n.accent ?? nothing}
+      style="left:${c[0] - 22}px;top:${c[1] - 22}px"
+    >
+      ${ico(n.glyph, n.dead ? 'neutral' : active ? n.tone : 'neutral', {
+        onTap: n.entity ? () => this.tap(n.entity, { action: 'more-info' }) : undefined,
+        label: n.label,
+      })}
+    </div>`;
+  }
+
+  private houseIcon(c: Point): TemplateResult {
+    const homeId = this.config?.home;
+    return html`<div class="en-node en-node--house" style="left:${c[0] - 22}px;top:${c[1] - 22}px">
+      ${ico('home', 'neutral', homeId ? { onTap: () => this.tap(homeId, { action: 'more-info' }), label: s(this.hass, 'house') } : {})}
+    </div>`;
+  }
+
+  private renderRows(
+    scene: Scene,
+    w: number,
+    rows: ReturnType<typeof rowsLayout>,
+    wide: boolean,
+  ): TemplateResult {
+    const style = this.flowStyle();
+    const H = rows.height;
+    const lanes =
+      style === 'rail'
+        ? this.railLanes(scene, rows)
+        : rows.lanes.map((l) => {
+            const n = scene.nodes[l.node] as Node;
+            const state = n.lanes[l.index] as LaneState;
+            if (n.dead) return svg`<path class="en-hairline" d=${pathOf(l.path)}></path>`;
+            return this.lane(l.path, state, {
+              reversible: !oneWay(n.kind),
+              heads: n.arrows,
+              thin: style === 'legs',
+            });
+          });
+    const out = wide
+      ? rows.out.map((path, i) => {
+          const c = scene.consumers[i] as Consumer;
+          const state: LaneState = {
+            way: 'in',
+            rest: scene.stale || (c.watts ?? 0) < DEFAULT_THRESHOLD,
+            hidden: false,
+            watts: c.watts ?? 0,
+            ink: c.accent ? { tone: 'accent', accent: c.accent } : { tone: 'home' },
+          };
+          return this.lane(path, state, {
+            reversible: false,
+            heads: true,
+            thin: style !== 'stream',
+          });
+        })
+      : [];
+    return html`<div class="en-stage" style="height:${H}px">
+      <svg width=${w} height=${H} viewBox="0 0 ${w} ${H}" aria-hidden="true">
+        ${lanes}${out}${this.houseArcs(rows.house, scene)}
+      </svg>
+      <div class="en-pulses-layer" data-measure="skip" aria-hidden="true"></div>
+      ${scene.nodes.map((n, i) => {
+        const c = rows.nodes[i] as Point;
+        const words = scene.words[i] as Words;
+        return html`${this.nodeIcon(n, c)}
+          <div class="en-place" style="left:${TEXT}px;top:${c[1] - blockH(words) / 2}px">
+            ${renderWords(words, 'left')}
+          </div>`;
+      })}
+      ${this.houseIcon(rows.house)}
+      ${
+        wide
+          ? html`<div
+                class="en-place"
+                style="left:${rows.house[0] - 60}px;top:${rows.house[1] + 36}px;width:120px"
+              >
+                ${renderWords(scene.house, 'center')}
+              </div>
+              ${scene.consumers.map((c, i) => {
+                const at = rows.consumers[i] as Point;
+                const words = scene.consumerWords[i] as Words;
+                return html`<div
+                    class="en-node"
+                    data-accent=${c.accent ?? nothing}
+                    style="left:${at[0] - 22}px;top:${at[1] - 22}px"
+                  >
+                    ${ico(c.glyph, 'neutral', c.entity ? { onTap: () => this.tap(c.entity, { action: 'more-info' }), label: c.label } : {})}
+                  </div>
+                  <div class="en-place" style="right:${TEXT}px;top:${at[1] - blockH(words) / 2}px">
+                    ${renderWords(words, 'right')}
+                  </div>`;
+              })}`
+          : html`<div class="en-place" style="right:0;top:${rows.house[1] + 36}px">
+              ${renderWords(scene.house, 'right')}
+            </div>`
+      }
+    </div>`;
+  }
+
+  /** The rail: inflows join one track into the house; outflows keep a connector of their own. */
+  private railLanes(scene: Scene, rows: ReturnType<typeof rowsLayout>): TemplateResult[] {
+    const trackX = rows.tail + 32;
+    const house = rows.house;
+    const d = headPath('thin');
+    const out: TemplateResult[] = [];
+    let inflow = false;
+    for (const l of rows.lanes) {
+      const n = scene.nodes[l.node] as Node;
+      const state = n.lanes[l.index] as LaneState;
+      if (n.dead) {
+        out.push(svg`<path class="en-hairline" d=${pathOf(l.path)}></path>`);
+        continue;
+      }
+      if (state.hidden) continue;
+      if (state.way === 'in') {
+        if (!state.rest) inflow = true;
+        out.push(
+          svg`<path class="en-rail en-ink--${state.ink.tone} ${state.rest ? 'is-rest' : ''}" data-accent=${state.ink.accent ?? nothing} d=${railIn(rows.tail, l.path.a[1], trackX, house[1])}></path>`,
+        );
+      } else {
+        const back = drawn(reverse(l.path), 'thin', n.arrows);
+        out.push(svg`<g class="en-ink--${state.ink.tone}" data-accent=${state.ink.accent ?? nothing}>
+          <path class="en-rail" d=${back.body}></path>
+          ${n.arrows ? svg`<path class="en-head" d=${d} transform=${back.head}></path>` : nothing}
+        </g>`);
+      }
+    }
+    const track = drawn(railTrack(trackX, house), 'thin', true);
+    out.push(svg`<g class="en-ink--home">
+      <path class="en-rail is-track ${inflow && !scene.stale ? '' : 'is-rest'}" d=${track.body}></path>
+      <path class="en-head ${inflow && !scene.stale ? '' : 'is-rest'}" d=${d} transform=${track.head}></path>
+    </g>`);
+    return out;
+  }
+
+  private renderCross(scene: Scene, w: number): TemplateResult {
+    const g = crossLayout(w);
+    const node = (kind: SourceKind): { n: Node; i: number } | undefined => {
+      const i = scene.nodes.findIndex((n) => n.kind === kind);
+      return i >= 0 ? { n: scene.nodes[i] as Node, i } : undefined;
+    };
+    const sun = node('solar');
+    const grid = node('grid');
+    const battery = node('battery');
+    const a = scene.allocation;
+    const thin = this.flowStyle() !== 'stream';
+    const t = DEFAULT_THRESHOLD;
+    const flows: {
+      key: CrossKey;
+      show: boolean;
+      watts: number;
+      ink: Ink | undefined;
+      always: boolean;
+    }[] = [
+      {
+        key: 'sunBattery',
+        show: !!sun && !!battery,
+        watts: a?.solarToBattery ?? 0,
+        ink: sun?.n.ink,
+        always: false,
+      },
+      {
+        key: 'sunGrid',
+        show: !!sun && !!grid,
+        watts: a?.solarToGrid ?? 0,
+        ink: sun?.n.ink,
+        always: false,
+      },
+      {
+        key: 'gridBattery',
+        show: !!grid && !!battery,
+        watts: a?.gridToBattery ?? 0,
+        ink: grid?.n.ink,
+        always: false,
+      },
+      {
+        key: 'batteryGrid',
+        show: !!grid && !!battery,
+        watts: a?.batteryToGrid ?? 0,
+        ink: battery?.n.ink,
+        always: false,
+      },
+      { key: 'sunHouse', show: !!sun, watts: a?.usedSolar ?? 0, ink: sun?.n.ink, always: true },
+      {
+        key: 'batteryHouse',
+        show: !!battery,
+        watts: a?.usedBattery ?? 0,
+        ink: battery?.n.ink,
+        always: true,
+      },
+      { key: 'gridHouse', show: !!grid, watts: a?.usedGrid ?? 0, ink: grid?.n.ink, always: true },
+    ];
+    const bridge = (a?.solarToBattery ?? 0) >= t && !!sun && !!battery;
+    const drawnLanes = flows
+      .filter((f) => f.show && f.ink)
+      .map((f) => {
+        const on = f.watts >= t && !scene.stale;
+        const state: LaneState = {
+          way: 'in',
+          rest: !on,
+          hidden: !f.always && !on,
+          watts: f.watts,
+          ink: f.ink as Ink,
+        };
+        return {
+          key: f.key,
+          lane: this.lane(g.lanes[f.key], state, { reversible: false, heads: true, thin }),
+        };
+      });
+    // the grid → house lane bridges the sun → battery lane: drawn over it (and its pulses) with a card-coloured edge
+    const lanes = drawnLanes.filter((l) => l.key !== 'gridHouse').map((l) => l.lane);
+    const bridged = drawnLanes.find((l) => l.key === 'gridHouse')?.lane;
+    const H =
+      Math.ceil(
+        Math.max(
+          g.height,
+          battery ? g.battery[1] + blockH(scene.words[battery.i]) / 2 : 0,
+          grid ? g.grid[1] + 30 + blockH(scene.words[grid.i]) : 0,
+        ) / 4,
+      ) * 4;
+    const place = (
+      entry: { n: Node; i: number } | undefined,
+      at: Point,
+      style: string,
+    ): TemplateResult | typeof nothing =>
+      entry
+        ? html`${this.nodeIcon(entry.n, at)}
+            <div class="en-place" style=${style}>
+              ${renderWords(scene.words[entry.i] as Words, 'left')}
+            </div>`
+        : nothing;
+    return html`<div class="en-stage" style="height:${H}px">
+      <svg width=${w} height=${H} viewBox="0 0 ${w} ${H}" aria-hidden="true">
+        ${lanes}${this.houseArcs(g.house, scene)}
+      </svg>
+      <div class="en-pulses-layer" data-measure="skip" aria-hidden="true"></div>
+      ${
+        bridged
+          ? html`<svg width=${w} height=${H} viewBox="0 0 ${w} ${H}" aria-hidden="true">
+                <path
+                  class="en-knockout ${bridge ? '' : 'is-hidden'}"
+                  d=${pathOf(g.lanes.gridHouse)}
+                ></path>
+                ${bridged}
+              </svg>
+              <div
+                class="en-pulses-layer en-pulses-layer--over"
+                data-measure="skip"
+                aria-hidden="true"
+              ></div>`
+          : nothing
+      }
+      ${place(sun, g.sun, `left:${g.sun[0] + 34}px;top:${g.sun[1] - (sun ? blockH(scene.words[sun.i]) : 36) / 2}px`)}
+      ${place(grid, g.grid, `left:0;top:${g.grid[1] + 30}px`)}
+      ${place(battery, g.battery, `left:${g.battery[0] + 34}px;top:${g.battery[1] - (battery ? blockH(scene.words[battery.i]) : 36) / 2}px`)}
+      ${this.houseIcon(g.house)}
+      <div class="en-place" style="right:0;top:${g.house[1] + 36}px">
+        ${renderWords(scene.house, 'right')}
+      </div>
+    </div>`;
+  }
+
+  /** Too narrow for lanes: one row per node, the direction on its own line when its line would not fit. */
+  private renderList(scene: Scene, w: number): TemplateResult {
+    const all = [...scene.words, scene.house];
+    // below Home Assistant's own minimum a figure no longer fits beside a circle: the rows drop their circles
+    const bare = all.some(
+      (words) =>
+        this.lineWidth(words.value, words.unit, '') > w - TEXT ||
+        (words.second
+          ? this.lineWidth(words.second.value, words.second.unit, '') > w - TEXT
+          : false),
+    );
+    const room = bare ? w : w - TEXT;
+    const row = (
+      glyph: string,
+      tone: Tone,
+      accent: string | undefined,
+      words: Words,
+      tap: (() => void) | undefined,
+      label: string,
+    ): TemplateResult => {
+      const wraps =
+        this.lineWidth(words.value, words.unit, words.way) > room ||
+        (words.second
+          ? this.lineWidth(words.second.value, words.second.unit, words.second.way) > room
+          : false);
+      // "Battery · 62 %" keeps "Battery" in a narrow column: the segments after the first go before anything is cut
+      const fitted = fitLine(
+        words.label.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
+        room,
+        (text) => this.head.ruler.width('en-words__label', text),
+      );
+      return html`<div
+        class="en-list__row ${bare ? 'is-bare' : ''}"
+        data-accent=${accent ?? nothing}
+      >
+        ${bare ? nothing : ico(glyph, tone, { onTap: tap, label })}${renderWords({ ...words, label: fitted }, 'left', wraps)}
+      </div>`;
+    };
+    return html`<div class="en-list">
+      ${scene.nodes.map((n, i) =>
+        row(
+          n.glyph,
+          n.dead || n.lanes.every((l) => l.rest || l.hidden) ? 'neutral' : n.tone,
+          n.accent,
+          scene.words[i] as Words,
+          n.entity ? () => this.tap(n.entity, { action: 'more-info' }) : undefined,
+          n.label,
+        ),
+      )}
+      ${row(
+        'home',
+        'neutral',
+        undefined,
+        scene.house,
+        this.config?.home ? () => this.tap(this.config?.home, { action: 'more-info' }) : undefined,
+        scene.house.label,
+      )}
+    </div>`;
+  }
+
+  /** Where it goes, when there is no room to draw it: a row per consumer, its share of the house on one scale. */
+  private renderConsumerRows(scene: Scene): TemplateResult | typeof nothing {
+    if (!scene.consumers.length) return nothing;
+    const house = scene.houseValue;
+    return html`<div class="ef-rows">
+      ${scene.consumers.map((c, i) => {
+        const words = scene.consumerWords[i] as Words;
+        const share = house && c.watts !== null ? c.watts / house : 0;
+        return barRow({
+          icon: c.glyph,
+          tone: 'neutral',
+          title: c.label,
+          name: true,
+          accent: c.accent,
+          ...(house && c.watts !== null
+            ? {
+                sub: s(this.hass, 'share_of_house', {
+                  percent: Math.round(Math.min(1, share) * 100),
+                }),
+              }
+            : {}),
+          value: words.value === '—' ? '—' : `${words.value} ${words.unit}`,
+          fraction: share,
+          barTone: c.accent ? 'accent' : 'ink',
+          ...(c.entity ? { onTap: () => this.tap(c.entity, { action: 'more-info' }) } : {}),
+        });
+      })}
+    </div>`;
+  }
+
+  /** The pulses the lanes drawn now ask for. */
+  private pulseList(): Pulse[] {
+    const scene = this.scene;
+    if (!scene || scene.period || scene.stale || scene.empty) return [];
+    const style = this.flowStyle();
+    if (style === 'rail') return [];
+    const layout = this.arrangement(scene);
+    const thin = style === 'legs';
+    const size = thin ? 'thin' : 'lane';
+    const pulses: Pulse[] = [];
+    const push = (
+      key: string,
+      path: Cubic,
+      state: LaneState,
+      heads: boolean,
+      over = false,
+    ): void => {
+      if (state.rest || state.hidden || state.watts <= 0) return;
+      const travelled = state.way === 'in' ? path : reverse(path);
+      const lane = drawn(travelled, size, heads);
+      pulses.push({
+        key: `${key}-${state.way}`,
+        path: travelled,
+        run: lane.run,
+        body: lane.body,
+        watts: state.watts,
+        ink: `en-ink--${state.ink.tone}`,
+        accent: state.ink.accent,
+        thin,
+        over,
+      });
+    };
+    const w = this.contentWidth;
+    if (layout === 'cross') {
+      const g = crossLayout(w);
+      const a = scene.allocation;
+      const ink = (kind: SourceKind): Ink | undefined =>
+        scene.nodes.find((n) => n.kind === kind)?.ink;
+      const lanes: [CrossKey, number, Ink | undefined][] = [
+        ['sunBattery', a?.solarToBattery ?? 0, ink('solar')],
+        ['sunGrid', a?.solarToGrid ?? 0, ink('solar')],
+        ['gridBattery', a?.gridToBattery ?? 0, ink('grid')],
+        ['batteryGrid', a?.batteryToGrid ?? 0, ink('battery')],
+        ['sunHouse', a?.usedSolar ?? 0, ink('solar')],
+        ['batteryHouse', a?.usedBattery ?? 0, ink('battery')],
+        ['gridHouse', a?.usedGrid ?? 0, ink('grid')],
+      ];
+      for (const [key, value, laneInk] of lanes)
+        if (laneInk && value >= DEFAULT_THRESHOLD)
+          push(
+            key,
+            g.lanes[key],
+            { way: 'in', rest: false, hidden: false, watts: value, ink: laneInk },
+            true,
+            key === 'gridHouse',
+          );
+      return pulses;
+    }
+    const wide = scene.consumers.length > 0 && w >= CONSUMERS_WIDE && layout === 'rows';
+    if (layout !== 'rows') return [];
+    const rows = rowsLayout({
+      width: w,
+      nodes: scene.nodes.map((n, i) => ({
+        wordsH: blockH(scene.words[i]),
+        wordsW: this.wordsWidth(scene.words[i] as Words),
+        pair: n.pair,
+      })),
+      houseWordsH: 36,
+      ...(wide
+        ? {
+            consumers: scene.consumerWords.map((cw) => ({
+              wordsH: blockH(cw),
+              wordsW: this.wordsWidth(cw),
+            })),
+          }
+        : {}),
+    });
+    if (rows.narrow) return [];
+    for (const l of rows.lanes) {
+      const n = scene.nodes[l.node] as Node;
+      if (n.dead) continue;
+      push(`${n.key}-${l.index}`, l.path, n.lanes[l.index] as LaneState, n.arrows);
+    }
+    if (wide)
+      rows.out.forEach((path, i) => {
+        const c = scene.consumers[i] as Consumer;
+        push(
+          c.key,
+          path,
+          {
+            way: 'in',
+            rest: (c.watts ?? 0) < DEFAULT_THRESHOLD,
+            hidden: false,
+            watts: c.watts ?? 0,
+            ink: c.accent ? { tone: 'accent', accent: c.accent } : { tone: 'home' },
+          },
+          true,
+        );
+      });
+    return pulses;
   }
 }
+
+/* ---------- pieces ---------- */
+
+/** A words block's height: label 16, a value line 20 each, a direction line 16 when it wraps. */
+function blockH(w: Words | undefined, wraps = false): number {
+  if (!w) return 36;
+  return 16 + 20 + (w.second ? 20 : 0) + (wraps ? (w.way ? 16 : 0) + (w.second?.way ? 16 : 0) : 0);
+}
+
+function renderWords(w: Words, align: 'left' | 'right' | 'center', wraps = false): TemplateResult {
+  const line = (value: string, unit: string, way: string): TemplateResult =>
+    html`<span class="en-words__value"
+        >${value}${unit || (way && !wraps) ? html`<span class="en-words__unit">${unit}${way && !wraps ? ` ${way}` : ''}</span>` : nothing}</span
+      >${way && wraps ? html`<span class="en-words__dir">${way}</span>` : nothing}`;
+  return html`<span class="en-words en-words--${align} ${w.dim ? 'is-dim' : ''}"
+    ><span class="en-words__label" data-name>${w.label}</span>${line(w.value, w.unit, w.way)}${
+      w.second ? line(w.second.value, w.second.unit, w.second.way) : nothing
+    }</span
+  >`;
+}
+
+/** Per-kind totals of the live readings, for the allocation. */
+function totalsOf(nodes: readonly Omit<Node, 'lanes'>[]): Totals {
+  const sum = (kind: SourceKind, way: 'in' | 'out'): number =>
+    nodes
+      .filter((n) => n.kind === kind)
+      .reduce((acc, n) => acc + Math.max(0, n.reading[way] ?? 0), 0);
+  return {
+    solar: sum('solar', 'in'),
+    fromGrid: sum('grid', 'in'),
+    toGrid: sum('grid', 'out'),
+    fromBattery: sum('battery', 'in'),
+    toBattery: sum('battery', 'out'),
+    generator: sum('generator', 'in'),
+    fromVehicle: sum('vehicle', 'in'),
+    toVehicle: sum('vehicle', 'out'),
+  };
+}
+
+/** A period's allocation (kWh) in the card's base unit (Wh). */
+const scaleAllocation = (a: Allocation, factor: number): Allocation =>
+  Object.fromEntries(
+    Object.entries(a).map(([k, v]) => [k, (v as number) * factor]),
+  ) as unknown as Allocation;
+
+/** The editors' contract: every key the sources list may carry. */
+export const FLOW_SOURCE_KEYS = SOURCE_KEYS;

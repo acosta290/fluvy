@@ -23,6 +23,13 @@ export interface AliasSpec {
   readonly items?: Readonly<Record<string, readonly Move[]>>;
   /** Keys read into something else by the card itself and removed here (the calendar's `tones`). */
   readonly drop?: readonly string[];
+  /**
+   * An older shape that no single move can express (several flat keys become one list): a pure function from the
+   * config to the newer one, applied after the moves and before `drop` — the keys it reads go in `drop`.
+   */
+  readonly upgrade?: (
+    config: Readonly<Record<string, unknown>>,
+  ) => Readonly<Record<string, unknown>>;
 }
 
 const move = (from: string, to: string, extra: Omit<Move, 'from' | 'to'> = {}): Move => ({
@@ -88,6 +95,10 @@ export function normaliseConfig<C extends LovelaceCardConfig>(
         typeof item === 'object' && item !== null ? applyMoves(item as Bag, moves) : item,
       );
       if (items.some((item, index) => item !== list[index])) next = { ...next, [key]: items };
+    }
+    if (spec.upgrade) {
+      const upgraded = spec.upgrade(next) as Bag;
+      if (upgraded !== next) next = upgraded;
     }
     for (const key of spec.drop ?? []) {
       if (!(key in next)) continue;

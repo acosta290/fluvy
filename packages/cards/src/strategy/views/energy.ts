@@ -1,30 +1,80 @@
-import { balanced, deviceRow, energyFlow, full, when } from '../layout.js';
+import {
+  balanced,
+  batteriesCard,
+  deviceRow,
+  energyBalance,
+  energyFlow,
+  full,
+  gridCard,
+  hasBattery,
+  hasSources,
+  when,
+} from '../layout.js';
 import { TODAY } from '../home-registry.js';
-import type { Section, StrategyContext, ViewSpec } from '../types.js';
+import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
 /*
- * The energy dashboard (`custom:fluvy-energy`): now (the flow and the day's curve), what the sun makes, what the
- * devices draw, and a curve a power meter.
+ * The energy dashboard (`custom:fluvy-energy`): now (the flow, the balance, the grid, the batteries, the charger and
+ * the day by source), today (a day's flow, where it went, the score, the day's balance), what the sun makes, what
+ * the devices draw, water and gas, and a curve a power meter.
  */
 
-/** The flow and today's curve first, then the sun's share and the distribution of what draws. */
+/** The live cards: where the energy comes from and goes, and each part of the house's system on its own. */
+export function liveCards(ctx: StrategyContext): Card[] {
+  const { energy, t } = ctx;
+  return [
+    ...when(hasSources(energy), () => [energyFlow(energy, ctx.style)]),
+    ...when(hasSources(energy) && (energy.solarPower || energy.batteryPower), () => [
+      energyBalance(energy),
+    ]),
+    ...when(energy.prefsMeters, () => [full('energy', { variant: 'sources' })]),
+    ...when(
+      energy.gridPower || energy.gridPhases.length || (energy.gridImport && energy.gridExport),
+      () => [gridCard(energy)],
+    ),
+    ...when(energy.gridPower && !energy.gridExport && !energy.prefsPower, (id) => [
+      full('gauge', {
+        entity: id,
+        variant: 'signed',
+        name: t('energy.grid'),
+      }),
+    ]),
+    ...when(hasBattery(energy), () => [batteriesCard(energy)]),
+    ...when(energy.charger, (id) => [full('ev-charger', { entity: id })]),
+  ];
+}
+
+/** A day's totals as the energy dashboard allocates them: the flow of the day, where it went, the score. */
+export function todayCards(ctx: StrategyContext): Card[] {
+  const { energy } = ctx;
+  return when(energy.prefsMeters, () => [
+    energyFlow(energy, ctx.style, { period: 'day', badge: 'self_powered' }),
+    full('energy-sankey'),
+    full('energy-score'),
+    energyBalance(energy, { period: 'day' }),
+  ]);
+}
+
+/** The flow and the day by source first, then each part of the system, and the day's curve. */
 function nowView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { solarPower, gridPower, homePower, consumptionPowers } = energy;
   return balanced([
-    ...when(solarPower || gridPower, () => [energyFlow(energy, ctx.style)]),
-    ...(solarPower
-      ? [full('energy', { entity: solarPower, name: t('energy.solar') })]
-      : gridPower
-        ? [full('energy', { entity: gridPower, name: t('energy.grid') })]
-        : homePower
-          ? [full('energy', { entity: homePower })]
-          : []),
-    ...when(solarPower, (id) => [full('gauge', { entity: id })]),
+    ...liveCards(ctx),
+    ...(energy.prefsMeters
+      ? []
+      : solarPower
+        ? [full('energy', { entity: solarPower, name: t('energy.solar') })]
+        : gridPower
+          ? [full('energy', { entity: gridPower, name: t('energy.grid') })]
+          : homePower
+            ? [full('energy', { entity: homePower })]
+            : []),
     ...when(consumptionPowers.length >= 2, () => [
       full('distribution', {
         title: t('strategy.consumption'),
         entities: consumptionPowers.slice(0, 8),
+        ...(energy.homePower ? { total: energy.homePower } : {}),
       }),
     ]),
     ...when(
@@ -35,6 +85,11 @@ function nowView(ctx: StrategyContext): Section[] {
           : [],
     ),
   ]);
+}
+
+/** Today in energy: the day's flow, where it went, the score and the day's balance. */
+function todayView(ctx: StrategyContext): Section[] {
+  return balanced(todayCards(ctx));
 }
 
 /** What the sun makes: today's production, the inverter's gauge and its day. */
@@ -48,7 +103,7 @@ function productionView(ctx: StrategyContext): Section[] {
   ]);
 }
 
-/** The energy dashboard's devices and how they share what the house draws. */
+/** The energy dashboard's devices, nested as it nests them, and how they share what the house draws. */
 function devicesView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { consumption, consumptionPowers } = energy;
@@ -63,8 +118,16 @@ function devicesView(ctx: StrategyContext): Section[] {
       full('distribution', {
         title: t('strategy.consumption'),
         entities: consumptionPowers.slice(0, 8),
+        ...(energy.homePower ? { total: energy.homePower } : {}),
       }),
     ]),
+  ]);
+}
+
+/** The house's water and gas meters. */
+function metersCards({ energy }: StrategyContext): Card[] {
+  return when(energy.meters.length, () => [
+    full('meters', { meters: energy.meters.map((entity) => ({ entity })) }),
   ]);
 }
 
@@ -77,6 +140,13 @@ function metersView({ home }: StrategyContext): Section[] {
 
 export const ENERGY_VIEWS: readonly ViewSpec[] = [
   { key: 'now', icon: 'fluvy:bolt', title: 'strategy.now', build: nowView, when: () => true },
+  {
+    key: 'today',
+    icon: 'fluvy:calendar',
+    title: 'strategy.today',
+    build: todayView,
+    when: ({ energy }) => energy.prefsMeters,
+  },
   {
     key: 'production',
     icon: 'fluvy:sun',
@@ -92,6 +162,13 @@ export const ENERGY_VIEWS: readonly ViewSpec[] = [
     when: ({ energy }) => energy.consumption.length > 0 || energy.consumptionPowers.length >= 2,
   },
   {
+    key: 'water',
+    icon: 'fluvy:drop',
+    title: 'strategy.water_gas',
+    build: (ctx) => balanced(metersCards(ctx)),
+    when: ({ energy }) => energy.meters.length > 0,
+  },
+  {
     key: 'meters',
     icon: 'fluvy:chart',
     title: 'strategy.meters',
@@ -99,3 +176,5 @@ export const ENERGY_VIEWS: readonly ViewSpec[] = [
     when: ({ home }) => home.powers.length > 0,
   },
 ];
+
+export { metersCards };

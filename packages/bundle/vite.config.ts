@@ -63,6 +63,15 @@ const STRATEGY = /\/packages\/cards\/src\/strategy\/(?!define\.ts)/;
 /** Wall mode (the controller in core — its switch stays in core's chunk — and the screensaver, corner and toast in cards): fetched only on a device that is a wall. */
 const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 
+/**
+ * The energy family (its cards, the flow's drawing and motion, the model they share, every `energy/` helper but the
+ * head's fitting, which the other cards use): fetched as the bundle starts —
+ * `index.ts` announces the cards and imports this without waiting — and defined as it lands. Home Assistant builds
+ * a card again the moment its tag is defined, so a dashboard with energy on it shows it; one without never waits.
+ */
+const ENERGY =
+  /\/packages\/cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|production\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)/;
+
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
@@ -71,8 +80,8 @@ const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.js
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy, the wall, the cards' editor, and everything else (Fluvy's packages and Lit)
- * in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities
+ * page, the settings panel, the strategy, the wall, the energy family, the cards' editor, and everything else
+ * (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities
  * only say so out loud.
  */
 const GROUPS: ReadonlyArray<{
@@ -86,6 +95,7 @@ const GROUPS: ReadonlyArray<{
   { name: 'panel', test: PANEL },
   { name: 'strategy', test: STRATEGY },
   { name: 'wall', test: WALL },
+  { name: 'energy', test: ENERGY },
   { name: 'editor', test: EDITOR },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];

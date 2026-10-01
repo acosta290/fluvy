@@ -157,14 +157,19 @@ const IN_AREAS: Readonly<Record<string, string>> = {
 };
 
 /** The meters an energy flow is drawn on (the card's own keys). */
-export type EnergyMeters = Readonly<Record<string, string | boolean>>;
+export type EnergyMeters = Readonly<Record<string, unknown>>;
 
 /** The preview's own meters, for a house without any. */
 const SIMULATED: EnergyMeters = {
-  solar_power: 'sensor.fluvy_preview_solar',
-  grid_power: 'sensor.fluvy_preview_grid',
-  battery_power: 'sensor.fluvy_preview_battery',
-  battery_level: 'sensor.fluvy_preview_battery_level',
+  sources: [
+    { type: 'solar', power: 'sensor.fluvy_preview_solar' },
+    { type: 'grid', power: 'sensor.fluvy_preview_grid' },
+    {
+      type: 'battery',
+      power: 'sensor.fluvy_preview_battery',
+      level: 'sensor.fluvy_preview_battery_level',
+    },
+  ],
 };
 
 /** The preview's entities. */
@@ -205,8 +210,17 @@ export class PreviewHouse {
     const key = JSON.stringify(config);
     let card = this.made.get(key);
     if (!card) {
-      card = document.createElement(String(config['type']).replace(/^custom:/, '')) as LovelaceCard;
-      card.setConfig(config as never);
+      const tag = String(config['type']).replace(/^custom:/, '');
+      const made = document.createElement(tag) as LovelaceCard;
+      card = made;
+      // the energy family arrives with its own chunk: its cards are configured once their element is defined
+      if (customElements.get(tag)) made.setConfig(config as never);
+      else
+        void customElements.whenDefined(tag).then(() => {
+          // made before its element existed: it becomes one now, then takes its config
+          customElements.upgrade(made);
+          if (typeof made.setConfig === 'function') made.setConfig(config as never);
+        });
       card.setAttribute('preview', '');
       // the preview is part of the page: it does not rise in again each time a tab opens
       card.setAttribute('still', '');
@@ -238,7 +252,7 @@ export class PreviewHouse {
     return this.card({
       type: 'custom:fluvy-energy-flow-card',
       ...(meters ?? SIMULATED),
-      ...(style === 'ribbons' ? {} : { flow_style: style }),
+      ...(style === 'stream' || style === 'ribbons' ? {} : { flow_style: style }),
     });
   }
 

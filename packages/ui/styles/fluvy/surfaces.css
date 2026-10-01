@@ -97,7 +97,9 @@
   height: 20px;
 }
 
+/* unavailable: the dashed ring alone — a palette's wash would otherwise mix the transparent fill into a card disc */
 .fv-ico--off {
+  background: transparent;
   outline: 1px dashed var(--tone-border);
   outline-offset: -1px;
 }

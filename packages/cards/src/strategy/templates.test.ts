@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
-import { CATALOGUE } from '../index.js';
+import { catalogue } from '../index.js';
+
+const CATALOGUE = await catalogue();
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { generate, generateWith } from './generate.js';
 import {
@@ -14,6 +16,7 @@ import {
 import type { View } from './types.js';
 
 import {
+  DEMO_ENERGY_SOURCES,
   DEMO_EXTRAS,
   DEMO_HEAT_PUMP_READINGS,
   DEMO_ROOMS,
@@ -25,10 +28,11 @@ const house = (more: readonly DemoEntity[] = [], consumption?: readonly string[]
   demoHass({ more, ...(consumption ? { consumption } : {}) }) as never;
 /** The demo home with one of everything the library has a card for. */
 const everything = () =>
-  house(
-    [...DEMO_EXTRAS, ...DEMO_ROOMS],
-    ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
-  );
+  demoHass({
+    more: [...DEMO_EXTRAS, ...DEMO_ROOMS],
+    consumption: ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
+    sources: DEMO_ENERGY_SOURCES,
+  }) as never;
 const cardsOf = (views: readonly View[]) =>
   views.flatMap((v) => v.sections.flatMap((s) => s.cards));
 

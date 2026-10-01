@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import type { HaFormSchemaItem, LovelaceCardConfig } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
-import { CATALOGUE } from '../index.js';
+import { catalogue } from '../index.js';
 import type { Card } from './base.js';
 import { COMMON_ALIASES } from './config.js';
 import { itemLabels, type FluvyRowsEditor } from './rows-editor.js';
@@ -32,7 +32,10 @@ const isWord = (label: string | undefined, name: string): boolean =>
   label !== name &&
   !/^[a-z_-]+(\.[a-z_-]+)+$/.test(label);
 
-const cards = CATALOGUE.map(([tag, element]) => ({ tag, card: element as unknown as CardClass }));
+const cards = (await catalogue()).map(([tag, element]) => ({
+  tag,
+  card: element as unknown as CardClass,
+}));
 
 describe('the editors’ contract', () => {
   it('names each card of the catalogue once, and pending ones that exist', () => {

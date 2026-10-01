@@ -86,7 +86,7 @@ const TILES = choice('tile_size', 'dashboard.tiles', [
   { value: 'large', label: 'dashboard.large' },
   { value: 'compact', label: 'dashboard.rows' },
 ]);
-const FLOW = choice('flow_style', 'dashboard.flow', words(['ribbons', 'rail', 'legs']));
+const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
 
 /** Every room with something in it, each going back to the tab that holds it. */

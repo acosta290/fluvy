@@ -226,7 +226,16 @@
   border-radius: 2px;
 }
 
-/* a bar's colour (.fv-bar--X) comes from the generated tones.css */
+/* in the dark the page's second surface sits a hair from the card: the track takes the hairline's ink to read */
+[data-mode='dark'] .fv-bar {
+  background: var(--fluvy-border);
+}
+
+/* a bar's colour (.fv-bar--X) comes from the generated tones.css; the ink bar is a destination's (a house's
+   consumer): no colour of its own, the text's ink quietened */
+.fv-bar--ink {
+  background: color-mix(in srgb, var(--fluvy-text) 62%, var(--fluvy-card));
+}
 
 /* stacked distribution */
 .fv-stack {
@@ -515,6 +524,48 @@
   background: var(--fluvy-accent-fill);
   color: var(--fluvy-accent-on-fill);
   box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+}
+
+/* a chip whose label is a name: it ends in an ellipsis at the pill's edge, never clipped in its middle */
+.fv-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* a chip whose device cannot be read: the dashed ring of an unavailable icon, its name in the secondary ink; it
+   takes no tap and gives nothing under the finger */
+.fv-chip.is-unavailable .fv-chip__pill {
+  background: transparent;
+  box-shadow: none;
+  outline: 1px dashed var(--fluvy-unavailable-border);
+  outline-offset: -1px;
+  color: var(--fluvy-text-secondary);
+}
+
+.fv-chip.is-unavailable:active .fv-chip__pill {
+  transform: none;
+}
+
+/* the dashed ring says it; the chip itself is not faded (the general `.is-unavailable` fade would take its name
+   under 3:1) */
+.fv-chip.is-unavailable {
+  opacity: 1;
+}
+
+/* a chip chosen in its own tone (a mode's: the sun's for a solar one), as its option tile would be */
+.fv-chip--toned.is-active .fv-chip__pill {
+  background: var(--tone-fill);
+  color: var(--tone-on);
+  box-shadow: inset 0 0 0 1px var(--tone-border);
+}
+
+/* chosen and neutral (a mode that is off): the option tile's exception, so it never reads as unchosen */
+.fv-chip--toned.fv-tone--neutral.is-active {
+  --tone-fill: var(--fluvy-page-alt);
+  --tone-border: var(--fluvy-border-strong);
+  --tone-on: var(--fluvy-text);
 }
 
 .fv-chip--ink.is-active .fv-chip__pill {

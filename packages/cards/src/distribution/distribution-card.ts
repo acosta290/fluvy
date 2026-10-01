@@ -56,6 +56,8 @@ export interface DistributionCardConfig extends FluvyCardConfig {
   max_rows?: number;
   /** `stack` (default): one bar of shares and a legend. `rows`: a 60 px row per source, its share under its name. */
   variant?: 'stack' | 'rows';
+  /** The whole's own meter (the house's): what the sources do not account for is shown as "Not measured". */
+  total?: string;
 }
 
 interface Part {
@@ -131,6 +133,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     'subtitle',
     'max_rows',
     'variant',
+    'total',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -150,10 +153,11 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         colourFields(),
         entitiesField('entities', ['sensor'], true),
         fieldRow(numberField('max_rows', 2, 10), selectField('variant', ['stack', 'rows'])),
+        entityField(['sensor'], 'total', false),
         actionFields(),
       ],
       ...idsOnly('entities'),
-      ...editorLabels(strings, { max_rows: 'max_rows' }, {}),
+      ...editorLabels(strings, { max_rows: 'max_rows', total: 'editor_total' }, {}),
     };
   }
 
@@ -195,7 +199,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
   }
 
   protected override watched(): readonly string[] {
-    return this.sources().map((row) => row.entity);
+    const total = this.config?.total;
+    return [...this.sources().map((row) => row.entity), ...(total ? [total] : [])];
   }
 
   /** The legend's rows: everything when it fits, otherwise the largest in their configured order and one "Other". */
@@ -242,6 +247,22 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         entity: source.entity,
       });
     });
+    // the whole's own meter: what no source accounts for, when every source reads and it is more than a sliver
+    const whole = this.config?.total ? this.entity(this.config.total) : undefined;
+    const wholeValue = whole?.status === 'ok' ? baseOf(whole) : null;
+    let unmeasured: Part | undefined;
+    if (wholeValue && wholeValue.unit === unit && values.every((value) => value !== null)) {
+      const rest = wholeValue.value - values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+      if (rest > wholeValue.value * SLIVER)
+        unmeasured = {
+          key: '__unmeasured',
+          label: strings(this.hass, 'not_measured'),
+          value: rest,
+          tone: 'neutral',
+          accent: undefined,
+          glyph: 'dots',
+        };
+    }
     if (kept.size < sources.length) {
       const rest = values.filter((_value, index) => !kept.has(index));
       parts.push({
@@ -255,6 +276,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         glyph: 'plug',
       });
     }
+    if (unmeasured) parts.push(unmeasured);
     return parts;
   }
 

@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 GlobalRegistrator.register();
 
-const { CATALOGUE } = await import('@fluvy/cards');
+const CATALOGUE = await (await import('@fluvy/cards')).catalogue();
 
 type Schema = readonly {
   name: string;
@@ -43,6 +43,7 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
       'fluvy-tile-card',
       'fluvy-tiles-card',
       'fluvy-light-card',
+      'fluvy-lights-card',
       'fluvy-thermostat-card',
       'fluvy-entities-card',
       'fluvy-media-card',
@@ -79,7 +80,14 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
     [
       'fluvy-energy-card',
       'fluvy-energy-flow-card',
+      'fluvy-energy-balance-card',
+      'fluvy-grid-card',
+      'fluvy-batteries-card',
+      'fluvy-ev-charger-card',
+      'fluvy-energy-sankey-card',
+      'fluvy-energy-score-card',
       'fluvy-energy-devices-card',
+      'fluvy-meters-card',
       'fluvy-gauge-card',
       'fluvy-stat-tiles-card',
       'fluvy-production-card',

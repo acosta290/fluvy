@@ -11,8 +11,10 @@ import {
 } from '@fluvy/core';
 import {
   BATTERY_POWER,
+  CHARGER,
   GENERIC,
   GRID,
+  GRID_EXPORT,
   HOME_POWER,
   LIGHT_WORDS,
   NOT_APPLIANCE,
@@ -28,7 +30,17 @@ import {
  * the catalogues) and device classes. Pure queries, no cards — the views (`views/`) turn them into cards.
  */
 
-export { BATTERY_POWER, GRID, HOME_POWER, LIGHT_WORDS, OUTDOOR, SOLAR, TODAY };
+export {
+  BATTERY_POWER,
+  CHARGER,
+  GRID,
+  GRID_EXPORT,
+  HOME_POWER,
+  LIGHT_WORDS,
+  OUTDOOR,
+  SOLAR,
+  TODAY,
+};
 const WEATHER_PLATFORMS =
   /aemet|met\b|met_|openweather|accuweather|forecast|weather|tomorrow|pirate|ecowitt|buienradar|nws/i;
 /** Covers that are a way in, not a window's shade. */
@@ -115,6 +127,9 @@ export class HomeRegistry {
   }
   deviceClass(id: string): string {
     return String(this.attr<string>(id, 'device_class') ?? '');
+  }
+  stateClass(id: string): string {
+    return String(this.attr<string>(id, 'state_class') ?? '');
   }
   /** The id and the name together: what the word rules look at. */
   label(id: string): string {
@@ -212,6 +227,17 @@ export class HomeRegistry {
       .filter((s) => this.deviceClass(s) === 'energy')
       .sort((a, b) => Number(TODAY.test(b)) - Number(TODAY.test(a)))[0];
     return [power, energy].filter((s): s is string => Boolean(s));
+  }
+  /** The sensors of a device class beside an entity: the same device, or the same name before its `_power`. */
+  beside(id: string, deviceClass: string): readonly string[] {
+    const device = this.deviceOf(id);
+    const stem = id.slice(id.indexOf('.') + 1).replace(/_power$/, '');
+    return this.domain('sensor', true).filter(
+      (s) =>
+        s !== id &&
+        this.deviceClass(s) === deviceClass &&
+        ((device !== undefined && this.deviceOf(s) === device) || s.startsWith(`sensor.${stem}_`)),
+    );
   }
   /** The temperature sensor of the same device as a humidity sensor, for the humidity card's dew point. */
   temperatureBeside(humidity: string): string | undefined {

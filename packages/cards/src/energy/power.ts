@@ -108,8 +108,8 @@ export function scaled(
   return formatNumber(hass, v, { digits, minDigits: digits });
 }
 
-/** "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name. */
-export function shortName(view: EntityView): string {
+/** "Garage battery power" → "Garage battery": a device's name, without the words that say which of its sensors it is. */
+export function deviceName(view: EntityView): string {
   const trimmed = view.name
     .replace(
       /\b(energy|energía|energia|power|potencia|today|hoy|day|día|dia|daily|consumption|consumo|yield|producción|produccion)\b/gi,
@@ -117,7 +117,12 @@ export function shortName(view: EntityView): string {
     )
     .replace(/\s{2,}/g, ' ')
     .trim();
-  const name = trimmed || view.name;
+  return trimmed || view.name;
+}
+
+/** "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name. */
+export function shortName(view: EntityView): string {
+  const name = deviceName(view);
   // an 11/600 uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never "KITCHEN SPEA…"
   const words = name.split(' ');
   return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;

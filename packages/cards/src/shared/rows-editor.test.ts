@@ -37,6 +37,30 @@ describe('rows editor lists', () => {
     expect(toItem({ name: 'no id' }, 'entity')).toBeNull();
   });
 
+  it('keeps an entry identified by another field (a battery read by two sensors has no power)', () => {
+    const batteries: RowsListSpec = {
+      key: 'batteries',
+      idKey: 'power',
+      also: ['phases', 'import', 'export', 'level'],
+      title: 'editor.rows',
+      schema: [{ name: 'power', selector: { entity: {} } }],
+    };
+    expect(toItem({ import: 'sensor.in', export: 'sensor.out' }, 'power', batteries.also)).toEqual({
+      import: 'sensor.in',
+      export: 'sensor.out',
+    });
+    expect(toItem({ phases: ['sensor.l1'] }, 'power', batteries.also)).toEqual({
+      phases: ['sensor.l1'],
+    });
+    expect(toItem({ phases: [], name: 'none' }, 'power', batteries.also)).toBeNull();
+    expect(
+      itemsOf(
+        { type: 't', batteries: [{ power: 'sensor.a' }, { level: 'sensor.soc' }, { name: 'x' }] },
+        batteries,
+      ),
+    ).toEqual([{ power: 'sensor.a' }, { level: 'sensor.soc' }]);
+  });
+
   it('writes an entity with nothing else back as its bare id, and drops empty fields', () => {
     expect(compact({ entity: 'sensor.a', name: '', icon: undefined }, 'entity')).toBe('sensor.a');
     expect(compact({ entity: 'sensor.a', name: 'Sun' }, 'entity')).toEqual({

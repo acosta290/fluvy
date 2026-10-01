@@ -162,6 +162,19 @@ export const fieldRow = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
   schema,
 });
 
+/** A form with only the fields `keep` names: a row that loses one field keeps the other on its own line. */
+export function pickFields(
+  schema: readonly HaFormSchemaItem[],
+  keep: (name: string) => boolean,
+): HaFormSchemaItem[] {
+  return schema.flatMap((item): HaFormSchemaItem[] => {
+    if (!item.schema) return keep(item.name) ? [item] : [];
+    const inner = pickFields(item.schema, keep);
+    if (inner.length === item.schema.length) return [item];
+    return inner;
+  });
+}
+
 /** A card's tone, from the palette's tones. */
 export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: toneSelector() });
 

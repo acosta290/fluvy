@@ -42,10 +42,12 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,wall,editor,lang-*}-<hash>.js` on demand — the Activity page, the
-History page, the settings panel, the date picker they share, the automatic dashboards' strategy (when a dashboard
-asks for it), wall mode (on a device that is a wall), the cards' visual editor (when a card is edited) and a
-language's catalogue (English ships in core). Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
+`chunks/{activity,history,panel,pages,strategy,wall,energy,editor,lang-*}-<hash>.js` on demand — the Activity page,
+the History page, the settings panel, the date picker they share, the automatic dashboards' strategy (when a dashboard
+asks for it), wall mode (on a device that is a wall), the energy family (fetched as the bundle starts: its cards are
+announced in core — `src/energy-family.ts`, their names and heights — and defined as `src/energy-cards.ts` lands;
+Home Assistant builds a card again the moment its tag is defined), the cards' visual editor (when a card is edited)
+and a language's catalogue (English ships in core). Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
 over **220 KB gzip**; `tools/release/check.mjs --release` holds every chunk to its own budget.
 

@@ -27,6 +27,7 @@ export function legendReadouts(
       value: parts[index]?.value ?? '—',
       unit: parts[index]?.unit ?? '',
       size: 's',
+      name: true,
     }),
   );
 }

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-palette="linen" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Energy, motion — fluvy design lab</title>
+    <link rel="stylesheet" href="../lab.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/fluvy.css" />
+    <link rel="stylesheet" href="../../../packages/ui/styles/energy.css" />
+    <link rel="stylesheet" href="../../../packages/tokens/dist/lab.css" />
+    <link rel="stylesheet" href="../energy-next.css" />
+    <style>
+      .mo-lane .en-lane { transition: opacity 400ms ease, stroke 400ms ease; }
+      .mo-lane .mo-head { transition: opacity 400ms ease, fill 400ms ease, stroke 400ms ease; }
+      .mo-lane .mo-head--out { opacity: 0; }
+      .mo-lane.is-out .mo-head--in { opacity: 0; }
+      .mo-lane.is-out .mo-head--out { opacity: 1; }
+      .mo-lane.is-second { transition: opacity 400ms ease; }
+      .mo-lane.is-second.is-hidden { opacity: 0; }
+      .mo-lane.is-resting .en-lane { opacity: 0.5; }
+      .mo-lane.is-resting .mo-head--in { opacity: 0.35; }
+      .mo-lane.is-resting.is-out .mo-head--in { opacity: 0; }
+      .mo-lane.is-resting.is-out .mo-head--out { opacity: 0.35; }
+      .mo-node .fv-ico { transition: background-color 200ms ease, color 200ms ease; }
+      .mo-words.is-resting .en-words__value { color: var(--fluvy-text-secondary); }
+      .mo-arc { transition: stroke-dasharray 700ms cubic-bezier(0.2, 0.7, 0.2, 1), stroke-dashoffset 700ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+      .mo-comet {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 26px;
+        height: 6px;
+        border-radius: 3px;
+        transform-origin: 23px 3px;
+        background: linear-gradient(to right, transparent, var(--ink) 85%);
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+      .mo-comet--solar { --ink: var(--fluvy-state-energy-solar); }
+      .mo-comet--grid { --ink: var(--fluvy-state-energy-grid); }
+      .mo-comet--battery { --ink: var(--fluvy-state-energy-battery); }
+      .en-figure > figcaption { min-height: 40px; max-width: 360px; }
+      @media (prefers-reduced-motion: reduce) { .mo-comet { display: none; } }
+    </style>
+  </head>
+  <body class="lab-page">
+    <section class="lab-sheet en-sheet" data-sheet="energy-motion">
+      <div id="motion-light" data-mode="light" data-palette="linen"></div>
+    </section>
+    <script src="../fluvy.js"></script>
+    <script src="../energy-next.js"></script>
+    <script src="../energy-motion.js"></script>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const root = document.getElementById('motion-light');
+      if (q.get('mode')) root.dataset.mode = q.get('mode');
+      if (q.get('palette')) root.dataset.palette = q.get('palette');
+      document.fonts.load('600 16px Inter').then(() => document.fonts.ready).then(() => {
+        renderEnergyMotion(root, { cycle: q.get('cycle') !== '0', scene: Number(q.get('scene') || 0) });
+        FLUVY.fit(document);
+        document.documentElement.dataset.labReady = '1';
+      });
+    </script>
+  </body>
+</html>

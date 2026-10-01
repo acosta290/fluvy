@@ -20,6 +20,7 @@ export type Tone =
   | 'battery'
   | 'house'
   | 'gas'
+  | 'vehicle'
   | 'neutral'
   | 'off'
   | 'warning';
@@ -60,6 +61,8 @@ export const TONE_VARS: Readonly<Record<Tone, ToneVars>> = {
   battery: state('energy-battery'),
   house: state('energy-home'),
   gas: state('energy-gas'),
+  // a car as a source (V2H): its own colour among the energy lanes, the water's teal (the two never share a diagram)
+  vehicle: state('energy-water'),
   neutral: { ink: 'text-secondary', fill: 'page', border: 'border', on: 'text-secondary' },
   // an unreachable device: the disabled ink on nothing, in a dashed hairline
   off: { ink: 'unavailable', fill: 'transparent', border: 'unavailable-border', on: 'unavailable' },
@@ -88,6 +91,7 @@ export const TONES = [
   'battery',
   'house',
   'gas',
+  'vehicle',
   'neutral',
   'warning',
 ] as const satisfies readonly Tone[];

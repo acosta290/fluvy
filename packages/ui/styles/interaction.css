@@ -94,6 +94,7 @@
 .fv-ico--tap {
   transition:
     transform var(--fv-fast) var(--fv-ease),
+    scale var(--fv-fast) var(--fv-ease),
     background-color var(--fv-base) var(--fv-ease),
     color var(--fv-base) var(--fv-ease),
     box-shadow var(--fv-base) var(--fv-ease),
@@ -111,9 +112,10 @@
   transform: scale(0.94);
 }
 
+/* `scale`, not `transform`: a card's entrance animation holds `transform` (fill both), which would win over the press */
 .fv-tile--tap:active,
 .fv-scene:active {
-  transform: scale(0.975);
+  scale: 0.975;
 }
 
 /* rows are full-width strips: they dim under the finger instead of shrinking (a scale would bend the divider) */
@@ -227,9 +229,9 @@
 .fv-ico,
 .fv-badge,
 .fv-chip__pill {
-  transition-property: transform, background-color, color, box-shadow, opacity;
+  transition-property: transform, scale, background-color, color, box-shadow, opacity;
   transition-duration:
-    var(--fv-fast), var(--fv-slow), var(--fv-slow), var(--fv-slow), var(--fv-base);
+    var(--fv-fast), var(--fv-fast), var(--fv-slow), var(--fv-slow), var(--fv-slow), var(--fv-base);
   transition-timing-function: var(--fv-ease);
 }
 

@@ -1,0 +1,777 @@
+/* Energy, next — concept styles for the 1.4 design round 2 (one sheet; ported as one when built). */
+
+/* ------------------------------------------------------------------- sheet */
+
+.en-sheet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 40px;
+  padding: 40px;
+}
+.en-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+.en-figure > figcaption {
+  font:
+    500 13px/20px Inter,
+    sans-serif;
+  color: #6b6252;
+}
+.en-card {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------- tones */
+
+/* sources have colours; destinations (the house, consumers) are ink */
+.en-card {
+  --en-solar: var(--fluvy-state-energy-solar);
+  --en-grid: var(--fluvy-state-energy-grid);
+  --en-battery: var(--fluvy-state-energy-battery);
+  --en-gas: var(--fluvy-state-energy-gas);
+  --en-water: var(--fluvy-state-energy-water);
+  --en-accent: var(--fluvy-accent);
+  --en-home: color-mix(in srgb, var(--fluvy-text) 62%, var(--fluvy-card));
+}
+[class*='--solar'] {
+  --ink: var(--en-solar);
+}
+[class*='--grid'] {
+  --ink: var(--en-grid);
+}
+[class*='--battery'] {
+  --ink: var(--en-battery);
+}
+[class*='--gas'] {
+  --ink: var(--en-gas);
+}
+[class*='--water'] {
+  --ink: var(--en-water);
+}
+[class*='--accent'] {
+  --ink: var(--en-accent);
+}
+[class*='--home'] {
+  --ink: var(--en-home);
+}
+
+/* ------------------------------------------------------------------ the flow */
+
+.en-stage {
+  position: relative;
+  margin-top: 16px;
+}
+.en-stage > svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.en-lane {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+  stroke-linecap: round;
+}
+.en-lane.is-idle {
+  opacity: 0.5;
+}
+.en-knockout {
+  fill: none;
+  stroke: var(--fluvy-card);
+  stroke-width: 12;
+}
+.en-pulse {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.en-tail-a {
+  stop-color: var(--ink);
+  stop-opacity: 0;
+}
+.en-tail-b {
+  stop-color: var(--ink);
+  stop-opacity: 1;
+}
+.en-chev {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.en-chev.is-idle {
+  opacity: 0.35;
+}
+.en-arc-track {
+  fill: none;
+  stroke: var(--fluvy-page-alt, var(--fluvy-border));
+  stroke-width: 3;
+}
+.en-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.en-node {
+  position: absolute;
+}
+.en-node .fv-ico {
+  width: 44px;
+  height: 44px;
+}
+/* the grid is down: a dashed ring, the icon quiet */
+.en-node.is-outage .fv-ico {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--fluvy-border-strong, var(--fluvy-border));
+  outline: 1.5px dashed var(--fluvy-text-secondary);
+  outline-offset: -1.5px;
+}
+
+.en-place {
+  position: absolute;
+}
+.en-words {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+.en-words--right {
+  align-items: flex-end;
+  text-align: right;
+}
+.en-words--center {
+  align-items: center;
+  text-align: center;
+}
+.en-words__label {
+  height: 16px;
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+.en-words__value {
+  height: 20px;
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+.en-words__value small {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fluvy-text-secondary);
+}
+.en-words.is-dim .en-words__value {
+  color: var(--fluvy-text-secondary);
+}
+
+.en-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+.en-list__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+}
+.en-list__row .fv-ico {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+.en-period {
+  margin-top: 16px;
+}
+
+/* ------------------------------------------------- bars and legends (Distribution's idiom) */
+
+.en-bar12 {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+}
+.en-bar12 > span {
+  background: var(--ink);
+  border-radius: 2px;
+}
+.en-bar12 > span:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+.en-bar12 > span:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+.en-legend {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin-top: 12px;
+}
+.en-legend__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.en-legend__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+  font:
+    500 14px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+.en-legend__value {
+  height: 20px;
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+.en-sq {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+.en-unit {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fluvy-text-secondary);
+}
+
+/* a block: LABEL … total, then its bar and legend */
+.en-block {
+  margin-top: 20px;
+}
+.en-block__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 20px;
+  margin-bottom: 8px;
+}
+.en-block__title {
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+.en-block__total {
+  height: 20px;
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+/* ---------------------------------------------------------- phases (a meter: the grid's colour both ways) */
+
+.en-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.en-phase {
+  display: grid;
+  grid-template-columns: 40px 1fr 96px;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+.en-phase__name {
+  display: flex;
+  flex-direction: column;
+  font:
+    600 14px/16px Inter,
+    sans-serif;
+  color: var(--fluvy-text);
+}
+.en-phase__name small {
+  font:
+    500 11px/16px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+.en-phase__bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fluvy-page-alt, var(--fluvy-border));
+}
+.en-phase__zero {
+  position: absolute;
+  left: calc(50% - 1px);
+  top: -4px;
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+  background: var(--fluvy-text-secondary);
+}
+.en-phase__fill {
+  position: absolute;
+  top: 0;
+  height: 8px;
+  background: var(--en-grid);
+}
+.en-phase__fill--out {
+  border-radius: 4px 0 0 4px;
+}
+.en-phase__fill--in {
+  border-radius: 0 4px 4px 0;
+}
+.en-phase__value {
+  text-align: right;
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+.en-phase-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 108px 0 52px;
+  font:
+    500 11px/16px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+
+/* the Grid card: In / Out beside the big value, on its baselines */
+.en-inout {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 12px;
+  align-items: baseline;
+  justify-items: end;
+}
+.en-inout span {
+  font:
+    500 13px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+.en-inout b {
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+/* ---------------------------------------------------------------- rulers: a mark at a value */
+
+.en-mark {
+  position: relative;
+}
+.en-mark::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--at) - 1px);
+  width: 2px;
+  height: 44px;
+  border-radius: 1px;
+  background: var(--fluvy-text);
+}
+
+/* -------------------------------------------------------------------- sankey */
+
+.en-sankey {
+  position: relative;
+  margin-top: 16px;
+}
+.en-sankey > svg {
+  position: absolute;
+  inset: 0;
+}
+.en-ribbon {
+  fill: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+}
+.en-node-bar {
+  fill: var(--ink);
+}
+.en-node-bar.is-dashed {
+  fill: none;
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.en-sk-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+.en-sk-label.is-end {
+  align-items: flex-end;
+  text-align: right;
+}
+.en-sk-name {
+  height: 16px;
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+.en-sk-value {
+  height: 20px;
+  font:
+    600 16px/20px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+
+/* --------------------------------------------------------------------- score */
+
+.en-scores {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.en-score {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.en-score__track {
+  fill: none;
+  stroke: var(--fluvy-page-alt, var(--fluvy-border));
+  stroke-width: 6;
+}
+.en-score__arc {
+  fill: none;
+  stroke: var(--fluvy-accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.en-score__value {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font:
+    600 20px/24px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+.en-score__label {
+  width: 96px;
+  text-align: center;
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+
+/* --------------------------------------------------------------------- charts */
+
+.en-chart {
+  position: relative;
+  margin-top: 16px;
+}
+.en-area {
+  fill: color-mix(in srgb, var(--ink) 40%, var(--fluvy-card));
+}
+.en-area-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.en-zero {
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.en-chart__tag {
+  position: absolute;
+  right: 0;
+  margin-right: -0.06em;
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+.en-cursor {
+  stroke: var(--fluvy-text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.en-cursor-dot {
+  fill: var(--fluvy-card);
+  stroke: var(--fluvy-text);
+  stroke-width: 2;
+}
+.en-bar--a {
+  --ink: var(--en-solar);
+  fill: var(--ink);
+}
+.en-bar--b {
+  --ink: color-mix(in srgb, var(--en-solar) 45%, var(--fluvy-card));
+  fill: var(--ink);
+}
+.en-bar.is-future {
+  opacity: 0.25;
+}
+
+/* -------------------------------------------------------------- nested list */
+
+.en-tree__kids {
+  position: relative;
+  margin-left: 20px;
+  padding-left: 20px;
+}
+/* the spine: 2 px, centred on the parent's circle (x 22) */
+.en-tree__kids::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--fluvy-border);
+}
+
+/* ------------------------------------------------------------- signed gauge */
+
+.en-gauge {
+  position: relative;
+  height: 220px;
+  margin-top: 8px;
+}
+.en-gauge > svg {
+  position: absolute;
+  inset: 0;
+}
+.en-tick {
+  stroke: var(--fluvy-border-strong, var(--fluvy-border));
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.en-tick.is-lit {
+  stroke: var(--en-grid);
+}
+.en-gauge__label {
+  position: absolute;
+  top: 88px;
+  width: 100%;
+  text-align: center;
+  font:
+    600 11px/16px Inter,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fluvy-text-secondary);
+}
+.en-gauge__value {
+  position: absolute;
+  top: 104px;
+  width: 100%;
+  text-align: center;
+  font:
+    600 40px/44px Inter,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text);
+}
+.en-gauge__value small {
+  margin-left: 3px;
+  font-size: 16px;
+  color: var(--fluvy-text-secondary);
+}
+.en-gauge__end,
+.en-gauge__zero {
+  position: absolute;
+  font:
+    500 11px/16px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+.en-gauge__end--l {
+  left: 36px;
+  top: 196px;
+}
+.en-gauge__end--r {
+  right: 36px;
+  top: 196px;
+}
+.en-gauge__zero {
+  left: 156px;
+  top: 0;
+}
+
+/* ------------------------------------------------------------------- editor */
+
+.en-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 16px;
+}
+.en-editor .fv-label {
+  margin-top: 16px;
+}
+.en-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--fluvy-page);
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  font:
+    500 15px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text);
+}
+.en-field small {
+  font:
+    500 13px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+.en-swatches {
+  display: flex;
+  gap: 8px;
+}
+.en-swatch-pick {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.en-swatch-pick.is-on {
+  box-shadow:
+    0 0 0 2px var(--fluvy-card),
+    0 0 0 4px var(--fluvy-text);
+}
+.en-yaml {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--fluvy-page);
+  font:
+    500 12px/20px ui-monospace,
+    'SF Mono',
+    Menlo,
+    monospace;
+  color: var(--fluvy-text);
+  white-space: pre;
+}
+
+/* nested rows: ink bars, one scale */
+.en-bar--ink {
+  background: var(--en-home);
+}
+.en-top--end {
+  align-items: last baseline;
+}
+
+.en-chart__tag--left {
+  left: 0;
+  right: auto;
+  margin-right: 0;
+}
+
+/* rail: 2.5 px connectors */
+.en-rail {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 55%, var(--fluvy-card));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.en-rail.is-idle {
+  opacity: 0.5;
+}
+/* an unavailable source: the unavailable idiom, a 1 px dashed hairline */
+.en-hairline {
+  fill: none;
+  stroke: var(--fluvy-border-strong, var(--fluvy-border));
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.en-words__dir {
+  height: 16px;
+  font:
+    600 12px/16px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+/* the house's ribbons: quieter than the sources' */
+.en-ribbon.en-fill--home {
+  fill: color-mix(in srgb, var(--ink) 24%, var(--fluvy-card));
+}
+/* meters: water and gas fills */
+.ef-bar__fill--water {
+  background: var(--fluvy-state-energy-water);
+}
+.ef-bar__fill--gas {
+  background: var(--fluvy-state-energy-gas);
+}
+.en-field__lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.en-hint {
+  margin: 8px 0 0;
+  font:
+    500 13px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}
+
+/* the arrowhead: solid, rounded corners, in the flow's ink; its tip is the flow's end */
+.en-head {
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.en-head.is-idle {
+  opacity: 0.35;
+}

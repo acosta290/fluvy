@@ -15,7 +15,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | --- | --- |
 | **Home** (`custom:fluvy-home`) | the whole house: Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors, each when the house has what it shows |
 | **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page |
-| **Energy** (`custom:fluvy-energy`) | Now (the flow and the day's curve), Production, Devices, Meters |
+| **Energy** (`custom:fluvy-energy`) | Now (the flow, the balance, the house by source, the grid, the batteries, the car charger), Today (the day's flow, where it went, the score, the day's balance), Production, Devices, Water & gas, Meters |
 | **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first cameras), Cameras, Openings room by room |
 | **Wall** (`custom:fluvy-wall`) | two columns for a tablet on the wall, read from a metre away: the greeting, the clock, the readings, the scenes and the rooms; the thermostat, the security rows and who is home |
 
@@ -27,7 +27,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | **Rooms** | a card a room (its photo where the area has one), headed by floor when the house has more than one; each room opens its own page with its thermostat, lights, covers, media, appliances, readings and camera — when the house has two rooms with something in them |
 | **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the light automations as scenes last |
 | **Climate** | thermostats, water heaters and humidifiers, the weather, the temperature and humidity sensors that are not the weather service's — humidity paired with its temperature |
-| **Energy** | the energy flow (solar, grid, battery, house — found by their words and by the energy dashboard's preferences), production, the energy dashboard's devices, their distribution |
+| **Energy** | the energy flow and the balance, the house's power by source, the grid (by phase when its meters are named so), the batteries, a car charger, the day's flow, where it went and the score (when the Energy dashboard meters its sources), production, the energy dashboard's devices, their distribution, water and gas |
 | **Security** | alarm panels, locks, gates and garage doors, the openings, the cameras — when the house has an alarm, a lock, a camera or a gate |
 | **Media** | what plays now, then every other player |
 | **Agenda** | the calendars in a month view, the to-do lists, the timers, the scripts and automations to run by hand — when there are calendars, timers, things to run, or more than one list |
@@ -50,8 +50,13 @@ subview: it opens from its card, never from the tabs, and its heading leads back
   a room's climate comes from the area's own temperature and humidity sensors when they are set, else from the first
   of each in the room.
 - **The weather service's sensors** (the platform is a weather integration) stay out of the climate view.
-- **Solar, grid, battery**: power sensors whose words say so; a grid meter that reads negative through the night is
-  understood as exporting-positive and inverted. The energy dashboard's preferences win when they exist.
+- **Solar, grid, battery**: the Energy dashboard first — when it carries the grid's power sensors the energy cards
+  are given no sources and read it themselves (every connection, two sensors kept as two). Otherwise power sensors
+  whose words say so: a meter named for what leaves the house (*export*, *feed-in*, *einspeisung*, *vertido*…) is the
+  grid's second sensor, never the grid itself; grid meters named by phase (*L1*, *Phase A*, *fase 2*) are read per
+  phase; a grid meter that reads negative through the night is understood as exporting-positive and inverted; the
+  battery's charge is the battery sensor beside its power. A car charger is a power sensor named so (*wallbox*,
+  *charger*, *ladestation*, *cargador*…); water and gas are the Energy dashboard's meters, else the house's own.
 
 ## Options
 
@@ -60,10 +65,10 @@ there; *Recreate* takes them all back to their defaults):
 
 | Option | Values | Templates | What it does |
 | --- | --- | --- | --- |
-| `hide` | view names: `rooms`, `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` (home); `production`, `devices`, `meters` (energy); `cameras`, `openings` (security) | home, energy, security | views left out (the first view always stays) |
+| `hide` | view names: `rooms`, `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` (home); `today`, `production`, `devices`, `water`, `meters` (energy); `cameras`, `openings` (security) | home, energy, security | views left out (the first view always stays) |
 | `thermostat_variant` | `dial` (default), `compact`, `ruler` | home, rooms, wall | how the thermostats are drawn |
 | `tile_size` | `large` (default), `compact` | home, rooms | the tiles' size on the Lights view, the Home view and a room's page |
-| `flow_style` | `ribbons` (default), `rail`, `legs` | home, energy | the energy flow's drawing |
+| `flow_style` | `stream` (default; `ribbons` reads as it), `legs`, `rail` | home, energy | the energy flow's drawing |
 | `room_variant` | `photo` (default: a photo where the area has one, else a tile), `tile`, `row` | home, rooms | the rooms' cards |
 | `areas` | a list of area ids | wall | the rooms the wall shows, in that order (default: every room with something in it) |
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |

@@ -223,6 +223,42 @@ export const DEMO_EXTRAS: readonly DemoEntity[] = [
     attributes: { friendly_name: 'Fern', device_class: 'moisture', unit_of_measurement: '%' },
   },
   { id: 'sensor.dryer_power', state: '300', attributes: power, registry: { device_id: 'd-dryer' } },
+  // the energy system beyond the sun and the grid: a home battery with its charge, a car charger, water and gas
+  { id: 'sensor.home_battery_power', state: '-600', attributes: power },
+  {
+    id: 'sensor.home_battery_level',
+    state: '62',
+    attributes: {
+      device_class: 'battery',
+      unit_of_measurement: '%',
+      friendly_name: 'Home battery',
+    },
+  },
+  {
+    id: 'sensor.wallbox_power',
+    state: '7400',
+    attributes: { ...power, friendly_name: 'Wallbox power' },
+  },
+  {
+    id: 'sensor.water_meter',
+    state: '412.8',
+    attributes: {
+      friendly_name: 'Water meter',
+      device_class: 'water',
+      unit_of_measurement: 'm³',
+      state_class: 'total_increasing',
+    },
+  },
+  {
+    id: 'sensor.gas_meter',
+    state: '1830.2',
+    attributes: {
+      friendly_name: 'Gas meter',
+      device_class: 'gas',
+      unit_of_measurement: 'm³',
+      state_class: 'total_increasing',
+    },
+  },
   {
     id: 'sensor.dryer_energy_today',
     state: '0.8',
@@ -247,6 +283,34 @@ export const DEMO_HEAT_PUMP_READINGS: readonly DemoEntity[] = [
   },
 ];
 
+/**
+ * The energy dashboard of a house that has set it all up: the grid's meters, the sun and the battery with their
+ * power sensors, the battery's charge and capacity, water and gas.
+ */
+export const DEMO_ENERGY_SOURCES: readonly Record<string, unknown>[] = [
+  {
+    type: 'grid',
+    stat_energy_from: 'sensor.grid_energy_today',
+    stat_energy_to: null,
+    power_config: { stat_rate: 'sensor.grid_meter_power' },
+  },
+  {
+    type: 'solar',
+    stat_energy_from: 'sensor.solar_inverter_daily_yield',
+    stat_rate: 'sensor.solar_inverter_power',
+  },
+  {
+    type: 'battery',
+    stat_energy_from: 'sensor.home_battery_out',
+    stat_energy_to: 'sensor.home_battery_in',
+    power_config: { stat_rate: 'sensor.home_battery_power' },
+    stat_soc: 'sensor.home_battery_level',
+    capacity: 10,
+  },
+  { type: 'water', stat_energy_from: 'sensor.water_meter' },
+  { type: 'gas', stat_energy_from: 'sensor.gas_meter' },
+];
+
 /** The devices the energy dashboard tracks in the ordinary house (its `device_consumption` statistics). */
 export const DEMO_CONSUMPTION: readonly string[] = ['sensor.washing_machine_energy_today'];
 
@@ -256,6 +320,19 @@ export const DEMO_ROOMS: readonly DemoEntity[] = [
     id: 'light.bedroom_ceiling',
     state: 'off',
     attributes: { friendly_name: 'Bedroom ceiling', supported_color_modes: ['brightness'] },
+    registry: { area_id: 'bedroom' },
+  },
+  {
+    id: 'light.bedroom_bedside',
+    state: 'on',
+    attributes: {
+      friendly_name: 'Bedside lamp',
+      supported_color_modes: ['hs', 'color_temp'],
+      color_mode: 'hs',
+      brightness: 90,
+      hs_color: [24, 65],
+      rgb_color: [255, 160, 90],
+    },
     registry: { area_id: 'bedroom' },
   },
   {
@@ -304,6 +381,8 @@ export interface DemoHassOptions {
   readonly more?: readonly DemoEntity[];
   /** The energy dashboard's device statistics. */
   readonly consumption?: readonly string[];
+  /** The energy dashboard's sources, meters and power sensors (`DEMO_ENERGY_SOURCES`), beside its devices. */
+  readonly sources?: readonly Record<string, unknown>[];
   readonly language?: string;
 }
 
@@ -340,6 +419,7 @@ export function demoHass(options: DemoHassOptions = {}): DemoHass {
     floors: Object.fromEntries(DEMO_FLOORS.map((floor) => [floor.floor_id, { ...floor }])),
     user: { id: 'u-marta', name: 'Marta', is_admin: true },
     callWS: async () => ({
+      ...(options.sources ? { energy_sources: options.sources } : {}),
       device_consumption: consumption.map((stat) => ({ stat_consumption: stat })),
     }),
   };

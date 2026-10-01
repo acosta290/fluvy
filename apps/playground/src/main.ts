@@ -23,7 +23,7 @@ import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
-import { NOW, SHEETS } from './scenes.js';
+import { mergeWs, NOW, SHEETS } from './scenes.js';
 
 /**
  * ?sheet=home            which design sheet to mount (default: all)
@@ -130,10 +130,7 @@ const mock = createHass([...states.values()], {
     string,
     readonly number[]
   >,
-  ws: Object.assign({}, ...selected.map(([, s]) => s.ws ?? {}), panelTab ? PANEL_WS : {}) as Record<
-    string,
-    (m: Record<string, unknown>) => unknown
-  >,
+  ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
   api: (method, path) => {
     for (const [, s] of selected) {
       const answer = s.api?.(method, path);
@@ -142,9 +139,10 @@ const mock = createHass([...states.values()], {
     return [];
   },
 });
-const cards: LovelaceCard[] = [];
+/** Every card mounted, with the house its frame shows it (a frame may answer some questions its own way). */
+const cards: { card: LovelaceCard; view: (hass: HomeAssistant) => HomeAssistant }[] = [];
 mock.subscribe((hass: HomeAssistant) => {
-  for (const card of cards) card.hass = hass;
+  for (const { card, view } of cards) card.hass = view(hass);
 });
 
 const stage = document.getElementById('stage') as HTMLElement;
@@ -227,8 +225,9 @@ for (const column of columns)
         } catch (error) {
           card.textContent = String(error);
         }
-        card.hass = mock.hass();
-        cards.push(card);
+        const view = frame.hass ?? ((hass: HomeAssistant) => hass);
+        card.hass = view(mock.hass());
+        cards.push({ card, view });
         el.append(card);
       }
       column.append(el);

@@ -1,3 +1,4 @@
+import { energyHeight } from '../energy-family.js';
 import {
   clock12,
   dateFormat,
@@ -36,6 +37,7 @@ import {
   css,
   html,
   nothing,
+  svg,
   type CSSResultGroup,
   type PropertyValues,
   type TemplateResult,
@@ -61,11 +63,15 @@ import { HeadFit } from './head.js';
 
 import { legendReadouts } from './legend.js';
 
-import { costParts, readoutParts } from './power.js';
+import { costParts, readoutParts, scaled, scaleOf } from './power.js';
+import { fetchPrefs } from '../energy-model/house.js';
+import { fetchPeriod, houseMidnight, type PeriodEnergy } from '../energy-model/period.js';
+import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
+import { LAYERS, stackOf, stackShape, type Layer, type StackPoint } from './stack.js';
+import { energyLegend } from './legend-row.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { listLength } from '../shared/heights.js';
 
 const s = strings('energy');
 
@@ -83,13 +89,19 @@ export interface EnergyCardConfig extends FluvyCardConfig {
   show_cost?: boolean;
   /** Up to three sensors under the chart (grid / solar / house energy today). */
   legend?: ReadonlyArray<string | EnergyLegendItem>;
-  /** `full` (default): the reading, the chart, its axis and the legend. `compact`: the head, the chart and its axis. */
-  variant?: 'full' | 'compact';
+  /**
+   * `full` (default): the reading, the chart, its axis and the legend. `compact`: the head, the chart and its axis.
+   * `sources`: the house's power today by where it came from, stacked, and what went to the grid below the line
+   * (the Energy dashboard's meters; the entity, when given, is the reading at the top).
+   */
+  variant?: 'full' | 'compact' | 'sources';
   /** Test hook, as in the clock and calendar cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
 
 const CHART_HEIGHT = 120;
+/** The stacked chart of the `sources` variant: 160, the zero line where the day's use and export divide it. */
+const SOURCES_CHART = 160;
 /** Narrower than this, three legend readouts would cut their words: they stack, one a line. */
 const STACK_BELOW = 240;
 const HEADROOM = 44; // the bubble's room: the chart rule in design/language.md
@@ -127,8 +139,7 @@ interface ChartWindow {
 export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: EnergyCardConfig): number {
-    if (config.variant === 'compact') return 240;
-    return 320 + (listLength(config, ['legend']) ? 60 : 0);
+    return energyHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -179,10 +190,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     ...Card.properties,
     series_: { state: true },
     loaded_: { state: true },
+    stack_: { state: true },
   };
 
   declare series_: Series | null;
   declare loaded_: boolean;
+  /** The `sources` variant: today's five-minute buckets by origin, and the day as the Energy dashboard allocates it. */
+  declare stack_: { points: StackPoint[]; day: PeriodEnergy | null } | null;
+  private prefs: EnergyPrefs | null | undefined;
   /** Where the chart is being read (a fraction of its width); null: it shows now. */
   private readonly scrubber = new ScrubController(this);
 
@@ -194,6 +209,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     super();
     this.series_ = null;
     this.loaded_ = false;
+    this.stack_ = null;
   }
 
   static override keys = configKeys<EnergyCardConfig>()([
@@ -225,7 +241,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         fieldRow(textField('name'), textField('subtitle')),
         iconField(),
         colourFields(),
-        fieldRow(numberField('hours', 1, 168), selectField('variant', ['full', 'compact'])),
+        fieldRow(
+          numberField('hours', 1, 168),
+          selectField('variant', ['full', 'compact', 'sources']),
+        ),
         fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
         entitiesField('legend', ['sensor']),
         actionFields(),
@@ -247,8 +266,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   protected override prepare(config: EnergyCardConfig): EnergyCardConfig {
-    if (!config.entity) throw new Error('fluvy-energy-card: "entity" is required');
+    if (!config.entity && config.variant !== 'sources')
+      throw new Error('fluvy-energy-card: "entity" is required');
     return config;
+  }
+
+  private get bySource(): boolean {
+    return this.config?.variant === 'sources';
   }
 
   private get compact(): boolean {
@@ -320,6 +344,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   private async load(): Promise<void> {
+    if (this.bySource) return this.loadSources();
     const id = this.config?.entity;
     const hass = this.hass;
     if (!id || !hass?.states[id]) return;
@@ -330,6 +355,34 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const series = await fetchHistory(hass, id, hours, points);
     if (key !== this.asked) return; // a newer request owns the chart
     this.series_ = series;
+    this.loaded_ = true;
+  }
+
+  /** Today by origin: the curve from five-minute buckets, the legend's totals from the hours (the dashboard's own). */
+  private async loadSources(): Promise<void> {
+    const hass = this.hass;
+    if (!hass) return;
+    const now = this.now();
+    const key = `sources|${Math.floor(now.getTime() / 300_000)}`;
+    if (key === this.asked) return;
+    this.asked = key;
+    this.prefs ??= await fetchPrefs(hass);
+    const sources = readPrefs(this.prefs).sources.filter(
+      (p) => p.energyIn.length || p.energyOut.length,
+    );
+    if (!sources.length) {
+      this.stack_ = null;
+      this.loaded_ = true;
+      return;
+    }
+    const [fine, day] = await Promise.all([
+      fetchPeriod(hass, sources, 'day', now, [], '5minute'),
+      fetchPeriod(hass, sources, 'day', now),
+    ]);
+    if (key !== this.asked) return;
+    this.stack_ = fine
+      ? { points: stackOf(fine.buckets, houseMidnight(hass, now).getTime()), day }
+      : null;
     this.loaded_ = true;
   }
 
@@ -424,6 +477,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
+    if (this.bySource) return this.renderSources();
     const view = this.entity();
     const title =
       this.config?.name ?? (view.status === 'missing' ? s(this.hass, 'title') : view.name);
@@ -484,6 +538,175 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
             </div>`
           : nothing
       }
+    </article>`;
+  }
+
+  /* ---------- by source ---------- */
+
+  private layerName(key: Layer): string {
+    const flow = strings('energy-flow');
+    return key === 'gas'
+      ? flow(this.hass, 'kind_generator')
+      : key === 'vehicle'
+        ? flow(this.hass, 'kind_vehicle')
+        : flow(this.hass, `kind_${key}`);
+  }
+
+  /** The house's power today by where it came from: stacked areas, the export under the line, the day's legend. */
+  private renderSources(): TemplateResult {
+    const id = this.config?.entity;
+    const view = id ? this.entity(id) : undefined;
+    const title = this.config?.name ?? s(this.hass, 'house_power');
+    const sub = this.config?.subtitle ?? s(this.hass, 'by_source');
+    const fitted = this.head.fit({ width: this.contentWidth, title, sub, trailing: view ? 44 : 0 });
+    const tone: Tone = toneOf(this.config, 'accent');
+    const points = this.stack_?.points ?? [];
+    const w = this.contentWidth;
+    const H = SOURCES_CHART;
+    const shape = points.length > 1 ? stackShape(points, w, H, HEADROOM) : null;
+    const now = this.now();
+    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
+    // the cursor: where the pointer reads, else now
+    const fraction = this.scrubber.value;
+    const pick = (at: number): StackPoint | undefined =>
+      points.reduce<StackPoint | undefined>(
+        (best, p) => (!best || Math.abs(p.at - at) < Math.abs(best.at - at) ? p : best),
+        undefined,
+      );
+    const cursorPoint =
+      fraction !== null ? pick(Math.min(fraction, nowAt)) : points[points.length - 1];
+    const used = (p: StackPoint | undefined): number | null =>
+      p ? LAYERS.reduce((sum, k) => sum + p.used[k], 0) : null;
+    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const reading =
+      fraction !== null && cursorPoint
+        ? (() => {
+            const kw = used(cursorPoint) ?? 0;
+            const scale = scaleOf([kw * 1000], 'W');
+            return {
+              label: formatTime(
+                this.hass,
+                new Date(houseMidnight(this.hass, now).getTime() + cursorPoint.at * 86_400_000),
+              ),
+              value: scaled(this.hass, kw * 1000, scale),
+              unit: scale.unit,
+            };
+          })()
+        : liveW
+          ? { label: s(this.hass, 'right_now'), ...liveW }
+          : null;
+    const day = this.stack_?.day?.allocation;
+    const kwh = (v: number): string =>
+      formatNumber(this.hass, v, { digits: v >= 100 ? 0 : 1, minDigits: v >= 100 ? 0 : 1 });
+    const legend: { key: Layer; name: string; value: number; out?: boolean }[] = day
+      ? [
+          ...LAYERS.filter((k) => shape?.layers.some((l) => l.key === k)).map((k) => ({
+            key: k,
+            name: this.layerName(k),
+            value:
+              k === 'solar'
+                ? day.usedSolar
+                : k === 'battery'
+                  ? day.usedBattery
+                  : k === 'gas'
+                    ? day.usedGenerator
+                    : k === 'vehicle'
+                      ? day.usedVehicle
+                      : day.usedGrid,
+          })),
+          ...(shape?.exported
+            ? [
+                {
+                  key: 'solar' as Layer,
+                  name: s(this.hass, 'exported'),
+                  value: day.solarToGrid + day.batteryToGrid,
+                  out: true,
+                },
+              ]
+            : []),
+        ]
+      : [];
+    const cursorAt = fraction !== null && cursorPoint ? cursorPoint.at : nowAt;
+    const top = used(cursorPoint);
+    return html`<article class="fv-card ef-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: view
+          ? round('dots', 'quiet', this.t('common.more'), () =>
+              this.tap(view.id, { action: 'more-info' }),
+            )
+          : nothing,
+        onIconTap: () => this.tap(id),
+        onHold: () => this.hold(id),
+        name: Boolean(this.config?.name),
+      })}
+      ${
+        reading
+          ? html`<div class="ef-top fv-value-row">
+              ${readout({ label: reading.label, value: reading.value, unit: reading.unit, size: 'l' })}
+            </div>`
+          : nothing
+      }
+      ${
+        !this.loaded_
+          ? html`<div class="en-chart"><div class="fv-skeleton" style="height:${H}px"></div></div>`
+          : !shape
+            ? html`<div class="en-chart">
+                ${
+                  this.stack_ === null
+                    ? this.head.empty(
+                        'bolt',
+                        strings('energy-flow')(this.hass, 'no_period'),
+                        strings('energy-flow')(this.hass, 'no_period_hint'),
+                        this.contentWidth,
+                      )
+                    : emptyState('bolt', s(this.hass, 'no_history'))
+                }
+              </div>`
+            : html`<div class="en-chart" ${scrub(this.scrubber)}>
+                <svg
+                  width=${w}
+                  height=${H}
+                  viewBox="0 0 ${w} ${H}"
+                  aria-hidden="true"
+                  data-measure="drawn"
+                >
+                  ${[...shape.layers]
+                    .reverse()
+                    .map(
+                      (l) =>
+                        svg`<path class="en-area en-ink--${l.key}" d=${l.area}></path><polyline class="en-area-line en-ink--${l.key}" points=${l.line}></polyline>`,
+                    )}
+                  ${shape.exported ? svg`<path class="en-area en-ink--solar is-out" d=${shape.exported.area}></path><polyline class="en-area-line en-ink--solar is-out" points=${shape.exported.line}></polyline>` : nothing}
+                  ${shape.exported ? svg`<line class="en-zero" x1="0" x2=${w} y1=${shape.zero} y2=${shape.zero}></line>` : nothing}
+                  <line
+                    class="en-cursor"
+                    x1=${shape.x(cursorAt)}
+                    x2=${shape.x(cursorAt)}
+                    y1="12"
+                    y2=${H}
+                  ></line>
+                  ${top !== null ? svg`<circle class="en-cursor-dot" r="5" cx=${shape.x(cursorAt)} cy=${shape.y(top)}></circle>` : nothing}
+                </svg>
+                <span class="en-chart__tag" style="top:0">${s(this.hass, 'used')}</span>
+                ${shape.exported ? html`<span class="en-chart__tag" style="top:${Math.round(shape.zero + 12)}px">${s(this.hass, 'exported')}</span>` : nothing}
+              </div>`
+      }
+      ${axis(this.dayAxis())}
+      ${energyLegend(
+        legend.map((item) => ({
+          ink: `en-ink--${item.key}`,
+          name: item.name,
+          value: kwh(item.value),
+          unit: 'kWh',
+          ...(item.out ? { square: 'out' as const } : {}),
+        })),
+        w,
+        this.head.ruler,
+      )}
     </article>`;
   }
 }

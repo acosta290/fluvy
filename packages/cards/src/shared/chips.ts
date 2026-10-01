@@ -41,13 +41,18 @@ export const fitsOneRow = (items: readonly ChipItem[], { ruler, width }: ChipFit
  * The columns a filled row takes so that no label is cut: as many as the labels are (three at most in one row of
  * five or six, four or two of four: every row full), the widest label measured in the row's own classes.
  */
-function fittedColumns(items: readonly ChipItem[], { ruler, width }: ChipFit): number {
+export function fittedColumns(
+  items: readonly ChipItem[],
+  { ruler, width }: ChipFit,
+  candidates: readonly number[] = defaultColumns(items.length),
+): number {
   const widest = widestOf(items, ruler);
-  const count = items.length;
-  const candidates = count <= 3 ? [count] : count === 4 ? [4, 2] : [count, 3, 2];
   for (const n of candidates) if (fitsIn(n, widest, width)) return n;
   return 1;
 }
+
+const defaultColumns = (count: number): number[] =>
+  count <= 3 ? [count] : count === 4 ? [4, 2] : [count, 3, 2];
 
 /**
  * A card's row of short choices (modes, presets, sources), in the style its config asks: `full` (the default) —

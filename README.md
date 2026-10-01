@@ -22,7 +22,7 @@
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, forty-one cards, five automatic dashboards, a
+Fluvy brings one design to the whole of Home Assistant: a theme, forty-nine cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in eight languages.
@@ -41,7 +41,7 @@ radii and hairlines.
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-tablet.png" width="640" alt="The same dashboard on a wall tablet">
 </p>
 
-## Forty-one cards
+## Forty-nine cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
@@ -49,23 +49,35 @@ hold for the 1 % scale.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/dimmer.gif" width="45%" alt="The precision dimmer: a relative drag, finer away from the ruler, and the 1 % scale on hold">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/energy-flow.gif" width="45%" alt="The energy flow: the lines' pace and dots follow the power as the day rises, without a jump">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/energy-flow.gif" width="45%" alt="The energy flow on a three-phase house: importing on two phases while the third exports, then all sun, then the battery at night — every lane in its origin's colour">
   <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/dimmer.mp4">dimmer.mp4</a> · <a href="https://github.com/acosta290/fluvy/blob/main/docs/media/energy-flow.mp4">energy-flow.mp4</a></sub>
 </p>
 
-**Control** — lights with brightness and colour temperature, thermostats (dial or compact), water heaters and
-humidifiers, covers with position and tilt, fans, vacuums, valves, media players and TVs, tiles and lists.
+**Control** — lights with brightness and colour temperature, a room's lights on one card (one tap for the whole
+room, a round for each light, in its bulb's colour), thermostats (dial or compact), water heaters and humidifiers,
+covers with position and tilt, fans, vacuums, valves, media players and TVs, tiles and lists.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-control.png" width="960" alt="Control cards: lights, thermostats, covers, fans, vacuums, media players, tiles and lists">
 </p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-lights.png" width="960" alt="Room lights: a room on one line with a round a light, six lights on their own line, chips with one brightness for the room, and tiles">
+</p>
 
-**Energy, security and sensors** — the energy flow (ribbons, rail or legs), today's energy and cost, solar
-production and strings, consumption by device, distribution, gauges for anything, locks, alarms, cameras,
-openings, humidity, plants and batteries.
+**Energy** — the energy flow, read the way your meters are: one sensor, import and export apart, or each phase — so
+a house that imports and exports at once shows both, every lane in the colour of where its energy came from, with
+the Energy dashboard's own sources when you give it none. Beside it: the balance of what comes in and goes out, the
+grid by phase, batteries, a car charger, where a day's energy went (a sankey), the score, water and gas, the house's
+power by source, solar by array, consumption by device and gauges for anything. [How they read a house](docs/energy.md).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="Energy, security and sensor cards">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="The energy cards: the flow of a three-phase house and the flow as a cross, the balance, the grid by phase, two batteries, a car charger, where the day's energy went and the energy score">
+</p>
+
+**Security and sensors** — locks, alarms, cameras, openings and motion, humidity, plants, gauges and sensor tiles.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-sensors.png" width="960" alt="Security and sensor cards: a lock, an alarm, a camera, openings and motion, humidity, plants, a solar gauge and sensor tiles">
 </p>
 
 **Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
@@ -117,7 +129,8 @@ preferences — language, motion, haptics, a palette of their own. Changes apply
 One line — `strategy: { type: custom:fluvy-home }` — and Fluvy reads your areas, devices, entities and energy
 preferences and builds Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors: lights grouped by
 room, a card a room that opens the room's own page, appliances with their readings, the running thermostat first,
-the home's forecast, the energy flow found by its words, batteries and phones told apart. Four more templates build
+the home's forecast, the whole Energy dashboard read (every grid connection, the battery's charge, water and gas),
+batteries and phones told apart. Four more templates build
 a dashboard each — **Rooms** (a tab a floor), **Energy**, **Security** and a **Wall** for a tablet — and the panel
 creates any of them with one tap. Every one is rebuilt every time it opens, so a new device simply shows up.
 [How they read a home](docs/automatic-dashboard.md).
@@ -125,8 +138,10 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 ## What you get
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with.
-- **Forty-one cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Forty-nine cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose.
+- **Energy as your meters read it**: a house that imports and exports at once shows both, per phase; with nothing
+  configured the cards read the Energy dashboard, and a day, a week or a month add up to its own figures.
 - **Five automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall.
 - **Wall mode** for a tablet: no sidebar, no header, a screensaver with the clock, dark at night, the screen kept
   awake — `?kiosk` on the dashboard's address and the tablet remembers, a × in the corner is the way out.

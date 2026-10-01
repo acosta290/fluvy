@@ -1,4 +1,4 @@
-import { badge, type Tone } from '@fluvy/ui';
+import { badge, emptyState, type Tone } from '@fluvy/ui';
 import { nothing, type LitElement, type ReactiveController, type TemplateResult } from 'lit';
 import { fitLine, TextRuler, type Segment } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
@@ -30,16 +30,18 @@ export interface FittedHead {
 
 /**
  * Fits a card head to its column before it is rendered, so nothing in it is ever clipped: the title
- * is the card's name and stays whole — the badge steps aside if the title needs the room; the sub is
- * context and gives up its trailing " · " segments first ("South roof · 5.4 kWp" → "South roof"); a
- * sub that cannot fit beside the badge even as its first segment sends the badge aside too, since the
- * state a badge carries is one every card of this family also shows in its body. The icon circle is
- * the last to go: a title that still does not fit in a column of 172 takes its room (a chart card's
- * icon is decoration; the chart says what the card is).
+ * is the card's name and stays whole; what gives way has an order — the badge first (the state a badge
+ * carries is one every card of this family also shows in its body), then the sub's trailing " · "
+ * segments ("South roof · 5.4 kWp" → "South roof"), then the icon circle: a title — or a sub's first
+ * segment — that still does not fit in a column of 172 takes its room (a chart card's icon is
+ * decoration; the chart says what the card is).
  *
  * Widths are laid out by the browser in the card's own classes (`TextRuler`), never guessed, and
  * measured again when a web font lands. One instance per card: `private readonly head = new HeadFit(this)`.
  */
+/** A switch at the head's end: its 56 × 44 hit (`.fv-hit`), not the 48 track — the room a head fit must keep for it. */
+export const SWITCH_SLOT = 56;
+
 export class HeadFit implements ReactiveController {
   /** The card's text ruler (measured again when a font lands): what else the card fits may share it. */
   readonly ruler: TextRuler;
@@ -69,14 +71,19 @@ export class HeadFit implements ReactiveController {
       trailing = 0;
     }
 
-    let sub = o.sub ? this.fitSub(o.sub, room()) : '';
-    if (sub && keepBadge && this.ruler.width('fv-card__sub', sub) > room()) {
+    // what gives way has an order (design/language.md § Header pattern): the badge first — its state is in the body
+    // too — then the sub's trailing segments, then the icon circle
+    if (o.sub && keepBadge && this.ruler.width('fv-card__sub', o.sub) > room()) {
       keepBadge = false;
       trailing = 0;
-      sub = this.fitSub(o.sub ?? '', room());
     }
+    let sub = o.sub ? this.fitSub(o.sub, room()) : '';
 
-    if (this.ruler.width('fv-card__title', o.title) > room()) {
+    // the title, or the sub's first segment (a period's "Desde medianoche"), needs the circle's room too
+    if (
+      this.ruler.width('fv-card__title', o.title) > room() ||
+      (sub !== '' && this.ruler.width('fv-card__sub', sub) > room())
+    ) {
       keepIcon = false;
       sub = o.sub ? this.fitSub(o.sub, room()) : '';
     }
@@ -113,4 +120,20 @@ export class HeadFit implements ReactiveController {
   fitRowSegments(segments: readonly Segment[], room: number): string {
     return fitLine(segments, room, (text) => this.ruler.width('fv-row__sub', text));
   }
+
+  /**
+   * An empty card's panel: what is missing in one line, and how to fix it as the hint under it — left out where it
+   * would run past two lines (half a column), as the panel stays a panel and not a page of words.
+   */
+  empty(glyph: string, text: string, hint: string, width: number): TemplateResult {
+    const room = Math.min(EMPTY_HINT_MAX, width - EMPTY_SIDES);
+    const fits = this.ruler.width('fv-empty-state__hint', hint) <= room * EMPTY_TWO_LINES;
+    return emptyState(glyph, text, fits ? hint : '');
+  }
 }
+
+/** The hint's measure (`.fv-empty-state__hint` max-width), the panel's padding both sides, and two lines of it less
+ * what wrapping by words loses. */
+const EMPTY_HINT_MAX = 380;
+const EMPTY_SIDES = 32;
+const EMPTY_TWO_LINES = 1.8;

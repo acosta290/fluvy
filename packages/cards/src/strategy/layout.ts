@@ -51,19 +51,93 @@ export const applianceTile = (home: HomeRegistry, id: string): Card => {
   const readouts = home.readoutsOf(id);
   return tile(id, { ...home.named(id), ...(readouts.length ? { readouts: [...readouts] } : {}) });
 };
+/**
+ * The house's sources in the energy cards' own words — or none when the energy dashboard carries their power
+ * sensors: then the cards read it themselves (every grid connection, array and battery, with their signs).
+ */
+export function energySources(e: EnergyRoles): Record<string, unknown>[] {
+  if (e.prefsPower) return [];
+  const grid = e.gridPhases.length
+    ? [{ type: 'grid', phases: [...e.gridPhases] }]
+    : e.gridImport && e.gridExport
+      ? [{ type: 'grid', import: e.gridImport, export: e.gridExport }]
+      : e.gridPower
+        ? [{ type: 'grid', power: e.gridPower, ...(e.gridInvert ? { invert: true } : {}) }]
+        : [];
+  return [
+    ...(e.solarPower ? [{ type: 'solar', power: e.solarPower }] : []),
+    ...grid,
+    ...(e.batteryPower
+      ? [
+          {
+            type: 'battery',
+            power: e.batteryPower,
+            ...(e.batteryInvert ? { invert: true } : {}),
+            ...(e.batteryLevel ? { level: e.batteryLevel } : {}),
+          },
+        ]
+      : []),
+  ];
+}
+
+/** Whether the house has sources for the flow and the balance to draw. */
+export const hasSources = (e: EnergyRoles): boolean =>
+  e.prefsPower || Boolean(e.solarPower || e.gridPower || e.gridPhases.length || e.batteryPower);
+
+const sourcesOf = (e: EnergyRoles): Record<string, unknown> => {
+  const sources = energySources(e);
+  return sources.length ? { sources } : {};
+};
+
+/** The flow in the dashboard's style (and a period, for a day's totals). */
 export const energyFlow = (
-  { solarPower, gridPower, batteryPower, homePower, gridInvert, batteryInvert }: EnergyRoles,
+  e: EnergyRoles,
   style: CardStyle,
+  extra: Record<string, unknown> = {},
 ): Card =>
   full('energy-flow', {
     ...(style.flow ? { flow_style: style.flow } : {}),
-    ...(solarPower ? { solar_power: solarPower } : {}),
-    ...(gridPower ? { grid_power: gridPower, ...(gridInvert ? { grid_invert: true } : {}) } : {}),
-    ...(batteryPower
-      ? { battery_power: batteryPower, ...(batteryInvert ? { battery_invert: true } : {}) }
-      : {}),
-    ...(homePower ? { home_power: homePower } : {}),
+    ...sourcesOf(e),
+    ...(e.homePower && !extra['period'] ? { home: e.homePower } : {}),
+    ...extra,
   });
+
+/** What comes in against what goes out. */
+export const energyBalance = (e: EnergyRoles, extra: Record<string, unknown> = {}): Card =>
+  full('energy-balance', { ...sourcesOf(e), ...extra });
+
+/** The grid: by phase, by two sensors, or its one meter; the energy dashboard's first connection otherwise. */
+export const gridCard = (e: EnergyRoles): Card =>
+  full(
+    'grid',
+    e.prefsPower
+      ? {}
+      : e.gridPhases.length
+        ? { phases: [...e.gridPhases] }
+        : e.gridImport && e.gridExport
+          ? { import: e.gridImport, export: e.gridExport }
+          : { power: e.gridPower, ...(e.gridInvert ? { invert: true } : {}) },
+  );
+
+/** The house's batteries: the energy dashboard's, or the one found by its words with its charge. */
+export const batteriesCard = (e: EnergyRoles): Card =>
+  full(
+    'batteries',
+    e.prefsPower || !e.batteryPower
+      ? {}
+      : {
+          batteries: [
+            {
+              power: e.batteryPower,
+              ...(e.batteryInvert ? { invert: true } : {}),
+              ...(e.batteryLevel ? { level: e.batteryLevel } : {}),
+            },
+          ],
+        },
+  );
+
+/** Whether the house has a battery the batteries card can read (the energy dashboard's gives its power too). */
+export const hasBattery = (e: EnergyRoles): boolean => Boolean(e.batteryPower);
 
 /** A thermostat in the dashboard's variant. */
 export const thermostat = (id: string, style: CardStyle): Card =>

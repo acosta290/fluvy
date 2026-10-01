@@ -23,7 +23,7 @@ import {
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { Card } from '../shared/base.js';
-import { HeadFit } from '../energy/head.js';
+import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { configKeys } from '../shared/config.js';
 
 import { glyphFor } from '../shared/domain.js';
@@ -275,7 +275,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       width: w,
       title: name,
       sub,
-      ...(unusable ? {} : { trailing: 48 }),
+      ...(unusable ? {} : { trailing: SWITCH_SLOT }),
     });
 
     return html`<article

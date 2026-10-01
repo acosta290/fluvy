@@ -5,6 +5,52 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **The energy flow, rebuilt** on one energy model shared by every energy card. A source is read the way its meter
+  is: one signed sensor, two sensors (what comes in and what goes out), or one per phase summed per sign — so a
+  house that imports on two phases and exports on the third shows both flows, and the sun's share of the house is
+  right again (#19). With no sources given, the card reads the Energy dashboard's own: every grid connection, array
+  and battery, two power sensors kept as two. Several arrays and batteries, a generator and a car that powers the
+  house are sources too; `consumers` show where the energy goes. Variants `rows`, `cross` and `list`; styles
+  `stream`, `legs` and `rail`; `motion: full | calm | off`; the badge says the sun's share, the self-sufficiency or
+  the grid's way; each source takes its name, icon, colour, threshold, arrows and when to show. A day, a week or a
+  month from the statistics, allocated hour by hour the way the Energy dashboard does, so the figures match.
+- Every lane in the colour of where its energy came from, a solid arrowhead whose tip ends the lane, and pulses of
+  light at a steady 24–72 px/s (eight a card at most, paused off screen and in a hidden tab).
+- New energy cards: **Energy balance**, **Grid** (each phase, the price), **Batteries**, **Car charger**,
+  **Where it went** (a sankey of the period), **Energy score**, **Water & gas**.
+- The energy card's `sources` variant (the house's power today by where it came from), nested energy devices with
+  what is not measured, Distribution's `total` (the whole's own meter: what no source accounts for), production by
+  array, and a signed gauge for a meter that can go negative.
+- [docs/energy.md](docs/energy.md): how the energy cards read a house, and every case.
+- **Room lights** (`fluvy-lights-card`): a room's lights on one card. A tap on the card turns the whole room on or off;
+  each light is a round beside the room's name (`row`), a chip with its name (`chips`) or a compact tile (`tiles`)
+  that a tap turns and a hold opens. A light that is on wears its bulb's colour and its round a ring of its level;
+  the lights come from an `area` or a list, each with its own name, icon and colour; `show_brightness` adds one
+  ruler for the room. The automatic dashboard's Lights view starts each room of two lights or more with it.
+
+### Changed
+
+- The automatic dashboards read the whole Energy dashboard (every connection, the battery's charge, water and gas)
+  and give the Energy template a *Today* view (a day's flow, where it went, the score) and a *Water & gas* view.
+- The energy family loads as its own file, fetched as Fluvy starts: every page stays under its budget.
+- 1.3's flow keys (`solar_power`, `grid_power`, `grid_invert`, `battery_*`, `home_power`, `flow_style: ribbons`) are
+  still read, and never written.
+- In the flow card's editor a source shows only the fields its kind is read by (a grid has no state of charge).
+- A figure in kW (or kWh, MW…) from 1 to 100 keeps its decimal: "1.0 kW" beside "2.2 kW".
+
+### Fixed
+
+- The automatic dashboard could take an export meter for the grid's own; export meters are now the grid's second
+  sensor.
+- Production counted "today" on the browser's clock; it counts on the house's.
+- An unavailable icon circle was filled in a solid palette (Volt, Mint); it is the dashed ring alone, as in the others.
+- A tile gave nothing under the finger (its entrance held the press back); it shrinks and eases again, as designed.
+- The room card's inner tiles were 76 tall; they are 84, as designed.
+- In a narrow column the light and fan cards' heads kept room for a 48 px switch that is 56: the second line now
+  gives way before it is cut.
+
 ## [1.3.3] — 2026-09-30
 
 ### Added

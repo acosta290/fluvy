@@ -3,8 +3,8 @@
  * Interaction and lifecycle tests for the energy, solar, clock and calendar cards on the playground
  * (real cards, simulated hass). Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5184/ node interactions-energy-clock-calendar.mjs
- * What it proves: the flow's dots run on CSS, pause at 0 W and vanish under reduced motion; an
- * unavailable curve claims no reading at "now"; the analog face runs without a single DOM write
+ * What it proves (the flow has its own suite, interactions-energy-flow.mjs): an unavailable curve claims no
+ * reading at "now"; the analog face runs without a single DOM write
  * while the digital seconds tick once a second; a removed clock schedules nothing more; a calendar
  * never re-reads because `hass` was replaced, reads a new month once and the old one from cache,
  * and its days work from the keyboard; a humidifier switch flips before Home Assistant answers;
@@ -42,73 +42,9 @@ async function moreInfos(page, run) {
   return page.evaluate(() => window.__moreInfo);
 }
 
-/* ---------- energy flow: motion on the compositor, paused at zero, gone under reduced motion ---------- */
+/* ---------- energy: an unavailable curve claims no reading at "now" ---------- */
 {
   const page = await open('energy');
-  const flow = frame(page, 'Flow').locator('fluvy-energy-flow-card').first();
-  const motion = await flow.evaluate((card) => {
-    const groups = [...card.shadowRoot.querySelectorAll('.ef-dots')];
-    return groups.map((g) => {
-      const dots = [...g.querySelectorAll('.ef-flow')];
-      const anims = dots.flatMap((d) => d.getAnimations());
-      return {
-        idle: g.classList.contains('is-idle'),
-        rate: Number(g.dataset.rate),
-        on: dots.filter((d) => d.classList.contains('is-on')).length,
-        states: [...new Set(anims.map((a) => a.playState))],
-        rates: [...new Set(anims.map((a) => a.playbackRate.toFixed(2)))],
-        css: anims.every((a) => a instanceof CSSAnimation),
-      };
-    });
-  });
-  check(
-    'flow: every link carries CSS animations (no script per frame)',
-    motion.length === 3 && motion.every((m) => m.css),
-    JSON.stringify(motion),
-  );
-  check(
-    'flow: live links run at the pace of their power',
-    motion.every(
-      (m) =>
-        !m.idle &&
-        m.on >= 1 &&
-        m.states.join() === 'running' &&
-        m.rates.length === 1 &&
-        Number(m.rates[0]) === m.rate,
-    ),
-    JSON.stringify(motion),
-  );
-
-  const night = frame(page, 'On the battery').locator('fluvy-energy-flow-card').first();
-  const idle = await night.evaluate((card) => {
-    const solar = card.shadowRoot.querySelector('.ef-dots--solar');
-    const anims = [...solar.querySelectorAll('.ef-flow')].flatMap((d) => d.getAnimations());
-    return {
-      idle: solar.classList.contains('is-idle'),
-      on: solar.querySelectorAll('.is-on').length,
-      states: [...new Set(anims.map((a) => a.playState))],
-      link:
-        (
-          card.shadowRoot.querySelector('.ef-link--solar') ??
-          card.shadowRoot.querySelector('.ef-band--solar')
-        ).classList.contains('ef-link--idle') ||
-        (card.shadowRoot.querySelector('.ef-band--solar')?.classList.contains('ef-band--idle') ??
-          false),
-    };
-  });
-  check(
-    'flow: a link at 0 W is idle — dots paused and hidden, dashes dimmed',
-    idle.idle && idle.on === 0 && idle.states.join() === 'paused' && idle.link,
-    JSON.stringify(idle),
-  );
-
-  const dead = frame(page, 'Nothing to show').locator('fluvy-energy-flow-card').first();
-  check(
-    'flow: an unavailable diagram shows the state once and no badge',
-    (await dead.locator('.fv-card__sub').textContent()).trim() === 'Unavailable' &&
-      (await dead.locator('.fv-badge').count()) === 0,
-  );
-
   // the unavailable energy card keeps its history but claims no reading at "now"
   const deadCurve = frame(page, 'Nothing to show').locator('fluvy-energy-card').nth(1);
   const dot = await deadCurve.evaluate((card) => {
@@ -125,95 +61,6 @@ async function moreInfos(page, run) {
     (
       await deadCurve.locator('.fv-readout--l .fv-readout__value span').first().textContent()
     ).trim() === '—',
-  );
-  await page.close();
-}
-{
-  const page = await open('energy', 360, { reducedMotion: 'reduce' });
-  const flow = frame(page, 'Flow').locator('fluvy-energy-flow-card').first();
-  const hidden = await flow.evaluate((card) =>
-    [...card.shadowRoot.querySelectorAll('.ef-dots')].every(
-      (g) => getComputedStyle(g).display === 'none',
-    ),
-  );
-  check(
-    'flow: reduced motion removes the travelling dots (the drawing stays)',
-    hidden && (await flow.locator('.ef-band').count()) === 3,
-  );
-  await page.close();
-}
-
-/* ---------- flow styles: ribbons (default) are as thick as their power, legs and rail draw on request ---------- */
-{
-  const page = await open('energy');
-  const flow = page.locator('fluvy-energy-flow-card').first(); // three sources, ribbons by default
-  const bands = flow.locator('.ef-band');
-  check(
-    'the flow draws one ribbon per source by default',
-    (await bands.count()) === 3 && (await flow.locator('.ef-link').count()) === 0,
-  );
-  const solar = await bands.nth(0).boundingBox();
-  const grid = await bands.nth(1).boundingBox();
-  check(
-    '…and the ribbon of the biggest flow is the thickest',
-    solar.height > grid.height + 8,
-    `${solar.height} vs ${grid.height}`,
-  );
-  check('…with a chevron per flowing source', (await flow.locator('.ef-chev').count()) === 3);
-  const legs = page.locator('fluvy-energy-flow-card').filter({ hasText: 'Legs' }).first();
-  check(
-    'flow_style: legs draws the dashed legs with arrowheads',
-    (await legs.locator('.ef-link').count()) === 2 &&
-      (await legs.locator('marker').count()) === 2 &&
-      (await legs.locator('.ef-band').count()) === 0,
-  );
-  const rail = page.locator('fluvy-energy-flow-card').filter({ hasText: 'Rail' }).first();
-  check(
-    'flow_style: rail draws one track, a connector per source and the arrow into the house',
-    (await rail.locator('.ef-rail').count()) === 1 &&
-      (await rail.locator('.ef-join').count()) === 2 &&
-      (await rail.locator('.ef-chev--house').count()) === 1,
-  );
-  check(
-    'every style animates its dots',
-    (await rail.locator('.ef-flow.is-on').count()) > 0 &&
-      (await flow.locator('.ef-flow.is-on').count()) > 0,
-  );
-  await page.close();
-}
-
-/* ---------- narrow flow cards list their sources: no diagram, no dots ---------- */
-{
-  const page = await open('energy');
-  const narrow = page.locator('fluvy-energy-flow-card').filter({ hasText: 'Narrow' }).first();
-  check(
-    'a 6-column flow card lists its sources and the house instead of drawing',
-    (await narrow.locator('.ef-list__row').count()) === 3 &&
-      (await narrow.locator('svg.ef-stage, .ef-stage').count()) === 0 &&
-      (await narrow.locator('.ef-flow').count()) === 0,
-  );
-  const wide = page.locator('fluvy-energy-flow-card').first();
-  check(
-    '…while a full-width one keeps the diagram',
-    (await wide.locator('.ef-stage').count()) === 1,
-  );
-  const rail = page.locator('fluvy-energy-flow-card').filter({ hasText: 'Rail' }).first();
-  const tip = await rail
-    .locator('.ef-chev--house')
-    .first()
-    .evaluate((c) => c.getAttribute('d'));
-  const track = await rail
-    .locator('.ef-rail')
-    .first()
-    .evaluate((t) => t.getAttribute('d'));
-  const tipX = Number(
-    tip.split(' ')[1].split('L')[1]?.split(',')[0] ?? tip.match(/L([\d.]+),/)?.[1],
-  );
-  const trackEnd = Number(track.match(/H([\d.]+)/)?.[1]);
-  check(
-    'rail: the arrow tip ends the track',
-    Number.isFinite(tipX) && Number.isFinite(trackEnd) && tipX - trackEnd === 1,
-    `${tipX} vs ${trackEnd}`,
   );
   await page.close();
 }
