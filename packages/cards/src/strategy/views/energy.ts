@@ -32,7 +32,8 @@ export function liveCards(ctx: StrategyContext): Card[] {
       energy.gridPower || energy.gridPhases.length || (energy.gridImport && energy.gridExport),
       () => [gridCard(energy)],
     ),
-    ...when(energy.gridPower && !energy.gridExport && !energy.prefsPower, (id) => [
+    // the meter's id last: `when` hands its value to the card
+    ...when(!energy.gridExport && !energy.prefsPower && energy.gridPower, (id) => [
       full('gauge', {
         entity: id,
         variant: 'signed',
@@ -59,7 +60,7 @@ export function todayCards(ctx: StrategyContext): Card[] {
 function nowView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { solarPower, gridPower, homePower, consumptionPowers } = energy;
-  return balanced([
+  return balanced(ctx.header, [
     ...liveCards(ctx),
     ...(energy.prefsMeters
       ? []
@@ -89,14 +90,14 @@ function nowView(ctx: StrategyContext): Section[] {
 
 /** Today in energy: the day's flow, where it went, the score and the day's balance. */
 function todayView(ctx: StrategyContext): Section[] {
-  return balanced(todayCards(ctx));
+  return balanced(ctx.header, todayCards(ctx));
 }
 
 /** What the sun makes: today's production, the inverter's gauge and its day. */
 function productionView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
   const { solarPower, solarToday } = energy;
-  return balanced([
+  return balanced(ctx.header, [
     ...when(solarToday, (id) => [full('production', { entity: id })]),
     ...when(solarPower, (id) => [full('gauge', { entity: id })]),
     ...when(solarPower, (id) => [full('energy', { entity: id, name: t('energy.solar') })]),
@@ -107,7 +108,7 @@ function productionView(ctx: StrategyContext): Section[] {
 function devicesView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { consumption, consumptionPowers } = energy;
-  return balanced([
+  return balanced(ctx.header, [
     ...when(consumption.length, () => [
       full('energy-devices', {
         title: t('strategy.appliances'),
@@ -132,8 +133,10 @@ function metersCards({ energy }: StrategyContext): Card[] {
 }
 
 /** A day's curve for every power meter of the house. */
-function metersView({ home }: StrategyContext): Section[] {
+function metersView(ctx: StrategyContext): Section[] {
+  const { home } = ctx;
   return balanced(
+    ctx.header,
     home.powers.slice(0, 9).map((id) => full('energy', { entity: id, name: home.placeName(id) })),
   );
 }
@@ -165,7 +168,7 @@ export const ENERGY_VIEWS: readonly ViewSpec[] = [
     key: 'water',
     icon: 'fluvy:drop',
     title: 'strategy.water_gas',
-    build: (ctx) => balanced(metersCards(ctx)),
+    build: (ctx) => balanced(ctx.header, metersCards(ctx)),
     when: ({ energy }) => energy.meters.length > 0,
   },
   {

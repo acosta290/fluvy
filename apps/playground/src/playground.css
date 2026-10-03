@@ -32,6 +32,33 @@ html[data-mode='dark'] body {
   justify-content: center;
   padding: 32px;
 }
+/* ?dashboard: Home Assistant's page, edge to edge (its header, then the view) */
+.pg-stage.pg-dashboard {
+  display: block;
+  padding: 0;
+  background: var(--fluvy-page);
+}
+.pg-dashboard hui-root {
+  min-height: 100vh;
+}
+/* in a dashboard, a frame is a section of the view: no sheet's outline around its cards */
+.pg-dashboard .pg-frame {
+  background: none;
+  box-shadow: none;
+  border: 0;
+}
+/* &frame=1: Home Assistant's sidebar beside the dashboard */
+.pg-stage.pg-dashboard--framed {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
+}
+.pg-dashboard--framed hui-root {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 /* ?compare: one column per palette, its name above it */
 .pg-look {
   display: flex;

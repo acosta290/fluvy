@@ -211,6 +211,26 @@
   margin: 0;
 }
 
+/* the compact bar row: 48 tall, the 40 circle on the row (4..44), the name and the value on one line (12..32, the
+   value's baseline on the name's), the bar 4 under the name from the text column to the content edge (36..40) */
+.fv-row.fv-row--bar.fv-row--compact {
+  height: 48px;
+}
+
+.fv-row--bar.fv-row--compact .fv-ico {
+  margin-top: 4px;
+}
+
+.fv-row--bar.fv-row--compact .fv-bar {
+  left: 52px;
+  top: 36px;
+}
+
+/* a bar row without its circle: the bar runs the whole row, under the words that start it */
+.fv-row--bar.fv-row--bare .fv-bar {
+  left: 0;
+}
+
 .fv-bar {
   display: block;
   height: 4px;
@@ -448,6 +468,30 @@
   line-height: 20px;
   font-variant-numeric: tabular-nums;
   text-wrap: balance;
+}
+
+/* the compact option tile: 64 tall (12 · label 16 · 4 · value 20 · 12), the label over the value and no glyph row —
+   a figure read at a glance (a stat tile's compact variant) */
+.fv-option--compact {
+  padding: 12px;
+}
+
+.fv-option--compact .fv-option__label {
+  margin-top: 0;
+}
+
+.fv-option--compact .fv-option__value {
+  margin-top: 4px;
+}
+
+/* a tile whose entity cannot be read: the Unavailable surface — the dashed hairline on the page fill, the off ink;
+   the hairline says it, so the tile is not faded as well (the general `.is-unavailable` fade would take its words
+   under 3:1) */
+.fv-option.is-unavailable {
+  outline: 1px dashed var(--fluvy-unavailable-border);
+  outline-offset: -1px;
+  color: var(--fluvy-text-secondary);
+  opacity: 1;
 }
 
 .fv-option.is-active {

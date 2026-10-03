@@ -21,6 +21,7 @@ import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
 import { toneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
 import { secondaryText } from '../shared/secondary.js';
+import { TemplateTexts } from '../shared/templates.js';
 import {
   actionField,
   colourFields,
@@ -33,7 +34,7 @@ export interface RowConfig {
   entity: string;
   name?: string;
   icon?: string;
-  /** What the row says under its name (area, last change, state, none, or an attribute); the area, else the time. */
+  /** What the row says under its name: area, last change, state, none, an attribute, or a template; the area, else the time. */
   secondary?: Secondary;
   tap_action?: ActionConfig;
   tone?: Tone;
@@ -55,7 +56,7 @@ export const ROW_KEYS = [
 export const rowSchema = (domains?: readonly string[]): HaFormSchemaItem[] => [
   entityField(domains),
   nameIconFields(),
-  selectField('secondary', ['area', 'last-changed', 'state', 'none']),
+  selectField('secondary', ['area', 'last-changed', 'state', 'none'], { custom: true }),
   colourFields(),
   actionField(),
 ];
@@ -132,6 +133,8 @@ export function changedLine(hass: HomeAssistant | undefined, view: EntityView): 
  */
 export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extends Card<C> {
   private rowList: readonly RowConfig[] = [];
+  /** A row's second line when it is a template: rendered by Home Assistant, live. */
+  protected readonly texts = new TemplateTexts(this);
 
   protected override prepare(config: C): C {
     const rows: unknown = config.rows;
@@ -178,7 +181,13 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       sub:
         events && view.status === 'ok'
           ? changedAt(this.hass, view)
-          : secondaryText(this.hass, view, row.secondary ?? 'last-changed', trailing === 'value'),
+          : secondaryText(
+              this.hass,
+              view,
+              row.secondary ?? 'last-changed',
+              trailing === 'value',
+              this.texts,
+            ),
       trailing,
       on,
       switchTone: tone === 'warning' ? 'accent' : tone,

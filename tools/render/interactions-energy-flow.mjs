@@ -357,24 +357,108 @@ const pulses = (flow) =>
 {
   const page = await open();
   const card = frame(page, 'House power by source').locator('fluvy-energy-card').first();
-  const chart = await card.evaluate((c) => {
-    const root = c.shadowRoot;
-    return {
-      areas: [...root.querySelectorAll('.en-area:not(.is-out)')].map((a) =>
-        [...a.classList].find((k) => k.startsWith('en-ink--')),
-      ),
-      out: root.querySelectorAll('.en-area.is-out').length,
-      legend: [...root.querySelectorAll('.en-legend__item')].map((i) =>
-        i.textContent.replace(/\s+/g, ''),
-      ),
-    };
-  });
+  const read = (c) =>
+    c.evaluate((el) => {
+      const root = el.shadowRoot;
+      return {
+        reading: (root.querySelector('.ef-top .fv-readout')?.textContent ?? '')
+          .replace(/\s+/g, ' ')
+          .trim(),
+        areas: [...root.querySelectorAll('.en-area:not(.is-out)')].map((a) =>
+          [...a.classList].find((k) => k.startsWith('en-ink--')),
+        ),
+        below: [...root.querySelectorAll('.en-area.is-out')].map((a) => a.dataset.below),
+        lines: [...root.querySelectorAll('path.en-area-line')].map((l) => l.getAttribute('d')),
+        legend: [...root.querySelectorAll('.en-legend__item')].map((i) =>
+          i.textContent.replace(/\s+/g, ''),
+        ),
+      };
+    });
+  const chart = await read(card);
+  const asked = await page.evaluate(() =>
+    (window.fluvyAsked ?? []).filter(
+      (m) => m.type === 'recorder/statistics_during_period' && (m.types ?? []).includes('mean'),
+    ),
+  );
   check(
-    'by source: the sun, the battery and the grid stacked, the export under the line, the day’s totals as the dashboard allocates them',
+    'by source, with the Energy dashboard’s power sensors: their five-minute means in kW, as Home Assistant’s own graph',
+    asked.some(
+      (m) =>
+        m.period === '5minute' &&
+        m.units?.power === 'kW' &&
+        ['sensor.fl_solar', 'sensor.fl_grid_in', 'sensor.fl_grid_out', 'sensor.fl_battery'].every(
+          (id) => m.statistic_ids.includes(id),
+        ),
+    ),
+    JSON.stringify(asked.map((m) => [m.period, m.types, m.units, m.statistic_ids])),
+  );
+  check(
+    'by source: right now is the house’s own use (1.9 + 3.2 − 0.4 − 0.6 = 4.1 kW), not a sensor of the card',
+    /^Right now 4\.1 ?kW$/.test(chart.reading),
+    chart.reading,
+  );
+  check(
+    'by source: the sun, the battery and the grid stacked; under the line what went into the battery and out to the grid; the day’s totals',
     chart.areas.sort().join() === 'en-ink--battery,en-ink--grid,en-ink--solar' &&
-      chart.out === 1 &&
-      chart.legend.join(' | ') === 'Solar6.9kWh | Battery2.4kWh | Grid4.1kWh | Exported1.3kWh',
+      chart.below.join() === 'charged,exported' &&
+      chart.legend.join(' | ') ===
+        'Solar6.9kWh | Battery2.4kWh | Grid4.1kWh | Charged3.0kWh | Exported1.3kWh',
     JSON.stringify(chart),
+  );
+
+  // issue #23's house: a hybrid inverter's meters are wrong, its power sensors right
+  const hybrid = frame(page, 'By source · a hybrid inverter, with power')
+    .locator('fluvy-energy-card')
+    .first();
+  const h = await read(hybrid);
+  const plot = hybrid.locator('.en-chart');
+  await plot.scrollIntoViewIfNeeded();
+  const box = await plot.boundingBox();
+  const at = async (hour) => {
+    await page.mouse.move(box.x + (box.width * hour) / 24, box.y + box.height / 2);
+    await page.waitForTimeout(150);
+    return (await read(hybrid)).reading;
+  };
+  const noon = await at(12.5);
+  const gap = await at(3.25);
+  await page.mouse.move(0, 0);
+  check(
+    'issue #23: drawn from power, the sun covers the house at midday, the evening is the battery’s, now is the house’s use (0.3 + 1.3 kW)',
+    /^Right now 1\.6 ?kW$/.test(h.reading) &&
+      h.areas.includes('en-ink--solar') &&
+      h.below.join() === 'charged,exported' &&
+      /^12:\d\d \d+(\.\d)? ?kW$/.test(noon) &&
+      Number.parseFloat(noon.split(' ')[1] ?? '') > 0.5,
+    JSON.stringify([h.reading, noon, h.legend]),
+  );
+  check(
+    'issue #23: the recorder’s gap at 03:00 is a gap — the curve stops and the cursor reads "—", never a zero',
+    h.lines.every((d) => (d.match(/M/g) ?? []).length >= 2) && /^03:\d\d —$/.test(gap),
+    JSON.stringify([gap, h.lines.map((d) => (d.match(/M/g) ?? []).length)]),
+  );
+
+  // the same house without power: its meters, which count in 0.1 kWh, in half-hour blocks (a quarter would show the
+  // step as a saw-tooth at the evening's 1.6 kW)
+  const meters = frame(page, 'By source · a hybrid inverter, meters only')
+    .locator('fluvy-energy-card')
+    .first();
+  const m = await read(meters);
+  const xs = (m.lines[0] ?? '')
+    .split(/[ML]/)
+    .map((p) => Number(p.trim().split(',')[0]))
+    .filter((x) => Number.isFinite(x) && x > 0);
+  const steps = xs
+    .slice(1)
+    .map((x, i) => x - (xs[i] ?? 0))
+    .filter((d) => d > 0);
+  const width = (await meters.locator('.en-chart svg').boundingBox()).width;
+  const block = (width * 30) / 1440;
+  check(
+    'without power sensors: the meters, half an hour a point for a 0.1 kWh step (no zigzag), no reading it cannot know',
+    m.reading === '' &&
+      steps.length > 10 &&
+      steps.every((d) => Math.abs(d - block) < 0.2 || d > block * 1.4),
+    JSON.stringify({ reading: m.reading, block, steps: steps.slice(0, 8) }),
   );
   await page.close();
 }

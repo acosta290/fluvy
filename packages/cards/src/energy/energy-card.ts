@@ -65,9 +65,20 @@ import { legendReadouts } from './legend.js';
 
 import { costParts, readoutParts, scaled, scaleOf } from './power.js';
 import { fetchPrefs } from '../energy-model/house.js';
-import { fetchPeriod, houseMidnight, type PeriodEnergy } from '../energy-model/period.js';
-import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
-import { LAYERS, stackOf, stackShape, type Layer, type StackPoint } from './stack.js';
+import { fetchPeriod, houseMidnight } from '../energy-model/period.js';
+import { allocate } from '../energy-model/allocate.js';
+import { fetchPowerDay, liveTotals, powerBuckets, powered } from '../energy-model/power-day.js';
+import { measureIds, readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
+import {
+  aggregate,
+  integrate,
+  LAYERS,
+  meterBlock,
+  stackOf,
+  stackShape,
+  type Layer,
+  type StackPoint,
+} from './stack.js';
 import { energyLegend } from './legend-row.js';
 import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
@@ -116,6 +127,17 @@ const clamp = (n: number, min: number, max: number): number => Math.min(max, Mat
 function minutesIntoDay(hass: HomeAssistant | undefined, now: Date): number {
   const wall = wallClock(now, houseZone(hass));
   return wall.hour * 60 + wall.minute + wall.second / 60;
+}
+
+/** The by-source day: its points, one bucket's length in minutes, and the day's energy by origin (kWh). */
+interface SourcesDay {
+  readonly points: StackPoint[];
+  readonly minutes: number;
+  readonly day: {
+    readonly used: Readonly<Record<Layer, number>>;
+    readonly charged: number;
+    readonly exported: number;
+  } | null;
 }
 
 interface ChartWindow {
@@ -195,8 +217,11 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   declare series_: Series | null;
   declare loaded_: boolean;
-  /** The `sources` variant: today's five-minute buckets by origin, and the day as the Energy dashboard allocates it. */
-  declare stack_: { points: StackPoint[]; day: PeriodEnergy | null } | null;
+  /**
+   * The `sources` variant: today's points by origin (from the power sensors' five-minute means when the Energy
+   * dashboard names them, else from its meters in fifteen-minute blocks), one bucket's length, and the day's totals.
+   */
+  declare stack_: SourcesDay | null;
   private prefs: EnergyPrefs | null | undefined;
   /** Where the chart is being read (a fraction of its width); null: it shows now. */
   private readonly scrubber = new ScrubController(this);
@@ -293,7 +318,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const ids = this.legend().map((item) => item.entity);
     if (this.config?.entity) ids.push(this.config.entity);
     if (this.config?.cost_entity) ids.push(this.config.cost_entity);
+    // by source, "right now" is the house's own use: every source's power sensor
+    if (this.bySource) ids.push(...this.prefSources().flatMap((p) => measureIds(p.measure)));
     return ids;
+  }
+
+  /** The Energy dashboard's sources (known once the preferences have been read). */
+  private prefSources(): readonly PrefSource[] {
+    return this.prefs ? readPrefs(this.prefs).sources : [];
   }
 
   private legend(): EnergyLegendItem[] {
@@ -358,7 +390,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     this.loaded_ = true;
   }
 
-  /** Today by origin: the curve from five-minute buckets, the legend's totals from the hours (the dashboard's own). */
+  /**
+   * Today by origin. With the power sensors the Energy dashboard names for every source, the curve is their
+   * five-minute means — what Home Assistant's own "Power sources" graph draws — and the legend its integral. Without
+   * them, the meters: their five-minute changes summed into fifteen-minute blocks (coarse meters even out), and the
+   * legend the hours as the dashboard allocates them.
+   */
   private async loadSources(): Promise<void> {
     const hass = this.hass;
     if (!hass) return;
@@ -367,23 +404,64 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     if (key === this.asked) return;
     this.asked = key;
     this.prefs ??= await fetchPrefs(hass);
-    const sources = readPrefs(this.prefs).sources.filter(
-      (p) => p.energyIn.length || p.energyOut.length,
-    );
-    if (!sources.length) {
+    const all = readPrefs(this.prefs).sources;
+    const midnight = houseMidnight(hass, now).getTime();
+    if (powered(all)) {
+      const rows = await fetchPowerDay(hass, all, now);
+      if (key !== this.asked) return;
+      const buckets = rows ? powerBuckets(rows, all) : [];
+      if (buckets.length) {
+        const points = stackOf(buckets, midnight, 5, 'kW');
+        this.stack_ = { points, minutes: 5, day: integrate(points, 5) };
+        this.loaded_ = true;
+        return;
+      }
+    }
+    const metered = all.filter((p) => p.energyIn.length || p.energyOut.length);
+    if (!metered.length) {
       this.stack_ = null;
       this.loaded_ = true;
       return;
     }
-    const [fine, day] = await Promise.all([
-      fetchPeriod(hass, sources, 'day', now, [], '5minute'),
-      fetchPeriod(hass, sources, 'day', now),
+    const [fine, hours] = await Promise.all([
+      fetchPeriod(hass, metered, 'day', now, [], '5minute'),
+      fetchPeriod(hass, metered, 'day', now),
     ]);
     if (key !== this.asked) return;
+    const a = hours?.allocation;
+    // a block over which the meters' own step does not show (15 minutes for a precise meter)
+    const minutes = fine ? meterBlock(fine.buckets) : 15;
     this.stack_ = fine
-      ? { points: stackOf(fine.buckets, houseMidnight(hass, now).getTime()), day }
+      ? {
+          points: stackOf(aggregate(fine.buckets, midnight, minutes), midnight, minutes),
+          minutes,
+          day: a
+            ? {
+                used: {
+                  solar: a.usedSolar,
+                  battery: a.usedBattery,
+                  gas: a.usedGenerator,
+                  vehicle: a.usedVehicle,
+                  grid: a.usedGrid,
+                },
+                charged: a.solarToBattery + a.gridToBattery,
+                exported: a.solarToGrid + a.batteryToGrid,
+              }
+            : null,
+        }
       : null;
     this.loaded_ = true;
+  }
+
+  /**
+   * What the house uses right now, in watts: every source's live power allocated as the flow card does. `null` when the
+   * sources do not say their power, or one cannot be read.
+   */
+  private houseNow(): number | null {
+    const sources = this.prefSources();
+    if (!powered(sources)) return null;
+    const totals = liveTotals(sources, (id) => this.entity(id));
+    return totals ? allocate(totals).usedTotal : null;
   }
 
   /* ---------- pieces ---------- */
@@ -552,7 +630,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         : flow(this.hass, `kind_${key}`);
   }
 
-  /** The house's power today by where it came from: stacked areas, the export under the line, the day's legend. */
+  /**
+   * The house's power today by where it came from: stacked areas of its use, under the line what went into the battery
+   * and out to the grid, the day's legend; "right now" is the house's own use.
+   */
   private renderSources(): TemplateResult {
     const id = this.config?.entity;
     const view = id ? this.entity(id) : undefined;
@@ -561,72 +642,86 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const fitted = this.head.fit({ width: this.contentWidth, title, sub, trailing: view ? 44 : 0 });
     const tone: Tone = toneOf(this.config, 'accent');
     const points = this.stack_?.points ?? [];
+    const step = (this.stack_?.minutes ?? 5) / DAY_MINUTES;
     const w = this.contentWidth;
     const H = SOURCES_CHART;
-    const shape = points.length > 1 ? stackShape(points, w, H, HEADROOM) : null;
+    const shape = points.length ? stackShape(points, w, H, HEADROOM, step) : null;
     const now = this.now();
     const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
-    // the cursor: where the pointer reads, else now
+    // the cursor: where the pointer reads, else now; nothing is read across a gap
     const fraction = this.scrubber.value;
-    const pick = (at: number): StackPoint | undefined =>
-      points.reduce<StackPoint | undefined>(
+    const pick = (at: number): StackPoint | undefined => {
+      const near = points.reduce<StackPoint | undefined>(
         (best, p) => (!best || Math.abs(p.at - at) < Math.abs(best.at - at) ? p : best),
         undefined,
       );
-    const cursorPoint =
-      fraction !== null ? pick(Math.min(fraction, nowAt)) : points[points.length - 1];
+      return near && Math.abs(near.at - at) <= step ? near : undefined;
+    };
+    const cursorAt = fraction !== null ? Math.min(fraction, nowAt) : nowAt;
+    const cursorPoint = fraction !== null ? pick(cursorAt) : points[points.length - 1];
     const used = (p: StackPoint | undefined): number | null =>
       p ? LAYERS.reduce((sum, k) => sum + p.used[k], 0) : null;
+    const power = (watts: number): { value: string; unit: string } => {
+      const scale = scaleOf([watts], 'W');
+      return { value: scaled(this.hass, watts, scale), unit: scale.unit };
+    };
+    const house = this.houseNow();
     const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
     const reading =
-      fraction !== null && cursorPoint
-        ? (() => {
-            const kw = used(cursorPoint) ?? 0;
-            const scale = scaleOf([kw * 1000], 'W');
-            return {
-              label: formatTime(
-                this.hass,
-                new Date(houseMidnight(this.hass, now).getTime() + cursorPoint.at * 86_400_000),
-              ),
-              value: scaled(this.hass, kw * 1000, scale),
-              unit: scale.unit,
-            };
-          })()
-        : liveW
-          ? { label: s(this.hass, 'right_now'), ...liveW }
-          : null;
-    const day = this.stack_?.day?.allocation;
+      fraction !== null
+        ? {
+            label: formatTime(
+              this.hass,
+              new Date(houseMidnight(this.hass, now).getTime() + cursorAt * 86_400_000),
+            ),
+            ...(cursorPoint ? power((used(cursorPoint) ?? 0) * 1000) : { value: '—', unit: '' }),
+          }
+        : house !== null
+          ? { label: s(this.hass, 'right_now'), ...power(house) }
+          : liveW
+            ? { label: s(this.hass, 'right_now'), ...liveW }
+            : null;
+    const day = this.stack_?.day;
     const kwh = (v: number): string =>
       formatNumber(this.hass, v, { digits: v >= 100 ? 0 : 1, minDigits: v >= 100 ? 0 : 1 });
-    const legend: { key: Layer; name: string; value: number; out?: boolean }[] = day
+    const below = new Set(shape?.below.map((b) => b.key) ?? []);
+    // the origins above the line; below it, where the energy went: the battery's ink and the grid's, at 60 %
+    const legend: { ink: string; name: string; value: number; out?: boolean }[] = day
       ? [
           ...LAYERS.filter((k) => shape?.layers.some((l) => l.key === k)).map((k) => ({
-            key: k,
+            ink: `en-ink--${k}`,
             name: this.layerName(k),
-            value:
-              k === 'solar'
-                ? day.usedSolar
-                : k === 'battery'
-                  ? day.usedBattery
-                  : k === 'gas'
-                    ? day.usedGenerator
-                    : k === 'vehicle'
-                      ? day.usedVehicle
-                      : day.usedGrid,
+            value: day.used[k],
           })),
-          ...(shape?.exported
+          ...(below.has('charged')
             ? [
                 {
-                  key: 'solar' as Layer,
+                  ink: 'en-ink--battery',
+                  name: s(this.hass, 'charged'),
+                  value: day.charged,
+                  out: true,
+                },
+              ]
+            : []),
+          ...(below.has('exported')
+            ? [
+                {
+                  ink: 'en-ink--grid',
                   name: s(this.hass, 'exported'),
-                  value: day.solarToGrid + day.batteryToGrid,
+                  value: day.exported,
                   out: true,
                 },
               ]
             : []),
         ]
       : [];
-    const cursorAt = fraction !== null && cursorPoint ? cursorPoint.at : nowAt;
+    const BELOW_INK = { charged: 'battery', exported: 'grid' } as const;
+    const belowTag =
+      below.has('charged') && below.has('exported')
+        ? s(this.hass, 'charged_exported')
+        : below.has('charged')
+          ? s(this.hass, 'charged')
+          : s(this.hass, 'exported');
     const top = used(cursorPoint);
     return html`<article class="fv-card ef-card" data-card>
       ${head({
@@ -678,10 +773,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                     .reverse()
                     .map(
                       (l) =>
-                        svg`<path class="en-area en-ink--${l.key}" d=${l.area}></path><polyline class="en-area-line en-ink--${l.key}" points=${l.line}></polyline>`,
+                        svg`<path class="en-area en-ink--${l.key}" d=${l.area}></path><path class="en-area-line en-ink--${l.key}" d=${l.line}></path>`,
                     )}
-                  ${shape.exported ? svg`<path class="en-area en-ink--solar is-out" d=${shape.exported.area}></path><polyline class="en-area-line en-ink--solar is-out" points=${shape.exported.line}></polyline>` : nothing}
-                  ${shape.exported ? svg`<line class="en-zero" x1="0" x2=${w} y1=${shape.zero} y2=${shape.zero}></line>` : nothing}
+                  ${shape.below.map(
+                    (b) =>
+                      svg`<path class="en-area en-ink--${BELOW_INK[b.key]} is-out" data-below=${b.key} d=${b.area}></path><path class="en-area-line en-ink--${BELOW_INK[b.key]} is-out" d=${b.line}></path>`,
+                  )}
+                  ${shape.below.length ? svg`<line class="en-zero" x1="0" x2=${w} y1=${shape.zero} y2=${shape.zero}></line>` : nothing}
                   <line
                     class="en-cursor"
                     x1=${shape.x(cursorAt)}
@@ -692,13 +790,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                   ${top !== null ? svg`<circle class="en-cursor-dot" r="5" cx=${shape.x(cursorAt)} cy=${shape.y(top)}></circle>` : nothing}
                 </svg>
                 <span class="en-chart__tag" style="top:0">${s(this.hass, 'used')}</span>
-                ${shape.exported ? html`<span class="en-chart__tag" style="top:${Math.round(shape.zero + 12)}px">${s(this.hass, 'exported')}</span>` : nothing}
+                ${shape.below.length ? html`<span class="en-chart__tag" style="top:${Math.round(shape.zero + 12)}px">${belowTag}</span>` : nothing}
               </div>`
       }
       ${axis(this.dayAxis())}
       ${energyLegend(
         legend.map((item) => ({
-          ink: `en-ink--${item.key}`,
+          ink: item.ink,
           name: item.name,
           value: kwh(item.value),
           unit: 'kWh',

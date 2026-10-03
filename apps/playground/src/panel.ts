@@ -68,7 +68,7 @@ const created = new Map<string, (typeof TEMPLATE_DASHBOARDS)[number]>();
 let onPanels: (() => void) | undefined;
 
 /**
- * The settings panel outside Home Assistant: `?panel=appearance` (or scope, dashboard, preferences, about).
+ * The settings panel outside Home Assistant: `?panel=appearance` (or scope, dashboard, wall, preferences).
  * Its settings live in memory behind the same websocket messages Home Assistant answers, and the live
  * look engine applies them to this page — what the panel does here is what it does at home. A page that already
  * runs on a `MemoryLook` (the demo) hands it over, so the panel shows that page's settings.

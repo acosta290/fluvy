@@ -124,12 +124,20 @@ export const numberField = (
   max: number,
   step = 1,
 ): HaFormSchemaItem => ({ name, selector: { number: { min, max, step, mode: 'box' } } });
-/** A choice among values the catalogue names (a value without a word does not compile), in the editor's language. */
-export const selectField = (name: string, options: readonly OptionWord[]): HaFormSchemaItem => ({
+/**
+ * A choice among values the catalogue names (a value without a word does not compile), in the editor's language;
+ * `custom` lets a value of the person's own be typed as well (an attribute's name, a template).
+ */
+export const selectField = (
+  name: string,
+  options: readonly OptionWord[],
+  { custom = false }: { custom?: boolean } = {},
+): HaFormSchemaItem => ({
   name,
   selector: {
     select: {
       mode: 'dropdown',
+      ...(custom ? { custom_value: true } : {}),
       options: options.map((value) => ({
         value,
         label: localize(editorLanguage(), `option.${value}`),
@@ -137,6 +145,19 @@ export const selectField = (name: string, options: readonly OptionWord[]): HaFor
     },
   },
 });
+/**
+ * An ordered subset of named choices (a compact row's `controls`): Home Assistant's select as chips that are
+ * dragged into order, with a box to add the rest. The dropdown mode is asked for: with fewer than six choices the
+ * selector would draw check boxes, which keep no order.
+ */
+export const orderedField = (
+  name: string,
+  options: ReadonlyArray<{ readonly value: string; readonly label: string }>,
+): HaFormSchemaItem => ({
+  name,
+  selector: { select: { multiple: true, reorder: true, mode: 'dropdown', options: [...options] } },
+});
+
 export const actionField = (name = 'tap_action'): HaFormSchemaItem => ({
   name,
   selector: { ui_action: {} },

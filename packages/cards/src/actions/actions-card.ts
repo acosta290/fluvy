@@ -31,6 +31,7 @@ import type { RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { listLength, rowsOf } from '../shared/heights.js';
+import { isTemplate, TemplateTexts } from '../shared/templates.js';
 
 const s = strings('actions');
 
@@ -38,7 +39,7 @@ export interface ActionRowConfig {
   entity: string;
   name?: string;
   icon?: string;
-  /** What the action does ("Lights & blinds"): the context before "· ran 07:00". Defaults to the entity's area. */
+  /** What the action does ("Lights & blinds"): the context before "· ran 07:00", or a template rendered live. Defaults to the entity's area. */
   secondary?: string;
 }
 
@@ -137,6 +138,8 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
   declare done_: ReadonlySet<string>;
 
   private readonly timers = new Map<string, number>();
+  /** A row's context when it is a template: rendered by Home Assistant, live. */
+  private readonly texts = new TemplateTexts(this);
 
   constructor() {
     super();
@@ -250,7 +253,13 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
           : Date.now() - run.getTime() < RECENT_MS
             ? s(this.hass, 'ran', { time: formatTime(this.hass, run) })
             : relativeAgo(this.hass, run);
-    const context = row.secondary ?? view.areaName;
+    // the "ran" words keep the line whatever the context says: a pending template has nothing to hold
+    const context =
+      row.secondary === undefined
+        ? view.areaName
+        : isTemplate(row.secondary)
+          ? this.texts.text(row.secondary, row.entity)
+          : row.secondary;
     return context ? `${context} · ${when}` : sentence(when);
   }
 

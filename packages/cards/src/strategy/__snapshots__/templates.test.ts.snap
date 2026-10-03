@@ -15,31 +15,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "weather": "weather.home",
             },
             {
-              "chips": [
-                {
-                  "icon": "fluvy:bolt",
-                  "label": "Now",
-                  "path": "/fluvy-home/now",
-                },
-                {
-                  "icon": "fluvy:sun",
-                  "label": "Production",
-                  "path": "/fluvy-home/production",
-                },
-                {
-                  "icon": "fluvy:plug",
-                  "label": "Devices",
-                  "path": "/fluvy-home/devices",
-                },
-                {
-                  "icon": "fluvy:chart",
-                  "label": "Meters",
-                  "path": "/fluvy-home/meters",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
-            },
-            {
               "grid_options": {
                 "columns": 12,
               },
@@ -120,7 +95,7 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-grid-card",
             },
             {
-              "entity": true,
+              "entity": "sensor.grid_meter_power",
               "grid_options": {
                 "columns": 12,
               },
@@ -145,31 +120,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
-            },
-            {
-              "chips": [
-                {
-                  "icon": "fluvy:bolt",
-                  "label": "Now",
-                  "path": "/fluvy-home/now",
-                },
-                {
-                  "icon": "fluvy:sun",
-                  "label": "Production",
-                  "path": "/fluvy-home/production",
-                },
-                {
-                  "icon": "fluvy:plug",
-                  "label": "Devices",
-                  "path": "/fluvy-home/devices",
-                },
-                {
-                  "icon": "fluvy:chart",
-                  "label": "Meters",
-                  "path": "/fluvy-home/meters",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
             },
             {
               "entity": "sensor.solar_inverter_daily_yield",
@@ -220,31 +170,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
-            },
-            {
-              "chips": [
-                {
-                  "icon": "fluvy:bolt",
-                  "label": "Now",
-                  "path": "/fluvy-home/now",
-                },
-                {
-                  "icon": "fluvy:sun",
-                  "label": "Production",
-                  "path": "/fluvy-home/production",
-                },
-                {
-                  "icon": "fluvy:plug",
-                  "label": "Devices",
-                  "path": "/fluvy-home/devices",
-                },
-                {
-                  "icon": "fluvy:chart",
-                  "label": "Meters",
-                  "path": "/fluvy-home/meters",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
             },
             {
               "grid_options": {
@@ -300,31 +225,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
-            },
-            {
-              "chips": [
-                {
-                  "icon": "fluvy:bolt",
-                  "label": "Now",
-                  "path": "/fluvy-home/now",
-                },
-                {
-                  "icon": "fluvy:sun",
-                  "label": "Production",
-                  "path": "/fluvy-home/production",
-                },
-                {
-                  "icon": "fluvy:plug",
-                  "label": "Devices",
-                  "path": "/fluvy-home/devices",
-                },
-                {
-                  "icon": "fluvy:chart",
-                  "label": "Meters",
-                  "path": "/fluvy-home/meters",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
             },
             {
               "entity": "sensor.grid_meter_power",
@@ -604,21 +504,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "weather": "weather.home",
             },
             {
-              "chips": [
-                {
-                  "icon": "fluvy:shield",
-                  "label": "Security",
-                  "path": "/fluvy-home/overview",
-                },
-                {
-                  "icon": "fluvy:door",
-                  "label": "Openings",
-                  "path": "/fluvy-home/openings",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
-            },
-            {
               "entities": [
                 "binary_sensor.kitchen_leak",
               ],
@@ -653,21 +538,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
-            },
-            {
-              "chips": [
-                {
-                  "icon": "fluvy:shield",
-                  "label": "Security",
-                  "path": "/fluvy-home/overview",
-                },
-                {
-                  "icon": "fluvy:door",
-                  "label": "Openings",
-                  "path": "/fluvy-home/openings",
-                },
-              ],
-              "type": "custom:fluvy-chips-card",
             },
             {
               "entities": [

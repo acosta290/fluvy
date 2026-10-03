@@ -1,4 +1,6 @@
 import {
+  applyZoom,
+  type DevicePatch,
   type DeviceSettings,
   type EffectiveSettings,
   type HomeAssistant,
@@ -8,6 +10,8 @@ import {
   type LookPreview,
   firstWeather,
   lookRule,
+  chromeOf,
+  tabsOf,
   type SunLike,
   type WallSettings,
   wallDark,
@@ -144,8 +148,8 @@ export class FluvyPanel extends LitElement {
   declare houseEdit: HouseEdit;
   declare personalEdit: PersonalEdit;
   declare strategyEdits: StrategyEdits;
-  /** This device as a wall panel, or not: the change waiting in the apply bar (undefined: none). */
-  declare deviceEdit: boolean | undefined;
+  /** This device's own changes waiting in the apply bar (a wall panel or not, its size). */
+  declare deviceEdit: DevicePatch;
   /** The Share card's words for the custom palette in the draft. */
   declare share: ShareDraft;
   declare showAllCommunity: boolean;
@@ -212,6 +216,7 @@ export class FluvyPanel extends LitElement {
     this.tab = 'appearance';
     this.houseEdit = {};
     this.personalEdit = {};
+    this.deviceEdit = {};
     this.strategyEdits = {};
     this.tryOnApp = false;
     this.dashboards = [];
@@ -309,8 +314,10 @@ export class FluvyPanel extends LitElement {
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has('route') && this.route) {
-      const segment = this.route.path.split('/')[1] as Tab | undefined;
-      if (segment && TABS.includes(segment)) this.tab = segment;
+      const segment = this.route.path.split('/')[1];
+      // `/fluvy/about` (a link from before 1.5) opens Preferences, where Fluvy's own card now is
+      const tab = (segment === 'about' ? 'preferences' : segment) as Tab | undefined;
+      if (tab && TABS.includes(tab)) this.tab = tab;
     }
     if (changed.has('hass') && this.hass) {
       if (!this.off) this.attach();
@@ -438,7 +445,7 @@ export class FluvyPanel extends LitElement {
       Object.keys(this.houseEdit).length > 0 ||
       Object.keys(this.personalEdit).length > 0 ||
       Object.keys(this.strategyEdits).length > 0 ||
-      this.deviceEdit !== undefined
+      Object.keys(this.deviceEdit).length > 0
     );
   }
 
@@ -634,8 +641,8 @@ export class FluvyPanel extends LitElement {
         this.strategyEdits = next;
         this.lastEdited = urlPath;
       },
-      editDevice: (wall) => {
-        this.deviceEdit = wall === this.device.wall ? undefined : wall;
+      editDevice: (patch) => {
+        this.deviceEdit = unsaved({ ...this.deviceEdit, ...patch }, this.device);
       },
       previewScreensaver: () => this.previewScreensaver(),
       setTryOnApp: (on) => {
@@ -654,7 +661,7 @@ export class FluvyPanel extends LitElement {
         this.houseEdit = {};
         this.personalEdit = {};
         this.strategyEdits = {};
-        this.deviceEdit = undefined;
+        this.deviceEdit = {};
         this.tryOnApp = false;
       },
       run: (task, done) => this.run(task, done),
@@ -673,11 +680,19 @@ export class FluvyPanel extends LitElement {
     const { store } = handle;
     if (!sameLook(this.draft, settings.look)) {
       const { palette, shape, pills } = this.draft;
+      const tabs = tabsOf(this.draft);
+      const chrome = chromeOf(this.draft);
       if (to === 'house') {
-        await store.saveHouse({ palette, shape, pills });
+        await store.saveHouse({ palette, shape, pills, tabs, chrome });
         if (settings.personalLook)
-          await store.savePersonal({ palette: undefined, shape: undefined, pills: undefined });
-      } else await store.savePersonal({ palette, shape, pills });
+          await store.savePersonal({
+            palette: undefined,
+            shape: undefined,
+            pills: undefined,
+            tabs: undefined,
+            chrome: undefined,
+          });
+      } else await store.savePersonal({ palette, shape, pills, tabs, chrome });
     }
     if (Object.keys(this.houseEdit).length) await store.saveHouse(this.houseEdit);
     if (Object.keys(this.personalEdit).length) await store.savePersonal(this.personalEdit);
@@ -693,11 +708,14 @@ export class FluvyPanel extends LitElement {
       written = true;
     }
     if (written) await this.loadDashboards();
-    if (this.deviceEdit !== undefined) {
-      // the device's own memory; the wall's controller, in every page, reads it again
-      this.device = writeDevice({ wall: this.deviceEdit });
-      this.deviceEdit = undefined;
-      (window as { __fluvy?: { wall?: { refresh?: () => void } } }).__fluvy?.wall?.refresh?.();
+    if (Object.keys(this.deviceEdit).length) {
+      // the device's own memory: the wall's controller, in every page, reads it again; the size shows at once
+      const edit = this.deviceEdit;
+      this.device = writeDevice(edit);
+      this.deviceEdit = {};
+      if (edit.wall !== undefined)
+        (window as { __fluvy?: { wall?: { refresh?: () => void } } }).__fluvy?.wall?.refresh?.();
+      if (edit.zoom !== undefined) applyZoom(this.device.zoom);
     }
     this.tryOnApp = false;
   }
@@ -797,14 +815,14 @@ export class FluvyPanel extends LitElement {
       case 'wall':
         return wall(ctx);
       case 'preferences':
-        return preferences(ctx);
-      case 'about':
-        return about(ctx, aboutFacts(), {
+        // this person's choices, this device's, then Fluvy itself
+        return html`${preferences(ctx)}
+        ${about(ctx, aboutFacts(), {
           exportSettings: () => exportSettings(this, ctx),
           importSettings: (file) => importSettings(this, file),
           reset: () => resetHouse(this),
           resetArmed: this.resetArmed,
-        });
+        })}`;
     }
   }
 

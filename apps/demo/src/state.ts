@@ -24,7 +24,7 @@ export const DEVICES: Readonly<Record<DeviceName, Device>> = {
 };
 export const DEVICE_NAMES = Object.keys(DEVICES) as readonly DeviceName[];
 
-export const PANEL_TABS = ['appearance', 'scope', 'dashboard', 'preferences', 'about'] as const;
+export const PANEL_TABS = ['appearance', 'scope', 'dashboard', 'preferences'] as const;
 export type PanelTab = (typeof PANEL_TABS)[number];
 
 export type DemoLanguage = LanguageCode;

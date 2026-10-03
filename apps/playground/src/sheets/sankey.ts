@@ -1,6 +1,6 @@
-import type { HomeAssistant } from '@fluvy/core';
 import { FluvyEnergySankeyCard } from '../../../../packages/cards/src/sankey/sankey-card.js';
 import { FluvyEnergyScoreCard } from '../../../../packages/cards/src/score/score-card.js';
+import { house, type Handler } from '../houses.js';
 import type { SheetSpec } from '../scenes.js';
 import { sheet as flow } from './flow.js';
 
@@ -20,7 +20,6 @@ const NOW = '2026-09-17T21:47:12';
 
 type Attributes = Record<string, unknown>;
 type Rows = { start: number; change: number }[];
-type Handler = (message: Record<string, unknown>) => unknown;
 
 const energy = (name: string): Attributes => ({
   friendly_name: name,
@@ -64,33 +63,6 @@ const fossil: Handler = () => ({
  * A frame's own house: its Energy dashboard and statistics answered here, on a connection of its own (the cards
  * keep a house's preferences per connection), and `entities` as its registry shows them.
  */
-function house(ws: Record<string, Handler>, options: { co2?: boolean } = {}) {
-  const connection = { subscribeMessage: async () => () => undefined };
-  let seen: HomeAssistant['entities'] | undefined;
-  let entities: HomeAssistant['entities'] = {};
-  return (hass: HomeAssistant): HomeAssistant => {
-    if (seen !== hass.entities) {
-      seen = hass.entities;
-      entities =
-        options.co2 === false
-          ? Object.fromEntries(
-              Object.entries(hass.entities).filter(([, e]) => e.platform !== 'co2signal'),
-            )
-          : hass.entities;
-    }
-    return {
-      ...hass,
-      entities,
-      connection: connection as unknown as HomeAssistant['connection'],
-      callWS: async <T>(message: { type: string; [key: string]: unknown }): Promise<T> => {
-        const handler = ws[message.type];
-        if (!handler) return hass.callWS<T>(message);
-        return handler(message) as T;
-      },
-    };
-  };
-}
-
 /* ---------- the houses of the hard cases ---------- */
 
 /** The grid charges the battery at night: its ribbon would cross the sun's into the house in the canonical rows. */

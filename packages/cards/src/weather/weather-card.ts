@@ -7,13 +7,23 @@ import {
   speaks,
   stateText,
   strings,
+  type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type UnsubscribeFunc,
 } from '@fluvy/core';
 
-import { firstFit, glyph, ico, listRow, sheetStyles, textWidth, type Tone } from '@fluvy/ui';
+import {
+  firstFit,
+  glyph,
+  head,
+  ico,
+  listRow,
+  sheetStyles,
+  textWidth,
+  type GlyphName,
+  type Tone,
+} from '@fluvy/ui';
 import {
   css,
   html,
@@ -36,9 +46,19 @@ import {
   numberField,
   selectField,
 } from '../shared/form.js';
+import { HeadFit } from '../energy/head.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 import { compassKey, conditionGlyph, isCondition } from '../shared/weather.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
+import {
+  forecastDaysOf,
+  forecastModeOf,
+  WEATHER_COMPACT_HEAD,
+  WEATHER_ROW,
+  weatherHeight,
+} from '../weather-family.js';
+import { release, type Subscription } from '../shared/subscription.js';
 
 const s = strings('weather');
 
@@ -46,16 +66,32 @@ type ForecastType = 'daily' | 'hourly';
 export type ForecastMode = ForecastType | 'both';
 /** What the card draws under the hero: a mode, or nothing when the forecast is not shown. */
 type Drawn = ForecastMode | 'none';
+export type WeatherVariant = 'full' | 'compact';
+const VARIANTS: readonly WeatherVariant[] = ['full', 'compact'];
 
 export interface WeatherCardConfig extends FluvyCardConfig {
+  /**
+   * `full` (default): the hero — the 64 condition circle, the temperature at readout l, a line of context — over
+   * day rows or hour columns. `compact`: one head row (the condition circle, the name, "condition · high / low"
+   * and the temperature) over hour columns and day columns.
+   */
+  variant?: WeatherVariant;
   /** What to draw under the hero: day rows (default), hour columns, or both as the design sheet shows them. */
   forecast?: ForecastMode;
-  /** Day rows (1–10, default 5). Hour columns are decided by the card's width. */
+  /** Day rows (1–10, default 5); in the compact card, the day columns at most. Hour columns are decided by the card's width. */
   days?: number;
   /** The forecast under the hero (default); `false` keeps the hero alone. */
   show_forecast?: boolean;
   /** Test hook: an ISO date that freezes "now" (day labels, the hours ahead). Undocumented. */
   _now?: string;
+}
+
+/** One column of a forecast strip: its label (an hour, a day), the condition's glyph and its figure. */
+interface StripCell {
+  readonly label: string;
+  readonly glyph: GlyphName;
+  readonly value: TemplateResult | string;
+  readonly title: string;
 }
 
 /** One entry of `weather/subscribe_forecast`; every field but `datetime` may be absent or null. */
@@ -71,15 +107,13 @@ interface ForecastItem {
 /** `undefined` = asked, not answered yet (the strip keeps its room); `null` = this entity has no such forecast. */
 type Forecasts = Partial<Record<ForecastType, readonly ForecastItem[] | null>>;
 
-interface Subscription {
-  cancelled: boolean;
-  unsubscribe?: UnsubscribeFunc;
-}
-
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 const HOUR_COLUMN = 64; // the sheet's hour column: five of them in a 320 column
-const ROW = 60;
+const ROW = WEATHER_ROW;
+const COMPACT_HEAD = WEATHER_COMPACT_HEAD;
+const modeOf = (config: WeatherCardConfig | undefined): Drawn => forecastModeOf(config);
+const dayCountOf = forecastDaysOf;
 
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -87,19 +121,11 @@ const dayOf = (date: Date): number =>
   date.getFullYear() * 10_000 + date.getMonth() * 100 + date.getDate();
 const capitalise = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** Home Assistant's unsubscribe answers with a promise that rejects when the socket is already gone. */
-function release(subscription: Subscription): void {
-  subscription.cancelled = true;
-  try {
-    void Promise.resolve(subscription.unsubscribe?.()).catch(() => undefined);
-  } catch {
-    /* nothing left to release */
-  }
-}
-
 /**
  * The weather hero: the condition as a 64 icon circle, the temperature at readout `l`, one line of
- * context, and the forecast underneath — hour columns, day rows, or both as the sheet draws them.
+ * context, and the forecast underneath — hour columns, day rows, or both as the sheet draws them. The
+ * compact card is one head row (the 44 condition circle, the name, "condition · high / low" and the
+ * temperature) over the hour columns and the days ahead as columns, as many as the width holds.
  *
  * The forecast is not an attribute any more: the card subscribes to `weather/subscribe_forecast`
  * once per type and releases every subscription on disconnect and whenever the entity or the mode
@@ -108,12 +134,7 @@ function release(subscription: Subscription): void {
 export class FluvyWeatherCard extends Card<WeatherCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: WeatherCardConfig): number {
-    // the hero (128); hour columns (100) and day rows (60 each, 16 above them) as asked
-    if (config.show_forecast === false) return 128;
-    const days = Math.min(10, Math.max(1, Math.round(config.days ?? 5)));
-    const hours = config.forecast === 'hourly' || config.forecast === 'both' ? 100 : 0;
-    const rows = config.forecast === 'hourly' ? 0 : 16 + 60 * days;
-    return 128 + hours + rows;
+    return weatherHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -170,6 +191,9 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
 
   declare forecasts_: Forecasts;
 
+  /** Fits the compact card's head to its column (measured in the card's own classes, again when a font lands). */
+  private readonly head = new HeadFit(this);
+
   private subscriptions: Subscription[] = [];
   /** What the live subscriptions are for, and what `forecasts_` was answered for: `entity|types`. */
   private subscribedKey = '';
@@ -189,7 +213,12 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     'tap_action',
     'hold_action',
   ];
-  static override keys = configKeys<WeatherCardConfig>()(['forecast', 'days', 'show_forecast']);
+  static override keys = configKeys<WeatherCardConfig>()([
+    'variant',
+    'forecast',
+    'days',
+    'show_forecast',
+  ]);
   /** `forecast: none` was the way to keep the hero alone: it reads as `show_forecast: false`. */
   static override aliases: AliasSpec = {
     keys: [
@@ -201,13 +230,18 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       },
     ],
   };
+  static override defaults: EditorDefaults = () => ({ variant: 'full' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(['weather']),
         nameIconFields(),
-        fieldRow(selectField('forecast', ['daily', 'hourly', 'both']), numberField('days', 1, 10)),
-        fieldRow(boolField('show_forecast'), accentField()),
+        fieldRow(
+          selectField('variant', VARIANTS),
+          selectField('forecast', ['daily', 'hourly', 'both']),
+        ),
+        fieldRow(numberField('days', 1, 10), boolField('show_forecast')),
+        accentField(),
         actionFields(),
       ],
       ...editorLabels(
@@ -231,10 +265,8 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
   }
 
   override getCardSize(): number {
-    const mode = this.mode();
-    const rows = mode === 'daily' || mode === 'both' ? this.dayCount() : 0;
     return Math.ceil(
-      (128 + (mode === 'hourly' || mode === 'both' ? 100 : 0) + (rows ? 16 + rows * ROW : 0)) / 50,
+      (this.config ? FluvyWeatherCard.layoutHeight(this.config) : COMPACT_HEAD) / 50,
     );
   }
 
@@ -248,13 +280,15 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
   }
 
   private mode(): Drawn {
-    if (this.config?.show_forecast === false) return 'none';
-    const mode = this.config?.forecast;
-    return mode === 'hourly' || mode === 'both' ? mode : 'daily';
+    return modeOf(this.config);
+  }
+
+  private compact(): boolean {
+    return this.config?.variant === 'compact';
   }
 
   private dayCount(): number {
-    return Math.min(10, Math.max(1, Math.round(this.config?.days ?? 5)));
+    return dayCountOf(this.config);
   }
 
   private now(): Date {
@@ -379,8 +413,8 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     return s(this.hass, compassKey(degrees));
   }
 
-  /** "Feels 16° · Wind 12 km/h NW" — humidity stands in for whichever of the two the entity does not report. */
-  private contextLine(): string {
+  /** "Feels 16°", "Wind 12 km/h NW" — humidity stands in for whichever of the two the entity does not report. */
+  private contextParts(): string[] {
     const view = this.entity();
     const parts: string[] = [];
     const feels = this.degrees(view.attr('apparent_temperature'));
@@ -398,7 +432,28 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       parts.push(
         `${this.t('weather.humidity')} ${formatNumber(this.hass, humidity, { digits: 0 })} %`,
       );
-    return parts.join(' · ');
+    return parts;
+  }
+
+  /** The hero's one line of context: "Feels 16° · Wind 12 km/h NW". */
+  private contextLine(): string {
+    return this.contextParts().join(' · ');
+  }
+
+  /** "23° / 13°": a day's high and low as the rows write them; the high alone without a low; nothing without a high. */
+  private highLow(item: ForecastItem): string {
+    const high = this.degrees(item.temperature);
+    const low = this.degrees(item.templow);
+    return high === null ? '' : low === null ? `${high}°` : `${high}° / ${low}°`;
+  }
+
+  /** Today's entry of the daily forecast, when it has been answered and has one. */
+  private todayForecast(): ForecastItem | undefined {
+    const today = dayOf(this.now());
+    return (this.forecasts_.daily ?? []).find((item) => {
+      const date = new Date(item.datetime);
+      return !Number.isNaN(date.getTime()) && dayOf(date) === today;
+    });
   }
 
   /* ---------- forecast strips ---------- */
@@ -416,6 +471,30 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     ).format(date);
   }
 
+  /** A column's width in a strip of `columns`: whole multiples of 4, so every glyph lands on a whole pixel. */
+  private cellWidth(columns: number): number {
+    return Math.floor(this.contentWidth / columns / 4) * 4;
+  }
+
+  /** The sheet's strip: equal columns of a label, the condition's glyph and a figure, centred in the content column. */
+  private renderStrip(kind: ForecastType, cells: readonly StripCell[]): TemplateResult {
+    const columns = cells.length;
+    return html`<div
+      class="am-hours"
+      data-forecast=${kind}
+      style="--am-hours:${columns};--am-hour-w:${this.cellWidth(columns)}px"
+    >
+      ${cells.map(
+        (cell) =>
+          html`<div class="am-hour" title=${cell.title || nothing}>
+            <span class="am-hour__t">${cell.label}</span>
+            ${glyph(cell.glyph)}
+            <span class="am-hour__v">${cell.value}</span>
+          </div>`,
+      )}
+    </div>`;
+  }
+
   private renderHours(
     items: readonly ForecastItem[] | null | undefined,
   ): TemplateResult | typeof nothing {
@@ -427,23 +506,76 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       .filter(({ at }) => Number.isFinite(at) && at > now - HOUR_MS)
       .slice(0, columns);
     if (ahead.length === 0) return nothing;
-    const cell = Math.floor(this.contentWidth / columns / 4) * 4;
-    return html`<div class="am-hours" style="--am-hours:${columns};--am-hour-w:${cell}px">
-      ${ahead.map(({ item, at }, index) => {
+    return this.renderStrip(
+      'hourly',
+      ahead.map(({ item, at }, index) => {
         const value = this.degrees(item.temperature);
         const dark = this.nightAt(at, now);
-        return html`<div
-          class="am-hour"
-          title=${this.conditionText(item.condition, dark) || nothing}
-        >
-          <span class="am-hour__t"
-            >${index === 0 && at <= now + HOUR_MS ? this.t('common.now') : this.hourLabel(new Date(at))}</span
-          >
-          ${glyph(conditionGlyph(item.condition ?? '', dark))}
-          <span class="am-hour__v">${value === null ? '—' : `${value}°`}</span>
-        </div>`;
-      })}
-    </div>`;
+        return {
+          label:
+            index === 0 && at <= now + HOUR_MS
+              ? this.t('common.now')
+              : this.hourLabel(new Date(at)),
+          glyph: conditionGlyph(item.condition ?? '', dark),
+          value: value === null ? '—' : `${value}°`,
+          title: this.conditionText(item.condition, dark),
+        };
+      }),
+    );
+  }
+
+  /**
+   * The compact card's days as columns: the days after today (the head says today's), as many as the width holds —
+   * 64 px each, fewer while the widest "high low" pair would not keep 4 px clear in its cell — up to `days`.
+   */
+  private renderDayColumns(
+    items: readonly ForecastItem[] | null | undefined,
+  ): TemplateResult | typeof nothing {
+    if (items === undefined) return html`<div class="am-hours fv-skeleton"></div>`;
+    const today = dayOf(this.now());
+    const dated = (items ?? [])
+      .map((item) => ({ item, date: new Date(item.datetime) }))
+      .filter(({ date }) => !Number.isNaN(date.getTime()) && dayOf(date) >= today);
+    const later = dated.filter(({ date }) => dayOf(date) > today);
+    const days = (later.length > 0 ? later : dated).slice(0, this.dayCount());
+    if (days.length === 0) return nothing;
+    const family = getComputedStyle(this).fontFamily;
+    const pairs = days.map(({ item }) => {
+      const high = this.degrees(item.temperature);
+      const low = this.degrees(item.templow);
+      return {
+        high,
+        low,
+        measure: high === null ? '—' : `${high}°${low === null ? '' : ` ${low}°`}`,
+      };
+    });
+    const widest = Math.max(...pairs.map((pair) => textWidth(pair.measure, `600 15px ${family}`)));
+    let columns = Math.max(1, Math.min(days.length, Math.floor(this.contentWidth / HOUR_COLUMN)));
+    while (columns > 1 && widest > this.cellWidth(columns) - 8) columns -= 1;
+    const cell = this.cellWidth(columns);
+    const weekday = this.dateFormat({ weekday: 'short' });
+    return this.renderStrip(
+      'daily',
+      days.slice(0, columns).map(({ item, date }, index) => {
+        const { high, low } = pairs[index] as (typeof pairs)[number];
+        const short = capitalise(weekday.format(date));
+        return {
+          // the day's weekday, "Today" when the forecast has no day after it (and the word fits the column)
+          label:
+            dayOf(date) === today
+              ? firstFit([this.t('common.today'), short], cell - 8, `500 12px ${family}`)
+              : short,
+          glyph: conditionGlyph(item.condition ?? '', false), // a day is the day's weather: never the night face
+          value:
+            high === null
+              ? '—'
+              : low === null
+                ? `${high}°`
+                : html`${high}° <span class="am-hour__low">${low}°</span>`,
+          title: this.conditionText(item.condition),
+        };
+      }),
+    );
   }
 
   /**
@@ -485,17 +617,24 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     const days = (afterToday && later.length > 0 ? later : dated).slice(0, count);
     if (days.length === 0) return nothing;
     const family = getComputedStyle(this).fontFamily;
+    const named = days.map(({ item, date }) => ({
+      item,
+      title: dayOf(date) === today ? this.t('common.today') : capitalise(weekday.format(date)),
+      value: this.highLow(item) || '—',
+    }));
+    // a column too narrow for a day's name beside its figures: the rows give their circles to the names
+    const keepIcon = this.head.rowsKeepIcon(this.contentWidth, named);
     return html`<div class="am-days">
-      ${days.map(({ item, date }) => {
-        const high = this.degrees(item.temperature);
-        const low = this.degrees(item.templow);
-        const value = high === null ? '—' : low === null ? `${high}°` : `${high}° / ${low}°`;
-        // the row: 44 circle + 12, the text, 12 + the value; 4 px of margin for a fallback face
-        const room = this.contentWidth - 56 - 12 - textWidth(value, `600 16px ${family}`) - 4;
+      ${named.map(({ item, title, value }) => {
+        // the row: 44 circle + 12 (when kept), the text, 12 + the value; 4 px of margin for a fallback face
+        const room =
+          this.head.rowRoom(this.contentWidth, '', { icon: keepIcon }) -
+          textWidth(value, `600 16px ${family}`) -
+          4;
         return listRow({
-          icon: conditionGlyph(item.condition ?? '', false), // a day row is the day's weather: neutral, never the night face
+          icon: keepIcon ? conditionGlyph(item.condition ?? '', false) : null, // a day row is the day's weather: neutral, never the night face
           tone: 'neutral',
-          title: dayOf(date) === today ? this.t('common.today') : capitalise(weekday.format(date)),
+          title,
           sub: this.dayDetail(item, room, `500 13px ${family}`),
           trailing: 'value',
           value,
@@ -522,11 +661,22 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     const condition = known ? this.conditionText(view.state, night) : stateText(this.hass, view);
     const tone: Tone = !usable ? 'off' : !known ? 'neutral' : night ? 'accent' : 'solar';
     const value = usable ? this.degrees(view.attr('temperature'), 1) : null;
-    const context = usable ? this.contextLine() : '';
     const mode = this.mode();
-
-    // the label is 11/600 uppercase at 0.06 em; the name keeps its place while at least 64 px of it would show
+    const hours = usable && (mode === 'hourly' || mode === 'both');
+    const days = usable && (mode === 'daily' || mode === 'both');
+    const icon =
+      this.config?.icon ?? (usable ? conditionGlyph(known ? view.state : '', night) : 'ban');
     const name = this.config?.name ?? view.name;
+
+    if (this.compact())
+      return html`<article class="fv-card am-card ${usable ? '' : 'is-off'}" data-card>
+        ${this.renderCompactHead(view, { icon, tone, name, condition, value, usable })}
+        ${hours ? this.renderHours(this.forecasts_.hourly) : nothing}
+        ${days ? this.renderDayColumns(this.forecasts_.daily) : nothing}
+      </article>`;
+
+    const context = usable ? this.contextLine() : '';
+    // the label is 11/600 uppercase at 0.06 em; the name keeps its place while at least 64 px of it would show
     const font = `600 11px ${getComputedStyle(this).fontFamily}`;
     const labelWidth = (text: string): number =>
       textWidth(text.toLocaleUpperCase(), font) + text.length * 0.66;
@@ -549,20 +699,59 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
             </p>
           </div>
         </div>
-        ${ico(
-          this.config?.icon ?? (usable ? conditionGlyph(known ? view.state : '', night) : 'ban'),
-          tone,
-          {
-            hero: true,
-            label: condition,
-            onTap: () => this.tap(view.id),
-            onHold: () => this.hold(view.id),
-          },
-        )}
+        ${ico(icon, tone, {
+          hero: true,
+          label: condition,
+          onTap: () => this.tap(view.id),
+          onHold: () => this.hold(view.id),
+        })}
         ${context ? html`<p class="fv-card__sub">${context}</p>` : nothing}
       </div>
-      ${usable && (mode === 'hourly' || mode === 'both') ? this.renderHours(this.forecasts_.hourly) : nothing}
-      ${usable && (mode === 'daily' || mode === 'both') ? this.renderDays(this.forecasts_.daily, mode === 'both') : nothing}
+      ${hours ? this.renderHours(this.forecasts_.hourly) : nothing}
+      ${days ? this.renderDays(this.forecasts_.daily, mode === 'both') : nothing}
     </article>`;
+  }
+
+  /**
+   * The compact card's head: the condition circle, the name (which may end in an ellipsis, as names do), the
+   * temperature at the end as the compact family writes it ("18.0°"), and a second line fitted to the room between
+   * them — the condition, then today's "high / low" and the hero's context while they fit, whole segments only
+   * (`HeadFit`: the circle gives way before a name or the condition would).
+   */
+  private renderCompactHead(
+    view: EntityView,
+    o: {
+      readonly icon: string;
+      readonly tone: Tone;
+      readonly name: string;
+      readonly condition: string;
+      readonly value: string | null;
+      readonly usable: boolean;
+    },
+  ): TemplateResult {
+    const temperature = o.value === null ? '—' : `${o.value}°`;
+    const today = o.usable ? this.todayForecast() : undefined;
+    const segments = [
+      o.condition,
+      today ? this.highLow(today) : '',
+      ...(o.usable ? this.contextParts() : []),
+    ].filter(Boolean);
+    const fitted = this.head.fit({
+      width: this.contentWidth,
+      title: o.name,
+      sub: segments.join(' · '),
+      trailing: this.head.ruler.width('am-weather__temp', temperature),
+    });
+    return head({
+      icon: fitted.icon ? o.icon : null,
+      tone: o.tone,
+      title: o.name,
+      name: true,
+      sub: fitted.sub,
+      trailing: html`<span class="am-weather__temp">${temperature}</span>`,
+      iconLabel: o.condition,
+      onIconTap: () => this.tap(view.id),
+      onHold: () => this.hold(view.id),
+    });
   }
 }

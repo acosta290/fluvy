@@ -8,6 +8,7 @@ import {
   toItem,
   withList,
   withoutUntouchedDefaults,
+  itemHelpers,
   listsEditor,
   type RowsListSpec,
 } from './rows-editor.js';
@@ -131,5 +132,18 @@ describe('an editor with aliases', () => {
     ) as FluvyRowsEditor;
     editor.setConfig({ type: 'custom:x', sub: 'Upstairs', hide_done: true });
     expect(editor.config).toEqual({ type: 'custom:x', subtitle: 'Upstairs', show_done: false });
+  });
+});
+
+describe('what the editor says under a field', () => {
+  const key = (k: string): string => k;
+  it('explains the second line — a keyword or a template for its select, words or a template for a text field', () => {
+    expect(itemHelpers({ name: 'secondary', selector: { select: {} } }, key)).toBe(
+      "A keyword, or a template such as {{ states('sensor.x') }}",
+    );
+    expect(itemHelpers({ name: 'secondary', selector: { text: {} } }, key)).toBe(
+      "Your own words, or a template such as {{ states('sensor.x') }}",
+    );
+    expect(itemHelpers({ name: 'name', selector: { text: {} } }, key)).toBeUndefined();
   });
 });

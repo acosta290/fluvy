@@ -19,6 +19,7 @@ const floorsOf = (ctx: StrategyContext) => {
 
 const grid = (ctx: StrategyContext, rooms: readonly AreaRegistryEntry[]): Section[] =>
   flowed(
+    ctx.header,
     rooms.map((area) => [roomCard(ctx, area)]),
     [],
     3,

@@ -5,7 +5,7 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { countFilters, countTargets, type KeyOf } from '@fluvy/core';
 
-import { faceOf, firstFit, glyph, reducedMotion, sideScroll } from '@fluvy/ui';
+import { faceOf, firstFit, glyph, reducedMotion, sideScroll, zoomOf } from '@fluvy/ui';
 import type { ActivityModel } from './model.js';
 import { openSources, singleEntity } from './sources.js';
 
@@ -150,7 +150,8 @@ export function showFilter(page: FluvyActivity, smooth: boolean): void {
   const chip = row?.querySelector<HTMLElement>('.fv-chip.is-active');
   if (!row || !chip) return;
   const offset =
-    chip.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
+    (chip.getBoundingClientRect().left - row.getBoundingClientRect().left) / zoomOf(row) +
+    row.scrollLeft;
   const left = offset - (row.clientWidth - chip.offsetWidth) / 2;
   row.scrollTo({
     left: Math.max(0, left),

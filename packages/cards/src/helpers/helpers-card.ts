@@ -48,6 +48,7 @@ import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { toneOf } from '../shared/colour.js';
 import { HEAD, ROW } from '../shared/heights.js';
+import { TemplateTexts } from '../shared/templates.js';
 
 const s = strings('helpers');
 
@@ -163,6 +164,8 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
 
   /** Widths laid out by the browser in the card's own classes: a select's filled chips measure their columns with it. */
   private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+  /** A row's own second line when it is a template: rendered by Home Assistant, live. */
+  private readonly texts = new TemplateTexts(this);
 
   constructor() {
     super();
@@ -179,6 +182,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       hass: this.hass,
       contentWidth: this.contentWidth,
       ruler: this.ruler,
+      texts: this.texts,
       state: (view) => this.stateOf(view),
       expect: (id, state) => this.expect(id, state),
       call: (domain, service, data, id) => this.call(domain, service, data, id),

@@ -1,8 +1,13 @@
 import {
   LANGUAGES,
   lookKey,
+  chromeOf,
+  sameChrome,
+  sameTabs,
+  tabsOf,
   paletteKey,
   paletteOf,
+  type DevicePatch,
   type DeviceSettings,
   type EffectiveSettings,
   type WallSettings,
@@ -29,15 +34,9 @@ import { knownPalettes, matchOf } from './palettes.js';
 /** Where a person who speaks a language better than we do can help. */
 export const TRANSLATING_URL = 'https://github.com/acosta290/fluvy/blob/main/docs/translating.md';
 
-export type Tab = 'appearance' | 'scope' | 'dashboard' | 'wall' | 'preferences' | 'about';
-export const TABS: readonly Tab[] = [
-  'appearance',
-  'scope',
-  'dashboard',
-  'wall',
-  'preferences',
-  'about',
-];
+/** The panel's tabs, one row of them (Fluvy's own facts — its version, its file — close Preferences). */
+export type Tab = 'appearance' | 'scope' | 'dashboard' | 'wall' | 'preferences';
+export const TABS: readonly Tab[] = ['appearance', 'scope', 'dashboard', 'wall', 'preferences'];
 
 export type StringKey = KeyOf<'panel'>;
 
@@ -87,9 +86,9 @@ export interface PanelContext {
   readonly houseEdit: HouseEdit;
   readonly personalEdit: PersonalEdit;
   readonly strategyEdits: StrategyEdits;
-  /** What this browser is (a wall panel or not), as remembered, and the change waiting in the apply bar. */
+  /** What this browser is (a wall panel or not, its size), as remembered, and the changes waiting in the apply bar. */
   readonly device: DeviceSettings;
-  readonly deviceEdit: boolean | undefined;
+  readonly deviceEdit: DevicePatch;
   /** The house's saved palettes (an administrator's to change). */
   readonly saved: readonly PaletteFile[];
   /** The Share card's title and author for the custom palette in the draft. */
@@ -106,8 +105,8 @@ export interface PanelContext {
   editWall(patch: Partial<WallSettings>): void;
   editPersonal(edit: PersonalEdit): void;
   editStrategy(urlPath: string, edit: StrategyEdit): void;
-  /** This device as a wall panel, or not (its own memory, saved from the apply bar like the rest). */
-  editDevice(wall: boolean): void;
+  /** This device's own settings — a wall panel or not, its size (its own memory, saved from the apply bar like the rest). */
+  editDevice(patch: DevicePatch): void;
   /** The screensaver as the wall would show it now, over this page until a tap. */
   previewScreensaver(): void;
   setTryOnApp(on: boolean): void;
@@ -258,7 +257,11 @@ export function withEdit(
   return next;
 }
 
-export const sameLook = (a: Look, b: Look): boolean => lookKey(a) === lookKey(b);
+/** The same look: the same tokens and the same view tabs. */
+export const sameLook = (a: Look, b: Look): boolean =>
+  lookKey(a) === lookKey(b) &&
+  sameTabs(tabsOf(a), tabsOf(b)) &&
+  sameChrome(chromeOf(a), chromeOf(b));
 
 /**
  * A palette's name: a preset's own (the same in every language), a saved or community palette's title when the
@@ -298,6 +301,13 @@ export function changeTitle(
     parts.push(`${paletteTitle(from.palette, t, known)} → ${paletteTitle(to.palette, t, known)}`);
   if (from.shape !== to.shape) parts.push(`${shapeTitle(from, t)} → ${shapeTitle(to, t)}`);
   if (from.pills !== to.pills) parts.push(`${pillTitle(from, t)} → ${pillTitle(to, t)}`);
+  const [a, b] = [tabsOf(from), tabsOf(to)];
+  if (a.style !== b.style)
+    parts.push(
+      `${t('tabs.title')} · ${t(`tabs.${a.style}` as StringKey)} → ${t(`tabs.${b.style}` as StringKey)}`,
+    );
+  else if (!sameTabs(a, b)) parts.push(t('tabs.title'));
+  if (!sameChrome(chromeOf(from), chromeOf(to))) parts.push(t('chrome.title'));
   return parts.join(' · ');
 }
 
@@ -330,8 +340,11 @@ export function changeLines(ctx: PanelContext): string[] {
   if (house.icons !== undefined) lines.push(`${t('scope.icons')} · ${onOff(house.icons)}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
-  if (ctx.deviceEdit !== undefined)
-    lines.push(`${t('tab.wall')} · ${t('wall.use')} · ${onOff(ctx.deviceEdit)}`);
+  const device = ctx.deviceEdit;
+  if (device.wall !== undefined)
+    lines.push(`${t('tab.wall')} · ${t('wall.use')} · ${onOff(device.wall)}`);
+  if (device.zoom !== undefined)
+    lines.push(`${t('pref.size')} · ${t('wall.percent', { count: device.zoom })}`);
   if (house.wall)
     for (const [key, label] of WALL_LABELS)
       if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))

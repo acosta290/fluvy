@@ -3,6 +3,7 @@ import { glyph } from '../glyphs.js';
 import { haptic } from '../haptics.js';
 import { reducedMotion } from '../motion.js';
 import { baseStyles } from '../styles/index.js';
+import { zoomOf } from './zoom.js';
 
 /** One thing the field may hold: its value, the label the list shows, a hint beside it ("Portuguese (Brazil)"). */
 export interface SelectOption {
@@ -190,20 +191,30 @@ export class FluvySelect extends LitElement {
    * Where the menu goes, from the field's box and the viewport — set before it is shown, so it never jumps: under
    * the field when its rows fit there, else on the side with more room, as tall as that side allows (the rest
    * scrolls; one row at the least), as wide as the field. Written only when something differs from the last time.
+   * The menu is laid out in the field's own pixels (a zoomed view zooms its top layer too), so the field's box and
+   * the viewport are read in those.
    */
   private place(menu: MenuElement): void {
     const field = this.field;
     if (!field) return;
-    const rect = field.getBoundingClientRect();
+    const zoom = zoomOf(field);
+    const visual = field.getBoundingClientRect();
+    const rect = {
+      top: visual.top / zoom,
+      bottom: visual.bottom / zoom,
+      left: visual.left / zoom,
+      width: visual.width / zoom,
+    };
+    const viewport = { width: window.innerWidth / zoom, height: window.innerHeight / zoom };
     const wanted = PAD * 2 + ROW * capRows(Math.max(1, this.options.length));
-    const below = window.innerHeight - MARGIN - (rect.bottom + GAP);
+    const below = viewport.height - MARGIN - (rect.bottom + GAP);
     const above = rect.top - GAP - MARGIN;
     const placement = wanted <= below || below >= above ? 'below' : 'above';
     const room = placement === 'below' ? below : above;
     const height = Math.max(PAD * 2 + ROW, Math.min(wanted, room));
     const top = placement === 'below' ? rect.bottom + GAP : rect.top - GAP - height;
-    const width = Math.max(MIN_WIDTH, Math.min(rect.width, window.innerWidth - MARGIN * 2));
-    const left = Math.max(MARGIN, Math.min(rect.left, window.innerWidth - MARGIN - width));
+    const width = Math.max(MIN_WIDTH, Math.min(rect.width, viewport.width - MARGIN * 2));
+    const left = Math.max(MARGIN, Math.min(rect.left, viewport.width - MARGIN - width));
     const box = [top, left, width, height].map((n) => `${Math.round(n)}px`);
     const placed = `${placement} ${box.join(' ')}`;
     if (placed === this.placed) return;

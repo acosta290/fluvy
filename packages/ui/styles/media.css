@@ -176,9 +176,24 @@
 
 /* sheet */
 .md-hero {
+  position: relative;
   display: flex;
   justify-content: center;
   margin-top: 24px;
+}
+
+/* the hero has no head: its power round sits in the corner, on the art's top line and the content's edge */
+.md-hero__power {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.md-hero__power svg {
+  width: 24px;
+  height: 24px;
 }
 
 .md-hero__text {

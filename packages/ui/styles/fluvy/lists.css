@@ -73,10 +73,6 @@
   height: 16px;
 }
 
-.fv-row--compact + .fv-row--compact::before {
-  left: 52px;
-}
-
 .fv-row + .fv-row::before {
   content: '';
   position: absolute;
@@ -85,6 +81,16 @@
   top: 0;
   height: 1px;
   background: var(--fluvy-border);
+}
+
+.fv-row--compact + .fv-row--compact::before {
+  left: 52px;
+}
+
+/* a row that gave its circle to its name (a column too narrow for both, as a head gives its circle): the words start
+   the row, and so does its hairline */
+.fv-row + .fv-row--bare::before {
+  left: 0;
 }
 
 .fv-row__text {

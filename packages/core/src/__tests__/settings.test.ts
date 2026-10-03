@@ -15,6 +15,7 @@ import {
   wearsLook,
   type SettingsHass,
 } from '../settings/index.js';
+import { CHROME_DEFAULTS, TABS_DEFAULTS } from '../look/tabs.js';
 
 describe('parsing stored settings', () => {
   it('falls back to the defaults for anything missing, broken or unknown', () => {
@@ -29,8 +30,15 @@ describe('parsing stored settings', () => {
         frame: 1,
         icons: 'yes',
         activity: 'no',
+        tabs: 'pills',
       }),
     ).toEqual(HOUSE_DEFAULTS);
+    // tabs read field by field: an unknown style or content takes the default, the rest is kept
+    expect(parseHouse({ tabs: { style: 'tartan', content: 'both', title: 'no' } }).tabs).toEqual({
+      style: 'fluvy',
+      content: 'both',
+      title: true,
+    });
     expect(parsePersonal({ language: 'sv', motion: 'fast', haptics: 'yes' })).toEqual(
       PERSONAL_DEFAULTS,
     );
@@ -48,6 +56,8 @@ describe('parsing stored settings', () => {
         icons: false,
         activity: false,
         history: false,
+        tabs: { style: 'pills', content: 'icons', title: false },
+        chrome: { logo: true, dividers: false, header: 'page', actions: 'menu' },
         extra: true,
       }),
     ).toEqual({
@@ -55,6 +65,8 @@ describe('parsing stored settings', () => {
       palette: 'volt',
       shape: 'round',
       pills: 'crisp',
+      tabs: { style: 'pills', content: 'icons', title: false },
+      chrome: { logo: true, dividers: false, header: 'page', actions: 'menu' },
       scope: 'everywhere',
       dashboards: ['fluvy-home'],
       frame: false,
@@ -160,9 +172,23 @@ describe('resolving the two layers', () => {
       palette: 'volt',
       shape: 'round',
       pills: 'soft',
+      tabs: TABS_DEFAULTS,
+      chrome: CHROME_DEFAULTS,
     });
     const own = resolveSettings(house, parsePersonal({ palette: 'blaze' }));
-    expect(own.look).toEqual({ palette: 'blaze', shape: 'round', pills: 'soft' });
+    expect(own.look).toEqual({
+      palette: 'blaze',
+      shape: 'round',
+      pills: 'soft',
+      tabs: TABS_DEFAULTS,
+      chrome: CHROME_DEFAULTS,
+    });
+    // a person's tabs count only with their own look, as their shape and pills do
+    const tabs = { style: 'hidden', content: 'names', title: true } as const;
+    expect(resolveSettings(house, parsePersonal({ tabs })).look.tabs).toEqual(TABS_DEFAULTS);
+    expect(resolveSettings(house, parsePersonal({ palette: 'blaze', tabs })).look.tabs).toEqual(
+      tabs,
+    );
     expect(
       resolveSettings(house, parsePersonal({ palette: 'blaze', pills: 'crisp' })).look.pills,
     ).toBe('crisp');

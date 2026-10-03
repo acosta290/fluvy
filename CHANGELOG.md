@@ -5,6 +5,65 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dashboard tabs, your way** (#20): the view tabs in a dashboard's header — Home Assistant's own — take the look as
+  the house chooses in *Appearance → Dashboard tabs*: Fluvy's (the dashboard's name, then the views as words, the
+  accent under the open one), pills, Home Assistant's own, or hidden; each tab with its view's name, its icon or both
+  (a view without an icon gets the one its name says), and the dashboard's name before them in any style.
+  A person who keeps their own look keeps their own tabs. The edit mode and subviews keep Home Assistant's header.
+- **The corner, your way**: *Appearance → Sidebar and header* puts Home Assistant's logo in the sidebar's head in place
+  of the menu icon, takes away the dividers under the sidebar's name and the header, lays the header on the page's
+  own colour, and puts the header's actions (add, search, Assist, edit) in one menu — all four, the corner of Fluvy's
+  screenshots.
+- **Templates in row text** — a row's `secondary` may be a Home Assistant template
+  (`{{ states('sensor.humidity') }} %`), rendered by Home Assistant and kept live, on every card that lists rows:
+  entities, lock, alarm, camera, bars, stat tiles, actions and helpers. The row's entity is `entity` in the template
+  and the person looking `user`; a template that fails renders nothing, never its own text. The editor's field takes
+  a keyword or a template alike (#21).
+- **Compact variants** for the cards that ran long (#21): the bars card's `variant: compact` draws 48 px rows — the
+  name and the value on one line, the 4 px bar under them; the weather card's `variant: compact` is one head row
+  (the condition circle, the name, "condition · high / low" and the temperature) over the hours and the days ahead
+  as columns, as many as the width holds (`days` stays the maximum); the stat tiles card's `variant: compact` draws
+  64 px tiles of label over value, three a row when every label and value fits (`columns: auto | 2 | 3`, which the
+  full tiles take too), and 48 px rows.
+- **A size per device** — a tablet on the wall reads its dashboards at 90, 100, 110, 125 or 150 %, remembered by
+  that browser alone: `?zoom=125` on the address (`?zoom=off` back), or *This device · Size* in the panel's
+  Preferences tab and the Wall tab's device card. Only the dashboard's view grows; Home Assistant's header, sidebar,
+  dialogs and the edit mode keep their size, and the size is set before the page paints. Every drag, scrub and
+  measure of the cards reads the pointer in the control's own pixels, so a ruler, a lock's grip, a dial, a chart
+  or a tab row behaves the same at any size (#21).
+- **Power on the media cards** (#21): the media card turns a player on and off from a round in its head (in place
+  of "…", which the artwork's tap still opens), a hero from its corner, and the now-playing strip from its left edge
+  (`show_power`, on where the player can be switched); a player that is off offers "Turn on" and no dead transport.
+  The compact row and the strip take `controls`: power, previous, play, next and volume, in the order written, as
+  many as the width holds.
+
+### Changed
+
+- The settings panel has five tabs, on one line: *About* is now the last card of *Preferences* (*Fluvy*: the
+  version, the look in use, the settings file, the house's reset). An old `/fluvy/about` link opens Preferences.
+- On the dashboards that wear the look, the header's tabs are Fluvy's by default: the views as words instead of
+  Home Assistant's icons. *Appearance → Dashboard tabs → Original* gives Home Assistant's tabs back.
+- The automatic dashboards no longer repeat their views as chips under the greeting, now that the header's tabs carry
+  their names; `greeting_tabs: show` (or the dashboard's options in the panel) puts them back.
+
+### Fixed
+
+- An automatic dashboard whose grid meter is found by its name (no power sensors in the Energy dashboard, no export
+  sensor) drew its grid gauge with no entity: the card was handed `true` and failed to render. It names the meter.
+- The energy card's `sources` variant (the house's power by source) is drawn from the power sensors the Energy
+  dashboard names, as Home Assistant's own "Power sources" graph is: energy meters that tick in coarse steps, or a
+  hybrid inverter's AC meter counted as the sun, no longer flatten the midday or put the sun in the night (#23). What
+  went into the battery is drawn under the line with the export; "right now" is the house's own use; a gap in the
+  recorder is a gap. Without power sensors the meters are read in blocks long enough for their step not to show.
+- The bars card counted a `plain` row as 76 px in its height; it is 60. The stat tiles card's height left out the
+  gaps above its tiles and its rows, so an automatic dashboard cut its columns 32 px short.
+- A bars, stat tiles or weather row squeezed under what holds its name (half a column) cut the name to a letter; the
+  rows now give their circles to the names, as a head does. A compact row of an entity that cannot be read said only
+  "—"; it says "Unavailable", "Unknown" or "Not found". A missing entity drew a sensor's trend glyph; it draws the
+  `ban` glyph. A dead stat tile was an ordinary tile; it wears the dashed hairline, in both variants.
+
 ## [1.4.0] — 2026-10-01
 
 ### Added

@@ -10,6 +10,7 @@ import {
   startLook,
   startShell,
   startWall,
+  startZoom,
   type LookHandle,
   type ShellHandle,
 } from '@fluvy/core';
@@ -49,6 +50,8 @@ if (host.__fluvy) {
   setFontFolder(new URL('fonts/', here).href);
   ensureFonts();
   const look = startLook();
+  // the size this device reads its dashboards at (`?zoom=` remembered, the loader's early variable taken over)
+  startZoom();
   const fluvy = {
     version,
     shell: startShell(),

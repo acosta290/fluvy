@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { HomeAssistant } from '@fluvy/core';
-import '../index.js';
+import { familiesDefined } from '../index.js';
+
+// the index fetches the media and energy families: they land before this file's page goes
+afterAll(() => familiesDefined);
 
 const hass = {
   language: 'en',

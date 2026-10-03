@@ -40,11 +40,15 @@ export function roomsView(ctx: StrategyContext): Section[] {
   const floors = home.floors.filter((floor) =>
     rooms.some((room) => room.floor_id === floor.floor_id),
   );
-  if (floors.length < 2) return flowed(rooms.map((area) => [roomCard(ctx, area)]));
+  if (floors.length < 2)
+    return flowed(
+      ctx.header,
+      rooms.map((area) => [roomCard(ctx, area)]),
+    );
   const unplaced = rooms.filter(
     (room) => !floors.some((floor) => floor.floor_id === room.floor_id),
   );
-  return flowed([
+  return flowed(ctx.header, [
     ...floors
       .map((floor) =>
         headed(
@@ -89,6 +93,7 @@ export function roomSections(
   const readings = inRoom([...home.temperatures, ...home.humidities]).slice(0, 3);
   const found = areaClimate(home.registries, area.area_id);
   const sections = flowed(
+    ctx.header,
     [
       [heading(back.title, 'fluvy:home', [], back.path)],
       ...(climate[0] ? [[thermostat(climate[0], ctx.style)]] : []),

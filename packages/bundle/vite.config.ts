@@ -72,6 +72,18 @@ const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 const ENERGY =
   /\/packages\/cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|production\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)/;
 
+/**
+ * The media family (the player and the now-playing strip, and what only they share): fetched as the bundle starts
+ * and defined as it lands, as the energy family is (`media-family.ts` stays in core: the names, the heights).
+ */
+/** The weather card (its forecast strips and rows): fetched as the bundle starts and defined as it lands. */
+const WEATHER = /\/packages\/cards\/src\/(weather-cards\.ts|weather\/)/;
+
+const MEDIA = /\/packages\/cards\/src\/(media-cards\.ts|media\/|now-playing\/|shared\/media\.ts)/;
+
+/** The icons a view's name says, for a tab row asked for icons whose views have none: fetched the first time it is. */
+const VIEW_ICONS = /\/packages\/core\/src\/look\/view-icons\.ts/;
+
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
@@ -80,7 +92,7 @@ const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/(?!en\.json)([\w-]+)\.js
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy, the wall, the energy family, the cards' editor, and everything else
+ * page, the settings panel, the strategy, the wall, the media and energy families, the cards' editor, and everything else
  * (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities
  * only say so out loud.
  */
@@ -95,8 +107,11 @@ const GROUPS: ReadonlyArray<{
   { name: 'panel', test: PANEL },
   { name: 'strategy', test: STRATEGY },
   { name: 'wall', test: WALL },
+  { name: 'weather', test: WEATHER },
+  { name: 'media', test: MEDIA },
   { name: 'energy', test: ENERGY },
   { name: 'editor', test: EDITOR },
+  { name: 'view-icons', test: VIEW_ICONS },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];
 

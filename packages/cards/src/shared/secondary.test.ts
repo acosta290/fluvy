@@ -2,6 +2,7 @@ import { resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { stateSkin } from './domain.js';
 import { secondaryText } from './secondary.js';
+import type { TemplateTexts } from './templates.js';
 
 const now = new Date(); // relativeTime reads the clock
 const hass = {
@@ -30,6 +31,10 @@ const hass = {
   areas: { study: { area_id: 'study', name: 'Study' } },
 } as unknown as HomeAssistant;
 const view = (id: string) => resolveEntity(hass, id);
+/** The card's texts, as the row sees them: a template's line, for that row's entity. */
+const texts = {
+  line: (template: string, entityId?: string) => `${entityId}: ${template}`,
+} as unknown as TemplateTexts;
 
 describe('secondaryText', () => {
   it('says the area when the row has one, else when it last changed', () => {
@@ -53,6 +58,15 @@ describe('secondaryText', () => {
     expect(secondaryText(hass, view('sensor.gone'), 'none')).toBe('');
     expect(secondaryText(hass, view('sensor.gone'), 'area')).toBe('Unavailable');
     expect(secondaryText(hass, view('sensor.missing'), 'state')).toBe('Entity not found');
+  });
+
+  it('hands a template to the card’s texts, and says nothing without them — never the template', () => {
+    const template = "{{ states('sensor.x') }} %";
+    expect(secondaryText(hass, view('light.desk'), template, false, texts)).toBe(
+      `light.desk: ${template}`,
+    );
+    expect(secondaryText(hass, view('light.desk'), template)).toBe('');
+    expect(secondaryText(hass, view('sensor.gone'), template, false, texts)).toBe('Unavailable');
   });
 });
 

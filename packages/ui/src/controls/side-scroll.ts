@@ -1,4 +1,5 @@
 import { reducedMotion } from '../motion.js';
+import { zoomOf } from './zoom.js';
 
 /**
  * A row that scrolls sideways (a tab strip). A finger and a trackpad already scroll it natively; this
@@ -36,6 +37,7 @@ export function sideScroll(target: HTMLElement, onUse?: () => void): () => void 
   let pointer = -1;
   let originX = 0;
   let originScroll = 0;
+  let zoom = 1;
   let dragging = false;
   let swallowClick = false;
 
@@ -45,11 +47,12 @@ export function sideScroll(target: HTMLElement, onUse?: () => void): () => void 
     pointer = event.pointerId;
     originX = event.clientX;
     originScroll = target.scrollLeft;
+    zoom = zoomOf(target); // the row scrolls in its own pixels; the pointer travels in the viewport's
     dragging = false;
   };
   const move = (event: PointerEvent): void => {
     if (event.pointerId !== pointer) return;
-    const dx = event.clientX - originX;
+    const dx = (event.clientX - originX) / zoom;
     if (!dragging) {
       if (Math.abs(dx) < INTENT) return;
       dragging = true;

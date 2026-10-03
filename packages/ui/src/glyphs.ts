@@ -143,6 +143,14 @@ const GLYPHS = {
   pillRound: '<rect x="3" y="7" width="18" height="10" rx="5"/>',
   pillSoft: '<rect x="3" y="7" width="18" height="10" rx="3"/>',
   pillCrisp: '<rect x="3" y="7" width="18" height="10" rx="1.5"/>',
+  /** a header with its views as words, the open one underlined (the header frame of `tabsNone`) */
+  tabsText:
+    '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10.5h3.5"/><path d="M13.5 10.5h3.5"/><path d="M7 14.5h3.5"/>',
+  /** the view tabs as pills, the open one first */
+  tabsPills:
+    '<rect x="2.5" y="8" width="10" height="8" rx="4"/><rect x="15.5" y="8" width="6" height="8" rx="4"/>',
+  /** a header with its name alone: no tabs */
+  tabsNone: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h6"/>',
   globe:
     '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="1.1" fill="currentColor" stroke="none"/>',

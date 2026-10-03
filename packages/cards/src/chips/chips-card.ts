@@ -5,7 +5,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { icon, reducedMotion, sheetStyles, sideScroll, type IconRef } from '@fluvy/ui';
+import { icon, reducedMotion, sheetStyles, sideScroll, zoomOf, type IconRef } from '@fluvy/ui';
 import {
   css,
   html,
@@ -301,15 +301,20 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     const scroller = this.scroller;
     if (!scroller) return;
     const active = scroller.querySelector<HTMLElement>('.is-active');
+    // the rects are read in the row's own pixels: what it scrolls by, and what the fade is measured in
+    const zoom = zoomOf(scroller);
     if (active && (glide || !this.hands)) {
       const room = scroller.getBoundingClientRect();
       const chip = active.getBoundingClientRect();
+      const width = room.width / zoom;
+      const start = (chip.left - room.left) / zoom;
+      const span = chip.width / zoom;
       // in full view, clear of the fade at a side that has more behind it
       const more = scroller.scrollWidth - scroller.clientWidth;
-      const clearLeft = room.left + (scroller.scrollLeft > 1 ? FADE : 0);
-      const clearRight = room.right - (more - scroller.scrollLeft > 1 ? FADE : 0);
-      if (chip.left < clearLeft || chip.right > clearRight) {
-        const left = scroller.scrollLeft + chip.left - room.left - (room.width - chip.width) / 2;
+      const clearLeft = scroller.scrollLeft > 1 ? FADE : 0;
+      const clearRight = width - (more - scroller.scrollLeft > 1 ? FADE : 0);
+      if (start < clearLeft || start + span > clearRight) {
+        const left = scroller.scrollLeft + start - (width - span) / 2;
         scroller.scrollTo({
           left: Math.max(0, left),
           behavior: glide && !reducedMotion() ? 'smooth' : 'auto',
@@ -321,7 +326,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     const natural =
       tabs.reduce(
         (sum, tab) =>
-          sum + (Number.parseFloat(tab.style.width) || tab.getBoundingClientRect().width),
+          sum + (Number.parseFloat(tab.style.width) || tab.getBoundingClientRect().width / zoom),
         0,
       ) +
       ROW_GAP * Math.max(0, tabs.length - 1);

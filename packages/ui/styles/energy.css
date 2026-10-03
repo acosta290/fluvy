@@ -32,7 +32,7 @@
 }
 
 /* rows in a column too narrow for their circles: the circle goes and the words take the row (the card puts the
-   figure at the head of the second line), the bar under them, 8 under the second line where the row's own bar is */
+   figure at the head of the second line), the bar under them where the row's own bar is (56), from the row's edge */
 .ef-rows.is-bare .fv-row > .fv-ico,
 .ef-rows.is-bare .fv-row > .fv-row__value {
   display: none;
@@ -43,8 +43,7 @@
 }
 
 .ef-rows.is-bare .fv-row--bar .fv-bar {
-  position: static;
-  margin-top: 8px;
+  left: 0;
 }
 
 .ef-cost {
@@ -940,6 +939,16 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--fluvy-text-secondary);
+  /* the bridge's card-coloured edge: a band that reaches the words passes under them, never through them */
+  text-shadow:
+    1.5px 0 var(--fluvy-card),
+    -1.5px 0 var(--fluvy-card),
+    0 1.5px var(--fluvy-card),
+    0 -1.5px var(--fluvy-card),
+    1px 1px var(--fluvy-card),
+    -1px 1px var(--fluvy-card),
+    1px -1px var(--fluvy-card),
+    -1px -1px var(--fluvy-card);
 }
 
 .en-cursor {

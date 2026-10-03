@@ -7,6 +7,7 @@ import {
   iconOf,
   isUnusable,
   nameOf,
+  ownSecondary,
   type HelperHost,
   type HelperRowConfig,
 } from './context.js';
@@ -143,7 +144,7 @@ function momentParts(
   moment: Moment | null,
 ): { value: string; sub: string } {
   if (!moment) return { value: '—', sub: contextOf(host, view, config) };
-  const custom = config.secondary;
+  const custom = ownSecondary(host, config);
   if (!moment.hasTime)
     return {
       value: dayText(host.hass, moment),
@@ -210,7 +211,7 @@ export function buttonRow(
 ): TemplateResult {
   const pressed = view.status === 'ok' ? new Date(view.state) : null;
   const sub =
-    config.secondary ??
+    ownSecondary(host, config) ??
     (pressed && !Number.isNaN(pressed.getTime())
       ? sentenceCase(relativeAgo(host.hass, pressed))
       : contextOf(host, view, config));

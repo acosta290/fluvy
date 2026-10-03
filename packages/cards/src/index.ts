@@ -18,8 +18,6 @@ import { FluvyHelpersCard } from './helpers/helpers-card.js';
 import { FluvyHumidityCard } from './humidity/humidity-card.js';
 import { FluvyLightCard } from './light/light-card.js';
 import { FluvyLockCard } from './lock/lock-card.js';
-import { FluvyMediaCard } from './media/media-card.js';
-import { FluvyNowPlayingCard } from './now-playing/now-playing-card.js';
 import { FluvyOpeningsCard } from './openings/openings-card.js';
 import { FluvyPeopleCard } from './people/people-card.js';
 import { FluvyReadoutsCard } from './readouts/readouts-card.js';
@@ -34,12 +32,13 @@ import { FluvyTimerCard } from './timer/timer-card.js';
 import { FluvyTodoCard } from './todo/todo-card.js';
 import { FluvyUpdatesCard } from './updates/updates-card.js';
 import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
-import { FluvyWeatherCard } from './weather/weather-card.js';
 import { FluvyRoomCard } from './room/room-card.js';
 import { FluvyLightsCard } from './lights/lights-card.js';
 import { FluvyMapCard } from './map/map-card.js';
 import { defineStrategies } from './strategy/define.js';
 import { ENERGY_FAMILY } from './energy-family.js';
+import { MEDIA_FAMILY } from './media-family.js';
+import { WEATHER_FAMILY } from './weather-family.js';
 
 /**
  * The fluvy card catalogue. Registration happens while the module evaluates — never after an
@@ -87,18 +86,6 @@ const CATALOGUE: ReadonlyArray<
     'Rows of entities: a switch for what toggles, the value for what is measured.',
   ],
   [
-    'fluvy-media-card',
-    FluvyMediaCard,
-    'Fluvy · Media',
-    'A media player: artwork, seek bar, transport and volume — full, compact row or hero.',
-  ],
-  [
-    'fluvy-now-playing-card',
-    FluvyNowPlayingCard,
-    'Fluvy · Now playing',
-    'The compact player of the home screen: artwork, thin progress, transport and volume.',
-  ],
-  [
     'fluvy-cover-card',
     FluvyCoverCard,
     'Fluvy · Cover',
@@ -133,12 +120,6 @@ const CATALOGUE: ReadonlyArray<
     FluvyCameraCard,
     'Fluvy · Camera',
     'A still that refreshes itself, with live and time pills; tap for the stream.',
-  ],
-  [
-    'fluvy-weather-card',
-    FluvyWeatherCard,
-    'Fluvy · Weather',
-    'Condition, temperature, feels-like, wind and the daily or hourly forecast.',
   ],
   [
     'fluvy-sensor-card',
@@ -272,19 +253,33 @@ const CATALOGUE: ReadonlyArray<
 
 for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
-// the energy family: listed and measured now, its elements fetched at once and defined as they land
-for (const [tag, name, description, height] of ENERGY_FAMILY)
+// the weather card and the media and energy families: listed and measured now, their elements fetched at once and
+// defined as they land
+for (const [tag, name, description, height] of [
+  ...WEATHER_FAMILY,
+  ...MEDIA_FAMILY,
+  ...ENERGY_FAMILY,
+])
   announceCard({ tag, name, description }, height);
-void import('./energy-cards.js');
+/** The two families defined (what a test waits on before its page goes; the bundle never waits). */
+export const familiesDefined: Promise<unknown> = Promise.all([
+  import('./weather-cards.js'),
+  import('./media-cards.js'),
+  import('./energy-cards.js'),
+]);
 
-/** Every card with its element: the eager ones and the energy family (for the docs and the tests). */
+/** Every card with its element: the eager ones, the weather card and the media and energy families (docs, tests). */
 export async function catalogue(): Promise<
   ReadonlyArray<
     readonly [tag: string, element: CustomElementConstructor, name: string, description: string]
   >
 > {
-  const { ENERGY_CATALOGUE } = await import('./energy-cards.js');
-  return [...CATALOGUE, ...ENERGY_CATALOGUE];
+  const [{ WEATHER_CATALOGUE }, { MEDIA_CATALOGUE }, { ENERGY_CATALOGUE }] = await Promise.all([
+    import('./weather-cards.js'),
+    import('./media-cards.js'),
+    import('./energy-cards.js'),
+  ]);
+  return [...CATALOGUE, ...WEATHER_CATALOGUE, ...MEDIA_CATALOGUE, ...ENERGY_CATALOGUE];
 }
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
 defineStrategies();
@@ -314,8 +309,6 @@ export {
   FluvyHumidityCard,
   FluvyLightCard,
   FluvyLockCard,
-  FluvyMediaCard,
-  FluvyNowPlayingCard,
   FluvyOpeningsCard,
   FluvyPeopleCard,
   FluvyReadoutsCard,
@@ -330,5 +323,4 @@ export {
   FluvyTodoCard,
   FluvyUpdatesCard,
   FluvyVacuumCard,
-  FluvyWeatherCard,
 };

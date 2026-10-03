@@ -34,6 +34,7 @@ import { ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { secondaryText } from '../shared/secondary.js';
+import { TemplateTexts } from '../shared/templates.js';
 import { listLength, ROW_COMPACT, ROW } from '../shared/heights.js';
 
 /** A row of the card: the rows every list shares (`RowConfig`). */
@@ -87,6 +88,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     { key: 'rows', alias: 'entities', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  /** A row's second line when it is a template: rendered by Home Assistant, live. */
+  private readonly texts = new TemplateTexts(this);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -195,7 +198,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             tone: currentTone(view, on ? rowTone : 'neutral'),
             title: row.name ?? view.name,
             name: true,
-            sub: secondaryText(this.hass, view, row.secondary, trailing === 'value'),
+            sub: secondaryText(this.hass, view, row.secondary, trailing === 'value', this.texts),
             trailing,
             on,
             compact,

@@ -36,3 +36,14 @@ describe('the choices of a select', () => {
     expect(labels(toneField())[0]).toBe('Accent');
   });
 });
+
+describe('a select that takes a value of its own', () => {
+  const select = (item: HaFormSchemaItem): Record<string, unknown> =>
+    (item.selector as { select: Record<string, unknown> }).select;
+  it('offers it only when asked (a keyword, an attribute or a template in the second line)', () => {
+    expect(select(selectField('variant', ['full', 'compact']))['custom_value']).toBeUndefined();
+    expect(
+      select(selectField('secondary', ['area', 'none'], { custom: true }))['custom_value'],
+    ).toBe(true);
+  });
+});

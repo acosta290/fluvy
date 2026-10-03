@@ -278,7 +278,8 @@ export const panelStyles = css`
     margin-top: -4px;
   }
   /* a dropdown under its label, the same 8 */
-  .pn-label + fluvy-select {
+  .pn-label + fluvy-select,
+  .pn-label + .pn-pair {
     margin-top: -4px;
   }
   .pn-card .fv-chips--fill {
@@ -305,7 +306,8 @@ export const panelStyles = css`
     padding-block: 8px;
     box-sizing: border-box;
   }
-  .pn-card.is-armed .fv-row__title {
+  .pn-card.is-armed .fv-row__title,
+  .pn-reset.is-armed .fv-row__title {
     color: var(--fluvy-warning);
   }
   /* a choice shown to someone who may not change it */
@@ -398,6 +400,238 @@ export const panelStyles = css`
   .pn-rows {
     display: flex;
     flex-direction: column;
+  }
+  /* the dashboards' view tabs as a header shows them: the header's colour and hairline, its 56 line, the name at
+     its weight; the tabs at their real size (a row longer than the card fades out at its end, as on a phone) */
+  .pn-tabsmock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding-inline: 16px 0;
+    overflow: hidden;
+    border-radius: var(--fluvy-radius-control);
+    background: var(--fluvy-card);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  }
+  .pn-tabsmock--hidden .pn-tabsmock__title {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+  /* with the tabs hidden, the header's actions at the mock's end (the corner card's choice) */
+  .pn-tabsmock__actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    margin-inline-start: auto;
+    padding-inline-end: 16px;
+    color: var(--fluvy-text);
+  }
+  .pn-tabsmock__actions svg {
+    width: 20px;
+    height: 20px;
+  }
+  .pn-tabsmock__title {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 40%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 24px;
+    color: var(--fluvy-text);
+  }
+  .pn-tabsmock__tabs {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    align-self: stretch;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  }
+  .pn-tabsmock__tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 12px;
+    align-self: stretch;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    color: var(--fluvy-text-secondary);
+  }
+  .pn-tabsmock__tab svg {
+    width: 20px;
+    height: 20px;
+  }
+  .pn-tabsmock__tab.is-active {
+    color: var(--fluvy-text);
+  }
+  .pn-tabsmock--fluvy .pn-tabsmock__tab.is-active::after,
+  .pn-tabsmock--ha .pn-tabsmock__tab.is-active::after {
+    content: '';
+    position: absolute;
+    inset: auto 12px 0;
+    height: 2px;
+    background: var(--fluvy-accent);
+  }
+  /* Home Assistant's own: icons at 24, the whole tab underlined in the ink */
+  .pn-tabsmock--ha:not(:has(.pn-tabsmock__title)) {
+    padding-inline-start: 0;
+  }
+  .pn-tabsmock--ha .pn-tabsmock__tab {
+    padding-inline: 16px;
+    color: var(--fluvy-text);
+    opacity: 0.8;
+  }
+  .pn-tabsmock--ha .pn-tabsmock__tab svg {
+    width: 24px;
+    height: 24px;
+  }
+  .pn-tabsmock--ha .pn-tabsmock__tab.is-active {
+    opacity: 1;
+  }
+  .pn-tabsmock--ha .pn-tabsmock__tab.is-active::after {
+    inset-inline: 0;
+    background: var(--fluvy-text);
+  }
+  .pn-tabsmock--pills .pn-tabsmock__tabs {
+    gap: 8px;
+  }
+  .pn-tabsmock--pills .pn-tabsmock__tab {
+    align-self: center;
+    height: 36px;
+    padding-inline: 16px;
+    border-radius: var(--fluvy-radius-pill, 9999px);
+    background: var(--fluvy-card);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  }
+  .pn-tabsmock--pills .pn-tabsmock__tab.is-active {
+    background: var(--fluvy-selected, var(--fluvy-text));
+    color: var(--fluvy-on-selected, var(--fluvy-page));
+    box-shadow: none;
+  }
+  /* the corner of every page: the sidebar's head beside the header (56), over the first 16 of the sidebar and of the
+     page, each on its fill; the hairline under the heads when chosen */
+  .pn-corner {
+    position: relative;
+    display: grid;
+    /* the sidebar's head at most Home Assistant's 256, the header the rest and never under its actions */
+    grid-template-columns: minmax(0, 256px) minmax(min-content, 1fr);
+    height: 72px;
+    overflow: hidden;
+    border-radius: var(--fluvy-radius-control);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  }
+  /* the preview's frame over its two columns' fills */
+  .pn-corner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    pointer-events: none;
+  }
+  .pn-corner__side {
+    min-width: 0;
+    background: var(--fluvy-card);
+  }
+  .pn-corner__head {
+    min-width: 0;
+    background: var(--fluvy-page);
+  }
+  .pn-corner__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 56px;
+    padding-inline: 12px;
+    box-sizing: border-box;
+  }
+  .pn-corner__head .pn-corner__row {
+    background: var(--fluvy-card);
+  }
+  .pn-corner.is-page .pn-corner__head .pn-corner__row {
+    background: transparent;
+  }
+  /* the header's actions at its end: Home Assistant's four, or its one menu as Fluvy's "…" */
+  .pn-corner__actions {
+    justify-content: flex-end;
+    gap: 8px;
+    padding-inline: 12px 16px;
+    color: var(--fluvy-text);
+  }
+  .pn-corner__actions svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+  }
+  /* the dashboard's name before the actions, where the header has the room (it gives way first) */
+  .pn-corner__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* no say in the column's width: the actions set the header's least */
+    contain: inline-size;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 24px;
+    color: var(--fluvy-text);
+  }
+  /* a phone's card: the header's name has no room beside the actions (a cut letter is not a name) */
+  @container pn (max-width: 523px) {
+    .pn-corner__title {
+      display: none;
+    }
+  }
+  /* a narrow card: the actions closer, so the name keeps its room */
+  @container pn (max-width: 380px) {
+    .pn-corner__actions {
+      gap: 4px;
+      padding-inline: 8px;
+    }
+  }
+  .pn-corner.has-lines .pn-corner__row {
+    box-shadow: inset 0 -1px 0 var(--fluvy-border);
+  }
+  .pn-corner__logo {
+    flex: 0 0 24px;
+    height: 24px;
+    background: center / 24px 24px no-repeat;
+  }
+  .pn-corner__menu {
+    display: inline-flex;
+    flex: 0 0 24px;
+    color: var(--fluvy-text-secondary);
+  }
+  .pn-corner__menu svg {
+    width: 24px;
+    height: 24px;
+  }
+  .pn-corner__name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 24px;
+    color: var(--fluvy-text);
+  }
+  /* what each tab shows: under the styles, at the card's own step */
+  .pn-card .pn-tabs-content {
+    margin-top: 0;
   }
   /* equal buttons across the column (export | import): whole-pixel cells, the odd pixel to the gap */
   .pn-pair {

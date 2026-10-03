@@ -16,7 +16,15 @@ import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import { attachToElementClass, browserEnv, onPanelFrame } from '../shell/index.js';
 import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
+import { chromeOf, tabsOf } from './css.js';
 import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
+import {
+  FLAT_ATTRIBUTE,
+  markRoots,
+  patchViewRoots,
+  SIDEBAR_LOGO_ATTRIBUTE,
+  type TabsFor,
+} from './tabs.js';
 import { safeStorage } from '../storage.js';
 
 /**
@@ -116,6 +124,18 @@ export function startLook(): LookHandle | undefined {
   };
   const wears = (urlPath: string | undefined): boolean =>
     current().scope === 'dashboards' && wearsLook(current(), urlPath);
+  /** The tabs a dashboard wears: every dashboard's while the whole app wears the look, else the look's dashboards'. */
+  const tabsFor: TabsFor = (urlPath) => {
+    const now = current();
+    return now.scope === 'everywhere' || wearsLook(now, urlPath)
+      ? { tabs: tabsOf(now.look), chrome: chromeOf(now.look) }
+      : null;
+  };
+  /** Every mark of the dashboards again: the panels (the cards look again when one moved) and their headers' tabs. */
+  const remark = (): void => {
+    if (markPanels(env.document, wears)) resyncCardThemes();
+    markRoots(env.document, tabsFor);
+  };
   const preferences = (): void => {
     const now = current();
     setMotionPreference(now.motion);
@@ -129,6 +149,10 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
+    // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked
+    const chrome = chromeOf(now.look);
+    env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);
+    env.document.documentElement.toggleAttribute(FLAT_ATTRIBUTE, !chrome.dividers);
     // what is not a card (a page of ours) follows the preferences too
     window.dispatchEvent(new Event(PREFERENCES_EVENT));
   };
@@ -141,6 +165,8 @@ export function startLook(): LookHandle | undefined {
   // the card editor's colour swatches show the palette's colours: the dialog wears the look of its dashboard
   void attachToElementClass('hui-dialog-edit-card', engine.panelSheet, env);
   void patchEditDialog(env.customElements, wears);
+  // the view tabs as the house chose them, in every dashboard's header (re-marked on each of its updates)
+  void patchViewRoots(env.customElements, tabsFor);
   const offFrames = onPanelFrame((frame) =>
     engine.addDocument(frame.document, frame.createSheet()),
   );
@@ -148,7 +174,7 @@ export function startLook(): LookHandle | undefined {
   // follows (another theme takes the pages back, and only Fluvy's dashboards stay marked)
   const observer = new MutationObserver(() => {
     apply();
-    if (markPanels(env.document, wears)) resyncCardThemes();
+    remark();
   });
   observer.observe(env.document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
@@ -161,7 +187,7 @@ export function startLook(): LookHandle | undefined {
       const changed = current().language !== before.language || current().motion !== before.motion;
       preferences();
       apply();
-      if (markPanels(env.document, wears)) resyncCardThemes();
+      remark();
       if (changed) refreshCards();
       for (const listener of listeners) listener(next);
     });
@@ -175,8 +201,8 @@ export function startLook(): LookHandle | undefined {
       previewed = next;
       preferences();
       apply();
-      // a previewed scope marks the dashboards as a saved one would
-      if (markPanels(env.document, wears)) resyncCardThemes();
+      // a previewed scope marks the dashboards as a saved one would, and previewed tabs show in their headers
+      remark();
       // the cards speak (and move) as previewed
       if (current().language !== before.language || current().motion !== before.motion)
         refreshCards();

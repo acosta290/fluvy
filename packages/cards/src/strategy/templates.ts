@@ -88,6 +88,11 @@ const TILES = choice('tile_size', 'dashboard.tiles', [
 ]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
+/** The views as chips under the greeting, besides the header's tabs. */
+const GREETING_TABS = choice('greeting_tabs', 'dashboard.greeting_tabs', [
+  { value: 'hide', label: 'dashboard.header_only' },
+  { value: 'show', label: 'dashboard.under_greeting' },
+]);
 
 /** Every room with something in it, each going back to the tab that holds it. */
 const everyRoom = (ctx: StrategyContext, tab: (area: AreaRegistryEntry) => string): RoomLink[] =>
@@ -109,7 +114,7 @@ export const TEMPLATES: readonly Template[] = [
     views: HOME_VIEWS,
     // the rooms open from the Rooms view: none without it
     rooms: (ctx, paths) => (paths.includes('rooms') ? everyRoom(ctx, () => 'rooms') : []),
-    options: [HIDE, THERMOSTAT, TILES, FLOW, ROOM],
+    options: [HIDE, THERMOSTAT, TILES, FLOW, ROOM, GREETING_TABS],
   },
   {
     id: 'rooms',
@@ -122,7 +127,7 @@ export const TEMPLATES: readonly Template[] = [
     header: 'hello',
     views: roomsViews,
     rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
-    options: [ROOM, THERMOSTAT, TILES],
+    options: [ROOM, THERMOSTAT, TILES, GREETING_TABS],
   },
   {
     id: 'energy',
@@ -134,7 +139,7 @@ export const TEMPLATES: readonly Template[] = [
     columns: 3,
     header: 'hello',
     views: ENERGY_VIEWS,
-    options: [HIDE, FLOW],
+    options: [HIDE, FLOW, GREETING_TABS],
   },
   {
     id: 'security',
@@ -149,6 +154,7 @@ export const TEMPLATES: readonly Template[] = [
     options: [
       HIDE,
       choice('camera_refresh', 'dashboard.refresh', counts([5, 10, 30], 'dashboard.seconds')),
+      GREETING_TABS,
     ],
   },
   {

@@ -31,7 +31,8 @@ by an alignment measurer, and holds from a phone to a wall tablet, in light and 
 
 The sidebar, the header, the tabs, the dialogs, the settings pages: with the Fluvy theme on, Home Assistant
 looks like it was designed with the cards, because it was — the same tokens, the same type (Inter), the same
-radii and hairlines.
+radii and hairlines. A dashboard's view tabs are yours to style: the views as words with the accent under the open
+one (as here), as pills, as icons, Home Assistant's own, or none at all.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-desktop.png" width="960" alt="Home Assistant with Fluvy: the sidebar, the tabs and a dashboard in one design">

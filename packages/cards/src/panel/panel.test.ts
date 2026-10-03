@@ -6,6 +6,8 @@ import {
   type HomeAssistant,
   type LookHandle,
   type SettingsHass,
+  TABS_DEFAULTS,
+  CHROME_DEFAULTS,
 } from '@fluvy/core';
 import { exportSettings, importPalette, importSettings } from './actions.js';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
@@ -159,7 +161,7 @@ describe('the settings panel', () => {
     swatch('Volt').click();
     await panel.updateComplete;
     expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Linen → Volt');
-    panel.tab = 'about';
+    panel.tab = 'preferences';
     await panel.updateComplete;
     expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Linen → Volt');
     panel.remove();
@@ -755,6 +757,54 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('sizes this device from Preferences: the chips, the bar’s line, saved to the device and shown at once', async () => {
+    localStorage.removeItem('fluvy:device');
+    document.documentElement.style.removeProperty('--fluvy-zoom');
+    const { panel, root, chip, button, written, settle } = await mount(false); // everyone's, not an administrator's
+    panel.tab = 'preferences';
+    await settle();
+    const sizes = () =>
+      [...root.querySelectorAll<HTMLElement>('.fv-chip')]
+        .filter((c) => /%/.test(c.textContent ?? ''))
+        .map((c) => `${c.textContent?.trim()}${c.classList.contains('is-active') ? '*' : ''}`);
+    expect(sizes()).toEqual(['90 %', '100 %*', '110 %', '125 %', '150 %']);
+    chip('125 %')!.click();
+    await settle();
+    expect(sizes()).toContain('125 %*');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Size · 125 %');
+    // nothing is saved or applied before the bar says so
+    expect(localStorage.getItem('fluvy:device')).toBeNull();
+    expect(document.documentElement.style.getPropertyValue('--fluvy-zoom')).toBe('');
+    chip('100 %')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200)); // the bar leaves in 160
+    await settle();
+    expect(root.querySelector('.pn-bar')).toBeNull(); // back to what is saved: no edit
+    chip('125 %')!.click();
+    await settle();
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    // the device's own memory, nothing of the house's or the person's; the view's size is on the page already
+    expect(written).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('fluvy:device') ?? '{}')).toMatchObject({ zoom: 125 });
+    expect(document.documentElement.style.getPropertyValue('--fluvy-zoom')).toBe('1.25');
+    expect(root.querySelector('.pn-bar')).toBeNull();
+    expect(sizes()).toContain('125 %*');
+    panel.remove();
+    // the Wall tab's device card offers the same choice, remembered
+    const again = await mount();
+    again.panel.tab = 'wall';
+    await again.settle();
+    expect(
+      [...again.root.querySelectorAll<HTMLElement>('.fv-chip.is-active')].some(
+        (c) => c.textContent?.trim() === '125 %',
+      ),
+    ).toBe(true);
+    again.panel.remove();
+    localStorage.removeItem('fluvy:device');
+    document.documentElement.style.removeProperty('--fluvy-zoom');
+  });
+
   it('says why only on dashboards cannot hold while the profile wears the Fluvy theme', async () => {
     const { panel, root, settle } = await mount(true, {
       selectedTheme: { theme: 'Fluvy' },
@@ -824,7 +874,7 @@ describe('the settings panel', () => {
 
   it('resets the house only on a second tap, and says so after the first', async () => {
     const { panel, row, written } = await mount();
-    panel.tab = 'about';
+    panel.tab = 'preferences';
     await panel.updateComplete;
     row('House settings')!.click();
     await panel.updateComplete;
@@ -880,7 +930,13 @@ describe('the settings panel', () => {
       new File([JSON.stringify(exported)], 'fluvy-settings.json'),
     );
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(handle.settings().look).toEqual({ palette: 'volt', shape: 'round', pills: 'soft' });
+    expect(handle.settings().look).toEqual({
+      palette: 'volt',
+      shape: 'round',
+      pills: 'soft',
+      tabs: TABS_DEFAULTS,
+      chrome: CHROME_DEFAULTS,
+    });
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().language).toBe('es');
     expect(saved.at(-1)?.config).toEqual({
@@ -921,10 +977,21 @@ describe('the settings panel', () => {
 
   it('ends a look tried on the whole app when the panel closes', async () => {
     const { panel, root, previews } = await mount();
-    const toggle = root.querySelector<HTMLElement>('.fv-switch, [role="switch"]');
+    // the preview's switch: "Try it on the whole app"
+    const toggle = root.querySelector<HTMLElement>(
+      '.pn-card--preview :is(.fv-switch, [role="switch"])',
+    );
     toggle?.click();
     await panel.updateComplete;
-    expect(previews.at(-1)).toEqual({ look: { palette: 'linen', shape: 'soft', pills: 'round' } });
+    expect(previews.at(-1)).toEqual({
+      look: {
+        palette: 'linen',
+        shape: 'soft',
+        pills: 'round',
+        tabs: TABS_DEFAULTS,
+        chrome: CHROME_DEFAULTS,
+      },
+    });
     panel.remove();
     expect(previews.at(-1)).toBeNull();
   });

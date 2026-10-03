@@ -12,14 +12,28 @@ import {
   type ShapeName,
 } from '@fluvy/tokens/runtime';
 
+import { CHROME_DEFAULTS, TABS_DEFAULTS, type Chrome, type ViewTabs } from './tabs.js';
+
 export { paletteKey };
 
-/** What a user picks: a palette (a preset's name or a custom one), a shape, and how round the pills are. */
+/**
+ * What a user picks: a palette (a preset's name or a custom one), a shape, how round the pills are, and how the
+ * dashboards' view tabs and the corner of every page look (absent: the defaults). Neither is a token: `lookKey`
+ * leaves them out.
+ */
 export interface Look {
   readonly palette: PaletteChoice;
   readonly shape: ShapeName;
   readonly pills: PillName;
+  readonly tabs?: ViewTabs;
+  readonly chrome?: Chrome;
 }
+
+/** A look's tabs, the defaults when it names none. */
+export const tabsOf = (look: Look): ViewTabs => look.tabs ?? TABS_DEFAULTS;
+
+/** A look's corner (the sidebar's head, the hairlines, the header's surface), the defaults when it names none. */
+export const chromeOf = (look: Look): Chrome => look.chrome ?? CHROME_DEFAULTS;
 
 const palettes = new Map<string, Palette>();
 

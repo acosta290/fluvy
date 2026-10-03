@@ -2,7 +2,7 @@ import { wordsIn, type HomeAssistant } from '@fluvy/core';
 import { gridExportPositive } from './energy-sign.js';
 import { HomeRegistry } from './home-registry.js';
 import { findEnergyRoles } from './energy-roles.js';
-import { helloCard, tabsCard } from './layout.js';
+import { HELLO_HEIGHT, helloCard, TABS_HEIGHT, tabsCard } from './layout.js';
 import type { Template } from './templates.js';
 import type {
   EnergyPrefs,
@@ -25,8 +25,8 @@ export const withCards = (sections: readonly Section[]): Section[] =>
   sections.filter((section) => section.cards.length > 0);
 
 /**
- * The template's frame: the greeting and the tabs first in the first section (the tabs only when there is more
- * than one; a wall opens with neither), then empty sections up to the template's columns.
+ * The template's frame: the greeting first in the first section, the views as chips under it when the dashboard
+ * asks for them (and has more than one; a wall opens with neither), then empty sections up to the template's columns.
  */
 export function framed(
   view: View,
@@ -39,7 +39,7 @@ export function framed(
     template.header === 'hello'
       ? [
           helloCard(ctx.weather, ctx.home.me),
-          ...(tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
+          ...(ctx.greetingTabs && tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
         ]
       : [];
   const [first, ...rest] = view.sections;
@@ -97,6 +97,8 @@ export async function buildContext(
       ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
     },
     areas: config.areas,
+    greetingTabs: config.greeting_tabs === 'show',
+    header: HELLO_HEIGHT + (config.greeting_tabs === 'show' ? TABS_HEIGHT : 0),
   };
   return ctx;
 }

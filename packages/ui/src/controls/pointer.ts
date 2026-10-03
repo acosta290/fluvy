@@ -1,3 +1,5 @@
+import { zoomOf } from './zoom.js';
+
 /**
  * Pointer tracking shared by the ruler and the dial. Pointer Events (not a gesture library): no
  * 10 px dead zone, pointer capture, coalesced moves. Scroll keeps working: the control declares
@@ -5,8 +7,10 @@
  * moved along the control's own axis.
  */
 export interface DragSample {
+  /** Where the pointer is, in viewport pixels (what a `getBoundingClientRect()` compares with). */
   readonly x: number;
   readonly y: number;
+  /** How far it has travelled since the press, in the target's OWN pixels: a zoomed control moves by its own length. */
   readonly dx: number;
   readonly dy: number;
   readonly event: PointerEvent;
@@ -26,13 +30,14 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
   let id = -1;
   let ox = 0;
   let oy = 0;
+  let zoom = 1;
   let moved = false;
 
   const sample = (event: PointerEvent): DragSample => ({
     x: event.clientX,
     y: event.clientY,
-    dx: event.clientX - ox,
-    dy: event.clientY - oy,
+    dx: (event.clientX - ox) / zoom,
+    dy: (event.clientY - oy) / zoom,
     event,
   });
 
@@ -40,6 +45,7 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
     if (id !== -1 || (event.pointerType === 'mouse' && event.button !== 0)) return;
     ox = event.clientX;
     oy = event.clientY;
+    zoom = zoomOf(target); // read once: the size cannot change under a finger
     moved = false;
     if (!callbacks.start(sample(event))) return;
     id = event.pointerId;

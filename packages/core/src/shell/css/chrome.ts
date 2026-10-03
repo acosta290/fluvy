@@ -1,3 +1,4 @@
+import { HA_LOGO_URL } from '../../icons/ha-logo.js';
 import { mask } from './shared.js';
 
 /*
@@ -122,6 +123,18 @@ export const sidebarCss = [
   'ha-list-item-button .item-text { font-weight: 500; letter-spacing: 0; }',
   '.title { font-weight: 600; letter-spacing: -0.01em; }',
 ].join('\n');
+
+/**
+ * Home Assistant's logo in the sidebar's head, in place of its menu glyph (the corner as Fluvy's screenshots draw it):
+ * the house in Home Assistant's blue on the menu button, which still opens and closes the sidebar; the name at 16.
+ */
+export const sidebarLogoCss = [
+  `.menu ha-icon-button { --icon-primary-color: transparent; background: ${HA_LOGO_URL} center / 24px 24px no-repeat; }`,
+  '.title { font-size: 16px; letter-spacing: 0.01em; }',
+].join('\n');
+
+/** No hairline under the sidebar's head (the header loses its own with the same choice: `fluvy-flat` on `hui-root`). */
+export const sidebarFlatCss = '.menu { border-bottom-color: transparent; }';
 
 /**
  * The sidebar's icons (an icon choice of the house's): our glyphs on Home Assistant's own panels, the

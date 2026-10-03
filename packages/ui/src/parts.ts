@@ -214,6 +214,8 @@ export interface OptionItem {
   readonly glyph?: IconRef | string;
   readonly tone?: Tone;
   readonly active?: boolean;
+  /** What it stands for cannot be read: the Unavailable surface (the dashed hairline, the off ink), no tap. */
+  readonly unavailable?: boolean;
 }
 
 /** Up to three tiles share a row; four make a 2 × 2; more wrap in threes — a tile never gets too narrow for its value. */
@@ -243,13 +245,17 @@ export function optionGrid(
   };
 }
 
-/** Option tiles: glyph top-left, label, value; active = tone fill only. They share the column in equal cells and every row is full. */
+/**
+ * Option tiles: glyph top-left, label, value; active = tone fill only. They share the column in equal cells and
+ * every row is full. `compact`: the 64 tile without its glyph row — the label over the value (`height` is then 64).
+ */
 export function options(
   items: readonly OptionItem[],
   onSelect: ((key: string) => void) | null,
   gap = 4,
   height = 84,
   columns = optionColumns(items.length),
+  compact = false,
 ): TemplateResult {
   const stat = onSelect === null;
   const grid = optionGrid(items.length, columns);
@@ -258,9 +264,11 @@ export function options(
     style="grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr));gap:${gap}px"
   >
     ${items.map((o, index) => {
-      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
-      const body = html`<span class="fv-option__glyph">${icon(o.glyph)}</span
-        ><span class="fv-option__label" data-name=${o.name ? '' : nothing}>${o.label}</span
+      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
+      const body = html`${compact ? nothing : html`<span class="fv-option__glyph">${icon(o.glyph)}</span>`}<span
+          class="fv-option__label"
+          data-name=${o.name ? '' : nothing}
+          >${o.label}</span
         ><span class="fv-option__value">${o.value ?? ''}</span>`;
       // a minimum, not a height: a tile whose value takes two lines grows, and its row grows with it
       const style = `min-height:${height}px${grid.spans[index] === 1 ? '' : `;grid-column:span ${grid.spans[index]}`}`;
@@ -271,7 +279,8 @@ export function options(
             data-target
             style=${style}
             aria-pressed=${o.active ? 'true' : 'false'}
-            @click=${() => onSelect(o.key)}
+            aria-disabled=${o.unavailable ? 'true' : nothing}
+            @click=${o.unavailable ? nothing : () => onSelect(o.key)}
           >
             ${body}
           </button>`;
@@ -398,7 +407,8 @@ export function button(
 }
 
 export interface ListRowOptions {
-  readonly icon?: IconRef | string | undefined;
+  /** `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. */
+  readonly icon?: IconRef | string | null | undefined;
   readonly tone?: Tone;
   readonly title: string;
   /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
@@ -456,14 +466,14 @@ export function listRow(o: ListRowOptions): TemplateResult {
               >`
             : nothing;
   return html`<div
-    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''}"
+    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''}"
     data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
     tabindex=${o.onTap ? 0 : nothing}
     @click=${o.onTap ?? nothing}
     @keydown=${activateKey(o.onTap)}
   >
-    <span class="fv-ico fv-ico--${o.tone ?? 'neutral'}" data-icon>${icon(o.icon)}</span>
+    ${rowIcon(o.icon, o.tone)}
     <span class="fv-row__text"
       ><span class="fv-row__title" data-name=${o.name ? '' : nothing}>${o.title}</span
       >${o.sub && !o.compact ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}</span
@@ -471,6 +481,15 @@ export function listRow(o: ListRowOptions): TemplateResult {
     ${tail}
   </div>`;
 }
+
+/** A row's circle in its tone; none at all for `null` (the row has given its room to the name). */
+const rowIcon = (
+  ref: IconRef | string | null | undefined,
+  tone: Tone | undefined,
+): TemplateResult | typeof nothing =>
+  ref === null
+    ? nothing
+    : html`<span class="fv-ico fv-ico--${tone ?? 'neutral'}" data-icon>${icon(ref)}</span>`;
 
 /** The language's empty state: a 44 ring with a glyph over one secondary line, centred in a 120 panel. */
 export function emptyState(ref: IconRef | string, text: string, hint = ''): TemplateResult {
@@ -482,7 +501,8 @@ export function emptyState(ref: IconRef | string, text: string, hint = ''): Temp
 }
 
 export interface BarRowOptions {
-  readonly icon?: IconRef | string | undefined;
+  /** `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. */
+  readonly icon?: IconRef | string | null | undefined;
   readonly tone?: Tone;
   readonly title: string;
   /** The title is a name (a device's, a plant's): it may end in an ellipsis in a narrow column, as names do. */
@@ -495,7 +515,11 @@ export interface BarRowOptions {
   /** The bar's colour: a tone, or `ink` (a destination's, no colour of its own). */
   readonly barTone?: Tone | 'ink';
   readonly valueTone?: 'warning' | '';
+  /** What it measures cannot be read: the row fades, its circle the dashed ring (`tone: 'off'`). */
+  readonly unavailable?: boolean;
   readonly onTap?: (() => void) | undefined;
+  /** The 48 row: a 40 circle, the title and the value on one line (no sub), the bar 4 under the title. */
+  readonly compact?: boolean;
 }
 
 /** Enter / Space on an element that plays a button (`role="button"`), ignoring keys bubbling up from a control inside it. */
@@ -512,32 +536,35 @@ export const activateKey =
     }
   };
 
-/** 76 px row with a 4 px bar under the text (plants, strings, batteries, meters). */
+/** 76 px row with a 4 px bar under the text (plants, strings, batteries, meters); 48 compact, the title alone over the bar. */
 export function barRow(o: BarRowOptions): TemplateResult {
   const pct = Number.isFinite(o.fraction)
     ? Math.round(Math.min(1, Math.max(0, o.fraction)) * 100)
     : 0;
   return html`<div
-    class="fv-row fv-row--bar ${o.onTap ? 'fv-row--tap' : ''}"
+    class="fv-row fv-row--bar ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''}"
     data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
     tabindex=${o.onTap ? 0 : nothing}
     @click=${o.onTap ?? nothing}
     @keydown=${activateKey(o.onTap)}
   >
-    <span class="fv-ico fv-ico--${o.tone ?? 'neutral'}" data-icon>${icon(o.icon)}</span>
+    ${rowIcon(o.icon, o.tone)}
     <span class="fv-row__text"
       ><span class="fv-row__title" data-name=${o.name ? '' : nothing}>${o.title}</span
-      >${o.sub ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}<span class="fv-bar"
-        ><span
-          class="fv-bar__fill fv-bar--${o.barTone ?? o.tone ?? 'neutral'}"
-          data-measure="value"
-          style="width:${pct}%"
-        ></span></span
-    ></span>
-    <span class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''}"
+      >${o.sub && !o.compact ? html`<span class="fv-row__sub">${o.sub}</span>` : nothing}</span
+    >
+    <span
+      class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${wordsClass(o.value)}"
       >${o.value ?? ''}</span
     >
+    <span class="fv-bar"
+      ><span
+        class="fv-bar__fill fv-bar--${o.barTone ?? o.tone ?? 'neutral'}"
+        data-measure="value"
+        style="width:${pct}%"
+      ></span
+    ></span>
   </div>`;
 }
 

@@ -16,7 +16,15 @@ import {
   sidebarCardCss,
   sidebarCss as automationSidebarCss,
 } from './css/automation.js';
-import { drawerCss, frameCss, sidebarCss, sidebarIconsCss } from './css/chrome.js';
+import { FLAT_ATTRIBUTE, SIDEBAR_LOGO_ATTRIBUTE } from '../look/tabs.js';
+import {
+  drawerCss,
+  frameCss,
+  sidebarCss,
+  sidebarFlatCss,
+  sidebarIconsCss,
+  sidebarLogoCss,
+} from './css/chrome.js';
 import {
   cardEditCss,
   editBarCss,
@@ -80,6 +88,8 @@ import {
 } from './css/more-info.js';
 import { headerBarCss, notificationItemCss, notificationsCss } from './css/notifications.js';
 import { pageCss } from './css/page.js';
+import { viewTabsCss } from './css/tabs.js';
+import { deviceZoomCss } from './css/zoom.js';
 import { wallDashboardCss, wallDrawerCss, wallPageCss } from './css/wall.js';
 import {
   dateRangeNavCss,
@@ -187,9 +197,12 @@ export interface ShellSheet {
   /**
    * A choice the house can turn off: `icons`, our icons in Home Assistant's own menus (the sidebar's glyphs,
    * Settings' icon circles) — off, the sheet stays empty and Home Assistant draws its own. `wall`: the sheet fills
-   * only while `<html>` carries the wall attribute, and then whatever the theme.
+   * only while `<html>` carries the wall attribute, and then whatever the theme. `always`: filled whatever the theme,
+   * every rule hanging on a mark of ours (a dashboard that wears the look while Home Assistant wears another theme).
    */
-  readonly choice?: 'icons' | 'wall';
+  readonly choice?: 'icons' | 'wall' | 'always';
+  /** An attribute of `<html>`: the sheet fills only while it is there (and the sheet's own rule holds), a house's choice. */
+  readonly when?: string;
 }
 
 /** Every touch of the shell. Adding a Home Assistant component is one line here plus its CSS in `css/`. */
@@ -200,6 +213,9 @@ export const SHEETS: readonly ShellSheet[] = [
   { id: 'drawer', target: 'ha-drawer', css: drawerCss, probe: '.sidebar-shell' },
   { id: 'sidebar', target: 'ha-sidebar', css: sidebarCss, probe: 'ha-list-item-button' },
   { id: 'sidebar-icons', target: 'ha-sidebar', css: sidebarIconsCss, choice: 'icons' },
+  // the corner, as the house chose it: Home Assistant's logo in the sidebar's head, no hairline under it
+  { id: 'sidebar-logo', target: 'ha-sidebar', css: sidebarLogoCss, when: SIDEBAR_LOGO_ATTRIBUTE },
+  { id: 'sidebar-flat', target: 'ha-sidebar', css: sidebarFlatCss, when: FLAT_ATTRIBUTE },
   { id: 'subpage', target: 'hass-subpage', css: subpageCss, probe: '.main-title' },
   { id: 'tabs-subpage', target: 'hass-tabs-subpage', css: tabsSubpageCss, probe: '.toolbar' },
   { id: 'tab', target: 'ha-tab', css: tabCss },
@@ -211,6 +227,10 @@ export const SHEETS: readonly ShellSheet[] = [
     probe: '.title',
   },
   { id: 'dashboard-root', target: 'hui-root', css: `${subpageCss}\n${editBarCss}` },
+  // the view tabs as the house chose them, on the dashboards that wear the look (marked by look/tabs.ts)
+  { id: 'view-tabs', target: 'hui-root', css: viewTabsCss, probe: '.toolbar', choice: 'always' },
+  // the size this device reads its dashboards at, on the view alone (`look/zoom.ts` keeps the variable on <html>)
+  { id: 'device-zoom', target: 'hui-root', css: deviceZoomCss, probe: '#view', choice: 'always' },
   // a wall panel: no chrome (fills on `<html fluvy-wall>` alone)
   { id: 'wall:page', target: 'document', css: wallPageCss, choice: 'wall' },
   {

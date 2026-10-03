@@ -41,7 +41,6 @@ const PANEL = [
   ['wall-night', 'wall&state=wall,night'],
   ['preferences', 'preferences'],
   ['preferences-menu', 'preferences&state=menu'],
-  ['about', 'about'],
 ];
 
 /** The pages to measure: `{ name, query, frame }`, one report per page and width. */

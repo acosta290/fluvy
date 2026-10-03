@@ -14,6 +14,14 @@ import {
 } from '@fluvy/tokens/runtime';
 import { THEME_NAME } from '@fluvy/tokens/config';
 import type { Look } from '../look/css.js';
+import {
+  CHROME_DEFAULTS,
+  parseChrome,
+  parseTabs,
+  TABS_DEFAULTS,
+  type Chrome,
+  type ViewTabs,
+} from '../look/tabs.js';
 import { isCardLanguage, type CardLanguage } from '../i18n/languages.js';
 
 /**
@@ -77,6 +85,10 @@ export interface HouseSettings {
   readonly palette: PaletteChoice;
   readonly shape: ShapeName;
   readonly pills: PillName;
+  /** How the dashboards that wear the look draw their view tabs. */
+  readonly tabs: ViewTabs;
+  /** The corner of every page: the sidebar's head, the hairlines, the header's surface. */
+  readonly chrome: Chrome;
   readonly scope: Scope;
   /** Dashboards (url paths) that wear the look in the `dashboards` scope; empty: every `fluvy-…` dashboard. */
   readonly dashboards: readonly string[];
@@ -100,6 +112,8 @@ export interface PersonalSettings {
   readonly palette?: PaletteChoice;
   readonly shape?: ShapeName;
   readonly pills?: PillName;
+  readonly tabs?: ViewTabs;
+  readonly chrome?: Chrome;
   readonly language: CardLanguage;
   readonly motion: Motion;
   readonly haptics: boolean;
@@ -131,6 +145,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   palette: DEFAULT_PALETTE,
   shape: DEFAULT_SHAPE,
   pills: DEFAULT_PILL,
+  tabs: TABS_DEFAULTS,
+  chrome: CHROME_DEFAULTS,
   scope: 'dashboards',
   dashboards: [],
   frame: true,
@@ -222,6 +238,8 @@ export function parseHouse(raw: unknown): HouseSettings {
     palette: parsePalette(value['palette']) ?? d.palette,
     shape: isShapeName(value['shape']) ? value['shape'] : d.shape,
     pills: isPillName(value['pills']) ? value['pills'] : d.pills,
+    tabs: parseTabs(value['tabs']) ?? d.tabs,
+    chrome: parseChrome(value['chrome']) ?? d.chrome,
     scope: oneOf(value['scope'], ['dashboards', 'everywhere'] as const) ? value['scope'] : d.scope,
     dashboards: Array.isArray(value['dashboards'])
       ? value['dashboards'].filter((path): path is string => typeof path === 'string')
@@ -239,11 +257,15 @@ export function parsePersonal(raw: unknown): PersonalSettings {
   const value = isRecord(raw) ? raw : {};
   const d = PERSONAL_DEFAULTS;
   const palette = parsePalette(value['palette']);
+  const tabs = parseTabs(value['tabs']);
+  const chrome = parseChrome(value['chrome']);
   return {
     version: SETTINGS_VERSION,
     ...(palette ? { palette } : {}),
     ...(isShapeName(value['shape']) ? { shape: value['shape'] } : {}),
     ...(isPillName(value['pills']) ? { pills: value['pills'] } : {}),
+    ...(tabs ? { tabs } : {}),
+    ...(chrome ? { chrome } : {}),
     language: isCardLanguage(value['language']) ? value['language'] : d.language,
     motion: oneOf(value['motion'], ['system', 'reduced'] as const) ? value['motion'] : d.motion,
     haptics: typeof value['haptics'] === 'boolean' ? value['haptics'] : d.haptics,
@@ -263,6 +285,8 @@ export function resolveSettings(
       palette: personal.palette ?? house.palette,
       shape: own ? (personal.shape ?? house.shape) : house.shape,
       pills: own ? (personal.pills ?? house.pills) : house.pills,
+      tabs: own ? (personal.tabs ?? house.tabs) : house.tabs,
+      chrome: own ? (personal.chrome ?? house.chrome) : house.chrome,
     },
     personalLook: own,
     scope: house.scope,

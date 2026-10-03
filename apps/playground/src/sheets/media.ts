@@ -1,8 +1,11 @@
 import { FluvyMediaCard } from '../../../../packages/cards/src/media/media-card.js';
+import { FluvyNowPlayingCard } from '../../../../packages/cards/src/now-playing/now-playing-card.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-media-card'))
   customElements.define('fluvy-media-card', FluvyMediaCard);
+if (!customElements.get('fluvy-now-playing-card'))
+  customElements.define('fluvy-now-playing-card', FluvyNowPlayingCard);
 
 /* supported_features bits of media_player */
 const PAUSE = 1,
@@ -46,6 +49,11 @@ const TV =
   SELECT_SOURCE |
   PLAY |
   STOP;
+/** A radio that cannot be switched off from here, and has no mute: the volume round opens its dialog. */
+const RADIO = PAUSE | PLAY | VOLUME_SET | VOLUME_STEP | PREVIOUS | NEXT;
+
+/** The mini row and the strip asked for every round there is. */
+const EVERY_CONTROL = ['power', 'previous', 'play', 'next', 'volume'];
 
 /** Album art as a data URI: the playground never reaches out to the network. */
 const art = (from: string, to: string): string =>
@@ -148,6 +156,27 @@ export const sheet: SheetSpec = {
       },
     ],
     [
+      'media_player.tv_off',
+      'off',
+      {
+        friendly_name: 'Bedroom TV',
+        volume_level: 0.2,
+        source_list: ['TV', 'Netflix', 'HDMI 1'],
+        supported_features: TV,
+      },
+    ],
+    [
+      'media_player.radio',
+      'playing',
+      {
+        friendly_name: 'Garage radio',
+        media_title: 'Radio Paradise',
+        media_artist: 'Mellow mix',
+        volume_level: 0.5,
+        supported_features: RADIO,
+      },
+    ],
+    [
       'media_player.nulls',
       'playing',
       {
@@ -221,6 +250,106 @@ export const sheet: SheetSpec = {
     {
       title: 'Hero',
       cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.kitchen', variant: 'hero' }],
+    },
+    // the power round: beside "…" on a television that is on, "Turn on" in the primary fill on one that is off
+    // (no dead transport under it), and none at all on a radio that cannot be switched from here
+    {
+      title: 'Power · TV',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.tv', show_source: false }],
+    },
+    {
+      title: 'Power · off',
+      cards: [{ type: 'custom:fluvy-media-card', entity: 'media_player.tv_off' }],
+    },
+    {
+      title: 'No power',
+      cards: [
+        { type: 'custom:fluvy-media-card', entity: 'media_player.radio' },
+        { type: 'custom:fluvy-media-card', entity: 'media_player.tv', show_power: false },
+      ],
+    },
+    // every control asked for: the row holds three beside the title at a phone column, in the order named;
+    // the volume round mutes where it can (the TV) and opens the dialog where it cannot (the radio)
+    {
+      title: 'Mini · controls',
+      cards: [
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.tv',
+          variant: 'mini',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.tv_off',
+          variant: 'mini',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.radio',
+          variant: 'mini',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.tv',
+          variant: 'mini',
+          controls: ['play', 'volume'],
+        },
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.radio',
+          variant: 'mini',
+          controls: ['play', 'volume'],
+        },
+      ],
+    },
+    // half a column cannot hold a round beside the title's 96: the row is the art and the words
+    {
+      title: 'Mini · half',
+      cards: [
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.tv',
+          variant: 'mini',
+          controls: EVERY_CONTROL,
+          cols: 6,
+        },
+        {
+          type: 'custom:fluvy-media-card',
+          entity: 'media_player.kitchen',
+          variant: 'mini',
+          cols: 6,
+        },
+      ],
+    },
+    // the strip with power on its left edge; off, the power round is the one live round
+    {
+      title: 'Now playing · power',
+      cards: [
+        {
+          type: 'custom:fluvy-now-playing-card',
+          entity: 'media_player.tv',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-now-playing-card',
+          entity: 'media_player.tv_off',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-now-playing-card',
+          entity: 'media_player.radio',
+          controls: EVERY_CONTROL,
+        },
+        {
+          type: 'custom:fluvy-now-playing-card',
+          entity: 'media_player.tv',
+          controls: EVERY_CONTROL,
+          cols: 6,
+        },
+      ],
     },
   ],
 };

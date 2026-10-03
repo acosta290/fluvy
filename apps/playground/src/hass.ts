@@ -1,10 +1,12 @@
-import type { HassEntity, HomeAssistant } from '@fluvy/core';
+import type { HassEntity, HomeAssistant, UnsubscribeFunc } from '@fluvy/core';
 import { simulate } from '@fluvy/demo-home/simulate';
+import { renderTemplate } from './template.js';
 
 /**
  * A small, honest stand-in for Home Assistant's `hass`: a state store, service calls that change it
- * after a network-like delay, the formatting hooks, and canned answers for the WebSocket reads the
- * cards make (history, statistics, forecasts, to-do items, calendar events).
+ * after a network-like delay, the formatting hooks, canned answers for the WebSocket reads the
+ * cards make (history, statistics, forecasts, to-do items, calendar events), and templates rendered
+ * live by a small Jinja of its own.
  */
 
 /** A sample of Home Assistant's Spanish state words (its `es` translations), by domain, device class and state. */
@@ -50,6 +52,14 @@ export type StateSeed = [
 
 type Listener = (hass: HomeAssistant) => void;
 
+/** A `render_template` subscription: rendered once, then again on every state change, sent when it changed. */
+interface Watch {
+  readonly message: Record<string, unknown>;
+  readonly callback: (event: unknown) => void;
+  /** The last event sent, as JSON: Home Assistant only speaks when the result changes. */
+  last?: string;
+}
+
 const LATENCY = 140;
 
 export interface MockOptions {
@@ -61,6 +71,8 @@ export interface MockOptions {
   readonly history?: Record<string, readonly number[]>;
   readonly ws?: Record<string, (message: Record<string, unknown>) => unknown>;
   readonly api?: (method: string, path: string) => unknown;
+  /** How long Home Assistant takes to answer a template, in ms (30: before the first paint; a real socket 50–200). */
+  readonly templateDelay?: number;
 }
 
 const iso = (date: Date): string => date.toISOString();
@@ -74,6 +86,8 @@ export function createHass(
   calls: Array<{ domain: string; service: string; data: unknown; target: unknown }>;
   /** Changes a state (and attributes) at once and tells every listener, as a recorder update would. */
   set: (id: string, state?: string, attributes?: Record<string, unknown>) => void;
+  /** How many `render_template` subscriptions are open: what the cards hold, and must let go of. */
+  templates: () => number;
 } {
   const now = options.now ?? new Date();
   const states: Record<string, HassEntity> = {};
@@ -91,6 +105,38 @@ export function createHass(
   const listeners = new Set<Listener>();
   const calls: Array<{ domain: string; service: string; data: unknown; target: unknown }> = [];
   let current: HomeAssistant;
+
+  const watches = new Set<Watch>();
+  /** Renders one watched template against the states as they are now; an error is an event too, as Home Assistant reports it. */
+  const answer = (watch: Watch): void => {
+    if (!watches.has(watch)) return;
+    let event: Record<string, unknown>;
+    try {
+      const result = renderTemplate(
+        String(watch.message['template']),
+        states,
+        (watch.message['variables'] as Record<string, unknown> | undefined) ?? {},
+      );
+      event = { result, listeners: { all: false, domains: [], entities: [], time: false } };
+    } catch (error) {
+      event = { error: error instanceof Error ? error.message : String(error), level: 'ERROR' };
+    }
+    const sent = JSON.stringify(event);
+    if (sent === watch.last) return;
+    watch.last = sent;
+    watch.callback(event);
+  };
+  const watch = (
+    message: Record<string, unknown>,
+    callback: (event: unknown) => void,
+  ): UnsubscribeFunc => {
+    const entry: Watch = { message, callback };
+    watches.add(entry);
+    setTimeout(() => answer(entry), options.templateDelay ?? 30);
+    return () => {
+      watches.delete(entry);
+    };
+  };
 
   const set = (
     id: string,
@@ -134,6 +180,8 @@ export function createHass(
           callback: (message: T) => void,
           message: { type: string; [k: string]: unknown },
         ) => {
+          if (message.type === 'render_template')
+            return watch(message, callback as (event: unknown) => void);
           const handler = options.ws?.[message.type];
           if (handler) setTimeout(() => callback(handler(message) as T), 30);
           return () => undefined;
@@ -151,8 +199,7 @@ export function createHass(
             states,
             simulate(states, { domain, service, data, target: { entity_id: ids } }, new Date()),
           );
-          current = build();
-          listeners.forEach((l) => l(current));
+          notify();
         }, LATENCY);
         return undefined;
       },
@@ -204,6 +251,13 @@ export function createHass(
       },
     }) as HomeAssistant;
 
+  /** The states changed: a new `hass` for every listener, and every watched template rendered again. */
+  const notify = (): void => {
+    current = build();
+    listeners.forEach((l) => l(current));
+    watches.forEach(answer);
+  };
+
   current = build();
   return {
     hass: () => current,
@@ -214,8 +268,8 @@ export function createHass(
     calls,
     set: (id, state, attributes) => {
       set(id, state, attributes);
-      current = build();
-      listeners.forEach((l) => l(current));
+      notify();
     },
+    templates: () => watches.size,
   };
 }

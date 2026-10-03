@@ -1,4 +1,5 @@
 import { html, nothing, type TemplateResult } from 'lit';
+import { optionGrid } from '@fluvy/ui';
 import type { TextRuler } from '../shared/fit.js';
 
 /**
@@ -62,6 +63,8 @@ export function energyLegend(
     ...items.map((item) => LEAD + ruler.width('en-legend__name', item.name)),
   );
   const slack = !folded && widest > width / columns;
+  // a folded legend's last row splits the width among its own, as option tiles do (five in three: 2·2·2, then 3·3)
+  const grid = folded ? optionGrid(items.length, columns) : undefined;
   // each item is centred in its column: its edges fall where the column's middle puts them (`data-align`)
   return html`<div
     class="en-legend"
@@ -69,8 +72,8 @@ export function energyLegend(
     style=${
       folded || slack
         ? [
-            folded
-              ? `grid-template-columns:repeat(${columns}, minmax(0, 1fr));grid-auto-flow:row;row-gap:12px`
+            grid
+              ? `grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr));grid-auto-flow:row;row-gap:12px`
               : '',
             slack ? '--en-slack:2px' : '',
           ]
@@ -80,8 +83,11 @@ export function energyLegend(
     }
   >
     ${items.map(
-      (item) =>
-        html`<span class="en-legend__item" data-accent=${item.accent ?? nothing}
+      (item, index) =>
+        html`<span
+          class="en-legend__item"
+          data-accent=${item.accent ?? nothing}
+          style=${grid ? `grid-column:span ${grid.spans[index] ?? 1}` : nothing}
           ><span class="en-legend__name"
             ><i class="en-sq ${item.ink} ${item.square ? `is-${item.square}` : ''}"></i
             ><span class="en-legend__text">${item.name}</span></span

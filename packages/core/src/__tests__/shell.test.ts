@@ -94,7 +94,23 @@ function page() {
     else attributes.delete('fluvy-wall');
     observed?.();
   };
-  return { env, document, input, classes, theme, look, wall, isDisconnected: () => disconnected };
+  /** A house's choice on `<html>` (the corner: `fluvy-sidebar-logo`, `fluvy-flat`). */
+  const mark = (name: string, on: boolean): void => {
+    if (on) attributes.add(name);
+    else attributes.delete(name);
+    observed?.();
+  };
+  return {
+    env,
+    document,
+    input,
+    classes,
+    theme,
+    look,
+    wall,
+    mark,
+    isDisconnected: () => disconnected,
+  };
 }
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
@@ -153,6 +169,52 @@ describe('shell lifecycle', () => {
     expect(wallSheet.css).toBe('');
     expect(pageSheet.css).not.toBe('');
     expect(running.report().sheets.filter((s) => s.id.startsWith('wall:'))).toHaveLength(3);
+  });
+
+  it('fills the view tabs’ sheet whatever the theme: its rules hang on our marks alone', async () => {
+    const { env, classes, theme } = page();
+    classes.set('hui-root', { elementStyles: [] });
+    running = startShell(env)!;
+    await settle();
+    const spec = SHEETS.find((s) => s.id === 'view-tabs')!;
+    expect(spec.choice).toBe('always');
+    const root = classes.get('hui-root');
+    const filled = (): boolean =>
+      (root?.elementStyles ?? []).some((sheet) => (sheet as FakeSheet).css === spec.css);
+    expect(filled()).toBe(true);
+    theme(true);
+    expect(filled()).toBe(true);
+    theme(false);
+    expect(filled()).toBe(true);
+    // every rule is scoped to a mark (the tabs, the corner): a root without one is Home Assistant's
+    for (const rule of spec.css.split('\n'))
+      expect(rule).toMatch(/^:host\(\[fluvy-(tab|flat|header-page|actions-menu)/);
+  });
+
+  it('fills a choice’s sheets only while the house makes it, and only with the theme', async () => {
+    const { env, classes, theme, mark } = page();
+    classes.set('ha-sidebar', { elementStyles: [] });
+    running = startShell(env)!;
+    await settle();
+    const css = (id: string): string => SHEETS.find((s) => s.id === id)!.css;
+    const filled = (id: string): boolean =>
+      (classes.get('ha-sidebar')?.elementStyles ?? []).some(
+        (sheet) => (sheet as FakeSheet).css === css(id),
+      );
+    theme(true);
+    expect(filled('sidebar-logo')).toBe(false);
+    mark('fluvy-sidebar-logo', true);
+    expect(filled('sidebar-logo')).toBe(true);
+    expect(filled('sidebar-flat')).toBe(false);
+    mark('fluvy-flat', true);
+    expect(filled('sidebar-flat')).toBe(true);
+    // another theme takes the sidebar back whatever the choices
+    theme(false);
+    expect(filled('sidebar-logo')).toBe(false);
+    theme(true);
+    mark('fluvy-sidebar-logo', false);
+    expect(filled('sidebar-logo')).toBe(false);
+    expect(filled('sidebar-flat')).toBe(true);
   });
 
   it('fills the sheets when the theme arrives and empties them when it leaves', async () => {

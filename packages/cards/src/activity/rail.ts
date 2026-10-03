@@ -1,5 +1,5 @@
 /** The Activity page's scroll ↔ time map: the anchors, the glide that settles a row under the pinned hour, the foot. */
-import { spring } from '@fluvy/ui';
+import { spring, zoomOf } from '@fluvy/ui';
 
 import type { ActivityModel } from './model.js';
 import { type Anchor, CHASES, HOUR, HOUR_HEAD } from './shared.js';
@@ -19,11 +19,13 @@ export function listTop(page: FluvyActivity): number {
   const list = page.renderRoot.querySelector<HTMLElement>('.av-list');
   const scroller = page.scroller;
   if (!list || !scroller) return 0;
-  return Math.max(
-    0,
-    Math.round(
-      list.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop,
-    ),
+  return Math.max(0, Math.round(offsetIn(scroller, list) + scroller.scrollTop));
+}
+
+/** How far down the scroller `node` sits (its top edge, or `edge`), in the scroller's own pixels. */
+function offsetIn(scroller: HTMLElement, node: Element, edge: 'top' | 'bottom' = 'top'): number {
+  return (
+    (node.getBoundingClientRect()[edge] - scroller.getBoundingClientRect().top) / zoomOf(scroller)
   );
 }
 
@@ -41,7 +43,9 @@ export function measureMap(page: FluvyActivity): Anchor[] {
   const top = topTime(page);
   const anchors: Anchor[] = [{ s: 0, t: top }];
   if (!scroller) return anchors;
-  const base = scroller.getBoundingClientRect().top - scroller.scrollTop;
+  // every height below in the scroller's own pixels, from the top of its content
+  const at = (node: Element, edge: 'top' | 'bottom' = 'top'): number =>
+    offsetIn(scroller, node, edge) + scroller.scrollTop;
   const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
   const push = (s: number, t: number, row = false): void => {
     const last = anchors[anchors.length - 1]!;
@@ -54,16 +58,15 @@ export function measureMap(page: FluvyActivity): Anchor[] {
     if (!section?.rows.length) return;
     // an hour's place in the flow: its section's top (under the day's name when a period crosses midnight) — never
     // its header's rect, which is sticky and reports the top of the screen while pinned
-    const rect = node.getBoundingClientRect();
     const dayhead = node.querySelector<HTMLElement>('.av-dayhead');
-    const head = (dayhead ? dayhead.getBoundingClientRect().bottom : rect.top) - base;
+    const head = dayhead ? at(dayhead, 'bottom') : at(node);
     push(head, Math.min(section.start + HOUR, top));
     const skipped = node.hasAttribute('data-skipped');
     const rows = skipped ? [] : [...node.querySelectorAll<HTMLElement>('.av-row')];
-    const slot = (rect.bottom - base - (head + HOUR_HEAD)) / section.rows.length;
+    const slot = (at(node, 'bottom') - (head + HOUR_HEAD)) / section.rows.length;
     section.rows.forEach((row, k) => {
       const exact = rows[k];
-      const y = exact ? exact.getBoundingClientRect().top - base : head + HOUR_HEAD + k * slot;
+      const y = exact ? at(exact) : head + HOUR_HEAD + k * slot;
       push(y - HOUR_HEAD, row.when * 1000, true);
     });
   });
@@ -179,12 +182,7 @@ export function follow(page: FluvyActivity): void {
 /** The scroll that puts a row under the pinned hour header. */
 export function rowScroll(page: FluvyActivity, node: HTMLElement): number {
   const scroller = page.scroller!;
-  return (
-    node.getBoundingClientRect().top -
-    scroller.getBoundingClientRect().top +
-    scroller.scrollTop -
-    HOUR_HEAD
-  );
+  return offsetIn(scroller, node) + scroller.scrollTop - HOUR_HEAD;
 }
 
 /** The row at or before moment `t`, and the scroll that settles it (its hour is laid out first if it was not). */

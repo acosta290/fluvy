@@ -717,5 +717,338 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-humidity-card', entity: 'sensor.so_not_there' },
       ],
     },
+
+    /* ---- the compact variants (1.5): bars at 48 a row, stat tiles at 64 three a row ---- */
+    {
+      title: 'Bars · compact',
+      cards: [
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Strings & inverter',
+          subtitle: 'SolarEdge · 3 strings',
+          icon: 'sliders',
+          tone: 'solar',
+          variant: 'compact',
+          badge_warn: '{count} shaded',
+          rows: [
+            { entity: 'sensor.so_string_east', icon: 'sun', tone: 'solar', max: 1800, low: 500 },
+            { entity: 'sensor.so_string_south', icon: 'sun', tone: 'solar', max: 2.42, low: 0.5 },
+            { entity: 'sensor.so_string_west', icon: 'sun', tone: 'solar', max: 1360, low: 500 },
+            { entity: 'sensor.so_inverter_power', icon: 'bolt', tone: 'solar', plain: true },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Bars · compact · desktop',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Plants',
+          subtitle: '4 plants · Living room',
+          icon: 'leaf',
+          variant: 'compact',
+          badge_warn: '{count} dry',
+          rows: [
+            'sensor.so_plant_monstera',
+            'sensor.so_plant_ficus',
+            'sensor.so_plant_basil',
+            'sensor.so_plant_olive',
+          ],
+        },
+      ],
+    },
+    // two compact cards side by side: the rows give their circles to the names, which read whole; the values and
+    // the bars never give way
+    {
+      title: 'Bars · compact · half a column',
+      width: 360, // the sheet's own width: two 172 cards (a half column shrinks with a narrower frame)
+      cards: [
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Plants',
+          icon: 'leaf',
+          variant: 'compact',
+          rows: ['sensor.so_plant_monstera', 'sensor.so_plant_ficus', 'sensor.so_plant_basil'],
+          cols: 6,
+        },
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Batteries',
+          icon: 'battery',
+          variant: 'compact',
+          rows: [
+            'sensor.so_remote_battery',
+            'sensor.so_door_battery',
+            'sensor.so_thermostat_battery',
+          ],
+          cols: 6,
+        },
+      ],
+    },
+    {
+      title: 'Bars · compact · a dead row, an unknown one, a missing one, many rows',
+      cards: [
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Strings',
+          subtitle: 'No ceilings set',
+          icon: 'sliders',
+          tone: 'solar',
+          variant: 'compact',
+          rows: [
+            { entity: 'sensor.so_string_east', icon: 'sun', tone: 'solar' },
+            { entity: 'sensor.so_string_south', icon: 'sun', tone: 'solar' },
+            { entity: 'sensor.so_string_north', icon: 'sun', tone: 'solar' },
+            { entity: 'sensor.so_solar_power_unknown', name: 'Carport', icon: 'sun' },
+            { entity: 'sensor.so_not_there', name: 'Shed' },
+            { entity: 'sensor.so_inverter_power', icon: 'bolt', tone: 'solar', plain: true },
+          ],
+        },
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Levels',
+          icon: 'sliders',
+          variant: 'compact',
+          rows: [
+            'sensor.so_remote_battery',
+            'sensor.so_door_battery',
+            'sensor.so_thermostat_battery',
+            'sensor.so_battery_level',
+            'sensor.so_plant_monstera',
+            'sensor.so_plant_ficus',
+            'sensor.so_plant_basil',
+            'sensor.so_plant_olive',
+          ],
+        },
+      ],
+    },
+    // a plain row is 60 among the 76 bar rows, and the card knows it
+    {
+      title: 'Bars · plain rows among bar rows',
+      cards: [
+        {
+          type: 'custom:fluvy-bars-card',
+          title: 'Inverter',
+          subtitle: 'Strings and totals',
+          icon: 'bolt',
+          tone: 'solar',
+          rows: [
+            {
+              entity: 'sensor.so_string_east',
+              icon: 'sun',
+              tone: 'solar',
+              sub: '6 panels',
+              max: 1800,
+            },
+            {
+              entity: 'sensor.so_inverter_power',
+              icon: 'bolt',
+              plain: true,
+              sub_entity: 'sensor.so_inverter_note',
+            },
+            {
+              entity: 'sensor.so_string_south',
+              icon: 'sun',
+              tone: 'solar',
+              sub: '8 panels',
+              max: 2.42,
+            },
+            {
+              entity: 'sensor.so_grid_export',
+              icon: 'bolt',
+              tone: 'grid',
+              plain: true,
+              sub: 'To the grid',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Tiles · compact',
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Total capacity',
+          subtitle: '18 panels · 5.4 kWp',
+          icon: 'bolt',
+          tone: 'solar',
+          variant: 'compact',
+          badge_entity: 'sensor.so_health',
+          badge_label: 'Health',
+          tiles: [
+            {
+              entity: 'sensor.so_solar_power',
+              name: 'Solar output',
+              tone: 'solar',
+              highlight: true,
+            },
+            { entity: 'sensor.so_grid_export', name: 'Grid export' },
+            { entity: 'sensor.so_self_use', name: 'Self-use' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+            { entity: 'sensor.so_co2', name: 'CO₂ avoided' },
+          ],
+          rows: [
+            { entity: 'sensor.so_energy_today', name: 'Produced today', icon: 'sun' },
+            { entity: 'sensor.so_co2', icon: 'leaf', secondary: 'This month' },
+          ],
+        },
+      ],
+    },
+    // auto: three a row, four as two by two, two when a label would not fit three
+    {
+      title: 'Tiles · compact · three, four, long labels',
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          variant: 'compact',
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output', highlight: true },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+          ],
+        },
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          variant: 'compact',
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output' },
+            { entity: 'sensor.so_grid_export', name: 'Export' },
+            { entity: 'sensor.so_self_use', name: 'Self-use' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+          ],
+        },
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'House',
+          variant: 'compact',
+          tiles: [
+            { entity: 'sensor.so_washer_power', name: 'Washing machine' },
+            { entity: 'sensor.so_long_name_power', name: 'Car charger in the garage' },
+            { entity: 'sensor.so_heat_pump_power', name: 'Heat pump' },
+          ],
+        },
+      ],
+    },
+    // columns asked for: three with names that end in an ellipsis, two with a wider last tile, three full tiles
+    {
+      title: 'Tiles · compact · columns asked for',
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'House',
+          variant: 'compact',
+          columns: 3,
+          tiles: [
+            { entity: 'sensor.so_washer_power', name: 'Washing machine' },
+            { entity: 'sensor.so_long_name_power', name: 'Car charger in the garage' },
+            { entity: 'sensor.so_heat_pump_power', name: 'Heat pump' },
+          ],
+        },
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          variant: 'compact',
+          columns: 2,
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output' },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+          ],
+        },
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          columns: 3,
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output', icon: 'sun', highlight: true },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery', icon: 'battery' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Tiles · compact · desktop',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Total capacity',
+          subtitle: '18 panels · 5.4 kWp',
+          icon: 'bolt',
+          tone: 'solar',
+          variant: 'compact',
+          tiles: [
+            {
+              entity: 'sensor.so_solar_power',
+              name: 'Solar output',
+              tone: 'solar',
+              highlight: true,
+            },
+            { entity: 'sensor.so_grid_export', name: 'Grid export' },
+            { entity: 'sensor.so_self_use', name: 'Self-use' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+          ],
+          rows: [{ entity: 'sensor.so_co2', icon: 'leaf' }],
+        },
+      ],
+    },
+    {
+      title: 'Tiles · compact · half a column',
+      width: 360, // the sheet's own width: two 172 cards (a half column shrinks with a narrower frame)
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          variant: 'compact',
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output', highlight: true },
+            { entity: 'sensor.so_battery_level', name: 'Battery' },
+            { entity: 'sensor.so_battery_charge', name: 'To battery' },
+          ],
+          cols: 6,
+        },
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Battery',
+          variant: 'compact',
+          tiles: ['sensor.so_battery_level', 'sensor.so_battery_power_dead'],
+          rows: ['sensor.so_battery_power_dead'],
+          cols: 6,
+        },
+      ],
+    },
+    {
+      title: 'Tiles · compact · readout, a dead tile, a missing tile, dead rows',
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          entity: 'sensor.so_energy_today',
+          name: 'Produced today',
+          title: 'Solar',
+          subtitle: 'South roof',
+          icon: 'sun',
+          tone: 'solar',
+          variant: 'compact',
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output', highlight: true },
+            { entity: 'sensor.so_battery_power_dead', name: 'Battery power' },
+            { entity: 'sensor.so_not_there', name: 'Carport' },
+          ],
+          rows: [
+            'sensor.so_battery_power_dead',
+            { entity: 'sensor.so_solar_power_unknown', name: 'Carport' },
+            { entity: 'sensor.so_not_there', name: 'Shed' },
+          ],
+        },
+      ],
+    },
   ],
 };

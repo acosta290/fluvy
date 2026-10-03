@@ -84,7 +84,7 @@ export const energyHeight = (config: LovelaceCardConfig): number =>
   config['variant'] === 'compact'
     ? 240
     : config['variant'] === 'sources'
-      ? 468
+      ? 520 // the legend's five items (three origins, charged, exported) fold into two rows
       : 320 + (listLength(config, ['legend']) ? 60 : 0);
 
 /**

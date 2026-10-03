@@ -26,6 +26,21 @@ lists such as `modes: [off, heat, cool]`), and at least one other layout through
 default and are content-sized on request (`preset_style`, `fan_style`, `suction_style: chips`). Cards that list rows
 (lock, alarm, camera, bars, stat tiles) take a `rows` list edited with Fluvy's own rows editor.
 
+## Templates in row text
+
+In every list of rows (entities, lock, alarm, camera, bars, stat tiles, actions, helpers) a row's `secondary` may be
+a Home Assistant template instead of a keyword or words of its own: anything with `{{ … }}` or `{% … %}` is rendered
+by Home Assistant and kept live, so the line changes as the entities it reads do. The row's own entity is `entity` in
+the template and the person looking at the dashboard `user`; a template that fails renders an empty line, never its
+own text. The editor's field takes a keyword or a template alike.
+
+```yaml
+type: custom:fluvy-entities-card
+rows:
+  - entity: climate.living
+    secondary: "{{ state_attr('climate.living', 'current_temperature') }} °C · {{ states('sensor.humidity') }} %"
+```
+
 <!-- generated:cards -->
 
 ## Everyday
@@ -38,15 +53,15 @@ default and are content-sized on request (`preset_style`, `fan_style`, `suction_
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `variant` (`dial`, `compact`, `ruler`), `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`) | — |
 | **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
-| **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume` | — |
-| **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume` | — |
+| **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
+| **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Cover** | `custom:fluvy-cover-card` | Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favourites. | `subtitle`, `tilt_angle`, `variant` (`full`, `compact`), `favorites_style` (`full`, `chips`), `show_tilt`, `show_favorites`, `favorites`, `favorites` (a list: `name`, `position`, `tilt`) | — |
 | **Fan** | `custom:fluvy-fan-card` | Speed ruler with steps, oscillation, direction and presets. | `subtitle`, `variant` (`full`, `compact`), `show_presets`, `preset_style` (`full`, `chips`), `show_oscillation`, `show_direction` | — |
 | **Vacuum** | `custom:fluvy-vacuum-card` | Robot vacuum or mower: battery, start · stop · dock · locate, suction. | `subtitle`, `variant` (`full`, `compact`), `show_battery`, `battery_entity`, `area_entity`, `duration_entity`, `remaining_entity`, `suction_style` (`full`, `chips`) | — |
 | **Lock** | `custom:fluvy-lock-card` | Slide to unlock, never one accidental tap; codes, jammed state, related rows. | `subtitle`, `variant` (`full`, `compact`), `show_rows`, `rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
 | **Alarm** | `custom:fluvy-alarm-card` | Arm modes as tiles and the keypad sheet for codes. | `subtitle`, `variant` (`tiles`, `compact`), `modes` (`disarm`, `arm_home`, `arm_away`, `arm_night`, `arm_vacation`, `arm_custom_bypass`), `show_rows`, `rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
 | **Camera** | `custom:fluvy-camera-card` | A still that refreshes itself, with live and time pills; tap for the stream. | `subtitle`, `refresh`, `show_rows`, `rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `sub` → `subtitle` |
-| **Weather** | `custom:fluvy-weather-card` | Condition, temperature, feels-like, wind and the daily or hourly forecast. | `forecast` (`daily`, `hourly`, `both`), `days`, `show_forecast` | `forecast` → `show_forecast` |
+| **Weather** | `custom:fluvy-weather-card` | Condition, temperature, feels-like, wind and the daily or hourly forecast. | `variant` (`full`, `compact`), `forecast` (`daily`, `hourly`, `both`), `days`, `show_forecast` | `forecast` → `show_forecast` |
 | **Sensor** | `custom:fluvy-sensor-card` | A sensor with its 24 h curve, trend, min, max and average. | `subtitle`, `variant` (`chart`, `tile`), `hours`, `show_stats` | — |
 | **Readouts** | `custom:fluvy-readouts-card` | Up to four values side by side with their trends. | `hours`, `variant` (`grid`, `row`), `rows` (a list: `entity`, `name`, `tap_action`) | `entities` → `rows` |
 | **People** | `custom:fluvy-people-card` | Who is home: avatars, zones and times. | `title`, `variant` (`grid`, `rows`), `map_path`, `show_zone`, `show_time` | `layout` → `variant` |
@@ -94,9 +109,9 @@ default and are content-sized on request (`preset_style`, `fan_style`, `suction_
 | **Energy devices** | `custom:fluvy-energy-devices-card` | Where the energy goes, device by device on one scale: nested circuits, and what no meter measures. | `title`, `subtitle`, `total`, `sort`, `max_rows`, `rows` (a list: `entity`, `name`, `icon`, `parent`, `cost_entity`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
 | **Water & gas** | `custom:fluvy-meters-card` | Today’s water and gas against a typical day, what flows right now, and a leak sensor or a valve beside them. | `title`, `subtitle`, `variant` (`full`, `rows`), `meters` (a list: `entity`, `rate`, `typical`, `name`, `icon`, `kind`), `rows` (a list: `entity`, `name`, `icon`) | — |
 | **Gauge** | `custom:fluvy-gauge-card` | A ring gauge for any numeric sensor with min, max and average, or centred on zero for a meter that runs both ways. | `subtitle`, `variant` (`ring`, `bar`, `signed`), `min`, `max`, `max_entity`, `label`, `badge`, `hours` | — |
-| **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of read-only stat tiles. | `title`, `subtitle`, `tiles`, `badge_entity`, `badge_label`, `rows`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
+| **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of read-only stat tiles. | `title`, `subtitle`, `variant` (`full`, `compact`), `columns` (`auto`, `2`, `3`), `tiles`, `badge_entity`, `badge_label`, `rows`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
 | **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
-| **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `rows`, `badge_ok`, `badge_warn`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`) | — |
+| **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `rows`, `badge_ok`, `badge_warn`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`) | — |
 | **Distribution** | `custom:fluvy-distribution-card` | One stacked bar and a legend: who draws what. | `title`, `subtitle`, `max_rows`, `variant` (`stack`, `rows`), `total`, `entities` (a list: `entity`, `name`, `tone`, `color`) | — |
 | **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |
 

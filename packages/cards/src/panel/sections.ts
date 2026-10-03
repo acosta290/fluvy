@@ -4,6 +4,7 @@ import {
   clock12,
   copyText,
   dayPeriods,
+  DEVICE_ZOOMS,
   type HomeAssistant,
   HOUSE_DEFAULTS,
   LANGUAGES,
@@ -12,6 +13,15 @@ import {
   parsePalette,
   resolveLanguage,
   type Scope,
+  chromeOf,
+  HA_LOGO_URL,
+  TAB_CONTENTS,
+  TAB_STYLES,
+  type TabContent,
+  type TabStyle,
+  tabsOf,
+  type Chrome,
+  type ViewTabs,
   WALL_AFTER,
   WALL_NIGHT_DIM,
   type WallSettings,
@@ -394,6 +404,197 @@ const PILL_GLYPH: Readonly<Record<PillName, string>> = {
   soft: 'pillSoft',
   crisp: 'pillCrisp',
 };
+const TAB_GLYPH: Readonly<Record<TabStyle, string>> = {
+  fluvy: 'tabsText',
+  pills: 'tabsPills',
+  ha: 'ha',
+  hidden: 'tabsNone',
+};
+
+/**
+ * The view tabs as a dashboard will show them: its name and three views in the chosen style, on the page's colour
+ * (Home Assistant's own style is drawn as it draws it: the icons, a line under the open one).
+ */
+/** The header's actions at its end, as the corner card chose them: Home Assistant's four, or its one menu as "…". */
+const mockActions = (chrome: Chrome): TemplateResult =>
+  chrome.actions === 'menu'
+    ? html`${icon('dots')}`
+    : html`${(['plus', 'search', 'chat', 'pencil'] as const).map((glyph) => icon(glyph))}`;
+
+function tabsMock(ctx: PanelContext, tabs: ViewTabs, chrome: Chrome): TemplateResult {
+  const views = [
+    ['strategy.home', 'home'],
+    ['strategy.rooms', 'rooms'],
+    ['strategy.lights', 'bulb'],
+  ] as const;
+  const ha = tabs.style === 'ha';
+  const names = !ha && tabs.content !== 'icons';
+  const glyphs = ha || tabs.content !== 'names';
+  const title = tabs.title;
+  return html`<div class="pn-tabsmock pn-tabsmock--${tabs.style}" aria-hidden="true">
+    ${
+      title
+        ? html`<span class="pn-tabsmock__title" data-name
+            >${ctx.hass.config?.location_name || 'Home'}</span
+          >`
+        : nothing
+    }
+    ${
+      tabs.style === 'hidden'
+        ? nothing
+        : html`<span class="pn-tabsmock__tabs" data-scroll-row
+            >${views.map(
+              ([key, glyph], index) =>
+                html`<span class="pn-tabsmock__tab ${index === 0 ? 'is-active' : ''}"
+                  >${glyphs ? icon(glyph) : nothing}${
+                    names ? html`<span>${localize(ctx.hass, key)}</span>` : nothing
+                  }</span
+                >`,
+            )}</span
+          >`
+    }
+    ${
+      // hidden tabs leave the bar its name and its actions: the preview shows what the bar then holds
+      tabs.style === 'hidden'
+        ? html`<span class="pn-tabsmock__actions">${mockActions(chrome)}</span>`
+        : nothing
+    }
+  </div>`;
+}
+
+/** The dashboards' view tabs: a style, what each tab shows and the dashboard's name before them. */
+function tabsCard(ctx: PanelContext): TemplateResult {
+  const tabs = tabsOf(ctx.draft);
+  const set = (patch: Partial<ViewTabs>): void => ctx.setDraft({ tabs: { ...tabs, ...patch } });
+  const ours = tabs.style === 'fluvy' || tabs.style === 'pills';
+  return html`<section class="fv-card pn-card">
+    ${head({ icon: TAB_GLYPH[tabs.style], title: ctx.t('tabs.title'), sub: ctx.t('tabs.sub') })}
+    ${tabsMock(ctx, tabs, chromeOf(ctx.draft))}
+    ${options(
+      TAB_STYLES.map((style) => ({
+        key: style,
+        glyph: TAB_GLYPH[style],
+        label: ctx.t(`tabs.${style}_sub` as StringKey),
+        value: ctx.t(`tabs.${style}` as StringKey),
+        active: tabs.style === style,
+      })),
+      (key) => set({ style: key as TabStyle }),
+      gap(ctx),
+    )}
+    ${
+      // what each tab shows is Fluvy's to draw: its own styles only
+      ours
+        ? chips(
+            TAB_CONTENTS.map((content) => ({
+              key: content,
+              label: ctx.t(`tabs.content_${content}` as StringKey),
+              active: tabs.content === content,
+            })),
+            (key) => set({ content: key as TabContent }),
+            'pn-tabs-content',
+            true,
+          )
+        : nothing
+    }
+    <div class="pn-rows">
+      ${listRow({
+        icon: 'text',
+        title: ctx.t('tabs.name'),
+        sub: ctx.t('tabs.name_sub'),
+        trailing: 'switch',
+        on: tabs.title,
+        onToggle: (on) => set({ title: on }),
+      })}
+    </div>
+    ${
+      ours
+        ? nothing
+        : html`<p class="pn-hint">
+            ${ctx.t(tabs.style === 'hidden' ? 'tabs.hidden_hint' : 'tabs.ha_hint')}
+          </p>`
+    }
+  </section>`;
+}
+
+/**
+ * The corner as every page will show it: the sidebar's head beside the header, each on its fill, over the top of the
+ * sidebar and of the page (so a hairline under them reads as one).
+ */
+function cornerMock(chrome: Chrome, title: string): TemplateResult {
+  return html`<div
+    class="pn-corner ${chrome.dividers ? 'has-lines' : ''} ${chrome.header === 'page' ? 'is-page' : ''}"
+    aria-hidden="true"
+  >
+    <span class="pn-corner__side">
+      <span class="pn-corner__row">
+        ${
+          chrome.logo
+            ? html`<span class="pn-corner__logo" style="background-image:${HA_LOGO_URL}"></span>`
+            : html`<span class="pn-corner__menu">${icon('menu')}</span>`
+        }
+        <span class="pn-corner__name">Home Assistant</span>
+      </span>
+    </span>
+    <span class="pn-corner__head">
+      <span class="pn-corner__row pn-corner__actions">
+        <span class="pn-corner__title" data-name>${title}</span>
+        ${mockActions(chrome)}
+      </span>
+    </span>
+  </div>`;
+}
+
+/** The corner of every page: Home Assistant's logo in the sidebar, the hairlines, the header's surface. */
+function cornerCard(ctx: PanelContext): TemplateResult {
+  const chrome = chromeOf(ctx.draft);
+  const set = (patch: Partial<Chrome>): void => ctx.setDraft({ chrome: { ...chrome, ...patch } });
+  return html`<section class="fv-card pn-card">
+    ${head({ icon: 'frame', title: ctx.t('chrome.title'), sub: ctx.t('chrome.sub') })}
+    ${cornerMock(chrome, String(ctx.hass.config?.location_name || 'Home'))}
+    <div class="pn-rows">
+      ${listRow({
+        icon: 'home',
+        title: ctx.t('chrome.logo'),
+        sub: ctx.t('chrome.logo_sub'),
+        trailing: 'switch',
+        on: chrome.logo,
+        onToggle: (on) => set({ logo: on }),
+      })}
+      ${listRow({
+        icon: 'minus',
+        title: ctx.t('chrome.dividers'),
+        sub: ctx.t('chrome.dividers_sub'),
+        trailing: 'switch',
+        on: chrome.dividers,
+        onToggle: (on) => set({ dividers: on }),
+      })}
+      ${listRow({
+        icon: 'palette',
+        title: ctx.t('chrome.page'),
+        sub: ctx.t('chrome.page_sub'),
+        trailing: 'switch',
+        on: chrome.header === 'page',
+        onToggle: (on) => set({ header: on ? 'page' : 'bar' }),
+      })}
+      ${listRow({
+        icon: 'dots',
+        title: ctx.t('chrome.actions'),
+        sub: ctx.t('chrome.actions_sub'),
+        trailing: 'switch',
+        on: chrome.actions === 'menu',
+        onToggle: (on) => set({ actions: on ? 'menu' : 'buttons' }),
+      })}
+    </div>
+    ${
+      // the sidebar is Home Assistant's own until the look covers the whole app
+      ctx.shown.scope === 'everywhere'
+        ? nothing
+        : html`<p class="pn-hint">
+            ${ctx.t('chrome.hint', { scope: ctx.t('tab.scope'), everywhere: ctx.t('scope.everywhere') })}
+          </p>`
+    }
+  </section>`;
+}
 
 /** The look on the real cards, and the switch that tries it on the whole app. */
 export function appearancePreview(ctx: PanelContext, preview: TemplateResult): TemplateResult {
@@ -553,6 +754,7 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
         gap(ctx),
       )}
     </section>
+    ${tabsCard(ctx)} ${cornerCard(ctx)}
     ${
       settings.personalLook
         ? html`<section class="fv-card pn-card pn-rows">
@@ -568,6 +770,8 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
                     palette: undefined,
                     shape: undefined,
                     pills: undefined,
+                    tabs: undefined,
+                    chrome: undefined,
                   }),
                 ),
             })}
@@ -979,7 +1183,7 @@ export function wall(ctx: PanelContext): TemplateResult {
   const { shown, admin, hass } = ctx;
   const settings = shown.wall;
   const edit = (patch: Partial<WallSettings>): void => ctx.editWall(patch);
-  const isWall = ctx.deviceEdit ?? ctx.device.wall;
+  const isWall = ctx.deviceEdit.wall ?? ctx.device.wall;
   const first =
     settings.dashboards[0] ?? ctx.dashboards.find((d) => d.template)?.urlPath ?? 'fluvy-auto';
   const address = `${location.origin}/${first}?kiosk`;
@@ -1006,9 +1210,10 @@ export function wall(ctx: PanelContext): TemplateResult {
           sub: ctx.t('wall.use_sub'),
           trailing: 'switch',
           on: isWall,
-          onToggle: (on) => ctx.editDevice(on),
+          onToggle: (on) => ctx.editDevice({ wall: on }),
         })}
       </div>
+      ${deviceSize(ctx)}
       <p class="fv-label pn-label">${ctx.t('wall.address')}</p>
       <div class="pn-address">
         <span class="pn-address__url" data-name>${address}</span>
@@ -1196,53 +1401,80 @@ export function wallPreview(ctx: PanelContext, preview: TemplateResult): Templat
   </section>`;
 }
 
+/* ---------- this device ---------- */
+
+/**
+ * The size this device reads its dashboards at, as chips (90 · 100 · 110 · 125 · 150 %): its own memory, saved from
+ * the apply bar like the rest and shown at once — the view alone grows, never Home Assistant's chrome. On the
+ * Preferences tab for everyone, and on the Wall tab's device card, where a tablet is set up.
+ */
+function deviceSize(ctx: PanelContext): TemplateResult {
+  const zoom = ctx.deviceEdit.zoom ?? ctx.device.zoom;
+  return html`<p class="fv-label pn-label">${ctx.t('pref.size')}</p>
+    ${choice(
+      DEVICE_ZOOMS.map((size) => ({
+        key: String(size),
+        label: ctx.t('wall.percent', { count: size }),
+        active: size === zoom,
+      })),
+      (key) => ctx.editDevice({ zoom: Number(key) as (typeof DEVICE_ZOOMS)[number] }),
+      // five sizes on one line where the column holds them ("100 %" + the pill's sides), else three over two
+      ctx.wide ? 5 : 3,
+    )}`;
+}
+
 /* ---------- preferences ---------- */
 
 export function preferences(ctx: PanelContext): TemplateResult {
   const { shown } = ctx;
   return html`<section class="fv-card pn-card">
-    ${head({ icon: 'person', title: ctx.t('pref.title'), sub: ctx.t('pref.sub') })}
-    <p class="fv-label pn-label">${ctx.t('pref.language')}</p>
-    <fluvy-select
-      .label=${ctx.t('pref.language')}
-      .value=${shown.language}
-      .options=${languageOptions(ctx)}
-      @fluvy-change=${(event: CustomEvent<SelectChangeDetail>) =>
-        ctx.editPersonal({ language: event.detail.value as CardLanguage })}
-    ></fluvy-select>
-    <div class="pn-rows">
-      ${listRow({
-        icon: 'motion',
-        title: ctx.t('pref.reduce'),
-        sub: ctx.t('pref.reduce_sub'),
-        trailing: 'switch',
-        on: shown.motion === 'reduced',
-        onToggle: (on) => ctx.editPersonal({ motion: on ? 'reduced' : 'system' }),
-      })}
-      ${listRow({
-        icon: 'haptic',
-        title: ctx.t('pref.haptics'),
-        sub: ctx.t('pref.haptics_sub'),
-        trailing: 'switch',
-        on: shown.haptics,
-        onToggle: (on) => ctx.editPersonal({ haptics: on }),
-      })}
-      ${listRow({
-        icon: 'clock',
-        title: ctx.t('pref.activity_card'),
-        sub: ctx.t('pref.activity_card_sub'),
-        trailing: 'switch',
-        on: shown.activityCard,
-        onToggle: (on) => ctx.editPersonal({ activityCard: on }),
-      })}
-      ${listRow({
-        icon: 'globe',
-        title: ctx.t('pref.translate'),
-        sub: ctx.t('pref.translate_sub'),
-        onTap: () => window.open(TRANSLATING_URL, '_blank', 'noopener'),
-      })}
-    </div>
-  </section>`;
+      ${head({ icon: 'person', title: ctx.t('pref.title'), sub: ctx.t('pref.sub') })}
+      <p class="fv-label pn-label">${ctx.t('pref.language')}</p>
+      <fluvy-select
+        .label=${ctx.t('pref.language')}
+        .value=${shown.language}
+        .options=${languageOptions(ctx)}
+        @fluvy-change=${(event: CustomEvent<SelectChangeDetail>) =>
+          ctx.editPersonal({ language: event.detail.value as CardLanguage })}
+      ></fluvy-select>
+      <div class="pn-rows">
+        ${listRow({
+          icon: 'motion',
+          title: ctx.t('pref.reduce'),
+          sub: ctx.t('pref.reduce_sub'),
+          trailing: 'switch',
+          on: shown.motion === 'reduced',
+          onToggle: (on) => ctx.editPersonal({ motion: on ? 'reduced' : 'system' }),
+        })}
+        ${listRow({
+          icon: 'haptic',
+          title: ctx.t('pref.haptics'),
+          sub: ctx.t('pref.haptics_sub'),
+          trailing: 'switch',
+          on: shown.haptics,
+          onToggle: (on) => ctx.editPersonal({ haptics: on }),
+        })}
+        ${listRow({
+          icon: 'clock',
+          title: ctx.t('pref.activity_card'),
+          sub: ctx.t('pref.activity_card_sub'),
+          trailing: 'switch',
+          on: shown.activityCard,
+          onToggle: (on) => ctx.editPersonal({ activityCard: on }),
+        })}
+        ${listRow({
+          icon: 'globe',
+          title: ctx.t('pref.translate'),
+          sub: ctx.t('pref.translate_sub'),
+          onTap: () => window.open(TRANSLATING_URL, '_blank', 'noopener'),
+        })}
+      </div>
+    </section>
+    <section class="fv-card pn-card">
+      ${head({ icon: 'frame', title: ctx.t('pref.device'), sub: ctx.t('pref.device_sub') })}
+      ${deviceSize(ctx)}
+      <p class="pn-hint pn-hint--after">${ctx.t('pref.size_sub')}</p>
+    </section>`;
 }
 
 /** Automatic (with the language it resolves to now), then Fluvy's languages by their own names, English beside. */
@@ -1272,6 +1504,11 @@ export interface AboutActions {
   readonly resetArmed: boolean;
 }
 
+/**
+ * Fluvy itself, the last card of Preferences: its version, the look in use and how much of Home Assistant it styles
+ * here, its settings as a file (export; an administrator imports), and an administrator's way back to the house's
+ * defaults in two taps.
+ */
 export function about(ctx: PanelContext, info: AboutInfo, actions: AboutActions): TemplateResult {
   const defaults = lookTitle(
     { palette: HOUSE_DEFAULTS.palette, shape: HOUSE_DEFAULTS.shape, pills: HOUSE_DEFAULTS.pills },
@@ -1279,47 +1516,45 @@ export function about(ctx: PanelContext, info: AboutInfo, actions: AboutActions)
   );
   const armed = actions.resetArmed;
   return html`<section class="fv-card pn-card">
-      ${head({ icon: 'info', title: ctx.t('about.title'), sub: ctx.t('about.version', { version: info.version || '—' }) })}
-      <div class="pn-rows">
-        ${listRow({ icon: 'palette', title: ctx.t('about.look'), trailing: 'value', value: lookTitle(ctx.settings.look, ctx.t, knownPalettes(ctx.saved)) })}
-        ${listRow({
-          icon: 'ha',
-          title: ctx.t('about.shell'),
-          sub: info.shell
-            ? ctx.t('about.shell_value', { styled: info.shell.styled, total: info.shell.total })
-            : ctx.t('about.shell_off'),
-          trailing: 'none',
-        })}
-      </div>
-    </section>
-    <section class="fv-card pn-card">
-      ${head({ icon: 'download', title: ctx.t('about.file'), sub: ctx.t('about.file_sub') })}
-      <div class="pn-pair" data-fill-row>
-        <button class="fv-btn fv-btn--quiet" data-target @click=${actions.exportSettings}>
-          ${ctx.t('about.export')}
-        </button>
-        ${
-          ctx.admin
-            ? html`<label class="fv-btn fv-btn--quiet pn-file" data-target>
-                ${ctx.t('about.import')}
-                <input
-                  type="file"
-                  accept="application/json"
-                  @change=${(event: Event) => {
-                    const input = event.target as HTMLInputElement;
-                    const file = input.files?.[0];
-                    if (file) actions.importSettings(file);
-                    input.value = '';
-                  }}
-                />
-              </label>`
-            : nothing
-        }
-      </div>
-    </section>
+    ${head({ icon: 'info', title: ctx.t('about.title'), sub: ctx.t('about.version', { version: info.version || '—' }) })}
+    <div class="pn-rows">
+      ${listRow({ icon: 'palette', title: ctx.t('about.look'), trailing: 'value', value: lookTitle(ctx.settings.look, ctx.t, knownPalettes(ctx.saved)) })}
+      ${listRow({
+        icon: 'ha',
+        title: ctx.t('about.shell'),
+        sub: info.shell
+          ? ctx.t('about.shell_value', { styled: info.shell.styled, total: info.shell.total })
+          : ctx.t('about.shell_off'),
+        trailing: 'none',
+      })}
+    </div>
+    <p class="fv-label pn-label">${ctx.t('about.file')}</p>
+    <div class="pn-pair" data-fill-row>
+      <button class="fv-btn fv-btn--quiet" data-target @click=${actions.exportSettings}>
+        ${ctx.t('about.export')}
+      </button>
+      ${
+        ctx.admin
+          ? html`<label class="fv-btn fv-btn--quiet pn-file" data-target>
+              ${ctx.t('about.import')}
+              <input
+                type="file"
+                accept="application/json"
+                @change=${(event: Event) => {
+                  const input = event.target as HTMLInputElement;
+                  const file = input.files?.[0];
+                  if (file) actions.importSettings(file);
+                  input.value = '';
+                }}
+              />
+            </label>`
+          : nothing
+      }
+    </div>
+    <p class="pn-hint pn-hint--after">${ctx.t('about.file_sub')}</p>
     ${
       ctx.admin
-        ? html`<section class="fv-card pn-card pn-rows ${armed ? 'is-armed' : ''}">
+        ? html`<div class="pn-rows pn-reset ${armed ? 'is-armed' : ''}">
             ${listRow({
               icon: 'auto',
               tone: armed ? 'warning' : 'neutral',
@@ -1331,7 +1566,8 @@ export function about(ctx: PanelContext, info: AboutInfo, actions: AboutActions)
               button: ctx.t('about.reset_btn'),
               onTap: actions.reset,
             })}
-          </section>`
+          </div>`
         : nothing
-    }`;
+    }
+  </section>`;
 }

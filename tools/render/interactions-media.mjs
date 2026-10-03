@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Interaction tests for the media cards: media (transport, seek, volume, sources, the clock) and now-playing — the
- * seek bar and volume send once per gesture, bursts coalesce.
+ * Interaction tests for the media cards: media (transport, seek, volume, sources, the power round, the mini row's
+ * controls, the clock) and now-playing (its strip, with power) — the seek bar and volume send once per gesture,
+ * bursts coalesce.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   node interactions-media.mjs            (expects the playground dev server on :5183)
  */
@@ -144,10 +145,195 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   );
   await reset(page);
 
+  /* ---------- the power round, the mini row's controls, the strip: first what they show ---------- */
+  const powerOf = (locator) =>
+    locator.locator('.fv-round[aria-label="Turn off"], .fv-round[aria-label="Turn on"]');
+  const labels = async (card) =>
+    card
+      .locator('.md-mini__row .fv-round')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
+  const stripLabels = async (card) =>
+    card
+      .locator('.hm-transport .fv-round')
+      .evaluateAll((els) =>
+        els.map((el) => `${el.getAttribute('aria-label')}${el.disabled ? '×' : ''}`),
+      );
+  const kitchen = frame(page, 'Playing').locator('fluvy-media-card');
+  const headPower = kitchen.locator('.md-now .fv-round');
+  check(
+    'media: the head’s trailing round is power on a player that can be switched',
+    (await headPower.count()) === 1 && (await headPower.getAttribute('aria-label')) === 'Turn off',
+    `${await headPower.count()} rounds, "${await headPower.first().getAttribute('aria-label')}"`,
+  );
+  const off = frame(page, 'Power · off').locator('fluvy-media-card');
+  const wake = off.locator('.md-now .fv-round');
+  check(
+    'media: a player that is off offers "Turn on" in the primary fill and no dead transport',
+    (await wake.getAttribute('aria-label')) === 'Turn on' &&
+      (await wake.evaluate((el) => el.classList.contains('fv-round--accent'))) &&
+      (await off.locator('.md-controls').count()) === 0,
+  );
+  const noPower = frame(page, 'No power').locator('fluvy-media-card');
+  check(
+    'media: no power round on a player that cannot be switched, nor with show_power off',
+    (await powerOf(noPower).count()) === 0 &&
+      (await noPower.locator('.md-now .fv-round[aria-label="More"]').count()) === 2,
+  );
+  check(
+    'media: the hero wears the power round in its corner',
+    (await frame(page, 'Hero').locator('.md-hero__power[aria-label="Turn off"]').count()) === 1,
+  );
+  // every control asked for: the row holds three beside the title at 360, in the order named
+  const minis = frame(page, 'Mini · controls').locator('fluvy-media-card');
+  check(
+    'media: the mini row draws what fits in the order asked; next and previous give way before play',
+    (await labels(minis.nth(0))).join() === 'Turn off,Pause,Mute',
+    (await labels(minis.nth(0))).join(),
+  );
+  check(
+    'media: an off mini row keeps the power round (and its volume), never a play round',
+    (await labels(minis.nth(1))).join() === 'Turn on,Mute',
+    (await labels(minis.nth(1))).join(),
+  );
+  check(
+    'media: a mini row of a player without power offers no power round',
+    (await labels(minis.nth(2))).join() === 'Previous,Pause,Volume',
+    (await labels(minis.nth(2))).join(),
+  );
+  check(
+    'media: the volume control mutes where it can, and opens the dialog where it cannot',
+    (await labels(minis.nth(3))).join() === 'Pause,Mute' &&
+      (await labels(minis.nth(4))).join() === 'Pause,Volume',
+    `${await labels(minis.nth(3))} · ${await labels(minis.nth(4))}`,
+  );
+  const halves = frame(page, 'Mini · half').locator('fluvy-media-card');
+  check(
+    'media: half a column lets the art go before the last round, and keeps play',
+    (await labels(halves.nth(0))).join() === 'Pause' &&
+      (await labels(halves.nth(1))).join() === 'Pause' &&
+      (await halves.locator('.md-art-tap, .fv-ico').count()) === 0 &&
+      (await halves.locator('button.md-mini__text').count()) === 2,
+    `${await labels(halves.nth(0))} · ${await labels(halves.nth(1))}`,
+  );
+  const strips = frame(page, 'Now playing · power').locator('fluvy-now-playing-card');
+  check(
+    'now-playing: power on the left edge, the transport centred, volume on the right',
+    (await stripLabels(strips.nth(0))).join() === 'Turn off,Previous,Pause,Next,Volume · 24 %' &&
+      (await strips
+        .nth(0)
+        .locator('.hm-transport__power')
+        .evaluate((el) => el.offsetLeft)) === 0,
+    (await stripLabels(strips.nth(0))).join(),
+  );
+  check(
+    'now-playing: off, the strip is power (in the primary fill) and volume, no dead transport',
+    (await stripLabels(strips.nth(1))).join() === 'Turn on,Volume · 20 %' &&
+      (await strips
+        .nth(1)
+        .locator('.hm-transport__power')
+        .evaluate((el) => el.classList.contains('fv-round--accent'))),
+    (await stripLabels(strips.nth(1))).join(),
+  );
+  check(
+    'now-playing: no power round without support; a half column keeps power and play',
+    (await stripLabels(strips.nth(2))).join() === 'Previous,Pause,Next,Volume · 50 %' &&
+      (await stripLabels(strips.nth(3))).join() === 'Turn off,Pause',
+    `${await stripLabels(strips.nth(2))} · ${await stripLabels(strips.nth(3))}`,
+  );
+
+  /* ---------- then what they do (each tap changes the player the frames share) ---------- */
+  await headPower.click();
+  check(
+    'media: power flips the card to off at once',
+    (await headPower.getAttribute('aria-label')) === 'Turn on' &&
+      (await kitchen.locator('.md-controls').count()) === 0,
+  );
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    '…and sends media_player.turn_off to the player',
+    c.length === 1 &&
+      c[0].s === 'media_player.turn_off' &&
+      c[0].t?.entity_id === 'media_player.kitchen',
+    JSON.stringify(c),
+  );
+  await reset(page);
+  await wake.click();
+  check(
+    'media: waking flips the card at once',
+    (await wake.getAttribute('aria-label')) === 'Turn off',
+  );
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    '…and sends media_player.turn_on to the player',
+    c.length === 1 &&
+      c[0].s === 'media_player.turn_on' &&
+      c[0].t?.entity_id === 'media_player.tv_off',
+    JSON.stringify(c),
+  );
+  await reset(page);
+  await minis.nth(0).locator('.fv-round').nth(1).click(); // pause
+  await minis.nth(0).locator('.fv-round').nth(2).click(); // mute
+  await minis.nth(2).locator('.fv-round').nth(0).click(); // the radio's previous
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    'media: each mini control sends its service to its player',
+    c.map((x) => `${x.s}@${x.t?.entity_id}`).join() ===
+      'media_player.media_play_pause@media_player.tv,media_player.volume_mute@media_player.tv,media_player.media_previous_track@media_player.radio' &&
+      c[1].d.is_volume_muted === true,
+    JSON.stringify(c.map((x) => x.s)),
+  );
+  await reset(page);
+  await halves.nth(0).locator('button.md-mini__text').click();
+  check(
+    'media: where the art has given way, the row’s words open the dialog',
+    (await moreInfo(page)).join() === 'media_player.tv' && (await calls(page)).length === 0,
+  );
+  await reset(page);
+  await minis.nth(4).locator('.fv-round').nth(1).click(); // volume without mute
+  check(
+    'media: the volume round of a player without mute opens its dialog, no service',
+    (await moreInfo(page)).join() === 'media_player.radio' && (await calls(page)).length === 0,
+  );
+  await reset(page);
+  await strips.nth(0).locator('.hm-transport__power').click();
+  check(
+    'now-playing: power flips the strip at once, and the transport goes with it',
+    (await stripLabels(strips.nth(0))).join() === 'Turn on,Volume · muted',
+    (await stripLabels(strips.nth(0))).join(),
+  );
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    '…and sends media_player.turn_off to the player',
+    c.length === 1 && c[0].s === 'media_player.turn_off' && c[0].t?.entity_id === 'media_player.tv',
+    JSON.stringify(c),
+  );
+  await reset(page);
+  // the television is off now: the mini row's power round wakes it, and the row offers its play again
+  await minis.nth(0).locator('.fv-round').first().click();
+  check(
+    'media: the mini row’s power round wakes a player that is off, and the row follows at once',
+    (await labels(minis.nth(0))).join() === 'Turn off,Play,Unmute',
+    (await labels(minis.nth(0))).join(),
+  );
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    '…and sends media_player.turn_on to the player',
+    c.length === 1 && c[0].s === 'media_player.turn_on' && c[0].t?.entity_id === 'media_player.tv',
+    JSON.stringify(c),
+  );
+  await reset(page);
+
   // the position clock: only playing cards tick; a removed card leaves no interval behind
   const before = await page.evaluate(() => window.__intervals());
   await page.evaluate(() => {
-    document.querySelectorAll('fluvy-media-card').forEach((el) => el.remove());
+    document
+      .querySelectorAll('fluvy-media-card, fluvy-now-playing-card')
+      .forEach((el) => el.remove());
   });
   await settle(page, 200);
   const after = await page.evaluate(() => window.__intervals());

@@ -14,6 +14,7 @@ import {
   clamp,
   glyph,
   head,
+  localPoint,
   reducedMotion,
   sheetStyles,
   spring,
@@ -294,7 +295,9 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
   private paint(pos: number): void {
     this.pos = pos;
     const travel = this.travel(pos);
-    if (this.knob) this.knob.style.transform = `translateX(${Math.round(pos * 100) / 100}px)`;
+    // the position as `translate`, as the ruler's knob rides: the lift's `scale` composes after it, so it never
+    // scales the travel (a `transform` would ride ahead of the finger by the lift)
+    if (this.knob) this.knob.style.translate = `${Math.round(pos * 100) / 100}px 0`;
     if (this.hint) this.hint.style.opacity = String(clamp(1 - travel * 1.6, 0, 1));
     const ready = this.dragging && travel >= COMMIT;
     if (ready !== this.ready) {
@@ -323,18 +326,21 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
   private nudge(): void {
     if (reducedMotion() || !this.knob?.animate) return;
     const lean = this.atStart ? 12 : -12;
-    this.knob.animate([{ translate: '0 0' }, { translate: `${lean}px 0` }, { translate: '0 0' }], {
-      duration: 420,
-      easing: 'cubic-bezier(0.2, 0, 0, 1)',
-    });
+    this.knob.animate(
+      [{ transform: 'none' }, { transform: `translateX(${lean}px)` }, { transform: 'none' }],
+      {
+        duration: 420,
+        easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    );
   }
 
   private bind(track: HTMLElement): void {
     this.detach = trackDrag(track, {
       start: (sample) => {
         if (this.frozen) return false;
-        const knobCentre = track.getBoundingClientRect().left + KNOB_BOX / 2 + this.pos;
-        if (Math.abs(sample.x - knobCentre) > GRAB) {
+        // the knob is placed in the track's own pixels: the finger is read in them too (a zoomed view)
+        if (Math.abs(localPoint(track, sample.event).x - (KNOB_BOX / 2 + this.pos)) > GRAB) {
           this.nudge();
           return false;
         }

@@ -33,6 +33,7 @@ import {
   pillWidth,
   reducedMotion,
   sheetStyles,
+  zoomOf,
   type SpringHandle,
 } from '@fluvy/ui';
 import type { FluvyTimeRail, TimeRailDetail } from '@fluvy/ui/time-rail';
@@ -742,12 +743,16 @@ export class FluvyActivity extends LitElement {
     // measured once it has opened (it grows for 300 ms)
     this.later(
       () => {
+        // in the scroller's own pixels (what it scrolls by)
+        const zoom = zoomOf(scroller);
         const box = scroller.getBoundingClientRect();
         const rect = detail.getBoundingClientRect();
         const row = detail.previousElementSibling as HTMLElement | null;
-        const over = rect.bottom + 16 - box.bottom;
+        const over = (rect.bottom - box.bottom) / zoom + 16;
         if (over <= 0) return;
-        const room = row ? row.getBoundingClientRect().top - box.top - HOUR_HEAD - 8 : over;
+        const room = row
+          ? (row.getBoundingClientRect().top - box.top) / zoom - HOUR_HEAD - 8
+          : over;
         glide(this, scroller.scrollTop + Math.min(over, Math.max(0, room)));
       },
       reducedMotion() ? 0 : 320,

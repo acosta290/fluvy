@@ -144,15 +144,27 @@ describe('custom:fluvy-home strategy', () => {
 
   it('puts every card of the library to use in a house that has one of everything', async () => {
     const CATALOGUE = await (await import('../index.js')).catalogue();
-    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, everything());
+    // the views as chips under the greeting too: the chips card is in use
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home', greeting_tabs: 'show' },
+      everything(),
+    );
     const used = new Set(
       views.flatMap((v) => v.sections.flatMap((s) => s.cards.map((c) => c.type))),
     );
     expect(CATALOGUE.map(([tag]) => `custom:${tag}`).filter((type) => !used.has(type))).toEqual([]);
   });
 
-  it('builds a view for each thing the house has, with the greeting and the tabs on every one', async () => {
-    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
+  it('builds a view for each thing the house has, with the greeting (and the tabs, when asked) on every one', async () => {
+    // by default the header's tabs are the way between the views: the greeting stands alone
+    const plain = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
+    for (const v of plain.views)
+      expect(types(v.sections[0]!.cards).slice(0, 2)).not.toContain('chips');
+    expect(types(plain.views[0]!.sections[0]!.cards)[0]).toBe('hello');
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home', greeting_tabs: 'show' },
+      house(),
+    );
     expect(views.filter((v) => !v.subview).map((v) => v.path)).toEqual([
       'home',
       'rooms',
@@ -223,7 +235,7 @@ describe('custom:fluvy-home strategy', () => {
 
   it('adds a Rooms view when the house has two rooms with something in them, and a subview per room', async () => {
     const { views } = await FluvyHomeStrategy.generate(
-      { type: 'custom:fluvy-home' },
+      { type: 'custom:fluvy-home', greeting_tabs: 'show' },
       house(DEMO_ROOMS),
     );
     const rooms = views.find((view) => view.path === 'rooms');

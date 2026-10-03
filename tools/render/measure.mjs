@@ -9,7 +9,7 @@
  *     --out ../../apps/design-lab/out/measure/report.json \
  *     --md  ../../apps/design-lab/out/measure/report.md
  *
- * Also an http page (the playground's real cards, the settings panel: `--page "http://127.0.0.1:5184/?panel=about"`).
+ * Also an http page (the playground's real cards, the settings panel: `--page "http://127.0.0.1:5184/?panel=preferences"`).
  *
  * Exit code 1 when anything is off. Opt a subtree out with `data-measure="skip"`;
  * force an element in with any other `data-measure` value. `data-measure="drawn"` is the one for a drawing (a

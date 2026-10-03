@@ -5,6 +5,7 @@ import { haptic } from '../haptics.js';
 import { spring, type SpringHandle } from '../motion.js';
 import { baseStyles } from '../styles/index.js';
 import { clamp, trackDrag } from './pointer.js';
+import { localPoint } from './zoom.js';
 
 /** A moment picked on the rail: while the finger moves (`done` false) and where it lets go; `key` for the keyboard. */
 export interface TimeRailDetail {
@@ -355,18 +356,18 @@ export class FluvyTimeRail extends LitElement {
       start: (sample) => {
         this.pressType = sample.event.pointerType;
         // a mouse scrubs from anywhere (a click in the track jumps, as in any scrollbar); a finger only from the knob
-        if (sample.event.pointerType !== 'mouse' && !this.nearKnob(sample.y)) return false;
+        if (sample.event.pointerType !== 'mouse' && !this.nearKnob(sample.event)) return false;
         this.scrubbing = true;
         this.tick = Number.NaN;
         this.atEnd = false;
         haptic(this, 'light');
-        this.scrub(sample.y, false);
+        this.scrub(sample.event, false);
         return true;
       },
-      move: (sample) => this.scrub(sample.y, false),
+      move: (sample) => this.scrub(sample.event, false),
       end: (sample) => {
         this.scrubbing = false;
-        this.scrub(sample.y, true);
+        this.scrub(sample.event, true);
       },
     });
     this.addEventListener('click', this.onTap);
@@ -406,8 +407,13 @@ export class FluvyTimeRail extends LitElement {
     return this.end - (clamp(y - INSET, 0, usable) / usable) * span;
   }
 
-  private nearKnob(clientY: number): boolean {
-    return Math.abs(clientY - this.getBoundingClientRect().top - this.knobAt) <= GRAB;
+  /** A pointer's height on the rail, in the rail's own pixels (what `timeAt` and the knob are measured in). */
+  private railY(event: MouseEvent): number {
+    return localPoint(this, event).y;
+  }
+
+  private nearKnob(event: PointerEvent): boolean {
+    return Math.abs(this.railY(event) - this.knobAt) <= GRAB;
   }
 
   /** Each tick of the scale: an hour's (a day's over a long period), newest first. */
@@ -447,8 +453,8 @@ export class FluvyTimeRail extends LitElement {
     this.tick = tick;
   }
 
-  private scrub(clientY: number, done: boolean): void {
-    const value = this.timeAt(clientY - this.getBoundingClientRect().top);
+  private scrub(event: PointerEvent, done: boolean): void {
+    const value = this.timeAt(this.railY(event));
     if (!done) this.feel(value);
     // the knob follows the finger exactly while it moves; the timeline behind it glides
     this.moveKnob(this.y(value), false);
@@ -460,7 +466,7 @@ export class FluvyTimeRail extends LitElement {
   private readonly onTap = (event: MouseEvent): void => {
     if (this.pressType === 'mouse' || this.pressType === '') return;
     this.pressType = '';
-    const value = this.timeAt(event.clientY - this.getBoundingClientRect().top);
+    const value = this.timeAt(this.railY(event));
     haptic(this, 'light');
     this.value = value;
     this.emit({ value, done: true, via: 'pointer' });

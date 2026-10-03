@@ -3,12 +3,13 @@ import type { IconRef } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { glyphFor } from '../shared/domain.js';
 import { type TextRuler } from '../shared/fit.js';
+import type { TemplateTexts } from '../shared/templates.js';
 
 export interface HelperRowConfig {
   entity: string;
   name?: string;
   icon?: string;
-  /** The line under the title: context or time, never the entity's domain. Defaults to its area; '' hides it. */
+  /** The line under the title: context or time, never the entity's domain; may be a template. Defaults to its area; '' hides it. */
   secondary?: string;
   /** Quick-set chips under a time-only helper, as "HH:MM" (the sheet's Wake-up row). */
   presets?: readonly string[];
@@ -24,6 +25,8 @@ export interface HelperHost {
   readonly contentWidth: number;
   /** Widths laid out by the browser in the card's own classes: a filled chip row measures its columns with it. */
   readonly ruler: TextRuler;
+  /** A row's own second line when it is a template: rendered by Home Assistant, live. */
+  readonly texts: TemplateTexts;
   /** The state to draw: the expected one while a change is in flight. */
   state(view: EntityView): string;
   expect(entityId: string, state: string): void;
@@ -45,9 +48,14 @@ export const nameOf = (view: EntityView, row: HelperRowConfig): string => row.na
 export const iconOf = (view: EntityView, row: HelperRowConfig): IconRef | string =>
   row.icon ?? view.attr<string>('icon') ?? glyphFor(view);
 
+/** The second line the owner wrote, a template rendered; undefined when the row says nothing of its own. */
+export const ownSecondary = (host: HelperHost, row: HelperRowConfig): string | undefined =>
+  row.secondary === undefined ? undefined : host.texts.resolve(row.secondary, row.entity);
+
 /** The context line: what the owner wrote, else why the entity cannot be used, else where it is. */
 export function contextOf(host: HelperHost, view: EntityView, row: HelperRowConfig): string {
-  if (row.secondary !== undefined) return row.secondary;
+  const own = ownSecondary(host, row);
+  if (own !== undefined) return own;
   if (view.status !== 'ok') return stateText(host.hass, view);
   return view.areaName;
 }

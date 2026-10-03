@@ -9,7 +9,7 @@ import {
 } from '@fluvy/core';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
 import { normaliseConfig, type AliasSpec } from './config.js';
-import { type FormLabeler, formLabels } from './form.js';
+import { editorWord, type FormLabeler, formLabels } from './form.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
 export interface RowsListSpec {
@@ -36,6 +36,8 @@ export interface RowsListSpec {
   readonly keys?: readonly string[];
   /** Words for the item's own fields; the card's, then the shared item words, name the rest. */
   readonly computeLabel?: FormLabeler;
+  /** What is said under an item's field; the card's, then the shared item helpers, say the rest. */
+  readonly computeHelper?: FormLabeler;
 }
 
 type Labeler = FormLabeler;
@@ -51,6 +53,7 @@ export interface RowsEditorSpec {
   readonly schema: readonly HaFormSchemaItem[];
   readonly lists: readonly RowsListSpec[];
   readonly computeLabel: Labeler;
+  readonly computeHelper?: Labeler;
   readonly defaults?: EditorDefaults;
   /** The older names the card still reads: shown as the newer ones, and written as them on the first change. */
   readonly aliases?: readonly AliasSpec[];
@@ -74,6 +77,15 @@ export const itemLabels: Labeler = formLabels({
   readouts: 'editor.readouts',
   presets: 'editor.presets',
 }).computeLabel;
+
+/**
+ * What the editor says under an item's field: a row's second line takes a keyword or a template (its select), or
+ * words of the person's own or a template (a text field).
+ */
+export const itemHelpers: Labeler = (schema) =>
+  schema.name === 'secondary'
+    ? editorWord(schema.selector?.['select'] ? 'editor.secondary_helper' : 'editor.template_helper')
+    : undefined;
 
 /**
  * `ha-form` and `ha-sortable` belong to Home Assistant's editors; when a card's editor opens before
@@ -261,8 +273,9 @@ export class FluvyRowsEditor extends LitElement {
 
   /** The add-picker's schema per list: built once, so its `ha-form` is not handed a new schema on every render. */
   private readonly pickers = new WeakMap<RowsListSpec, HaFormSchemaItem[]>();
-  /** The words of each list's item forms: built once per list, for the same reason. */
+  /** The words of each list's item forms, and the helpers under them: built once per list, for the same reason. */
   private readonly labelers = new WeakMap<RowsListSpec, Labeler>();
+  private readonly helpers = new WeakMap<RowsListSpec, Labeler>();
 
   constructor() {
     super();
@@ -396,6 +409,20 @@ export class FluvyRowsEditor extends LitElement {
     return labeler;
   }
 
+  /** What is said under an item's field: by its list, else by the card, else by the shared item helpers. */
+  private helper(list: RowsListSpec): Labeler {
+    let helper = this.helpers.get(list);
+    if (!helper) {
+      const own = this.spec?.computeHelper;
+      helper = (schema, localize) =>
+        list.computeHelper?.(schema, localize) ??
+        own?.(schema, localize) ??
+        itemHelpers(schema, localize);
+      this.helpers.set(list, helper);
+    }
+    return helper;
+  }
+
   private renderList(list: RowsListSpec): TemplateResult {
     const items = itemsOf(this.config, list);
     return html`<div class="list">
@@ -416,6 +443,7 @@ export class FluvyRowsEditor extends LitElement {
                   .data=${item}
                   .schema=${list.schemaOf?.(item) ?? list.schema}
                   .computeLabel=${this.labeler(list)}
+                  .computeHelper=${this.helper(list)}
                   @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
                 ></ha-form>
                 <ha-icon-button
@@ -455,6 +483,7 @@ export class FluvyRowsEditor extends LitElement {
         .data=${data}
         .schema=${spec.schema}
         .computeLabel=${spec.computeLabel}
+        .computeHelper=${spec.computeHelper}
         @value-changed=${this.onCard}
       ></ha-form>
       ${spec.lists.map((list) => this.renderList(list))}
@@ -499,6 +528,7 @@ export function listsEditor(
     schema: withoutLists(form.schema, keys),
     lists,
     computeLabel: (schema, localize) => form.computeLabel?.(schema, localize),
+    ...(form.computeHelper ? { computeHelper: form.computeHelper } : {}),
     ...(defaults ? { defaults } : {}),
     ...(aliases?.length ? { aliases } : {}),
   });

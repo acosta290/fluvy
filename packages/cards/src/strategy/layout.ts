@@ -164,8 +164,9 @@ export const tabsCard = (base: string, views: readonly View[]): Card => ({
     })),
 });
 
-/** The greeting and the tabs above the first column (60 + 16 + 44 + 16). */
-const HEADER = 136;
+/** The greeting above the first column (60 + 16), and the tabs under it when the dashboard shows them (44 + 16). */
+export const HELLO_HEIGHT = 76;
+export const TABS_HEIGHT = 60;
 const GAP = 16;
 const listLength = (card: Card): number => {
   for (const key of ['rows', 'entities', 'scenes', 'tiles'] as const) {
@@ -210,6 +211,7 @@ function* cutsOf(count: number, parts: number, from = 1): Generator<number[]> {
  * columns end closest to one line once the loose cards are in (the first column carries the header).
  */
 export function flowed(
+  header: number,
   blocks: readonly (readonly Card[])[],
   loose: readonly Card[] = [],
   columns = 3,
@@ -220,7 +222,7 @@ export function flowed(
     const bounds = [0, ...cuts, runs.length];
     const laid = Array.from({ length: columns }, (_, i) => {
       const cards = runs.slice(bounds[i] ?? runs.length, bounds[i + 1] ?? runs.length).flat();
-      return { cards, height: (i === 0 ? HEADER : 0) + heightOfAll(cards) };
+      return { cards, height: (i === 0 ? header : 0) + heightOfAll(cards) };
     });
     for (const card of loose) {
       const shortest = laid.reduce((low, next) => (next.height < low.height ? next : low));
@@ -236,8 +238,8 @@ export function flowed(
 }
 
 /** Cards shared out over the columns: the lead card under the header, every other one where the columns are shortest. */
-export const balanced = ([lead, ...rest]: readonly Card[]): Section[] =>
-  flowed(lead ? [[lead]] : [], rest);
+export const balanced = (header: number, [lead, ...rest]: readonly Card[]): Section[] =>
+  flowed(header, lead ? [[lead]] : [], rest);
 
 /** Tiles two a row; an odd one out closes the run as a compact tile across the column, so no row is half empty. */
 export function tileRows(tiles: readonly Card[]): Card[][] {

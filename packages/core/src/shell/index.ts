@@ -143,26 +143,38 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
   let active: boolean | null = null;
   let icons: boolean | null = null;
   let wall: boolean | null = null;
+  /** The house's choices the sheets wait on (`when`), as the attributes on `<html>` say them now. */
+  const choices = [...new Set(SHEETS.flatMap((spec) => (spec.when ? [spec.when] : [])))];
+  let chosen = '';
   const sync = (): void => {
     const on = themed(env.document);
     const ours = !env.document.documentElement.hasAttribute(ORIGINAL_ICONS);
     const walled = env.document.documentElement.hasAttribute(WALL_ATTRIBUTE);
-    if (on === active && ours === icons && walled === wall) return;
+    const now = choices.filter((name) => env.document.documentElement.hasAttribute(name)).join(' ');
+    if (on === active && ours === icons && walled === wall && now === chosen) return;
+    chosen = now;
+    const holds = (spec: ShellSheet): boolean =>
+      !spec.when || env.document.documentElement.hasAttribute(spec.when);
     const drawn = active === true && icons === true;
     const first = active === null;
     active = on;
     icons = ours;
     wall = walled;
-    // a wall sheet follows the wall attribute alone (a wall is a wall in every scope); the rest follow the theme
+    // a wall sheet follows the wall attribute alone (a wall is a wall in every scope), an `always` sheet its marks;
+    // the rest follow the theme
     for (const { spec, sheet } of entries)
       sheet.replaceSync(
-        spec.choice === 'wall'
-          ? walled
+        !holds(spec)
+          ? ''
+          : spec.choice === 'always'
             ? spec.css
-            : ''
-          : on && (spec.choice !== 'icons' || ours)
-            ? spec.css
-            : '',
+            : spec.choice === 'wall'
+              ? walled
+                ? spec.css
+                : ''
+              : on && (spec.choice !== 'icons' || ours)
+                ? spec.css
+                : '',
       );
     // Home Assistant's Material icons drawn as ours (or back) on what is already on the page
     if (!first && drawn !== (on && ours)) redrawSvgIcons(env.document, on && ours);
@@ -221,7 +233,7 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
   const observer = new env.MutationObserver(sync);
   observer.observe(env.document.documentElement, {
     attributes: true,
-    attributeFilter: ['style', PAGE_ATTRIBUTE, ORIGINAL_ICONS, WALL_ATTRIBUTE],
+    attributeFilter: ['style', PAGE_ATTRIBUTE, ORIGINAL_ICONS, WALL_ATTRIBUTE, ...choices],
     subtree: true,
   });
 

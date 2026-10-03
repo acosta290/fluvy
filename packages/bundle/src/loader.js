@@ -34,13 +34,19 @@ try {
   // no storage or a stale value: the build applies the look once the settings arrive
 }
 
-// A wall panel starts as one: the shell hides the sidebar and the header on this attribute before Home
-// Assistant renders (the build's wall controller confirms, or takes it off, once it knows the page).
+// What this device is, before Home Assistant renders. A wall panel starts as one: the shell hides the sidebar
+// and the header on this attribute (the build's wall controller confirms, or takes it off, once it knows the
+// page). A device that reads its dashboards larger starts at that size: the shell's `device-zoom` sheet zooms
+// the view on this variable (the build's `look/zoom.ts` takes it over). The sizes are `DEVICE_ZOOMS`
+// (`packages/core/src/settings/device.ts`); a test holds the two lists together.
+const ZOOMS = [90, 100, 110, 125, 150];
 try {
   const device = JSON.parse(localStorage.getItem('fluvy:device') ?? 'null');
   if (device && device.wall === true) document.documentElement.setAttribute('fluvy-wall', '');
+  if (device && ZOOMS.includes(device.zoom) && device.zoom !== 100)
+    document.documentElement.style.setProperty('--fluvy-zoom', String(device.zoom / 100));
 } catch {
-  // no storage: a device that is not a wall
+  // no storage: a device that is not a wall, at Home Assistant's size
 }
 
 // The `fluvy:` icon set exists before the app renders: `<ha-icon>` marks an icon of an unknown set

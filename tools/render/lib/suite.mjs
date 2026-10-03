@@ -1,5 +1,5 @@
 /**
- * The harness every interaction suite shares: one Chromium, a pass / fail line per check, the playground's mock
+ * The harness every interaction suite shares: one browser, a pass / fail line per check, the playground's mock
  * (its service calls, its more-info requests) and the exit code. A suite opens its pages with `sheet()` (a design
  * sheet's real cards) or its own URL through `page()`.
  *
@@ -7,11 +7,22 @@
  *   const page = await suite.sheet('devices', { width: 360 });
  *   suite.check('the switch flips', ok, detail);
  *   await suite.finish();
+ *
+ * Chromium by default; `ENGINE=webkit` (or `firefox`) runs a suite in another engine Playwright ships, for what
+ * the engines do differently (a zoomed view's geometry).
  */
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 import { launchOptions } from '../lib.mjs';
 
 export const BASE = process.env.PLAYGROUND ?? 'http://127.0.0.1:5183/';
+export const ENGINE = process.env.ENGINE ?? 'chromium';
+
+/** The engine `ENGINE` names, launched as every tool launches it (Chromium's flags are Chromium's alone). */
+export function launch() {
+  const engine = { chromium, firefox, webkit }[ENGINE];
+  if (!engine) throw new Error(`ENGINE must be chromium, webkit or firefox, not "${ENGINE}"`);
+  return engine.launch(ENGINE === 'chromium' ? launchOptions : {});
+}
 
 /** Counts live intervals and listens for more-info requests, before any card is created. */
 const INIT = `(() => {
@@ -25,7 +36,7 @@ const INIT = `(() => {
 })()`;
 
 export async function startSuite() {
-  const browser = await chromium.launch(launchOptions);
+  const browser = await launch();
   const results = [];
   const check = (name, ok, detail = '') => {
     results.push({ name, ok, detail });

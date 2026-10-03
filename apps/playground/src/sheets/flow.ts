@@ -1,6 +1,7 @@
 import { FluvyDistributionCard } from '../../../../packages/cards/src/distribution/distribution-card.js';
 import { FluvyEnergyCard } from '../../../../packages/cards/src/energy/energy-card.js';
 import { FluvyEnergyFlowCard } from '../../../../packages/cards/src/energy-flow/energy-flow-card.js';
+import { HYBRID_STATES, hybridMetersOnly, hybridWithPower } from '../hybrid.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-energy-flow-card'))
@@ -67,6 +68,29 @@ function fiveMinutes(id: string): { start: number; change: number }[] {
   const target = (STATS[id] ?? []).reduce((total, b) => total + b.change, 0);
   const factor = sum > 0 ? target / sum : 0;
   return series.map((kw, i) => ({ start: DAY + i * 300_000, change: (kw / 12) * factor }));
+}
+
+/** Each power sensor's meters: its five-minute means follow the meters' day, at the meters' scale. */
+const POWER_OF: Record<string, { from: string; to?: string }> = {
+  'sensor.fl_solar': { from: 'sensor.fl_solar_energy' },
+  'sensor.fl_grid_in': { from: 'sensor.fl_grid_in_energy' },
+  'sensor.fl_grid_out': { from: 'sensor.fl_grid_out_energy' },
+  // signed: discharging is positive, charging negative
+  'sensor.fl_battery': { from: 'sensor.fl_battery_out_energy', to: 'sensor.fl_battery_in_energy' },
+};
+
+/** The same day as the power sensors' five-minute means (kW), as the recorder compiles them. */
+function powerMeans(id: string): { start: number; end: number; mean: number }[] {
+  const of = POWER_OF[id];
+  if (!of) return [];
+  const kw = (meter: string): number[] => fiveMinutes(meter).map((b) => b.change * 12);
+  const from = kw(of.from);
+  const to = of.to ? kw(of.to) : [];
+  return from.map((value, i) => ({
+    start: DAY + i * 300_000,
+    end: DAY + (i + 1) * 300_000,
+    mean: value - (to[i] ?? 0),
+  }));
 }
 
 /** The day's shapes in kW, a value a five-minute bucket. */
@@ -169,6 +193,9 @@ export const sheet: SheetSpec = {
     ['sensor.fl_solar_energy', '11.2', energy('Solar')],
     ['sensor.fl_battery_out_energy', '2.4', energy('Battery out')],
     ['sensor.fl_battery_in_energy', '3.0', energy('Battery in')],
+    ...HYBRID_STATES.map(
+      ([id, state, name]) => [id, state, power(name, 'kW')] as [string, string, Attributes],
+    ),
   ],
 
   ws: {
@@ -192,13 +219,20 @@ export const sheet: SheetSpec = {
       ],
       device_consumption: [],
     }),
-    'recorder/statistics_during_period': (message) =>
-      Object.fromEntries(
+    'recorder/statistics_during_period': (message) => {
+      (window.fluvyAsked ??= []).push(message);
+      const mean = ((message['types'] as string[] | undefined) ?? []).includes('mean');
+      return Object.fromEntries(
         ((message['statistic_ids'] as string[] | undefined) ?? []).map((id) => [
           id,
-          message['period'] === '5minute' ? fiveMinutes(id) : (STATS[id] ?? []),
+          mean
+            ? powerMeans(id)
+            : message['period'] === '5minute'
+              ? fiveMinutes(id)
+              : (STATS[id] ?? []),
         ]),
-      ),
+      );
+    },
   },
 
   frames: [
@@ -408,6 +442,28 @@ export const sheet: SheetSpec = {
           variant: 'sources',
           entity: 'sensor.fl_house',
           name: 'House power',
+          _now: NOW,
+        },
+      ],
+    },
+    {
+      title: 'By source · a hybrid inverter, with power',
+      hass: hybridWithPower,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          variant: 'sources',
+          _now: NOW,
+        },
+      ],
+    },
+    {
+      title: 'By source · a hybrid inverter, meters only',
+      hass: hybridMetersOnly,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          variant: 'sources',
           _now: NOW,
         },
       ],

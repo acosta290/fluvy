@@ -36,7 +36,36 @@ const everything = () =>
 const cardsOf = (views: readonly View[]) =>
   views.flatMap((v) => v.sections.flatMap((s) => s.cards));
 
+/** Every `entity` a card config names, however deep, and every id of its `entities`. */
+function entitiesOf(value: unknown, out: unknown[] = []): unknown[] {
+  if (Array.isArray(value)) for (const item of value) entitiesOf(item, out);
+  else if (value && typeof value === 'object')
+    for (const [key, inner] of Object.entries(value)) {
+      if (key === 'entity') out.push(inner);
+      else if (key === 'entities' && Array.isArray(inner))
+        for (const item of inner) {
+          if (typeof item === 'string' || typeof item !== 'object') out.push(item);
+          else entitiesOf(item, out);
+        }
+      else entitiesOf(inner, out);
+    }
+  return out;
+}
+
 describe('the dashboard templates', () => {
+  it('name every entity by its id: a card is never handed a flag for an entity', async () => {
+    for (const template of TEMPLATES)
+      for (const hass of [house(), everything()]) {
+        const { views } = await generate({ type: template.type }, hass);
+        const named = entitiesOf(cardsOf(views));
+        expect(named.length, template.id).toBeGreaterThan(0);
+        expect(
+          named.filter((id) => typeof id !== 'string' || !/^[a-z_]+\.[a-z0-9_]+$/.test(id)),
+          template.id,
+        ).toEqual([]);
+      }
+  });
+
   it('are found by their strategy type, and nothing else is', () => {
     expect(templateOf('custom:fluvy-energy')?.id).toBe('energy');
     expect(templateOf('custom:fluvy-home')).toBe(HOME_TEMPLATE);
@@ -103,9 +132,21 @@ describe('the dashboard templates', () => {
     }
   });
 
-  it('open with the greeting and the tabs, except the wall, which opens with its own composition', async () => {
+  it('open with the greeting (and the tabs, when asked), except the wall, which opens with its own composition', async () => {
     for (const template of TEMPLATES) {
-      const { views } = await generate({ type: template.type }, everything());
+      // by default the header's tabs lead between the views: no chips under the greeting
+      const plain = await generate({ type: template.type }, everything());
+      expect(
+        plain.views[0]!.sections[0]!.cards.some(
+          (c) =>
+            c.type === 'custom:fluvy-chips-card' &&
+            (c['chips'] as { path?: string }[]).every((chip) => chip.path !== undefined),
+        ),
+      ).toBe(false);
+      const { views } = await generate(
+        { type: template.type, greeting_tabs: 'show' },
+        everything(),
+      );
       const first = views[0]!.sections[0]!.cards;
       expect(first[0]!.type).toBe('custom:fluvy-hello-card');
       const tabs = first.filter(

@@ -38,6 +38,33 @@ Three shapes set the radii of cards, tiles and controls: **soft** (20 / 16 / 12 
 (28 / 22 / 16) and **crisp** (14 / 12 / 8). Circles and the rulers' 2 px lines never change. The buttons' style
 (pills or crisp) follows the same setting.
 
+## Dashboard tabs
+
+The view tabs in a dashboard's header — Home Assistant's own, the ones you pick a view with — take the look on every
+dashboard that wears it, as the house chooses in *Appearance → Dashboard tabs*:
+
+| Style | What the header shows |
+| --- | --- |
+| **Fluvy** (default) | the dashboard's name, then the views as words; the open one in the text's colour with the accent under exactly its name |
+| **Pills** | the views as pills, the open one filled |
+| **Original** | Home Assistant's own tabs, untouched |
+| **Hidden** | no tabs (the views are reached from the dashboard itself) |
+
+With Fluvy's tabs or pills, each tab shows the view's **name** (default), its **icon**, or **both**; a view without an
+icon gets the one its name says, in any of Fluvy's languages ("Luces" a bulb, "Hab 1" a room), and keeps its words
+when its name says none. The **dashboard's name** before the tabs is a switch of its own, in every style; on a phone
+it gives way to the tabs, which scroll under the finger and fade where the row goes on. The edit mode, a subview and a dashboard of a
+single view keep Home Assistant's header. A person who keeps their own look keeps their own tabs too.
+
+## Sidebar and header
+
+*Appearance → Sidebar and header* sets the corner of every page: **Home Assistant's logo** in the sidebar's head in
+place of the menu icon (a tap on it still opens and closes the sidebar), the **dividers** under the sidebar's name and
+under the header, the **header on the page** (no bar, the page's own colour) and the **actions in one menu**: add,
+search, Assist and edit behind one "…", as Home Assistant draws them on a phone. All four on is the corner of Fluvy's
+screenshots. The sidebar takes them where Fluvy styles all of Home Assistant (*Scope → Everywhere*); a
+dashboard's header takes them wherever the dashboard wears the look. The edit mode keeps Home Assistant's header.
+
 ## Using the theme on its own
 
 The theme works without the cards: choose it in your profile and every Home Assistant page takes Fluvy's colours,

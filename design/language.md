@@ -24,14 +24,14 @@ Code follows the same bar: clean, ordered, reusable, one place per concern.
 | --- | --- | --- |
 | Card | radius 20, padding 20, content column 320 in a 360 card | hairline `inset 0 0 0 1px border`; no resting shadow |
 | Compact card | padding 16, rounds 44 | mini media rows, compact climate row, counter row |
-| Player card | 48 rounds throughout (transport and the "…" on the 80 art) | the one card where the header round is 48, so it centres on the art on the grid |
+| Player card | 48 rounds throughout (transport and the head's round on the 80 art: power for a player that can be switched on or off, else "…") | the one card where the header round is 48, so it centres on the art on the grid; the head keeps one trailing round — two beside the art would leave a title 104 px in a phone's column — and the dialog stays a tap on the art or a still press on the head away |
 | Tile | 172 × 168, padding 16, radius 16 | two per row: 172 + 16 + 172 on the phone (`.fv-grid2`), 152 + 8 + 152 on the desktop, 208 + 8 + 208 on the wall; the foot slot is 40: a 44 ruler hit band drawn 4 up, or two xs readouts |
 | Tile · compact | 76 tall, padding 16, radius 16 — the scene tile's geometry: 44 icon, 12 gap, name 15/600 over state 13/500 (36 block centred on the icon) | the whole tile is the button — tap toggles what toggles (opens what does not), hold 500 ms opens the details; no switch: the tone fill says "on"; a small tile says "Unavailable" without the time |
 | Tile · mini | 108 tall, padding 12, radius 16: 44 icon, 8 gap, name 13/600 over state 12/500, centred | same behaviour; three or four per row |
 | Tiles group | `.fv-tiles`: compact or mini tiles 8 px apart, or large ones (icon circle + switch, ruler or readouts) at the section's gaps; 2 / 3 / 4 per row or `auto` (148 / 84 minimum) | one card, the Mushroom-style pairs and threes; grouped and lone tiles are the same tile. A compact tile under 128 gives its name the icon's room, so buttons people reach for on a phone are large |
 | Sheet | 392 wide, padding 16, content 360, radius 24 top | grabber, title/sub + close or switch |
 | Phone frame | 392, side padding 16, content 360 | status bar, hello, room chips, sections, bottom nav 60 |
-| Unavailable | dashed 1 px outline, page fill, neutral ink | card, tile, icon ring **and** badge all dashed; value "—", the word "Unavailable" stays |
+| Unavailable | dashed 1 px outline, page fill, neutral ink | card, tile, stat tile, icon ring **and** badge all dashed; value "—", the word "Unavailable" stays — a compact row, which has no second line for the word, says it as its value ("Unavailable", "Unknown", "Not found"; the dash only where the word would not leave the name its room); an entity that is not there draws the `ban` glyph, never a kind's |
 
 ## Header pattern (every card except the weather hero)
 
@@ -57,9 +57,9 @@ In a narrow column the head is fitted by measure (`HeadFit`), and what gives way
 | Setpoint | dial: soft disc, tick ring, knob riding the ring, current-temperature dot, min/max labels, stepper below | `dial({ min, max, target | range, current })` — real units, never fractions; a range dial keeps the stepper and marks the selected knob with the focus halo (tap to select) |
 | Toggle | 48 × 28 switch in a 56 × 44 hit | tile heads, rows, sheet heads |
 | Modes | option tiles (84 tall, radius 12): a 20 outline glyph top-left, 12/500 label, 16/600 value; active = tone fill + dark ink, **no ring, no dots** | row fills the column exactly: 3 × 104 + 2 × 4 = 320; sheet 3 × 112 + 2 × 12 = 360; desktop 3 × 96 + 2 × 12 = 312; every row is full — a shorter last row splits the column among its own tiles (5 modes: 3 + 2 wider, `optionGrid`) |
-| Stats | the option anatomy, read-only (`tiles()`), 2 × 156 + 8 | capacity, sub-values of a card |
+| Stats | the option anatomy, read-only (`tiles()`), 2 × 156 + 8; **compact** (1.5): 64 tall (12 · label 16 · 4 · value 20 · 12), no glyph row, three a row in the mode row's rhythm (3 × 104 + 2 × 4) while the widest label and value fit a cell (`optionColumnsFor`, measured), four as two by two, else two, one a row where not even two cells hold a value — a value never wraps; `columns: auto \| 2 \| 3` | capacity, sub-values of a card |
 | Gauge | the dial's tick ring without the disc; uppercase label above the value in the open centre; MIN / MAX / AVG readouts below | solar power, any read-only 0–max |
-| Bar row | 76 tall: circle on the title/sub pair, value at the right, a 4 px bar from x 76 to the content edge under the text | strings, plants, meters |
+| Bar row | 76 tall: circle on the title/sub pair, value at the right, a 4 px bar from x 76 to the content edge under the text; a `plain` row is the 60 list row; **compact** (1.5): 48 tall, the 40 circle on the row (4..44), the name and the value on one line (12..32, baselines paired as the one-line rows'), the bar at 36..40 from the text column (52) to the content edge; a plain row the 48 compact list row. **Rows squeezed under what holds a name** (the words' column beside the value under 96, or under the name itself — measured, as the head is): the rows give their circles to the names, every row of the list with them, the bar and the hairline starting the row; a name that still does not fit ends in an ellipsis, as names may, never before it has begun | strings, plants, meters |
 | Distribution | one stacked 12 px bar (2 px gaps) + legend rows 36 with 12 × 12 square swatches | what is drawing now |
 | Filters / presets | chips: 36 pill in a 44 hit, text only, **content-sized**: 14 px sides → width = laid-out text + 28 rounded up to 4 (a post-render `fit()` pass measures the text in layout; the sheets render only once Inter is in use); same label → same width everywhere | gap 8; **a chip row fills its row** (revised 2026-09-18, quality bar #5): equal cells in as many rows as the labels need (`chipColumns`: four short words on one line, four long ones as 2 × 2, a shorter last row split among its own chips — never a label cut to make a row); content-sized chips only on request (`*_style: chips`); tab rows (phone rooms, view tabs) use the 14 px face with 16 px sides (text + 32 → 4-grid), ink-filled active, and fill their line when they fit (they scroll — finger, trackpad, wheel or mouse drag — when they do not) |
 | Commands | 44 rounds, one filled primary, quiet siblings, 8 gaps, left-aligned row | vacuum, blinds open/stop/close, timer |
@@ -106,6 +106,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - Command rows (cover open/stop/close, vacuum pause/stop/dock/locate) are **action rows**: glyph buttons in equal cells that fill the content column — 2 × 152, 3 × 96, 4 × 68 with a 16 gap — 44 tall, radius 12, page fill, the primary one accent. Never a left-hugging strip of circles. Centred media transports stay round.
 - Switch off in dark: track `border-strong` (a clear step above the card), thumb `text-secondary`; on = tone track with the dark thumb. Light keeps the page-alt track, hairline and white thumb.
 - Trailing chevrons: glyph right-aligned in its 44 box with a −8 optical margin so the ink sits on the column edge (section meta: −5).
+- **Media power and compact controls (1.5):** a player that can be switched on or off carries a power round — the player head's trailing round, the hero's corner (48, on the art's top line and the content's edge; the art gives the corner its 12 px), the mini row and the now-playing strip when `controls` names it. Off, it is the one clear thing to do: "Turn on" in the primary fill, and no dead transport under it (the play round waits for the player to be on). `controls` is an ordered subset of `power · previous · play · next · volume`, each only when the player can take it, drawn in the named order; a row that cannot hold them all lets them give way in an order of need — next, previous, volume, then power; play never, it is the control — as a head's lines do. The mini row holds as many as fit beside a title of 96 (three at a phone's column), its volume round muting where the player can and opening the dialog where it cannot; a column that cannot hold one round beside the art lets the art go first (the compact tile's rule) and keeps one round, the words then being the row's tap. The strip centres the transport, keeps power on its left edge and volume on its right, draws power and volume alone on a player that is off (no dead transport, as the card), and a half column spreads 44 rounds.
 
 ## Clocks and calendar
 
@@ -127,6 +128,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   the page ground would read as lit). Two a row, 8 apart; a name steps to 14 under 200 and may end in an ellipsis
   (long names belong to `controls: rows`).
 - Compact surfaces write degrees without the unit — "4 of 10 on · 21.4°", "Idle · 22.8°" — the readouts keep "°C".
+- **Weather · compact (1.5):** the hero folds into one head row — the 44 condition circle, the name (an ellipsis as names may), "condition · high / low · feels · wind" as the sub, fitted by `HeadFit` (the optional segments leave from the end, then the circle gives way: the words say the condition), the temperature at the end as the compact family writes it ("18.0°", 16/600) — over the hour strip and the days ahead as the strip's 64 columns (the weekday, the day's glyph, the high and its low in the secondary ink), as many as the width holds — fewer while the widest pair would not keep 4 px clear in its cell, `days` the most — starting after today, which the head already says.
 - The **tile** variant is a head (44 icon circle, the name, the count and the climate as its sub, "opens" as the
   bare 44 chevron with its ink on the column edge) over the inner tiles; the **row** variant is the compact tile
   itself (76), two a row on the automatic dashboards.
@@ -158,6 +160,49 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   rooms as chips that toggle, then the sidebar switch and *Recreate* in two taps (the armed row in the warning tone,
   "Cancels in 4 seconds"). The preview draws the template touched last.
 
+## View tabs (1.5, the dashboard header's)
+
+- Home Assistant's own tabs (`hui-root`'s `ha-tab-group`), restyled by marks on the root, never replaced: a tab is
+  still Home Assistant's element, its tap and its keyboard are Home Assistant's.
+- **Fluvy** (default): the dashboard's name first (20/600, −0.01em, 24 line; 12 after the bar's 12 padding — on the
+  view's column, 24 in — and 12 before the tabs; it never shrinks for them, a long one ends in an ellipsis at 40 %), then the views as words 14/600 in the secondary ink, 12 a side; the open one in the text's ink with a
+  2 px accent line at the header's foot exactly as wide as its name. No line under the others, no track.
+- **Pills**: the room tabs' pill (36 tall, 16 a side, pill radius, the card fill with the hairline; the open one in
+  the selected ink, no hairline), 8 apart, centred in the 56 bar. They are Home Assistant's elements, laid out by it
+  at text + 32: the 4-grid rounding of Fluvy's own measured pills does not reach them (nothing blurs: the hairline is
+  an inset shadow on whole pixels).
+- **Content**: the name (an icon tab writes its `aria-label`), the icon (24, Home Assistant's size), or both (a 20
+  icon, 8, the name). A view without an icon, asked for its icon, gets the one its name says in any of the eight
+  languages (a mask of the fluvy set in the tab's ink, from an on-demand table); a name that says none keeps its words.
+- **The dashboard's name** is a switch of its own in every style: before Home Assistant's own tabs too, and with
+  hidden tabs the bar may hold the actions alone.
+- **Hidden**: no tabs; the name (when shown) grows and the actions keep the bar's end.
+- A phone (`.narrow`) drops the name; the row scrolls under the finger and fades 24 px only where it goes on — its
+  start once scrolled, its end while there is more — and keeps 24 px at its end. Home Assistant's chevrons give way
+  there; on a wide screen they stay (a mouse has no other way along the row).
+- Never in the edit mode, a subview or a one-view dashboard (Home Assistant's own title stays), and never on a
+  dashboard that does not wear the look.
+- The panel's card: a header mock on the card fill with the hairline (radius 12, 56 tall), the four styles as option
+  tiles with their glyphs, the content as filling chips, the name as a switch row; *Hidden* and *Original* (Home Assistant's own),
+  with nothing more to choose, each say why in a hint (*Hidden*: where the automatic dashboards' chips under the
+  greeting are switched on).
+
+## The corner (1.5, the sidebar's head and the header)
+
+- Three choices of the house's (or a person's own look): **Home Assistant's logo** — its house in its blue (#18BCF2,
+  24 on the 24 grid) on the menu button, which keeps its tap (open and close the sidebar), the name at 16/600 with
+  0.01em, as Fluvy's screenshots draw it; **dividers** — the 1 px hairline under the sidebar's head and under the
+  header, or none; **the header** — a bar on the card's fill, or on the page's own colour (no bar); **the actions** —
+  Home Assistant's four buttons, or its phone's one menu on every screen (it draws them; Fluvy asks for that render),
+  its button drawn as Fluvy's "…". All four: the screenshots' corner.
+- The sidebar takes them only where the look covers Home Assistant (its sheets fill on `<html>`'s marks and the
+  theme); a dashboard's header wherever it wears the look (marks on its root). The edit mode keeps Home Assistant's.
+- The panel's card draws the corner: the sidebar's head (at most 256) beside the header (never narrower than its
+  actions; the dashboard's name in it only where it holds a word: not on a phone), each on its fill over a band of
+  the page, the hairline under both when chosen, the frame above them; four switch rows; under "only dashboards" a
+  hint says where the sidebar follows. The tabs card's preview shows the header's actions when the tabs are hidden
+  (what the bar then holds); its name is the header's (20/600, an ellipsis at 40 %, all the room when hidden).
+
 ## Wall
 
 - A wall is the dashboard alone: no sidebar, no header, the view padded by the tablet's safe area and, when the house
@@ -183,6 +228,24 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   two tiles on the background chosen — in the night's tokens, under the night's veil, when the settings would make
   it night now. Every wall control edits the latest wall (`editWall`): two taps before a render never lose the
   first.
+
+## Size (a device's, 1.5)
+
+- A tablet across the room reads larger: 90, 100, 110, 125 or 150 % — the device's own, like the wall switch
+  (`?zoom=125`, or *This device · Size* on the Preferences tab and the Wall tab's device card: five chips in one row,
+  three over two on a phone).
+  It is CSS `zoom` on the dashboard's view alone: the cards, their type and their controls scale together and the
+  layout follows (a column that held three cards holds two); every rule of ours is written in the view's own pixels,
+  so nothing is laid out twice.
+- What does not scale: Home Assistant's header and sidebar, its dialogs, and the edit mode (a dashboard is edited at
+  the size it is laid out in). A card's own dialog (the keypad) and a menu in the top layer scale with the view and
+  are placed in its pixels.
+- A gesture under zoom is read in the control's pixels: a drag travels by the control's own length (`trackDrag`'s
+  `dx`, `localPoint`), a tap or a scrub by its fraction of the box. The size never makes a new ellipsis: what fits at
+  100 % fits at 150 %.
+- The header's dashboard name follows the view's column at every size (its margin is the view's 24 grown with the
+  size, less the bar's 12). A hairline inside the view is drawn at the size too: at 110 or 125 % it can straddle two
+  device pixels — a known softness of a scaled page, the price of one layout for every size.
 
 ## Palettes that travel
 
@@ -279,6 +342,13 @@ chip chosen in half a column takes the same tone as its tile (the sun's for a so
 at 45 %), so no array is mistaken for hours to come. A legend of arrays folds by the legend rule, names and figures
 measured.
 
+**By source (1.5).** The house's power today: its use stacked by origin above the line (the sun first, the grid
+last); under the line, from it down, what went into the battery (the battery's ink) and out to the grid (the grid's
+ink), both at 60 % — Home Assistant's "Power sources" convention, where a sink sits below zero. Drawn from the power
+sensors' five-minute means when the Energy dashboard names one for every source (as Home Assistant draws its own
+graph), else from the meters in 15-minute blocks (30 or 60 when their step — 0.1 kWh — would show as a saw-tooth); a bucket without the grid or the battery is a gap (the curve
+stops, the cursor reads "—"), never a zero. "Right now" is the house's own use, allocated live as the flow card does.
+
 **Empty.** An energy card's empty panel sits 16 under its head and says what is missing in one line ("No batteries
 yet"), with how to fix it as the hint under it ("Add them here, or give the Energy dashboard its batteries").
 
@@ -337,7 +407,7 @@ sits 16 under its head.
 - One centred column of cards (760 at most; the phone's 16 gutter). Its breakpoints are its own width (inside Home Assistant the sidebar takes part of the screen): from 648 it is laid out as on a desktop (12 gaps, the wide tabs); the preview takes the desktop card sizes when it has 672 of its own (a 760 panel); from 1184 the preview leaves the column for a 400 side column of its own, sticky (scrolling within itself when taller than the window) and on every tab — the look's preview, or the automatic dashboard's on its tab. Narrower, the preview closes the tabs that have one.
 - **The Dashboard tab's preview** draws the lights in the chosen size, the thermostat in its variant and the energy flow in its style — on the house's own meters when it has any (the automatic dashboard's detection: the energy preferences, then the words), on made-up ones (sun, grid, a charging battery) when it has none.
 - **Settings file**: Export writes everything Fluvy keeps — the house's settings, this person's, the automatic dashboard's options (not the house's own entities), the version and the date; Import restores them (the dashboard's options when the house has an automatic dashboard).
-- **Tabs**: a tab row (14 px face) on the card surface, the open one in the selected ink. A phone scrolls content-sized pills and keeps the open one in the middle, fading only where the row goes on; a wide panel fills the column with five equal tabs.
+- **Tabs**: five — Appearance, Scope, Dashboards, Wall, Preferences — a tab row (14 px face) on the card surface, the open one in the selected ink. A phone scrolls content-sized pills and keeps the open one in the middle, fading only where the row goes on; a wide panel fills the column with the five equal tabs on one line. Fluvy's own facts (the About tab until 1.4) are Preferences' last card, *Fluvy*: its version as the head's sub, the look in use and the Home Assistant pages it styles as rows, the settings file as a label over the equal Export · Import pair with its hint under, and the house's reset row (an administrator's).
 - **The panel wears the look being chosen**: a tap on a palette or a shape re-skins the page it was made on; the preview shows the real cards at their real size (desktop tiles 152 beside the thermostat's 312).
 - **Nothing saves on tap (2026-09-19)**: every tab edits, and the edit is shown before it is saved — the look on the panel itself; where it applies, the frame and the menus' icons on the whole screen (the look engine's preview); the language and motion of the cards on the page. An edit back to the saved value is no edit, and an edit clears itself when Home Assistant hands the saved value back (no flicker to the old one). The Dashboard tab previews its cards (the lights as large tiles or rows, the thermostat in its variant).
 - **Pending changes**: a bar in a dock at the foot of the column, in the flow (it never covers the last card) and sticky (at hand while scrolling), on every tab: what changes (one change in words, each part from → to: "Linen → Volt · Soft → Round", "Floating frame · Off"; several: "3 changes"), Discard, and how to save: a changed look as an equal pair, for the house or only for me (one accent "Apply for me" for someone who may not change the house's), anything else one accent Save. The "Saved" notice sits in the same dock. Enter 220 ms, leave 160 ms, transform and opacity only.

@@ -1,23 +1,36 @@
 import { readStored, writeStored } from '../storage.js';
 
 /*
- * What this browser is: a wall panel, or not. The house says how its walls behave (`HouseSettings.wall`); the
- * device says it is one, in its own storage, so a person's phone never becomes a wall because the house has some.
+ * What this browser is: a wall panel, or not, and the size it reads its dashboards at. The house says how its walls
+ * behave (`HouseSettings.wall`); the device says it is one, in its own storage, so a person's phone never becomes
+ * a wall because the house has some — and a tablet across the room reads larger without the phone following.
  */
 
 export const DEVICE_KEY = 'fluvy:device';
 export const DEVICE_VERSION = 1;
 
+/** The sizes a device may read its dashboards at, in percent (the loader carries the same list). */
+export const DEVICE_ZOOMS = [90, 100, 110, 125, 150] as const;
+export type DeviceZoom = (typeof DEVICE_ZOOMS)[number];
+
 export interface DeviceSettings {
   readonly version: typeof DEVICE_VERSION;
   /** This browser is a wall panel. */
   readonly wall: boolean;
+  /** The size this browser reads its dashboards at (the view alone, never Home Assistant's chrome). */
+  readonly zoom: DeviceZoom;
 }
 
-export const DEVICE_DEFAULTS: DeviceSettings = { version: DEVICE_VERSION, wall: false };
+/** What a device may change about itself (the version is never written). */
+export type DevicePatch = Partial<Omit<DeviceSettings, 'version'>>;
+
+export const DEVICE_DEFAULTS: DeviceSettings = { version: DEVICE_VERSION, wall: false, zoom: 100 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isZoom = (value: unknown): value is DeviceZoom =>
+  (DEVICE_ZOOMS as readonly unknown[]).includes(value);
 
 /** What this browser remembers of itself; anything missing or broken is the default. */
 export function parseDevice(raw: unknown): DeviceSettings {
@@ -25,12 +38,13 @@ export function parseDevice(raw: unknown): DeviceSettings {
   return {
     version: DEVICE_VERSION,
     wall: typeof value['wall'] === 'boolean' ? value['wall'] : DEVICE_DEFAULTS.wall,
+    zoom: isZoom(value['zoom']) ? value['zoom'] : DEVICE_DEFAULTS.zoom,
   };
 }
 
 export const readDevice = (): DeviceSettings => parseDevice(readStored<unknown>(DEVICE_KEY));
 
-export function writeDevice(patch: Partial<Omit<DeviceSettings, 'version'>>): DeviceSettings {
+export function writeDevice(patch: DevicePatch): DeviceSettings {
   const next = parseDevice({ ...readDevice(), ...patch });
   writeStored(DEVICE_KEY, next);
   return next;
@@ -52,4 +66,18 @@ export function latchFromUrl(search: string): boolean | undefined {
         : undefined;
   if (wall !== undefined) writeDevice({ wall });
   return wall;
+}
+
+/**
+ * `?zoom=125` on a dashboard's address sizes this device: one of the listed sizes is remembered, `?zoom=100` and
+ * `?zoom=off` bring it back to 100; anything else leaves it as it is (undefined).
+ */
+export function latchZoomFromUrl(search: string): DeviceZoom | undefined {
+  const params = new URLSearchParams(search);
+  if (!params.has('zoom')) return undefined;
+  const value = params.get('zoom')?.toLowerCase() ?? '';
+  const zoom = value === 'off' ? 100 : Number(value);
+  if (!isZoom(zoom)) return undefined;
+  writeDevice({ zoom });
+  return zoom;
 }

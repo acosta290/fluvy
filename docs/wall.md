@@ -44,6 +44,18 @@ The house chooses the way out in the *Wall* tab (*Way out*), and nobody is ever 
 
 `?kiosk=0` on the address leaves wall mode too, from anywhere.
 
+## Reading from across the room
+
+A tablet on the wall is read from further away than a phone in the hand. The size is the device's own, like the
+wall switch: open the dashboard's address with `?zoom=125` on it (90, 100, 110, 125 or 150), or choose it under
+*This device · Size* in the panel's *Preferences* tab (the *Wall* tab's device card shows the same choice). The
+tablet remembers; a phone that opens the same dashboard keeps its own size. `?zoom=100` or `?zoom=off` brings it back.
+
+Only the dashboard's view grows — the cards, their text and their controls — and the layout follows: a column that
+held three cards holds two. Home Assistant's header and sidebar, its dialogs and the edit mode stay at their size, so
+a dashboard is edited as it is laid out. The size is read before Home Assistant paints, so a page never starts small
+and jumps.
+
 ## Details
 
 - The first visit with `?kiosk` paints the sidebar for an instant before the wall takes over; every reload after
@@ -51,8 +63,8 @@ The house chooses the way out in the *Wall* tab (*Way out*), and nobody is ever 
   the address once read.
 - Wall mode fails open: if Home Assistant's pages change under Fluvy's feet, the sidebar and the header simply
   return (see [troubleshooting](troubleshooting.md)).
-- The wall's settings are the house's (`wall` in the settings file the *About* tab exports); what this device is
-  stays in the browser (`localStorage`, `fluvy:device`), and a pause in the session (`sessionStorage`,
-  `fluvy:wall-paused`).
+- The wall's settings are the house's (`wall` in the settings file *Preferences* exports); what this device is
+  and its size stay in the browser (`localStorage`, `fluvy:device`), and a pause in the session (`sessionStorage`,
+  `fluvy:wall-paused`). `?zoom=` is dropped from the address once read, as `?kiosk` is.
 - The wall's own pieces — the controller, the screensaver, the corner and the toast — load only on a device that
   is a wall (their own chunk); a phone never pays for them.

@@ -32,6 +32,7 @@ export function homeView(ctx: StrategyContext): Section[] {
   // the controls, the climate and the day, the energy and the house's state, in reading order; the
   // single-purpose cards fill the columns' feet
   return flowed(
+    ctx.header,
     [
       ...when(lights.length, () =>
         headed(
@@ -120,13 +121,13 @@ export function lightsView(ctx: StrategyContext): Section[] {
     6,
   );
   if (scenes.length) blocks.push([full('scenes', { title: t('strategy.automations'), scenes })]);
-  return flowed(blocks);
+  return flowed(ctx.header, blocks);
 }
 
 /** Thermostats first, then the forecast, humidity and temperatures, shared out so the three columns end level. */
 export function climateView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
-  return balanced([
+  return balanced(ctx.header, [
     ...home.climate.slice(0, 4).map((id) => thermostat(id, ctx.style)),
     ...home.fans.slice(0, 2).map((id) => full('fan', { entity: id, ...home.named(id) })),
     ...home.weather.slice(0, 1).map((id) => full('weather', { entity: id })),
@@ -152,7 +153,7 @@ export function climateView(ctx: StrategyContext): Section[] {
 export function energyView(ctx: StrategyContext): Section[] {
   const { home, t, energy } = ctx;
   const { solarPower, gridPower, solarToday, consumption, consumptionPowers } = energy;
-  return balanced([
+  return balanced(ctx.header, [
     ...liveCards(ctx),
     ...(energy.prefsMeters
       ? []
@@ -193,8 +194,9 @@ export const secured = (home: HomeRegistry): boolean =>
   Boolean(home.alarms.length || home.locks.length || home.cameras.length || home.gateways.length);
 
 /** The alarm first, then what opens (locks, garage doors and gates), what is open, and the cameras. */
-export function securityView({ home, t }: StrategyContext): Section[] {
-  return balanced([
+export function securityView(ctx: StrategyContext): Section[] {
+  const { home, t } = ctx;
+  return balanced(ctx.header, [
     ...home.alarms.slice(0, 2).map((id) => full('alarm', { entity: id, ...home.named(id) })),
     ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
     ...home.gateways.slice(0, 2).map((id) => full('cover', { entity: id, ...home.named(id) })),
@@ -206,12 +208,13 @@ export function securityView({ home, t }: StrategyContext): Section[] {
 }
 
 /** What plays now (only while something does), then every other player of the house. */
-export function mediaView({ home }: StrategyContext): Section[] {
+export function mediaView(ctx: StrategyContext): Section[] {
+  const { home } = ctx;
   const players = home.players.slice(0, 6);
   const playing =
     players.find((id) => home.state(id) === 'playing') ??
     players.find((id) => home.state(id) === 'paused');
-  return balanced([
+  return balanced(ctx.header, [
     ...when(playing, (id) => [full('now-playing', { entity: id, ...home.named(id) })]),
     ...players
       .filter((id) => id !== playing)
@@ -220,8 +223,9 @@ export function mediaView({ home }: StrategyContext): Section[] {
 }
 
 /** The calendars, the lists, the timers and what a person runs by hand. */
-export function agendaView({ home, t }: StrategyContext): Section[] {
-  return balanced([
+export function agendaView(ctx: StrategyContext): Section[] {
+  const { home, t } = ctx;
+  return balanced(ctx.header, [
     ...when(home.calendars.length, () => [
       full('calendar', { entities: home.calendars.slice(0, 3), view: 'month-day' }),
     ]),
@@ -233,11 +237,12 @@ export function agendaView({ home, t }: StrategyContext): Section[] {
   ]);
 }
 
-export function sensorsView({ home, t }: StrategyContext): Section[] {
+export function sensorsView(ctx: StrategyContext): Section[] {
+  const { home, t } = ctx;
   const zones = home.zones.filter((id) => id !== 'zone.home');
   const { batteries, phones, openings, plants, helpers, people, updates } = home;
   // what runs on batteries, who is home, what is open, then the helpers and the updates
-  return flowed([
+  return flowed(ctx.header, [
     when(batteries.length, () => [
       full('bars', {
         title: t('strategy.batteries'),

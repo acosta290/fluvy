@@ -7,6 +7,16 @@ import { FontsSettled } from '../shared/fonts.js';
 const ICON = 44 + 12;
 const GAP = 12;
 const BADGE_SIDES = 28;
+/* a compact row's circle (40) and its gap */
+const ICON_COMPACT = 40 + 12;
+/** The least a row's name may have beside its value before the circle gives way to it (the name itself when shorter). */
+const ROW_NAME_MIN = 96;
+
+/** How a row is laid out: the compact row's 40 circle, or no circle at all (given to the name). */
+export interface RowLayout {
+  readonly compact?: boolean;
+  readonly icon?: boolean;
+}
 
 export interface HeadFitOptions {
   /** Content width of the card. */
@@ -95,17 +105,56 @@ export class HeadFit implements ReactiveController {
     };
   }
 
-  /** "A · B · C" keeps A, then as many of the rest as the room holds. */
-  private fitSub(sub: string, room: number): string {
+  /**
+   * A card's sub fitted to `room` on its own (a head whose geometry is not the standard one: the player's 80 art and
+   * its rounds): "A · B · C" keeps A, then as many of the rest as the room holds.
+   */
+  fitSub(sub: string, room: number): string {
     const segments: Segment[] = sub
       .split(' · ')
       .map((text, index) => ({ text, optional: index > 0 }));
     return fitLine(segments, room, (text) => this.ruler.width('fv-card__sub', text));
   }
 
-  /** Room for a row's second line beside its value (`fv-row`: a 44 circle and two 12 gaps). */
-  rowRoom(width: number, value: string): number {
-    return width - ICON - GAP - (value ? this.ruler.width('fv-row__value', value) : 0);
+  /**
+   * Room for a row's words beside its value (`fv-row`: a 44 circle — 40 in a compact row, none in a row that gave
+   * it to its name — and two 12 gaps).
+   */
+  rowRoom(width: number, value: string, layout: RowLayout = {}): number {
+    const icon = layout.icon === false ? 0 : layout.compact ? ICON_COMPACT : ICON;
+    return width - icon - GAP - (value ? this.ruler.width('fv-row__value', value) : 0);
+  }
+
+  /** The least a row's name needs beside its value: 96, or the name itself (measured) when it is shorter. */
+  rowNameRoom(title: string): number {
+    return Math.min(ROW_NAME_MIN, this.ruler.width('fv-row__title', title));
+  }
+
+  /**
+   * Whether a list of rows keeps its circles: a row squeezed so far that its name would end before it had begun
+   * (its words' column under 96, or under the name itself) gives the circle's room to the name — and every row of
+   * the list with it, so the names keep one column. The head's own order: the circle gives way before a name is cut
+   * short; a name that still does not fit then ends in an ellipsis, as names may.
+   */
+  rowsKeepIcon(
+    width: number,
+    rows: readonly { readonly title: string; readonly value: string }[],
+    compact = false,
+  ): boolean {
+    return rows.every(
+      ({ title, value }) => this.rowRoom(width, value, { compact }) >= this.rowNameRoom(title),
+    );
+  }
+
+  /**
+   * A compact row's value for an entity that cannot be read: the state's word ("Unavailable", "Not found"), where
+   * it leaves the name its room even without the circle; else `fallback` — the figure's dash, the dashed ring still
+   * saying why.
+   */
+  rowWord(width: number, title: string, word: string, fallback: string): string {
+    return this.rowRoom(width, word, { compact: true, icon: false }) >= this.rowNameRoom(title)
+      ? word
+      : fallback;
   }
 
   /** A row's second line fitted to `room`: segments after the first go, from the end, before anything is clipped. */

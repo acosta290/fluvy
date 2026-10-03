@@ -1,8 +1,19 @@
-import { isActive, isUsable, type EntityView } from '@fluvy/core';
+import {
+  isActive,
+  isUsable,
+  localize,
+  stateText,
+  type EntityView,
+  type HomeAssistant,
+} from '@fluvy/core';
 import type { GlyphName, Tone } from '@fluvy/ui';
 
-/** Default glyph for an entity: device class first, then domain. A config `icon` always wins. */
+/**
+ * Default glyph for an entity: device class first, then domain. A config `icon` always wins. An entity that is not
+ * there has no kind to borrow a glyph from: the `ban` glyph every card draws for what cannot be read.
+ */
 export function glyphFor(view: EntityView): GlyphName {
+  if (view.status === 'missing') return 'ban';
   const dc = view.deviceClass;
   switch (view.domain) {
     case 'light':
@@ -102,6 +113,14 @@ export function glyphFor(view: EntityView): GlyphName {
 /** The glyph a measure wears, from what it measures: a chart's head has no entity of its own. */
 export const glyphForClass = (domain: string, deviceClass: string): GlyphName =>
   glyphFor({ domain, deviceClass, state: '' } as EntityView);
+
+/**
+ * The state of an entity that cannot be read, as one word for a value slot: "Unavailable", "Unknown", or "Not found"
+ * for an entity that is not there (the empty panel says "Entity not found"; a row's value has room for less).
+ */
+export function stateWord(hass: HomeAssistant | undefined, view: EntityView): string {
+  return view.status === 'missing' ? localize(hass, 'state.not_found') : stateText(hass, view);
+}
 
 /** The tone an entity fills with when it is active. Off, unavailable and events stay neutral. */
 export function toneFor(view: EntityView): Tone {

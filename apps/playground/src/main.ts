@@ -18,6 +18,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
+import { dashboardOptions, mountDashboard } from './dashboard.js';
 import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
@@ -35,7 +36,8 @@ import { mergeWs, NOW, SHEETS } from './scenes.js';
  * ?shape=round           soft | round | crisp
  * ?accent=%23ff4a1a      a custom palette instead: &character=vivid &base=cool &fill=solid &highlight=%23e2ff3d
  * ?compare=linen,volt    the sheet once per palette, side by side (each column scoped to its palette)
- * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | preferences | about)
+ * ?template_delay=3000   how long the mock takes to answer a row's template, in ms (default 30: before the first paint)
+ * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | wall | preferences)
  * &state=pending,guest     …at a moment of its own (see `PanelState` in panel.ts)
  * &nopopover=1             …in a browser without the Popover API (the dropdown's fixed fallback)
  * ?history=1             Fluvy's History page on a made-up house (&moment=week|month|states|many|empty|loading|sources|dates)
@@ -43,11 +45,14 @@ import { mergeWs, NOW, SHEETS } from './scenes.js';
  *                        &at=2026-09-17T21:47 the clock set to that moment, still running,
  *                        &card=1 its timeline on a card,
  *                        &moment=detail|burst|dates|sources|lights|week|nomatch|fresh|drop|loading|empty)
+ * ?dashboard=home        a sheet's frames as a dashboard's view, under Home Assistant's header and its view tabs
+ *                        (&tabs= &content= &tabtitle= &views= &icons= &edit= &subview= &scope= — see dashboard.ts)
  */
 const params = new URLSearchParams(location.search);
 const dark = params.get('mode') === 'dark';
 const width = Number(params.get('width') ?? 360);
-const only = params.get('sheet');
+const dashboard = params.get('dashboard');
+const only = dashboard ?? params.get('sheet');
 const language = params.get('lang') ?? 'en';
 
 // a WebView without the top layer: the dropdown must place its menu itself
@@ -131,6 +136,7 @@ const mock = createHass([...states.values()], {
     readonly number[]
   >,
   ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
+  ...(params.has('template_delay') ? { templateDelay: Number(params.get('template_delay')) } : {}),
   api: (method, path) => {
     for (const [, s] of selected) {
       const answer = s.api?.(method, path);
@@ -177,19 +183,21 @@ if (wallMoment)
 const compare = (params.get('compare') ?? '').split(',').filter(isPaletteName);
 const shape = params.get('shape');
 /** Where the frames go: the stage, or one column per compared palette with its look scoped to it. */
-const columns = compare.length
-  ? compare.map((palette) => {
-      const column = document.createElement('div');
-      column.className = 'pg-look';
-      column.dataset['look'] = palette;
-      const label = document.createElement('p');
-      label.className = 'pg-look__name';
-      label.textContent = palette;
-      column.append(label);
-      stage.append(column);
-      return column;
-    })
-  : [stage];
+const columns = dashboard
+  ? [mountDashboard(stage, dashboardOptions(params))]
+  : compare.length
+    ? compare.map((palette) => {
+        const column = document.createElement('div');
+        column.className = 'pg-look';
+        column.dataset['look'] = palette;
+        const label = document.createElement('p');
+        label.className = 'pg-look__name';
+        label.textContent = palette;
+        column.append(label);
+        stage.append(column);
+        return column;
+      })
+    : [stage];
 if (compare.length) {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(

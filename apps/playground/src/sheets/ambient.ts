@@ -121,6 +121,15 @@ const DAYS = [
   { condition: 'lightning-rainy', temperature: 19, templow: 12, precipitation: 7.4 },
   { condition: 'snowy', temperature: 2, templow: -3, precipitation_probability: 80 },
 ];
+/** The cabin's week: figures below zero, the widest a day column has to hold. */
+const COLD_DAYS = [
+  { condition: 'snowy', temperature: -4, templow: -12, precipitation_probability: 80 },
+  { condition: 'snowy-rainy', temperature: -1, templow: -9, precipitation_probability: 60 },
+  { condition: 'cloudy', temperature: -13, templow: -21, precipitation_probability: 10 },
+  { condition: 'sunny', temperature: -8, templow: -19, precipitation_probability: 0 },
+  { condition: 'fog', temperature: -3, templow: -11, precipitation_probability: 20 },
+  { condition: 'windy', temperature: 1, templow: -6, precipitation_probability: 5 },
+];
 
 const TILE_TEMPERATURE = {
   type: 'custom:fluvy-sensor-card',
@@ -376,6 +385,15 @@ export const sheet: SheetSpec = {
   ws: {
     'weather/subscribe_forecast': (message: Record<string, unknown>) => {
       const entity = String(message['entity_id'] ?? '');
+      // the cabin forecasts its days only
+      if (entity === 'weather.am_cold')
+        return {
+          type: message['forecast_type'],
+          forecast:
+            message['forecast_type'] === 'daily'
+              ? COLD_DAYS.map((day, index) => ({ datetime: at(index * DAY), ...day }))
+              : null,
+        };
       // Home Assistant refuses the subscription of an entity without forecasts; the mock can only stay silent or say "none"
       if (
         entity !== 'weather.am_home' &&
@@ -566,6 +584,94 @@ export const sheet: SheetSpec = {
       ],
     },
     conditionFrame,
+    /* --- the compact card (1.5): one head row, the hours and the days ahead as columns --- */
+    {
+      title: 'Weather · compact',
+      cards: [
+        { type: 'custom:fluvy-weather-card', entity: 'weather.am_home', variant: 'compact', _now },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_evening',
+          variant: 'compact',
+          forecast: 'hourly',
+          _now,
+        },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_home',
+          variant: 'compact',
+          forecast: 'both',
+          days: 3,
+          _now,
+        },
+      ],
+    },
+    {
+      title: 'Weather · compact · desktop',
+      width: 392,
+      cards: [
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_home',
+          variant: 'compact',
+          forecast: 'both',
+          _now,
+        },
+      ],
+    },
+    // half a column: as many day columns as fit (two of the seven asked), the name ends in an ellipsis
+    {
+      title: 'Weather · compact · half a column',
+      width: 360, // the sheet's own width: two 172 cards (a half column shrinks with a narrower frame)
+      cards: [
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_home',
+          variant: 'compact',
+          days: 7,
+          _now,
+          cols: 6,
+        },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_night',
+          variant: 'compact',
+          forecast: 'hourly',
+          _now,
+          cols: 6,
+        },
+      ],
+    },
+    // figures below zero take wider columns (four, not five); no forecast at all; a long name; unknown, unavailable, missing
+    {
+      title: 'Weather · compact · edges',
+      cards: [
+        { type: 'custom:fluvy-weather-card', entity: 'weather.am_cold', variant: 'compact', _now },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_basic',
+          variant: 'compact',
+          forecast: 'both',
+          _now,
+        },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_home',
+          variant: 'compact',
+          show_forecast: false,
+          name: 'Barcelona El Prat airport weather station',
+          _now,
+        },
+        {
+          type: 'custom:fluvy-weather-card',
+          entity: 'weather.am_unknown',
+          variant: 'compact',
+          _now,
+        },
+        { type: 'custom:fluvy-weather-card', entity: 'weather.am_gone', variant: 'compact', _now },
+        { type: 'custom:fluvy-weather-card', entity: 'weather.am_missing', variant: 'compact' },
+      ],
+    },
     {
       title: 'Sensors · edges',
       cards: [

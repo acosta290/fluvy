@@ -42,6 +42,11 @@ export interface FluvyStrategyConfig {
   scenes_max?: ScenesMax;
   /** The dashboard's words in one language, whoever opens it (default: each person's). */
   language?: LanguageCode;
+  /**
+   * The views as chips under the greeting too (`show`), or only as the header's tabs (`hide`, the default since the
+   * header's tabs wear the look: 1.5).
+   */
+  greeting_tabs?: 'show' | 'hide';
 }
 
 /** The home dashboard's config: the same keys, its views by name. */
@@ -125,6 +130,10 @@ export interface StrategyContext {
   readonly style: CardStyle;
   /** The rooms the dashboard was asked to show (undefined: every room with something in it). */
   readonly areas: readonly string[] | undefined;
+  /** Whether every view's first column opens with the views as chips under the greeting. */
+  readonly greetingTabs: boolean;
+  /** What opens the first column of every view, in px at a 360 column (the greeting, the chips): the layout counts it. */
+  readonly header: number;
 }
 
 export interface ViewSpec {

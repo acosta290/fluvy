@@ -40,6 +40,7 @@ import {
   ScrubController,
   sheetStyles,
   textWidth,
+  zoomOf,
 } from '@fluvy/ui';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
@@ -322,7 +323,7 @@ export class FluvyHistory extends LitElement {
 
   /** What the page's own width decides: the column a chart is drawn into, and which shape its head takes. */
   private measure(main: HTMLElement): void {
-    const width = Math.round(main.getBoundingClientRect().width);
+    const width = Math.round(main.getBoundingClientRect().width / zoomOf(main)); // the chart's column, in its own pixels
     if (width && width !== this.mainWidth) this.mainWidth = width;
     const own = this.offsetWidth;
     if (own > 0) {

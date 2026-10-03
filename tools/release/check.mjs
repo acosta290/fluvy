@@ -29,7 +29,12 @@ const BUDGETS = {
   wall: 16_384,
   // the energy family: every energy card, the flow's drawing and motion, the model they share
   energy: 65_536,
+  // the media family: the player and the now-playing strip
+  media: 16_384,
+  // the weather card
+  weather: 12_288,
   editor: 8192,
+  'view-icons': 4096,
   pages: 8192,
   activity: 32_768,
   history: 16_384,

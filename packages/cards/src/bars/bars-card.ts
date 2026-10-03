@@ -1,4 +1,5 @@
 import {
+  isUsable,
   stateText,
   strings as words,
   valueParts,
@@ -21,7 +22,7 @@ import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { glyphFor, stateWord } from '../shared/domain.js';
 
 import {
   actionField,
@@ -36,15 +37,20 @@ import {
   iconField,
   idsOnly,
   nameIconFields,
+  selectField,
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { HEAD, listLength, ROW_BAR } from '../shared/heights.js';
+import { HEAD, ROW, ROW_BAR, ROW_COMPACT } from '../shared/heights.js';
+import { PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 
 const strings = words('bars');
+
+export type BarsVariant = 'full' | 'compact';
+const VARIANTS: readonly BarsVariant[] = ['full', 'compact'];
 
 const anyNumber = (name: string): HaFormSchemaItem => ({
   name,
@@ -55,7 +61,7 @@ export interface BarRowConfig {
   entity: string;
   name?: string;
   icon?: string;
-  /** Static context in front of the live secondary text ("6 panels"). */
+  /** The row's own context in front of what its companions say ("6 panels"), or a template rendered live. */
   secondary?: string;
   /** One or more entities read into the row's secondary line (a string's temperature, a plant's note). */
   sub_entity?: string | readonly string[];
@@ -79,6 +85,11 @@ export interface BarsCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
   rows?: ReadonlyArray<string | BarRowConfig>;
+  /**
+   * `full` (default): 76 px rows with the context under the name (60 for a plain one). `compact`: 48 px rows, the
+   * name and the value on one line and the bar under them.
+   */
+  variant?: BarsVariant;
   /** "All good" by default. */
   badge_ok?: string;
   /** "{count} low" by default ("{count} thirsty", "{count} shaded"). */
@@ -111,15 +122,24 @@ const subEntities = (row: BarRowConfig): string[] =>
       ? [row.sub_entity]
       : [...row.sub_entity];
 
+const rowsOf = (config: BarsCardConfig): BarRowConfig[] =>
+  (config.rows ?? []).map((row) => (typeof row === 'string' ? { entity: row } : row));
+
+/** A row's height: a bar row 76 and a plain one 60; every compact row 48. */
+const rowHeight = (row: BarRowConfig, compact: boolean): number =>
+  compact ? ROW_COMPACT : row.plain ? ROW : ROW_BAR;
+
 /**
  * The bar-row list: one 76 px row per entity — icon circle, name and context, the value at the right
- * and a 4 px bar under the text. Rows outside their band turn warning and are counted in the head
- * badge ("1 shaded", "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card.
+ * and a 4 px bar under the text — or, compact, 48 px rows with the name and the value on one line over
+ * the bar. Rows outside their band turn warning and are counted in the head badge ("1 shaded",
+ * "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card.
  */
 export class FluvyBarsCard extends Card<BarsCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: BarsCardConfig): number {
-    return HEAD + ROW_BAR * listLength(config, ['rows']);
+    const compact = config.variant === 'compact';
+    return rowsOf(config).reduce((height, row) => height + rowHeight(row, compact), HEAD);
   }
 
   static override styles: CSSResultGroup = [
@@ -128,6 +148,8 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   ];
 
   private readonly head = new HeadFit(this);
+  /** A row's own context when it is a template: rendered by Home Assistant, live. */
+  private readonly texts = new TemplateTexts(this);
 
   /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
   static override base: readonly BaseKey[] = ['icon', 'tone', 'color', 'tap_action', 'hold_action'];
@@ -135,6 +157,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     'title',
     'subtitle',
     'rows',
+    'variant',
     'badge_ok',
     'badge_warn',
   ]);
@@ -171,11 +194,12 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  static override defaults: EditorDefaults = () => ({ variant: 'full' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
-        iconField(),
+        fieldRow(iconField(), selectField('variant', VARIANTS)),
         colourFields(),
         entitiesField('rows', undefined, true),
         fieldRow(textField('badge_ok'), textField('badge_warn')),
@@ -206,9 +230,11 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   }
 
   private rows(): BarRowConfig[] {
-    return (this.config?.rows ?? []).map((row) =>
-      typeof row === 'string' ? { entity: row } : row,
-    );
+    return this.config ? rowsOf(this.config) : [];
+  }
+
+  private compact(): boolean {
+    return this.config?.variant === 'compact';
   }
 
   protected override prepare(config: BarsCardConfig): BarsCardConfig {
@@ -217,7 +243,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   }
 
   override getCardSize(): number {
-    return 1 + Math.ceil((this.rows().length * 76) / 50);
+    return Math.ceil((this.config ? FluvyBarsCard.layoutHeight(this.config) : HEAD) / 50);
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
@@ -245,7 +271,9 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
    * In a narrow column the context gives way from the end — the word that says why there is no value never does.
    */
   private context(row: BarRowConfig, view: EntityView, usable: boolean, room: number): string {
-    const segments: Segment[] = row.secondary ? [{ text: row.secondary, optional: true }] : [];
+    const own = row.secondary ? this.texts.resolve(row.secondary, row.entity) : '';
+    const segments: Segment[] =
+      own && own !== PENDING_LINE ? own.split(' · ').map((text) => ({ text, optional: true })) : [];
     const lower = (state: string): string =>
       segments.length
         ? state.charAt(0).toLocaleLowerCase(this.hass?.language) + state.slice(1)
@@ -266,6 +294,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     const first = segments[0];
     if (first && usable) segments[0] = { text: first.text }; // the row's first word of context stays
     const line = this.head.fitRowSegments(segments, room);
+    if (!line) return own; // nothing else on the line: the row's own, a blank while its template is pending
     return state && line === lower(state) ? state : line; // left alone on the line, the state keeps its capital
   }
 
@@ -287,10 +316,12 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     });
 
     const width = this.contentWidth;
+    const compact = this.compact();
     let warnings = 0;
-    const body = rows.map((row, index) => {
+    // every row's figure first: whether the rows keep their circles is decided over all of them
+    const items = rows.map((row, index) => {
       const view = views[index] as EntityView;
-      const usable = view.status === 'ok' || view.status === 'unknown';
+      const usable = isUsable(view);
       const quantity = usable ? baseOf(view) : null;
       const percent = PERCENT.has(view.deviceClass) || view.unit === '%';
       const factor = toBase(1, view.unit).value;
@@ -311,26 +342,42 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
       const scale = quantity ? scaleFor(setPeak.get(quantity.unit) ?? 0, quantity.unit) : null;
       const parts = valueParts(this.hass, view);
       // a figure in the set's unit; anything else (a percentage, a text state, "—") as Home Assistant formats it
-      const value =
+      const figure =
         quantity && scale && scale.unit !== view.unit
           ? figureText(this.hass, quantity.value, scale)
           : parts.unit
             ? `${parts.value} ${parts.unit}`
             : parts.value;
+      const title = row.name ?? view.name;
+      // a compact row has no second line to say why there is no figure: the state's word is its value, where the
+      // word leaves the name its room (the full row says it under the name)
+      const value =
+        compact && view.status !== 'ok'
+          ? this.head.rowWord(width, title, stateWord(this.hass, view), figure)
+          : figure;
+      return { row, view, usable, quantity, min, max, warn, title, value };
+    });
+    const keepIcon = this.head.rowsKeepIcon(width, items, compact);
+    const body = items.map(({ row, view, usable, quantity, min, max, warn, title, value }) => {
       // a row's own tone, or its colour as the accent; without either the circle stays neutral and the bar takes the measure's tone
       const own: Tone | undefined = row.tone ?? (row.color ? 'accent' : undefined);
       const iconTone: Tone = !usable ? 'off' : warn ? 'warning' : (own ?? 'neutral');
       const valueTone: 'warning' | '' = warn ? 'warning' : '';
 
+      // a compact row is the name and the value alone: its context is not laid out
       const shared = {
-        icon: row.icon ?? glyphFor(view),
+        icon: keepIcon ? (row.icon ?? glyphFor(view)) : null,
         tone: iconTone,
-        title: row.name ?? view.name,
+        title,
         name: true,
         accent: this.accents.item(row.color),
-        sub: this.context(row, view, usable, this.head.rowRoom(width, value)),
+        sub: compact
+          ? ''
+          : this.context(row, view, usable, this.head.rowRoom(width, value, { icon: keepIcon })),
         value,
         valueTone,
+        compact,
+        unavailable: !usable,
         onTap: (): void => this.tap(row.entity, row.tap_action),
       };
       return row.plain

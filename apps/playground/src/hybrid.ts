@@ -1,0 +1,158 @@
+import { house, type Handler } from './houses.js';
+
+/**
+ * Issue #23's house, for the energy card's `sources` frames: a hybrid inverter with the sun on its DC side and a
+ * battery that charges hard at midday. Its POWER sensors are right (the sun, the grid signed, the battery signed); its
+ * ENERGY meters are what such a house often has — they tick in 0.1 kWh steps, and the "solar" meter is the inverter's
+ * AC output (the sun less what went into the battery, plus what came out of it at night). The recorder was down from
+ * 03:00 to 03:30. Home Assistant's own "Power sources" graph draws this house right from the power sensors; a chart
+ * drawn from the meters cannot.
+ */
+
+const DAY = Date.parse('2026-09-16T22:00:00Z');
+const STEP = 300_000;
+/** The sheet's moment, 21:47: buckets up to it. */
+const BUCKETS = 262;
+const GAP = new Set(Array.from({ length: 6 }, (_, i) => 36 + i)); // 03:00–03:30
+
+interface Bucket {
+  readonly sun: number;
+  readonly house: number;
+  readonly charge: number;
+  readonly discharge: number;
+  readonly imported: number;
+  readonly exported: number;
+}
+
+/** The day in kW, a value a five-minute bucket: a 6 kW bell of sun, a 4.5 kW charge at midday, the battery at night. */
+function day(): Bucket[] {
+  const out: Bucket[] = [];
+  for (let i = 0; i < BUCKETS; i++) {
+    const h = (i * 5 + 2.5) / 60;
+    const sun = 6.2 * Math.max(0, Math.sin(((h - 7) / 12) * Math.PI));
+    const house =
+      1.0 +
+      0.4 * Math.exp(-((h - 7.5) ** 2) / 1.2) +
+      0.6 * Math.exp(-((h - 13.5) ** 2) / 0.5) +
+      1.2 * Math.exp(-((h - 19.5) ** 2) / 3);
+    const window = h > 9 && h < 15 ? Math.sin(((h - 9) / 6) * Math.PI) : 0;
+    const charge = Math.min(4.5, Math.max(0, sun - house)) * window;
+    const night = h < 7.5 || h > 17;
+    const discharge = night ? Math.min(house, 1.3) : 0;
+    const exported = Math.max(0, sun - house - charge);
+    const imported = Math.max(0, house - sun - discharge);
+    out.push({ sun, house, charge, discharge, imported, exported });
+  }
+  return out;
+}
+
+/** A meter's five-minute changes when it counts in 0.1 kWh steps: the cumulative energy floored to the step. */
+function ticks(kw: readonly number[]): number[] {
+  let total = 0;
+  let shown = 0;
+  return kw.map((p) => {
+    total += p / 12;
+    const next = Math.floor(total * 10 + 1e-9) / 10;
+    const change = next - shown;
+    shown = next;
+    return change;
+  });
+}
+
+const D = day();
+const series = (pick: (b: Bucket) => number): number[] => D.map(pick);
+
+/** The power sensors' five-minute means (kW): the truth. */
+const MEANS: Record<string, number[]> = {
+  'sensor.hy_pv': series((b) => b.sun),
+  'sensor.hy_grid': series((b) => b.imported - b.exported),
+  'sensor.hy_battery': series((b) => b.discharge - b.charge),
+};
+/** The energy meters' five-minute changes (kWh): coarse, and the "solar" meter is the inverter's AC side. */
+const METERS: Record<string, number[]> = {
+  'sensor.hy_solar_energy': ticks(series((b) => Math.max(0, b.sun - b.charge) + b.discharge)),
+  'sensor.hy_grid_in_energy': ticks(series((b) => b.imported)),
+  'sensor.hy_grid_out_energy': ticks(series((b) => b.exported)),
+  'sensor.hy_battery_out_energy': ticks(series((b) => b.discharge)),
+  'sensor.hy_battery_in_energy': ticks(series((b) => b.charge)),
+};
+
+const rows = (id: string, mean: boolean) => {
+  const list = (mean ? MEANS : METERS)[id];
+  if (!list) return [];
+  return list.flatMap((value, i) =>
+    GAP.has(i)
+      ? []
+      : [
+          mean
+            ? { start: DAY + i * STEP, end: DAY + (i + 1) * STEP, mean: value }
+            : { start: DAY + i * STEP, change: value },
+        ],
+  );
+};
+
+/** The hourly changes the legend of the meters' path reads (the Energy dashboard's arithmetic). */
+const hourly = (id: string) => {
+  const list = METERS[id] ?? [];
+  const hours = new Map<number, number>();
+  list.forEach((value, i) => {
+    if (GAP.has(i)) return;
+    const hour = Math.floor(i / 12);
+    hours.set(hour, (hours.get(hour) ?? 0) + value);
+  });
+  return [...hours.entries()].map(([hour, change]) => ({ start: DAY + hour * 3600_000, change }));
+};
+
+const statistics: Handler = (message) =>
+  Object.fromEntries(
+    ((message['statistic_ids'] as string[] | undefined) ?? []).map((id) => {
+      const types = (message['types'] as string[] | undefined) ?? [];
+      if (types.includes('mean')) return [id, rows(id, true)];
+      return [id, message['period'] === '5minute' ? rows(id, false) : hourly(id)];
+    }),
+  );
+
+const prefs = (power: boolean) => ({
+  energy_sources: [
+    {
+      type: 'grid',
+      stat_energy_from: 'sensor.hy_grid_in_energy',
+      stat_energy_to: 'sensor.hy_grid_out_energy',
+      ...(power ? { stat_rate: 'sensor.hy_grid' } : {}),
+    },
+    {
+      type: 'solar',
+      stat_energy_from: 'sensor.hy_solar_energy',
+      ...(power ? { stat_rate: 'sensor.hy_pv' } : {}),
+    },
+    {
+      type: 'battery',
+      stat_energy_from: 'sensor.hy_battery_out_energy',
+      stat_energy_to: 'sensor.hy_battery_in_energy',
+      ...(power ? { stat_rate: 'sensor.hy_battery' } : {}),
+    },
+  ],
+  device_consumption: [],
+});
+
+/** The house with its power sensors in the Energy dashboard, and the same house with its meters alone. */
+export const hybridWithPower = house({
+  'energy/get_prefs': () => prefs(true),
+  'recorder/statistics_during_period': statistics,
+});
+export const hybridMetersOnly = house({
+  'energy/get_prefs': () => prefs(false),
+  'recorder/statistics_during_period': statistics,
+});
+
+/** Its live sensors at 21:47: the sun down, the battery carrying the evening, a little from the grid. */
+export const HYBRID_STATES = [
+  ['sensor.hy_pv', '0', 'Inverter PV power'],
+  ['sensor.hy_grid', '0.3', 'Grid power'],
+  ['sensor.hy_battery', '1.3', 'Battery power'],
+] as const;
+
+/** What the suite compares with: the sun's power at noon and at 02:00 (kW). */
+export const HYBRID_EXPECT = {
+  sunAtNoon: MEANS['sensor.hy_pv']?.[144] ?? 0,
+};

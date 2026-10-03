@@ -26,6 +26,7 @@ export {
   type PressTarget,
 } from './controls/pointer.js';
 export { sideScroll } from './controls/side-scroll.js';
+export { localPoint, zoomOf } from './controls/zoom.js';
 export { ScrubController, scrub } from './controls/scrub.js';
 export { FluvyRuler, type RulerChangeDetail, type RulerWindowDetail } from './controls/ruler.js';
 export { FluvyDial, type DialArc, type DialChangeDetail } from './controls/dial.js';

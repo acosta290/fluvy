@@ -22,7 +22,9 @@ export async function generateWith(
   hass: HomeAssistant,
   base?: string,
 ): Promise<{ views: View[] }> {
-  const ctx = await buildContext(config, hass, base);
+  const built = await buildContext(config, hass, base);
+  // a template without the greeting opens its columns with nothing
+  const ctx = template.header === 'hello' ? built : { ...built, header: 0 };
   const hidden = new Set(config.hide ?? []);
   const views = viewsOf(template, ctx)
     .filter((spec, index) => index === 0 || !hidden.has(spec.key))

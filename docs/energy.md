@@ -94,8 +94,12 @@ battery exported, then the rest ran the house — and adds the hours up. The fig
 - **Energy score** — self-powered, the sun used and low-carbon, as the Energy dashboard's own gauges compute them.
 - **Water & gas** — each meter's use today against a typical day, what flows right now, and a leak sensor or a valve
   beside them.
-- **Energy** — `variant: sources` draws the house's power today by where it came from, stacked, with what went to the
-  grid below the line.
+- **Energy** — `variant: sources` draws the house's power today by where it came from, stacked, with what went into
+  the battery and out to the grid below the line. When the Energy dashboard names a power sensor for every source, the
+  curve is their five-minute means — what Home Assistant's own "Power sources" graph draws — and "right now" is the
+  house's own use; otherwise the meters, in blocks of 15 minutes, or 30 or 60 when a meter counts in coarse steps
+  (0.1 kWh). A hybrid inverter's AC meter registered as solar counts what the battery gives back as sun: give the
+  Energy dashboard its power sensors and the card draws from them.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **Gauge** — `variant: signed` for a meter that can be negative: zero at the top, "1.8 kW out".

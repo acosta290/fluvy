@@ -73,12 +73,13 @@ there; *Recreate* takes them all back to their defaults):
 | `areas` | a list of area ids | wall | the rooms the wall shows, in that order (default: every room with something in it) |
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
+| `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were) |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
 | `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `tr` | all | the dashboard's words in that language, whoever opens it |
 
 Without `language`, the dashboard's words follow the language of whoever opens it (Home Assistant's, or the one
 chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or
-*cocina* is a light's room in any of them. The settings file the *About* tab exports carries every dashboard's options
+*cocina* is a light's room in any of them. The settings file *Preferences* exports (its last card, *Fluvy*) carries every dashboard's options
 under `dashboards`, by url path; a file from Fluvy 1.2 (one `dashboard` key) still lands on the home dashboard.
 
 ## Limits

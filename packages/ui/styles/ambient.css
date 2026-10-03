@@ -57,6 +57,23 @@
   font-weight: 600;
   line-height: 20px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* a day column's low beside its high ("23° 12°"): the quiet half of the pair */
+.am-hour__low {
+  font-weight: 500;
+  color: var(--fluvy-text-secondary);
+}
+
+/* the compact card's temperature at the head's end: the compact family's 16/600 figure, never cut */
+.am-weather__temp {
+  flex: none;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .am-days {
