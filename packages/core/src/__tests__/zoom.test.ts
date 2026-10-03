@@ -33,25 +33,25 @@ describe('the size this device reads at', () => {
   });
 
   it('remembers ?zoom= and drops it from the address, keeping the rest and the hash', () => {
-    visit('http://home.local/fluvy-home?edit=1&zoom=125&tabs=pills#rooms');
+    visit('http://ha.test/fluvy-home?edit=1&zoom=125&tabs=pills#rooms');
     stop = startZoom();
     expect(readDevice().zoom).toBe(125);
     expect(factor()).toBe('1.25');
-    expect(location.href).toBe('http://home.local/fluvy-home?edit=1&tabs=pills#rooms');
+    expect(location.href).toBe('http://ha.test/fluvy-home?edit=1&tabs=pills#rooms');
   });
 
   it('drops a size it does not know too, and leaves the remembered one', () => {
     writeDevice({ zoom: 110 });
-    visit('http://home.local/fluvy-home?zoom=120');
+    visit('http://ha.test/fluvy-home?zoom=120');
     stop = startZoom();
     expect(readDevice().zoom).toBe(110);
     expect(factor()).toBe('1.1');
-    expect(location.href).toBe('http://home.local/fluvy-home');
+    expect(location.href).toBe('http://ha.test/fluvy-home');
   });
 
   it('applies what the device remembers when the address says nothing, and follows another tab', () => {
     writeDevice({ zoom: 150 });
-    visit('http://home.local/fluvy-home');
+    visit('http://ha.test/fluvy-home');
     stop = startZoom();
     expect(factor()).toBe('1.5');
     // another tab of this browser changed the device: the storage event brings the size here

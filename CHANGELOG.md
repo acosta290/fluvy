@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-10-03
+
 ### Added
 
 - **Dashboard tabs, your way** (#20): the view tabs in a dashboard's header — Home Assistant's own — take the look as
