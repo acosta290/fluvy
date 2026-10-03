@@ -9,7 +9,8 @@ import { house, type Handler } from './houses.js';
  * drawn from the meters cannot.
  */
 
-const DAY = Date.parse('2026-09-16T22:00:00Z');
+/** The sheet's midnight in the browser's own zone, as the card counts its day (a runner in UTC and a desk in Madrid differ). */
+const DAY = new Date(2026, 8, 17).getTime();
 const STEP = 300_000;
 /** The sheet's moment, 21:47: buckets up to it. */
 const BUCKETS = 262;
