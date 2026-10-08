@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-10-08
+
 ### Added
 
 - **The whole house on one chart** (#26): the energy card's `variant: overview` draws today as Home Assistant's
