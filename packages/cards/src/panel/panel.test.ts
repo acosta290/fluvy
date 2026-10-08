@@ -518,7 +518,13 @@ describe('the settings panel', () => {
     panel.tab = 'wall';
     await settle();
     row('See the screensaver')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 80)); // the wall's pieces are fetched
+    // the wall's pieces are fetched (a chunk of their own): as long as that takes, up to two seconds on a slow runner
+    for (
+      let waited = 0;
+      waited < 2000 && !root.querySelector('fluvy-wall-screensaver');
+      waited += 20
+    )
+      await new Promise((resolve) => setTimeout(resolve, 20));
     await settle();
     const saver = root.querySelector('fluvy-wall-screensaver') as HTMLElement & {
       clock: boolean;
