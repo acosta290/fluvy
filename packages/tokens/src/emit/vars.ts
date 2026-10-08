@@ -1,5 +1,5 @@
 import { meshOf } from '../build/mesh.js';
-import { composite } from '../color/contrast.js';
+import { composite, contrastRatio } from '../color/contrast.js';
 import { cssVar, DEFAULT_MODE, DEFAULT_PALETTE, PALETTE_TOKEN } from '../config.js';
 import type { AccentFamily } from '../build/derive/accent.js';
 import {
@@ -28,6 +28,7 @@ import {
   RAMP_STEPS,
   SEMANTIC_ROLES,
   STATE_KEYS,
+  type Hex,
   type Palette,
   type PaletteModeColors,
 } from '../types.js';
@@ -124,6 +125,24 @@ export function identityVars(palette: Pick<Palette, 'key'>): readonly VarGroup[]
 }
 
 /**
+ * An item's colour at rest (`tint: always`): its fill washed into the ground it sits on, as much of it as keeps the
+ * words on it — the primary and the secondary ink — at 4.5, up to 40 %. A tint palette's fill is pale enough to take
+ * the 40 %; a solid one in dark gives a quarter or so. With none to spare, the ground: the fill's hairline says it.
+ */
+export function restWash(fill: Hex, ground: Hex, colors: PaletteModeColors): Hex {
+  // from 40 % down, two points a step
+  for (let step = 20; step > 0; step--) {
+    const wash = composite(fill, ground, step / 50);
+    if (
+      contrastRatio(colors.text.secondary, wash) >= 4.5 &&
+      contrastRatio(colors.text.primary, wash) >= 4.5
+    )
+      return wash;
+  }
+  return ground;
+}
+
+/**
  * What a card's own colour redefines inside it: the accent's seven, the ink on the solid accent, the primary
  * action, the highlight where the palette has none of its own, the accent ramp, the twelve graph series and the
  * lit light (the accent's twin) — and nothing else: surfaces, text, the neutral ramp, the other states, the marks
@@ -145,6 +164,8 @@ export function accentFamilyVars(
     [cssVar('accent-fill'), family.fill],
     [cssVar('accent-fill-border'), family.fillBorder],
     [cssVar('accent-wash'), wash],
+    [cssVar('accent-rest'), restWash(family.fill, colors.surface.card, colors)],
+    [cssVar('accent-rest-inner'), restWash(family.fill, colors.surface.page, colors)],
     [cssVar('accent-on-fill'), family.onFill],
     [cssVar('primary'), family.primary.fill],
     [cssVar('primary-hover'), family.primary.hover],

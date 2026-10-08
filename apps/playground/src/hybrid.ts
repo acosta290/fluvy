@@ -63,11 +63,27 @@ function ticks(kw: readonly number[]): number[] {
 const D = day();
 const series = (pick: (b: Bucket) => number): number[] => D.map(pick);
 
+/** The battery's usable capacity (kWh) and its charge at midnight (%). */
+const CAPACITY = 15;
+const MIDNIGHT_LEVEL = 70;
+
+/** Its state of charge through the day: what went in less what came out, at the end of each five minutes. */
+function charge(): number[] {
+  let level = MIDNIGHT_LEVEL;
+  return D.map((b) => {
+    level = Math.min(100, Math.max(0, level + (((b.charge - b.discharge) / 12) * 100) / CAPACITY));
+    return level;
+  });
+}
+const LEVELS = charge();
+
 /** The power sensors' five-minute means (kW): the truth. */
 const MEANS: Record<string, number[]> = {
   'sensor.hy_pv': series((b) => b.sun),
   'sensor.hy_grid': series((b) => b.imported - b.exported),
   'sensor.hy_battery': series((b) => b.discharge - b.charge),
+  'sensor.hy_soc': LEVELS,
+  'sensor.hy_battery_2': series(() => 0),
 };
 /** The energy meters' five-minute changes (kWh): coarse, and the "solar" meter is the inverter's AC side. */
 const METERS: Record<string, number[]> = {
@@ -113,7 +129,7 @@ const statistics: Handler = (message) =>
     }),
   );
 
-const prefs = (power: boolean) => ({
+const prefs = (power: boolean, batteries = 1, capacity = true) => ({
   energy_sources: [
     {
       type: 'grid',
@@ -126,12 +142,15 @@ const prefs = (power: boolean) => ({
       stat_energy_from: 'sensor.hy_solar_energy',
       ...(power ? { stat_rate: 'sensor.hy_pv' } : {}),
     },
-    {
+    // a second battery idles all day: it only says its own charge
+    ...Array.from({ length: batteries }, (_, i) => ({
       type: 'battery',
-      stat_energy_from: 'sensor.hy_battery_out_energy',
-      stat_energy_to: 'sensor.hy_battery_in_energy',
-      ...(power ? { stat_rate: 'sensor.hy_battery' } : {}),
-    },
+      stat_energy_from: i === 0 ? 'sensor.hy_battery_out_energy' : 'sensor.hy_battery_2_out_energy',
+      stat_energy_to: i === 0 ? 'sensor.hy_battery_in_energy' : 'sensor.hy_battery_2_in_energy',
+      ...(power ? { stat_rate: i === 0 ? 'sensor.hy_battery' : 'sensor.hy_battery_2' } : {}),
+      stat_soc: i === 0 ? 'sensor.hy_soc' : 'sensor.hy_soc_2',
+      ...(capacity ? { capacity: CAPACITY } : {}),
+    })),
   ],
   device_consumption: [],
 });
@@ -145,15 +164,34 @@ export const hybridMetersOnly = house({
   'energy/get_prefs': () => prefs(false),
   'recorder/statistics_during_period': statistics,
 });
+/** Two batteries that do not state their capacity: their group's charge cannot be known (no line, "—"). */
+export const hybridTwoBatteries = house({
+  'energy/get_prefs': () => prefs(true, 2, false),
+  'recorder/statistics_during_period': statistics,
+});
+/** The house without its battery. */
+export const hybridNoBattery = house({
+  'energy/get_prefs': () => prefs(true, 0),
+  'recorder/statistics_during_period': statistics,
+});
 
 /** Its live sensors at 21:47: the sun down, the battery carrying the evening, a little from the grid. */
 export const HYBRID_STATES = [
   ['sensor.hy_pv', '0', 'Inverter PV power'],
   ['sensor.hy_grid', '0.3', 'Grid power'],
   ['sensor.hy_battery', '1.3', 'Battery power'],
+  ['sensor.hy_battery_2', '0', 'Second battery power'],
+] as const;
+
+/** Its batteries' charge at 21:47 (%): the first, and a second one for the two-battery house. */
+export const HYBRID_LEVELS = [
+  ['sensor.hy_soc', String(Math.round(LEVELS[LEVELS.length - 1] ?? 0))],
+  ['sensor.hy_soc_2', '48'],
 ] as const;
 
 /** What the suite compares with: the sun's power at noon and at 02:00 (kW). */
 export const HYBRID_EXPECT = {
   sunAtNoon: MEANS['sensor.hy_pv']?.[144] ?? 0,
+  /** The battery's charge at noon (%), on its own scale. */
+  levelAtNoon: LEVELS[144] ?? 0,
 };

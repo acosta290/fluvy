@@ -100,6 +100,18 @@ battery exported, then the rest ran the house — and adds the hours up. The fig
   house's own use; otherwise the meters, in blocks of 15 minutes, or 30 or 60 when a meter counts in coarse steps
   (0.1 kWh). A hybrid inverter's AC meter registered as solar counts what the battery gives back as sun: give the
   Energy dashboard its power sensors and the card draws from them.
+  `variant: overview` draws the whole house today, as Home Assistant's "Power sources" graph does, plus your batteries:
+  - every source's power above the line: the sun's whole production, what the battery gave and what came from the
+    grid;
+  - below the line, what went into the battery and out to the grid;
+  - the house's use as a line;
+  - the batteries' state of charge as a dashed line on its own scale (100 % at the top). It comes from the charge
+    sensor the Energy dashboard names; several batteries are weighted by their capacity, and with no capacity given
+    there is no line.
+
+  At the top, "right now" and the charge now. Run a finger along the chart and the readouts and the legend show that
+  moment. `show_soc: false` and `show_house: false` hide the two lines. A generator or a car shows only when the
+  Energy dashboard names a power sensor for every source.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **Gauge** — `variant: signed` for a meter that can be negative: zero at the top, "1.8 kW out".

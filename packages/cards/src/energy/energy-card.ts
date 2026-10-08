@@ -40,6 +40,7 @@ import {
   svg,
   type CSSResultGroup,
   type PropertyValues,
+  type SVGTemplateResult,
   type TemplateResult,
 } from 'lit';
 
@@ -65,22 +66,39 @@ import { legendReadouts } from './legend.js';
 
 import { costParts, readoutParts, scaled, scaleOf } from './power.js';
 import { fetchPrefs } from '../energy-model/house.js';
-import { fetchPeriod, houseMidnight } from '../energy-model/period.js';
+import { fetchPeriod, houseMidnight, type PeriodEnergy } from '../energy-model/period.js';
 import { allocate } from '../energy-model/allocate.js';
 import { fetchPowerDay, liveTotals, powerBuckets, powered } from '../energy-model/power-day.js';
 import { measureIds, readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
 import {
+  chargedBatteries,
+  chargeNow,
+  chargePoints,
+  fetchChargeDay,
+} from '../energy-model/soc-day.js';
+import {
   aggregate,
+  chargeLine,
+  crosses,
+  flowShape,
+  flowsOf,
   integrate,
+  integrateFlows,
   LAYERS,
   meterBlock,
+  OUTFLOWS,
   stackOf,
   stackShape,
+  type Bucket,
+  type ChargePoint,
+  type FlowDay,
+  type FlowPoint,
   type Layer,
+  type Outflow,
   type StackPoint,
 } from './stack.js';
-import { energyLegend } from './legend-row.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import { energyLegend, type LegendEntry } from './legend-row.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 
@@ -103,9 +121,15 @@ export interface EnergyCardConfig extends FluvyCardConfig {
   /**
    * `full` (default): the reading, the chart, its axis and the legend. `compact`: the head, the chart and its axis.
    * `sources`: the house's power today by where it came from, stacked, and what went to the grid below the line
-   * (the Energy dashboard's meters; the entity, when given, is the reading at the top).
+   * (the Energy dashboard's meters; the entity, when given, is the reading at the top). `overview`: the whole house
+   * today — every source's power above the line (the sun's whole production), the battery's charge and the export
+   * below it, the house's use as a line and the batteries' state of charge on its own scale.
    */
-  variant?: 'full' | 'compact' | 'sources';
+  variant?: 'full' | 'compact' | 'sources' | 'overview';
+  /** `overview`: the batteries' state of charge as a dashed line (on when the Energy dashboard names one). */
+  show_soc?: boolean;
+  /** `overview`: the house's use as a line over the sources. */
+  show_house?: boolean;
   /** Test hook, as in the clock and calendar cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
@@ -113,6 +137,45 @@ export interface EnergyCardConfig extends FluvyCardConfig {
 const CHART_HEIGHT = 120;
 /** The stacked chart of the `sources` variant: 160, the zero line where the day's use and export divide it. */
 const SOURCES_CHART = 160;
+/** The `overview` chart: 184, its tag's line (16) and 12 above the tallest stack and the charge's 100 %. */
+const OVERVIEW_CHART = 184;
+const OVERVIEW_TOP = 28;
+/** The cursor starts under the chart's tag row (16) and 4 more, so it never runs into a tag's words. */
+const CURSOR_TOP = 20;
+
+/** A tag in a stacked chart: its words (or a figure, untracked), its box (16 tall), and the side it sits on. */
+interface ChartTag {
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly end: boolean;
+  readonly figure: boolean;
+}
+
+/** A tag's classes: its side, and a figure's untracked set. */
+const tagClass = (end: boolean, figure: boolean): string =>
+  `en-chart__tag${end ? ' en-chart__tag--end' : ''}${figure ? ' en-chart__tag--figure' : ''}`;
+
+/** The mask the lines and the cursor give way through, round each tag's box (4 round); the areas pass under them. */
+const tagMask = (tags: readonly ChartTag[], w: number, h: number): SVGTemplateResult =>
+  svg`<defs><mask id="en-tags" maskUnits="userSpaceOnUse" x="0" y="0" width=${w} height=${h}><rect width=${w} height=${h} fill="white"></rect>${tags.map((t) => svg`<rect x=${t.x - 4} y=${t.y - 4} width=${t.w + 8} height="24" rx="4" fill="black"></rect>`)}</mask></defs>`;
+
+const tagSpan = (tag: ChartTag): TemplateResult =>
+  html`<span class=${tagClass(tag.end, tag.figure)} style="top:${tag.y}px">${tag.text}</span>`;
+
+/** The cursor's dots, drawn over the chart and its tags: a dot is never under a tag's words. */
+const dotsOver = (w: number, h: number, dots: SVGTemplateResult | typeof nothing): TemplateResult =>
+  html`<svg
+    class="en-chart__dots"
+    width=${w}
+    height=${h}
+    viewBox="0 0 ${w} ${h}"
+    aria-hidden="true"
+    data-measure="drawn"
+  >
+    ${dots}
+  </svg>`;
 /** Narrower than this, three legend readouts would cut their words: they stack, one a line. */
 const STACK_BELOW = 240;
 const HEADROOM = 44; // the bubble's room: the chart rule in design/language.md
@@ -123,21 +186,43 @@ const DAY_FROM = 3; // hours into the day from which "24 h" means the calendar d
 
 const clamp = (n: number, min: number, max: number): number => Math.min(max, Math.max(min, n));
 
+/** The point nearest `at` within one bucket (`step`), or none: nothing is read across a gap. */
+function nearest<P extends { readonly at: number }>(
+  points: readonly P[],
+  at: number,
+  step: number,
+): P | undefined {
+  const near = points.reduce<P | undefined>(
+    (best, p) => (!best || Math.abs(p.at - at) < Math.abs(best.at - at) ? p : best),
+    undefined,
+  );
+  return near && Math.abs(near.at - at) <= step ? near : undefined;
+}
+
 /** Minutes into the day on the clock Home Assistant shows (the server's zone when the user chose it). */
 function minutesIntoDay(hass: HomeAssistant | undefined, now: Date): number {
   const wall = wallClock(now, houseZone(hass));
   return wall.hour * 60 + wall.minute + wall.second / 60;
 }
 
-/** The by-source day: its points, one bucket's length in minutes, and the day's energy by origin (kWh). */
+/**
+ * Today's buckets for the `sources` and `overview` variants: the power sensors' five-minute means (kW) or the meters'
+ * blocks (kWh), one bucket's length, the house's midnight, and — from the meters — the hours as the Energy dashboard
+ * allocates them, which the legend quotes so its figures match the dashboard's.
+ */
 interface SourcesDay {
-  readonly points: StackPoint[];
+  readonly buckets: readonly Bucket[];
   readonly minutes: number;
-  readonly day: {
-    readonly used: Readonly<Record<Layer, number>>;
-    readonly charged: number;
-    readonly exported: number;
-  } | null;
+  readonly unit: 'kW' | 'kWh';
+  readonly midnight: number;
+  readonly hours: PeriodEnergy | null;
+}
+
+/** The by-source day's energy by origin (kWh): what its legend says. */
+interface UsedDay {
+  readonly used: Readonly<Record<Layer, number>>;
+  readonly charged: number;
+  readonly exported: number;
 }
 
 interface ChartWindow {
@@ -212,16 +297,27 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     ...Card.properties,
     series_: { state: true },
     loaded_: { state: true },
-    stack_: { state: true },
+    day_: { state: true },
+    charge_: { state: true },
   };
 
   declare series_: Series | null;
   declare loaded_: boolean;
   /**
-   * The `sources` variant: today's points by origin (from the power sensors' five-minute means when the Energy
-   * dashboard names them, else from its meters in fifteen-minute blocks), one bucket's length, and the day's totals.
+   * The `sources` and `overview` variants: today's buckets (from the power sensors' five-minute means when the Energy
+   * dashboard names them, else from its meters in fifteen-minute blocks). Shaped when drawn, so a variant changed in
+   * the editor draws from the same day at once.
    */
-  declare stack_: SourcesDay | null;
+  declare day_: SourcesDay | null;
+  /** `overview`: the batteries' state of charge through today (null: none stated, or not readable). */
+  declare charge_: ChargePoint[] | null;
+  /** Each day's shapes, made once per day fetched. */
+  private readonly shaped = new WeakMap<
+    SourcesDay,
+    { stack?: StackPoint[]; flows?: FlowPoint[] }
+  >();
+  /** The charge request already made. */
+  private askedCharge = '';
   private prefs: EnergyPrefs | null | undefined;
   /** Where the chart is being read (a fraction of its width); null: it shows now. */
   private readonly scrubber = new ScrubController(this);
@@ -234,7 +330,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     super();
     this.series_ = null;
     this.loaded_ = false;
-    this.stack_ = null;
+    this.day_ = null;
+    this.charge_ = null;
   }
 
   static override keys = configKeys<EnergyCardConfig>()([
@@ -244,6 +341,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     'show_cost',
     'legend',
     'variant',
+    'show_soc',
+    'show_house',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -259,6 +358,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     keys: [{ from: 'title', to: 'name' }],
     items: { legend: ITEM_ALIASES },
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    show_cost: true,
+    show_soc: true,
+    show_house: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -268,8 +374,9 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         colourFields(),
         fieldRow(
           numberField('hours', 1, 168),
-          selectField('variant', ['full', 'compact', 'sources']),
+          selectField('variant', ['full', 'compact', 'sources', 'overview']),
         ),
+        fieldRow(boolField('show_soc'), boolField('show_house')),
         fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
         entitiesField('legend', ['sensor']),
         actionFields(),
@@ -291,13 +398,22 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   protected override prepare(config: EnergyCardConfig): EnergyCardConfig {
-    if (!config.entity && config.variant !== 'sources')
+    if (!config.entity && config.variant !== 'sources' && config.variant !== 'overview')
       throw new Error('fluvy-energy-card: "entity" is required');
     return config;
   }
 
   private get bySource(): boolean {
     return this.config?.variant === 'sources';
+  }
+
+  private get wholeHouse(): boolean {
+    return this.config?.variant === 'overview';
+  }
+
+  /** Drawn from the Energy dashboard's sources (by source, or the whole house). */
+  private get fromSources(): boolean {
+    return this.bySource || this.wholeHouse;
   }
 
   private get compact(): boolean {
@@ -319,7 +435,9 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     if (this.config?.entity) ids.push(this.config.entity);
     if (this.config?.cost_entity) ids.push(this.config.cost_entity);
     // by source, "right now" is the house's own use: every source's power sensor
-    if (this.bySource) ids.push(...this.prefSources().flatMap((p) => measureIds(p.measure)));
+    if (this.fromSources) ids.push(...this.prefSources().flatMap((p) => measureIds(p.measure)));
+    // the whole house quotes its batteries' charge now
+    if (this.wholeHouse) ids.push(...chargedBatteries(this.prefSources()).map((b) => b.soc ?? ''));
     return ids;
   }
 
@@ -376,7 +494,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   private async load(): Promise<void> {
-    if (this.bySource) return this.loadSources();
+    if (this.wholeHouse) void this.loadCharge();
+    if (this.fromSources) return this.loadSources();
     const id = this.config?.entity;
     const hass = this.hass;
     if (!id || !hass?.states[id]) return;
@@ -391,10 +510,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   /**
-   * Today by origin. With the power sensors the Energy dashboard names for every source, the curve is their
-   * five-minute means — what Home Assistant's own "Power sources" graph draws — and the legend its integral. Without
-   * them, the meters: their five-minute changes summed into fifteen-minute blocks (coarse meters even out), and the
-   * legend the hours as the dashboard allocates them.
+   * Today's buckets. With the power sensors the Energy dashboard names for every source, they are their five-minute
+   * means — what Home Assistant's own "Power sources" graph draws — and the legend their integral. Without them, the
+   * meters: their five-minute changes summed into fifteen-minute blocks (coarse meters even out), and the legend the
+   * hours as the dashboard allocates them.
    */
   private async loadSources(): Promise<void> {
     const hass = this.hass;
@@ -411,15 +530,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       if (key !== this.asked) return;
       const buckets = rows ? powerBuckets(rows, all) : [];
       if (buckets.length) {
-        const points = stackOf(buckets, midnight, 5, 'kW');
-        this.stack_ = { points, minutes: 5, day: integrate(points, 5) };
+        this.day_ = { buckets, minutes: 5, unit: 'kW', midnight, hours: null };
         this.loaded_ = true;
         return;
       }
     }
     const metered = all.filter((p) => p.energyIn.length || p.energyOut.length);
     if (!metered.length) {
-      this.stack_ = null;
+      this.day_ = null;
       this.loaded_ = true;
       return;
     }
@@ -428,29 +546,93 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       fetchPeriod(hass, metered, 'day', now),
     ]);
     if (key !== this.asked) return;
-    const a = hours?.allocation;
     // a block over which the meters' own step does not show (15 minutes for a precise meter)
     const minutes = fine ? meterBlock(fine.buckets) : 15;
-    this.stack_ = fine
+    this.day_ = fine
       ? {
-          points: stackOf(aggregate(fine.buckets, midnight, minutes), midnight, minutes),
+          buckets: aggregate(fine.buckets, midnight, minutes),
           minutes,
-          day: a
-            ? {
-                used: {
-                  solar: a.usedSolar,
-                  battery: a.usedBattery,
-                  gas: a.usedGenerator,
-                  vehicle: a.usedVehicle,
-                  grid: a.usedGrid,
-                },
-                charged: a.solarToBattery + a.gridToBattery,
-                exported: a.solarToGrid + a.batteryToGrid,
-              }
-            : null,
+          unit: 'kWh',
+          midnight,
+          hours,
         }
       : null;
     this.loaded_ = true;
+  }
+
+  /** The batteries' state of charge through today (`overview`). */
+  private async loadCharge(): Promise<void> {
+    const hass = this.hass;
+    if (!hass || this.config?.show_soc === false) return;
+    const now = this.now();
+    const key = `charge|${Math.floor(now.getTime() / 300_000)}`;
+    if (key === this.askedCharge) return;
+    this.askedCharge = key;
+    this.prefs ??= await fetchPrefs(hass);
+    const batteries = chargedBatteries(readPrefs(this.prefs).sources);
+    const rows = batteries.length ? await fetchChargeDay(hass, batteries, now) : null;
+    if (key !== this.askedCharge) return;
+    this.charge_ = rows ? chargePoints(rows, batteries, houseMidnight(hass, now).getTime()) : null;
+  }
+
+  /** Today's points by origin (`sources`), shaped once per day fetched. */
+  private stackPoints(day: SourcesDay): StackPoint[] {
+    const cached = this.shaped.get(day) ?? {};
+    cached.stack ??= stackOf(day.buckets, day.midnight, day.minutes, day.unit);
+    this.shaped.set(day, cached);
+    return cached.stack;
+  }
+
+  /** Today's flows (`overview`), shaped once per day fetched. */
+  private flowPoints(day: SourcesDay): FlowPoint[] {
+    const cached = this.shaped.get(day) ?? {};
+    cached.flows ??= flowsOf(day.buckets, day.midnight, day.minutes, day.unit);
+    this.shaped.set(day, cached);
+    return cached.flows;
+  }
+
+  /** The by-source legend's day: the power's integral, or the meters' hours as the dashboard allocates them. */
+  private usedDay(day: SourcesDay, points: readonly StackPoint[]): UsedDay | null {
+    if (day.unit === 'kW') return integrate(points, day.minutes);
+    const a = day.hours?.allocation;
+    return a
+      ? {
+          used: {
+            solar: a.usedSolar,
+            battery: a.usedBattery,
+            gas: a.usedGenerator,
+            vehicle: a.usedVehicle,
+            grid: a.usedGrid,
+          },
+          charged: a.solarToBattery + a.gridToBattery,
+          exported: a.solarToGrid + a.batteryToGrid,
+        }
+      : null;
+  }
+
+  /** The whole house's legend: the power's integral, or the meters' hours (their sums, the house as allocated). */
+  private flowDay(day: SourcesDay, points: readonly FlowPoint[]): FlowDay | null {
+    if (day.unit === 'kW') return integrateFlows(points, day.minutes);
+    const h = day.hours;
+    if (!h) return null;
+    const t = h.totals;
+    return {
+      into: {
+        solar: t.solar,
+        battery: t.fromBattery,
+        gas: t.generator ?? 0,
+        vehicle: t.fromVehicle ?? 0,
+        grid: t.fromGrid,
+      },
+      out: { battery: t.toBattery, vehicle: t.toVehicle ?? 0, grid: t.toGrid },
+      house: h.allocation.usedTotal,
+    };
+  }
+
+  /** A tag at `y`, at the chart's start or its end, measured as it is set. */
+  private chartTag(text: string, y: number, end: boolean, width: number, figure = false): ChartTag {
+    const w = this.head.ruler.width(tagClass(end, figure), text);
+    return { text, x: end ? width - w : 0, y, w, end, figure };
   }
 
   /**
@@ -466,8 +648,37 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   /* ---------- pieces ---------- */
 
+  /** A power in watts as the readouts write it (W or kW, the house's precision). */
+  private power(watts: number): { value: string; unit: string } {
+    const scale = scaleOf([watts], 'W');
+    return { value: scaled(this.hass, watts, scale), unit: scale.unit };
+  }
+
+  /** A day's energy as the legend writes it: one decimal, none from 100. */
+  private kwh(v: number): string {
+    return formatNumber(this.hass, v, { digits: v >= 100 ? 0 : 1, minDigits: v >= 100 ? 0 : 1 });
+  }
+
   private dayAxis(): ReadonlyArray<readonly [number, string]> {
-    const marks = [0, 6, 12, 18, 24];
+    const five = this.dayMarks([0, 6, 12, 18, 24]);
+    // five labels that cannot keep 12 apart in the chart's width (a narrow card) read as three: midnight, noon, midnight
+    // (the first sits on the start, the next centred a quarter in: a quarter less one and a half labels is their gap)
+    const room = (this.contentWidth / 4 - 12) / 1.5;
+    const fits = five.every(([, text]) => this.head.ruler.width('fv-axis', text) <= room);
+    return fits ? five : this.dayMarks([0, 12, 24]);
+  }
+
+  /** The card's own title where it fits its head (with its circle and what trails it), else a shorter one. */
+  private houseTitle(trailing: number): string {
+    const room = this.contentWidth - 56 - (trailing ? trailing + 12 : 0);
+    const long = s(this.hass, 'house_power');
+    return this.head.ruler.width('fv-card__title', long) <= room
+      ? long
+      : s(this.hass, 'house_power_short');
+  }
+
+  /** The hours of the day axis, written as the house's clock writes them. */
+  private dayMarks(marks: readonly number[]): ReadonlyArray<readonly [number, string]> {
     if (!clock12(this.hass))
       return marks.map((h) => [h / 24, `${String(h).padStart(2, '0')}:00`] as const);
     // "12 AM … 6 PM": the hour and a compact day period, which is all a 40 px label holds
@@ -556,6 +767,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   protected renderCard(): TemplateResult {
     if (this.bySource) return this.renderSources();
+    if (this.wholeHouse) return this.renderOverview();
     const view = this.entity();
     const title =
       this.config?.name ?? (view.status === 'missing' ? s(this.hass, 'title') : view.name);
@@ -637,53 +849,56 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   private renderSources(): TemplateResult {
     const id = this.config?.entity;
     const view = id ? this.entity(id) : undefined;
-    const title = this.config?.name ?? s(this.hass, 'house_power');
+    const title = this.config?.name ?? this.houseTitle(view ? 44 : 0);
     const sub = this.config?.subtitle ?? s(this.hass, 'by_source');
     const fitted = this.head.fit({ width: this.contentWidth, title, sub, trailing: view ? 44 : 0 });
     const tone: Tone = toneOf(this.config, 'accent');
-    const points = this.stack_?.points ?? [];
-    const step = (this.stack_?.minutes ?? 5) / DAY_MINUTES;
+    const sourcesDay = this.day_;
+    const step = (sourcesDay?.minutes ?? 5) / DAY_MINUTES;
+    const now = this.now();
+    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
+    // meters only, as the whole house: the chart ends on the last bucket whose meters have closed, and reads it at rest
+    const house = this.houseNow();
+    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const metersOnly = house === null && !liveW;
+    const all = sourcesDay ? this.stackPoints(sourcesDay) : [];
+    // a point sits at its bucket's middle: the bucket has closed half a step after it
+    const closedOnly = metersOnly ? all.filter((p) => p.at + step / 2 <= nowAt + 1e-9) : all;
+    const points = closedOnly.length ? closedOnly : all;
+    const closed = metersOnly ? points[points.length - 1] : undefined;
+    const end = closed?.at ?? nowAt;
     const w = this.contentWidth;
     const H = SOURCES_CHART;
     const shape = points.length ? stackShape(points, w, H, HEADROOM, step) : null;
-    const now = this.now();
-    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
-    // the cursor: where the pointer reads, else now; nothing is read across a gap
+    // the cursor: where the pointer reads, on the bucket it reads, never past the chart's end; nothing across a gap
     const fraction = this.scrubber.value;
-    const pick = (at: number): StackPoint | undefined => {
-      const near = points.reduce<StackPoint | undefined>(
-        (best, p) => (!best || Math.abs(p.at - at) < Math.abs(best.at - at) ? p : best),
-        undefined,
-      );
-      return near && Math.abs(near.at - at) <= step ? near : undefined;
-    };
-    const cursorAt = fraction !== null ? Math.min(fraction, nowAt) : nowAt;
-    const cursorPoint = fraction !== null ? pick(cursorAt) : points[points.length - 1];
+    const asked = fraction !== null ? Math.min(fraction, end) : end;
+    const cursorPoint =
+      fraction !== null ? nearest(points, asked, step) : points[points.length - 1];
+    const cursorAt = fraction !== null && cursorPoint ? cursorPoint.at : asked;
     const used = (p: StackPoint | undefined): number | null =>
       p ? LAYERS.reduce((sum, k) => sum + p.used[k], 0) : null;
-    const power = (watts: number): { value: string; unit: string } => {
-      const scale = scaleOf([watts], 'W');
-      return { value: scaled(this.hass, watts, scale), unit: scale.unit };
-    };
-    const house = this.houseNow();
-    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const power = (watts: number): { value: string; unit: string } => this.power(watts);
+    const at = (moment: number): string =>
+      formatTime(
+        this.hass,
+        new Date(houseMidnight(this.hass, now).getTime() + moment * 86_400_000),
+      );
     const reading =
       fraction !== null
         ? {
-            label: formatTime(
-              this.hass,
-              new Date(houseMidnight(this.hass, now).getTime() + cursorAt * 86_400_000),
-            ),
+            label: at(cursorAt),
             ...(cursorPoint ? power((used(cursorPoint) ?? 0) * 1000) : { value: '—', unit: '' }),
           }
         : house !== null
           ? { label: s(this.hass, 'right_now'), ...power(house) }
           : liveW
             ? { label: s(this.hass, 'right_now'), ...liveW }
-            : null;
-    const day = this.stack_?.day;
-    const kwh = (v: number): string =>
-      formatNumber(this.hass, v, { digits: v >= 100 ? 0 : 1, minDigits: v >= 100 ? 0 : 1 });
+            : closed
+              ? { label: at(closed.at), ...power((used(closed) ?? 0) * 1000) }
+              : null;
+    const day = sourcesDay ? this.usedDay(sourcesDay, points) : null;
+    const kwh = (v: number): string => this.kwh(v);
     const below = new Set(shape?.below.map((b) => b.key) ?? []);
     // the origins above the line; below it, where the energy went: the battery's ink and the grid's, at 60 %
     const legend: { ink: string; name: string; value: number; out?: boolean }[] = day
@@ -723,6 +938,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           ? s(this.hass, 'charged')
           : s(this.hass, 'exported');
     const top = used(cursorPoint);
+    const tags: ChartTag[] = shape
+      ? [
+          this.chartTag(s(this.hass, 'used'), 0, false, w),
+          ...(shape.below.length
+            ? [this.chartTag(belowTag, Math.round(shape.zero + 12), false, w)]
+            : []),
+        ]
+      : [];
     return html`<article class="fv-card ef-card" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
@@ -751,7 +974,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           : !shape
             ? html`<div class="en-chart">
                 ${
-                  this.stack_ === null
+                  this.day_ === null
                     ? this.head.empty(
                         'bolt',
                         strings('energy-flow')(this.hass, 'no_period'),
@@ -780,17 +1003,18 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                       svg`<path class="en-area en-ink--${BELOW_INK[b.key]} is-out" data-below=${b.key} d=${b.area}></path><path class="en-area-line en-ink--${BELOW_INK[b.key]} is-out" d=${b.line}></path>`,
                   )}
                   ${shape.below.length ? svg`<line class="en-zero" x1="0" x2=${w} y1=${shape.zero} y2=${shape.zero}></line>` : nothing}
+                  ${tagMask(tags, w, H)}
                   <line
                     class="en-cursor"
+                    mask="url(#en-tags)"
                     x1=${shape.x(cursorAt)}
                     x2=${shape.x(cursorAt)}
-                    y1="12"
+                    y1=${CURSOR_TOP}
                     y2=${H}
                   ></line>
-                  ${top !== null ? svg`<circle class="en-cursor-dot" r="5" cx=${shape.x(cursorAt)} cy=${shape.y(top)}></circle>` : nothing}
                 </svg>
-                <span class="en-chart__tag" style="top:0">${s(this.hass, 'used')}</span>
-                ${shape.below.length ? html`<span class="en-chart__tag" style="top:${Math.round(shape.zero + 12)}px">${belowTag}</span>` : nothing}
+                ${tags.map(tagSpan)}
+                ${dotsOver(w, H, top !== null ? svg`<circle class="en-cursor-dot" r="5" cx=${shape.x(cursorAt)} cy=${shape.y(top)}></circle>` : nothing)}
               </div>`
       }
       ${axis(this.dayAxis())}
@@ -805,6 +1029,264 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         w,
         this.head.ruler,
       )}
+    </article>`;
+  }
+
+  /* ---------- the whole house ---------- */
+
+  /** The name of what left the house's sources, under the line: the battery's charge, a car's, the export. */
+  private outName(key: Outflow): string {
+    return key === 'battery'
+      ? s(this.hass, 'charged')
+      : key === 'grid'
+        ? s(this.hass, 'exported')
+        : this.layerName('vehicle');
+  }
+
+  /**
+   * The whole house today, Home Assistant's "Power sources" convention: every source's power stacked above the line
+   * (the sun's whole production first, the grid last), what went into the battery and out to the grid below it, the
+   * house's use as a line over them and the batteries' charge as a dashed line on its own scale (100 % on the tag's
+   * line, 0 % at the foot). Scrubbed, the readouts and the legend say that moment; at rest, now and the day.
+   */
+  private renderOverview(): TemplateResult {
+    const id = this.config?.entity;
+    const view = id ? this.entity(id) : undefined;
+    const title = this.config?.name ?? this.houseTitle(view ? 44 : 0);
+    const sub = this.config?.subtitle ?? s(this.hass, 'whole_house');
+    const fitted = this.head.fit({ width: this.contentWidth, title, sub, trailing: view ? 44 : 0 });
+    const tone: Tone = toneOf(this.config, 'accent');
+    const day = this.day_;
+    const step = (day?.minutes ?? 5) / DAY_MINUTES;
+    const now = this.now();
+    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
+    // no live power for the house (meters only): a bucket whose meters have not closed reads low, so the chart ends
+    // on the last one that has, and that is the moment the top row and the cursor read at rest
+    const house = this.houseNow();
+    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const metersOnly = house === null && !liveW;
+    const all = day ? this.flowPoints(day) : [];
+    // a point sits at its bucket's middle: the bucket has closed half a step after it
+    const closedOnly = metersOnly ? all.filter((p) => p.at + step / 2 <= nowAt + 1e-9) : all;
+    const points = closedOnly.length ? closedOnly : all;
+    const closed = metersOnly ? points[points.length - 1] : undefined;
+    const restAt = closed?.at ?? nowAt;
+    const w = this.contentWidth;
+    const H = OVERVIEW_CHART;
+    const shape = points.length ? flowShape(points, w, H, OVERVIEW_TOP, step) : null;
+    const showHouse = this.config?.show_house !== false;
+
+    // the batteries' charge: through today from the recorder, ending on the live reading
+    const batteries = this.config?.show_soc === false ? [] : chargedBatteries(this.prefSources());
+    const levelNow = batteries.length
+      ? chargeNow(batteries, (soc) => {
+          const v = this.entity(soc);
+          return v.status === 'ok' ? v.number : null;
+        })
+      : null;
+    const charge: ChargePoint[] = batteries.length
+      ? [
+          // the recorder's last five minutes may sit past now (their middle): the live reading takes their place
+          ...(this.charge_ ?? []).filter((p) => levelNow === null || p.at < nowAt),
+          ...(levelNow !== null ? [{ at: nowAt, level: levelNow }] : []),
+        ]
+      : [];
+    // the recorder's last five minutes arrive late: a reading up to a quarter of an hour from the next is joined
+    const chargeStep = 10 / DAY_MINUTES;
+    const soc =
+      shape && charge.length > 1 ? chargeLine(charge, w, OVERVIEW_TOP, H, chargeStep) : null;
+
+    // the cursor: where the pointer reads, else now; nothing is read across a gap
+    const fraction = this.scrubber.value;
+    const scrubbing = fraction !== null;
+    // the cursor: never past the chart's end (the last closed bucket on meters only), on the bucket it reads
+    const asked = scrubbing ? Math.min(fraction, restAt) : restAt;
+    const cursorPoint = scrubbing ? nearest(points, asked, step) : points[points.length - 1];
+    const cursorAt = scrubbing && cursorPoint ? cursorPoint.at : asked;
+    // the charge at the moment the row reads: now, or the closed bucket's time on meters only
+    const cursorLevel =
+      scrubbing || closed
+        ? (nearest(charge, cursorAt, chargeStep)?.level ?? null)
+        : (levelNow ?? charge[charge.length - 1]?.level ?? null);
+
+    const at = (fraction: number): string =>
+      formatTime(
+        this.hass,
+        new Date(houseMidnight(this.hass, now).getTime() + fraction * 86_400_000),
+      );
+    const reading = scrubbing
+      ? {
+          label: at(cursorAt),
+          ...(cursorPoint ? this.power(cursorPoint.house * 1000) : { value: '—', unit: '' }),
+        }
+      : house !== null
+        ? { label: s(this.hass, 'right_now'), ...this.power(house) }
+        : liveW
+          ? { label: s(this.hass, 'right_now'), ...liveW }
+          : closed
+            ? { label: at(closed.at), ...this.power(closed.house * 1000) }
+            : null;
+    const level = batteries.length
+      ? {
+          label: s(this.hass, 'battery'),
+          value: cursorLevel === null ? '—' : formatNumber(this.hass, cursorLevel, { digits: 0 }),
+          unit: cursorLevel === null ? '' : '%',
+        }
+      : null;
+
+    // the legend: a square for each area drawn, the day's energy at rest and the power under the cursor while read —
+    // one unit and one precision for the whole row ("1.3 kW" beside "0.9 kW", never "907 W")
+    const total = day ? this.flowDay(day, points) : null;
+    const read = cursorPoint
+      ? [...LAYERS.map((k) => cursorPoint.into[k]), ...OUTFLOWS.map((k) => cursorPoint.out[k])]
+      : [];
+    const rowScale = scaleOf(
+      read.map((kw) => kw * 1000),
+      'W',
+    );
+    const figure = (
+      kw: number | undefined,
+      kwhs: number | undefined,
+    ): { value: string; unit: string } =>
+      scrubbing
+        ? kw === undefined
+          ? { value: '—', unit: '' }
+          : {
+              value: formatNumber(this.hass, (kw * 1000) / rowScale.divisor, {
+                digits: rowScale.divisor === 1 ? 0 : 1,
+                minDigits: rowScale.divisor === 1 ? 0 : 1,
+              }),
+              unit: rowScale.unit,
+            }
+        : { value: this.kwh(kwhs ?? 0), unit: 'kWh' };
+    const legend: LegendEntry[] =
+      shape && (total || scrubbing)
+        ? [
+            ...shape.above.map((a) => ({
+              ink: `en-ink--${a.key}`,
+              name: this.layerName(a.key),
+              ...figure(cursorPoint?.into[a.key], total?.into[a.key]),
+            })),
+            ...shape.below.map((b) => ({
+              ink: `en-ink--${b.key}`,
+              name: this.outName(b.key),
+              square: 'out' as const,
+              ...figure(cursorPoint?.out[b.key], total?.out[b.key]),
+            })),
+          ]
+        : [];
+    const belowKeys = new Set(shape?.below.map((b) => b.key) ?? []);
+    const belowTag =
+      belowKeys.has('battery') && belowKeys.has('grid')
+        ? s(this.hass, 'charged_exported')
+        : belowKeys.has('battery')
+          ? s(this.hass, 'charged')
+          : belowKeys.has('grid')
+            ? s(this.hass, 'exported')
+            : this.layerName('vehicle');
+    const dotAt = cursorPoint
+      ? showHouse
+        ? cursorPoint.house
+        : LAYERS.reduce((sum, k) => sum + cursorPoint.into[k], 0)
+      : null;
+    const stacked = this.contentWidth < STACK_BELOW;
+    // the tags: the lines and the cursor give way round them, the dots sit above them; the one under the line goes
+    // to the side the charge does not cross, and where it crosses both, the legend names the areas alone
+    const tags: ChartTag[] = [];
+    if (shape) {
+      tags.push(this.chartTag(s(this.hass, 'sources_tag'), 0, false, w));
+      if (soc) tags.push(this.chartTag('100 %', 0, true, w, true));
+      if (shape.below.length) {
+        const y = Math.round(shape.zero + 12);
+        const free = (tag: ChartTag): boolean =>
+          !soc || !crosses(soc.runs, { x: tag.x - 6, y: tag.y - 6, w: tag.w + 12, h: 28 });
+        const side = [
+          this.chartTag(belowTag, y, false, w),
+          this.chartTag(belowTag, y, true, w),
+        ].find(free);
+        if (side) tags.push(side);
+      }
+    }
+    return html`<article class="fv-card ef-card ef-card--overview" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: view
+          ? round('dots', 'quiet', this.t('common.more'), () =>
+              this.tap(view.id, { action: 'more-info' }),
+            )
+          : nothing,
+        onIconTap: () => this.tap(id),
+        onHold: () => this.hold(id),
+        name: Boolean(this.config?.name),
+      })}
+      ${
+        reading || level
+          ? html`<div class="ef-top fv-value-row ${stacked ? 'is-stacked' : ''}">
+              ${reading ? html`<div class="ef-key ${showHouse && shape ? 'ef-key--house' : ''}">${readout({ label: reading.label, value: reading.value, unit: reading.unit, size: 'l' })}</div>` : nothing}
+              ${level ? html`<div class="${reading ? 'ef-top__side' : ''} ef-key ${soc ? 'ef-key--soc' : ''} en-ink--battery">${readout({ label: level.label, value: level.value, unit: level.unit, size: 's' })}</div>` : nothing}
+            </div>`
+          : nothing
+      }
+      ${
+        !this.loaded_
+          ? html`<div class="en-chart"><div class="fv-skeleton" style="height:${H}px"></div></div>`
+          : !shape
+            ? html`<div class="en-chart">
+                ${
+                  this.day_ === null
+                    ? this.head.empty(
+                        'bolt',
+                        strings('energy-flow')(this.hass, 'no_period'),
+                        strings('energy-flow')(this.hass, 'no_period_hint'),
+                        this.contentWidth,
+                      )
+                    : emptyState('bolt', s(this.hass, 'no_history'))
+                }
+              </div>`
+            : html`<div class="en-chart" ${scrub(this.scrubber)}>
+                <svg
+                  width=${w}
+                  height=${H}
+                  viewBox="0 0 ${w} ${H}"
+                  aria-hidden="true"
+                  data-measure="drawn"
+                >
+                  ${[...shape.above]
+                    .reverse()
+                    .map(
+                      (a) =>
+                        svg`<path class="en-area en-ink--${a.key}" data-above=${a.key} d=${a.area}></path><path class="en-area-line en-ink--${a.key}" d=${a.line}></path>`,
+                    )}
+                  ${shape.below.map(
+                    (b) =>
+                      svg`<path class="en-area en-ink--${b.key} is-out" data-below=${b.key} d=${b.area}></path><path class="en-area-line en-ink--${b.key} is-out" d=${b.line}></path>`,
+                  )}
+                  ${shape.below.length ? svg`<line class="en-zero" x1="0" x2=${w} y1=${shape.zero} y2=${shape.zero}></line>` : nothing}
+                  ${tagMask(tags, w, H)}
+                  <g mask="url(#en-tags)">
+                    ${showHouse ? svg`<path class="en-house" d=${shape.house}></path>` : nothing}
+                    ${soc ? svg`<path class="en-soc-halo" d=${soc.line}></path>${soc.runs.map((run) => svg`<path class="en-soc en-ink--battery" d=${run.d} pathLength=${run.dashes}></path>`)}` : nothing}
+                    <line
+                      class="en-cursor"
+                      x1=${shape.x(cursorAt)}
+                      x2=${shape.x(cursorAt)}
+                      y1=${CURSOR_TOP}
+                      y2=${H}
+                    ></line>
+                  </g>
+                </svg>
+                ${tags.map(tagSpan)}
+                ${dotsOver(
+                  w,
+                  H,
+                  svg`${dotAt !== null ? svg`<circle class="en-cursor-dot" r="5" cx=${shape.x(cursorAt)} cy=${shape.y(dotAt)}></circle>` : nothing}${soc && cursorLevel !== null ? svg`<circle class="en-soc-dot en-ink--battery" r="3.75" cx=${shape.x(cursorAt)} cy=${soc.y(cursorLevel)}></circle>` : nothing}`,
+                )}
+              </div>`
+      }
+      ${axis(this.dayAxis())} ${energyLegend(legend, w, this.head.ruler)}
     </article>`;
   }
 }

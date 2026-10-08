@@ -28,6 +28,7 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('timer');
 
@@ -86,6 +87,8 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
   }
 
   static override keys = configKeys<TimerCardConfig>()(['show_gauge', 'show_actions']);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ show_gauge: true, show_actions: true });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

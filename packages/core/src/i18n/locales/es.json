@@ -44,7 +44,8 @@
     "editor_lights": "Luces (ninguna: las del área)",
     "editor_show_level": "Mostrar el nivel",
     "editor_show_brightness": "Un brillo para toda la habitación",
-    "editor_light_colors": "Cada luz encendida en el color de su bombilla"
+    "editor_light_colors": "Cada luz encendida en el color de su bombilla",
+    "editor_tint": "Mostrar el color de cada mosaico"
   },
   "climate": {
     "mode": "Modo",
@@ -164,7 +165,10 @@
     "used": "Usada",
     "exported": "Exportada",
     "charged": "Cargada",
-    "charged_exported": "Cargada · exportada"
+    "charged_exported": "Cargada · exportada",
+    "whole_house": "Hoy · toda la casa",
+    "sources_tag": "Fuentes",
+    "house_power_short": "Casa"
   },
   "sensor": {
     "last_24h": "Últimas 24 h",
@@ -356,7 +360,8 @@
     "morning": "Buenos días",
     "afternoon": "Buenas tardes",
     "evening": "Buenas tardes",
-    "night": "Buenas noches"
+    "night": "Buenas noches",
+    "hello": "Hola"
   },
   "editor": {
     "entity": "Entidad",
@@ -453,7 +458,16 @@
     "show_climate": "Mostrar el clima",
     "picture": "Imagen",
     "temperature_entity": "Temperatura",
-    "humidity_entity": "Humedad"
+    "humidity_entity": "Humedad",
+    "show_soc": "Mostrar la carga de la batería",
+    "show_house": "Mostrar el consumo de la casa",
+    "camera_view": "Imagen",
+    "aspect_ratio": "Proporción",
+    "fit_mode": "Encaje",
+    "also_sensors": "También en la gráfica (hasta 2)",
+    "people": "Personas",
+    "battery": "Batería del móvil",
+    "tint": "Mostrar su color"
   },
   "strategy": {
     "home": "Inicio",
@@ -622,13 +636,81 @@
     "badge_ok": "Insignia cuando todo va bien",
     "badge_warn": "Insignia con avisos, p. ej. «{count} bajas»"
   },
+  "printer": {
+    "title": "Impresora 3D",
+    "progress": "Progreso",
+    "left": "Queda",
+    "left_text": "quedan {time}",
+    "ready_at": "Lista a las {time}",
+    "done_at": "Terminada a las {time}",
+    "layer_of": "Capa {layer} de {layers}",
+    "nozzle": "Boquilla",
+    "bed": "Cama",
+    "chamber": "Cámara",
+    "layer": "Capa",
+    "speed": "Velocidad",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "stop": "Parar",
+    "light": "Luz",
+    "stop_confirm": "¿Parar la impresión? No se podrá reanudar.",
+    "no_printer": "No se encontró la impresora",
+    "phase_printing": "Imprimiendo",
+    "phase_preparing": "Preparando",
+    "phase_paused": "En pausa",
+    "phase_finished": "Terminada",
+    "phase_stopped": "Parada",
+    "phase_error": "Error",
+    "phase_idle": "En reposo",
+    "phase_offline": "Sin conexión",
+    "editor_device": "Impresora",
+    "editor_readouts": "Lecturas (hasta seis)",
+    "editor_show_image": "Mostrar la cámara o la vista previa",
+    "editor_roles": "Entidades a mano",
+    "role_status": "Estado",
+    "role_printing": "Imprimiendo (sí/no)",
+    "role_progress": "Progreso",
+    "role_remaining": "Tiempo restante",
+    "role_finish": "Hora de fin",
+    "role_start": "Hora de inicio",
+    "role_file": "Archivo",
+    "role_nozzle": "Boquilla",
+    "role_nozzle_target": "Objetivo de la boquilla",
+    "role_bed": "Cama",
+    "role_bed_target": "Objetivo de la cama",
+    "role_chamber": "Cámara",
+    "role_layer": "Capa",
+    "role_layers": "Capas totales",
+    "role_speed": "Velocidad",
+    "role_camera": "Cámara",
+    "role_preview": "Vista previa",
+    "role_pause": "Botón de pausa",
+    "role_resume": "Botón de reanudar",
+    "role_stop": "Botón de parar",
+    "role_light": "Luz",
+    "editor_role": "Qué es",
+    "filament": "Filamento",
+    "elapsed": "Transcurrido",
+    "elapsed_text": "{time} imprimiendo",
+    "empty": "Vacía",
+    "editor_image": "Imagen",
+    "editor_show_filament": "Mostrar el filamento",
+    "editor_sensors": "Más lecturas",
+    "role_stage": "Etapa",
+    "role_error": "Error",
+    "role_elapsed": "Tiempo impreso",
+    "role_filament": "Filamento en uso",
+    "done_ago": "Terminada {when}",
+    "ready_on": "Lista el {day} a las {time}"
+  },
   "camera": {
     "live": "Live",
     "snapshot": "Captura",
     "fullscreen": "Pantalla completa",
     "view": "Vista en directo de {name}",
     "offline": "La cámara no envía imagen",
-    "refresh": "Segundos entre imágenes"
+    "refresh": "Segundos entre imágenes",
+    "exit_fullscreen": "Salir de pantalla completa"
   },
   "chips": {
     "rooms": "Estancias"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "person_helper": "Vacío: quien haya iniciado sesión"
   },
   "helpers": {
     "title": "Ayudantes",
@@ -819,7 +902,7 @@
     "alert_one": "1 alerta",
     "alert_many": "{count} alertas",
     "all_clear": "Todo bien",
-    "all_sensors": "Todos los sensores",
+    "all_sensors": "Ver todos",
     "more": "{count} más",
     "less": "Ver menos",
     "detected": "Detectado",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Corriente",
     "dashboard.greeting_tabs": "Vistas bajo el saludo",
     "dashboard.header_only": "Solo la cabecera",
-    "dashboard.under_greeting": "También como chips"
+    "dashboard.under_greeting": "También en chips",
+    "wall.subview": "Volver de una subvista",
+    "wall.subview_sub": "Una pared no tiene cabecera: un botón con el nombre de la vista, o la cabecera de Home Assistant en las subvistas",
+    "wall.subview_button": "Botón atrás",
+    "wall.subview_header": "Cabecera",
+    "wall.back": "Atrás",
+    "wall.back_to": "Volver de {view}"
   },
   "people": {
     "title": "En casa",
     "count": "{home} de {total}",
     "updated": "actualizado {when}",
     "map": "Abrir el mapa",
-    "editor.map_path": "Ruta del mapa"
+    "editor.map_path": "Ruta del mapa",
+    "title_short": "En casa"
   },
   "map": {
     "title": "Dónde está cada uno",
@@ -1283,7 +1373,20 @@
     "sources": "Por fuente",
     "signed": "Centrado en cero",
     "water": "Agua",
-    "gas": "Gas"
+    "gas": "Gas",
+    "overview": "Toda la casa",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "La de la cámara",
+    "cover": "Llenar (recortar)",
+    "contain": "Imagen entera",
+    "on": "Al encenderse",
+    "camera": "Cámara",
+    "preview": "Vista previa"
   },
   "tone": {
     "accent": "Acento",
@@ -1381,7 +1484,7 @@
     "per_phase": "Por fase",
     "phase": "L{n}",
     "sub_day": "Hoy · desde medianoche",
-    "feed_in": "Compensación",
+    "feed_in": "Abono",
     "net": "Neto",
     "editor_show_phases": "Por fase (una red medida por fase)",
     "editor_show_cost": "Coste y compensación (en un periodo)"

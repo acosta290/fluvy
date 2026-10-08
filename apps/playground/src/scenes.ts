@@ -30,6 +30,8 @@ export interface SheetSpec {
   readonly ws?: Record<string, (message: Record<string, unknown>) => unknown>;
   /** REST answers, e.g. calendar events: (method, path) → body, or undefined to pass. */
   readonly api?: (method: string, path: string) => unknown;
+  /** The house's units when this sheet stands alone (`?sheet=…`): imperial for a house in °F and miles. */
+  readonly units?: 'imperial';
 }
 
 export const NOW = new Date(2026, 8, 17, 21, 47, 12);

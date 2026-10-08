@@ -45,7 +45,7 @@ import {
   selectField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   fetchToday,
   fetchWeek,
@@ -218,6 +218,8 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { meters: ITEM_ALIASES, rows: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'full' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -422,7 +424,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     });
   }
 
-  /** "6 L/min now · typical 150 L": what flows now first, the typical day after it (the first to go when narrow). */
+  /**
+   * "6 L/min now · typical 150 L": what flows now first, the typical day after it (the first to go when narrow); the
+   * rate alone where even "6 L/min now" would not fit — a figure per minute says it is now.
+   */
   private note(m: Meter, room: number): string {
     const segments: Segment[] = [];
     if (m.trouble) segments.push({ text: m.trouble });
@@ -433,9 +438,12 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
         text: s(this.hass, 'typical', { value: this.amount(m.typical, m.unit) }),
         optional: segments.length > 0,
       });
-    return segments.length
-      ? fitLine(segments, room, (text) => this.head.ruler.width('ef-meter__note', text))
-      : '';
+    if (!segments.length) return '';
+    const width = (text: string): number => this.head.ruler.width('ef-meter__note', text);
+    const line = fitLine(segments, room, width);
+    return width(line) > room && !m.trouble && m.rate !== undefined
+      ? fitLine([{ text: m.rate ?? '—' }], room, width)
+      : line;
   }
 
   private amount(value: number, unit: string): string {

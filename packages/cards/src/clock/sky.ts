@@ -13,12 +13,16 @@ import type { GlyphName } from '@fluvy/ui';
 import { compassKey, conditionGlyph, isCondition, isNight } from '../shared/weather.js';
 
 const s = strings('clock', 'weather');
+/** The weather card's words: a condition's shorter name where the clock's own is longer. */
+const weather = strings('weather');
 
 /** What a clock shows of the weather: the sky's state in words and as a glyph, and the air outside. */
 export interface Sky {
   /** False when the entity is unavailable, unknown or missing: `text` then says which. */
   readonly ok: boolean;
   readonly text: string;
+  /** `text` where room is short: the weather card's own word ("Clear" for the clock's "Clear night"). */
+  readonly short: string;
   /** `text` as a segment after "·": lowercase where fluvy owns the copy, untouched where Home Assistant translated it. */
   readonly inline: string;
   readonly glyph: GlyphName;
@@ -54,6 +58,7 @@ export function readSky(hass: HomeAssistant | undefined, view: EntityView): Sky 
     return {
       ok: false,
       text,
+      short: text,
       inline: lowerFirst(text),
       glyph: 'ban',
       night: isNight(hass),
@@ -71,6 +76,7 @@ export function readSky(hass: HomeAssistant | undefined, view: EntityView): Sky 
   return {
     ok: true,
     text,
+    short: known ? weather(hass, condition) : text,
     inline: known ? lowerFirst(text) : text,
     glyph: conditionGlyph(condition, night),
     night,

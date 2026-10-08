@@ -74,6 +74,44 @@ const STILL = `data:image/svg+xml,${encodeURIComponent(
   </svg>`,
 )}`;
 
+/** A 180° camera's frame (3:1): the garden from under the eaves, the fence bending at both ends as the lens does. */
+const WIDE = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="480" viewBox="0 0 1440 480">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb3c9"/><stop offset="1" stop-color="#d9e4e6"/></linearGradient>
+      <linearGradient id="lawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f8a4c"/><stop offset="1" stop-color="#4c6234"/></linearGradient>
+    </defs>
+    <rect width="1440" height="480" fill="url(#sky)"/>
+    <path d="M0 250 Q720 170 1440 250 L1440 480 L0 480 Z" fill="url(#lawn)"/>
+    <path d="M0 230 Q720 150 1440 230" fill="none" stroke="#7a6248" stroke-width="10"/>
+    <path d="M0 262 Q720 182 1440 262" fill="none" stroke="#7a6248" stroke-width="8"/>
+    <g fill="#3f5a2c"><circle cx="260" cy="190" r="70"/><circle cx="330" cy="170" r="60"/><circle cx="1150" cy="185" r="80"/></g>
+    <rect x="610" y="150" width="220" height="110" rx="10" fill="#b9a27c"/>
+    <path d="M590 155 L720 90 L850 155 Z" fill="#8c6b4a"/>
+    <rect x="700" y="200" width="40" height="60" fill="#6b5236"/>
+    <path d="M420 480 Q720 330 1020 480 Z" fill="#a89a80"/>
+  </svg>`,
+)}`;
+
+/**
+ * Home Assistant's stream element, as the camera card sets it (`stateObj`, `fitMode`, `aspectRatio`): here, the
+ * camera's still in the plate with a moving band, so a live frame reads as one.
+ */
+class MockCameraStream extends HTMLElement {
+  stateObj?: { attributes?: { entity_picture?: string } };
+  fitMode = 'cover';
+  aspectRatio?: number;
+  connectedCallback(): void {
+    const root = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>
+        :host { display: block; overflow: hidden; }
+        img { width: 100%; height: 100%; object-fit: ${this.fitMode}; display: block; }
+      </style><img alt="" src="${this.stateObj?.attributes?.entity_picture ?? ''}">`;
+    this.dataset['live'] = '1';
+  }
+}
+define('ha-camera-stream', MockCameraStream);
+
 const PANEL = {
   friendly_name: 'Alarm',
   supported_features: 1 | 2,
@@ -175,7 +213,33 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Back garden', entity_picture: 'data:image/png;base64,iVBORw0KAAAA' },
     ],
     ['camera.garage', 'unavailable', { friendly_name: 'Garage camera' }],
+    [
+      'camera.garden_180',
+      'streaming',
+      { friendly_name: 'Garden · 180°', entity_picture: WIDE, supported_features: 2 },
+    ],
   ],
+  // as a real house has them: the rows' entities in areas (their line still says when they changed)
+  registry: {
+    entities: Object.fromEntries(
+      [
+        ['binary_sensor.front_door', 'ds_hall'],
+        ['binary_sensor.back_door', 'ds_garden'],
+        ['binary_sensor.living_motion', 'ds_living'],
+        ['binary_sensor.person', 'ds_garden'],
+        ['binary_sensor.vehicle', 'ds_garden'],
+        ['lock.side_gate', 'ds_garden'],
+        ['sensor.garage_lock_battery', 'ds_garage'],
+        ['switch.auto_lock', 'ds_hall'],
+      ].map(([id, area]) => [id, { entity_id: id, area_id: area }]),
+    ),
+    areas: {
+      ds_hall: { area_id: 'ds_hall', name: 'Hall' },
+      ds_garden: { area_id: 'ds_garden', name: 'Garden' },
+      ds_living: { area_id: 'ds_living', name: 'Living room' },
+      ds_garage: { area_id: 'ds_garage', name: 'Garage' },
+    },
+  },
   frames: [
     {
       title: 'Lock',
@@ -317,6 +381,33 @@ export const sheet: SheetSpec = {
     {
       title: 'Camera · unavailable',
       cards: [{ type: 'custom:fluvy-camera-card', entity: 'camera.garage' }],
+    },
+    {
+      title: 'Camera · 180°, its own shape',
+      cards: [
+        { type: 'custom:fluvy-camera-card', entity: 'camera.garden_180', aspect_ratio: 'native' },
+      ],
+    },
+    {
+      title: 'Camera · 180° in 16:9, the whole picture',
+      cards: [
+        { type: 'custom:fluvy-camera-card', entity: 'camera.garden_180', fit_mode: 'contain' },
+      ],
+    },
+    {
+      title: 'Camera · 4:3, half a second',
+      cards: [
+        {
+          type: 'custom:fluvy-camera-card',
+          entity: 'camera.driveway',
+          aspect_ratio: '4:3',
+          refresh: 0.5,
+        },
+      ],
+    },
+    {
+      title: 'Camera · live',
+      cards: [{ type: 'custom:fluvy-camera-card', entity: 'camera.driveway', camera_view: 'live' }],
     },
   ],
 };

@@ -451,14 +451,132 @@ const pulses = (flow) =>
     .slice(1)
     .map((x, i) => x - (xs[i] ?? 0))
     .filter((d) => d > 0);
-  const width = (await meters.locator('.en-chart svg').boundingBox()).width;
+  const width = (await meters.locator('.en-chart > svg:not(.en-chart__dots)').boundingBox()).width;
   const block = (width * 30) / 1440;
   check(
-    'without power sensors: the meters, half an hour a point for a 0.1 kWh step (no zigzag), no reading it cannot know',
-    m.reading === '' &&
+    'without power sensors: the meters, half an hour a point for a 0.1 kWh step (no zigzag); at rest the last half hour that has closed, as the whole house reads it',
+    /^\d{1,2}:\d{2} [\d.,]+ ?k?W$/.test(m.reading) &&
       steps.length > 10 &&
       steps.every((d) => Math.abs(d - block) < 0.2 || d > block * 1.4),
     JSON.stringify({ reading: m.reading, block, steps: steps.slice(0, 8) }),
+  );
+  await page.close();
+}
+
+/* ---------- the whole house (issue #26) ---------- */
+{
+  const page = await open();
+  const read = (c) =>
+    c.evaluate((el) => {
+      const root = el.shadowRoot;
+      const text = (sel) =>
+        (root.querySelector(sel)?.textContent ?? '').replace(/\s+/g, ' ').trim();
+      return {
+        reading: text('.ef-top > .ef-key:not(.ef-top__side) .fv-readout'),
+        level: text('.ef-top__side .fv-readout'),
+        above: [...root.querySelectorAll('.en-area[data-above]')].map((a) => a.dataset.above),
+        below: [...root.querySelectorAll('.en-area[data-below]')].map((a) => a.dataset.below),
+        house: root.querySelector('path.en-house')?.getAttribute('d') ?? null,
+        // the charge is drawn a path a run (each a whole number of dashes long)
+        soc: root.querySelector('path.en-soc')
+          ? [...root.querySelectorAll('path.en-soc')].map((p) => p.getAttribute('d')).join(' ')
+          : null,
+        socDashes: [...root.querySelectorAll('path.en-soc')].map((p) =>
+          Number(p.getAttribute('pathLength')),
+        ),
+        legend: [...root.querySelectorAll('.en-legend__item')].map((i) =>
+          i.textContent.replace(/\s+/g, ''),
+        ),
+      };
+    });
+  const card = frame(page, 'The whole house').locator('fluvy-energy-card').first();
+  await card.scrollIntoViewIfNeeded();
+  const chart = await read(card);
+  const asked = await page.evaluate(() =>
+    (window.fluvyAsked ?? []).filter(
+      (m) => m.type === 'recorder/statistics_during_period' && (m.types ?? []).includes('mean'),
+    ),
+  );
+  check(
+    'the whole house: the battery’s charge through the day from its own sensor’s five-minute means',
+    asked.some(
+      (m) =>
+        m.period === '5minute' &&
+        m.statistic_ids.length === 1 &&
+        m.statistic_ids[0] === 'sensor.fl_battery_level',
+    ),
+    JSON.stringify(asked.map((m) => m.statistic_ids)),
+  );
+  check(
+    'the whole house: right now the house’s use (4.1 kW), beside it the battery’s charge now (62 %)',
+    /^Right now 4\.1 ?kW$/.test(chart.reading) && /^Battery 62 ?%$/.test(chart.level),
+    JSON.stringify([chart.reading, chart.level]),
+  );
+  check(
+    'the whole house: every source above the line (the sun’s whole production), the charge and the export below, the house as a line, the charge dashed',
+    chart.above.join() === 'grid,battery,solar' &&
+      chart.below.join() === 'battery,grid' &&
+      chart.house?.startsWith('M') &&
+      chart.soc?.startsWith('M') &&
+      chart.legend.join(' | ') ===
+        'Solar11.2kWh | Battery2.4kWh | Grid4.1kWh | Charged3.0kWh | Exported1.3kWh',
+    JSON.stringify(chart),
+  );
+  const plot = card.locator('.en-chart');
+  const box = await plot.boundingBox();
+  await page.mouse.move(box.x + (box.width * 12.5) / 24, box.y + box.height / 2);
+  await page.waitForTimeout(200);
+  const noon = await read(card);
+  await page.mouse.move(0, 0);
+  const units = noon.legend.map((item) => item.replace(/^[^\d—]+[\d.,]+/, ''));
+  check(
+    'scrubbed, the readouts say that moment and the legend each source’s power then, in one unit',
+    /^12:\d\d [\d.,]+ ?k?W$/.test(noon.reading) &&
+      /^Battery \d+ ?%$/.test(noon.level) &&
+      units.length === 5 &&
+      new Set(units).size === 1 &&
+      /^k?W$/.test(units[0] ?? ''),
+    JSON.stringify([noon.reading, noon.level, noon.legend]),
+  );
+
+  // issue #23's hybrid house, with its recorder's gap and a battery that fills at midday
+  const hybrid = frame(page, 'The whole house · a hybrid inverter, with power')
+    .locator('fluvy-energy-card')
+    .first();
+  await hybrid.scrollIntoViewIfNeeded();
+  const h = await read(hybrid);
+  const hbox = await hybrid.locator('.en-chart').boundingBox();
+  await page.mouse.move(hbox.x + (hbox.width * 3.25) / 24, hbox.y + hbox.height / 2);
+  await page.waitForTimeout(200);
+  const gap = await read(hybrid);
+  await page.mouse.move(0, 0);
+  check(
+    'the gap at 03:00 is a gap in every series: the areas, the house and the charge stop, the cursor reads "—"',
+    (h.house.match(/M/g) ?? []).length >= 2 &&
+      (h.soc.match(/M/g) ?? []).length >= 2 &&
+      h.socDashes.length >= 2 &&
+      h.socDashes.every((n) => (n - 4) % 8 === 0) &&
+      /^03:\d\d —$/.test(gap.reading) &&
+      /^Battery —$/.test(gap.level),
+    JSON.stringify([gap.reading, gap.level]),
+  );
+  const two = await read(
+    frame(page, 'The whole house · two batteries without their capacity')
+      .locator('fluvy-energy-card')
+      .first(),
+  );
+  check(
+    'two batteries that do not say their capacity have no group charge: no line, "—"',
+    two.soc === null && /^Battery —$/.test(two.level),
+    JSON.stringify([two.soc, two.level]),
+  );
+  const bare = await read(
+    frame(page, 'The whole house · no battery, no house line').locator('fluvy-energy-card').first(),
+  );
+  check(
+    'without a battery and with show_house off: no charge, no house line, the sources and the export alone',
+    bare.soc === null && bare.house === null && bare.level === '' && bare.below.join() === 'grid',
+    JSON.stringify(bare),
   );
   await page.close();
 }

@@ -44,7 +44,8 @@
     "editor_lights": "Lichter (keine: die des Bereichs)",
     "editor_show_level": "Helligkeit zeigen",
     "editor_show_brightness": "Eine Helligkeit für den Raum",
-    "editor_light_colors": "Jedes Licht in der Farbe seiner Lampe"
+    "editor_light_colors": "Jedes Licht in der Farbe seiner Lampe",
+    "editor_tint": "Farbe jeder Kachel zeigen"
   },
   "climate": {
     "mode": "Modus",
@@ -164,7 +165,10 @@
     "used": "Verbraucht",
     "exported": "Eingespeist",
     "charged": "Geladen",
-    "charged_exported": "Geladen · eingespeist"
+    "charged_exported": "Geladen · eingespeist",
+    "whole_house": "Heute · das ganze Haus",
+    "sources_tag": "Quellen",
+    "house_power_short": "Haus"
   },
   "sensor": {
     "last_24h": "Letzte 24 h",
@@ -300,7 +304,7 @@
     "timeline": "Zeitleiste",
     "no_calendar": "Wähle einen Kalender",
     "unavailable": "Kalender nicht verfügbar",
-    "off": "Nicht verfügbar",
+    "off": "Offline",
     "failed": "Termine konnten nicht geladen werden",
     "one_unavailable": "{name} ist nicht verfügbar",
     "some_unavailable": "{count} Kalender sind nicht verfügbar",
@@ -356,7 +360,8 @@
     "morning": "Guten Morgen",
     "afternoon": "Guten Tag",
     "evening": "Guten Abend",
-    "night": "Gute Nacht"
+    "night": "Gute Nacht",
+    "hello": "Hallo"
   },
   "editor": {
     "entity": "Entität",
@@ -453,7 +458,16 @@
     "show_climate": "Klima zeigen",
     "picture": "Bild",
     "temperature_entity": "Temperatur",
-    "humidity_entity": "Luftfeuchtigkeit"
+    "humidity_entity": "Luftfeuchtigkeit",
+    "show_soc": "Ladestand zeigen",
+    "show_house": "Verbrauch zeigen",
+    "camera_view": "Bild",
+    "aspect_ratio": "Seitenverhältnis",
+    "fit_mode": "Einpassen",
+    "also_sensors": "Auch im Diagramm (bis zu 2)",
+    "people": "Personen",
+    "battery": "Handy-Akku",
+    "tint": "Farbe zeigen"
   },
   "strategy": {
     "home": "Zuhause",
@@ -622,13 +636,81 @@
     "badge_ok": "Badge, wenn alles in Ordnung ist",
     "badge_warn": "Badge bei Warnungen, z. B. „{count} schwach“"
   },
+  "printer": {
+    "title": "3D-Drucker",
+    "progress": "Fortschritt",
+    "left": "Verbleibend",
+    "left_text": "noch {time}",
+    "ready_at": "Fertig um {time}",
+    "done_at": "Fertig um {time}",
+    "layer_of": "Schicht {layer} von {layers}",
+    "nozzle": "Düse",
+    "bed": "Bett",
+    "chamber": "Kammer",
+    "layer": "Schicht",
+    "speed": "Geschwindigkeit",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "stop": "Stoppen",
+    "light": "Licht",
+    "stop_confirm": "Druck stoppen? Er kann nicht fortgesetzt werden.",
+    "no_printer": "Kein Drucker gefunden",
+    "phase_printing": "Druckt",
+    "phase_preparing": "Bereitet vor",
+    "phase_paused": "Pausiert",
+    "phase_finished": "Fertig",
+    "phase_stopped": "Gestoppt",
+    "phase_error": "Fehler",
+    "phase_idle": "Bereit",
+    "phase_offline": "Offline",
+    "editor_device": "Drucker",
+    "editor_readouts": "Werte (bis zu sechs)",
+    "editor_show_image": "Kamera oder Vorschau zeigen",
+    "editor_roles": "Entitäten von Hand",
+    "role_status": "Status",
+    "role_printing": "Druckt (an/aus)",
+    "role_progress": "Fortschritt",
+    "role_remaining": "Restzeit",
+    "role_finish": "Endzeit",
+    "role_start": "Startzeit",
+    "role_file": "Datei",
+    "role_nozzle": "Düse",
+    "role_nozzle_target": "Düsen-Zielwert",
+    "role_bed": "Bett",
+    "role_bed_target": "Bett-Zielwert",
+    "role_chamber": "Kammer",
+    "role_layer": "Schicht",
+    "role_layers": "Schichten gesamt",
+    "role_speed": "Geschwindigkeit",
+    "role_camera": "Kamera",
+    "role_preview": "Vorschau",
+    "role_pause": "Pause-Taste",
+    "role_resume": "Fortsetzen-Taste",
+    "role_stop": "Stopp-Taste",
+    "role_light": "Licht",
+    "editor_role": "Was es ist",
+    "filament": "Filament",
+    "elapsed": "Vergangen",
+    "elapsed_text": "seit {time}",
+    "empty": "Leer",
+    "editor_image": "Bild",
+    "editor_show_filament": "Filament zeigen",
+    "editor_sensors": "Weitere Werte",
+    "role_stage": "Phase",
+    "role_error": "Fehler",
+    "role_elapsed": "Druckzeit",
+    "role_filament": "Filament in Verwendung",
+    "done_ago": "Fertig {when}",
+    "ready_on": "Fertig am {day} um {time}"
+  },
   "camera": {
     "live": "Live",
     "snapshot": "Schnappschuss",
     "fullscreen": "Vollbild",
     "view": "Livebild von {name}",
     "offline": "Kein Bild von der Kamera",
-    "refresh": "Sekunden zwischen Bildern"
+    "refresh": "Sekunden zwischen Bildern",
+    "exit_fullscreen": "Vollbild beenden"
   },
   "chips": {
     "rooms": "Räume"
@@ -688,7 +770,7 @@
     "kind_battery": "Batterie",
     "kind_generator": "Generator",
     "kind_vehicle": "Auto",
-    "no_sources": "Noch keine Leistungssensoren",
+    "no_sources": "Noch keine Sensoren für die Leistung",
     "no_sources_hint": "Quellen hinzufügen oder dem Energie-Dashboard seine Leistungssensoren geben",
     "no_period": "Noch kein Energie-Dashboard",
     "no_period_hint": "Richte das Energie-Dashboard ein, um diese Summen zu sehen",
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Profil"
+    "profile": "Profil",
+    "person_helper": "Leer: wer angemeldet ist"
   },
   "helpers": {
     "title": "Helfer",
@@ -883,7 +966,7 @@
     "tabs.pills": "Pillen",
     "tabs.pills_sub": "Gefüllt",
     "tabs.ha": "Original",
-    "tabs.ha_sub": "Von Home Assistant",
+    "tabs.ha_sub": "Home Assistant",
     "tabs.hidden": "Ausgeblendet",
     "tabs.hidden_sub": "Keine Tabs",
     "tabs.content_names": "Namen",
@@ -1002,7 +1085,7 @@
     "about.file_sub": "Diese Einrichtung in ein anderes Haus mitnehmen",
     "about.export": "Exportieren",
     "about.import": "Importieren",
-    "about.reset": "Haus-Einstellungen",
+    "about.reset": "Fürs ganze Haus",
     "about.reset_sub": "Zurück zu {look}",
     "about.reset_btn": "Zurücksetzen",
     "about.reset_armed": "Noch einmal tippen",
@@ -1074,7 +1157,7 @@
     "wall.theme_follow": "Folgen",
     "wall.theme_follow_sub": "Home Assistant",
     "wall.theme_sun": "Sonne",
-    "wall.theme_sun_sub": "Nach Sonnenuntergang",
+    "wall.theme_sun_sub": "Ab Dämmerung",
     "wall.theme_hours": "Uhrzeiten",
     "wall.theme_hours_sub": "Zwischen Zeiten",
     "wall.from": "Nacht ab",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Strom",
     "dashboard.greeting_tabs": "Ansichten unter der Begrüßung",
     "dashboard.header_only": "Nur Kopfzeile",
-    "dashboard.under_greeting": "Auch als Chips"
+    "dashboard.under_greeting": "Auch als Chips",
+    "wall.subview": "Zurück aus einer Unteransicht",
+    "wall.subview_sub": "Eine Wand hat keine Kopfzeile: eine Taste mit dem Namen der Ansicht oder die Kopfzeile von Home Assistant in Unteransichten",
+    "wall.subview_button": "Zurück-Taste",
+    "wall.subview_header": "Kopfzeile",
+    "wall.back": "Zurück",
+    "wall.back_to": "Zurück aus {view}"
   },
   "people": {
     "title": "Wer ist zuhause",
     "count": "{home} von {total}",
     "updated": "aktualisiert {when}",
     "map": "Karte öffnen",
-    "editor.map_path": "Pfad der Karte"
+    "editor.map_path": "Pfad der Karte",
+    "title_short": "Zuhause"
   },
   "map": {
     "title": "Wo alle sind",
@@ -1142,7 +1232,7 @@
     "all_devices": "Alle Geräte",
     "unavailable": "{count} nicht verfügbar",
     "temperature": "Temperatur",
-    "humidity": "Luftfeuchtigkeit"
+    "humidity": "Luftfeuchte"
   },
   "production": {
     "production": "Erzeugung",
@@ -1283,7 +1373,20 @@
     "sources": "Nach Quelle",
     "signed": "Null in der Mitte",
     "water": "Wasser",
-    "gas": "Gas"
+    "gas": "Gas",
+    "overview": "Ganzes Haus",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "Wie die Kamera",
+    "cover": "Füllen (zuschneiden)",
+    "contain": "Ganzes Bild",
+    "on": "Wenn an",
+    "camera": "Kamera",
+    "preview": "Vorschau"
   },
   "tone": {
     "accent": "Akzent",
@@ -1408,7 +1511,7 @@
     "price_now": "Preis jetzt",
     "imported": "Bezogen",
     "exported": "Eingespeist",
-    "net_cost": "Nettokosten",
+    "net_cost": "Netto",
     "no_grid": "Noch kein Netzsensor",
     "no_grid_hint": "Einen hinzufügen oder dem Energie-Dashboard die Netzleistung geben",
     "editor_voltages": "Spannung je Phase (in der Reihenfolge der Phasen)",

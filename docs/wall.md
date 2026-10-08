@@ -16,8 +16,16 @@ Settings are never walls, so a tablet can always be administered from itself.
 
 ## On the wall
 
-- The sidebar and the dashboard header are gone; the dashboard fills the screen inside the tablet's safe area.
-  There is no swipe between views and no gesture of Fluvy's: the dashboard's own tabs remain.
+- The sidebar and the dashboard header are gone, and the dashboard fills the screen inside the tablet's safe area.
+  The header's tabs go with it, so a wall moves between its views with what the dashboard itself holds (chips,
+  headings, buttons that navigate). There is no swipe between views and no gesture of Fluvy's.
+- **Subviews**: Home Assistant shows its back arrow in the header, which a wall does not have. The house chooses the
+  way back in the *Wall* tab (*Back from a subview*):
+  - **Back button** (the default): a pill at the top left with a chevron and the subview's name. It sits on the line of the
+    exit corner, and the view keeps room for it. A tap goes back as Home Assistant's own arrow does: to the view's
+    `back_path`, or back where you came from.
+  - **Header**: Home Assistant's header, with its arrow and the view's name, in subviews only. The exit corner moves
+    under it.
 - **Screensaver**: after 2, 5, 10 or 30 minutes without a touch (or never), the screen shows the clock and the weather
   over the wall background, or dims to black. Any touch wakes it — that touch does nothing else. A motion or
   occupancy sensor chosen as *Wake on motion* (a dropdown of every one the house has, with its room) wakes it too.

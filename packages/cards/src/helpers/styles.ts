@@ -23,6 +23,16 @@ export const rowStyles = css`
     min-width: 32%;
   }
 
+  /* …but a figure, a state of one word or an action's word has no second line to take: beside one, the name gives way
+     further (two lines, then an ellipsis, as names may) rather than push it out of the row */
+  .fv-row:has(
+      > .fv-row__value:not(.fv-row__value--words, .fv-row__value--text),
+      > .in-value--action
+    )
+    > .fv-row__text {
+    min-width: 0;
+  }
+
   .fv-row__value {
     flex: 0 0 auto;
     min-width: 0;
@@ -54,6 +64,12 @@ export const rowStyles = css`
      cap on the 4 grid, so a capped button keeps whole pixels */
   .in-value {
     max-width: round(down, calc(68% - 68px), 4px);
+  }
+
+  /* an action's word ("Install", "Run") is never cut: its button keeps its measured width, uncapped */
+  .in-value--action {
+    flex: none;
+    max-width: none;
   }
 
   .in-value__text {

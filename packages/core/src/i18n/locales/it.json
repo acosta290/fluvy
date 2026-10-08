@@ -44,7 +44,8 @@
     "editor_lights": "Luci (nessuna: quelle dell’area)",
     "editor_show_level": "Mostra il livello",
     "editor_show_brightness": "Una luminosità per tutta la stanza",
-    "editor_light_colors": "Ogni luce accesa nel colore della sua lampadina"
+    "editor_light_colors": "Ogni luce accesa nel colore della sua lampadina",
+    "editor_tint": "Mostra il colore di ogni riquadro"
   },
   "climate": {
     "mode": "Modalità",
@@ -164,7 +165,10 @@
     "used": "Usata",
     "exported": "Immessa",
     "charged": "Caricata",
-    "charged_exported": "Caricata · immessa"
+    "charged_exported": "Caricata · immessa",
+    "whole_house": "Oggi · tutta la casa",
+    "sources_tag": "Fonti",
+    "house_power_short": "Casa"
   },
   "sensor": {
     "last_24h": "Ultime 24 h",
@@ -300,7 +304,7 @@
     "timeline": "Cronologia",
     "no_calendar": "Scegli un calendario",
     "unavailable": "Calendario non disponibile",
-    "off": "Non disponibile",
+    "off": "Offline",
     "failed": "Impossibile caricare gli eventi",
     "one_unavailable": "{name} non è disponibile",
     "some_unavailable": "{count} calendari non sono disponibili",
@@ -356,7 +360,8 @@
     "morning": "Buongiorno",
     "afternoon": "Buon pomeriggio",
     "evening": "Buonasera",
-    "night": "Buonanotte"
+    "night": "Buonanotte",
+    "hello": "Ciao"
   },
   "editor": {
     "entity": "Entità",
@@ -453,7 +458,16 @@
     "show_climate": "Mostra il clima",
     "picture": "Immagine",
     "temperature_entity": "Temperatura",
-    "humidity_entity": "Umidità"
+    "humidity_entity": "Umidità",
+    "show_soc": "Mostra la carica",
+    "show_house": "Mostra il consumo",
+    "camera_view": "Immagine",
+    "aspect_ratio": "Proporzioni",
+    "fit_mode": "Adattamento",
+    "also_sensors": "Anche nel grafico (fino a 2)",
+    "people": "Persone",
+    "battery": "Batteria del telefono",
+    "tint": "Mostra il colore"
   },
   "strategy": {
     "home": "Casa",
@@ -622,13 +636,81 @@
     "badge_ok": "Badge quando va tutto bene",
     "badge_warn": "Badge con avvisi, es. “{count} scariche”"
   },
+  "printer": {
+    "title": "Stampante 3D",
+    "progress": "Avanzamento",
+    "left": "Rimanente",
+    "left_text": "mancano {time}",
+    "ready_at": "Pronta alle {time}",
+    "done_at": "Terminata alle {time}",
+    "layer_of": "Strato {layer} di {layers}",
+    "nozzle": "Ugello",
+    "bed": "Piano",
+    "chamber": "Camera",
+    "layer": "Strato",
+    "speed": "Velocità",
+    "pause": "Metti in pausa",
+    "resume": "Riprendi",
+    "stop": "Interrompi",
+    "light": "Luce",
+    "stop_confirm": "Interrompere la stampa? Non potrà riprendere.",
+    "no_printer": "Nessuna stampante trovata",
+    "phase_printing": "In stampa",
+    "phase_preparing": "Preparazione",
+    "phase_paused": "In pausa",
+    "phase_finished": "Terminata",
+    "phase_stopped": "Interrotta",
+    "phase_error": "Errore",
+    "phase_idle": "Inattiva",
+    "phase_offline": "Offline",
+    "editor_device": "Stampante",
+    "editor_readouts": "Valori (fino a sei)",
+    "editor_show_image": "Mostra la telecamera o l’anteprima",
+    "editor_roles": "Entità scelte a mano",
+    "role_status": "Stato",
+    "role_printing": "In stampa (sì/no)",
+    "role_progress": "Avanzamento",
+    "role_remaining": "Tempo rimanente",
+    "role_finish": "Ora di fine",
+    "role_start": "Ora di inizio",
+    "role_file": "File",
+    "role_nozzle": "Ugello",
+    "role_nozzle_target": "Obiettivo ugello",
+    "role_bed": "Piano",
+    "role_bed_target": "Obiettivo piano",
+    "role_chamber": "Camera",
+    "role_layer": "Strato",
+    "role_layers": "Strati totali",
+    "role_speed": "Velocità",
+    "role_camera": "Telecamera",
+    "role_preview": "Anteprima",
+    "role_pause": "Pulsante pausa",
+    "role_resume": "Pulsante riprendi",
+    "role_stop": "Pulsante interrompi",
+    "role_light": "Luce",
+    "editor_role": "Che cos’è",
+    "filament": "Filamento",
+    "elapsed": "Trascorso",
+    "elapsed_text": "{time} trascorsi",
+    "empty": "Vuoto",
+    "editor_image": "Immagine",
+    "editor_show_filament": "Mostra il filamento",
+    "editor_sensors": "Altri valori",
+    "role_stage": "Fase",
+    "role_error": "Errore",
+    "role_elapsed": "Tempo di stampa",
+    "role_filament": "Filamento in uso",
+    "done_ago": "Terminata {when}",
+    "ready_on": "Pronta {day} alle {time}"
+  },
   "camera": {
     "live": "Dal vivo",
     "snapshot": "Istantanea",
     "fullscreen": "Schermo intero",
     "view": "Vista dal vivo di {name}",
     "offline": "Nessuna immagine dalla telecamera",
-    "refresh": "Secondi tra un’immagine e l’altra"
+    "refresh": "Secondi tra un’immagine e l’altra",
+    "exit_fullscreen": "Esci da schermo intero"
   },
   "chips": {
     "rooms": "Stanze"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Profilo"
+    "profile": "Profilo",
+    "person_helper": "Vuoto: chi ha effettuato l’accesso"
   },
   "helpers": {
     "title": "Helper",
@@ -1096,7 +1179,7 @@
     "wall.exit": "Uscita",
     "wall.exit_sub": "Nell’angolo in alto: una × per uscire, o una pressione nascosta per mettere in pausa",
     "wall.exit_button": "Pulsante",
-    "wall.exit_hold": "Pressione lunga",
+    "wall.exit_hold": "Tieni premuto",
     "palette.yours": "Le vostre",
     "palette.community": "Comunità",
     "palette.more": "Mostra tutte ({n})",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Flusso",
     "dashboard.greeting_tabs": "Viste sotto il saluto",
     "dashboard.header_only": "Solo l'intestazione",
-    "dashboard.under_greeting": "Anche come chip"
+    "dashboard.under_greeting": "Anche come chip",
+    "wall.subview": "Indietro da una sottovista",
+    "wall.subview_sub": "Una parete non ha intestazione: un pulsante con il nome della vista, o l’intestazione di Home Assistant nelle sottoviste",
+    "wall.subview_button": "Tasto indietro",
+    "wall.subview_header": "Intestazione",
+    "wall.back": "Indietro",
+    "wall.back_to": "Indietro da {view}"
   },
   "people": {
     "title": "Chi è in casa",
     "count": "{home} su {total}",
     "updated": "aggiornato {when}",
     "map": "Apri la mappa",
-    "editor.map_path": "Percorso della mappa"
+    "editor.map_path": "Percorso della mappa",
+    "title_short": "In casa"
   },
   "map": {
     "title": "Dove sono tutti",
@@ -1283,7 +1373,20 @@
     "sources": "Per fonte",
     "signed": "Centrato sullo zero",
     "water": "Acqua",
-    "gas": "Gas"
+    "gas": "Gas",
+    "overview": "Tutta la casa",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "Quello della telecamera",
+    "cover": "Riempi (ritaglia)",
+    "contain": "Immagine intera",
+    "on": "Se acceso",
+    "camera": "Telecamera",
+    "preview": "Anteprima"
   },
   "tone": {
     "accent": "Accento",
@@ -1410,7 +1513,7 @@
     "price_now": "Prezzo attuale",
     "imported": "Prelevato",
     "exported": "Immesso",
-    "net_cost": "Costo netto",
+    "net_cost": "Netto",
     "no_grid": "Ancora nessun sensore di rete",
     "no_grid_hint": "Aggiungine uno o dai alla dashboard Energia la potenza della rete",
     "editor_voltages": "Tensione per fase (nell’ordine delle fasi)",

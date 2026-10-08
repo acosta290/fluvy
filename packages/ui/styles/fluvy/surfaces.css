@@ -364,8 +364,57 @@
   opacity: 1;
 }
 
+/* a frame not yet asked for draws nothing (the browser's broken-picture frame would show round a contained picture) */
+.fv-plate__img:not([src]) {
+  visibility: hidden;
+}
+
 .fv-plate__img.is-on {
   z-index: 1;
   opacity: 1;
   animation: fv-fade 360ms var(--fv-ease) both;
+}
+
+/* A battery's charge: the glyph filled to its level and the figure, in the line's ink; low (not charging), both in the
+   warning ink; charging, a bolt across the glyph with a card edge so it reads over the fill */
+.fv-battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fluvy-text-secondary);
+  white-space: nowrap;
+}
+
+.fv-battery svg {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fv-battery__level {
+  fill: currentColor;
+  stroke: none;
+}
+
+.fv-battery.is-low {
+  color: var(--fluvy-warning);
+}
+
+.fv-battery__halo {
+  stroke: var(--fluvy-card);
+  stroke-width: 4;
+}
+
+.fv-battery__bolt {
+  stroke-width: 1.5;
 }

@@ -1,3 +1,4 @@
+import type { Tint } from '../shared/colour.js';
 import {
   strings,
   type ActionConfig,
@@ -22,8 +23,10 @@ import {
   formLabels,
   iconField,
   textField,
+  tintField,
+  accentField,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 
 const s = strings('chips');
@@ -37,10 +40,14 @@ export interface ChipConfig {
   entity?: string;
   /** A full action; wins over `path` and `entity`. */
   action?: ActionConfig;
+  /** The tab's own colour (a Home Assistant colour name or `#rrggbb`): its fill when it is the open one. */
+  color?: string;
 }
 
 export interface ChipsCardConfig extends FluvyCardConfig {
   chips?: readonly ChipConfig[];
+  /** `always`: a tab with a colour shows it at rest too — a wash and its hairline (`on`, the default: when open). */
+  tint?: Tint;
 }
 
 /** "/fluvy-home/living/", "/fluvy-home/living?edit=1" and "/fluvy-home/living" are the same view. */
@@ -164,17 +171,18 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
 
   /** The row's accessible name is the base's `name`; the tabs are its own. */
   static override base: readonly BaseKey[] = ['name'];
-  static override keys = configKeys<ChipsCardConfig>()(['chips']);
+  static override keys = configKeys<ChipsCardConfig>()(['chips', 'tint']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'chips',
       idKey: 'name',
       title: 'editor.tabs',
-      keys: ['name', 'icon', 'path', 'entity', 'action'],
+      keys: ['name', 'icon', 'path', 'entity', 'action', 'color'],
       schema: [
         textField('name'),
         fieldRow(iconField(), textField('path')),
         entityField(undefined, 'entity', false),
+        accentField(),
         actionField('action'),
       ],
     },
@@ -183,9 +191,15 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     keys: [{ from: 'label', to: 'name' }],
     items: { chips: ITEM_ALIASES },
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ tint: 'on' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
-      schema: [textField('name'), { name: 'chips', required: true, selector: { object: {} } }],
+      schema: [
+        textField('name'),
+        { name: 'chips', required: true, selector: { object: {} } },
+        tintField(),
+      ],
       ...formLabels({ chips: 'editor.tabs' }),
     };
   }
@@ -378,9 +392,10 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
         ${chips.map(
           (chip, index) =>
             html`<button
-              class="fv-chip ${index === active ? 'fv-chip--ink is-active' : ''}"
+              class="fv-chip ${index === active ? (chip.color ? 'is-active' : 'fv-chip--ink is-active') : ''}"
               data-target
               data-fit="32"
+              data-accent=${this.accents.item(chip.color) ?? nothing}
               aria-current=${index === active ? 'page' : nothing}
               @click=${() => {
                 const action = this.actionFor(chip);
@@ -388,7 +403,13 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
                 this.tap(chip.entity, action);
               }}
             >
-              <span class="fv-chip__pill" data-control
+              <span
+                class="fv-chip__pill ${
+                  this.config?.tint === 'always' && chip.color && index !== active
+                    ? 'is-tinted'
+                    : ''
+                }"
+                data-control
                 >${chip.icon ? icon(chip.icon) : nothing}${chip.name}</span
               >
             </button>`,

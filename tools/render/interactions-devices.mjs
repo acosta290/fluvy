@@ -123,6 +123,42 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   await page.close();
 }
 
+/* ---------- a house in Fahrenheit: the thermostat steps a whole degree, every figure says °F ---------- */
+{
+  const page = await open('imperial');
+  const card = frame(page, 'Fahrenheit · a thermostat stepping whole degrees').locator(
+    'fluvy-thermostat-card',
+  );
+  const unit = await card.evaluate((el) =>
+    (el.shadowRoot.querySelector('fluvy-dial')?.shadowRoot?.textContent ?? '').replace(/\s+/g, ' '),
+  );
+  await reset(page);
+  await card.locator('.fv-stepper__half').nth(1).click();
+  await settle(page, 900);
+  const c = await calls(page);
+  check(
+    'Fahrenheit: the thermostat says °F and, with no step of its own, steps a whole degree (70 → 71)',
+    /°F/.test(unit) &&
+      c.length === 1 &&
+      c[0].s === 'climate.set_temperature' &&
+      c[0].d.temperature === 71,
+    JSON.stringify({ unit, c }),
+  );
+  const printer = await frame(page, 'Fahrenheit · a printer')
+    .locator('fluvy-printer-card')
+    .evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.pr-stat .fv-readout')].map((r) =>
+        r.textContent.replace(/\s+/g, ' ').trim(),
+      ),
+    );
+  check(
+    'Fahrenheit: a printer’s heaters and chamber in °F — 9° off its target says both, at its target alone',
+    printer.join('|') === 'Nozzle 437 / 446°F|Bed 140°F|Chamber 104°F',
+    JSON.stringify(printer),
+  );
+  await page.close();
+}
+
 /* ---------- thermostat: modes and chips ---------- */
 {
   const page = await open('climate');

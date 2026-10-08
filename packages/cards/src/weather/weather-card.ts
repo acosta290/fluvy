@@ -145,16 +145,14 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       .am-card {
         width: 100%;
       }
-      /* same 88 box as the sheet (readout 64 beside the 64 circle, then 4 + the 20 sub), but the sub runs
-         under the circle too: "Sensación 16° · Viento 12 km/h NO" has to fit a 260 column */
+      /* same 88 box as the sheet (readout 64 beside the 64 circle, then 4 + the 20 sub; 64 without the sub), but the
+         sub runs under the circle too: "Sensación 16° · Viento 12 km/h NO" has to fit a 260 column */
       .am-weather__hero {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 64px;
         column-gap: 12px;
         align-content: start;
-      }
-      .am-weather__hero--bare {
-        height: 64px;
+        height: auto;
       }
       .am-weather__now {
         min-width: 0;
@@ -166,6 +164,7 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       /* "Barcelona El Prat · Partly cloudy": the name may ellipsize, the condition never (and a name with no room left steps aside: see renderCard) */
       .am-weather__label {
         display: flex;
+        height: auto;
         min-width: 0;
         white-space: pre;
       }
@@ -176,6 +175,14 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       }
       .am-weather__condition {
         flex: none;
+      }
+      /* …and a condition too long for the label even alone (a narrow column, a long word) takes a second line, which
+         the hero grows by, rather than run into the circle */
+      .am-weather__condition:only-child {
+        flex: 0 1 auto;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: break-word;
       }
       .am-hours {
         grid-template-columns: repeat(var(--am-hours, 5), var(--am-hour-w, minmax(0, 1fr)));
@@ -230,7 +237,11 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
       },
     ],
   };
-  static override defaults: EditorDefaults = () => ({ variant: 'full' });
+  static override defaults: EditorDefaults = () => ({
+    forecast: 'daily',
+    show_forecast: true,
+    variant: 'full',
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -495,29 +506,48 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     </div>`;
   }
 
+  /**
+   * The hours ahead as columns: as many as the width holds (64 px each, three to six), fewer while the widest hour or
+   * figure would not keep 4 px clear in its cell; the first says "Now" where the word fits its column, else its hour.
+   */
   private renderHours(
     items: readonly ForecastItem[] | null | undefined,
   ): TemplateResult | typeof nothing {
     if (items === undefined) return html`<div class="am-hours fv-skeleton"></div>`;
     const now = this.now().getTime();
-    const columns = Math.max(3, Math.min(6, Math.floor(this.contentWidth / HOUR_COLUMN)));
     const ahead = (items ?? [])
       .map((item) => ({ item, at: Date.parse(item.datetime) }))
       .filter(({ at }) => Number.isFinite(at) && at > now - HOUR_MS)
-      .slice(0, columns);
+      .slice(0, Math.max(3, Math.min(6, Math.floor(this.contentWidth / HOUR_COLUMN))));
     if (ahead.length === 0) return nothing;
+    const family = getComputedStyle(this).fontFamily;
+    const hours = ahead.map(({ item, at }) => {
+      const value = this.degrees(item.temperature);
+      return {
+        item,
+        at,
+        hour: this.hourLabel(new Date(at)),
+        value: value === null ? '—' : `${value}°`,
+      };
+    });
+    const widest = Math.max(
+      ...hours.map(({ hour }) => textWidth(hour, `500 12px ${family}`)),
+      ...hours.map(({ value }) => textWidth(value, `600 15px ${family}`)),
+    );
+    let columns = hours.length;
+    while (columns > 1 && widest > this.cellWidth(columns) - 8) columns -= 1;
+    const cell = this.cellWidth(columns);
     return this.renderStrip(
       'hourly',
-      ahead.map(({ item, at }, index) => {
-        const value = this.degrees(item.temperature);
+      hours.slice(0, columns).map(({ item, at, hour, value }, index) => {
         const dark = this.nightAt(at, now);
         return {
           label:
             index === 0 && at <= now + HOUR_MS
-              ? this.t('common.now')
-              : this.hourLabel(new Date(at)),
+              ? firstFit([this.t('common.now'), hour], cell - 8, `500 12px ${family}`)
+              : hour,
           glyph: conditionGlyph(item.condition ?? '', dark),
-          value: value === null ? '—' : `${value}°`,
+          value,
           title: this.conditionText(item.condition, dark),
         };
       }),
@@ -684,7 +714,7 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     const named = nameRoom >= Math.min(64, labelWidth(name) + 2);
 
     return html`<article class="fv-card am-card ${usable ? '' : 'is-off'}" data-card>
-      <div class="am-weather__hero ${context ? '' : 'am-weather__hero--bare'}">
+      <div class="am-weather__hero">
         <div class="am-weather__now">
           <div class="fv-readout fv-readout--l">
             <p class="fv-readout__label am-weather__label">

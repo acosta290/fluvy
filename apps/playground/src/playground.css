@@ -54,6 +54,8 @@ html[data-mode='dark'] body {
   justify-content: flex-start;
   align-items: stretch;
   gap: 0;
+  /* the app bar beside the drawer, as home-assistant-main sets it */
+  --ha-top-app-bar-width: calc(100% - 256px);
 }
 .pg-dashboard--framed hui-root {
   flex: 1 1 auto;

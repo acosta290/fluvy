@@ -44,7 +44,8 @@
     "editor_lights": "Lumières (aucune : celles de la pièce)",
     "editor_show_level": "Afficher le niveau",
     "editor_show_brightness": "Une luminosité pour toute la pièce",
-    "editor_light_colors": "Chaque lumière allumée à la couleur de son ampoule"
+    "editor_light_colors": "Chaque lumière allumée à la couleur de son ampoule",
+    "editor_tint": "Afficher la couleur de chaque tuile"
   },
   "climate": {
     "mode": "Mode",
@@ -164,7 +165,10 @@
     "used": "Consommée",
     "exported": "Injectée",
     "charged": "Chargée",
-    "charged_exported": "Chargée · injectée"
+    "charged_exported": "Chargée · injectée",
+    "whole_house": "Aujourd’hui · toute la maison",
+    "sources_tag": "Sources",
+    "house_power_short": "Maison"
   },
   "sensor": {
     "last_24h": "Dernières 24 h",
@@ -356,7 +360,8 @@
     "morning": "Bonjour",
     "afternoon": "Bonjour",
     "evening": "Bonsoir",
-    "night": "Bonne nuit"
+    "night": "Bonne nuit",
+    "hello": "Bonjour"
   },
   "editor": {
     "entity": "Entité",
@@ -453,7 +458,16 @@
     "show_climate": "Afficher le climat",
     "picture": "Image",
     "temperature_entity": "Température",
-    "humidity_entity": "Humidité"
+    "humidity_entity": "Humidité",
+    "show_soc": "Afficher la charge",
+    "show_house": "Afficher la consommation",
+    "camera_view": "Image",
+    "aspect_ratio": "Proportions",
+    "fit_mode": "Ajustement",
+    "also_sensors": "Aussi sur le graphique (2 au plus)",
+    "people": "Personnes",
+    "battery": "Batterie du téléphone",
+    "tint": "Afficher sa couleur"
   },
   "strategy": {
     "home": "Accueil",
@@ -622,13 +636,81 @@
     "badge_ok": "Badge quand tout va bien",
     "badge_warn": "Badge avec des alertes, p. ex. « {count} faibles »"
   },
+  "printer": {
+    "title": "Imprimante 3D",
+    "progress": "Progression",
+    "left": "Restant",
+    "left_text": "{time} restantes",
+    "ready_at": "Prête à {time}",
+    "done_at": "Terminée à {time}",
+    "layer_of": "Couche {layer} sur {layers}",
+    "nozzle": "Buse",
+    "bed": "Plateau",
+    "chamber": "Caisson",
+    "layer": "Couche",
+    "speed": "Vitesse",
+    "pause": "Mettre en pause",
+    "resume": "Reprendre",
+    "stop": "Arrêter",
+    "light": "Lumière",
+    "stop_confirm": "Arrêter l’impression ? Elle ne pourra pas reprendre.",
+    "no_printer": "Aucune imprimante trouvée",
+    "phase_printing": "Impression",
+    "phase_preparing": "Préparation",
+    "phase_paused": "En pause",
+    "phase_finished": "Terminée",
+    "phase_stopped": "Arrêtée",
+    "phase_error": "Erreur",
+    "phase_idle": "Au repos",
+    "phase_offline": "Hors ligne",
+    "editor_device": "Imprimante",
+    "editor_readouts": "Valeurs (six au plus)",
+    "editor_show_image": "Afficher la caméra ou l’aperçu",
+    "editor_roles": "Entités choisies à la main",
+    "role_status": "État",
+    "role_printing": "Impression (oui/non)",
+    "role_progress": "Progression",
+    "role_remaining": "Temps restant",
+    "role_finish": "Heure de fin",
+    "role_start": "Heure de début",
+    "role_file": "Fichier",
+    "role_nozzle": "Buse",
+    "role_nozzle_target": "Consigne de la buse",
+    "role_bed": "Plateau",
+    "role_bed_target": "Consigne du plateau",
+    "role_chamber": "Caisson",
+    "role_layer": "Couche",
+    "role_layers": "Couches au total",
+    "role_speed": "Vitesse",
+    "role_camera": "Caméra",
+    "role_preview": "Aperçu",
+    "role_pause": "Bouton pause",
+    "role_resume": "Bouton reprise",
+    "role_stop": "Bouton arrêt",
+    "role_light": "Lumière",
+    "editor_role": "Ce que c’est",
+    "filament": "Filament",
+    "elapsed": "Écoulé",
+    "elapsed_text": "{time} écoulées",
+    "empty": "Vide",
+    "editor_image": "Image",
+    "editor_show_filament": "Afficher le filament",
+    "editor_sensors": "Autres valeurs",
+    "role_stage": "Étape",
+    "role_error": "Erreur",
+    "role_elapsed": "Temps d’impression",
+    "role_filament": "Filament utilisé",
+    "done_ago": "Terminée {when}",
+    "ready_on": "Prête {day} à {time}"
+  },
   "camera": {
     "live": "Direct",
     "snapshot": "Instantané",
     "fullscreen": "Plein écran",
     "view": "Vue en direct de {name}",
     "offline": "Aucune image de la caméra",
-    "refresh": "Secondes entre les images"
+    "refresh": "Secondes entre les images",
+    "exit_fullscreen": "Quitter le plein écran"
   },
   "chips": {
     "rooms": "Pièces"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Profil"
+    "profile": "Profil",
+    "person_helper": "Vide : la personne connectée"
   },
   "helpers": {
     "title": "Assistants",
@@ -819,7 +902,7 @@
     "alert_one": "1 alerte",
     "alert_many": "{count} alertes",
     "all_clear": "Tout est calme",
-    "all_sensors": "Tous les capteurs",
+    "all_sensors": "Voir tout",
     "more": "{count} de plus",
     "less": "Afficher moins",
     "detected": "Détecté",
@@ -932,7 +1015,7 @@
     "scope.dashboards": "Tableaux de bord",
     "scope.everywhere": "Partout",
     "scope.ha": "Home Assistant",
-    "scope.list": "Tableaux de bord qui le portent",
+    "scope.list": "Tableaux de bord concernés",
     "scope.list_auto": "Automatique : ceux dont l’adresse commence par fluvy",
     "scope.list_chosen": "{n} choisis",
     "scope.overview": "Aperçu",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Flux",
     "dashboard.greeting_tabs": "Vues sous l'accueil",
     "dashboard.header_only": "L'en-tête seul",
-    "dashboard.under_greeting": "Aussi en puces"
+    "dashboard.under_greeting": "Aussi en puces",
+    "wall.subview": "Retour d’une sous-vue",
+    "wall.subview_sub": "Un mur n’a pas d’en-tête : un bouton au nom de la vue, ou l’en-tête de Home Assistant dans les sous-vues",
+    "wall.subview_button": "Bouton retour",
+    "wall.subview_header": "En-tête",
+    "wall.back": "Retour",
+    "wall.back_to": "Retour depuis {view}"
   },
   "people": {
     "title": "Qui est là",
     "count": "{home} sur {total}",
     "updated": "mis à jour {when}",
     "map": "Ouvrir la carte",
-    "editor.map_path": "Chemin de la carte"
+    "editor.map_path": "Chemin de la carte",
+    "title_short": "Présents"
   },
   "map": {
     "title": "Où est chacun",
@@ -1283,7 +1373,20 @@
     "sources": "Par source",
     "signed": "Centré sur zéro",
     "water": "Eau",
-    "gas": "Gaz"
+    "gas": "Gaz",
+    "overview": "Toute la maison",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "Celui de la caméra",
+    "cover": "Remplir (rogner)",
+    "contain": "Image entière",
+    "on": "Allumé",
+    "camera": "Caméra",
+    "preview": "Aperçu"
   },
   "tone": {
     "accent": "Accent",

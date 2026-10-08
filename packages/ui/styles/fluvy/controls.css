@@ -564,6 +564,16 @@
   height: 20px;
 }
 
+/* a tab's colour at rest (`tint: always`): its rest wash and the fill's hairline, as a tile's (tiles.css); over any
+   ground a chip row gives its pills (the tabs' card fill) */
+.fv-chip .fv-chip__pill.is-tinted {
+  background: var(
+    --fluvy-accent-rest,
+    color-mix(in srgb, var(--fluvy-accent-fill) 40%, var(--fluvy-card))
+  );
+  box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+}
+
 .fv-chip.is-active .fv-chip__pill {
   background: var(--fluvy-accent-fill);
   color: var(--fluvy-accent-on-fill);

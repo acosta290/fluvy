@@ -240,6 +240,7 @@ export const panelStyles = css`
      way out as a button beneath */
   .pn-status {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 4px;
     margin-top: 12px;
     padding: 16px;
@@ -264,6 +265,19 @@ export const panelStyles = css`
   .pn-status__btn {
     justify-self: start;
     margin-top: 4px;
+  }
+  /* its words are an action's, never cut: a button wider than its panel (a long language) takes the panel's width
+     and its words two lines, with the 14 above and below that one line has (the child combinator outranks the
+     content-sized button's own padding) */
+  .pn-status > .pn-status__btn {
+    max-width: 100%;
+    height: auto;
+    min-height: 48px;
+    padding-block: 14px;
+    line-height: 20px;
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
   }
   /* the rows that lead a card (a switch under the head, before what it changes): the preview's own margin follows */
   .pn-rows--lead {

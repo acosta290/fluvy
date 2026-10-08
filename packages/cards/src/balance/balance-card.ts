@@ -173,11 +173,16 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
       .ef-cols--stack {
         grid-template-columns: minmax(0, 1fr);
       }
-      /* a narrow column: the total under its title, both on the column's start */
+      /* a narrow column: the total under its title, both on the column's start; a title longer than the column takes a
+         second line ("Komt / binnen"), and the head grows by it */
       .en-block__head--stack {
         flex-direction: column;
         align-items: flex-start;
-        height: 36px;
+        height: auto;
+        min-height: 36px;
+      }
+      .en-block__head--stack > .en-block__title {
+        max-width: 100%;
       }
     `,
   ];

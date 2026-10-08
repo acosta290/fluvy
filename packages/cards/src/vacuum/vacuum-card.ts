@@ -8,7 +8,6 @@ import {
   valueParts,
   type EntityView,
   type FluvyCardConfig,
-  type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -28,6 +27,7 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
+import { batteryOf } from '../shared/battery.js';
 import { Card } from '../shared/base.js';
 
 import { glyphFor } from '../shared/domain.js';
@@ -56,6 +56,7 @@ import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
 import { COMPACT } from '../shared/heights.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const vacuumStrings = strings('vacuum');
 
@@ -143,13 +144,6 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
 
   private readonly suctionHold = new Hold<string | null>(this);
   private readonly head = new HeadFit(this);
-  private battery:
-    | {
-        readonly registry: HomeAssistant['entities'] | undefined;
-        readonly robot: string;
-        readonly id: string | undefined;
-      }
-    | undefined;
 
   static override keys = configKeys<VacuumCardConfig>()([
     'subtitle',
@@ -161,6 +155,12 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     'battery_entity',
     'suction_style',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    suction_style: 'full',
+    show_battery: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -230,28 +230,11 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   }
 
   /**
-   * The battery sensor: the configured one, or the `battery` sensor on the robot's own device —
-   * Home Assistant moved the battery out of the vacuum's attributes into a sensor of its own.
-   * Looked up once per entity registry, not per render.
+   * The battery sensor: the configured one, or the `battery` sensor on the robot's own device — Home Assistant moved
+   * the battery out of the vacuum's attributes into a sensor of its own.
    */
   private batteryId(): string | undefined {
-    if (this.config?.battery_entity) return this.config.battery_entity;
-    const robot = this.config?.entity ?? '';
-    const registry = this.hass?.entities;
-    const known = this.battery;
-    if (known && known.registry === registry && known.robot === robot) return known.id;
-    const device = registry?.[robot]?.device_id;
-    const found =
-      device && registry
-        ? Object.values(registry).find(
-            (entry) =>
-              entry.device_id === device &&
-              entry.entity_id.startsWith('sensor.') &&
-              this.hass?.states[entry.entity_id]?.attributes.device_class === 'battery',
-          )
-        : undefined;
-    this.battery = { registry, robot, id: found?.entity_id };
-    return found?.entity_id;
+    return this.config?.battery_entity || batteryOf(this.hass, this.config?.entity ?? '');
   }
 
   private command(view: EntityView, robot: Robot, key: Command): void {

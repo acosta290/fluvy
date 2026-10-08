@@ -3,9 +3,9 @@ import { badge, head, listRow } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { addDays, dayKey, sameDay } from '../../shared/dates.js';
-import { FACE, badgeWidth, fitText } from '../fit.js';
+import { FACE, fitText } from '../fit.js';
 import type { ViewContext } from './context.js';
-import { dayList, headRoom, headTone, notice, outage, surface } from './shared.js';
+import { dayList, fitBadgeHead, headTone, notice, outage, surface } from './shared.js';
 
 const s = strings('calendar');
 
@@ -58,16 +58,18 @@ export function agendaView(ctx: ViewContext): TemplateResult {
   const otherEmpty = otherReady && agenda.count(other) === 0;
   // an empty tomorrow is said, not offered; the way back to today always is
   const canTurn = otherReady && (!onToday || !otherEmpty);
+  const title = ctx.config.title ?? words.dayName(day, agenda.today);
+  const fit = fitBadgeHead(ctx, 'calendar', title, pill && !broken ? [pill] : []);
 
   return surface(
     ctx,
     html`
       ${head({
-        icon: 'calendar',
+        icon: fit.icon,
         tone: headTone(ctx),
-        title: ctx.config.title ?? words.dayName(day, agenda.today),
-        sub: fitText(words.dates(day), headRoom(ctx, pill ? badgeWidth(pill) : 0), FACE.sub),
-        trailing: pill && !broken ? badge(pill, left > 0 ? 'accent' : 'neutral') : nothing,
+        title,
+        sub: fitText(words.dates(day), fit.room, FACE.sub),
+        trailing: fit.pill ? badge(fit.pill, left > 0 ? 'accent' : 'neutral') : nothing,
       })}
       ${broken ?? keyed(dayKey(day), html`<div class="fv-swap">${list?.body}</div>`)}
       ${

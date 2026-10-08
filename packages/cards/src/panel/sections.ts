@@ -1326,6 +1326,15 @@ export function wall(ctx: PanelContext): TemplateResult {
         ],
         admin ? (key) => edit({ exit: key as WallSettings['exit'] }) : null,
       )}
+      <p class="fv-label pn-label">${ctx.t('wall.subview')}</p>
+      <p class="pn-hint">${ctx.t('wall.subview_sub')}</p>
+      ${choice(
+        [
+          chip(ctx.t('wall.subview_button'), 'button', settings.subview === 'button'),
+          chip(ctx.t('wall.subview_header'), 'header', settings.subview === 'header'),
+        ],
+        admin ? (key) => edit({ subview: key as WallSettings['subview'] }) : null,
+      )}
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'sun', title: ctx.t('wall.day_night'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}

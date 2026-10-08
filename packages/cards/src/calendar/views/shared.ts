@@ -2,7 +2,7 @@ import { strings } from '@fluvy/core';
 import { listRow, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { sameDay } from '../../shared/dates.js';
-import { FACE, textWidth } from '../fit.js';
+import { FACE, badgeWidth, textWidth } from '../fit.js';
 import type { DayEvent } from '../model.js';
 import type { ViewContext } from './context.js';
 
@@ -50,6 +50,29 @@ export function fitHead(
 ): { readonly icon: 'calendar' | 'clock' | 'list' | null; readonly room: number } {
   const room = headRoom(ctx, trailing);
   return textWidth(title, FACE.title) <= room ? { icon, room } : { icon: null, room: room + 56 };
+}
+
+/**
+ * A head with a badge, fitted in the header's order: the badge's shorter forms (`pills`, longest first), then the badge
+ * itself give way to a title that would not fit beside them — what a badge says, the body says too — and last the
+ * icon circle (`fitHead`). The sub has the title's room.
+ */
+export function fitBadgeHead(
+  ctx: ViewContext,
+  icon: 'calendar' | 'clock' | 'list',
+  title: string,
+  pills: readonly string[],
+): {
+  readonly icon: 'calendar' | 'clock' | 'list' | null;
+  readonly pill: string;
+  readonly room: number;
+} {
+  const width = textWidth(title, FACE.title);
+  for (const pill of pills) {
+    const room = headRoom(ctx, badgeWidth(pill));
+    if (width <= room) return { icon, pill, room };
+  }
+  return { ...fitHead(ctx, icon, title, 0), pill: '' };
 }
 
 /** The time column is the sheet's 40 on a 24-hour clock; "12:30 PM" needs more, on the grid. */

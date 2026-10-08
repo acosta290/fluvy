@@ -58,7 +58,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 import { statsSize } from '../shared/readouts.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { connectionOf, gridWay, meanOf, type GridWay } from './grid.js';
 
 const g = strings('grid');
@@ -150,6 +150,10 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       .en-inout--below span {
         line-height: 16px;
       }
+      /* too narrow even for a word beside its figure ("Einspeisung 0,4 kW" in half a column): each word over its figure */
+      .en-inout--column {
+        grid-template-columns: minmax(0, 1fr);
+      }
       .ef-cols {
         grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
       }
@@ -194,6 +198,8 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     keys: [PHASES_ALIAS],
     items: { readouts: ITEM_ALIASES },
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ invert: false });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -508,8 +514,11 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       : 0;
     const beside = !sides.length || bigW + ROW_GAP + inoutW <= w;
     const size = beside || bigW <= w ? 'l' : 'm';
+    const column = !beside && inoutW > w;
     const inout = sides.length
-      ? html`<div class="en-inout ${beside ? '' : 'en-inout--below'}">
+      ? html`<div
+          class="en-inout ${beside ? '' : 'en-inout--below'} ${column ? 'en-inout--column' : ''}"
+        >
           ${sides.map(
             (x) =>
               html`<span>${x.word}</span

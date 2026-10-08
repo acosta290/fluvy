@@ -22,7 +22,8 @@ function numberLocale(
 }
 
 export interface NumberOptions {
-  readonly digits?: number;
+  /** Undefined: the reading's own (its precision, else its unit's default). */
+  readonly digits?: number | undefined;
   readonly minDigits?: number;
 }
 
@@ -107,10 +108,38 @@ export function valueParts(
           ? 1
           : 2
       : (precision ?? defaultDigits(view.number, view.unit)));
+  // a precision set in the registry is exact, as Home Assistant writes it: 21.0 at one decimal stays "21.0"
+  const exact =
+    !rescaled &&
+    precision !== undefined &&
+    (options.digits === undefined || options.digits === precision);
   return {
-    value: formatNumber(hass, scaled.value, { ...options, digits }),
+    value: formatNumber(hass, scaled.value, {
+      ...options,
+      digits,
+      ...(exact ? { minDigits: options.minDigits ?? precision } : {}),
+    }),
     unit: displayUnit(scaled.unit),
   };
+}
+
+/**
+ * The digits a reading is written with now (its registry precision, else the default for its unit), for another
+ * `value` of the same sensor (a chart's moment, so a figure read under the finger keeps the width it has at rest).
+ * Undefined where either is written in a larger unit than the sensor's ("1.2 kW" has digits of its own) or the
+ * reading is not a number: the value then takes its own.
+ */
+export function digitsOf(
+  hass: HomeAssistant | undefined,
+  view: EntityView,
+  value: number,
+): number | undefined {
+  if (view.number === null) return undefined;
+  if (scaleUnit(value, view.unit).unit !== view.unit) return undefined;
+  if (scaleUnit(view.number, view.unit).unit !== view.unit) return undefined;
+  const precision = hass?.entities?.[view.id]?.display_precision;
+  if (typeof precision === 'number' && Number.isFinite(precision)) return precision;
+  return defaultDigits(view.number, view.unit);
 }
 
 function defaultDigits(value: number, unit: string): number {
@@ -301,7 +330,7 @@ export function formatTime(
 export function formatDate(
   hass: HomeAssistant | undefined,
   date: Date,
-  style: 'full' | 'short' | 'day' | 'month' = 'full',
+  style: 'full' | 'short' | 'day' | 'month' | 'weekday' = 'full',
 ): string {
   if (!validDate(date)) return '—';
   const opts: Intl.DateTimeFormatOptions =
@@ -311,7 +340,9 @@ export function formatDate(
         ? { weekday: 'short', day: 'numeric', month: 'short' }
         : style === 'day'
           ? { weekday: 'long', day: 'numeric' }
-          : { month: 'long' };
+          : style === 'weekday'
+            ? { weekday: 'short' }
+            : { month: 'long' };
   const zone = houseZone(hass);
   if (zone) opts.timeZone = zone;
   return dateFormat(hass?.language ?? 'en', opts).format(date);

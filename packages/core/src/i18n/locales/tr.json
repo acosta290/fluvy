@@ -44,7 +44,8 @@
     "editor_lights": "Işıklar (yoksa: alanınkiler)",
     "editor_show_level": "Seviyeyi göster",
     "editor_show_brightness": "Oda için tek parlaklık",
-    "editor_light_colors": "Açık her ışık kendi ampulünün renginde"
+    "editor_light_colors": "Açık her ışık kendi ampulünün renginde",
+    "editor_tint": "Her kutunun rengini göster"
   },
   "climate": {
     "mode": "Mod",
@@ -164,7 +165,10 @@
     "used": "Kullanılan",
     "exported": "Verilen",
     "charged": "Şarj edilen",
-    "charged_exported": "Şarj edilen · verilen"
+    "charged_exported": "Şarj edilen · verilen",
+    "whole_house": "Bugün · tüm ev",
+    "sources_tag": "Kaynaklar",
+    "house_power_short": "Ev"
   },
   "sensor": {
     "last_24h": "Son 24 sa",
@@ -349,14 +353,15 @@
     "todo": "Yapılacaklar"
   },
   "battery": {
-    "low": "{count} düşük",
+    "low": "Düşük: {count}",
     "all_good": "Hepsi iyi"
   },
   "greeting": {
     "morning": "Günaydın",
     "afternoon": "İyi günler",
     "evening": "İyi akşamlar",
-    "night": "İyi geceler"
+    "night": "İyi geceler",
+    "hello": "Merhaba"
   },
   "editor": {
     "entity": "Varlık",
@@ -453,7 +458,16 @@
     "show_climate": "İklimi göster",
     "picture": "Resim",
     "temperature_entity": "Sıcaklık",
-    "humidity_entity": "Nem"
+    "humidity_entity": "Nem",
+    "show_soc": "Şarjı göster",
+    "show_house": "Tüketimi göster",
+    "camera_view": "Görüntü",
+    "aspect_ratio": "En boy oranı",
+    "fit_mode": "Sığdırma",
+    "also_sensors": "Grafikte ayrıca (en fazla 2)",
+    "people": "Kişiler",
+    "battery": "Telefon pili",
+    "tint": "Rengi göster"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -620,7 +634,74 @@
     "levels": "Seviyeler",
     "rows": "Varlıklar",
     "badge_ok": "Her şey yolundayken rozet",
-    "badge_warn": "Uyarı rozeti, ör. \"{count} düşük\""
+    "badge_warn": "Uyarı rozeti, ör. \"Düşük: {count}\""
+  },
+  "printer": {
+    "title": "3D yazıcı",
+    "progress": "İlerleme",
+    "left": "Kalan",
+    "left_text": "{time} kaldı",
+    "ready_at": "{time} itibarıyla hazır",
+    "done_at": "{time} itibarıyla bitti",
+    "layer_of": "Katman {layer}/{layers}",
+    "nozzle": "Nozul",
+    "bed": "Tabla",
+    "chamber": "Hazne",
+    "layer": "Katman",
+    "speed": "Hız",
+    "pause": "Duraklat",
+    "resume": "Sürdür",
+    "stop": "Durdur",
+    "light": "Işık",
+    "stop_confirm": "Baskı durdurulsun mu? Sürdürülemez.",
+    "no_printer": "Yazıcı bulunamadı",
+    "phase_printing": "Yazdırıyor",
+    "phase_preparing": "Hazırlanıyor",
+    "phase_paused": "Duraklatıldı",
+    "phase_finished": "Bitti",
+    "phase_stopped": "Durduruldu",
+    "phase_error": "Hata",
+    "phase_idle": "Boşta",
+    "phase_offline": "Çevrimdışı",
+    "editor_device": "Yazıcı",
+    "editor_readouts": "Değerler (en fazla altı)",
+    "editor_show_image": "Kamerayı ya da önizlemeyi göster",
+    "editor_roles": "Elle seçilen varlıklar",
+    "role_status": "Durum",
+    "role_printing": "Yazdırıyor (açık/kapalı)",
+    "role_progress": "İlerleme",
+    "role_remaining": "Kalan süre",
+    "role_finish": "Bitiş saati",
+    "role_start": "Başlangıç saati",
+    "role_file": "Dosya",
+    "role_nozzle": "Nozul",
+    "role_nozzle_target": "Nozul hedefi",
+    "role_bed": "Tabla",
+    "role_bed_target": "Tabla hedefi",
+    "role_chamber": "Hazne",
+    "role_layer": "Katman",
+    "role_layers": "Toplam katman",
+    "role_speed": "Hız",
+    "role_camera": "Kamera",
+    "role_preview": "Önizleme",
+    "role_pause": "Duraklatma düğmesi",
+    "role_resume": "Sürdürme düğmesi",
+    "role_stop": "Durdurma düğmesi",
+    "role_light": "Işık",
+    "editor_role": "Ne olduğu",
+    "filament": "Filament",
+    "elapsed": "Geçen",
+    "elapsed_text": "{time} geçti",
+    "empty": "Boş",
+    "editor_image": "Görüntü",
+    "editor_show_filament": "Filamenti göster",
+    "editor_sensors": "Diğer değerler",
+    "role_stage": "Aşama",
+    "role_error": "Hata",
+    "role_elapsed": "Baskı süresi",
+    "role_filament": "Kullanılan filament",
+    "done_ago": "{when} bitti",
+    "ready_on": "{day} {time} hazır"
   },
   "camera": {
     "live": "Canlı",
@@ -628,7 +709,8 @@
     "fullscreen": "Tam ekran",
     "view": "{name} canlı görüntüsü",
     "offline": "Kameradan görüntü yok",
-    "refresh": "Görüntüler arası saniye"
+    "refresh": "Görüntüler arası saniye",
+    "exit_fullscreen": "Tam ekrandan çık"
   },
   "chips": {
     "rooms": "Odalar"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Profil"
+    "profile": "Profil",
+    "person_helper": "Boş: oturum açan kişi"
   },
   "helpers": {
     "title": "Yardımcılar",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Akış",
     "dashboard.greeting_tabs": "Selamlamanın altında görünümler",
     "dashboard.header_only": "Yalnızca başlık",
-    "dashboard.under_greeting": "Çip olarak da"
+    "dashboard.under_greeting": "Çip olarak da",
+    "wall.subview": "Alt görünümden dönüş",
+    "wall.subview_sub": "Duvarda başlık yok: görünümün adını taşıyan bir düğme ya da alt görünümlerde Home Assistant başlığı",
+    "wall.subview_button": "Geri düğmesi",
+    "wall.subview_header": "Başlık",
+    "wall.back": "Geri",
+    "wall.back_to": "{view} görünümünden geri"
   },
   "people": {
     "title": "Kim evde",
     "count": "{total} kişiden {home}",
     "updated": "{when} güncellendi",
     "map": "Haritayı aç",
-    "editor.map_path": "Harita yolu"
+    "editor.map_path": "Harita yolu",
+    "title_short": "Evde"
   },
   "map": {
     "title": "Herkes nerede",
@@ -1283,7 +1373,20 @@
     "sources": "Kaynağa göre",
     "signed": "Sıfır ortada",
     "water": "Su",
-    "gas": "Gaz"
+    "gas": "Gaz",
+    "overview": "Tüm ev",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "Kameranınki",
+    "cover": "Doldur (kırp)",
+    "contain": "Tüm görüntü",
+    "on": "Açıkken",
+    "camera": "Kamera",
+    "preview": "Önizleme"
   },
   "tone": {
     "accent": "Vurgu",

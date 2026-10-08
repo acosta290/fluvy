@@ -23,6 +23,8 @@ export { wallDark } from './wall/schedule.js';
 export type { SunLike } from './wall/schedule.js';
 export type { WallFacade, WallStartOptions } from './wall/start.js';
 export type {
+  BackHandle,
+  BackOptions,
   CornerOptions,
   NoticeOptions,
   ScreensaverOptions,

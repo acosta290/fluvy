@@ -144,9 +144,34 @@ export const pretty = (raw: string): string => {
 const GAPS = [16, 12, 20, 24, 8, 4] as const;
 
 export function actionGap(contentWidth: number, count: number): number {
-  const cell = (gap: number): number => (contentWidth - gap * (count - 1)) / count;
-  for (const gap of GAPS) if (cell(gap) >= 44 && cell(gap) % 4 === 0) return gap;
-  return cell(16) >= 44 ? 16 : 8; // an odd width: keep the design gap while the cells stay touchable
+  return sharedGap(contentWidth, [count]);
+}
+
+/**
+ * One gap for rows of equal cells that stand one over another (a printer's trays over its buttons): the first of
+ * `gaps` that lands every row's cells on whole 4 px and keeps them touchable; else the one nearest 16, within `gaps`'
+ * range, that lands them on whole pixels; else the design's 16 (8 where that would not).
+ */
+export function sharedGap(
+  contentWidth: number,
+  counts: readonly number[],
+  gaps: readonly number[] = GAPS,
+): number {
+  const cell = (gap: number, count: number): number => (contentWidth - gap * (count - 1)) / count;
+  for (const gap of gaps)
+    if (counts.every((n) => cell(gap, n) >= 44 && cell(gap, n) % 4 === 0)) return gap;
+  // no gap of the grid lands them on the 4 grid (an odd wide column): the nearest to 16 that lands them on whole pixels
+  const low = Math.min(...gaps);
+  const high = Math.max(...gaps);
+  for (let step = 0; step <= 12; step++)
+    for (const gap of [16 - step, 16 + step])
+      if (
+        gap >= low &&
+        gap <= high &&
+        counts.every((n) => cell(gap, n) >= 44 && Number.isInteger(cell(gap, n)))
+      )
+        return gap;
+  return counts.every((n) => cell(16, n) >= 44) ? 16 : 8;
 }
 
 /**

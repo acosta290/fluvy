@@ -38,6 +38,43 @@ Three shapes set the radii of cards, tiles and controls: **soft** (20 / 16 / 12 
 (28 / 22 / 16) and **crisp** (14 / 12 / 8). Circles and the rulers' 2 px lines never change. The buttons' style
 (pills or crisp) follows the same setting.
 
+## A colour per card, and per item
+
+A card's `color` (one of Home Assistant's colour names, or `#rrggbb`) is the accent inside that card. Lists of things
+you tell apart by colour also take a `color` on each item: tiles, scenes, tabs (the chips card), people (a ring round
+their picture), openings (their circle), rows, bars, stat tiles and lights. By default an item's colour shows while it
+is on.
+
+`tint: always` makes a coloured item show its colour at rest too, as a quiet wash of it with a hairline in the same
+colour; an item without a colour of its own keeps the card's surface. It works on the tile card, a tiles group, a
+room's tiles, room lights' tiles, scenes and tabs. The wash is as strong as the words on it allow (they always read at
+full contrast), so it is softer in a dark, vivid palette. On, the item still takes its full fill:
+
+```yaml
+type: custom:fluvy-tiles-card
+size: compact
+tint: always
+tiles:
+  - entity: light.hall
+    color: red
+  - entity: switch.kettle
+    color: '#e17055'
+```
+
+A colour name is Home Assistant's tone for it on your palette — amber, for one, is the colour of a lit light, which a
+palette may move aside to keep its own accent clear — so the whole dashboard stays in harmony. A `#rrggbb` is exactly
+that colour. Because names follow the palette, two of them can land on one colour or close to it:
+
+- grey and blue grey are one grey everywhere;
+- on the electric palettes amber takes the lit light's colour there: deep purple's on Volt and Iris, teal's on Mint,
+  grey's on Noir in light; and on Volt indigo sits close to amber too;
+- on Mist, blue and amber are close in light;
+- on every palette's pale fills, in light and in dark, neighbours on the wheel (red and deep orange for one) are hard
+  to tell apart at rest.
+
+For items that must stay apart, choose names far apart on the wheel (teal and deep orange, blue and pink), or give
+them hex colours.
+
 ## Dashboard tabs
 
 The view tabs in a dashboard's header — Home Assistant's own, the ones you pick a view with — take the look on every

@@ -108,7 +108,8 @@
 
 /* switched on (shuffle, filters narrowing, a day away from today): in a card the glyph takes the accent; on the page's
    ground the button takes the accent's fill, as an active chip */
-.fv-round.is-on {
+.fv-round.is-on,
+.fv-action.is-on {
   color: var(--fluvy-accent);
 }
 

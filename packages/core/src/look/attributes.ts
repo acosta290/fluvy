@@ -16,3 +16,9 @@ export const ACTIVITY_CARD = 'fluvy-activity-card';
 export const WALL_ATTRIBUTE = 'fluvy-wall';
 /** On `<html>`: the wall's background for the dashboard's view (the wall mesh), read by the shell's wall sheet. */
 export const WALL_BACKGROUND_VAR = '--fluvy-wall-bg';
+/** On `<html>`: a wall's subviews show Home Assistant's header (its back arrow and the view's title). */
+export const WALL_HEADER_ATTRIBUTE = 'fluvy-wall-header';
+/** On `<html>`: a wall's subviews have the floating way back (the view keeps its room under it). */
+export const WALL_BACK_ATTRIBUTE = 'fluvy-wall-way-back';
+/** On `<html>`: how far down the wall's corner sits (Home Assistant's header, in a subview that shows it). */
+export const WALL_TOP_VAR = '--fluvy-wall-top';

@@ -32,17 +32,17 @@ import {
   titleFields,
 } from '../shared/form.js';
 
-import type { HelperHost, HelperRowConfig } from './context.js';
+import { nameOf, type HelperHost, type HelperRowConfig } from './context.js';
 import { compactNumber, isBoxedNumber, numberBlocks } from './number.js';
 
-import { buttonRow, momentRow, plainRow, switchRow } from './rows.js';
+import { actionsKeepIcon, buttonRow, momentRow, plainRow, switchRow } from './rows.js';
 
 import { selectPiece } from './select.js';
 
 import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
@@ -145,6 +145,11 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
         padding-left: 0;
       }
 
+      /* rows that gave their circles to their names: the hairline after the chips starts the row too */
+      .in-quick + .fv-row--bare::before {
+        left: 0;
+      }
+
       /* the sheet's compact value is a 36 box around one digit; a unit or three digits may widen it */
       .in-compact__value {
         width: auto;
@@ -176,6 +181,17 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     });
   }
 
+  /** Whether the list rows keep their circles beside the buttons' "Run", which is never cut. */
+  private rowsKeepIcon(): boolean {
+    const actions = this.rows().flatMap((row) => {
+      const view = this.entity(row.entity);
+      return BUTTONS.has(view.domain)
+        ? [{ name: nameOf(view, row), action: s(this.hass, 'run') }]
+        : [];
+    });
+    return actionsKeepIcon(this.ruler, this.contentWidth, actions);
+  }
+
   /** The card as its controls see it for this render (its own helpers are protected). */
   private hostView(): HelperHost {
     return {
@@ -183,6 +199,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       contentWidth: this.contentWidth,
       ruler: this.ruler,
       texts: this.texts,
+      bare: !this.rowsKeepIcon(),
       state: (view) => this.stateOf(view),
       expect: (id, state) => this.expect(id, state),
       call: (domain, service, data, id) => this.call(domain, service, data, id),
@@ -233,6 +250,8 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ options_style: 'full' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

@@ -54,6 +54,7 @@ export function wallSettingsFor(
       params.get('exit') === 'hold' || moment === 'corner' || moment === 'paused'
         ? 'hold'
         : 'button',
+    subview: params.get('wallsub') === 'header' ? 'header' : 'button',
     ...(moment === 'dim' ? { dim: true } : {}),
     ...(moment === 'night' ? { theme: 'dark' as const, nightDim: 40 as const } : {}),
   };

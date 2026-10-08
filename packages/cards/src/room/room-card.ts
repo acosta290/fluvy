@@ -26,12 +26,14 @@ import {
   nameIconFields,
   selectField,
   textField,
+  tintField,
 } from '../shared/form.js';
 import { ROW, rowsOf } from '../shared/heights.js';
-import { fitLine, TextRuler } from '../shared/fit.js';
-import { statsSize } from '../shared/readouts.js';
+import { fitLine, TextRuler, type Segment } from '../shared/fit.js';
+import { FontsSettled } from '../shared/fonts.js';
+import { statsColumns, statsSize } from '../shared/readouts.js';
 import type { BaseKey } from '../shared/base.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { FluvyTileCard, type TileCardConfig, type TileItem } from '../tile/tile-card.js';
 import { FluvyTilesCard } from '../tiles/tiles-card.js';
 
@@ -94,15 +96,35 @@ export class FluvyRoomCard extends FluvyTileCard {
       .am-card {
         width: auto;
       }
-      /* the sheet's three 96 columns; a card takes the column it is given */
+      /* the sheet's three 96 columns; a card takes the column it is given, and fewer columns where a label would not
+         hold in a third */
       .am-area__stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(var(--am-stats, 3), minmax(0, 1fr));
+      }
+      .am-area__stats--odd > :last-child {
+        grid-column: 1 / -1;
+      }
+      /* a row's title is a word, not a name ("Todos los dispositivos"): it takes a second line rather than lose its end */
+      .am-rows .fv-row__title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
       }
     `,
   ];
 
   /** Widths laid out by the browser in the card's own classes: the readouts and the row's line are fitted with it. */
   private readonly roomRuler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
+  constructor() {
+    super();
+    // the state line and the stats are measured: a web font arriving changes every width
+    new FontsSettled(this, () => {
+      this.roomRuler.clear();
+      this.requestUpdate();
+    });
+  }
 
   static override base: readonly BaseKey[] = [
     'name',
@@ -125,6 +147,7 @@ export class FluvyRoomCard extends FluvyTileCard {
     'humidity_entity',
     'size',
     'readouts',
+    'tint',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -135,6 +158,15 @@ export class FluvyRoomCard extends FluvyTileCard {
     },
   ];
   static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'photo',
+    controls: 'rows',
+    size: 'large',
+    show_count: true,
+    show_climate: true,
+    tint: 'on',
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -161,6 +193,7 @@ export class FluvyRoomCard extends FluvyTileCard {
           selector: { entity: { multiple: true } },
         }),
         colourFields(),
+        tintField(),
         fieldRow(actionField('tap_action'), actionField('hold_action')),
       ],
       ...formLabels({
@@ -262,30 +295,38 @@ export class FluvyRoomCard extends FluvyTileCard {
 
   /** The state line: "3 of 5 on · 21.4 °C". */
   private roomLine(ids: readonly string[], on: number): string {
-    const parts: string[] = [];
-    if (this.room?.show_count !== false && ids.length)
-      parts.push(
-        on > 0
+    const count =
+      this.room?.show_count !== false && ids.length
+        ? on > 0
           ? this.t('common.on_of', { on, count: ids.length })
-          : counted(this.hass, ids, (id) => this.entity(id)),
-      );
+          : counted(this.hass, ids, (id) => this.entity(id))
+        : '';
+    const climate: Segment[] = [];
     const { temperature } = this.climate();
     if (this.room?.show_climate !== false && temperature) {
       const view = this.entity(temperature);
       if (isUsable(view)) {
         // a compact surface writes degrees without the unit: "21.4°" (the readouts keep "°C")
         const value = valueParts(this.hass, view);
-        parts.push(
-          value.unit.startsWith('°') ? `${value.value}°` : `${value.value} ${value.unit}`.trim(),
-        );
+        climate.push({
+          text: value.unit.startsWith('°')
+            ? `${value.value}°`
+            : `${value.value} ${value.unit}`.trim(),
+          optional: true,
+        });
       }
     }
-    // the count stays; the climate leaves when the line would be cut
-    return fitLine(
-      parts.map((text, index) => ({ text, optional: index > 0 })),
-      this.contentWidth - 44 - 12,
-      (text) => this.roomRuler.width('fv-tile__state', text),
-    );
+    // the compact tile's words have its width less its 16 px sides, and less its circle and gap where it keeps one
+    // (128 and wider: tiles.css)
+    const room = this.width - 32 - (this.width >= 128 ? 44 + 12 : 0);
+    const width = (text: string): number =>
+      this.roomRuler.width('fv-tile fv-tile--compact > fv-tile__state', text);
+    // the count stays, the climate leaves first; then the count in figures ("3/5") where its words would be cut, the
+    // tile's fill already saying that something is on
+    const worded = fitLine([...(count ? [{ text: count }] : []), ...climate], room, width);
+    return on > 0 && count && width(worded) > room
+      ? fitLine([{ text: `${on}/${ids.length}` }, ...climate], room, width)
+      : worded;
   }
 
   private renderStats(ids: readonly string[], on: number): TemplateResult | typeof nothing {
@@ -308,9 +349,15 @@ export class FluvyRoomCard extends FluvyTileCard {
         unit: s(this.hass, 'of', { count: ids.length }),
       });
     if (!stats.length) return nothing;
-    // three readouts in the column: the size the widest still fits (m → s → xs)
-    const size = statsSize(this.roomRuler, this.contentWidth, stats);
-    return html`<div class="am-area__stats" data-align="center">
+    // three readouts in the column while every label and figure holds in its third, else fewer columns (a shorter last
+    // row takes the whole row); the size the widest figure still fits (s → xs)
+    const columns = statsColumns(this.roomRuler, this.contentWidth, stats);
+    const size = statsSize(this.roomRuler, this.contentWidth, stats, columns);
+    return html`<div
+      class="am-area__stats ${stats.length % columns ? 'am-area__stats--odd' : ''}"
+      data-align="center"
+      style="--am-stats:${columns}"
+    >
       ${stats.map((stat) => readout({ ...stat, size }))}
     </div>`;
   }

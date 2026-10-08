@@ -58,7 +58,7 @@ import {
 } from './common.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { HeadFit } from '../energy/head.js';
 import { COMPACT, listLength } from '../shared/heights.js';
 
@@ -204,6 +204,13 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { favorites: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    favorites_style: 'full',
+    show_tilt: true,
+    show_favorites: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

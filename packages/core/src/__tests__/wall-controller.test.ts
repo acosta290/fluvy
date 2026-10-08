@@ -2,10 +2,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HOUSE_DEFAULTS, PERSONAL_DEFAULTS, resolveSettings } from '../settings/schema.js';
 import { DEVICE_KEY } from '../settings/device.js';
-import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../look/attributes.js';
+import {
+  WALL_ATTRIBUTE,
+  WALL_BACK_ATTRIBUTE,
+  WALL_BACKGROUND_VAR,
+  WALL_HEADER_ATTRIBUTE,
+  WALL_TOP_VAR,
+} from '../look/attributes.js';
+import { VIEW_EVENT } from '../look/view.js';
 import {
   createWall,
   PAUSED_KEY,
+  type BackOptions,
   type CornerOptions,
   type NoticeOptions,
   type WallPhase,
@@ -29,7 +37,9 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
   );
   const states: WallState[] = [];
   const phases: WallPhase[] = [];
-  const shown = { sleep: 0, closed: 0, corner: 0, toast: 0 };
+  const shown = { sleep: 0, closed: 0, corner: 0, toast: 0, back: 0 };
+  let back: BackOptions | undefined;
+  let backTitle = '';
   let wakeUp: (() => void) | undefined;
   let corner: CornerOptions | undefined;
   let notice: NoticeOptions | undefined;
@@ -48,6 +58,19 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
       shown.toast++;
       notice = options;
       return () => shown.toast--;
+    },
+    back: (options) => {
+      shown.back++;
+      back = options;
+      backTitle = options.title;
+      return {
+        update: (title) => {
+          backTitle = title;
+        },
+        remove: () => {
+          shown.back--;
+        },
+      };
     },
   };
   const listeners = new Set<() => void>();
@@ -82,7 +105,27 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
     wake: () => wakeUp?.(),
     corner: () => corner,
     notice: () => notice,
+    back: () => back,
+    backTitle: () => backTitle,
   };
+}
+
+/** A dashboard root that tells the page it now shows a view (as `look/view.ts` does after it rendered). */
+function showView(
+  facts: { subview: boolean; title?: string; backPath?: string },
+  goBack?: () => void,
+) {
+  const root = document.createElement('hui-root') as HTMLElement & { _goBack?: () => void };
+  if (goBack) root._goBack = goBack;
+  document.body.append(root);
+  root.dispatchEvent(
+    new CustomEvent(VIEW_EVENT, {
+      bubbles: true,
+      composed: true,
+      detail: { subview: facts.subview, title: facts.title ?? '', backPath: facts.backPath },
+    }),
+  );
+  return root;
 }
 
 describe('the wall controller', () => {
@@ -117,6 +160,58 @@ describe('the wall controller', () => {
     expect(shown.corner).toBe(0);
     expect(phases).toEqual(['awake', 'off']);
     wall.stop();
+  });
+
+  it('keeps the wall as it is on a move inside it: one corner, not a new one for every view', async () => {
+    const { wall, shown, corner } = setup();
+    await vi.advanceTimersByTimeAsync(1);
+    const first = corner();
+    history.replaceState(null, '', '/fluvy-wall/kitchen');
+    window.dispatchEvent(new Event('location-changed'));
+    await vi.advanceTimersByTimeAsync(1);
+    expect(shown.corner).toBe(1);
+    expect(corner()).toBe(first);
+    wall.stop();
+  });
+
+  it('a subview has the floating way back with its title; it goes as Home Assistant goes back', async () => {
+    const { wall, shown, back, backTitle } = setup();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(document.documentElement.hasAttribute(WALL_BACK_ATTRIBUTE)).toBe(true);
+    expect(shown.back).toBe(0);
+    const goBack = vi.fn();
+    const root = showView({ subview: true, title: 'Kitchen' }, goBack);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(shown.back).toBe(1);
+    expect(backTitle()).toBe('Kitchen');
+    back()?.onBack();
+    expect(goBack).toHaveBeenCalledTimes(1);
+    // another subview: the same button, its title follows
+    showView({ subview: true, title: 'Bedroom' });
+    expect(shown.back).toBe(1);
+    expect(backTitle()).toBe('Bedroom');
+    showView({ subview: false, title: 'Home' });
+    expect(shown.back).toBe(0);
+    root.remove();
+    wall.stop();
+    expect(document.documentElement.hasAttribute(WALL_BACK_ATTRIBUTE)).toBe(false);
+  });
+
+  it('a house that keeps Home Assistant’s header: the header in a subview, the corner under it, no button', async () => {
+    const { wall, shown } = setup({ subview: 'header' });
+    await vi.advanceTimersByTimeAsync(1);
+    const html = document.documentElement;
+    expect(html.hasAttribute(WALL_HEADER_ATTRIBUTE)).toBe(true);
+    expect(html.style.getPropertyValue(WALL_TOP_VAR)).toBe('');
+    const root = showView({ subview: true, title: 'Kitchen' });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(shown.back).toBe(0);
+    expect(html.style.getPropertyValue(WALL_TOP_VAR)).toBe('56px');
+    showView({ subview: false });
+    expect(html.style.getPropertyValue(WALL_TOP_VAR)).toBe('');
+    root.remove();
+    wall.stop();
+    expect(html.hasAttribute(WALL_HEADER_ATTRIBUTE)).toBe(false);
   });
 
   it('sleeps after the minutes, wakes on the screensaver’s touch, and forces the night’s mode', async () => {

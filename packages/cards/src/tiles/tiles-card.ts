@@ -17,6 +17,7 @@ import {
   formLabels,
   nameIconFields,
   selectField,
+  tintField,
 } from '../shared/form.js';
 import type { BaseKey } from '../shared/base.js';
 import {
@@ -80,7 +81,13 @@ export class FluvyTilesCard extends FluvyTileCard {
 
   /** The group has no entity of its own: its tone and colour are its tiles' default. */
   static override base: readonly BaseKey[] = ['entities', 'tone', 'color'];
-  static override keys = configKeys<TilesCardConfig>()(['size', 'readouts', 'tiles', 'columns']);
+  static override keys = configKeys<TilesCardConfig>()([
+    'size',
+    'readouts',
+    'tiles',
+    'columns',
+    'tint',
+  ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'tiles',
@@ -97,13 +104,19 @@ export class FluvyTilesCard extends FluvyTileCard {
     },
   ];
   static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
-  static override defaults: EditorDefaults = () => ({ size: 'compact' });
+  // the columns a group takes when it names none: three minis a row, else two
+  static override defaults: EditorDefaults = (config) => ({
+    size: 'compact',
+    columns: config['size'] === 'mini' ? '3' : '2',
+    tint: 'on',
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entitiesField('entities', undefined, true),
         fieldRow(selectField('size', SIZES), selectField('columns', COLUMNS)),
         colourFields(),
+        tintField(),
         entitiesField('readouts', ['sensor']),
       ],
       ...formLabels({ readouts: 'editor.readouts' }),

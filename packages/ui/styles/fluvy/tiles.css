@@ -331,3 +331,22 @@
 .fv-tiles--auto.fv-tiles--mini {
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
 }
+
+/* An item's colour at rest (`tint: always`, on coloured items): its rest wash (as much of its fill as keeps the words
+   at 4.5) and the fill's hairline; on keeps the full fill, so the two never read alike. Tiles, scenes, a room's and the
+   lights' tiles here; tabs in controls.css. */
+.fv-tile.is-tinted {
+  background: var(
+    --fluvy-accent-rest,
+    color-mix(in srgb, var(--fluvy-accent-fill) 40%, var(--fluvy-card))
+  );
+  box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+}
+
+.fv-tile--inner.is-tinted {
+  background: var(
+    --fluvy-accent-rest-inner,
+    color-mix(in srgb, var(--fluvy-accent-fill) 40%, var(--fluvy-page))
+  );
+  box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
+}

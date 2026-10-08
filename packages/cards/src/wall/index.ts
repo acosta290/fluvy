@@ -1,18 +1,21 @@
 import type {
+  BackHandle,
+  BackOptions,
   CornerOptions,
   HomeAssistant,
   NoticeOptions,
   ScreensaverOptions,
   WallUi,
 } from '@fluvy/core';
+import { FluvyWallBack } from './back.js';
 import { FluvyWallCorner } from './corner.js';
 import { wallHost } from './host.js';
 import { FluvyWallScreensaver } from './screensaver.js';
 import { FluvyWallToast } from './toast.js';
 
 /*
- * The wall's pieces, fetched with the controller on a device that is a wall: the screensaver, the corner and the
- * toast, each mounted where the look's tokens reach it and taken down by the function that showed it.
+ * The wall's pieces, fetched with the controller on a device that is a wall: the screensaver, the corner, the toast and
+ * the way back from a subview, each mounted where the look's tokens reach it and taken down by what showed it.
  */
 
 const define = (tag: string, element: CustomElementConstructor): void => {
@@ -21,6 +24,7 @@ const define = (tag: string, element: CustomElementConstructor): void => {
 define('fluvy-wall-screensaver', FluvyWallScreensaver);
 define('fluvy-wall-corner', FluvyWallCorner);
 define('fluvy-wall-toast', FluvyWallToast);
+define('fluvy-wall-back', FluvyWallBack);
 
 /** Keeps a piece's `hass` fresh while it is on the page (the clock's weather, the toast's words). */
 function follow(
@@ -74,4 +78,21 @@ export function notice(options: NoticeOptions): () => void {
   };
 }
 
-export const ui: WallUi = { sleep, corner, notice };
+export function back(options: BackOptions): BackHandle {
+  const element = document.createElement('fluvy-wall-back') as FluvyWallBack;
+  element.title = options.title;
+  element.onBack = options.onBack;
+  const unfollow = follow(element, options.hass);
+  wallHost(document).append(element);
+  return {
+    update: (title) => {
+      element.title = title;
+    },
+    remove: () => {
+      unfollow();
+      element.remove();
+    },
+  };
+}
+
+export const ui: WallUi = { sleep, corner, notice, back };

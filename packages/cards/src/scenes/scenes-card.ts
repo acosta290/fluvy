@@ -1,3 +1,4 @@
+import type { Tint } from '../shared/colour.js';
 import {
   stateText,
   strings,
@@ -33,8 +34,9 @@ import {
   nameIconFields,
   selectField,
   textField,
+  tintField,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   columnsOf,
   configKeys,
@@ -56,6 +58,8 @@ export interface SceneItemConfig {
   subtitle?: string;
   /** What a tap does instead of running the scene. */
   tap_action?: ActionConfig;
+  /** The scene's own colour (a Home Assistant colour name or `#rrggbb`): its tile's when it is the last run. */
+  color?: string;
 }
 
 export interface ScenesCardConfig extends FluvyCardConfig {
@@ -65,6 +69,8 @@ export interface ScenesCardConfig extends FluvyCardConfig {
   scenes?: ReadonlyArray<string | SceneItemConfig>;
   /** `auto` (default): two a row while every name fits its two lines; `1` or `2` to say so (two at most). */
   columns?: Columns;
+  /** `always`: every tile shows its colour at rest too — a wash and its hairline (`on`, the default: the last run). */
+  tint?: Tint;
   /** Test hook: an ISO date that freezes "now" (the "applied … ago" lines). Undocumented. */
   _now?: string;
 }
@@ -140,24 +146,33 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
 
   /** A grid of scenes has no entity of its own: its colour is the lit tile's, a hold on a tile is the base's. */
   static override base: readonly BaseKey[] = ['entities', 'color', 'hold_action'];
-  static override keys = configKeys<ScenesCardConfig>()(['title', 'scenes', 'columns']);
+  static override keys = configKeys<ScenesCardConfig>()(['title', 'scenes', 'columns', 'tint']);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'scenes',
       alias: 'entities',
       title: 'editor.scenes',
       domains: DOMAINS,
-      keys: ['entity', 'name', 'icon', 'subtitle', 'tap_action'],
-      schema: [entityField(DOMAINS), nameIconFields(), textField('subtitle'), actionField()],
+      keys: ['entity', 'name', 'icon', 'subtitle', 'color', 'tap_action'],
+      schema: [
+        entityField(DOMAINS),
+        nameIconFields(),
+        textField('subtitle'),
+        accentField(),
+        actionField(),
+      ],
     },
   ];
   static override aliases: AliasSpec = { items: { scenes: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ columns: 'auto', tint: 'on' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         fieldRow(textField('title'), selectField('columns', ['auto', '1', '2'])),
         entitiesField('entities', DOMAINS, true),
         fieldRow(accentField(), actionField('hold_action')),
+        tintField(),
       ],
       ...formLabels({}),
     };
@@ -281,10 +296,15 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
           const at = fired[index] ?? 0;
           const active = at > 0 && at === newest;
           const meta = this.meta(item, view, at, now);
+          // a coloured scene keeps its colour at rest when the card asks (the last run is on: its full fill)
+          const tinted = this.config?.tint === 'always' && Boolean(item.color) && !active;
           return html`<button
-            class="fv-tile am-scene fv-tile--tap ${active ? 'is-on fv-tile--accent' : ''}"
+            class="fv-tile am-scene fv-tile--tap ${active ? 'is-on fv-tile--accent' : ''} ${
+              tinted ? 'is-tinted' : ''
+            }"
             data-card
             data-target
+            data-accent=${this.accents.item(item.color) ?? nothing}
             aria-pressed=${active ? 'true' : 'false'}
             .fvTap=${() => (item.tap_action ? this.tap(view.id, item.tap_action) : this.run(view))}
             .fvHold=${() => this.hold(view.id)}
@@ -292,7 +312,7 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
             @contextmenu=${preventMenu}
             @click=${clickPress}
           >
-            ${ico(item.icon ?? view.attr<string | null>('icon') ?? glyphFor(view), active ? 'accent' : 'neutral')}
+            ${ico(item.icon ?? view.attr<string | null>('icon') ?? glyphFor(view), active || tinted ? 'accent' : 'neutral')}
             <span class="fv-row__text">
               <span class="fv-row__title">${name}</span>
               ${meta ? html`<span class="fv-row__sub">${meta}</span>` : nothing}

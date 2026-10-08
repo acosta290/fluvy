@@ -291,14 +291,23 @@ export function tile(m: ClockModel): TemplateResult {
       [m.clock.period, ''],
       (candidate) => m.ruler.width('ck-tile__time', widest(time), 'fv-unit', candidate) <= m.width,
     ) ?? '';
-  const state = fitLine(
+  // the weather in its shorter word where the clock's own does not fit ("Nuit dégagée" → "Dégagé"); a line still too
+  // long takes the tile's second line, and a word longer than the tile gives way to the tiles' dash (a title is a
+  // name: it may end in an ellipsis instead)
+  const measure = (text: string): number => m.ruler.width('fv-tile__state', text);
+  const line = fitLine(
     [
       ...(m.title ? [{ text: m.title }] : []),
-      { text: m.sky ? m.sky.text : (m.date?.short ?? ''), optional: Boolean(m.title) },
+      {
+        text: m.sky ? m.sky.text : (m.date?.short ?? ''),
+        ...(m.sky ? { short: m.sky.short } : {}),
+        optional: Boolean(m.title),
+      },
     ],
     m.width,
-    (text) => m.ruler.width('fv-tile__state', text),
+    measure,
   );
+  const state = !m.title && line.split(/\s+/).some((word) => measure(word) > m.width) ? '—' : line;
   return html`
     <p class="ck-tile__time" data-baseline="tt" data-align="optical">
       ${time}${unit ? html`<span class="fv-unit">${unit}</span>` : nothing}

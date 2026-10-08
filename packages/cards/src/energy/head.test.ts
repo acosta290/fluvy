@@ -69,3 +69,51 @@ describe('a fitted head', () => {
     expect(fitted.sub).toBe('Desde medianoche');
   });
 });
+
+describe('a badge that is the card’s alert (badgeFirst)', () => {
+  it('keeps the badge while the sub’s trailing segments give way', () => {
+    // 220 − 56 (icon) − 36 (the badge "On" and its gap) leaves 128: "6 sensors · 3 rooms" (152) loses its rooms
+    const sub = '6 sensors · 3 rooms';
+    const plain = fitter().fit({ width: 220, title: 'Doors', sub, badge });
+    expect(plain.badge).toBe(nothing);
+    const first = fitter().fit({ width: 220, title: 'Doors', sub, badge, badgeFirst: true });
+    expect(first.badge).not.toBe(nothing);
+    expect(first.sub).toBe('6 sensors');
+  });
+
+  it('lets the badge go only where the sub’s first segment would not hold beside it', () => {
+    const fitted = fitter().fit({
+      width: 180,
+      title: 'Doors',
+      sub: 'Eighteen sensors · 3 rooms',
+      badge,
+      badgeFirst: true,
+    });
+    expect(fitted.badge).toBe(nothing);
+    expect(fitted.sub).toBe('Eighteen sensors');
+  });
+});
+
+describe('a list’s circles (rowsKeepIcon) by what ends each row', () => {
+  it('counts a chevron’s 44 or a switch’s 56, not an empty value', () => {
+    // 200 − 56 − 12 − 44 leaves 88 for "Front door" (80): kept; a switch's 56 leaves 76: given
+    expect(fitter().rowsKeepIcon(200, [{ title: 'Front door', value: '', end: 44 }])).toBe(true);
+    expect(fitter().rowsKeepIcon(200, [{ title: 'Front door', value: '', end: 56 }])).toBe(false);
+    // no end and no value: only the circle and the gap (the old reading of a chevron row)
+    expect(fitter().rowsKeepIcon(160, [{ title: 'Front door', value: '' }])).toBe(true);
+  });
+
+  it('gives every circle with the one row that needs it', () => {
+    const rows = [
+      { title: 'Gate', value: 'Locked' },
+      { title: 'Living room motion', value: 'Not detected' },
+    ];
+    expect(fitter().rowsKeepIcon(250, rows)).toBe(false);
+    expect(fitter().rowsKeepIcon(360, rows)).toBe(true);
+  });
+
+  it('measures a row’s room without its circle once given', () => {
+    expect(fitter().rowRoom(200, '', { icon: false, end: 44 })).toBe(200 - 12 - 44);
+    expect(fitter().rowRoom(200, 'Open', { end: 0 })).toBe(200 - 56 - 12);
+  });
+});

@@ -198,7 +198,7 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  static override defaults: EditorDefaults = () => ({ hours: 6 });
+  static override defaults: EditorDefaults = () => ({ variant: 'grid', hours: 6 });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

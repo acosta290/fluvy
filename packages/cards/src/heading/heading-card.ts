@@ -25,6 +25,7 @@ import {
 } from '../shared/form.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
 import { counted } from '../shared/counted.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 export interface HeadingCardConfig extends FluvyCardConfig {
   title?: string;
@@ -123,6 +124,8 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
   static override base: readonly BaseKey[] = ['icon', 'entities', 'tap_action'];
   static override keys = configKeys<HeadingCardConfig>()(['title', 'subtitle', 'path', 'variant']);
   static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'bar' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

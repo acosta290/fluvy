@@ -33,7 +33,7 @@ import {
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { glyphFor } from '../shared/domain.js';
@@ -145,6 +145,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'stack' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

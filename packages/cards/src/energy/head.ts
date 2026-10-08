@@ -16,6 +16,8 @@ const ROW_NAME_MIN = 96;
 export interface RowLayout {
   readonly compact?: boolean;
   readonly icon?: boolean;
+  /** What ends the row when it is not a value's words: a chevron's 44, a switch's 56. */
+  readonly end?: number;
 }
 
 export interface HeadFitOptions {
@@ -27,6 +29,11 @@ export interface HeadFitOptions {
   readonly badge?: { readonly text: string; readonly tone: Tone } | null | undefined;
   /** Width of a fixed trailing element instead (a 44 round, a 96 nav pair). */
   readonly trailing?: number;
+  /**
+   * The badge says what the card is for (an alert, a count under a fold): the sub's trailing segments give way before
+   * it does, and the badge goes only where the sub's first segment would not hold beside it.
+   */
+  readonly badgeFirst?: boolean;
 }
 
 export interface FittedHead {
@@ -38,20 +45,21 @@ export interface FittedHead {
   readonly icon: boolean;
 }
 
+/** A switch at the head's end: its 56 × 44 hit (`.fv-hit`), not the 48 track — the room a head fit must keep for it. */
+export const SWITCH_SLOT = 56;
+
 /**
  * Fits a card head to its column before it is rendered, so nothing in it is ever clipped: the title
  * is the card's name and stays whole; what gives way has an order — the badge first (the state a badge
  * carries is one every card of this family also shows in its body), then the sub's trailing " · "
  * segments ("South roof · 5.4 kWp" → "South roof"), then the icon circle: a title — or a sub's first
  * segment — that still does not fit in a column of 172 takes its room (a chart card's icon is
- * decoration; the chart says what the card is).
+ * decoration; the chart says what the card is). A badge that is the card's alert (`badgeFirst`) outranks the sub's
+ * trailing segments. Lists share the rows' rule: `rowsKeepIcon` gives every row's circle to the names together.
  *
  * Widths are laid out by the browser in the card's own classes (`TextRuler`), never guessed, and
  * measured again when a web font lands. One instance per card: `private readonly head = new HeadFit(this)`.
  */
-/** A switch at the head's end: its 56 × 44 hit (`.fv-hit`), not the 48 track — the room a head fit must keep for it. */
-export const SWITCH_SLOT = 56;
-
 export class HeadFit implements ReactiveController {
   /** The card's text ruler (measured again when a font lands): what else the card fits may share it. */
   readonly ruler: TextRuler;
@@ -84,8 +92,11 @@ export class HeadFit implements ReactiveController {
     // what gives way has an order (design/language.md § Header pattern): the badge first — its state is in the body
     // too — then the sub's trailing segments, then the icon circle
     if (o.sub && keepBadge && this.ruler.width('fv-card__sub', o.sub) > room()) {
-      keepBadge = false;
-      trailing = 0;
+      const first = o.badgeFirst ? this.fitSub(o.sub, room()) : '';
+      if (!first || this.ruler.width('fv-card__sub', first) > room()) {
+        keepBadge = false;
+        trailing = 0;
+      }
     }
     let sub = o.sub ? this.fitSub(o.sub, room()) : '';
 
@@ -122,7 +133,8 @@ export class HeadFit implements ReactiveController {
    */
   rowRoom(width: number, value: string, layout: RowLayout = {}): number {
     const icon = layout.icon === false ? 0 : layout.compact ? ICON_COMPACT : ICON;
-    return width - icon - GAP - (value ? this.ruler.width('fv-row__value', value) : 0);
+    const end = layout.end ?? (value ? this.ruler.width('fv-row__value', value) : 0);
+    return width - icon - GAP - end;
   }
 
   /** The least a row's name needs beside its value: 96, or the name itself (measured) when it is shorter. */
@@ -138,11 +150,13 @@ export class HeadFit implements ReactiveController {
    */
   rowsKeepIcon(
     width: number,
-    rows: readonly { readonly title: string; readonly value: string }[],
+    rows: readonly { readonly title: string; readonly value: string; readonly end?: number }[],
     compact = false,
   ): boolean {
     return rows.every(
-      ({ title, value }) => this.rowRoom(width, value, { compact }) >= this.rowNameRoom(title),
+      ({ title, value, end }) =>
+        this.rowRoom(width, value, end === undefined ? { compact } : { compact, end }) >=
+        this.rowNameRoom(title),
     );
   }
 

@@ -26,7 +26,8 @@ export interface StackPoint {
   readonly exported: number;
 }
 
-type Bucket = { readonly start: number; readonly totals: Totals };
+/** A slice of the day: its start (ms) and the house's flows over it (energy, or power for the sensors' means). */
+export type Bucket = { readonly start: number; readonly totals: Totals };
 
 /**
  * Buckets into average power by origin, placed on the day by their middle. `kWh`: energy over the bucket (the meters'
@@ -152,8 +153,11 @@ export const BELOW_ROOM = 28;
  * The points split where the data stops: two points further apart than one and a half buckets are not joined (a
  * recorder that was down is not a quiet house). A lone point is drawn across its own bucket.
  */
-function runsOf(points: readonly StackPoint[], step: number): StackPoint[][] {
-  const runs: StackPoint[][] = [];
+export function runsOf<P extends { readonly at: number }>(
+  points: readonly P[],
+  step: number,
+): P[][] {
+  const runs: P[][] = [];
   for (const p of points) {
     const run = runs[runs.length - 1];
     const last = run?.[run.length - 1];
@@ -164,10 +168,50 @@ function runsOf(points: readonly StackPoint[], step: number): StackPoint[][] {
     run.length > 1
       ? run
       : [
-          { ...(run[0] as StackPoint), at: (run[0] as StackPoint).at - step / 2 },
-          { ...(run[0] as StackPoint), at: (run[0] as StackPoint).at + step / 2 },
+          { ...(run[0] as P), at: (run[0] as P).at - step / 2 },
+          { ...(run[0] as P), at: (run[0] as P).at + step / 2 },
         ],
   );
+}
+
+/** One band per run, between `low` and `high` (kW, signed), as an area and its edge line. */
+function bandOf<P extends { readonly at: number }>(
+  runs: readonly (readonly P[])[],
+  x: (at: number) => number,
+  y: (kw: number) => number,
+  low: (p: P) => number,
+  high: (p: P) => number,
+): { area: string; line: string } {
+  const areas: string[] = [];
+  const lines: string[] = [];
+  for (const run of runs) {
+    const upper = run.map((p) => pt(x(p.at), y(high(p))));
+    const lower = run.map((p) => pt(x(p.at), y(low(p)))).reverse();
+    areas.push(`M${upper.join(' L')} L${lower.join(' L')} Z`);
+    lines.push(`M${upper.join(' L')}`);
+  }
+  return { area: areas.join(' '), line: lines.join(' ') };
+}
+
+/** One kW scale for above and below zero: what `stackShape` and `flowShape` share. */
+function signedScale(
+  up: number,
+  down: number,
+  width: number,
+  height: number,
+  top: number,
+): { zero: number; x: (at: number) => number; y: (kw: number) => number } {
+  // when anything went out, at least BELOW_ROOM px under the line for its tag (a day that exported a little would
+  // otherwise put the tag over the hours); the foot one pixel up, so the lowest area's 2 px edge is drawn whole
+  const foot = height - 1;
+  let k = (foot - top) / (up + down);
+  if (down > 0 && down * k < BELOW_ROOM) k = (foot - top - BELOW_ROOM) / up;
+  const zero = top + up * k;
+  return {
+    zero,
+    x: (at: number): number => Math.min(1, Math.max(0, at)) * width,
+    y: (kw: number): number => zero - kw * k,
+  };
 }
 
 /**
@@ -185,29 +229,12 @@ export function stackShape(
   const total = (p: StackPoint): number => LAYERS.reduce((sum, k) => sum + p.used[k], 0);
   const up = Math.max(0.1, ...points.map(total));
   const down = Math.max(0, ...points.map((p) => p.charged + p.exported));
-  // one kW scale above and below; when anything went out, at least BELOW_ROOM px under the line for its tag (a day that
-  // exported a little would otherwise put the tag over the hours)
-  let k = (height - top) / (up + down);
-  if (down > 0 && down * k < BELOW_ROOM) k = (height - top - BELOW_ROOM) / up;
-  const zero = top + up * k;
-  const x = (at: number): number => Math.min(1, Math.max(0, at)) * width;
-  const y = (kw: number): number => zero - kw * k;
+  const { zero, x, y } = signedScale(up, down, width, height, top);
   const runs = runsOf(points, step);
-  /** One band per run, between `low` and `high` (kW, signed), as an area and its edge line. */
   const band = (
     low: (p: StackPoint) => number,
     high: (p: StackPoint) => number,
-  ): { area: string; line: string } => {
-    const areas: string[] = [];
-    const lines: string[] = [];
-    for (const run of runs) {
-      const upper = run.map((p) => pt(x(p.at), y(high(p))));
-      const lower = run.map((p) => pt(x(p.at), y(low(p)))).reverse();
-      areas.push(`M${upper.join(' L')} L${lower.join(' L')} Z`);
-      lines.push(`M${upper.join(' L')}`);
-    }
-    return { area: areas.join(' '), line: lines.join(' ') };
-  };
+  ): { area: string; line: string } => bandOf(runs, x, y, low, high);
   const layers = LAYERS.filter((key) => points.some((p) => p.used[key] > 0)).map((key) => {
     const below = (p: StackPoint): number =>
       LAYERS.slice(0, LAYERS.indexOf(key)).reduce((sum, l) => sum + p.used[l], 0);
@@ -231,4 +258,188 @@ export function stackShape(
       ),
     });
   return { layers, below: under, zero, y, x };
+}
+
+/* ---------------------------------------------------------------------------------------- the whole house */
+
+/**
+ * The whole house over a day (the energy card's `overview` variant), Home Assistant's "Power sources" convention: what
+ * every source gave stacked above the line (the sun's whole production, the battery's discharge, the grid's import),
+ * what left below it (into the battery, out to the grid), and the house's own use as a line between them.
+ */
+
+/** Where the energy went that the house did not use, from the line down: the battery, a car, the grid. */
+export type Outflow = 'battery' | 'vehicle' | 'grid';
+export const OUTFLOWS: readonly Outflow[] = ['battery', 'vehicle', 'grid'];
+
+export interface FlowPoint {
+  readonly at: number;
+  /** Average power each source gave over the bucket, kW: the sun's production, a discharge, the import. */
+  readonly into: Readonly<Record<Layer, number>>;
+  /** Average power that left the house's sources over the bucket, kW: a charge, the export. */
+  readonly out: Readonly<Record<Outflow, number>>;
+  /** Average power the house used over the bucket, kW. */
+  readonly house: number;
+}
+
+/** Buckets into the sources' flows, placed on the day by their middle (`unit` as in `stackOf`). */
+export function flowsOf(
+  buckets: readonly Bucket[],
+  dayStart: number,
+  minutes = 5,
+  unit: 'kWh' | 'kW' = 'kWh',
+): FlowPoint[] {
+  const factor = unit === 'kW' ? 1 : 60 / minutes;
+  return buckets.map(({ start, totals: t }) => ({
+    at: (start + (minutes * 60_000) / 2 - dayStart) / 86_400_000,
+    into: {
+      solar: t.solar * factor,
+      battery: t.fromBattery * factor,
+      gas: (t.generator ?? 0) * factor,
+      vehicle: (t.fromVehicle ?? 0) * factor,
+      grid: t.fromGrid * factor,
+    },
+    out: {
+      battery: t.toBattery * factor,
+      vehicle: (t.toVehicle ?? 0) * factor,
+      grid: t.toGrid * factor,
+    },
+    house: allocate(t).usedTotal * factor,
+  }));
+}
+
+/** The day's energy (kWh) from its flow points (kW over `minutes` each). */
+export interface FlowDay {
+  readonly into: Readonly<Record<Layer, number>>;
+  readonly out: Readonly<Record<Outflow, number>>;
+  readonly house: number;
+}
+
+export function integrateFlows(points: readonly FlowPoint[], minutes: number): FlowDay {
+  const hours = minutes / 60;
+  const into: Record<Layer, number> = { solar: 0, battery: 0, gas: 0, vehicle: 0, grid: 0 };
+  const out: Record<Outflow, number> = { battery: 0, vehicle: 0, grid: 0 };
+  let house = 0;
+  for (const p of points) {
+    for (const key of LAYERS) into[key] += p.into[key] * hours;
+    for (const key of OUTFLOWS) out[key] += p.out[key] * hours;
+    house += p.house * hours;
+  }
+  return { into, out, house };
+}
+
+export interface FlowShape {
+  /** Above the line, from it up: the sun, the battery, a generator, a car, the grid. */
+  readonly above: ReadonlyArray<{
+    readonly key: Layer;
+    readonly area: string;
+    readonly line: string;
+  }>;
+  /** Below the line, from it down: the battery, a car, the grid. */
+  readonly below: ReadonlyArray<{
+    readonly key: Outflow;
+    readonly area: string;
+    readonly line: string;
+  }>;
+  /** The house's use, a line over the stacks (split at the gaps as they are). */
+  readonly house: string;
+  readonly zero: number;
+  readonly y: (kw: number) => number;
+  readonly x: (at: number) => number;
+}
+
+/** The flows in a `width` × `height` box, as `stackShape` lays out the house's use. */
+export function flowShape(
+  points: readonly FlowPoint[],
+  width: number,
+  height: number,
+  top = 12,
+  step = 5 / 1440,
+): FlowShape {
+  const sum = <K extends string>(r: Readonly<Record<K, number>>, keys: readonly K[]): number =>
+    keys.reduce((total, k) => total + r[k], 0);
+  const up = Math.max(0.1, ...points.map((p) => Math.max(sum(p.into, LAYERS), p.house)));
+  const down = Math.max(0, ...points.map((p) => sum(p.out, OUTFLOWS)));
+  const { zero, x, y } = signedScale(up, down, width, height, top);
+  const runs = runsOf(points, step);
+  const above = LAYERS.filter((key) => points.some((p) => p.into[key] > 0)).map((key) => {
+    const under = (p: FlowPoint): number => sum(p.into, LAYERS.slice(0, LAYERS.indexOf(key)));
+    return { key, ...bandOf(runs, x, y, under, (p) => under(p) + p.into[key]) };
+  });
+  const below = OUTFLOWS.filter((key) => points.some((p) => p.out[key] > 0)).map((key) => {
+    const over = (p: FlowPoint): number => -sum(p.out, OUTFLOWS.slice(0, OUTFLOWS.indexOf(key)));
+    return { key, ...bandOf(runs, x, y, over, (p) => over(p) - p.out[key]) };
+  });
+  const house = runs
+    .map((run) => `M${run.map((p) => pt(x(p.at), y(p.house))).join(' L')}`)
+    .join(' ');
+  return { above, below, house, zero, y, x };
+}
+
+/** A state of charge over the day: where it was read (0..1 of the day) and its level (0–100). */
+export interface ChargePoint {
+  readonly at: number;
+  readonly level: number;
+}
+
+/**
+ * The state of charge as a line on its own scale, 100 % at `top` and 0 % at `bottom`, split where it was not read
+ * (`step`: one reading's spacing as a fraction of the day).
+ */
+export function chargeLine(
+  points: readonly ChargePoint[],
+  width: number,
+  top: number,
+  bottom: number,
+  step = 5 / 1440,
+): {
+  readonly line: string;
+  readonly runs: ReadonlyArray<{
+    readonly d: string;
+    readonly dashes: number;
+    readonly xy: ReadonlyArray<readonly [number, number]>;
+  }>;
+  readonly y: (level: number) => number;
+} {
+  const x = (at: number): number => Math.min(1, Math.max(0, at)) * width;
+  const y = (level: number): number =>
+    bottom - (Math.min(100, Math.max(0, level)) / 100) * (bottom - top);
+  const runs = runsOf(points, step).map((run) => {
+    const xy = run.map((p) => [x(p.at), y(p.level)] as const);
+    let length = 0;
+    for (let i = 1; i < xy.length; i++)
+      length += Math.hypot(xy[i]![0] - xy[i - 1]![0], xy[i]![1] - xy[i - 1]![1]);
+    // the length a 4 · 4 dash lays out whole: it starts and ends on a dash, so a gap in the readings reads as two ends
+    const dashes = Math.max(4, Math.round((length - 4) / 8) * 8 + 4);
+    return { d: `M${xy.map(([px, py]) => pt(px, py)).join(' L')}`, dashes, xy };
+  });
+  return { line: runs.map((run) => run.d).join(' '), runs, y };
+}
+
+/** A box in a chart's pixels. */
+export interface Box {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+/** Whether a line through these runs of points passes through a box (each segment walked a pixel at a time). */
+export function crosses(
+  runs: ReadonlyArray<{ readonly xy: ReadonlyArray<readonly [number, number]> }>,
+  box: Box,
+): boolean {
+  const inside = (x: number, y: number): boolean =>
+    x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h;
+  for (const { xy } of runs)
+    for (let i = 0; i < xy.length; i++) {
+      const [x, y] = xy[i]!;
+      if (inside(x, y)) return true;
+      if (i === 0) continue;
+      const [px, py] = xy[i - 1]!;
+      const steps = Math.ceil(Math.hypot(x - px, y - py));
+      for (let k = 1; k < steps; k++)
+        if (inside(px + ((x - px) * k) / steps, py + ((y - py) * k) / steps)) return true;
+    }
+  return false;
 }

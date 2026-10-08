@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { startShell, type ShellEnv, type ShellHandle } from '../shell/index.js';
 import { SHEETS } from '../shell/registry.js';
+import { WALL_BACK_ATTRIBUTE, WALL_HEADER_ATTRIBUTE } from '../look/attributes.js';
 
 /* A page in miniature: roots with light children, elements with open shadow roots, Lit-like classes. */
 
@@ -168,7 +169,37 @@ describe('shell lifecycle', () => {
     wall(false);
     expect(wallSheet.css).toBe('');
     expect(pageSheet.css).not.toBe('');
-    expect(running.report().sheets.filter((s) => s.id.startsWith('wall:'))).toHaveLength(3);
+    expect(running.report().sheets.filter((s) => s.id.startsWith('wall:'))).toHaveLength(5);
+  });
+
+  it('fills a wall’s way back from a subview on the house’s choice, and only on a wall', async () => {
+    const { env, classes, wall, mark } = page();
+    classes.set('hui-root', { elementStyles: [] });
+    running = startShell(env)!;
+    await settle();
+    const root = classes.get('hui-root');
+    const filled = (id: string): boolean => {
+      const spec = SHEETS.find((s) => s.id === id)!;
+      return (root?.elementStyles ?? []).some((sheet) => (sheet as FakeSheet).css === spec.css);
+    };
+    mark(WALL_BACK_ATTRIBUTE, true);
+    await settle();
+    expect(filled('wall:subview-back')).toBe(false); // not a wall yet
+    wall(true);
+    await settle();
+    expect(filled('wall:subview-back')).toBe(true);
+    expect(filled('wall:subview-header')).toBe(false);
+    mark(WALL_BACK_ATTRIBUTE, false);
+    mark(WALL_HEADER_ATTRIBUTE, true);
+    await settle();
+    expect(filled('wall:subview-back')).toBe(false);
+    expect(filled('wall:subview-header')).toBe(true);
+    // its rules hang on a subview alone: a wall's own views keep no header
+    for (const id of ['wall:subview-back', 'wall:subview-header'])
+      for (const rule of SHEETS.find((s) => s.id === id)!
+        .css.split('\n')
+        .filter((r) => r.endsWith('{')))
+        expect(rule).toMatch(/^:host\(\[fluvy-subview\]\)/);
   });
 
   it('fills the view tabs’ sheet whatever the theme: its rules hang on our marks alone', async () => {

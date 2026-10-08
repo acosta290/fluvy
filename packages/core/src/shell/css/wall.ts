@@ -1,4 +1,5 @@
 import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../../look/attributes.js';
+import { SUBVIEW_ATTRIBUTE } from '../../look/view.js';
 
 /*
  * A wall panel (`<html fluvy-wall>`): the page does not bounce or select, the drawer is gone with its width (the
@@ -43,5 +44,28 @@ export const wallDashboardCss = `
   min-height: 100vh;
   padding-top: env(safe-area-inset-top, 0px);
   background: var(${WALL_BACKGROUND_VAR}, var(--lovelace-background, var(--primary-background-color))) !important;
+}
+`;
+
+/*
+ * A wall's way back from a subview, as the house chose it (`<html fluvy-wall-header>` or `<html fluvy-wall-way-back>`): Home
+ * Assistant's header in a subview alone — its back arrow and the view's title, its height given back to the view — or
+ * the room the floating way back takes at the top of the view, so it never sits on the first card.
+ */
+export const wallSubviewHeaderCss = `
+:host([${SUBVIEW_ATTRIBUTE}]) {
+  --header-height: 56px;
+}
+:host([${SUBVIEW_ATTRIBUTE}]) .header {
+  display: block;
+}
+:host([${SUBVIEW_ATTRIBUTE}]) #view {
+  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+}
+`;
+
+export const wallSubviewBackCss = `
+:host([${SUBVIEW_ATTRIBUTE}]) #view {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 44px);
 }
 `;

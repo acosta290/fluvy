@@ -43,6 +43,7 @@ import { Refresher } from '../shared/refresh.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { ROW } from '../shared/heights.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const strings = words('humidity');
 
@@ -130,6 +131,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
   ]);
   /** `trend_hours` was the window's older name; `trend_hours: 0` still hides the row. */
   static override aliases: AliasSpec = { keys: [{ from: 'trend_hours', to: 'hours' }] };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ show_trend: true });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

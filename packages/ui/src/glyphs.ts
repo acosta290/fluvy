@@ -215,6 +215,10 @@ const GLYPHS = {
   /** a window floating inside the page: the shell's frame */
   frame:
     '<rect x="3" y="4" width="18" height="16" rx="3"/><rect x="7" y="8" width="10" height="8" rx="1.5"/>',
+  /** a 3D printer: its frame, the head on its rail with the nozzle, the part rising on the bed */
+  // an enclosed printer: its frame, the gantry with a solid carriage and nozzle, the part on the bed, 1.75 clear of it
+  printer3d:
+    '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 8.5h17"/><rect x="8.5" y="6.75" width="7" height="4" rx="1.25" fill="currentColor" stroke="none"/><path d="M10.75 10.5h2.5L12 13Z" fill="currentColor" stroke="none"/><path d="M6.5 17.5h11"/><rect x="9" y="14.75" width="6" height="2.75" rx=".75" fill="currentColor" stroke="none"/>',
 } as const satisfies Record<string, string | readonly [string, number]>;
 
 export type GlyphName = keyof typeof GLYPHS;

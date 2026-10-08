@@ -1,3 +1,4 @@
+import { printerDevices } from '../printer/roles.js';
 import {
   areaOf,
   areasInOrder,
@@ -310,13 +311,6 @@ export class HomeRegistry {
       ),
     );
   }
-  /** The signed-in user's person (the greeting's face and name). */
-  get me(): string | undefined {
-    const user = this.hass.user?.id;
-    return user
-      ? this.domain('person').find((id) => this.hass.states[id]?.attributes['user_id'] === user)
-      : undefined;
-  }
   /** Updates: HA files most of them as config entities, yet they are what a Sensors view lists. */
   get updates(): readonly string[] {
     return this.memo('updates', () =>
@@ -401,6 +395,10 @@ export class HomeRegistry {
   }
   get cameras(): readonly string[] {
     return this.domain('camera');
+  }
+  /** The house's 3D printers: the devices of a printer integration (OctoPrint, PrusaLink, Bambu Lab, Moonraker). */
+  get printers(): readonly string[] {
+    return this.memo('printers', () => printerDevices(this.hass));
   }
   get players(): readonly string[] {
     return this.domain('media_player');

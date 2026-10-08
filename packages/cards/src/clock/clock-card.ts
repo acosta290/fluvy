@@ -125,6 +125,13 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
       .ck-tile .fv-tile__foot > :first-child {
         padding-right: 4px;
       }
+      /* the state too long for the tile's line ("Partiellement nuageux") takes the slack above the foot, a second line */
+      .ck-tile .fv-tile__state {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
+      }
       .ck-side__face {
         flex: none;
       }

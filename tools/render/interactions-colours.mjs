@@ -147,6 +147,27 @@ const styleOf = (locator, prop) => locator.evaluate((el, p) => getComputedStyle(
   await page.close();
 }
 
+/* ---------- a status under a colour ---------- */
+{
+  const page = await suite.sheet('colours');
+  const tile = await frame(page, 'A status under a colour')
+    .locator('fluvy-tiles-card .fv-tile')
+    .first()
+    .evaluate((el) => [...el.classList].filter((c) => /^fv-tile--|^is-/.test(c)));
+  const rows = await frame(page, 'A status under a colour')
+    .locator('fluvy-entities-card .fv-row .fv-ico')
+    .evaluateAll((els) => els.map((el) => [...el.classList].find((c) => /^fv-ico--/.test(c))));
+  check(
+    'an open window stays the warning’s under a colour (tile and row); a tone asked for by name is honoured',
+    tile.includes('fv-tile--warning') &&
+      tile.includes('is-on') &&
+      rows[0] === 'fv-ico--warning' &&
+      rows[1] === 'fv-ico--accent',
+    JSON.stringify({ tile, rows }),
+  );
+  await page.close();
+}
+
 /* ---------- derived again: dark mode, another palette, no theme ---------- */
 {
   const light = await suite.sheet('colours', { width: 412 });
@@ -176,6 +197,59 @@ const styleOf = (locator, prop) => locator.evaluate((el, p) => getComputedStyle(
     `${on.dark} on ${darkCard}`,
   );
   for (const page of [light, dark, volt, off]) await page.close();
+}
+
+/* ---------- tint: an item's colour at rest (the comment on issue #26) ---------- */
+for (const mode of ['light', 'dark', 'volt']) {
+  const page = await suite.sheet('colours', {
+    width: 412,
+    extra: mode === 'dark' ? '&mode=dark' : mode === 'volt' ? '&palette=volt' : '',
+  });
+  const surfaces = (title, card, item) =>
+    frame(page, title)
+      .locator(card)
+      .first()
+      .evaluate(
+        (el, selector) =>
+          [...el.shadowRoot.querySelectorAll(selector)].map((node) => {
+            const style = getComputedStyle(node);
+            return {
+              cls: node.className,
+              bg: style.backgroundColor,
+              edge: style.boxShadow,
+            };
+          }),
+        item,
+      );
+  const tiles = await surfaces('Tint · tiles at rest', 'fluvy-tiles-card', '.fv-tile');
+  const plain = await surfaces('Plain tiles', 'fluvy-tiles-card', '.fv-tile');
+  const lit = tiles[0];
+  const rest = tiles[1];
+  const plainOff = plain.find((t) => !t.cls.includes('is-on'));
+  check(
+    `tint (${mode}): a tile with a colour washes it at rest (the wash its words read on), a hairline of it round; on it keeps the full fill, never alike`,
+    !lit.cls.includes('is-tinted') &&
+      rest.cls.includes('is-tinted') &&
+      rest.bg !== plainOff?.bg &&
+      rest.bg !== lit.bg &&
+      rest.edge !== plainOff?.edge &&
+      !plain.some((t) => t.cls.includes('is-tinted')),
+    JSON.stringify({ lit: lit.bg, rest: rest.bg, plain: plainOff?.bg }),
+  );
+  const scenes = await surfaces('Tint · scenes and tabs', 'fluvy-scenes-card', '.am-scene');
+  check(
+    `tint (${mode}): every scene in its own colour at rest, the last run full`,
+    new Set(scenes.map((t) => t.bg)).size === scenes.length &&
+      scenes.some((t) => t.cls.includes('is-on')),
+    JSON.stringify(scenes.map((t) => t.bg)),
+  );
+  const pills = await surfaces('Tint · scenes and tabs', 'fluvy-chips-card', '.fv-chip__pill');
+  check(
+    `tint (${mode}): a tab with a colour washes it at rest; one without stays the card’s`,
+    pills.length === 3 && pills[1].bg !== pills[2].bg && pills[0].bg !== pills[1].bg,
+    JSON.stringify(pills.map((t) => t.bg)),
+  );
+  await page.close();
 }
 
 await suite.finish();

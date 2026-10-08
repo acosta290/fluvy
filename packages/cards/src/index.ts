@@ -1,10 +1,8 @@
 import { announceCard, registerCard } from '@fluvy/core';
 import '@fluvy/ui';
 import { FluvyActionsCard } from './actions/actions-card.js';
-import { FluvyAlarmCard } from './alarm/alarm-card.js';
 import { FluvyBarsCard } from './bars/bars-card.js';
 import { FluvyCalendarCard } from './calendar/calendar-card.js';
-import { FluvyCameraCard } from './camera/camera-card.js';
 import { FluvyChipsCard } from './chips/chips-card.js';
 import { FluvyClockCard } from './clock/clock-card.js';
 import { FluvyCoverCard } from './cover/cover-card.js';
@@ -17,7 +15,6 @@ import { FluvyHelloCard } from './hello/hello-card.js';
 import { FluvyHelpersCard } from './helpers/helpers-card.js';
 import { FluvyHumidityCard } from './humidity/humidity-card.js';
 import { FluvyLightCard } from './light/light-card.js';
-import { FluvyLockCard } from './lock/lock-card.js';
 import { FluvyOpeningsCard } from './openings/openings-card.js';
 import { FluvyPeopleCard } from './people/people-card.js';
 import { FluvyReadoutsCard } from './readouts/readouts-card.js';
@@ -36,6 +33,7 @@ import { FluvyRoomCard } from './room/room-card.js';
 import { FluvyLightsCard } from './lights/lights-card.js';
 import { FluvyMapCard } from './map/map-card.js';
 import { defineStrategies } from './strategy/define.js';
+import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY } from './energy-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
 import { WEATHER_FAMILY } from './weather-family.js';
@@ -104,28 +102,10 @@ const CATALOGUE: ReadonlyArray<
     'Robot vacuum or mower: battery, start · stop · dock · locate, suction.',
   ],
   [
-    'fluvy-lock-card',
-    FluvyLockCard,
-    'Fluvy · Lock',
-    'Slide to unlock, never one accidental tap; codes, jammed state, related rows.',
-  ],
-  [
-    'fluvy-alarm-card',
-    FluvyAlarmCard,
-    'Fluvy · Alarm',
-    'Arm modes as tiles and the keypad sheet for codes.',
-  ],
-  [
-    'fluvy-camera-card',
-    FluvyCameraCard,
-    'Fluvy · Camera',
-    'A still that refreshes itself, with live and time pills; tap for the stream.',
-  ],
-  [
     'fluvy-sensor-card',
     FluvySensorCard,
     'Fluvy · Sensor',
-    'A sensor with its 24 h curve, trend, min, max and average.',
+    'A sensor with its 24 h curve, trend, min, max and average, or up to three sensors on one chart.',
   ],
   [
     'fluvy-readouts-card',
@@ -137,7 +117,7 @@ const CATALOGUE: ReadonlyArray<
     'fluvy-people-card',
     FluvyPeopleCard,
     'Fluvy · People',
-    'Who is home: avatars, zones and times.',
+    'Who is home: avatars, zones, times and phone batteries, each person with a tap of their own.',
   ],
   [
     'fluvy-openings-card',
@@ -253,33 +233,43 @@ const CATALOGUE: ReadonlyArray<
 
 for (const [tag, element, name, description] of CATALOGUE)
   registerCard({ tag, name, description }, element);
-// the weather card and the media and energy families: listed and measured now, their elements fetched at once and
+// the weather card and the media, energy and devices families: listed and measured now, their elements fetched at once and
 // defined as they land
 for (const [tag, name, description, height] of [
   ...WEATHER_FAMILY,
   ...MEDIA_FAMILY,
   ...ENERGY_FAMILY,
+  ...DEVICES_FAMILY,
 ])
   announceCard({ tag, name, description }, height);
-/** The two families defined (what a test waits on before its page goes; the bundle never waits). */
+/** The families defined (what a test waits on before its page goes; the bundle never waits). */
 export const familiesDefined: Promise<unknown> = Promise.all([
   import('./weather-cards.js'),
   import('./media-cards.js'),
   import('./energy-cards.js'),
+  import('./devices-cards.js'),
 ]);
 
-/** Every card with its element: the eager ones, the weather card and the media and energy families (docs, tests). */
+/** Every card with its element: the eager ones, the weather card and the media, energy and devices families (docs, tests). */
 export async function catalogue(): Promise<
   ReadonlyArray<
     readonly [tag: string, element: CustomElementConstructor, name: string, description: string]
   >
 > {
-  const [{ WEATHER_CATALOGUE }, { MEDIA_CATALOGUE }, { ENERGY_CATALOGUE }] = await Promise.all([
-    import('./weather-cards.js'),
-    import('./media-cards.js'),
-    import('./energy-cards.js'),
-  ]);
-  return [...CATALOGUE, ...WEATHER_CATALOGUE, ...MEDIA_CATALOGUE, ...ENERGY_CATALOGUE];
+  const [{ WEATHER_CATALOGUE }, { MEDIA_CATALOGUE }, { ENERGY_CATALOGUE }, { DEVICES_CATALOGUE }] =
+    await Promise.all([
+      import('./weather-cards.js'),
+      import('./media-cards.js'),
+      import('./energy-cards.js'),
+      import('./devices-cards.js'),
+    ]);
+  return [
+    ...CATALOGUE,
+    ...WEATHER_CATALOGUE,
+    ...MEDIA_CATALOGUE,
+    ...ENERGY_CATALOGUE,
+    ...DEVICES_CATALOGUE,
+  ];
 }
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
 defineStrategies();
@@ -292,10 +282,8 @@ export { activityIsOurs, takeOverActivity } from './activity/takeover.js';
 export { historyIsOurs, takeOverHistory } from './history/takeover.js';
 export {
   FluvyActionsCard,
-  FluvyAlarmCard,
   FluvyBarsCard,
   FluvyCalendarCard,
-  FluvyCameraCard,
   FluvyChipsCard,
   FluvyClockCard,
   FluvyCoverCard,
@@ -308,7 +296,6 @@ export {
   FluvyHelpersCard,
   FluvyHumidityCard,
   FluvyLightCard,
-  FluvyLockCard,
   FluvyOpeningsCard,
   FluvyPeopleCard,
   FluvyReadoutsCard,

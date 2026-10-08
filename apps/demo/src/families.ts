@@ -12,7 +12,7 @@ export const FAMILIES: readonly Family[] = [
   {
     key: 'devices',
     label: 'family.devices',
-    sheets: ['devices-motion', 'devices-security', 'slider', 'lights'],
+    sheets: ['devices-motion', 'devices-security', 'printer', 'slider', 'lights'],
   },
   { key: 'climate', label: 'family.climate', sheets: ['climate'] },
   { key: 'energy', label: 'family.energy', sheets: ['flow', 'energy', 'solar'] },

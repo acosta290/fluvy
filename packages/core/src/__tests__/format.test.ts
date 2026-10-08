@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveEntity } from '../entity.js';
 import {
+  digitsOf,
   formatDate,
   formatDuration,
   formatNumber,
@@ -90,6 +91,39 @@ describe('valueParts', () => {
     expect(valueParts(p, resolveEntity(p, 'sensor.x'))).toEqual({ value: '46', unit: '%' });
     const big = make('es', 'language', '12345.678', { unit_of_measurement: 'kWh' });
     expect(valueParts(big, resolveEntity(big, 'sensor.x'))).toEqual({ value: '12,3', unit: 'MWh' });
+  });
+});
+
+describe('digitsOf', () => {
+  const moment = (h: HomeAssistant, value: number) => {
+    const view = resolveEntity(h, 'sensor.x');
+    return valueParts(h, { ...view, number: value }, { digits: digitsOf(h, view, value) });
+  };
+  it('writes a chart’s moment with the reading’s digits, so the figure keeps its width', () => {
+    const p = make('en', 'language', '46', { unit_of_measurement: '%' });
+    expect(moment(p, 47.9)).toEqual({ value: '48', unit: '%' });
+    const t = make('en', 'language', '21.4', { unit_of_measurement: '°C' });
+    expect(moment(t, 19.75)).toEqual({ value: '19.8', unit: '°C' });
+  });
+  it('writes a registry precision exactly, at rest and under the finger: 21.0 stays "21.0"', () => {
+    const h = {
+      ...make('en', 'language', '21.0', { unit_of_measurement: '°C' }),
+      entities: { 'sensor.x': { entity_id: 'sensor.x', display_precision: 1 } },
+    } as HomeAssistant;
+    expect(valueParts(h, resolveEntity(h, 'sensor.x')).value).toBe('21.0');
+    const view = resolveEntity(h, 'sensor.x');
+    expect(
+      valueParts(h, { ...view, number: 21.4 }, { digits: digitsOf(h, view, 21.4) }).value,
+    ).toBe('21.4');
+    expect(valueParts(h, { ...view, number: 20 }, { digits: digitsOf(h, view, 20) }).value).toBe(
+      '20.0',
+    );
+  });
+  it('lets a moment in a larger unit keep its own digits: 505 W at rest, 1.23 kW under the finger', () => {
+    const w = make('en', 'language', '505', { unit_of_measurement: 'W', device_class: 'power' });
+    expect(moment(w, 1234)).toEqual({ value: '1.23', unit: 'kW' });
+    expect(moment(w, 2480)).toEqual({ value: '2.48', unit: 'kW' });
+    expect(moment(w, 820)).toEqual({ value: '820', unit: 'W' });
   });
 });
 

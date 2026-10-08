@@ -10,6 +10,28 @@ import { renderTemplate } from './template.js';
  */
 
 /** A sample of Home Assistant's Spanish state words (its `es` translations), by domain, device class and state. */
+/** Home Assistant's own words for an opening and for motion (its 2025.1 translations): [on, off]. */
+const OPENING_WORDS: Record<string, readonly [string, string]> = {
+  en: ['Open', 'Closed'],
+  de: ['Geöffnet', 'Geschlossen'],
+  es: ['Abierto', 'Cerrado'],
+  fr: ['Ouvert', 'Fermé'],
+  it: ['Aperto/a', 'Chiuso/a'],
+  nl: ['Open', 'Gesloten'],
+  'pt-BR': ['Aberto', 'Fechado'],
+  tr: ['Açık', 'Kapalı'],
+};
+const MOTION_WORDS: Record<string, readonly [string, string]> = {
+  en: ['Detected', 'Clear'],
+  de: ['Erkannt', 'Keine'],
+  es: ['Detectado', 'No detectado'],
+  fr: ['Détecté', 'Non détecté'],
+  it: ['Rilevato', 'Assente'],
+  nl: ['Gedetecteerd', 'Niet gedetecteerd'],
+  'pt-BR': ['Detectado', 'Não detectado'],
+  tr: ['Algılandı', 'Temiz'],
+};
+
 const SPANISH: Record<string, string> = {
   on: 'Encendido',
   off: 'Apagado',
@@ -73,6 +95,8 @@ export interface MockOptions {
   readonly api?: (method: string, path: string) => unknown;
   /** How long Home Assistant takes to answer a template, in ms (30: before the first paint; a real socket 50–200). */
   readonly templateDelay?: number;
+  /** The house's units: metric (°C, km), or imperial (°F, mi) as a house in the US keeps them. */
+  readonly units?: 'metric' | 'imperial';
 }
 
 const iso = (date: Date): string => date.toISOString();
@@ -170,7 +194,10 @@ export function createHass(
       locale: { language: options.language ?? 'en', number_format: 'language', time_format: '24' },
       language: options.language ?? 'en',
       config: {
-        unit_system: { temperature: '°C', length: 'km' },
+        unit_system:
+          options.units === 'imperial'
+            ? { temperature: '°F', length: 'mi' }
+            : { temperature: '°C', length: 'km' },
         currency: 'EUR',
         time_zone: 'Europe/Madrid',
       },
@@ -228,14 +255,19 @@ export function createHass(
         const raw = stateObj.state;
         const unit = stateObj.attributes.unit_of_measurement;
         if (unit && Number.isFinite(Number(raw))) return `${raw} ${unit}`;
-        // a leak sensor in Home Assistant's own English words (its moisture class)
-        if (
-          (options.language ?? 'en') === 'en' &&
-          stateObj.entity_id.startsWith('binary_sensor.') &&
-          stateObj.attributes['device_class'] === 'moisture' &&
-          (raw === 'on' || raw === 'off')
-        )
-          return raw === 'on' ? 'Wet' : 'Dry';
+        // an opening and motion in Home Assistant's own words, in every language; a leak sensor in its English ones
+        if (stateObj.entity_id.startsWith('binary_sensor.') && (raw === 'on' || raw === 'off')) {
+          const language = options.language ?? 'en';
+          const kind = stateObj.attributes['device_class'];
+          const pair =
+            kind === 'window' || kind === 'door' || kind === 'garage_door' || kind === 'opening'
+              ? OPENING_WORDS[language]
+              : kind === 'motion' || kind === 'occupancy'
+                ? MOTION_WORDS[language]
+                : undefined;
+          if (pair) return raw === 'on' ? pair[0] : pair[1];
+          if (language === 'en' && kind === 'moisture') return raw === 'on' ? 'Wet' : 'Dry';
+        }
         // Home Assistant's own words in Spanish (the longest of them are what a pill has to hold)
         if ((options.language ?? 'en') === 'es') {
           const domain = stateObj.entity_id.split('.')[0] ?? '';

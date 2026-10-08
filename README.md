@@ -22,7 +22,7 @@
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, forty-nine cards, five automatic dashboards, a
+Fluvy brings one design to the whole of Home Assistant: a theme, fifty cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in eight languages.
@@ -42,7 +42,7 @@ one (as here), as pills, as icons, Home Assistant's own, or none at all.
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-tablet.png" width="640" alt="The same dashboard on a wall tablet">
 </p>
 
-## Forty-nine cards
+## Fifty cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
@@ -56,7 +56,8 @@ hold for the 1 % scale.
 
 **Control** — lights with brightness and colour temperature, a room's lights on one card (one tap for the whole
 room, a round for each light, in its bulb's colour), thermostats (dial or compact), water heaters and humidifiers,
-covers with position and tilt, fans, vacuums, valves, media players and TVs, tiles and lists.
+covers with position and tilt, fans, vacuums, valves, media players and TVs, 3D printers (OctoPrint, PrusaLink,
+Bambu Lab, Moonraker: the job, its time left, the heaters, the camera, pause and stop), tiles and lists.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-control.png" width="960" alt="Control cards: lights, thermostats, covers, fans, vacuums, media players, tiles and lists">
@@ -69,13 +70,15 @@ covers with position and tilt, fans, vacuums, valves, media players and TVs, til
 a house that imports and exports at once shows both, every lane in the colour of where its energy came from, with
 the Energy dashboard's own sources when you give it none. Beside it: the balance of what comes in and goes out, the
 grid by phase, batteries, a car charger, where a day's energy went (a sankey), the score, water and gas, the house's
-power by source, solar by array, consumption by device and gauges for anything. [How they read a house](docs/energy.md).
+power by source, the whole house on one chart with its batteries' charge, solar by array, consumption by device and
+gauges for anything. [How they read a house](docs/energy.md).
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="The energy cards: the flow of a three-phase house and the flow as a cross, the balance, the grid by phase, two batteries, a car charger, where the day's energy went and the energy score">
 </p>
 
-**Security and sensors** — locks, alarms, cameras, openings and motion, humidity, plants, gauges and sensor tiles.
+**Security and sensors** — locks, alarms, cameras (live, in their own shape), openings and motion, humidity, plants,
+gauges, sensor tiles, and up to three sensors on one chart.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-sensors.png" width="960" alt="Security and sensor cards: a lock, an alarm, a camera, openings and motion, humidity, plants, a solar gauge and sensor tiles">
@@ -139,7 +142,7 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 ## What you get
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with.
-- **Forty-nine cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Fifty cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose.
 - **Energy as your meters read it**: a house that imports and exports at once shows both, per phase; with nothing
   configured the cards read the Energy dashboard, and a day, a week or a month add up to its own figures.

@@ -1,6 +1,6 @@
 import { localize, type HomeAssistant } from '@fluvy/core';
 import { html, nothing, type TemplateResult } from 'lit';
-import { durationParts, type DurationUnit } from '../energy-model/duration.js';
+import { durationParts, type DurationUnit } from '../shared/duration.js';
 import type { Figure } from './value-row.js';
 
 const word = (hass: HomeAssistant | undefined, unit: DurationUnit): string =>

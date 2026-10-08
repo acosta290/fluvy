@@ -415,7 +415,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   );
 
   // openings: the "All sensors" row opens the rest in place
-  const openings = page.locator('fluvy-openings-card').first();
+  const openings = page.locator('[data-frame$="/Openings & motion"] fluvy-openings-card').first();
   check(
     'openings: four rows and the "2 more" row',
     (await openings.locator('.fv-row').count()) === 5,
@@ -427,6 +427,90 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
     (await openings.locator('.fv-row').count()) === 7 &&
       (await openings.locator('.fv-row').last().locator('.fv-row__sub').textContent()).trim() ===
         'Show less',
+  );
+
+  // openings with names of their own (issue #26): the entry's name and icon, a bare id keeps its own
+  const named = page
+    .locator('[data-frame$="/Openings · each its own name"] fluvy-openings-card')
+    .first();
+  const titles = await named.evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.fv-row__title')].map((t) => t.textContent.trim()),
+  );
+  check(
+    'openings: an entry’s own name, a bare id its sensor’s',
+    titles.join('|') === 'Front door|Kitchen|Garage|Hallway motion',
+    titles.join('|'),
+  );
+
+  // openings as tiles (issue #26's layouts): two a row, each its name, its state and its time; an open one in the warning
+  const tiles = await page
+    .locator('[data-frame$="/Openings · tiles"] fluvy-openings-card')
+    .first()
+    .evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.op-tiles .fv-tile')].map((t) => ({
+        name: t.querySelector('.fv-tile__name')?.textContent.trim(),
+        state: t.querySelector('.fv-tile__state')?.textContent.trim(),
+        warn: t.classList.contains('is-on'),
+        cut: [...t.querySelectorAll('.fv-tile__name, .fv-tile__state')].some(
+          (el) => el.scrollWidth > el.clientWidth + 1,
+        ),
+      })),
+    );
+  check(
+    'openings tiles: a tile each, the open window in the warning tone; a time beside its state where the tile holds both, else the state alone (never cut)',
+    tiles.length === 4 &&
+      tiles.map((t) => t.name).join('|') === 'Front door|Kitchen|Garage|Kitchen leak' &&
+      tiles[1]?.warn === true &&
+      tiles[1]?.state === 'Open · 2 h' &&
+      /^Closed( · 2 h ago)?$/.test(tiles[0]?.state ?? '') &&
+      /^Dry( · 2 h ago)?$/.test(tiles[3]?.state ?? '') &&
+      tiles.every((t) => !t.cut),
+    JSON.stringify(tiles),
+  );
+  // a coloured tile wears its colour at rest (its rest wash), a plain one the page's fill
+  const rest = await page
+    .locator('[data-frame$="/Openings · tiles"] fluvy-openings-card')
+    .first()
+    .evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.op-tiles .fv-tile')].map((t) => ({
+        tinted: t.classList.contains('is-tinted'),
+        bg: getComputedStyle(t).backgroundColor,
+      })),
+    );
+  check(
+    'openings tiles: a coloured one wears its colour at rest, a plain one does not',
+    rest[0]?.tinted === true &&
+      rest[2]?.tinted === true &&
+      rest[3]?.tinted === false &&
+      rest[0].bg !== rest[3].bg &&
+      rest[0].bg !== rest[2].bg,
+    JSON.stringify(rest),
+  );
+  // compact, a sensor gone, folded: one line a value (a dash for the gone one), "+2" to unfold, "−" to fold
+  const folded = page
+    .locator('[data-frame$="/Openings · compact, one gone, folded"] fluvy-openings-card')
+    .first();
+  const readFolded = () =>
+    folded.evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.fv-row')].map((r) => ({
+        value: r.querySelector('.fv-row__value')?.textContent.trim() ?? '',
+        open: r.getAttribute('aria-expanded'),
+        tall: Math.round(r.getBoundingClientRect().height),
+      })),
+    );
+  const before = await readFolded();
+  await folded.locator('.fv-row').last().click();
+  await page.waitForTimeout(100);
+  const after = await readFolded();
+  check(
+    'openings compact: a gone sensor is a dash, every row 48 on one line, "+2" unfolds, and open its chevron folds (expanded)',
+    before.length === 3 &&
+      before[0]?.value === '—' &&
+      before[2]?.value === '+2' &&
+      after.length === 5 &&
+      after[4]?.open === 'true' &&
+      [...before, ...after].every((r) => r.tall === 48),
+    JSON.stringify({ before, after }),
   );
 
   // scenes: a press fills its tile at once; the automation is triggered, not toggled
@@ -604,6 +688,156 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
     `${arrows} · ${await bare.locator('.fv-trend').count()}`,
   );
   await page.close();
+}
+
+/* ---------- openings and people at a phone's card and half a column, in five languages ---------- */
+// a value, a state, a badge, a sub and a battery are never cut, nor anything outside the card; a name ends in an
+// ellipsis (as names may, the language's rule) only with its 96 beside its circle, or 40 once the circle is given; a
+// list gives its circles together (the "all sensors" row with them), and a row without one starts its hairline
+for (const lang of ['de', 'fr', 'nl', 'pt-BR', 'es']) {
+  for (const width of [264, 200]) {
+    const page = await open('ambient', width, `&lang=${lang}`);
+    const cut = await page.evaluate(() => {
+      const out = [];
+      for (const card of document.querySelectorAll('fluvy-openings-card, fluvy-people-card')) {
+        const where = card.closest('[data-frame]')?.dataset.frame ?? card.localName;
+        const root = card.shadowRoot;
+        const box = root.querySelector('article').getBoundingClientRect();
+        for (const el of root.querySelectorAll(
+          '.fv-card__title, .fv-card__sub, .fv-badge, .fv-row__title, .fv-row__sub, .fv-row__value, .fv-tile__name, .fv-tile__state, .am-person__name, .am-person__state, .fv-battery',
+        )) {
+          const r = el.getBoundingClientRect();
+          if (!r.width) continue;
+          const clipped =
+            el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflow === 'hidden';
+          const name = el.matches(
+            '.fv-card__title, .fv-row__title, .fv-tile__name, .am-person__name',
+          );
+          const owner = el.closest('.fv-row, .fv-tile, .fv-card__head, .am-person');
+          const bare =
+            owner?.classList.contains('am-person') ||
+            !owner?.querySelector(
+              ':scope > .fv-ico, :scope > .am-avatar, :scope > button > .fv-ico',
+            );
+          // a name may end in an ellipsis beside its circle once it has its 96, without it once it has begun (40)
+          const room = bare ? 40 : 95;
+          const outside = r.right > box.right - 15 || r.left < box.left + 15;
+          if (outside || (clipped && (!name || el.clientWidth < room)))
+            out.push(`${where}: ${el.className.split(' ')[0]} "${el.textContent.trim()}"`);
+        }
+        const rows = [...root.querySelectorAll('.am-rows > .fv-row, .am-rows .fv-row')];
+        const circles = rows.map((row) => !row.classList.contains('fv-row--bare'));
+        if (new Set(circles).size > 1) out.push(`${where}: circles not given together`);
+        for (const row of rows)
+          if (
+            row.classList.contains('fv-row--bare') !==
+            !row.querySelector(':scope > .fv-ico, :scope > .am-avatar')
+          )
+            out.push(`${where}: a bare row's hairline`);
+      }
+      return out;
+    });
+    check(
+      `openings and people (${lang}, ${width}): nothing cut but a name as names may, circles given together`,
+      cut.length === 0,
+      [...new Set(cut)].slice(0, 6).join(' · '),
+    );
+    await page.close();
+  }
+}
+
+/* ---------- a phone's battery is said whole, whatever the state beside it ---------- */
+// a long state ("Abwesend", "Afwezig", "Dışarıda") beside a narrow row: the avatars give way, then the state is a dash,
+// before the battery's figure would lose its "%"
+{
+  const cut = [];
+  for (const lang of ['de', 'nl', 'tr']) {
+    for (const width of [204, 212, 218, 222, 226, 230, 236, 240, 264, 296]) {
+      const page = await open('ambient', width, `&lang=${lang}`);
+      const found = await page.evaluate(() => {
+        const out = [];
+        for (const card of document.querySelectorAll('fluvy-people-card')) {
+          for (const sub of card.shadowRoot.querySelectorAll('.fv-row__sub')) {
+            const battery = sub.querySelector('.fv-battery');
+            if (!battery) continue;
+            const s = sub.getBoundingClientRect();
+            const b = battery.getBoundingClientRect();
+            if (sub.scrollWidth > sub.clientWidth + 1 || b.right > s.right + 0.5)
+              out.push(`"${battery.textContent.trim()}"`);
+          }
+        }
+        return out;
+      });
+      for (const f of found) cut.push(`${lang} ${width} ${f}`);
+      await page.close();
+    }
+  }
+  check(
+    'a phone’s battery is said whole beside any state (de, nl, tr, 204–296)',
+    cut.length === 0,
+    cut.slice(0, 8).join(' · '),
+  );
+}
+
+/* ---------- an alert under the fold is always said ---------- */
+// the smoke folded under "all sensors": its row says it before its count ("2 more · 1 alert", "+2 · 1 alert", the alert
+// alone), and its label says everything
+{
+  const unsaid = [];
+  for (const lang of ['en', 'de', 'fr', 'nl', 'tr']) {
+    for (const width of [264, 200]) {
+      const page = await open('ambient', width, `&lang=${lang}`);
+      const rows = await page
+        .locator('[data-frame$="/Openings · smoke under the fold"] fluvy-openings-card')
+        .evaluateAll((els) =>
+          els.map((el) => {
+            const rows = [...el.shadowRoot.querySelectorAll('.fv-row')];
+            const fold = rows[rows.length - 1];
+            return {
+              sub: fold?.querySelector('.fv-row__sub')?.textContent.trim() ?? '',
+              label: fold?.getAttribute('aria-label') ?? '',
+            };
+          }),
+        );
+      for (const r of rows) {
+        const alert = r.label.split(' · ').pop() ?? '';
+        if (!alert || !r.sub.endsWith(alert))
+          unsaid.push(`${lang} ${width}: "${r.sub}" (${r.label})`);
+      }
+      if (!rows.length) unsaid.push(`${lang} ${width}: no card`);
+      await page.close();
+    }
+  }
+  check(
+    'an alert under the fold is said on its row at 264 and 200 in five languages, before its count',
+    unsaid.length === 0,
+    unsaid.join(' · '),
+  );
+}
+
+/* ---------- the openings head keeps its badge at a phone's card ---------- */
+// the badge is the card's alert: it stays before the sub's last part, and the long title only where both still hold
+{
+  const lost = [];
+  for (const lang of ['en', 'de', 'es', 'fr', 'pt-BR']) {
+    const page = await open('ambient', 328, `&lang=${lang}`);
+    const heads = await page
+      .locator('[data-frame$="/Openings & motion"] fluvy-openings-card')
+      .evaluateAll((els) =>
+        els.map((el) => ({
+          badge: el.shadowRoot.querySelector('.fv-card__head .fv-badge')?.textContent.trim() ?? '',
+          title: el.shadowRoot.querySelector('.fv-card__title')?.textContent.trim() ?? '',
+        })),
+      );
+    for (const h of heads) if (!h.badge) lost.push(`${lang}: "${h.title}" without its badge`);
+    if (!heads.length) lost.push(`${lang}: no card`);
+    await page.close();
+  }
+  check(
+    'the openings head keeps its badge at 328 in five languages (the long title only beside it)',
+    lost.length === 0,
+    lost.join(' · '),
+  );
 }
 
 await suite.finish();

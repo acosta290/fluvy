@@ -150,6 +150,76 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - The **map** variant is Home Assistant's own map card on a plate (16 radius, 1.6:1 or square); it falls back to the
   columns in silence where the card helpers are missing.
 
+## Several sensors (1.6)
+
+- **The card**: up to three sensors on one card (a room's temperature and humidity). The head is the set's: the
+  room's name, the trend glyph in the accent, the window.
+- **The readouts**: one per sensor in equal columns, 32 apart with a 36 hairline in the middle of the gap, each centred
+  in its column (its circle and its words as one, the words left inside). Each is the sensor's circle in its measure's
+  tone, then its name (what it says beyond the head: "Temperature" under "Living room") over its value, at the medium
+  readout where every value fits.
+- **What gives way**, checked on every name at every step: the circles go before a name would end in an ellipsis; a
+  readout without its circle carries its curve's key beside its name (a 12 × 2 line in the curve's ink, 8 after the
+  name; none where no curve is drawn). Then the gap closes to 16. Then one line a readout: the name and its key at the
+  start, the value at the end on the name's baseline, a hairline across between them. A name that still does not fit
+  ends in an ellipsis before its key: the name gives way, its key never does (the key is its own part, never inside
+  the name's box). A value never shrinks past the extra-small size, and never wraps.
+- **The chart**: one curve per sensor, each on its own scale (the units differ, so a line is read against its own
+  readout), in its measure's tone. Fills are lighter (16 %) so no curve hides another. A tone that would repeat
+  passes to the next spare one.
+- **Scrubbing**: every readout says that moment, written at its reading's precision while it stays in the reading's
+  unit (the figure never grows under the finger; a moment in a larger unit, 1.23 kW under 505 W, keeps its own). When
+  is a pill in the bubble's colours (the text's ink, the page's words) on the axis row, which is 20 tall for it, the
+  hours centred in it; kept inside the axis's width, under the cursor, while the hours give way. Past 24 h it says the
+  weekday too ("Tue 09:47"), as the single chart's bubble does. No bubble over the plot, so the scale's top is 12 below
+  the chart's (the ink from 17.5). The cursor runs from the highest dot down, under the dots, and sits under the
+  finger: the scrubbed box is the drawn width. The statistics are one sensor's, so they stay out.
+- **The hours under a chart** (one sensor or several): the clock times at the window's quarters ending in "Now", as
+  many as keep 12 between every two, measured in their language — five, else three, else the two ends; a window of
+  days says its days ago at its start and middle, three, else the two ends.
+
+## Camera (1.6)
+
+- **The picture**: stills that refresh themselves (as quick as half a second), or Home Assistant's own stream
+  (`camera_view: live`: its player, WebRTC, HLS or MJPEG as the camera offers). The stream plays only while the card is
+  on screen, and the card falls back to stills where Home Assistant gives no player.
+- **The shape**: 16:9 by default, or 4:3, 3:2, 1:1, 2:1, 21:9, or the camera's own (read off its first frame). Its
+  height lands on the 4 grid.
+- **The fit**: the plate fills its shape (`cover`, cropping what overflows), or shows the whole picture
+  (`contain`) on the screen's dark, as a player's bands are.
+- **Sharpness**: a still is asked at the plate's width in device pixels (sharp, and no heavier than it needs to be).
+  Frames under a second apart cut, as a video does: a fade would never finish.
+- **While streaming**: no time pill. "Live" stays.
+- **A low picture**: under 108 the time pill goes (the rounds would sit on it); "Live" at the top start and the rounds
+  at the bottom end never share a column. The plate never goes under 68 (the rounds, 12 above and below).
+- **The camera's own shape** is remembered once read, so the plate is laid out in it before the first frame, and
+  checked against the first frame: a camera that changed its shape (another profile, turned upright) is taken and
+  remembered anew, one reflow.
+- **Over a contained picture's bands** (and full screen's) a pill keeps its shape with a light hairline round its wash.
+- **Full screen** has the room a low plate lacks: its clock and its snapshot round are back, and its round says how
+  to leave it (the close glyph, "Exit full screen").
+- **"Live"** is as wide as its word in every language, never under 64, on one line, on the 4 grid.
+- **A narrow plate gives way in order**: on a low plate (the rounds share its rows) the snapshot round goes before it
+  would come within 8 of "Live"; then "Live" folds to its dot; on a taller plate the clock goes before it would come
+  within 8 of "Live".
+- **The rounds over the picture** are a light glass with a fixed dark glyph, alike in light and dark; a pointer's hover
+  makes the glass a touch whiter, never the glyph.
+- **The live dot** is one vivid red (#f0453a) in both modes, ringed in white at 55 %, so it reads on any picture and
+  alone, folded. Full screen never folds it: the word is back with the room. A stale "Live" (no frame for a while)
+  fades and is hidden from readers too.
+- **The rows under the picture** (and the lock's and the alarm's) give their circles together where a name would get
+  less than its 96 beside what ends its row — the value's words, a switch's 56, a chevron's 44; an age takes its short
+  form ("21 d", "3 h", "12 min") where any row's full words would not fit, every age of the list alike. A row that
+  cannot be read says its state's word, never an age — where the word would be cut, its dashed skin says it alone and
+  the word is the row's label.
+
+## Greeting (1.6)
+
+- **It gives way in tiers, never cut**: 28 with the name; 22 where the name is long; the greeting alone (the avatar
+  says who), at 28 again where it fits; at 22; and last, where even that would be cut (a phone's column at the largest
+  sizes), the language's short hello ("Hello", "Hallo", "Ciao"). The date and the weather give way under it as before.
+- **Whose greeting**: without a `person`, the signed-in user's person (name, picture, more-info); a `person` pins one.
+
 ## Dashboards (the panel's tab)
 
 - Five templates as rows in one card: a created one is a row that opens (accent circle, its url as the sub, the bare
@@ -216,6 +286,14 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   fills a 2 px ring (radius 18, the accent, its track at 20 %) over a second and a half and the tablet taps back once
   — letting go before cancels; it pauses the wall, and the toast says "Wall paused" with "Resume" for as long as the
   pause lasts. The toast: 44 tall, card fill, hairline and lift, radius 12, its words 14/600 and a 32 accent button.
+- **The way back from a subview** (1.6): the wall has no header, so Home Assistant's back arrow goes with it. The house
+  chooses between two ways back:
+  - **The button** (the default): the corner's disc grown into a pill at the top left, on the corner's line. It is 32
+    tall in a 44 target, 6 from the edges, on the card's fill at 88 % with the hairline and the knob's drop. It holds
+    a 20 chevron in the secondary ink, 4, then the view's title at 14/600, which ends in an ellipsis at half the
+    screen. It is there for as long as the subview is: navigation is never hidden. The view keeps the pill's 44 above
+    its cards, and a tap is Home Assistant's own way back (`back_path`, else its history).
+  - **Home Assistant's header**, in subviews only, with the corner moved under it.
 - The **screensaver** is a modal in the top layer: the wall mesh (or black), the digital clock in its hero size with
   the date under it in a 480 column, centred; dimmed, the clock is white at 60 %. It fades in over 320 ms and out over
   200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over
@@ -226,7 +304,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   one the house has, its room as the hint), *Day and night* (four option tiles in 2 × 2 with a value line each, two
   time fields for the hours, the veil's share as chips), *Background* (two chips) and a preview of the clock over
   two tiles on the background chosen — in the night's tokens, under the night's veil, when the settings would make
-  it night now. Every wall control edits the latest wall (`editWall`): two taps before a render never lose the
+  it night now. Its chip rows are written for a phone of 320 at least, in every language (a word that would not fit
+  a chip there takes a shorter one). Every wall control edits the latest wall (`editWall`): two taps before a render never lose the
   first.
 
 ## Size (a device's, 1.5)
@@ -241,8 +320,9 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   the size it is laid out in). A card's own dialog (the keypad) and a menu in the top layer scale with the view and
   are placed in its pixels.
 - A gesture under zoom is read in the control's pixels: a drag travels by the control's own length (`trackDrag`'s
-  `dx`, `localPoint`), a tap or a scrub by its fraction of the box. The size never makes a new ellipsis: what fits at
-  100 % fits at 150 %.
+  `dx`, `localPoint`), a tap or a scrub by its fraction of the box. At the same column width the size never makes a
+  new ellipsis; a bigger size makes a phone's column narrower (two thirds of it at 150 %), and the cards then give way
+  as they do in any narrow column, by their own rules.
 - The header's dashboard name follows the view's column at every size (its margin is the view's 24 grown with the
   size, less the bar's 12). A hairline inside the view is drawn at the size too: at 110 or 125 % it can straddle two
   device pixels — a known softness of a scaled page, the price of one layout for every size.
@@ -349,8 +429,130 @@ sensors' five-minute means when the Energy dashboard names one for every source 
 graph), else from the meters in 15-minute blocks (30 or 60 when their step — 0.1 kWh — would show as a saw-tooth); a bucket without the grid or the battery is a gap (the curve
 stops, the cursor reads "—"), never a zero. "Right now" is the house's own use, allocated live as the flow card does.
 
+**The whole house (1.6).** Home Assistant's "Power sources" convention, kept whole:
+- **Above the line**, every source's power stacked from the line up: the sun's whole production first, then the
+  battery's discharge, a generator, a car, the grid's import.
+- **Below it**, from the line down, the battery's charge, a car's and the export, at 60 %.
+- **The house's use** is a 2 px line in the text's ink over the stacks.
+- **The batteries' charge** is dashed (2 px, true 4 · 4, butt ends) in the battery's ink on its own scale: 100 % on
+  the tag's line (28 under the chart's top, its "100 %" at the top right, untracked), 0 % at the chart's foot. A 4 px
+  card-coloured edge under it lets it read over the areas it crosses. Each run is laid out a whole number of dashes
+  long, starting and ending on one, so a gap reads as two ends.
+- **The tags** are never crossed by a line: the house's line, the charge and the cursor give way round each tag's box
+  (4 round), in every stacked energy chart; the areas pass under the tag's text halo; the dots are drawn over the tags,
+  never under their words. The tag under the line sits at the chart's start, or at its end where the charge crosses
+  the start; where it crosses both, there is no tag (the legend names the areas).
+- **The cursor** starts under the tag row (16 + 4), in every stacked energy chart. At "now" the house's dot is its
+  ring; the charge's is a small solid dot (r 3) in the battery's ink with a 1.5 card edge, drawn over the ring, so it
+  reads cleanly beside it, on its rim or inside it.
+- **The foot**: the scale ends a pixel above the chart's foot, so the lowest area's 2 px edge is drawn whole.
+- **The top row** is "Right now" (the house) with the charge now as its side readout. Each readout carries the key of
+  its line beside its label, on the side away from the column it is aligned to: after a label on the column's start,
+  before one on its end. So the words stay on the column (a 12 × 2 line; 12 × 2 dashes, 4 · 4 · 4). With no live
+  power for the house (meters only), the chart ends on the last bucket whose meters have closed (an open one reads
+  low, so it is not drawn), and that is the moment the row reads at rest: its time as the label ("21:15"), its power,
+  the house's key, the charge then; the cursor and its ring sit there, on the line's end (a bucket's point sits at its
+  middle, so it has closed half a bucket after it). With no house at all, the charge takes the start column. The
+  house by source reads a house with meters only the same way, so its height never changes under the finger.
+- **Scrubbing** stops at the chart's end (now, or the last closed bucket) and the cursor sits on the bucket it reads,
+  so its ring is always on the line; across a gap it reads "—".
+- **The day axis** writes its five hours where they keep 12 apart in the chart's width, else three (00:00 · 12:00 ·
+  24:00), as the sensor chart thins its own.
+- **The title**: "House power" where it fits beside its round, else "House" (each language its short one).
+- **The legend** is a square per area drawn. At rest it gives the day's energy (from the power's integral, or from the
+  meters' hours as the Energy dashboard allocates them). Scrubbed, it gives each flow's power at that moment, one unit
+  and one precision for the row; the readouts read that moment too ("12:30 · 522 W", "Battery 77 %").
+- **Gaps**: a gap stops every series, and a charge that cannot be known (two batteries without their capacity) is
+  "—" with no line.
+
 **Empty.** An energy card's empty panel sits 16 under its head and says what is missing in one line ("No batteries
 yet"), with how to fix it as the hint under it ("Add them here, or give the Energy dashboard its batteries").
+
+## People (1.6)
+
+- **Each their own**: a name, a colour (a 2 px ring round the avatar, 2 clear of it on the card: a picture would hide a
+  fill), and a tap and a hold of their own (a page of theirs, by default their details).
+- **The title** is the card's own where it fits beside the map's round, a shorter one where it does not ("Who is
+  home" → "At home"); a typed one is the user's (a name, which may end in an ellipsis).
+- **A person's line** keeps their state; its detail (the zone, the time) goes, whole, where the column cannot hold
+  both: a state never ends in an ellipsis. Where a state would not hold its grid column even alone, the card lays its
+  people as rows. Rows give their avatars together, as every list's circles (the hairline then starts the row); a
+  battery stays whole and its detail goes first; a state that would leave a name under 40 is a dash, its word the
+  row's label.
+- **A phone's charge** (`show_battery`, or a battery named by hand): the set's battery glyph (20, 16 in a row's sub)
+  filled to its level, 12 wide inside and never under 3 so a low one shows, then the figure ("78 %", "—" unread). At
+  20 % and under, glyph and figure take the warning ink; on its charger (Android's charging sensor, iOS's battery
+  state, a tracker's word) a bolt crosses the glyph with a card edge and it is never low. The grid puts it under the
+  state line, 4 below; a row before its detail ("▮ 78 % · 19:47"). Found from the tracker the person is seen by, else
+  any of theirs, else a tracker's own `battery_level`.
+
+## Openings (1.6)
+
+- **Each row its own**: a name, an icon, a colour, a tap and a hold. Its colour is who it is: its circle wears it at
+  rest. What needs acting on (open, wet, smoke) fills the circle in the warning tone and says its state in the
+  warning's ink, whatever its colour; events (motion) and the rest stay neutral.
+- **Layouts**: rows (60, the time under each name: "14 min" open, "2 h ago" since — gone, whole, where it would not
+  fit beside the value), compact (48, the name and the
+  state on one line; a value never wraps), or tiles (two a row, 84 inner tiles, columns at the dashboard's gap and rows
+  8 apart: the circle, the name, the state and its time; an open one fills in the warning, a coloured one wears its
+  rest wash; a tile's time goes, whole, where its tile cannot hold it; where a state would not fit even alone, or a
+  name beside the circle would end before it had begun (96, or the name), every tile gives its circle's room to its
+  words, and where a state still would not fit, one tile a row — measured in the tile's own type, at the grid's own
+  gap). `show_time` takes the times away.
+- **A sensor gone** is a dash on the dashed skin of anything gone; its word is said where the time would be when it
+  fits, and is always its label.
+- **The "all sensors" row** gives its circle with the rows'. Folded, it says what it hides and any alert among it
+  ("2 more · 1 open"; compact, "+2" in the warning's ink); its chevron turns up when it is open.
+- **The head** keeps its badge (the card's alert) before the sub's last part, then gives way as every head; the
+  sheet's "Openings & motion" where it keeps both its circle and its badge, else "Openings".
+- **The same sensor twice** keeps both rows (rows are by position, never by entity).
+
+## 3D printer (1.6)
+
+- **Full**: the head; the picture; the progress row; the bar; its line; the readouts; the filament unit's trays; the
+  buttons. **Compact**: the head, the bar and one line, the readouts at the extra-small size. **Row**: the compact
+  anatomy (76, 16 in), the printer's circle ringed by the job, its name over what it does, pause or resume. Narrow,
+  it gives way in order: the line's trailing parts (the ring says the progress), then the round (where the state or a
+  name's 96 would not hold beside it), then the name takes an ellipsis; the state is never cut.
+- **The head**: the printer's glyph (the warning's when it failed, so a failure never reads as a pause), its name, the
+  job (the stage while it prepares: "Heatbed preheating"), the state in the badge. The badge gives way first, as
+  badges do, and the state is then said at the head of the sub ("Failed · Hook"): the state is never left unsaid.
+- **Why it failed**, in the integration's words, is a line of its own under the head: 13/500 in the warning's ink,
+  two lines at most. The failed job keeps its bar where it stopped.
+- **The picture**: the camera (stills, or Home Assistant's stream with `camera_view: live`), else the job's preview
+  (`image` picks); its shape and fit as the camera card's (16:9 by default), never taller than 360 — capped, it keeps
+  its shape, centred. A preview is fetched again only when its picture changes.
+- **The card's colour** stands in for the accent only: paused and failed keep the warning, whatever its colour (as an
+  item's colour never covers a status anywhere: an open window's tile stays the warning's).
+- **Narrow** (where a heater's widest pair, "888 / 888 °F", would not hold half the column at the extra-small size;
+  measured, never a fixed width): every heater reads alone and the layer writes its total as its unit ("112" with
+  "/ 240"), so two readouts hold a row where their figures fit.
+- **The progress row**: the progress at the large size and the time left beside it on its baseline; where the two (a
+  label or a figure, the wider) and 16 do not fit, the time left goes under, on the column's start, 12 below.
+- **The bar**: 8 tall, radius 4, in the phase's tone; under it one line: "Ready at 22:59" (the integration's finish
+  time: it does not drift), the time printed so far, the layer where no readout says it — its parts left out whole,
+  from the end. Finished: "Finished at 21:17", from the finish time or when the state changed, never now; another
+  day's moment says its day by the calendar ("Ready Fri at 05:27", a date from six days out), a job finished before
+  today how long ago ("Finished yesterday", "Finished 2 days ago").
+- **The readouts**: equal columns, as many a row as hold every label and every value — at the small size, else the
+  extra-small, before one fewer a row (two at the extra-small beat one at the small) — never leaving one alone on a row of three or four (four as two by two, five as three and two); a last
+  row that cannot fill is centred. A heater says "142 / 220 °C" from 3 °C off its target (5 °F), and its reading alone
+  from 1 °C (2 °F) (no flicker between); it is always measured as its widest form ("888 / 888"), so a drifting heater never moves the
+  card. Each readout opens its entity. Any entity of the printer can be one more (`sensors`).
+- **The filament unit's trays** (Bambu Lab's AMS): a 44 cell a tray, its colour as a 12 swatch and its type, the one
+  printing ringed in the accent (a 2 px ring and its words in the accent's ink, never a fill: the action row keeps the
+  one loud fill, and it says so to a reader, `aria-current`), an empty one with a dashed ring (a shape of its own); every
+  swatch has a ring in the text's ink at about half, so black filament on a dark card and white on a light one still
+  show. Four a row where every
+  type fits its cell, else two, else the swatches alone (the type is each one's label and tip), four across where each
+  keeps 44, else two by two. Cells with a hairline: a state, not buttons. The trays and the buttons share one gap, 8 to 16 (never wider
+  than the 16 between the two groups): the first that lands both rows on the 4 grid, else the one nearest 16 that
+  lands them on whole pixels; 4 only where nothing wider keeps every cell 44.
+- **The buttons**: pause or resume (the primary, in the row too), stop (asked first, in Home Assistant's dialog), the
+  light (the glyph takes the accent while it is on). Never a system button or an emergency stop.
+- **Tones**: printing, preparing and finished in the accent; paused and failed in the warning (failed with its own
+  glyph); at rest and stopped neutral; offline the unavailable skin.
+- **The ring** (the row): 2 px at r 26.5 round the 44 circle, 3.5 clear of it, from twelve o'clock.
 
 ## Room lights (1.4)
 
@@ -383,9 +585,14 @@ sits 16 under its head.
 - Paired readouts of different sizes are baseline-aligned (`data-baseline` group); side readouts get the padding that puts them on the big value's baseline.
 - A 16/600 value beside a 15/600 title or 14/500 legend name (list rows, bar rows, legend rows) carries `top: −1px`: Blink floors the half-leading, so in the same 20 px box the 16 px baseline lands 1 px low. One-line rows pair title and value in a `data-baseline` group; two-line rows (title + sub) centre the value on the pair instead.
 - Percent always with a thin space: `70 %`. Temperatures in compact surfaces: `21.5°`; on dials `21.5 °C`.
+- Celsius or Fahrenheit: a sensor's figure in its own unit, a climate's and a water heater's in the house's (Home
+  Assistant hands them in it). Nothing assumes Celsius: a range, a step or a threshold an entity does not give is Home
+  Assistant's own in the house's unit (a thermostat 7–35 °C by halves or 45–95 °F by whole degrees), and a readout is
+  measured as wide as the unit makes it (a chamber's 104 °F has three figures).
 - Compact family (tile + row): value `22°`, sub `Heating · 21.1°`. Dial family: value `21.5 °C`, sub `Now 20.8°`.
 - Segments after `·` are lowercase unless proper nouns. Never ellipsis on a value.
-- Chart bubbles: dark pill, tail on the cursor; charts reserve 44 px headroom so the bubble never touches the curve; the cursor sits at "now" and the fill stops there; the axis is the full 24 h (`00:00 … 24:00`) with labels placed by value (`axis()`), first left-aligned, last right-aligned — same rule as ruler labels.
+- Chart bubbles: dark pill, tail on the cursor; charts reserve 44 px headroom so the bubble never touches the curve (a
+  chart of several curves has no bubble: when is a pill on its axis row, so it keeps 12); the cursor sits at "now" and the fill stops there; the axis is the full 24 h (`00:00 … 24:00`) with labels placed by value (`axis()`), first left-aligned, last right-aligned — same rule as ruler labels.
 - Legends without dots unless each dot is a plotted series. Empty states: a 44 neutral ring on the card fill + one line of secondary text, centred in a 120 page-filled panel; the way out, when there is one, is the hint under it (it may wrap). An unavailable icon circle is the dashed ring alone, unfilled in every palette.
 - Flow diagrams: see § Energy (1.4) — contacts on the house are slots 20 px of arc apart, every arrowhead ends its lane.
 
@@ -399,6 +606,22 @@ sits 16 under its head.
 - **Highlight** (`--fluvy-highlight*`): a second brand colour, the accent where a palette has none, always a **fill with its on-fill ink** (never a stroke, text, chart or the primary action), at most one per region. It marks *here*: `--fluvy-selected` / `--fluvy-on-selected` fill the open tab (ink on a soft palette, the highlight on Volt and Iris); and, only on a palette that has one, *you* and *today* (`--fluvy-mark` / `--fluvy-on-mark`: the avatar, the calendar's today). Where a palette has no highlight there is no mark, and those places keep their accent design (on a solid palette its fill, never a dark ramp of it). Today keeps its colour when it is the selected day; another selected day takes the primary fill. Beside the mark (the greeting's avatar) the rooms' "here" is the ink pill, so the region holds one highlight: on a palette with a mark the rooms row always takes the ink pill, and the highlight's "here" is left to the settings panel's tabs.
 - **Custom palettes** go through the same derivation and gates, whatever colour is picked: an electric pick keeps its share of the gamut when its line has to go deeper to be seen (a pastel pink becomes a hot pink on white), the device colour it lands on becomes its twin, and crowded status or device colours turn a few degrees aside (at most 32° for a device, 24° for a status: a warning stays amber) until nothing is too close. "Electric" is asked of the accent only as far as the pick is: a dusty rose stays a dusty rose.
 - **Colour per card (2026-09-28).** A card's `color` — one of Home Assistant's colour names, or any `#rrggbb` — is *which colour that card is*: it stands in for the palette's accent inside the card (its chart's line and fill, its icon circle, its gauge's ring, its lit light — the accent's twin — its primary action, its ramp and graph series; the highlight too where the palette has none of its own), and nothing else: surfaces, text, the neutral ramp, the status and device tones and every Home Assistant name stay the palette's. The family is derived on the very palette the card wears (`--fluvy-palette`, written by the theme and by a look applied live) in the mode it is in, through the palette's own accent arithmetic (`deriveAccent`: the same ink fitting, fill legibility, on-fill and graph gates; a pick whose series sit too close stretches their tone stagger until they stand apart), and written into the card's shadow root on its children — never on the host, whose computed values the card reads — without `!important`. A part with a colour of its own and no tone is drawn in the accent (`toneOf`); a device tone (a fan, a heater, a speaker) is never recoloured. Home Assistant's colour names resolve through one table (`NAMED_COLORS`), the same the theme writes them from, each in the tone Home Assistant gives it (pink the armed rose, cyan the water, teal the presence green, brown the gas): a card asking for teal is the teal every Home Assistant surface shows. The editor offers Home Assistant's colour picker; its swatches show the palette's colours because the card editor dialog wears the look of its dashboard.
+- **An item's colour, at rest too (1.6, the one exception to "surfaces stay the palette's").** Lists of things
+  people tell apart by colour take a `color` per item: tiles, scenes, tabs, people (a ring round the avatar: a picture
+  would hide a fill), openings (its circle), rows, bars, stat tiles and lights. Its fill shows while the item is on (the
+  default), and the house may ask for it at rest too (`tint: always`, on tiles, a tiles group, a room's tiles, room
+  lights' tiles, scenes and tabs), on coloured items only: an item with no colour of its own keeps the card's surface.
+  A colour never covers a status: an open window, a jammed lock stay the warning's, circle, fill and words. Only a
+  `tone` asked for by name outranks a status (the house's choice): the circle and the fill take it.
+  At rest it is the item's rest wash (`--fluvy-accent-rest`, `-rest-inner` over the page on an inner tile) with the
+  fill's hairline; on, the full fill as ever. The rest wash is as much of the fill, up to 40 %, as keeps the words on
+  it — the primary and the secondary ink — at 4.5, derived per palette, mode and colour and gated in the build for all
+  of them: a tint palette's pale fill takes the 40 %; a solid one in dark gives about a quarter, still 1.18 or more
+  from the card. In a tint palette the whole way from the card to the fill is about 1.25, so the rest wash and the
+  fill are close in lightness: on and off are told apart by the icon circle (filled when on), the fill's step and the
+  state's word. The words keep
+  their usual ink. A named colour is Home Assistant's tone on the palette (amber is the lit light's ink, which a
+  palette may move aside): the palette keeps its harmony, and a hex picks one exactly.
 - Text on a filled surface uses that surface's on-fill ink (a tile's state line, a scene row's time), never the page's secondary.
 - Gates (build and tests, every preset and custom combinations): text 4.5, icons and graphics 3, ink on fill 4.5, icon on its resting circle 3, hairline 1.35, card vs page 1.18 (light), dark card lift 4–6 pp, ΔE separation of series and roles.
 

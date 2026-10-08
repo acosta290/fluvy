@@ -38,6 +38,7 @@ import {
   nameIconFields,
   selectField,
 } from '../shared/form.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 /** How the card is drawn: the full dimmer, or the compact one (its level in the head, the ruler alone); `auto` picks by width. */
 export type LightVariant = 'auto' | 'full' | 'compact';
@@ -119,6 +120,13 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     'show_temperature',
     'temperature_tint',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    live_update: false,
+    variant: 'auto',
+    show_temperature: true,
+    temperature_tint: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

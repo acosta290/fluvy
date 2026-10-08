@@ -319,6 +319,42 @@ export const sheet: SheetSpec = {
     ['zone.am_work', '0', { friendly_name: 'Work', latitude: 41.5, longitude: 2.2, radius: 200 }],
     ['person.am_noa', 'unknown', { friendly_name: 'Noa' }],
     ['person.am_guest', 'unavailable', { friendly_name: 'Guest' }],
+    /* the family's phones: a tracker each and its battery on the same device (the registry below ties them) */
+    ['device_tracker.marta_phone', 'home', { friendly_name: 'Marta’s phone', source_type: 'gps' }],
+    ['device_tracker.pau_phone', 'home', { friendly_name: 'Pau’s phone', source_type: 'gps' }],
+    ['device_tracker.ona_phone', 'not_home', { friendly_name: 'Ona’s phone', source_type: 'gps' }],
+    [
+      'sensor.marta_phone_battery',
+      '78',
+      { friendly_name: 'Marta’s phone battery', unit_of_measurement: '%', device_class: 'battery' },
+    ],
+    [
+      'sensor.pau_phone_battery',
+      '18',
+      { friendly_name: 'Pau’s phone battery', unit_of_measurement: '%', device_class: 'battery' },
+    ],
+    [
+      'sensor.ona_phone_battery',
+      'unavailable',
+      { friendly_name: 'Ona’s phone battery', unit_of_measurement: '%', device_class: 'battery' },
+    ],
+    // Marta's phone is on its charger (Android's charging sensor, on its device)
+    [
+      'binary_sensor.marta_phone_is_charging',
+      'on',
+      { friendly_name: 'Marta’s phone is charging', device_class: 'battery_charging' },
+    ],
+    // a tracker that keeps its battery as an attribute (Life360, iCloud3), with no sensor of its own
+    [
+      'device_tracker.lia_phone',
+      'home',
+      { friendly_name: 'Lia', source_type: 'gps', battery_level: 54 },
+    ],
+    [
+      'sensor.jan_watch_battery',
+      '64',
+      { friendly_name: 'Jan’s watch', unit_of_measurement: '%', device_class: 'battery' },
+    ],
 
     ['binary_sensor.am_front_door', 'off', { friendly_name: 'Front door', device_class: 'door' }],
     [
@@ -342,6 +378,7 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Garage door', device_class: 'garage_door' },
     ],
     ['binary_sensor.am_smoke', 'off', { friendly_name: 'Smoke', device_class: 'smoke' }],
+    ['binary_sensor.am_attic_smoke', 'on', { friendly_name: 'Attic smoke', device_class: 'smoke' }],
     [
       'binary_sensor.am_basement_leak',
       'on',
@@ -373,6 +410,56 @@ export const sheet: SheetSpec = {
     ['script.am_goodnight', 'off', { friendly_name: 'Good night', last_triggered: at(-46 * HOUR) }],
     ['scene.am_gone', 'unavailable', { friendly_name: 'Holiday' }],
   ],
+
+  // the phones' devices: a person's battery is found on the device of the tracker they are seen by
+  registry: {
+    entities: Object.fromEntries(
+      (['marta', 'pau', 'ona'] as const)
+        .flatMap((who) => [
+          [
+            `device_tracker.${who}_phone`,
+            {
+              entity_id: `device_tracker.${who}_phone`,
+              device_id: `d-${who}-phone`,
+              labels: [],
+              platform: 'mobile_app',
+            },
+          ],
+          [
+            `sensor.${who}_phone_battery`,
+            {
+              entity_id: `sensor.${who}_phone_battery`,
+              device_id: `d-${who}-phone`,
+              labels: [],
+              platform: 'mobile_app',
+            },
+          ],
+        ])
+        .concat([
+          [
+            'binary_sensor.marta_phone_is_charging',
+            {
+              entity_id: 'binary_sensor.marta_phone_is_charging',
+              device_id: 'd-marta-phone',
+              labels: [],
+              platform: 'mobile_app',
+            },
+          ],
+        ]),
+    ),
+    devices: Object.fromEntries(
+      (['marta', 'pau', 'ona'] as const).map((who) => [
+        `d-${who}-phone`,
+        {
+          id: `d-${who}-phone`,
+          name: `${who}'s phone`,
+          name_by_user: null,
+          area_id: null,
+          labels: [],
+        },
+      ]),
+    ),
+  },
 
   history: {
     'sensor.am_living_temperature': TEMPERATURE,
@@ -450,6 +537,113 @@ export const sheet: SheetSpec = {
       ],
     },
     {
+      title: 'Openings · each its own name',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          _now,
+          rows: [
+            { entity: 'binary_sensor.am_front_door', name: 'Front door' },
+            { entity: 'binary_sensor.am_kitchen_window', name: 'Kitchen', icon: 'blinds' },
+            { entity: 'binary_sensor.am_garage_door', name: 'Garage', color: 'purple' },
+            'binary_sensor.am_hallway_motion',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Openings · compact, no times',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          variant: 'compact',
+          show_time: false,
+          _now,
+          rows: [
+            { entity: 'binary_sensor.am_front_door', name: 'Front door', color: 'teal' },
+            { entity: 'binary_sensor.am_kitchen_window', name: 'Kitchen', icon: 'blinds' },
+            {
+              entity: 'binary_sensor.am_garage_door',
+              name: 'Garage',
+              icon: 'car',
+              color: 'purple',
+            },
+            'binary_sensor.am_kitchen_leak',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Openings · tiles',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          variant: 'tiles',
+          _now,
+          rows: [
+            { entity: 'binary_sensor.am_front_door', name: 'Front door', color: 'teal' },
+            { entity: 'binary_sensor.am_kitchen_window', name: 'Kitchen' },
+            {
+              entity: 'binary_sensor.am_garage_door',
+              name: 'Garage',
+              icon: 'car',
+              color: 'purple',
+            },
+            'binary_sensor.am_kitchen_leak',
+          ],
+        },
+      ],
+    },
+    // compact with a sensor gone and more than fit: a value never wraps, the "all sensors" row says "+n"
+    {
+      title: 'Openings · compact, one gone, folded',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          variant: 'compact',
+          max_rows: 2,
+          _now,
+          rows: [
+            'binary_sensor.am_missing_window',
+            'binary_sensor.am_front_door',
+            'binary_sensor.am_kitchen_window',
+            'binary_sensor.am_garage_door',
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Sensors · two on one chart',
+      cards: [
+        {
+          type: 'custom:fluvy-sensor-card',
+          entity: 'sensor.am_living_temperature',
+          name: 'Living room',
+          entities: ['sensor.am_living_humidity'],
+          _now,
+        },
+      ],
+    },
+    {
+      title: 'Sensors · three, one a word, one gone',
+      cards: [
+        {
+          type: 'custom:fluvy-sensor-card',
+          entity: 'sensor.am_living_temperature',
+          name: 'Living room',
+          entities: [{ entity: 'sensor.am_house_power', name: 'Power' }, 'sensor.am_washer'],
+          _now,
+        },
+        {
+          type: 'custom:fluvy-sensor-card',
+          entity: 'sensor.am_pressure',
+          entities: ['sensor.am_living_temperature', 'sensor.am_broken'],
+          hours: 72,
+          _now,
+        },
+      ],
+    },
+    {
       title: 'Openings & motion',
       cards: [
         {
@@ -466,12 +660,63 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the smoke folded under "all sensors": its row says it before its count, whatever the width
+    {
+      title: 'Openings · smoke under the fold',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          _now,
+          entities: [
+            'binary_sensor.am_front_door',
+            'binary_sensor.am_kitchen_window',
+            'binary_sensor.am_hallway_motion',
+            'binary_sensor.am_kitchen_leak',
+            'binary_sensor.am_garage_door',
+            'binary_sensor.am_attic_smoke',
+          ],
+        },
+      ],
+    },
     {
       title: 'Who is home',
       cards: [
         {
           type: 'custom:fluvy-people-card',
           entities: ['person.am_marta', 'person.am_pau', 'person.am_ona'],
+          _now,
+        },
+      ],
+    },
+    // their phones' batteries, found from the trackers they are seen by (Pau's is low; Ona's cannot be read)
+    {
+      title: 'Who is home · batteries',
+      cards: [
+        {
+          type: 'custom:fluvy-people-card',
+          entities: ['person.am_marta', 'person.am_pau', 'person.am_ona'],
+          show_battery: true,
+          _now,
+        },
+      ],
+    },
+    // each person their own: a name, a battery named by hand, a colour, and a page of their own on a tap
+    {
+      title: 'Who is home · each their own',
+      cards: [
+        {
+          type: 'custom:fluvy-people-card',
+          variant: 'rows',
+          show_battery: true,
+          people: [
+            {
+              entity: 'person.am_marta',
+              tap_action: { action: 'navigate', navigation_path: '/fluvy-home/marta' },
+            },
+            { entity: 'person.am_pau', color: 'teal' },
+            { entity: 'person.am_jan', name: 'Jan', battery: 'sensor.jan_watch_battery' },
+            { entity: 'device_tracker.lia_phone', color: 'purple' },
+          ],
           _now,
         },
       ],

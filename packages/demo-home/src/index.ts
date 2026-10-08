@@ -73,6 +73,7 @@ export const DEMO_DEVICES: readonly DemoDevice[] = [
   { id: 'd-living', area_id: 'living_room', name: 'Zigbee hub' },
   { id: 'd-washer', area_id: null },
   { id: 'd-garden', area_id: 'garden' },
+  { id: 'd-printer', area_id: null, name: 'P1S' },
 ];
 
 const power = { device_class: 'power', unit_of_measurement: 'W' } as const;
@@ -174,7 +175,34 @@ export const DEMO_HOME: readonly DemoEntity[] = [
 ];
 
 /** One of everything the library has a card for, on top of the ordinary house. */
+/** A 3D printer (Bambu Lab's words): its state, how far it is, its nozzle, its pause and stop. */
+const printer = (
+  id: string,
+  state: string,
+  translation_key: string,
+  attributes = {},
+): DemoEntity => ({
+  id,
+  state,
+  attributes,
+  registry: { device_id: 'd-printer', platform: 'bambu_lab', translation_key },
+});
+
 export const DEMO_EXTRAS: readonly DemoEntity[] = [
+  printer('sensor.p1s_print_status', 'running', 'print_status', {
+    friendly_name: 'P1S Print status',
+  }),
+  printer('sensor.p1s_print_progress', '62', 'print_progress', { unit_of_measurement: '%' }),
+  printer('sensor.p1s_remaining_time', '72', 'remaining_time', {
+    unit_of_measurement: 'min',
+    device_class: 'duration',
+  }),
+  printer('sensor.p1s_nozzle_temperature', '220', 'nozzle_temp', {
+    unit_of_measurement: '°C',
+    device_class: 'temperature',
+  }),
+  printer('button.p1s_pause_printing', 'unknown', 'pause'),
+  printer('button.p1s_stop_printing', 'unknown', 'stop'),
   {
     id: 'cover.living_room_blinds',
     state: 'open',

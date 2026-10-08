@@ -34,15 +34,17 @@ function tile(
 /** Unavailable, the way every fluvy tile says it: the short dashed tile, the ban glyph, the word. */
 function offTile(ctx: ViewContext, name: string): TemplateResult {
   const open = (): void => ctx.open();
-  const word = s(ctx.hass, 'off');
-  // in a narrow column the word needs the glyph's place: the dashed tile already says what the glyph would
-  const glyph = textWidth(word, FACE.tile) <= ctx.width - 56;
+  const off = s(ctx.hass, 'off');
+  // in a narrow column the word needs the glyph's place: the dashed tile already says what the glyph would — and
+  // the dash says it where not even the word fits, as every tile's does
+  const glyph = textWidth(off, FACE.tile) <= ctx.width - 56;
+  const word = glyph || textWidth(off, FACE.tile) <= ctx.width ? off : '—';
   return html`<article
     class="fv-tile fv-tile--off fv-tile--tap"
     data-card
     role="button"
     tabindex="0"
-    aria-label=${`${name} · ${word}`}
+    aria-label=${`${name} · ${off}`}
     @click=${open}
     @keydown=${onActivate(open)}
   >
@@ -80,14 +82,21 @@ function dateTile(ctx: ViewContext): TemplateResult {
           FACE.tile,
         )
       : counted;
+  const day = String(today.getDate());
+  const month = words.monthShort(today);
+  const tight =
+    textWidth(day, { size: 40, weight: 600, tracking: -0.02 }) +
+      8 +
+      textWidth(month, { size: 16, weight: 600 }) >
+    ctx.width;
   return tile(
     ctx,
     `${name} · ${ready ? state : ''}`,
     undefined,
     html` <div class="fv-tile__head">
-        <span class="cd-tile__date"
-          ><span class="cd-tile__day" data-baseline="td">${today.getDate()}</span
-          ><span class="cd-tile__month" data-baseline="td">${words.monthShort(today)}</span></span
+        <span class="cd-tile__date ${tight ? 'cd-tile__date--tight' : ''}"
+          ><span class="cd-tile__day" data-baseline="td">${day}</span
+          ><span class="cd-tile__month" data-baseline="td">${month}</span></span
         >
       </div>
       ${

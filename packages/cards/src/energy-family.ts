@@ -84,8 +84,10 @@ export const energyHeight = (config: LovelaceCardConfig): number =>
   config['variant'] === 'compact'
     ? 240
     : config['variant'] === 'sources'
-      ? 520 // the legend's five items (three origins, charged, exported) fold into two rows
-      : 320 + (listLength(config, ['legend']) ? 60 : 0);
+      ? 468 // the legend's five items (three origins, charged, exported) fold into two rows
+      : config['variant'] === 'overview'
+        ? 492 // the taller chart (184) over the same legend
+        : 320 + (listLength(config, ['legend']) ? 60 : 0);
 
 /**
  * The devices at a 360 column: a 76 bar row each, one more under each parent (what its devices leave unmeasured) and

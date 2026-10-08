@@ -1,4 +1,5 @@
 import { walkShadow } from '../shell/dom.js';
+import { markView } from './view.js';
 
 /**
  * A dashboard's view tabs (Home Assistant's own, in its header): how the dashboards that wear the look draw them.
@@ -108,7 +109,17 @@ export type RootElement = HTMLElement & {
     panels?: Record<string, { title?: string | null } | undefined>;
     localize?: (key: string) => string;
   };
-  lovelace?: { editMode?: boolean; config?: { title?: string } };
+  lovelace?: {
+    editMode?: boolean;
+    config?: {
+      title?: string;
+      views?: ReadonlyArray<{ subview?: boolean; back_path?: string; title?: string } | undefined>;
+    };
+  };
+  /** The view shown (its index in the configuration), Home Assistant's own state. */
+  _curView?: number | string;
+  /** Home Assistant's way back from a subview (its view's `back_path`, its history, the dashboard). */
+  _goBack?: () => void;
 };
 
 /** What a dashboard's header wears: its tabs and the corner. */
@@ -324,6 +335,8 @@ export async function patchViewRoots(
     proto.updated = function (this: RootElement, changes: unknown): void {
       original.call(this, changes);
       markRoot(this, marksFor(this, tabsFor));
+      // whether it shows a subview, whatever the look: a wall draws its way back from it
+      markView(this);
     };
     const actions = proto._renderActionItems;
     if (typeof actions === 'function')

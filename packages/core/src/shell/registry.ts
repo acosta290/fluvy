@@ -90,7 +90,14 @@ import { headerBarCss, notificationItemCss, notificationsCss } from './css/notif
 import { pageCss } from './css/page.js';
 import { viewTabsCss } from './css/tabs.js';
 import { deviceZoomCss } from './css/zoom.js';
-import { wallDashboardCss, wallDrawerCss, wallPageCss } from './css/wall.js';
+import {
+  wallDashboardCss,
+  wallDrawerCss,
+  wallPageCss,
+  wallSubviewBackCss,
+  wallSubviewHeaderCss,
+} from './css/wall.js';
+import { WALL_BACK_ATTRIBUTE, WALL_HEADER_ATTRIBUTE } from '../look/attributes.js';
 import {
   dateRangeNavCss,
   debugViewportCss,
@@ -246,6 +253,23 @@ export const SHEETS: readonly ShellSheet[] = [
     css: wallDashboardCss,
     probe: '.header',
     choice: 'wall',
+  },
+  // its way back from a subview: Home Assistant's header there, or room for the floating button
+  {
+    id: 'wall:subview-header',
+    target: 'hui-root',
+    css: wallSubviewHeaderCss,
+    probe: '.header',
+    choice: 'wall',
+    when: WALL_HEADER_ATTRIBUTE,
+  },
+  {
+    id: 'wall:subview-back',
+    target: 'hui-root',
+    css: wallSubviewBackCss,
+    probe: '#view',
+    choice: 'wall',
+    when: WALL_BACK_ATTRIBUTE,
   },
   { id: 'view-header', target: 'hui-view-header', css: viewHeaderCss },
   { id: 'view-badges', target: 'hui-view-badges', css: viewBadgesCss },

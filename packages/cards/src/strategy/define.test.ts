@@ -1,13 +1,16 @@
 // @vitest-environment happy-dom
 import { demoHass } from '@fluvy/demo-home';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
-import '../index.js';
+import { familiesDefined } from '../index.js';
 import { defineStrategies, TEMPLATE_IDS } from './define.js';
 import { generate } from './generate.js';
 import { TEMPLATES } from './templates.js';
 
 describe('the strategies defined for Home Assistant', () => {
+  // the families' chunks are fetched as the module loads: they land before the file's environment goes
+  afterAll(() => familiesDefined);
+
   it('defines one element per template, and names the same five the templates do', () => {
     defineStrategies();
     defineStrategies(); // a second definition is not an error: each tag is defined once

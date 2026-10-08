@@ -137,6 +137,11 @@
   height: 20px;
 }
 
+/* a row that unfolds more, open: its chevron turns up */
+.fv-row.is-open .fv-row__chevron svg {
+  transform: rotate(-90deg);
+}
+
 /* a row that offers one action: a 36 quiet button at its end (the whole row is the tap target) */
 .fv-row__btn {
   flex: 0 0 auto;

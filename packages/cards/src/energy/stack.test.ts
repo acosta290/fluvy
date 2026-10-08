@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { aggregate, BELOW_ROOM, integrate, meterBlock, stackOf, stackShape } from './stack.js';
+import {
+  aggregate,
+  BELOW_ROOM,
+  chargeLine,
+  crosses,
+  flowShape,
+  flowsOf,
+  integrate,
+  integrateFlows,
+  meterBlock,
+  stackOf,
+  stackShape,
+} from './stack.js';
 
 const DAY = Date.parse('2026-09-30T22:00:00Z');
 const bucket = (minute: number, totals: Record<string, number>) => ({
@@ -37,8 +49,8 @@ describe('the house by source', () => {
     const shape = stackShape(points, 320, 160);
     expect(shape.layers.map((l) => l.key)).toEqual(['solar', 'battery', 'grid']);
     expect(shape.below.map((b) => b.key)).toEqual(['exported']);
-    // 1.8 kW used at the top and 1.2 kW out: the line sits 12 + 148 × 1.8 / 3 down
-    expect(shape.zero).toBeCloseTo(12 + (148 * 1.8) / 3);
+    // 1.8 kW used at the top and 1.2 kW out: the line sits 12 + 147 × 1.8 / 3 down (the foot a pixel up, its edge whole)
+    expect(shape.zero).toBeCloseTo(12 + (147 * 1.8) / 3);
     expect(shape.y(0)).toBeCloseTo(shape.zero);
   });
 
@@ -53,7 +65,7 @@ describe('the house by source', () => {
     const shape = stackShape(points, 320, 160);
     expect(shape.below.map((b) => b.key)).toEqual(['charged', 'exported']);
     // 1.2 kW used, 3.6 kW charged and 1.2 kW exported: one scale for 1.2 up and 4.8 down
-    expect(shape.zero).toBeCloseTo(12 + (148 * 1.2) / 6);
+    expect(shape.zero).toBeCloseTo(12 + (147 * 1.2) / 6);
   });
 
   it('a day with nothing out keeps its line at the bottom', () => {
@@ -63,7 +75,7 @@ describe('the house by source', () => {
       160,
     );
     expect(shape.below).toEqual([]);
-    expect(shape.zero).toBeCloseTo(160);
+    expect(shape.zero).toBeCloseTo(159);
   });
 
   it('never joins points across a gap: a run a stretch of data, a lone point across its own bucket', () => {
@@ -162,10 +174,118 @@ describe('the room under the line', () => {
       exported,
     });
     const shape = stackShape([point(0.05), { ...point(0.05), at: 0.51 }], 1440, 200);
-    expect(200 - shape.zero).toBeCloseTo(BELOW_ROOM);
+    expect(199 - shape.zero).toBeCloseTo(BELOW_ROOM);
     // the same kW is the same height above and below
     expect(shape.y(1) - shape.y(2)).toBeCloseTo(shape.y(-1) - shape.y(0));
     // nothing out: no room taken
-    expect(stackShape([point(0), { ...point(0), at: 0.51 }], 1440, 200).zero).toBe(200);
+    expect(stackShape([point(0), { ...point(0), at: 0.51 }], 1440, 200).zero).toBe(199);
+  });
+});
+
+describe('the whole house', () => {
+  it('keeps every flow as it came: the sun’s whole production above, the charge and the export below', () => {
+    // 12:00: 6 kW of sun, 4.5 into the battery, 0.2 out to the grid; the house used the rest (1.3)
+    const [p] = flowsOf([bucket(720, { solar: 6, toBattery: 4.5, toGrid: 0.2 })], DAY, 5, 'kW');
+    expect(p?.into.solar).toBeCloseTo(6);
+    expect(p?.out.battery).toBeCloseTo(4.5);
+    expect(p?.out.grid).toBeCloseTo(0.2);
+    expect(p?.house).toBeCloseTo(1.3);
+    expect(p?.into.grid).toBe(0);
+  });
+
+  it('turns meters’ energy into power over their block', () => {
+    const [p] = flowsOf([bucket(720, { solar: 0.75, fromBattery: 0.25 })], DAY, 15);
+    expect(p?.into.solar).toBeCloseTo(3);
+    expect(p?.into.battery).toBeCloseTo(1);
+    expect(p?.at).toBeCloseTo((720 + 7.5) / 1440);
+  });
+
+  it('stacks the sources from the sun up and the outflows from the line down, on one kW scale', () => {
+    const points = flowsOf(
+      [
+        bucket(0, { fromBattery: 0.8, fromGrid: 0.2 }),
+        bucket(5, { fromBattery: 0.8, fromGrid: 0.2 }),
+        bucket(720, { solar: 5, toBattery: 2, toGrid: 1 }),
+        bucket(725, { solar: 5, toBattery: 2, toGrid: 1 }),
+      ],
+      DAY,
+      5,
+      'kW',
+    );
+    const shape = flowShape(points, 320, 184, 28);
+    expect(shape.above.map((a) => a.key)).toEqual(['solar', 'battery', 'grid']);
+    expect(shape.below.map((b) => b.key)).toEqual(['battery', 'grid']);
+    // 5 kW at the top and 3 kW out: the line sits 28 + 155 × 5 / 8 down, the deepest outflow on the foot (183)
+    expect(shape.zero).toBeCloseTo(28 + (155 * 5) / 8);
+    expect(shape.y(-3)).toBeCloseTo(183);
+    // the house's line is drawn over the stacks
+    expect(shape.house.startsWith('M')).toBe(true);
+  });
+
+  it('splits every area and the house’s line where the recorder stopped', () => {
+    const points = flowsOf(
+      [
+        bucket(0, { fromGrid: 1 }),
+        bucket(5, { fromGrid: 1 }),
+        bucket(60, { fromGrid: 1 }),
+        bucket(65, { fromGrid: 1 }),
+      ],
+      DAY,
+      5,
+      'kW',
+    );
+    const shape = flowShape(points, 320, 184, 28);
+    expect(shape.house.match(/M/g)).toHaveLength(2);
+    expect(shape.above[0]?.area.match(/M/g)).toHaveLength(2);
+  });
+
+  it('adds the day up from its power: kWh by source, outflow and the house', () => {
+    const points = flowsOf(
+      [bucket(720, { solar: 6, toBattery: 3 }), bucket(725, { solar: 6, toBattery: 3 })],
+      DAY,
+      5,
+      'kW',
+    );
+    const day = integrateFlows(points, 5);
+    expect(day.into.solar).toBeCloseTo(1);
+    expect(day.out.battery).toBeCloseTo(0.5);
+    expect(day.house).toBeCloseTo(0.5);
+  });
+
+  it('draws the charge on its own scale: 100 % at the top, 0 % at the foot, split at a gap', () => {
+    const line = chargeLine(
+      [
+        { at: 0, level: 50 },
+        { at: 5 / 1440, level: 60 },
+        { at: 120 / 1440, level: 80 },
+        { at: 125 / 1440, level: 100 },
+      ],
+      320,
+      28,
+      184,
+    );
+    expect(line.y(100)).toBe(28);
+    expect(line.y(0)).toBe(184);
+    expect(line.y(150)).toBe(28); // never outside its scale
+    expect(line.line.match(/M/g)).toHaveLength(2);
+    // each run is laid out a whole number of 4 · 4 dashes long, ending on a dash: a gap reads as two ends
+    expect(line.runs).toHaveLength(2);
+    for (const run of line.runs) expect((run.dashes - 4) % 8).toBe(0);
+  });
+
+  it('knows whether the charge runs through a tag’s box, between its points too', () => {
+    const line = chargeLine(
+      [
+        { at: 0, level: 0 },
+        { at: 0.5, level: 100 },
+      ],
+      320,
+      28,
+      184,
+      1,
+    );
+    // the diagonal from (0, 184) to (160, 28) passes x 80 at y 106, with no point of its own there
+    expect(crosses(line.runs, { x: 76, y: 100, w: 8, h: 12 })).toBe(true);
+    expect(crosses(line.runs, { x: 240, y: 100, w: 60, h: 24 })).toBe(false);
   });
 });

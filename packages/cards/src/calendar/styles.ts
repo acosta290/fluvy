@@ -62,6 +62,20 @@ export const calendarStyles = css`
     text-align: left;
   }
 
+  /* a state in words ("Aucun événement", "7 prochains jours") takes a second line rather than lose its end: the 168
+     tile keeps one line free under its meta for it */
+  .cd-tile .fv-tile__state:not(.cd-tile__meta) {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+
+  /* a month's abbreviation too long to stand 8 from its day in a narrow tile ("17 Sept") stands one step closer */
+  .cd-tile__date--tight {
+    gap: 4px;
+  }
+
   .fv-tile--off {
     display: flex;
     height: 76px;

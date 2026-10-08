@@ -76,6 +76,8 @@ const NEVER_INITIAL = [
   'fluvy-time-field',
   'fluvy-panel',
   'fluvy-wall-corner',
+  'fluvy-wall-back',
+  'fluvy-keypad',
   'fluvy-rows-editor',
 ];
 for (const name of initial) {

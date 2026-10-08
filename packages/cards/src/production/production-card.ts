@@ -47,12 +47,13 @@ import {
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { houseDay, loadDay, loadPowerDay, type DayRecord } from './day.js';
 
 import { hourlyForecast } from './forecast.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { statsColumns, statsSize, type StatText } from '../shared/readouts.js';
 
 const strings = words('production');
 
@@ -138,6 +139,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       .so-cols .fv-readout__label {
         white-space: nowrap;
       } /* a label never drops onto its value */
+      .so-cols--odd > :last-child {
+        grid-column: 1 / -1;
+      }
       .fv-axis span {
         white-space: nowrap;
       } /* "12 AM" on a 12-hour clock is one label */
@@ -218,6 +222,12 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     keys: [{ from: 'title', to: 'name' }],
     items: { arrays: ITEM_ALIASES },
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    show_forecast: true,
+    show_peak: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -574,20 +584,41 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       }
       ${axis(this.contentWidth < AXIS_FULL ? [ticks[0], ticks[2], ticks[4]].filter((tick) => !!tick) : ticks)}
       ${arrays.length ? this.renderLegend(arrays, hourNow, hovered, unusable ? 'neutral' : tone) : nothing}
-      ${
-        compact || arrays.length
-          ? nothing
-          : html`<div class="so-cols fv-cols">
-              ${
-                this.config?.show_peak === false
-                  ? nothing
-                  : html`${readout({ label: strings(this.hass, 'peak'), value: peak.value, unit: peak.unit, size: 's' })}
-                    ${readout({ label: strings(this.hass, 'peak_at'), value: known && peakValue > 0 ? this.hourLabel(peakHour) : '—', size: 's' })}`
-              }
-              ${readout({ label: strings(this.hass, 'sun_hours'), value: known ? formatNumber(this.hass, sunHours, { digits: 1 }) : '—', unit: known ? strings(this.hass, 'hour') : '', size: 's' })}
-            </div>`
-      }
+      ${compact || arrays.length ? nothing : this.renderStats(peak, known && peakValue > 0 ? this.hourLabel(peakHour) : '—', known ? formatNumber(this.hass, sunHours, { digits: 1 }) : null)}
     </article>`;
+  }
+
+  /**
+   * The day's statistics under the bars — the peak and its hour (unless asked away) and the sun hours — in three
+   * columns while every label and figure holds in its third, else fewer, a shorter last row taking the whole row; the
+   * figures at the size the widest still fits.
+   */
+  private renderStats(
+    peak: { readonly value: string; readonly unit: string },
+    peakAt: string,
+    sunHours: string | null,
+  ): TemplateResult {
+    const stats: StatText[] = [
+      ...(this.config?.show_peak === false
+        ? []
+        : [
+            { label: strings(this.hass, 'peak'), ...peak },
+            { label: strings(this.hass, 'peak_at'), value: peakAt },
+          ]),
+      {
+        label: strings(this.hass, 'sun_hours'),
+        value: sunHours ?? '—',
+        unit: sunHours === null ? '' : strings(this.hass, 'hour'),
+      },
+    ];
+    const columns = statsColumns(this.head.ruler, this.contentWidth, stats);
+    const size = statsSize(this.head.ruler, this.contentWidth, stats, columns);
+    return html`<div
+      class="so-cols fv-cols ${stats.length % columns ? 'so-cols--odd' : ''}"
+      style="grid-template-columns:repeat(${columns}, minmax(0, 1fr))"
+    >
+      ${stats.map((stat) => readout({ ...stat, size }))}
+    </div>`;
   }
 
   /**

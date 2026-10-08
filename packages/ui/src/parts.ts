@@ -1,4 +1,4 @@
-import { html, nothing, type TemplateResult } from 'lit';
+import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
   clickPress,
   preventMenu,
@@ -124,8 +124,10 @@ export const badge = (text: string, tone: Tone = 'accent'): TemplateResult =>
   html`<span class="fv-badge fv-badge--${tone}" data-control data-fit="28">${text}</span>`;
 
 export interface ReadoutOptions {
-  readonly label: string;
-  readonly value: string;
+  /** Words, or a name with what goes beside it (a curve's key) when the label lays out its own parts. */
+  readonly label: string | TemplateResult;
+  /** A figure, or one with what goes before it (a filament's swatch). */
+  readonly value: string | TemplateResult;
   readonly unit?: string;
   readonly size?: 'xs' | 's' | 'm' | 'l';
   readonly trend?: 'up' | 'down' | undefined;
@@ -427,19 +429,32 @@ export interface ListRowOptions {
   /** Shown as it is but not changeable here (someone who may only look): full strength, a switch that does not move. */
   readonly readonly?: boolean;
   readonly onTap?: (() => void) | undefined;
+  /** A still press on the row (its tap then never runs for that press); a row without one taps on click alone. */
+  readonly onHold?: (() => void) | undefined;
   readonly onToggle?: ((next: boolean) => void) | undefined;
   /** The row's own colour (`data-accent`, derived by the card's accent sheet): the accent inside the row. */
   readonly accent?: string | undefined;
   /** The 48 row: a 36 circle, the title alone (no sub). */
   readonly compact?: boolean;
+  /** A row that unfolds more (`trailing: 'chevron'`): open, its chevron turns up and it says it is expanded. */
+  readonly open?: boolean;
+  /** What a reader hears for the row, where its words leave something out (a sensor gone, said only by its skin). */
+  readonly label?: string;
 }
 
 /** A value that reads as words, not a figure: it may take two lines instead of one. */
 const words = (value: string | undefined): boolean => /[a-zà-ÿ]{3}/i.test(value ?? '');
 const wordy = (value: string | undefined): boolean => (value ?? '').length > 14 && words(value);
-/** A value in words: prose (`--text`, a smaller two-line style) or a short state (`--words`, which a card may let wrap). */
+/**
+ * A value in words: prose (`--text`, a smaller two-line style) or a short state of several words (`--words`, which a
+ * card may let wrap between them; one word has no second line to take, and stays a value).
+ */
 const wordsClass = (value: string | undefined): string =>
-  wordy(value) ? 'fv-row__value--text' : words(value) ? 'fv-row__value--words' : '';
+  wordy(value)
+    ? 'fv-row__value--text'
+    : words(value) && /\S\s+\S/.test(value ?? '')
+      ? 'fv-row__value--words'
+      : '';
 
 /** 60 px row: icon circle, title/sub, one trailing element. */
 export function listRow(o: ListRowOptions): TemplateResult {
@@ -466,11 +481,17 @@ export function listRow(o: ListRowOptions): TemplateResult {
               >`
             : nothing;
   return html`<div
-    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''}"
+    class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''} ${o.open ? 'is-open' : ''}"
     data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
+    aria-expanded=${o.open === undefined ? nothing : o.open ? 'true' : 'false'}
+    aria-label=${o.label ?? nothing}
     tabindex=${o.onTap ? 0 : nothing}
-    @click=${o.onTap ?? nothing}
+    .fvTap=${o.onHold ? o.onTap : undefined}
+    .fvHold=${o.onHold}
+    @pointerdown=${o.onHold ? startPress : nothing}
+    @contextmenu=${o.onHold ? preventMenu : nothing}
+    @click=${o.onHold ? clickPress : (o.onTap ?? nothing)}
     @keydown=${activateKey(o.onTap)}
   >
     ${rowIcon(o.icon, o.tone)}
@@ -655,4 +676,28 @@ export function fitPills(root: ParentNode, force = false): void {
     box.style.paddingRight = `${Math.max(0, width - natural - lead)}px`;
     el.dataset['fitKey'] = text;
   });
+}
+
+/** A charging battery's bolt, across the glyph. */
+const BOLT = 'M12.5 6.5 9 12.5h4l-1.5 5';
+/** At this charge and under, a battery is low: the warning ink, its glyph and its figure both. */
+export const LOW_BATTERY = 20;
+
+/**
+ * A battery's charge (a phone's beside its person): the set's battery glyph filled to its level — 12 wide inside, never
+ * under 3 so a low one shows — a bolt across it while it charges, and the figure ("78 %", "—" unread). Low and not
+ * charging, glyph and figure take the warning ink.
+ */
+export function batteryLevel(
+  level: number | null,
+  figure: string,
+  charging = false,
+): TemplateResult {
+  const low = level !== null && level <= LOW_BATTERY && !charging;
+  const fill = level === null || level <= 0 ? 0 : Math.max(3, (12 * level) / 100);
+  return html`<span class="fv-battery ${low ? 'is-low' : ''} ${charging ? 'is-charging' : ''}"
+    >${svg`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2"/>${fill > 0 ? svg`<rect class="fv-battery__level" x="5" y="10" width=${fill.toFixed(2)} height="4" rx="1"/>` : nothing}${charging ? svg`<path class="fv-battery__halo" d=${BOLT}/><path class="fv-battery__bolt" d=${BOLT}/>` : nothing}</svg>`}<span
+      >${figure}</span
+    ></span
+  >`;
 }

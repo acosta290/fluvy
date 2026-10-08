@@ -82,6 +82,8 @@ export function homeView(ctx: StrategyContext): Section[] {
         full('media', { entity: id, variant: 'mini', ...home.named(id) }),
       ]),
       ...when(home.first('vacuum'), (id) => [full('vacuum', { entity: id, ...home.named(id) })]),
+      // every printer, compact: an overview's card (the camera and the buttons are a tap away, on the device)
+      ...home.printers.map((device) => full('printer', { device, variant: 'compact' })),
       ...when(home.first('todo'), (id) => [full('todo', { entity: id })]),
       // the house's first scene, one tap away
       ...when(home.scenes[0], (id) => [full('scene', { entity: id, ...home.named(id) })]),

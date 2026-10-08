@@ -1,3 +1,4 @@
+import type { Tint } from '../shared/colour.js';
 import {
   areaEntities,
   formatNumber,
@@ -42,6 +43,7 @@ import {
   nameIconFields,
   selectField,
   textField,
+  tintField,
 } from '../shared/form.js';
 import { rowsOf } from '../shared/heights.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
@@ -65,6 +67,8 @@ export interface LightItem {
 export interface LightsCardConfig extends FluvyCardConfig {
   /** The room: its lights, in name order, when `lights` lists none. */
   area?: string;
+  /** `tiles`: each lamp shows its colour at rest too (`always`), or only when on (`on`, the default). */
+  tint?: Tint;
   /** The lights, in the order they are drawn (default: the area's). */
   lights?: readonly (string | LightItem)[];
   /**
@@ -174,6 +178,7 @@ export class FluvyLightsCard extends FluvyTileCard {
     'show_level',
     'show_brightness',
     'light_colors',
+    'tint',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -194,6 +199,7 @@ export class FluvyLightsCard extends FluvyTileCard {
     show_level: true,
     show_brightness: false,
     light_colors: true,
+    tint: 'on',
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -204,12 +210,15 @@ export class FluvyLightsCard extends FluvyTileCard {
         fieldRow(boolField('show_count'), boolField('show_level')),
         boolField('light_colors'),
         colourFields(),
+        tintField(),
         actionFields(),
       ],
       ...formLabels({
         show_level: 'lights.editor_show_level',
         show_brightness: 'lights.editor_show_brightness',
         light_colors: 'lights.editor_light_colors',
+        // the tiles' colour at rest: the row and the chips have no surface to wash
+        tint: 'lights.editor_tint',
       }),
     };
   }

@@ -9,7 +9,6 @@ import {
 } from '@fluvy/core';
 
 import {
-  badge,
   button,
   clamp,
   glyph,
@@ -52,9 +51,9 @@ import {
 } from '../shared/form.js';
 
 import { changedLine, ROW_KEYS, RowsCard, rowSchema, type RowsCardConfig } from './rows.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import { listLength, COMPACT, ROW } from '../shared/heights.js';
+import { lockHeight } from '../devices-family.js';
 
 const s = strings('lock');
 
@@ -88,9 +87,7 @@ const NUMERIC = /^\^?(?:\\d|\[0-9\])(?:\{(\d+)(?:,(\d*))?\}|[+*])?\$?$/;
 export class FluvyLockCard extends RowsCard<LockCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: LockCardConfig): number {
-    if (config.variant === 'compact') return COMPACT;
-    const rows = config.show_rows === false ? 0 : listLength(config, ['rows']);
-    return rows ? COMPACT + 16 + ROW * rows : COMPACT;
+    return lockHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -199,6 +196,8 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'full', show_rows: true });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -542,14 +541,21 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         ? s(this.hass, atStart ? 'press_again_unlock' : 'press_again_lock')
         : this.t(atStart ? 'lock.slide_unlock' : 'lock.slide_lock');
 
+    // the head gives way in its order: the badge first (the circle's glyph says locked or open too), then the sub
+    const fitted = this.headFit.fit({
+      width: this.contentWidth,
+      title: name,
+      sub: this.config?.subtitle ?? changedLine(this.hass, view),
+      badge: { text: shown, tone },
+    });
     return html`<article class="fv-card dv-card ${unusable ? 'is-unavailable' : ''}" data-card>
         ${head({
-          icon: this.config?.icon ?? (atStart ? 'lock' : 'unlock'),
+          icon: fitted.icon ? (this.config?.icon ?? (atStart ? 'lock' : 'unlock')) : null,
           tone,
           title: name,
           name: true,
-          sub: this.config?.subtitle ?? changedLine(this.hass, view),
-          trailing: badge(shown, tone),
+          sub: fitted.sub,
+          trailing: fitted.badge,
           onIconTap: () => this.tap(view.id),
           onHold: () => this.hold(view.id),
           iconLabel: name,

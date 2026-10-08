@@ -54,6 +54,7 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
       'fluvy-lock-card',
       'fluvy-alarm-card',
       'fluvy-camera-card',
+      'fluvy-printer-card',
       'fluvy-weather-card',
       'fluvy-sensor-card',
       'fluvy-readouts-card',
@@ -111,7 +112,10 @@ function option(field: { name: string; selector?: Record<string, unknown> }): st
 }
 
 function row(tag: string, name: string, description: string, card: Contract): string {
-  const fields = flatten(card.getConfigForm().schema).filter((f) => card.keys.includes(f.name));
+  // a list's own key is said once, as the list
+  const fields = flatten(card.getConfigForm().schema).filter(
+    (f) => card.keys.includes(f.name) && !card.lists.some((list) => list.key === f.name),
+  );
   const own = fields.map(option);
   const lists = card.lists.map((list) => {
     const keys = flatten(list.schema).map((f) => `\`${f.name}\``);

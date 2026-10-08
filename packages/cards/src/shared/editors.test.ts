@@ -69,6 +69,20 @@ describe('the editors’ contract', () => {
   );
 
   it.each(cards)(
+    '$tag: every switch and every choice shows what the card does when the config says nothing',
+    ({ card }) => {
+      const defaults = card.defaults?.({ type: 'custom:x' }, undefined) ?? {};
+      for (const field of fields(card.getConfigForm().schema)) {
+        const selector = (field as { selector?: Record<string, { multiple?: boolean }> }).selector;
+        const choice = selector?.['boolean'] !== undefined || selector?.['select'] !== undefined;
+        // a tone left empty is the card's own; several chosen of a list, empty, are all the entity has
+        const optional = field.name === 'tone' || selector?.['select']?.multiple === true;
+        if (choice && !optional) expect(field.name in defaults, field.name).toBe(true);
+      }
+    },
+  );
+
+  it.each(cards)(
     '$tag: a default is for a field the editor shows, never an older name',
     ({ card }) => {
       const shown = new Set(names(card.getConfigForm().schema));

@@ -95,6 +95,21 @@ const ACTIVE_OFF = new Set([
  * entity it belonged to.
  */
 /** The house's weather entity, the first there is: the wall's screensaver and its preview show the same one. */
+/**
+ * A user's person: the `person.` entity that carries their user id, as every person of the house does (anyone may
+ * read it, not only an administrator). Undefined for a user who is no one's person (a wall tablet's own account).
+ */
+export function personOf(
+  hass: HomeAssistant | undefined,
+  userId: string | undefined,
+): string | undefined {
+  if (!hass || !userId) return undefined;
+  for (const state of Object.values(hass.states))
+    if (domainOf(state.entity_id) === 'person' && state.attributes['user_id'] === userId)
+      return state.entity_id;
+  return undefined;
+}
+
 export const firstWeather = (hass: HomeAssistant | undefined): string | undefined =>
   Object.keys(hass?.states ?? {}).find((id) => id.startsWith('weather.'));
 

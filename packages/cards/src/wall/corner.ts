@@ -36,7 +36,8 @@ export class FluvyWallCorner extends LitElement {
   static override styles = css`
     :host {
       position: fixed;
-      top: env(safe-area-inset-top, 0px);
+      /* under Home Assistant's header when a subview shows it (the controller sets the variable on <html>) */
+      top: calc(env(safe-area-inset-top, 0px) + var(--fluvy-wall-top, 0px));
       right: env(safe-area-inset-right, 0px);
       z-index: 7;
       width: 44px;

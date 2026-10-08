@@ -36,12 +36,18 @@ export const sheet: SheetSpec = {
     sensor('co_lux', 'Light level', '312', 'lx', 'illuminance'),
     sensor('co_dust', 'Fine dust', '9', 'µg/m³', 'pm25'),
     sensor('co_humidity', 'Cellar humidity', '61', '%', 'humidity'),
+    ['binary_sensor.co_window', 'on', { friendly_name: 'Studio window', device_class: 'window' }],
     [
       'light.co_lamp',
       'on',
       { friendly_name: 'Reading lamp', brightness: 204, supported_color_modes: ['brightness'] },
     ],
     ['light.co_hall', 'off', { friendly_name: 'Hall', supported_color_modes: ['brightness'] }],
+    ['light.co_porch', 'off', { friendly_name: 'Porch', supported_color_modes: ['onoff'] }],
+    ['switch.co_kettle', 'off', { friendly_name: 'Kettle' }],
+    ['scene.co_evening', '2026-09-17T19:40:00+00:00', { friendly_name: 'Evening' }],
+    ['scene.co_cinema', '2026-09-16T21:00:00+00:00', { friendly_name: 'Cinema' }],
+    ['scene.co_morning', '2026-09-17T07:00:00+00:00', { friendly_name: 'Morning' }],
     ['fan.co_fan', 'on', { friendly_name: 'Ceiling fan', percentage: 66, supported_features: 1 }],
     [
       'media_player.co_player',
@@ -142,6 +148,66 @@ export const sheet: SheetSpec = {
             { entity: 'light.co_lamp', color: 'red' },
             'fan.co_fan',
             { entity: 'media_player.co_player', color: '#00b894' },
+          ],
+        },
+      ],
+    },
+    // `tint: always`: a tile with a colour shows it at rest too — a wash and its hairline; on, the full fill as ever
+    {
+      title: 'Tint · tiles at rest',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'compact',
+          tint: 'always',
+          tiles: [
+            { entity: 'light.co_lamp', color: 'red' },
+            { entity: 'light.co_hall', color: 'red' },
+            { entity: 'light.co_porch', color: 'teal' },
+            { entity: 'switch.co_kettle', color: '#e17055' },
+          ],
+        },
+      ],
+    },
+    // a colour stands in for the accent, never for a status: an open window stays the warning's under a colour; a tone
+    // asked for by name is the house's choice
+    {
+      title: 'A status under a colour',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'compact',
+          tiles: [{ entity: 'binary_sensor.co_window', color: 'teal' }],
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Windows',
+          rows: [
+            { entity: 'binary_sensor.co_window', color: 'teal' },
+            { entity: 'binary_sensor.co_window', name: 'Studio window (accent)', tone: 'accent' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Tint · scenes and tabs',
+      cards: [
+        {
+          type: 'custom:fluvy-scenes-card',
+          tint: 'always',
+          scenes: [
+            { entity: 'scene.co_evening', color: 'deep-orange' },
+            { entity: 'scene.co_cinema', color: 'indigo' },
+            { entity: 'scene.co_morning', color: 'amber' },
+          ],
+        },
+        {
+          type: 'custom:fluvy-chips-card',
+          tint: 'always',
+          chips: [
+            { name: 'Home', path: '/', color: 'teal' },
+            { name: 'Garden', path: '/garden', color: 'green' },
+            { name: 'Garage', path: '/garage' },
           ],
         },
       ],

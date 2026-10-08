@@ -52,6 +52,8 @@ export const MAX_SAVED_PALETTES = 12;
 export type WallTheme = 'dark' | 'follow' | 'sun' | 'hours';
 /** The way out of a wall: a small button in the corner (a tap leaves), or a hidden hold of the corner (it pauses). */
 export type WallExit = 'button' | 'hold';
+/** The way back from a subview on a wall: a floating button with the view's title, or Home Assistant's header. */
+export type WallSubview = 'button' | 'header';
 export const WALL_AFTER = [0, 2, 5, 10, 30] as const;
 export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
 
@@ -77,6 +79,8 @@ export interface WallSettings {
   readonly background: 'plain' | 'wall';
   /** How a person leaves the wall on the device. */
   readonly exit: WallExit;
+  /** How a person comes back from a subview (Home Assistant's header is gone on a wall). */
+  readonly subview: WallSubview;
 }
 
 /** What the house decides (an admin). */
@@ -166,6 +170,7 @@ export const HOUSE_DEFAULTS: HouseSettings = {
     nightDim: 0,
     background: 'plain',
     exit: 'button',
+    subview: 'button',
   },
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
@@ -227,6 +232,7 @@ export function parseWall(raw: unknown): WallSettings {
       ? value['background']
       : d.background,
     exit: oneOf(value['exit'], ['button', 'hold'] as const) ? value['exit'] : d.exit,
+    subview: oneOf(value['subview'], ['button', 'header'] as const) ? value['subview'] : d.subview,
   };
 }
 

@@ -12,3 +12,14 @@ export interface Coloured {
  */
 export const toneOf = (item: Coloured | undefined, fallback: Tone = 'accent'): Tone =>
   item?.tone ?? (item?.color !== undefined && item.color !== '' ? 'accent' : fallback);
+
+/**
+ * The tone of a part that may be saying a status: a tone asked for by name is the house's choice; otherwise a warning
+ * (an open window, a jammed lock) stays the warning's whatever colour the part was given — a colour stands in for the
+ * accent, never for a status; anything else as `toneOf`.
+ */
+export const statusToneOf = (item: Coloured | undefined, status: Tone): Tone =>
+  item?.tone ?? (status === 'warning' ? 'warning' : toneOf(item, status));
+
+/** When an item's colour shows on its surface: while it is on (the default), or always — a quiet wash and its hairline at rest. */
+export type Tint = 'on' | 'always';

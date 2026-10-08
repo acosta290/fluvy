@@ -279,4 +279,91 @@ async function hold(page, locator, ms = 650) {
   await page.close();
 }
 
+/* ---------- the greeting greets whoever is signed in (issue #26) ---------- */
+{
+  const page = await suite.sheet('home-extras');
+  const cards = frame(page, 'B Greeting · whoever is signed in').locator('fluvy-hello-card');
+  const read = (card) =>
+    card.evaluate((el) => ({
+      text: el.shadowRoot.querySelector('.hm-hello__greeting, h2, .hm-hello')?.textContent ?? '',
+      picture: el.shadowRoot.querySelector('.hm-avatar__img')?.getAttribute('src') ?? '',
+      label: el.shadowRoot.querySelector('.hm-avatar')?.getAttribute('aria-label') ?? '',
+    }));
+  const viewer = await read(cards.nth(0));
+  const fixed = await read(cards.nth(1));
+  check(
+    'a greeting that names no one greets the signed-in user: their person’s name and picture',
+    viewer.text.includes('Marta') && viewer.picture !== '' && viewer.label === 'Marta',
+    JSON.stringify(viewer),
+  );
+  check(
+    'a greeting that names a person keeps that person, whoever looks',
+    fixed.text.includes('Ana') && fixed.label === 'Ana Ruiz',
+    JSON.stringify(fixed),
+  );
+  await reset(page);
+  await cards.nth(0).locator('.hm-avatar').click();
+  await settle(page, 300);
+  check(
+    'its avatar opens the signed-in person’s details',
+    (await moreInfo(page)).join() === 'person.marta',
+    (await moreInfo(page)).join(),
+  );
+  await page.close();
+}
+
+/* ---------- the people: an action each (issue #25) and their phones' batteries (issue #26) ---------- */
+{
+  const page = await suite.sheet('ambient');
+  await watchNavigation(page);
+  const grid = frame(page, 'Who is home · batteries').locator('fluvy-people-card');
+  const batteries = await grid.evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.am-person')].map((p) => ({
+      text: (p.querySelector('.fv-battery')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      low: p.querySelector('.fv-battery')?.classList.contains('is-low') ?? false,
+    })),
+  );
+  check(
+    'people: each phone’s battery found from the tracker the person is seen by (78 %, 18 % low, unreadable “—”)',
+    JSON.stringify(batteries) ===
+      JSON.stringify([
+        { text: '78 %', low: false },
+        { text: '18 %', low: true },
+        { text: '—', low: false },
+      ]),
+    JSON.stringify(batteries),
+  );
+  const rows = frame(page, 'Who is home · each their own').locator('fluvy-people-card .fv-row');
+  await rows.nth(0).click();
+  await settle(page, 300);
+  check(
+    'people: a person with a tap action of their own goes to their page',
+    (await navigations(page)).join() === '/fluvy-home/marta',
+  );
+  await reset(page);
+  await rows.nth(1).click();
+  await settle(page, 300);
+  check(
+    'people: a person without one opens their details, never the card’s action',
+    (await moreInfo(page)).join() === 'person.am_pau',
+  );
+  await reset(page);
+  await hold(page, rows.nth(0));
+  await settle(page, 300);
+  check(
+    'people: a hold opens the details and never also taps',
+    (await moreInfo(page)).join() === 'person.am_marta' && (await navigations(page)).length === 0,
+  );
+  const jan = await rows.nth(2).evaluate((el) => ({
+    name: el.querySelector('.fv-row__title')?.textContent.trim(),
+    battery: (el.querySelector('.fv-battery')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+  }));
+  check(
+    'people: an entry’s own name and battery sensor',
+    jan.name === 'Jan' && jan.battery === '64 %',
+    JSON.stringify(jan),
+  );
+  await page.close();
+}
+
 await suite.finish();

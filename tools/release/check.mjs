@@ -31,6 +31,8 @@ const BUDGETS = {
   energy: 65_536,
   // the media family: the player and the now-playing strip
   media: 16_384,
+  // the devices family: the lock, the alarm and its keypad, the camera
+  devices: 32_768,
   // the weather card
   weather: 12_288,
   editor: 8192,

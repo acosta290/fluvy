@@ -11,6 +11,7 @@ import {
   type HelperHost,
   type HelperRowConfig,
 } from './context.js';
+import { type TextRuler } from '../shared/fit.js';
 import {
   dayText,
   daysUntil,
@@ -26,6 +27,29 @@ const s = strings('helpers');
 
 /** Below this content width a row's extras stop indenting to the text column. */
 const NARROW = 300;
+/** A row button's sides: its words plus 16 on either side, on the 4 grid (`fitPills`). */
+const BUTTON_SIDES = 32;
+/** A row's 44 circle and the 12 gaps on either side of its words. */
+const ROW_SIDES = 44 + 12 + 12;
+/** The least a row's name may have beside an action before the circles give way to it (the name itself when shorter). */
+const NAME_MIN = 96;
+
+/**
+ * Whether a list's rows keep their circles beside their actions. An action's word is never cut, so a row whose
+ * button would leave its name under 96 (or under the name itself) gives the circle's room to the name — and every
+ * row of the list with it, so the names keep one column: the rows' rule (`HeadFit.rowsKeepIcon`).
+ */
+export function actionsKeepIcon(
+  ruler: TextRuler,
+  width: number,
+  rows: readonly { readonly name: string; readonly action: string }[],
+): boolean {
+  return rows.every(
+    ({ name, action }) =>
+      width - ROW_SIDES - ruler.pill('fv-btn > in-value__text', action, BUTTON_SIDES) >=
+      Math.min(NAME_MIN, ruler.width('fv-row__title', name)),
+  );
+}
 
 /** Where the entity is, else when it last changed: a row's sub is context or time, never its state again. */
 function rowSub(host: HelperHost, view: EntityView, row: HelperRowConfig): string {
@@ -37,16 +61,26 @@ function rowSub(host: HelperHost, view: EntityView, row: HelperRowConfig): strin
 
 const sentenceCase = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
-/** The sheet's list row with a free trailing element — `listRow` only knows switch, value and chevron. */
+/**
+ * The sheet's list row with a free trailing element — `listRow` only knows switch, value and chevron. `bare`: the
+ * row has given its circle to its name.
+ */
 function row(
   view: EntityView,
   config: HelperRowConfig,
   tone: Tone,
   sub: string,
   trailing: TemplateResult,
+  bare: boolean,
 ): TemplateResult {
-  return html`<div class="fv-row ${isUnusable(view) ? 'is-unavailable' : ''}">
-    <span class="fv-ico fv-ico--${tone}" data-icon>${icon(iconOf(view, config))}</span>
+  return html`<div
+    class="fv-row ${bare ? 'fv-row--bare' : ''} ${isUnusable(view) ? 'is-unavailable' : ''}"
+  >
+    ${
+      bare
+        ? nothing
+        : html`<span class="fv-ico fv-ico--${tone}" data-icon>${icon(iconOf(view, config))}</span>`
+    }
     <span class="fv-row__text"
       ><span class="fv-row__title">${nameOf(view, config)}</span
       >${sub ? html`<span class="fv-row__sub">${sub}</span>` : nothing}</span
@@ -58,7 +92,8 @@ function row(
 /**
  * The sheet's content-sized row button (44 in a row, text + 16 px sides on the 4 grid). `label` is the
  * accessible name: a card holds several "Run" and several "Install", each must say what it acts on.
- * `name`: the words are a name (a select's chosen option) and may end in an ellipsis where the row is narrow.
+ * `name`: the words are a name (a select's chosen option) and may end in an ellipsis where the row is narrow;
+ * otherwise they are an action's word, never cut: the row's name gives way to it.
  */
 export function rowButton(
   kind: 'quiet' | 'link',
@@ -69,10 +104,10 @@ export function rowButton(
   name = false,
 ): TemplateResult {
   return html`<button
-    class="fv-btn fv-btn--${kind} in-value"
+    class="fv-btn fv-btn--${kind} in-value ${name ? '' : 'in-value--action'}"
     data-control
     data-target
-    data-fit="32"
+    data-fit=${BUTTON_SIDES}
     aria-label=${label}
     ?disabled=${disabled}
     @click=${onClick}
@@ -110,6 +145,7 @@ export function valueRow(
     currentTone(view, 'neutral'),
     rowSub(host, view, config),
     valueButton(host, view, nameOf(view, config), value),
+    host.bare,
   );
 }
 
@@ -122,7 +158,7 @@ export function switchRow(
   const unusable = isUnusable(view);
   const on = host.state(view) === 'on';
   return listRow({
-    icon: iconOf(view, config),
+    icon: host.bare ? null : iconOf(view, config),
     tone: unusable ? 'off' : on ? 'accent' : 'neutral',
     title: nameOf(view, config),
     sub: rowSub(host, view, config),
@@ -172,6 +208,7 @@ export function momentRow(
     currentTone(view, 'neutral'),
     parts.sub,
     valueButton(host, view, nameOf(view, config), parts.value),
+    host.bare,
   );
   const settable = view.domain === 'input_datetime' || view.domain === 'time';
   if (!moment || moment.hasDate || !settable || !config.presets?.length) return main;
@@ -189,7 +226,7 @@ export function momentRow(
   if (!items.length) return main;
   // a narrow column gives the chips the whole line rather than breaking the set in two
   return html`${main}
-    <div class="in-quick ${host.contentWidth < NARROW ? 'in-quick--flush' : ''}">
+    <div class="in-quick ${host.contentWidth < NARROW || host.bare ? 'in-quick--flush' : ''}">
       ${chips(items, (time) => {
         if (state.slice(0, 5) === time.slice(0, 5)) return;
         host.expect(view.id, time);
@@ -223,7 +260,7 @@ export function buttonRow(
     () => host.call(view.domain, 'press', {}, view.id),
     isUnusable(view),
   );
-  return row(view, config, currentTone(view, 'neutral'), sub, run);
+  return row(view, config, currentTone(view, 'neutral'), sub, run, host.bare);
 }
 
 /** Anything else (the sheet's Sun row): read-only state stays plain, and the row opens more-info. */
@@ -235,7 +272,7 @@ export function plainRow(
   const missing = view.status === 'missing';
   const parts = valueParts(host.hass, view);
   return listRow({
-    icon: iconOf(view, config),
+    icon: host.bare ? null : iconOf(view, config),
     tone: currentTone(view, isActive(view) ? toneFor(view) : 'neutral'),
     title: nameOf(view, config),
     sub: rowSub(host, view, config),

@@ -93,6 +93,7 @@ describe('parsing stored settings', () => {
         nightDim: 40,
         background: 'wall',
         exit: 'hold',
+        subview: 'header',
       }),
     ).toEqual({
       dashboards: ['fluvy-wall'],
@@ -106,6 +107,7 @@ describe('parsing stored settings', () => {
       nightDim: 40,
       background: 'wall',
       exit: 'hold',
+      subview: 'header',
     });
     expect(
       parseWall({
@@ -117,6 +119,7 @@ describe('parsing stored settings', () => {
         nightDim: 50,
         background: 'photo',
         exit: 'door',
+        subview: 'tabs',
       }),
     ).toEqual(WALL_DEFAULTS);
     // a wall saved before the way out could be chosen has the button

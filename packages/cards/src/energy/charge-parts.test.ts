@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { durationParts } from '../energy-model/duration.js';
+import { durationParts } from '../shared/duration.js';
 import { modeKind } from '../energy-model/modes.js';
 import { markAt, markedLabels } from './marked-ruler.js';
 

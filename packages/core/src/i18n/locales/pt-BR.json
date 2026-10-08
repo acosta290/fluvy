@@ -44,7 +44,8 @@
     "editor_lights": "Luzes (nenhuma: as da área)",
     "editor_show_level": "Mostrar o nível",
     "editor_show_brightness": "Um brilho para o cômodo",
-    "editor_light_colors": "Cada luz acesa na cor da sua lâmpada"
+    "editor_light_colors": "Cada luz acesa na cor da sua lâmpada",
+    "editor_tint": "Mostrar a cor de cada bloco"
   },
   "climate": {
     "mode": "Modo",
@@ -164,7 +165,10 @@
     "used": "Usada",
     "exported": "Exportada",
     "charged": "Carregada",
-    "charged_exported": "Carregada · exportada"
+    "charged_exported": "Carregada · exportada",
+    "whole_house": "Hoje · a casa toda",
+    "sources_tag": "Fontes",
+    "house_power_short": "Casa"
   },
   "sensor": {
     "last_24h": "Últimas 24 h",
@@ -356,7 +360,8 @@
     "morning": "Bom dia",
     "afternoon": "Boa tarde",
     "evening": "Boa noite",
-    "night": "Boa noite"
+    "night": "Boa noite",
+    "hello": "Olá"
   },
   "editor": {
     "entity": "Entidade",
@@ -453,7 +458,16 @@
     "show_climate": "Mostrar o clima",
     "picture": "Imagem",
     "temperature_entity": "Temperatura",
-    "humidity_entity": "Umidade"
+    "humidity_entity": "Umidade",
+    "show_soc": "Mostrar a carga",
+    "show_house": "Mostrar o consumo",
+    "camera_view": "Imagem",
+    "aspect_ratio": "Proporção",
+    "fit_mode": "Ajuste",
+    "also_sensors": "Também no gráfico (até 2)",
+    "people": "Pessoas",
+    "battery": "Bateria do celular",
+    "tint": "Mostrar a cor"
   },
   "strategy": {
     "home": "Início",
@@ -622,13 +636,81 @@
     "badge_ok": "Selo quando está tudo bem",
     "badge_warn": "Selo com avisos, ex. “{count} fracas”"
   },
+  "printer": {
+    "title": "Impressora 3D",
+    "progress": "Progresso",
+    "left": "Restante",
+    "left_text": "faltam {time}",
+    "ready_at": "Pronta às {time}",
+    "done_at": "Concluída às {time}",
+    "layer_of": "Camada {layer} de {layers}",
+    "nozzle": "Bico",
+    "bed": "Mesa",
+    "chamber": "Câmara",
+    "layer": "Camada",
+    "speed": "Velocidade",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "stop": "Parar",
+    "light": "Luz",
+    "stop_confirm": "Parar a impressão? Ela não poderá ser retomada.",
+    "no_printer": "Nenhuma impressora encontrada",
+    "phase_printing": "Imprimindo",
+    "phase_preparing": "Preparando",
+    "phase_paused": "Pausada",
+    "phase_finished": "Concluída",
+    "phase_stopped": "Parada",
+    "phase_error": "Erro",
+    "phase_idle": "Ociosa",
+    "phase_offline": "Offline",
+    "editor_device": "Impressora",
+    "editor_readouts": "Leituras (até seis)",
+    "editor_show_image": "Mostrar a câmera ou a prévia",
+    "editor_roles": "Entidades escolhidas à mão",
+    "role_status": "Estado",
+    "role_printing": "Imprimindo (sim/não)",
+    "role_progress": "Progresso",
+    "role_remaining": "Tempo restante",
+    "role_finish": "Hora de término",
+    "role_start": "Hora de início",
+    "role_file": "Arquivo",
+    "role_nozzle": "Bico",
+    "role_nozzle_target": "Alvo do bico",
+    "role_bed": "Mesa",
+    "role_bed_target": "Alvo da mesa",
+    "role_chamber": "Câmara",
+    "role_layer": "Camada",
+    "role_layers": "Total de camadas",
+    "role_speed": "Velocidade",
+    "role_camera": "Câmera",
+    "role_preview": "Prévia",
+    "role_pause": "Botão de pausa",
+    "role_resume": "Botão de retomar",
+    "role_stop": "Botão de parar",
+    "role_light": "Luz",
+    "editor_role": "O que é",
+    "filament": "Filamento",
+    "elapsed": "Decorrido",
+    "elapsed_text": "{time} decorridos",
+    "empty": "Vazio",
+    "editor_image": "Imagem",
+    "editor_show_filament": "Mostrar o filamento",
+    "editor_sensors": "Mais leituras",
+    "role_stage": "Etapa",
+    "role_error": "Erro",
+    "role_elapsed": "Tempo impresso",
+    "role_filament": "Filamento em uso",
+    "done_ago": "Concluída {when}",
+    "ready_on": "Pronta {day} às {time}"
+  },
   "camera": {
     "live": "Ao vivo",
     "snapshot": "Instantâneo",
     "fullscreen": "Tela cheia",
     "view": "Visão ao vivo de {name}",
     "offline": "Sem imagem da câmera",
-    "refresh": "Segundos entre imagens"
+    "refresh": "Segundos entre imagens",
+    "exit_fullscreen": "Sair da tela cheia"
   },
   "chips": {
     "rooms": "Cômodos"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "person_helper": "Vazio: quem estiver conectado"
   },
   "helpers": {
     "title": "Auxiliares",
@@ -819,7 +902,7 @@
     "alert_one": "1 alerta",
     "alert_many": "{count} alertas",
     "all_clear": "Tudo tranquilo",
-    "all_sensors": "Todos os sensores",
+    "all_sensors": "Ver todos",
     "more": "mais {count}",
     "less": "Mostrar menos",
     "detected": "Detectado",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Fluxo",
     "dashboard.greeting_tabs": "Visualizações sob a saudação",
     "dashboard.header_only": "Só o cabeçalho",
-    "dashboard.under_greeting": "Também como chips"
+    "dashboard.under_greeting": "Também em chips",
+    "wall.subview": "Voltar de uma subvisualização",
+    "wall.subview_sub": "Uma parede não tem cabeçalho: um botão com o nome da visualização, ou o cabeçalho do Home Assistant nas subvisualizações",
+    "wall.subview_button": "Botão voltar",
+    "wall.subview_header": "Cabeçalho",
+    "wall.back": "Voltar",
+    "wall.back_to": "Voltar de {view}"
   },
   "people": {
     "title": "Quem está em casa",
     "count": "{home} de {total}",
     "updated": "atualizado {when}",
     "map": "Abrir o mapa",
-    "editor.map_path": "Caminho do mapa"
+    "editor.map_path": "Caminho do mapa",
+    "title_short": "Em casa"
   },
   "map": {
     "title": "Onde está cada um",
@@ -1283,7 +1373,20 @@
     "sources": "Por fonte",
     "signed": "Centrado no zero",
     "water": "Água",
-    "gas": "Gás"
+    "gas": "Gás",
+    "overview": "Casa toda",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "O da câmera",
+    "cover": "Preencher (cortar)",
+    "contain": "Imagem inteira",
+    "on": "Quando ligado",
+    "camera": "Câmera",
+    "preview": "Prévia"
   },
   "tone": {
     "accent": "Destaque",
@@ -1408,7 +1511,7 @@
     "per_phase": "Por fase",
     "phase": "L{n}",
     "sub_day": "Hoje · desde a meia-noite",
-    "feed_in": "Compensação",
+    "feed_in": "Créditos",
     "net": "Líquido",
     "editor_show_phases": "Por fase (uma rede medida por fase)",
     "editor_show_cost": "Custo e compensação (em um período)"
@@ -1425,7 +1528,7 @@
     "price_now": "Preço agora",
     "imported": "Importado",
     "exported": "Exportado",
-    "net_cost": "Custo líquido",
+    "net_cost": "Líquido",
     "no_grid": "Ainda sem sensor da rede",
     "no_grid_hint": "Adicione um ou dê ao painel Energia a potência da rede",
     "editor_voltages": "Tensão por fase (na ordem das fases)",

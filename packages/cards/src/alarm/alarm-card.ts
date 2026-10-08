@@ -13,7 +13,6 @@ import {
 } from '@fluvy/core';
 
 import {
-  badge,
   head,
   label,
   options,
@@ -48,12 +47,13 @@ import {
 
 import './keypad.js';
 import type { FluvyKeypad, KeypadAction } from './keypad.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { chipRow, fitsOneRow } from '../shared/chips.js';
 import { optionColumnsFor } from '../shared/options.js';
 import { TextRuler } from '../shared/fit.js';
-import { COMPACT, listLength, ROW } from '../shared/heights.js';
+import { FontsSettled } from '../shared/fonts.js';
+import { alarmHeight } from '../devices-family.js';
 
 const s = strings('alarm');
 
@@ -175,9 +175,7 @@ function previewState(hass: HomeAssistant): HassEntity {
 export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: AlarmCardConfig): number {
-    if (config.variant === 'compact') return COMPACT;
-    const rows = config.show_rows === false ? 0 : listLength(config, ['rows']);
-    return 300 + (rows ? 16 + ROW * rows : 0);
+    return alarmHeight(config);
   }
 
   /** Widths laid out by the browser in the row's own classes: the compact card's chips are measured with it. */
@@ -221,6 +219,11 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
   constructor() {
     super();
     this.pending_ = '';
+    // the mode tiles' columns and the chips are measured: a web font arriving changes every width
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
   }
 
   static override keys = configKeys<AlarmCardConfig>()([
@@ -234,6 +237,8 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'tiles', show_rows: true });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -488,20 +493,27 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
       active: !unusable && lit === mode.state,
     }));
 
+    // the head gives way in its order: the badge first (the armed mode is the lit tile's too), then the sub, the circle
+    const fitted = this.headFit.fit({
+      width: this.contentWidth,
+      title: name,
+      sub: this.config?.subtitle ?? changedLine(this.hass, view),
+      badge: {
+        text: state.startsWith('armed_') ? s(this.hass, 'armed') : stateText(this.hass, view),
+        tone,
+      },
+    });
     return html`<article
         class="fv-card dv-card ${unusable ? 'is-unavailable' : ''} ${narrow ? 'is-compact' : ''}"
         data-card
       >
         ${head({
-          icon: this.config?.icon ?? glyphFor(view),
+          icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
           tone,
           title: name,
           name: true,
-          sub: this.config?.subtitle ?? changedLine(this.hass, view),
-          trailing: badge(
-            state.startsWith('armed_') ? s(this.hass, 'armed') : stateText(this.hass, view),
-            tone,
-          ),
+          sub: fitted.sub,
+          trailing: fitted.badge,
           onIconTap: () => this.tap(view.id),
           onHold: () => this.hold(view.id),
           iconLabel: name,

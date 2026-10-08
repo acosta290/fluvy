@@ -44,7 +44,8 @@
     "editor_lights": "Lights (none: the area’s)",
     "editor_show_level": "Show the level",
     "editor_show_brightness": "One brightness for the room",
-    "editor_light_colors": "Each light on in its bulb’s colour"
+    "editor_light_colors": "Each light on in its bulb’s colour",
+    "editor_tint": "Show each tile’s colour"
   },
   "climate": {
     "mode": "Mode",
@@ -164,7 +165,10 @@
     "used": "Used",
     "exported": "Exported",
     "charged": "Charged",
-    "charged_exported": "Charged · exported"
+    "charged_exported": "Charged · exported",
+    "whole_house": "Today · the whole house",
+    "sources_tag": "Sources",
+    "house_power_short": "House"
   },
   "sensor": {
     "last_24h": "Last 24 h",
@@ -356,7 +360,8 @@
     "morning": "Good morning",
     "afternoon": "Good afternoon",
     "evening": "Good evening",
-    "night": "Good night"
+    "night": "Good night",
+    "hello": "Hello"
   },
   "editor": {
     "entity": "Entity",
@@ -453,7 +458,16 @@
     "show_climate": "Show the climate",
     "picture": "Picture",
     "temperature_entity": "Temperature",
-    "humidity_entity": "Humidity"
+    "humidity_entity": "Humidity",
+    "show_soc": "Show the battery charge",
+    "show_house": "Show the house’s use",
+    "camera_view": "Picture",
+    "aspect_ratio": "Shape",
+    "fit_mode": "Fit",
+    "also_sensors": "Also on the chart (up to 2)",
+    "people": "People",
+    "battery": "Phone battery",
+    "tint": "Show its colour"
   },
   "strategy": {
     "home": "Home",
@@ -622,13 +636,81 @@
     "badge_ok": "Badge when all is well",
     "badge_warn": "Badge with warnings, e.g. \"{count} low\""
   },
+  "printer": {
+    "title": "3D printer",
+    "progress": "Progress",
+    "left": "Left",
+    "left_text": "{time} left",
+    "ready_at": "Ready at {time}",
+    "done_at": "Finished at {time}",
+    "layer_of": "Layer {layer} of {layers}",
+    "nozzle": "Nozzle",
+    "bed": "Bed",
+    "chamber": "Chamber",
+    "layer": "Layer",
+    "speed": "Speed",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "light": "Light",
+    "stop_confirm": "Stop the print? It cannot be resumed.",
+    "no_printer": "No printer found",
+    "phase_printing": "Printing",
+    "phase_preparing": "Preparing",
+    "phase_paused": "Paused",
+    "phase_finished": "Finished",
+    "phase_stopped": "Stopped",
+    "phase_error": "Error",
+    "phase_idle": "Idle",
+    "phase_offline": "Offline",
+    "editor_device": "Printer",
+    "editor_readouts": "Readouts (up to six)",
+    "editor_show_image": "Show the camera or preview",
+    "editor_roles": "Entities named by hand",
+    "role_status": "Status",
+    "role_printing": "Printing (on/off)",
+    "role_progress": "Progress",
+    "role_remaining": "Time left",
+    "role_finish": "Finish time",
+    "role_start": "Start time",
+    "role_file": "File",
+    "role_nozzle": "Nozzle",
+    "role_nozzle_target": "Nozzle target",
+    "role_bed": "Bed",
+    "role_bed_target": "Bed target",
+    "role_chamber": "Chamber",
+    "role_layer": "Layer",
+    "role_layers": "Total layers",
+    "role_speed": "Speed",
+    "role_camera": "Camera",
+    "role_preview": "Preview",
+    "role_pause": "Pause button",
+    "role_resume": "Resume button",
+    "role_stop": "Stop button",
+    "role_light": "Light",
+    "editor_role": "What it is",
+    "filament": "Filament",
+    "elapsed": "Elapsed",
+    "elapsed_text": "{time} so far",
+    "empty": "Empty",
+    "editor_image": "Picture",
+    "editor_show_filament": "Show the filament",
+    "editor_sensors": "More readouts",
+    "role_stage": "Stage",
+    "role_error": "Error",
+    "role_elapsed": "Time printed",
+    "role_filament": "Filament in use",
+    "done_ago": "Finished {when}",
+    "ready_on": "Ready {day} at {time}"
+  },
   "camera": {
     "live": "Live",
     "snapshot": "Snapshot",
-    "fullscreen": "Fullscreen",
+    "fullscreen": "Full screen",
     "view": "Live view of {name}",
     "offline": "No image from the camera",
-    "refresh": "Seconds between images"
+    "refresh": "Seconds between images",
+    "exit_fullscreen": "Exit full screen"
   },
   "chips": {
     "rooms": "Rooms"
@@ -734,7 +816,8 @@
   "heading": {},
   "hello": {
     "greeting": "{greeting}, {name}",
-    "profile": "Profile"
+    "profile": "Profile",
+    "person_helper": "Empty: whoever is signed in"
   },
   "helpers": {
     "title": "Helpers",
@@ -1118,14 +1201,21 @@
     "dashboard.stream": "Stream",
     "dashboard.greeting_tabs": "Views under the greeting",
     "dashboard.header_only": "Header only",
-    "dashboard.under_greeting": "As chips too"
+    "dashboard.under_greeting": "As chips too",
+    "wall.subview": "Back from a subview",
+    "wall.subview_sub": "A wall has no header: a button with the view’s name, or Home Assistant’s header in subviews",
+    "wall.subview_button": "Back button",
+    "wall.subview_header": "Header",
+    "wall.back": "Back",
+    "wall.back_to": "Back from {view}"
   },
   "people": {
     "title": "Who is home",
     "count": "{home} of {total}",
     "updated": "updated {when}",
     "map": "Open the map",
-    "editor.map_path": "Map path"
+    "editor.map_path": "Map path",
+    "title_short": "At home"
   },
   "map": {
     "title": "Where everyone is",
@@ -1283,7 +1373,20 @@
     "sources": "By source",
     "signed": "Centred on zero",
     "water": "Water",
-    "gas": "Gas"
+    "gas": "Gas",
+    "overview": "Whole house",
+    "16:9": "16:9",
+    "4:3": "4:3",
+    "3:2": "3:2",
+    "1:1": "1:1",
+    "2:1": "2:1",
+    "21:9": "21:9",
+    "native": "The camera’s own",
+    "cover": "Fill (crop)",
+    "contain": "Whole picture",
+    "on": "When on",
+    "camera": "Camera",
+    "preview": "Job preview"
   },
   "tone": {
     "accent": "Accent",

@@ -137,6 +137,11 @@ const mock = createHass([...states.values()], {
   >,
   ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
   ...(params.has('template_delay') ? { templateDelay: Number(params.get('template_delay')) } : {}),
+  // &units=imperial, or a sheet that stands alone in a house in °F and miles
+  ...(params.get('units') === 'imperial' ||
+  (selected.length === 1 && selected[0]?.[1].units === 'imperial')
+    ? { units: 'imperial' as const }
+    : {}),
   api: (method, path) => {
     for (const [, s] of selected) {
       const answer = s.api?.(method, path);

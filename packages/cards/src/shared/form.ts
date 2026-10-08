@@ -211,6 +211,9 @@ export const accentField = (name = 'color'): HaFormSchemaItem => ({
 /** A tone and a colour, on one row. */
 export const colourFields = (): HaFormSchemaItem => fieldRow(toneField(), accentField());
 
+/** When an item's colour shows on its surface: while it is on (the default), or always (a quiet wash at rest). */
+export const tintField = (): HaFormSchemaItem => selectField('tint', ['on', 'always']);
+
 /** A card's head: its title and its subtitle, on one row. */
 export const titleFields = (): HaFormSchemaItem =>
   fieldRow(textField('title'), textField('subtitle'));

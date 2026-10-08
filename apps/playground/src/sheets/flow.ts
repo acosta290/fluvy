@@ -1,7 +1,14 @@
 import { FluvyDistributionCard } from '../../../../packages/cards/src/distribution/distribution-card.js';
 import { FluvyEnergyCard } from '../../../../packages/cards/src/energy/energy-card.js';
 import { FluvyEnergyFlowCard } from '../../../../packages/cards/src/energy-flow/energy-flow-card.js';
-import { HYBRID_STATES, hybridMetersOnly, hybridWithPower } from '../hybrid.js';
+import {
+  HYBRID_LEVELS,
+  HYBRID_STATES,
+  hybridMetersOnly,
+  hybridNoBattery,
+  hybridTwoBatteries,
+  hybridWithPower,
+} from '../hybrid.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-energy-flow-card'))
@@ -79,8 +86,29 @@ const POWER_OF: Record<string, { from: string; to?: string }> = {
   'sensor.fl_battery': { from: 'sensor.fl_battery_out_energy', to: 'sensor.fl_battery_in_energy' },
 };
 
+/** The battery's capacity (kWh), as the preferences say, and its charge now (%): the state's 62. */
+const CAPACITY = 10;
+const LEVEL_NOW = 62;
+
+/**
+ * The battery's charge through the day (its five-minute means, %): what went in less what came out, ending on the
+ * state the sheet reads now.
+ */
+function levelMeans(): { start: number; end: number; mean: number }[] {
+  const battery = powerMeans('sensor.fl_battery');
+  let level = 0;
+  const levels = battery.map((b) => (level -= ((b.mean / 12) * 100) / CAPACITY));
+  const shift = LEVEL_NOW - (levels[levels.length - 1] ?? 0);
+  return battery.map((b, i) => ({
+    start: b.start,
+    end: b.end,
+    mean: Math.min(100, Math.max(0, (levels[i] ?? 0) + shift)),
+  }));
+}
+
 /** The same day as the power sensors' five-minute means (kW), as the recorder compiles them. */
 function powerMeans(id: string): { start: number; end: number; mean: number }[] {
+  if (id === 'sensor.fl_battery_level') return levelMeans();
   const of = POWER_OF[id];
   if (!of) return [];
   const kw = (meter: string): number[] => fiveMinutes(meter).map((b) => b.change * 12);
@@ -196,6 +224,9 @@ export const sheet: SheetSpec = {
     ...HYBRID_STATES.map(
       ([id, state, name]) => [id, state, power(name, 'kW')] as [string, string, Attributes],
     ),
+    ...HYBRID_LEVELS.map(
+      ([id, state]) => [id, state, level('Battery')] as [string, string, Attributes],
+    ),
   ],
 
   ws: {
@@ -214,7 +245,7 @@ export const sheet: SheetSpec = {
           stat_energy_to: 'sensor.fl_battery_in_energy',
           stat_rate: 'sensor.fl_battery',
           stat_soc: 'sensor.fl_battery_level',
-          capacity: 10,
+          capacity: CAPACITY,
         },
       ],
       device_consumption: [],
@@ -466,6 +497,39 @@ export const sheet: SheetSpec = {
           variant: 'sources',
           _now: NOW,
         },
+      ],
+    },
+    {
+      title: 'The whole house',
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          variant: 'overview',
+          entity: 'sensor.fl_house',
+          _now: NOW,
+        },
+      ],
+    },
+    {
+      title: 'The whole house · a hybrid inverter, with power',
+      hass: hybridWithPower,
+      cards: [{ type: 'custom:fluvy-energy-card', variant: 'overview', _now: NOW }],
+    },
+    {
+      title: 'The whole house · meters only',
+      hass: hybridMetersOnly,
+      cards: [{ type: 'custom:fluvy-energy-card', variant: 'overview', _now: NOW }],
+    },
+    {
+      title: 'The whole house · two batteries without their capacity',
+      hass: hybridTwoBatteries,
+      cards: [{ type: 'custom:fluvy-energy-card', variant: 'overview', _now: NOW }],
+    },
+    {
+      title: 'The whole house · no battery, no house line',
+      hass: hybridNoBattery,
+      cards: [
+        { type: 'custom:fluvy-energy-card', variant: 'overview', show_house: false, _now: NOW },
       ],
     },
     {

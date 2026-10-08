@@ -3,12 +3,12 @@ import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { addDays, dayKey, sameDay, weekStart } from '../../shared/dates.js';
 import { dayClasses, dayStep } from '../../shared/days.js';
-import { FACE, badgeWidth, fitText, textWidth } from '../fit.js';
+import { FACE, fitText } from '../fit.js';
 import type { ViewContext } from './context.js';
 import {
   columnStyle,
   dayList,
-  headRoom,
+  fitBadgeHead,
   headTone,
   notice,
   outage,
@@ -40,28 +40,24 @@ export function weekView(ctx: ViewContext): TemplateResult {
   const total = ready ? days.reduce((sum, date) => sum + agenda.count(date), 0) : 0;
 
   const title = ctx.config.title ?? words.t('calendar.this_week');
-  // the count gives way before the title does: "10 events", or just "10" where the words do not fit
-  const pill =
-    !ready || broken
-      ? ''
-      : ([words.events(total), String(total)].find(
-          (text) => headRoom(ctx, badgeWidth(text)) >= textWidth(title, FACE.title),
-        ) ?? String(total));
+  // the count gives way before the title does: "10 events", or just "10" where the words do not fit, or none
+  const fit = fitBadgeHead(
+    ctx,
+    'calendar',
+    title,
+    !ready || broken ? [] : [words.events(total), String(total)],
+  );
   const list = broken ? null : dayList(ctx, ctx.day);
 
   return surface(
     ctx,
     html`
       ${head({
-        icon: 'calendar',
+        icon: fit.icon,
         tone: headTone(ctx),
         title,
-        sub: fitText(
-          words.ranges(start, addDays(start, 6)),
-          headRoom(ctx, pill ? badgeWidth(pill) : 0),
-          FACE.sub,
-        ),
-        trailing: pill ? badge(pill, 'neutral') : nothing,
+        sub: fitText(words.ranges(start, addDays(start, 6)), fit.room, FACE.sub),
+        trailing: fit.pill ? badge(fit.pill, 'neutral') : nothing,
       })}
       ${
         broken ??

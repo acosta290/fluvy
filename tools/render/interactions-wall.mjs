@@ -160,4 +160,70 @@ const ready = async (page) => {
   await page.close();
 }
 
+/* ---------- a subview: the floating way back, or Home Assistant's header (issue #26) ---------- */
+{
+  const page = await suite.page('dashboard=home&wall=1&after=10&subview=1', { viewport: VIEWPORT });
+  await ready(page);
+  const pill = page.locator('fluvy-wall-back button');
+  const corner = page.locator('fluvy-wall-corner');
+  const header = () =>
+    page.evaluate(() => {
+      const root = document.querySelector('hui-root');
+      const head = root?.shadowRoot?.querySelector('.header');
+      return head ? getComputedStyle(head).display : 'none';
+    });
+  const pillBox = await pill.locator('.pill').boundingBox();
+  const cornerBox = await corner.locator('.disc').boundingBox();
+  const firstCard = await page.locator('[data-frame] > *').first().boundingBox();
+  check(
+    'a wall’s subview has its way back: “‹ Kitchen” at the top left, on the corner’s line, over no card',
+    (await pill.count()) === 1 &&
+      ((await pill.textContent()) ?? '').trim() === 'Kitchen' &&
+      (await header()) === 'none' &&
+      pillBox !== null &&
+      cornerBox !== null &&
+      Math.abs(pillBox.y + pillBox.height / 2 - (cornerBox.y + cornerBox.height / 2)) < 1 &&
+      Math.abs(pillBox.x - (VIEWPORT.width - cornerBox.x - cornerBox.width)) < 1 &&
+      firstCard !== null &&
+      firstCard.y >= pillBox.y + pillBox.height,
+    JSON.stringify({ pillBox, cornerBox, firstCard }),
+  );
+  await pill.click();
+  await settle(page, 300);
+  check(
+    'a tap goes back as Home Assistant’s own arrow does; out of the subview the button is gone, the wall stays',
+    (await page.evaluate(() => window.__wentBack)) === 1 &&
+      (await page.locator('fluvy-wall-back').count()) === 0 &&
+      (await phase(page)) === 'awake',
+  );
+  await page.close();
+}
+{
+  const page = await suite.page('dashboard=home&wall=1&after=10&subview=1&wallsub=header', {
+    viewport: VIEWPORT,
+  });
+  await ready(page);
+  const header = () =>
+    page.evaluate(() => {
+      const head = document.querySelector('hui-root')?.shadowRoot?.querySelector('.header');
+      return head ? getComputedStyle(head).display : 'none';
+    });
+  const cornerTop = async () => (await page.locator('fluvy-wall-corner').boundingBox())?.y ?? -1;
+  check(
+    'a house that keeps Home Assistant’s header: the header in the subview, the corner under it, no floating button',
+    (await header()) !== 'none' &&
+      (await page.locator('fluvy-wall-back').count()) === 0 &&
+      (await cornerTop()) === 56,
+    `${await header()} · corner ${await cornerTop()}`,
+  );
+  await page.evaluate(() => document.querySelector('hui-root')._goBack());
+  await settle(page, 300);
+  check(
+    'out of the subview the header is gone again and the corner back at the top',
+    (await header()) === 'none' && (await cornerTop()) === 0,
+    `${await header()} · corner ${await cornerTop()}`,
+  );
+  await page.close();
+}
+
 await suite.finish();

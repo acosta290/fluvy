@@ -39,6 +39,7 @@ import {
 } from '../shared/form.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('todo');
 
@@ -209,6 +210,12 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
       { from: 'hide_completed', to: 'show_completed', map: (value) => !value },
     ],
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    show_add: true,
+    show_due: true,
+    show_completed: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

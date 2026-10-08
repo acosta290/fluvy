@@ -18,6 +18,16 @@ import { editBarCss } from '../../../packages/core/src/shell/css/dashboard.js';
 import { viewTabsCss } from '../../../packages/core/src/shell/css/tabs.js';
 import { subpageCss } from '../../../packages/core/src/shell/css/tables.js';
 import { deviceZoomCss } from '../../../packages/core/src/shell/css/zoom.js';
+import {
+  wallDashboardCss,
+  wallSubviewBackCss,
+  wallSubviewHeaderCss,
+} from '../../../packages/core/src/shell/css/wall.js';
+import {
+  WALL_ATTRIBUTE,
+  WALL_BACK_ATTRIBUTE,
+  WALL_HEADER_ATTRIBUTE,
+} from '../../../packages/core/src/look/attributes.js';
 
 /*
  * A dashboard's frame outside Home Assistant, `?dashboard=<sheet>`: `hui-root` with its header and view tabs as Home
@@ -35,6 +45,9 @@ import { deviceZoomCss } from '../../../packages/core/src/shell/css/zoom.js';
  *                 &flat=1 no hairlines, &header=page the header on the page's colour, &actions=menu one menu
  *   &zoom=125     this device's size, as the bundle reads it (`look/zoom.ts`: remembered, dropped from the address,
  *                 the view zoomed by the shell's `device-zoom` sheet; `&zoom=off` back to 100)
+ *   &wall=1       the page a wall (main.ts mounts the real controller): the shell's wall sheets for `hui-root` fill as
+ *                 the shell fills them on `<html>`'s marks · &wallsub=header Home Assistant's header in a subview
+ *                 (the floating way back is the default); the root's `_goBack` closes the subview (`__wentBack`)
  */
 
 interface View {
@@ -336,7 +349,23 @@ class MockRoot extends LitElement {
     panels: Record<string, { title: string | null }>;
     localize: (key: string) => string;
   };
-  lovelace!: { editMode: boolean; config: { title?: string } };
+  lovelace!: {
+    editMode: boolean;
+    config: { title?: string; views?: ReadonlyArray<{ title: string; subview?: boolean }> };
+  };
+
+  /** The view shown, as Home Assistant's root keeps it (its index in the configuration). */
+  get _curView(): number {
+    return this.options.subview ? this.options.views.findIndex((v) => v.subview) : this.current;
+  }
+
+  /** Home Assistant's way back from a subview: here, the subview closes (and the page counts it). */
+  _goBack(): void {
+    const w = window as Window & { __wentBack?: number };
+    w.__wentBack = (w.__wentBack ?? 0) + 1;
+    this.options = { ...this.options, subview: false };
+    this.requestUpdate();
+  }
 
   static override styles = [
     css`
@@ -348,10 +377,14 @@ class MockRoot extends LitElement {
         --ha-font-size-m: 14px;
         --ha-font-size-xl: 20px;
       }
+      /* as hui-root lays it: the header fixed over the page at the app bar's width (beside the sidebar when there is
+         one), the view padded by its height */
       .header {
-        position: sticky;
+        position: fixed;
         top: 0;
+        width: var(--ha-top-app-bar-width, 100%);
         z-index: 4;
+        padding-top: env(safe-area-inset-top);
         background-color: var(--app-header-background-color);
         color: var(--app-header-text-color, white);
       }
@@ -462,9 +495,17 @@ class MockRoot extends LitElement {
         align-items: center;
       }
       #view {
+        position: relative;
         display: flex;
         box-sizing: border-box;
-        min-height: calc(100vh - var(--header-height));
+        min-height: 100vh;
+        padding-top: calc(var(--header-height) + env(safe-area-inset-top));
+      }
+      /* the edit mode's tab row under the toolbar: Home Assistant pads by both, less the 2 they share */
+      .edit-mode #view {
+        padding-top: calc(
+          var(--header-height) + var(--tab-bar-height, 56px) - 2px + env(safe-area-inset-top)
+        );
       }
       hui-view {
         display: flex;
@@ -690,7 +731,30 @@ export function mountDashboard(stage: HTMLElement, options: DashboardOptions): H
     panels: { 'fluvy-home': { title: options.title } },
     localize: (key) => key,
   };
-  root.lovelace = { editMode: options.edit, config: {} };
+  root.lovelace = {
+    editMode: options.edit,
+    config: { views: options.views.map((v) => ({ title: v.title, subview: v.subview === true })) },
+  };
+  // a wall's sheets for `hui-root`, filled as the shell fills them on <html>'s marks
+  const wallSheet = new CSSStyleSheet();
+  const syncWall = (): void => {
+    const marks = document.documentElement;
+    wallSheet.replaceSync(
+      marks.hasAttribute(WALL_ATTRIBUTE)
+        ? [
+            wallDashboardCss,
+            marks.hasAttribute(WALL_HEADER_ATTRIBUTE) ? wallSubviewHeaderCss : '',
+            marks.hasAttribute(WALL_BACK_ATTRIBUTE) ? wallSubviewBackCss : '',
+          ].join('\n')
+        : '',
+    );
+  };
+  new MutationObserver(syncWall).observe(document.documentElement, { attributes: true });
+  void root.updateComplete.then(() => {
+    const shadow = root.shadowRoot as ShadowRoot;
+    shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, wallSheet];
+    syncWall();
+  });
   const narrow = (): void => {
     root.narrow = innerWidth <= NARROW;
   };

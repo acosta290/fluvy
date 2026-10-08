@@ -55,6 +55,7 @@ import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { COMPACT } from '../shared/heights.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const fanStrings = strings('fan');
 
@@ -185,6 +186,14 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     'show_oscillation',
     'show_direction',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    preset_style: 'full',
+    show_presets: true,
+    show_oscillation: true,
+    show_direction: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

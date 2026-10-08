@@ -24,7 +24,7 @@ function wallView(ctx: StrategyContext): Section[] {
   const readings = home.temperatures.slice(0, 3);
   const secured = [...home.alarms, ...home.locks, ...home.gateways, ...home.openings].slice(0, 6);
   const left: Card[] = [
-    helloCard(weather, home.me),
+    helloCard(weather),
     full('clock', { variant: 'side', ...(weather ? { weather } : {}) }),
     ...(readings.length
       ? [

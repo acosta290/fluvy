@@ -37,7 +37,7 @@ import {
   textField,
 } from '../shared/form.js';
 import { HEAD, ROW, listLength } from '../shared/heights.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   distanceFromHome,
   groupByZone,
@@ -152,6 +152,14 @@ export class FluvyMapCard extends Card<MapCardConfig> {
       schema: [entityField(['zone']), nameIconFields()],
     },
   ];
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'zones',
+    map_shape: 'wide',
+    fit_zones: false,
+    show_empty: false,
+    show_distance: false,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

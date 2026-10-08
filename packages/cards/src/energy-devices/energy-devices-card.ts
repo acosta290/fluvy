@@ -57,7 +57,7 @@ import {
   type Family,
   type Scale,
 } from '../energy/power.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import type { Segment } from '../shared/fit.js';
@@ -201,6 +201,8 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ sort: true });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

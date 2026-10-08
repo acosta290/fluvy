@@ -44,6 +44,7 @@ import {
   type CarFlow,
   type Due,
 } from './charger.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('ev-charger', 'energy-flow');
 
@@ -117,6 +118,8 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
     'solar_share',
     'mode',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ invert: false });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

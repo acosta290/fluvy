@@ -70,7 +70,7 @@ import {
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   arcs,
   crossLayout,
@@ -397,6 +397,15 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     upgrade,
     drop: LEGACY_KEYS,
   };
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    flow_style: 'stream',
+    motion: 'full',
+    badge: 'solar',
+    period: 'live',
+    variant: 'rows',
+    show_period: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

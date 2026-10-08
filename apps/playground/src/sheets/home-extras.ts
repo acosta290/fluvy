@@ -104,7 +104,8 @@ export const sheet: SheetSpec = {
     [
       'person.marta',
       'home',
-      { friendly_name: 'Marta', entity_picture: plate('#b08d57', '#e6d2ae') },
+      // the mock's signed-in user is Marta (u1): her person carries her user id, as Home Assistant's people do
+      { friendly_name: 'Marta', entity_picture: plate('#b08d57', '#e6d2ae'), user_id: 'u1' },
     ],
     ['person.ana', 'not_home', { friendly_name: 'Ana Ruiz' }],
 
@@ -303,6 +304,11 @@ export const sheet: SheetSpec = {
         hello({ name: 'Marta', weather: 'weather.clouds', _now: '2026-09-17T23:30:00' }),
         hello({ name: 'Marta', weather: 'weather.no_temperature' }),
       ],
+    },
+    // a new card names no one: it greets whoever is signed in (Marta, her picture); a fixed person stays fixed
+    {
+      title: 'B Greeting · whoever is signed in',
+      cards: [hello({ weather: 'weather.flat' }), hello({ person: 'person.ana' })],
     },
     // the greeting without its avatar, its date or its weather
     {

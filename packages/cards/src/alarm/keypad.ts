@@ -167,6 +167,11 @@ export class FluvyKeypad extends LitElement {
       .dv-actions {
         grid-template-columns: repeat(2, minmax(0, var(--kp-pair, 124px)));
       }
+      /* a pair whose words would not stand side by side in the sheet ("Abwesend aktivieren") stands one above the
+         other, still one width */
+      .dv-actions--stacked {
+        grid-template-columns: minmax(0, var(--kp-pair, 124px));
+      }
       .dv-actions .fv-btn {
         width: 100%;
         min-width: 0;
@@ -303,7 +308,8 @@ export class FluvyKeypad extends LitElement {
 
   /**
    * The pair shares one width: the sheet's 124 beside the keys (172 without them), or what the
-   * longer label needs (a Spanish "Armar ausente" does not fit 124), kept on the 4 px grid.
+   * longer label needs (a Spanish "Armar ausente" does not fit 124), kept on the 4 px grid — side by
+   * side while two of them and the 16 between fit the sheet, else one above the other.
    */
   private fitPair(): void {
     const row = this.renderRoot.querySelector<HTMLElement>('.dv-actions');
@@ -316,7 +322,9 @@ export class FluvyKeypad extends LitElement {
       button.style.width = previous;
     }
     const base = this.request_ && this.showsKeys(this.request_) ? 124 : 172;
-    row.style.setProperty('--kp-pair', `${Math.max(base, Math.ceil(natural / 4) * 4)}px`);
+    const pair = Math.max(base, Math.ceil(natural / 4) * 4);
+    row.style.setProperty('--kp-pair', `${pair}px`);
+    row.classList.toggle('dv-actions--stacked', 2 * pair + 16 > row.clientWidth);
   }
 
   /* ---------- typing ---------- */

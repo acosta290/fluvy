@@ -147,9 +147,9 @@ export const sizedTile = (id: string, extra: Record<string, unknown>, style: Car
   tile(id, { ...extra, ...(style.tiles === 'compact' ? { size: 'compact' } : {}) });
 
 /** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
-export const helloCard = (weather: string | undefined, person: string | undefined): Card => ({
+/** The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer). */
+export const helloCard = (weather: string | undefined): Card => ({
   type: 'custom:fluvy-hello-card',
-  ...(person ? { person } : {}),
   ...(weather ? { weather } : {}),
 });
 export const tabsCard = (base: string, views: readonly View[]): Card => ({

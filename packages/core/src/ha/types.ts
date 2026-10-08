@@ -50,6 +50,8 @@ export interface DeviceRegistryEntry {
   labels?: string[];
   manufacturer?: string | null;
   model?: string | null;
+  /** The device this one is reached through (a printer's filament unit hangs on the printer). */
+  via_device_id?: string | null;
 }
 
 export interface AreaRegistryEntry {

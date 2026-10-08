@@ -6,6 +6,9 @@
  * 1 when any page has a violation — after every page has been measured, so one report never hides another.
  *
  *   PLAYGROUND=http://127.0.0.1:5183/ node tools/render/measure-all.mjs [--out out/measure] [--only home,climate]
+ *     [--lang de] [--widths 296,360]
+ * `--lang` measures the pages in another language (German and French words are the long ones: a label that fits in
+ * English may not); `--widths` measures at other widths (296: a phone's half-section column) in place of the three.
  */
 import { spawn } from 'node:child_process';
 import { mkdir, readdir } from 'node:fs/promises';
@@ -26,7 +29,12 @@ const only = option('--only', '')
   .map((s) => s.trim())
   .filter(Boolean);
 
-const WIDTHS = [360, 412, 1400];
+const lang = option('--lang', '');
+const widths = option('--widths', '')
+  .split(',')
+  .map(Number)
+  .filter((n) => n > 0);
+const WIDTHS = widths.length ? widths : [360, 412, 1400];
 const sheets = (await readdir(join(root, 'apps', 'playground', 'src', 'sheets')))
   .filter((file) => file.endsWith('.ts'))
   .map((file) => file.replace(/\.ts$/, ''))
@@ -62,13 +70,13 @@ const pages = [
 
 const run = (page, width) =>
   new Promise((resolve) => {
-    const out = join(outDir, `${page.name}-${width}`);
+    const out = join(outDir, `${page.name}-${width}${lang ? `-${lang}` : ''}`);
     const child = spawn(
       process.execPath,
       [
         join(here, 'measure.mjs'),
         '--page',
-        `${BASE}?${page.query}`,
+        `${BASE}?${page.query}${lang ? `&lang=${lang}` : ''}`,
         '--frame',
         page.frame,
         '--width',
@@ -95,9 +103,9 @@ await mkdir(outDir, { recursive: true });
 const started = Date.now();
 const failed = [];
 for (const page of pages)
-  for (const width of page.widths ?? WIDTHS) {
+  for (const width of widths.length ? WIDTHS : (page.widths ?? WIDTHS)) {
     const result = await run(page, width);
-    const label = `${page.name} @ ${width}`;
+    const label = `${page.name} @ ${width}${lang ? ` (${lang})` : ''}`;
     if (result.code === 0 && result.count === 0) console.log(`✓ ${label}`);
     else {
       failed.push(
@@ -106,7 +114,10 @@ for (const page of pages)
       console.log(`✗ ${label} — ${result.count ?? 'no report'} violations`);
     }
   }
-const total = pages.reduce((n, page) => n + (page.widths ?? WIDTHS).length, 0);
+const total = pages.reduce(
+  (n, page) => n + (widths.length ? WIDTHS : (page.widths ?? WIDTHS)).length,
+  0,
+);
 console.log(
   `\n${total - failed.length}/${total} pages at 0 violations (${Math.round((Date.now() - started) / 1000)} s) → ${outDir}`,
 );

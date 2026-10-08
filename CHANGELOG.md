@@ -5,6 +5,71 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **The whole house on one chart** (#26): the energy card's `variant: overview` draws today as Home Assistant's
+  "Power sources" graph does — every source's power stacked above the line (the sun's whole production, the battery's
+  discharge, a generator, a car, the grid's import), what went into the battery, a car and the grid under it, the
+  house's use as a line over them — plus your batteries' charge, dashed on its own 0–100 % scale. The legend gives the
+  day's energy at rest and each flow's power under the finger; `show_soc` and `show_house` take the charge or the
+  house's line away. [How it reads a house](docs/energy.md).
+- **A way back from a subview on the wall** (#26): a wall has no header, so Home Assistant's back arrow went with it.
+  *Wall → Back from a subview* chooses a back button (the default: a pill at the top left with a chevron and the
+  subview's name, on the line of the exit corner) or Home Assistant's header, in subviews only.
+- **The camera, live and in its own shape** (#26): `camera_view: live` plays Home Assistant's own stream (WebRTC, HLS
+  or MJPEG, as the camera offers) while the card is on screen, and falls back to stills where there is none;
+  `aspect_ratio` (16:9, 4:3, 3:2, 1:1, 2:1, 21:9, or `native`, the camera's own) and `fit_mode` (`cover`, or `contain`
+  for the whole picture on the screen's dark, as a 180° camera needs); `refresh` from half a second. Stills are asked
+  at the card's width in device pixels: sharp, and no heavier than they need to be.
+- **Several sensors on one chart** (#26): the sensor card's *Also on the chart* (`entities`) adds up to two more
+  sensors — a readout each above the chart, and a curve each on its own scale in its measure's tone. Scrubbed, every
+  readout says that moment and the axis says when.
+- **People: an action and a phone battery each** (#25, #26): the people card's `people` take a name, a colour (a
+  ring round their picture), and a tap and a hold action per person — `navigate` to a person's own page, for one.
+  `show_battery` puts each phone's battery beside its person: a glyph filled to its level and "78 %", glyph and figure
+  in the warning tone at 20 % and under, a bolt while it charges; found from the person's phone (its battery sensor,
+  or the tracker's own `battery_level`) or named as `battery`.
+- **Openings with their own names** (#26): the openings card's `rows` take a name, an icon, a colour (its circle, at
+  rest too), a tap and a hold per opening; `variant: compact` lays them out as 48 rows and `variant: tiles` two a row,
+  and `show_time` takes the times away.
+- **A colour per item, at rest too** (#26): scenes, chips, people and openings take a `color` per item, as tiles do.
+  `tint: always` on tiles, tile groups, scenes, chips, rooms and lights shows an item's colour at rest as well, a quiet
+  wash with a hairline of it, while on keeps the full fill.
+- **A 3D printer card** (#27): `custom:fluvy-printer-card`, given the printer's device, finds the rest itself for
+  OctoPrint, PrusaLink, Bambu Lab and Moonraker. The job and its picture (the camera's stills or its live stream, or
+  the job's preview), the progress, the time left, when it will be ready and how long it has run; the nozzle, the bed
+  and the chamber (both figures while a heater is on its way), the layers, the speed and the filament — a Bambu Lab
+  AMS's trays with their colours, the one printing marked; the stage while it prepares and, when a print fails, why.
+  Pause or resume, stop (asked first) and the light; any readout opens its entity, and any of the printer's entities
+  can be one more (`sensors`). `variant: compact` and `variant: row` (a ring of the progress round the printer); any
+  part can be named by hand (`roles`). System buttons and an emergency stop are never shown. The automatic Home
+  dashboard adds a compact one for each printer it finds.
+
+### Changed
+
+- The camera, lock and alarm cards load on demand, with the printer: what every dashboard loads first is 9 KB lighter.
+
+### Fixed
+
+- The visual editor showed switches off that the card had on, and choices empty that the card had made (the date and
+  forecast of a clock, a cover's tilt, a fan's presets, the greeting's weather, a timer's buttons, a gauge's style, a
+  map's layout… on forty cards): every switch and choice now shows what the card does when the config says nothing.
+- Words that ran out of their chip or row in some languages at a phone's width: the wall's back button and long press
+  (Spanish, Italian), the screen's dark after sunset (German, Dutch), the openings' "all sensors" row (Spanish,
+  French, Portuguese), the people card's title (German: a shorter one where the long one does not fit).
+- Narrow columns, large sizes and long languages: a card's head gives its badge way before its title, then its circle;
+  a list's rows (lock, alarm, camera, openings, people) give their circles to their names together, and a row's age
+  takes its short form ("21 d") rather than an ellipsis; the greeting says the language's short hello where even the
+  greeting alone would be cut (a phone at 150 %); the update and helper buttons, the weather, calendar, clock, rooms,
+  meters and energy cards keep their words whole in all eight languages.
+- A house in Fahrenheit: a thermostat whose entity gives no range or step of its own now takes Home Assistant's own in
+  Fahrenheit (45–95 °F, a whole degree a step) where it took Celsius' (7–35, by halves), and a water heater's
+  110–140 °F.
+- **The greeting showed the same person to everyone** (#26): a greeting card without a `person` now greets whoever is
+  signed in — their person's name and picture, and their more-info on a tap. The automatic dashboards and a new card
+  no longer write a person into the greeting; a card that names one keeps it, so empty its *Person* field to follow
+  the signed-in user.
+
 ## [1.5.0] — 2026-10-03
 
 ### Added

@@ -16,9 +16,10 @@ import {
 } from '@fluvy/core';
 import { listRow, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
+import { HeadFit } from '../energy/head.js';
 import { Card } from '../shared/base.js';
 import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
-import { toneOf } from '../shared/colour.js';
+import { statusToneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
 import { secondaryText } from '../shared/secondary.js';
 import { TemplateTexts } from '../shared/templates.js';
@@ -127,12 +128,27 @@ export function changedLine(hass: HomeAssistant | undefined, view: EntityView): 
   return changed.recent ? s(hass, 'since', { time }) : time;
 }
 
+/** A row as the list plans it: what it shows, and the width of what ends it. */
+interface RowPlan {
+  readonly row: RowConfig;
+  readonly view: EntityView;
+  readonly usable: boolean;
+  readonly trailing: 'switch' | 'value' | 'chevron';
+  readonly value: string;
+  readonly end: number;
+  readonly title: string;
+  readonly words: ReturnType<typeof secondaryText>;
+  readonly age: boolean;
+}
+
 /**
  * Cards that end in a list of entity rows (lock, alarm, camera). One trailing element per row, chosen
  * by the entity: a switch for what is safe to toggle, the value for what is measured, a chevron for the rest.
  */
 export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extends Card<C> {
   private rowList: readonly RowConfig[] = [];
+  /** The head's fitting and the rows' (what gives way, in its order), for the card and its rows alike. */
+  protected readonly headFit = new HeadFit(this);
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   protected readonly texts = new TemplateTexts(this);
 
@@ -155,30 +171,66 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
   /** `events` draws the rows as history (camera detections): neutral circle, the time of day, a chevron. */
   protected renderRows(events = false): TemplateResult | typeof nothing {
     if (!this.rowList.length || this.config?.show_rows === false) return nothing;
-    return html`<div class="dv-rows">
-      ${this.rowList.map((row) => this.renderRow(row, events))}
+    const plans = this.rowList.map((row) => this.plan(row, events));
+    // a column too narrow for a name beside what ends its row gives every row's circle to its words, as every list does
+    const keep = this.headFit.rowsKeepIcon(
+      this.contentWidth,
+      plans.map((p) => ({ title: p.title, value: p.value, end: p.end })),
+    );
+    // an age in its full words ("21 days ago") where every row's fits beside what ends it, else every age short
+    // ("21 d"): one form a list, never cut
+    const short = plans.some(
+      (p) => p.age && this.headFit.ruler.width('fv-row__sub', p.words) > this.wordsRoom(p, keep),
+    );
+    // the longest word of a value in words, so a name's floor leaves it its line (devices.css)
+    const word = Math.max(
+      0,
+      ...plans.flatMap((p) =>
+        /\S\s+\S/.test(p.value)
+          ? p.value.split(/\s+/).map((w) => this.headFit.ruler.width('fv-row__value', w))
+          : [],
+      ),
+    );
+    return html`<div class="dv-rows" style=${word ? `--fv-word:${word}px` : nothing}>
+      ${plans.map((p) => this.renderRow(p, events, keep, short))}
     </div>`;
   }
 
-  private renderRow(row: RowConfig, events: boolean): TemplateResult {
+  /** What a row shows and how wide its end is, before the list decides its circles and its ages. */
+  private plan(row: RowConfig, events: boolean): RowPlan {
     const view = this.entity(row.entity);
     const usable = isUsable(view);
     const canToggle = usable && TOGGLE_DOMAINS.has(view.domain) && !NEVER_A_SWITCH.has(view.domain);
-    const trailing = canToggle
+    const trailing: RowPlan['trailing'] = canToggle
       ? 'switch'
       : !events && view.status === 'ok' && (view.number !== null || READ_OUT.has(view.domain))
         ? 'value'
         : 'chevron';
-    const state = this.stateOf(view);
-    const on = state === view.state ? isActive(view) : state === 'on';
-    const tone = toneOf(row, toneFor(view));
     const parts = trailing === 'value' ? valueParts(this.hass, view) : null;
-    return listRow({
-      icon: row.icon ?? glyphFor(view),
-      tone: events ? (usable ? 'neutral' : 'off') : currentTone(view, on ? tone : 'neutral'),
+    const value =
+      trailing === 'value'
+        ? parts
+          ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
+          : stateText(this.hass, view)
+        : '';
+    // the line says when it changed unless the row asks otherwise (as `secondaryText` is called below)
+    const mode = row.secondary ?? 'last-changed';
+    const changed = lastChanged(view);
+    return {
+      row,
+      view,
+      usable,
+      trailing,
+      value,
+      // the end's own width: the value's words, a switch's 56 (its hit area), a chevron's 44
+      end:
+        trailing === 'value'
+          ? this.headFit.ruler.width('fv-row__value', value)
+          : trailing === 'switch'
+            ? 56
+            : 44,
       title: row.name ?? view.name,
-      name: true,
-      sub:
+      words:
         events && view.status === 'ok'
           ? changedAt(this.hass, view)
           : secondaryText(
@@ -188,10 +240,56 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
               trailing === 'value',
               this.texts,
             ),
+      // an age only where the line is one: a state's word (a row that cannot be read) is never shortened into one
+      age:
+        view.status === 'ok' &&
+        changed !== null &&
+        (events ? !changed.recent : mode === 'last-changed'),
+    };
+  }
+
+  /** A row's words' room: the column less its circle (where kept), the gap and what ends the row. */
+  private wordsRoom(p: RowPlan, keep: boolean): number {
+    return this.headFit.rowRoom(this.contentWidth, '', { icon: keep, end: p.end });
+  }
+
+  /** An age in its short form: "21 d", "3 h", "12 min". */
+  private shortAge(view: EntityView): string {
+    const changed = lastChanged(view);
+    if (!changed) return '';
+    const minutes = Math.max(1, Math.round((Date.now() - changed.date.getTime()) / 60_000));
+    const [n, unit] =
+      minutes < 60
+        ? [minutes, 'time.unit_min' as const]
+        : minutes < 1440
+          ? [Math.round(minutes / 60), 'time.unit_h' as const]
+          : [Math.round(minutes / 1440), 'time.unit_d' as const];
+    return `${n} ${this.t(unit)}`;
+  }
+
+  private renderRow(p: RowPlan, events: boolean, keep: boolean, short: boolean): TemplateResult {
+    const { row, view, usable, trailing } = p;
+    const state = this.stateOf(view);
+    const on = state === view.state ? isActive(view) : state === 'on';
+    const tone = statusToneOf(row, toneFor(view));
+    // a row that cannot be read says its state's word where it fits; where it would be cut, the dashed skin says it
+    // alone and the word is the row's label (as a gone tile's)
+    const word =
+      view.status !== 'ok' &&
+      this.headFit.ruler.width('fv-row__sub', p.words) > this.wordsRoom(p, keep)
+        ? p.words
+        : '';
+    return listRow({
+      icon: keep ? (row.icon ?? glyphFor(view)) : null,
+      tone: events ? (usable ? 'neutral' : 'off') : currentTone(view, on ? tone : 'neutral'),
+      title: p.title,
+      name: true,
+      sub: p.age && short ? this.shortAge(view) : word ? '' : p.words,
+      ...(word ? { label: `${p.title} · ${word}` } : {}),
       trailing,
       on,
       switchTone: tone === 'warning' ? 'accent' : tone,
-      value: parts ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}` : '',
+      value: p.value,
       valueTone: view.domain === 'binary_sensor' && on && tone === 'warning' ? 'warning' : '',
       unavailable: !usable,
       accent: this.accents.item(row.color),

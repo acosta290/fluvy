@@ -55,6 +55,7 @@ import {
 } from './signed.js';
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const strings = words('gauge');
 const ways = words('energy-flow');
@@ -202,6 +203,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     'hours',
     'badge',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'ring' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -540,10 +543,10 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         .map((v) => Math.abs(v) / scale.divisor),
     );
     const digits = precision ?? (largest >= 100 ? 0 : largest >= 1 ? 1 : 2);
-    // a power meter: the magnitude, its direction after the unit; anything else: the signed figure
-    const said = (v: number | null): { value: string; unit: string } => {
+    // a power meter: the magnitude, its direction after the unit (`ways`); anything else: the signed figure
+    const said = (v: number | null, ways: boolean): { value: string; unit: string } => {
       if (v === null) return { value: '—', unit: '' };
-      if (!power) return { value: figure(this.hass, v, scale, digits), unit: scale.unit };
+      if (!ways) return { value: figure(this.hass, v, scale, digits), unit: scale.unit };
       const direction = way(v);
       return {
         value: figure(this.hass, Math.abs(v), scale, digits),
@@ -556,12 +559,12 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       Number.isInteger(ends.max / scale.divisor)
         ? 0
         : 1;
-    const edge = (v: number): string => {
-      const shown = formatNumber(this.hass, (power ? Math.abs(v) : v) / scale.divisor, {
+    const edge = (v: number, ways: boolean): string => {
+      const shown = formatNumber(this.hass, (ways ? Math.abs(v) : v) / scale.divisor, {
         digits: edgeDigits,
         minDigits: edgeDigits,
       }).replace(/^-/, '−');
-      return [shown, scale.unit, power ? way(v) : ''].filter(Boolean).join(' ');
+      return [shown, scale.unit, ways ? way(v) : ''].filter(Boolean).join(' ');
     };
 
     const fraction = value === null || !ends ? null : fractionOf(value, ends.min, ends.max);
@@ -584,47 +587,48 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
 
     const width = this.contentWidth;
     const r = this.head.ruler;
-    const left = ends ? edge(ends.min) : '—';
-    const right = ends ? edge(ends.max) : '—';
-    const g = signedGeometry(
-      width,
-      Math.max(r.width('en-gauge__end', left), r.width('en-gauge__end', right)),
-    );
-    const shown = said(value);
-    const fits = (size: ValueSize): boolean =>
-      r.width(
-        size === 'l' ? 'en-gauge__value' : 'en-gauge__value en-gauge__value--m',
-        shown.value,
-        'en-gauge__unit',
-        shown.unit,
-      ) <= valueRoom(g, size);
-    const size: ValueSize = fits('l') ? 'l' : 'm';
+    const statWidth = (stat: { value: string; unit: string }): number =>
+      r.width('fv-readout fv-readout--xs > fv-readout__value', stat.value, 'fv-unit', stat.unit);
+    // the gauge with its power's directions in words, or signed: everything in one way, the needle saying which
+    const lay = (ways: boolean) => {
+      const left = ends ? edge(ends.min, ways) : '—';
+      const right = ends ? edge(ends.max, ways) : '—';
+      const leftW = r.width('en-gauge__end', left);
+      const rightW = r.width('en-gauge__end', right);
+      const g = signedGeometry(width, Math.max(leftW, rightW));
+      const shown = said(value, ways);
+      const fits = (size: ValueSize): boolean =>
+        r.width(
+          size === 'l' ? 'en-gauge__value' : 'en-gauge__value en-gauge__value--m',
+          shown.value,
+          'en-gauge__unit',
+          shown.unit,
+        ) <= valueRoom(g, size);
+      const stats = (
+        [
+          ['common.min', series?.min],
+          ['common.max', series?.max],
+          ['common.average', series?.average],
+        ] as const
+      ).map(([name, raw]) => ({
+        label: this.t(name),
+        ...said(raw === undefined ? null : raw * base.value, ways),
+      }));
+      // the words hold while the value fits its ring, the two ends their line and every statistic the column
+      const holds =
+        fits('m') && leftW + 8 + rightW <= width && stats.every((stat) => statWidth(stat) <= width);
+      return { left, right, g, shown, size: (fits('l') ? 'l' : 'm') as ValueSize, stats, holds };
+    };
+    const worded = lay(power);
+    const { left, right, g, shown, size, stats } = worded.holds ? worded : lay(false);
     const box = valueBox(g, size);
     const label = this.innerLabel(view);
     const room = labelRoom(g, size);
     const labelFits = r.width('en-gauge__label', label) <= room;
 
-    const stats = (
-      [
-        ['common.min', series?.min],
-        ['common.max', series?.max],
-        ['common.average', series?.average],
-      ] as const
-    ).map(([name, raw]) => ({
-      label: this.t(name),
-      ...said(raw === undefined ? null : raw * base.value),
-    }));
     // three columns while the figures hold in them (small, else extra small); else one above the other
     const column = (width - 32) / 3;
-    const stack = !stats.every(
-      (stat) =>
-        r.width(
-          'fv-readout fv-readout--xs > fv-readout__value',
-          stat.value,
-          'fv-unit',
-          stat.unit,
-        ) <= column,
-    );
+    const stack = !stats.every((stat) => statWidth(stat) <= column);
     const statSize = statsSize(this.head.ruler, width, stats, stack ? 1 : 3);
     const fitted = this.head.fit({
       width,

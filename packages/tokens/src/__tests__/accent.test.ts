@@ -76,6 +76,29 @@ describe('a card’s own colour on every palette', () => {
     }
   });
 
+  it('washes an item’s colour at rest so its words read on it, and as far from the card as the words allow', () => {
+    for (const palette of palettes) {
+      const seed = seeds[palette.name as keyof typeof seeds];
+      for (const mode of PALETTE_MODES) {
+        const colors = palette[mode];
+        const { card } = colors.surface;
+        for (const pick of [...HARD_PICKS, ...HA_COLOR_NAMES.map((n) => NAMED_COLORS[n](colors))]) {
+          const vars = new Map(accentFamilyVars(accentFamily(seed, colors, pick), colors));
+          const rest = vars.get('--fluvy-accent-rest')!;
+          const fill = vars.get('--fluvy-accent-fill')!;
+          const at = `${palette.name} ${mode} ${pick}`;
+          // the words: the title and the state line, at 4.5
+          expect(contrastRatio(colors.text.primary, rest), at).toBeGreaterThanOrEqual(4.5);
+          expect(contrastRatio(colors.text.secondary, rest), at).toBeGreaterThanOrEqual(4.5);
+          // it is a wash of the fill, never louder than it, and visibly not the card where the fill is far from it
+          expect(contrastRatio(rest, card), at).toBeLessThan(contrastRatio(fill, card) + 0.001);
+          if (contrastRatio(fill, card) >= 1.6)
+            expect(contrastRatio(rest, card), at).toBeGreaterThanOrEqual(1.18);
+        }
+      }
+    }
+  });
+
   it('writes what the accent owns and nothing else', () => {
     const linen = palettes.find((p) => p.name === 'linen')!;
     const volt = palettes.find((p) => p.name === 'volt')!;

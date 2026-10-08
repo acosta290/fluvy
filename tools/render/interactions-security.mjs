@@ -426,4 +426,192 @@ const open = (sheet, options) => suite.sheet(sheet, options);
   await page.close();
 }
 
+/* ---------- camera: its shape, its fit, half a second, the stream (issue #26) ---------- */
+{
+  const page = await open('devices-security');
+  const plate = (title) =>
+    frame(page, title)
+      .locator('fluvy-camera-card')
+      .evaluate((el) => {
+        const box = el.shadowRoot.querySelector('.dv-cam');
+        const img = el.shadowRoot.querySelector('.fv-plate__img.is-on');
+        return {
+          w: box.getBoundingClientRect().width,
+          h: box.getBoundingClientRect().height,
+          fit: img ? getComputedStyle(img).objectFit : '',
+          stream: Boolean(el.shadowRoot.querySelector('ha-camera-stream')),
+          stills: el.shadowRoot.querySelectorAll('.fv-plate__img').length,
+          time: el.shadowRoot.querySelectorAll('.dv-cam__time').length,
+          refresh: el.config.refresh,
+        };
+      });
+  const on4 = (v) => Math.round(v / 4) * 4;
+  for (const title of [
+    'Camera · 180°, its own shape',
+    'Camera · 180° in 16:9, the whole picture',
+    'Camera · 4:3, half a second',
+    'Camera · live',
+  ])
+    await frame(page, title).scrollIntoViewIfNeeded();
+  await page.waitForTimeout(800);
+  const wide = await plate('Camera · 180°, its own shape');
+  check(
+    'camera: `native` takes the camera’s own shape (a 180° camera’s 3:1), on the 4 px grid',
+    wide.h === on4(wide.w / 3),
+    JSON.stringify(wide),
+  );
+  const whole = await plate('Camera · 180° in 16:9, the whole picture');
+  check(
+    'camera: `contain` shows the whole picture in the 16:9 plate',
+    whole.fit === 'contain' && whole.h === on4((whole.w * 9) / 16),
+    JSON.stringify(whole),
+  );
+  const quick = await plate('Camera · 4:3, half a second');
+  check(
+    'camera: 4:3 is 4:3, and half a second is allowed',
+    quick.h === on4((quick.w * 3) / 4) && quick.refresh === 0.5,
+    JSON.stringify(quick),
+  );
+  const live = await plate('Camera · live');
+  check(
+    'camera: `live` shows Home Assistant’s stream in the plate, no stills under it and no time pill',
+    live.stream && live.stills === 0 && live.time === 0,
+    JSON.stringify(live),
+  );
+  const asked = await frame(page, 'Camera')
+    .locator('fluvy-camera-card')
+    .first()
+    .evaluate((el) => {
+      const view = el.hass.states['camera.driveway'];
+      el.hass = {
+        ...el.hass,
+        states: {
+          ...el.hass.states,
+          'camera.driveway': {
+            ...view,
+            attributes: {
+              ...view.attributes,
+              entity_picture: '/api/camera_proxy/camera.driveway?token=t',
+            },
+          },
+        },
+      };
+      el.inFlight = 0;
+      el.pull();
+      const srcs = [...el.shadowRoot.querySelectorAll('.fv-plate__img')].map(
+        (i) => i.getAttribute('src') ?? '',
+      );
+      return { srcs, want: Math.ceil(el.contentWidth * (window.devicePixelRatio || 1)) };
+    });
+  await page.waitForTimeout(100);
+  const proxied = await frame(page, 'Camera')
+    .locator('fluvy-camera-card')
+    .first()
+    .evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.fv-plate__img')].map((i) => i.getAttribute('src') ?? ''),
+    );
+  check(
+    'camera: a still is asked at the plate’s width in device pixels, its signed token kept',
+    proxied.some((src) => src.includes('token=t') && src.includes(`width=${asked.want}&`)),
+    JSON.stringify(proxied),
+  );
+  await page.close();
+}
+
+/* ---------- "Live" in every language: one line, inside its pill, its dot whole ---------- */
+{
+  const pills = [];
+  for (const lang of ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr']) {
+    const page = await suite.sheet('devices-security', { extra: `&lang=${lang}` });
+    // a camera fetches its stills on screen only: each is brought into view
+    const cameras = page.locator('fluvy-camera-card');
+    for (let i = 0; i < (await cameras.count()); i++) {
+      await cameras.nth(i).scrollIntoViewIfNeeded();
+      await settle(page, 250);
+    }
+    const read = await page.evaluate(() => {
+      const out = [];
+      for (const card of document.querySelectorAll('fluvy-camera-card')) {
+        const live = card.shadowRoot?.querySelector('.dv-cam__live');
+        if (!live || live.classList.contains('is-dot')) continue;
+        const box = live.getBoundingClientRect();
+        const dot = live.querySelector('i')?.getBoundingClientRect();
+        out.push({
+          h: Math.round(box.height),
+          fits: live.scrollWidth <= live.clientWidth + 0.5,
+          dot: Math.round(dot?.width ?? 0),
+        });
+      }
+      return out;
+    });
+    pills.push({
+      lang,
+      ok: read.length > 0 && read.every((p) => p.h === 24 && p.fits && p.dot === 8),
+    });
+    await page.close();
+  }
+  check(
+    'camera: "Live" on one line inside its pill, its dot whole, in all eight languages',
+    pills.every((p) => p.ok),
+    JSON.stringify(pills),
+  );
+}
+
+/* ---------- the device rows in narrow columns, every language ---------- */
+// the camera's, the lock's and the alarm's rows give their circles together where a name would get less than its 96
+// beside what ends its row; an age takes its short form, one form a list; a state's word is never an age; nothing cut
+// but a name, and a name only as names may (96 beside its circle, 40 once the circle is given)
+{
+  const cut = [];
+  for (const lang of ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr']) {
+    for (const width of [204, 211, 232, 256]) {
+      const page = await open('devices-security', { width, lang });
+      const found = await page.evaluate(() => {
+        const out = [];
+        for (const card of document.querySelectorAll(
+          'fluvy-camera-card, fluvy-lock-card, fluvy-alarm-card',
+        )) {
+          const root = card.shadowRoot;
+          const rows = [...root.querySelectorAll('.dv-rows .fv-row')];
+          const ages = new Set();
+          for (const row of rows) {
+            const bare = row.classList.contains('fv-row--bare');
+            for (const el of row.querySelectorAll('.fv-row__title, .fv-row__sub, .fv-row__value')) {
+              if (!el.getBoundingClientRect().width) continue;
+              const clipped = el.scrollWidth > el.clientWidth + 1;
+              const name = el.classList.contains('fv-row__title');
+              if (clipped && (!name || el.clientWidth < (bare ? 40 : 95)))
+                out.push(
+                  `${card.localName.slice(6)}: "${el.textContent.trim()}" ${el.clientWidth}/${el.scrollWidth}`,
+                );
+            }
+            // a value ends inside its row: never past its edge, never over the next row
+            const value = row.querySelector('.fv-row__value');
+            if (value) {
+              const v = value.getBoundingClientRect();
+              const r = row.getBoundingClientRect();
+              if (v.right > r.right + 0.5 || v.bottom > r.bottom + 0.5)
+                out.push(
+                  `${card.localName.slice(6)}: "${value.textContent.trim()}" leaves its row`,
+                );
+            }
+            const sub = row.querySelector('.fv-row__sub')?.textContent.trim() ?? '';
+            if (/\d/.test(sub) && !/:/.test(sub))
+              ages.add(/^\d+ \S+$/.test(sub) ? 'short' : 'long');
+          }
+          if (ages.size > 1) out.push(`${card.localName.slice(6)}: ages in two forms`);
+        }
+        return out;
+      });
+      for (const f of found) cut.push(`${lang} ${width} ${f}`);
+      await page.close();
+    }
+  }
+  check(
+    'device rows at 204, 211, 232 and 256 in eight languages: circles give way together, ages one form, nothing cut but a name as names may',
+    cut.length === 0,
+    cut.slice(0, 8).join(' · '),
+  );
+}
+
 await suite.finish();

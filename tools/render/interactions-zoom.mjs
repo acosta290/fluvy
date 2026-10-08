@@ -351,6 +351,7 @@ async function tap(page, locator) {
     'energy',
     'media',
     'home-extras',
+    'ambient',
   ]) {
     const at = {};
     for (const zoom of [100, 125, 150]) {
@@ -370,6 +371,33 @@ async function tap(page, locator) {
       fresh(at, 150).join(' ‖ '),
     );
   }
+}
+
+/* ---------- the greeting on a phone at 150 % ---------- */
+// a phone's column at the largest size holds no "Good afternoon": the greeting takes the language's short hello before
+// a word of it would be cut
+{
+  const cut = [];
+  for (const lang of ['en', 'de', 'es', 'nl', 'it']) {
+    const page = await open('home-extras', 150, {
+      viewport: { width: 360, height: 700 },
+      extra: `&lang=${lang}`,
+    });
+    const titles = await page.locator('fluvy-hello-card').evaluateAll((els) =>
+      els.map((el) => {
+        const t = el.shadowRoot.querySelector('.hm-hello__title');
+        return { text: t?.innerText.trim() ?? '', spill: t ? t.scrollWidth - t.clientWidth : 0 };
+      }),
+    );
+    for (const t of titles) if (t.spill > 1) cut.push(`${lang}: "${t.text}" +${t.spill}`);
+    if (!titles.length) cut.push(`${lang}: no greeting`);
+    await page.close();
+  }
+  check(
+    'the greeting on a 360 phone at 150 %: whole in every language (its short hello where it must)',
+    cut.length === 0,
+    cut.join(' · '),
+  );
 }
 
 console.log(`\n(${ENGINE})`);

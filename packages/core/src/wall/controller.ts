@@ -1,7 +1,17 @@
 import { resyncCardThemes, setDarkOverride } from '../card.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { firstWeather } from '../entity.js';
-import { WALL_ATTRIBUTE, WALL_BACKGROUND_VAR } from '../look/attributes.js';
+import { navigate } from '../actions.js';
+import {
+  WALL_ATTRIBUTE,
+  WALL_BACK_ATTRIBUTE,
+  WALL_BACKGROUND_VAR,
+  WALL_HEADER_ATTRIBUTE,
+  WALL_TOP_VAR,
+} from '../look/attributes.js';
+import type { RootElement } from '../look/tabs.js';
+import { currentView, NO_VIEW, VIEW_EVENT, type ViewFacts } from '../look/view.js';
+import { walkShadow } from '../shell/dom.js';
 import { readDevice, writeDevice } from '../settings/device.js';
 import type { EffectiveSettings, WallExit } from '../settings/schema.js';
 import { createIdle, type Idle } from './idle.js';
@@ -48,6 +58,19 @@ export interface CornerOptions {
   readonly hass: () => HomeAssistant | undefined;
 }
 
+export interface BackOptions {
+  /** The subview's title ("Back" when it has none). */
+  readonly title: string;
+  readonly onBack: () => void;
+  readonly hass: () => HomeAssistant | undefined;
+}
+
+/** The floating way back while it is on the page: its title follows the view, and it goes. */
+export interface BackHandle {
+  update(title: string): void;
+  remove(): void;
+}
+
 export interface NoticeOptions {
   /** "Wall paused · Resume" (it stays while the pause does) or "Wall mode off · Back to the wall". */
   readonly kind: 'paused' | 'left';
@@ -63,6 +86,8 @@ export interface WallUi {
   corner(options: CornerOptions): () => void;
   /** Shows the notice at the foot of the page, with its way back; returns how to remove it. */
   notice(options: NoticeOptions): () => void;
+  /** Shows the way back from a subview at the top left. */
+  back(options: BackOptions): BackHandle;
 }
 
 export interface WallDeps {
@@ -123,6 +148,10 @@ export function createWall(deps: WallDeps): WallHandle {
   let stopToast: (() => void) | undefined;
   let closeSaver: (() => void) | undefined;
   let dimLayer: HTMLElement | undefined;
+  /** The view the dashboard shows (a subview has a way back on a wall), and the root that shows it. */
+  let view: ViewFacts = NO_VIEW;
+  let root: RootElement | undefined;
+  let backHandle: BackHandle | undefined;
   let darkTimer = 0;
   let resumeTimer = 0;
   let leftTimer = 0;
@@ -227,6 +256,52 @@ export function createWall(deps: WallDeps): WallHandle {
     veil();
   };
 
+  /** Home Assistant's own way back (the view's `back_path`, its history, the dashboard), or ours where it is missing. */
+  const goBack = (): void => {
+    if (typeof root?._goBack === 'function') {
+      root._goBack();
+      return;
+    }
+    if (view.backPath) navigate(view.backPath, true);
+    else win.history.back();
+  };
+
+  /**
+   * The way back from a subview, as the house chose it: the floating button with the view's title, or Home Assistant's
+   * header (the shell's wall sheets fill on the attributes) with the corner moved under it.
+   */
+  const syncWay = (): void => {
+    const on = phase === 'awake' || phase === 'asleep';
+    const mode = wall().subview;
+    html.toggleAttribute(WALL_HEADER_ATTRIBUTE, on && mode === 'header');
+    html.toggleAttribute(WALL_BACK_ATTRIBUTE, on && mode === 'button');
+    if (on && mode === 'header' && view.subview) html.style.setProperty(WALL_TOP_VAR, '56px');
+    else html.style.removeProperty(WALL_TOP_VAR);
+    if (!on || mode !== 'button' || !view.subview) {
+      backHandle?.remove();
+      backHandle = undefined;
+      return;
+    }
+    if (backHandle) {
+      backHandle.update(view.title);
+      return;
+    }
+    void ui().then((pieces) => {
+      if (backHandle || !(phase === 'awake' || phase === 'asleep') || !view.subview) return;
+      if (wall().subview !== 'button') return;
+      backHandle = pieces.back({ title: view.title, onBack: goBack, hass: deps.hass });
+    });
+  };
+
+  /** What the dashboard on the page shows now (when the wall comes, before any root has told it). */
+  const readView = (): void => {
+    walkShadow(doc, (element) => {
+      if (element.localName !== 'hui-root') return;
+      root = element as RootElement;
+      view = currentView(root);
+    });
+  };
+
   const leaveWall = (): void => {
     html.removeAttribute(WALL_ATTRIBUTE);
     html.style.removeProperty(WALL_BACKGROUND_VAR);
@@ -246,6 +321,11 @@ export function createWall(deps: WallDeps): WallHandle {
     deps.setWall({ on: false, dark: undefined });
     dimLayer?.remove();
     dimLayer = undefined;
+    backHandle?.remove();
+    backHandle = undefined;
+    html.removeAttribute(WALL_HEADER_ATTRIBUTE);
+    html.removeAttribute(WALL_BACK_ATTRIBUTE);
+    html.style.removeProperty(WALL_TOP_VAR);
   };
 
   const enterWall = (): void => {
@@ -274,9 +354,16 @@ export function createWall(deps: WallDeps): WallHandle {
         hass: deps.hass,
       });
     });
+    readView();
+    syncWay();
   };
 
-  const evaluate = (): void => {
+  /**
+   * Whether the page is a wall now. A move inside a wall (a subview, another view) keeps the wall as it is — its
+   * corner, its idle time, its screen kept awake — and only its way back follows; the settings changing (`force`)
+   * set it up again.
+   */
+  const evaluate = (force = true): void => {
     const hass = deps.hass();
     const settings = deps.settings();
     const on = wallOn({
@@ -288,6 +375,10 @@ export function createWall(deps: WallDeps): WallHandle {
       settings,
     });
     if (on) {
+      if (!force && (phase === 'awake' || phase === 'asleep')) {
+        syncWay();
+        return;
+      }
       enterWall();
       return;
     }
@@ -346,9 +437,17 @@ export function createWall(deps: WallDeps): WallHandle {
   }
 
   // the page moves between dashboards without reloading; the settings may change on another device
-  const onLocation = (): void => evaluate();
+  const onLocation = (): void => evaluate(false);
   win.addEventListener('location-changed', onLocation);
   win.addEventListener('popstate', onLocation);
+  // the dashboard's root tells when the view it shows has changed (after it rendered it)
+  const onView = (event: Event): void => {
+    const target = event.composedPath()[0];
+    if (target instanceof HTMLElement) root = target as RootElement;
+    view = (event as CustomEvent<ViewFacts>).detail ?? NO_VIEW;
+    syncWay();
+  };
+  win.addEventListener(VIEW_EVENT, onView);
   const offSettings = deps.onSettings(evaluate);
   // Home Assistant's panels arrive with its connection: look again until they are there
   let tries = 0;
@@ -374,6 +473,7 @@ export function createWall(deps: WallDeps): WallHandle {
     stop: () => {
       win.removeEventListener('location-changed', onLocation);
       win.removeEventListener('popstate', onLocation);
+      win.removeEventListener(VIEW_EVENT, onView);
       offSettings();
       win.clearTimeout(resumeTimer);
       win.clearTimeout(leftTimer);

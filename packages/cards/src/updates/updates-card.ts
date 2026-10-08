@@ -9,11 +9,11 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { badge, head, icon, listRow, sheetStyles, type IconRef } from '@fluvy/ui';
+import { badge, head, icon, listRow, sheetStyles, type IconRef, type Tone } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { rowButton } from '../helpers/rows.js';
+import { actionsKeepIcon, rowButton } from '../helpers/rows.js';
 
 import { rowStyles } from '../helpers/styles.js';
 
@@ -35,7 +35,10 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { TextRuler } from '../shared/fit.js';
+import { FontsSettled } from '../shared/fonts.js';
 import { listLength, ROW } from '../shared/heights.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('updates');
 
@@ -111,6 +114,8 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     'toggle',
     'toggle_secondary',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ show_up_to_date: false });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -162,6 +167,17 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
+  /** Widths laid out by the browser in the card's own classes: whether an Install leaves the names their room. */
+  private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
+
+  constructor() {
+    super();
+    new FontsSettled(this, () => {
+      this.ruler.clear();
+      this.requestUpdate();
+    });
+  }
+
   /* ---------- rows ---------- */
 
   /** 0–100 while Home Assistant reports a percentage, null while it only says "in progress" (or nothing). */
@@ -186,9 +202,17 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     return to ?? from ?? '';
   }
 
-  private row(view: EntityView, narrow: boolean): TemplateResult {
+  /** An update that Install starts from here: not running, waiting, and installable by Home Assistant. */
+  private installable(view: EntityView): boolean {
+    return !this.installing(view) && view.state === 'on' && view.supports(INSTALL);
+  }
+
+  /** `bare`: the rows have given their circles to their names (an Install, never cut, squeezed one of them). */
+  private row(view: EntityView, narrow: boolean, bare: boolean): TemplateResult {
     const unusable = view.status === 'unavailable' || view.status === 'missing';
     const ref: IconRef | string = view.attr<string>('icon') ?? glyphFor(view);
+    const circle = (tone: Tone): TemplateResult | typeof nothing =>
+      bare ? nothing : html`<span class="fv-ico fv-ico--${tone}" data-icon>${icon(ref)}</span>`;
 
     if (this.installing(view)) {
       const percent = this.percent(view);
@@ -202,8 +226,8 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
       const sub = narrow
         ? progress.charAt(0).toLocaleUpperCase() + progress.slice(1)
         : [this.versions(view), progress].filter(Boolean).join(' · ');
-      return html`<div class="fv-row in-row--progress">
-        <span class="fv-ico fv-ico--accent" data-icon>${icon(ref)}</span>
+      return html`<div class="fv-row in-row--progress ${bare ? 'fv-row--bare' : ''}">
+        ${circle('accent')}
         <span class="fv-row__text">
           <span class="fv-row__title">${view.name}</span>
           <span class="fv-row__sub">${sub}</span>
@@ -224,7 +248,7 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
       </div>`;
     }
 
-    if (view.state === 'on' && view.supports(INSTALL)) {
+    if (this.installable(view)) {
       const install = rowButton(
         'link',
         s(this.hass, 'install'),
@@ -234,8 +258,8 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
           this.call('update', 'install', {}, view.id);
         },
       );
-      return html`<div class="fv-row">
-        <span class="fv-ico fv-ico--neutral" data-icon>${icon(ref)}</span>
+      return html`<div class="fv-row ${bare ? 'fv-row--bare' : ''}">
+        ${circle('neutral')}
         <span class="fv-row__text"
           ><span class="fv-row__title">${view.name}</span
           ><span class="fv-row__sub">${this.versions(view)}</span></span
@@ -247,7 +271,7 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     // nothing to install from here: the trailing slot says why, or the chevron leads to Home Assistant's own dialog
     const pending = view.state === 'on';
     return listRow({
-      icon: ref,
+      icon: bare ? null : ref,
       tone: unusable ? 'off' : 'neutral',
       title: view.name,
       sub: this.versions(view),
@@ -259,7 +283,8 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     });
   }
 
-  private toggleRow(): TemplateResult | typeof nothing {
+  /** The switch under the list, in the list's column: without its circle when the rows gave theirs to their names. */
+  private toggleRow(bare: boolean): TemplateResult | typeof nothing {
     const id = this.config?.toggle;
     if (!id) return nothing;
     const view = this.entity(id);
@@ -267,7 +292,7 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     const on = this.stateOf(view) === 'on';
     return html`<div class="in-rows">
       ${listRow({
-        icon: view.attr<string>('icon') ?? 'clock',
+        icon: bare ? null : (view.attr<string>('icon') ?? 'clock'),
         tone: unusable ? 'off' : on ? 'accent' : 'neutral',
         title: view.name,
         sub:
@@ -290,6 +315,14 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     const waiting = views.filter((view) => view.state === 'on' || this.installing(view));
     const shown = this.config?.show_up_to_date ? views : waiting;
     const narrow = this.contentWidth < NARROW;
+    const install = s(this.hass, 'install');
+    const bare = !actionsKeepIcon(
+      this.ruler,
+      this.contentWidth,
+      shown
+        .filter((view) => this.installable(view))
+        .map((view) => ({ name: view.name, action: install })),
+    );
 
     const stamps = views
       .map((view) => (view.stateObj ? new Date(view.stateObj.last_updated).getTime() : Number.NaN))
@@ -315,12 +348,12 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
       })}
       ${
         shown.length
-          ? html`<div class="in-rows">${shown.map((view) => this.row(view, narrow))}</div>`
+          ? html`<div class="in-rows">${shown.map((view) => this.row(view, narrow, bare))}</div>`
           : html`<div class="in-rows in-rows--quiet">
               ${listRow({ icon: 'check', tone: 'neutral', title: s(this.hass, 'all_up_to_date'), trailing: 'none' })}
             </div>`
       }
-      ${this.toggleRow()}
+      ${this.toggleRow(bare)}
     </article>`;
   }
 }

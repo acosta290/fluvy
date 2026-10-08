@@ -2,6 +2,7 @@ import {
   formatNumber,
   languageOf,
   LANGUAGES,
+  personOf,
   stateText,
   strings,
   type DayParts,
@@ -34,6 +35,7 @@ import {
   accentField,
   actionFields,
   boolField,
+  editorWord,
   entityField,
   fieldRow,
   formLabels,
@@ -44,14 +46,18 @@ import { overflows } from './fit.js';
 
 import { conditionGlyph, isCondition, isNight } from '../shared/weather.js';
 import { configKeys } from '../shared/config.js';
+import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const weatherWord = strings('weather');
 const s = strings('hello');
 
 export interface HelloCardConfig extends FluvyCardConfig {
-  /** Who is greeted. Falls back to the first word of the signed-in user's name. */
+  /** Who is greeted. Falls back to the first word of the greeted person's name, else the signed-in user's. */
   name?: string;
-  /** Person entity: its picture fills the avatar, and tapping the avatar opens its more-info. */
+  /**
+   * The person greeted, whoever looks: its picture fills the avatar, and tapping the avatar opens its more-info. Left
+   * out (the default), the card greets whoever is signed in — their person's name and picture.
+   */
   person?: string;
   /** Weather entity: condition glyph + temperature + condition at the right of the date. */
   weather?: string;
@@ -93,7 +99,8 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * the sheet draws it. One timer aligned to the hour re-renders it; nothing runs per second.
  *
  * The block never clips what it says: after each render `fit()` steps the greeting from 28 to 22
- * when the name is long, then to the greeting alone; the date from "Thursday, September 17" to
+ * when the name is long, then to the greeting alone, and where even that would be cut (a phone at the
+ * largest sizes) to the language's short hello; the date from "Thursday, September 17" to
  * "Thu, Sep 17" when the weather needs the room, and in the narrowest columns the weather to glyph +
  * degrees, then away, then the date too. Nothing is ever cut.
  */
@@ -158,6 +165,14 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
       /* even the small tier cannot hold the name: the greeting alone (the avatar says who) */
       .is-bare .hm-hello__name {
         display: none;
+      }
+      /* nor the greeting at the small tier (a phone's column at a large size): the language's short hello */
+      .hm-hello__greet--short,
+      .is-hi .hm-hello__greet {
+        display: none;
+      }
+      .is-hi .hm-hello__greet--short {
+        display: inline;
       }
 
       /* the fit measures right after it flips a tier: nothing here may be mid-transition (reduced motion gives
@@ -234,6 +249,12 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     'show_date',
     'show_avatar',
   ]);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    show_avatar: true,
+    show_weather: true,
+    show_date: true,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -248,17 +269,15 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
         actionFields(),
       ],
       ...formLabels({ person: 'editor.entity', weather: 'editor.weather' }),
+      computeHelper: (schema) =>
+        schema.name === 'person' ? editorWord('hello.person_helper') : undefined,
     };
   }
 
+  /** A new card greets whoever looks at it: it names no person of its own. */
   static getStubConfig(_hass: unknown, entities: readonly string[]): HelloCardConfig {
-    const person = entities.find((id) => id.startsWith('person.'));
     const weather = entities.find((id) => id.startsWith('weather.'));
-    return {
-      type: 'custom:fluvy-hello-card',
-      ...(person ? { person } : {}),
-      ...(weather ? { weather } : {}),
-    };
+    return { type: 'custom:fluvy-hello-card', ...(weather ? { weather } : {}) };
   }
 
   override getCardSize(): number {
@@ -271,8 +290,14 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   protected override watched(): readonly string[] {
     const ids = ['sun.sun'];
     if (this.config?.weather) ids.push(this.config.weather);
-    if (this.config?.person) ids.push(this.config.person);
+    const person = this.personId();
+    if (person) ids.push(person);
     return ids;
+  }
+
+  /** The person greeted: the card's own, else the signed-in user's (none for an account that is no one's person). */
+  private personId(): string | undefined {
+    return this.config?.person || personOf(this.hass, this.hass?.user?.id);
   }
 
   /* ---------- the hour tick ---------- */
@@ -327,6 +352,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     block.classList.remove(
       'is-small',
       'is-bare',
+      'is-hi',
       'is-short',
       'is-compact',
       'is-dateonly',
@@ -339,6 +365,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
       block.classList.add('is-bare');
       block.classList.remove('is-small');
       if (overflows(title)) block.classList.add('is-small');
+      if (overflows(title)) block.classList.add('is-hi');
     }
     // the date too (when it is shown): the short form first, then the weather drops its word and keeps glyph +
     // degrees, then leaves the line to the date, and a column too narrow even for the short date shows neither
@@ -358,11 +385,12 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     return frozen && !Number.isNaN(frozen.getTime()) ? frozen : new Date();
   }
 
-  /** The configured name, else the first name of the configured person (the avatar's), else the signed-in user's. */
+  /** The configured name, else the first name of the person greeted (the avatar's), else the signed-in user's. */
   private who(): string {
     const configured = this.config?.name?.trim();
     if (configured) return configured;
-    const person = this.config?.person ? this.entity(this.config.person) : null;
+    const id = this.personId();
+    const person = id ? this.entity(id) : null;
     const named =
       person && person.status !== 'missing' ? person.name : (this.hass?.user?.name ?? '');
     return named.trim().split(/\s+/)[0] ?? '';
@@ -395,7 +423,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   }
 
   private avatar(name: string): TemplateResult {
-    const id = this.config?.person;
+    const id = this.personId();
     const person = id ? this.entity(id) : null;
     const path = person?.attr<string | null>('entity_picture');
     const picture = path && this.hass ? this.hass.hassUrl(path) : '';
@@ -452,7 +480,10 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
       <div class="hm-hello__text">
         <h1 class="hm-hello__title">
           <span class="hm-hello__greet">${greet}</span
-          >${at > 0 ? html`<span class="hm-hello__name">${said.slice(greet.length)}</span>` : nothing}
+          >${at > 0 ? html`<span class="hm-hello__name">${said.slice(greet.length)}</span>` : nothing}<span
+            class="hm-hello__greet hm-hello__greet--short"
+            >${this.t('greeting.hello')}</span
+          >
         </h1>
         <p class="hm-hello__meta">
           ${

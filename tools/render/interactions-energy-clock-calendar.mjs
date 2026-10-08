@@ -128,6 +128,74 @@ async function moreInfos(page, run) {
     (await bubble.boundingBox()).x < restLeft - 80 && /\d{1,2}:\d{2}/.test(text),
     text,
   );
+  // several sensors on one card (issue #26): a readout each, a curve each on its own scale; scrubbed, the readouts
+  // read that moment and one bubble says when
+  const several = frame(sensorPage, 'Sensors · two on one chart').locator('fluvy-sensor-card');
+  await several.scrollIntoViewIfNeeded();
+  const readPair = () =>
+    several.evaluate((el) => ({
+      labels: [...el.shadowRoot.querySelectorAll('.am-pair .fv-readout__label')].map((l) =>
+        l.textContent.trim(),
+      ),
+      values: [...el.shadowRoot.querySelectorAll('.am-pair .fv-readout__value')].map((v) =>
+        v.textContent.replace(/\s+/g, ' ').trim(),
+      ),
+      lines: el.shadowRoot.querySelectorAll('.am-multi .curve-line').length,
+      tones: [...el.shadowRoot.querySelectorAll('.am-multi > g')].map((g) =>
+        g.getAttribute('class'),
+      ),
+      // the moment read is a pill on the axis row (several curves: no bubble over one of them)
+      bubble: el.shadowRoot.querySelector('.am-axis .am-when')?.textContent.trim() ?? '',
+      // the hours give way (they fade) while the pill reads
+      axisHidden:
+        el.shadowRoot.querySelector('.am-axis')?.classList.contains('is-reading') ?? false,
+    }));
+  const atRest = await readPair();
+  check(
+    'sensors: two on one card — “Temperature 21.4 °C | Humidity 46 %”, two curves in their measures’ tones',
+    atRest.labels.join('|') === 'Temperature|Humidity' &&
+      /^21\.4 ?°C$/.test(atRest.values[0] ?? '') &&
+      /^46 ?%$/.test(atRest.values[1] ?? '') &&
+      atRest.lines === 2 &&
+      atRest.tones.join('|') === 'fv-tone--heat|fv-tone--water' &&
+      atRest.bubble === '',
+    JSON.stringify(atRest),
+  );
+  const pairBox = await several.locator('.am-chart').boundingBox();
+  await sensorPage.mouse.move(pairBox.x + pairBox.width * 0.3, pairBox.y + pairBox.height * 0.6);
+  await sensorPage.waitForTimeout(150);
+  const read = await readPair();
+  await sensorPage.mouse.move(0, 0);
+  check(
+    'sensors: scrubbed, each readout says that moment at its reading’s precision (“48 %”, never “47.9 %”), and the pill on the axis row says when over the hours',
+    read.values.join() !== atRest.values.join() &&
+      /^\d+ ?%$/.test(read.values[1] ?? '') &&
+      /^\d{1,2}:\d{2}$/.test(read.bubble) &&
+      read.axisHidden &&
+      !atRest.axisHidden,
+    JSON.stringify(read),
+  );
+  // each readout centred in its column, a key in its curve's ink beside the name once the circles have gone
+  const layout = await several.evaluate((el) => {
+    const items = [...el.shadowRoot.querySelectorAll('.am-pair__item')];
+    return items.map((item) => {
+      const box = item.getBoundingClientRect();
+      const inner = [...item.children].map((c) => c.getBoundingClientRect());
+      const left = Math.min(...inner.map((b) => b.left));
+      const right = Math.max(...inner.map((b) => b.right));
+      const key = item.querySelector('.am-key');
+      return {
+        off: Math.abs(left - box.left - (box.right - right)),
+        circle: Boolean(item.querySelector('.fv-ico')),
+        key: key !== null && Math.round(key.getBoundingClientRect().width) === 12,
+      };
+    });
+  });
+  check(
+    'sensors: each readout centred in its column; without its circle, a 12 px key in its curve’s ink beside its name',
+    layout.length === 2 && layout.every((i) => i.off <= 1 && (i.circle || i.key)),
+    JSON.stringify(layout),
+  );
   await sensorPage.close();
   const page = await open('solar');
   const production = page.locator('fluvy-production-card').first();

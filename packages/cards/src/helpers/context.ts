@@ -27,6 +27,8 @@ export interface HelperHost {
   readonly ruler: TextRuler;
   /** A row's own second line when it is a template: rendered by Home Assistant, live. */
   readonly texts: TemplateTexts;
+  /** The rows have given their circles to their names: an action's word squeezed one of them (`actionsKeepIcon`). */
+  readonly bare: boolean;
   /** The state to draw: the expected one while a change is in flight. */
   state(view: EntityView): string;
   expect(entityId: string, state: string): void;

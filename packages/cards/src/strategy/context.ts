@@ -38,7 +38,7 @@ export function framed(
   const header =
     template.header === 'hello'
       ? [
-          helloCard(ctx.weather, ctx.home.me),
+          helloCard(ctx.weather),
           ...(ctx.greetingTabs && tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
         ]
       : [];

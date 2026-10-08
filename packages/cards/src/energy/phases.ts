@@ -85,26 +85,25 @@ interface Figure {
 /** The phases' rows and their axis ("← out · in →"), laid out to the column by measure. */
 export function phaseBlock(o: PhaseOptions): TemplateResult {
   const span = phaseSpan(o.rows.map((r) => r.value));
-  const figures = o.rows.map((r): Figure => {
-    const bar = phaseBar(r.value, span, o.threshold);
-    return r.value === null
-      ? { value: '—', unit: '', way: '', reach: 0 }
-      : {
-          value: scaled(o.hass, Math.abs(r.value), o.scale),
-          unit: bar.way ? `${o.scale.unit} ${o.ways[bar.way]}` : o.scale.unit,
-          way: bar.way,
-          reach: bar.reach,
-        };
-  });
-  const valueW = Math.max(
-    VALUE,
-    up4(
-      Math.max(
-        0,
-        ...figures.map((f) => o.ruler.width('en-phase__value', f.value, 'en-unit', f.unit)),
-      ),
-    ),
-  );
+  const figuresOf = (worded: boolean): Figure[] =>
+    o.rows.map((r): Figure => {
+      const bar = phaseBar(r.value, span, o.threshold);
+      return r.value === null
+        ? { value: '—', unit: '', way: '', reach: 0 }
+        : {
+            value: scaled(o.hass, Math.abs(r.value), o.scale),
+            unit: bar.way && worded ? `${o.scale.unit} ${o.ways[bar.way]}` : o.scale.unit,
+            way: bar.way,
+            reach: bar.reach,
+          };
+    });
+  const widest = (list: readonly Figure[]): number =>
+    Math.max(0, ...list.map((f) => o.ruler.width('en-phase__value', f.value, 'en-unit', f.unit)));
+  // a column too narrow for a figure with its way ("0.4 kW exported" in half a phone's) writes the figure alone: its
+  // bar, and the axis under the rows, say which way it goes
+  let figures = figuresOf(true);
+  if (widest(figures) > o.width) figures = figuresOf(false);
+  const valueW = Math.max(VALUE, up4(widest(figures)));
   const left = `← ${o.ways.out}`;
   const right = `${o.ways.in} →`;
   const axisW = o.ruler.width('en-phase-axis', left) + o.ruler.width('en-phase-axis', right) + 8;
@@ -148,6 +147,13 @@ export function phaseBlock(o: PhaseOptions): TemplateResult {
 
 /** A phase's row in a narrow column: its name and figure on one line, its bar under them across the column. */
 export const phaseStyles = css`
+  /* an axis too wide for its column folds: the out side on its line, the in side on the next at the end */
+  .en-phase-axis {
+    flex-wrap: wrap;
+  }
+  .en-phase-axis > span:last-child {
+    margin-left: auto;
+  }
   .en-phase--stack {
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 8px;

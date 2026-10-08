@@ -11,7 +11,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { badge, head, listRow } from '@fluvy/ui';
+import { head, listRow } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -29,13 +29,14 @@ import {
   selectField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import { toneOf } from '../shared/colour.js';
+import { statusToneOf, toneOf } from '../shared/colour.js';
 import { secondaryText } from '../shared/secondary.js';
 import { TemplateTexts } from '../shared/templates.js';
 import { listLength, ROW_COMPACT, ROW } from '../shared/heights.js';
+import { HeadFit } from '../energy/head.js';
 
 /** A row of the card: the rows every list shares (`RowConfig`). */
 export type EntityRowConfig = RowConfig;
@@ -90,6 +91,10 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   private readonly texts = new TemplateTexts(this);
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({ variant: 'rows', show_count: false });
+  /** Fits the head to its column (measured in the card's own classes, again when a font lands). */
+  private readonly head = new HeadFit(this);
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -135,22 +140,34 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const active = views.filter((v) => isActive(v)).length;
     const tone = toneOf(this.config, 'accent');
     const compact = this.config?.variant === 'compact';
-    const header = this.config?.title
-      ? head({
-          icon: this.config.icon ?? 'grid',
-          tone,
-          title: this.config.title,
-          sub: this.config.subtitle ?? '',
-          trailing: this.config.show_count
-            ? badge(
-                active > 0
-                  ? `${active} ${this.t('common.on').toLowerCase()}`
-                  : this.t('common.off'),
-                active > 0 ? tone : 'neutral',
-              )
-            : nothing,
+    const title = this.config?.title;
+    // the count gives way to the title, then the circle does, as every head's do (`HeadFit`)
+    const fitted = title
+      ? this.head.fit({
+          width: this.contentWidth,
+          title,
+          sub: this.config?.subtitle ?? '',
+          badge: this.config?.show_count
+            ? {
+                text:
+                  active > 0
+                    ? `${active} ${this.t('common.on').toLowerCase()}`
+                    : this.t('common.off'),
+                tone: active > 0 ? tone : 'neutral',
+              }
+            : null,
         })
-      : nothing;
+      : null;
+    const header =
+      title && fitted
+        ? head({
+            icon: fitted.icon ? (this.config?.icon ?? 'grid') : null,
+            tone,
+            title,
+            sub: fitted.sub,
+            trailing: fitted.badge,
+          })
+        : nothing;
 
     return html`<article class="fv-card" data-card>
       ${header}
@@ -192,7 +209,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             state === view.state ? isActive(view) : !['off', 'closed', 'locked'].includes(state);
           const parts = valueParts(this.hass, view);
           const warn = view.domain === 'binary_sensor' && on && toneFor(view) === 'warning';
-          const rowTone = toneOf(row, toneFor(view));
+          const rowTone = statusToneOf(row, toneFor(view));
           return listRow({
             icon: row.icon ?? glyphFor(view),
             tone: currentTone(view, on ? rowTone : 'neutral'),

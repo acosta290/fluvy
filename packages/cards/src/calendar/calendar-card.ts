@@ -49,7 +49,7 @@ import { upcomingView } from './views/upcoming.js';
 import { weekView } from './views/week.js';
 import { Words } from './words.js';
 import { configKeys } from '../shared/config.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('calendar');
 
@@ -165,6 +165,12 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
       schema: [entityField(['calendar']), textField('name'), colourFields()],
     },
   ];
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => ({
+    variant: 'agenda',
+    tile: 'date',
+    first_weekday: 'language',
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [

@@ -314,6 +314,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         fan: undefined,
       };
     }
+    // the house's unit: Home Assistant gives a climate's and a water heater's temperatures in it; where an entity says
+    // no range or step of its own, its defaults are Home Assistant's, in that unit
+    const unit = this.hass?.config.unit_system.temperature ?? '°C';
+    const fahrenheit = unit === '°F';
     if (view.domain === 'water_heater') {
       const list = view.attr<string[]>('operation_list') ?? [];
       const off = state === 'off';
@@ -322,10 +326,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         kind: 'water_heater',
         tone: 'heat',
         off,
-        min: num('min_temp') ?? 30,
-        max: num('max_temp') ?? 70,
+        min: num('min_temp') ?? (fahrenheit ? 110 : 43),
+        max: num('max_temp') ?? (fahrenheit ? 140 : 60),
         step: num('target_temp_step') ?? 1,
-        unit: this.hass?.config.unit_system.temperature ?? '°C',
+        unit,
         target,
         low: undefined,
         high: undefined,
@@ -351,7 +355,8 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         fan: undefined,
       };
     }
-    const step = num('target_temp_step') ?? 0.5;
+    // a whole degree in Fahrenheit, a half in Celsius, as Home Assistant's own thermostat steps
+    const step = num('target_temp_step') ?? (fahrenheit ? 1 : 0.5);
     const off = state === 'off';
     const action = view.attr<string>('hvac_action');
     const low = num('target_temp_low');
@@ -382,10 +387,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       kind: 'climate',
       tone,
       off,
-      min: num('min_temp') ?? 7,
-      max: num('max_temp') ?? 35,
+      min: num('min_temp') ?? (fahrenheit ? 45 : 7),
+      max: num('max_temp') ?? (fahrenheit ? 95 : 35),
       step,
-      unit: this.hass?.config.unit_system.temperature ?? '°C',
+      unit,
       target: isRange ? undefined : target,
       low: isRange ? low : undefined,
       high: isRange ? high : undefined,

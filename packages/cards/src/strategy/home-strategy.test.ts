@@ -200,7 +200,7 @@ describe('custom:fluvy-home strategy', () => {
     expect(await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass)).toMatchSnapshot();
   });
 
-  it('puts the running thermostat, the home forecast and the signed-in person first, and keeps valves out of appliances', async () => {
+  it('puts the running thermostat and the home forecast first, greets whoever looks, and keeps valves out of appliances', async () => {
     const hass = house([
       entity('climate.aa_idle_ac', 'off', { temperature: 24 }),
       entity('weather.met_service', 'sunny'),
@@ -221,7 +221,10 @@ describe('custom:fluvy-home strategy', () => {
     expect(home.find((c) => c.type === 'custom:fluvy-weather-card')?.['entity']).not.toBe(
       'weather.met_service',
     ); // the home's forecast (home / forecast_home) before the national service
-    expect(home.find((c) => c.type === 'custom:fluvy-hello-card')?.['person']).toBe('person.me');
+    // the greeting names no one: each person who opens the dashboard is greeted (a saved copy too)
+    const hello = home.find((c) => c.type === 'custom:fluvy-hello-card');
+    expect(hello).toBeDefined();
+    expect(hello?.['person']).toBeUndefined();
     expect(home.some((c) => c['entity'] === 'switch.sink_water_valve')).toBe(false);
     const sensors = views
       .find((v) => v.path === 'sensors')!

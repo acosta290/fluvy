@@ -44,8 +44,9 @@ import {
   formLabels,
   nameIconFields,
   selectField,
+  tintField,
 } from '../shared/form.js';
-import { toneOf } from '../shared/colour.js';
+import { statusToneOf, type Tint } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 
@@ -69,6 +70,8 @@ export interface TileItem {
 export interface TileCardConfig extends FluvyCardConfig, Omit<TileItem, 'entity'> {
   /** `large` (default): icon + switch, name, state and a foot. `compact`: one 76 px row. `mini`: icon over name, 108 px. */
   size?: TileSize;
+  /** `always`: a tile shows its colour at rest too — a wash of it and its hairline (`on`, the default: only when on). */
+  tint?: Tint;
 }
 
 const LIGHT_BRIGHTNESS_MODES = new Set([
@@ -163,8 +166,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     `,
   ];
 
-  static override keys = configKeys<TileCardConfig>()(['size', 'readouts']);
-  static override defaults: EditorDefaults = () => ({ size: 'large' });
+  static override keys = configKeys<TileCardConfig>()(['size', 'readouts', 'tint']);
+  static override defaults: EditorDefaults = () => ({ size: 'large', tint: 'on' });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -172,6 +175,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         nameIconFields(),
         selectField('size', TILE_SIZES),
         colourFields(),
+        tintField(),
         entitiesField('readouts', ['sensor']),
         actionFields(),
       ],
@@ -292,16 +296,24 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * "· 11 days ago", a small one's reading); a word that cannot fit at all is a dash on a tile without a reading
    * (unavailable, unknown) and nothing on one with — never a cut. The room is the tile's width less its sides (16 on a
    * large or compact tile, 12 on a mini, or what a narrower mini can spare around its 44 circle) and, where the line
-   * sits beside the circle (a large tile, a compact one 128 or wider, an inner one 136 or wider), the circle and its
-   * gap.
+   * sits beside the circle (a large tile's off skin, a compact one 128 or wider, an inner one 136 or wider), the circle
+   * and its gap. `under`: the line sits under the head (a live large tile: "On · 70 %" over its ruler) and has the
+   * whole width.
    */
-  private fitState(line: string, size: TileSize, dash: boolean, inside = false): string {
+  private fitState(
+    line: string,
+    size: TileSize,
+    dash: boolean,
+    inside = false,
+    under = false,
+  ): string {
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
     const mini = size === 'mini';
     const sides = mini ? (width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12) : 16;
     // a compact tile under 128 (an inner one under 136) hides its circle (tiles.css) and gives the words its room
-    const beside = !mini && (size === 'large' || width >= (inside ? 136 : 128)) ? 44 + 12 : 0;
+    const beside =
+      !mini && !under && (size === 'large' || width >= (inside ? 136 : 128)) ? 44 + 12 : 0;
     const room = width - 2 * sides - beside;
     const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
     const measure = (text: string): number => this.ruler.width(cls, text);
@@ -405,7 +417,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       state === view.state
         ? isActive(view)
         : !['off', 'closed', 'locked', 'idle', 'docked', 'paused'].includes(state);
-    const tone = toneOf(item, toneFor(view));
+    const tone = statusToneOf(item, toneFor(view));
     // a grouped tile's own colour sits on its article (the lone card's is the card's, written by the base)
     const accent = item === this.config ? undefined : this.accents.item(item.color);
     const level = this.level(view);
@@ -413,7 +425,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
     const iconTone =
       currentTone(view, on ? tone : 'accent') === 'neutral' ? 'accent' : on ? tone : 'accent';
-    const classes = `fv-tile fv-tile--${tone} fv-tile--tap${sizeClass} ${on ? 'is-on' : ''}`;
+    // a coloured tile keeps its colour at rest when the card asks (`tint: always`): its rest wash and the fill's hairline
+    const tinted = this.config?.tint === 'always' && item.color && !on ? ' is-tinted' : '';
+    const classes = `fv-tile fv-tile--${tone} fv-tile--tap${sizeClass}${tinted} ${on ? 'is-on' : ''}`;
 
     if (small) {
       // the whole tile is the button: tap toggles what toggles (opens what does not), hold opens the details
@@ -532,7 +546,13 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       <div class="fv-tile__head">${lead}${trailing}</div>
       <h3 class="fv-tile__name">${name}</h3>
       <p class="fv-tile__state">
-        ${this.stateLine(view, on, level ? level.value : null, valueInHead)}
+        ${this.fitState(
+          this.stateLine(view, on, level ? level.value : null, valueInHead),
+          size,
+          false,
+          inside,
+          true,
+        )}
       </p>
       ${foot}
     </article>`;

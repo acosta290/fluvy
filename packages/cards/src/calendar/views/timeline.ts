@@ -3,13 +3,13 @@ import { badge, head } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { hoursOf } from '../config.js';
 import { wallHours } from '../../shared/dates.js';
-import { FACE, badgeWidth, fitText, textWidth } from '../fit.js';
+import { FACE, fitText } from '../fit.js';
 import type { DayEvent } from '../model.js';
 import type { ViewContext } from './context.js';
 import {
   dayList,
   eventAria,
-  headRoom,
+  fitBadgeHead,
   headTone,
   notice,
   note,
@@ -107,12 +107,14 @@ export function timelineView(ctx: ViewContext): TemplateResult {
 
   const title = ctx.config.title ?? s(ctx.hass, 'timeline');
   const clock = words.time(agenda.now);
-  // "Now 21:47"; the accent pill alone says "now" where the word does not fit beside the title
-  const pill = broken
-    ? ''
-    : ([`${words.t('common.now')} ${clock}`, clock].find(
-        (text) => headRoom(ctx, badgeWidth(text)) >= textWidth(title, FACE.title),
-      ) ?? clock);
+  // "Now 21:47"; the accent pill alone says "now" where the word does not fit beside the title, and the body's line
+  // where not even the time does
+  const fit = fitBadgeHead(
+    ctx,
+    'clock',
+    title,
+    broken ? [] : [`${words.t('common.now')} ${clock}`, clock],
+  );
 
   const body = (): TemplateResult => {
     if (!ready) return dayList(ctx, day).body; // the skeleton
@@ -159,11 +161,11 @@ export function timelineView(ctx: ViewContext): TemplateResult {
     ctx,
     html`
       ${head({
-        icon: 'clock',
+        icon: fit.icon,
         tone: headTone(ctx),
         title,
-        sub: fitText(words.dates(day), headRoom(ctx, pill ? badgeWidth(pill) : 0), FACE.sub),
-        trailing: pill ? badge(pill, 'accent') : nothing,
+        sub: fitText(words.dates(day), fit.room, FACE.sub),
+        trailing: fit.pill ? badge(fit.pill, 'accent') : nothing,
       })}
       ${broken ?? html`${body()}${notice(ctx)}`}
     `,
