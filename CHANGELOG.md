@@ -30,6 +30,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   wine cooler). The generated regexes capture the stem they find, as the first group that takes part in the match
   (#55).
 
+## [1.9.1] — 2026-10-20
+
+### Fixed
+
+- The integration no longer touches the disk on the event loop: when Home Assistant reloads its themes and Fluvy's
+  is not loaded, the look for its file (and the write that puts it back) runs in an executor, so a slow SD card or a
+  network mount never stalls Home Assistant (HACS review, hacs/default#11332).
+
 ## [1.9.0] — 2026-10-19
 
 ### Fixed
