@@ -54,6 +54,7 @@ import { HeadFit } from '../energy/head.js';
 import { Card, HEAD_BASE, type HeadConfig } from '../shared/base.js';
 import { statusToneOf, toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
+import { widestDuration } from '../shared/duration.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { COLUMN, textWidth } from '../shared/heights.js';
 import { optionColumnsFor, optionsHold } from '../shared/options.js';
@@ -3117,11 +3118,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
       [
         time === 'end'
           ? { label: s(this.hass, 'ready'), value: clock, unit: '' }
-          : {
-              label: jobWords(this.hass, 'left'),
-              value: `88 ${this.t('time.unit_h')} 88`,
-              unit: this.t('time.unit_min'),
-            },
+          : { label: jobWords(this.hass, 'left'), ...widestDuration(this.hass) },
         { label: s(this.hass, 'finished'), value: clock, unit: '' },
       ],
     );

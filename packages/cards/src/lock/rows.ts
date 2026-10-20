@@ -21,6 +21,7 @@ import { Card } from '../shared/base.js';
 import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
 import { statusToneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
+import { withUnit } from '../shared/duration.js';
 import { secondaryText } from '../shared/secondary.js';
 import { TemplateTexts } from '../shared/templates.js';
 import {
@@ -268,7 +269,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     return this.headFit.rowRoom(this.contentWidth, '', { icon: keep, end: p.end });
   }
 
-  /** An age in its short form: "21 d", "3 h", "12 min". */
+  /** An age in its short form: "21 d", "3 h", "12 min" — "21日", "12分". */
   private shortAge(view: EntityView): string {
     const changed = lastChanged(view);
     if (!changed) return '';
@@ -279,7 +280,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
         : minutes < 1440
           ? [Math.round(minutes / 60), 'time.unit_h' as const]
           : [Math.round(minutes / 1440), 'time.unit_d' as const];
-    return `${n} ${this.t(unit)}`;
+    return withUnit(n, this.t(unit));
   }
 
   private renderRow(p: RowPlan, events: boolean, keep: boolean, short: boolean): TemplateResult {

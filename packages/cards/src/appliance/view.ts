@@ -1,7 +1,7 @@
 import { localize, type HomeAssistant } from '@fluvy/core';
 import { addGlyphs, type Tone } from '@fluvy/ui';
 import { statusToneOf, toneOf, type Coloured } from '../shared/colour.js';
-import { durationParts } from '../shared/duration.js';
+import { durationText, spanText } from '../shared/duration.js';
 import { jobWords, whenText, type JobClock } from '../shared/job-time.js';
 import { APPLIANCE_GLYPHS } from './glyphs.js';
 import { KIND_DEFAULTS, type ApplianceKind } from './kinds.js';
@@ -82,25 +82,7 @@ export function statusTone(status: ApplianceStatus, config: Coloured, kind: Appl
   }
 }
 
-/** A span as a readout writes it: "1 h 12" with "min", "45" with "min"; a dash where it is unknown. */
-export function durationText(
-  hass: HomeAssistant | undefined,
-  seconds: number | null,
-): { readonly value: string; readonly unit: string } {
-  const parts = seconds === null ? null : durationParts(seconds);
-  const last = parts?.[parts.length - 1];
-  if (!parts || !last) return { value: '—', unit: '' };
-  const word = (unit: 'd' | 'h' | 'min'): string =>
-    s(hass, unit === 'd' ? 'time.unit_d' : unit === 'h' ? 'time.unit_h' : 'time.unit_min');
-  const lead = parts.slice(0, -1).map((part) => `${part.value} ${word(part.unit)} `);
-  return { value: `${lead.join('')}${last.value}`, unit: word(last.unit) };
-}
-
-/** A span in a line: "1 h 12 min". */
-export const spanText = (hass: HomeAssistant | undefined, seconds: number): string => {
-  const { value, unit } = durationText(hass, seconds);
-  return unit ? `${value} ${unit}` : value;
-};
+export { durationText, spanText };
 
 /** What is said with how long it has lasted: a door left open, a load waiting to be taken out. */
 const LASTING: ReadonlySet<string> = new Set(['appliance.door_open', 'appliance.unload']);

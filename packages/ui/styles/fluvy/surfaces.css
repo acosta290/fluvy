@@ -326,6 +326,11 @@
   font-size: 12px;
 }
 
+/* a unit in kana or kanji (時間, 分, 本) attaches to its figure, as Japanese writes a counter: no gap at any size */
+.fv-unit.fv-unit--tight {
+  margin-left: 0;
+}
+
 .fv-trend {
   align-self: center;
   margin-left: 6px;

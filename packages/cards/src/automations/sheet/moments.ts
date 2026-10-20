@@ -13,6 +13,7 @@ import '@fluvy/ui/time-field';
 import type { TimeFieldDetail } from '@fluvy/ui/time-field';
 import { html, type TemplateResult } from 'lit';
 import { chipRow, type ChipFit } from '../../shared/chips.js';
+import { withUnit } from '../../shared/duration.js';
 import { momentText, weekdayShort } from '../format.js';
 import { WEEKDAYS, type Moment, type RunEnv, type SunEvent, type Weekday } from '../schedule.js';
 
@@ -100,8 +101,8 @@ export function quickEnds(
     key: String(minutes),
     label:
       minutes < 60
-        ? `${minutes} ${localize(hass, 'time.unit_min')}`
-        : `${minutes / 60} ${localize(hass, 'time.unit_h')}`,
+        ? withUnit(minutes, localize(hass, 'time.unit_min'))
+        : withUnit(minutes / 60, localize(hass, 'time.unit_h')),
     active: sameMoment(end, later(start, minutes)),
     disabled: start.kind === 'sun' && start.offset + minutes > OFFSET_LIMIT,
   }));

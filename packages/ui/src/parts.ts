@@ -164,12 +164,22 @@ export interface ReadoutOptions {
   readonly name?: boolean;
 }
 
+/** A unit written in kana or kanji (時間, 分, 本): Japanese attaches a counter to its figure, where English keeps a space. */
+const CJK_UNIT = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
+
+/** Whether a unit attaches to its figure with no gap ("5.2時間", "12本"), as a kana or kanji word does. */
+export const attachedUnit = (unit: string): boolean => CJK_UNIT.test(unit);
+
+/** A readout's unit in its slot: 4 px from its figure, or attached when it is a kana or kanji word. */
+export const unitSpan = (unit: string): TemplateResult =>
+  html`<span class="fv-unit${attachedUnit(unit) ? ' fv-unit--tight' : ''}">${unit}</span>`;
+
 export function readout(o: ReadoutOptions): TemplateResult {
   return html`<div class="fv-readout fv-readout--${o.size ?? 'm'}">
     <p class="fv-readout__label" data-name=${o.name ? '' : nothing}>${o.label}</p>
     <p class="fv-readout__value">
       <span>${o.value}</span
-      >${o.unit ? html`<span class="fv-unit">${o.unit}</span>` : nothing}${o.trend ? html`<span class="fv-trend ${o.trend === 'down' ? 'fv-trend--down' : ''}">${glyph(o.trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
+      >${o.unit ? unitSpan(o.unit) : nothing}${o.trend ? html`<span class="fv-trend ${o.trend === 'down' ? 'fv-trend--down' : ''}">${glyph(o.trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
     </p>
   </div>`;
 }

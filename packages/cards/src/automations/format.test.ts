@@ -70,6 +70,7 @@ describe('the days in words', () => {
     ['nl', 'ma', 'ma–vr', 'Elke dag'],
     ['pt-BR', 'seg', 'seg–sex', 'Todo dia'],
     ['tr', 'Pzt', 'Pzt–Cum', 'Her gün'],
+    ['ja', '月', '月–金', '毎日'],
   ])('speaks %s: the short weekday, a run, every day', (language, monday, run, every) => {
     const hass = house(language);
     expect(weekdayShort(hass, 'mon')).toBe(monday);
@@ -92,6 +93,15 @@ describe('moments and spans', () => {
     expect(offsetWords(en, 75)).toBe('+1 h 15 min');
     expect(offsetWords(en, -120)).toBe('−2 h');
     expect(offsetWords(en, 0)).toBe('+0 min');
+  });
+
+  it('attaches a Japanese unit to its figure, and the hours to the minutes', () => {
+    const ja = house('ja');
+    expect(offsetWords(ja, 15)).toBe('+15分');
+    expect(offsetWords(ja, -30)).toBe('−30分');
+    expect(offsetWords(ja, 75)).toBe('+1時間15分');
+    expect(offsetWords(ja, -120)).toBe('−2時間');
+    expect(momentText(ja, { kind: 'sun', event: 'sunset', offset: -30 })).toBe('日の入り −30分');
   });
 
   it('names a moment: the time, or the sun with its offset', () => {
@@ -178,7 +188,7 @@ describe('the next and the last run', () => {
     expect(lastText(en, at(21, 47, -3), NOW)).toBe('3 days ago');
   });
 
-  it.each(['de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr'])(
+  it.each(['de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr', 'ja'])(
     'speaks %s for the next and the last run, with the words in place',
     (language) => {
       const hass = house(language);
@@ -207,7 +217,7 @@ describe('what a target does next', () => {
     expect(changeText(en, 'run', at(23, 0), NOW)).toBe('Runs in 1 h');
   });
 
-  it.each(['de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr'])(
+  it.each(['de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr', 'ja'])(
     'speaks %s, the wait where the language puts it',
     (language) => {
       const words = changeText(house(language), 'on', at(6, 45, 1), NOW);

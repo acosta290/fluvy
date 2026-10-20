@@ -33,7 +33,7 @@ import { Card, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import { Crossfade } from '../shared/crossfade.js';
-import { durationParts } from '../shared/duration.js';
+import { durationText, spanText, widestDuration, withUnit } from '../shared/duration.js';
 import { fitLine } from '../shared/fit.js';
 import {
   accentField,
@@ -1117,13 +1117,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
 
   /** "1 h 12 min", "45 min", "2 d 3 h": a duration as a readout's value and its last unit. */
   private durationText(seconds: number | null): { value: string; unit: string } {
-    const parts = seconds === null ? null : durationParts(seconds);
-    const last = parts?.[parts.length - 1];
-    if (!parts || !last) return { value: '—', unit: '' };
-    const word = (unit: 'd' | 'h' | 'min'): string =>
-      this.t(unit === 'd' ? 'time.unit_d' : unit === 'h' ? 'time.unit_h' : 'time.unit_min');
-    const lead = parts.slice(0, -1).map((p) => `${p.value} ${word(p.unit)} `);
-    return { value: `${lead.join('')}${last.value}`, unit: word(last.unit) };
+    return durationText(this.hass, seconds);
   }
 
   /** How far the job is (0–100), from its progress sensor; null when it says nothing. */
@@ -1486,7 +1480,6 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     if (!r.unavailable && (r.left === null || r.progress === null)) return false;
     const progress = s(this.hass, 'progress');
     const label = s(this.hass, 'left');
-    const hours = `88 ${this.t('time.unit_h')} 88`;
     return sideStacked(
       this.head.ruler,
       this.contentWidth,
@@ -1496,7 +1489,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
       ],
       [
         { label, ...left },
-        { label, value: hours, unit: this.t('time.unit_min') },
+        { label, ...widestDuration(this.hass) },
       ],
     );
   }
@@ -1543,9 +1536,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     const elapsedShown = stats.some((stat) => stat.key === 'elapsed');
     const elapsed =
       r.elapsed !== null && !elapsedShown
-        ? s(this.hass, 'elapsed_text', {
-            time: Object.values(this.durationText(r.elapsed)).join(' '),
-          })
+        ? s(this.hass, 'elapsed_text', { time: spanText(this.hass, r.elapsed) })
         : '';
     const layerText =
       !layerShown && busy(r.phase) && layer !== null && layers
@@ -1555,7 +1546,9 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     const line = compact
       ? this.meta([
           r.unavailable ? '—' : `${this.figure(r.progress ?? 0)} %`,
-          r.left !== null ? s(this.hass, 'left_text', { time: `${left.value} ${left.unit}` }) : '',
+          r.left !== null
+            ? s(this.hass, 'left_text', { time: withUnit(left.value, left.unit) })
+            : '',
           when,
           elapsed,
           layerText,
@@ -1743,7 +1736,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
         r.failure ? { text: r.failure, optional: true } : null,
         r.left !== null
           ? {
-              text: s(this.hass, 'left_text', { time: `${left.value} ${left.unit}` }),
+              text: s(this.hass, 'left_text', { time: withUnit(left.value, left.unit) }),
               optional: true,
             }
           : null,
