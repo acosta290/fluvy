@@ -69,7 +69,7 @@ in `tools/docs` holds this table to it):
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 32 KB | the lock, the alarm and its keypad, the camera, the printer, the job's times |
-| `appliances` | 53 KB | the appliances family and its English |
+| `appliances` | 54 KB | the appliances family and its English |
 | `appliance-art` | 32 KB | the appliances' product drawings |
 | `automations` | 20 KB | the automations card, the schedule model and its store |
 | `automations-sheet` | 16 KB | the schedule sheet |
