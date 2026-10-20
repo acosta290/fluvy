@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fluvy",
+        "description": "Fluvyのテーマ、カード、設定パネルをインストールします。設定する項目はありません。"
+      }
+    },
+    "abort": {
+      "already_configured": "Fluvyはすでに設定されています。",
+      "single_instance_allowed": "Fluvyはすでに設定されています。"
+    }
+  },
+  "exceptions": {
+    "frontend_missing": {
+      "message": "custom_components/fluvy/frontend にFluvyのフロントエンドファイルがありません。HACSからFluvyを再インストールし（開発用のチェックアウトでは `pnpm build` を実行し）、Home Assistantを再起動してください。"
+    }
+  },
+  "issues": {
+    "legacy_yaml": {
+      "title": "configuration.yamlからFluvyの古い行を削除してください",
+      "description": "Fluvyは統合になり、パネルとモジュールを自分で登録します。次の行をconfiguration.yamlから削除し（`frontend: themes: !include_dir_merge_named themes` は残します）、設定を確認して、都合のよいときにHome Assistantを再起動してください:\n\n{lines}"
+    },
+    "theme_not_loaded": {
+      "title": "Fluvyのテーマが読み込まれていません",
+      "description": "Fluvyはテーマを `{path}` に書き込みましたが、Home AssistantにFluvyという名前のテーマがありません。次をconfiguration.yamlに追加し、アクション `frontend.reload_themes` を実行してください（開発者ツール → アクション）。再起動は不要です:\n\n{yaml}\n\nすでにこの行がある場合は、設定 → システム → ログで、読み込みに失敗したテーマを確認してください。"
+    },
+    "resources_yaml_mode": {
+      "title": "Fluvyのダッシュボードリソースを追加してください",
+      "description": "ダッシュボードのリソースはYAMLで管理されているため、Fluvyは自分のリソースを登録できません。次をconfiguration.yamlの `lovelace: resources:` の下に追加し、ブラウザを再読み込みしてください:\n\n```yaml\n  - url: {url}\n    type: module\n```\n\nFluvyはすでにすべてのページで読み込まれています。このリソースがあると、ダッシュボードは描画の前にFluvyを読み込みます。"
+    }
+  }
+}
