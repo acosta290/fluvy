@@ -350,12 +350,14 @@ describe('a room in a narrow column', () => {
   it('keeps an administrator’s hint to three lines at 211 in every language: the why, the way out left out', async () => {
     await preloadLanguages();
     // the ruler as a browser's: a class's measure caps its probe, as the hint's 380 does — the room measures the hint's
-    // whole line (7 px a glyph), so a long one is never taken for three lines it would run past
+    // whole line (7 px a glyph, 14 a kana or kanji), so a long one is never taken for three lines it would run past
+    const glyphs = (text: string): number =>
+      [...text].reduce((sum, ch) => sum + (/[\u3000-\u9fff]/u.test(ch) ? 14 : 7), 0);
     const ruler = {
       width: (cls: string, text: string) =>
-        (cls === 'fv-empty-state__hint' ? Math.min(text.length * 7, 380) : text.length * 7) + 1,
+        (cls === 'fv-empty-state__hint' ? Math.min(glyphs(text), 380) : glyphs(text)) + 1,
     };
-    for (const language of ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr']) {
+    for (const language of ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr', 'ja']) {
       const hass = { ...house(), language, locale: { language, number_format: 'language' } };
       const full = localize(hass as HomeAssistant, 'room.kept_out', { n: 2 });
       const why = full.split(' · ')[0]!;
@@ -367,7 +369,7 @@ describe('a room in a narrow column', () => {
       );
       // three lines of 211's 139 less what wrapping by words loses: 389
       expect(hint(narrow), language).toBe(why);
-      expect(why.length * 7 + 1, language).toBeLessThanOrEqual(389);
+      expect(glyphs(why) + 1, language).toBeLessThanOrEqual(389);
       const wide = await roomAt(
         { area: 'wohnzimmer', ...REPORTER },
         360,
