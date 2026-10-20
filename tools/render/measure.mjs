@@ -45,7 +45,8 @@
  *                  read as one word: "LUNMARMER");
  *   `midword`      a line that ends inside a word (`overflow-wrap`, `word-break`: "Resta/rt HA"), or between a figure
  *                  and its unit across a no-break space; the language's own hyphenation (`hyphens: auto`, a soft
- *                  hyphen) is not a break;
+ *                  hyphen) is not a break, nor is a line that ends between two kana or kanji (Japanese wraps at any
+ *                  character; a break beside a Latin word or a figure, or inside one, still is);
  *   `pill-cut`     a content-sized pill (`[data-fit]`) that does not hold its content: a pill must, so a name inside
  *                  one has no ellipsis to fall back on;
  *   `clipped`      a run that runs past the box clipping it (an ancestor's `overflow`), with no ellipsis to say so;
@@ -748,17 +749,22 @@ function audit(opts) {
   /** Words, for the mid-word rule: a line may end between two of them, never inside one. */
   const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
   const NO_BREAK = /[\u00a0\u2007\u202f\u2060]/u;
+  /** A kana or a kanji: Japanese wraps between any two of them, so a line may end inside such a word. */
+  const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
 
   /**
    * Where a run's lines end inside a word: each index whose character starts a new line while the one before it is in
-   * the same word, or is a no-break space (a figure parted from its unit). Hyphenation the language does is no break.
+   * the same word, or is a no-break space (a figure parted from its unit). Hyphenation the language does is no break,
+   * nor is a line that ends between two kana or kanji; one that ends beside a Latin letter or a figure inside a word is.
    */
   const brokenWords = (run) => {
     const text = run.node.textContent;
     const ecs = globalThis.getComputedStyle(run.el);
     if (ecs.hyphens === 'auto') return [];
     const words = Array.from(segmenter.segment(text)).filter((s) => s.isWordLike);
-    const inside = (i) => words.some((w) => w.index < i && i < w.index + w.segment.length);
+    const inside = (i) =>
+      !(CJK.test(text[i - 1]) && CJK.test(text[i])) &&
+      words.some((w) => w.index < i && i < w.index + w.segment.length);
     const shown = (rect) =>
       run.shown.some(
         (b) =>

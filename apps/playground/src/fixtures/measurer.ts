@@ -101,6 +101,15 @@ export const sheet: SheetSpec = {
       ],
     },
     {
+      title: 'midword · a Latin word broken inside Japanese prose',
+      cards: [
+        card(
+          '<p class="fx-narrow">照明はHome Assistantの再起動後に点灯します</p>',
+          '.fx-narrow { width: 52px; overflow-wrap: anywhere; }',
+        ),
+      ],
+    },
+    {
       title: 'midword · a figure parted from its unit',
       cards: [
         card(
@@ -224,6 +233,18 @@ export const sheet: SheetSpec = {
            .fx-figure { white-space: nowrap; }
            .fx-week { display: grid; grid-template-columns: repeat(3, 24px); }
            .fx-week span { display: flex; justify-content: center; font-weight: 600; }`,
+        ),
+      ],
+    },
+    {
+      title: 'clean · Japanese prose wraps at any character, a figure keeps its unit',
+      cards: [
+        card(
+          `<p class="fx-prose">リビングの照明は点灯しています。2つの非表示または診断エンティティ、エリアの設定でセンサーを選択</p>
+           <p class="fx-prose">洗濯機は残り12分で終わります。</p>
+           <p class="fx-figure">36\u202f% · 21,5\u202f°C</p>`,
+          `.fx-prose { width: 160px; overflow-wrap: anywhere; }
+           .fx-figure { white-space: nowrap; }`,
         ),
       ],
     },
