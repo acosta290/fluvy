@@ -18,6 +18,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 - A dropdown of ten rows or more (the Preferences tab's language menu, with Japanese) shows eight rows and 24 px of
   the ninth, not eight and a half: the menu stays on the 4 grid, and the cut row still says there is more.
+- A sheet draws for the width it was laid out at: the alerts sheet and the schedule sheet read their content width
+  while they render, which before their first layout is the design's 360 — on a slow device nothing had laid them out
+  by the time their fonts settled either, so in a 266 column their rows kept their circles and their long lines and
+  ran past their rows, and the snooze chips were cut. Each now watches its own width and draws again when the one it
+  drew for is not the one it was given (the measurer caught it on a loaded CI runner).
 
 ### Development
 

@@ -34,6 +34,7 @@ import { textField } from '../../helpers/text.js';
 import { chipRow, type ChipFit } from '../../shared/chips.js';
 import { TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
+import { LaidWidth } from '../../shared/laid.js';
 import { optionCell, optionColumnsFor, optionsHold } from '../../shared/options.js';
 import { daysShort, daysText, lastText, spanText, suggestAlias } from '../format.js';
 import {
@@ -579,6 +580,12 @@ export class FluvyScheduleSheet extends LitElement {
       fitPills(this.renderRoot, true);
       this.requestUpdate();
     });
+    // drawn for the design's 360 before it is laid out: drawn again for the width it was given
+    new LaidWidth(
+      this,
+      () => this.renderRoot.querySelector('.fv-sheet'),
+      () => this.fit.width,
+    );
   }
 
   get isOpen(): boolean {
