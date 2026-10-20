@@ -92,21 +92,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     healing = False
 
     async def _async_heal_theme() -> None:
-        # the theme file went missing while running: put it back once, then let the issue speak
+        # the theme is not loaded: look for its file off the event loop (a slow card or a network
+        # mount must never stall Home Assistant); gone, put it back once; there, let the issue speak
         nonlocal healing
         healing = True
         try:
+            if await hass.async_add_executor_job(theme_path(hass).is_file):
+                async_sync_theme_issue(hass, theme_loaded(hass))
+                return
             async_sync_theme_issue(hass, await async_install_theme(hass, runtime))
         finally:
             healing = False
 
     @callback
     def _themes_updated(_event: Event) -> None:
+        # decided on what is in memory only; the file is read in the task, never here
         loaded = theme_loaded(hass)
-        if not loaded and not healing and not theme_path(hass).is_file():
-            hass.async_create_task(_async_heal_theme())
+        if loaded or healing:
+            async_sync_theme_issue(hass, loaded)
             return
-        async_sync_theme_issue(hass, loaded)
+        hass.async_create_task(_async_heal_theme())
 
     entry.async_on_unload(hass.bus.async_listen(EVENT_THEMES_UPDATED, _themes_updated))
     return True

@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The integration no longer touches the disk on the event loop: when Home Assistant reloads its themes and Fluvy's
+  is not loaded, the look for its file (and the write that puts it back) runs in an executor, so a slow SD card or a
+  network mount never stalls Home Assistant (HACS review, hacs/default#11332).
+
 ## [1.9.0] — 2026-10-19
 
 ### Fixed
