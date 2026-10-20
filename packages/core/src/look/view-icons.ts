@@ -1,16 +1,17 @@
 import { ICON_PATHS } from '../icons/generated.js';
 
 /*
- * A view without an icon, in a tab row asked for icons: the icon its name says, read in Fluvy's languages written in
- * Latin letters at once (as the automatic dashboard reads a house; a Japanese name waits for its words here), from its
- * title and then its path ("Luces" → the bulb, "Hab 1" → the rooms, "paneles" → the sun). A name it does not know
- * keeps its words. Fetched on demand, its own chunk.
+ * A view without an icon, in a tab row asked for icons: the icon its name says, read in Fluvy's languages at once (as
+ * the automatic dashboard reads a house), from its title and then its path ("Luces" → the bulb, "Hab 1" → the rooms,
+ * "paneles" → the sun, "寝室" → the rooms). A name it does not know keeps its words. Fetched on demand, its own chunk.
  */
 
 /**
  * Each icon and the words that call for it, first match wins (a word of four letters or more matches as the start of
  * a word: "batter" finds "batteries"; a shorter one, or one ending in `$`, only as a whole word; one starting with `*`
- * as the end of a word: "*zimmer" finds "Wohnzimmer"). Words are written without accents.
+ * as the end of a word: "*zimmer" finds "Wohnzimmer"). Words are written without accents. A word in kana or kanji is
+ * found anywhere in the name, as Japanese writes no spaces between words, and may carry a lookahead of its own where
+ * a word hides inside another (`電気(?!代|料金)`: the lights, not the electricity bill).
  */
 const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = [
   [
@@ -34,6 +35,14 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'luzes',
       'isik',
       'aydinlat',
+      '照明',
+      'ライト',
+      '電気(?!代|料金|使用|消費|量)',
+      '灯り',
+      '明かり',
+      'あかり',
+      'ランプ',
+      '電球',
     ],
   ],
   [
@@ -60,11 +69,33 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'thermostat',
       'termostat',
       'aire',
+      '空調',
+      'エアコン',
+      '暖房',
+      '冷房',
+      '温度',
+      '気温',
+      '室温',
+      '床暖',
+      'サーモ',
     ],
   ],
   [
     'battery',
-    ['batter', 'bateri', 'akku', 'accu$', 'accus$', 'pil', 'piller', 'storage', 'almacena'],
+    [
+      'batter',
+      'bateri',
+      'akku',
+      'accu$',
+      'accus$',
+      'pil',
+      'piller',
+      'storage',
+      'almacena',
+      'バッテリー',
+      '蓄電',
+      '電池',
+    ],
   ],
   [
     'cloud',
@@ -80,6 +111,10 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'previsione',
       'forecast',
       'pronostic',
+      '天気',
+      '気象',
+      '天候',
+      '予報',
     ],
   ],
   [
@@ -98,6 +133,9 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'pv',
       'fotovolta',
       'photovolta',
+      '太陽光',
+      'ソーラー',
+      '発電',
     ],
   ],
   [
@@ -118,6 +156,12 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'verbrauch',
       'verbruik',
       'tuketim',
+      'エネルギー',
+      '電力',
+      '消費',
+      '電気代',
+      '電気料金',
+      '電気使用',
     ],
   ],
   [
@@ -132,6 +176,10 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'guvenlik',
       'alarm',
       'allarm',
+      'セキュリティ',
+      '防犯(?!カメラ)',
+      '警備',
+      'アラーム',
     ],
   ],
   // an Italian "camera da letto" is a bedroom, before "camera" is a camera
@@ -202,9 +250,33 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'verdieping',
       'andar',
       'kat',
+      '部屋',
+      'リビング',
+      '居間',
+      '寝室',
+      'ベッドルーム',
+      'キッチン',
+      '台所',
+      'ダイニング',
+      '浴室',
+      'バスルーム',
+      '風呂',
+      'トイレ',
+      '洗面',
+      '書斎',
+      '和室',
+      '洋室',
+      '客間',
+      '廊下',
+      '玄関',
+      '階',
+      'フロア',
     ],
   ],
-  ['camera', ['camera', 'cameras', 'camara', 'kamera', 'telecamer', 'videovigil', 'cctv']],
+  [
+    'camera',
+    ['camera', 'cameras', 'camara', 'kamera', 'telecamer', 'videovigil', 'cctv', 'カメラ'],
+  ],
   [
     'lock',
     [
@@ -220,6 +292,11 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'kilit',
       'door',
       'puerta',
+      '鍵',
+      'ロック',
+      '施錠',
+      'ドア',
+      '扉',
     ],
   ],
   [
@@ -236,9 +313,30 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'audio',
       'sonos',
       'radio',
+      'メディア',
+      '音楽',
+      'ミュージック',
+      'オーディオ',
+      'スピーカー',
+      'ラジオ',
     ],
   ],
-  ['film', ['tv', 'tele', 'television', 'fernseh', 'cinema', 'cine', 'kino', 'sinema']],
+  [
+    'film',
+    [
+      'tv',
+      'tele',
+      'television',
+      'fernseh',
+      'cinema',
+      'cine',
+      'kino',
+      'sinema',
+      'テレビ',
+      'シアター',
+      '映画',
+    ],
+  ],
   [
     'leaf',
     [
@@ -259,9 +357,32 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'buiten',
       'esterno',
       'dis',
+      '庭',
+      'ガーデン',
+      '植物',
+      '屋外',
+      '室外',
+      'ベランダ',
+      'バルコニー',
+      'テラス',
     ],
   ],
-  ['automation', ['automat', 'otomas', 'scene', 'escena', 'szene', 'scena', 'cena', 'sahne']],
+  [
+    'automation',
+    [
+      'automat',
+      'otomas',
+      'scene',
+      'escena',
+      'szene',
+      'scena',
+      'cena',
+      'sahne',
+      'オートメーション',
+      '自動化',
+      'シーン',
+    ],
+  ],
   [
     'car',
     [
@@ -278,11 +399,27 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'charger',
       'cargador',
       'wallbox',
+      '車',
+      'ガレージ',
+      '駐車',
+      '充電',
     ],
   ],
   [
     'calendar',
-    ['agenda', 'calendar', 'calendario', 'kalender', 'calendrier', 'takvim', 'schedule', 'horario'],
+    [
+      'agenda',
+      'calendar',
+      'calendario',
+      'kalender',
+      'calendrier',
+      'takvim',
+      'schedule',
+      'horario',
+      'カレンダー',
+      '予定',
+      'スケジュール',
+    ],
   ],
   [
     'person',
@@ -298,10 +435,36 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'aile',
       'presen',
       'kisi',
+      '家族',
+      '人(?!感)',
+      '在宅',
+      '居場所',
     ],
   ],
-  ['drop', ['water', 'agua', 'wasser', 'eau', 'acqua', 'su', 'riego', 'irriga']],
-  ['fan', ['fan', 'fans', 'ventila', 'vantilat']],
+  [
+    'drop',
+    [
+      'water',
+      'agua',
+      'wasser',
+      'eau',
+      'acqua',
+      'su',
+      'riego',
+      'irriga',
+      '水道',
+      '散水',
+      '水やり',
+      '給水',
+      '給湯',
+      'プール',
+      '水',
+    ],
+  ],
+  [
+    'fan',
+    ['fan', 'fans', 'ventila', 'vantilat', '換気', 'ファン', '扇風機', '送風', 'サーキュレーター'],
+  ],
   [
     'blinds',
     [
@@ -316,12 +479,34 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'rolluik',
       'panjur',
       'store',
+      'ブラインド',
+      'カーテン',
+      'シャッター',
+      '雨戸',
+      '窓',
     ],
   ],
-  ['vacuum', ['vacuum', 'aspira', 'staubsaug', 'stofzuig', 'supurge', 'robot']],
+  [
+    'vacuum',
+    ['vacuum', 'aspira', 'staubsaug', 'stofzuig', 'supurge', 'robot', '掃除', 'ロボット', 'ルンバ'],
+  ],
   [
     'chart',
-    ['sensor', 'capteur', 'history', 'historia', 'histori', 'statist', 'estadist', 'gecmis'],
+    [
+      'sensor',
+      'capteur',
+      'history',
+      'historia',
+      'histori',
+      'statist',
+      'estadist',
+      'gecmis',
+      'センサー',
+      '履歴',
+      '統計',
+      'グラフ',
+      '計測',
+    ],
   ],
   [
     'home',
@@ -346,23 +531,40 @@ const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = 
       'genel',
       'main',
       'principal',
+      'ホーム',
+      '自宅',
+      '我が家',
+      '概要',
+      'トップ',
+      'メイン',
+      '全体',
+      '家(?!電|族)',
     ],
   ],
 ];
 
-/** Lower case, no accents (a Turkish ı too), separators as spaces: "Habitación_1" → "habitacion 1". */
+/**
+ * Lower case, in ordinary width, no accents (a Turkish ı too; a kana keeps its voicing mark, が is not か), separators
+ * as spaces: "Habitación_1" → "habitacion 1", "ＬＥＤ照明" → "led照明".
+ */
 const plain = (text: string): string =>
   text
     .replace(/ı/g, 'i')
+    .normalize('NFKC')
     .normalize('NFD')
-    .replace(/\p{M}/gu, '')
+    .replace(/(?![\u3099\u309a])\p{M}/gu, '')
+    .normalize('NFC')
     .toLowerCase()
     .replace(/[_./-]+/g, ' ')
     .trim();
 
+/** A word in kana or kanji: found anywhere in the name, no word boundary either side. */
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
+
 const matchers: ReadonlyArray<readonly [string, RegExp]> = TABLE.map(([icon, words]) => {
   const ending = words.filter((w) => w.startsWith('*')).map((w) => w.slice(1));
-  const rest = words.filter((w) => !w.startsWith('*'));
+  const cjk = words.filter((w) => CJK.test(w));
+  const rest = words.filter((w) => !w.startsWith('*') && !CJK.test(w));
   const whole = (w: string): boolean => w.length < 4 || w.endsWith('$');
   const long = rest.filter((w) => !whole(w));
   const short = rest.filter(whole).map((w) => w.replace(/\$$/, ''));
@@ -370,8 +572,9 @@ const matchers: ReadonlyArray<readonly [string, RegExp]> = TABLE.map(([icon, wor
     ...(long.length ? [`(?:^|\\s)(?:${long.join('|')})`] : []),
     ...(short.length ? [`(?:^|\\s)(?:${short.join('|')})(?=\\s|\\d|$)`] : []),
     ...(ending.length ? [`(?:^|\\s)\\S*(?:${ending.join('|')})(?=\\s|\\d|$)`] : []),
+    ...(cjk.length ? [`(?:${cjk.join('|')})`] : []),
   ];
-  return [icon, new RegExp(parts.join('|'))] as const;
+  return [icon, new RegExp(parts.join('|'), 'u')] as const;
 });
 
 /** The icon a view's name (else its path) says, as a fluvy icon name; undefined when neither says one. */
