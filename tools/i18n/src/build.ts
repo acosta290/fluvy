@@ -10,10 +10,13 @@
  *
  *   pnpm i18n build       (also part of `pnpm build`); the language tools' tests fail when either file is stale
  *
- * A stem is matched as a substring; a stem may carry a boundary of its own (`pv\b`, `mode$`). `light` matches whole
- * words between separators, `generic` matches the whole name, `place_noise` whole words. The appliance words are
- * plain lower-case ASCII, matched against a name with its accents taken off ("Kühlschrank" is read as "kuhlschrank",
- * as Home Assistant writes it into an entity's id).
+ * A stem is matched as a substring; a stem may carry regex of its own (a boundary: `pv\b`, `mode$`; a lookaround:
+ * `(?<!ガス)レンジ`). `light` matches whole words between separators, `generic` matches the whole name, `place_noise`
+ * whole words — for a stem in Latin letters. A stem in kana or kanji is matched as a substring whatever its category's
+ * shape (Japanese writes no spaces between words): its alternation follows the word-shaped one. The appliance words
+ * are plain lower-case letters, matched against a name with its accents taken off and its width made ordinary
+ * ("Kühlschrank" is read as "kuhlschrank", as Home Assistant writes it into an entity's id; "ＬＥＤ" as "led"); a
+ * kana's voicing mark stays (が is not か).
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -72,27 +75,56 @@ const KINDS = [
   'blender',
 ] as const;
 
-/** A stem as a regex fragment: escaped, unless it carries regex of its own (a class, a boundary, an anchor). */
+/** A stem as a regex fragment: escaped, unless it carries regex of its own (a class, a boundary, an anchor, a lookaround). */
 const fragment = (stem: string): string =>
-  /[\\[\]$^]/.test(stem) ? stem : stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  /[\\[\]$^]|\(\?/.test(stem) ? stem : stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-function pattern(stems: readonly string[], shape: Shape): string {
-  const alternation = [...new Set(stems)].map(fragment).join('|');
+/** A character of a stem written in kana or kanji: Japanese has no word boundaries, so such a stem is a substring whatever the shape. */
+export const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
+
+/**
+ * A category's regex source: its Latin stems in the category's shape, its kana and kanji stems as substrings after
+ * them (`(^|[\s_.-])(light|lamp)([\s_.-]|$)|(照明|ライト)`); a whole-name match takes both scripts alike.
+ */
+export function pattern(stems: readonly string[], shape: Shape): string {
+  const unique = [...new Set(stems)];
+  const worded = unique
+    .filter((stem) => !CJK.test(stem))
+    .map(fragment)
+    .join('|');
+  const cjk = unique
+    .filter((stem) => CJK.test(stem))
+    .map(fragment)
+    .join('|');
+  const both = [worded, cjk].filter(Boolean).join('|');
   switch (shape) {
     case 'word':
-      return `(^|[\\s_.-])(${alternation})([\\s_.-]|$)`;
+      return [worded && `(^|[\\s_.-])(${worded})([\\s_.-]|$)`, cjk && `(${cjk})`]
+        .filter(Boolean)
+        .join('|');
     case 'whole':
-      return `^(${alternation})$`;
+      return `^(${both})$`;
     case 'words':
-      return `\\b(${alternation})\\b`;
+      return [worded && `\\b(${worded})\\b`, cjk && `(${cjk})`].filter(Boolean).join('|');
     default:
-      return alternation;
+      return both;
   }
 }
 
-/** A stem as the appliance words read a name: lower-case, its accents taken off ("ladesäule" is "ladesaule"). */
-const plain = (stem: string): string =>
-  stem.normalize('NFD').replace(/\p{M}/gu, '').replace(/ı/g, 'i').replace(/ß/g, 'ss').toLowerCase();
+/**
+ * A stem as the appliance words read a name (`plain` in packages/cards/src/appliance/kinds.ts, the same): lower-case,
+ * in ordinary width, its accents taken off ("ladesäule" is "ladesaule", "ＬＥＤ" is "led"); a kana keeps its voicing
+ * mark (が is not か) and is composed again.
+ */
+export const plain = (stem: string): string =>
+  stem
+    .normalize('NFKC')
+    .normalize('NFD')
+    .replace(/(?![\u3099\u309a])\p{M}/gu, '')
+    .normalize('NFC')
+    .replace(/ı/g, 'i')
+    .replace(/ß/g, 'ss')
+    .toLowerCase();
 
 /** A pattern as a regex literal, compiled first: a stem that does not compile stops the build here, not in a browser. */
 function literal(source: string, flags: string): string {

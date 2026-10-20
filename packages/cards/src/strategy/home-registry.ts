@@ -133,9 +133,9 @@ export class HomeRegistry {
   stateClass(id: string): string {
     return String(this.attr<string>(id, 'state_class') ?? '');
   }
-  /** The id and the name together: what the word rules look at. */
+  /** The id and the name together, in ordinary width (a full-width "ＬＥＤ" reads as "LED"): what the word rules look at. */
   label(id: string): string {
-    return `${id} ${this.name(id)}`;
+    return `${id} ${this.name(id)}`.normalize('NFKC');
   }
 
   deviceName(id: string): string | undefined {
