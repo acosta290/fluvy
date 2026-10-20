@@ -25,7 +25,7 @@
 Fluvy brings one design to the whole of Home Assistant: a theme, fifty-five cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
-by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in eight languages.
+by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in nine languages.
 
 ## The whole app, one design
 
@@ -165,8 +165,8 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 - **A settings panel** for the house and for each person.
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme.
-- **Eight languages** — English, Spanish, German, Dutch, French, Italian, Brazilian Portuguese and Turkish — in every card,
-  page and dialog, each fetched only when spoken.
+- **Nine languages** — English, Spanish, German, Dutch, French, Italian, Brazilian Portuguese, Turkish and Japanese — in
+  every card, page and dialog, each fetched only when spoken.
 - **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.
 
 ## Installation

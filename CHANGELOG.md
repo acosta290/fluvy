@@ -5,6 +5,15 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Japanese (`ja`): the ninth language, in every card, page, dialog and editor form, the settings panel's language
+  list and the integration's own texts, with three greetings (おはようございます, こんにちは, こんばんは from 18:00;
+  おやすみなさい is a farewell and never shows). The automatic dashboard and the appliance cards read a house named
+  in Japanese: the naming words take kanji and kana, matched as substrings since Japanese writes no spaces, beside the
+  romaji an entity id carries (`shoumei`, `raito`, `sentakuki`, `reizouko`); a full-width name ("ＬＥＤ") reads as its
+  letters. The measurer lets Japanese wrap at any character (#54).
+
 ## [1.9.0] — 2026-10-19
 
 ### Fixed

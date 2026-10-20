@@ -1,9 +1,10 @@
 import { ICON_PATHS } from '../icons/generated.js';
 
 /*
- * A view without an icon, in a tab row asked for icons: the icon its name says, read in Fluvy's eight languages at
- * once (as the automatic dashboard reads a house), from its title and then its path ("Luces" → the bulb, "Hab 1" →
- * the rooms, "paneles" → the sun). A name it does not know keeps its words. Fetched on demand, its own chunk.
+ * A view without an icon, in a tab row asked for icons: the icon its name says, read in Fluvy's languages written in
+ * Latin letters at once (as the automatic dashboard reads a house; a Japanese name waits for its words here), from its
+ * title and then its path ("Luces" → the bulb, "Hab 1" → the rooms, "paneles" → the sun). A name it does not know
+ * keeps its words. Fetched on demand, its own chunk.
  */
 
 /**
