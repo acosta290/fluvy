@@ -1330,11 +1330,14 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // the readouts sit beside the title only on a wide card where nothing of the head gives way for them
     const tryHead =
       showHead && variant !== 'mini' && readouts.length > 0 && width >= READOUTS_IN_HEAD;
-    // "Last 7 days" is "7 days" where half a section cannot hold it (nl "Afgelopen 7 dagen")
+    // "Last 7 days" is "7 days" where half a section cannot hold it (nl "Afgelopen 7 dagen"); a missing sensor's
+    // "Entity not found" is "Not found" (ja エンティティが見つかりません → 見つかりません)
     const shorter =
       sub === this.periodLine() && this.period === 'day' && this.count > 1
         ? [this.t('page.days', { n: this.count })]
-        : [];
+        : unusable && view.status === 'missing'
+          ? [`${this.t('state.not_found')} · ${period}`]
+          : [];
     let fitted = this.head.fit({
       width,
       title: name,
