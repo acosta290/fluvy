@@ -14,6 +14,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   romaji an entity id carries (`shoumei`, `raito`, `sentakuki`, `reizouko`); a full-width name ("ＬＥＤ") reads as its
   letters. The measurer lets Japanese wrap at any character (#54).
 
+### Fixed
+
+- A dropdown of ten rows or more (the Preferences tab's language menu, with Japanese) shows eight rows and 24 px of
+  the ninth, not eight and a half: the menu stays on the 4 grid, and the cut row still says there is more.
+
 ## [1.9.0] — 2026-10-19
 
 ### Fixed
