@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-10-20
+
 ### Fixed
 
 - The integration no longer touches the disk on the event loop: when Home Assistant reloads its themes and Fluvy's
