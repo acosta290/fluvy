@@ -5,6 +5,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A sheet draws for the width it was laid out at: the alerts sheet and the schedule sheet read their content width
+  while they render, which before their first layout is the design's 360 — on a slow device nothing had laid them out
+  by the time their fonts settled either, so in a 266 column their rows kept their circles and their long lines and
+  ran past their rows, and the snooze chips were cut. Each now watches its own width and draws again when the one it
+  drew for is not the one it was given (the measurer caught it on a loaded CI runner).
+
 ## [1.9.1] — 2026-10-20
 
 ### Fixed

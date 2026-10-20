@@ -30,6 +30,7 @@ import {
 import { chipRow } from '../../shared/chips.js';
 import { fitLine, TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
+import { LaidWidth } from '../../shared/laid.js';
 import { bindAction, offered } from '../actions.js';
 import type { AlertResult, AlertsState } from '../engine.js';
 import {
@@ -364,6 +365,13 @@ export class FluvyAlertsSheet extends LitElement {
       fitPills(this.renderRoot, true);
       this.requestUpdate();
     });
+    // drawn for the design's 360 before it is laid out (and, on a slow device, still when its fonts settle): drawn
+    // again for the width it was given, so its rows give their circles and shorten their lines in a narrow column
+    new LaidWidth(
+      this,
+      () => this.renderRoot.querySelector('.fv-sheet'),
+      () => this.room,
+    );
   }
 
   get isOpen(): boolean {
