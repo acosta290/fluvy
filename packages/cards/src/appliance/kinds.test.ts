@@ -124,7 +124,7 @@ describe('what an appliance is', () => {
     expect(kindOf(signals({ platform: 'matter', tops: [250] }))).toMatchObject({ kind: 'oven' });
   });
 
-  it('reads a name in any of the eight languages, accents or none, the more particular kind first', () => {
+  it('reads a name in any of the nine languages, accents or none, the more particular kind first', () => {
     const names: ReadonlyArray<readonly [string, string]> = [
       ['Washing machine', 'washer'],
       ['Waschmaschine', 'washer'],
@@ -182,6 +182,31 @@ describe('what an appliance is', () => {
       ['Air fryer', 'air_fryer'],
       ['Heißluftfritteuse', 'air_fryer'],
       ['Friggitrice ad aria', 'air_fryer'],
+      // Japanese, in kanji and kana as a name is written, or in the romaji an entity id carries
+      ['洗濯機', 'washer'],
+      ['sentakuki', 'washer'],
+      ['ドラム式洗濯乾燥機', 'washer_dryer'],
+      ['食洗機', 'dishwasher'],
+      ['食器洗い乾燥機', 'dishwasher'],
+      ['shokusenki', 'dishwasher'],
+      ['乾燥機', 'dryer'],
+      ['電子レンジ', 'microwave'],
+      ['オーブンレンジ', 'microwave'],
+      ['オーブン', 'oven'],
+      ['ＩＨクッキングヒーター', 'hob'],
+      ['ガスコンロ', 'hob'],
+      ['ガスレンジ', 'hob'],
+      ['レンジフード', 'hood'],
+      ['冷蔵庫', 'fridge'],
+      ['reizouko', 'fridge'],
+      ['冷凍庫', 'freezer'],
+      ['コーヒーメーカー', 'coffee'],
+      ['電気ケトル', 'kettle'],
+      ['ノンフライヤー', 'air_fryer'],
+      ['オーブントースター', 'toaster'],
+      ['ホットサンドメーカー', 'sandwich_maker'],
+      ['ミキサー', 'blender'],
+      ['ワインセラー', 'wine'],
     ];
     for (const [name, kind] of names) expect(byWords(name), name).toEqual({ kind, by: 'words' });
     // a name that says no kind says none
@@ -202,6 +227,9 @@ describe('what an appliance is', () => {
       'Hair dryer',
       'Wärmeschublade',
       'Styler',
+      'ロボット掃除機',
+      'ドライヤー',
+      '布団乾燥機',
     ])
       expect(byWords(name), name).toEqual({ excluded: 'name' });
     expect(kindOf(signals({ domains: new Set(['vacuum']), name: 'Waschmaschine' }))).toEqual({

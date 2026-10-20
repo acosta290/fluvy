@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
 import '../index.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
+import { HomeRegistry } from './home-registry.js';
 import {
   hcCoffee,
   hcDishwasher,
@@ -40,6 +41,32 @@ const entity = (
 
 const types = (cards: readonly { type: string }[]): string[] =>
   cards.map((c) => c.type.replace('custom:fluvy-', '').replace('-card', ''));
+
+describe('custom:fluvy-home strategy — a house named in Japanese', () => {
+  it('reads a switch as a light by its kana or kanji, a garden as outdoors, a full-width name in ordinary width', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.ribingu_no_denki', 'on', { friendly_name: 'リビングの電気' }),
+        entity('switch.shinshitsu', 'off', { friendly_name: '寝室の照明' }),
+        entity('switch.niwa', 'off', { friendly_name: '庭のライト' }),
+        entity('switch.led_tape', 'off', { friendly_name: 'ＬＥＤ テープ' }),
+        entity('switch.denki_ketoru', 'off', { friendly_name: '電気ケトル' }),
+        entity('switch.despot', 'off', { friendly_name: 'Despot' }),
+      ]),
+    );
+    const { lights } = registry;
+    for (const id of [
+      'switch.ribingu_no_denki',
+      'switch.shinshitsu',
+      'switch.niwa',
+      'switch.led_tape',
+    ])
+      expect(lights, id).toContain(id);
+    for (const id of ['switch.denki_ketoru', 'switch.despot']) expect(lights, id).not.toContain(id);
+    expect(registry.outdoor('switch.niwa')).toBe(true);
+    expect(registry.outdoor('switch.shinshitsu')).toBe(false);
+  });
+});
 
 describe("custom:fluvy-home strategy — the grid meter's sign", () => {
   /** A grid meter found by its words, negative while the house imports at night. */
