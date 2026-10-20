@@ -273,6 +273,32 @@ describe('what an appliance is', () => {
     expect(said('Liquidificador')).toEqual({ kind: 'blender', by: 'words' });
     expect(said('Ekmek kızartma makinesi')).toEqual({ kind: 'toaster', by: 'words' });
   });
+
+  it('reads the longest of a name’s words that overlap, whatever the kinds’ order, in kana and in Latin letters', () => {
+    const said = (name: string) => byWords(name);
+    // an oven toaster is a toaster (listed after the oven), a gas range a hob (after the microwave), a range hood a hood
+    expect(said('オーブントースター')).toEqual({ kind: 'toaster', by: 'words' });
+    expect(said('ガスレンジ')).toEqual({ kind: 'hob', by: 'words' });
+    expect(said('レンジフード')).toEqual({ kind: 'hood', by: 'words' });
+    expect(said('電子レンジ')).toEqual({ kind: 'microwave', by: 'words' });
+    expect(said('電気ポット')).toEqual({ kind: 'kettle', by: 'words' });
+    // a longer never-word beats the kind inside it
+    for (const name of [
+      '布団乾燥機',
+      'ヘアドライヤー',
+      'Hair dryer',
+      'Haartrockner',
+      'Kimchi refrigerator',
+    ])
+      expect(said(name), name).toEqual({ excluded: 'name' });
+    // in Latin letters: the dishwasher's word holds the washer's, the washer-dryer's the dryer's
+    expect(said('Dishwasher')).toEqual({ kind: 'dishwasher', by: 'words' });
+    expect(said('Waschtrockner')).toEqual({ kind: 'washer_dryer', by: 'words' });
+    expect(said('Lave-vaisselle')).toEqual({ kind: 'dishwasher', by: 'words' });
+    // words that stand apart keep the kinds' order, the more particular first
+    expect(said('Wine fridge')).toEqual({ kind: 'wine', by: 'words' });
+    expect(said('Fridge freezer')).toEqual({ kind: 'fridge', by: 'words' });
+  });
 });
 
 describe('the house’s appliances', () => {

@@ -1,5 +1,6 @@
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
 import { prefSources } from '../energy-model/sources.js';
+import { says, type Rules } from '../shared/words.js';
 import type { EnergyRoles } from './types.js';
 import {
   BATTERY_POWER,
@@ -15,8 +16,23 @@ import {
 /*
  * The house's energy readings by their role — solar, grid, battery, house, a car charger, today's production, the
  * energy dashboard's devices, water and gas — from the energy dashboard's own preferences first, then from the
- * registries' words.
+ * registries' words: a reading's name says one role, the longest of words that overlap winning (`shared/words.ts`).
  */
+
+type Role = 'solar' | 'export' | 'grid' | 'battery' | 'charger' | 'home';
+
+/**
+ * The roles a reading's name can say, the first listed winning where a name says two that stand apart: the sun,
+ * what leaves the house, the grid, the battery, the car's charger, the house itself.
+ */
+const ROLE_WORDS: Rules<Role> = [
+  ['solar', SOLAR],
+  ['export', GRID_EXPORT],
+  ['grid', GRID],
+  ['battery', BATTERY_POWER],
+  ['charger', CHARGER],
+  ['home', HOME_POWER],
+];
 
 /** A grid meter named by its phase: `grid_power_l1`, "Phase A", `fase_2`, `faz 3`. */
 const PHASE =
@@ -43,46 +59,28 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const solarPref = preferredPower(home, prefs, 'solar');
   const gridPref = preferredPower(home, prefs, 'grid');
   const batteryPref = preferredPower(home, prefs, 'battery');
-  const solarPower = solarPref?.id ?? home.pick(powers, SOLAR);
+  // each reading's one role by its words (a reading the preferences name may say any)
+  const role = new Map(
+    [...powers, ...energies].map((id) => [id, says(home.label(id), ROLE_WORDS)]),
+  );
+  const saying = (list: readonly string[], said: Role): string[] =>
+    list.filter((id) => role.get(id) === said);
+  const solarPower = solarPref?.id ?? saying(powers, 'solar')[0];
   // a meter named for what leaves the house is never the grid's own: it is the export beside an import
-  const exporting = powers.filter(
-    (id) => id !== solarPower && GRID_EXPORT.test(home.label(id)) && !SOLAR.test(home.label(id)),
-  );
-  const gridMeters = powers.filter(
-    (id) => id !== solarPower && !exporting.includes(id) && GRID.test(home.label(id)),
-  );
+  const exporting = saying(powers, 'export').filter((id) => id !== solarPower);
+  const gridMeters = saying(powers, 'grid').filter((id) => id !== solarPower);
   const phases = gridMeters.filter((id) => PHASE.test(home.label(id)));
   const gridPhases = !gridPref && phases.length >= 2 ? phases.slice(0, 3) : [];
-  const gridPower =
-    gridPref?.id ??
-    home.pick(
-      gridMeters.filter((id) => !gridPhases.includes(id)),
-      GRID,
-    );
+  const gridPower = gridPref?.id ?? gridMeters.find((id) => !gridPhases.includes(id));
   const gridExport = !gridPref ? exporting[0] : undefined;
   const batteryPower =
     batteryPref?.id ??
-    home.pick(
-      powers.filter(
-        (id) =>
-          id !== solarPower &&
-          id !== gridPower &&
-          !gridPhases.includes(id) &&
-          !exporting.includes(id),
-      ),
-      BATTERY_POWER,
-    );
-  const charger = home.pick(
-    powers.filter((id) => ![solarPower, gridPower, batteryPower].includes(id)),
-    CHARGER,
+    saying(powers, 'battery').find((id) => id !== solarPower && id !== gridPower);
+  const charger = saying(powers, 'charger').find(
+    (id) => ![solarPower, gridPower, batteryPower].includes(id),
   );
-  const homePower = home.pick(
-    powers.filter(
-      (id) =>
-        ![solarPower, gridPower, batteryPower, charger, gridExport].includes(id) &&
-        !gridPhases.includes(id),
-    ),
-    HOME_POWER,
+  const homePower = saying(powers, 'home').find(
+    (id) => ![solarPower, gridPower, batteryPower].includes(id),
   );
   // the battery's charge: the energy dashboard's, else the battery-class sensor beside its power sensor
   const batteryLevel =
@@ -91,10 +89,8 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
       ? home.beside(batteryPower, 'battery').find((id) => home.hasState(id))
       : undefined);
   const solarToday =
-    home.pick(
-      energies.filter((id) => SOLAR.test(home.label(id))),
-      TODAY,
-    ) ?? house.sources.find((s) => s.kind === 'solar')?.energyIn[0];
+    saying(energies, 'solar').find((id) => TODAY.test(home.label(id))) ??
+    house.sources.find((s) => s.kind === 'solar')?.energyIn[0];
   const consumption = (prefs?.device_consumption ?? [])
     .map((d) => d.stat_consumption)
     .filter((id) => home.hasState(id));

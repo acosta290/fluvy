@@ -1,5 +1,13 @@
-import { applianceDevices, kindOf, signalsOf, type ApplianceKind } from '../appliance/kinds.js';
+import {
+  APPLIANCE_WORDS,
+  applianceDevices,
+  kindOf,
+  plain,
+  signalsOf,
+  type ApplianceKind,
+} from '../appliance/kinds.js';
 import { printerDevices } from '../printer/roles.js';
+import { says, type Rules } from '../shared/words.js';
 import {
   areaOf,
   areasInOrder,
@@ -29,7 +37,9 @@ import {
 /*
  * What a house looks like to the automatic dashboard: the entity, device and area registries read
  * through word rules (the way people name things, in every language Fluvy ships: `words.generated.ts`, from
- * the catalogues) and device classes. Pure queries, no cards — the views (`views/`) turn them into cards.
+ * the catalogues) and device classes. Where a name is read among classes of words — a switch's, a place's — the
+ * longest of words that overlap wins (`shared/words.ts`). Pure queries, no cards — the views (`views/`) turn them
+ * into cards.
  */
 
 export {
@@ -67,6 +77,19 @@ const OPENINGS = new Set([
 ]);
 /** A plug's second switch (USB, child lock…): the plain outlet sorts first. */
 const TWIN_SWITCH = /outlet|usb|child|lock/i;
+/**
+ * What a switch's name says it is, read plain: a light, else an appliance of a kind or never one (電気ケトル is a kettle
+ * on its plug, not the light 電気; a light's words win over a kind's that stand apart: "oven light").
+ */
+const SWITCH_WORDS: Rules<'light' | ApplianceKind | 'never'> = [
+  ['light', LIGHT_WORDS],
+  ...APPLIANCE_WORDS,
+];
+/** Where a thing is: outdoors, against the house's own words (家庭, the household, holds no garden 庭). */
+const PLACE_WORDS: Rules<'outdoor' | 'home'> = [
+  ['outdoor', OUTDOOR],
+  ['home', HOME_POWER],
+];
 
 export type Registry = Pick<
   HomeAssistant,
@@ -206,10 +229,11 @@ export class HomeRegistry {
     );
   }
   outdoor(id: string): boolean {
-    return OUTDOOR.test(`${this.label(id)} ${this.areaName(this.areaOf(id)) ?? ''}`);
+    const where = `${this.label(id)} ${this.areaName(this.areaOf(id)) ?? ''}`;
+    return says(where, PLACE_WORDS) === 'outdoor';
   }
   private isLightSwitch(id: string): boolean {
-    return id.startsWith('switch.') && LIGHT_WORDS.test(this.label(id));
+    return id.startsWith('switch.') && says(plain(this.label(id)), SWITCH_WORDS) === 'light';
   }
   private fromWeather(id: string): boolean {
     return (
@@ -249,10 +273,6 @@ export class HomeRegistry {
       (t) => (device && this.deviceOf(t) === device) || t.startsWith(stem),
     );
   }
-  pick(list: readonly string[], pattern: RegExp): string | undefined {
-    return list.find((id) => pattern.test(this.label(id)));
-  }
-
   /* ---------- lists ---------- */
 
   domain(domain: string, allowDiagnostic = false): readonly string[] {

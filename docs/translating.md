@@ -32,11 +32,15 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
   an appliance card tells a washer from a dishwasher by (plain lower-case letters: a name is read with its accents
   taken off and in ordinary width, so "Kühlschrank" is `kuhlschrank` and "ＬＥＤ" is `led`). A stem in Latin letters
   is matched as its category asks (a light's as a whole word, a place's noise as whole words, the rest as a substring);
-  a stem in kana or kanji is always matched as a substring, since Japanese writes no spaces between words, and may
-  carry a lookaround of its own where a word hides inside another (`(?<!ガス)レンジ`: a microwave, not a gas stove).
-  They never ship: every language's stems are merged into `packages/cards/src/strategy/words.generated.ts` and
-  `packages/cards/src/appliance/words.generated.ts` (`pnpm i18n build`), because a house is named in its own
-  language, not the UI's.
+  a stem in kana or kanji is always matched as a substring, since Japanese writes no spaces between words. Where
+  lists compete for one name (a light's against the appliances' kinds, the kinds against each other, the energy
+  roles), every list is run and of two words that overlap in the name the longer wins, whatever the lists' order —
+  電気ケトル is a kettle, not the light 電気; ガスレンジ a hob, not the microwave レンジ; オーブントースター a toaster —
+  so a stem needs no lookaround against a longer word another list carries (a stem may still carry one against a
+  word no list has: `電気(?!毛布)`, a blanket is no light); words that stand apart each hold, and the first list wins
+  ("wine fridge" is the wine cooler, listed before the fridge). They never ship: every language's stems are merged
+  into `packages/cards/src/strategy/words.generated.ts` and `packages/cards/src/appliance/words.generated.ts`
+  (`pnpm i18n build`), because a house is named in its own language, not the UI's.
 - **The registry**, `packages/core/src/i18n/languages.ts`: the code (as Home Assistant reports `hass.language`), the
   language's own name, its English name, and when its day's parts begin (the greeting's "morning", "afternoon",
   "evening", "night").

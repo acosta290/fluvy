@@ -6,6 +6,7 @@ import { candidatesOf, entriesOf, knownPlatform, roleOf, type House } from './ro
 import type { ApplianceStep } from './status.js';
 import { KIND_WORDS, NOT_AN_APPLIANCE } from './words.generated.js';
 import { celsius } from './zones.js';
+import { says, type Rules } from '../shared/words.js';
 
 /*
  * What an appliance is. The card's own `kind` first; then what the integration says outright — Miele's model is the
@@ -13,9 +14,10 @@ import { celsius } from './zones.js';
  * (DEVICE_WASHER)"), and a WashTower is two devices named "<name> washer" and "<name> dryer"; then the keys only one
  * kind has (salt is a dishwasher's, i-Dos a washer's, a cavity's temperature an oven's, a setpoint that tops out below
  * 30 °C a compartment's; what LG's status can say — spinning, night dry, preheating — and what its older integration
- * writes in the device sensor's attributes); then the words of its name in any of the nine languages. Some things
- * are never an appliance, whatever they say: a vacuum (Home Connect's robot has no vacuum entity, only its keys), a
- * charger, a 3D printer, and — until 1.10 — a warming drawer, LG's Styler and its kimchi fridge.
+ * writes in the device sensor's attributes); then the words of its name in any of the nine languages, the longest of
+ * words that overlap winning (`shared/words.ts`: オーブントースター is a toaster, not an oven). Some things are never
+ * an appliance, whatever they say: a vacuum (Home Connect's robot has no vacuum entity, only its keys), a charger, a
+ * 3D printer, and — until 1.10 — a warming drawer, LG's Styler and its kimchi fridge.
  */
 
 export type ApplianceKind =
@@ -370,6 +372,15 @@ export function plain(text: string): string {
     .toLowerCase();
 }
 
+/**
+ * What a name says an appliance is, or that it is none (a vacuum, a hair dryer, a charger): the classes a plain name
+ * is read among, what is never one first, then the kinds in their order (`tools/i18n/src/build.ts` KINDS).
+ */
+export const APPLIANCE_WORDS: Rules<ApplianceKind | 'never'> = [
+  ['never', NOT_AN_APPLIANCE],
+  ...KIND_WORDS,
+];
+
 /** By the words of its names (its own and its model) in any of the nine languages. */
 export function byWords(
   ...names: ReadonlyArray<string | null | undefined>
@@ -378,10 +389,9 @@ export function byWords(
     .filter((name): name is string => Boolean(name))
     .map(plain)
     .join(' | ');
-  if (!text) return undefined;
-  if (NOT_AN_APPLIANCE.test(text)) return { excluded: 'name' };
-  const found = KIND_WORDS.find(([, pattern]) => pattern.test(text));
-  return found ? { kind: found[0], by: 'words' } : undefined;
+  const said = text ? says(text, APPLIANCE_WORDS) : undefined;
+  if (!said) return undefined;
+  return said === 'never' ? { excluded: 'name' } : { kind: said, by: 'words' };
 }
 
 /**

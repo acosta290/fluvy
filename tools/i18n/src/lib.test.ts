@@ -95,7 +95,7 @@ describe('the catalogues on disk', () => {
 describe('the generated patterns', () => {
   it('match a Latin stem in its shape and a kana or kanji stem as a substring, Japanese writing no spaces', () => {
     expect(pattern(['light', 'spot', '照明', 'ライト'], 'word')).toBe(
-      '(^|[\\s_.-])(light|spot)([\\s_.-]|$)|(照明|ライト)',
+      '(?:^|[\\s_.-])(light|spot)(?:[\\s_.-]|$)|(照明|ライト)',
     );
     const light = new RegExp(pattern(['light', 'spot', '照明', 'ライト', '電気'], 'word'), 'i');
     for (const name of [
@@ -125,7 +125,29 @@ describe('the generated patterns', () => {
         .trim(),
     ).toBe('Living room');
     // a substring shape holds both as they are
-    expect(pattern(['washer', '洗濯機'], 'substring')).toBe('washer|洗濯機');
+    expect(pattern(['washer', '洗濯機'], 'substring')).toBe('(washer|洗濯機)');
+  });
+
+  it('capture the stem found as the first group that takes part in the match, never a separator around it', () => {
+    const stem = (source: string, flags: string, name: string): string | undefined =>
+      new RegExp(source, flags)
+        .exec(name)
+        ?.slice(1)
+        .find((group) => group !== undefined);
+    const light = pattern(['light', 'spot', '照明', '電気'], 'word');
+    expect(stem(light, 'i', 'switch.kitchen_light Kitchen light')).toBe('light');
+    expect(stem(light, 'i', 'リビングの電気')).toBe('電気');
+    // a stem's own separators are its own; a stem's own group is numbered after the alternation's
+    const hob = pattern(['cooktop', '(^|[ _-])hob([ _-]|$)', 'コンロ'], 'substring');
+    expect(stem(hob, 'i', 'the hob')).toBe(' hob');
+    expect(stem(hob, 'i', 'ガスコンロ')).toBe('コンロ');
+    expect(stem(pattern(['temperature', '温度'], 'whole'), 'i', '温度')).toBe('温度');
+    expect(stem(pattern(['sensor', 'センサー'], 'words'), 'i', 'リビングのセンサー')).toBe(
+      'センサー',
+    );
+    expect(stem(pattern(['sensor', 'センサー'], 'words'), 'i', 'Living room sensor')).toBe(
+      'sensor',
+    );
   });
 
   it('read a name plain: accents off, ordinary width, a kana’s voicing mark kept', () => {

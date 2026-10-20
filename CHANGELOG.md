@@ -19,6 +19,17 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - A dropdown of ten rows or more (the Preferences tab's language menu, with Japanese) shows eight rows and 24 px of
   the ninth, not eight and a half: the menu stays on the 4 grid, and the cut row still says there is more.
 
+### Development
+
+- One matcher reads a name among the naming words' lists (`packages/cards/src/shared/words.ts`): where lists compete
+  — a switch's light words against the appliances' kinds, the kinds against each other and against what is never an
+  appliance, a reading's energy roles, a place against the house's words — every list is run and of two words that
+  overlap in the name the longer wins, whatever the lists' order (電気ケトル is a kettle, not the light 電気; ガスレンジ
+  a hob, not the microwave レンジ; オーブントースター a toaster; "hair dryer" no dryer), so a stem needs no lookaround
+  against a longer word another list carries; words that stand apart keep the lists' order ("wine fridge" stays a
+  wine cooler). The generated regexes capture the stem they find, as the first group that takes part in the match
+  (#55).
+
 ## [1.9.0] — 2026-10-19
 
 ### Fixed
