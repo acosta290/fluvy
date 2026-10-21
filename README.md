@@ -7,7 +7,7 @@
 <p align="center">A premium theme and card library for Home Assistant.</p>
 
 <p align="center">
-  <a href="https://hacs.xyz"><img alt="HACS custom repository" src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg?logo=homeassistantcommunitystore&logoColor=white"></a>
+  <a href="https://hacs.xyz"><img alt="HACS default repository" src="https://img.shields.io/badge/HACS-Default-41BDF5.svg?logo=homeassistantcommunitystore&logoColor=white"></a>
   <a href="https://github.com/acosta290/fluvy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/acosta290/fluvy?sort=semver&display_name=tag"></a>
   <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.9 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.9%2B-18BCF2.svg?logo=homeassistant&logoColor=white"></a>
   <a href="LICENSE"><img alt="Licence: GPL-3.0" src="https://img.shields.io/badge/licence-GPL--3.0-4c7bd9"></a>
@@ -181,22 +181,20 @@ frontend:
   themes: !include_dir_merge_named themes
 ```
 
-1. Until Fluvy is listed in HACS's default store, add it once: in HACS, open the menu (⋮) → **Custom
-   repositories**, add `https://github.com/acosta290/fluvy` with the type **Integration** — or click the button
-   above, which fills the dialog in. In HACS (and in Home Assistant's Marketplace from 2026.11, which reads the same catalogue)
-   Fluvy is listed under **Integration**, not Theme: a HACS theme can only be a YAML file, and Fluvy is the theme plus
-   the cards, the dashboards, the settings panel and the restyling of Home Assistant's own pages, which only an
-   integration can install. Search for "Fluvy" or "theme" with no type filter.
-2. Search for **Fluvy** in HACS and download it.
-3. Restart Home Assistant.
-4. Go to **Settings → Devices & services → Add integration**, search for **Fluvy** and add it. There is nothing to
+1. Search for **Fluvy** in HACS and download it — or click the button above, which opens it in your HACS. Fluvy
+   is in HACS's default store (and in Home Assistant's Marketplace from 2026.11, which reads the same catalogue)
+   under **Integration**, not Theme: a HACS theme can only be a YAML file, and Fluvy is the theme plus the cards,
+   the dashboards, the settings panel and the restyling of Home Assistant's own pages, which only an integration
+   can install. Search for "Fluvy" or "theme" with no type filter.
+2. Restart Home Assistant.
+3. Go to **Settings → Devices & services → Add integration**, search for **Fluvy** and add it. There is nothing to
    configure: the integration puts the settings panel in the sidebar, loads Fluvy on every page and installs the
    theme.
-5. Reload the browser, then choose the **Fluvy** theme: in your profile (**Theme → Fluvy**), or from the panel's
+4. Reload the browser, then choose the **Fluvy** theme: in your profile (**Theme → Fluvy**), or from the panel's
    *Scope* tab, which offers it.
 
 Without HACS: download `fluvy.zip` from the [latest release](https://github.com/acosta290/fluvy/releases/latest),
-unzip it into `<config>/custom_components/fluvy/`, restart, and continue at step 4.
+unzip it into `<config>/custom_components/fluvy/`, restart, and continue at step 3.
 
 If something is missing — the theme line above, a resource that has to be added by hand because your dashboards
 are configured in YAML, an old manual install — Home Assistant tells you in **Settings → System → Repairs**, with
