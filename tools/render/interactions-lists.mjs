@@ -10,7 +10,7 @@
  * and 20 above the card's foot in every card of a list (20 all round where it has no head); the card's own words and
  * every language's.
  */
-import { frame, startSuite } from './lib/suite.mjs';
+import { frame, HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -25,8 +25,9 @@ const EMPTY = [
 
 /** The cards of a frame, each with what it draws and how tall it says it is at this column. */
 const cardsOf = (page, title) =>
-  frame(page, title).evaluate((root) =>
-    [...root.querySelectorAll('*')]
+  frame(page, title).evaluate(async (root, module) => {
+    const { houseHeightOf } = await import(module);
+    return [...root.querySelectorAll('*')]
       .filter((el) => el.localName.startsWith('fluvy-') && el.localName.endsWith('-card'))
       .map((el) => {
         const box = [...el.renderRoot.children].find((node) => node.localName !== 'style');
@@ -48,10 +49,10 @@ const cardsOf = (page, title) =>
           panel: Boolean(el.renderRoot.querySelector('.fv-empty-state, .in-rows--quiet')),
           rows: el.renderRoot.querySelectorAll('.fv-row:not(.in-rows--quiet .fv-row)').length,
           height: box?.getBoundingClientRect().height ?? 0,
-          declared: el.constructor.layoutHeight(el.config, el.hass),
+          declared: houseHeightOf({ ...el.config, type: `custom:${el.localName}` }, -1, el.hass),
         };
-      }),
-  );
+      });
+  }, HOUSE_HEIGHTS);
 
 /* ---------- every card of a list, empty: its panel, at the height it says ---------- */
 {

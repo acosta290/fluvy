@@ -11,7 +11,8 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
+import { barRow, head, listRow, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
   css,
@@ -24,7 +25,7 @@ import {
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   accentField,
@@ -148,7 +149,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     css`
       .ef-card {
         width: 100%;
@@ -369,7 +370,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         config,
         view,
         label: config.name ?? (this.fromPrefs ? shortName(view) : view.name),
-        glyph: config.icon ?? (this.fromPrefs ? 'plug' : glyphFor(view)),
+        glyph: config.icon ?? (this.fromPrefs ? 'plug' : iconOf(view)),
         value: this.readingOf(config.entity, view, kind),
       };
     });

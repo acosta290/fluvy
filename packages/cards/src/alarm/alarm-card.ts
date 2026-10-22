@@ -36,7 +36,7 @@ import {
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -192,8 +192,8 @@ function previewState(hass: HomeAssistant): HassEntity {
  */
 export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: AlarmCardConfig, hass?: HomeAssistant): number {
-    return alarmHeight(config, hass);
+  static override layoutHeight(config: AlarmCardConfig): number {
+    return alarmHeight(config);
   }
 
   /** Widths laid out by the browser in the row's own classes: the compact card's chips are measured with it. */
@@ -563,7 +563,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
         data-card
       >
         ${head({
-          icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+          icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
           tone,
           title: name,
           name: true,

@@ -1,4 +1,4 @@
-import { strings, type HomeAssistant } from '@fluvy/core';
+import { strings } from '@fluvy/core';
 import type {
   EntityView,
   FluvyCardConfig,
@@ -50,7 +50,7 @@ import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { toneOf } from '../shared/colour.js';
-import { attrOf, chipRows, EMPTY, HEAD, known, listAttr, ROW } from '../shared/heights.js';
+import { chipRows, EMPTY, HEAD, ROW } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, idsOf, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { TemplateTexts } from '../shared/templates.js';
 
@@ -74,6 +74,65 @@ const SWITCHES = new Set(['input_boolean', 'switch']);
 const MOMENTS = new Set(['input_datetime', 'date', 'time', 'datetime']);
 const BUTTONS = new Set(['input_button', 'button']);
 
+/** What the house says of a helper: whether a number has a range (its ruler), a select's options, a moment's date. */
+export interface HelperShape {
+  readonly ranged?: boolean;
+  readonly options?: readonly string[];
+  readonly dated?: boolean;
+}
+
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns. A helper by its kind, 16 under what is
+ * above it: a number's field and its ruler (44 + 4 + 44; the field alone for a counter without a range, a boxed
+ * number), a select's label and its chips (20 + 8 + rows of 44; a list past six options is a row), a text's label and
+ * field (20 + 12 + 44; a 36 label with a second line), a switch, a button, a moment or a state as rows of 60 in one
+ * group (16 above the group, not each row), a time's quick presets 56 under its row. The house says a number's range,
+ * a select's options and a moment's date (`shapeOf`, read by `house-heights.ts`); where it is not there to say, a
+ * ruler (a counter its field) and one row of three chips.
+ */
+export function helpersHeight(
+  config: HelpersCardConfig,
+  shapeOf?: (id: string, domain: string) => HelperShape,
+): number {
+  const rows = idsOf(config.rows ?? config.entities);
+  if (!rows.length) return HEAD + EMPTY;
+  // one number or counter and no title: the compact figure (see `compactNumber`)
+  if (rows.length === 1 && !config.title && /^(counter|number|input_number)\./.test(rows[0] ?? ''))
+    return 76;
+  const items = (config.rows ?? config.entities ?? []) as readonly (string | HelperRowConfig)[];
+  const itemOf = (id: string): HelperRowConfig | undefined =>
+    items.find((item): item is HelperRowConfig => typeof item !== 'string' && item.entity === id);
+  let height = 64 + 20;
+  let group = 0; // rows in the open group of list rows
+  for (const id of rows) {
+    const domain = id.slice(0, id.indexOf('.'));
+    const shape = shapeOf?.(id, domain) ?? {};
+    let block = 0;
+    if (NUMBERS.has(domain)) {
+      block = (shape.ranged ?? domain !== 'counter') ? 92 : 44;
+    } else if (SELECTS.has(domain)) {
+      const options = shape.options ?? [];
+      if (options.length <= MAX_CHIPS) {
+        const style = config.options_style === 'chips' ? 'chips' : 'full';
+        block = 28 + chipRows(options.length ? options : ['a', 'b', 'c'], style) * 44;
+      }
+    } else if (TEXTS.has(domain)) {
+      block = (itemOf(id)?.secondary ? 36 : 20) + 12 + 44;
+    }
+    if (block) {
+      height += 16 + block;
+      group = 0;
+      continue;
+    }
+    if (!group) height += 16;
+    group += 1;
+    height += ROW;
+    // a time with quick presets: the chips under its row
+    if (MOMENTS.has(domain) && !shape.dated && itemOf(id)?.presets?.length) height += 56;
+  }
+  return height;
+}
+
 /**
  * Every Home Assistant helper on one card, each in the idiom the design sheet gives its kind: a number
  * is a big tabular value with its stepper and the ruler under it, a select is a row of chips, a text
@@ -81,61 +140,9 @@ const BUTTONS = new Set(['input_button', 'button']);
  * One control per module: `number.ts`, `select.ts`, `text.ts`, `rows.ts`.
  */
 export class FluvyHelpersCard extends Card<HelpersCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: HelpersCardConfig, hass?: HomeAssistant): number {
-    const rows = idsOf(config.rows ?? config.entities);
-    if (!rows.length) return HEAD + EMPTY;
-    // one number or counter and no title: the compact figure (see `compactNumber`)
-    if (
-      rows.length === 1 &&
-      !config.title &&
-      /^(counter|number|input_number)\./.test(rows[0] ?? '')
-    )
-      return 76;
-    // a helper by its kind, 16 under what is above it: a number's field and its ruler (44 + 4 + 44; the field alone
-    // for a counter without a range, a boxed number), a select's label and its chips (20 + 8 + rows of 44; a list
-    // past six options is a row), a text's label and field (20 + 12 + 44; a 36 label with a second line), a switch,
-    // a button, a moment or a state as rows of 60 in one group (16 above the group, not each row), a time's quick
-    // presets 56 under its row. The house says a number's range and a select's options; without it, a ruler and one
-    // row of three chips.
-    const items = (config.rows ?? config.entities ?? []) as readonly (string | HelperRowConfig)[];
-    const itemOf = (id: string): HelperRowConfig | undefined =>
-      items.find((item): item is HelperRowConfig => typeof item !== 'string' && item.entity === id);
-    let height = 64 + 20;
-    let group = 0; // rows in the open group of list rows
-    for (const id of rows) {
-      const domain = id.slice(0, id.indexOf('.'));
-      const attr = (key: string): unknown => attrOf(hass, id, key);
-      let block = 0;
-      if (NUMBERS.has(domain)) {
-        const counter = domain === 'counter';
-        const min = attr(counter ? 'minimum' : 'min');
-        const max = attr(counter ? 'maximum' : 'max');
-        const ranged = counter
-          ? typeof min === 'number' && typeof max === 'number'
-          : attr('mode') !== 'box' && !(known(hass, id) && (min === null || max === null));
-        block = ranged ? 92 : 44;
-      } else if (SELECTS.has(domain)) {
-        const options = listAttr(hass, id, 'options');
-        if (options.length <= MAX_CHIPS) {
-          const style = config.options_style === 'chips' ? 'chips' : 'full';
-          block = 28 + chipRows(options.length ? options : ['a', 'b', 'c'], style) * 44;
-        }
-      } else if (TEXTS.has(domain)) {
-        block = (itemOf(id)?.secondary ? 36 : 20) + 12 + 44;
-      }
-      if (block) {
-        height += 16 + block;
-        group = 0;
-        continue;
-      }
-      if (!group) height += 16;
-      group += 1;
-      height += ROW;
-      // a time with quick presets: the chips under its row
-      if (MOMENTS.has(domain) && !attr('has_date') && itemOf(id)?.presets?.length) height += 56;
-    }
-    return height;
+  /** The card's height at a 360 column from its config alone: a ruler and three short options (`helpersHeight`). */
+  static override layoutHeight(config: HelpersCardConfig): number {
+    return helpersHeight(config);
   }
 
   static override styles: CSSResultGroup = [

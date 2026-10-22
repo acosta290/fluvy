@@ -58,7 +58,7 @@ type CardElement = HTMLElement & {
   updateComplete: Promise<boolean>;
   holder: { onScreen: boolean; report(onScreen: boolean): void };
   /** The still asked for last, until it lands (no image lands under test: the test says it did). */
-  inFlight: number;
+  feed: { inFlight: number };
 };
 
 beforeEach(() => vi.useFakeTimers());
@@ -81,10 +81,10 @@ describe('a printer’s stills', () => {
     // on screen: one still at once, then one every five seconds while it prints (each landing before the next)
     card.holder.report(true);
     expect(pulled).toHaveLength(1);
-    card.inFlight = 0;
+    card.feed.inFlight = 0;
     await vi.advanceTimersByTimeAsync(5_000);
     expect(pulled).toHaveLength(2);
-    card.inFlight = 0;
+    card.feed.inFlight = 0;
     // off screen: no more
     card.holder.report(false);
     await vi.advanceTimersByTimeAsync(30_000);
@@ -92,7 +92,7 @@ describe('a printer’s stills', () => {
     // back on screen: one at once, and the five seconds again
     card.holder.report(true);
     expect(pulled).toHaveLength(3);
-    card.inFlight = 0;
+    card.feed.inFlight = 0;
     await vi.advanceTimersByTimeAsync(5_000);
     expect(pulled).toHaveLength(4);
   });

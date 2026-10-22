@@ -77,6 +77,8 @@ const GLYPHS = {
     '<path d="M12 3 5 6v5c0 4.5 3 8.3 7 9.5 4-1.2 7-5 7-9.5V6Z"/><path d="m9.5 12 2 2 3.5-4"/>',
   camera:
     '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z"/><circle cx="12" cy="13" r="3.5"/>',
+  /** a security camera on its wall arm, its hood at the front: the Cameras card's head */
+  cctv: '<path d="M15.6 12.9V16.9H20.6"/><g transform="matrix(.883 -.469 .469 .883 7.65 13.7)"><rect x="0" y="-3" width="10.5" height="6" rx="1.5"/><path d="M0-1.5-3.2-3V3L0 1.5"/></g>',
   vacuum:
     '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v4"/><circle cx="12" cy="12" r="2"/><path d="M6 17.5 4 20"/><path d="m18 17.5 2 2.5"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none"/>',
@@ -99,6 +101,21 @@ const GLYPHS = {
   map: '<path d="m4 6 5-2 6 2 5-2v14l-5 2-6-2-5 2Z"/><path d="M9 4v14"/><path d="M15 6v14"/>',
   pin: '<path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21Z"/><circle cx="12" cy="10.5" r="2.2"/>',
   door: '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  /** the door's frame with its leaf swung in on its hinge, the knob at its free edge */
+  doorOpen:
+    '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><path d="M6 3.5l7 2.5v13l-7 2"/><circle cx="11" cy="12.5" r="1" fill="currentColor" stroke="none"/>',
+  /** a window's four panes; open, its two sashes swung in */
+  window:
+    '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16"/><path d="M4 12h16"/>',
+  windowOpen:
+    '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4.5 5.5 9 7.5v9l-4.5 2"/><path d="M19.5 5.5 15 7.5v9l4.5 2"/>',
+  /** a field gate between its posts, braced; open, its leaf swung toward you on the left post */
+  gate: '<path d="M4 3v18"/><path d="M20 3v18"/><path d="M4 7h16"/><path d="M4 17h16"/><path d="M4 17 20 7"/>',
+  gateOpen: '<path d="M4 3v18"/><path d="M20 3v18"/><path d="M4 7l10-3v16.5L4 17"/>',
+  /** a garage, its door shut in two panels; open, the door rolled up into a band at its top */
+  garage: '<path d="M4 21V9.5L12 3l8 6.5V21"/><path d="M7.5 12h9v9h-9Z"/><path d="M7.5 16.5h9"/>',
+  garageOpen:
+    '<path d="M4 21V9.5L12 3l8 6.5V21"/><path d="M7.5 21v-9h9V21"/><path d="M7.5 13.5h9"/>',
   warn: '<path d="M12 4 3 19h18Z"/><path d="M12 10v4"/><circle cx="12" cy="16.5" r=".9" fill="currentColor" stroke="none"/>',
   update: '<path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 19h14"/>',
   list: '<path d="M9 7h11"/><path d="M9 12h11"/><path d="M9 17h11"/><circle cx="5" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="1" fill="currentColor" stroke="none"/>',

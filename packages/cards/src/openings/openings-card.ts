@@ -28,7 +28,7 @@ import { agoShort, durationShort } from '../helpers/datetime.js';
 import { HeadFit, type FittedHead } from '../energy/head.js';
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import {
   accentField,
   actionField,
@@ -354,7 +354,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
             bare
               ? nothing
               : ico(
-                  item.icon ?? (view.deviceClass === 'window' ? 'blinds' : glyphFor(view)),
+                  iconOf(view, item.icon),
                   dead ? 'off' : warn ? tone : item.color ? 'accent' : 'neutral',
                 )
           }
@@ -554,9 +554,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
                 const dead = !isUsable(view);
                 const title = item.name ?? view.name;
                 return listRow({
-                  icon: keep
-                    ? (item.icon ?? (view.deviceClass === 'window' ? 'blinds' : glyphFor(view))) // the sheet's window glyph
-                    : null,
+                  icon: keep ? iconOf(view, item.icon) : null,
                   // what needs acting on is filled in the warning tone, circle and state alike; a row's own colour is who
                   // it is, so its circle wears it the rest of the time; events (motion) and the rest stay neutral
                   tone: dead ? 'off' : warn ? tone : item.color ? 'accent' : 'neutral',

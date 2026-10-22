@@ -487,10 +487,13 @@ for (const width of [211, 360]) {
         };
       });
   const on4 = (v) => Math.round(v / 4) * 4;
+  // every camera seen once, the one whose stream cannot play among them: its one session is opened (and closed) before
+  // the live card's are counted
   for (const title of [
     'Camera · 180°, its own shape',
     'Camera · 180° in 16:9, the whole picture',
     'Camera · 4:3, half a second',
+    'Camera · live, no stream',
     'Camera · live',
   ])
     await frame(page, title).scrollIntoViewIfNeeded();
@@ -599,8 +602,8 @@ for (const width of [211, 360]) {
           },
         },
       };
-      el.inFlight = 0;
-      el.pull();
+      el.feed.inFlight = 0;
+      el.feed.pull();
       const srcs = [...el.shadowRoot.querySelectorAll('.fv-plate__img')].map(
         (i) => i.getAttribute('src') ?? '',
       );

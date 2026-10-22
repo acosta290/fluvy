@@ -10,11 +10,13 @@ const LANGUAGE = /\/packages\/core\/src\/i18n\/locales\/([\w-]+)\.json/;
 
 /**
  * What the pages and the settings panel share and a dashboard never needs: the date picker both pages open, the
- * time field inside it, the dropdown. Fetched with whichever of them opens first; core must not reach for any of
- * it (a static import from core would drag the chunk onto every dashboard — `finish.mjs` refuses such a build).
+ * time field inside it, the dropdown; and what the Activity and History pages share — the period they show and its
+ * range, their floating layers, the CSV they write, their chrome's sheet. Fetched with whichever of them opens first;
+ * core must not reach for any of it (a static import from core would drag the chunk onto every dashboard —
+ * `finish.mjs` refuses such a build).
  */
 const PAGES =
-  /\/packages\/(cards\/src\/shared\/date-picker\.ts|ui\/src\/controls\/(time-field|select)\.ts)/;
+  /\/packages\/(cards\/src\/shared\/(date-picker|period|range|layers?|csv)\.ts|ui\/src\/(controls\/(time-field|select)|styles\/(generated\/)?page)\.ts)/;
 
 /** What only the Activity page uses (all of its folder but the takeover, and its English): fetched the first time `/logbook` is opened. */
 const ACTIVITY =
@@ -34,6 +36,12 @@ const PANEL =
 /** The automatic dashboard's strategy (all of its folder but the definer): fetched when a dashboard asks for it. */
 const STRATEGY = /\/packages\/cards\/src\/strategy\/(?!define\.ts)/;
 
+/**
+ * The heights counted with the house (what an entity's capabilities draw, what a room holds): the strategy's, fetched
+ * with it; every page carries the cards' heights from their configs alone.
+ */
+const HOUSE_HEIGHTS = /\/packages\/cards\/src\/house-heights\.ts/;
+
 /** Wall mode (the controller in core — its switch stays in core's chunk — and the screensaver, corner and toast in cards; their words are core's `wall`): fetched only on a device that is a wall. */
 const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 
@@ -41,33 +49,36 @@ const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 const WEATHER = /\/packages\/cards\/src\/(weather-cards\.ts|weather\/)/;
 
 /**
- * The media family (the player and the now-playing strip, what only they share, and their English): fetched as the
- * bundle starts and defined as it lands, as the energy family is (`media-family.ts` stays in core: the names, the
- * heights).
+ * The media family (the player and the now-playing strip, what only they share, the player's sheet and their
+ * English): fetched as the bundle starts and defined as it lands, as the energy family is (`media-family.ts` stays in
+ * core: the names, the heights).
  */
 const MEDIA =
-  /\/packages\/(cards\/src\/(media-cards\.ts|media\/|now-playing\/|shared\/media\.ts)|core\/src\/i18n\/locales\/en\/media\.json)/;
+  /\/packages\/(cards\/src\/(media-cards\.ts|media\/|now-playing\/|shared\/media\.ts)|ui\/src\/styles\/(generated\/)?media\.ts|core\/src\/i18n\/locales\/en\/media\.json)/;
 
 /** The history bars' readings (`readings.ts`, the resets and the steps; `history.ts`, the recorder's history): fetched by the first card that needs them. */
 const HISTORY_BARS_READINGS = /\/packages\/cards\/src\/history-bars\/(readings|history)\.ts/;
 
 /**
  * The energy family (its cards, the flow's drawing and motion, the model they share, every `energy/` helper but the
- * head's fitting, which the other cards use, and the family's English): fetched as the bundle starts — `index.ts`
- * announces the cards and imports this without waiting — and defined as it lands. Home Assistant builds a card again
- * the moment its tag is defined, so a dashboard with energy on it shows it; one without never waits.
+ * head's fitting, which the other cards use, its sheet and the family's English): fetched as the bundle starts —
+ * `index.ts` announces the cards and imports this without waiting — and defined as it lands. Home Assistant builds a
+ * card again the moment its tag is defined, so a dashboard with energy on it shows it; one without never waits.
  */
 const ENERGY =
-  /\/packages\/(cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|production\/|history-bars\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)|core\/src\/i18n\/locales\/en\/energy\.json)/;
+  /\/packages\/(cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|production\/|history-bars\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)|ui\/src\/styles\/(generated\/)?energy\.ts|core\/src\/i18n\/locales\/en\/energy\.json)/;
+
+/** The cameras' sheet: fetched the first time a Cameras card's round opens it, never by a dashboard that only shows them. */
+const CAMERAS_SHEET = /\/packages\/cards\/src\/camera\/sheet\//;
 
 /**
- * The devices family (the lock, the alarm and its keypad, the camera, the 3D printer, the job's times the appliances
- * share, and their English): fetched as the bundle starts and defined as it lands, as the energy family is
- * (`devices-family.ts` stays in core: the names, the heights; so do the rows the lock shares with the entities card,
- * `lock/rows.ts`).
+ * The devices family (the lock, the alarm and its keypad, the camera and the cameras, the 3D printer, the job's times
+ * the appliances share, the motion sensor a camera's device carries, and their English): fetched as the bundle starts
+ * and defined as it lands, as the energy family is (`devices-family.ts` stays in core: the names, the heights; so do the
+ * rows the lock shares with the entities card, `lock/rows.ts`).
  */
 const DEVICES =
-  /\/packages\/(cards\/src\/(devices-cards\.ts|devices\/|camera\/|alarm\/|lock\/lock-card\.ts|printer\/|shared\/job-time\.ts)|core\/src\/i18n\/locales\/en\/(devices|job)\.json)/;
+  /\/packages\/(cards\/src\/(devices-cards\.ts|devices\/|camera\/|alarm\/|lock\/lock-card\.ts|printer\/|shared\/(job-time|motion)\.ts)|core\/src\/i18n\/locales\/en\/(devices|job)\.json)/;
 
 /** The appliances' pictures (one product drawing a kind): fetched by the first card that draws one, never at start. */
 const APPLIANCE_ART = /\/packages\/cards\/src\/appliance\/art\//;
@@ -101,11 +112,21 @@ const ALERTS_SHEET = /\/packages\/cards\/src\/alerts\/sheet(\.ts|\/)/;
 const ALERTS =
   /\/packages\/(cards\/src\/(alerts-cards\.ts|alerts\/)|core\/src\/i18n\/locales\/en\/alerts\.json)/;
 
+/**
+ * The template card (its card, the parsers of its templates' answers, and its English): fetched as the bundle starts
+ * and defined as it lands, as the weather card is (`template-family.ts` stays in core: the name, the height).
+ */
+const TEMPLATE =
+  /\/packages\/(cards\/src\/(template-cards\.ts|template\/)|core\/src\/i18n\/locales\/en\/template\.json)/;
+
 /** The light card's colour controls (the quick colours' table and row, the hue maths): fetched by the first colour bulb drawn. */
 const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/colour\.ts/;
 
 /** The icons a view's name says, for a tab row asked for icons whose views have none: fetched the first time it is. */
 const VIEW_ICONS = /\/packages\/core\/src\/look\/view-icons\.ts/;
+
+/** The icon set's other part (`fluvy:washer`, `fluvy:gate-open` …): fetched the first time Home Assistant asks for one. */
+const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
@@ -118,10 +139,12 @@ const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy, the wall, the weather card, the media, energy (the history bars' readings on
- * their own), devices, appliances (their pictures on their own), automations and alerts families (each sheet on its
- * own), the cards' editor, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in
- * `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * page, the settings panel, the strategy and the heights it counts with the house, the wall, the weather card, the
+ * media, energy (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their
+ * pictures on their own), automations and alerts families (each sheet on its own), the template card, the cards'
+ * editor, the view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The
+ * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
+ * loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -131,11 +154,13 @@ export const GROUPS = [
   { name: 'history', test: HISTORY },
   { name: 'panel', test: PANEL },
   { name: 'strategy', test: STRATEGY },
+  { name: 'house-heights', test: HOUSE_HEIGHTS },
   { name: 'wall', test: WALL },
   { name: 'weather', test: WEATHER },
   { name: 'media', test: MEDIA },
   { name: 'history-bars-readings', test: HISTORY_BARS_READINGS },
   { name: 'energy', test: ENERGY },
+  { name: 'cameras-sheet', test: CAMERAS_SHEET },
   { name: 'devices', test: DEVICES },
   { name: 'appliance-art', test: APPLIANCE_ART },
   { name: 'appliances', test: APPLIANCES },
@@ -143,9 +168,11 @@ export const GROUPS = [
   { name: 'automations', test: AUTOMATIONS },
   { name: 'alerts-sheet', test: ALERTS_SHEET },
   { name: 'alerts', test: ALERTS },
+  { name: 'template', test: TEMPLATE },
   { name: 'light-colour', test: LIGHT_COLOUR },
   { name: 'editor', test: EDITOR },
   { name: 'view-icons', test: VIEW_ICONS },
+  { name: 'icons', test: ICONS },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];
 

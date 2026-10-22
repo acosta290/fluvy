@@ -384,3 +384,9 @@
   );
   box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
 }
+
+/* An item of a tone alone at rest (`tint: always`, 1.10): its tone's wash as a light card's at rest (`data-surface`
+   writes the card's fill, its hairline and its inner fill), so an inner tile keeps the hairline as a coloured one. */
+.fv-tile--inner[data-surface] {
+  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+}

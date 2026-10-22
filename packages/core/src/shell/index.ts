@@ -1,4 +1,3 @@
-import { THEME_SENTINEL } from '@fluvy/tokens/config';
 import { PAGE_ATTRIBUTE, WALL_ATTRIBUTE } from '../look/attributes.js';
 import { patchChartFont, patchChartSeries } from './charts.js';
 import { adoptLast, walkShadow } from './dom.js';
@@ -7,9 +6,12 @@ import { PanelFrames } from './frames.js';
 import { refreshLegacyIcons } from './icons.js';
 import { patchMarqueeOverflow } from './marquee.js';
 import { patchNavigationGlyphs } from './navigation.js';
+import { asidesOf, themed, versionNote } from './patches.js';
 import { patchSvgIcons, redrawSvgIcons } from './svg-icons.js';
 import { configGlyph } from './css/settings.js';
 import { SHEETS, type ShellSheet } from './registry.js';
+
+export { guard, inUse, setWorn, stepAside, themed, versionNote } from './patches.js';
 
 /**
  * The shell: what the theme cannot reach in Home Assistant's own chrome — the frame, the sidebar,
@@ -24,6 +26,9 @@ import { SHEETS, type ShellSheet } from './registry.js';
  * selector that no longer matches after a Home Assistant update simply does nothing (`report()` says
  * which ones stopped matching). The only observer watches the inline styles of `<html>` and `<body>`,
  * where Home Assistant (and a panel frame such as HACS) writes the theme and with it our sentinel.
+ * What no sheet can reach (the charts, the icons' paths, the frames, a few attributes) is a wrap of one of
+ * Home Assistant's methods that acts only while Fluvy is in use on the page, and steps aside when it
+ * throws (`patches.ts`).
  *
  * The same engine runs in the page (`startShell`, once) and in every same-origin panel frame the page
  * shows (`frames.ts`): each document gets its own sheets, made by its own window.
@@ -50,8 +55,13 @@ export interface SheetReport {
 export interface ShellReport {
   readonly active: boolean;
   readonly sheets: readonly SheetReport[];
-  /** Behaviour the shell wraps (not styles): whether each wrap took (`null` while its element is not defined yet). */
-  readonly patches: Readonly<Record<string, boolean | null>>;
+  /**
+   * Behaviour wrapped on Home Assistant's elements (not styles): whether each of the shell's wraps took (`null` while
+   * its element is not defined yet), and every patch on the page that stepped aside (its part threw), with what it threw.
+   */
+  readonly patches: Readonly<Record<string, boolean | null | string>>;
+  /** The page's: Home Assistant's version beside the releases this build was checked against (a note, never a stop). */
+  readonly version?: string;
   /** The shells of the panel frames on the page now (HACS). */
   readonly frames: readonly ShellReport[];
 }
@@ -119,16 +129,6 @@ function classAttacher(env: ShellEnv): (entry: Entry) => void {
 }
 
 /**
- * The theme is on when our sentinel is among the inline variables of `<html>` (Home Assistant applied the
- * fluvy theme) or `<body>` (a panel frame), or when the look covers the whole app (`<html fluvy-look>`).
- */
-export const themed = (doc: Document): boolean =>
-  doc.documentElement.hasAttribute(PAGE_ATTRIBUTE) ||
-  [doc.documentElement, doc.body].some(
-    (element) => (element?.style.getPropertyValue(THEME_SENTINEL).trim() ?? '') !== '',
-  );
-
-/**
  * A shell for one document: its sheets, attached once, filled while the theme is on. `frames` also gives
  * every same-origin panel frame the document shows a shell of its own (the page's shell does; a frame's
  * does not look for frames inside itself).
@@ -139,6 +139,13 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     sheet: env.createSheet(),
     attached: false,
   }));
+  const frames = options.frames
+    ? new PanelFrames(env, (frameEnv) => {
+        const shell = createShell(frameEnv);
+        for (const listener of frameListeners) listener(frameEnv);
+        return shell;
+      })
+    : undefined;
 
   let active: boolean | null = null;
   let icons: boolean | null = null;
@@ -157,6 +164,8 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
       !spec.when || env.document.documentElement.hasAttribute(spec.when);
     const drawn = active === true && icons === true;
     const first = active === null;
+    // the page wears Fluvy now: the panel frames on it get their shells
+    if (on && active === false) frames?.scan();
     active = on;
     icons = ours;
     wall = walled;
@@ -191,43 +200,27 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     entry.attached = true;
   }
   refreshLegacyIcons(env.document);
-  const patches: Record<string, boolean | null> = {
-    chartFont: null,
-    chartSeries: null,
-    marqueeOverflow: null,
-    navigationGlyphs: null,
-    svgIcons: null,
+  /** Whether each wrap took: null until its element is defined. */
+  const patches: Record<string, boolean | null> = {};
+  const track = (name: string, patch: Promise<boolean>): Promise<boolean> => {
+    patches[name] = null;
+    return patch.then((done) => (patches[name] = done));
   };
-  void patchChartFont(env.customElements).then((done) => {
-    patches['chartFont'] = done;
-  });
-  void patchChartSeries(env.customElements).then((done) => {
-    patches['chartSeries'] = done;
-  });
-  void patchMarqueeOverflow(env.customElements).then((done) => {
-    patches['marqueeOverflow'] = done;
-  });
-  void patchNavigationGlyphs(env.customElements, env.document, configGlyph).then((done) => {
-    patches['navigationGlyphs'] = done;
-  });
-  void patchSvgIcons(env.customElements, () => active === true && icons === true).then((done) => {
-    patches['svgIcons'] = done;
+  void track('chartFont', patchChartFont(env.customElements));
+  void track('chartSeries', patchChartSeries(env.customElements));
+  void track('marqueeOverflow', patchMarqueeOverflow(env.customElements));
+  void track(
+    'navigationGlyphs',
+    patchNavigationGlyphs(env.customElements, env.document, configGlyph),
+  );
+  void track(
+    'svgIcons',
+    patchSvgIcons(env.customElements, () => active === true && icons === true),
+  ).then((done) => {
     // the icons drawn before the patch (the page's first render) take ours too
     if (done && active && icons) redrawSvgIcons(env.document, true);
   });
-  const frames = options.frames
-    ? new PanelFrames(env, (frameEnv) => {
-        const shell = createShell(frameEnv);
-        for (const listener of frameListeners) listener(frameEnv);
-        return shell;
-      })
-    : undefined;
-  if (frames) {
-    patches['panelFrames'] = null;
-    void frames.watch().then((done) => {
-      patches['panelFrames'] = done;
-    });
-  }
+  if (frames) void track('panelFrames', frames.watch());
 
   // `<html>` and `<body>` only: the page's light tree is a handful of elements (everything else lives in shadow roots)
   const observer = new env.MutationObserver(sync);
@@ -275,7 +268,9 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
       return {
         active: active === true,
         sheets,
-        patches: { ...patches },
+        patches: { ...patches, ...asidesOf(env.document) },
+        // the page's (a frame has no Home Assistant of its own)
+        ...(frames && { version: versionNote(env.document) }),
         frames: frames?.current().map((shell) => shell.report()) ?? [],
       };
     },

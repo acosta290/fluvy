@@ -400,4 +400,29 @@ for (const [width, card] of [
   await page.close();
 }
 
+/* ---------- the spine runs through the middle of every circle, on a 12-hour clock too ---------- */
+for (const [clock, width] of [
+  ['24', 1440],
+  ['12', 1440],
+  ['12', 390],
+]) {
+  const page = await open(`clock=${clock}`, width);
+  const off = await page.evaluate(() => {
+    const root = document.querySelector('fluvy-activity').shadowRoot;
+    return [...root.querySelectorAll('.av-row')].slice(0, 24).map((row) => {
+      const spine = getComputedStyle(row, '::before');
+      const x =
+        row.getBoundingClientRect().left + parseFloat(spine.left) + parseFloat(spine.width) / 2;
+      const node = row.querySelector('.av-node').getBoundingClientRect();
+      return Math.round(Math.abs(x - (node.left + node.width / 2)) * 10) / 10;
+    });
+  });
+  check(
+    `the spine runs through every circle's middle (${clock}-hour clock, ${width} wide)`,
+    off.length > 0 && off.every((d) => d <= 1),
+    JSON.stringify({ rows: off.length, worst: Math.max(...off) }),
+  );
+  await page.close();
+}
+
 await suite.finish();

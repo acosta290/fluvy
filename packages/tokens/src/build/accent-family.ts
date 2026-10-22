@@ -17,17 +17,26 @@ export type { AccentFamily } from './derive/accent.js';
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
+/** A candle's white as Home Assistant gives it (2,200 K): the warmest a lit white is drawn, the band's whole chroma. */
+const CANDLE = fromHex('#ff9227');
+
 /**
  * A card's own colour on the palette it sits on: the family the accent would have had, had the palette been
  * seeded with `pick` — its hue and chroma read as `readIdentity` reads a seed's accent (clamped into the
  * character's band), fitted against this palette's own surfaces, in this mode, with the mode's profile. A grey is
  * drawn on the grey ladder instead (`neutralFamily`). The palette's states, statuses and surfaces are not touched:
  * only what the accent owns.
+ *
+ * A lit `white` (a bulb's colour temperature, 1.10) is a scale instead: its hue, and the share of a candle's chroma
+ * it has — so a candle is the band's warmest, 2,700 K plainly warmer than 4,000 K, 5,000 K nearly neutral, a
+ * daylight white neutral and a cool one as cool as it is far from daylight — fitted to the same gates, never the grey
+ * ladder.
  */
 export function accentFamily(
   seed: PaletteSeed,
   colors: PaletteModeColors,
   pick: Hex,
+  white = false,
 ): AccentFamily {
   const identity = readIdentity(seed);
   const { limits, character } = identity;
@@ -49,17 +58,18 @@ export function accentFamily(
   };
   // a pick this close to grey is a grey (as a custom palette's accent is), and so is every grey of the palette's
   // own, whatever its rounding: never lifted into the character's chroma band, where it would read as a colour
-  if (color.c < Math.max(GREY_CHROMA, neutralPeak + 0.003))
+  if (!white && color.c < Math.max(GREY_CHROMA, neutralPeak + 0.003))
     return neutralFamily(ctx, colors, color);
-  const peak = clamp(
-    peakChromaFrom(color.l, color.c / base.accentChromaScale),
-    ...limits.accentChroma,
-  );
+  // a white's chroma is its share of a candle's, of the most the band gives a candle
+  const band = white ? CANDLE : color;
+  const peak =
+    clamp(peakChromaFrom(band.l, band.c / base.accentChromaScale), ...limits.accentChroma) *
+    (white ? Math.min(1, color.c / CANDLE.c) : 1);
   return deriveAccent(ctx, {
     hue: color.h,
     peakChroma: peak * p.accentChromaScale,
     graphPeakChroma: clamp(peak, ...limits.graphChroma) * p.graphChromaScale,
-    lightAccent: character === 'vivid' && color.l > 0.85,
+    lightAccent: !white && character === 'vivid' && color.l > 0.85,
     fill: accentAnchors(color, character, colors.fillStyle).fill,
   });
 }

@@ -11,14 +11,16 @@ import {
 import {
   accentField,
   actionFields,
-  boolField,
   colourFields,
   emptyFields,
   entitiesField,
   entityField,
   fieldRow,
   formLabels,
+  holdsLight,
+  lightColourFields,
   nameIconFields,
+  onlyWhen,
   selectField,
   tintField,
   toneField,
@@ -34,6 +36,7 @@ import {
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { withMembers } from '../shared/light.js';
 import { lightDefaults, type LovelaceCardConfig } from '@fluvy/core';
 
 export interface TilesCardConfig extends TileCardConfig, EmptyList {
@@ -96,6 +99,7 @@ export class FluvyTilesCard extends FluvyTileCard {
     'columns',
     'tint',
     'light_colors',
+    'light_whites',
     ...EMPTY_KEYS,
   ]);
   static override lists: readonly RowsListSpec[] = [
@@ -107,7 +111,7 @@ export class FluvyTilesCard extends FluvyTileCard {
       schema: [
         entityField(),
         nameIconFields(),
-        fieldRow(toneField(), accentField()),
+        fieldRow(toneField(), accentField('color', { bulb: true })),
         entitiesField('readouts', ['sensor']),
         actionFields(),
       ],
@@ -120,6 +124,7 @@ export class FluvyTilesCard extends FluvyTileCard {
     columns: config['size'] === 'mini' ? '3' : '2',
     tint: 'on',
     light_colors: lightDefaults().colors,
+    light_whites: 'temperature',
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -128,7 +133,8 @@ export class FluvyTilesCard extends FluvyTileCard {
         fieldRow(selectField('size', SIZES), selectField('columns', COLUMNS)),
         ...colourFields(),
         tintField(),
-        boolField('light_colors'),
+        // a light's colours where the group holds a light
+        onlyWhen(holdsLight('tiles', 'entities'), lightColourFields()),
         entitiesField('readouts', ['sensor']),
         emptyFields(),
       ],
@@ -190,7 +196,10 @@ export class FluvyTilesCard extends FluvyTileCard {
   }
 
   protected override watched(): readonly string[] {
-    return this.items().flatMap((item) => [item.entity, ...(item.readouts ?? [])]);
+    return withMembers(
+      this.items().flatMap((item) => [item.entity, ...(item.readouts ?? [])]),
+      this.hass,
+    );
   }
 
   protected override renderCard(): TemplateResult {

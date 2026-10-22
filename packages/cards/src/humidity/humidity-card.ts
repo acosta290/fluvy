@@ -27,7 +27,7 @@ import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import {
   actionFields,
   boolField,
@@ -282,7 +282,7 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
       .join(' · ');
     const room = this.head.rowRoom(this.contentWidth, '', { icon: keep }) - SWITCH_SLOT;
     return listRow({
-      icon: keep ? glyphFor(view) : null,
+      icon: keep ? iconOf(view) : null,
       tone: !usable ? 'off' : on ? 'water' : 'neutral',
       title: view.name,
       name: true,
@@ -416,7 +416,7 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone,
         title: name,
         sub: fitted.sub,

@@ -441,6 +441,7 @@
     "show_color": "Mostrar a cor",
     "colors": "Cores rápidas",
     "color_help": "Escolha uma, ou escolha Cor personalizada e escolha qualquer cor no campo",
+    "item_color_helper": "Vazio, a cor da lâmpada de uma luz onde o cartão as mostra; senão, a do cartão",
     "rgb": "Qualquer cor",
     "swatch_name_help": "O que o círculo diz; vazio, a palavra da cor ou seu hexadecimal",
     "show_tilt": "Mostrar a inclinação",
@@ -753,6 +754,28 @@
     "offline": "Sem imagem da câmera",
     "refresh": "Segundos entre imagens",
     "exit_fullscreen": "Sair da tela cheia"
+  },
+  "cameras": {
+    "title": "Câmeras",
+    "sub": "Visão ao vivo",
+    "count_one": "{n} câmera",
+    "count": "{n} câmeras",
+    "motion": "Movimento detectado",
+    "no_motion": "Sem movimento",
+    "online": "Online",
+    "recording": "Gravando",
+    "streaming": "Transmitindo",
+    "offline": "Offline",
+    "no_stream": "Sem transmissão",
+    "empty": "Nenhuma câmera",
+    "all": "Todas as câmeras",
+    "live_all": "Mostrar todas as câmeras ao vivo",
+    "editor_motion": "Sensor de movimento",
+    "editor_status": "Linha de status",
+    "editor_show_status": "Mostrar a linha de status",
+    "editor_max_live": "Ao vivo ao mesmo tempo",
+    "editor_show_live": "Mostrar “Ao vivo”",
+    "editor_show_fullscreen": "Mostrar o botão de tela cheia"
   },
   "chips": {
     "rooms": "Cômodos"
@@ -1630,7 +1653,8 @@
     "palette": "A luz do tema",
     "temperature": "O branco da lâmpada",
     "regular": "Normal",
-    "thin": "Fina"
+    "thin": "Fina",
+    "motion": "Movimento"
   },
   "tone": {
     "accent": "Destaque",
@@ -2206,5 +2230,12 @@
     "starts_on": "Começa {day} às {time}",
     "done_at": "Terminou às {time}",
     "done_ago": "Terminou {when}"
+  },
+  "template": {
+    "card": "Modelo",
+    "editor.active": "Mostrar como ligado",
+    "editor.active_helper": "Automático segue a entidade. Um modelo fica ligado, a menos que dê off, false, no ou 0",
+    "editor.icon_helper": "Um ícone como mdi:lightbulb, ou um modelo que dê um",
+    "editor.color_helper": "Em YAML, um modelo pode dar uma cor ou um tom"
   }
 }

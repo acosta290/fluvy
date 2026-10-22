@@ -1,5 +1,6 @@
 import {
   english,
+  idsOf,
   localize,
   type HaFormSchemaItem,
   type HomeAssistant,
@@ -198,18 +199,69 @@ export const fieldRow = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
   schema,
 });
 
-/** A form with only the fields `keep` names: a row that loses one field keeps the other on its own line. */
+/**
+ * A form with only the items `keep` takes, asked of every row and every field: a row it refuses goes whole, and a row
+ * that loses one of its fields keeps the other on its own line.
+ */
 export function pickFields(
   schema: readonly HaFormSchemaItem[],
-  keep: (name: string) => boolean,
+  keep: (item: HaFormSchemaItem) => boolean,
 ): HaFormSchemaItem[] {
   return schema.flatMap((item): HaFormSchemaItem[] => {
-    if (!item.schema) return keep(item.name) ? [item] : [];
+    if (!keep(item)) return [];
+    if (!item.schema) return [item];
     const inner = pickFields(item.schema, keep);
     if (inner.length === item.schema.length) return [item];
     return inner;
   });
 }
+
+/** A `pickFields` test of the fields' names alone: every row is opened, for its fields to be asked. */
+export const byName =
+  (keep: (name: string) => boolean) =>
+  (item: HaFormSchemaItem): boolean =>
+    item.schema !== undefined || keep(item.name);
+
+/** A field as `ha-form` takes it, through its rows: without its `when` (a form is never handed a function). */
+function bare(item: HaFormSchemaItem): HaFormSchemaItem {
+  const { when, schema, ...field } = item;
+  return when || schema ? { ...field, ...(schema ? { schema: schema.map(bare) } : {}) } : item;
+}
+
+/**
+ * The form as it stands: the fields and rows that can act on what it holds (`when`, asked with the config over the
+ * card's defaults, and the house), the rest left out — their values stay in the config.
+ */
+export const visibleFields = (
+  schema: readonly HaFormSchemaItem[],
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): HaFormSchemaItem[] => pickFields(schema, (item) => item.when?.(data, hass) ?? true).map(bare);
+
+/**
+ * A card's list as its editor's `when` reads it: under its key, else its alias; none where the config holds no list
+ * there (that slip is the card's to say, never the editor's to throw on).
+ */
+export const listed = (
+  data: Readonly<Record<string, unknown>>,
+  key: string,
+  alias?: string,
+): readonly unknown[] => {
+  const list = data[key] ?? (alias ? data[alias] : undefined);
+  return Array.isArray(list) ? list : [];
+};
+
+/** Whether a card's list names a light: what the lights' colours act on (`lightColourFields`). */
+export const holdsLight =
+  (key: string, alias?: string) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    idsOf(listed(data, key, alias)).some((id) => id.startsWith('light.'));
+
+/** A field (or a row) shown only while `when` says it can act: one that acts only in a style is shown in that style. */
+export const onlyWhen = (
+  when: NonNullable<HaFormSchemaItem['when']>,
+  item: HaFormSchemaItem,
+): HaFormSchemaItem => ({ ...item, when });
 
 /** A card's tone, from the palette's tones. */
 export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: toneSelector() });
@@ -219,16 +271,17 @@ export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: tone
  * colours where the look reaches the editor, or any colour typed — with the palette's accent as its default. A colour
  * that may be none (`card_color`) is none until one is chosen: the picker then says what the card draws, and offers
  * to clear it. One that follows its entity (`state`: a light card's, its bulb's) says so as Home Assistant's own
- * tile does, State by default.
+ * tile does, State by default. An item's that defaults to its bulb's, else the card's (`bulb`: an item of a card of
+ * lights, tiles or rows), shows none chosen, and its helper says what it draws then.
  */
 export const accentField = (
   name = 'color',
-  { none = false, state = false } = {},
+  { none = false, state = false, bulb = false } = {},
 ): HaFormSchemaItem => ({
   name,
   selector: {
     ui_color: {
-      default_color: none ? 'none' : state ? 'state' : 'primary',
+      ...(bulb ? {} : { default_color: none ? 'none' : state ? 'state' : 'primary' }),
       include_none: none,
       include_state: state,
     },
@@ -247,6 +300,19 @@ export const colourFields = ({ state = false } = {}): HaFormSchemaItem[] => [
  */
 export const tintField = (options: readonly OptionWord[] = ['on', 'always']): HaFormSchemaItem =>
   selectField('tint', options, { words: { off: 'never' } });
+
+/**
+ * A lit light in its bulb's colour (`light_colors`), and beside it how a white shows then (`light_whites`: by its
+ * temperature, or as the palette's light) — a choice only while the bulbs show their colours.
+ */
+export const lightColourFields = (): HaFormSchemaItem =>
+  fieldRow(
+    boolField('light_colors'),
+    onlyWhen(
+      ({ light_colors }) => light_colors === true,
+      selectField('light_whites', ['palette', 'temperature']),
+    ),
+  );
 
 /** What a device card shows while the device is off: everything (the default), or the essentials alone. */
 export const whenOffField = (): HaFormSchemaItem => selectField('when_off', ['all', 'essentials']);

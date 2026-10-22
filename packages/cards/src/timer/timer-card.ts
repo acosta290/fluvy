@@ -16,7 +16,7 @@ import { html, nothing, type CSSResultGroup, type PropertyValues, type TemplateR
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -270,7 +270,7 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
 
     return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone,
         title: name,
         name: true,

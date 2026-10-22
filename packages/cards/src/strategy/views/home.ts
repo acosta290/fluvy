@@ -227,7 +227,7 @@ export function energyView(ctx: StrategyContext): Section[] {
 export const secured = (home: HomeRegistry): boolean =>
   Boolean(home.alarms.length || home.locks.length || home.cameras.length || home.gateways.length);
 
-/** The alarm first, then what opens (locks, garage doors and gates), what is open, and the cameras. */
+/** The alarm first, then what opens (locks, garage doors and gates), what is open, and the first four cameras. */
 export function securityView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   return balanced(ctx, [
@@ -237,7 +237,7 @@ export function securityView(ctx: StrategyContext): Section[] {
     ...when(home.openings.length, () => [
       full('openings', { title: t('strategy.sensors'), entities: home.openings.slice(0, 8) }),
     ]),
-    ...home.cameras.slice(0, 4).map((id) => full('camera', { entity: id })),
+    ...when(home.cameras.length, () => [full('cameras', { cameras: home.cameras.slice(0, 4) })]),
   ]);
 }
 

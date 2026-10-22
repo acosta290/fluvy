@@ -13,7 +13,7 @@ import { glyph, listRow, type ChipItem } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { chipRow, type ChipFit } from '../../shared/chips.js';
-import { glyphFor } from '../../shared/domain.js';
+import { iconOf } from '../../shared/domain.js';
 import { domainsOf, verbsFor } from '../schedule.js';
 import type { TargetChoice } from '../scope.js';
 
@@ -166,7 +166,7 @@ export function fixedTarget(
   const view = resolveEntity(hass, choice.id);
   return html`<div class="ss-fixed">
     ${listRow({
-      icon: choice.icon ?? glyphFor(view),
+      icon: iconOf(view, choice.icon),
       tone: 'neutral',
       title: name,
       name: true,
@@ -196,7 +196,7 @@ export function targetChips(
       key: choice.id,
       label: nameOf(choice.id),
       name: true,
-      glyph: choice.icon ?? glyphFor(resolveEntity(hass, choice.id)),
+      glyph: iconOf(resolveEntity(hass, choice.id), choice.icon),
       active,
       disabled: !active && !joins(chosen, choice.id),
     };
@@ -218,7 +218,7 @@ export function candidateRows(
           <div class="ss-group__rows">
             ${group.items.map((item) =>
               listRow({
-                icon: glyphFor(item.view),
+                icon: iconOf(item.view),
                 tone: 'neutral',
                 title: item.view.name,
                 name: true,

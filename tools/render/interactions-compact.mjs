@@ -15,7 +15,7 @@
  * missing entity draws the `ban` glyph, and a dead stat tile wears the dashed hairline in both variants; and every
  * card's declared `layoutHeight` is the height it measures at a 360 column.
  */
-import { frame, startSuite } from './lib/suite.mjs';
+import { frame, HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -38,9 +38,20 @@ const rects = (locator) =>
 const near = (a, b, tolerance = 0.5) => Math.abs(a - b) <= tolerance;
 const distinct = (values) => new Set(values.map((v) => Math.round(v))).size;
 
-/** The card's declared height against the one it measures (its own article, at a 360 column). */
+/**
+ * The card's declared height, as the automatic dashboard plans it, against the one it measures (its own article, at a
+ * 360 column).
+ */
 async function sameHeight(name, card) {
-  const declared = await card.evaluate((el) => el.constructor.layoutHeight(el.config, el.hass));
+  const declared = await card.evaluate(
+    async (el, module) =>
+      (await import(module)).houseHeightOf(
+        { ...el.config, type: `custom:${el.localName}` },
+        -1,
+        el.hass,
+      ),
+    HOUSE_HEIGHTS,
+  );
   const box = await card.locator('article').first().boundingBox();
   check(
     `${name}: layoutHeight ${declared} is the height measured`,

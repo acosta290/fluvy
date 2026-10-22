@@ -1,0 +1,9 @@
+{
+  "template": {
+    "card": "Template",
+    "editor.active": "Shows as on",
+    "editor.active_helper": "Automatic follows the entity. A template is on unless it gives off, false, no or 0",
+    "editor.icon_helper": "An icon such as mdi:lightbulb, or a template that gives one",
+    "editor.color_helper": "In YAML, a template may give a colour or a tone"
+  }
+}

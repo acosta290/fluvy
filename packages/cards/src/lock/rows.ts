@@ -18,8 +18,8 @@ import { listRow, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
 import { Card } from '../shared/base.js';
-import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
-import { statusToneOf } from '../shared/colour.js';
+import { currentTone, iconOf, toneFor } from '../shared/domain.js';
+import { statusToneOf, toneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
 import { withUnit } from '../shared/duration.js';
 import { secondaryText } from '../shared/secondary.js';
@@ -56,12 +56,15 @@ export const ROW_KEYS = [
   'color',
 ] as const;
 
-/** A row's form: the entity, its name and icon, what it says, its colours, its tap. */
-export const rowSchema = (domains?: readonly string[]): HaFormSchemaItem[] => [
+/**
+ * A row's form: the entity, its name and icon, what it says, its colours, its tap; on a card whose lights wear their
+ * bulbs' colours (`bulb`), no colour chosen by default.
+ */
+export const rowSchema = (domains?: readonly string[], bulb = false): HaFormSchemaItem[] => [
   entityField(domains),
   nameIconFields(),
   selectField('secondary', ['area', 'last-changed', 'state', 'none'], { custom: true }),
-  fieldRow(toneField(), accentField()),
+  fieldRow(toneField(), accentField('color', { bulb })),
   actionField(),
 ];
 
@@ -72,6 +75,9 @@ export interface RowsCardConfig extends FluvyCardConfig {
 }
 
 const s = strings('lock');
+
+/** What a row opens where it names no tap of its own: its entity's details, never the card's own tap. */
+export const DETAILS: ActionConfig = { action: 'more-info' };
 
 /** A row switch is only for what is harmless to flip by accident — never a lock, a garage door or a valve. */
 const NEVER_A_SWITCH = new Set([
@@ -153,7 +159,9 @@ interface RowPlan {
   readonly value: string;
   readonly end: number;
   readonly title: string;
-  readonly words: ReturnType<typeof secondaryText>;
+  readonly words: string;
+  /** The line's shorter form (`secondaryText`'s), for a row too narrow for its words: a time's, a state's one word. */
+  readonly short: string;
   readonly age: boolean;
 }
 
@@ -184,7 +192,10 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     return [this.config?.entity ?? '', ...this.rowList.map((row) => row.entity)];
   }
 
-  /** `events` draws the rows as history (camera detections): neutral circle, the time of day, a chevron. */
+  /**
+   * `events` draws the rows as history (camera detections): a chevron, and a neutral circle unless the row names a tone
+   * or a colour; the line says when it changed as the time of day, unless the row asks for another one.
+   */
   protected renderRows(events = false): TemplateResult | typeof nothing {
     if (!this.rowList.length || this.config?.show_rows === false) return nothing;
     const plans = this.rowList.map((row) => this.plan(row, events));
@@ -229,9 +240,13 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
           ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
           : stateText(this.hass, view)
         : '';
-    // the line says when it changed unless the row asks otherwise (as `secondaryText` is called below)
+    // the line says when it changed unless the row asks for another one (the area, its state, an attribute, a template,
+    // none); in history that is the time of day (its age, once it is over half a day old)
     const mode = row.secondary ?? 'last-changed';
     const changed = lastChanged(view);
+    const time = events && mode === 'last-changed' && view.status === 'ok';
+    const line = (short: boolean): string =>
+      secondaryText(this.hass, view, mode, trailing === 'value', this.texts, short);
     return {
       row,
       view,
@@ -246,21 +261,14 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
             ? 56
             : 44,
       title: row.name ?? view.name,
-      words:
-        events && view.status === 'ok'
-          ? changedAt(this.hass, view)
-          : secondaryText(
-              this.hass,
-              view,
-              row.secondary ?? 'last-changed',
-              trailing === 'value',
-              this.texts,
-            ),
+      words: time ? changedAt(this.hass, view) : line(false),
+      short: time ? '' : line(true),
       // an age only where the line is one: a state's word (a row that cannot be read) is never shortened into one
       age:
         view.status === 'ok' &&
         changed !== null &&
-        (events ? !changed.recent : mode === 'last-changed'),
+        mode === 'last-changed' &&
+        (!events || !changed.recent),
     };
   }
 
@@ -290,21 +298,26 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     const tone = statusToneOf(row, toneFor(view));
     // a row that cannot be read says its state's word where it fits; where it would be cut, the dashed skin says it
     // alone and the word is the row's label (as a gone tile's)
-    const word =
-      view.status !== 'ok' &&
-      this.headFit.ruler.width('fv-row__sub', p.words) > this.wordsRoom(p, keep)
-        ? p.words
-        : '';
+    const fits = (text: string): boolean =>
+      this.headFit.ruler.width('fv-row__sub', text) <= this.wordsRoom(p, keep);
+    const word = view.status !== 'ok' && !fits(p.words) ? p.words : '';
+    // a line the row cannot hold whole takes its shorter form ("32 d ago", "Not found"), read in full
+    const sub =
+      p.age && short ? this.shortAge(view) : word ? '' : fits(p.words) ? p.words : p.short;
     return listRow({
-      icon: keep ? (row.icon ?? glyphFor(view)) : null,
-      tone: events ? (usable ? 'neutral' : 'off') : currentTone(view, on ? tone : 'neutral'),
+      icon: keep ? iconOf(view, row.icon) : null,
+      tone: events
+        ? usable
+          ? toneOf(row, 'neutral')
+          : 'off'
+        : currentTone(view, on ? tone : 'neutral'),
       title: p.title,
       name: true,
-      sub: p.age && short ? this.shortAge(view) : word ? '' : p.words,
-      // a short age ("21 d") is read in full; a word the row could not hold is read too
+      sub,
+      // a short line is read in full; a word the row could not hold is read too
       ...(word
         ? { label: `${p.title} · ${word}` }
-        : p.age && short
+        : sub !== p.words
           ? { label: `${p.title} · ${p.words}` }
           : {}),
       trailing,
@@ -314,7 +327,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       valueTone: view.domain === 'binary_sensor' && on && tone === 'warning' ? 'warning' : '',
       unavailable: !usable,
       accent: this.accents.item(row.color),
-      onTap: () => this.tap(view.id, row.tap_action),
+      onTap: () => this.tap(view.id, row.tap_action ?? DETAILS),
       onToggle: (next) => {
         if (!this.hass) return;
         this.expect(view.id, next ? 'on' : 'off');

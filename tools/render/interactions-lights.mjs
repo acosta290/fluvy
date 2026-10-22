@@ -64,9 +64,9 @@ const ids = (call) => [].concat(call?.d?.entity_id ?? call?.t?.entity_id ?? []);
     JSON.stringify(living),
   );
   check(
-    'a lit round wears its bulb’s colour when it has one (the floor lamp’s orange), a ring of its level; an off one neither',
+    'a lit round wears its bulb’s colour (the floor lamp’s orange), a white its warmth (the ceiling’s 2700 K, #58), a ring of its level; an off one neither',
     living.rounds[0].on &&
-      living.rounds[0].accent === null &&
+      living.rounds[0].accent === 'white #ffa757' &&
       living.rounds[0].ring &&
       living.rounds[1].on &&
       living.rounds[1].accent === '#ff8c46' &&
@@ -309,6 +309,74 @@ const ids = (call) => [].concat(call?.d?.entity_id ?? call?.t?.entity_id ?? []);
   await page.close();
 }
 
+/* ---------- whites by their warmth, a group by its members, the card's tone, in every style (#58) ---------- */
+{
+  const page = await suite.sheet('lights', { width: 360 });
+  const accents = (c, selector) =>
+    c.evaluate(
+      (el, s) => [...el.shadowRoot.querySelectorAll(s)].map((b) => b.dataset.accent ?? ''),
+      selector,
+    );
+  const warmth = await Promise.all([
+    accents(card(page, 'Whites by their warmth', 0), '.lt-bulb'),
+    accents(card(page, 'Whites by their warmth', 1), '.fv-chip'),
+    accents(card(page, 'Whites by their warmth', 2), '.fv-tile'),
+  ]);
+  const [row] = warmth;
+  check(
+    'a warm white in its warmth, a cool one in its own, a group in its members’ colours, a lamp that only dims in the palette’s — rounds, chips and tiles alike',
+    row[0] === 'white #ffa757' &&
+      row[1] === 'white #dde6ff' &&
+      /^#[0-9a-f]{6}$/.test(row[2]) &&
+      row[3] === '' &&
+      warmth.every((accent) => JSON.stringify(accent) === JSON.stringify(row)),
+    JSON.stringify(warmth),
+  );
+  // a candle to a cool white: seven steps of one scale, each its own colour, warmest first
+  const ladder = await card(page, 'Whites from a candle to a cool one', 0).evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.fv-tile')].map((tile) => ({
+      accent: tile.dataset.accent ?? '',
+      fill: getComputedStyle(tile).backgroundColor,
+    })),
+  );
+  check(
+    'whites from 2,200 to 8,000 K: each drawn as a white, each tile its own colour',
+    ladder.length === 7 &&
+      ladder.every((tile) => /^white #[0-9a-f]{6}$/.test(tile.accent)) &&
+      new Set(ladder.map((tile) => tile.fill)).size === 7,
+    JSON.stringify(ladder),
+  );
+  const palette = await Promise.all([
+    accents(card(page, 'Whites as the theme’s light', 0), '.lt-bulb'),
+    accents(card(page, 'Whites as the theme’s light', 1), '.fv-tile'),
+  ]);
+  check(
+    'whites as the theme’s light where the card asks: none of their own; the group keeps its colour bulbs’',
+    palette.every((a) => a[0] === '' && a[1] === '' && a[2] === row[2] && a[3] === ''),
+    JSON.stringify(palette),
+  );
+  const toned = await card(page, 'Tiles in the card’s tone, no level').evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.fv-tile')].map((tile) => ({
+      tone: [...tile.classList].find((c) => /^fv-tile--(?!tap|inner|compact)/.test(c)),
+      on: tile.classList.contains('is-on'),
+      line: tile.querySelector('.fv-tile__state').textContent.trim(),
+      surface: tile.dataset.surface ?? '',
+      fill: getComputedStyle(tile).backgroundColor,
+    })),
+  );
+  check(
+    'tiles in the card’s tone where their lamps show no colour, no level where the card shows none, an off one in the tone’s rest wash',
+    toned[0].tone === 'fv-tile--heat' &&
+      toned[0].on &&
+      !/%/.test(toned[0].line) &&
+      !toned[2].on &&
+      toned[2].surface === 'heat-0' &&
+      toned[2].fill !== toned[0].fill,
+    JSON.stringify(toned),
+  );
+  await page.close();
+}
+
 /* ---------- the words follow the language ---------- */
 {
   const page = await suite.sheet('lights', { width: 360, lang: 'es' });
@@ -354,13 +422,13 @@ const ids = (call) => [].concat(call?.d?.entity_id ?? call?.t?.entity_id ?? []);
   await light('On').locator('.lc-swatch').first().waitFor({ timeout: 5000 });
   const white = await readLight('On');
   check(
-    'a colour bulb in its white: the brightness and the temperature rulers, six quick colours (two whites first), the warm one checked at 3200 K',
+    'a colour bulb in its white: the brightness and the temperature rulers, six quick colours (two whites first), the warm one checked at 3200 K, the card in its warmth (#58)',
     white.rulers === 2 &&
       white.tints[1] === 'warm-cool' &&
       white.swatches.length === 6 &&
       white.swatches.every((s) => s.width === 44 && s.height === 44) &&
       white.swatches[0].active &&
-      white.accent === '',
+      white.accent === 'white #ffb87b',
     JSON.stringify(white),
   );
   const amber = await readLight('Colour · hs mode');

@@ -11,7 +11,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -138,8 +137,8 @@ const capitalise = (text: string): string => text.charAt(0).toUpperCase() + text
  */
 export class FluvyWeatherCard extends Card<WeatherCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: WeatherCardConfig, hass?: HomeAssistant): number {
-    return weatherHeight(config, hass);
+  static override layoutHeight(config: WeatherCardConfig): number {
+    return weatherHeight(config);
   }
 
   static override styles: CSSResultGroup = [

@@ -1,41 +1,49 @@
 import type { HomeAssistant } from '@fluvy/core';
 
 /*
- * The battery of what an entity belongs to: the `battery` sensor on the entity's own device — a robot's, a phone's
- * tracker's (Home Assistant keeps a device's battery in a sensor of its own). A sensor found is remembered per entity
- * registry (a new object whenever it changes); one not found is looked for again half a minute later, since a battery
- * whose state arrives after the first look is still to be found, and a card asks on every update.
+ * What an entity belongs to, read off its device: its battery (Home Assistant keeps a device's battery in a sensor of
+ * its own) — a robot's, a phone's tracker's — and the like (a camera's motion sensor, `motion.ts`).
  */
 
-const found = new WeakMap<object, Map<string, string>>();
-const missed = new WeakMap<object, Map<string, number>>();
 const LOOK_AGAIN = 30_000;
 
-/** The `battery` sensor on the device `entityId` belongs to, if it has one. */
-export function batteryOf(hass: HomeAssistant | undefined, entityId: string): string | undefined {
-  const registry = hass?.entities;
-  if (!registry || !entityId) return undefined;
-  let byEntity = found.get(registry);
-  if (!byEntity) found.set(registry, (byEntity = new Map()));
-  const known = byEntity.get(entityId);
-  if (known) return known;
-  let misses = missed.get(registry);
-  if (!misses) missed.set(registry, (misses = new Map()));
-  const last = misses.get(entityId);
-  if (last !== undefined && Date.now() - last < LOOK_AGAIN) return undefined;
-  const device = registry[entityId]?.device_id;
-  const battery = device
-    ? Object.values(registry).find(
-        (entry) =>
-          entry.device_id === device &&
-          entry.entity_id.startsWith('sensor.') &&
-          hass.states[entry.entity_id]?.attributes.device_class === 'battery',
-      )?.entity_id
-    : undefined;
-  if (battery) byEntity.set(entityId, battery);
-  else misses.set(entityId, Date.now());
-  return battery;
+/**
+ * A finder of the entity on the same device that `matches` (its id, the house): one found is remembered per entity
+ * registry (a new object whenever it changes); one not found is looked for again half a minute later, since an entity
+ * whose state arrives after the first look is still to be found, and a card asks on every update.
+ */
+export function onItsDevice(
+  matches: (id: string, hass: HomeAssistant) => boolean,
+): (hass: HomeAssistant | undefined, entityId: string) => string | undefined {
+  const found = new WeakMap<object, Map<string, string>>();
+  const missed = new WeakMap<object, Map<string, number>>();
+  return (hass, entityId) => {
+    const registry = hass?.entities;
+    if (!registry || !entityId) return undefined;
+    let byEntity = found.get(registry);
+    if (!byEntity) found.set(registry, (byEntity = new Map()));
+    const known = byEntity.get(entityId);
+    if (known) return known;
+    let misses = missed.get(registry);
+    if (!misses) missed.set(registry, (misses = new Map()));
+    const last = misses.get(entityId);
+    if (last !== undefined && Date.now() - last < LOOK_AGAIN) return undefined;
+    const device = registry[entityId]?.device_id;
+    const sibling = device
+      ? Object.values(registry).find(
+          (entry) => entry.device_id === device && matches(entry.entity_id, hass),
+        )?.entity_id
+      : undefined;
+    if (sibling) byEntity.set(entityId, sibling);
+    else misses.set(entityId, Date.now());
+    return sibling;
+  };
 }
+
+/** The `battery` sensor on the device `entityId` belongs to, if it has one. */
+export const batteryOf = onItsDevice(
+  (id, hass) => id.startsWith('sensor.') && hass.states[id]?.attributes.device_class === 'battery',
+);
 
 /** Where a charge is read: a battery sensor's state, or a tracker's own `battery_level` attribute. */
 export interface BatterySource {

@@ -1,7 +1,5 @@
 import { stateText, type EntityView, type HomeAssistant } from '@fluvy/core';
-import type { IconRef } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
-import { glyphFor } from '../shared/domain.js';
 import { type TextRuler } from '../shared/fit.js';
 import type { TemplateTexts } from '../shared/templates.js';
 
@@ -46,9 +44,6 @@ export const isUnusable = (view: EntityView): boolean =>
   view.status === 'unavailable' || view.status === 'missing';
 
 export const nameOf = (view: EntityView, row: HelperRowConfig): string => row.name ?? view.name;
-
-export const iconOf = (view: EntityView, row: HelperRowConfig): IconRef | string =>
-  row.icon ?? view.attr<string>('icon') ?? glyphFor(view);
 
 /** The second line the owner wrote, a template rendered; undefined when the row says nothing of its own. */
 export const ownSecondary = (host: HelperHost, row: HelperRowConfig): string | undefined =>

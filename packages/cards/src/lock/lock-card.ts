@@ -6,7 +6,6 @@ import {
   type EntityView,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -47,6 +46,7 @@ import {
   fieldRow,
   formLabels,
   nameIconFields,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
@@ -86,6 +86,9 @@ const CONFIRM_MS = 2000;
 const KNOB_BOX = 44;
 /** A `code_format` that only admits digits: `^\d{4}$`, `\d+`, `^[0-9]{4,8}$`. Anything else needs a real text field. */
 const NUMERIC = /^\^?(?:\\d|\[0-9\])(?:\{(\d+)(?:,(\d*))?\}|[+*])?\$?$/;
+/** Whether the card draws rows at all (the editor offers them only then): the compact card draws none. */
+const drawsRows = ({ variant }: Readonly<Record<string, unknown>>): boolean =>
+  variant !== 'compact';
 
 /**
  * The lock: one deliberate gesture and nothing else. The knob starts at the true start of a 44 px
@@ -95,8 +98,8 @@ const NUMERIC = /^\^?(?:\\d|\[0-9\])(?:\{(\d+)(?:,(\d*))?\}|[+*])?\$?$/;
  */
 export class FluvyLockCard extends RowsCard<LockCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: LockCardConfig, hass?: HomeAssistant): number {
-    return lockHeight(config, hass);
+  static override layoutHeight(config: LockCardConfig): number {
+    return lockHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -206,7 +209,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
   static override base = HEAD_BASE;
   static override keys = configKeys<LockCardConfig>()(['rows', 'show_rows', 'subtitle', 'variant']);
   static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
+    { key: 'rows', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema(), when: drawsRows },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
@@ -218,7 +221,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         nameIconFields(),
         showIconField(),
         fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
-        boolField('show_rows'),
+        onlyWhen(drawsRows, boolField('show_rows')),
         entitiesField('rows'),
         ...colourFields(),
         actionFields(),

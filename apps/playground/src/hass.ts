@@ -168,6 +168,8 @@ const LATENCY = 140;
 export interface MockOptions {
   readonly dark?: boolean;
   readonly language?: string;
+  /** Home Assistant's time format: a 12-hour clock ("9:50 PM") or the 24-hour one (the default). */
+  readonly clock?: '12' | '24';
   readonly now?: Date;
   /** The registries a sheet needs beyond its states (areas, floors, devices, entity entries). */
   readonly registry?: Partial<Pick<HomeAssistant, 'entities' | 'devices' | 'areas' | 'floors'>>;
@@ -306,15 +308,20 @@ export function createHass(
   };
 
   const watches = new Set<Watch>();
-  /** Renders one watched template against the states as they are now; an error is an event too, as Home Assistant reports it. */
+  /**
+   * Renders one watched template against the states as they are now; an error is an event too, as Home Assistant
+   * reports it, and what it says as a warning while it renders (a name not defined) comes before the result.
+   */
   const answer = (watch: Watch): void => {
     if (!watches.has(watch)) return;
     let event: Record<string, unknown>;
+    const warnings: string[] = [];
     try {
       const result = renderTemplate(
         String(watch.message['template']),
         states,
         (watch.message['variables'] as Record<string, unknown> | undefined) ?? {},
+        (message) => warnings.push(message),
       );
       event = { result, listeners: { all: false, domains: [], entities: [], time: false } };
     } catch (error) {
@@ -323,6 +330,7 @@ export function createHass(
     const sent = JSON.stringify(event);
     if (sent === watch.last) return;
     watch.last = sent;
+    for (const message of warnings) watch.callback({ error: message, level: 'WARNING' });
     watch.callback(event);
   };
   const watch = (
@@ -372,7 +380,11 @@ export function createHass(
         darkMode: options.dark ?? false,
         theme: 'Fluvy',
       },
-      locale: { language: options.language ?? 'en', number_format: 'language', time_format: '24' },
+      locale: {
+        language: options.language ?? 'en',
+        number_format: 'language',
+        time_format: options.clock ?? '24',
+      },
       language: options.language ?? 'en',
       config: {
         unit_system:

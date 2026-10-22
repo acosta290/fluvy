@@ -11,6 +11,7 @@ import {
   splitStatuses,
   surfaceInset,
   surfaceWash,
+  type AccentFamily,
   type Hex,
   type PaletteMode,
   type PaletteChoice,
@@ -84,6 +85,23 @@ export const PALETTE_ACCENT = 'accent';
 const asksForAccent = (choice: unknown): boolean =>
   typeof choice === 'string' && /^\s*(primary|accent)\s*$/i.test(choice);
 
+/**
+ * A lit white drawn by its warmth (`light_whites: temperature`, 1.10): this mark, then its colour as Home Assistant
+ * gives it (`white #ffa757`) — derived on the whites' scale, not by its hue as a colour is (`accentFamily`).
+ */
+export const WHITE = 'white ';
+const isWhite = (choice: unknown): choice is string =>
+  typeof choice === 'string' && /^white #[0-9a-f]{6}$/.test(choice);
+
+/** The family a colour (`#rrggbb`) or a white (`WHITE`) has on a palette × mode. */
+const familyOf = (paletteKey: string, mode: PaletteMode, pick: string): AccentFamily =>
+  accentFamily(
+    seedOf(choiceOf(paletteKey)),
+    colorsOf(paletteKey, mode),
+    pick.slice(-7),
+    pick.startsWith(WHITE),
+  );
+
 /** What the palette's own accent writes inside a card, kept like a colour's family. */
 export function paletteAccentCss(paletteKey: string, mode: PaletteMode): string {
   const key = `own|${paletteKey}|${mode}`;
@@ -102,9 +120,8 @@ export function surfaceCss(paletteKey: string, mode: PaletteMode, pick: Hex): st
   const key = `surface|${paletteKey}|${mode}|${pick}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
-  const choice = choiceOf(paletteKey);
   const colors = colorsOf(paletteKey, mode);
-  const family = accentFamily(seedOf(choice), colors, pick);
+  const family = familyOf(paletteKey, mode, pick);
   return remember(
     key,
     declarationsCss([
@@ -135,8 +152,9 @@ export const TONE_STATES: Readonly<Record<string, keyof PaletteModeColors['state
 };
 
 /**
- * What a lit surface (a light card's `tint`, 1.9) writes for what it is lit in — a colour's family (`#rrggbb`) or a
- * tone of the palette's own (`light`: its lit light) — at `level` (0 at rest): `litSurface`, kept like the rest.
+ * What a lit surface (a light card's `tint`, 1.9) writes for what it is lit in — a colour's family (`#rrggbb`, a
+ * white's: `WHITE`) or a tone of the palette's own (`light`: its lit light) — at `level` (0 at rest): `litSurface`,
+ * kept like the rest.
  */
 export function litCss(
   paletteKey: string,
@@ -147,11 +165,10 @@ export function litCss(
   const key = `lit|${paletteKey}|${mode}|${source}|${level}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
-  const choice = choiceOf(paletteKey);
   const colors = colorsOf(paletteKey, mode);
   const state = TONE_STATES[source];
-  const role = source.startsWith('#')
-    ? accentFamily(seedOf(choice), colors, source)
+  const role = source.includes('#')
+    ? familyOf(paletteKey, mode, source)
     : state
       ? colors.state[state]
       : source === 'warning'
@@ -160,15 +177,13 @@ export function litCss(
   return remember(key, declarationsCss(litSurface(role, colors, level)));
 }
 
-export function accentCss(paletteKey: string, mode: PaletteMode, pick: Hex): string {
+export function accentCss(paletteKey: string, mode: PaletteMode, pick: string): string {
   const key = `${paletteKey}|${mode}|${pick}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
-  const choice = choiceOf(paletteKey);
-  const colors = colorsOf(paletteKey, mode);
   return remember(
     key,
-    declarationsCss(accentFamilyVars(accentFamily(seedOf(choice), colors, pick), colors)),
+    declarationsCss(accentFamilyVars(familyOf(paletteKey, mode, pick), colorsOf(paletteKey, mode))),
   );
 }
 
@@ -222,11 +237,15 @@ export class AccentSheet {
   }
 
   /**
-   * What a colour is on the card's palette: a hex, the palette's own accent where it is named (`primary`, `accent`),
-   * or nothing — none given, Home Assistant's `state`, a word no colour answers to.
+   * What a colour is on the card's palette: a hex, a lit white (`WHITE`), the palette's own accent where it is named
+   * (`primary`, `accent`), or nothing — none given, Home Assistant's `state`, a word no colour answers to.
    */
   pick(choice: unknown): string | undefined {
-    return asksForAccent(choice) ? PALETTE_ACCENT : accentHex(this.paletteKey, this.mode, choice);
+    return asksForAccent(choice)
+      ? PALETTE_ACCENT
+      : isWhite(choice)
+        ? choice
+        : accentHex(this.paletteKey, this.mode, choice);
   }
 
   /**
@@ -267,7 +286,7 @@ export class AccentSheet {
   }
 
   /**
-   * A lit surface: the value for its `data-surface` — lit in a colour (`#rrggbb`) or a tone of the palette's, at
+   * A lit surface: the value for its `data-surface` — lit in a colour (`#rrggbb`, a white) or a tone of the palette's, at
    * `level` (0 at rest, else the lamp's share, in 5 % steps).
    */
   lit(source: string, level: number): string {

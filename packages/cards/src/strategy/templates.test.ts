@@ -153,8 +153,13 @@ describe('the dashboard templates', () => {
       for (const card of cardsOf((await generate({ type: template.type }, everything())).views))
         used.add(card.type);
     // the automations card is placed by hand (1.8): the automatic dashboards do not put it on a view; the appliance
-    // card is drawn by the appliances card, which lays the strategy's out whole (#47)
-    const byHand = new Set(['custom:fluvy-automations-card', 'custom:fluvy-appliance-card']);
+    // card is drawn by the appliances card, which lays the strategy's out whole (#47); a template card says what its
+    // templates say, and only the person writes those (#59)
+    const byHand = new Set([
+      'custom:fluvy-automations-card',
+      'custom:fluvy-appliance-card',
+      'custom:fluvy-template-card',
+    ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(
         (type) => !used.has(type) && !byHand.has(type),
@@ -287,12 +292,20 @@ describe('the dashboard templates', () => {
     expect(garden.back_path).toBe('/fluvy-home/rooms');
   });
 
-  it('draw the security cameras at the refresh asked for, and the wall’s scenes up to the number asked for', async () => {
+  it('draw the security cameras on one Cameras card a view at the refresh asked for, and the wall’s scenes up to the number asked for', async () => {
     const security = templateById('security');
     const { views } = await generate({ type: security.type, camera_refresh: 30 }, everything());
-    const cameras = cardsOf(views).filter((c) => c.type === 'custom:fluvy-camera-card');
-    expect(cameras.length).toBeGreaterThan(0);
-    expect(cameras.every((c) => c['refresh'] === 30)).toBe(true);
+    // the overview's first four, then every camera across the cameras view's columns (#60)
+    const [overview, all, ...more] = cardsOf(views).filter(
+      (c) => c.type === 'custom:fluvy-cameras-card',
+    ) as unknown as { cameras: string[]; refresh: number; grid_options: unknown }[];
+    expect(more).toEqual([]);
+    expect(overview!.cameras.length).toBeGreaterThan(0);
+    expect(overview!.cameras.length).toBeLessThanOrEqual(4);
+    expect(all!.cameras.length).toBeGreaterThanOrEqual(overview!.cameras.length);
+    expect(all!.grid_options).toEqual({ columns: 'full' });
+    expect([overview!.refresh, all!.refresh]).toEqual([30, 30]);
+    expect(cardsOf(views).some((c) => c.type === 'custom:fluvy-camera-card')).toBe(false);
     const wall = templateById('wall');
     const chips = cardsOf(
       (await generate({ type: wall.type, scenes_max: 4 }, everything())).views,

@@ -15,6 +15,7 @@ import {
 } from '@fluvy/core';
 
 import { axis, head, readout, scrub, ScrubController, sheetStyles, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
   css,
@@ -116,14 +117,14 @@ const sum = (values: readonly number[]): number =>
  */
 export class FluvyProductionCard extends Card<ProductionCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: ProductionCardConfig, hass?: HomeAssistant): number {
-    return productionHeight(config, hass);
+  static override layoutHeight(config: ProductionCardConfig): number {
+    return productionHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,
-    sheetStyles.energy,
+    energyStyles,
     css`
       /* the sheet paints the bars solar; another tone brings its own ink (a ruler tone class carries nothing but the tone's variables) */
       .so-bars .so-bar__fill {

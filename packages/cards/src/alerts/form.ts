@@ -3,6 +3,7 @@ import {
   accentField,
   actionField,
   boolField,
+  byName,
   editorLabels,
   editorWord,
   fieldRow,
@@ -179,7 +180,10 @@ export function alertFields(item: Readonly<Record<string, unknown>>): readonly H
       ...(spec?.source ? [] : STATES),
       ...(spec ? (spec.params ?? []) : MATCHER),
     ]);
-    form = pickFields(FIELDS, (name) => shown.has(name));
+    form = pickFields(
+      FIELDS,
+      byName((name) => shown.has(name)),
+    );
     forms.set(key, form);
   }
   return form;

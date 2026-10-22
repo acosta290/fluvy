@@ -26,10 +26,13 @@ until chosen, so a dashboard looks as it did:
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
 | **Show their colour** | Never · When on · Always | a light card's `tint`: its light's colour on its whole surface, while the light is on, or at rest too |
-| **In their bulb's colour** | off · on | `light_colors` on tiles, a tiles group, a room's tiles and rows, an entities card's rows: a lit colour bulb in its colour |
+| **In their bulb's colour** | off · on | `light_colors` on tiles, a tiles group, a room's tiles and rows, an entities card's rows: a lit bulb in its colour, a white in its warmth |
 
 A change shows on every card of the page at once, before it is saved; a card that sets the key keeps its own. The
 room lights card keeps its own default (its lights in their colours), and the automatic dashboards write neither.
+How a white shows in its bulb's colour is each card's own (`light_whites`, 1.10): by its warmth, from a candle's to a
+neutral daylight and a cool white, unless the card asks for the palette's lit light (`palette`); there is no house
+setting for it.
 
 ## Status colours
 

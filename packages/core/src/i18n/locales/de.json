@@ -441,6 +441,7 @@
     "show_color": "Farbe anzeigen",
     "colors": "Schnellfarben",
     "color_help": "Wähle eine Farbe oder „Eigene Farbe“ und such dir im Feld darunter jede beliebige aus",
+    "item_color_helper": "Leer: bei einem Licht die Farbe seiner Lampe, wo die Karte sie zeigt, sonst die der Karte",
     "rgb": "Beliebige Farbe",
     "swatch_name_help": "Was der Kreis sagt; leer: das Wort der Farbe oder ihr Hexcode",
     "show_tilt": "Neigung zeigen",
@@ -753,6 +754,28 @@
     "offline": "Kein Bild von der Kamera",
     "refresh": "Sekunden zwischen Bildern",
     "exit_fullscreen": "Vollbild beenden"
+  },
+  "cameras": {
+    "title": "Kameras",
+    "sub": "Live-Übersicht",
+    "count_one": "{n} Kamera",
+    "count": "{n} Kameras",
+    "motion": "Bewegung erkannt",
+    "no_motion": "Keine Bewegung",
+    "online": "Online",
+    "recording": "Zeichnet auf",
+    "streaming": "Streamt",
+    "offline": "Offline",
+    "no_stream": "Kein Stream",
+    "empty": "Keine Kameras",
+    "all": "Alle Kameras",
+    "live_all": "Alle Kameras live zeigen",
+    "editor_motion": "Bewegungsmelder",
+    "editor_status": "Statuszeile",
+    "editor_show_status": "Statuszeile zeigen",
+    "editor_max_live": "Gleichzeitig live",
+    "editor_show_live": "„Live“ zeigen",
+    "editor_show_fullscreen": "Vollbild-Schaltfläche zeigen"
   },
   "chips": {
     "rooms": "Räume"
@@ -1630,7 +1653,8 @@
     "palette": "Licht des Designs",
     "temperature": "Weiß der Lampe",
     "regular": "Normal",
-    "thin": "Dünn"
+    "thin": "Dünn",
+    "motion": "Bewegung"
   },
   "tone": {
     "accent": "Akzent",
@@ -2206,5 +2230,12 @@
     "starts_on": "Start am {day} um {time}",
     "done_at": "Beendet um {time}",
     "done_ago": "Beendet {when}"
+  },
+  "template": {
+    "card": "Template",
+    "editor.active": "Als an zeigen",
+    "editor.active_helper": "Automatisch folgt der Entität. Ein Template ist an, außer es ergibt off, false, no oder 0",
+    "editor.icon_helper": "Ein Symbol wie mdi:lightbulb oder ein Template, das eines ergibt",
+    "editor.color_helper": "In YAML kann ein Template eine Farbe oder einen Ton ergeben"
   }
 }

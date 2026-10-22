@@ -441,6 +441,7 @@
     "show_color": "Rengi göster",
     "colors": "Hızlı renkler",
     "color_help": "Birini seç ya da Özel renk’i seçip alanından istediğin rengi seç",
+    "item_color_helper": "Boşsa, kart gösteriyorsa ışığın ampul rengi, yoksa kartın rengi",
     "rgb": "Herhangi bir renk",
     "swatch_name_help": "Yuvarlağın söylediği; boşsa rengin sözcüğü ya da hex kodu",
     "show_tilt": "Eğimi göster",
@@ -753,6 +754,28 @@
     "offline": "Kameradan görüntü yok",
     "refresh": "Görüntüler arası saniye",
     "exit_fullscreen": "Tam ekrandan çık"
+  },
+  "cameras": {
+    "title": "Kameralar",
+    "sub": "Canlı genel bakış",
+    "count_one": "{n} kamera",
+    "count": "{n} kamera",
+    "motion": "Hareket algılandı",
+    "no_motion": "Hareket yok",
+    "online": "Çevrimiçi",
+    "recording": "Kaydediyor",
+    "streaming": "Yayında",
+    "offline": "Çevrimdışı",
+    "no_stream": "Yayın yok",
+    "empty": "Kamera yok",
+    "all": "Tüm kameralar",
+    "live_all": "Tüm kameraları canlı göster",
+    "editor_motion": "Hareket sensörü",
+    "editor_status": "Durum satırı",
+    "editor_show_status": "Durum satırını göster",
+    "editor_max_live": "Aynı anda canlı",
+    "editor_show_live": "“Canlı” göster",
+    "editor_show_fullscreen": "Tam ekran düğmesini göster"
   },
   "chips": {
     "rooms": "Odalar"
@@ -1630,7 +1653,8 @@
     "palette": "Temanın ışığı",
     "temperature": "Ampulün beyazı",
     "regular": "Normal",
-    "thin": "İnce"
+    "thin": "İnce",
+    "motion": "Hareket"
   },
   "tone": {
     "accent": "Vurgu",
@@ -2206,5 +2230,12 @@
     "starts_on": "{day} {time} itibarıyla başlar",
     "done_at": "Bitiş: {time}",
     "done_ago": "{when} bitti"
+  },
+  "template": {
+    "card": "Şablon",
+    "editor.active": "Açık olarak göster",
+    "editor.active_helper": "Otomatik, varlığı izler. Bir şablon off, false, no ya da 0 vermedikçe açıktır",
+    "editor.icon_helper": "mdi:lightbulb gibi bir simge ya da simge veren bir şablon",
+    "editor.color_helper": "YAML’da bir şablon bir renk ya da ton verebilir"
   }
 }

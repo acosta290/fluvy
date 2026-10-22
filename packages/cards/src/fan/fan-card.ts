@@ -8,7 +8,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -31,7 +30,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -59,16 +58,7 @@ import { chipRow } from '../shared/chips.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { axisHolds } from '../shared/axis.js';
 import { firstFit } from '../shared/fit.js';
-import {
-  chipBlock,
-  chipRows,
-  COMPACT,
-  drawnAs,
-  featuresOf,
-  known,
-  listAttr,
-  ROW,
-} from '../shared/heights.js';
+import { chipBlock, chipRows, COMPACT, drawnAs, ROW } from '../shared/heights.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 
@@ -102,6 +92,30 @@ const USUAL = SET_SPEED | OSCILLATE | DIRECTION;
 type Labels = ReadonlyArray<readonly [number, string]>;
 type Direction = 'forward' | 'reverse';
 
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the head, the speed with its stepper and
+ * its ruler (228), then the oscillation and direction rows (16 + 60 each) the fan has, and its presets as a row of
+ * chips under their label — what it does (`features`) and its presets as the house describes them
+ * (`house-heights.ts`), its speed and both rows where it is not there to say. A card that keeps to the essentials
+ * while off is reserved its height when on.
+ */
+export function fanHeight(
+  config: FanCardConfig,
+  features = USUAL,
+  presets: readonly string[] = [],
+): number {
+  if (config.variant === 'compact') return COMPACT;
+  const rows =
+    (config.show_oscillation !== false && features & OSCILLATE ? 1 : 0) +
+    (config.show_direction !== false && features & DIRECTION ? 1 : 0);
+  const shown = config.show_presets === false || !(features & PRESET_MODE) ? [] : presets;
+  return (
+    228 +
+    (rows ? 16 + ROW * rows : 0) +
+    chipBlock(chipRows(shown.map(pretty), config.preset_style === 'chips' ? 'chips' : 'full'))
+  );
+}
+
 /** How many speeds the fan has: `percentage_step` is 100 / speed_count, and 1 on a continuous fan. */
 function speedCount(view: EntityView): number {
   const step = numberAttr(view, 'percentage_step');
@@ -115,28 +129,9 @@ function speedCount(view: EntityView): number {
  * percentage sent is the one Home Assistant maps back onto that speed. The head glyph turns while it runs.
  */
 export class FluvyFanCard extends Card<FanCardConfig> {
-  /**
-   * The card's height at a 360 column, for the automatic dashboard's columns. Read from the config alone: a card
-   * that keeps to the essentials while off is reserved its height when on.
-   */
-  static override layoutHeight(config: FanCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'compact') return COMPACT;
-    // the head, the speed with its stepper and its ruler (228), then the oscillation and direction rows (16 + 60
-    // each) the fan has, and its presets as a row of chips under their label; both rows where the house is not
-    // there to say
-    const features = known(hass, config.entity) ? featuresOf(hass, config.entity) : USUAL;
-    const rows =
-      (config.show_oscillation !== false && features & OSCILLATE ? 1 : 0) +
-      (config.show_direction !== false && features & DIRECTION ? 1 : 0);
-    const presets =
-      config.show_presets === false || !(features & PRESET_MODE)
-        ? []
-        : listAttr(hass, config.entity, 'preset_modes').map(pretty);
-    return (
-      228 +
-      (rows ? 16 + ROW * rows : 0) +
-      chipBlock(chipRows(presets, config.preset_style === 'chips' ? 'chips' : 'full'))
-    );
+  /** The card's height at a 360 column from its config alone: its speed and both rows (`fanHeight`). */
+  static override layoutHeight(config: FanCardConfig): number {
+    return fanHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -532,7 +527,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
 
     // the blades: slow up to a third, fast up to two thirds, both above; a fan that cannot say its speed turns at the middle one.
     // Only blades turn: an icon the user chose for an air purifier stays still.
-    const iconRef = this.config?.icon ?? glyphFor(view);
+    const iconRef = iconOf(view, this.config?.icon);
     const blades = iconRef === 'fan' || iconRef === 'mdi:fan' || iconRef === 'mdi:ceiling-fan';
     const level =
       !on || unusable || !blades

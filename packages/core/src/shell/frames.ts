@@ -1,6 +1,7 @@
 import { addFonts } from '../fonts.js';
 import { walkShadow } from './dom.js';
 import type { ShellEnv, ShellHandle } from './index.js';
+import { guard, inUse, wrap } from './patches.js';
 
 /**
  * Panels that run in a same-origin frame (HACS is the one every installation has, because Fluvy is installed
@@ -8,14 +9,10 @@ import type { ShellEnv, ShellHandle } from './index.js';
  * and fonts never reach them, so they rendered in Roboto with Material tracking. `ha-panel-custom`
  * writes that frame itself (`_createPanel`): the one method is wrapped, and every frame it creates, and
  * the one already on screen when the shell starts, gets Inter and a shell of its own once its document
- * has loaded (its components are defined by then, whichever registry they use). A frame whose document
- * cannot be read (another origin) is left alone.
+ * has loaded (its components are defined by then, whichever registry they use) — while Fluvy is in use on
+ * the page: on another theme the frame stays as Home Assistant draws it, without Inter, until the page
+ * wears Fluvy (`scan`). A frame whose document cannot be read (another origin) is left alone.
  */
-interface PanelPrototype {
-  _createPanel?: (panel: unknown) => void;
-  __fluvyFrames?: true;
-}
-
 type FrameShell = (env: ShellEnv) => ShellHandle;
 
 /** A frame's document, or null: a cross-origin frame throws on the read. */
@@ -53,36 +50,39 @@ export class PanelFrames {
   /** Wraps `ha-panel-custom` once it is defined (it is loaded with the first custom panel); false if Home Assistant reshaped it. */
   async watch(): Promise<boolean> {
     await this.env.customElements.whenDefined('ha-panel-custom');
-    const proto = this.env.customElements.get('ha-panel-custom')?.prototype as
-      PanelPrototype | undefined;
-    const original = proto?._createPanel;
-    if (!proto || typeof original !== 'function') return false;
-    if (!proto.__fluvyFrames) {
-      const attach = (frame: HTMLIFrameElement): void => this.attach(frame);
-      proto._createPanel = function (this: Element, panel: unknown): void {
-        original.call(this, panel);
-        const frame = this.querySelector('iframe');
-        if (frame) attach(frame);
-      };
-      proto.__fluvyFrames = true;
-    }
+    const done = wrap(
+      this.env.customElements.get('ha-panel-custom')?.prototype,
+      '_createPanel',
+      'panelFrames',
+      (panel: Element) => {
+        const frame = panel.querySelector('iframe');
+        if (frame) this.attach(frame);
+      },
+    );
+    if (done) this.scan();
+    return done;
+  }
+
+  /** The frames on the page now get their shells (the shell started, or the page wears Fluvy now). */
+  scan(): void {
     walkShadow(this.env.document, (element) => {
       const frame =
         element.localName === 'ha-panel-custom' ? element.querySelector('iframe') : null;
       if (frame) this.attach(frame);
     });
-    return true;
   }
 
+  /** A frame gets its shell once its document has loaded, if the page wears Fluvy then. */
   attach(frame: HTMLIFrameElement): void {
     this.prune();
     if (this.shells.has(frame)) return;
-    const start = (): void => {
-      const env = frameEnv(frame);
-      if (!env || this.shells.has(frame)) return;
-      addFonts(env.document);
-      this.shells.set(frame, this.shellFor(env));
-    };
+    const start = (): void =>
+      void guard('panelFrames', () => {
+        const env = frameEnv(frame);
+        if (!env || this.shells.has(frame) || !inUse(this.env.document)) return;
+        addFonts(env.document);
+        this.shells.set(frame, this.shellFor(env));
+      });
     if (frame.contentDocument?.readyState === 'complete') start();
     else frame.addEventListener('load', start, { once: true });
   }

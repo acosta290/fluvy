@@ -22,7 +22,7 @@ import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 
 import {
   accentField,
@@ -398,7 +398,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
 
       // a compact row is the name and the value alone: its context is not laid out
       const shared = {
-        icon: keepIcon ? (row.icon ?? glyphFor(view)) : null,
+        icon: keepIcon ? iconOf(view, row.icon) : null,
         tone: iconTone,
         title,
         name: true,

@@ -349,6 +349,29 @@ for (const mode of ['light', 'dark', 'volt']) {
       !plain.some((t) => t.cls.includes('is-tinted')),
     JSON.stringify({ lit: lit.bg, rest: rest.bg, plain: plainOff?.bg }),
   );
+  const statusAt = (index) =>
+    frame(page, 'Tint · a status at rest')
+      .locator('fluvy-tiles-card')
+      .nth(index)
+      .evaluate((el) =>
+        [...el.shadowRoot.querySelectorAll('.fv-tile')].map((node) => ({
+          cls: node.className,
+          surface: node.dataset.surface ?? '',
+          bg: getComputedStyle(node).backgroundColor,
+          card: getComputedStyle(node).getPropertyValue('--fluvy-card').trim(),
+        })),
+      );
+  const [statuses, tealStatuses] = [await statusAt(0), await statusAt(1)];
+  check(
+    `tint (${mode}): a shut door, a clear smoke alarm and a dry leak sensor at rest keep the card's surface, never the warning's wash; given a colour, its wash`,
+    statuses.length === 3 &&
+      statuses.every(
+        (t) => !t.cls.includes('is-tinted') && !t.surface && toHex(t.bg) === toHex(t.card),
+      ) &&
+      tealStatuses.length === 3 &&
+      tealStatuses.every((t) => t.cls.includes('is-tinted') && toHex(t.bg) !== toHex(t.card)),
+    JSON.stringify({ statuses, tealStatuses }),
+  );
   const scenes = await surfaces('Tint · scenes and tabs', 'fluvy-scenes-card', '.am-scene');
   check(
     `tint (${mode}): every scene in its own colour at rest, the last run full`,
@@ -736,14 +759,12 @@ for (const [name, extra] of [
     );
   const [lamp, strip, white] = tiles;
   check(
-    'a lit colour bulb’s tile fills with its own family’s fill, unlike the palette’s lit light (a white’s)',
+    'a lit bulb’s tile fills with its own family’s fill: a colour bulb’s colour, a white’s warmth (#58), each its own',
     lamp.accent === '#ff9800' &&
       strip.accent === '#2196f3' &&
-      toHex(lamp.fill) === toHex(lamp.family) &&
-      toHex(lamp.fill) !== toHex(white.fill) &&
-      toHex(strip.fill) !== toHex(lamp.fill) &&
-      white.on &&
-      white.accent === '',
+      white.accent === 'white #ffb87b' &&
+      [lamp, strip, white].every((tile) => tile.on && toHex(tile.fill) === toHex(tile.family)) &&
+      new Set([lamp, strip, white].map((tile) => toHex(tile.fill))).size === 3,
     JSON.stringify(tiles),
   );
   await page.close();

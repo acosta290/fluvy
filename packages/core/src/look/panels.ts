@@ -1,10 +1,6 @@
 import { walkShadow } from '../shell/dom.js';
+import { always, wrap } from '../shell/patches.js';
 import { PANEL_ATTRIBUTE } from './attributes.js';
-
-interface PanelPrototype {
-  updated?: (changed: unknown) => void;
-  __fluvyLook?: true;
-}
 
 type PanelElement = HTMLElement & { panel?: { url_path?: string } };
 /** Home Assistant's card editor dialog: it knows which panel it was opened on through `hass.panelUrl`. */
@@ -22,9 +18,11 @@ function mark(element: HTMLElement, urlPath: string | undefined, wears: Wears): 
 
 /**
  * Keeps every dashboard panel marked: `ha-panel-lovelace`'s one update method is wrapped (a panel is
- * reused from dashboard to dashboard, so each update re-reads its url path); `changed` runs when a mark
- * moves, so the cards inside look for the theme again. False if Home Assistant
- * reshaped the element: the `dashboards` scope then does nothing, and `everywhere` still works.
+ * reused from dashboard to dashboard, so each update re-reads its url path: the mark is put on a
+ * dashboard that wears the look and taken off any other, on every page); `changed` runs when a mark
+ * moves, so the cards inside look for the theme again. Home Assistant's update runs first and always,
+ * ours caught (`patches.ts`). False if Home Assistant reshaped the element: the `dashboards` scope then
+ * does nothing, and `everywhere` still works.
  */
 export async function patchLovelacePanels(
   registry: CustomElementRegistry,
@@ -32,17 +30,15 @@ export async function patchLovelacePanels(
   changed: () => void,
 ): Promise<boolean> {
   await registry.whenDefined('ha-panel-lovelace');
-  const proto = registry.get('ha-panel-lovelace')?.prototype as PanelPrototype | undefined;
-  const original = proto?.updated;
-  if (!proto || typeof original !== 'function') return false;
-  if (!proto.__fluvyLook) {
-    proto.updated = function (this: PanelElement, changes: unknown): void {
-      original.call(this, changes);
-      if (mark(this, this.panel?.url_path, wears)) changed();
-    };
-    proto.__fluvyLook = true;
-  }
-  return true;
+  return wrap(
+    registry.get('ha-panel-lovelace')?.prototype,
+    'updated',
+    'lovelacePanels',
+    (panel: PanelElement) => {
+      if (mark(panel, panel.panel?.url_path, wears)) changed();
+    },
+    always,
+  );
 }
 
 /**
@@ -56,17 +52,15 @@ export async function patchEditDialog(
   changed: () => void,
 ): Promise<boolean> {
   await registry.whenDefined('hui-dialog-edit-card');
-  const proto = registry.get('hui-dialog-edit-card')?.prototype as PanelPrototype | undefined;
-  const original = proto?.updated;
-  if (!proto || typeof original !== 'function') return false;
-  if (!proto.__fluvyLook) {
-    proto.updated = function (this: DialogElement, changes: unknown): void {
-      original.call(this, changes);
-      if (mark(this, this.hass?.panelUrl, wears)) changed();
-    };
-    proto.__fluvyLook = true;
-  }
-  return true;
+  return wrap(
+    registry.get('hui-dialog-edit-card')?.prototype,
+    'updated',
+    'editDialog',
+    (dialog: DialogElement) => {
+      if (mark(dialog, dialog.hass?.panelUrl, wears)) changed();
+    },
+    always,
+  );
 }
 
 /** Re-marks the panels (and an open card editor) on the page now (the settings changed); true when a mark changed. */

@@ -7,7 +7,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { barRow, head, ico, sheetStyles, type Tone } from '@fluvy/ui';
+import { barRow, head, ico, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -58,6 +59,7 @@ import {
   accentField,
   actionFields,
   boolField,
+  byName,
   colourFields,
   editorLabels,
   editorWord,
@@ -276,7 +278,7 @@ function sourceSchema(item: Readonly<Record<string, unknown>>): readonly HaFormS
   const key = SOURCE_KEYS.filter(shown).join(',');
   let form = sourceForms.get(key);
   if (!form) {
-    form = pickFields(SOURCE_FIELDS, shown);
+    form = pickFields(SOURCE_FIELDS, byName(shown));
     sourceForms.set(key, form);
   }
   return form;
@@ -301,13 +303,13 @@ function upgrade(config: Readonly<Record<string, unknown>>): Readonly<Record<str
  * the lane, and pulses of light travel it at a pace set by its share of the house's peak.
  */
 export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
-  static override layoutHeight(config: EnergyFlowCardConfig, hass?: HomeAssistant): number {
-    return flowHeight(config, hass);
+  static override layoutHeight(config: EnergyFlowCardConfig): number {
+    return flowHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     statsStyles,
     css`
       .ef-card {

@@ -36,6 +36,7 @@ import {
   iconField,
   nameIconFields,
   numberField,
+  onlyWhen,
   showIconField,
   textField,
   titleFields,
@@ -43,7 +44,7 @@ import {
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
-import { FluvyApplianceCard, type ApplianceCardConfig } from './appliance-card.js';
+import { applianceHouseHeight, type ApplianceCardConfig } from './appliance-card.js';
 import { choiceField, deviceField, kindField, option } from './form.js';
 import { DUE_WORD } from './full.js';
 import { applianceDevices, KIND_DEFAULTS, type ApplianceKind } from './kinds.js';
@@ -166,6 +167,47 @@ interface Line {
 }
 
 /**
+ * The card's height at a 360 column with the house in hand (the automatic dashboard's, through `house-heights.ts`):
+ * its whole cards one a row 16 apart, each what its appliance draws (`applianceHouseHeight`), the house's where it
+ * names none; else the family's, from the config alone.
+ */
+export function appliancesHouseHeight(config: AppliancesCardConfig, hass: HomeAssistant): number {
+  const listed = config.appliances;
+  const items =
+    config.variant === 'cards'
+      ? (listed
+          ? listed.map((entry): ApplianceItem =>
+              typeof entry === 'string' ? { device: entry } : entry,
+            )
+          : applianceDevices(hass).map((device): ApplianceItem => ({ device }))
+        ).filter((item) => item.device || item.entity)
+      : [];
+  if (!items.length) return appliancesHeight(config);
+  return items.reduce(
+    (sum, item, index) =>
+      sum +
+      (index ? 16 : 0) +
+      applianceHouseHeight(
+        {
+          type: '',
+          ...(config.picture ? { picture: config.picture } : {}),
+          ...item,
+        } as ApplianceCardConfig,
+        hass,
+      ),
+    0,
+  );
+}
+
+type Form = Readonly<Record<string, unknown>>;
+/**
+ * Whether the list draws a head and a surface of its own, as its editor's form says: always but as whole cards, which
+ * stand alone and draw the list's head only while there is nothing to show (never, where an empty list hides).
+ */
+const headed = ({ variant, hide_empty }: Form): boolean =>
+  variant !== 'cards' || hide_empty !== true;
+
+/**
  * The house's appliances: what each is doing in a live row — a bar row with its progress, its circle in its status's
  * tone, what it does and when ("Rinsing · Ready at 14:32"), the time left or its state at the end — what needs a hand
  * first (waiting to be unloaded, a door left open, a failure), then what runs (ending soonest), waits to start, is
@@ -174,35 +216,11 @@ interface Line {
  */
 export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
   /**
-   * The card's height at a 360 column: its whole cards, given the house, one a row 16 apart, each what its appliance
-   * draws (the appliance card's), the house's where it names none; else the family's, from the config alone.
+   * The card's height at a 360 column from its config alone: the family's. Its whole cards, each what its appliance
+   * draws, the automatic dashboard counts with the house (`appliancesHouseHeight`).
    */
-  static override layoutHeight(config: AppliancesCardConfig, hass?: HomeAssistant): number {
-    const listed = config.appliances;
-    const items =
-      hass && config.variant === 'cards'
-        ? (listed
-            ? listed.map((entry): ApplianceItem =>
-                typeof entry === 'string' ? { device: entry } : entry,
-              )
-            : applianceDevices(hass).map((device): ApplianceItem => ({ device }))
-          ).filter((item) => item.device || item.entity)
-        : [];
-    if (!items.length) return appliancesHeight(config);
-    return items.reduce(
-      (sum, item, index) =>
-        sum +
-        (index ? 16 : 0) +
-        FluvyApplianceCard.layoutHeight(
-          {
-            type: '',
-            ...(config.picture ? { picture: config.picture } : {}),
-            ...item,
-          } as ApplianceCardConfig,
-          hass,
-        ),
-      0,
-    );
+  static override layoutHeight(config: AppliancesCardConfig): number {
+    return appliancesHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -378,8 +396,8 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
+        onlyWhen(headed, titleFields()),
+        onlyWhen(headed, fieldRow(iconField(), showIconField())),
         fieldRow(
           choiceField('variant', [
             option('rows'),
@@ -387,13 +405,18 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
             option('tiles'),
             ['cards', 'appliance.o_cards'],
           ]),
-          numberField('max_rows', 1, 30),
+          // whole cards are every one there is: no fold
+          onlyWhen(({ variant }) => variant !== 'cards', numberField('max_rows', 1, 30)),
         ),
-        choiceField('picture', [
-          ['art', 'appliance.o_picture'],
-          ['icon', 'appliance.o_icon'],
-          option('none'),
-        ]),
+        // a picture is a tile's and a whole card's: a row has its circle
+        onlyWhen(
+          ({ variant }) => variant === 'tiles' || variant === 'cards',
+          choiceField('picture', [
+            ['art', 'appliance.o_picture'],
+            ['icon', 'appliance.o_icon'],
+            option('none'),
+          ]),
+        ),
         fieldRow(
           choiceField('show', [option('all'), ['active', 'appliance.o_busy']]),
           choiceField('sort', [
@@ -402,11 +425,11 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
             ['none', 'appliance.o_listed'],
           ]),
         ),
-        fieldRow(boolField('show_count'), boolField('hide_empty')),
+        fieldRow(onlyWhen(headed, boolField('show_count')), boolField('hide_empty')),
         textField('empty_text'),
-        fieldRow(toneField(), accentField()),
-        accentField('card_color', { none: true }),
-        actionFields(),
+        onlyWhen(headed, fieldRow(toneField(), accentField())),
+        onlyWhen(headed, accentField('card_color', { none: true })),
+        onlyWhen(headed, actionFields()),
       ],
       ...editorLabels(s, {
         show: 'editor_show',

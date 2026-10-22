@@ -14,7 +14,6 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -60,7 +59,7 @@ import { toneOf } from '../shared/colour.js';
 import { TextRuler } from '../shared/fit.js';
 import { statsRow } from '../shared/readouts.js';
 import { FontsSettled } from '../shared/fonts.js';
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 import {
   accentField,
   actionFields,
@@ -81,7 +80,6 @@ import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import type { BaseKey } from '../shared/base.js';
 import { axisHolds } from '../shared/axis.js';
-import { attrOf } from '../shared/heights.js';
 import { labelOf, normaliseExtras, seriesTones, type SensorItem } from './series.js';
 
 const s = strings('sensor');
@@ -151,8 +149,27 @@ function sensorTone(view: EntityView): Tone {
  * not there to say it does not — its history stays, as its slots do (the owner's rule, 1.9). A word is a word.
  */
 /** A state that is a word, not a figure (and not the house saying it cannot read it). */
-const isWord = (state: string): boolean =>
+export const isWord = (state: string): boolean =>
   state !== 'unavailable' && state !== 'unknown' && !Number.isFinite(Number(state));
+
+/** How the house reads a sensor: its state a word, and its names too long for two sensors' row beside the card's. */
+export interface SensorReads {
+  readonly word: boolean;
+  readonly stacked: boolean;
+}
+
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns: a sensor whose state is a word (as the
+ * house reads it: `house-heights.ts`) keeps it, set big, and draws no chart — the head and its row; several sensors
+ * draw their readout row (16 + 48) in the statistics' place and the chart no bubble's 32, and three read a line each
+ * (3 × 32 + 2 × 12 in place of the row's 48) where their names would not hold the row (`stacked`).
+ */
+export function sensorHeight(config: SensorCardConfig, reads?: SensorReads): number {
+  if (config.variant === 'tile') return 168;
+  if (reads?.word) return 164;
+  if (normaliseExtras(config['entities']).length) return reads?.stacked ? 348 : 276;
+  return config.show_stats === false ? 244 : 304;
+}
 
 const charted = (view: EntityView): boolean =>
   view.status === 'ok'
@@ -179,27 +196,9 @@ function sizeFor(
  * five minutes, when the sensor itself changes — no timer.
  */
 export class FluvySensorCard extends Card<SensorCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: SensorCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'tile') return 168;
-    // a sensor whose state is a word (the house says) keeps it, set big, and draws no chart: the head and its row
-    const state = typeof config.entity === 'string' ? hass?.states?.[config.entity] : undefined;
-    if (state && isWord(state.state)) return 164;
-    // several sensors: their readout row (16 + 48) takes the statistics' place, and the chart no bubble's 32; three
-    // read a line each (3 × 32 + 2 × 12 in place of the row's 48) where a name with its key would not hold its third
-    // (`pairFit`): the card's label, a sensor's name, else its measure's word ("Temperature") — past ten letters
-    const extras = normaliseExtras(config['entities']);
-    if (extras.length) {
-      const wordOf = (id: string, name: string | undefined): string =>
-        name ?? String(attrOf(hass, id, 'device_class') ?? attrOf(hass, id, 'friendly_name') ?? '');
-      const labels = [
-        wordOf(config.entity ?? '', config.label),
-        ...extras.map((item) => wordOf(item.entity, item.name)),
-      ];
-      const stacked = hass && extras.length === 2 && labels.some((label) => label.length > 10);
-      return stacked ? 348 : 276;
-    }
-    return config.show_stats === false ? 244 : 304;
+  /** The card's height at a 360 column from its config alone: a curve (`sensorHeight`). */
+  static override layoutHeight(config: SensorCardConfig): number {
+    return sensorHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -753,7 +752,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       @keydown=${key}
     >
       <div class="fv-tile__head">
-        ${ico(this.config?.icon ?? glyphFor(view), tone)}
+        ${ico(iconOf(view, this.config?.icon), tone)}
         ${trend ? html`<span class="fv-trend ${trend === 'down' ? 'fv-trend--down' : ''} am-tile__trend">${glyph(trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
       </div>
       ${readout({
@@ -798,7 +797,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       shorter: view.status === 'missing' ? [stateWord(this.hass, view)] : [],
     });
     const header = head({
-      icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+      icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
       small: fitted.small,
       tone,
       title,
@@ -848,7 +847,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           }"
           data-align="center"
         >
-          ${ico(glyphFor(view), 'neutral')}
+          ${ico(iconOf(view, this.config?.icon), 'neutral')}
           <p class="fv-empty">${s(this.hass, 'no_history')}</p>
         </div>
       </article>`;
@@ -1067,7 +1066,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           // a key only where there is a curve to key (a word or a sensor gone draws none); the name gives way, never it
           const key = !fit.circles && (series?.values.length ?? 0) > 1;
           return html`<div class="am-pair__item fv-tone--${tone}" data-accent=${accent ?? nothing}>
-            ${fit.circles ? ico(item.icon ?? glyphFor(sensor), tone) : nothing}
+            ${fit.circles ? ico(iconOf(sensor, item.icon), tone) : nothing}
             ${readout({
               label: html`<span class="am-name">${texts[index]?.label ?? sensor.name}</span>${
                   key ? html`<i class="am-key" data-measure="skip"></i>` : nothing

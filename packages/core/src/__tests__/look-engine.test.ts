@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { baseStyles } from '@fluvy/ui';
 import { LookEngine } from '../look/engine.js';
 import {
@@ -90,5 +90,80 @@ describe('the look engine', () => {
     expect(fallback).toMatch(/--fluvy-radius-card: ?14px/);
     expect(fallback).not.toContain('--fluvy-theme');
     expect(fallback).not.toContain('--primary-color');
+  });
+
+  it('brings Home Assistant’s chrome up to date only on a page that wears Fluvy', () => {
+    const { look } = engine();
+    const meta = Object.assign(document.createElement('meta'), {
+      name: 'theme-color',
+      content: '#03a9f4',
+    });
+    document.head.append(meta);
+    const fireMessage = vi.fn();
+    document.body.append(
+      Object.assign(document.createElement('home-assistant'), {
+        hass: { auth: { external: { fireMessage } } },
+      }),
+    );
+    document.documentElement.removeAttribute('style');
+    document.documentElement.style.setProperty('--app-theme-color', '#101010');
+    document.documentElement.style.setProperty('--primary-background-color', '#fafafa');
+    // another theme, a dashboard that does not wear the look: Home Assistant's chrome, as its theme left it
+    look.apply(settings({ scope: 'dashboards' }), false);
+    expect(meta.content).toBe('#03a9f4');
+    expect(document.documentElement.style.backgroundColor).toBe('');
+    expect(fireMessage).not.toHaveBeenCalled();
+    // the look covers the whole app
+    look.apply(settings({ scope: 'everywhere' }), false);
+    expect(meta.content).not.toBe('#03a9f4');
+    expect(document.documentElement.style.backgroundColor).not.toBe('');
+    expect(fireMessage).toHaveBeenCalledWith({ type: 'theme-update' });
+    meta.remove();
+    document.body.replaceChildren();
+    document.documentElement.removeAttribute('style');
+  });
+
+  it('gives Home Assistant’s chrome back on the apply that takes Fluvy off the page, then leaves it', () => {
+    const { look } = engine();
+    const meta = Object.assign(document.createElement('meta'), {
+      name: 'theme-color',
+      content: '#03a9f4',
+    });
+    document.head.append(meta);
+    const fireMessage = vi.fn();
+    document.body.append(
+      Object.assign(document.createElement('home-assistant'), {
+        hass: { auth: { external: { fireMessage } } },
+      }),
+    );
+    const style = document.documentElement.style;
+    document.documentElement.removeAttribute('style');
+    look.apply(settings({ scope: 'everywhere' }), false);
+    const ours = { background: style.backgroundColor, color: meta.content };
+    // Home Assistant applies another theme and writes the chrome while the look's sheet is still on: ours
+    style.setProperty('--app-theme-color', '#ff9800');
+    style.setProperty('--primary-background-color', '#fafafa');
+    style.backgroundColor = ours.background;
+    look.apply(settings({ scope: 'dashboards' }), false);
+    expect(meta.content).toBe('#ff9800');
+    expect(style.backgroundColor).not.toBe(ours.background);
+    expect(style.backgroundColor).not.toBe('');
+    expect(fireMessage).toHaveBeenCalledTimes(2);
+    // Home Assistant's own theme names no colour for the bar: its first one, as Home Assistant falls back to
+    look.apply(settings({ scope: 'everywhere' }), false);
+    meta.setAttribute('default-content', '#03a9f4');
+    document.documentElement.removeAttribute('style');
+    look.apply(settings({ scope: 'dashboards' }), false);
+    expect(meta.content).toBe('#03a9f4');
+    expect(style.backgroundColor).toBe('');
+    // off the page, the chrome stays Home Assistant's
+    const calls = fireMessage.mock.calls.length;
+    meta.content = '#123456';
+    look.apply(settings({ scope: 'dashboards' }), true);
+    expect(meta.content).toBe('#123456');
+    expect(fireMessage).toHaveBeenCalledTimes(calls);
+    meta.remove();
+    document.body.replaceChildren();
+    document.documentElement.removeAttribute('style');
   });
 });

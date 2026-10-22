@@ -227,6 +227,83 @@ describe('a card’s own colour on every palette', () => {
   });
 });
 
+describe('a lit white by its warmth (1.10, #58)', () => {
+  /** Home Assistant's colour for a white (`rgb_color` in `color_temp`): a candle, warm, neutral, daylight and cool. */
+  const LADDER = [
+    [2200, '#ff9227'],
+    [2700, '#ffa757'],
+    [3000, '#ffb16e'],
+    [4000, '#ffcea6'],
+    [5000, '#ffe4ce'],
+    [6500, '#fffefa'],
+    [8000, '#dde6ff'],
+  ] as const;
+  /** How warm a colour reads: its chroma towards a candle's hue (a cool white's is below nothing). */
+  const CANDLE_HUE = fromHex('#ff9227').h;
+  const warmth = (hex: string): number => {
+    const { c, h } = fromHex(hex);
+    return c * Math.cos(((h - CANDLE_HUE) * Math.PI) / 180);
+  };
+
+  it('clears the gates every colour clears, on every palette, a candle to a cool white', () => {
+    for (const palette of palettes) {
+      const seed = seeds[palette.name as keyof typeof seeds];
+      for (const mode of PALETTE_MODES) {
+        const colors = palette[mode];
+        const { card, page } = colors.surface;
+        for (const [kelvin, pick] of LADDER) {
+          const family = accentFamily(seed, colors, pick, true);
+          const at = (fg: string, bg: string, min: number, what: string): void =>
+            expect(
+              contrastRatio(fg, bg),
+              `${palette.name}/${mode} ${kelvin} K ${what}`,
+            ).toBeGreaterThanOrEqual(min);
+          at(family.ink, card, GATES.icon, 'ink on card');
+          at(family.ink, page, GATES.icon, 'ink on page');
+          at(family.text, card, GATES.text, 'text on card');
+          at(family.text, page, GATES.text, 'text on page');
+          at(family.onFill, family.fill, GATES.onFill, 'ink on fill');
+          at(family.fillBorder, family.fill, GATES.borderVsCard, 'fill border');
+          at(family.onAccent, family.ink, GATES.text, 'ink on the solid accent');
+          at(family.primary.on, family.primary.fill, GATES.text, 'primary');
+        }
+      }
+    }
+  });
+
+  it('reads as a scale in Linen and Dusk, light and dark: candle, warm, neutral, cool — every step a step', () => {
+    for (const name of ['linen', 'dusk'] as const) {
+      const palette = palettes.find((p) => p.name === name)!;
+      for (const mode of PALETTE_MODES) {
+        const colors = palette[mode];
+        const families = LADDER.map(([, pick]) => accentFamily(seeds[name], colors, pick, true));
+        const at = `${name}/${mode}`;
+        for (const part of ['fill', 'ink'] as const) {
+          const warmths = families.map((family) => warmth(family[part]));
+          // ordered: each white cooler than the one before, a candle the warmest, 8,000 K on the cool side
+          for (let i = 1; i < LADDER.length; i += 1) {
+            expect(warmths[i], `${at} ${part} ${LADDER[i]![0]} K`).toBeLessThan(warmths[i - 1]!);
+            // every step a step: at least a just-noticeable difference side by side
+            expect(
+              deltaE(families[i - 1]![part], families[i]![part]),
+              `${at} ${part} ${LADDER[i - 1]![0]} → ${LADDER[i]![0]} K`,
+            ).toBeGreaterThanOrEqual(1);
+          }
+          expect(warmths.at(-1), `${at} ${part} 8000 K`).toBeLessThan(0);
+        }
+        const chroma = (index: number): number => fromHex(families[index]!.fill).c;
+        // 2,700 K plainly warmer than 4,000 K: as far apart as a plate that answers the pointer
+        expect(deltaE(families[1]!.fill, families[3]!.fill), at).toBeGreaterThanOrEqual(
+          GATES.feedback,
+        );
+        // 5,000 K nearly neutral, daylight neutral
+        expect(chroma(4), at).toBeLessThan(chroma(0) / 3);
+        expect(chroma(5), at).toBeLessThan(0.003);
+      }
+    }
+  });
+});
+
 describe('a lit light card’s surface (1.9, #41)', () => {
   const lit = (
     role: Parameters<typeof litSurface>[0],
@@ -242,7 +319,8 @@ describe('a lit light card’s surface (1.9, #41)', () => {
         const roles = [
           ['light-active', colors.state['light-active']] as const,
           ['accent', colors.accent] as const,
-          ...[...BULBS, ...KELVIN].map((hex) => [hex, accentFamily(seed, colors, hex)] as const),
+          ...BULBS.map((hex) => [hex, accentFamily(seed, colors, hex)] as const),
+          ...KELVIN.map((hex) => [hex, accentFamily(seed, colors, hex, true)] as const),
         ];
         for (const [name, role] of roles)
           for (const level of [0, 0.1, LIT_FLOOR, 0.75, 1]) {

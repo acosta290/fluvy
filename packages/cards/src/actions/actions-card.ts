@@ -8,13 +8,13 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { glyph, head, icon, sheetStyles, type IconRef } from '@fluvy/ui';
+import { glyph, head, icon, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import { relativeAgo } from '../helpers/datetime.js';
 import { HeadFit } from '../energy/head.js';
 import { Card, type BaseKey } from '../shared/base.js';
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import {
   actionFields,
   colourFields,
@@ -341,7 +341,7 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     const runnable =
       view.status !== 'unavailable' && view.status !== 'missing' && view.domain in SERVICES;
     const done = this.done_.has(view.id);
-    const ref: IconRef | string = row.icon ?? view.attr<string>('icon') ?? glyphFor(view);
+    const ref = iconOf(view, row.icon);
     return html`<button
       class="in-action fv-tile--tap ${runnable ? '' : 'is-unavailable'}"
       data-card

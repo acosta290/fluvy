@@ -151,6 +151,81 @@ describe('resolveEntity', () => {
     expect(never.attr('hvac_modes')).toBeUndefined();
     expect(never.supports(1)).toBe(false);
   });
+
+  it('tells the icon the person set from the one its integration gives, and has neither once it is gone', () => {
+    const h = hass(
+      {
+        // Home Assistant writes the person's icon into the state's attributes too
+        'cover.gate': { state: 'closed', attributes: { icon: 'mdi:gate-arrow-right' } },
+        'sensor.pollen': { state: '3', attributes: { icon: 'mdi:flower-pollen' } },
+        'switch.pump': { state: 'on', attributes: { icon: 'mdi:pump' } },
+        'light.hall': { state: 'on' },
+      },
+      {
+        entities: {
+          'cover.gate': { entity_id: 'cover.gate', icon: 'mdi:gate-arrow-right' },
+          'switch.pump': { entity_id: 'switch.pump', icon: 'mdi:water-pump' },
+          'light.hall': { entity_id: 'light.hall' },
+        },
+      },
+    );
+    const gate = resolveEntity(h, 'cover.gate');
+    expect(gate.registryIcon).toBe('mdi:gate-arrow-right');
+    expect(gate.ownIcon).toBeUndefined();
+    // no registry entry at all: the icon is its integration's
+    const pollen = resolveEntity(h, 'sensor.pollen');
+    expect(pollen.registryIcon).toBeUndefined();
+    expect(pollen.ownIcon).toBe('mdi:flower-pollen');
+    // both, as a state written before the person's icon was saved has them
+    const pump = resolveEntity(h, 'switch.pump');
+    expect(pump.registryIcon).toBe('mdi:water-pump');
+    expect(pump.ownIcon).toBe('mdi:pump');
+    const hall = resolveEntity(h, 'light.hall');
+    expect(hall.registryIcon).toBeUndefined();
+    expect(hall.ownIcon).toBeUndefined();
+    // an entity that is not there draws the ban glyph, whatever its registry still says
+    const gone = resolveEntity({ ...h, states: {} }, 'cover.gate');
+    expect(gone.status).toBe('missing');
+    expect(gone.registryIcon).toBeUndefined();
+    expect(gone.ownIcon).toBeUndefined();
+  });
+
+  it('reads the icon a helper’s, a scene’s or a template’s own settings hold as the person’s', () => {
+    const h = hass(
+      {
+        'input_boolean.guests': { state: 'on', attributes: { icon: 'mdi:account-group' } },
+        'timer.tea': { state: 'idle', attributes: { icon: 'mdi:tea' } },
+        'scene.movie': { state: '2026-10-22T20:00:00+00:00', attributes: { icon: 'mdi:movie' } },
+        'sensor.rain_today': { state: '3', attributes: { icon: 'mdi:weather-pouring' } },
+        'sensor.pollen': { state: '3', attributes: { icon: 'mdi:flower-pollen' } },
+      },
+      {
+        entities: {
+          'sensor.rain_today': { entity_id: 'sensor.rain_today', platform: 'template' },
+          'sensor.pollen': {
+            entity_id: 'sensor.pollen',
+            platform: 'pollen',
+            translation_key: 'grass',
+          },
+        },
+      },
+    );
+    for (const [id, icon] of [
+      ['input_boolean.guests', 'mdi:account-group'],
+      ['timer.tea', 'mdi:tea'],
+      ['scene.movie', 'mdi:movie'],
+      ['sensor.rain_today', 'mdi:weather-pouring'],
+    ]) {
+      expect(resolveEntity(h, id).registryIcon, id).toBe(icon);
+      expect(resolveEntity(h, id).ownIcon, id).toBeUndefined();
+    }
+    // an integration's icon stays its own, and so does the key it names the entity by
+    const pollen = resolveEntity(h, 'sensor.pollen');
+    expect(pollen.registryIcon).toBeUndefined();
+    expect(pollen.ownIcon).toBe('mdi:flower-pollen');
+    expect(pollen.translationKey).toBe('grass');
+    expect(resolveEntity(h, 'timer.tea').translationKey).toBeUndefined();
+  });
 });
 
 describe('isActive', () => {

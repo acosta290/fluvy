@@ -19,6 +19,19 @@ export interface EntityView {
   readonly number: number | null;
   readonly unit: string;
   readonly deviceClass: string;
+  /**
+   * The icon the person set for the entity in Home Assistant: its registry's, or the one its own settings hold where
+   * Home Assistant keeps it there (a helper's, a scene's, a script's, a template's: `OWN_SETTINGS`); none for an entity
+   * that is not there.
+   */
+  readonly registryIcon: string | undefined;
+  /**
+   * The icon its integration gives the state (`attributes.icon` where it is not the person's, which Home Assistant
+   * also writes there); none for an entity that is not there.
+   */
+  readonly ownIcon: string | undefined;
+  /** The key its integration names it by (its registry's `translation_key`), under which it may declare its icons. */
+  readonly translationKey: string | undefined;
   supports(bit: number): boolean;
   attr<T = unknown>(key: string): T | undefined;
 }
@@ -53,6 +66,13 @@ const CAPABILITY =
   /^(friendly_name|unit_of_measurement|supported_features|options|min|max|step|mode)$|^(min|max)_|_(modes|list|step|class)$/;
 
 /**
+ * Where an entity's own settings hold the icon the person gives it, which Home Assistant writes into its state as it
+ * does the registry's: a helper's (whose settings hide the registry's icon), a scene's, a script's, a zone's, an old
+ * group's, a template's. No integration chooses an icon for these.
+ */
+const OWN_SETTINGS = /^(input_\w+|counter|timer|schedule|zone|group|scene|script|template)$/;
+
+/**
  * The last state this page read of each entity. One that goes missing — its integration not set up yet after a
  * restart, a YAML entity reloading, an id renamed — is drawn from its description and capabilities as they were, so
  * its card keeps the anatomy and the size it had (1.9, the owner's rule); never from its state's own attributes.
@@ -74,13 +94,21 @@ export function resolveEntity(hass: HomeAssistant | undefined, id: string | unde
         ? 'unknown'
         : 'ok';
   const registry = hass?.entities?.[entityId]; // may be absent: some states never enter the registry
+  const domain = domainOf(entityId);
+  const icon = stateObj?.attributes['icon'];
+  const stated = typeof icon === 'string' && icon ? icon : undefined;
+  const registryIcon =
+    (stateObj &&
+      (registry?.icon ||
+        ((OWN_SETTINGS.test(domain) || registry?.platform === 'template') && stated))) ||
+    undefined;
   const areaId = areaOf(hass, entityId);
   // `Number('')` and `Number('  ')` are 0: only a state with digits in it is a number
   const parsed =
     stateObj && status === 'ok' && /\d/.test(stateObj.state) ? Number(stateObj.state) : NaN;
   return {
     id: entityId,
-    domain: domainOf(entityId),
+    domain,
     status,
     stateObj,
     state: stateObj?.state ?? 'missing',
@@ -89,6 +117,9 @@ export function resolveEntity(hass: HomeAssistant | undefined, id: string | unde
     number: Number.isFinite(parsed) ? parsed : null,
     unit: attr<string>('unit_of_measurement') ?? '',
     deviceClass: attr<string>('device_class') ?? '',
+    registryIcon,
+    ownIcon: stated !== registryIcon ? stated : undefined,
+    translationKey: registry?.translation_key,
     supports: (bit) => ((attr<number>('supported_features') ?? 0) & bit) !== 0,
     attr,
   };

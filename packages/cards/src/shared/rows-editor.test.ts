@@ -1,6 +1,15 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
+import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  cardForm,
+  drawEditor,
+  listTitles,
+  nextConfig,
+  shownNames,
+  type FormStub,
+} from './fixtures/editor.js';
+import { boolField, fieldRow, holdsLight, onlyWhen, selectField, textField } from './form.js';
 import {
   FluvyRowsEditor,
   compact,
@@ -287,13 +296,134 @@ describe('a select’s options as the house has them', () => {
     ) as FluvyRowsEditor;
     editor.setConfig({ type: 'custom:x' });
     const formOf = (): unknown =>
-      (editor as unknown as { schema(spec: unknown): unknown }).schema(editor.spec);
+      (editor as unknown as { schema(spec: unknown, data: unknown): unknown }).schema(
+        editor.spec,
+        {},
+      );
     const first = formOf();
     expect(formOf()).toBe(first);
-    expect(first).not.toBe(editor.spec?.schema);
+    expect(first).not.toEqual(editor.spec?.schema);
     // a house that says nothing of them leaves the form as the card wrote it
     house = 'none';
-    expect(formOf()).toBe(editor.spec?.schema);
+    expect(formOf()).toEqual(editor.spec?.schema);
+  });
+});
+
+describe('a field or a list that cannot act (`when`)', () => {
+  afterEach(() => document.body.replaceChildren());
+  // a card whose compact variant has no subtitle and no rows (a lock's): its form, its rows, what it does by default
+  const full = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant !== 'compact';
+  const form = {
+    schema: [
+      selectField('variant', ['full', 'compact']),
+      fieldRow(textField('title'), onlyWhen(full, textField('subtitle'))),
+      onlyWhen(full, boolField('show_rows')),
+    ],
+  };
+  const list: RowsListSpec = { ...rows, when: full };
+  const editor = (): HTMLElement =>
+    listsEditor(form, [list], () => ({ variant: 'full', show_rows: true }));
+
+  it('shows a field while it can act, and takes it away as what the form holds changes', async () => {
+    const element = await drawEditor(editor(), { type: 'custom:x' });
+    expect(shownNames(cardForm(element).schema)).toEqual([
+      'variant',
+      'title',
+      'subtitle',
+      'show_rows',
+    ]);
+    const written = nextConfig(element);
+    cardForm(element).change('variant', 'compact');
+    expect(await written).toEqual({ type: 'custom:x', variant: 'compact' });
+    await element.updateComplete;
+    // the title is left alone on its row's line
+    expect(cardForm(element).schema.map((item) => item.name)).toEqual(['variant', 'title']);
+    cardForm(element).change('variant', 'full');
+    await element.updateComplete;
+    expect(shownNames(cardForm(element).schema)).toContain('show_rows');
+  });
+
+  it('keeps a hidden field’s value through an edit of another, and never writes a default it hid', async () => {
+    const element = await drawEditor(editor(), {
+      type: 'custom:x',
+      variant: 'compact',
+      subtitle: 'Hall',
+      show_rows: false,
+    });
+    expect(shownNames(cardForm(element).schema)).toEqual(['variant', 'title']);
+    const written = nextConfig(element);
+    cardForm(element).change('title', 'Front door');
+    expect(await written).toEqual({
+      type: 'custom:x',
+      variant: 'compact',
+      subtitle: 'Hall',
+      show_rows: false,
+      title: 'Front door',
+    });
+    const quiet = await drawEditor(editor(), { type: 'custom:x', variant: 'compact' });
+    const next = nextConfig(quiet);
+    cardForm(quiet).change('title', 'Back door');
+    expect(await next).toEqual({ type: 'custom:x', variant: 'compact', title: 'Back door' });
+  });
+
+  it('draws no list that cannot act, and keeps its entries', async () => {
+    const element = await drawEditor(editor(), {
+      type: 'custom:x',
+      variant: 'compact',
+      rows: ['sensor.door'],
+    });
+    expect(listTitles(element)).toEqual([]);
+    const written = nextConfig(element);
+    cardForm(element).change('title', 'Front door');
+    expect(await written).toMatchObject({ rows: ['sensor.door'] });
+    await element.updateComplete;
+    cardForm(element).change('variant', 'full');
+    await element.updateComplete;
+    expect(listTitles(element)).toEqual(['Rows']);
+  });
+
+  it('asks what can act of the whole card, its lists too, which the form itself never holds', async () => {
+    // a card of rows whose lights' colours act where a row is a light
+    const lit = (): HTMLElement =>
+      listsEditor(
+        {
+          schema: [
+            textField('title'),
+            onlyWhen(holdsLight('rows', 'entities'), boolField('light_colors')),
+          ],
+        },
+        [rows],
+      );
+    const none = await drawEditor(lit(), { type: 'custom:x', rows: ['switch.kettle'] });
+    expect(shownNames(cardForm(none).schema)).toEqual(['title']);
+    expect(cardForm(none).data).not.toHaveProperty('rows');
+    // under the list's alias too
+    const aliased = await drawEditor(lit(), { type: 'custom:x', entities: ['light.desk'] });
+    expect(shownNames(cardForm(aliased).schema)).toEqual(['title', 'light_colors']);
+    expect(cardForm(aliased).data).not.toHaveProperty('entities');
+    // a row turned into a light in its own form: the card's form asks again
+    const element = await drawEditor(lit(), { type: 'custom:x', rows: ['switch.kettle'] });
+    const row = element.shadowRoot!.querySelectorAll<FormStub>('ha-form')[1]!;
+    row.change('entity', 'light.desk');
+    await element.updateComplete;
+    expect(shownNames(cardForm(element).schema)).toEqual(['title', 'light_colors']);
+  });
+
+  it('hands the form the same schema while nothing it shows changes, and never a function', async () => {
+    const element = await drawEditor(editor(), { type: 'custom:x' });
+    const first = cardForm(element).schema;
+    element.hass = { language: 'en', states: {} } as unknown as HomeAssistant;
+    await element.updateComplete;
+    cardForm(element).change('title', 'Front door');
+    await element.updateComplete;
+    expect(cardForm(element).schema).toBe(first);
+    expect(JSON.stringify(first)).not.toContain('when');
+    expect(
+      first.flatMap((item) => [item, ...(item.schema ?? [])]).some((item) => 'when' in item),
+    ).toBe(false);
+    cardForm(element).change('variant', 'compact');
+    await element.updateComplete;
+    expect(cardForm(element).schema).not.toBe(first);
   });
 });
 

@@ -42,16 +42,19 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,wall,weather,media,energy,history-bars-readings,devices,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,light-colour,editor,view-icons,lang-*}-<hash>.js`
-on demand — the Activity page, the History page, the settings panel, the date picker they share, the automatic
-dashboards' strategy (when a dashboard asks for it), wall mode (on a device that is a wall), the weather card and the
-media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are
-announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
-`src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
-history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
-draws one), the schedule sheet and the alerts' sheet (when one is opened), the light card's colour controls (the first
-colour bulb), the cards' visual editor (when a card is edited) and a language's catalogue (English's core part ships
-in core; a lazy family's English part travels with the family's chunk, registered as it lands).
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
+on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
+period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
+counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
+from their configs alone), wall mode (on a device that is a wall), the weather and template cards and the media,
+energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are announced in core —
+`src/energy-family.ts` and its siblings, their names and heights — and defined as `src/energy-cards.ts` and its
+siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
+first card that reads a counter by them), the appliances' pictures (the first card that draws one), the schedule sheet,
+the alerts' sheet and the cameras' sheet (when one is opened), the light card's colour controls (the first colour
+bulb), the cards' visual editor (when a card is edited), the icon set's other part (the first time Home Assistant asks for one of its
+icons) and a language's catalogue (English's core part ships in core; a lazy family's
+English part travels with the family's chunk, registered as it lands).
 `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group names its English part, or core
 keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes `manifest.json` with every file's
 size and hash and a **build stamp**, and fails the build when the initial set goes over **236 KB gzip** or carries a
@@ -64,22 +67,26 @@ in `tools/docs` holds this table to it):
 | `core` | 236 KB | what every page loads |
 | `panel` | 40 KB | the settings panel and its English |
 | `strategy` | 24 KB | the automatic dashboards |
+| `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
-| `energy` | 76 KB | the energy family, the history bars with it |
+| `energy` | 80 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
-| `devices` | 32 KB | the lock, the alarm and its keypad, the camera, the printer, the job's times |
+| `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times |
+| `cameras-sheet` | 8 KB | the Cameras card's sheet |
 | `appliances` | 54 KB | the appliances family and its English |
 | `appliance-art` | 32 KB | the appliances' product drawings |
 | `automations` | 20 KB | the automations card, the schedule model and its store |
 | `automations-sheet` | 16 KB | the schedule sheet |
 | `alerts` | 24 KB | the alerts card, its matcher, engine and memory, its English |
 | `alerts-sheet` | 12 KB | the alerts' sheet |
+| `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `light-colour` | 4 KB | the light card's quick colours and hue ruler |
 | `weather` | 12 KB | the weather card |
 | `editor` | 8 KB | the cards' visual editor |
 | `view-icons` | 4 KB | a view's icon from its name |
-| `pages` | 8 KB | the date picker, the time field and the dropdown the pages share |
+| `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera |
+| `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the layers, the CSV, their chrome's sheet |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
 | `lang` | 24 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
@@ -103,12 +110,49 @@ entry; `node tools/release/check.mjs` (part of `pnpm check`) fails when they dis
 the built folder. A tag `v1.2.0` makes `release.yml` build, check, zip the integration folder as `fluvy.zip` and
 publish the release HACS installs from.
 
+The Home Assistant releases a build was checked against are `CHECKED` in `packages/core/src/shell/patches.ts`
+(`2026.9–2026.10`): the shell's report and the console set the page's Home Assistant beside them (a note, never a
+stop; `docs/shell.md`). Its floor is held to `hacs.json`'s `homeassistant` by a test; its end moves when a release is
+checked against a newer Home Assistant.
+
 ## Generated files
 
 Regenerated by their generators, never edited: `packages/ui/src/styles/generated/` (`pnpm --filter @fluvy/ui
-build:styles`), `packages/core/src/icons/generated.ts` and `mdi.ts` (`tools/icons/README.md`),
+build:styles`), `packages/core/src/icons/generated.ts`, `generated-on-demand.ts` and `mdi.ts`
+(`tools/icons/README.md`),
 `packages/theme/src/__tests__/ha-vars.json` (`packages/theme/scripts/ha-vars.mjs <clone of home-assistant/frontend>`),
 the brand files (`tools/brand/README.md`), the strategy's golden snapshot (`vitest -u`, with an explanation).
+
+## The editors
+
+Every card's visual editor is one element, the rows editor (`packages/cards/src/shared/rows-editor.ts`, the `editor`
+chunk, fetched the first time a card is edited), built by the base class from what the card declares; a card never
+writes an editor of its own.
+
+- **The form** is the card's `getConfigForm()`: Home Assistant's `ha-form` schema, written with the builders of
+  `shared/form.ts`. A list the card declares in `static lists` (`RowsListSpec`) leaves the form and is edited item by
+  item below it — each item its own form, a handle to drag it into order, a cross to remove it, a picker to add the
+  next — so a list of `{ entity, name, … }` items stays editable where Home Assistant's form could only hold ids.
+- **Defaults are shown, never written.** `static defaults` says what the card does for a key the config leaves out;
+  the editor shows it in its field, and a value the person leaves as it was stays out of the config. A list's default
+  shows as rows and is written only once the list is touched.
+- **Choices** (`static choices`): a select's options as the house has them (a thermostat's modes, from its entity),
+  swapped in as the form is drawn, so the form itself stays one static schema.
+- **Aliases** (`static aliases`): an older name the card still reads shows in its newer field, and is written as the
+  newer one with the first change.
+- **`when`**: a field, a row of fields (`onlyWhen(test, field)`) or a whole list (`RowsListSpec.when`) may say when
+  it can act, from the whole card — the config over the defaults, its lists too (`listed(data, key, alias)`, so a
+  camera of the list asked live counts; the form itself holds no list), and a test that reads the house's default for
+  lights reads what the card does — and the house. The editor leaves out what cannot act (an option that acts only
+  in a style shows in that style) and hands `ha-form` no function. A hidden field keeps its value: the form holds
+  the whole config over the defaults and answers every change with all of it, so a value set before the field went
+  away is still there when it comes back. `visibleFields(schema, data, hass)` is the form the editor draws; a row
+  that loses one field keeps the other on its own line.
+
+`packages/cards/src/shared/editors.test.ts` holds every card to the contract, walking the whole form whatever its
+`when`: what the form and the lists show is exactly the card's `base` and `keys`, every field has a word, every switch
+and every choice a default (a tone may be left empty: it is the card's own), a field that may hide is never a required
+one, and no older name is shown.
 
 ## The playground
 
@@ -236,19 +280,20 @@ named by hand. `--known none` measures without it.
 
 ### Known heights
 
-`node tools/render/heights.mjs` reads every card's declared height (`static layoutHeight`, what the automatic
-dashboard lays its columns out with) against what the card draws in the playground at a 360 column — the sheets'
-frames, with the house each frame shows, as the dashboard reads it: a thermostat counts its presets, a fan its
-oscillation row, a cover its tilt. A drift over 8 px fails the run unless `tools/render/known-heights.json` lists it:
-the frame, the card, the height declared, the height drawn and the reason — the few cards whose drawing depends on
-live content the config cannot know (a printer's job, a calendar's events, the house's appliances), which declare
-their documented default. A known drift no longer seen as listed fails too: the file only shrinks. `--write-known`
-rewrites it from what the run saw, keeping the reasons (a new entry's is `triage`, to be written by hand);
-`--only climate,home` measures some sheets, `--json out.json` keeps every sample with its config.
+`node tools/render/heights.mjs` reads every card's declared height (`static layoutHeight`, from its config alone) as
+the automatic dashboard lays its columns out with it — counted with the house each frame shows
+(`packages/cards/src/house-heights.ts`, a chunk of its own the strategy imports: a thermostat counts its presets, a
+fan its oscillation row, a cover its tilt) — against what the card draws in the playground at a 360 column. A drift
+over 8 px fails the run unless `tools/render/known-heights.json` lists it: the frame, the card, the height declared,
+the height drawn and the reason — the few cards whose drawing depends on live content the config cannot know (a
+printer's job, a calendar's events, the house's appliances), which declare their documented default. A known drift no
+longer seen as listed fails too: the file only shrinks. `--write-known` rewrites it from what the run saw, keeping the
+reasons (a new entry's is `triage`, to be written by hand); `--only climate,home` measures some sheets, `--json
+out.json` keeps every sample with its config.
 
 ### The facts guard
 
-`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "fifty-five cards", "fifteen
+`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "fifty-seven cards", "fifteen
 palettes", "five automatic dashboards", "nine languages", "five tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;

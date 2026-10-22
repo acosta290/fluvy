@@ -2,6 +2,7 @@
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { outOfReachStates, type OutOfReach } from '@fluvy/demo-home/out-of-reach';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { houseHeightOf } from '../house-heights.js';
 import { familiesDefined } from '../index.js';
 
 // the lock and the alarm are a lazy family's: they are defined before a test draws them
@@ -247,15 +248,13 @@ describe('a fan, a cover and a robot out of reach', () => {
 
 /*
  * Never read (missing since the page opened: an integration still starting, an id renamed), a card cannot know what
- * its entity could do: it draws its domain's usual parts — those its `layoutHeight` declares where the house is not
+ * its entity could do: it draws its domain's usual parts — those its height counts where the house is not
  * there to say — every control disabled and every value "—", as the thermostat draws Off · Heat · Cool. Never one
  * quiet line.
  */
 describe('a fan, a cover and a robot never read', () => {
   const declared = (card: CardElement): number =>
-    (
-      card.constructor as unknown as { layoutHeight(config: unknown, hass: unknown): number }
-    ).layoutHeight((card as unknown as { config: unknown }).config, card.hass);
+    houseHeightOf((card as unknown as { config: LovelaceCardConfig }).config, -1, card.hass);
 
   it('a fan keeps its speed with its stepper, its ruler, and its oscillation and direction rows', async () => {
     const { card, root } = await drawn('fan', { entity: 'fan.never_read' });

@@ -12,8 +12,21 @@ interface CustomIconSet {
   getIconList: () => Promise<{ name: string; keywords?: string[] }[]>;
 }
 
-/** The names Home Assistant lists for the set, with the words a picker searches by. */
-export const iconNames = (): readonly string[] => Object.keys(ICON_PATHS);
+/**
+ * The set's other part (the appliances, a garage, a gate, a window, a door open), which no page needs until Home
+ * Assistant asks for one of its icons: fetched then. A fetch that fails draws nothing, as an unknown name does.
+ */
+const onDemand = (): Promise<Readonly<Record<string, string>>> =>
+  import('./generated-on-demand.js').then(
+    (part) => part.ON_DEMAND_PATHS,
+    () => ({}),
+  );
+
+/** The names Home Assistant lists for the set (both parts). */
+export const iconNames = async (): Promise<readonly string[]> => [
+  ...Object.keys(ICON_PATHS),
+  ...Object.keys(await onDemand()),
+];
 
 /**
  * Registers the fluvy glyphs as a Home Assistant icon set through the frontend's public
@@ -29,9 +42,12 @@ export function registerIcons(): void {
   const waiting = host.customIcons[ICON_SET];
   if (waiting && !waiting.handOver) return; // the real set is already there
   const set: CustomIconSet = {
-    getIcon: async (name) => ({ path: ICON_PATHS[name] ?? '', viewBox: '0 0 24 24' }),
+    getIcon: async (name) => ({
+      path: ICON_PATHS[name] ?? (await onDemand())[name] ?? '',
+      viewBox: '0 0 24 24',
+    }),
     getIconList: async () =>
-      Object.keys(ICON_PATHS).map((name) => ({ name, keywords: name.split('-') })),
+      (await iconNames()).map((name) => ({ name, keywords: name.split('-') })),
   };
   host.customIcons[ICON_SET] = set;
   // the loader's stand-in (registered before the app rendered) answers the icons asked of it meanwhile

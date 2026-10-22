@@ -18,7 +18,7 @@ import { agoShort } from '../helpers/datetime.js';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 
@@ -270,7 +270,7 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
         @click=${clickPress}
       >
         <span class="fv-ico fv-ico--${toneOf(this.config, 'accent')}" data-icon>
-          ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : (this.config?.icon ?? glyphFor(view)))}</span>`)}
+          ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : iconOf(view, this.config?.icon))}</span>`)}
         </span>
         <span class="fv-row__text">
           <span class="fv-row__title" data-name>${name}</span>

@@ -16,7 +16,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | **Home** (`custom:fluvy-home`) | the whole house: Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors, each when the house has what it shows, and an Appliances page behind Home's appliance bands |
 | **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page |
 | **Energy** (`custom:fluvy-energy`) | Now (the flow, the balance, the house by source, the grid, the batteries, the car charger), Today (the day's flow, where it went, the score, the day's balance), Production, Devices, Water & gas, Meters |
-| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first cameras), Cameras, Openings room by room |
+| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first four cameras on one Cameras card), Cameras (every camera, up to twelve, on one Cameras card across the view), Openings room by room |
 | **Wall** (`custom:fluvy-wall`) | two columns for a tablet on the wall, read from a metre away: the greeting, the clock, the readings, the scenes and the rooms; the thermostat, the security rows and who is home |
 
 ## What the home dashboard builds
@@ -28,7 +28,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the light automations as scenes last |
 | **Climate** | thermostats, water heaters and humidifiers, the weather, the temperature and humidity sensors that are not the weather service's — humidity paired with its temperature |
 | **Energy** | the energy flow and the balance, the house's power by source, the grid (by phase when its meters are named so), the batteries, a car charger, the day's flow, where it went and the score (when the Energy dashboard meters its sources), production, the energy dashboard's devices, their distribution, water and gas |
-| **Security** | alarm panels, locks, gates and garage doors, the openings, the cameras — when the house has an alarm, a lock, a camera or a gate |
+| **Security** | alarm panels, locks, gates and garage doors, the openings, the first four cameras on one Cameras card — when the house has an alarm, a lock, a camera or a gate |
 | **Media** | what plays now, then every other player |
 | **Agenda** | the calendars in a month view, the to-do lists, the timers, the scripts and automations to run by hand — when there are calendars, timers, things to run, or more than one list |
 | **Sensors** | device batteries, phones, the people and the map of their zones, the openings (when there is no Security view), the plants, the helpers, the updates, the first camera |

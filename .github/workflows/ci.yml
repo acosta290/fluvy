@@ -36,6 +36,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # nothing of a private installation, of the past or in another language in the tree: a red scan is seen the day it
+  # turns red, not at release (no install, no build)
+  leaks:
+    name: Leak scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash tools/release/leak-scan.sh
+
   python:
     name: Integration (ruff)
     runs-on: ubuntu-latest

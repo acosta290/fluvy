@@ -29,9 +29,9 @@ import {
   sampleAt,
   scrub,
   ScrubController,
-  sheetStyles,
   type Tone,
 } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
   css,
@@ -299,7 +299,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     statsStyles,
     axesStyles,
     css`

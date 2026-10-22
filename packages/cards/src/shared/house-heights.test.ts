@@ -1,41 +1,21 @@
 // @vitest-environment happy-dom
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
-import { alarmHeight, lockHeight, printerHeight } from '../devices-family.js';
-import {
-  batteriesHeight,
-  chargerHeight,
-  devicesHeight,
-  flowHeight,
-  gridHeight,
-  legendRows,
-  productionHeight,
-} from '../energy-family.js';
-import { mediaHeight } from '../media-family.js';
-import { weatherHeight } from '../weather-family.js';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { printerHeight } from '../devices-family.js';
+import { devicesHeight, legendRows } from '../energy-family.js';
 import { appliancesHeight } from '../appliances-family.js';
 import { alertsHeight } from '../alerts-family.js';
-import { FluvyClockCard } from '../clock/clock-card.js';
-import { FluvyCoverCard } from '../cover/cover-card.js';
-import { FluvyDistributionCard } from '../distribution/distribution-card.js';
-import { FluvyFanCard } from '../fan/fan-card.js';
-import { FluvyHelpersCard } from '../helpers/helpers-card.js';
-import { FluvyLightCard } from '../light/light-card.js';
-import { FluvyLightsCard } from '../lights/lights-card.js';
-import { FluvyReadoutsCard } from '../readouts/readouts-card.js';
-import { FluvyRoomCard } from '../room/room-card.js';
-import { FluvySensorCard } from '../sensor/sensor-card.js';
-import { FluvyStatTilesCard } from '../stat-tiles/stat-tiles-card.js';
-import { FluvyThermostatCard } from '../thermostat/thermostat-card.js';
-import { FluvyTilesCard } from '../tiles/tiles-card.js';
-import { FluvyUpdatesCard } from '../updates/updates-card.js';
-import { FluvyVacuumCard } from '../vacuum/vacuum-card.js';
+import { houseHeightOf } from '../house-heights.js';
+import { familiesDefined } from '../index.js';
 import { chipRows, optionRows, statsRows, textWidth } from './heights.js';
 
+// the cards declare their heights from their configs as they register; the families' chunks land before the tests go
+beforeAll(() => familiesDefined);
+
 /*
- * Every declared height counts what the house draws: the cards' `layoutHeight(config, hass)` for the capabilities
- * and options the house writes, on the 4 px grid, against the anatomies measured in the playground at a 360 column
- * (tools/render/heights.mjs); without the house, the documented default.
+ * Every height the automatic dashboard plans counts what the house draws (`houseHeightOf`): the capabilities and
+ * options the house writes, on the 4 px grid, against the anatomies measured in the playground at a 360 column
+ * (tools/render/heights.mjs); without the house, the documented default the card declares from its config.
  */
 
 const entity = (entity_id: string, state: string, attributes = {}): HassEntity => ({
@@ -53,11 +33,22 @@ const house = (entities: readonly HassEntity[], more: Partial<HomeAssistant> = {
     ...more,
   }) as unknown as HomeAssistant;
 
-type Height = (config: LovelaceCardConfig, hass?: HomeAssistant) => number;
+/** A card's height as the automatic dashboard plans it, with the house where there is one. */
 const declare =
-  (height: Height, type: string) =>
-  (config: Record<string, unknown>, hass?: HomeAssistant): number =>
-    height({ type, ...config }, hass);
+  (tag: string) =>
+  (config: Omit<LovelaceCardConfig, 'type'>, hass?: HomeAssistant): number =>
+    houseHeightOf({ ...config, type: `custom:${tag}` }, -1, hass);
+
+/** The families' cards, by the names of their heights. */
+const lockHeight = declare('fluvy-lock-card');
+const alarmHeight = declare('fluvy-alarm-card');
+const mediaHeight = declare('fluvy-media-card');
+const weatherHeight = declare('fluvy-weather-card');
+const gridHeight = declare('fluvy-grid-card');
+const flowHeight = declare('fluvy-energy-flow-card');
+const productionHeight = declare('fluvy-production-card');
+const batteriesHeight = declare('fluvy-batteries-card');
+const chargerHeight = declare('fluvy-ev-charger-card');
 
 const onGrid = (height: number): number => {
   expect(height % 4).toBe(0);
@@ -103,10 +94,7 @@ describe('words, letter by letter', () => {
 });
 
 describe('the thermostat', () => {
-  const height = declare(
-    FluvyThermostatCard.layoutHeight as Height,
-    'custom:fluvy-thermostat-card',
-  );
+  const height = declare('fluvy-thermostat-card');
   const living = entity('climate.living', 'heat', {
     hvac_modes: ['heat', 'cool', 'heat_cool'],
     preset_modes: ['eco', 'comfort', 'away', 'boost'],
@@ -168,9 +156,9 @@ describe('the thermostat', () => {
 });
 
 describe('the devices', () => {
-  const fan = declare(FluvyFanCard.layoutHeight as Height, 'custom:fluvy-fan-card');
-  const cover = declare(FluvyCoverCard.layoutHeight as Height, 'custom:fluvy-cover-card');
-  const vacuum = declare(FluvyVacuumCard.layoutHeight as Height, 'custom:fluvy-vacuum-card');
+  const fan = declare('fluvy-fan-card');
+  const cover = declare('fluvy-cover-card');
+  const vacuum = declare('fluvy-vacuum-card');
   const hass = house([
     entity('fan.bedroom', 'off', {
       supported_features: 63,
@@ -259,7 +247,7 @@ describe('the devices', () => {
 });
 
 describe('the player, the weather and the clock', () => {
-  const clock = declare(FluvyClockCard.layoutHeight as Height, 'custom:fluvy-clock-card');
+  const clock = declare('fluvy-clock-card');
   const hass = house([
     entity('media_player.tv', 'playing', {
       supported_features: 22973,
@@ -304,9 +292,9 @@ describe('the player, the weather and the clock', () => {
 });
 
 describe('lights and sensors', () => {
-  const light = declare(FluvyLightCard.layoutHeight as Height, 'custom:fluvy-light-card');
-  const lights = declare(FluvyLightsCard.layoutHeight as Height, 'custom:fluvy-lights-card');
-  const sensor = declare(FluvySensorCard.layoutHeight as Height, 'custom:fluvy-sensor-card');
+  const light = declare('fluvy-light-card');
+  const lights = declare('fluvy-lights-card');
+  const sensor = declare('fluvy-sensor-card');
   const registries = {
     entities: {
       'light.a': { entity_id: 'light.a', area_id: 'kitchen' },
@@ -387,12 +375,12 @@ describe('lights and sensors', () => {
 });
 
 describe('rooms, helpers, updates, tiles and readouts', () => {
-  const room = declare(FluvyRoomCard.layoutHeight as Height, 'custom:fluvy-room-card');
-  const helpers = declare(FluvyHelpersCard.layoutHeight as Height, 'custom:fluvy-helpers-card');
-  const updates = declare(FluvyUpdatesCard.layoutHeight as Height, 'custom:fluvy-updates-card');
-  const tiles = declare(FluvyTilesCard.layoutHeight as Height, 'custom:fluvy-tiles-card');
-  const readouts = declare(FluvyReadoutsCard.layoutHeight as Height, 'custom:fluvy-readouts-card');
-  const stats = declare(FluvyStatTilesCard.layoutHeight as Height, 'custom:fluvy-stat-tiles-card');
+  const room = declare('fluvy-room-card');
+  const helpers = declare('fluvy-helpers-card');
+  const updates = declare('fluvy-updates-card');
+  const tiles = declare('fluvy-tiles-card');
+  const readouts = declare('fluvy-readouts-card');
+  const stats = declare('fluvy-stat-tiles-card');
   const registries = {
     entities: {
       'light.l': { entity_id: 'light.l', area_id: 'living' },
@@ -513,10 +501,7 @@ describe('rooms, helpers, updates, tiles and readouts', () => {
 });
 
 describe('the energy family and the lists', () => {
-  const distribution = declare(
-    FluvyDistributionCard.layoutHeight as Height,
-    'custom:fluvy-distribution-card',
-  );
+  const distribution = declare('fluvy-distribution-card');
   const hass = house([
     entity('sensor.self', '72', { friendly_name: 'Self-powered', unit_of_measurement: '%' }),
     entity('sensor.exp', '1.3', { friendly_name: 'Exported', unit_of_measurement: 'kWh' }),

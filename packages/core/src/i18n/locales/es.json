@@ -441,6 +441,7 @@
     "show_color": "Mostrar el color",
     "colors": "Colores rápidos",
     "color_help": "Elige uno, o elige Color personalizado y escoge cualquier color en su pocillo",
+    "item_color_helper": "Vacío, el color de la bombilla de una luz donde la tarjeta los muestra; si no, el de la tarjeta",
     "rgb": "Cualquier color",
     "swatch_name_help": "Lo que dice el círculo; vacío, la palabra del color o su hexadecimal",
     "show_tilt": "Mostrar la inclinación",
@@ -753,6 +754,28 @@
     "offline": "La cámara no envía imagen",
     "refresh": "Segundos entre imágenes",
     "exit_fullscreen": "Salir de pantalla completa"
+  },
+  "cameras": {
+    "title": "Cámaras",
+    "sub": "Vista en directo",
+    "count_one": "{n} cámara",
+    "count": "{n} cámaras",
+    "motion": "Movimiento detectado",
+    "no_motion": "Sin movimiento",
+    "online": "En línea",
+    "recording": "Grabando",
+    "streaming": "Transmitiendo",
+    "offline": "Sin conexión",
+    "no_stream": "Sin transmisión",
+    "empty": "Sin cámaras",
+    "all": "Todas las cámaras",
+    "live_all": "Mostrar todas las cámaras en directo",
+    "editor_motion": "Sensor de movimiento",
+    "editor_status": "Línea de estado",
+    "editor_show_status": "Mostrar la línea de estado",
+    "editor_max_live": "En directo a la vez",
+    "editor_show_live": "Mostrar «En directo»",
+    "editor_show_fullscreen": "Mostrar el botón de pantalla completa"
   },
   "chips": {
     "rooms": "Estancias"
@@ -1630,7 +1653,8 @@
     "palette": "La luz del tema",
     "temperature": "El blanco de la bombilla",
     "regular": "Normal",
-    "thin": "Fino"
+    "thin": "Fino",
+    "motion": "Movimiento"
   },
   "tone": {
     "accent": "Acento",
@@ -2206,5 +2230,12 @@
     "starts_on": "Empieza el {day} a las {time}",
     "done_at": "Terminó a las {time}",
     "done_ago": "Terminó {when}"
+  },
+  "template": {
+    "card": "Plantilla",
+    "editor.active": "Mostrar como encendido",
+    "editor.active_helper": "Automático sigue a la entidad. Una plantilla está encendida salvo que dé off, false, no o 0",
+    "editor.icon_helper": "Un icono como mdi:lightbulb, o una plantilla que dé uno",
+    "editor.color_helper": "En YAML, una plantilla puede dar un color o un tono"
   }
 }

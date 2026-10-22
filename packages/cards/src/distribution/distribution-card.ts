@@ -41,7 +41,7 @@ import {
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
@@ -249,7 +249,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         value: values[index] ?? null,
         tone,
         accent: this.accents.item(source.color),
-        glyph: glyphFor(views[index] as EntityView),
+        glyph: iconOf(views[index] as EntityView),
         entity: source.entity,
       });
     });

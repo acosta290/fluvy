@@ -1,4 +1,5 @@
 import type { Tone } from '@fluvy/ui';
+import type { LightWhites } from './light.js';
 
 /** What carries a tone and a colour of its own: a card's config, or an item of one of its lists. */
 export interface Coloured {
@@ -24,8 +25,17 @@ export const statusToneOf = (item: Coloured | undefined, status: Tone): Tone =>
 /** When an item's colour shows on its surface: while it is on (the default), or always — a quiet wash and its hairline at rest. */
 export type Tint = 'on' | 'always';
 
+/**
+ * Whether a tone shows at rest (`tint: always`) as its wash: a domain's or the accent's does; the neutral has none,
+ * and a status (a warning, a danger) says something is wrong only while it is.
+ */
+export const washesAtRest = (tone: Tone): boolean =>
+  tone !== 'neutral' && tone !== 'warning' && tone !== 'danger';
+
 /** What a card with lights says of their colours (1.9). */
 export interface LightColours {
   /** A lit light wears its bulb's colour (the house's default, in fluvy's settings, where the card says none). */
   light_colors?: boolean;
+  /** A lit white in its bulb's colour: by its temperature (the default, 1.10), or as the palette's light (`palette`). */
+  light_whites?: LightWhites;
 }

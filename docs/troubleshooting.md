@@ -40,6 +40,8 @@ and open an issue with the output.
 ## A page inside HACS looks plain
 
 HACS runs in a frame of its own; the shell reaches it, but only once the frame has finished loading. Reload the page.
+On a page that wears another theme than Fluvy, HACS keeps Home Assistant's own look on purpose: Fluvy steps aside
+there (see [when Fluvy steps aside](shell.md#when-fluvy-steps-aside)).
 
 ## The wall shows the sidebar again
 

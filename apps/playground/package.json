@@ -26,6 +26,7 @@
     "./english": "./src/english.ts",
     "./scenes": "./src/scenes.ts",
     "./hass": "./src/hass.ts",
+    "./ha-icons": "./src/ha-icons.ts",
     "./panel": "./src/panel.ts",
     "./history": "./src/history.ts",
     "./activity": "./src/activity.ts",
@@ -47,6 +48,7 @@
     "lit": "3.3.3"
   },
   "devDependencies": {
+    "@mdi/js": "7.4.47",
     "typescript": "^6.0.3",
     "vite": "^8.3.4"
   }

@@ -18,7 +18,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
+import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 
 import {
   boolField,
@@ -27,16 +27,19 @@ import {
   entitiesField,
   fieldRow,
   formLabels,
+  holdsLight,
   iconField,
+  lightColourFields,
+  onlyWhen,
   selectField,
   showIconField,
   titleFields,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
+import { DETAILS, ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
-import { glowOf } from '../shared/light.js';
+import { lightLook, litColour, withMembers } from '../shared/light.js';
 import { secondaryText } from '../shared/secondary.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
 import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW } from '../shared/heights.js';
@@ -130,10 +133,17 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     'show_count',
     'variant',
     'light_colors',
+    'light_whites',
     ...EMPTY_KEYS,
   ]);
   static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', alias: 'entities', title: 'editor.rows', keys: ROW_KEYS, schema: rowSchema() },
+    {
+      key: 'rows',
+      alias: 'entities',
+      title: 'editor.rows',
+      keys: ROW_KEYS,
+      schema: rowSchema(undefined, true),
+    },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
@@ -143,6 +153,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     variant: 'rows',
     show_count: false,
     light_colors: lightDefaults().colors,
+    light_whites: 'temperature',
   });
   /** Fits the head to its column (measured in the card's own classes, again when a font lands). */
   private readonly head = new HeadFit(this);
@@ -154,7 +165,9 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         showIconField(),
         ...colourFields(),
         entitiesField('entities', undefined, true),
-        fieldRow(boolField('show_count'), boolField('light_colors')),
+        boolField('show_count'),
+        // a light's colours where the rows hold a light
+        onlyWhen(holdsLight('rows', 'entities'), lightColourFields()),
         emptyFields(),
       ],
       ...formLabels({}),
@@ -175,7 +188,10 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   }
 
   protected override watched(): readonly string[] {
-    return this.rows().map((r) => r.entity);
+    return withMembers(
+      this.rows().map((r) => r.entity),
+      this.hass,
+    );
   }
 
   override getCardSize(): number {
@@ -192,12 +208,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const tone = toneOf(this.config, 'accent');
     const compact = this.config?.variant === 'compact';
     const title = this.config?.title;
-    // a lit light's row wears its bulb's colour (`light_colors`, the house's where the card says none) unless the row,
-    // or the card, has a colour or a tone of its own
-    const glows =
-      !this.config?.color &&
-      !this.config?.tone &&
-      (this.config?.light_colors ?? lightDefaults().colors);
+    // a lit light's row may wear its bulb's colour (`light_colors`, the house's where the card says none)
+    const glows = this.config?.light_colors ?? lightDefaults().colors;
     const panel = emptyPanel(this, !rows.length, 'grid', 'common.no_entities');
     // the count gives way to the title, then the circle does, as every head's do (`HeadFit`); an empty list's panel
     // says what a count of nothing would
@@ -310,10 +322,19 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           const on =
             state === view.state ? isActive(view) : !['off', 'closed', 'locked'].includes(state);
           const warn = view.domain === 'binary_sensor' && on && toneFor(view) === 'warning';
-          const rowTone = statusToneOf(row, toneFor(view));
+          // a light's row wears what the rule every light follows says (`lightLook`); any other its own colour, else
+          // its kind's tone (a warning stays one)
+          const [colour, rowTone] =
+            view.domain === 'light'
+              ? lightLook(
+                  row,
+                  this.config,
+                  glows ? litColour(view, on, this.config?.light_whites, this.hass) : undefined,
+                )
+              : ([row.color, statusToneOf(row, toneFor(view))] as const);
           const said = compact ? { sub: '', stack: false } : line(laid[i]!);
           return listRow({
-            icon: keep ? (row.icon ?? glyphFor(view)) : null,
+            icon: keep ? iconOf(view, row.icon) : null,
             tone: currentTone(view, on ? rowTone : 'neutral'),
             title: row.name ?? view.name,
             name: true,
@@ -324,15 +345,12 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             trailing,
             on,
             compact,
-            accent: this.accents.item(
-              row.color ||
-                (glows && view.domain === 'light' && !row.tone ? glowOf(view, on) : undefined),
-            ),
+            accent: this.accents.item(colour),
             switchTone: rowTone === 'warning' ? 'accent' : rowTone,
             value,
             valueTone: warn ? 'warning' : '',
             unavailable: !usable,
-            onTap: () => this.tap(view.id, row.tap_action),
+            onTap: () => this.tap(view.id, row.tap_action ?? DETAILS),
             onToggle: (next) => {
               if (!this.hass) return;
               this.expect(

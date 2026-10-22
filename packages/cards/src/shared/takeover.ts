@@ -3,7 +3,7 @@
  * view, and gives its page back whenever the look leaves (another theme) or the house keeps Home Assistant's. The
  * panel's state, routes and subscriptions are untouched; nothing it renders is subscribed while ours shows.
  */
-import { PAGE_ATTRIBUTE, themed, type HomeAssistant } from '@fluvy/core';
+import { guard, PAGE_ATTRIBUTE, stepAside, themed, type HomeAssistant } from '@fluvy/core';
 import { html, nothing, type TemplateResult } from 'lit';
 
 export interface HaPanel extends HTMLElement {
@@ -37,7 +37,8 @@ export const pageIsOurs = (kept: string, doc: Document = document): boolean =>
 
 /**
  * Wraps one of Home Assistant's panels with ours. If Home Assistant reshapes the panel (no `render`), its page simply
- * stays. Resolves whether the wrap took.
+ * stays; if ours throws, the wrap steps aside and the shell's report says so (by our tag). Resolves whether the wrap
+ * took.
  */
 export async function takeOverPage(
   page: Takeover,
@@ -66,9 +67,19 @@ export async function takeOverPage(
   if (!wrapped[page.ours]) {
     proto.render = function (this: HaPanel): unknown {
       panels.add(this);
-      if (!ours) return original.call(this);
-      void page.load();
-      return page.view(this);
+      // ours caught: if it throws, Home Assistant's page draws, for the rest of the session
+      return (
+        (ours &&
+          guard(page.ours, () => {
+            // a view whose file cannot come (offline, a server that lost it) gives Home Assistant's page back
+            page.load().catch((error: unknown) => {
+              stepAside(page.ours, error);
+              this.requestUpdate?.();
+            });
+            return page.view(this);
+          })) ||
+        original.call(this)
+      );
     };
     wrapped[page.ours] = true;
   }

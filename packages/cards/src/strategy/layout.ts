@@ -1,6 +1,7 @@
 import type { HomeRegistry } from './home-registry.js';
 import type { Card, CardStyle, EnergyRoles, Section, StrategyContext, View } from './types.js';
-import { layoutHeightOf } from '@fluvy/core';
+// the house's reading is a chunk of its own, fetched with this one: the columns are cut with what the house draws
+import { houseHeightOf } from '../house-heights.js';
 
 /*
  * The cards the strategy places and how a view's columns are cut so they end on one line: the small builders the
@@ -177,9 +178,9 @@ const listLength = (card: Card): number => {
 };
 /** What the columns are cut with: the header's height over the first column, and the house the cards count with. */
 export type LayoutContext = Pick<StrategyContext, 'header' | 'hass'>;
-export /** A card's height: what the card declares for its config and the house (`static layoutHeight`), else a head and 64 a row. */
+export /** A card's height: what it draws in this house (`houseHeightOf`), else a head and 64 a row. */
 const heightOf = (card: Card, { hass }: LayoutContext): number =>
-  layoutHeightOf(card, 100 + 64 * listLength(card), hass);
+  houseHeightOf(card, 100 + 64 * listLength(card), hass);
 const halfColumn = (card: Card): boolean => card.grid_options?.columns === 6;
 /** A run of cards stacked in one column; half-column cards side by side, two a row. */
 function heightOfAll(cards: readonly Card[], ctx: LayoutContext): number {

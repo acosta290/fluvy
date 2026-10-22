@@ -34,10 +34,10 @@ import {
   motionPreference,
   pillWidth,
   reducedMotion,
-  sheetStyles,
   zoomOf,
   type SpringHandle,
 } from '@fluvy/ui';
+import { pageStyles } from '@fluvy/ui/styles/page';
 import type { FluvyTimeRail, TimeRailDetail } from '@fluvy/ui/time-rail';
 import { FontsSettled } from '../shared/fonts.js';
 import { renderFilters, renderTools, showFilter, wireStrip } from './filters.js';
@@ -84,7 +84,7 @@ const s = strings('activity', 'page');
  * further down).
  */
 export class FluvyActivity extends LitElement {
-  static override styles = [...baseStyles, sheetStyles.page, ...activityStyles];
+  static override styles = [...baseStyles, pageStyles, ...activityStyles];
 
   static override properties = {
     hass: { attribute: false },

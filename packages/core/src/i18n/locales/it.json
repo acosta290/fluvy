@@ -441,6 +441,7 @@
     "show_color": "Mostra il colore",
     "colors": "Colori rapidi",
     "color_help": "Scegline uno, oppure Colore personalizzato e scegli qualsiasi colore nel suo campo",
+    "item_color_helper": "Vuoto, il colore della lampadina di una luce dove la scheda li mostra, altrimenti quello della scheda",
     "rgb": "Qualsiasi colore",
     "swatch_name_help": "Ciò che dice il cerchio; vuoto, la parola del colore o il suo esadecimale",
     "show_tilt": "Mostra l’inclinazione",
@@ -753,6 +754,28 @@
     "offline": "Nessuna immagine dalla telecamera",
     "refresh": "Secondi tra un’immagine e l’altra",
     "exit_fullscreen": "Esci da schermo intero"
+  },
+  "cameras": {
+    "title": "Telecamere",
+    "sub": "Panoramica dal vivo",
+    "count_one": "{n} telecamera",
+    "count": "{n} telecamere",
+    "motion": "Movimento rilevato",
+    "no_motion": "Nessun movimento",
+    "online": "Online",
+    "recording": "In registrazione",
+    "streaming": "In streaming",
+    "offline": "Offline",
+    "no_stream": "Nessuno streaming",
+    "empty": "Nessuna telecamera",
+    "all": "Tutte le telecamere",
+    "live_all": "Mostra tutte le telecamere dal vivo",
+    "editor_motion": "Sensore di movimento",
+    "editor_status": "Riga di stato",
+    "editor_show_status": "Mostra la riga di stato",
+    "editor_max_live": "In diretta contemporaneamente",
+    "editor_show_live": "Mostra «Dal vivo»",
+    "editor_show_fullscreen": "Mostra il pulsante a schermo intero"
   },
   "chips": {
     "rooms": "Stanze"
@@ -1630,7 +1653,8 @@
     "palette": "La luce del tema",
     "temperature": "Il bianco della lampadina",
     "regular": "Normale",
-    "thin": "Sottile"
+    "thin": "Sottile",
+    "motion": "Movimento"
   },
   "tone": {
     "accent": "Accento",
@@ -2206,5 +2230,12 @@
     "starts_on": "Inizio {day} alle {time}",
     "done_at": "Finito alle {time}",
     "done_ago": "Finito {when}"
+  },
+  "template": {
+    "card": "Template",
+    "editor.active": "Mostra come acceso",
+    "editor.active_helper": "Automatico segue l’entità. Un template è acceso a meno che non dia off, false, no o 0",
+    "editor.icon_helper": "Un’icona come mdi:lightbulb, o un template che ne dia una",
+    "editor.color_helper": "In YAML, un template può dare un colore o un tono"
   }
 }

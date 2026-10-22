@@ -53,8 +53,8 @@ describe('the appliances’ glyphs', () => {
     }
   });
 
-  it('the six a person may pick are outlined in core’s icon set, the others are not', () => {
-    const outlined = new Set(iconNames());
+  it('the six a person may pick are outlined in the icon set, the others are not', async () => {
+    const outlined = new Set(await iconNames());
     for (const name of Object.keys(APPLIANCE_GLYPHS))
       expect(outlined.has(name), name).toBe((PICKABLE as readonly string[]).includes(name));
   });

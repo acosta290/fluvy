@@ -1,4 +1,4 @@
-import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
 
 /**
@@ -32,15 +32,13 @@ const FORECAST_DAILY = 1;
 const FORECAST_HOURLY = 2;
 
 /**
- * The card at a 360 column: the hero (or the compact head), then a strip per forecast or the days' rows. Given the
- * house, a forecast the entity does not offer (its features say which) draws nothing and counts nothing.
+ * The card at a 360 column: the hero (or the compact head), then a strip per forecast or the days' rows. A forecast
+ * the entity does not offer (its `features`, as the house describes them: `house-heights.ts`) draws nothing and
+ * counts nothing; where the house is not there to say, every forecast asked for is offered.
  */
-export function weatherHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function weatherHeight(config: LovelaceCardConfig, features?: number): number {
   const mode = forecastModeOf(config);
-  const id = config['entity'];
-  const state = typeof id === 'string' ? hass?.states?.[id] : undefined;
-  const features = state?.attributes['supported_features'];
-  const offers = (bit: number): boolean => typeof features !== 'number' || (features & bit) !== 0;
+  const offers = (bit: number): boolean => features === undefined || (features & bit) !== 0;
   const hours = (mode === 'hourly' || mode === 'both') && offers(FORECAST_HOURLY) ? 1 : 0;
   const days = (mode === 'daily' || mode === 'both') && offers(FORECAST_DAILY) ? 1 : 0;
   if (config['variant'] === 'compact') return WEATHER_COMPACT_HEAD + WEATHER_STRIP * (hours + days);

@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setWorn } from '../shell/patches.js';
+import { SUBVIEW_ATTRIBUTE, VIEW_EVENT } from '../look/view.js';
 import {
   CHROME_DEFAULTS,
   cssString,
@@ -161,5 +163,96 @@ describe('the marks on a dashboard’s header', () => {
     markRoot(el, marksFor(el, only(TABS_DEFAULTS)));
     expect(el.hasAttribute('fluvy-header-page')).toBe(false);
     expect(el.hasAttribute('fluvy-flat')).toBe(false);
+  });
+});
+
+describe('hui-root’s wraps', () => {
+  /** A dashboard's root of its own (a fresh class: each is wrapped once), its `narrow` Home Assistant's property. */
+  const rootClass = () =>
+    class extends HTMLElement {
+      updates = 0;
+      renders = 0;
+      get narrow(): boolean {
+        return false;
+      }
+      updated(): void {
+        this.updates += 1;
+      }
+      _renderActionItems(): string {
+        this.renders += 1;
+        return this.narrow ? 'one menu' : 'buttons';
+      }
+    };
+  type Root = InstanceType<ReturnType<typeof rootClass>> & RootElement;
+  /** Answers `hui-root` with `klass`, defined under a name of its own (the page has its `hui-root` already). */
+  const registryOf = (klass: CustomElementConstructor, name: string): CustomElementRegistry => {
+    customElements.define(name, klass);
+    return {
+      whenDefined: () => Promise.resolve(klass),
+      get: (tag: string) => (tag === 'hui-root' ? klass : undefined),
+    } as unknown as CustomElementRegistry;
+  };
+  const visit = (url: string): void =>
+    (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(url);
+  afterEach(() => {
+    setWorn(() => false);
+    visit('http://localhost:3000/');
+  });
+
+  it('take the marks off a dashboard that does not wear the look, and tell a subview only where Fluvy is in use', async () => {
+    const Root = rootClass();
+    const tabsFor: TabsFor = (url) =>
+      url === 'fluvy-home' ? { tabs: TABS_DEFAULTS, chrome: CHROME_DEFAULTS } : null;
+    expect(await patchViewRoots(registryOf(Root, 'test-root-1'), tabsFor)).toBe(true);
+    const el = document.body.appendChild(new Root()) as Root;
+    Object.assign(el, {
+      hass: { panelUrl: 'fluvy-home' },
+      lovelace: { editMode: false, config: { views: [{ subview: true, title: 'Lamp' }] } },
+      _curView: 0,
+    });
+    const told: unknown[] = [];
+    window.addEventListener(VIEW_EVENT, (event) => told.push((event as CustomEvent).detail));
+    setWorn((url) => url === 'fluvy-home');
+    visit('http://localhost:3000/fluvy-home/lamp');
+    el.updated();
+    expect(el.updates).toBe(1);
+    expect(el.getAttribute(TABS_ATTRIBUTE)).toBe('fluvy');
+    expect(el.hasAttribute(SUBVIEW_ATTRIBUTE)).toBe(true);
+    expect(told).toHaveLength(1);
+    // Home Assistant keeps the root for the next dashboard, which does not wear the look
+    el.hass = { panelUrl: 'lovelace' };
+    visit('http://localhost:3000/lovelace/lamp');
+    el.updated();
+    expect(el.updates).toBe(2);
+    expect(el.hasAttribute(TABS_ATTRIBUTE)).toBe(false);
+    expect(el.hasAttribute(SUBVIEW_ATTRIBUTE)).toBe(false);
+    expect(told).toHaveLength(1);
+    expect([...el.attributes].filter((a) => a.name.startsWith('fluvy'))).toEqual([]);
+  });
+
+  // last in the file: a patch that stepped aside stays aside for the session
+  it('step aside when ours throws: Home Assistant’s update and its actions’ render still run, once each', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const Root = rootClass();
+    const tabsFor = vi.fn((): null => {
+      throw new TypeError('reshaped');
+    });
+    await patchViewRoots(registryOf(Root, 'test-root-2'), tabsFor);
+    const el = document.body.appendChild(new Root()) as Root;
+    el.hass = { panelUrl: 'fluvy-home' };
+    el.updated();
+    el.updated();
+    expect(el.updates).toBe(2);
+    expect(tabsFor).toHaveBeenCalledTimes(1);
+    // the one menu cannot be lent (a root that takes no own value): Home Assistant's buttons, drawn once
+    el.setAttribute('fluvy-actions-menu', '');
+    Object.preventExtensions(el);
+    expect(el._renderActionItems()).toBe('buttons');
+    expect(el.renders).toBe(1);
+    expect(warn.mock.calls.map(([text]) => String(text).split(':')[0])).toEqual([
+      '[fluvy] viewRoots stepped aside',
+      '[fluvy] actionsMenu stepped aside',
+    ]);
+    warn.mockRestore();
   });
 });

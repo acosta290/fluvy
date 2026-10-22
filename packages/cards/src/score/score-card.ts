@@ -6,7 +6,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { activateKey, head, readout, sheetStyles } from '@fluvy/ui';
+import { activateKey, head, readout } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -89,7 +90,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     css`
       .en-card {
         width: 100%;

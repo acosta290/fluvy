@@ -1,12 +1,10 @@
-import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { LovelaceCardConfig } from '@fluvy/core';
 import {
-  attrOf,
   textWidth,
   chipBlock,
   chipRows,
   COLUMN,
   HEAD,
-  listAttr,
   listLength,
   optionBlock,
   optionRows,
@@ -15,6 +13,7 @@ import {
   rowsOf,
   statsBlock,
   statsRows,
+  type NameOf,
 } from './shared/heights.js';
 
 /**
@@ -31,23 +30,24 @@ const up4 = (v: number): number => Math.ceil(v / 4) * 4;
 
 /**
  * The labels of a card's `readouts`: their names, else the sensors' as the energy cards write them (`shortName`: a
- * name past eleven characters of several words by its last, "Kitchen speaker" as "Speaker"), else their ids.
+ * name past eleven characters of several words by its last, "Kitchen speaker" as "Speaker"; the house's, read by
+ * `house-heights.ts`), else their ids.
  */
-const readoutLabels = (config: LovelaceCardConfig, hass?: HomeAssistant): string[] =>
+const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
   (Array.isArray(config['readouts']) ? (config['readouts'] as unknown[]) : []).map((item) => {
     const entry = (typeof item === 'string' ? { entity: item } : (item ?? {})) as Record<
       string,
       unknown
     >;
     if (typeof entry['name'] === 'string') return entry['name'];
-    const own = attrOf(hass, entry['entity'], 'friendly_name');
+    const own = nameOf?.(entry['entity']);
     const name = typeof own === 'string' ? own : String(entry['entity'] ?? '').replace(/^.*\./, '');
     const words = name.split(' ');
     return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
   });
 
 /** The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals. */
-export function flowHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const sources = Array.isArray(config['sources']) ? config['sources'].length : 0;
   const count = Math.max(1, sources || 3);
   const last = FLOW_TOP + (count - 1) * FLOW_PITCH;
@@ -61,7 +61,7 @@ export function flowHeight(config: LovelaceCardConfig, hass?: HomeAssistant): nu
     stage +
     (period && config['show_period'] !== false ? 60 : 0) +
     (consumers ? 16 + ROW_BAR * (consumers + 1) : 0) +
-    statsBlock(statsRows(readoutLabels(config, hass)))
+    statsBlock(statsRows(readoutLabels(config, nameOf)))
   );
 }
 
@@ -104,9 +104,9 @@ export function balanceHeight(config: LovelaceCardConfig): number {
  * The grid at a 360 column: its value row, its phases, the price, the totals (today's two when none are named; the
  * readouts named, in the rows their labels take).
  */
-export function gridHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function gridHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const phases = phasesOf(config);
-  const labels = readoutLabels(config, hass);
+  const labels = readoutLabels(config, nameOf);
   return (
     64 +
     80 +
@@ -163,9 +163,10 @@ export function legendRows(names: readonly string[], width = COLUMN): number {
 
 /**
  * Production at a 360 column; several arrays draw a taller chart (112) and their legend (a row of 40, 16 under the
- * axis, one a row where a name runs long) instead of the figures. The names are the config's, else the house's.
+ * axis, one a row where a name runs long) instead of the figures. The names are the config's, else the house's
+ * (`nameOf`, read by `house-heights.ts`).
  */
-export function productionHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function productionHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const arrays = Array.isArray(config['arrays']) ? (config['arrays'] as unknown[]).slice(0, 4) : [];
   if (config['variant'] === 'compact') return arrays.length ? 288 : 236;
   if (!arrays.length) return 344;
@@ -174,7 +175,7 @@ export function productionHeight(config: LovelaceCardConfig, hass?: HomeAssistan
       string,
       unknown
     >;
-    const name = entry['name'] ?? attrOf(hass, entry['entity'], 'friendly_name');
+    const name = entry['name'] ?? nameOf?.(entry['entity']);
     return typeof name === 'string' ? name : '';
   });
   const rows = legendRows(names);
@@ -342,14 +343,12 @@ const RULER = 56 + 20;
 const COLS = 60;
 const MODE_OPTIONS = ['a', 'b', 'c'];
 
-/** A mode select's options as the house lists them (`options`), three where it is not there to say. */
-const modeOptions = (config: LovelaceCardConfig, hass?: HomeAssistant): string[] => {
-  const options = listAttr(hass, config['mode'], 'options');
-  return options.length ? options : MODE_OPTIONS;
-};
+/** A mode select's options as the house lists them (`house-heights.ts`), three where it is not there to say. */
+const modeOptions = (options: readonly string[] | undefined): readonly string[] =>
+  options?.length ? options : MODE_OPTIONS;
 
 /** Batteries at a 360 column: the charge on its ruler, a row per battery when there are several, the mode. */
-export function batteriesHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function batteriesHeight(config: LovelaceCardConfig, options?: readonly string[]): number {
   const listed = Array.isArray(config['batteries']) ? (config['batteries'] as unknown[]) : [];
   // none listed: the Energy dashboard's, most often one with its state of charge
   const count = Math.max(1, listed.length);
@@ -359,7 +358,7 @@ export function batteriesHeight(config: LovelaceCardConfig, hass?: HomeAssistant
     VALUE_ROW +
     (level ? RULER : 0) +
     (count > 1 ? 16 + ROW_BAR * count : 0) +
-    (config['mode'] ? chipBlock(chipRows(modeOptions(config, hass))) : 0)
+    (config['mode'] ? chipBlock(chipRows(modeOptions(options))) : 0)
   );
 }
 
@@ -367,12 +366,12 @@ export function batteriesHeight(config: LovelaceCardConfig, hass?: HomeAssistant
  * The car charger at a 360 column: the car's charge on its ruler (else the power), the session's readouts (the time
  * it has charged only shows while it charges: a status alone is not counted), the mode.
  */
-export const chargerHeight = (config: LovelaceCardConfig, hass?: HomeAssistant): number =>
+export const chargerHeight = (config: LovelaceCardConfig, options?: readonly string[]): number =>
   HEAD +
   VALUE_ROW +
   (config['level'] ? RULER : 0) +
   (config['session_energy'] || config['solar_share'] ? COLS : 0) +
-  (config['mode'] ? optionBlock(optionRows(modeOptions(config, hass))) : 0);
+  (config['mode'] ? optionBlock(optionRows(modeOptions(options))) : 0);
 
 /** The chips a period card carries by default: 16 under the head, a 44 row. */
 const periodChips = (config: LovelaceCardConfig): number =>
@@ -395,7 +394,7 @@ export type FamilyEntry = readonly [
   tag: string,
   name: string,
   description: string,
-  height: (config: LovelaceCardConfig, hass?: HomeAssistant) => number,
+  height: (config: LovelaceCardConfig) => number,
 ];
 
 export const ENERGY_FAMILY: readonly FamilyEntry[] = [

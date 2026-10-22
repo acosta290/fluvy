@@ -12,7 +12,7 @@ import {
 import type { ActivityCause, ActivityEvent } from '@fluvy/core/activity';
 import { glyph, type GlyphName } from '@fluvy/ui';
 
-import { currentTone, glyphFor } from '../shared/domain.js';
+import { currentTone, iconOf } from '../shared/domain.js';
 
 import { type Look, MINOR, MOMENTS, TRIGGER_KEYS, TRIGGERS } from './shared.js';
 
@@ -134,18 +134,22 @@ export function lookOf(
   if (domain === 'homeassistant') return { glyph: 'ha', tone: 'neutral', major: true };
   if (domain === 'automation') return { glyph: 'automation', tone: 'accent', major };
   if (domain === 'script') return { glyph: 'script', tone: 'accent', major };
-  const ref = event.icon ?? view?.stateObj?.attributes.icon;
-  const custom = typeof ref === 'string' && ref ? ref : undefined;
   if (view && event.state !== undefined && !isMoment(event)) {
-    // a group looks like what it holds (all the lamps: a bulb)
+    // a group looks like what it holds (all the lamps: a bulb), unless it has an icon of its own; each as it stood
     const members = domain === 'group' ? view.attr<readonly string[]>('entity_id') : undefined;
     const like = members?.[0] ? resolveEntity(page.hass, members[0]) : view;
     const past = pastView(like, event.state);
-    return { glyph: custom ?? glyphFor(past), tone: currentTone(past), major };
+    return { glyph: iconOf(past, event.icon || view.registryIcon), tone: currentTone(past), major };
   }
-  // a moment (a button pressed, a doorbell) happened; it is not a state that is on: a neutral circle
-  const fallback: GlyphName = domain === 'event' ? 'bell' : view ? glyphFor(view) : 'note';
-  return { glyph: custom ?? fallback, tone: 'neutral', major };
+  // a moment (a button pressed, a doorbell) happened; it is not a state that is on: a neutral circle. An event is the
+  // bell unless it has an icon of its own, an entry of no entity the note
+  const glyph =
+    domain === 'event'
+      ? event.icon || view?.registryIcon || view?.ownIcon || 'bell'
+      : view
+        ? iconOf(view, event.icon)
+        : event.icon || 'note';
+  return { glyph, tone: 'neutral', major };
 }
 
 /** The automation run behind an entry (the same context): what triggered it. */

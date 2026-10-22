@@ -13,7 +13,7 @@ Every screen — our cards and every Home Assistant page under the theme — is 
 3. **Aligned text.** Readout rows centred; labels and values on shared baselines; nothing drifts to the left of its column.
 4. **Uniform spacing.** One rhythm between siblings (4 px grid; 8 / 12 / 16 / 24 steps); no two fields touching, no uneven gaps in a stack.
 5. **Chip rows fill.** A horizontal row of chips or options occupies its row — equal widths or distributed — and leaves no empty tail. (A scrolling strip that overflows on purpose, such as view tabs, is exempt.)
-6. **Text stays inside.** Ellipsis for names, wrap for prose; values never ellipsise, never overflow or clip.
+6. **Text stays inside.** Ellipsis for names, wrap for prose; values never ellipsise, never overflow or clip. Japanese prose wraps between its phrases, never inside a word (スケジュールを / 追加, not 追 / 加): `word-break: auto-phrase` on every Fluvy element whose language is Japanese (Home Assistant writes its language on `<html>`), where the browser knows the phrases (Chromium 119+); every other language wraps as it did.
 7. **Clean motion.** Short, purposeful transitions (transform and opacity only), no jank, nothing replayed on a view change.
 8. **Pixel alignment.** Edges, centres and baselines line up to the pixel across a row and down a column.
 
@@ -39,7 +39,11 @@ family owns ships with that family's chunk and is said only where that chunk has
 **A tile is a button laid over it (1.9).** Every tile's surface taps and holds through one button laid over it
 (`pressCover`), last of its parts; a large tile's switch, its circle-switch and its ruler are raised over that button,
 beside it, and keep their own taps (never a switch inside a button). The keyboard reaches a tile as one stop: Enter
-taps, Shift+F10 or the menu key holds. The same button is a room's photo and row, and a greeting's words.
+taps, Shift+F10 or the menu key holds. The same button is a room's photo and row, and a greeting's words. A tile is a
+button only where it has something to run (1.10): a compact or mini tile whose tap and hold both do nothing (`none`,
+or more-info and a toggle with no entity, as the template card's tile of nothing) draws no button, as a large tile
+already did. Its switch, its circle-switch and its ruler say what the entity is; its fill what the tile shows
+(`look`): the two are one on every tile but the template card's, whose fill is `active`'s.
 
 **An unavailable tile keeps its size (the owner's rule, 1.9).** Unavailable, unknown or missing, a tile draws the live
 tile's own anatomy in every size — the circle (the ban glyph, the off skin), the name, the state line ("Unavailable ·
@@ -161,6 +165,40 @@ key hold.
 - Glyphs live on the 24 grid with a 1.75 round stroke, ink 3..21 tall and centred on (12, 12) — a glyph that draws smaller (flame, moon) is re-centred with a `<g transform>` or redrawn to the set's height; the flame keeps its inner tongue ≥ 1 unit clear of the outer base.
 - Fill semantics: filled pastel = on / active / alert. Off, idle, events (person detected, vehicle) and weather day rows are neutral.
 - Dashed ring = unavailable.
+- **Which icon (1.10, the owner's rule: Fluvy's glyphs for as much as possible, Home Assistant's where we have
+  none), on every card, row, tile, chip and sheet that draws an entity:** the card's own `icon`; else the icon the
+  person set for the entity in Home Assistant — its registry's, or the one its own settings hold where Home
+  Assistant keeps it there (a helper's, a scene's, a script's, a zone's, an old group's, a template's: they write it
+  into the state as the registry's is, and no integration chooses one for them); else Fluvy's glyph for its kind,
+  drawn as it stands; else its integration's (`attributes.icon`); else Home Assistant's own for its state
+  (`<ha-state-icon>`: its device class, the state the circle draws, its integration's icon translations); `dots`
+  last. Fluvy has no glyph for a domain it does not know, nor for a sensor or a binary sensor of a class it does not
+  draw (pm2.5, pressure, vibration: Home Assistant's icon knows the class). One of no class keeps Fluvy's stand-in
+  (`trendUp`, `check`) unless Home Assistant knows better: its integration gives it an icon, or names it by a
+  translation key (where integrations declare their icons). A lawn mower is the leaf. An entity that is not there:
+  `ban`. One function, `iconOf(view, own)` (`cards/src/shared/domain.ts`); an Activity entry draws the entity as it
+  stood (Home Assistant's icon too, for the state it had); a group there looks like what it holds unless it has an
+  icon of its own.
+- **What draws a kind keeps its own glyph** (a role, a place, a set — not an entity): a room's and a room's
+  lights' head (the area's icon, the home), the weather's condition, the energy flow's nodes, a meter's flame or
+  drop, the batteries' battery, the appliances' kinds, a chart's head for a set of sensors (the trend, a class), an
+  alert (its preset's glyph, or a split alert's entity's own icon), the lock card's head (lock or unlock as the knob
+  stands: it says the state when the badge has given way), the player's art plate, the map's zones, the updates
+  card's "Auto-update at night" (the clock), the Energy dashboard's devices (the plug), an automation row (the
+  clock for a schedule), the Activity's runs and an event's bell, a scene's check as it runs.
+- **What opens and shuts is drawn as it stands:** a door, a gate, a garage and a window — a cover of the class, or a
+  `door` / `opening` / `garage_door` / `window` sensor — wear their open glyph while open or opening (a sensor: on)
+  and their shut one otherwise; a chart's head (no state) draws them shut. A damper is the fan; a shutter, blind,
+  curtain, awning or shade the blinds, open or not. Motion, occupancy, moisture and smoke keep one glyph: the fill
+  says on.
+- **The opening glyphs:** `door` / `doorOpen` (the frame, its leaf swung in on the hinge, the knob at its free
+  edge), `window` / `windowOpen` (four panes; the two sashes swung in), `gate` / `gateOpen` (a braced field gate
+  between its posts; its leaf swung toward you on the left post, wide and unbraced, so it never reads as a slashed
+  sliver), `garage` / `garageOpen` (a garage, its door shut in two panels — one seam, 4.5 from its head and its foot,
+  so it never merges into a bar at 16 px; open, the door rolled up into one band at its top). Same grid, stroke and
+  ink box as the set; each read at 16, 20, 24 and 32 in a filled and an outlined circle, light and dark.
+- **Home Assistant's icon in a circle** takes the glyph's box: 20 in the 44, 16 in the smaller 40 and a compact
+  row's circle, 32 in the hero.
 
 ## Controls (one idiom per job)
 
@@ -194,7 +232,7 @@ key hold.
 Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fields, toast actions); cards 20, tiles 16, sheets 24, device frames 24, the phone 40. Art thumbnails ≤ 80 are 12, the 200 hero 20. A scene tile on the page is a tile (76 / 16, hairline); inside a card it is an inner tile (84 / 12, page fill, no hairline). Active inner tiles are fill only (no hairline), like option tiles.
 
 - Calendar month + day: the month grid on top, a day label ("Thursday 17 · 4 events") and that day's event rows underneath — the week card's idiom, a month tall; selecting a day swaps the list.
-- **Shell (2026-09-18, the sheet's chrome):** the theme colours the sidebar and the header; the rest is the module's shell layer, only while the Fluvy theme is the page's theme and removed when it is not. Public properties: `font-family: var(--ha-font-family-body)` on `body` (Home Assistant's template hard-codes Roboto there), `--ha-border-radius-sm: 12px` on `ha-sidebar`. Three adopted stylesheets (never touching elements): the sidebar — our glyphs as masks on the built-in panels (home, energy → bolt, map, logbook → list, history → clock, media → speaker, to-do → check, settings → sliders; custom panels keep theirs), the selected pill in the accent fill, labels 14/500, title 600; the drawer — no hairline between sidebar and content; the app root on ≥ 1024 px — a rounded panel (radius 24, 16 px inset, page-alt behind, hairline around) that contains the header and the drawer. Phones and tablets under 1024 stay full-bleed. `fluvy:` sidebar icons that failed before the module loaded are re-asked. The set's outlines are scaled 10/9 (ink 2..22) to sit beside Material icons at 24.
+- **Shell (2026-09-18, the sheet's chrome):** the theme colours the sidebar and the header; the rest is the module's shell layer, only while the Fluvy theme is the page's theme: its sheets stay attached and are emptied when it is not. Public properties: `font-family: var(--ha-font-family-body)` on `body` (Home Assistant's template hard-codes Roboto there), `--ha-border-radius-sm: 12px` on `ha-sidebar`. Three adopted stylesheets (never touching elements): the sidebar — our glyphs as masks on the built-in panels (home, energy → bolt, map, logbook → list, history → clock, media → speaker, to-do → check, settings → sliders; custom panels keep theirs), the selected pill in the accent fill, labels 14/500, title 600; the drawer — no hairline between sidebar and content; the app root on ≥ 1024 px — a rounded panel (radius 24, 16 px inset, page-alt behind, hairline around) that contains the header and the drawer. Phones and tablets under 1024 stay full-bleed. `fluvy:` sidebar icons that failed before the module loaded are re-asked. The set's outlines are scaled 10/9 (ink 2..22) to sit beside Material icons at 24.
 - **Shell, beyond the sidebar (2026-09-18 night):** the notifications drawer takes a white header without hairline, its title 20/600, the list 16 px in, and the empty state as the cards draw it (a 44 ring on the card fill with the check glyph, one 14/500 secondary line, in a 16-radius page-alt panel, the language's one empty state); notification cards get a 16/600 head and a 14/20 body. The settings lists' icon badges are our icon circle (accent on the accent fill) instead of the frontend's brand colours. Rule for every further page: the theme first (colours, radii, the body font), an adopted sheet only for what the theme cannot reach, always our existing idioms (icon circle, empty state, card head), never new ones.
 - **Scrolling in the frame (revised 2026-09-18):** the app keeps the whole window and scrolls as Home Assistant designed it (the window for dashboards, inner lists for tables, logbook and history); the frame is declared as 16 px safe-area insets on `home-assistant-main`, so the header, sidebar, content, floating buttons and every viewport-sized page step inside by themselves, and a fixed, click-through layer paints the page around a 24-radius opening with a hairline. One scroll per page, nothing clipped; the page scrollbar is thin and in the theme's thumb colour. The dashboard's chrome (greeting, tabs, readouts strip) never plays the entrance (`still`), so the same header reads as fixed while the views change under it.
 - **Form controls (HA's own, in Settings, editors and dialogs; 2026-09-18):** every control speaks the cards' idiom. Fields (`ha-input`, `ha-textarea`, `ha-picker-field` — also the face of `ha-select` — and the older composite pickers: labels, entity name, state content, clock format, the time row) are a 12-radius box on the **page fill** with a hairline, the strong hairline on hover, a 2 px accent ring on focus, no Material underline. Menus (`ha-dropdown`, what a select opens) take the sheets' 16 radius and lift, 44 rows at radius 10 in a 6 px inset, page fill on hover/focus, the chosen row as an active tile (accent fill, dark ink). Switches are the cards' 48 × 28 switch (20 thumb; off = page fill in a strong hairline with a card-white thumb, dark = lifted track with the secondary ink as thumb; on = solid accent, card thumb). A checked box or radio is the solid accent with the on-accent mark (radius 6 boxes, 1.5 px rings). Sliders carry the cards' knob (card-white 20 thumb, 2 px accent ring, lift) on a 6 px track. The code editor is a field with a hairline gutter. Buttons use the one tappable radius (12); card headers are 20/600. Where HA exposes a variable the **theme** sets it (switch, checkbox, radio, slider track, button radius, card header size, `--input-*`, disabled fills/inks); the rest are sheets in the component classes' Lit `elementStyles`, emptied when the Fluvy theme is not the page's theme.
@@ -204,10 +242,29 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - **Home Assistant's own Material icons (2026-09-19):** the chrome's icons (`ha-svg-icon`, told only a path: undo, redo, help, the ⋮ menu and its items, pencils, close, back arrows, search, copy, delete…) are drawn as our glyphs while the shell is on and the house keeps our icons: a table of 32-bit keys of the Material paths (`tools/icons/mdi-glyphs.json` → `packages/core/src/icons/mdi.ts`, `@mdi/js` pinned to Home Assistant's 7.4.47, only for the generator) tells which glyph replaces each; the Material path is kept on the element and comes back when the icons are switched off or another theme is worn.
 - **A dashboard in edit mode:** the edit bar keeps its accent fill, everything on it in the bar's ink; Done is the primary action (36, the tappable radius, never shrunk); the open view is a tile on the card fill holding its arrows and pencil (no underline); frames of what can be edited are a fine dashed hairline; what adds (a title, a badge, a card, a section) is a fine dashed accent outline filling with the accent's wash; what edits is a quiet control on the card fill with a hairline.
 - **All of Home Assistant under the theme (exploration of 2026-09-18):** the theme maps HA's whole colour system, not only the accent — the named palette (`--amber-color`… 21 names, which every per-domain state colour, timeline, logbook dot and 2026 summary resolves through), the success / warning / danger scales (`--ha-color-green|orange|red-05…95` from our status inks), off as the quiet strong hairline, weather glyphs, outlines, the edit-mode header (the accent fill), the code editor's syntax (keys accent, values ink, figures info, punctuation disabled). Type: HA's "bold" is our 600, font sizes keep `--ha-font-size-scale`, the old Material components get Inter without tracking (`--mdc-typography-*` from the shell's page sheet, not the theme: 2026.10 retires those names), HA tiles take the compact tile's 15/600 over 13/500. The shell registry then gives every HA component class its idiom: data tables (14/20 cells, 13/600 secondary headers, 36 toolbar controls), search boxes (card-white 12-radius field), menus, tabs on whole pixels, dialog titles 600 with an ellipsis, alerts as status panels (role fill, radius 12), option boxes as tiles, button toggle groups as a segmented track, section and card titles 20/600, card actions on the content column, empty states, Leaflet controls, logbooks that open instead of scrolling inside a scrolling surface, the automation editor (headings, rows, side panel, targets), and the charts' canvas font (the one wrapped builder). a shell health check (see `docs/shell.md`) lists which sheets HA still draws after an update.
-- **All of Home Assistant, second round (2026-09-18, night):** Inter is registered at start on every page (not when the first card appears) and inside every same-origin panel frame (HACS), which gets a shell of its own. HA's charts draw the canvas in the body font and a series HA paints in its own default primary in the page's primary. The empty-state idiom reaches HA through one shell helper (tables, "No activity found", the area page's lists, the To-do panel, the notifications drawer). A card head that carries icon buttons (the Activity card, the log cards) keeps the standard head line (12 · 34 · 16) and hangs the 48 buttons over it. Option choices in HA become our option tiles with their glyph (the profile's Auto · Light · Dark), view switches our segmented track (Daily / Hourly), paired footer actions one width (112). A required field without a hint keeps no empty row; HA's 10 px step is the 11 px floor. Page titles are 600 everywhere, inactive tabs take the secondary ink, and a tab strip keeps a fixed trailing slot so it never moves between sibling pages.
+- **All of Home Assistant, second round (2026-09-18, night):** Inter is registered at start on every page (not when the first card appears) and inside every same-origin panel frame (HACS), which gets a shell of its own while the page wears Fluvy. HA's charts draw the canvas in the body font and a series HA paints in its own default primary in the page's primary (where Fluvy is in use). The empty-state idiom reaches HA through one shell helper (tables, "No activity found", the area page's lists, the To-do panel, the notifications drawer). A card head that carries icon buttons (the Activity card, the log cards) keeps the standard head line (12 · 34 · 16) and hangs the 48 buttons over it. Option choices in HA become our option tiles with their glyph (the profile's Auto · Light · Dark), view switches our segmented track (Daily / Hourly), paired footer actions one width (112). A required field without a hint keeps no empty row; HA's 10 px step is the 11 px floor. Page titles are 600 everywhere, inactive tabs take the secondary ink, and a tab strip keeps a fixed trailing slot so it never moves between sibling pages.
 - **Automatic dashboard:** `strategy: { type: custom:fluvy-home }` builds Home, Lights, Climate, Energy and Sensors from the registries and the energy preferences with the approved `/fluvy-home` layout: lights = `light.*` plus switches whose words say light, appliances = the other switches (one per device, twin outlets dropped) with their power and energy readings, climate = thermostats + weather + temperature/humidity sensors that are not the weather service's, energy = solar/grid/battery power by words + the energy dashboard's devices, sensors = device batteries, phones (mobile_app), people, openings, plants, updates. Names: the entity's own words, the device's name when the own words only say the kind, the area or the device for a reading's place. Capped lists, empty sections and views left out, titles in the dashboard's language, `hide: [energy]` to drop a view.
 - **Loading:** a Lovelace resource runs only once a dashboard has rendered; the shell reaches every page (Settings opened cold, History, Map) because the integration also loads the module at start on every page (`add_extra_js_url`, the loader beside the build under `/fluvy-frontend/<version>-<build>/`), and registers the settings panel with that same loader; a build's URL never changes, so no cache serves a stale one.
-- **Icon set:** the glyphs (125) are a Home Assistant icon set, `fluvy:<name>` (kebab-case of the glyph key: `cloud-sun`), registered through `window.customIcons`; the paths are the strokes outlined to fills at build time (`tools/icons/outline.py`, shapely, 0.06 simplification) on the same 24 grid, written as an absolute start and relative steps in tenths (SVG's shortest numbers: 17 KB gzip for the set instead of 27). Inside our cards a `fluvy:` reference draws the stroke glyph inline; elsewhere `<ha-icon>` draws the fill. Our dashboards use `fluvy:` icons in the sidebar; built-in panels keep MDI.
+- **When Fluvy steps aside (1.10, after the HACS review):** what no sheet can reach (the charts' canvas, an icon's
+  path, HACS's frame, the settings lists' glyphs, the more-info title's fade, a dashboard's header marks, the
+  Activity and History pages) is one wrapped method of a Home Assistant element, and every wrap but two keeps three
+  rules. Home Assistant's code runs first, always and unchanged. Ours runs after it only where Fluvy is in use — the
+  page wears the Fluvy theme or the look covers the whole app, the dashboard on screen wears the look, or the device
+  is a wall; anywhere else Home Assistant's elements stay its own: its chart font and colours, its Material paths,
+  HACS's frame without Inter, no attribute of ours (`<home-assistant>`'s frame mark included), the page's background
+  and theme colour as its theme left them (a mark a worn dashboard left behind is taken off, and the change that takes
+  Fluvy off the page writes the chrome once more, as Home Assistant does, from its theme: Home Assistant wrote it
+  while our sheet was still on). Ours is caught: a part that throws steps its patch aside for the session, in its own
+  document (HACS's frame and the page apart), said once in the console and listed in `__fluvy.shell.report()`, which
+  also sets Home Assistant's version beside the releases the build was checked against — a note, never a stop. The
+  two that do not run Home Assistant's code first keep the other two rules: the Activity and History pages draw ours
+  *in place of* the panel's render while the page wears Fluvy and the house keeps our pages (the panel's state,
+  routes and subscriptions untouched; another theme or the house's choice gives Home Assistant's page back at once,
+  and ours throwing gives it back for the session); and on a dashboard that wears the look with its actions in one
+  menu, the root is lent `narrow` for the one call that draws them, before Home Assistant's render, which then draws
+  them as on a phone (an own value over the property, taken away when the call returns or throws; a lending that
+  throws steps aside and the render runs as written).
+- **Icon set:** the glyphs (149) are a Home Assistant icon set, `fluvy:<name>` (kebab-case of the glyph key: `cloud-sun`), registered through `window.customIcons`; the paths are the strokes outlined to fills at build time (`tools/icons/outline.py`, shapely, 0.06 simplification) on the same 24 grid, in two parts: what Fluvy's chrome names (a Material icon it redraws, a sheet's mask, a view's icon) in core (`icons/generated.ts`), the rest — the six appliances a person may pick, the garage, the gate, the window, the door open and the security camera — in an `icons` chunk that `getIcon` fetches the first time Home Assistant asks for one of them (`icons/generated-on-demand.ts`; `ON_DEMAND` in `tools/icons/extract-glyphs.mjs` says which), written as an absolute start and relative steps in tenths (SVG's shortest numbers: 17 KB gzip for the set instead of 27). Inside our cards a `fluvy:` reference draws the stroke glyph inline; elsewhere `<ha-icon>` draws the fill. Our dashboards use `fluvy:` icons in the sidebar; built-in panels keep MDI.
 - **Heading icon:** an optional icon before the section title — a 20 px glyph in a 24 box in the accent ink, 8 px before
   the 20/24 title, on its cap height; the title ellipsises before the meta gives way, and a meta longer than its 60 % of
   the row gives its words up to the chevron (its words stay in the button's label): never cut. It replaces emoji in
@@ -223,6 +280,25 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - **Tiles squeezed narrow (2026-09-19):** a large tile whose inner width cannot hold its icon circle, 8 and the switch (under 132 px) folds the switch into the circle (the circle becomes the switch, as Home Assistant's own tile's icon is); a sensor's value that would not fit beside the circle goes to the state line; a foot keeps one readout under 120 px of inner width and the ruler is drawn to the inner width. A group of tiles lays out fewer columns when its width cannot hold the ones asked (large 100, compact 128, mini 64 at least); a lone compact tile under 128 gives its name the circle's room, a mini tile under 60 draws a 36 circle. A thermostat's "Target · Now 20.8°" label keeps one line: it is the longest of its forms its room holds (beside the stepper, the row less the stepper and its 12; stacked, the whole row) — the readout is never squeezed under its stepper (§ Value row).
 - **Names that must read:** two compact tiles side by side under 200 px step the name to 14 px; a large tile's name that would end in an ellipsis steps to 14 px, and a large tile with nothing under its state line lets the name take two balanced lines; a scenes card goes one tile a row when a name would not read in two lines of a half tile; a pill sized to its text is padded on both sides from the measured text, so its label never ends in an ellipsis; in a list row a state in words wraps between its words once the name is down to its third, figures never wrap.
 - **Customisation principle (user, 2026-09-18):** every card exposes what to show (section toggles such as `show_fan`), which items appear and in which order (subset lists such as `modes: [off, heat, cool]`), and at least two more layouts through `variant`. Chip rows fill the row by default and are content-sized on request (`preset_style`, `fan_style`, `suction_style: chips`). Editors show what the card does by default (`formEditor` / `listsEditor` with defaults): the dial, the mode tiles, every mode the device offers; a default the user leaves as it was is never written into the config. The thermostat is the reference: `variant: dial | compact | ruler`, `modes`, `modes_style: tiles | chips | full`, `preset_style`, `fan_style`.
+  An option that cannot act is not shown; one that acts only in a style is shown in that style (2026-10-22, #58). The
+  editor asks each field, each row of fields and each list when it can act (`when`), from the whole card — the config
+  over the card's defaults, its lists too (a camera of the list asked live), so a house default counts as the card's
+  own — and the house. A hidden option keeps
+  its value, and acts again when it comes back; it is never a required one. The cases (1.10, #58): the light card's
+  *How much colour* only while it shows its colour (its own *Show its colour*, else the house's); a compact lock
+  without its rows; how whites show (`light_whites`) only beside "in its bulb's colour" while the bulbs show their
+  colours, and on the light card not while its own colour or tone stands in for its bulb's; a tile's light colours
+  only for a light, a tiles group's and an entities card's while their list holds one, a tile's readouts except under
+  a large tile's ruler (a light that dims, a cover set to a position, a fan to a speed); a tile's and a template's
+  colour at rest (`tint`) only where something shows then (a colour, or a tone that washes: never a status's at rest,
+  never a template that is always on); the room lights card's colour at rest in tiles alone; the Cameras card's
+  `max_live` where a picture streams (the card asked live, or a camera of its list); a room's controls, tiles and
+  lights' colours except in a row, its picture for the photo alone, its colour at rest with tiles alone, its lights'
+  colours not with `controls: none` (the room's never-read `size` and `readouts` are gone from its editor); the
+  appliances card's picture for tiles and whole cards, no fold (`max_rows`) for whole cards, and the list's head,
+  colours and actions not where whole cards hide an empty list (whole cards draw the list's head only while nothing
+  shows). What is wrong where an option was shown and did nothing is fixed instead: the room lights card's tiles honour
+  its `tone` and `show_level`, and a tile's `tint: always` acts without a colour.
 - **When off (1.7):** a device card can keep to the essentials while the device is off (`when_off: essentials`; the default `all` shows everything): the head, the state (dial, readout or ruler, dimmed as today) and what wakes it — the mode tiles on the thermostat, the switch and the speed ruler on the fan. What hides is what has no use off: the thermostat's presets and fan speeds, the fan's presets, oscillation and direction. "Off" is the card's own (`stateOf()` / `expect()`), so a mode or the switch tapped brings everything back in the same render, before Home Assistant answers, and below the tile under the finger — nothing moves under it; Home Assistant resizes as for any `rows: 'auto'`. Covers (tilt, favourites) and media (sources, volume) keep everything: those are how they wake. The water heater and the humidifier only have modes: nothing hides. `layoutHeight` stays the on height (the automatic dashboard reserves it), and so does the card unavailable, unknown or missing (§ Surfaces).
 - **Modes in their order (1.9, #46):** a thermostat draws its modes in the order its `modes` list gives them, and
   without one in a single order (`modeOrder`): a climate's in Home Assistant's (Off first), any other after them in the
@@ -237,21 +313,22 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   `show_current: false` drops "· Now 20.6°" and the dial's sub; `subtitle` replaces the line under the name (empty
   hides it), which otherwise leaves the area out where it is the name ("Garderobe / Garderobe" said it twice).
   `show_stepper: false` with `show_modes: false` is the glance: the head and the readout, the readout the card's tap.
-- **Declared heights (1.9):** every card's `static layoutHeight(config, hass?)` says what the card draws at a 360
-  column, so the sections grid and the automatic dashboard place cards without gaps or overlaps. Given the house
-  (the automatic dashboard and `tools/render/heights.mjs` read it so), a declaration counts what the entity's
-  capabilities draw — a thermostat's presets and fan speeds, a fan's oscillation and direction rows, a cover's
-  position or tilt, a vacuum's readouts, battery, commands and suction, a lock's latch, an alarm's modes, a media
-  player's sources, a weather's forecasts, a clock's forecast row, a light's colour or temperature ruler, a room's
-  rows and readouts, a helper's range and options, an update that waits or installs. Without the house, the config's
-  say and the documented default (Off · Heat · Cool; the oscillation and direction rows; a colour bulb). A row the
-  card lays out by measure (filled chips, option tiles, a row of readouts, a legend) is counted with the same rule,
+- **Declared heights (1.9):** every card's `static layoutHeight(config)` says what the card draws at a 360 column from
+  its config, so the sections grid and the automatic dashboard place cards without gaps or overlaps. The automatic
+  dashboard (and `tools/render/heights.mjs`, and the interaction suites that hold a card to its height) count it with
+  the house (1.10: `houseHeightOf` in `cards/src/house-heights.ts`, a chunk of its own the strategy imports, so no other
+  page carries the reading): what the house says of the card's entity is handed to the card's height function, which
+  counts what the entity's capabilities draw — a thermostat's presets and fan speeds, a fan's oscillation and direction
+  rows, a cover's position or tilt, a vacuum's readouts, battery, commands and suction, a lock's latch, an alarm's
+  modes, a media player's sources, a weather's forecasts, a clock's forecast row, a light's colour or temperature ruler,
+  a room's rows and readouts, a helper's range and options, an update that waits or installs. Without the house, the
+  config's say and the documented default (Off · Heat · Cool; the oscillation and direction rows; a colour bulb). A row
+  the card lays out by measure (filled chips, option tiles, a row of readouts, a legend) is counted with the same rule,
   its words estimated letter by letter (`textWidth` in `shared/heights.ts`, Inter's widths by the kind of letter,
-  calibrated on the rows as they draw). A height that depends on live content the config cannot know (a printer's
-  job, a calendar's events, the house's appliances, a to-do list's items, the Energy dashboard's devices) is declared
-  from the config's maximum or its documented default and listed, with the reason, in
-  `tools/render/known-heights.json`, which only shrinks. A card that is off, at rest or out of reach is reserved its
-  on height.
+  calibrated on the rows as they draw). A height that depends on live content the config cannot know (a printer's job, a
+  calendar's events, the house's appliances, a to-do list's items, the Energy dashboard's devices) is declared from the
+  config's maximum or its documented default and listed, with the reason, in `tools/render/known-heights.json`, which
+  only shrinks. A card that is off, at rest or out of reach is reserved its on height.
 - **Measured anatomies the declarations follow:** a tiles card is compact by default (76 a row, two a row; `columns`
   held to what a 360 column holds); the alerts and appliances rows start 4 under the head; the photo room card
   starts at its hero (no 20 above) with a 44 readout row 20 under it; the readouts card lays three a row and four as
@@ -470,7 +547,12 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   less than its 96 beside what ends its row — the value's words, a switch's 56, a chevron's 44; an age takes its short
   form ("21 d", "3 h", "12 min") where any row's full words would not fit, every age of the list alike. A row that
   cannot be read says its state's word, never an age — where the word would be cut, its dashed skin says it alone and
-  the word is the row's label.
+  the word is the row's label. A camera's rows are its history (1.10): each says when it last changed, as the time of
+  day (its age once it is over half a day old), unless the row's `secondary` asks for another line — its state, its
+  area, an attribute, a template, or none — which it then says as every list does (its shorter form where the row
+  cannot hold it whole, read in full). A row's own `tone` or `color` shows on its circle; with neither, the circle
+  stays neutral. A row with no `tap_action` of its own opens its entity's details, never the card's tap — the lock's,
+  the alarm's and the entities card's rows alike.
 - **Out of reach (1.9)**: unavailable, unknown or gone from the house, the camera keeps its head (the `ban` glyph where
   it is gone), its plate in its shape with the camera's glyph and why, and its rows.
 - **Back on screen, and a stream that failed (1.9):** a card put back off screen stays out until the viewport says it
@@ -478,6 +560,77 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   `hasVideo`); a live card whose stream could not play says "Stream unavailable" where "Live" stood
   (`camera.stream_failed`; the dot the glass's own white; its dot alone where the words would not fit the plate, the
   words its label), the stills showing meanwhile.
+- **One feed, one plate (1.10):** every camera picture — the camera card's, the printer's, each tile of the Cameras
+  card — is one feed (`camera/feed.ts`) and, where it has pills and rounds, one plate (`camera/plate.ts`). The feed
+  fetches stills only while its own plate is on screen and the tab is in front, one request at a time (one unanswered
+  after 30 s no longer holds the next back), keeps the last frame through two failures and gives the plate its off skin
+  at the third, holds the stream as one element for the plate's life and ends its session when the camera changes or
+  the plate goes back to stills; a picture that changes with its job (a printer's preview) is fetched again only when it
+  does. The plate gives way by the same rules at any width: under 100 high its rounds share "Live"'s rows and the first
+  ones go before they would come within 8 of it, the last one stays, then "Live" folds to its dot; from 108 high the
+  clock, where it is 8 clear of "Live". A tile holds one round (full screen), the camera card two (snapshot, full
+  screen).
+
+## Cameras (1.10)
+
+- **What it is (#60, the reader's mockup):** several cameras at a glance — the head (the security camera's circle,
+  "Cameras", "Live overview", a round `…` at its end), then a tile a camera. A tile is the camera's plate (the camera
+  card's own, `renderPlate`) in the card's shape — "Live" at its top start, one light glass round at its bottom end
+  (full screen, that tile's picture alone; on an iPhone, the camera's details) — and, 16 under it, a 44 row: its circle,
+  its name (15/600) over its line (13/500, a 16 glyph beside it). No clock and no snapshot round on a tile: the camera
+  card keeps those.
+- **The circle:** the camera's own `icon`, else the one set for it in Home Assistant, else its area's icon, else
+  Fluvy's camera — `iconOf` — neutral, as the mockup draws it, motion seen or not (the line's glyph and words say
+  it); in the camera's own `tone` or `color` while its line says motion is seen, where it asks one; out of reach,
+  `ban` on the dashed ring.
+- **The line:** `auto` reads the camera's motion sensor (its own `motion`, else a motion, occupancy or presence binary
+  sensor on the camera's device): the running figure "Motion detected", or the eye "No motion"; a sensor that cannot be
+  read, or none, leaves it to the camera — wifi "Online" (idle), "Recording", "Streaming"; out of reach, `ban` "Offline"
+  (unavailable) or the state's word. A live picture whose stream cannot play says so in their place, `ban` "Stream
+  unavailable" ("No stream" where that would not hold, read in full): "Live" folds to its dot on a narrow tile, and the
+  line is where it is seen; a live line keeps the room of those short words, so nothing moves when a stream fails.
+  `motion` and `state` ask for one of them, `none` (or `show_status: false`) leaves the line out — the row stays 44, its
+  name alone.
+- **What gives way, every tile's together, in order:** first the lines' 16 glyphs (their words say it), so that the
+  circles — the icons people choose for their cameras — stand at more widths; then the circles, where a name would get
+  less than its 96 or a line's words (the longest it may say: a line that reads a sensor holds room for both its words,
+  so nothing moves when someone walks by) would not hold whole beside one, the glyphs coming back where they then hold;
+  then a line whose words still would not hold says its glyph alone, its words its label. At a phone's 360 column (tiles
+  of 136) and a desktop's (152) the circles give way in most languages; tiles of about 165 to 200 keep their circles
+  without the lines' glyphs (English from 168, German from 180); from about 180 in English and 200 in German the
+  mockup's whole row stands.
+- **Tiles a row (`columns`):** `auto` one under a 320 column, two from 320, as many tiles of 240 as fit up to four on a
+  wide band, never more than the card has cameras; a count asked for is held where a tile would come under 120. Tiles
+  are one width on whole pixels, 16 apart (8 for the pictures alone), what a third leaves under a pixel.
+- **"Live" at a tile's width:** the camera card's rules — as wide as its word, never under 64; on a low plate (a tile)
+  it folds to its dot where it would come within 8 of the round (`live + 12 + 8 + 44 + 12`): its dot on half a
+  section's tiles (152, 172) and a phone's (136), its word from a 211 card and on a desktop's 152 tiles in English and
+  German; faded while stale; "Stream unavailable" where a live tile's stream could not play.
+- **Live pictures (`camera_view: live`, `max_live`):** the first `max_live` (four by default, twelve at most) of the
+  cameras asked live stream, the others keep to stills; each tile is a feed of its own — stills only while that tile
+  is on screen and the tab in front, its stream one element for its life.
+- **The head's round** opens the cameras' sheet (its own chunk), "All cameras" to a reader: the card's title over how
+  many cameras, a row a camera (an 80 × 44 thumbnail with the live dot, its name over its line, a chevron to its
+  details), and at the head's end a switch "Live" that shows every camera live (up to `max_live`), or none, while the
+  dashboard stays open — never written to the card; where the title would not hold beside it, the switch steps to a row
+  of its own under the head. A card that streams none (`max_live: 0`) has no switch: it would do nothing. A
+  `hold_action` on the card that runs takes the round instead, and the round says "More", as every card's round that
+  runs the card's own. The head itself is a button only where the card's `tap_action` goes somewhere without an entity
+  (a page, a URL, an action).
+- **Half a section:** where the title would not hold whole beside the round, the round steps to a compact row "More"
+  under the tiles (its circle by the rows' rule): a control never goes; the sub line goes before a word is cut.
+- **Variants:** `grid` (the default); `list`, a row of 60 a camera — its thumbnail, its name over its line, a chevron
+  (the chevron, then the thumbnail, give way where a name would get less than its 96); `compact`, the pictures alone,
+  as many of 96 as fit (three from 320, up to six), "Live" and no round, each with its name under it (8 + 20).
+- **Out of reach:** a tile keeps its plate in its shape with the camera's glyph and the word its line says ("Offline",
+  or the state's word; the glyph alone on a plate too low for it), and its row with the `ban` circle and that word; the
+  card wears the off skin only when every camera is out of reach. With no cameras: the head and the empty panel ("No
+  cameras", or `empty_text`); `hide_empty` hides it.
+- **Height:** declared from the config alone (`camerasHeight`): its cameras (listed; an area's as the house counts
+  them in `house-heights.ts`, two where it is not there to say), rows of tiles of the card's shape at a 320 column,
+  a row of 60 each in `list`. A row of tiles is level: one shape for every tile (the card's `aspect_ratio`); with
+  `native`, every tile of a row takes the tallest of its cameras' own shapes (16:9 until a camera's first frame says),
+  a portrait doorbell beside a 16:9 camera giving the row its shape, each picture filling it or held whole in it.
 
 ## Greeting (1.6)
 
@@ -508,7 +661,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   at text + 32: the 4-grid rounding of Fluvy's own measured pills does not reach them (nothing blurs: the hairline is
   an inset shadow on whole pixels).
 - **Content**: the name (an icon tab writes its `aria-label`), the icon (24, Home Assistant's size), or both (a 20
-  icon, 8, the name). A view without an icon, asked for its icon, gets the one its name says in any of the eight
+  icon, 8, the name). A view without an icon, asked for its icon, gets the one its name says in any of the nine
   languages (a mask of the fluvy set in the tab's ink, from an on-demand table); a name that says none keeps its words.
 - **The dashboard's name** is a switch of its own in every style: before Home Assistant's own tabs too, and with
   hidden tabs the bar may hold the actions alone.
@@ -597,8 +750,9 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - An appliance's whole card is 376 at a 360 column for every big kind (Home Assistant's six grid rows) in every state
   and whatever of its kind's rows it has, so a row of them on a dashboard ends level whatever each holds. What it draws
   beyond the slot — a hob of five plates (two rows), a fridge of three compartments, its compartments' steppers, the
-  quick modes, buttons and programmes asked for — its declared height says, read from the house (`layoutHeight(config,
-  hass)`, the appliances chunk's: its kind from its device, a second drum's line under a compact or dial hero, the rows
+  quick modes, buttons and programmes asked for — its declared height says, read from the house
+  (`applianceHouseHeight`, the appliances chunk's, which the automatic dashboard reads through `house-heights.ts`: its
+  kind from its device, a second drum's line under a compact or dial hero, the rows
   its plates, chips and tiles take by their words); without the house, the family's from the config alone. The
   appliances card's whole cards are each theirs, one a row 16 apart.
 
@@ -1044,7 +1198,7 @@ temperature on its way, a hob's plates, a fridge's compartments, a state and its
   machine", "Coffee system"); LG's model, which ends in its device type ("WM4000 (DEVICE_WASHER)", the older
   integration's "(TOWER_DRYER)"), a WashTower being two devices named "… washer" and "… dryer"; the keys only one kind
   has (salt is a dishwasher's, i-Dos a washer's, a cavity's temperature an oven's, Home Connect's programmes name their
-  appliance, a Matter setpoint that tops out under 30 °C is a compartment's); the words of its name in any of the eight
+  appliance, a Matter setpoint that tops out under 30 °C is a compartment's); the words of its name in any of the nine
   languages, read with its accents off (a "Sandwichtoaster" is a sandwich maker before it is a toaster). **Never
   one**: a vacuum (Home Connect's robot has no vacuum entity, only its keys; LG's robot and stick), a charger, a 3D
   printer (the printer card's: a washer is never a printer, a printer never an appliance), a hair dryer, and — until
@@ -1319,15 +1473,32 @@ temperature on its way, a hob's plates, a fridge's compartments, a state and its
   `color` (a name, a hex; Primary or Accent is the palette's accent, named; Home Assistant's State, the editor's
   default, follows the light), else its `tone`, else **the light's**: the finger's choice while held (five seconds or
   until the bulb reports it, as a level is), what the bulb glows (`rgb_color` in a colour mode), a group's lit members'
-  colours by their brightness (`entity_id`; a white adds nothing as the palette shows whites, so a red bulb among
-  whites glows red — Home Assistant's own mean would wash it to a beige, and its majority mode would call it white),
-  and, while a flip waits for Home Assistant, the colour it last glowed (kept for the page), so it never flashes the
-  palette's light first. Glowing none, the palette's lit light (`state['light-active']`, never the name amber, which is
-  a near black on Noir). The icon circle, the switch and the rulers take it through the lit-light family `data-accent`
-  remaps; `compact` too.
-- **Whites** (`light_whites`): `palette` (the default) shows a lit white as the palette's lit light; `temperature`
-  shows it as Home Assistant's tile does, its `rgb_color` with the saturation lifted to 0.4 at its hue and value —
-  but a daylight white (under 0.1) stays the palette's light, never Home Assistant's grey.
+  colours by their brightness (`entity_id`; each white by its warmth, or — `light_whites: palette` — adding nothing as
+  the palette shows whites, so a red bulb among them glows red where Home Assistant's own mean would wash it to a beige
+  and its majority mode call it white), and, while a flip waits for Home Assistant, the colour it last glowed (kept for
+  the page), so it never flashes the palette's light first. Glowing none, the palette's lit light
+  (`state['light-active']`, never the name amber, which is a near black on Noir). The icon circle, the switch and the
+  rulers take it through the lit-light family `data-accent` remaps; `compact` too.
+- **Whites** (`light_whites`, 1.10, #58): `temperature` (the default since 1.10, the owner's call) shows a lit white
+  on one scale, from Home Assistant's own colour for its temperature (its `rgb_color`, marked a white: `WHITE`): its
+  hue, and as much of the band's chroma as its share of a candle's (2,200 K) — a candle the warmest, 2,700 K plainly
+  warmer than 4,000 K, 5,000 K nearly neutral, daylight (6,500 K) neutral, a cool white (above it) as cool as it is
+  far from daylight — fitted to every gate a colour clears, never the grey ladder (`accentFamily(…, white)`); each
+  step of the ladder at least a just-noticeable difference from the next. `palette` shows it as the palette's lit
+  light. A white Home Assistant gives no colour for, a light that only dims and one that only switches have no colour
+  of their own: the palette's lit light, whatever the setting. A group of whites is a white (their mean by
+  brightness), one with a colour bulb among them a colour. The same key, the same default, on the light card, the room
+  lights card, a tile, a tiles group, a room and an entities card (`litColour`, `cards/src/shared/light.ts`).
+- **One rule for every light drawn (1.10, #58)**: a light's own `color`, else its own `tone`, else its bulb's colour
+  (where the card shows bulbs' colours: `light_colors`), else the card's `color`, else the card's `tone`, else the
+  palette's lit light (`lightLook`, `cards/src/shared/light.ts`). A bulb's colour and the card's are drawn in the
+  lit light, which a colour's family redefines (the card's reaches it as the card's accent); an item's own in the
+  accent, as every item's colour is. On a card of one light (the light card, a lone tile) the card is the item: its
+  colour and tone come first. A light group wears its lit members' colours by their brightness on every card
+  (`entity_id`), its members watched with it; a room's lights row is the mean of the room's lights, each lamp once (a
+  group in the room counts as its members, `lampsOf`). In the editors an
+  item's colour on a card of lights, tiles or rows shows none chosen — its default is its bulb's, else the card's, never
+  the palette's accent — and the line under it says so (`accentField(…, { bulb })`); a default is never written.
 - **The card shows its colour (1.9, #41)** — `tint`: `off` (never), `on` (while the light is on), `always` (at rest
   too); where the card says none, the house's (§ Settings panel → Lights; off). `tint_strength`:
   - **`full`** (the default) is **a lit tile's skin, rule for rule** (`.fv-card.is-lit` beside `.fv-tile.is-on`):
@@ -1579,8 +1750,9 @@ switch is a button under the whole card (a tap: every light off when one is on, 
 card gives under the finger, `scale` 0.985 — its entrance holds `transform`); the head lets a tap through to it, the
 rounds and the gaps between them take their own — a round's hit reaches 4 px into the gaps, the rest of a gap is dead,
 so a near miss never switches the room. The card is a group of the room's button and a switch a light (never a switch
-inside a button). A lit round takes its colour's fill and ink, as a chosen chip or an on tile — its bulb's colour when
-the bulb has one (hs, rgb, xy: derived as an accent family, so its ink holds 3:1), else the palette's light — and a 2
+inside a button). A lit round takes its colour's fill and ink, as a chosen chip or an on tile — by the rule every
+light follows (§ Light colour): its own colour, its bulb's (a colour mode's, derived as an accent family so its ink
+holds 3:1; a white's warmth by default, #58), the card's colour, the card's tone, else the palette's light — and a 2
 px ring 4 inside its edge (on its fill, in its ink) to its level from the top, all the way round for a light that does
 not dim or when the level is not shown: every lit round has a ring, no off one has. The ring follows a new level in
 `--fv-base` (its one animation, declared). An off round is the neutral circle; an unreadable one the dashed ring,
@@ -1590,10 +1762,54 @@ under the head's icon, the last on the content's edge, six a line at most, the l
 columns; the icon circle gives way first. **Chips**: the room's switch in the head (its hit is 56: the head keeps that
 room), a filled chip a light (its glyph and name, chosen in its colour; an unreadable one the dashed ring), columns as
 the names hold whole (three: two and one). **Tiles**: the room card's inner tiles (84), two a row; an odd last one
-takes the row; one a row where a tile would be under 120, and under 136 a tile gives its name the icon's room.
+takes the row; one a row where a tile would be under 120, and under 136 a tile gives its name the icon's room. The
+tiles take the card's tone and colour where a lamp shows none of its own, say their level as the card's line does
+(`show_level`), and show their colour at rest only here (`tint: always`; the rounds and the chips have no surface to
+wash — the editor offers it in tiles alone).
 `show_brightness` puts one ruler for the room under the head (16 + 44 + 20; the 16 above it is the ruler's own, never
 the room's): the average of what is on; a change sets what is on (everything when nothing is). An empty card's panel
 sits 16 under its head.
+
+## Template (1.10)
+
+The template card (#59) is the tile card's tile — compact (76, the default), mini (108) or large (168), the same
+anatomy, the same heights — whose name, line, icon, colour and fill are Home Assistant templates or words of the
+person's own; the tile says only what it shows otherwise (two hooks: its look, its line), so with no template it is
+the tile card's tile of the same entity, byte for byte.
+
+- **With an entity** the tile is that entity's: its glyph, its tone, its state line, on a large tile its switch, its
+  ruler and its readouts; a template reads it as `entity`, and the person looking as `user`. The fill follows
+  `active` (`auto`: as the entity is; `always`; `never`; a template, on by the house's rule — any state not among the
+  off ones, a number not 0, `true`/`yes`); the switch, the ruler and the flip still follow the entity, so a large
+  tile never says its light is off while it is on.
+- **With none** (a tile of nothing) it wears the resting skin, never the off one; it has no reading in its head, toggles
+  nothing, and is a button only for what runs without an entity (navigate, a URL, an action, Assist). Its circle is the
+  template's code braces (`code`) until it is given an icon — never the three dots, which say "more" on a round that is
+  a button.
+- **Pending.** Until Home Assistant answers, the tile shows what its entity would — its glyph, its palette, its fill —
+  and a blank line (a no-break space) of the name's or the line's height where the words will land: nothing moves
+  when they do. A template edited, or the card back on the page, keeps its last answer until the next lands. A
+  warning (a name the template reads that is not defined) is not an answer.
+- **A template that fails** shows nothing of itself (never its text): no name (its line kept, blank, as while it was
+  pending, so a large tile's line never climbs into its place), no line, the entity's own icon and colour; a reader
+  hears the entity's name, else "Template". An icon that names no icon (`mdi:…`, a glyph's name) and a colour no palette
+  knows are the entity's own.
+- **Colour.** A template's answer is a tone of the palette by its name (`warning`, `heat` …) or a colour as the
+  card's palette draws it (a Home Assistant colour's name, `#rrggbb`, `rgb(…)`), never handed raw to a lit surface;
+  `tint: always` keeps it at rest.
+- **The line.** `state` (the default with an entity: the tile's own state line, fitted part by part), `area`,
+  `last-changed`, `none` (the default without one), or the person's words — written or a template's: they lose their
+  last ` · ` parts first, as a state line does, then what is left ends in an ellipsis as a name does (`data-name`),
+  never left out. An entity that cannot be read says so on its line, whatever was asked.
+- **Mushroom pastes in:** `primary` → `name`, `icon_color` → `color`, `layout: vertical` and its later `vertical: true`
+  → mini (`horizontal`, `default` → compact); `fill_container`, `multiline_secondary`, `double_tap_action`, `entity_id`
+  let go when the editor saves; `picture` and `badge_*` kept, not drawn (a follow-up). Its actions are the tile's, not
+  Mushroom's: Mushroom's do nothing unless given one, the tile toggles what toggles on a tap and opens its details on a
+  hold; `tap_action: { action: none }` keeps a pasted card still (the docs' paste paragraph says so).
+- **Editor:** entity (not required), name and icon, the line (a keyword or a template), style and *Shows as on* on one
+  row, tone and colour, the card's colour, *Show its colour* only with a colour, readouts only for a large tile, the
+  actions; helpers under the name, the line, the icon, *Shows as on* and the colour (a colour template goes in YAML).
+- Its chunk is its own (`template`, 2.1 KB of 8): every page carries only its name and height (`template-family.ts`).
 
 ## Value row (1.9)
 
@@ -1888,9 +2104,11 @@ last entry taken out in the editor — is a card, never a configuration error (#
   people tell apart by colour take a `color` per item: tiles, scenes, tabs, people (a ring round the avatar: a picture
   would hide a fill), openings (its circle), rows, bars, stat tiles and lights. Its fill shows while the item is on (the
   default), and the house may ask for it at rest too (`tint: always`, on tiles, a tiles group, a room's tiles, room
-  lights' tiles, scenes and tabs), on coloured items only: an item with no colour of its own keeps the card's surface.
-  A colour never covers a status: an open window, a jammed lock stay the warning's, circle, fill and words. Only a
-  `tone` asked for by name outranks a status (the house's choice): the circle and the fill take it.
+  lights' tiles, scenes and tabs). A tile with no colour of its own takes its tone's rest wash, as a light card at
+  rest does (`data-surface`, `litSurface` at rest: two fifths of the most of the fill everything on it reads on; an
+  inner tile its deeper step over the page, with the tone's hairline) — 1.10, #58; a scene and a tab with none keep
+  the card's surface. A colour never covers a status: an open window, a jammed lock stay the warning's, circle, fill
+  and words. Only a `tone` asked for by name outranks a status (the house's choice): the circle and the fill take it.
   At rest it is the item's rest wash (`--fluvy-accent-rest`, `-rest-inner` over the page on an inner tile) with the
   fill's hairline; on, the full fill as ever. The rest wash is as much of the fill, up to 40 %, as keeps the words on
   it — the primary and the secondary ink — at 4.5, derived per palette, mode and colour and gated in the build for all
@@ -1902,10 +2120,10 @@ last entry taken out in the editor — is a card, never a configuration error (#
   palette may move aside): the palette keeps its harmony, and a hex picks one exactly.
   **A lit light in its bulb's colour (1.9, #41)**: tiles, a tiles group, a room's tiles, a room's lights row (the
   colour of what is lit, by brightness) and an entities card's light rows wear a lit colour bulb's colour
-  (`light_colors`; the house's where the card says none, off), a white and an off light the palette's: an item's own
-  `color`, then its `tone`, then the card's `color` or `tone` come first. The room lights card keeps its own default
-  (on), and its rounds and chips, like every surface of a light, show the colour a light last glowed while a flip
-  waits.
+  (`light_colors`; the house's where the card says none, off), a white its warmth (`light_whites`, 1.10), an off light
+  the palette's — by the rule every light follows (§ Light colour): an item's own `color`, then its `tone`, then the
+  bulb's, then the card's `color`, then its `tone`. The room lights card keeps its own default (on), and its rounds
+  and chips, like every surface of a light, show the colour a light last glowed while a flip waits.
 - Text on a filled surface uses that surface's on-fill ink (a tile's state line, a scene row's time), never the page's secondary.
 - Gates (build and tests, every preset and custom combinations): text 4.5, icons and graphics 3, ink on fill 4.5, icon on its resting circle 3, hairline 1.35, card vs page 1.18 (light), dark card lift 4–6 pp, ΔE separation of series and roles. The grey ladder's own gates are in its bullet above.
 
@@ -1924,7 +2142,8 @@ last entry taken out in the editor — is a card, never a configuration error (#
 - **Scope → Everywhere** offers what belongs to the whole app: the floating frame and **our icons in the menus** (the sidebar's glyphs and Settings' icon circles; off, Home Assistant draws its own). Both are the house's, apply live on every screen, and are shown read-only to someone who is not an administrator.
 - **Appearance → Lights (1.9, #41)**: what a card of lights does where its own config says nothing — *Show their colour*
   (Never · When on · Always: a light card's `tint`) as a full row of chips under its label, and *In their bulb's
-  colour* (a switch: `light_colors` on tiles, rows and rooms). The house's, an administrator's (read-only for
+  colour* (a switch: `light_colors` on tiles, rows and rooms) — a white then by its warmth, each card's own
+  `light_whites` (no house setting). The house's, an administrator's (read-only for
   everyone else), off until chosen; shown on every card of the page at once, saved from the bar ("Lights · Show their
   colour · When on"). "Never", not "Off", beside "Show their colour": a light's own off is another thing.
 - **Appearance → Status colours (1.9)**: one card under Lights, a block a status — Warning, Danger, Success, Notice —

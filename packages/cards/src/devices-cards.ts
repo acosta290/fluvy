@@ -3,6 +3,7 @@ import './devices/english.js';
 import { registerCard } from '@fluvy/core';
 import { FluvyAlarmCard } from './alarm/alarm-card.js';
 import { FluvyCameraCard } from './camera/camera-card.js';
+import { FluvyCamerasCard } from './camera/cameras-card.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { FluvyLockCard } from './lock/lock-card.js';
 import { FluvyPrinterCard } from './printer/printer-card.js';
@@ -15,6 +16,7 @@ const ELEMENTS: Readonly<Record<string, CustomElementConstructor>> = {
   'fluvy-lock-card': FluvyLockCard,
   'fluvy-alarm-card': FluvyAlarmCard,
   'fluvy-camera-card': FluvyCameraCard,
+  'fluvy-cameras-card': FluvyCamerasCard,
   'fluvy-printer-card': FluvyPrinterCard,
 };
 

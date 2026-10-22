@@ -8,6 +8,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { setFallbackTokens } from '@fluvy/ui';
 import type { EffectiveSettings } from '../settings/schema.js';
+import { inUse } from '../shell/patches.js';
 import { declarationsOf, lookKey, type Look } from './css.js';
 import { PAGE_ATTRIBUTE, PANEL_ATTRIBUTE } from './attributes.js';
 
@@ -49,7 +50,8 @@ interface HassElement extends Element {
  * - `dashboards`: the same declarations on `ha-panel-lovelace` hosts that wear the look (`panels.ts`);
  * - always: the cards' token fallback becomes this look, so a fluvy card anywhere else follows it.
  * Then, as Home Assistant does after it applies a theme, the page background, the browser's theme colour
- * and the companion app (status bar) are brought up to date.
+ * and the companion app (status bar) are brought up to date — while Fluvy is in use on the page, and once more
+ * when Fluvy leaves it.
  */
 export class LookEngine {
   private readonly targets: Target[] = [];
@@ -58,6 +60,8 @@ export class LookEngine {
   private applied = '';
   private fallback = '';
   private pageCss = '';
+  /** Whether the last apply left Fluvy in use on the page, its chrome then synced. */
+  private chromed = false;
 
   /** `early`: the sheet the loader applied from this browser's cache before the build arrived, taken over as is. */
   constructor(
@@ -103,7 +107,11 @@ export class LookEngine {
       everywhere ? '' : `:host([${PANEL_ATTRIBUTE}]){${declarationsCss(declarations)}}`,
     );
     this.applyFallback(look, statuses);
-    this.syncChrome();
+    // on a page that does not wear Fluvy, the chrome is Home Assistant's, as its theme left it; on the apply that takes
+    // Fluvy off, once more: Home Assistant read it while our sheet was still on, and the page now computes its theme's
+    const using = inUse(this.doc);
+    if (using || this.chromed) this.syncChrome();
+    this.chromed = using;
     this.remember(mode);
     return true;
   }
@@ -116,14 +124,18 @@ export class LookEngine {
     setFallbackTokens(fallbackCss(look, statuses));
   }
 
-  /** What Home Assistant does once a theme is on: the page background, the browser's theme colour, the companion app. */
+  /**
+   * What Home Assistant does once a theme is on (`_applyTheme`), as it does it: the page background, the browser's theme
+   * colour (its own first one where the page names none), the companion app.
+   */
   private syncChrome(): void {
     const root = this.doc.documentElement;
     const computed = getComputedStyle(root);
-    const background = computed.getPropertyValue('--primary-background-color').trim();
-    if (background) root.style.backgroundColor = background;
+    root.style.backgroundColor = computed.getPropertyValue('--primary-background-color');
     const meta = this.doc.querySelector('meta[name=theme-color]');
-    const color = computed.getPropertyValue('--app-theme-color').trim();
+    const color =
+      computed.getPropertyValue('--app-theme-color').trim() ||
+      meta?.getAttribute('default-content');
     if (meta && color) meta.setAttribute('content', color);
     (
       this.doc.querySelector('home-assistant') as HassElement | null

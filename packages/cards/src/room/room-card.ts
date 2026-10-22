@@ -19,6 +19,7 @@ import {
   valueParts,
   type AreaContents,
   type ClimateKind,
+  type FluvyCardConfig,
   type HaFormSchemaItem,
   type HomeAssistant,
   type LovelaceConfigForm,
@@ -46,6 +47,8 @@ import {
   areaField,
   boolField,
   colourFields,
+  lightColourFields,
+  onlyWhen,
   fieldRow,
   formLabels,
   nameIconFields,
@@ -54,13 +57,14 @@ import {
   textField,
   tintField,
 } from '../shared/form.js';
-import { meanHex } from '../shared/light.js';
+import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
 import { EMPTY, ROW, rowsOf } from '../shared/heights.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { statsRow } from '../shared/readouts.js';
 import type { BaseKey } from '../shared/base.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { FluvyTileCard, type TileCardConfig, type TileItem } from '../tile/tile-card.js';
+import type { LightColours, Tint } from '../shared/colour.js';
+import { FluvyTileCard, type TileItem } from '../tile/tile-card.js';
 import { FluvyTilesCard } from '../tiles/tiles-card.js';
 
 const s = strings('room');
@@ -68,7 +72,7 @@ const s = strings('room');
 export type RoomVariant = 'photo' | 'tile' | 'row';
 export type RoomControls = 'rows' | 'tiles' | 'none';
 
-export interface RoomCardConfig extends TileCardConfig {
+export interface RoomCardConfig extends FluvyCardConfig, LightColours {
   /** The area (its id). */
   area: string;
   /** `photo` (default where the area has a picture, else `tile`): the picture, the readouts and the controls. `tile`: the head and the controls. `row`: a compact tile. */
@@ -89,6 +93,8 @@ export interface RoomCardConfig extends TileCardConfig {
   temperature_entity?: string;
   /** The room's humidity, a sensor, a thermostat or a humidifier; default: the area's. */
   humidity_entity?: string;
+  /** `always`: its tiles show their colour at rest too (`on`, the default: only when on). */
+  tint?: Tint;
 }
 
 const HERO = 160;
@@ -100,6 +106,16 @@ const INNER = 84;
 const HINT = 380;
 const HINT_SIDES = 32;
 const HINT_LINES = 2.8;
+
+/** Whether the room draws what its editor offers under its head or hero (its form's data): a row draws none of it. */
+const drawsControls = ({ variant }: Readonly<Record<string, unknown>>): boolean =>
+  variant !== 'row';
+/** …its tiles (`controls: tiles`), and their colour at rest with them. */
+const drawsTiles = (form: Readonly<Record<string, unknown>>): boolean =>
+  drawsControls(form) && form['controls'] === 'tiles';
+/** …its lights, in a row of their own or among its tiles. */
+const drawsLights = (form: Readonly<Record<string, unknown>>): boolean =>
+  drawsControls(form) && form['controls'] !== 'none';
 
 /**
  * The room as the card draws it: the area's contents, its readings the config's where it names them, and what is on
@@ -118,6 +134,56 @@ const NOTHING: RoomContents = {
   members: [],
 };
 
+/**
+ * A room as the house describes it: what it holds (`areaContents`), whether it has a picture, and whether the person
+ * reading is an administrator.
+ */
+export interface RoomHolds {
+  readonly found: AreaContents;
+  readonly picture: boolean;
+  readonly admin: boolean;
+}
+
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns. The house says what the room holds
+ * (`house-heights.ts`): its rows (the lights, the climate, the media, then every device: four where the house is not
+ * there to say), its tiles (its controls, four at most), its readouts (the climate it reads and its count), its
+ * picture (the photo card where the area has one, else the tile); a room with nothing to show is the panel (an
+ * administrator reads why under it) where the rest would be.
+ */
+export function roomHeight(config: RoomCardConfig, room?: RoomHolds): number {
+  if (config.variant === 'row') return 76;
+  const found = room?.found;
+  const climate = config.show_climate === false ? {} : (found?.climate ?? {});
+  const empty =
+    found !== undefined &&
+    !holdsSomething({ entities: found.entities, climate }) &&
+    !(config.controls === 'tiles' && (config.tiles?.length ?? found.controls.length) > 0);
+  const hint = room?.admin && (found?.keptOut ?? 0) > 0 ? 32 : 0;
+  const has = (domain: string): number =>
+    found?.entities.some((id) => id.startsWith(`${domain}.`)) ? 1 : 0;
+  const rows = found ? has('light') + has('climate') + has('media_player') + 1 : 4;
+  const tiles = Math.max(
+    1,
+    Math.min(TILES, config.tiles?.length ?? found?.controls.length ?? TILES),
+  );
+  const controls = empty
+    ? 16 + EMPTY + hint
+    : config.controls === 'none'
+      ? 0
+      : config.controls === 'tiles'
+        ? 16 + rowsOf(tiles, 2) * (INNER + 8) - 8
+        : 16 + ROW * rows;
+  const variant = config.variant ?? (config.picture || !found || room?.picture ? 'photo' : 'tile');
+  if (variant === 'tile') return 20 + 44 + controls + 20;
+  // the readouts 20 under the hero: the climate the room reads, its count of devices on
+  const readings =
+    (config.show_climate !== false && (climate.temperature || climate.humidity) ? 1 : 0) +
+    (config.show_count !== false && (found?.entities.length ?? 1) ? 1 : 0);
+  const stats = !empty && readings ? STATS : 0;
+  return HERO + stats + (empty ? 20 + EMPTY + hint : controls) + 20;
+}
+
 /** A reading's field: a sensor of its class, or the thermostat (the humidifier) that carries it (`climateAttribute`). */
 const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
   name: `${kind}_entity`,
@@ -129,44 +195,9 @@ const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem 
  * (its lights and controls, how many are on), in the ambient family's area anatomy.
  */
 export class FluvyRoomCard extends FluvyTileCard {
-  static override layoutHeight(config: RoomCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'row') return 76;
-    // the house says what the room holds: its rows (the lights, the climate, the media, then every device: four
-    // where the house is not there to say), its tiles (its controls, four at most), its readouts (the climate it
-    // reads and its count), its picture (the photo card where the area has one, else the tile); a room with nothing
-    // to show is the panel (an administrator reads why under it) where the rest would be
-    const areaId = typeof config.area === 'string' ? config.area : '';
-    const area = areaId && hass?.states ? hass.areas?.[areaId] : undefined;
-    const found = area && hass ? areaContents(hass, areaId) : undefined;
-    const climate = config.show_climate === false ? {} : (found?.climate ?? {});
-    const empty =
-      found !== undefined &&
-      !holdsSomething({ entities: found.entities, climate }) &&
-      !(config.controls === 'tiles' && (config.tiles?.length ?? found.controls.length) > 0);
-    const hint = hass?.user?.is_admin && (found?.keptOut ?? 0) > 0 ? 32 : 0;
-    const has = (domain: string): number =>
-      found?.entities.some((id) => id.startsWith(`${domain}.`)) ? 1 : 0;
-    const rows = found ? has('light') + has('climate') + has('media_player') + 1 : 4;
-    const tiles = Math.max(
-      1,
-      Math.min(TILES, config.tiles?.length ?? found?.controls.length ?? TILES),
-    );
-    const controls = empty
-      ? 16 + EMPTY + hint
-      : config.controls === 'none'
-        ? 0
-        : config.controls === 'tiles'
-          ? 16 + rowsOf(tiles, 2) * (INNER + 8) - 8
-          : 16 + ROW * rows;
-    const variant =
-      config.variant ?? (config.picture || !found || area?.picture ? 'photo' : 'tile');
-    if (variant === 'tile') return 20 + 44 + controls + 20;
-    // the readouts 20 under the hero: the climate the room reads, its count of devices on
-    const readings =
-      (config.show_climate !== false && (climate.temperature || climate.humidity) ? 1 : 0) +
-      (config.show_count !== false && (found?.entities.length ?? 1) ? 1 : 0);
-    const stats = !empty && readings ? STATS : 0;
-    return HERO + stats + (empty ? 20 + EMPTY + hint : controls) + 20;
+  /** The card's height at a 360 column from its config alone: four rows under a photo (`roomHeight`). */
+  static override layoutHeight(config: RoomCardConfig): number {
+    return roomHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -216,10 +247,9 @@ export class FluvyRoomCard extends FluvyTileCard {
     'path',
     'temperature_entity',
     'humidity_entity',
-    'size',
-    'readouts',
     'tint',
     'light_colors',
+    'light_whites',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -227,6 +257,7 @@ export class FluvyRoomCard extends FluvyTileCard {
       title: 'editor.tiles',
       keys: FluvyTilesCard.lists[0]?.keys ?? [],
       schema: FluvyTilesCard.lists[0]?.schema ?? [],
+      when: drawsTiles,
     },
   ];
   static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
@@ -237,11 +268,11 @@ export class FluvyRoomCard extends FluvyTileCard {
     return {
       variant: config['picture'] || area?.picture ? 'photo' : 'tile',
       controls: 'rows',
-      size: 'large',
       show_count: true,
       show_climate: true,
       tint: 'on',
       light_colors: lightDefaults().colors,
+      light_whites: 'temperature',
       temperature_entity: found.temperature,
       humidity_entity: found.humidity,
     };
@@ -254,20 +285,21 @@ export class FluvyRoomCard extends FluvyTileCard {
         showIconField(),
         fieldRow(
           selectField('variant', ['photo', 'tile', 'row']),
-          selectField('controls', ['rows', 'tiles', 'none']),
+          onlyWhen(drawsControls, selectField('controls', ['rows', 'tiles', 'none'])),
         ),
         fieldRow(boolField('show_climate'), boolField('show_count')),
-        fieldRow(textField('picture'), textField('path')),
+        // a picture is the photo's alone (the default where the room has one)
+        fieldRow(
+          onlyWhen(({ variant }) => variant === 'photo', textField('picture')),
+          textField('path'),
+        ),
         fieldRow(
           readingField('temperature', 'climate'),
           readingField('humidity', 'climate', 'humidifier'),
         ),
-        fieldRow(selectField('size', ['large', 'compact', 'mini']), {
-          name: 'readouts',
-          selector: { entity: { multiple: true } },
-        }),
         ...colourFields(),
-        fieldRow(tintField(), boolField('light_colors')),
+        onlyWhen(drawsTiles, tintField()),
+        onlyWhen(drawsLights, lightColourFields()),
         fieldRow(actionField('tap_action'), actionField('hold_action')),
       ],
       ...formLabels({
@@ -363,8 +395,12 @@ export class FluvyRoomCard extends FluvyTileCard {
 
   protected override watched(): readonly string[] {
     const { members, climate } = this.contents();
-    // every entity the area holds, shown or not: one whose state comes late fills the room, a hidden one moves the hint
-    return idsOf([...members, ...this.tiles(), climate.temperature, climate.humidity]);
+    // every entity the area holds, shown or not: one whose state comes late fills the room, a hidden one moves the hint;
+    // and a light group's members (its colour is theirs)
+    return withMembers(
+      idsOf([...members, ...this.tiles(), climate.temperature, climate.humidity]),
+      this.hass,
+    );
   }
 
   /** A reading as the readouts write it — a sensor's state, a thermostat's own — or undefined where it cannot be read. */
@@ -542,18 +578,25 @@ export class FluvyRoomCard extends FluvyTileCard {
       this.contentWidth,
       rows.map(([, title]) => ({ title, value: '', end: to ? 44 : 0 })),
     );
-    // the lights' row wears the colour of what is lit (by brightness; `light_colors`, the house's where the card says
-    // none), unless the card has a colour or a tone of its own
-    const glow =
-      !this.room?.color && !this.room?.tone && (this.room?.light_colors ?? lightDefaults().colors)
-        ? meanHex(lights.map((id) => this.entity(id)))
-        : undefined;
+    // the lights' row wears what the rule every light follows says (`lightLook`): the colour of what is lit, by
+    // brightness, each lamp once (a group in the room is its members; `light_colors`, the house's where the card says
+    // none), else the card's colour or tone
+    const [colour, lightsTone] = lightLook(
+      {},
+      this.room,
+      (this.room?.light_colors ?? lightDefaults().colors)
+        ? meanHex(
+            lampsOf(lights, this.hass).map((id) => this.entity(id)),
+            this.room?.light_whites,
+          )
+        : undefined,
+    );
     return html`<div class="am-rows">
       ${rows.map(([glyph, title, sub, tone]) =>
         listRow({
           icon: keep ? glyph : null,
           tone,
-          ...(tone === 'light' && glow ? { accent: this.accents.item(glow) } : {}),
+          ...(tone === 'light' ? { tone: lightsTone, accent: this.accents.item(colour) } : {}),
           title,
           sub,
           trailing: to ? 'chevron' : 'none',

@@ -19,12 +19,33 @@ type CardClass = typeof Card & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;
 };
 
-/** Every field a schema shows, through its grids. */
+/**
+ * Every field a schema shows, through its grids — whatever its `when`: a field the editor hides while it cannot act
+ * is held to the contract as any other.
+ */
 const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
   schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
+/** The fields the editor may hide: those with a `when` of their own, or in a row with one. */
+const hideable = (schema: readonly HaFormSchemaItem[], hiding = false): HaFormSchemaItem[] =>
+  schema.flatMap((item) => {
+    const hides = hiding || item.when !== undefined;
+    return item.schema ? hideable(item.schema, hides) : hides && item.name ? [item] : [];
+  });
+/** Whether a schema says when anything in it shows. */
+const conditional = (schema: readonly HaFormSchemaItem[]): boolean =>
+  schema.some((item) => item.when !== undefined || conditional(item.schema ?? []));
 /** Every field name a schema shows, through its grids. */
 const names = (schema: readonly HaFormSchemaItem[]): string[] =>
   fields(schema).map((item) => item.name);
+/**
+ * Whether a field shows what the card does when the config says nothing: every switch and every choice — but a tone
+ * left empty, which is the card's own, and several chosen of a list, which, empty, are all the entity has.
+ */
+const showsDefault = (field: HaFormSchemaItem): boolean => {
+  const selector = field.selector as Record<string, { multiple?: boolean }> | undefined;
+  const choice = selector?.['boolean'] !== undefined || selector?.['select'] !== undefined;
+  return choice && field.name !== 'tone' && selector?.['select']?.multiple !== true;
+};
 /** A label that is a word: not the field's own name, not a catalogue key handed back for a word that is missing. */
 const isWord = (label: string | undefined, name: string): boolean =>
   typeof label === 'string' &&
@@ -64,6 +85,23 @@ describe('the editors’ contract', () => {
           list.idKey ?? 'entity',
         );
         if (list.keys) expect(new Set(names(list.schema))).toEqual(new Set(list.keys));
+        // an item's form goes to Home Assistant's as it is: what an item shows is `schemaOf`'s to say
+        expect(conditional(list.schema), `${list.key}: an item's field with a when`).toBe(false);
+      }
+    },
+  );
+
+  it.each(cards)(
+    '$tag: a field that may hide is never a required one, and keeps its word and what the card does without it',
+    ({ card }) => {
+      const form = card.getConfigForm();
+      const defaults = editorDefaults(form, card.defaults)?.({ type: 'custom:x' }, undefined) ?? {};
+      const key = (name: string): string => name;
+      for (const field of hideable(form.schema)) {
+        expect(field.required, `${field.name} is required`).not.toBe(true);
+        expect(isWord(form.computeLabel?.(field, key), field.name), field.name).toBe(true);
+        if (showsDefault(field))
+          expect(field.name in defaults, `${field.name}: no default`).toBe(true);
       }
     },
   );
@@ -74,13 +112,8 @@ describe('the editors’ contract', () => {
       const defaults =
         editorDefaults(card.getConfigForm(), card.defaults)?.({ type: 'custom:x' }, undefined) ??
         {};
-      for (const field of fields(card.getConfigForm().schema)) {
-        const selector = (field as { selector?: Record<string, { multiple?: boolean }> }).selector;
-        const choice = selector?.['boolean'] !== undefined || selector?.['select'] !== undefined;
-        // a tone left empty is the card's own; several chosen of a list, empty, are all the entity has
-        const optional = field.name === 'tone' || selector?.['select']?.multiple === true;
-        if (choice && !optional) expect(field.name in defaults, field.name).toBe(true);
-      }
+      for (const field of fields(card.getConfigForm().schema))
+        if (showsDefault(field)) expect(field.name in defaults, field.name).toBe(true);
     },
   );
 

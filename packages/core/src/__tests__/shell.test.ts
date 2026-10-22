@@ -222,6 +222,14 @@ describe('shell lifecycle', () => {
       expect(rule).toMatch(/^:host\(\[fluvy-(tab|flat|header-page|actions-menu)/);
   });
 
+  it('fills the device size’s sheet whatever the theme: without our variable it zooms nothing', () => {
+    const spec = SHEETS.find((s) => s.id === 'device-zoom')!;
+    expect(spec.choice).toBe('always');
+    // each rule is the variable (absent: 1, the view's own size) or the edit mode's 1
+    for (const rule of spec.css.split('\n'))
+      expect(rule).toMatch(/\{ zoom: (var\(--fluvy-zoom, 1\)|1); \}$/);
+  });
+
   it('fills a choice’s sheets only while the house makes it, and only with the theme', async () => {
     const { env, classes, theme, mark } = page();
     classes.set('ha-sidebar', { elementStyles: [] });

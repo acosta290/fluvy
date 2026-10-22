@@ -1,10 +1,9 @@
 import { isActive, stateText, strings, valueParts, type EntityView } from '@fluvy/core';
 import { chips, icon, listRow, type ChipItem, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
-import { currentTone, toneFor } from '../shared/domain.js';
+import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import {
   contextOf,
-  iconOf,
   isUnusable,
   nameOf,
   ownSecondary,
@@ -104,7 +103,9 @@ function row(
     ${
       bare
         ? nothing
-        : html`<span class="fv-ico fv-ico--${tone}" data-icon>${icon(iconOf(view, config))}</span>`
+        : html`<span class="fv-ico fv-ico--${tone}" data-icon
+            >${icon(iconOf(view, config.icon))}</span
+          >`
     }
     <span class="fv-row__text"
       ><span class="fv-row__title" data-name>${nameOf(view, config)}</span
@@ -184,7 +185,7 @@ export function switchRow(
   const unusable = isUnusable(view);
   const on = host.state(view) === 'on';
   return listRow({
-    icon: host.bare ? null : iconOf(view, config),
+    icon: host.bare ? null : iconOf(view, config.icon),
     tone: unusable ? 'off' : on ? 'accent' : 'neutral',
     title: nameOf(view, config),
     name: true,
@@ -320,7 +321,7 @@ export function plainRow(
   const sub = rowSub(host, view, config);
   const value = plainValue(host, view);
   return listRow({
-    icon: host.bare ? null : iconOf(view, config),
+    icon: host.bare ? null : iconOf(view, config.icon),
     tone: currentTone(view, isActive(view) ? toneFor(view) : 'neutral'),
     title: name,
     name: true,

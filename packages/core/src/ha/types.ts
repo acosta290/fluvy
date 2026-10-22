@@ -208,6 +208,11 @@ export interface HaFormSchemaItem {
   title?: string;
   flatten?: boolean;
   schema?: readonly HaFormSchemaItem[];
+  /**
+   * Whether the field (or the row) can act on what the form holds — the config over the card's defaults — and the
+   * house: Fluvy's editor leaves it out while it cannot, and keeps its value. Never handed to `ha-form`.
+   */
+  when?: (data: Readonly<Record<string, unknown>>, hass?: HomeAssistant) => boolean;
 }
 
 export interface LovelaceConfigForm {

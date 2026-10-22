@@ -10,7 +10,6 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
-  type HomeAssistant,
 } from '@fluvy/core';
 import { LIT_FLOOR } from '@fluvy/tokens/runtime';
 
@@ -33,7 +32,7 @@ import { Card, HEAD_BASE } from '../shared/base.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { configKeys } from '../shared/config.js';
 
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -45,13 +44,21 @@ import {
   fieldRow,
   formLabels,
   nameIconFields,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
   tintField,
 } from '../shared/form.js';
-import { listAttr, rowsOf } from '../shared/heights.js';
-import { COLOURED, DIMMABLE, glowOf, hexOf, type LightWhites } from '../shared/light.js';
+import { rowsOf } from '../shared/heights.js';
+import {
+  COLOURED,
+  DIMMABLE,
+  hexOf,
+  litColour,
+  withMembers,
+  type LightWhites,
+} from '../shared/light.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 import type { HeldColour } from './colour.js';
@@ -94,7 +101,7 @@ export interface LightCardConfig extends FluvyCardConfig {
   tint?: LightTint;
   /** How much: a lit tile's whole fill (`full`, the default), a gentle wash (`soft`), or as the lamp is bright. */
   tint_strength?: TintStrength;
-  /** A lit white: as the palette's lit light (`palette`, the default), or by its temperature (`temperature`). */
+  /** A lit white: by its temperature (`temperature`, the default since 1.10), or as the palette's lit light (`palette`). */
   light_whites?: LightWhites;
 }
 
@@ -168,6 +175,36 @@ const modesOf = (
   return Array.isArray(modes) ? modes.filter((m): m is string => typeof m === 'string') : [];
 };
 
+/**
+ * What a bulb does: a colour bulb draws its hue ruler and quick colours, a white one its temperature ruler, a dimmer
+ * neither.
+ */
+export interface BulbDoes {
+  readonly colour: boolean;
+  readonly temperature: boolean;
+}
+/** Where the house is not there to say: a colour bulb. */
+const COLOUR_BULB: BulbDoes = { colour: true, temperature: true };
+
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the ruler slot (a label, the ruler and
+ * its labels: 100) when a temperature or a hue ruler may show, and the quick colours (16 above, 44 rounds, six a row,
+ * as many rows as the count takes; a named entry counts one) when they may — for what the bulb does, as the house
+ * describes it (`house-heights.ts`), a colour bulb's where it is not there to say; a list of none draws no row.
+ */
+export function lightHeight(config: LightCardConfig, bulb: BulbDoes = COLOUR_BULB): number {
+  if (config.variant === 'compact') return 188;
+  const slot =
+    (config.show_temperature !== false && bulb.temperature) ||
+    (config.show_color !== false && bulb.colour)
+      ? 100
+      : 0;
+  const rows =
+    config.show_color !== false && bulb.colour ? rowsOf(config.colors?.length ?? 6, 6) : 0;
+  const swatches = rows ? 8 + rows * 52 : 0;
+  return 268 + slot + swatches;
+}
+
 /** Under this content width the full layout has no room for its value and stepper: the compact one takes over. */
 const COMPACT_BELOW = 260;
 
@@ -183,26 +220,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   /** The head, measured: what gives way in a narrow column is the sub, then the icon — never the switch. */
   private readonly head = new HeadFit(this);
 
-  /**
-   * The card's height at a 360 column, for the automatic dashboard's columns — from the config alone: the ruler
-   * slot (a label, the ruler and its labels: 100) when a temperature or a hue ruler may show, and the quick colours
-   * (16 above, 44 rounds, six a row, as many rows as the count takes; a named entry counts one) when they may; a
-   * white bulb under the same config draws less, and a list of none draws no row.
-   */
-  static override layoutHeight(config: LightCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'compact') return 188;
-    // the house says what the bulb does: a colour bulb its ruler and swatches, a white one its temperature ruler, a
-    // dimmer neither (and a bulb the house has not described draws as a dimmer); without the house, a colour bulb
-    const modes = listAttr(hass, config.entity, 'supported_color_modes');
-    const colour = !hass || modes.some((m) => COLOURED.has(m));
-    const temperature = colour || modes.includes('color_temp');
-    const slot =
-      (config.show_temperature !== false && temperature) || (config.show_color !== false && colour)
-        ? 100
-        : 0;
-    const rows = config.show_color !== false && colour ? rowsOf(config.colors?.length ?? 6, 6) : 0;
-    const swatches = rows ? 8 + rows * 52 : 0;
-    return 268 + slot + swatches;
+  /** The card's height at a 360 column from its config alone: a colour bulb's (`lightHeight`). */
+  static override layoutHeight(config: LightCardConfig): number {
+    return lightHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -308,7 +328,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     colors: defaultSwatches(modesOf(config, hass)),
     tint: lightDefaults().tint,
     tint_strength: 'full',
-    light_whites: 'palette',
+    light_whites: 'temperature',
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -326,9 +346,18 @@ export class FluvyLightCard extends Card<LightCardConfig> {
         ...colourFields({ state: true }),
         fieldRow(
           tintField(['off', 'on', 'always']),
-          selectField('tint_strength', STRENGTHS, { words: { full: 'full_colour' } }),
+          // a strength is a lit surface's: none to choose while the light never shows its colour — by its own tint,
+          // else by the house's
+          onlyWhen(
+            ({ tint }) => tint === 'on' || tint === 'always',
+            selectField('tint_strength', STRENGTHS, { words: { full: 'full_colour' } }),
+          ),
         ),
-        selectField('light_whites', ['palette', 'temperature']),
+        // how a white shows is the bulb's: none to choose while the card wears a colour or a tone of its own
+        onlyWhen(
+          ({ color, tone }) => (!color || color === 'state') && !tone,
+          selectField('light_whites', ['palette', 'temperature']),
+        ),
         actionFields(),
       ],
       ...formLabels({
@@ -362,13 +391,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
 
   /** A light group's members are watched too: its colour is theirs. */
   protected override watched(): readonly string[] {
-    return [...super.watched(), ...this.members()];
-  }
-
-  /** What a light group holds (`entity_id`); none for a single light. */
-  private members(): readonly string[] {
-    const ids = this.hass?.states[this.config?.entity ?? '']?.attributes['entity_id'];
-    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
+    return withMembers(super.watched(), this.hass);
   }
 
   override getCardSize(): number {
@@ -621,12 +644,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
           ? 'rgb' in choice
             ? hexOf(choice.rgb)
             : undefined
-          : glowOf(
-              view,
-              on,
-              this.config?.light_whites,
-              this.members().map((id) => this.entity(id)),
-            );
+          : litColour(view, on, this.config?.light_whites, this.hass);
     // the icon, the switch and the rulers take it through the light-active family `data-accent` remaps
     const accent = live ? this.accents.item(live) : undefined;
 
@@ -670,7 +688,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       data-surface=${surface ?? nothing}
     >
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         small: fitted.small,
         tone: unusable ? 'off' : on ? tone : 'neutral',
         title: name,

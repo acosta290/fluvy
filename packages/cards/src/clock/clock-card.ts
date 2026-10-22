@@ -7,7 +7,6 @@ import {
   type HaFormSchemaItem,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 import { isoWeek, sheetStyles, type Tone } from '@fluvy/ui';
 import {
@@ -91,6 +90,21 @@ const isOwnLabel = (name: string): name is keyof typeof OWN_LABELS => name in OW
 const NO_TIME: ClockParts = { time: '—', seconds: '', period: '' };
 
 /**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the face, and the Outside · Tonight ·
+ * Tomorrow row (16 + 44) where it is asked for and the weather offers a daily forecast (`daily`, as the house
+ * describes it: `house-heights.ts`).
+ */
+export function clockHeight(config: ClockCardConfig, daily = true): number {
+  const weather = Boolean(config.weather);
+  const forecast = weather && config.show_forecast !== false && daily;
+  if (config.variant === 'tile') return 168;
+  if (config.variant === 'side')
+    return (config.face === 'digital' ? 132 : 208) + (forecast ? 60 : 0);
+  if (config.face === 'digital') return forecast ? 196 : 136;
+  return forecast ? 352 : weather ? 292 : 340;
+}
+
+/**
  * One clock, every look of the sheet: the analog face (plain, quarters, all numerals) or the digital
  * digits, as a hero card, a compact side card or a tile, each with or without its weather.
  *
@@ -99,19 +113,9 @@ const NO_TIME: ClockParts = { time: '—', seconds: '', period: '' };
  * re-renders the text; it stops with the tab and with the element.
  */
 export class FluvyClockCard extends Card<ClockCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: ClockCardConfig, hass?: HomeAssistant): number {
-    const weather = Boolean(config.weather);
-    // the Outside · Tonight · Tomorrow row (16 + 44): asked for, and offered by the weather (its daily forecast)
-    const forecast =
-      weather &&
-      config.show_forecast !== false &&
-      (!hass || !config.weather || offersDaily(hass.states[config.weather]));
-    if (config.variant === 'tile') return 168;
-    if (config.variant === 'side')
-      return (config.face === 'digital' ? 132 : 208) + (forecast ? 60 : 0);
-    if (config.face === 'digital') return forecast ? 196 : 136;
-    return forecast ? 352 : weather ? 292 : 340;
+  /** The card's height at a 360 column from its config alone (`clockHeight`). */
+  static override layoutHeight(config: ClockCardConfig): number {
+    return clockHeight(config);
   }
 
   static override styles: CSSResultGroup = [

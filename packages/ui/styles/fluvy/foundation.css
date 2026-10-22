@@ -40,6 +40,12 @@
   list-style: none;
 }
 
+/* Japanese wraps between its phrases, never inside a word (追|加), where the browser knows them (Chromium 119+; the
+   rest keep their own breaks). Home Assistant writes its language on <html>; every other language is left as it is. */
+:host(:lang(ja)) {
+  word-break: auto-phrase;
+}
+
 /* ---------- tones ---------- */
 /* Every tone's four variables on every carrier live in the generated tones.css (from src/tones.ts). The one
    exception a carrier makes: a neutral option that is active is a raised plate, not a page-coloured one. */

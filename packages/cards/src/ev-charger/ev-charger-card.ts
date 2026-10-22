@@ -12,7 +12,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, sheetStyles, type Tone } from '@fluvy/ui';
+import { head, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
@@ -82,13 +83,13 @@ export interface EvChargerCardConfig extends FluvyCardConfig {
  * drawn, and a reading that cannot be read is "—".
  */
 export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
-  static override layoutHeight(config: EvChargerCardConfig, hass?: HomeAssistant): number {
-    return chargerHeight(config, hass);
+  static override layoutHeight(config: EvChargerCardConfig): number {
+    return chargerHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     statsStyles,
     css`
       .ef-card {

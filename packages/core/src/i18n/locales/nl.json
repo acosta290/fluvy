@@ -441,6 +441,7 @@
     "show_color": "Kleur tonen",
     "colors": "Snelle kleuren",
     "color_help": "Kies er een, of kies Eigen kleur en kies elke kleur in het veld eronder",
+    "item_color_helper": "Leeg: bij een lamp de kleur van zijn peer waar de kaart die toont, anders die van de kaart",
     "rgb": "Elke kleur",
     "swatch_name_help": "Wat het rondje zegt; leeg: het woord van de kleur of haar hexcode",
     "show_tilt": "Kanteling tonen",
@@ -753,6 +754,28 @@
     "offline": "Geen beeld van de camera",
     "refresh": "Seconden tussen beelden",
     "exit_fullscreen": "Volledig scherm sluiten"
+  },
+  "cameras": {
+    "title": "Camera’s",
+    "sub": "Live-overzicht",
+    "count_one": "{n} camera",
+    "count": "{n} camera’s",
+    "motion": "Beweging gedetecteerd",
+    "no_motion": "Geen beweging",
+    "online": "Online",
+    "recording": "Neemt op",
+    "streaming": "Streamt",
+    "offline": "Offline",
+    "no_stream": "Geen stream",
+    "empty": "Geen camera’s",
+    "all": "Alle camera’s",
+    "live_all": "Alle camera’s live tonen",
+    "editor_motion": "Bewegingssensor",
+    "editor_status": "Statusregel",
+    "editor_show_status": "Statusregel tonen",
+    "editor_max_live": "Tegelijk live",
+    "editor_show_live": "‘Live’ tonen",
+    "editor_show_fullscreen": "Knop volledig scherm tonen"
   },
   "chips": {
     "rooms": "Kamers"
@@ -1630,7 +1653,8 @@
     "palette": "Licht van het thema",
     "temperature": "Het wit van de lamp",
     "regular": "Normaal",
-    "thin": "Dun"
+    "thin": "Dun",
+    "motion": "Beweging"
   },
   "tone": {
     "accent": "Accent",
@@ -2206,5 +2230,12 @@
     "starts_on": "Start {day} om {time}",
     "done_at": "Afgerond om {time}",
     "done_ago": "Afgerond {when}"
+  },
+  "template": {
+    "card": "Sjabloon",
+    "editor.active": "Als aan tonen",
+    "editor.active_helper": "Automatisch volgt de entiteit. Een sjabloon is aan, tenzij het off, false, no of 0 geeft",
+    "editor.icon_helper": "Een icoon zoals mdi:lightbulb, of een sjabloon dat er een geeft",
+    "editor.color_helper": "In YAML kan een sjabloon een kleur of een toon geven"
   }
 }

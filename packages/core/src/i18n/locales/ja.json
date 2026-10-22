@@ -393,6 +393,7 @@
     "show_color": "色を表示",
     "colors": "クイックカラー",
     "color_help": "1つ選ぶか、「カスタムカラー」を選んでその欄で任意の色を指定してください",
+    "item_color_helper": "空のときは、カードが電球の色を表示していれば照明の電球の色、それ以外はカードの色",
     "rgb": "任意の色",
     "swatch_name_help": "色の丸に表示する文字。空のときは色の名前またはHEXコード",
     "show_tilt": "チルトを表示",
@@ -819,7 +820,8 @@
     "palette": "テーマの照明色",
     "temperature": "電球の白色",
     "regular": "標準",
-    "thin": "細い"
+    "thin": "細い",
+    "motion": "動き"
   },
   "tone": {
     "accent": "アクセント",
@@ -1516,6 +1518,28 @@
     "refresh": "画像の更新間隔（秒）",
     "exit_fullscreen": "全画面を終了"
   },
+  "cameras": {
+    "title": "カメラ",
+    "sub": "ライブ一覧",
+    "count_one": "{n}台",
+    "count": "{n}台",
+    "motion": "動きを検知",
+    "no_motion": "動きなし",
+    "online": "オンライン",
+    "recording": "録画中",
+    "streaming": "配信中",
+    "offline": "オフライン",
+    "no_stream": "ストリームなし",
+    "empty": "カメラなし",
+    "all": "すべてのカメラ",
+    "live_all": "すべてのカメラをライブ表示",
+    "editor_motion": "モーションセンサー",
+    "editor_status": "状態行",
+    "editor_show_status": "状態行を表示",
+    "editor_max_live": "同時ライブ数",
+    "editor_show_live": "「ライブ」を表示",
+    "editor_show_fullscreen": "全画面ボタンを表示"
+  },
   "energy-devices": {
     "title": "家電",
     "share_of_total": "全体の{percent}%",
@@ -2206,5 +2230,12 @@
     "statuses.auto": "自動",
     "statuses.own": "カスタム",
     "statuses.close": "{status}に近い色です：見分けがつきにくくなります"
+  },
+  "template": {
+    "card": "テンプレート",
+    "editor.active": "オンとして表示",
+    "editor.active_helper": "自動ではエンティティに従います。テンプレートはoff、false、no、0以外を返すとオンになります",
+    "editor.icon_helper": "mdi:lightbulbのようなアイコン、またはアイコンを返すテンプレート",
+    "editor.color_helper": "YAMLでは、テンプレートで色またはトーンを指定できます"
   }
 }

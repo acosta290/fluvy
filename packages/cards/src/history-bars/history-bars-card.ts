@@ -21,10 +21,10 @@ import {
   readout,
   scrub,
   ScrubController,
-  sheetStyles,
   type IconRef,
   type Tone,
 } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
   css,
@@ -364,7 +364,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     axesStyles,
     css`
       /* the readouts: beside the title (right-aligned, a divider between them), or on their own row under the head */

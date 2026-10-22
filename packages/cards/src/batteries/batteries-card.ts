@@ -7,7 +7,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
+import { barRow, head, listRow, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -99,13 +100,13 @@ const kwh = (hass: HomeAssistant | undefined, value: number): string =>
  * be read is "—", and what depends on it is not drawn: nothing is estimated.
  */
 export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
-  static override layoutHeight(config: BatteriesCardConfig, hass?: HomeAssistant): number {
-    return batteriesHeight(config, hass);
+  static override layoutHeight(config: BatteriesCardConfig): number {
+    return batteriesHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     css`
       .ef-card {
         width: 100%;

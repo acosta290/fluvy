@@ -100,5 +100,27 @@
     "offline": "No image from the camera",
     "refresh": "Seconds between images",
     "exit_fullscreen": "Exit full screen"
+  },
+  "cameras": {
+    "title": "Cameras",
+    "sub": "Live overview",
+    "count_one": "{n} camera",
+    "count": "{n} cameras",
+    "motion": "Motion detected",
+    "no_motion": "No motion",
+    "online": "Online",
+    "recording": "Recording",
+    "streaming": "Streaming",
+    "offline": "Offline",
+    "no_stream": "No stream",
+    "empty": "No cameras",
+    "all": "All cameras",
+    "live_all": "Show every camera live",
+    "editor_motion": "Motion sensor",
+    "editor_status": "Status line",
+    "editor_show_status": "Show the status line",
+    "editor_max_live": "Live at once",
+    "editor_show_live": "Show “Live”",
+    "editor_show_fullscreen": "Show the full-screen button"
   }
 }

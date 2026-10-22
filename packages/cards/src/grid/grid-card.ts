@@ -7,7 +7,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, listRow, readout, sheetStyles, type Tone } from '@fluvy/ui';
+import { head, listRow, readout, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -126,13 +127,13 @@ interface Model {
  * and today's totals — from the grid's own sensors, or from the Energy dashboard's first grid connection.
  */
 export class FluvyGridCard extends Card<GridCardConfig> {
-  static override layoutHeight(config: GridCardConfig, hass?: HomeAssistant): number {
-    return gridHeight(config, hass);
+  static override layoutHeight(config: GridCardConfig): number {
+    return gridHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     phaseStyles,
     statsStyles,
     css`

@@ -9,7 +9,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -30,7 +29,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { batteryOf } from '../shared/battery.js';
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -56,16 +55,7 @@ import {
 import { configKeys, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
-import {
-  attrOf,
-  chipBlock,
-  chipRows,
-  COMPACT,
-  drawnAs,
-  featuresOf,
-  known,
-  listAttr,
-} from '../shared/heights.js';
+import { chipBlock, chipRows, COMPACT, drawnAs } from '../shared/heights.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 
@@ -129,6 +119,43 @@ const MOWER: Robot = {
 const usual = ({ bits }: Robot): number =>
   bits.start | bits.stop | bits.dock | bits.battery | bits.suction;
 
+/**
+ * What the house says of a robot: what it does (`supported_features`; its kind's usual where the house has not read
+ * it), whether it reports its own battery (`battery_level`), its suction's speeds.
+ */
+export interface RobotDoes {
+  readonly features: number | undefined;
+  readonly level: boolean;
+  readonly speeds: readonly string[];
+}
+
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the head; the readouts' row (16 + 44)
+ * where the config names a sensor; the battery (a label, the gauge and its marks: 112) where the robot has one; the
+ * commands (16 + 44) it takes; its suction as a row of chips under a label — what it does as the house describes it
+ * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips.
+ */
+export function vacuumHeight(config: VacuumCardConfig, does?: RobotDoes): number {
+  if (config.variant === 'compact') return COMPACT;
+  const id = config.entity;
+  const robot = typeof id === 'string' && id.startsWith('lawn_mower.') ? MOWER : VACUUM;
+  const features = does?.features ?? usual(robot);
+  const has = (key: Command | 'suction' | 'battery'): boolean =>
+    robot.bits[key] !== 0 && (features & robot.bits[key]) !== 0;
+  const readouts = config.area_entity || config.duration_entity || config.remaining_entity ? 60 : 0;
+  const battery =
+    config.show_battery !== false && (config.battery_entity || does?.level || has('battery'))
+      ? 112
+      : 0;
+  const commands =
+    has('start') || has('pause') || has('stop') || has('dock') || has('locate') ? 60 : 0;
+  const style = config.suction_style === 'chips' ? 'chips' : 'full';
+  const suction = has('suction')
+    ? chipBlock(does ? chipRows(does.speeds.map(pretty), style) : 2)
+    : 0;
+  return 64 + readouts + battery + commands + suction + 20;
+}
+
 const GAUGE: ReadonlyArray<readonly [number, number]> = [
   [0, 0],
   [0.25, 25],
@@ -143,36 +170,9 @@ const GAUGE: ReadonlyArray<readonly [number, number]> = [
  * suction as chips. Lawn mowers are served by the same card.
  */
 export class FluvyVacuumCard extends Card<VacuumCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: VacuumCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'compact') return COMPACT;
-    // the head; the readouts' row (16 + 44) where the config names a sensor; the battery (a label, the gauge and its
-    // marks: 112) where the robot has one; the commands (16 + 44) it takes; its suction as a row of chips under a
-    // label. Where the house is not there to say, every part, and two rows of suction chips.
-    const id = config.entity;
-    const robot = typeof id === 'string' && id.startsWith('lawn_mower.') ? MOWER : VACUUM;
-    const features = known(hass, id) ? featuresOf(hass, id) : usual(robot);
-    const has = (key: Command | 'suction' | 'battery'): boolean =>
-      robot.bits[key] !== 0 && (features & robot.bits[key]) !== 0;
-    const readouts =
-      config.area_entity || config.duration_entity || config.remaining_entity ? 60 : 0;
-    const battery =
-      config.show_battery !== false &&
-      (config.battery_entity || attrOf(hass, id, 'battery_level') !== undefined || has('battery'))
-        ? 112
-        : 0;
-    const commands =
-      has('start') || has('pause') || has('stop') || has('dock') || has('locate') ? 60 : 0;
-    const speeds = has('suction') ? listAttr(hass, id, 'fan_speed_list').map(pretty) : [];
-    const suction = has('suction')
-      ? chipBlock(
-          Math.max(
-            hass ? 0 : 2,
-            chipRows(speeds, config.suction_style === 'chips' ? 'chips' : 'full'),
-          ),
-        )
-      : 0;
-    return 64 + readouts + battery + commands + suction + 20;
+  /** The card's height at a 360 column from its config alone: every part (`vacuumHeight`). */
+  static override layoutHeight(config: VacuumCardConfig): number {
+    return vacuumHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -437,9 +437,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon
-          ? (this.config?.icon ?? (robot === MOWER ? 'leaf' : glyphFor(view)))
-          : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone,
         title: name,
         name: true,

@@ -30,16 +30,22 @@ const BUDGETS = {
   // the settings panel and its English
   panel: 40_960,
   strategy: 24_576,
+  // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
+  'house-heights': 4096,
   wall: 16_384,
-  // the energy family: every energy card, the flow's drawing and motion, the model they share. 76 KB since 1.9 (the
-  // family's English, the history bars' live day and resets, the power chart's axes): 64 before
-  energy: 77_824,
+  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 80 KB since
+  // 1.10 (its sheet left core, 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the
+  // power chart's axes); 64 before
+  energy: 81_920,
   // the history bars' readings: the resets and the steps, the recorder's history, fetched by the first card needing them
   'history-bars-readings': 8192,
   // the media family: the player and the now-playing strip
   media: 16_384,
-  // the devices family: the lock, the alarm and its keypad, the camera, the printer, the job's times
-  devices: 32_768,
+  // the devices family: the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times.
+  // 36 KB since 2026-10-22 (the Cameras card, #60: its tiles, its feeds, its lines and its editor): 32 before
+  devices: 36_864,
+  // the cameras' sheet: fetched when a Cameras card's round opens it
+  'cameras-sheet': 8192,
   // the appliances family: the washer, the dryer, the dishwasher and their kin, plug mode, their English. 54 KB since
   // 2026-10-20 (the Japanese naming words, in kanji, kana and romaji, #54); 53 since 2026-10-19 (the #47 judge's
   // fixes: rows that never repeat the hero, the head's picture chosen by the whole name, a fridge on a plug that never
@@ -59,13 +65,19 @@ const BUDGETS = {
   alerts: 24_576,
   // the alerts' sheet: fetched when it is opened
   'alerts-sheet': 12_288,
+  // the template card: its card on the tile's, the parsers of its templates' answers, its English (1.10, #59)
+  template: 8192,
   // the light card's colour controls: the quick colours' table and row, fetched by the first colour bulb
   'light-colour': 4096,
   // the weather card
   weather: 12_288,
   editor: 8192,
   'view-icons': 4096,
-  pages: 8192,
+  // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
+  icons: 4096,
+  // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,
+  // layers, CSV and chrome's sheet. 12 KB since 1.10 (those left core, 2.3 KB): 8 before
+  pages: 12_288,
   activity: 32_768,
   history: 16_384,
   // 24 KB since 1.9 (the appliances' and the alerts' words): 20 in 1.8, 16 before

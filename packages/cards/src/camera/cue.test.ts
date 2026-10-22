@@ -2,6 +2,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
+import { RETRY_AFTER } from './stream.js';
 
 // the camera lands with the devices family, defined before a page needs it
 await familiesDefined;
@@ -42,8 +43,8 @@ type CardElement = HTMLElement & {
   hass: HomeAssistant;
   width: number;
   updateComplete: Promise<boolean>;
-  stamp_: number;
-  holder: { state: string };
+  requestUpdate(): void;
+  feed: { stamp: number; holder: { state: string; retryAt: number } };
 };
 
 async function pill(view: 'auto' | 'live', streamState: '' | 'none') {
@@ -53,9 +54,11 @@ async function pill(view: 'auto' | 'live', streamState: '' | 'none') {
   card.width = 360;
   document.body.append(card);
   await card.updateComplete;
-  // a still has landed, and the stream stands where the holder says
-  card.stamp_ = Date.now();
-  card.holder.state = streamState;
+  // a still has landed, and the stream stands where the holder says (one that could not play waits to be asked again)
+  card.feed.stamp = Date.now();
+  card.feed.holder.state = streamState;
+  card.feed.holder.retryAt = Date.now() + RETRY_AFTER;
+  card.requestUpdate();
   await card.updateComplete;
   const el = card.shadowRoot!.querySelector('.dv-cam__live')!;
   return {

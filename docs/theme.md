@@ -66,9 +66,10 @@ Cards work out their colours on the palette they wear, from the moment they are 
 look, and on one that does not (it then wears the look your house chose), in its editor too.
 
 `tint: always` makes a coloured item show its colour at rest too, as a quiet wash of it with a hairline in the same
-colour; an item without a colour of its own keeps the card's surface. It works on the tile card, a tiles group, a
-room's tiles, room lights' tiles, scenes and tabs. The wash is as strong as the words on it allow (they always read at
-full contrast), so it is softer in a dark, vivid palette. On, the item still takes its full fill:
+colour. It works on the tile card, a tiles group, a room's tiles, room lights' tiles, scenes and tabs; a tile without
+a colour of its own shows its tone's wash (1.10) — but a status at rest (a shut door, a dry leak sensor, a clear smoke
+alarm: their warning and danger tones) never washes —, and a scene or a tab without one keeps the card's surface. The wash is
+as strong as the words on it allow (they always read at full contrast), so it is softer in a dark, vivid palette. On, the item still takes its full fill:
 
 ```yaml
 type: custom:fluvy-tiles-card

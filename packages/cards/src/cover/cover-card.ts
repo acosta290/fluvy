@@ -8,7 +8,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -21,7 +20,6 @@ import {
   stepper,
   type ActionItem,
   type ChipItem,
-  type GlyphName,
   type RulerChangeDetail,
   type RulerWindowDetail,
   type Tone,
@@ -31,7 +29,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
@@ -61,7 +59,7 @@ import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shar
 import { chipRow } from '../shared/chips.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { HeadFit } from '../energy/head.js';
-import { COMPACT, drawnAs, featuresOf, known, listLength } from '../shared/heights.js';
+import { COMPACT, drawnAs, listLength } from '../shared/heights.js';
 import {
   fitValueRow,
   STEPPER,
@@ -106,13 +104,20 @@ const SET_TILT_POSITION = 128;
 /** What a cover draws where the house is not there to say (`layoutHeight`; one never read): position, commands. */
 const USUAL = OPEN | CLOSE | SET_POSITION | STOP;
 
-/** Device classes that read better with their own glyph than with the blinds. */
-const CLASS_GLYPH: Record<string, GlyphName> = {
-  garage: 'car',
-  door: 'door',
-  gate: 'door',
-  damper: 'fan',
-};
+/**
+ * The card's height at a 360 column, for the automatic dashboard's columns, for what the cover does (`features`, as
+ * the house describes it: `house-heights.ts`): the ruler with its side column where it takes a position (the whole
+ * card where the house is not there to say); else the tilt's readout and stepper over the commands; else the head
+ * and the commands.
+ */
+export function coverHeight(config: CoverCardConfig, features = USUAL): number {
+  if (config.variant === 'compact') return COMPACT;
+  const tilt =
+    config.show_tilt !== false && (features & (SET_TILT_POSITION | OPEN_TILT | CLOSE_TILT)) !== 0;
+  const positioned = (features & SET_POSITION) !== 0;
+  const favorites = config.show_favorites !== false && listLength(config, ['favorites']) ? 88 : 0;
+  return positioned ? 328 + favorites : tilt ? 224 : COMPACT;
+}
 
 /** The ruler's band, and its words (56) with the 8 before the band: what the side column beside them does not get. */
 const RULER_BAND = 44;
@@ -143,17 +148,9 @@ const percentAttr = (view: EntityView, key: string): Percent => {
  * cover says it is travelling, instead of snapping back to where the motor happens to be.
  */
 export class FluvyCoverCard extends Card<CoverCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: CoverCardConfig, hass?: HomeAssistant): number {
-    if (config.variant === 'compact') return COMPACT;
-    // the ruler with its side column where the cover takes a position (the whole card where the house is not there
-    // to say); else the tilt's readout and stepper over the commands; else the head and the commands
-    const features = known(hass, config.entity) ? featuresOf(hass, config.entity) : USUAL;
-    const tilt =
-      config.show_tilt !== false && (features & (SET_TILT_POSITION | OPEN_TILT | CLOSE_TILT)) !== 0;
-    const positioned = (features & SET_POSITION) !== 0;
-    const favorites = config.show_favorites !== false && listLength(config, ['favorites']) ? 88 : 0;
-    return positioned ? 328 + favorites : tilt ? 224 : COMPACT;
+  /** The card's height at a 360 column from its config alone: the whole card (`coverHeight`). */
+  static override layoutHeight(config: CoverCardConfig): number {
+    return coverHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -594,9 +591,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon
-          ? (this.config?.icon ?? CLASS_GLYPH[view.deviceClass] ?? glyphFor(view))
-          : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone,
         title: name,
         name: true,

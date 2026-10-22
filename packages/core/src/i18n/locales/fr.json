@@ -441,6 +441,7 @@
     "show_color": "Afficher la couleur",
     "colors": "Couleurs rapides",
     "color_help": "Choisissez-en une, ou Couleur personnalisée et choisissez n’importe quelle couleur dans son champ",
+    "item_color_helper": "Vide, la couleur de l’ampoule d’une lumière là où la carte les montre, sinon celle de la carte",
     "rgb": "Toute couleur",
     "swatch_name_help": "Ce que dit le rond ; vide, le mot de la couleur ou son code hexa",
     "show_tilt": "Afficher l’inclinaison",
@@ -753,6 +754,28 @@
     "offline": "Aucune image de la caméra",
     "refresh": "Secondes entre les images",
     "exit_fullscreen": "Quitter le plein écran"
+  },
+  "cameras": {
+    "title": "Caméras",
+    "sub": "Vue en direct",
+    "count_one": "{n} caméra",
+    "count": "{n} caméras",
+    "motion": "Mouvement détecté",
+    "no_motion": "Aucun mouvement",
+    "online": "En ligne",
+    "recording": "Enregistrement",
+    "streaming": "En diffusion",
+    "offline": "Hors ligne",
+    "no_stream": "Pas de flux",
+    "empty": "Aucune caméra",
+    "all": "Toutes les caméras",
+    "live_all": "Afficher toutes les caméras en direct",
+    "editor_motion": "Détecteur de mouvement",
+    "editor_status": "Ligne d’état",
+    "editor_show_status": "Afficher la ligne d’état",
+    "editor_max_live": "En direct en même temps",
+    "editor_show_live": "Afficher « Direct »",
+    "editor_show_fullscreen": "Afficher le bouton plein écran"
   },
   "chips": {
     "rooms": "Pièces"
@@ -1630,7 +1653,8 @@
     "palette": "La lumière du thème",
     "temperature": "Le blanc de l’ampoule",
     "regular": "Normale",
-    "thin": "Fine"
+    "thin": "Fine",
+    "motion": "Mouvement"
   },
   "tone": {
     "accent": "Accent",
@@ -2206,5 +2230,12 @@
     "starts_on": "Début {day} à {time}",
     "done_at": "Terminé à {time}",
     "done_ago": "Terminé {when}"
+  },
+  "template": {
+    "card": "Modèle",
+    "editor.active": "Afficher comme allumé",
+    "editor.active_helper": "Automatique suit l’entité. Un modèle est allumé sauf s’il donne off, false, no ou 0",
+    "editor.icon_helper": "Une icône comme mdi:lightbulb, ou un modèle qui en donne une",
+    "editor.color_helper": "En YAML, un modèle peut donner une couleur ou une tonalité"
   }
 }

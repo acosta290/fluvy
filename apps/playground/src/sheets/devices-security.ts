@@ -259,21 +259,63 @@ export const sheet: SheetSpec = {
         pg_stream: 'fails',
       },
     ],
+    /* what opens and shuts, drawn as it stands */
+    [
+      'cover.drive_gate',
+      'closed',
+      { friendly_name: 'Drive gate', device_class: 'gate', supported_features: 3 },
+    ],
+    [
+      'cover.yard_gate',
+      'open',
+      { friendly_name: 'Yard gate', device_class: 'gate', supported_features: 3 },
+    ],
+    [
+      'cover.main_garage',
+      'closed',
+      { friendly_name: 'Garage', device_class: 'garage', supported_features: 3 },
+    ],
+    [
+      'cover.workshop',
+      'opening',
+      { friendly_name: 'Workshop', device_class: 'garage', supported_features: 3 },
+    ],
+    ['binary_sensor.hall_door', 'off', { friendly_name: 'Hall door', device_class: 'door' }],
+    ['binary_sensor.patio_door', 'on', { friendly_name: 'Patio door', device_class: 'door' }],
+    ['binary_sensor.skylight', 'off', { friendly_name: 'Skylight', device_class: 'window' }],
+    ['binary_sensor.bay_window', 'on', { friendly_name: 'Bay window', device_class: 'window' }],
+    /* the icons Home Assistant knows: the person's (the registry's, below), an integration's, one for the class */
+    ['light.porch_lamp', 'on', { friendly_name: 'Porch lamp', icon: 'mdi:outdoor-lamp' }],
+    ['sensor.pollen', '3', { friendly_name: 'Pollen', icon: 'mdi:flower-pollen' }],
+    ['sensor.visitors', '4', { friendly_name: 'Visitors today' }],
+    [
+      'binary_sensor.washer_vibration',
+      'off',
+      { friendly_name: 'Washer vibration', device_class: 'vibration' },
+    ],
   ],
   // as a real house has them: the rows' entities in areas (their line still says when they changed)
   registry: {
-    entities: Object.fromEntries(
-      [
-        ['binary_sensor.front_door', 'ds_hall'],
-        ['binary_sensor.back_door', 'ds_garden'],
-        ['binary_sensor.living_motion', 'ds_living'],
-        ['binary_sensor.person', 'ds_garden'],
-        ['binary_sensor.vehicle', 'ds_garden'],
-        ['lock.side_gate', 'ds_garden'],
-        ['sensor.garage_lock_battery', 'ds_garage'],
-        ['switch.auto_lock', 'ds_hall'],
-      ].map(([id, area]) => [id, { entity_id: id, area_id: area }]),
-    ),
+    entities: {
+      ...Object.fromEntries(
+        [
+          ['binary_sensor.front_door', 'ds_hall'],
+          ['binary_sensor.back_door', 'ds_garden'],
+          ['binary_sensor.living_motion', 'ds_living'],
+          ['binary_sensor.person', 'ds_garden'],
+          ['binary_sensor.vehicle', 'ds_garden'],
+          ['lock.side_gate', 'ds_garden'],
+          ['sensor.garage_lock_battery', 'ds_garage'],
+          ['switch.auto_lock', 'ds_hall'],
+        ].map(([id, area]) => [id, { entity_id: id, area_id: area }]),
+      ),
+      // the icon the person set in Home Assistant
+      'light.porch_lamp': {
+        entity_id: 'light.porch_lamp',
+        area_id: 'ds_garden',
+        icon: 'mdi:outdoor-lamp',
+      },
+    },
     areas: {
       ds_hall: { area_id: 'ds_hall', name: 'Hall' },
       ds_garden: { area_id: 'ds_garden', name: 'Garden' },
@@ -415,6 +457,20 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a row's line as the row asks (#57): the gate's state, not when it changed; a row's own tone on its circle
+    {
+      title: 'Camera · rows with their own line',
+      cards: [
+        {
+          type: 'custom:fluvy-camera-card',
+          entity: 'camera.driveway',
+          rows: [
+            { entity: 'cover.drive_gate', secondary: 'state' },
+            { entity: 'binary_sensor.person', icon: 'person', secondary: 'area', tone: 'warning' },
+          ],
+        },
+      ],
+    },
     {
       title: 'Camera · image error',
       cards: [{ type: 'custom:fluvy-camera-card', entity: 'camera.back_garden' }],
@@ -471,6 +527,56 @@ export const sheet: SheetSpec = {
           entity: 'alarm_control_panel.away',
           variant: 'compact',
           cols: 6,
+        },
+      ],
+    },
+    // a gate, a garage, a door and a window, shut beside open: Fluvy's glyph for each as it stands
+    {
+      title: 'Openings · shut and open',
+      cards: [
+        'cover.drive_gate',
+        'cover.yard_gate',
+        'cover.main_garage',
+        'cover.workshop',
+        'binary_sensor.hall_door',
+        'binary_sensor.patio_door',
+        'binary_sensor.skylight',
+        'binary_sensor.bay_window',
+      ].map((entity) => ({ type: 'custom:fluvy-tile-card', entity, size: 'compact', cols: 6 })),
+    },
+    // the same in a camera's rows and in a list, beside the icons only Home Assistant knows
+    {
+      title: 'Camera · its openings as they stand',
+      cards: [
+        {
+          type: 'custom:fluvy-camera-card',
+          entity: 'camera.driveway',
+          rows: ['cover.drive_gate', 'cover.yard_gate', 'cover.main_garage', 'cover.workshop'],
+        },
+      ],
+    },
+    {
+      title: 'Openings in a list · the icons Home Assistant knows',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Openings',
+          entities: [
+            'binary_sensor.hall_door',
+            'binary_sensor.patio_door',
+            'binary_sensor.skylight',
+            'binary_sensor.bay_window',
+          ],
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Icons',
+          entities: [
+            'light.porch_lamp',
+            'sensor.pollen',
+            'sensor.visitors',
+            'binary_sensor.washer_vibration',
+          ],
         },
       ],
     },

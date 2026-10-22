@@ -18,7 +18,7 @@ import { agoShort } from '../helpers/datetime.js';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import { TextRuler } from '../shared/fit.js';
 
@@ -326,7 +326,7 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
             @contextmenu=${preventMenu}
             @click=${clickPress}
           >
-            ${ico(item.icon ?? view.attr<string | null>('icon') ?? glyphFor(view), active || tinted ? 'accent' : 'neutral')}
+            ${ico(iconOf(view, item.icon), active || tinted ? 'accent' : 'neutral')}
             <span class="fv-row__text">
               <span class="fv-row__title">${name}</span>
               ${meta ? html`<span class="fv-row__sub">${meta}</span>` : nothing}

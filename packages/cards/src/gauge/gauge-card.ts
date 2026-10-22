@@ -27,7 +27,7 @@ import { HeadFit } from '../energy/head.js';
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 import {
   actionFields,
   colourFields,
@@ -129,7 +129,6 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,
-    sheetStyles.energy,
     css`
       /* the signed ring: its size fitted to the column, its lit ticks in the card's tone (the grid's by default) */
       .en-gauge .en-tick.is-lit {
@@ -409,7 +408,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone: headTone,
         title: name,
         sub: fitted.sub,
@@ -645,7 +644,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? glyphFor(view)) : null,
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
         tone: headTone,
         title: name,
         sub: fitted.sub,

@@ -13,7 +13,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
 import {
@@ -26,12 +25,12 @@ import {
   label,
   preventMenu,
   round,
-  sheetStyles,
   startPress,
   type ChipItem,
   type IconRef,
   type RulerChangeDetail,
 } from '@fluvy/ui';
+import { mediaStyles } from '@fluvy/ui/styles/media';
 
 import {
   css,
@@ -77,6 +76,7 @@ import {
 } from '../shared/media.js';
 import { mediaHeight } from '../media-family.js';
 import { configKeys, type RowStyle } from '../shared/config.js';
+import { iconOf } from '../shared/domain.js';
 import { chipRow } from '../shared/chips.js';
 import { fitLine } from '../shared/fit.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
@@ -143,13 +143,13 @@ const cssUrl = (url: string): string => url.replace(/["\\]/g, '');
  */
 export class FluvyMediaCard extends Card<MediaCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: MediaCardConfig, hass?: HomeAssistant): number {
-    return mediaHeight(config, hass);
+  static override layoutHeight(config: MediaCardConfig): number {
+    return mediaHeight(config);
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.media,
+    mediaStyles,
     css`
       /* the sheet fixes 360; a dashboard column decides here */
       .md-card,
@@ -1055,7 +1055,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
               ? ico('ban', 'off')
               : picture
                 ? this.art(44, picture, 'md-art--s')
-                : ico(this.config?.icon ?? 'speaker', active ? 'media' : 'neutral')
+                : ico(iconOf(view, this.config?.icon), active ? 'media' : 'neutral')
         }
         <div class="fv-row__text">
           <span class="fv-row__title" data-name

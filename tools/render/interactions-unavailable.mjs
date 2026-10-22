@@ -39,7 +39,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { parseArgs } from './lib.mjs';
-import { startSuite } from './lib/suite.mjs';
+import { HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
 
 const args = parseArgs(process.argv.slice(2), {
   cards: '',
@@ -80,6 +80,8 @@ const DECLARED = 8;
 const SOURCES = {
   'fluvy-tile-card': ['stub', ['actions', 'Tile · large', 0]],
   'fluvy-tiles-card': ['stub', ['actions', 'Tiles · large · one unavailable', 0]],
+  // its stub names its entity by a template; the washer has its readouts beside its words
+  'fluvy-template-card': ['stub', ['template', 'Large', 0]],
   'fluvy-light-card': ['stub', ['slider', 'On', 0]],
   'fluvy-thermostat-card': [['climate', 'Heat', 0]],
   'fluvy-cover-card': [['devices-motion', 'Blinds', 0]],
@@ -103,6 +105,7 @@ const SOURCES = {
   'fluvy-energy-sankey-card': [['sankey', 'Where it went', 0]],
   'fluvy-energy-score-card': [['sankey', 'Energy score', 0]],
   'fluvy-alarm-card': [['devices-security', 'Alarm', 0]],
+  'fluvy-cameras-card': [['cameras', 'Cameras · the mockup', 0]],
   'fluvy-printer-card': [['printer', 'Bambu Lab · printing', 0]],
   'fluvy-automations-card': [['automations', 'Rows', 0]],
   'fluvy-appliances-card': [['appliances', 'Appliances · rows', 0]],
@@ -243,7 +246,13 @@ const plan = (page, tag, source) =>
  */
 const measure = (page, tag, source, cases) =>
   page.evaluate(
-    async ({ tag, source, cases, found }) => {
+    async ({ tag, source, cases, found, module }) => {
+      const { houseHeightOf } = await import(module);
+      /** A card's declared height as the automatic dashboard plans it, with the house it is shown. */
+      const planned = (el) =>
+        typeof el.constructor.layoutHeight === 'function'
+          ? houseHeightOf({ ...el.config, type: `custom:${tag}` }, -1, el.hass)
+          : undefined;
       const frame =
         source && window.fluvySheets[source[0]]?.frames.find((f) => f.title === source[1]);
       const live = (frame?.hass ?? ((hass) => hass))(window.fluvyMock.hass());
@@ -334,10 +343,9 @@ const measure = (page, tag, source, cases) =>
       await frames();
       const out = [];
       for (const { c, a, b, ids } of pairs) {
-        const declared = a.constructor.layoutHeight?.(a.config, a.hass);
+        const declared = planned(a);
         // never read, the card declares what it draws where the house is not there to say
-        const unread =
-          c.kind === 'never' ? b.constructor.layoutHeight?.(b.config, b.hass) : declared;
+        const unread = c.kind === 'never' ? planned(b) : declared;
         out.push({
           variant: c.variant,
           kind: c.kind,
@@ -353,7 +361,7 @@ const measure = (page, tag, source, cases) =>
       stage.replaceChildren();
       return out;
     },
-    { tag, source, cases, found: tag in FOUND },
+    { tag, source, cases, found: tag in FOUND, module: HOUSE_HEIGHTS },
   );
 
 /** What failed, what is listed and why, and the declarations that drift, for `--json`. */

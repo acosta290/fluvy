@@ -162,6 +162,26 @@ describe('TemplateTexts', () => {
     expect(open).toHaveLength(1); // the refused one never opened
   });
 
+  it('takes a warning for no answer: the line holds, and the result that follows it is the answer', async () => {
+    const { open, host, texts } = await shown();
+    const read = (): string[] =>
+      host.render(() => [texts.text(T, 'sensor.t'), texts.line(T, 'sensor.t')]);
+    // Home Assistant says a name the template reads that is not defined as a warning, before the result
+    const before = host.updates;
+    open[0]!.answer({ error: "'room' is undefined", level: 'WARNING' });
+    expect(host.updates).toBe(before); // nothing to draw: still pending
+    expect(read()).toEqual(['', PENDING_LINE]);
+    open[0]!.answer({ result: '22.5', listeners: {} });
+    expect(read()).toEqual(['22.5', '22.5']);
+    // a warning on a later render keeps what the line said until its result lands
+    open[0]!.answer({ error: "'room' is undefined", level: 'WARNING' });
+    expect(read()).toEqual(['22.5', '22.5']);
+    open[0]!.answer({ result: '23', listeners: {} });
+    expect(read()).toEqual(['23', '23']);
+    open[0]!.answer({ error: "UndefinedError: 'x' is undefined", level: 'ERROR' });
+    expect(read()).toEqual(['', '']); // an error is an answer: nothing
+  });
+
   it('holds a row’s line while Home Assistant has not answered, and lets it go on an answered nothing', async () => {
     const { connection, open } = socket();
     const host = new Host(connection);

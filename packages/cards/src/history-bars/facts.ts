@@ -3,6 +3,7 @@ import type { GlyphName } from '@fluvy/ui';
 import {
   accentField,
   actionField,
+  byName,
   editorWord,
   entityField,
   fieldRow,
@@ -276,7 +277,7 @@ export const FACT_FIELDS: HaFormSchemaItem[] = [
 /** A head readout has no circle: the same fields without the icon and the colour. */
 export const READOUT_FIELDS: HaFormSchemaItem[] = pickFields(
   FACT_FIELDS,
-  (name) => name !== 'icon' && name !== 'color',
+  byName((name) => name !== 'icon' && name !== 'color'),
 );
 export const READOUT_KEYS = FACT_KEYS.filter((key) => key !== 'icon' && key !== 'color');
 
@@ -317,7 +318,7 @@ function schemaFor(
   const key = `${prefix}:${FACT_KEYS.filter(shown).join(',')}`;
   let form = forms.get(key);
   if (!form) {
-    form = pickFields(prefix === 'fact' ? FACT_FIELDS : READOUT_FIELDS, shown);
+    form = pickFields(prefix === 'fact' ? FACT_FIELDS : READOUT_FIELDS, byName(shown));
     forms.set(key, form);
   }
   return form;

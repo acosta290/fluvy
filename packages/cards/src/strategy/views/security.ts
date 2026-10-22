@@ -1,3 +1,4 @@
+import { COLUMNS } from '../context.js';
 import { balanced, flowed, full, when } from '../layout.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
@@ -6,10 +7,14 @@ import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
  * every camera, and the openings room by room.
  */
 
-const camera = (id: string, ctx: StrategyContext): Card =>
-  full('camera', { entity: id, ...(ctx.style.refresh ? { refresh: ctx.style.refresh } : {}) });
+/** Cameras on one Cameras card, at the dashboard's refresh. */
+const cameras = (ids: readonly string[], ctx: StrategyContext): Card =>
+  full('cameras', {
+    cameras: [...ids],
+    ...(ctx.style.refresh ? { refresh: ctx.style.refresh } : {}),
+  });
 
-/** The alarm first, then what opens (locks, garage doors and gates), what is open, and the first cameras. */
+/** The alarm first, then what opens (locks, garage doors and gates), what is open, and the first four cameras. */
 function overviewView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   return balanced(ctx, [
@@ -19,16 +24,21 @@ function overviewView(ctx: StrategyContext): Section[] {
     ...when(home.openings.length, () => [
       full('openings', { title: t('strategy.sensors'), entities: home.openings.slice(0, 8) }),
     ]),
-    ...home.cameras.slice(0, 2).map((id) => camera(id, ctx)),
+    ...when(home.cameras.length, () => [cameras(home.cameras.slice(0, 4), ctx)]),
   ]);
 }
 
-/** Every camera, at the dashboard's refresh. */
+/** Every camera (twelve at most) on one Cameras card across the view's columns, at the dashboard's refresh. */
 function camerasView(ctx: StrategyContext): Section[] {
-  return balanced(
-    ctx,
-    ctx.home.cameras.slice(0, 9).map((id) => camera(id, ctx)),
-  );
+  return [
+    {
+      type: 'grid',
+      column_span: COLUMNS,
+      cards: [
+        { ...cameras(ctx.home.cameras.slice(0, 12), ctx), grid_options: { columns: 'full' } },
+      ],
+    },
+  ];
 }
 
 /** The openings by room (a card a room when the house has areas, else one), every one of them. */

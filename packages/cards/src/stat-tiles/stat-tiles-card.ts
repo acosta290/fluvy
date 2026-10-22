@@ -8,7 +8,6 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
   entriesOf,
 } from '@fluvy/core';
 
@@ -31,7 +30,7 @@ import { baseOf, figure, figureText, scaleFor, type Scale } from '../gauge/units
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 
 import {
   accentField,
@@ -58,7 +57,6 @@ import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { optionColumnsFor } from '../shared/options.js';
 import {
-  attrOf,
   EMPTY,
   entryCount,
   HEAD,
@@ -66,6 +64,7 @@ import {
   ROW,
   ROW_COMPACT,
   textWidth,
+  type NameOf,
 } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { TemplateTexts } from '../shared/templates.js';
@@ -168,52 +167,59 @@ export function statTileColumns(
 }
 
 /**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the lead readout, the tiles and the rows
+ * 16 under them. `auto` is laid out by the words (`statTileColumns`): three a row while the widest label holds a
+ * cell, four as two by two, else two — the names the config's or the house's (`nameOf`, read by `house-heights.ts`),
+ * the figures the stand-in's width; the count alone where the house is not there to say.
+ */
+export function statTilesHeight(config: StatTilesCardConfig, nameOf?: NameOf): number {
+  const compact = config.variant === 'compact';
+  // auto-entities hands its figures over as `entities` (read as `tiles` once the card has them)
+  const items = entriesOf<{ readonly entity: string; readonly name?: string }>(
+    config.tiles ?? config.entities,
+  )
+    .slice(0, MAX_TILES)
+    .map((item) => (typeof item === 'string' ? { entity: item } : item));
+  const count = items.length;
+  const rows = entryCount(config, ['rows']);
+  const lead = config.entity ? LEAD : 0;
+  if (!count && !rows) return HEAD + lead + EMPTY;
+  const asked = statColumns(config.columns, compact ? 'auto' : 2);
+  const labels = nameOf
+    ? items.map((item) => {
+        const name = item.name ?? nameOf(item.entity);
+        return textWidth(typeof name === 'string' ? name : '', 'option');
+      })
+    : undefined;
+  const perRow = Math.max(
+    1,
+    Math.min(
+      count,
+      asked !== 'auto'
+        ? asked
+        : labels
+          ? statTileColumns(asked, 320, labels, [], STAND_IN)
+          : optionColumns(count),
+    ),
+  );
+  const gap = tileGap(320, perRow);
+  const tiles = count
+    ? rowsOf(count, perRow) * ((compact ? TILE_COMPACT : TILE_HEIGHT) + gap) - gap
+    : 0;
+  // the rows sit 16 under the tiles, or where the tiles would be
+  return HEAD + lead + tiles + (rows ? (count ? 16 : 0) + (compact ? ROW_COMPACT : ROW) * rows : 0);
+}
+
+/**
  * A set of figures as read-only tiles: the option-tile anatomy (glyph top-left, label, value) without
  * the interaction, two per row, one of them optionally filled with its tone — or, compact, 64 px tiles
  * of label over value, three a row when they fit. An optional big readout sits above them, optional
  * plain rows below.
  */
 export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: StatTilesCardConfig, hass?: HomeAssistant): number {
-    const compact = config.variant === 'compact';
-    // auto-entities hands its figures over as `entities` (read as `tiles` once the card has them)
-    const items = entriesOf<{ readonly entity: string; readonly name?: string }>(
-      config.tiles ?? config.entities,
-    )
-      .slice(0, MAX_TILES)
-      .map((item) => (typeof item === 'string' ? { entity: item } : item));
-    const count = items.length;
-    const rows = entryCount(config, ['rows']);
-    const lead = config.entity ? LEAD : 0;
-    if (!count && !rows) return HEAD + lead + EMPTY;
-    // `auto` is laid out by the words (`statTileColumns`): three a row while the widest label holds a cell, four
-    // as two by two, else two — the names the config's or the house's, the figures the stand-in's width; the
-    // count alone where the house is not there to say
-    const asked = statColumns(config.columns, compact ? 'auto' : 2);
-    const labels = items.map((item) => {
-      const name = item.name ?? attrOf(hass, item.entity, 'friendly_name');
-      return textWidth(typeof name === 'string' ? name : '', 'option');
-    });
-    const perRow = Math.max(
-      1,
-      Math.min(
-        count,
-        asked === 'auto' && hass
-          ? statTileColumns(asked, 320, labels, [], STAND_IN)
-          : asked === 'auto'
-            ? optionColumns(count)
-            : asked,
-      ),
-    );
-    const gap = tileGap(320, perRow);
-    const tiles = count
-      ? rowsOf(count, perRow) * ((compact ? TILE_COMPACT : TILE_HEIGHT) + gap) - gap
-      : 0;
-    // the rows sit 16 under the tiles, or where the tiles would be
-    return (
-      HEAD + lead + tiles + (rows ? (count ? 16 : 0) + (compact ? ROW_COMPACT : ROW) * rows : 0)
-    );
+  /** The card's height at a 360 column from its config alone: the tiles a row by their count (`statTilesHeight`). */
+  static override layoutHeight(config: StatTilesCardConfig): number {
+    return statTilesHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -379,7 +385,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         label: tile.name ?? view.name,
         name: true,
         value: this.text(view, scales),
-        glyph: tile.icon ?? glyphFor(view),
+        glyph: iconOf(view, tile.icon),
         tone: tile.tone ?? tone,
         active: !gone(view) && (tile.highlight ?? false),
         unavailable: gone(view),
@@ -426,7 +432,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
       data-card
     >
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? (lead ? glyphFor(lead) : 'grid')) : null,
+        icon: fitted.icon ? (this.config?.icon ?? (lead ? iconOf(lead) : 'grid')) : null,
         tone: headTone,
         title,
         sub: fitted.sub,
@@ -451,7 +457,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
                 const usable = isUsable(view);
                 // a compact row is the name and the value alone: its second line is not laid out
                 return listRow({
-                  icon: keepIcon ? (row.icon ?? glyphFor(view)) : null,
+                  icon: keepIcon ? iconOf(view, row.icon) : null,
                   tone: usable ? toneOf(row, 'neutral') : 'off',
                   accent: this.accents.item(row.color),
                   title,

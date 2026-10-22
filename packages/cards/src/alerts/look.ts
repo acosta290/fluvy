@@ -7,7 +7,7 @@ import {
   type HomeAssistant,
 } from '@fluvy/core';
 import { durationShort } from '../helpers/datetime.js';
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 import { nameOf, type AlertResult, type AlertRow } from './engine.js';
 import type { RepairsStore } from './repairs.js';
 
@@ -102,11 +102,9 @@ export function rowState({ hass }: LookContext, row: AlertRow): string {
 export const rowDetail = (context: LookContext, row: AlertRow): string =>
   row.value !== undefined && row.state ? rowState(context, row) : lasted(context, row.since);
 
-/** A row's glyph: its entity's own (a door, a battery), else the alert's. */
+/** A row's glyph: its entity's (a door as it stands, a battery), else the alert's. */
 export function rowGlyph(context: LookContext, result: AlertResult, row: AlertRow): string {
-  if (!row.state) return alertIcon(context, result);
-  const icon = row.state.attributes['icon'];
-  return typeof icon === 'string' ? icon : glyphFor(resolveEntity(context.hass, row.id));
+  return row.state ? iconOf(resolveEntity(context.hass, row.id)) : alertIcon(context, result);
 }
 
 /** Where a row is: its area's name. */

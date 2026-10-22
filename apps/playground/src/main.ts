@@ -31,6 +31,7 @@ import {
 import { setFallbackTokens, textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
 import { dashboardOptions, mountDashboard } from './dashboard.js';
+import { defineIconStubs } from './ha-icons.js';
 import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
 import { mountHistory, type HistoryMoment } from './history.js';
@@ -45,6 +46,7 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  * ?width=392             a frame's width: the section's, which a full card fills (a half card is (width − 16) / 2);
  *                        a frame with a width of its own keeps it
  * ?lang=es               UI language
+ * ?clock=12             Home Assistant's 12-hour clock ("9:50 PM"; the house's time format)
  * ?theme=off             drop the theme tokens: the cards must fall back to their own
  * &fallback=mist           …and those are this palette's, the page wearing none (a dashboard without the look, #40)
  * ?palette=volt          a preset, applied by the live palette engine (the one the bundle runs)
@@ -75,6 +77,7 @@ const width = Number(params.get('width') ?? 360);
 const dashboard = params.get('dashboard');
 const only = dashboard ?? params.get('sheet');
 const language = params.get('lang') ?? 'en';
+const clock = params.get('clock') === '12' ? '12' : undefined;
 /** The house's status colours the URL asks for (none: every status the palette's). */
 const statuses = parseStatuses(
   Object.fromEntries(STATUS_NAMES.map((name) => [name, params.get(name)])),
@@ -179,6 +182,7 @@ const registry = selected.reduce<NonNullable<MockOptions['registry']>>(
 const mock = createHass([...states.values()], {
   dark,
   language,
+  ...(clock ? { clock } : {}),
   now: NOW,
   registry,
   history: Object.assign({}, ...selected.map(([, s]) => s.history ?? {})) as Record<
@@ -387,19 +391,7 @@ Object.assign(window, {
   fluvyOutOfReach: outOfReachView,
 });
 
-// Home Assistant's <ha-icon> is not here: a stub draws a neutral disc so an `mdi:` reference has a visible box
-if (!customElements.get('ha-icon')) {
-  customElements.define(
-    'ha-icon',
-    class extends HTMLElement {
-      connectedCallback(): void {
-        if (!this.shadowRoot)
-          this.attachShadow({ mode: 'open' }).innerHTML =
-            '<style>:host{display:inline-flex;width:20px;height:20px}svg{width:100%;height:100%}</style><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8"/><path d="M8 12h8"/></svg>';
-      }
-    },
-  );
-}
+defineIconStubs();
 void document.fonts.ready.then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {

@@ -14,7 +14,8 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 - **Settings and its lists**, the notifications drawer, the quick search, the pickers, the code editor.
 - **Forms and dialogs**: fields, selects, menus, switches, sliders, dialog footers, creation forms.
 - **Dashboards in edit mode**: the edit bar, the frames of what can be edited, what adds and what edits.
-- **Panels in a frame** (HACS): they get Inter and a shell of their own.
+- **Panels in a frame** (HACS): they get Inter and a shell of their own while the page wears Fluvy; on another theme
+  the frame is left as Home Assistant draws it.
 - **The Activity and History pages** (see [pages](pages.md)), with their own switches.
 
 ## The view tabs' sheet
@@ -53,18 +54,66 @@ Home Assistant paints, and the bundle takes it over.
 
 ## What it never does
 
-It never changes what a page does, never intercepts a click, and never persists anything. Every sheet is attached
-while the shell is on and removed when it is off or when the page's theme is not Fluvy.
+It never changes what a page does, never intercepts a click, and never persists anything. Every sheet is attached once,
+when its element is defined, and stays attached: it is filled while the page wears Fluvy (and the house's choice it
+waits on holds) and emptied otherwise, and an empty sheet does nothing. The view tabs', the device size's and the
+wall's sheets are filled whatever the theme, because every rule in them hangs on a mark or a variable Fluvy writes only
+where it is used — a dashboard that wears the look, a device that reads larger, a wall.
+
+## When Fluvy steps aside
+
+What no stylesheet can reach — a chart drawn on a canvas, an icon told only a path, a frame with a document of its own
+— is reached by wrapping one method of a Home Assistant element: the charts' theme and series (`ha-chart-base`), the
+icons' path (`ha-svg-icon`), HACS's frame (`ha-panel-custom`), the settings lists (`ha-config-navigation-list`), the
+playing title in more-info (`ha-marquee-text`), a dashboard's panel, root and card editor (`ha-panel-lovelace`,
+`hui-root`, `hui-dialog-edit-card`) and the Activity and History pages (`ha-panel-logbook`, `ha-panel-history`).
+Every wrap is made once, and keeps to three rules:
+
+- **Home Assistant's code always runs**, first and unchanged; Fluvy's part comes after it. Two wraps are the
+  exception, and say so below.
+- **Fluvy's part acts only where Fluvy is in use**: the page wears the Fluvy theme or the look covers the whole app,
+  the dashboard on screen wears the look, or the device is a wall. On any other page — another theme, a dashboard the
+  look does not dress — the charts keep Home Assistant's font and colours, the icons their Material paths, HACS's
+  frame its own font, and Home Assistant's elements carry no attribute of Fluvy's, `<home-assistant>` included (the
+  marks a dashboard wore come off when it is left). The page's background and theme colour are Home Assistant's too:
+  Home Assistant writes them while Fluvy is still on the page, so the change that takes Fluvy off writes them once
+  more, as Home Assistant does, from what the page then computes — its theme's.
+- **Fluvy's part is caught**: if it throws — a Home Assistant release reshaped what it reads — that patch steps aside
+  for the rest of the session, in that document alone (one that fails inside HACS's frame stays on the page, and the
+  other way round). Home Assistant's code goes on alone, the console says so once (`[fluvy] svgIcons stepped aside:
+  …`, with Home Assistant's version), and the report lists it.
+
+The two wraps that do not run Home Assistant's code first act only where Fluvy is in use too, caught the same way:
+
+- **The Activity and History pages** (`ha-panel-logbook`, `ha-panel-history`): while the page wears Fluvy (the Fluvy
+  theme, or the look over the whole app) and the house keeps Fluvy's pages (*Scope* tab), the panel's `render` draws
+  Fluvy's page *in place of* Home Assistant's. Only what it draws changes: the panel's state, routes and
+  subscriptions stay Home Assistant's, and Fluvy's page is handed the panel's own `hass` and `narrow`. Another theme,
+  or the house keeping Home Assistant's page, gives Home Assistant's render back at once (the panel draws again); and
+  if Fluvy's page throws while it draws, Home Assistant's render draws in its place for the rest of the session.
+- **A dashboard's actions in one menu** (`hui-root._renderActionItems`): on a dashboard that wears the look with its
+  actions in one menu (the `fluvy-actions-menu` mark on its root), the root is lent `narrow` for that one call,
+  before Home Assistant's render, which then draws the actions as on a phone: behind its one "…". The value is laid
+  over the root's as one of its own and taken away as soon as the render returns or throws, so nothing updates, and
+  Home Assistant's render runs once whatever Fluvy's part does. A root that holds `narrow` as its own value already
+  is left as it is; a lending that throws steps aside, and the render runs as Home Assistant wrote it.
+
+The report also sets Home Assistant's version beside the releases this build was checked against
+(`Home Assistant 2026.10.2 (checked: 2026.9–2026.10)`), and the console says the same at its debug level once the page
+connects. A version outside that range is a note, never a stop: what still fits works, and what does not steps aside.
 
 ## After a Home Assistant release
 
 A Home Assistant release can rename or rebuild a page the shell restyles. Nothing breaks: a sheet that no longer
-matches simply does nothing, and the page shows Home Assistant's own design in that spot. To see where that happened,
-open the browser console on any page and type:
+matches simply does nothing, a wrap whose method is gone is never made, one that no longer fits steps aside, and the
+page shows Home Assistant's own design in that spot. To see where that happened, open the browser console on any page
+and type:
 
 ```js
 __fluvy.shell.report()
 ```
 
-It lists every sheet and whether Home Assistant still draws the element it was written for. Paste it into an issue;
-the fix is usually a small one and ships in the next release.
+It lists every sheet and whether Home Assistant still draws the element it was written for, the shell's wraps (`true`
+made, `false` its method is gone, `null` its element is not on this page yet), every patch that stepped aside with what
+it threw (a panel frame's in that frame's own report, under `frames`), and Home Assistant's version. Paste it into an issue; the fix is usually a small one and ships in the next
+release.

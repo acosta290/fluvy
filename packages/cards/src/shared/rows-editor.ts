@@ -9,7 +9,7 @@ import {
 } from '@fluvy/core';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
 import { normaliseConfig, type AliasSpec } from './config.js';
-import { editorWord, type FormLabeler, formLabels } from './form.js';
+import { editorWord, type FormLabeler, formLabels, visibleFields } from './form.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
 export interface RowsListSpec {
@@ -46,6 +46,11 @@ export interface RowsListSpec {
   readonly read?: (raw: unknown) => Item | null;
   /** An item back as its config entry, the reverse of `read`; null drops the item. Without it, `compact`. */
   readonly write?: (item: Item) => Entry | null;
+  /**
+   * Whether the list can act on what the card's form holds, as a field's `when` (a compact lock draws no rows): left
+   * out of the editor while it cannot, its entries kept in the config.
+   */
+  readonly when?: HaFormSchemaItem['when'];
 }
 
 type Labeler = FormLabeler;
@@ -128,14 +133,23 @@ export const itemLabels: Labeler = formLabels({
   presets: 'editor.presets',
 }).computeLabel;
 
+/** A colour picker with no default of its own (`accentField`'s `bulb`): none chosen, the item wears what it would. */
+const unchosen = (schema: HaFormSchemaItem): boolean => {
+  const picker = schema.selector?.['ui_color'] as { default_color?: string } | undefined;
+  return picker !== undefined && picker.default_color === undefined;
+};
+
 /**
  * What the editor says under an item's field: a row's second line takes a keyword or a template (its select), or
- * words of the person's own or a template (a text field).
+ * words of the person's own or a template (a text field); a colour none is chosen for by default, what the item wears
+ * while none is.
  */
 export const itemHelpers: Labeler = (schema) =>
   schema.name === 'secondary'
     ? editorWord(schema.selector?.['select'] ? 'editor.secondary_helper' : 'editor.template_helper')
-    : undefined;
+    : unchosen(schema)
+      ? editorWord('editor.item_color_helper')
+      : undefined;
 
 /**
  * `ha-form` and `ha-sortable` belong to Home Assistant's editors; when a card's editor opens before
@@ -226,6 +240,10 @@ export const withList = (
   if (list.alias && list.alias !== list.key) delete next[list.alias];
   return next;
 };
+
+/** The names of the fields a form shows, through its rows: what tells one of a card's forms from another. */
+const namesOf = (schema: readonly HaFormSchemaItem[]): string[] =>
+  schema.flatMap((item) => (item.schema ? namesOf(item.schema) : [item.name]));
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   a === b || JSON.stringify(a) === JSON.stringify(b);
@@ -340,7 +358,7 @@ export class FluvyRowsEditor extends LitElement {
   /** The words of each list's item forms, and the helpers under them: built once per list, for the same reason. */
   private readonly labelers = new WeakMap<RowsListSpec, Labeler>();
   private readonly helpers = new WeakMap<RowsListSpec, Labeler>();
-  /** The card's form with the house's options in it, kept while they say the same, for the same reason. */
+  /** The card's form as it stands (the fields that can act, the house's options), kept while it is the same, likewise. */
   private chosen:
     { readonly key: string; readonly schema: readonly HaFormSchemaItem[] } | undefined;
 
@@ -390,12 +408,19 @@ export class FluvyRowsEditor extends LitElement {
     return this.config && this.spec?.defaults ? this.spec.defaults(this.config, this.hass) : {};
   }
 
-  /** The card's form, its selects offering what the house has (`choices`) where the card says so. */
-  private schema(spec: RowsEditorSpec): readonly HaFormSchemaItem[] {
-    const choices = this.config && spec.choices?.(this.config, this.hass);
-    if (!choices || !Object.keys(choices).length) return spec.schema;
-    const key = JSON.stringify(choices);
-    if (this.chosen?.key !== key) this.chosen = { key, schema: withChoices(spec.schema, choices) };
+  /**
+   * The card's form as it stands: the fields that can act on the card (`asked`, the whole config over the defaults,
+   * its lists too — a hidden one keeps its value, which `ha-form` hands back with every change), its selects offering
+   * what the house has (`choices`) where the card says so.
+   */
+  private schema(
+    spec: RowsEditorSpec,
+    asked: Readonly<Record<string, unknown>>,
+  ): readonly HaFormSchemaItem[] {
+    const choices = (this.config && spec.choices?.(this.config, this.hass)) || {};
+    const shown = visibleFields(spec.schema, asked, this.hass);
+    const key = JSON.stringify([choices, namesOf(shown)]);
+    if (this.chosen?.key !== key) this.chosen = { key, schema: withChoices(shown, choices) };
     return this.chosen.schema;
   }
 
@@ -571,14 +596,17 @@ export class FluvyRowsEditor extends LitElement {
           ([key]) => !spec.lists.some((list) => list.key === key || list.alias === key),
         ),
       );
-    const data = { ...withoutLists(this.defaults()), ...withoutLists(this.config) };
+    const defaults = this.defaults();
+    const data = { ...withoutLists(defaults), ...withoutLists(this.config) };
+    // what can act is asked of the whole card, its lists too (a camera of the list asked live)
+    const asked = { ...defaults, ...this.config };
     // the card's helpers are told what the form shows and the house (one that reads the sensor picked)
     const own = spec.computeHelper;
     return html`
       <ha-form
         .hass=${this.hass}
         .data=${data}
-        .schema=${this.schema(spec)}
+        .schema=${this.schema(spec, asked)}
         .computeLabel=${spec.computeLabel}
         .computeHelper=${
           own
@@ -588,7 +616,9 @@ export class FluvyRowsEditor extends LitElement {
         }
         @value-changed=${this.onCard}
       ></ha-form>
-      ${spec.lists.map((list) => this.renderList(list))}
+      ${spec.lists
+        .filter((list) => list.when?.(asked, this.hass) ?? true)
+        .map((list) => this.renderList(list))}
     `;
   }
 }

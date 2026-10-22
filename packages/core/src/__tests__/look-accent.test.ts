@@ -11,6 +11,7 @@ import {
   paletteAccentCss,
   surfaceCss,
   TONE_STATES,
+  WHITE,
 } from '../look/accent.js';
 
 const linen = derivePalette(seedOf('linen'));
@@ -110,6 +111,27 @@ describe('a card’s colour on its palette', () => {
       /--fluvy-card:#[0-9a-f]{6};--fluvy-border:#[0-9a-f]{6};--fluvy-inset:#[0-9a-f]{6};/,
     );
     expect(css).not.toContain(`--fluvy-inset:${linen.light.surface.page};`);
+  });
+});
+
+describe('a lit white by its warmth (1.10, #58)', () => {
+  it('is drawn on the whites’ scale, not by its hue as the same colour picked would be', () => {
+    const warm = `${WHITE}#ffa757`;
+    expect(accentCss('linen', 'light', warm)).not.toBe(accentCss('linen', 'light', '#ffa757'));
+    expect(accentCss('linen', 'light', warm)).not.toBe(
+      accentCss('linen', 'light', `${WHITE}#ffcea6`),
+    );
+    expect(litCss('linen', 'light', warm, 0.6)).not.toBe(litCss('linen', 'light', '#ffa757', 0.6));
+  });
+
+  it('is an item’s colour as it is marked, a word that only looks like one nothing', () => {
+    const accents = new AccentSheet();
+    accents.wears('linen', 'dark');
+    expect(accents.pick(`${WHITE}#ffa757`)).toBe('white #ffa757');
+    for (const none of ['white #ffa75', 'white#ffa757', 'warm #ffa757'])
+      expect(accents.pick(none)).toBeUndefined();
+    // Home Assistant's own white is a colour of the palette's
+    expect(accents.pick('white')).toMatch(/^#[0-9a-f]{6}$/);
   });
 });
 

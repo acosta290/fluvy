@@ -25,14 +25,14 @@ import {
 } from '@fluvy/ui';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { StreamHolder } from '../camera/stream.js';
+import { CameraFeed } from '../camera/feed.js';
+import type { StreamHolder } from '../camera/stream.js';
 import { sharedGap } from '../cover/common.js';
 import { CAMERA_RATIOS, cameraRatio, plateHeight, printerHeight } from '../devices-family.js';
 import { HeadFit } from '../energy/head.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
-import { Crossfade } from '../shared/crossfade.js';
 import { durationText, spanText, widestDuration, withUnit } from '../shared/duration.js';
 import { fitLine } from '../shared/fit.js';
 import {
@@ -130,11 +130,9 @@ export interface PrinterCardConfig extends FluvyCardConfig {
 const DEFAULT_READOUTS: readonly PrinterReadout[] = ['nozzle', 'bed', 'chamber', 'layer'];
 /** The most readouts a card holds (two rows of three). */
 const MOST_READOUTS = 6;
-/** A still from the printer's camera while it prints (a job moves slowly), and while it rests. */
-const STILL_BUSY = 5_000;
-const STILL_IDLE = 30_000;
-/** A still that has not answered after this long no longer holds the next one back. */
-const STALL_MS = 30_000;
+/** Seconds between two stills from the printer's camera while it prints (a job moves slowly), and while it rests. */
+const STILL_BUSY = 5;
+const STILL_IDLE = 30;
 /** The tallest a picture grows on a wide card. */
 const PLATE_CAP = 360;
 /**
@@ -527,40 +525,30 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     `,
   ];
 
-  static override properties = { ...Card.properties, stamp_: { state: true } };
-  declare stamp_: number;
-
   private readonly head = new HeadFit(this);
-  /** The camera's stills (or the preview's), cross-faded as they land. */
-  private readonly frames = new Crossfade(
-    this,
-    () => {
-      this.inFlight = 0;
-      this.stamp_ = Date.now();
-    },
-    () => {
-      this.inFlight = 0;
-    },
-  );
-  private timer = 0;
-  private period = 0;
-  /** When the still in flight was asked for (0: none). */
-  private inFlight = 0;
-  /** The job's preview last fetched (its picture's path): fetched again only when it changes. */
-  private previewPath = '';
-  /** Home Assistant's stream, held as the camera card holds its own: one element, kept while the card is near. */
-  private readonly holder = new StreamHolder(this, () => this.sync());
-  /** Whether the last render drew the stream. */
-  private shownStream = false;
+  /**
+   * The picture, as the camera card's: the camera's stills while the card is on screen — every five seconds while it
+   * prints, every thirty at rest — or its stream on a live card; a job's preview, which changes with the job, fetched
+   * again only when its picture does.
+   */
+  private readonly feed = new CameraFeed(this, () => {
+    const picture = this.picture();
+    return {
+      hass: this.hass,
+      view: picture?.view ?? null,
+      live:
+        this.config?.camera_view === 'live' &&
+        picture?.preview === false &&
+        picture.view.domain === 'camera',
+      refresh: busy(this.phase()) ? STILL_BUSY : STILL_IDLE,
+      once: picture?.preview === true,
+      width: this.contentWidth,
+    };
+  });
   /** Whether each heater reads "now / target": kept between renders so a reading near its target does not flicker. */
   private readonly heating = new Map<'nozzle' | 'bed', boolean>();
   /** The device, its roles and its trays, found once per registry and config: the search walks every entity. */
   private found: PrinterFound | undefined;
-
-  constructor() {
-    super();
-    this.stamp_ = 0;
-  }
 
   /** A printer has no entity of its own to show: its device does; `entity` names one of its entities instead. */
   static override base: readonly BaseKey[] = [
@@ -791,113 +779,9 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     return preview ? { view: preview, preview: true } : null;
   }
 
-  /** The camera live: asked for, a camera shown, and Home Assistant's stream element there. */
-  private get streaming(): boolean {
-    const picture = this.picture();
-    return (
-      this.config?.camera_view === 'live' &&
-      picture !== null &&
-      !picture.preview &&
-      picture.view.domain === 'camera' &&
-      this.holder.playing
-    );
-  }
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    document.addEventListener('visibilitychange', this.onTabChange);
-    this.sync();
-  }
-
-  /** Back in front: a preview put off while the page was hidden is fetched now. */
-  private readonly onTabChange = (): void => {
-    if (document.visibilityState !== 'hidden') this.sync();
-  };
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    document.removeEventListener('visibilitychange', this.onTabChange);
-    window.clearInterval(this.timer);
-    this.timer = 0;
-    this.period = 0;
-    this.previewPath = '';
-  }
-
-  /**
-   * The picture's upkeep: the stream asked for once when the card wants it live; a camera's still now and then while
-   * the card is up — every five seconds while it prints, every thirty at rest; a job's preview, which changes with the
-   * job, fetched again only when its picture does.
-   */
-  private sync(): void {
-    const picture = this.picture();
-    // the stream comes and goes with the screen, which is not the card's state: draw it again
-    const streaming = this.streaming;
-    if (streaming !== this.shownStream) {
-      this.shownStream = streaming;
-      this.requestUpdate();
-    }
-    if (picture?.preview) {
-      window.clearInterval(this.timer);
-      this.timer = 0;
-      this.period = 0;
-      const path = picture.view.attr<string | null>('entity_picture') ?? '';
-      // remembered once its fetch has started (a hidden page, a card off screen or a still in flight puts it off to
-      // the next look)
-      if (path !== this.previewPath && this.isConnected && this.holder.onScreen && this.pull())
-        this.previewPath = path;
-      return;
-    }
-    this.previewPath = '';
-    if (this.config?.camera_view === 'live' && picture && picture.view.domain === 'camera')
-      this.holder.ask(picture.view.id);
-    // off screen the stills pause (no period): the viewport's next word runs `sync` again, which re-arms the
-    // interval and pulls one at once, as the camera card does
-    const period =
-      !picture || streaming || !this.holder.onScreen
-        ? 0
-        : busy(this.phase())
-          ? STILL_BUSY
-          : STILL_IDLE;
-    if (period === this.period) return;
-    window.clearInterval(this.timer);
-    this.timer = 0;
-    this.period = period;
-    if (period && this.isConnected) {
-      this.timer = window.setInterval(() => this.pull(), period);
-      this.pull();
-    }
-  }
-
-  /** A still asked for now; false where none could be (no picture, one in flight, a hidden page). */
-  private pull(): boolean {
-    const picture = this.picture();
-    const path = picture?.view.attr<string | null>('entity_picture');
-    if (!this.hass || !path || document.visibilityState === 'hidden') return false;
-    const now = Date.now();
-    if (this.inFlight && now - this.inFlight < STALL_MS) return false;
-    this.inFlight = now;
-    const base = this.hass.hassUrl(path);
-    const width = Math.ceil(this.contentWidth * (window.devicePixelRatio || 1));
-    this.frames.show(
-      base.startsWith('data:')
-        ? `${base}#${Date.now()}`
-        : `${base}${base.includes('?') ? '&' : '?'}width=${width}&_=${Date.now()}`,
-    );
-    return true;
-  }
-
-  protected override willUpdate(changed: Map<PropertyKey, unknown>): void {
-    super.willUpdate(changed);
-    // another printer, or stills instead of the stream: the stream goes, and its session with it
-    const previous = changed.get('config') as PrinterCardConfig | undefined;
-    if (
-      previous &&
-      (previous.camera_view !== this.config?.camera_view ||
-        previous.device !== this.config?.device ||
-        previous.entity !== this.config?.entity)
-    )
-      this.holder.teardown();
-    if (changed.has('hass') || changed.has('config')) this.sync();
+  /** Home Assistant's stream as the feed holds it: the viewport's word reaches the stills through it. */
+  get holder(): StreamHolder {
+    return this.feed.holder;
   }
 
   /* ---------- reading the printer ---------- */
@@ -1444,15 +1328,6 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     const width = height === PLATE_CAP ? Math.round((PLATE_CAP * ratio) / 4) * 4 : 0;
     if (!picture) return this.restingPicture(r, height, width);
     const contain = this.config?.fit_mode === 'contain';
-    const stream = this.streaming
-      ? this.holder.draw({
-          hass: this.hass,
-          stateObj: picture.view.stateObj,
-          fitMode: contain ? 'contain' : 'cover',
-          aspectRatio: ratio,
-          className: 'pr-stream',
-        })
-      : undefined;
     return html`<div
       class="pr-plate dv-cam fv-plate ${picture.preview ? 'is-preview' : ''} ${
         contain ? 'is-contain' : ''
@@ -1466,8 +1341,12 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
       @click=${clickPress}
       @contextmenu=${preventMenu}
     >
-      ${stream ?? this.frames.render()}
-      ${stream || this.stamp_ ? nothing : html`<span class="fv-skeleton dv-cam__skeleton"></span>`}
+      ${this.feed.render(contain ? 'contain' : 'cover', ratio, 'pr-stream')}
+      ${
+        this.feed.streaming || this.feed.stamp
+          ? nothing
+          : html`<span class="fv-skeleton dv-cam__skeleton"></span>`
+      }
     </div>`;
   }
 

@@ -11,11 +11,28 @@
  * Chromium by default; `ENGINE=webkit` (or `firefox`) runs a suite in another engine Playwright ships, for what
  * the engines do differently (a zoomed view's geometry).
  */
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chromium, firefox, webkit } from 'playwright';
 import { launchOptions, PLAYGROUND } from '../lib.mjs';
 
 export const BASE = PLAYGROUND;
 export const ENGINE = process.env.ENGINE ?? 'chromium';
+
+/**
+ * The cards' heights as the automatic dashboard plans them (`houseHeightOf`: declared from the config, counted with
+ * the house), the module as the playground serves it: a page imports it to read a card's height as the dashboard does.
+ */
+export const HOUSE_HEIGHTS = `/@fs${join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+  'packages',
+  'cards',
+  'src',
+  'house-heights.ts',
+)}`;
 
 /** The engine `ENGINE` names, launched as every tool launches it (Chromium's flags are Chromium's alone). */
 export function launch() {

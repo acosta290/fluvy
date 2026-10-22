@@ -4,13 +4,10 @@ import { calendarCss } from './generated/calendar.js';
 import { climateCss } from './generated/climate.js';
 import { clocksCss } from './generated/clocks.js';
 import { devicesCss } from './generated/devices.js';
-import { energyCss } from './generated/energy.js';
 import { fluvyCss } from './generated/fluvy.js';
 import { homeCss } from './generated/home.js';
 import { inputsCss } from './generated/inputs.js';
 import { interactionCss } from './generated/interaction.js';
-import { mediaCss } from './generated/media.js';
-import { pageCss } from './generated/page.js';
 import { roomsCss } from './generated/rooms.js';
 import { sliderCss } from './generated/slider.js';
 import { solarCss } from './generated/solar.js';
@@ -18,7 +15,7 @@ import { tokensCss } from './generated/tokens.js';
 
 /**
  * One CSSResult per stylesheet, created once: Lit turns each into a single constructable
- * stylesheet that every card adopts, so fifty-five cards share one parsed copy of the language.
+ * stylesheet that every card adopts, so fifty-seven cards share one parsed copy of the language.
  */
 const sheet = (css: string): CSSResult => unsafeCSS(css);
 
@@ -36,12 +33,15 @@ export function setFallbackTokens(css: string): void {
   fallback.styleSheet?.replaceSync(css);
 }
 
+/**
+ * The sheets of the cards' families. One that only a family or a page fetched on demand adopts is a module of its own,
+ * which travels in that chunk: the energy family's (`@fluvy/ui/styles/energy`), the player's (`@fluvy/ui/styles/media`)
+ * and the Activity and History pages' chrome (`@fluvy/ui/styles/page`).
+ */
 export const sheetStyles = {
   home: sheet(homeCss),
   slider: sheet(sliderCss),
   climate: sheet(climateCss),
-  media: sheet(mediaCss),
-  energy: sheet(energyCss),
   devices: sheet(devicesCss),
   ambient: sheet(ambientCss),
   inputs: sheet(inputsCss),
@@ -49,6 +49,4 @@ export const sheetStyles = {
   clocks: sheet(clocksCss),
   calendar: sheet(calendarCss),
   rooms: sheet(roomsCss),
-  /** Page chrome (the bar and the floating layers): the Activity and History pages, never a card. */
-  page: sheet(pageCss),
 } as const;

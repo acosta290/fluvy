@@ -13,7 +13,14 @@ import {
   type EffectiveSettings,
 } from '../settings/schema.js';
 import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
-import { attachToElementClass, browserEnv, onPanelFrame } from '../shell/index.js';
+import {
+  attachToElementClass,
+  browserEnv,
+  onPanelFrame,
+  setWorn,
+  themed,
+  versionNote,
+} from '../shell/index.js';
 import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
 import { chromeOf, tabsOf } from './css.js';
@@ -119,15 +126,29 @@ export function startLook(): LookHandle | undefined {
     const scope = pageScope(now.scope, appHass()?.themes?.theme);
     return scope === now.scope ? now : { ...now, scope };
   };
+  /**
+   * The frame as the house wants it, told to `<home-assistant>` only while the page wears Fluvy (the frame's sheet is
+   * empty on any other, and Home Assistant's elements carry nothing of ours there); a wall has none whatever the house
+   * says: the dashboard fills the tablet.
+   */
+  const frame = (): void => {
+    const off = !current().frame || wall.on;
+    env.document
+      .querySelector('home-assistant')
+      ?.toggleAttribute(NO_FRAME, off && themed(env.document));
+  };
   const apply = (): void => {
     const changed = engine.apply(
       current(),
       wall.dark ?? appHass()?.themes?.darkMode ?? prefersDark(),
     );
     if (changed) resyncCardThemes();
+    frame();
   };
   const wears = (urlPath: string | undefined): boolean =>
     current().scope === 'dashboards' && wearsLook(current(), urlPath);
+  // the patches on Home Assistant's elements act on the dashboards that wear the look too
+  setWorn(wears);
   /** The tabs a dashboard wears: every dashboard's while the whole app wears the look, else the look's dashboards'. */
   const tabsFor: TabsFor = (urlPath) => {
     const now = current();
@@ -145,8 +166,6 @@ export function startLook(): LookHandle | undefined {
     setMotionPreference(now.motion);
     setHaptics(now.haptics);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
-    // a wall has no frame whatever the house says: the dashboard fills the tablet
-    env.document.querySelector('home-assistant')?.toggleAttribute(NO_FRAME, !now.frame || wall.on);
     // Home Assistant's own icons in its menus, if the house keeps them (the shell empties its icon sheets)
     env.document.documentElement.toggleAttribute(ORIGINAL_ICONS, !now.icons);
     // Home Assistant's own Activity page, if the house keeps it (the takeover gives the page back)
@@ -187,7 +206,8 @@ export function startLook(): LookHandle | undefined {
 
   void connected().then((hass) => {
     if (!hass || !handle) return;
-    preferences(); // `<home-assistant>` exists now
+    console.debug(`[fluvy] ${versionNote()}`);
+    frame(); // `<home-assistant>` exists now
     store.start((next) => {
       const before = current();
       settings = next;

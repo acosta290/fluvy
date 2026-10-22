@@ -5,6 +5,71 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- A light drawn in its bulb's colour shows a white by its warmth: a lit white or colour-temperature bulb takes its
+  step on one scale — a candle's the warmest, 2,700 K warm, 5,000 K nearly neutral, daylight neutral, a cool white
+  cool — where it was the palette's lit light, on the room lights card (its default), on tiles, a tiles group, a room
+  and an entities card where "In their bulb's colour" is on (the card's or the house's), and on the light card.
+  `light_whites: palette` gives the old look back (#58).
+- On a card with both "in its bulb's colour" and a `color` or `tone` of its own, a lit colour bulb shows its bulb's
+  colour, not the card's; an entities card's or a room's `tone` draws its lit lights that show no colour of their own
+  (they took the palette's light), and a room lights card's `tone` and `color` reach its tiles (#58).
+- A light group on a tile, a row or the room lights card wears its members' colours weighed by their brightness, not
+  Home Assistant's own mean of them (#58).
+- The room lights card's tiles drop their level where the card says `show_level: false`, and a tile with `tint:
+  always` and no colour of its own shows its tone's quiet wash when off — never a status's: a shut door, a clear smoke
+  alarm, a dry leak sensor keep the card's surface, and with a colour (their own, or their group's) wash in it as in
+  1.9.1 (#58).
+- What opens and shuts is drawn as it stands: a garage cover is a garage, shut or open, where the cover card drew a
+  car and the other cards the blinds; a gate cover a gate where the cover card drew a door; a window cover a window,
+  where it was the blinds; a window on the openings card a window where it drew the blinds; a garage-door sensor a
+  garage; and an open door, gate, garage or window — a cover, or a door, opening, garage-door or window sensor — wears
+  its open glyph.
+- The icon you set for an entity in Home Assistant shows on every card that draws the entity with no icon of its own:
+  a list's rows, a camera's, a lock's and an alarm's rows, the heads of the single-entity cards, bars, stat tiles,
+  openings, the sensor card and the schedule sheet's targets too. Where Fluvy has a glyph for an entity's kind, an
+  integration's icon no longer replaces it on the room lights, scenes, actions, helpers and updates cards, the alerts'
+  rows and the Activity page (a button shows the bolt, an update the update glyph); a helper's, a scene's or a
+  script's own icon still shows. A sensor or a binary sensor of a class Fluvy does not draw (pm2.5, pressure,
+  vibration …) and an entity of a kind Fluvy does not know (a zone, an event …) show Home Assistant's icon for it
+  where they showed the trend arrow, the check or the three dots — on the Activity page, its icon for the state it
+  changed to; a lawn mower is a leaf (#57).
+- Camera rows with a `secondary` say it (the state, the area …) where they said the time of day, and a camera row's
+  own `tone` or `color` colours its circle. A camera, lock, alarm or entities row with no `tap_action` of its own
+  opens its entity's details where it ran the card's `tap_action`: a card with a `navigate` tap no longer navigates
+  from its rows (#57).
+- The Security dashboard shows its cameras on one Cameras card: the first four on its overview (two camera cards
+  before) and every camera, up to twelve, across its Cameras view (up to nine camera cards before); the home
+  dashboard's Security view shows its first four on one Cameras card (up to four camera cards before). The Home view
+  and the rooms keep the camera card (#60).
+- The card editors show an option only where it acts, and keep its value while it is hidden: the light card's *How
+  much colour* only while it shows its colour, how whites show only beside "In its bulb's colour" while that is on (on
+  the light card, while no colour or tone of its own stands in for its bulb's), a tile's light colours only for a
+  light, a tiles group's and an entities card's only while they hold one, a tile's readouts not under a large tile's
+  ruler, a tile's colour at rest only where something shows then (not for a door or a smoke alarm with no colour), the
+  room lights card's colour at rest only in tiles, a room's controls, tiles and lights' colours not in a row and its
+  picture for the photo alone, the appliances card's picture only for tiles and whole cards, and no rows on a compact
+  lock; the room card no longer offers `size` and `readouts`, which it never read (#58).
+- On a page that wears another theme than Fluvy (outside the dashboards that wear the look), Home Assistant's own
+  elements stay as Home Assistant draws them: its charts (history, statistics, energy, hardware) keep its font and its
+  own colour for a series, where they took the theme's body font and primary; HACS's frame keeps its font, with no
+  Inter and no shell, until the page wears Fluvy; the settings lists, the more-info title and the dashboards' headers
+  carry no attribute of Fluvy's. Pages that wear Fluvy look and behave as in 1.9. `__fluvy.shell.report()` gains Home
+  Assistant's version and the patches that stepped aside, with what they threw.
+- A lone mini tile declares the 108 px it draws (it declared 76), so the automatic dashboard counts it whole when it
+  cuts its columns; a compact or mini tile whose tap and hold are both `none` no longer takes a keyboard stop or a
+  press, and looks the same.
+- Rows with a template that reads a name that is not defined (entities, lock, alarm, camera, bars, stat tiles,
+  actions, helpers) no longer flash an empty line before their words.
+- The 3D printer's camera stills pause in a hidden tab, as the camera card's always have, and a fresh one is fetched
+  as soon as the tab is back in front (the next one came at the printer's next 5 s or 30 s tick).
+- The automations card's count ("1 of 2 on") has words of its own, so a language may count automations apart from
+  lights and devices. English, German, Dutch and Turkish say what they said; Spanish, French, Italian and Portuguese
+  now agree with their word for automations (2 de 3 encendidas, 2 sur 3 allumées, 2 su 3 accese, 2 de 3 ligadas,
+  where they said encendidos, allumés, accesi, ligados). The Preferences tab's language menu has ten rows: eight and
+  the top of the ninth show, the rest scrolls.
+
 ### Added
 
 - Japanese (`ja`): the ninth language, in every card, page, dialog and editor form, the settings panel's language
@@ -13,17 +78,97 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   in Japanese: the naming words take kanji and kana, matched as substrings since Japanese writes no spaces, beside the
   romaji an entity id carries (`shoumei`, `raito`, `sentakuki`, `reizouko`); a full-width name ("ＬＥＤ") reads as its
   letters. The calendar labels a day as a Japanese calendar prints it, 17日（木）, and the measurer lets Japanese wrap
-  at any character. The catalogue and the naming words were read end to end by @vinjex, its maintainer, who chose
+  at any character; where the browser knows Japanese phrases (Chromium 119 and later) a line breaks between them,
+  never inside a word (スケジュールを / 追加, where 追 / 加 split the verb), and no other language wraps otherwise.
+  The catalogue and the naming words were read end to end by @vinjex, its maintainer, who chose
   where Japanese departs from Home Assistant's words, as the translating guide lists (#54, #56).
+- The Template card (`custom:fluvy-template-card`, #59): a tile — compact, mini or large — whose name, line, icon,
+  colour and fill are Home Assistant templates, rendered live, with an entity or with none. With an entity it is that
+  entity's tile (its icon, tone and state, a large tile's switch, ruler and readouts) and a template reads it as
+  `entity`; `active` says when it shows as on (as its entity is, always, never, or as a template answers). Without one
+  it is your words alone, and a button for a navigation, a URL, an action or Assist. Until Home Assistant answers, the
+  tile shows its entity's own icon, colour and state and keeps a blank line where the words will land; a template that
+  fails shows nothing of itself. A Mushroom template card pastes in: `primary`, `icon_color`, `layout: vertical` and
+  `vertical: true` are read as Fluvy's (its actions do nothing unless given one, where Fluvy's tile toggles on a tap:
+  `tap_action: { action: none }` keeps a pasted card still).
+- The Cameras card (`custom:fluvy-cameras-card`, #60): several cameras at a glance, as the reader drew it — each a
+  tile of its picture ("Live", a full-screen round) over its circle, its name and what it sees: "Motion detected" or
+  "No motion" from the motion sensor on the camera's device (or the one you name), else "Online", "Recording",
+  "Streaming", "Offline". Two a row from a 320 column, up to four across a wide band, or the count you ask for;
+  `variant: list` (a row a camera) and `compact` (the pictures alone). Its cameras are those you list or every camera
+  of an `area`; each picture refreshes itself only while it is on screen, or streams with `camera_view: live` — the
+  first `max_live` (four) of them. The head's round opens a sheet of every camera, with a switch that shows them all
+  live for now. Show or hide the line, "Live" and the full-screen round; a name, an icon, a motion sensor, a line, a
+  fit, a refresh, a colour and actions a camera.
+- Eight glyphs: a gate, a garage and a window, each shut and open, a door open, and a security camera on its wall arm
+  (the Cameras card's head) — in Home Assistant's icon pickers too, as `fluvy:gate`, `fluvy:gate-open`,
+  `fluvy:garage`, `fluvy:garage-open`, `fluvy:window`, `fluvy:window-open`, `fluvy:door-open` and `fluvy:cctv`.
 
 ### Changed
 
 - Automations count in their own words: the automations card's "1 of 2 on" has keys of its own, so a language counts
-  automations apart from lights and devices (Japanese 2件中1件がオン, where a room's devices read 2台中1台がオン); the
-  other languages say what they said.
+  automations apart from lights and devices (Japanese 2件中1件がオン, where a room's devices read 2台中1台がオン);
+  Spanish, French, Italian and Portuguese agree with their word for automations (encendidas, allumées, accese,
+  ligadas), the other languages say what they said.
+- A white shows its warmth by default wherever a light is drawn in its bulb's colour — the light card, the room lights
+  card, tiles, a room, an entities card's rows: `light_whites: temperature` is the default; `light_whites: palette`
+  keeps the palette's lit light (#58).
+- One rule for every light a card draws: its own colour, else its own tone, else its bulb's, else the card's colour,
+  else the card's tone, else the palette's lit light. On tiles, a tiles group, a room and an entities card a lit bulb's
+  colour now comes before the card's `color` and `tone` (it came after) (#58).
+- A light group wears its lit members' colours, weighed by their brightness, on every card — tiles, rows and the room
+  lights card too, as the light card did — and draws again when a member changes (#58).
+- Every card draws an entity's icon in one order (#57): the icon the card gives it; else the one you set for the
+  entity in Home Assistant — in its settings, or in a helper's, a scene's, a script's or a template's own; else
+  Fluvy's glyph for its kind, drawn as it stands; else its integration's; else Home Assistant's own for it. Tiles,
+  rows, heads, a camera's and a lock's rows, lists, bars, stat tiles, charts' legends, the schedule sheet's targets,
+  the alerts' rows and the Activity page alike. A sensor or a binary sensor of a class Fluvy has no glyph for (pm2.5,
+  pressure, vibration …) and a kind of entity it does not know show Home Assistant's icon for it where they showed a
+  generic one; one of no class keeps Fluvy's trend arrow or check unless its integration has an icon for it. A lawn
+  mower is drawn as a leaf, as the vacuum card drew it.
+- What opens and shuts is drawn as it stands, on every card: a door, a gate, a garage or a window — a cover of that
+  class, or a door, opening, garage-door or window sensor — wears its open glyph while it is open (or opening) and its
+  shut one otherwise. A damper is a fan, every other cover the blinds. A garage cover is no longer drawn as a car, nor
+  a window on the openings card as blinds: each is drawn as what it is.
+- A row with no tap of its own opens its entity's details — on the camera, lock, alarm and entities cards — where it
+  ran the card's own `tap_action` (#57).
+- The Security dashboard shows its cameras on the Cameras card: its overview the first four on one card (it showed
+  two camera cards), its Cameras view every camera (up to twelve) on one card across the view (it showed up to nine
+  camera cards); the home dashboard's Security view its first four on one Cameras card (it showed up to four camera
+  cards). The Home view and the rooms keep the camera card (#60).
+- The card editors show only what can act (#58): an option that has no effect in the chosen style, or with the card's
+  other options as they are, is not shown, and keeps its value for when it does. The light card offers the strength of
+  its colour only while it shows one (its own setting, else the house's); how whites show, beside "in its bulb's
+  colour", while it is on (the light card's not while its own colour or tone stands in for its bulb's); a tile its
+  light colours only for a light, a tiles group and an entities card theirs only while their list holds one, a tile
+  its readouts except under a large tile's ruler and its colour at rest only where something shows then (a colour, or
+  a tone that washes); the room lights card its colour at rest in tiles alone; a room its controls, tiles and lights'
+  colours not in a row, its picture for the photo alone, its colour at rest with tiles alone; the appliances card its
+  picture for tiles and whole cards, its rows limit not for whole cards, and the list's head, colours and actions not
+  where whole cards hide an empty list; the compact lock card no rows, which it never draws. An editor asks what can
+  act of the whole card, its lists too.
+- After the HACS review: the patches Fluvy puts on Home Assistant's own elements — the charts' font and series
+  colour, the icons Home Assistant draws by path, HACS's frame, the settings lists' glyphs, the more-info title, the
+  dashboards' headers, the Activity and History pages — act only where Fluvy is in use (the page wears the Fluvy
+  theme or the look covers it, the dashboard on screen wears the look, or the device is a wall), after Home
+  Assistant's own code but for two, which are caught the same way: the Activity and History pages draw Fluvy's page
+  in place of the panel's render (its state, routes and subscriptions untouched; Home Assistant's page back at once
+  on another theme or by the house's choice, and for the session if Fluvy's throws), and a dashboard with its actions
+  in one menu lends its root `narrow` for the one call that draws them, before Home Assistant's render. On a page
+  that wears another theme, Home Assistant's charts keep its font and colours, its icons their Material paths, HACS's
+  frame its own font, the page its background and theme colour — written once more from its theme when the page
+  stops wearing Fluvy, since Home Assistant wrote them while Fluvy's sheet was still on — and nothing of Fluvy's is
+  written on Home Assistant's elements, the frame's mark on `<home-assistant>` included. A patch whose part throws (a
+  Home Assistant release reshaped what it reads) steps aside for the session, in its own document (one that fails in
+  HACS's frame stays on the page, and the other way round): Home Assistant's code goes on alone, the console says so
+  once, and `__fluvy.shell.report()` lists it with what it threw, beside Home Assistant's version and the releases
+  this build was checked against (2026.9–2026.10) — a note, never a stop.
 
 ### Fixed
 
+- The Activity page's line runs through the middle of every circle on a 12-hour clock too: on a desktop, where the
+  time column widens for "9:50 PM", the line ran 20 px left of the circles (the phone's layout, with no time column,
+  was right). The playground takes `?clock=12` to draw Home Assistant's 12-hour clock.
 - A dropdown of ten rows or more (the Preferences tab's language menu, with Japanese) shows eight rows and 24 px of
   the ninth, not eight and a half: the menu stays on the 4 grid, and the cut row still says there is more.
 - A sheet draws for the width it was laid out at: the alerts sheet and the schedule sheet read their content width
@@ -39,6 +184,41 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - Where one of a list's naming words begins a longer one, a name is read by the longer ("secadora de roupas",
   "frigorifero", "Hausverbrauch", not "secadora", "frigo", "Haus"), so the word weighs its whole length against
   another list's word that overlaps it: a shorter stem listed first no longer hides the longer from the matcher.
+- A camera card's rows say the line they are asked for (`secondary`: the state, the area, an attribute, a template, or
+  none) where they always said the time of day; a row's own `tone` or `color` shows on its circle (#57).
+- "Each light in its bulb's colour" shows white and colour-temperature bulbs too: a Hue (or any bulb) in colour
+  temperature was drawn as the palette's lit light — in some palettes close to an off tile — and now shows its warmth,
+  a step of one scale from a candle's to a neutral daylight and a cool white (2,700 K and 4,000 K no longer one
+  amber), on the room lights card's rounds, chips and tiles, tiles, a room's tiles and lights row and an entities
+  card's rows (#58). In the card editor's preview too: the lit fill was there all along, only the colour was not.
+- The room lights card's tiles take the card's tone and colour where a lamp shows none of its own, and say no level
+  where the card shows none (`show_level: false`), as its rounds and line do (#58).
+- A light's own colour in the room lights card's editor shows none chosen where it said Primary, which it never drew:
+  left empty, a light wears its bulb's colour, else the card's, and the line under the field says so. The same for a
+  tile's colour in a tiles group or a room and a row's on an entities card (#58).
+- Two cards of one lamp that show whites differently (`light_whites`) no longer borrow each other's white for the
+  moment a tap waits for Home Assistant: each remembers the colour it drew (#58).
+- A room's lights row counts each lamp once: a light group in the room with its members was counted twice in its
+  colour, once itself and once through them (#58).
+- A tile asked to show its colour at rest (`tint: always`) without a colour of its own shows its tone's rest wash, as
+  a light card at rest does, where it showed nothing — never a status's: what says a warning when it is on (a door, a
+  window, a garage door, smoke, gas, a leak, a problem) keeps the card's surface at rest (#58).
+- A lone mini tile declares the 108 px it draws, as a group of mini tiles does; it declared a compact tile's 76, so
+  whatever reads a card's height before drawing it (the automatic dashboard cutting its columns) counted it short.
+- A compact or mini tile whose tap and hold both do nothing is no longer a button that does nothing: the keyboard no
+  longer stops on it.
+- A row's template that reads a name that is not defined no longer blanks its line for a moment before its result:
+  Home Assistant says such a name as a warning before the result, and Fluvy took the warning for a failure.
+- Home Assistant's icons in a smaller circle (a compact row's, a narrow head's) are drawn at the 16 Fluvy's glyphs are
+  there, not at 20.
+- The 3D printer's camera stills pause while the tab is hidden, as the camera card's do, and a fresh one is fetched as
+  soon as the tab is back in front: the printer's interval kept ticking unseen, and the next still waited for its next
+  5 s or 30 s tick.
+
+### Removed
+
+- The room card's `size` and `readouts` options, which it never read: gone from its editor; a dashboard's YAML that
+  has them still loads, and they still do nothing.
 
 ### Development
 
@@ -53,6 +233,89 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The naming words' build orders each alternation (`ordered` in `tools/i18n/src/build.ts`): a stem is tried after
   every longer stem that begins with it, the listed order kept otherwise and a stem of its own regex never taken for
   the shorter, so stems that nest need no care in the words (94 such pairs across the nine languages were reordered).
+- Every page loads 5.2 KB less for the same cards: a card declares its height from its config alone (`static
+  layoutHeight(config)`), and what the house adds — an entity's capabilities, options and names, a room's contents —
+  the automatic dashboard reads in a chunk of its own (`house-heights`, which the strategy imports: `houseHeightOf`),
+  the heights it plans unchanged to the pixel; the Activity and History pages' period, layers, CSV and chrome's sheet
+  travel in the pages chunk, the player's sheet with the media family, the energy sheet with the energy family; the
+  gauge's signed ring is drawn by the solar sheet the gauge adopts, which leaves every rule on every element where it
+  was. The render tools read a card's height as the dashboard plans it (`HOUSE_HEIGHTS` in
+  `tools/render/lib/suite.mjs`). With the Template and Cameras cards announced, every page is 232.1 KB of its 236.
+- Budgets: every page and core 236 KB, as in 1.9; the energy family 80 KB (76: its sheet), the pages chunk 12 (8: the
+  pages' period, layers, CSV and sheet), the devices family 36 (32: the Cameras card); new chunks of their own: the
+  house's heights (`house-heights`, 4 KB), the cameras' sheet (`cameras-sheet`, 8), the Template card (`template`, 8)
+  and the icon set's other part (`icons`, 4).
+- Dev dependencies: happy-dom 21.0.3, Vitest 5.0.5, Playwright 1.64.1, eslint 10.13.0, Prettier 3.9.10,
+  typescript-eslint 8.71.2, @types/node 24.19.2 (#51, #52, #53).
+- The leak scan runs in CI, in a job of its own, on every pull request and every push to `main`: a red scan is seen
+  the day it turns red, not at release.
+- `when` on an editor field, a row of fields (`onlyWhen`) or a rows-editor list; `visibleFields(schema, data, hass)`;
+  `pickFields` asks its test of the item (`byName` for a test by name); the editors' contract holds hidden fields to
+  every rule and never lets one be required; `lightColourFields()` in `shared/form.ts`. `docs/development.md` gains
+  "The editors". A `when` is asked of the whole card, its lists too (`ha-form` still holds none of them): `listed(data,
+  key, alias)` and `holdsLight(key, alias)` read a list; `tintsAtRest` (a card of one tile) and `washesAtRest(tone)`
+  (`shared/colour.ts`, the tile's rest wash too) say what shows at rest; `accentField(…, { bulb })` has no default, and
+  the shared item helpers say what the item wears while none is chosen; `lampsOf` (`shared/light.ts`) counts each
+  lamp of some lights once.
+- The camera's picture is one feed and one plate (`camera/feed.ts`, `camera/plate.ts`): the camera card, the 3D
+  printer and each tile of the Cameras card are built on them; the stream holder watches the part of a card its
+  stream plays in (`watch`), so each tile of a card counts as on screen on its own. `renderPlate` draws a plate
+  without its own button, its "Live" or its round where its card has no use for them (a tile's button covers its
+  whole tile); `plateLayout` holds "Live" alone on a plate with no round. `onItsDevice` (`shared/battery.ts`) finds
+  an entity's sibling on its device — the battery, and now `motionOf` (`shared/motion.ts`, in the devices chunk).
+  `camera/status.ts`: a camera's line, its words and how it fits.
+- `interactions-cameras.mjs` (tiles' stills per tile on screen, streams per tile kept across a scroll and released,
+  `max_live`, full screen per tile, the sheet's switch, "Live" folding by tile width and in nine languages, a
+  `native` row levelled at its tallest camera, a failed stream said on its tile's line); the unavailable twins hold the
+  Cameras card; the security suite counts the live card's sessions after every camera has been seen. The playground's
+  `ha-icon` and `ha-state-icon` draw the Material icons the sheets, the houses and the demo name, and Home
+  Assistant's icons for the classes the sheets draw that Fluvy has no glyph for, from `@mdi/js` (a disc for anything
+  else), drawn again when a card hands them another icon.
+- One order for an entity's icon: `iconOf(view, own)` and `glyphKnown(view)` in `shared/domain.ts`, at every call
+  site (the helpers card's own `iconOf(view, row)` is gone, and the lights', scenes', actions', updates', alerts' and
+  Activity's hand-made orders with it); `EntityView.registryIcon` (the person's, and the icon a helper's, a scene's,
+  a script's, a zone's, an old group's or a template's own settings hold: `OWN_SETTINGS` in `core/src/entity.ts`),
+  `ownIcon` (the integration's `attributes.icon`) and `translationKey` (the registry's `translation_key`);
+  `glyphKnown` keeps the stand-ins for an entity of no class unless it has an integration's icon or a translation
+  key. `stateIcon(entityId, state)` in `@fluvy/ui` (`ha-state:<entity id>=<state>`), which `icon()` draws as
+  `<ha-state-icon>` with the state as its `stateValue` and the rest read off the `hass` of the element that renders
+  the circle (Home Assistant 2026.9's element reads the rest of the house from its contexts): an Activity entry
+  draws Home Assistant's icon for the state it had.
+- The outlined icon set in two parts: the six appliance icons left core for an `icons` chunk (2.1 KB), the new
+  garage, gate, window and open door with them, that `getIcon` and `getIconList` fetch, a failed fetch drawing
+  nothing; `iconNames()` is async;
+  `tools/icons/outline.py` writes both modules, and the extractor runs on `node` (no `tsx`).
+- `cards/src/shared/light.ts`: `lightLook(item, card, glow)` (the one rule, a colour and a tone), `litColour(view, on,
+  whites, hass)` (was `glowOf`; a group's members found in the house), `memberIds`, `withMembers` (what a card of
+  lights watches); a tile's `showsLevel()`; `.fv-tile--inner[data-surface]` keeps a tone's hairline. Tests:
+  `shared/light.test.ts`, `light/tint.test.ts` (the rule flipped, whites, groups, a tile at rest),
+  `lights/lights-card.test.ts` (new), the tile's, the room's and the appliances' editors; the playground's lights
+  sheet (whites by their warmth, a cool white, a group, a dimmer, the theme's light, tiles in the card's tone) and the
+  lights and colours suites.
+- A lit white is marked as one (`WHITE` in `@fluvy/core`: `white #rrggbb`, Home Assistant's own colour for its
+  temperature) and derived on the whites' scale, `accentFamily(seed, colors, pick, white)`: its hue, its chroma its
+  share of a candle's. Tests over a ladder of 2,200 to 8,000 K (`tokens/__tests__/accent.test.ts`: the gates on every
+  palette, the order and every step a step in Linen and Dusk, light and dark); the playground's whites as Home
+  Assistant reports them (`whiteRgb`), from a candle to a cool one in a frame of their own.
+- One `wrap()` for every patch on Home Assistant's elements (`packages/core/src/shell/patches.ts`, with `inUse()`,
+  `guard()` and `CHECKED`, whose floor a test holds to `hacs.json`); tests per wrap (not in use, in use, a part that
+  throws, a patch aside in one document and on in another) and a new `shell-patches.test.ts`; the built-bundle suite
+  (`interactions-built.mjs`) loads the real build on a page that wears another theme, with stand-ins for the wrapped
+  elements, and checks that nothing of Fluvy's reaches them until the Fluvy theme is applied; and, with the look on
+  every page, replays Home Assistant's `_applyTheme` from the Fluvy theme to another and to its default: the page's
+  background, its theme colour and the frame's mark end as that theme leaves them.
+- The tile says what it shows through two hooks, `look()` (its name, what a reader hears, its icon, its skin, its fill,
+  whether its line is the person's words) and `tileLine()`; its switch, ruler and flip follow the entity (`lit`), its
+  fill the look. A card built on the tile (the Template card) changes only those.
+- `TemplateTexts` ignores `level: 'WARNING'` events (Home Assistant's `handle_render_template` hands its `log_fn` the
+  logging level's name; under `strict: false` an undefined name is a warning and the result follows).
+- The playground's Jinja learns `{% if %}`/`{% elif %}`/`{% else %}`, arithmetic (`+ - * / //`, a sign and parentheses,
+  bound as Jinja binds them: Mushroom's `(state_attr(entity, 'brightness') / 2.55) | round(0)`), comparisons,
+  `and`/`or`/`not`, the inline `if`, `upper`/`lower`/`title`/`capitalize`, works out only the branch it takes, strips
+  its result as Home Assistant does, and says an undefined name as a warning before the result; a `template` sheet
+  (eleven frames) and its interaction suite (`interactions-template-card.mjs`); the unavailable suite draws the Template
+  card's twins. The public demo shows the Template and Cameras cards' sheets, and draws the Material icons the
+  playground does.
 
 ## [1.9.1] — 2026-10-20
 

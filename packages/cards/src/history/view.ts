@@ -40,10 +40,10 @@ import {
   pillWidth,
   reducedMotion,
   ScrubController,
-  sheetStyles,
   textWidth,
   zoomOf,
 } from '@fluvy/ui';
+import { pageStyles } from '@fluvy/ui/styles/page';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
 import { FontsSettled } from '../shared/fonts.js';
@@ -84,7 +84,7 @@ const SLACK = HOUR;
 export type HistoryLayer = 'picking' | 'sourcing';
 
 export class FluvyHistory extends LitElement {
-  static override styles = [...baseStyles, sheetStyles.page, historyStyles];
+  static override styles = [...baseStyles, pageStyles, historyStyles];
 
   static override properties = {
     hass: { attribute: false },

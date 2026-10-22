@@ -47,6 +47,9 @@ export const sheet: SheetSpec = {
     sensor('co_dust', 'Fine dust', '9', 'µg/m³', 'pm25'),
     sensor('co_humidity', 'Cellar humidity', '61', '%', 'humidity'),
     ['binary_sensor.co_window', 'on', { friendly_name: 'Studio window', device_class: 'window' }],
+    ['binary_sensor.co_door', 'off', { friendly_name: 'Front door', device_class: 'door' }],
+    ['binary_sensor.co_smoke', 'off', { friendly_name: 'Smoke alarm', device_class: 'smoke' }],
+    ['binary_sensor.co_leak', 'off', { friendly_name: 'Leak sensor', device_class: 'moisture' }],
     [
       'light.co_lamp',
       'on',
@@ -176,6 +179,29 @@ export const sheet: SheetSpec = {
             { entity: 'light.co_hall', color: 'red' },
             { entity: 'light.co_porch', color: 'teal' },
             { entity: 'switch.co_kettle', color: '#e17055' },
+          ],
+        },
+      ],
+    },
+    // `tint: always` over what says a status: shut, clear and dry at rest are no warning, so they keep the card's
+    // surface; given a colour, they wash in it as any tile does
+    {
+      title: 'Tint · a status at rest',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'compact',
+          tint: 'always',
+          tiles: ['binary_sensor.co_door', 'binary_sensor.co_smoke', 'binary_sensor.co_leak'],
+        },
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'compact',
+          tint: 'always',
+          tiles: [
+            { entity: 'binary_sensor.co_door', color: 'teal' },
+            { entity: 'binary_sensor.co_smoke', color: 'teal' },
+            { entity: 'binary_sensor.co_leak', color: 'teal' },
           ],
         },
       ],

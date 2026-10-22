@@ -9,9 +9,6 @@ export const pageStyles = css`
     --av-pad: 24px;
     --av-time: 52px;
     --av-ground: var(--primary-background-color, var(--fluvy-page));
-    /* the spine's x in a row (2 px wide, through the middle of the 40 node column), and where the text starts */
-    --av-spine: calc(8px + var(--av-time) + 12px + 19px);
-    --av-body: calc(8px + var(--av-time) + 12px + 40px + 12px);
     --rail-ground: var(--av-ground);
     /* what hover lays on a row, and the room a card keeps under its last line */
     --av-hover: var(--fluvy-card);
@@ -25,6 +22,15 @@ export const pageStyles = css`
   }
   :host([compact]) {
     --av-pad: 16px;
+  }
+  /* the spine's x in a row (2 px wide, through the middle of the 40 node column) and where the text starts, worked out
+     where the time column is measured (52, or 72 for a 12-hour clock's "9:50 PM"): a custom property's var() is
+     resolved where it is declared, so declared on the host they would keep the 52 and miss the circles by 20 px */
+  .av-scroll {
+    --av-spine: calc(8px + var(--av-time) + 12px + 19px);
+    --av-body: calc(8px + var(--av-time) + 12px + 40px + 12px);
+  }
+  :host([compact]) .av-scroll {
     --av-spine: calc(8px + 19px);
     --av-body: calc(8px + 40px + 12px);
   }

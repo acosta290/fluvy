@@ -1,5 +1,6 @@
 import { walkShadow } from '../shell/dom.js';
-import { markView } from './view.js';
+import { always, guard, inUse, wrap } from '../shell/patches.js';
+import { markView, SUBVIEW_ATTRIBUTE } from './view.js';
 
 /**
  * A dashboard's view tabs (Home Assistant's own, in its header): how the dashboards that wear the look draw them.
@@ -297,31 +298,32 @@ export function markRoot(root: RootElement, marks: Marks | null): boolean {
 }
 
 interface RootPrototype {
-  updated?: (changed: unknown) => void;
   _renderActionItems?: (...args: unknown[]) => unknown;
+  /** The actions' render is wrapped (the update's wrap knows its own). */
   __fluvyTabs?: true;
 }
+
+type NarrowRoot = RootElement & { narrow?: boolean };
 
 /**
  * Home Assistant's header actions in its one menu on a wide screen too: the root draws them as it does on a phone (it
  * reads `narrow` while it draws them), the rest of its header as it is. `narrow` is read through an own value laid over
- * the property for that one call and taken away after it, so nothing updates; a root that holds `narrow` as its own
- * value (another Home Assistant) is left as it is.
+ * the property for that one render (true: laid, and taken away after it), so nothing updates; a root that holds
+ * `narrow` as its own value (another Home Assistant) is left as it is.
  */
-function asOnAPhone<T>(root: RootElement & { narrow?: boolean }, draw: () => T): T {
-  if (root.narrow || Object.prototype.hasOwnProperty.call(root, 'narrow')) return draw();
+function lendNarrow(root: NarrowRoot): boolean {
+  if (root.narrow || Object.hasOwn(root, 'narrow')) return false;
   Object.defineProperty(root, 'narrow', { value: true, configurable: true });
-  try {
-    return draw();
-  } finally {
-    delete (root as { narrow?: boolean }).narrow;
-  }
+  return true;
 }
 
 /**
  * Keeps every dashboard's header marked: `hui-root`'s update method is wrapped (it updates when the dashboard, the
- * view or the edit mode changes), so the marks follow at once; its actions' render is wrapped too, for the one menu.
- * False if Home Assistant reshaped the element: its header then stays its own (the sheet only styles marked roots).
+ * view or the edit mode changes), so the marks follow at once — put on a dashboard that wears the look, taken off any
+ * other (Home Assistant keeps the root from dashboard to dashboard) —; its actions' render is wrapped too, for the one
+ * menu. Home Assistant's update runs first and always, ours caught (`patches.ts`); its actions' render always runs,
+ * once, lent `narrow` before it only on our mark (`lendNarrow`, caught too). False if Home Assistant reshaped the
+ * element: its header then stays its own (the sheet only styles marked roots).
  */
 export async function patchViewRoots(
   registry: CustomElementRegistry,
@@ -329,25 +331,33 @@ export async function patchViewRoots(
 ): Promise<boolean> {
   await registry.whenDefined('hui-root');
   const proto = registry.get('hui-root')?.prototype as RootPrototype | undefined;
-  const original = proto?.updated;
-  if (!proto || typeof original !== 'function') return false;
-  if (!proto.__fluvyTabs) {
-    proto.updated = function (this: RootElement, changes: unknown): void {
-      original.call(this, changes);
-      markRoot(this, marksFor(this, tabsFor));
-      // whether it shows a subview, whatever the look: a wall draws its way back from it
-      markView(this);
+  const done = wrap(
+    proto,
+    'updated',
+    'viewRoots',
+    (root: RootElement) => {
+      markRoot(root, marksFor(root, tabsFor));
+      // whether it shows a subview, wherever Fluvy is in use: a wall draws its way back from it
+      if (inUse(root.ownerDocument)) markView(root);
+      else root.removeAttribute(SUBVIEW_ATTRIBUTE);
+    },
+    always,
+  );
+  const actions = proto?._renderActionItems;
+  if (done && proto && typeof actions === 'function' && !proto.__fluvyTabs) {
+    proto._renderActionItems = function (this: NarrowRoot, ...args: unknown[]): unknown {
+      // on our mark alone; Home Assistant's render runs once, whatever ours does
+      const lent =
+        this.hasAttribute(ACTIONS_MENU_ATTRIBUTE) && guard('actionsMenu', () => lendNarrow(this));
+      try {
+        return actions.apply(this, args);
+      } finally {
+        if (lent) delete this.narrow;
+      }
     };
-    const actions = proto._renderActionItems;
-    if (typeof actions === 'function')
-      proto._renderActionItems = function (this: RootElement, ...args: unknown[]): unknown {
-        return this.hasAttribute(ACTIONS_MENU_ATTRIBUTE)
-          ? asOnAPhone(this, () => actions.apply(this, args))
-          : actions.apply(this, args);
-      };
     proto.__fluvyTabs = true;
   }
-  return true;
+  return done;
 }
 
 /** Re-marks every dashboard header on the page now (the settings or the preview changed). */

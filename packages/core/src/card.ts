@@ -150,10 +150,11 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   static still = false;
 
   /**
-   * The card's height at a 360 column for this config, for whoever lays cards out before they are drawn: with the
-   * house, what the entity's capabilities draw; without it, the config's say and the documented default.
+   * The card's height at a 360 column for this config, for whoever lays cards out before they are drawn: the
+   * config's say and the documented default. What the house adds (the entity's capabilities) the automatic dashboard
+   * counts with the cards' `house-heights.ts`.
    */
-  static layoutHeight?(config: LovelaceCardConfig, hass?: HomeAssistant): number;
+  static layoutHeight?(config: LovelaceCardConfig): number;
 
   static override properties = {
     hass: { attribute: false, noAccessor: true },

@@ -144,6 +144,9 @@
     camera: svg(
       '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z"/><circle cx="12" cy="13" r="3.5"/>',
     ),
+    cctv: svg(
+      '<path d="M15.6 12.9V16.9H20.6"/><g transform="matrix(.883 -.469 .469 .883 7.65 13.7)"><rect x="0" y="-3" width="10.5" height="6" rx="1.5"/><path d="M0-1.5-3.2-3V3L0 1.5"/></g>',
+    ),
     vacuum: svg(
       '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v4"/><circle cx="12" cy="12" r="2"/><path d="M6 17.5 4 20"/><path d="m18 17.5 2 2.5"/>',
     ),
@@ -187,6 +190,25 @@
     ),
     door: svg(
       '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none"/>',
+    ),
+    doorOpen: svg(
+      '<path d="M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17"/><path d="M4 21h16"/><path d="M6 3.5l7 2.5v13l-7 2"/><circle cx="11" cy="12.5" r="1" fill="currentColor" stroke="none"/>',
+    ),
+    window: svg(
+      '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M12 4v16"/><path d="M4 12h16"/>',
+    ),
+    windowOpen: svg(
+      '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4.5 5.5 9 7.5v9l-4.5 2"/><path d="M19.5 5.5 15 7.5v9l4.5 2"/>',
+    ),
+    gate: svg(
+      '<path d="M4 3v18"/><path d="M20 3v18"/><path d="M4 7h16"/><path d="M4 17h16"/><path d="M4 17 20 7"/>',
+    ),
+    gateOpen: svg('<path d="M4 3v18"/><path d="M20 3v18"/><path d="M4 7l10-3v16.5L4 17"/>'),
+    garage: svg(
+      '<path d="M4 21V9.5L12 3l8 6.5V21"/><path d="M7.5 12h9v9h-9Z"/><path d="M7.5 16.5h9"/>',
+    ),
+    garageOpen: svg(
+      '<path d="M4 21V9.5L12 3l8 6.5V21"/><path d="M7.5 21v-9h9V21"/><path d="M7.5 13.5h9"/>',
     ),
     warn: svg(
       '<path d="M12 4 3 19h18Z"/><path d="M12 10v4"/><circle cx="12" cy="16.5" r=".9" fill="currentColor" stroke="none"/>',

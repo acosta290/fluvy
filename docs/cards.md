@@ -1,15 +1,22 @@
 # The cards
 
-Fifty-five cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Fifty-seven cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
-written into the configuration. In YAML, a card is `type: custom:<tag>` plus the entity or entities it draws and any
-option the editor offers; the *Options* column below names them (a select's values in brackets, a list with its item
-keys), and *Reads* the older names a card still accepts (read, never written back). Every entity card also takes
+written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
+options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
+`type: custom:<tag>` plus the entity or entities it draws and any option the editor offers; the *Options* column below
+names them (a select's values in brackets, a list with its item keys), and *Reads* the older names a card still
+accepts (read, never written back). Every entity card also takes
 `entity`, `name`, `icon`, `tap_action`, `hold_action`, `tone`, `color` and `card_color` (a quiet wash of a colour as
 the card's own surface, its edge and dividers in it — see [the theme guide](theme.md#a-colour-per-card-and-per-item));
 a list card takes `title`. A card with a head also takes `show_icon`: `auto` (the default: the circle gives way where
 a long name in a narrow column needs its room, and only then), `always` (the circle stays while the name keeps a
-few letters beside it: a smaller circle first, then none) or `never`. The tables are generated from the code (`pnpm docs:cards`).
+few letters beside it: a smaller circle first, then none) or `never`. An `icon` left out — a card's, a row's or a
+tile's — is the one you set for the entity in Home Assistant (in its settings, or a helper's, a scene's or a script's
+own), else Fluvy's glyph for its kind, drawn open or shut as it stands (a door, a gate, a garage, a window), else its
+integration's or Home Assistant's own: a sensor of a class Fluvy has no glyph for takes Home Assistant's, one of no
+class keeps Fluvy's trend arrow unless its integration has an icon for it. The tables are generated from the code
+(`pnpm docs:cards`).
 
 Every card holds from the floor of a narrow column — 152 px for a card that takes half a section, 211 px for a full
 one — up to a wall's 520 px, in light and dark, in every language Fluvy speaks; `unavailable`, `unknown` and a
@@ -79,9 +86,12 @@ with a quiet wash of it at rest too, `off` never. How much: `full` (the default)
 the same on every palette as a tile's — `soft` a gentler wash, and `brightness` a wash as strong as the lamp is bright
 (a lamp at 10 % still reads lit). The colour is the card's own `color` when it has one (*Primary* is the palette's
 accent; the editor's *State* follows the light), else its `tone`, else the light's: the colour it glows, a group's lit
-members' by their brightness, the one you just tapped. A white shows as the palette's lit light, or by its temperature
-with `light_whites: temperature`. Where a card says nothing, the house decides (the settings panel → Appearance → Lights;
-off unless chosen):
+members' by their brightness, the one you just tapped. A white shows its warmth (1.10) on one scale, from Home
+Assistant's own colour for its temperature: a candle's (2,200 K) the warmest, 2,700 K warm, 4,000 K a little, 5,000 K
+nearly neutral, daylight (6,500 K) neutral, and a cool one, above it, cool — or the palette's lit light with
+`light_whites: palette`. A light that only dims or only switches, and a white Home Assistant gives no colour for, have
+no colour of their own and take the palette's lit light. Where a card says nothing of its surface, the house decides
+(the settings panel → Appearance → Lights; off unless chosen):
 
 ```yaml
 type: custom:fluvy-light-card
@@ -90,8 +100,20 @@ tint: on
 tint_strength: brightness
 ```
 
-Tiles, a tiles group, a room's tiles and rows, and an entities card's rows can wear a lit colour bulb's colour as well
-(`light_colors: true`, or the house's choice): a tile's own `color` or `tone`, and the card's, come first.
+Tiles, a tiles group, a room's tiles and rows, and an entities card's rows can wear a lit bulb's colour as well
+(`light_colors: true`, or the house's choice; the room lights card does unless told not to), a white by its warmth
+or as the palette's light as above (`light_whites`). Every light a card draws follows one rule (1.10): its own `color`,
+else its own `tone`, else its bulb's colour, else the card's `color`, else the card's `tone`, else the palette's lit
+light — so a bulb's colour now comes before the card's. A light group wears its lit members' colours, weighed by their
+brightness. The editors offer only what acts: the whites while the bulbs show their colours, the colour at rest
+(`tint`) on a room lights card in tiles and on a room with tiles, a light's colours on a tile of a light.
+
+```yaml
+type: custom:fluvy-lights-card
+area: bedroom
+variant: tiles
+light_whites: palette
+```
 
 The history bars card reads a sensor's long-term statistics (`days` bars of a `period`: days, weeks or months; a
 bar is what a meter gained, or a measurement's `mean`, `max` or `min`). Its head readouts (`head`) and the facts
@@ -148,13 +170,58 @@ In every list of rows (entities, lock, alarm, camera, bars, stat tiles, actions,
 a Home Assistant template instead of a keyword or words of its own: anything with `{{ … }}` or `{% … %}` is rendered
 by Home Assistant and kept live, so the line changes as the entities it reads do. The row's own entity is `entity` in
 the template and the person looking at the dashboard `user`; a template that fails renders an empty line, never its
-own text. The editor's field takes a keyword or a template alike.
+own text. The editor's field takes a keyword or a template alike. A camera's rows are its history: each says when it
+last changed, as the time of day, unless its `secondary` asks for another line (`state`, `area`, an attribute, a
+template, `none`), and a row's `tone` or `color` shows on its circle. A row with no `tap_action` of its own opens its
+entity's details.
 
 ```yaml
 type: custom:fluvy-entities-card
 rows:
   - entity: climate.living
     secondary: "{{ state_attr('climate.living', 'current_temperature') }} °C · {{ states('sensor.humidity') }} %"
+```
+
+## Template
+
+The template card is a tile — compact (the default), mini or large, the tile card's own — whose `name`,
+`secondary`, `icon`, `color` and `active` may each be a Home Assistant template, rendered and kept live as a row's
+text is. `entity` is optional. With one, the tile is that entity's: its glyph, its tone and its state, on a large tile
+its switch, its ruler and its `readouts`, and a template reads it as `entity`. Without one, the tile is your words
+alone: it wears the resting skin, toggles nothing, and is a button only for an action that needs no entity
+(`navigate`, `url`, `perform-action`, `assist`).
+
+- `secondary`: `state` (the default with an entity), `area`, `last-changed`, `none` (the default without one), words
+  of your own or a template. Your own words that do not fit lose their last ` · ` parts, then end in an ellipsis.
+- `icon`: an icon such as `mdi:lightbulb`, or a Fluvy glyph's name (`bulb`).
+- `color`: a colour (a Home Assistant colour's name, `#rrggbb`, `rgb(…)`) or one of the palette's tones (`warning`,
+  `heat`, `water`…); `tint: always` keeps it at rest. The editor's colour picker takes a colour; a template goes in
+  YAML.
+- `active`: when the tile shows as on — `auto` (as its entity is; the default), `always`, `never`, or a template: on
+  unless it gives `off`, `false`, `no`, `0` or another state that reads as off. The fill is `active`'s; a large
+  tile's switch and ruler still say what the entity is.
+
+Until Home Assistant answers, the tile shows its entity's own glyph, colour and state, and a blank line where the
+words will land, so nothing moves when they do; a template that fails shows nothing of itself, and a reader hears
+the entity's name (or "Template").
+
+A Mushroom template card pastes in: `primary` is read as `name`, `icon_color` as `color`, `layout: vertical` (or
+Mushroom's later `vertical: true`) as the mini tile (`horizontal` and `default` as the compact one). `fill_container`,
+`multiline_secondary`, `double_tap_action` and `entity_id` have no part here and are let go when the editor saves;
+`picture`, `badge_icon` and `badge_color` stay in the configuration, not drawn. One difference to know: Mushroom's
+template card does nothing on a tap or a hold unless you give it an action, where Fluvy's tile toggles what toggles (a
+light, a switch) on a tap and opens its details on a hold. To keep a pasted card still, write
+`tap_action: { action: none }` (and `hold_action: { action: none }`).
+
+```yaml
+type: custom:fluvy-template-card # was custom:mushroom-template-card
+entity: sensor.washer_power
+primary: "{{ 'Washing' if states(entity) | float > 10 else 'Washer' }}"
+secondary: "{{ states(entity) | round }} W"
+icon: mdi:washing-machine
+icon_color: "{{ 'blue' if states(entity) | float > 10 else 'grey' }}"
+active: "{{ states(entity) | float > 10 }}" # Fluvy's own: the fill
+layout: vertical
 ```
 
 ## Schedules
@@ -225,6 +292,37 @@ type: custom:fluvy-appliances-card
 variant: cards
 ```
 
+## Cameras
+
+The cameras card shows several cameras at a glance, as a reader drew it (#60): each a tile of its picture — "Live" at
+its top and a full-screen round at its bottom — over its circle (its own `icon`, the one set for the camera, its area's,
+the camera), its name and its line. The line reads the camera's motion sensor where it has one (`motion`, else the
+motion, occupancy or presence sensor on the camera's device): "Motion detected" (its circle neutral, or in the camera's
+own `tone` or `color` where it has one) or "No motion"; else the camera's state ("Online", "Recording", "Streaming",
+"Offline"); `status` asks for one of them, or `none`. The cameras are those it lists in `cameras`, else every camera of
+its `area`. Each picture refreshes itself only while it is on screen (`refresh`, in seconds), or streams with
+`camera_view: live` — the first `max_live` of them (four by default), the others keeping to stills. A picture whose
+stream cannot play shows its stills and says so on its line ("Stream unavailable"). `columns` lays the tiles out
+(`auto`: one in a narrow column, two from 320, up to four across a wide band); `variant: list` is a row a camera with
+its thumbnail, `compact` the pictures alone with their names. The head's round opens a sheet of every camera, with a
+switch that shows them all live, or none, while the dashboard stays open (never written to the card; none with
+`max_live: 0`); a `hold_action` on the card runs there instead.
+
+```yaml
+type: custom:fluvy-cameras-card
+title: Outside
+cameras:
+  - entity: camera.driveway
+    icon: mdi:fence
+  - entity: camera.garden
+    motion: binary_sensor.garden_person
+  - camera.terrace
+  - camera.garage
+columns: 2
+camera_view: live
+max_live: 2
+```
+
 ## Alerts
 
 The alerts card gathers what needs a look. Each alert is one line — a `preset` (`low_battery`, `unavailable`, `open`,
@@ -261,12 +359,13 @@ alerts:
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `tint` (`on`, `always`), `light_colors`, `readouts` | — |
-| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `tint` (`on`, `always`), `light_colors`, `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `tap_action`, `hold_action`) | `entities` → `tiles` |
+| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
+| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `tap_action`, `hold_action`) | `entities` → `tiles` |
+| **Template** | `custom:fluvy-template-card` | A tile whose name, line, icon, colour and fill are templates, with or without an entity; a Mushroom template card pastes in. | `secondary` (`state`, `area`, `last-changed`, `none`), `variant` (`compact`, `mini`, `large`), `active` (`auto`, `always`, `never`), `tint` (`on`, `always`), `readouts` | `primary` → `name`, `icon_color` → `color`, `layout` → `variant`, `vertical` → `variant` |
 | **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `variant` (`auto`, `full`, `compact`), `show_stepper`, `show_temperature`, `show_color`, `temperature_tint`, `live_update`, `tint` (`off`, `on`, `always`), `tint_strength` (`soft`, `brightness`, `full`), `light_whites` (`palette`, `temperature`), `colors` (a list: `color`, `name`, `rgb`) | — |
-| **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `tint` (`on`, `always`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
+| **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
-| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
+| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Cover** | `custom:fluvy-cover-card` | Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favourites. | `subtitle`, `tilt_angle`, `variant` (`full`, `compact`), `favorites_style` (`full`, `chips`), `show_tilt`, `show_favorites`, `favorites` (a list: `name`, `position`, `tilt`) | — |
@@ -275,6 +374,7 @@ alerts:
 | **Lock** | `custom:fluvy-lock-card` | Slide to unlock, never one accidental tap; codes, jammed state, related rows. | `subtitle`, `variant` (`full`, `compact`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
 | **Alarm** | `custom:fluvy-alarm-card` | Arm modes as tiles and the keypad sheet for codes. | `subtitle`, `variant` (`tiles`, `compact`), `modes` (`disarm`, `arm_home`, `arm_away`, `arm_night`, `arm_vacation`, `arm_custom_bypass`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | — |
 | **Camera** | `custom:fluvy-camera-card` | A still that refreshes itself, or Home Assistant’s live stream, in the shape you choose; tap for the stream. | `subtitle`, `camera_view` (`auto`, `live`), `refresh`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `native`), `fit_mode` (`cover`, `contain`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `sub` → `subtitle` |
+| **Cameras** | `custom:fluvy-cameras-card` | Several cameras at a glance, each picture live or refreshing itself with its name and what it sees; a sheet of them all. | `title`, `subtitle`, `area`, `variant` (`grid`, `list`, `compact`), `columns` (`auto`, `1`, `2`, `3`, `4`), `camera_view` (`auto`, `live`), `max_live`, `refresh`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `native`), `fit_mode` (`cover`, `contain`), `show_status`, `status` (`auto`, `motion`, `state`, `none`), `show_live`, `show_fullscreen`, `empty_text`, `hide_empty`, `cameras` (a list: `entity`, `name`, `icon`, `motion`, `status`, `camera_view`, `refresh`, `fit_mode`, `tone`, `color`, `tap_action`, `hold_action`) | `entities` → `cameras` |
 | **3D printer** | `custom:fluvy-printer-card` | A 3D printer’s job: progress, time left, heaters, layers, filament and the camera; pause, resume and stop. OctoPrint, PrusaLink, Bambu Lab, Moonraker, Creality, Elegoo, Anycubic, Snapmaker and FlashForge. | `device`, `variant` (`full`, `compact`, `row`), `readouts` (`nozzle`, `bed`, `chamber`, `layer`, `speed`, `filament`, `elapsed`), `show_image`, `image` (`auto`, `camera`, `preview`), `camera_view` (`auto`, `live`), `fit_mode` (`cover`, `contain`), `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `native`), `show_filament`, `show_controls`, `sensors` (a list: `entity`, `name`), `roles` (a list: `role`, `entity`) | — |
 | **Appliance** | `custom:fluvy-appliance-card` | A washer, dryer, dishwasher, oven, hob, fridge, coffee machine or small appliance on a plug, pictured: what it does, when it is ready, what it uses, its reminders. | `device`, `kind` (`auto`, `washer`, `dryer`, `washer_dryer`, `dishwasher`, `oven`, `microwave`, `hob`, `hood`, `fridge`, `freezer`, `wine`, `coffee`, `kettle`, `air_fryer`, `toaster`, `blender`, `sandwich_maker`, `appliance`), `variant` (`full`, `compact`, `ring`, `row`), `unit` (`both`, `main`, `sub`), `picture` (`art`, `icon`, `none`), `image`, `show_power`, `power_action`, `show_notify`, `show_hero`, `show_progress`, `progress_style` (`auto`, `bar`, `steps`), `time` (`both`, `left`, `end`), `show_zones`, `setpoint_style` (`readout`, `stepper`), `show_drinks`, `show_rows`, `drinks`, `row_values` (`inline`, `end`, `plain`), `readouts` (`program`, `temperature`, `spin`, `dryness`, `energy`, `water`, `cycles`, `detergent`, `elapsed`, `total`, `this_cycle`, `probe`, `power`), `show_maintenance`, `show_modes`, `modes_style` (`chips`, `tiles`), `modes` (`super_cool`, `super_freeze`, `eco`, `holiday`, `ice_maker`, `sabbath`, `child_lock`), `show_controls`, `show_programs`, `controls` (`start`, `pause`, `stop`, `power`, `light`), `unload_reminder`, `unload_after`, `done_for`, `door_alert`, `low_level`, `running_power`, `finished_after`, `rows` (a list: `key`, `entity`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `sensors` (a list: `entity`, `name`), `maintenance` (a list: `key`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `zones` (a list: `entity`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `roles` (a list: `role`, `entity`) | — |
 | **Appliances** | `custom:fluvy-appliances-card` | The house’s appliances as live rows, or their whole cards side by side: what runs, what is done, what waits. | `title`, `subtitle`, `variant` (`rows`, `compact`, `tiles`, `cards`), `max_rows`, `picture` (`art`, `icon`, `none`), `show` (`all`, `active`), `sort` (`state`, `name`, `none`), `show_count`, `hide_empty`, `empty_text`, `appliances` (a list: `device`, `entity`, `name`, `icon`, `color`, `kind`, `tap_action`, `hold_action`) | — |
@@ -289,7 +389,7 @@ alerts:
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `show_climate`, `show_count`, `picture`, `path`, `temperature_entity`, `humidity_entity`, `size` (`large`, `compact`, `mini`), `readouts`, `tint` (`on`, `always`), `light_colors`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `tap_action`, `hold_action`) | — |
+| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `show_climate`, `show_count`, `picture`, `path`, `temperature_entity`, `humidity_entity`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `tap_action`, `hold_action`) | — |
 | **Map** | `custom:fluvy-map-card` | Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate. | `title`, `variant` (`zones`, `map`, `rows`), `map_shape` (`wide`, `square`), `hours_to_show`, `default_zoom`, `fit_zones`, `show_empty`, `show_distance`, `map_path`, `empty_text`, `hide_empty`, `zones` (a list: `entity`, `name`, `icon`) | — |
 
 ## Structure and navigation

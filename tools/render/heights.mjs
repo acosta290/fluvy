@@ -3,7 +3,8 @@
  * Every card's declared height (`static layoutHeight`, what the automatic dashboard lays columns out with) against
  * what it measures in the playground at a 360 column: the sheets' frames at their natural width (a card of 360;
  * a frame with a width of its own, or a card showing its empty state, is not a sample). The declaration is read as
- * the dashboard reads it, with the house the frame shows (`hass`), so it counts what the entity's capabilities draw.
+ * the dashboard reads it (`houseHeightOf`, the cards' `house-heights.ts`), with the house the frame shows (`hass`),
+ * so it counts what the entity's capabilities draw.
  *
  * A drift over 8 px fails the run (exit 1) unless the known heights (`tools/render/known-heights.json`) list it:
  * the frame, the card, what it declares and what it draws, and why — the few cards whose drawing depends on live
@@ -15,7 +16,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { startSuite } from './lib/suite.mjs';
+import { HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
 
 const TOLERANCE = 8;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -54,7 +55,8 @@ const suite = await startSuite();
 const all = [];
 for (const sheet of sheets) {
   const page = await suite.page(`sheet=${sheet}`, { viewport: { width: 1400, height: 1200 } });
-  const rows = await page.evaluate(() => {
+  const rows = await page.evaluate(async (module) => {
+    const { houseHeightOf } = await import(module);
     const out = [];
     for (const frame of document.querySelectorAll('[data-frame]')) {
       if (frame.getAttribute('data-measure') === 'false') continue;
@@ -67,8 +69,8 @@ for (const sheet of sheets) {
           !/^fluvy-(tiles|scenes)-card$/.test(tag)
         )
           continue; // a tile inside a set is the set's
-        const height = el.constructor.layoutHeight;
-        if (typeof height !== 'function' || !el.config) continue;
+        // a card that declares a height (`static layoutHeight`), read as the dashboard plans it
+        if (typeof el.constructor.layoutHeight !== 'function' || !el.config) continue;
         // the card's own box (what it renders at its root), not the host a frame's grid row may have stretched
         const card = [...(el.renderRoot?.children ?? [])].find((node) => node.tagName !== 'STYLE');
         const rect = (card ?? el).getBoundingClientRect();
@@ -80,14 +82,14 @@ for (const sheet of sheets) {
           frame: frame.getAttribute('data-frame'),
           tag,
           n,
-          declared: height(el.config, el.hass),
+          declared: houseHeightOf({ ...el.config, type: `custom:${tag}` }, -1, el.hass),
           measured: Math.round(rect.height),
           config: el.config,
         });
       }
     }
     return out;
-  });
+  }, HOUSE_HEIGHTS);
   all.push(...rows);
   await page.close();
 }

@@ -2,6 +2,7 @@
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { areaEntities, localize, preloadLanguages, type HomeAssistant } from '@fluvy/core';
 import { familiesDefined } from '../index.js';
+import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
 import { FluvyRoomCard, type RoomCardConfig } from './room-card.js';
 
 // the index fetches the lazy families: they land before this file's page goes
@@ -379,5 +380,56 @@ describe('a room in a narrow column', () => {
       expect(hint(wide), language).toBe(full);
       document.body.replaceChildren();
     }
+  });
+});
+
+describe('the room card’s editor offers what acts in the room’s style (#58)', () => {
+  const editor = async (config: Record<string, unknown>) => {
+    const element = await FluvyRoomCard.getConfigElement();
+    (element as HTMLElement & { hass: HomeAssistant }).hass = house();
+    return drawEditor(element, { type: 'custom:fluvy-room-card', area: 'garten', ...config });
+  };
+  const shown = async (config: Record<string, unknown>): Promise<string[]> =>
+    shownNames(cardForm(await editor(config)).schema);
+  afterEach(() => document.body.replaceChildren());
+
+  it('a row draws neither controls, tiles, a picture nor the lights’ colours: none of them is offered', async () => {
+    const photo = await shown({ variant: 'photo', controls: 'tiles' });
+    for (const name of ['controls', 'picture', 'tint', 'light_colors'])
+      expect(photo).toContain(name);
+    const row = await shown({ variant: 'row', controls: 'tiles', light_colors: true });
+    for (const name of ['controls', 'picture', 'tint', 'light_colors', 'light_whites'])
+      expect(row).not.toContain(name);
+    // what a row does draw stays: its line, its way in
+    for (const name of ['show_climate', 'show_count', 'path']) expect(row).toContain(name);
+    expect(listTitles(await editor({ variant: 'row', controls: 'tiles' }))).toEqual([]);
+  });
+
+  it('the tiles and their colour at rest with tiles alone; the lights’ colours wherever lights are drawn', async () => {
+    const rows = await editor({ variant: 'tile' });
+    expect(shownNames(cardForm(rows).schema)).not.toContain('tint');
+    expect(shownNames(cardForm(rows).schema)).toContain('light_colors');
+    expect(listTitles(rows)).toEqual([]);
+    const tiles = await editor({ variant: 'tile', controls: 'tiles' });
+    expect(shownNames(cardForm(tiles).schema)).toContain('tint');
+    expect(listTitles(tiles)).toEqual(['Tiles']);
+    expect(await shown({ variant: 'tile', controls: 'none' })).not.toContain('light_colors');
+  });
+
+  it('a picture for the photo alone: its default where the room has one or the card names one', async () => {
+    expect(await shown({ variant: 'tile', controls: 'tiles' })).not.toContain('picture');
+    expect(await shown({ variant: 'tile', picture: '/local/garden.jpg' })).not.toContain('picture');
+    expect(await shown({ variant: 'photo' })).toContain('picture');
+    // no variant: the photo where the card names a picture, the tile where nothing does
+    expect(await shown({ picture: '/local/garden.jpg' })).toContain('picture');
+    expect(await shown({})).not.toContain('picture');
+  });
+
+  it('never the size and the readouts it never read (their YAML keys stay, ignored)', async () => {
+    const names = await shown({ variant: 'tile', size: 'mini', readouts: ['sensor.garten_t'] });
+    expect(names).not.toContain('size');
+    expect(names).not.toContain('readouts');
+    expect(FluvyRoomCard.keys).not.toContain('size');
+    expect(FluvyRoomCard.keys).not.toContain('readouts');
   });
 });

@@ -633,6 +633,14 @@
   height: 32px;
 }
 
+/* the smaller circle's glyph is 16 (`lists.css`): Home Assistant's icon in it too */
+.fv-row--compact > .fv-ico .fv-haicon,
+.fv-ico--small .fv-haicon {
+  --mdc-icon-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
 .fv-vbar--on {
   fill: var(--tone-ink, var(--fluvy-accent));
 }

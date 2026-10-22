@@ -3,8 +3,8 @@ import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core'
 import { OUT_OF_REACH, outOfReachStates } from '@fluvy/demo-home/out-of-reach';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applianceHeight, APPLIANCE_VARIANTS } from '../appliances-family.js';
-import { FluvyApplianceCard } from './appliance-card.js';
-import { FluvyAppliancesCard } from './appliances-card.js';
+import { applianceHouseHeight, FluvyApplianceCard } from './appliance-card.js';
+import { appliancesHouseHeight, FluvyAppliancesCard } from './appliances-card.js';
 import { allFixtures, houseOf, laterFixtures, minutesFrom, plugFridge } from './fixtures/index.js';
 import { applianceDevices } from './kinds.js';
 import { forgetUnloaded } from './memory.js';
@@ -603,7 +603,7 @@ describe('the whole card’s standard slot (#47)', () => {
     root(card).querySelectorAll('.ap-items > .ap-item').length,
   ];
   const height = (config: Record<string, unknown>, hass: HomeAssistant): number =>
-    FluvyApplianceCard.layoutHeight({ type: 'x', ...config }, hass);
+    applianceHouseHeight({ type: 'x', ...config }, hass);
   /** The house as Home Assistant words it: a Miele plate's level ("Off", "Level 7"), the rest as raw. */
   const spoken = (hass: HomeAssistant): HomeAssistant =>
     ({
@@ -751,7 +751,9 @@ describe('the whole card’s standard slot (#47)', () => {
   it('the list’s whole cards follow them: each what its appliance draws, one a row 16 apart', () => {
     const hass = house();
     const list = (config: Record<string, unknown>, at?: HomeAssistant): number =>
-      FluvyAppliancesCard.layoutHeight({ type: 'x', variant: 'cards', ...config }, at);
+      at
+        ? appliancesHouseHeight({ type: 'x', variant: 'cards', ...config }, at)
+        : FluvyAppliancesCard.layoutHeight({ type: 'x', variant: 'cards', ...config });
     expect(list({ appliances: ['st-oven', 'miele-coffee', 'hc-fridge'] }, hass)).toBe(
       3 * 376 + 2 * 16,
     );

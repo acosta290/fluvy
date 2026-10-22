@@ -16,10 +16,16 @@ export const asText = (value: unknown): string =>
 /** A blank line of a sub's height (a non-breaking space): what a row shows for a template Home Assistant has not answered yet. */
 export const PENDING_LINE = '\u00a0';
 
-/** What `render_template` sends: the result each time it changes, or an error (and it keeps listening). */
+/**
+ * What `render_template` sends: the result each time it changes, or an error (and it keeps listening). An error comes
+ * with its level: `ERROR` (the template failed: no result follows), or `WARNING` (under `strict: false`, a name the
+ * template reads that is not defined, `{{ room }}`, is said as a warning while it renders, and its result follows:
+ * Home Assistant's `handle_render_template` hands its `log_fn` the logging level's name).
+ */
 interface Rendered {
   readonly result?: unknown;
   readonly error?: string;
+  readonly level?: string;
 }
 
 /** One template for one row: what it last rendered to, and the subscription that keeps it current. */
@@ -133,7 +139,11 @@ export class TemplateTexts implements ReactiveController {
     };
     connection
       .subscribeMessage<Rendered>(
-        (message) => answer(message.error === undefined ? asText(message.result) : ''),
+        // a warning is not an answer: the result it comes before is, and the line holds what it last said meanwhile
+        (message) => {
+          if (message.level !== 'WARNING')
+            answer(message.error === undefined ? asText(message.result) : '');
+        },
         {
           type: 'render_template',
           template,

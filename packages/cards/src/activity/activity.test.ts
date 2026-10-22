@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
-import { html, LitElement } from 'lit';
-import { afterEach, describe, expect, it } from 'vitest';
-import { ORIGINAL_ACTIVITY, type HomeAssistant } from '@fluvy/core';
+import { html, LitElement, type TemplateResult } from 'lit';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ORIGINAL_ACTIVITY, resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { eventKey, type ActivityEvent } from '@fluvy/core/activity';
 import type { FluvyTimeRail, TimeRailDetail } from '@fluvy/ui/time-rail';
 import { ActivityIndex, buildModel, dayRange, shiftRange } from './model.js';
 import { timeAt } from './rail.js';
 import { setTarget } from './sources.js';
+import { takeOverPage } from '../shared/takeover.js';
 import { activityIsOurs, takeOverActivity } from './takeover.js';
 import type { FluvyActivity } from './view.js';
+import { lookOf } from './words.js';
 
 const at = (h: number, m = 0, s = 0): number => new Date(2026, 8, 17, h, m, s).getTime() / 1000;
 
@@ -132,6 +134,50 @@ describe('the Activity model', () => {
     expect(found.counts.all).toBe(2);
     expect(found.counts.security).toBe(0);
     expect(found.filters).toContain('security');
+  });
+});
+
+describe('an entry’s circle', () => {
+  const states = {
+    ...house().states,
+    'binary_sensor.washer_vibration': {
+      entity_id: 'binary_sensor.washer_vibration',
+      state: 'off',
+      attributes: { friendly_name: 'Washer vibration', device_class: 'vibration' },
+      last_changed: '',
+      last_updated: '',
+    },
+    'group.downstairs': {
+      entity_id: 'group.downstairs',
+      state: 'on',
+      attributes: { friendly_name: 'Downstairs', entity_id: ['light.kitchen'] },
+      last_changed: '',
+      last_updated: '',
+    },
+  };
+  const look = (event: ActivityEvent, extra: Record<string, unknown> = {}) => {
+    const hass = house({ states: { ...states, ...extra } } as Partial<HomeAssistant>);
+    const page = { hass, index: new ActivityIndex(() => hass) } as unknown as FluvyActivity;
+    return lookOf(page, event, resolveEntity(hass, event.entity_id)).glyph;
+  };
+
+  it('draws the entity as it stood: Fluvy’s glyph, and Home Assistant’s icon for the state it had', () => {
+    expect(look({ when: at(18, 30), entity_id: 'binary_sensor.front_door', state: 'on' })).toBe(
+      'doorOpen',
+    );
+    expect(
+      look({ when: at(18, 30), entity_id: 'binary_sensor.washer_vibration', state: 'on' }),
+    ).toBe('ha-state:binary_sensor.washer_vibration=on');
+  });
+
+  it('draws a group as what it holds, unless it has an icon of its own', () => {
+    const event = { when: at(19), entity_id: 'group.downstairs', state: 'off' };
+    expect(look(event)).toBe('bulb');
+    const own = {
+      ...states['group.downstairs'],
+      attributes: { ...states['group.downstairs'].attributes, icon: 'mdi:home-floor-0' },
+    };
+    expect(look(event, { 'group.downstairs': own })).toBe('mdi:home-floor-0');
   });
 });
 
@@ -276,6 +322,58 @@ describe('the Activity page in place of Home Assistant’s', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await panel.updateComplete;
     expect(panel.shadowRoot!.querySelector('.stock')).not.toBeNull();
+  });
+
+  it('gives Home Assistant its page back for the session when ours throws', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    class Page extends LitElement {
+      override render() {
+        return html`<p class="stock">Home Assistant’s page</p>`;
+      }
+    }
+    customElements.define('ha-panel-test', Page);
+    const view = vi.fn((): TemplateResult => {
+      throw new TypeError('no view');
+    });
+    document.documentElement.style.setProperty('--fluvy-theme', '1');
+    const load = (): Promise<unknown> => Promise.resolve();
+    expect(
+      await takeOverPage({ tag: 'ha-panel-test', ours: 'fluvy-test', kept: 'x', load, view }),
+    ).toBe(true);
+    const panel = document.body.appendChild(new Page());
+    await panel.updateComplete;
+    expect(panel.shadowRoot!.querySelector('.stock')).not.toBeNull();
+    panel.requestUpdate();
+    await panel.updateComplete;
+    expect(view).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(/^\[fluvy\] fluvy-test stepped aside/);
+    warn.mockRestore();
+  });
+
+  it('gives Home Assistant its page back when our view’s file cannot come', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    class Page extends LitElement {
+      override render() {
+        return html`<p class="stock">Home Assistant’s page</p>`;
+      }
+    }
+    customElements.define('ha-panel-offline', Page);
+    const view = vi.fn((): TemplateResult => html`<p class="ours">loading</p>`);
+    document.documentElement.style.setProperty('--fluvy-theme', '1');
+    const load = (): Promise<unknown> => Promise.reject(new TypeError('Failed to fetch'));
+    expect(
+      await takeOverPage({ tag: 'ha-panel-offline', ours: 'fluvy-offline', kept: 'x', load, view }),
+    ).toBe(true);
+    const panel = document.body.appendChild(new Page());
+    await panel.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await panel.updateComplete;
+    expect(panel.shadowRoot!.querySelector('.stock')).not.toBeNull();
+    expect(panel.shadowRoot!.querySelector('.ours')).toBeNull();
+    expect(String(warn.mock.calls[0]?.[0])).toMatch(
+      /^\[fluvy\] fluvy-offline stepped aside: TypeError/,
+    );
+    warn.mockRestore();
   });
 });
 

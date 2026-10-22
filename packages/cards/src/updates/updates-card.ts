@@ -8,10 +8,9 @@ import {
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
-  type HomeAssistant,
 } from '@fluvy/core';
 
-import { head, icon, listRow, sheetStyles, type IconRef, type Tone } from '@fluvy/ui';
+import { head, icon, listRow, sheetStyles, type Tone } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -21,7 +20,7 @@ import { rowStyles } from '../helpers/styles.js';
 
 import { Card, type BaseKey } from '../shared/base.js';
 
-import { glyphFor } from '../shared/domain.js';
+import { iconOf } from '../shared/domain.js';
 
 import {
   actionField,
@@ -40,7 +39,7 @@ import {
 import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { HeadFit } from '../energy/head.js';
-import { attrOf, HEAD, ROW } from '../shared/heights.js';
+import { HEAD, ROW } from '../shared/heights.js';
 import { EMPTY_KEYS, hideEmpty, idsOf, listOf, type EmptyList } from '../shared/lists.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 
@@ -65,30 +64,23 @@ const STARTING = 'installing';
 const NARROW = 300;
 
 /**
+ * The card's height at a 360 column, for the automatic dashboard's columns: the rows 16 under the head, one per
+ * update `waiting` (or that cannot be read; every one with `show_up_to_date` — the house says which: every one listed
+ * where it is not there to say), 76 for each of them `installing`; nothing waiting (or nothing listed) is the one
+ * quiet row ("Everything is up to date"); the switch under the list is a row of its own group (16 + 60).
+ */
+export const updatesHeight = (config: UpdatesCardConfig, waiting: number, installing = 0): number =>
+  HEAD + ROW * Math.max(1, waiting) + 16 * installing + (config.toggle ? 16 + ROW : 0);
+
+/**
  * What is waiting to be installed: one row per update entity with the version step in the sub, an
  * Install button, and — while an install runs — the 4 px progress bar under the text, exactly as the
  * sheet draws it. Entities that are current are hidden unless asked for; an empty card says so.
  */
 export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(config: UpdatesCardConfig, hass?: HomeAssistant): number {
-    const ids = idsOf(config.entities);
-    // the rows 16 under the head: one per update waiting (or that cannot be read; every one with `show_up_to_date`),
-    // 76 for one installing; nothing waiting (or nothing listed) is the one quiet row ("Everything is up to date");
-    // the switch under the list is a row of its own group (16 + 60). Without the house, every update listed waits.
-    const shown = ids.filter((id) => {
-      const state = hass?.states?.[id];
-      return (
-        !hass ||
-        config.show_up_to_date === true ||
-        !state ||
-        state.state === 'on' ||
-        state.state === 'unavailable' ||
-        state.state === 'unknown'
-      );
-    });
-    const busy = shown.filter((id) => attrOf(hass, id, 'in_progress') === true).length;
-    return HEAD + ROW * Math.max(1, shown.length) + 16 * busy + (config.toggle ? 16 + ROW : 0);
+  /** The card's height at a 360 column from its config alone: every update listed waits (`updatesHeight`). */
+  static override layoutHeight(config: UpdatesCardConfig): number {
+    return updatesHeight(config, idsOf(config.entities).length);
   }
 
   static override styles: CSSResultGroup = [
@@ -256,7 +248,7 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
   /** `bare`: the rows have given their circles to their names (what ends one, never cut, squeezed it). */
   private row(view: EntityView, narrow: boolean, bare: boolean): TemplateResult {
     const unusable = view.status === 'unavailable' || view.status === 'missing';
-    const ref: IconRef | string = view.attr<string>('icon') ?? glyphFor(view);
+    const ref = iconOf(view);
     const circle = (tone: Tone): TemplateResult | typeof nothing =>
       bare ? nothing : html`<span class="fv-ico fv-ico--${tone}" data-icon>${icon(ref)}</span>`;
 

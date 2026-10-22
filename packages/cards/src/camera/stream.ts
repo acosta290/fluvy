@@ -1,9 +1,9 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 
 /**
- * Home Assistant's camera stream inside a card: one element for the card's life, kept while the card is on screen or
- * only just off it, taken down for good when the card goes or changes its camera, tried again a while after it
- * failed. The camera and the printer cards share it.
+ * Home Assistant's camera stream inside a card: one element for the card's life, kept while the card (or the part of it
+ * the stream plays in) is on screen or only just off it, taken down for good when the card goes or changes its camera,
+ * tried again a while after it failed. Each camera feed (`feed.ts`) holds one.
  *
  * Why the care: Home Assistant's players (`ha-hls-player`, `ha-web-rtc-player`) start a session when they are
  * connected and end it when they are not, and they manage a hidden tab themselves. A card that took the element out
@@ -76,6 +76,8 @@ export class StreamHolder implements ReactiveController {
   element: StreamElement | undefined;
 
   private observer: IntersectionObserver | undefined;
+  /** The element the viewport is watched for: the host, or the part of it the stream plays in. */
+  private observed: Element | undefined;
   private detachTimer = 0;
   private retryAt = 0;
   private backoff = RETRY_AFTER;
@@ -85,6 +87,11 @@ export class StreamHolder implements ReactiveController {
     private readonly host: ReactiveControllerHost & HTMLElement,
     /** Called when what the host should draw may have changed. */
     private readonly onChange: () => void,
+    /**
+     * The part of the host whose place on screen counts (a tile among several): watched once it is drawn, and again
+     * through `watch` when it is drawn anew. Without it, the host's own.
+     */
+    private readonly target?: () => Element | null,
   ) {
     host.addController(this);
   }
@@ -102,7 +109,9 @@ export class StreamHolder implements ReactiveController {
         this.onScreen = seen;
         this.report(seen);
       });
-      this.observer.observe(this.host);
+      // a target not drawn yet is watched once the host has drawn it
+      const element = this.target ? this.target() : this.host;
+      if (element) this.watch(element);
     } else {
       this.onScreen = true;
       this.attached = true;
@@ -112,7 +121,25 @@ export class StreamHolder implements ReactiveController {
   hostDisconnected(): void {
     this.observer?.disconnect();
     this.observer = undefined;
+    this.observed = undefined;
     this.teardown();
+  }
+
+  /** The host has drawn: its target, where it has one, may be a new element. */
+  hostUpdated(): void {
+    const element = this.target?.();
+    if (element) this.watch(element);
+  }
+
+  /**
+   * Watches `element` for the viewport from now on: the target drawn anew (a tile re-rendered) is a new element, the
+   * same one again is nothing to do. Its first report says whether it is on screen, as the host's did.
+   */
+  watch(element: Element): void {
+    if (!this.observer || element === this.observed) return;
+    if (this.observed) this.observer.unobserve(this.observed);
+    this.observed = element;
+    this.observer.observe(element);
   }
 
   /**

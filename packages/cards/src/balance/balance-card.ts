@@ -7,7 +7,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, sheetStyles, type Tone } from '@fluvy/ui';
+import { head, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -151,7 +152,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     phaseStyles,
     statsStyles,
     css`

@@ -5,7 +5,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { activateKey, emptyState, head, sheetStyles } from '@fluvy/ui';
+import { activateKey, emptyState, head } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -108,7 +109,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     css`
       .en-card {
         width: 100%;

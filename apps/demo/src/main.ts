@@ -4,6 +4,7 @@ import '@fluvy/cards';
 import { type EffectiveSettings, ensureLanguage, type Look, lookKey, paletteOf } from '@fluvy/core';
 import { PALETTE_NAMES } from '@fluvy/tokens/runtime';
 import { pinClock } from '@fluvy/playground/clock';
+import { defineIconStubs } from '@fluvy/playground/ha-icons';
 import { createMemoryLook } from '@fluvy/playground/look-memory';
 import mark from '../../../custom_components/fluvy/brand/icon.png';
 import { installBridges } from './bridges.js';
@@ -44,6 +45,8 @@ shell.palettes = PALETTE_NAMES.map((name): PaletteDot => {
 shell.state = state;
 document.getElementById('shell')?.replaceWith(shell);
 
+// Home Assistant's icons for an `mdi:` reference and a state, as the playground draws them
+defineIconStubs();
 const stage = createStage(document.getElementById('stage') as HTMLElement, look);
 
 const syncUrl = (): void => {

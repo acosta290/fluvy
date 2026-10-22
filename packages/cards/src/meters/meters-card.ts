@@ -12,7 +12,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { activateKey, barRow, head, listRow, readout, round, sheetStyles } from '@fluvy/ui';
+import { activateKey, barRow, head, listRow, readout, round } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
   html,
@@ -32,7 +33,7 @@ import { shortName } from '../energy/power.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import { glyphFor, stateWord } from '../shared/domain.js';
+import { iconOf, stateWord } from '../shared/domain.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import {
   actionFields,
@@ -145,7 +146,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.energy,
+    energyStyles,
     css`
       .ef-card {
         width: 100%;
@@ -646,7 +647,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const view = this.entity(r.entity);
     const usable = view.status === 'ok';
     const title = r.name ?? view.name;
-    const glyph = keep ? (r.icon ?? glyphFor(view)) : null;
+    const glyph = keep ? iconOf(view, r.icon) : null;
     const open = (): void => this.tap(view.id, { action: 'more-info' });
     if (SWITCHED.has(view.domain)) {
       const state = this.stateOf(view);

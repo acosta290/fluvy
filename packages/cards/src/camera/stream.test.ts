@@ -189,6 +189,54 @@ describe('the holder across a reconnect and a recovered stream (1.9)', () => {
     delete (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
   });
 
+  it('watches its target where it has one, once drawn, and the target drawn anew in its place (1.10)', () => {
+    const watched: Element[] = [];
+    const left: Element[] = [];
+    class FakeObserver {
+      observe(element: Element): void {
+        watched.push(element);
+      }
+      unobserve(element: Element): void {
+        left.push(element);
+      }
+      disconnect(): void {}
+    }
+    (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver =
+      FakeObserver;
+    const card = host();
+    // no target: the host itself
+    new StreamHolder(card, () => undefined).hostConnected();
+    expect(watched).toEqual([card]);
+    watched.length = 0;
+    // a tile not drawn yet: nothing is watched until the host has drawn it
+    let tile: Element | null = null;
+    const holder = new StreamHolder(
+      card,
+      () => undefined,
+      () => tile,
+    );
+    holder.hostConnected();
+    expect(watched).toEqual([]);
+    tile = card.appendChild(document.createElement('div'));
+    holder.hostUpdated();
+    expect(watched).toEqual([tile]);
+    // drawn again as the same element: nothing to do
+    holder.hostUpdated();
+    holder.watch(tile);
+    expect(watched).toEqual([tile]);
+    // drawn anew: the new element in the old one's place
+    const redrawn = card.appendChild(document.createElement('div'));
+    holder.watch(redrawn);
+    expect(left).toEqual([tile]);
+    expect(watched).toEqual([tile, redrawn]);
+    // back in the page: the target as it is drawn now, at once
+    tile = redrawn;
+    holder.hostDisconnected();
+    holder.hostConnected();
+    expect(watched).toEqual([tile, redrawn, redrawn]);
+    delete (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
+  });
+
   it('waits a minute again after a stream that played, not twice the last wait', async () => {
     const holder = new StreamHolder(host(), () => undefined);
     holder.hostConnected();

@@ -1,10 +1,4 @@
-import {
-  capabilitiesOf,
-  entriesOf,
-  type EntityView,
-  type HomeAssistant,
-  type LovelaceCardConfig,
-} from '@fluvy/core';
+import { capabilitiesOf, entriesOf, type EntityView, type LovelaceCardConfig } from '@fluvy/core';
 import { optionColumns } from '@fluvy/ui';
 
 /*
@@ -47,23 +41,14 @@ export const rowsOf = (count: number, perRow: number): number => Math.ceil(count
 
 /* ---------- the house ---------- */
 
-/** An entity's attribute as the house has it, when the house and the entity are there. */
-export const attrOf = (hass: HomeAssistant | undefined, id: unknown, key: string): unknown =>
-  typeof id === 'string' ? hass?.states?.[id]?.attributes?.[key] : undefined;
+/*
+ * A card declares its height from its config (`static layoutHeight`); what the house says of its entities — their
+ * capabilities, their options, their names — `house-heights.ts` reads for the automatic dashboard and hands to the
+ * card's height function, so no page but that dashboard's carries the reading.
+ */
 
-/** An entity's list attribute (its modes, its sources): the strings in it, none without. */
-export const listAttr = (hass: HomeAssistant | undefined, id: unknown, key: string): string[] => {
-  const value = attrOf(hass, id, key);
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
-};
-
-/** An entity's `supported_features`, 0 where it writes none. */
-export const featuresOf = (hass: HomeAssistant | undefined, id: unknown): number =>
-  Number(attrOf(hass, id, 'supported_features')) || 0;
-
-/** Whether the house holds the entity at all. */
-export const known = (hass: HomeAssistant | undefined, id: unknown): boolean =>
-  typeof id === 'string' && hass?.states?.[id] !== undefined;
+/** An entity's name as the house writes it (its `friendly_name`), for a row laid out by its words. */
+export type NameOf = (id: unknown) => unknown;
 
 /**
  * An entity as its card draws it: one this page has never read (missing since it opened: an integration still

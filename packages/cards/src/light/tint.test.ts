@@ -7,6 +7,10 @@ import {
 } from '@fluvy/core';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
+import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
+import { FluvyEntitiesCard } from '../entities/entities-card.js';
+import { FluvyTileCard } from '../tile/tile-card.js';
+import { FluvyTilesCard } from '../tiles/tiles-card.js';
 import { FluvyLightCard } from './light-card.js';
 
 // the index fetches the lazy families: they land before this file's page goes
@@ -69,6 +73,19 @@ const STATES = {
     ...BULB,
   }),
   'switch.kettle': state('switch.kettle', 'on', { friendly_name: 'Kettle' }),
+  // what says a status when it is on: shut, clear and dry at rest
+  'binary_sensor.front_door': state('binary_sensor.front_door', 'off', {
+    friendly_name: 'Front door',
+    device_class: 'door',
+  }),
+  'binary_sensor.smoke': state('binary_sensor.smoke', 'off', {
+    friendly_name: 'Smoke',
+    device_class: 'smoke',
+  }),
+  'binary_sensor.leak': state('binary_sensor.leak', 'off', {
+    friendly_name: 'Leak',
+    device_class: 'moisture',
+  }),
 };
 
 const house = (states: Record<string, unknown> = STATES): HomeAssistant =>
@@ -193,21 +210,22 @@ describe('a light card shows its colour (`tint`, #41)', () => {
     );
   });
 
-  it('a white: the palette’s lit light, or by its temperature where asked', async () => {
-    const white = await light({ entity: 'light.white', tint: 'on', tint_strength: 'soft' });
-    expect([white.accent, white.surface]).toEqual(['', 'light-60']);
-    const warm = await light({
+  it('a white: by its temperature (the default since 1.10, #58), or the palette’s lit light where asked', async () => {
+    const warm = await light({ entity: 'light.white', tint: 'on', tint_strength: 'soft' });
+    expect([warm.accent, warm.surface]).toEqual(['white #ffa757', 'white #ffa757-60']);
+    const white = await light({
       entity: 'light.white',
       tint: 'on',
       tint_strength: 'soft',
-      light_whites: 'temperature',
+      light_whites: 'palette',
     });
-    expect([warm.accent, warm.surface]).toEqual(['#ffa757', '#ffa757-60']);
+    expect([white.accent, white.surface]).toEqual(['', 'light-60']);
   });
 
-  it('a group: its lit members’ colours by brightness, a white adding none (mixed modes)', async () => {
-    const group = await light({ entity: 'light.group', tint: 'on' });
-    expect(group.accent).toBe('#ff9800');
+  it('a group: its lit members’ colours by brightness, a white by its temperature or adding none (mixed modes)', async () => {
+    expect((await light({ entity: 'light.group', tint: 'on' })).accent).toBe('#ffa02c');
+    const palette = await light({ entity: 'light.group', tint: 'on', light_whites: 'palette' });
+    expect(palette.accent).toBe('#ff9800');
   });
 
   it('switched on, shows the colour it last glowed before Home Assistant says', async () => {
@@ -307,23 +325,53 @@ describe('the light card’s editor (#41)', () => {
     expect(defaults()).toMatchObject({
       tint: 'off',
       tint_strength: 'full',
-      light_whites: 'palette',
+      light_whites: 'temperature',
     });
     setLightDefaults({ tint: 'always', colors: true });
     expect(defaults()['tint']).toBe('always');
   });
+
+  it('offers a strength only while the light shows its colour: by its own tint, else by the house’s', async () => {
+    const strength = async (config: Record<string, unknown>): Promise<boolean> => {
+      const editor = await drawEditor(await FluvyLightCard.getConfigElement(), {
+        type: 'custom:fluvy-light-card',
+        entity: 'light.lamp',
+        ...config,
+      });
+      return shownNames(cardForm(editor).schema).includes('tint_strength');
+    };
+    expect(await strength({})).toBe(false);
+    expect(await strength({ tint: 'on' })).toBe(true);
+    expect(await strength({ tint: 'always' })).toBe(true);
+    // a YAML-mode dashboard's unquoted off
+    expect(await strength({ tint: false })).toBe(false);
+    setLightDefaults({ tint: 'on', colors: false });
+    expect(await strength({})).toBe(true);
+    expect(await strength({ tint: 'off' })).toBe(false);
+  });
 });
 
-describe('tiles, rows and rooms in their bulbs’ colours (`light_colors`, #41)', () => {
+describe('tiles, rows and rooms in their bulbs’ colours (`light_colors`, #41; one rule and whites, #58)', () => {
   const accents = (card: CardElement, selector: string): string[] =>
     [...card.shadowRoot!.querySelectorAll<HTMLElement>(selector)].map(
       (el) => el.dataset['accent'] ?? '',
     );
+  const tones = (card: CardElement, selector: string): string[] =>
+    [...card.shadowRoot!.querySelectorAll<HTMLElement>(selector)].map(
+      (el) => [...el.classList].find((c) => /^fv-tile--(?!tap|inner|compact)/.test(c)) ?? '',
+    );
   const ENTITIES = ['light.lamp', 'light.white', 'light.reading', 'switch.kettle'];
 
-  it('a lit colour bulb’s tile wears its colour; a white, an off light and a plug keep their own', async () => {
+  it('a lit bulb’s tile wears its colour, a white its temperature; an off light and a plug keep their own', async () => {
     const card = await mount({ type: 'fluvy-tiles-card', light_colors: true, entities: ENTITIES });
-    expect(accents(card, '.fv-tile')).toEqual(['#ff9800', '', '', '']);
+    expect(accents(card, '.fv-tile')).toEqual(['#ff9800', 'white #ffa757', '', '']);
+    const palette = await mount({
+      type: 'fluvy-tiles-card',
+      light_colors: true,
+      light_whites: 'palette',
+      entities: ENTITIES,
+    });
+    expect(accents(palette, '.fv-tile')).toEqual(['#ff9800', '', '', '']);
   });
 
   it('as 1.8 drew them where neither the card nor the house says; the house’s default where the card says none', async () => {
@@ -331,12 +379,12 @@ describe('tiles, rows and rooms in their bulbs’ colours (`light_colors`, #41)'
     expect(accents(card, '.fv-tile')).toEqual(['', '', '', '']);
     setLightDefaults({ tint: 'off', colors: true });
     await card.updateComplete;
-    expect(accents(card, '.fv-tile')).toEqual(['#ff9800', '', '', '']);
+    expect(accents(card, '.fv-tile')).toEqual(['#ff9800', 'white #ffa757', '', '']);
     const own = await mount({ type: 'fluvy-tiles-card', light_colors: false, entities: ENTITIES });
     expect(accents(own, '.fv-tile')).toEqual(['', '', '', '']);
   });
 
-  it('a tile’s own colour, then its tone, then the card’s colour or tone come before the bulb’s', async () => {
+  it('one rule: a tile’s own colour, then its tone, then its bulb’s, then the card’s colour, then the card’s tone', async () => {
     const items = await mount({
       type: 'fluvy-tiles-card',
       light_colors: true,
@@ -349,27 +397,64 @@ describe('tiles, rows and rooms in their bulbs’ colours (`light_colors`, #41)'
     expect(teal).toMatch(/^#[0-9a-f]{6}$/);
     expect(teal).not.toBe('#ff9800');
     expect(heat).toBe('');
-    const card = await mount({
+    expect(tones(items, '.fv-tile')[1]).toBe('fv-tile--heat');
+    // the bulb's before the card's colour (1.10: the card's came first)
+    const purple = await mount({
       type: 'fluvy-tiles-card',
       light_colors: true,
       color: 'purple',
-      entities: ['light.lamp'],
+      tone: 'cool',
+      entities: ['light.lamp', 'light.reading'],
     });
-    expect(accents(card, '.fv-tile')).toEqual(['']);
+    expect(accents(purple, '.fv-tile')).toEqual(['#ff9800', '']);
+    // a light with no colour of its own wears the card's (its accent redefines the lit light), else the card's tone
+    expect(tones(purple, '.fv-tile')).toEqual(['fv-tile--light', 'fv-tile--light']);
+    const cool = await mount({
+      type: 'fluvy-tiles-card',
+      light_colors: false,
+      tone: 'cool',
+      entities: ['light.lamp', 'switch.kettle'],
+    });
+    expect(tones(cool, '.fv-tile')).toEqual(['fv-tile--cool', 'fv-tile--accent']);
   });
 
-  it('a lone tile wears it on its own article', async () => {
+  it('a lone tile wears it on its own article; its own colour or tone before its bulb’s', async () => {
     const card = await mount({ type: 'fluvy-tile-card', entity: 'light.lamp', light_colors: true });
     expect(accents(card, 'article')).toEqual(['#ff9800']);
+    const white = await mount({
+      type: 'fluvy-tile-card',
+      entity: 'light.white',
+      light_colors: true,
+    });
+    expect(accents(white, 'article')).toEqual(['white #ffa757']);
+    const own = await mount({
+      type: 'fluvy-tile-card',
+      entity: 'light.lamp',
+      light_colors: true,
+      tone: 'heat',
+    });
+    expect([accents(own, 'article')[0], tones(own, 'article')[0]]).toEqual(['', 'fv-tile--heat']);
   });
 
-  it('a row of lights: each lit colour bulb in its colour', async () => {
+  it('a light group: its members’ colours by brightness, watched with it', async () => {
+    const card = await mount({
+      type: 'fluvy-tile-card',
+      entity: 'light.group',
+      light_colors: true,
+    });
+    expect(accents(card, 'article')).toEqual(['#ffa02c']);
+    const watched = (card as unknown as { watched(): string[] }).watched();
+    expect(watched).toEqual(['light.group', 'light.lamp', 'light.white', 'light.reading']);
+  });
+
+  it('a row of lights: each lit bulb in its colour, a white its temperature, before the card’s colour', async () => {
     const card = await mount({
       type: 'fluvy-entities-card',
       light_colors: true,
+      color: 'purple',
       entities: ENTITIES,
     });
-    expect(accents(card, '.fv-row')).toEqual(['#ff9800', '', '', '']);
+    expect(accents(card, '.fv-row')).toEqual(['#ff9800', 'white #ffa757', '', '']);
   });
 
   it('a room: its tiles each in its own, its lights’ row in the colour of what is lit', async () => {
@@ -380,13 +465,185 @@ describe('tiles, rows and rooms in their bulbs’ colours (`light_colors`, #41)'
       controls: 'tiles',
       light_colors: true,
     });
-    expect(accents(tiles, '.fv-tile')).toContain('#ff9800');
+    expect(accents(tiles, '.fv-tile')).toEqual(
+      expect.arrayContaining(['#ff9800', 'white #ffa757']),
+    );
     const rows = await mount({
       type: 'fluvy-room-card',
       area: 'den',
       variant: 'tile',
       light_colors: true,
+      color: 'purple',
     });
-    expect(accents(rows, '.fv-row')[0]).toBe('#ff9800');
+    // the colour bulb and the warm white by their brightness; the palette's whites: the bulb alone
+    expect(accents(rows, '.fv-row')[0]).toBe('#ffa02c');
+    const palette = await mount({
+      type: 'fluvy-room-card',
+      area: 'den',
+      variant: 'tile',
+      light_colors: true,
+      light_whites: 'palette',
+    });
+    expect(accents(palette, '.fv-row')[0]).toBe('#ff9800');
+  });
+
+  it('a room’s lights row counts a group beside its members once: as its members', async () => {
+    const card = document.createElement('fluvy-room-card') as CardElement;
+    card.setConfig({
+      type: 'custom:fluvy-room-card',
+      area: 'den',
+      variant: 'tile',
+      light_colors: true,
+    });
+    // the group in the room with its members, its own colour one Home Assistant has not brought up to date
+    const states = {
+      ...STATES,
+      'light.group': {
+        ...STATES['light.group'],
+        attributes: {
+          ...STATES['light.group'].attributes,
+          color_mode: 'hs',
+          rgb_color: [0, 0, 255],
+        },
+      },
+    };
+    const hass = house(states);
+    card.hass = {
+      ...hass,
+      entities: {
+        ...hass.entities,
+        'light.group': { entity_id: 'light.group', area_id: 'den', device_id: null },
+      },
+    } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    expect(accents(card, '.fv-row')[0]).toBe('#ffa02c');
+  });
+});
+
+describe('a tile’s colour at rest (`tint: always`, #58)', () => {
+  const tile = async (config: Record<string, unknown>): Promise<HTMLElement> => {
+    const card = await mount({ type: 'fluvy-tile-card', tint: 'always', ...config });
+    return card.shadowRoot!.querySelector<HTMLElement>('article')!;
+  };
+  const rest = (article: HTMLElement): [boolean, string | undefined] => [
+    article.classList.contains('is-tinted'),
+    article.dataset['surface'],
+  ];
+
+  it('a tile of a tone alone takes its tone’s rest wash, as a light card at rest does', async () => {
+    expect(rest(await tile({ entity: 'light.reading' }))).toEqual([false, 'light-0']);
+    expect(rest(await tile({ entity: 'light.reading', tone: 'heat' }))).toEqual([false, 'heat-0']);
+  });
+
+  it('a status at rest never washes in it: a shut door, a clear smoke alarm, a dry leak sensor keep the card’s', async () => {
+    for (const entity of [
+      'binary_sensor.front_door',
+      'binary_sensor.smoke',
+      'binary_sensor.leak',
+    ]) {
+      const article = await tile({ entity, size: 'compact' });
+      expect(rest(article), entity).toEqual([false, undefined]);
+      expect(article.classList.contains('fv-tile--warning'), entity).toBe(true);
+    }
+  });
+
+  it('a status with a colour of its own, or in a coloured group, washes in that colour at rest, as 1.9.1 did', async () => {
+    for (const entity of ['binary_sensor.front_door', 'binary_sensor.smoke', 'binary_sensor.leak'])
+      expect(rest(await tile({ entity, size: 'compact', color: 'teal' })), entity).toEqual([
+        true,
+        undefined,
+      ]);
+    const group = await mount({
+      type: 'fluvy-tiles-card',
+      tint: 'always',
+      tiles: [
+        'binary_sensor.front_door',
+        { entity: 'binary_sensor.smoke', color: 'teal' },
+        'light.reading',
+      ],
+    });
+    const tiles = [...group.shadowRoot!.querySelectorAll<HTMLElement>('article.fv-tile')];
+    expect(tiles.map(rest)).toEqual([
+      [false, undefined],
+      [true, undefined],
+      [false, 'light-0'],
+    ]);
+    const coloured = await mount({
+      type: 'fluvy-tiles-card',
+      tint: 'always',
+      color: 'teal',
+      tiles: ['binary_sensor.front_door', 'light.reading'],
+    });
+    expect(
+      [...coloured.shadowRoot!.querySelectorAll<HTMLElement>('article.fv-tile')].map(rest),
+    ).toEqual([
+      [true, undefined],
+      [true, undefined],
+    ]);
+  });
+
+  it('a coloured one its colour’s rest wash; lit, unavailable or asked only when on, none', async () => {
+    expect(rest(await tile({ entity: 'light.reading', color: 'teal' }))).toEqual([true, undefined]);
+    for (const config of [
+      { entity: 'light.lamp' },
+      { entity: 'light.porch' },
+      { entity: 'light.reading', tint: 'on' },
+    ])
+      expect(rest(await tile(config))).toEqual([false, undefined]);
+  });
+});
+
+describe('the editors offer a light’s colours and a tile’s rest where they can act (#58)', () => {
+  const shown = async (
+    element: Promise<HTMLElement>,
+    config: Record<string, unknown>,
+  ): Promise<string[]> => {
+    const editor = await element;
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = house();
+    return shownNames(
+      cardForm(await drawEditor(editor, config as unknown as LovelaceCardConfig)).schema,
+    );
+  };
+  const tiles = (config: Record<string, unknown>) =>
+    shown(FluvyTilesCard.getConfigElement(), { type: 'custom:fluvy-tiles-card', ...config });
+  const rows = (config: Record<string, unknown>) =>
+    shown(FluvyEntitiesCard.getConfigElement(), { type: 'custom:fluvy-entities-card', ...config });
+  const lamp = (config: Record<string, unknown>) =>
+    shown(FluvyLightCard.getConfigElement(), {
+      type: 'custom:fluvy-light-card',
+      entity: 'light.lamp',
+      ...config,
+    });
+  const tile = (config: Record<string, unknown>) =>
+    shown(FluvyTileCard.getConfigElement(), { type: 'custom:fluvy-tile-card', ...config });
+
+  it('a group of tiles and a card of rows offer the lights’ colours while they hold a light', async () => {
+    expect(await tiles({ tiles: ['switch.kettle'] })).not.toContain('light_colors');
+    expect(await tiles({ tiles: ['switch.kettle', { entity: 'light.lamp' }] })).toContain(
+      'light_colors',
+    );
+    expect(await tiles({ entities: ['light.white'] })).toContain('light_colors');
+    expect(await rows({ rows: ['switch.kettle', 'binary_sensor.smoke'] })).not.toContain(
+      'light_colors',
+    );
+    expect(await rows({ entities: ['switch.kettle', 'light.group'] })).toContain('light_colors');
+  });
+
+  it('the light card offers how its whites show while its bulb gives its colour: not under a colour or a tone of its own', async () => {
+    expect(await lamp({})).toContain('light_whites');
+    expect(await lamp({ color: 'state' })).toContain('light_whites');
+    expect(await lamp({ color: 'purple' })).not.toContain('light_whites');
+    expect(await lamp({ color: 'primary' })).not.toContain('light_whites');
+    expect(await lamp({ tone: 'heat' })).not.toContain('light_whites');
+  });
+
+  it('a tile offers its colour at rest where something shows then: a colour, or a tone that washes', async () => {
+    expect(await tile({ entity: 'light.reading' })).toContain('tint');
+    expect(await tile({ entity: 'switch.kettle' })).toContain('tint');
+    expect(await tile({ entity: 'binary_sensor.front_door' })).not.toContain('tint');
+    expect(await tile({ entity: 'binary_sensor.front_door', color: 'teal' })).toContain('tint');
+    expect(await tile({ entity: 'binary_sensor.front_door', tone: 'accent' })).toContain('tint');
+    expect(await tile({ entity: 'switch.kettle', tone: 'danger' })).not.toContain('tint');
   });
 });

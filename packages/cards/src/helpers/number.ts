@@ -1,11 +1,11 @@
 import { formatNumber, localize, numberAttr, strings, type EntityView } from '@fluvy/core';
 import { ico, stepper, type RulerChangeDetail } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
+import { iconOf } from '../shared/domain.js';
 import {
   contextOf,
   field,
   fieldContext,
-  iconOf,
   isUnusable,
   nameOf,
   type HelperHost,
@@ -161,7 +161,7 @@ export function compactNumber(
     class="fv-card in-compact ${m.unusable ? 'is-unavailable is-off' : ''}"
     data-card
   >
-    ${ico(iconOf(view, row), m.unusable ? 'off' : 'accent', { onTap: () => host.moreInfo(view.id), label: name })}
+    ${ico(iconOf(view, row.icon), m.unusable ? 'off' : 'accent', { onTap: () => host.moreInfo(view.id), label: name })}
     <div class="fv-row__text">
       <span class="fv-row__title">${name}</span
       >${sub ? html`<span class="fv-row__sub">${sub}</span>` : nothing}

@@ -511,11 +511,11 @@ function ownWords(name: string, device: string): string {
  */
 export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
   /**
-   * The card's height at a 360 column, for the automatic dashboard's columns: given the house, what its appliance
-   * draws (`houseHeight`); without it, the family's from the config alone (every big kind's 376).
+   * The card's height at a 360 column from its config alone: the family's (every big kind's 376). What its appliance
+   * draws beyond it the automatic dashboard counts with the house (`applianceHouseHeight`).
    */
-  static override layoutHeight(config: ApplianceCardConfig, hass?: HomeAssistant): number {
-    return hass ? houseHeight(config, hass) : applianceHeight(config);
+  static override layoutHeight(config: ApplianceCardConfig): number {
+    return applianceHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -1489,7 +1489,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
     const c = this.config;
     if (!c) return 6;
     return Math.round(
-      (this.hass ? houseHeight(c, this.hass, this.appliance()) : applianceHeight(c)) / 50,
+      (this.hass ? applianceHouseHeight(c, this.hass, this.appliance()) : applianceHeight(c)) / 50,
     );
   }
 
@@ -4413,14 +4413,15 @@ const chipRows = (labels: readonly string[]): number =>
   );
 
 /**
- * The card's height at a 360 column with the house in hand (the automatic dashboard's, `heights.mjs`'): the family's
+ * The card's height at a 360 column with the house in hand (the automatic dashboard's, through `house-heights.ts`;
+ * `heights.mjs`' and its own `getCardSize`): the family's
  * (`applianceHeight`) for the kind its device says (one read from its plug as a plug's), and what its appliance draws
  * beyond it — a second drum's row beside the card's own rows (among the kind's three it holds a row's place), or its
  * line under a compact or dial hero; a fridge's compartments and a hob's plates in as many rows as theirs take (a
  * hob's as their words take); the quick modes, buttons and programmes asked for, in as many rows as their words take,
  * or none where it has none. Out of reach the same: what an appliance has is its registry's.
  */
-function houseHeight(
+export function applianceHouseHeight(
   config: ApplianceCardConfig,
   hass: HomeAssistant,
   found = findAppliance(hass, config),

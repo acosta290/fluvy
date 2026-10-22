@@ -2,6 +2,9 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
+import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
+import { FluvyTilesCard } from '../tiles/tiles-card.js';
+import { FluvyTileCard } from './tile-card.js';
 
 // the index fetches the lazy families: they land before this file's page goes
 afterAll(() => familiesDefined);
@@ -133,6 +136,26 @@ const PLUG = {
   readouts: ['sensor.washer_power', 'sensor.washer_energy'],
 };
 
+describe('a tile declares the height it draws', () => {
+  // the mini tile is 108 tall, icon over name (tiles.css), as a group of minis declares it
+  it.each([
+    ['large', 168],
+    ['compact', 76],
+    ['mini', 108],
+  ] as const)('%s: %i, as a group of one tile of its size', (size, height) => {
+    expect(
+      FluvyTileCard.layoutHeight({ type: 'custom:fluvy-tile-card', entity: 'light.desk', size }),
+    ).toBe(height);
+    expect(
+      FluvyTilesCard.layoutHeight({
+        type: 'custom:fluvy-tiles-card',
+        size,
+        entities: ['light.desk'],
+      }),
+    ).toBe(height);
+  });
+});
+
 describe('an unavailable tile keeps the live one’s anatomy and size (A7)', () => {
   afterEach(() => document.body.replaceChildren());
 
@@ -221,5 +244,92 @@ describe('an unavailable tile keeps the live one’s anatomy and size (A7)', () 
     expect(typeof tap.fvHold).toBe('function');
     expect(tap.querySelector('.fv-hit, button')).toBeNull();
     expect(tile!.hasAttribute('role')).toBe(false);
+  });
+});
+
+describe('the tile’s circle: what opens drawn as it stands, Home Assistant’s icon where Fluvy has none', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const STATES = {
+    'cover.gate': state('cover.gate', 'open', { friendly_name: 'Gate', device_class: 'gate' }),
+    'cover.garage': state('cover.garage', 'closed', {
+      friendly_name: 'Garage',
+      device_class: 'garage',
+    }),
+    'binary_sensor.door': state('binary_sensor.door', 'on', {
+      friendly_name: 'Front door',
+      device_class: 'door',
+    }),
+    'sensor.air': state('sensor.air', '12', { friendly_name: 'Air', device_class: 'pm25' }),
+    // the person's icon, which Home Assistant writes into the state too
+    'sensor.lux': state('sensor.lux', '300', { friendly_name: 'Lux', icon: 'mdi:brightness-5' }),
+  };
+
+  /** The circle of the tile of `entity`; the person set `sensor.lux`'s icon in Home Assistant. */
+  async function circle(entity: string): Promise<HTMLElement> {
+    const card = document.createElement('fluvy-tile-card') as CardElement;
+    card.setConfig({ type: 'custom:fluvy-tile-card', entity });
+    card.hass = {
+      ...house(STATES),
+      entities: { 'sensor.lux': { entity_id: 'sensor.lux', icon: 'mdi:brightness-5' } },
+    } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    return card.shadowRoot!.querySelector<HTMLElement>('.fv-tile .fv-ico')!;
+  }
+
+  it('a gate open, a garage shut, a door open: Fluvy’s glyphs as they stand', async () => {
+    expect((await circle('cover.gate')).innerHTML).toContain('M4 7l10-3v16.5L4 17');
+    document.body.replaceChildren();
+    expect((await circle('cover.garage')).innerHTML).toContain('M7.5 12h9v9h-9Z');
+    document.body.replaceChildren();
+    expect((await circle('binary_sensor.door')).innerHTML).toContain('M6 3.5l7 2.5v13l-7 2');
+  });
+
+  it('the icon the person set in Home Assistant', async () => {
+    const icon = (await circle('sensor.lux')).querySelector<HTMLElement & { icon?: string }>(
+      'ha-icon',
+    );
+    expect(icon?.icon).toBe('mdi:brightness-5');
+  });
+
+  it('Home Assistant’s own icon for the state where Fluvy has no glyph for the kind', async () => {
+    const icon = (await circle('sensor.air')).querySelector<HTMLElement & { stateObj?: unknown }>(
+      'ha-state-icon',
+    );
+    expect(icon?.classList.contains('fv-haicon')).toBe(true);
+    expect(icon?.stateObj).toBe(STATES['sensor.air']);
+  });
+});
+
+describe('the tile’s editor offers what acts for its entity and its size (#58)', () => {
+  const STATES = {
+    ...LIVE,
+    'light.plug': state('light.plug', 'on', {
+      friendly_name: 'Salt lamp',
+      supported_color_modes: ['onoff'],
+    }),
+  };
+  const shown = async (config: Record<string, unknown>): Promise<string[]> => {
+    const editor = await FluvyTileCard.getConfigElement();
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = house(STATES);
+    const drawnEditor = await drawEditor(editor, { type: 'custom:fluvy-tile-card', ...config });
+    return shownNames(cardForm(drawnEditor).schema);
+  };
+  afterEach(() => document.body.replaceChildren());
+
+  it('a light’s colours for a light alone, how its whites show while it shows its colour', async () => {
+    expect(await shown({ entity: 'switch.washer' })).not.toContain('light_colors');
+    expect(await shown({ entity: 'light.desk' })).toContain('light_colors');
+    // the house says none (off), the card none: no whites to choose
+    expect(await shown({ entity: 'light.desk' })).not.toContain('light_whites');
+    expect(await shown({ entity: 'light.desk', light_colors: true })).toContain('light_whites');
+  });
+
+  it('readouts where they are drawn: never under a large tile’s ruler', async () => {
+    expect(await shown({ entity: 'light.desk' })).not.toContain('readouts');
+    expect(await shown({ entity: 'light.desk', size: 'compact' })).toContain('readouts');
+    expect(await shown({ entity: 'light.plug' })).toContain('readouts');
+    expect(await shown({ entity: 'switch.washer' })).toContain('readouts');
   });
 });

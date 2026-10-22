@@ -393,6 +393,7 @@
     "show_color": "Show colour",
     "colors": "Quick colours",
     "color_help": "Pick one, or choose Custom colour and pick any colour in its well",
+    "item_color_helper": "Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s",
     "rgb": "Any colour",
     "swatch_name_help": "What the round says; empty, the colour’s word or its hex",
     "show_tilt": "Show tilt",
@@ -819,7 +820,8 @@
     "palette": "The theme’s light",
     "temperature": "The bulb’s white",
     "regular": "Regular",
-    "thin": "Thin"
+    "thin": "Thin",
+    "motion": "Motion"
   },
   "tone": {
     "accent": "Accent",

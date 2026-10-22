@@ -1,24 +1,39 @@
 import { FluvyLightsCard } from '../../../../packages/cards/src/lights/lights-card.js';
+import type { StateSeed } from '../hass.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-lights-card'))
   customElements.define('fluvy-lights-card', FluvyLightsCard);
 
 type Attributes = Record<string, unknown>;
-/** A white lamp that dims (its level in %). */
-const white = (name: string, level?: number): Attributes => ({
+
+/**
+ * Home Assistant's colour for a white at `kelvin` (its `color_temperature_to_rgb`): what it reports as a light's
+ * `rgb_color` while the light is in `color_temp`.
+ */
+const whiteRgb = (kelvin: number): number[] => {
+  const t = kelvin / 100;
+  const channel = (value: number): number => Math.round(Math.min(255, Math.max(0, value)));
+  return [
+    t <= 66 ? 255 : channel(329.698727446 * (t - 60) ** -0.1332047592),
+    channel(
+      t <= 66
+        ? 99.4708025861 * Math.log(t) - 161.1195681661
+        : 288.1221695283 * (t - 60) ** -0.0755148492,
+    ),
+    t >= 66 ? 255 : t <= 19 ? 0 : channel(138.5177312231 * Math.log(t - 10) - 305.0447927307),
+  ];
+};
+/** A white lamp that dims (its level in %), at `kelvin` (2700 K unless said). */
+const white = (name: string, level?: number, kelvin = 2700): Attributes => ({
   friendly_name: name,
   supported_color_modes: ['color_temp'],
   color_mode: 'color_temp',
   // lit, its colour as Home Assistant reports it beside its temperature
   ...(level !== undefined
-    ? {
-        brightness: Math.round((level / 100) * 255),
-        hs_color: [28.4, 65.7],
-        rgb_color: [255, 167, 87],
-      }
+    ? { brightness: Math.round((level / 100) * 255), rgb_color: whiteRgb(kelvin) }
     : {}),
-  color_temp_kelvin: 2700,
+  color_temp_kelvin: kelvin,
 });
 /** A coloured bulb, on in `rgb`. */
 const colour = (name: string, rgb: readonly number[], level: number): Attributes => ({
@@ -27,6 +42,13 @@ const colour = (name: string, rgb: readonly number[], level: number): Attributes
   color_mode: 'hs',
   brightness: Math.round((level / 100) * 255),
   rgb_color: rgb,
+});
+/** A lamp that only dims, lit at `level` %: no colour of its own. */
+const dimmer = (name: string, level: number): Attributes => ({
+  friendly_name: name,
+  supported_color_modes: ['brightness'],
+  color_mode: 'brightness',
+  brightness: Math.round((level / 100) * 255),
 });
 /** A lamp that only switches. */
 const plain = (name: string): Attributes => ({
@@ -40,6 +62,9 @@ const lights = (config: Record<string, unknown>) => ({
 });
 
 const LIVING = ['light.lt_ceiling', 'light.lt_floor', 'light.lt_reading'];
+/** A warm white, a cool one, a group of two colours and a lamp that only dims: each in its own colour, or none (#58). */
+const WHITES = ['light.lt_ceiling', 'light.lt_cool', 'light.lt_group', 'light.lt_dimmer'];
+const LADDER = [2200, 2700, 3000, 4000, 5000, 6500, 8000].map((kelvin) => `light.lt_k${kelvin}`);
 const SIX = [
   'light.lt_ceiling',
   'light.lt_floor',
@@ -67,6 +92,24 @@ export const sheet: SheetSpec = {
     ['light.lt_plug_a', 'on', plain('Fairy lights')],
     ['light.lt_plug_b', 'off', plain('Salt lamp')],
     ['light.lt_long', 'on', white('The big paper lantern over the dining table in the corner', 60)],
+    // a cool white: Home Assistant's colour for 8000 K, a blue a shade off white (6500 K is daylight, neutral)
+    ['light.lt_cool', 'on', white('Bathroom', 80, 8000)],
+    // the whites from a candle to a cool one, each as Home Assistant reports it
+    ...[2200, 2700, 3000, 4000, 5000, 6500, 8000].map((kelvin): StateSeed => [
+      `light.lt_k${kelvin}`,
+      'on',
+      white(`${kelvin} K`, 80, kelvin),
+    ]),
+    ['light.lt_dimmer', 'on', dimmer('Hallway', 45)],
+    [
+      'light.lt_group',
+      'on',
+      {
+        // Home Assistant's own for a group: its members' plain mean, which Fluvy weighs by their brightness
+        ...colour('Lamps', [183, 130, 163], 48),
+        entity_id: ['light.lt_floor', 'light.lt_strip'],
+      },
+    ],
   ],
   registry: {
     entities: {
@@ -161,6 +204,43 @@ export const sheet: SheetSpec = {
           variant: 'tiles',
           show_brightness: true,
           area: 'lt_kitchen',
+        }),
+      ],
+    },
+    {
+      title: 'Whites by their warmth',
+      cards: [
+        lights({ name: 'Living room', lights: WHITES }),
+        lights({ name: 'Living room', variant: 'chips', lights: WHITES }),
+        lights({ name: 'Living room', variant: 'tiles', lights: WHITES }),
+      ],
+    },
+    // a candle, warm, neutral, daylight and cool: each white a step of one scale (#58)
+    {
+      title: 'Whites from a candle to a cool one',
+      cards: [
+        lights({ name: 'Whites', variant: 'tiles', show_level: false, lights: LADDER }),
+        lights({ name: 'Whites', variant: 'chips', lights: LADDER }),
+      ],
+    },
+    {
+      title: 'Whites as the theme’s light',
+      cards: [
+        lights({ name: 'Living room', light_whites: 'palette', lights: WHITES }),
+        lights({ name: 'Living room', variant: 'tiles', light_whites: 'palette', lights: WHITES }),
+      ],
+    },
+    {
+      title: 'Tiles in the card’s tone, no level',
+      cards: [
+        lights({
+          name: 'Living room',
+          variant: 'tiles',
+          tone: 'heat',
+          light_colors: false,
+          show_level: false,
+          tint: 'always',
+          lights: LIVING,
         }),
       ],
     },

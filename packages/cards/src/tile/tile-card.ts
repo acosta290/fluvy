@@ -5,6 +5,7 @@ import {
   isUsable,
   lightDefaults,
   relativeTime,
+  resolveEntity,
   stateText,
   TOGGLE_DOMAINS,
   toggleEntity,
@@ -12,12 +13,14 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
+  type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
 import {
   ico,
+  type IconRef,
   pressCover,
   readout,
   type RulerChangeDetail,
@@ -31,23 +34,24 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { Card } from '../shared/base.js';
 
-import { currentTone, glyphFor, toneFor } from '../shared/domain.js';
-import { DIMMABLE, glowOf } from '../shared/light.js';
+import { currentTone, iconOf, toneFor } from '../shared/domain.js';
+import { DIMMABLE, lightLook, litColour, withMembers } from '../shared/light.js';
 import { fitLine, TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 
 import {
   actionFields,
-  boolField,
   colourFields,
   entitiesField,
   entityField,
   formLabels,
+  lightColourFields,
   nameIconFields,
+  onlyWhen,
   selectField,
   tintField,
 } from '../shared/form.js';
-import { statusToneOf, type LightColours, type Tint } from '../shared/colour.js';
+import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 
@@ -75,6 +79,22 @@ export interface TileCardConfig extends FluvyCardConfig, LightColours, Omit<Tile
   tint?: Tint;
 }
 
+/** What a tile shows of its entity (`look`): what a card built on the tile may answer otherwise (the template card). */
+export interface TileLook {
+  /** The words over its line. */
+  readonly name: string;
+  /** What a reader hears for its button, its switch and its ruler: never a blank. */
+  readonly label: string;
+  readonly glyph: IconRef | string;
+  /** It can be read: the live skin; else the off skin on the same anatomy, the ban circle, a dash in every reading. */
+  readonly usable: boolean;
+  /** It shows as on: the tone's fill. */
+  readonly on: boolean;
+  readonly tone: Tone;
+  /** Its line is the person's own words: what fits of it ends in an ellipsis as a name does, never left out. */
+  readonly words?: boolean;
+}
+
 const COVER_SET_POSITION = 4;
 const FAN_SET_SPEED = 1;
 const MORE_INFO: ActionConfig = { action: 'more-info' };
@@ -85,6 +105,27 @@ const HEAD_ROOM = 44 + 8 + 48;
 const TWO_READOUTS = 120;
 /** Three readouts (power, today, cost) share a foot from this inner width: a tile on its own row. */
 const THREE_READOUTS = 292;
+
+/** Whether a large tile's foot is its ruler, never its readouts: a light that dims, a cover set to a position, a fan to a speed. */
+const ruled = (view: EntityView): boolean =>
+  view.domain === 'light'
+    ? (view.attr<string[]>('supported_color_modes') ?? []).some((m) => DIMMABLE.has(m))
+    : (view.domain === 'cover' && view.supports(COVER_SET_POSITION)) ||
+      (view.domain === 'fan' && view.supports(FAN_SET_SPEED));
+
+/**
+ * Whether a card of one tile shows something at rest when asked (`tint: always`, its editor's form): a colour, or a
+ * tone that washes at rest — its own, else its entity's (`washesAtRest`: a status at rest never does).
+ */
+export const tintsAtRest = (
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): boolean =>
+  Boolean(data['color']) ||
+  washesAtRest(
+    (data['tone'] as Tone | undefined) ??
+      toneFor(resolveEntity(hass, String(data['entity'] ?? ''))),
+  );
 
 /**
  * The tile. Large (172 × 168): icon circle + switch, name, state, and a foot that is either a compact
@@ -97,7 +138,7 @@ const THREE_READOUTS = 292;
 export class FluvyTileCard extends Card<TileCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: TileCardConfig): number {
-    return config.size === 'compact' || config.size === 'mini' ? 76 : 168;
+    return config.size === 'compact' ? 76 : config.size === 'mini' ? 108 : 168;
   }
 
   static override styles: CSSResultGroup = [
@@ -158,11 +199,18 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     `,
   ];
 
-  static override keys = configKeys<TileCardConfig>()(['size', 'readouts', 'tint', 'light_colors']);
+  static override keys = configKeys<TileCardConfig>()([
+    'size',
+    'readouts',
+    'tint',
+    'light_colors',
+    'light_whites',
+  ]);
   static override defaults: EditorDefaults = () => ({
     size: 'large',
     tint: 'on',
     light_colors: lightDefaults().colors,
+    light_whites: 'temperature',
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -171,9 +219,14 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         nameIconFields(),
         selectField('size', TILE_SIZES),
         ...colourFields(),
-        tintField(),
-        boolField('light_colors'),
-        entitiesField('readouts', ['sensor']),
+        onlyWhen(tintsAtRest, tintField()),
+        // a light's colours, for a light; readouts where they are drawn: a large tile's foot is its ruler when it has one
+        onlyWhen(({ entity }) => String(entity).startsWith('light.'), lightColourFields()),
+        onlyWhen(
+          ({ size, entity }, hass) =>
+            size !== 'large' || !ruled(resolveEntity(hass, String(entity))),
+          entitiesField('readouts', ['sensor']),
+        ),
         actionFields(),
       ],
       ...formLabels({ readouts: 'editor.readouts' }),
@@ -212,16 +265,15 @@ export class FluvyTileCard extends Card<TileCardConfig> {
   }
 
   protected override watched(): readonly string[] {
-    return [this.config?.entity ?? '', ...(this.config?.readouts ?? [])];
+    return withMembers([this.config?.entity ?? '', ...(this.config?.readouts ?? [])], this.hass);
   }
 
-  /** What the foot ruler controls for this entity, if anything. */
+  /** What the foot ruler controls for this entity, if anything (`ruled`). */
   private level(
     view: EntityView,
   ): { value: number; commit: (value: number) => void; label: string } | null {
+    if (!ruled(view)) return null;
     if (view.domain === 'light') {
-      const modes = view.attr<string[]>('supported_color_modes') ?? [];
-      if (!modes.some((m) => DIMMABLE.has(m))) return null;
       const brightness = view.attr<number>('brightness');
       return {
         value: brightness ? Math.round((brightness / 255) * 100) : 0,
@@ -229,29 +281,32 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         label: this.t('light.brightness'),
       };
     }
-    if (view.domain === 'cover' && view.supports(COVER_SET_POSITION)) {
+    if (view.domain === 'cover')
       return {
         value: view.attr<number>('current_position') ?? 0,
         commit: (v) => this.call('cover', 'set_cover_position', { position: v }, view.id),
         label: this.t('cover.position'),
       };
-    }
-    if (view.domain === 'fan' && view.supports(FAN_SET_SPEED)) {
-      return {
-        value: view.attr<number>('percentage') ?? 0,
-        commit: (v) => this.call('fan', 'set_percentage', { percentage: v }, view.id),
-        label: this.t('fan.speed'),
-      };
-    }
-    return null;
+    return {
+      value: view.attr<number>('percentage') ?? 0,
+      commit: (v) => this.call('fan', 'set_percentage', { percentage: v }, view.id),
+      label: this.t('fan.speed'),
+    };
+  }
+
+  /** Whether a lit tile's line says its level ("On · 70 %"): the room lights card asks it not to (`show_level`). */
+  protected showsLevel(): boolean {
+    return true;
   }
 
   /**
    * The line under the name. State is said once: when the head already shows the reading (a sensor
    * on a large tile), this line carries context — the room, or when it last moved — never the same
-   * figure again. A small tile has no head figure, so there the reading IS the line.
+   * figure again. A small tile has no head figure, so there the reading IS the line. `on`: the entity is on (what its
+   * switch says, whatever the tile's fill does).
    */
-  private stateLine(
+  protected tileLine(
+    _item: TileItem,
     view: EntityView,
     on: boolean,
     level: number | null,
@@ -271,7 +326,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       return view.stateObj ? relativeTime(this.hass, new Date(view.stateObj.last_changed)) : '';
     }
     const text = stateText(this.hass, view);
-    return on && level !== null && level > 0
+    return on && level !== null && level > 0 && this.showsLevel()
       ? `${text} · ${formatNumber(this.hass, level, { digits: 0 })} %`
       : text;
   }
@@ -295,7 +350,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * large or compact tile, 12 on a mini, or what a narrower mini can spare around its 44 circle) and, where the line
    * sits beside the circle (a large tile's off skin, a compact one 128 or wider, an inner one 136 or wider), the circle
    * and its gap. `under`: the line sits under the head (a live large tile: "On · 70 %" over its ruler) and has the
-   * whole width.
+   * whole width. `words`: the line is the person's own (a template card's): what is left of it once its last parts
+   * are gone ends in an ellipsis, as a name does, rather than going.
    */
   private fitState(
     line: string,
@@ -303,6 +359,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     dash: boolean,
     inside = false,
     under = false,
+    words = false,
   ): string {
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
@@ -319,7 +376,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       room,
       measure,
     );
-    if (fitted && measure(fitted) <= room) return fitted;
+    if (fitted && (words || measure(fitted) <= room)) return fitted;
     return dash ? '—' : '';
   }
 
@@ -366,15 +423,39 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return this.renderTile(config, this.size());
   }
 
+  /** Whether the entity is on: as Home Assistant says, or as a flip just asked until it answers. */
+  private lit(view: EntityView): boolean {
+    const state = this.stateOf(view);
+    return (
+      isUsable(view) &&
+      (state === view.state
+        ? isActive(view)
+        : !['off', 'closed', 'locked', 'idle', 'docked', 'paused'].includes(state))
+    );
+  }
+
+  /** What the tile shows of its entity: its name, its icon, its skin; `lit`, whether the entity is on. */
+  protected look(item: TileItem, view: EntityView, lit: boolean): TileLook {
+    const name = item.name ?? view.name;
+    return {
+      name,
+      label: name,
+      glyph: iconOf(view, item.icon),
+      usable: isUsable(view),
+      on: lit,
+      tone: statusToneOf(item, toneFor(view)),
+    };
+  }
+
   /**
-   * The colour a lit light's tile wears (`light_colors`, 1.9; the house's choice where the card says none): its bulb's
-   * — unless the tile, or the card, has a colour or a tone of its own, which it keeps.
+   * What a lit light's bulb glows on its tile (`litColour`: its whites as the card asks, a group its members'), where
+   * the card shows bulbs' colours (`light_colors`, 1.9; the house's choice where the card says none).
    */
-  protected glow(item: TileItem, view: EntityView, on: boolean): string | undefined {
+  protected glow(view: EntityView, on: boolean): string | undefined {
     const config = this.config;
-    if (view.domain !== 'light' || item.color || item.tone || config?.color || config?.tone)
-      return undefined;
-    return (config?.light_colors ?? lightDefaults().colors) ? glowOf(view, on) : undefined;
+    return (config?.light_colors ?? lightDefaults().colors)
+      ? litColour(view, on, config?.light_whites, this.hass)
+      : undefined;
   }
 
   /** The width one tile gets: the card's own (a tiles group divides its width). */
@@ -394,59 +475,77 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    */
   protected renderTile(item: TileItem, size: TileSize, inside = false): TemplateResult {
     const view = this.entity(item.entity);
-    const name = item.name ?? view.name;
-    const glyph = item.icon ?? glyphFor(view);
     const small = size !== 'large';
     const sizeClass = small ? ` fv-tile--${size}${inside ? ' fv-tile--inner' : ''}` : '';
 
     // a missing or unreachable entity wears the off skin on the live tile's own anatomy and size — the ban circle, the
     // name, its state line, a dash in every reading, a switch that does not move: only the colours change, so it never
-    // stands shorter than its neighbours. An unknown one is a live tile whose word is "Unknown".
-    const usable = isUsable(view);
-    const state = this.stateOf(view);
-    const on =
-      usable &&
-      (state === view.state
-        ? isActive(view)
-        : !['off', 'closed', 'locked', 'idle', 'docked', 'paused'].includes(state));
-    const tone = statusToneOf(item, toneFor(view));
-    // a grouped tile's own colour sits on its article (the lone card's is the card's, written by the base), and a lit
-    // light's bulb's where it has none
-    const glow = usable ? this.glow(item, view, on) : undefined;
-    const accent = this.accents.item(item === this.config ? glow : item.color || glow);
+    // stands shorter than its neighbours. An unknown one is a live tile whose word is "Unknown". Its switch, its ruler
+    // and its flip follow the entity (`lit`), its fill its look (`on`): the template card may tell them apart.
+    const lit = this.lit(view);
+    const {
+      name,
+      label,
+      glyph: icon,
+      usable,
+      on,
+      tone: kindTone,
+      words,
+    } = this.look(item, view, lit);
+    // a light wears what the rule every light follows says (`lightLook`: in a group, the card's colour and tone come
+    // after its bulb's); anything else its own colour, else its look's tone (a warning stays one)
+    const [colour, tone] =
+      view.domain === 'light'
+        ? lightLook(
+            item,
+            item === this.config ? undefined : this.config,
+            usable ? this.glow(view, on) : undefined,
+          )
+        : ([item.color, kindTone] as const);
+    // its colour sits on its article, where the card's own (written by the base) is not already it
+    const accent = this.accents.item(colour === this.config?.color ? undefined : colour);
     const level = this.level(view);
     const canToggle = TOGGLE_DOMAINS.has(view.domain);
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
     const iconTone =
       currentTone(view, on ? tone : 'accent') === 'neutral' ? 'accent' : on ? tone : 'accent';
-    // a coloured tile keeps its colour at rest when the card asks (`tint: always`): its rest wash and the fill's hairline
-    const tinted =
-      usable && this.config?.tint === 'always' && item.color && !on ? ' is-tinted' : '';
+    // a tile keeps its colour at rest when the card asks (`tint: always`): one with a colour (its own, the card's)
+    // that colour's rest wash and the fill's hairline, any other its tone's, as a light card's at rest — never a
+    // status's: a shut door or a clear smoke alarm at rest is not a warning (`washesAtRest`)
+    const rest = usable && !on && this.config?.tint === 'always';
+    const coloured = Boolean(accent || this.config?.color);
+    const tinted = rest && coloured ? ' is-tinted' : '';
+    const surface = rest && !coloured && washesAtRest(tone) ? this.accents.lit(tone, 0) : nothing;
     const classes = usable
       ? `fv-tile fv-tile--${tone} fv-tile--tap${sizeClass}${tinted} ${on ? 'is-on' : ''}`
       : `fv-tile fv-tile--off fv-tile--tap${sizeClass}`;
     // what cannot be read cannot be switched: its tap opens the details, its toggle (if asked) goes to Home Assistant
     const run = (action: ActionConfig): void =>
-      usable ? this.act(view, on, action) : this.tap(view.id, action);
+      usable ? this.act(view, lit, action) : this.tap(view.id, action);
     const holdAction = item.hold_action ?? MORE_INFO;
     const holdNow = actionRuns(holdAction, view.id) ? () => run(holdAction) : undefined;
 
     if (small) {
-      // the whole tile is the button (laid over it): tap toggles what toggles (opens what does not), hold opens the
-      // details
+      // the whole tile is the button (laid over it) where it has something to run: tap toggles what toggles (opens
+      // what does not), hold opens the details
       const tapAction = item.tap_action ?? (usable && canToggle ? TOGGLE : MORE_INFO);
-      const tapNow = (): void => run(tapAction);
-      let line = this.stateLine(view, on, level ? level.value : null, false, true);
+      const tapNow = actionRuns(tapAction, view.id) ? () => run(tapAction) : undefined;
+      let line = this.tileLine(item, view, lit, level ? level.value : null, false, true);
       const reading = usable ? this.readoutText(item) : '';
       if (reading) line = `${line} · ${reading}`;
-      line = this.fitState(line, size, !usable, inside);
-      return html`<article class=${classes} data-card data-accent=${(usable && accent) || nothing}>
-        ${usable ? ico(glyph, iconTone) : ico('ban', 'off')}
+      line = this.fitState(line, size, !usable, inside, false, words);
+      return html`<article
+        class=${classes}
+        data-card
+        data-accent=${(usable && accent) || nothing}
+        data-surface=${surface}
+      >
+        ${usable ? ico(icon, iconTone) : ico('ban', 'off')}
         <div class="fv-tile__text">
           <h3 class="fv-tile__name">${name}</h3>
-          <p class="fv-tile__state">${line}</p>
+          <p class="fv-tile__state" data-name=${words ? '' : nothing}>${line}</p>
         </div>
-        ${pressCover(name, tapNow, holdNow)}
+        ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
       </article>`;
     }
 
@@ -454,22 +553,23 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // folds its switch into the icon circle, gives its value to the state line, keeps one readout
     const inner = Math.floor(this.tileWidth()) - 32;
     const family = getComputedStyle(this).fontFamily;
-    const parts = sensorLike ? valueParts(this.hass, view) : null;
+    // a tile of nothing (a template card without an entity) has no reading
+    const parts = sensorLike && item.entity ? valueParts(this.hass, view) : null;
     const valueInHead =
       parts !== null &&
       44 + 8 + textWidth(`${parts.value} ${parts.unit}`.trim(), `600 16px ${family}`) <= inner;
     const switchApart = canToggle && inner >= HEAD_ROOM;
     const flip = (event: Event): void => {
       event.stopPropagation();
-      this.flip(view, !on);
+      this.flip(view, !lit);
     };
     const lead = !usable
       ? ico('ban', 'off')
       : canToggle && !switchApart
-        ? ico(glyph, iconTone, { onTap: flip, label: name, checked: on })
-        : ico(glyph, iconTone);
+        ? ico(icon, iconTone, { onTap: flip, label, checked: lit })
+        : ico(icon, iconTone);
     const trailing = switchApart
-      ? toggle(on, tone, (next) => this.flip(view, next), name, !usable)
+      ? toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
       : parts && valueInHead
         ? html`<span class="fv-tile__value"
             >${parts.value}${parts.unit ? html` <span class="fv-unit">${parts.unit}</span>` : nothing}</span
@@ -479,9 +579,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     let foot: TemplateResult | typeof nothing = nothing;
     if (level) {
       foot = html`<fluvy-ruler
-        class=${on ? '' : 'fv-ruler--off'}
+        class=${lit ? '' : 'fv-ruler--off'}
         ?on-fill=${on}
-        .value=${on ? level.value : 0}
+        .value=${lit ? level.value : 0}
         .min=${0}
         .max=${100}
         .step=${1}
@@ -489,12 +589,12 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         .knob=${28}
         .minor=${1 / 12}
         .major=${1 / 4}
-        .tone=${on ? tone : 'neutral'}
-        ?inactive=${!on}
+        .tone=${lit ? tone : 'neutral'}
+        ?inactive=${!lit}
         ?wake=${usable}
         ?inert=${!usable}
         unit="%"
-        .label=${`${name} · ${level.label}`}
+        .label=${`${label} · ${level.label}`}
         .format=${(v: number) => formatNumber(this.hass, v, { digits: 0 })}
         @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => level.commit(e.detail.value)}
       ></fluvy-ruler>`;
@@ -545,23 +645,19 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // the tap action, a still press the hold action — never a switch inside a button
     const tapAction = item.tap_action ?? MORE_INFO;
     const tapNow = actionRuns(tapAction, view.id) ? () => this.tap(view.id, tapAction) : undefined;
+    const line = this.tileLine(item, view, lit, level ? level.value : null, valueInHead);
     return html`<article
       class=${`${classes}${foot === nothing ? ' fv-tile--footless' : this.nameFits(name) ? '' : ' fv-tile--tight'}`}
       data-card
       data-accent=${(usable && accent) || nothing}
+      data-surface=${surface}
     >
       <div class="fv-tile__head">${lead}${trailing}</div>
       <h3 class="fv-tile__name">${name}</h3>
-      <p class="fv-tile__state">
-        ${this.fitState(
-          this.stateLine(view, on, level ? level.value : null, valueInHead),
-          size,
-          !usable,
-          inside,
-          true,
-        )}
+      <p class="fv-tile__state" data-name=${words ? '' : nothing}>
+        ${this.fitState(line, size, !usable, inside, true, words)}
       </p>
-      ${foot} ${tapNow || holdNow ? pressCover(name, tapNow, holdNow) : nothing}
+      ${foot} ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
     </article>`;
   }
 }

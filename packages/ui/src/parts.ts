@@ -1,4 +1,5 @@
-import { html, nothing, svg, type TemplateResult } from 'lit';
+import { html, noChange, nothing, svg, type TemplateResult } from 'lit';
+import { Directive, directive, type ElementPart } from 'lit/directive.js';
 import {
   clickPress,
   holdKey,
@@ -13,14 +14,51 @@ import { glyph, isGlyph, type GlyphName } from './glyphs.js';
 /**
  * Template functions for the fluvy primitives — the same markup and class names as the approved
  * design sheets (`apps/design-lab/fluvy.js`), rendered by Lit so the DOM is stable and transitions run.
- * Nothing here knows about Home Assistant: values in, callbacks out.
+ * Nothing here knows about Home Assistant but the icon elements a reference names: values in, callbacks out.
  */
 
 export type { Tone } from './tones.js';
 import type { Tone } from './tones.js';
 
-/** Either a fluvy glyph name or a Home Assistant icon id (`mdi:…`), which `<ha-icon>` draws. */
+/**
+ * A fluvy glyph name, a Home Assistant icon id (`mdi:…`), which `<ha-icon>` draws, or `ha-state:<entity id>=<state>`:
+ * Home Assistant's own icon for that entity in that state (`stateIcon`).
+ */
 export type IconRef = GlyphName | `${string}:${string}`;
+
+const HA_STATE = 'ha-state:';
+
+/**
+ * Home Assistant's own icon for an entity in a state — its device class, the state, its integration's icons — drawn
+ * by `<ha-state-icon>`, which reads the rest of the house from Home Assistant's page itself. The state is the one the
+ * circle draws: the entity's now, or one it had (an activity's row).
+ */
+export const stateIcon = (entityId: string, state: string): IconRef =>
+  `${HA_STATE}${entityId}=${state}`;
+
+/**
+ * Hands `<ha-state-icon>` the entity's state from the element whose render draws it: a card or a sheet holds the
+ * `hass` it was given, so no card threads the state through its circles. An entity id has no `=`: the state follows
+ * the first.
+ */
+class StateOf extends Directive {
+  /** Nothing to draw: the state is set in `update`. */
+  render(ref: string): typeof noChange {
+    void ref;
+    return noChange;
+  }
+
+  override update(part: ElementPart, [ref]: [string]): typeof noChange {
+    const host = part.options?.host as { hass?: { states?: Record<string, unknown> } } | undefined;
+    const at = ref.indexOf('=');
+    Object.assign(part.element, {
+      stateObj: host?.hass?.states?.[ref.slice(0, at)],
+      stateValue: ref.slice(at + 1),
+    });
+    return noChange;
+  }
+}
+const stateOf = directive(StateOf);
 
 /** `fluvy:cloud-sun` → the glyph name `cloudSun`. */
 const glyphOf = (ref: string): string =>
@@ -34,6 +72,11 @@ export function icon(
     const name = glyphOf(ref);
     if (isGlyph(name)) return glyph(name);
   }
+  if (ref && ref.startsWith(HA_STATE))
+    return html`<ha-state-icon
+      class="fv-haicon"
+      ${stateOf(ref.slice(HA_STATE.length))}
+    ></ha-state-icon>`;
   if (ref && ref.includes(':')) return html`<ha-icon class="fv-haicon" .icon=${ref}></ha-icon>`;
   return glyph(isGlyph(ref) ? ref : fallback);
 }

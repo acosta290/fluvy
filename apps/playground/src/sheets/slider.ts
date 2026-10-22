@@ -413,8 +413,8 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-light-card', entity: 'light.tn_missing' },
       ],
     },
-    // a lit light's tile and row in its bulb's colour (`light_colors`): the orange lamp, the blue strip; a white
-    // and an off lamp keep the palette's light
+    // a lit light's tile and row in its bulb's colour (`light_colors`): the orange lamp, the blue strip, a white in its
+    // warmth (#58); an off lamp keeps the palette's light
     {
       title: 'Tiles · bulb colours',
       cards: [
@@ -426,7 +426,7 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-tile-card', entity: 'light.tn_red', light_colors: true },
       ],
     },
-    // the order: the tile's own colour, its tone, the card's colour, then the bulb's
+    // the order (#58): the tile's own colour, its tone, the bulb's, then the card's colour
     {
       title: 'Tiles · their own colour first',
       cards: [

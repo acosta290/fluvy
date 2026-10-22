@@ -3,6 +3,7 @@ import { ensureLanguage, plural, type HomeAssistant, type LovelaceCardConfig } f
 import { OUT_OF_REACH, outOfReachStates } from '@fluvy/demo-home/out-of-reach';
 import { afterEach, describe, expect, it } from 'vitest';
 import { appliancesHeight } from '../appliances-family.js';
+import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
 import { FluvyApplianceCard } from './appliance-card.js';
 import { FluvyAppliancesCard } from './appliances-card.js';
 import { allFixtures, houseOf } from './fixtures/index.js';
@@ -257,5 +258,39 @@ describe('the house’s appliances', () => {
         (whole) => whole.config['device'],
       ),
     ).toEqual(['hc-oven', 'lg-washer']);
+  });
+});
+
+describe('the appliances card’s editor offers what acts in its style (#58)', () => {
+  const shown = async (config: Record<string, unknown>): Promise<string[]> =>
+    shownNames(
+      cardForm(
+        await drawEditor(await FluvyAppliancesCard.getConfigElement(), {
+          type: 'custom:fluvy-appliances-card',
+          ...config,
+        }),
+      ).schema,
+    );
+  const HEAD = ['title', 'subtitle', 'icon', 'show_icon', 'show_count', 'tone', 'color'];
+  const SURFACE = ['card_color', 'tap_action', 'hold_action'];
+
+  it('a picture for tiles and whole cards, which draw one; a row has its circle', async () => {
+    expect(await shown({ variant: 'tiles' })).toContain('picture');
+    expect(await shown({ variant: 'cards' })).toContain('picture');
+    expect(await shown({})).not.toContain('picture');
+    expect(await shown({ variant: 'compact' })).not.toContain('picture');
+  });
+
+  it('whole cards are every one there is, without the list’s head while one is shown, and none at all when an empty list hides', async () => {
+    const rows = await shown({});
+    for (const name of [...HEAD, ...SURFACE, 'max_rows']) expect(rows).toContain(name);
+    const cards = await shown({ variant: 'cards' });
+    expect(cards).not.toContain('max_rows');
+    // with nothing to show, whole cards draw the list's head and its empty panel: its words, its colours, its actions
+    for (const name of [...HEAD, ...SURFACE, 'empty_text', 'hide_empty'])
+      expect(cards).toContain(name);
+    const hidden = await shown({ variant: 'cards', hide_empty: true });
+    for (const name of [...HEAD, ...SURFACE]) expect(hidden).not.toContain(name);
+    for (const name of ['show', 'sort', 'picture', 'hide_empty']) expect(hidden).toContain(name);
   });
 });

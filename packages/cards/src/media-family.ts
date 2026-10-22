@@ -1,6 +1,6 @@
-import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { chipBlock, chipRows, featuresOf, listAttr } from './shared/heights.js';
+import { chipBlock, chipRows } from './shared/heights.js';
 
 /**
  * The media family, announced at start and defined when its chunk lands (`media-cards.ts`), as the energy family
@@ -30,25 +30,21 @@ export function mediaControls(
   return [...new Set(raw.filter(isControl))];
 }
 
-/** `media_player` SELECT_SOURCE, and the sources a card lists at most (its own `MAX_SOURCES`). */
-const SELECT_SOURCE = 2048;
+/** The sources a card lists at most (its own `MAX_SOURCES`). */
 const MAX_SOURCES = 6;
 
 /**
  * The player: artwork, title and controls (264), the volume under them (88), the sources as chips under their label
- * where the player has some (the house says: six at most, filled rows); a hero and a row their own. A player that is
- * off draws "Turn on" in place of its transport: the on height is the one reserved.
+ * where the player has some (six at most, filled rows: the house lists them, `house-heights.ts`; none where it is not
+ * there to say); a hero and a row their own. A player that is off draws "Turn on" in place of its transport: the on
+ * height is the one reserved.
  */
-export function mediaHeight(config: LovelaceCardConfig, hass?: HomeAssistant): number {
+export function mediaHeight(config: LovelaceCardConfig, sources: readonly string[] = []): number {
   if (config['variant'] === 'hero') return 600;
   if (config['variant'] === 'mini') return 76;
-  const id = config['entity'];
-  const sources =
-    config['show_source'] === false || !(featuresOf(hass, id) & SELECT_SOURCE)
-      ? []
-      : listAttr(hass, id, 'source_list').slice(0, MAX_SOURCES);
+  const shown = config['show_source'] === false ? [] : sources.slice(0, MAX_SOURCES);
   const style = config['source_style'] === 'chips' ? 'chips' : 'full';
-  return (config['show_volume'] === false ? 264 : 352) + chipBlock(chipRows(sources, style));
+  return (config['show_volume'] === false ? 264 : 352) + chipBlock(chipRows(shown, style));
 }
 
 /**

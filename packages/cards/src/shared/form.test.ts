@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
+import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import { describe, expect, it, vi } from 'vitest';
 import {
   accentField,
+  boolField,
+  byName,
   colourFields,
   editorLabels,
+  fieldRow,
   formLabels,
+  onlyWhen,
+  pickFields,
   selectField,
+  textField,
   toneField,
+  visibleFields,
 } from './form.js';
 
 const label = (form: ReturnType<typeof formLabels>, name: string): string | undefined =>
@@ -63,5 +70,85 @@ describe('a colour field', () => {
     const surface = colourFields()[1]!;
     expect(surface.name).toBe('card_color');
     expect(picker(surface)).toMatchObject({ default_color: 'none', include_none: true });
+  });
+});
+
+describe('a form that shows only what can act', () => {
+  const full = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant !== 'compact';
+  const schema: HaFormSchemaItem[] = [
+    selectField('variant', ['full', 'compact']),
+    fieldRow(textField('title'), onlyWhen(full, textField('subtitle'))),
+    onlyWhen(full, fieldRow(boolField('show_rows'), boolField('show_icon'))),
+    boolField('live_update'),
+  ];
+  /** A form as names, a row as the list of its own. */
+  const shape = (form: readonly HaFormSchemaItem[]): unknown[] =>
+    form.map((item) => (item.schema ? shape(item.schema) : item.name));
+  /** Whether anything in a form is a function. */
+  const callable = (form: readonly HaFormSchemaItem[]): boolean =>
+    form.some(
+      (item) =>
+        Object.values(item).some((value) => typeof value === 'function') ||
+        callable(item.schema ?? []),
+    );
+
+  it('keeps every field and row while each can act', () => {
+    expect(shape(visibleFields(schema, { variant: 'full' }))).toEqual([
+      'variant',
+      ['title', 'subtitle'],
+      ['show_rows', 'show_icon'],
+      'live_update',
+    ]);
+  });
+
+  it('drops a field or a whole row that cannot, and a row that loses one field keeps the other on its own line', () => {
+    expect(shape(visibleFields(schema, { variant: 'compact' }))).toEqual([
+      'variant',
+      'title',
+      'live_update',
+    ]);
+  });
+
+  it('hands Home Assistant’s form no function: every `when` stays behind', () => {
+    expect(callable(schema)).toBe(true);
+    expect(callable(visibleFields(schema, { variant: 'full' }))).toBe(false);
+    expect(callable(visibleFields(schema, { variant: 'compact' }))).toBe(false);
+    // the fields themselves are the card's, whole
+    expect(visibleFields(schema, {})[0]).toBe(schema[0]);
+    expect(visibleFields(schema, {})[1]?.schema?.[1]).toEqual(textField('subtitle'));
+  });
+
+  it('asks with what the form holds and the house', () => {
+    const when = vi.fn(() => true);
+    const hass = { language: 'en' } as HomeAssistant;
+    const data = { variant: 'full' };
+    visibleFields([onlyWhen(when, textField('title'))], data, hass);
+    expect(when).toHaveBeenCalledWith(data, hass);
+  });
+
+  it('picks by any test of the item, a row and a field alike; by name, every row is opened', () => {
+    const title = { name: 'title', selector: { text: {} } };
+    const rows: HaFormSchemaItem[] = [fieldRow(title, textField('subtitle')), textField('icon')];
+    expect(shape(pickFields(rows, (item) => !item.schema))).toEqual(['icon']);
+    expect(
+      shape(
+        pickFields(
+          rows,
+          byName((name) => name !== 'subtitle'),
+        ),
+      ),
+    ).toEqual(['title', 'icon']);
+    expect(
+      pickFields(
+        rows,
+        byName((name) => name !== 'subtitle'),
+      )[0],
+    ).toBe(title);
+    expect(
+      pickFields(
+        rows,
+        byName(() => true),
+      )[0],
+    ).toBe(rows[0]);
   });
 });
