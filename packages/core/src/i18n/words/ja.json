@@ -584,14 +584,7 @@
     "renji",
     "renzi"
   ],
-  "appliance_oven": [
-    "オーブン",
-    "スチームオーブン",
-    "コンベクション",
-    "oobun",
-    "obun",
-    "o-bun"
-  ],
+  "appliance_oven": ["オーブン", "スチームオーブン", "コンベクション", "oobun", "obun", "o-bun"],
   "appliance_hob": [
     "ihクッキング",
     "ihヒーター",
