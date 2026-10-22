@@ -17,16 +17,12 @@ settings panel, the dashboard resource and the theme. Nothing is written to `con
 
 ## Through HACS
 
-Until Fluvy is listed in HACS's default store, it is added once as a custom repository; downloads and updates then
-work exactly as for any other integration.
+Fluvy is in HACS's default store: it downloads and updates exactly as any other integration.
 
-1. HACS → menu (⋮) → **Custom repositories** → add `https://github.com/acosta290/fluvy`, type **Integration**
-   (the button in the README opens this dialog with the fields filled in). Skip this step once Fluvy is in the
-   default store.
-2. Search for **Fluvy** and download it.
-3. Restart Home Assistant (HACS asks for it).
-4. **Settings → Devices & services → Add integration** → search for **Fluvy** → add. There is nothing to configure.
-5. Reload the browser, then choose the **Fluvy** theme in your profile (**Theme → Fluvy**) or accept the offer in
+1. Search for **Fluvy** in HACS and download it (the button in the README opens it in your HACS).
+2. Restart Home Assistant (HACS asks for it).
+3. **Settings → Devices & services → Add integration** → search for **Fluvy** → add. There is nothing to configure.
+4. Reload the browser, then choose the **Fluvy** theme in your profile (**Theme → Fluvy**) or accept the offer in
    the panel's *Scope* tab. Everyone in the house does this once, on any device; it follows their profile.
 
 ## Why an integration, and not a theme
