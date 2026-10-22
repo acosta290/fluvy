@@ -291,6 +291,10 @@ describe('what an appliance is', () => {
       'Kimchi refrigerator',
     ])
       expect(said(name), name).toEqual({ excluded: 'name' });
+    // and a never-word wins outright, even where a longer kind's word overlaps it: a laundry-folding machine's 洗濯物
+    // (the laundry) inside the washer's 全自動洗濯
+    expect(said('全自動洗濯物たたみ機')).toEqual({ excluded: 'name' });
+    expect(said('全自動洗濯機')).toEqual({ kind: 'washer', by: 'words' });
     // in Latin letters: the dishwasher's word holds the washer's, the washer-dryer's the dryer's
     expect(said('Dishwasher')).toEqual({ kind: 'dishwasher', by: 'words' });
     expect(said('Waschtrockner')).toEqual({ kind: 'washer_dryer', by: 'words' });

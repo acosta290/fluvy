@@ -374,14 +374,20 @@ export function plain(text: string): string {
 
 /**
  * What a name says an appliance is, or that it is none (a vacuum, a hair dryer, a charger): the classes a plain name
- * is read among, what is never one first, then the kinds in their order (`tools/i18n/src/build.ts` KINDS).
+ * is read among, what is never one first, then the kinds in their order (`tools/i18n/src/build.ts` KINDS). The switch
+ * question reads them as one list beside a light's words (`strategy/home-registry.ts`); `byWords` asks `never` alone,
+ * first.
  */
 export const APPLIANCE_WORDS: Rules<ApplianceKind | 'never'> = [
   ['never', NOT_AN_APPLIANCE],
   ...KIND_WORDS,
 ];
 
-/** By the words of its names (its own and its model) in any of the nine languages. */
+/**
+ * By the words of its names (its own and its model) in any of the nine languages. A word of what is never an
+ * appliance anywhere in them says none, before any kind is weighed against it: a longer kind's word around it does
+ * not make it one (全自動洗濯物たたみ機 folds the laundry, 洗濯物, and washes nothing, though 全自動洗濯 is a washer's word).
+ */
 export function byWords(
   ...names: ReadonlyArray<string | null | undefined>
 ): KindVerdict | undefined {
@@ -389,9 +395,10 @@ export function byWords(
     .filter((name): name is string => Boolean(name))
     .map(plain)
     .join(' | ');
-  const said = text ? says(text, APPLIANCE_WORDS) : undefined;
-  if (!said) return undefined;
-  return said === 'never' ? { excluded: 'name' } : { kind: said, by: 'words' };
+  if (!text) return undefined;
+  if (NOT_AN_APPLIANCE.test(text)) return { excluded: 'name' };
+  const said = says(text, KIND_WORDS);
+  return said ? { kind: said, by: 'words' } : undefined;
 }
 
 /**
