@@ -2,6 +2,8 @@ import {
   clock12,
   dateFormat,
   formatDate,
+  LANGUAGES,
+  languageOf,
   localize,
   strings,
   type HomeAssistant,
@@ -142,10 +144,13 @@ export class Words {
         : this.t('common.events', { count });
   }
 
-  /** "Thursday 17 · 4 events" — the label over a selected day's list. */
+  /**
+   * "Thursday 17 · 4 events" — the label over a selected day's list, its weekday as wide as the language writes it
+   * there (「17日（木） · イベント4件」).
+   */
   dayLabel(date: Date, count: number | null): string {
     const day = s(this.hass, 'day_label', {
-      weekday: this.weekday(date, 'long'),
+      weekday: this.weekday(date, LANGUAGES[languageOf(this.hass)].weekday ?? 'long'),
       day: date.getDate(),
     });
     return count === null ? day : `${day} · ${this.events(count).toLocaleLowerCase(this.language)}`;

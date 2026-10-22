@@ -27,6 +27,11 @@ export interface LanguageInfo {
   /** Its English name: the select's hint, and what the docs say. */
   readonly english: string;
   readonly dayParts: DayParts;
+  /**
+   * How wide a weekday is written beside a day's number (the calendar's "Thursday 17"): `long` unless the language
+   * writes it short there (Japanese prints 17日（木）, never 17日（木曜日）).
+   */
+  readonly weekday?: 'long' | 'short';
 }
 
 export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
@@ -89,6 +94,7 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     // three greetings: おはようございます until 11:00, こんにちは through the afternoon, こんばんは from 18:00 as the last
     // band (no evening); おやすみなさい is a farewell before sleep, never a greeting, and never shows
     dayParts: { morning: 5, afternoon: 11, night: 18 },
+    weekday: 'short',
   },
 };
 

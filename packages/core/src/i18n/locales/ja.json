@@ -276,7 +276,7 @@
     "one_unavailable": "{name}を利用できません",
     "some_unavailable": "{count}件のカレンダーを利用できません",
     "untitled": "タイトルなし",
-    "day_label": "{day}日({weekday})",
+    "day_label": "{day}日（{weekday}）",
     "first_at": "最初は{time}",
     "until": "{time}まで",
     "left": "残り{count}",
