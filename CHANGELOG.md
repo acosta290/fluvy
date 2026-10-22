@@ -12,7 +12,15 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   おやすみなさい is a farewell and never shows). The automatic dashboard and the appliance cards read a house named
   in Japanese: the naming words take kanji and kana, matched as substrings since Japanese writes no spaces, beside the
   romaji an entity id carries (`shoumei`, `raito`, `sentakuki`, `reizouko`); a full-width name ("ＬＥＤ") reads as its
-  letters. The measurer lets Japanese wrap at any character (#54).
+  letters. The calendar labels a day as a Japanese calendar prints it, 17日（木）, and the measurer lets Japanese wrap
+  at any character. The catalogue and the naming words were read end to end by @vinjex, its maintainer, who chose
+  where Japanese departs from Home Assistant's words, as the translating guide lists (#54, #56).
+
+### Changed
+
+- Automations count in their own words: the automations card's "1 of 2 on" has keys of its own, so a language counts
+  automations apart from lights and devices (Japanese 2件中1件がオン, where a room's devices read 2台中1台がオン); the
+  other languages say what they said.
 
 ### Fixed
 
@@ -23,17 +31,28 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   by the time their fonts settled either, so in a 266 column their rows kept their circles and their long lines and
   ran past their rows, and the snooze chips were cut. Each now watches its own width and draws again when the one it
   drew for is not the one it was given (the measurer caught it on a loaded CI runner).
+- A reading named by its device, in no area, keeps no separator the sensor words leave at its ends: 「寝室：温度」 is
+  寝室, 「キッチン温度・湿度」 キッチン and "Hall · Temperature" Hall (it read "Hall ·"); an entity's own name, with its
+  device's name taken off its front, sheds one at either end.
+- An appliance's name with a word of what is never an appliance is none, even where a longer kind's word overlaps
+  that word: 全自動洗濯物たたみ機 folds the laundry (洗濯物) and is no washer, though 全自動洗濯 is a washer's word.
+- Where one of a list's naming words begins a longer one, a name is read by the longer ("secadora de roupas",
+  "frigorifero", "Hausverbrauch", not "secadora", "frigo", "Haus"), so the word weighs its whole length against
+  another list's word that overlaps it: a shorter stem listed first no longer hides the longer from the matcher.
 
 ### Development
 
 - One matcher reads a name among the naming words' lists (`packages/cards/src/shared/words.ts`): where lists compete
-  — a switch's light words against the appliances' kinds, the kinds against each other and against what is never an
-  appliance, a reading's energy roles, a place against the house's words — every list is run and of two words that
+  — a switch's light words against the appliances' kinds and what is never an appliance, the kinds against each
+  other, a reading's energy roles, a place against the house's words — every list is run and of two words that
   overlap in the name the longer wins, whatever the lists' order (電気ケトル is a kettle, not the light 電気; ガスレンジ
   a hob, not the microwave レンジ; オーブントースター a toaster; "hair dryer" no dryer), so a stem needs no lookaround
   against a longer word another list carries; words that stand apart keep the lists' order ("wine fridge" stays a
-  wine cooler). The generated regexes capture the stem they find, as the first group that takes part in the match
-  (#55).
+  wine cooler). An appliance card asks what is never an appliance first, alone. The generated regexes capture the
+  stem they find, as the first group that takes part in the match (#55).
+- The naming words' build orders each alternation (`ordered` in `tools/i18n/src/build.ts`): a stem is tried after
+  every longer stem that begins with it, the listed order kept otherwise and a stem of its own regex never taken for
+  the shorter, so stems that nest need no care in the words (94 such pairs across the nine languages were reordered).
 
 ## [1.9.1] — 2026-10-20
 

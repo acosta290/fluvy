@@ -4,17 +4,17 @@ Fluvy speaks the languages below in every card, page, dialog and editor form. Ho
 states, attribute values, its dialogs — come from Home Assistant's translations; Fluvy's words come from one
 catalogue per language, and a person may choose theirs in the panel's *Preferences* whatever Home Assistant speaks.
 
-| Code | Language | Catalogue |
-| --- | --- | --- |
-| `en` | English | `packages/core/src/i18n/locales/en/` — the source every other language mirrors, in parts |
-| `es` | Spanish | `packages/core/src/i18n/locales/es.json` |
-| `de` | German | `packages/core/src/i18n/locales/de.json` |
-| `nl` | Dutch | `packages/core/src/i18n/locales/nl.json` |
-| `fr` | French | `packages/core/src/i18n/locales/fr.json` |
-| `it` | Italian | `packages/core/src/i18n/locales/it.json` |
-| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` and `pt-PT` read it too |
-| `tr` | Turkish | `packages/core/src/i18n/locales/tr.json` |
-| `ja` | Japanese | `packages/core/src/i18n/locales/ja.json` |
+| Code | Language | Catalogue | Maintainer |
+| --- | --- | --- | --- |
+| `en` | English | `packages/core/src/i18n/locales/en/` — the source every other language mirrors, in parts | — |
+| `es` | Spanish | `packages/core/src/i18n/locales/es.json` | — |
+| `de` | German | `packages/core/src/i18n/locales/de.json` | — |
+| `nl` | Dutch | `packages/core/src/i18n/locales/nl.json` | — |
+| `fr` | French | `packages/core/src/i18n/locales/fr.json` | — |
+| `it` | Italian | `packages/core/src/i18n/locales/it.json` | — |
+| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` and `pt-PT` read it too | — |
+| `tr` | Turkish | `packages/core/src/i18n/locales/tr.json` | — |
+| `ja` | Japanese | `packages/core/src/i18n/locales/ja.json` | [@vinjex](https://github.com/vinjex) |
 
 ## How a language works
 
@@ -38,12 +38,17 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
   電気ケトル is a kettle, not the light 電気; ガスレンジ a hob, not the microwave レンジ; オーブントースター a toaster —
   so a stem needs no lookaround against a longer word another list carries (a stem may still carry one against a
   word no list has: `電気(?!毛布)`, a blanket is no light); words that stand apart each hold, and the first list wins
-  ("wine fridge" is the wine cooler, listed before the fridge). They never ship: every language's stems are merged
-  into `packages/cards/src/strategy/words.generated.ts` and `packages/cards/src/appliance/words.generated.ts`
+  ("wine fridge" is the wine cooler, listed before the fridge). An appliance card reads what is never an appliance
+  first: a name with one of those words is none, whatever kind's word overlaps it. Inside one list the build orders
+  the stems: a stem is tried after any longer stem that begins with it (温度計 before 温度, "frigorifero" before
+  "frigo"), so stems that nest need no care in the list; a stem carrying regex of its own keeps its place among the
+  others like it. They never ship: every language's stems are merged into
+  `packages/cards/src/strategy/words.generated.ts` and `packages/cards/src/appliance/words.generated.ts`
   (`pnpm i18n build`), because a house is named in its own language, not the UI's.
 - **The registry**, `packages/core/src/i18n/languages.ts`: the code (as Home Assistant reports `hass.language`), the
-  language's own name, its English name, and when its day's parts begin (the greeting's "morning", "afternoon",
-  "evening", "night").
+  language's own name, its English name, when its day's parts begin (the greeting's "morning", "afternoon",
+  "evening", "night"), and, for a language that writes it short beside a day's number, `weekday: 'short'` (the
+  calendar's 17日（木）).
 - **The integration** has a translation of its own texts (the Repairs it raises, its setup dialog) in
   `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json`.
 
@@ -55,6 +60,22 @@ keys, keys English lacks, empty texts, placeholders, the word stems) and prints 
 `http://127.0.0.1:5183/?sheet=climate&lang=de`. Keep a card's words short — a chip, a tile label and a readout have
 a fixed width — and keep Home Assistant's register: the same word Home Assistant uses on the same screen, the same
 form of address.
+
+## Japanese: where it departs from Home Assistant's words, on purpose
+
+Japanese keeps Home Assistant's register, and in a few places a different word, chosen by its maintainer because
+Home Assistant's says something else to a Japanese reader. These are not slips to fix:
+
+- **運転中** for an appliance that is running: Home Assistant's 実行中 is what software does.
+- **除湿**, **送風**, **風量** and **弱・中・強** on a thermostat and a fan, the words on every air conditioner's remote
+  (Home Assistant writes ドライ, ファンのみ, ファンモード and 低・中・高).
+- **重大** for a critical alert: Home Assistant's 致命的 means fatal.
+- **利用不可** on a label and **利用できません** in a sentence for what is unavailable: Home Assistant's 切断 says the
+  thing was disconnected, which an unavailable entity may not be.
+
+And two that look like departures and are Home Assistant's own words: **買電** and **売電** (energy bought from and
+sold to the grid, as its energy settings say), and **アップデート** beside **更新** (Home Assistant writes both: the
+update of a device or an add-on, and saving or refreshing a page).
 
 ## Adding a language
 
