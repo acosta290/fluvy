@@ -40,12 +40,13 @@ const BUDGETS = {
   media: 16_384,
   // the devices family: the lock, the alarm and its keypad, the camera, the printer, the job's times
   devices: 32_768,
-  // the appliances family: the washer, the dryer, the dishwasher and their kin, plug mode, their English. 53 KB since
-  // 2026-10-19 (the #47 judge's fixes: rows that never repeat the hero, the head's picture chosen by the whole name, a
-  // fridge on a plug that never finishes and asks before it is switched off, the compact line's shorter forms); 51
-  // since the reporter's LG house (#47: LG's older integration read by its device sensor's attributes, both LG
-  // integrations known by their signatures, LG's states and cycles worded in eight languages); 48 before
-  appliances: 54_272,
+  // the appliances family: the washer, the dryer, the dishwasher and their kin, plug mode, their English. 54 KB since
+  // 2026-10-20 (the Japanese naming words, in kanji, kana and romaji, #54); 53 since 2026-10-19 (the #47 judge's
+  // fixes: rows that never repeat the hero, the head's picture chosen by the whole name, a fridge on a plug that never
+  // finishes and asks before it is switched off, the compact line's shorter forms); 51 since the reporter's LG house
+  // (#47: LG's older integration read by its device sensor's attributes, both LG integrations known by their
+  // signatures, LG's states and cycles worded in eight languages); 48 before
+  appliances: 55_296,
   // the appliances' pictures: one product drawing a kind, fetched by the first card that draws one
   'appliance-art': 32_768,
   // the automations family: the card, the schedule model and its store. 20 KB since 1.9 (the family's English, the

@@ -72,9 +72,13 @@ const DEVICES =
 /** The appliances' pictures (one product drawing a kind): fetched by the first card that draws one, never at start. */
 const APPLIANCE_ART = /\/packages\/cards\/src\/appliance\/art\//;
 
-/** The appliances family (the washer, the dryer, the dishwasher and their kin, and their English): fetched as the bundle starts and defined as it lands. */
+/**
+ * The appliances family (the washer, the dryer, the dishwasher and their kin, the matcher that reads a name among
+ * classes of words — the strategy reads its switches through it too, as it reads the kinds — and their English):
+ * fetched as the bundle starts and defined as it lands.
+ */
 const APPLIANCES =
-  /\/packages\/(cards\/src\/(appliances-cards\.ts|appliance\/)|core\/src\/i18n\/locales\/en\/appliances\.json)/;
+  /\/packages\/(cards\/src\/(appliances-cards\.ts|appliance\/|shared\/words\.ts)|core\/src\/i18n\/locales\/en\/appliances\.json)/;
 
 /**
  * The schedule sheet (its targets, day chips and moment rows): fetched the first time a schedule is opened or added,

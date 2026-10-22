@@ -124,7 +124,7 @@ describe('what an appliance is', () => {
     expect(kindOf(signals({ platform: 'matter', tops: [250] }))).toMatchObject({ kind: 'oven' });
   });
 
-  it('reads a name in any of the eight languages, accents or none, the more particular kind first', () => {
+  it('reads a name in any of the nine languages, accents or none, the more particular kind first', () => {
     const names: ReadonlyArray<readonly [string, string]> = [
       ['Washing machine', 'washer'],
       ['Waschmaschine', 'washer'],
@@ -182,6 +182,31 @@ describe('what an appliance is', () => {
       ['Air fryer', 'air_fryer'],
       ['Heißluftfritteuse', 'air_fryer'],
       ['Friggitrice ad aria', 'air_fryer'],
+      // Japanese, in kanji and kana as a name is written, or in the romaji an entity id carries
+      ['洗濯機', 'washer'],
+      ['sentakuki', 'washer'],
+      ['ドラム式洗濯乾燥機', 'washer_dryer'],
+      ['食洗機', 'dishwasher'],
+      ['食器洗い乾燥機', 'dishwasher'],
+      ['shokusenki', 'dishwasher'],
+      ['乾燥機', 'dryer'],
+      ['電子レンジ', 'microwave'],
+      ['オーブンレンジ', 'microwave'],
+      ['オーブン', 'oven'],
+      ['ＩＨクッキングヒーター', 'hob'],
+      ['ガスコンロ', 'hob'],
+      ['ガスレンジ', 'hob'],
+      ['レンジフード', 'hood'],
+      ['冷蔵庫', 'fridge'],
+      ['reizouko', 'fridge'],
+      ['冷凍庫', 'freezer'],
+      ['コーヒーメーカー', 'coffee'],
+      ['電気ケトル', 'kettle'],
+      ['ノンフライヤー', 'air_fryer'],
+      ['オーブントースター', 'toaster'],
+      ['ホットサンドメーカー', 'sandwich_maker'],
+      ['ミキサー', 'blender'],
+      ['ワインセラー', 'wine'],
     ];
     for (const [name, kind] of names) expect(byWords(name), name).toEqual({ kind, by: 'words' });
     // a name that says no kind says none
@@ -202,6 +227,9 @@ describe('what an appliance is', () => {
       'Hair dryer',
       'Wärmeschublade',
       'Styler',
+      'ロボット掃除機',
+      'ドライヤー',
+      '布団乾燥機',
     ])
       expect(byWords(name), name).toEqual({ excluded: 'name' });
     expect(kindOf(signals({ domains: new Set(['vacuum']), name: 'Waschmaschine' }))).toEqual({
@@ -244,6 +272,36 @@ describe('what an appliance is', () => {
     expect(said('Standmixer')).toEqual({ kind: 'blender', by: 'words' });
     expect(said('Liquidificador')).toEqual({ kind: 'blender', by: 'words' });
     expect(said('Ekmek kızartma makinesi')).toEqual({ kind: 'toaster', by: 'words' });
+  });
+
+  it('reads the longest of a name’s words that overlap, whatever the kinds’ order, in kana and in Latin letters', () => {
+    const said = (name: string) => byWords(name);
+    // an oven toaster is a toaster (listed after the oven), a gas range a hob (after the microwave), a range hood a hood
+    expect(said('オーブントースター')).toEqual({ kind: 'toaster', by: 'words' });
+    expect(said('ガスレンジ')).toEqual({ kind: 'hob', by: 'words' });
+    expect(said('レンジフード')).toEqual({ kind: 'hood', by: 'words' });
+    expect(said('電子レンジ')).toEqual({ kind: 'microwave', by: 'words' });
+    expect(said('電気ポット')).toEqual({ kind: 'kettle', by: 'words' });
+    // a longer never-word beats the kind inside it
+    for (const name of [
+      '布団乾燥機',
+      'ヘアドライヤー',
+      'Hair dryer',
+      'Haartrockner',
+      'Kimchi refrigerator',
+    ])
+      expect(said(name), name).toEqual({ excluded: 'name' });
+    // and a never-word wins outright, even where a longer kind's word overlaps it: a laundry-folding machine's 洗濯物
+    // (the laundry) inside the washer's 全自動洗濯
+    expect(said('全自動洗濯物たたみ機')).toEqual({ excluded: 'name' });
+    expect(said('全自動洗濯機')).toEqual({ kind: 'washer', by: 'words' });
+    // in Latin letters: the dishwasher's word holds the washer's, the washer-dryer's the dryer's
+    expect(said('Dishwasher')).toEqual({ kind: 'dishwasher', by: 'words' });
+    expect(said('Waschtrockner')).toEqual({ kind: 'washer_dryer', by: 'words' });
+    expect(said('Lave-vaisselle')).toEqual({ kind: 'dishwasher', by: 'words' });
+    // words that stand apart keep the kinds' order, the more particular first
+    expect(said('Wine fridge')).toEqual({ kind: 'wine', by: 'words' });
+    expect(said('Fridge freezer')).toEqual({ kind: 'fridge', by: 'words' });
   });
 });
 

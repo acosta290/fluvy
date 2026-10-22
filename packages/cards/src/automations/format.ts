@@ -9,6 +9,7 @@ import {
   wallClock,
   type HomeAssistant,
 } from '@fluvy/core';
+import { withUnits } from '../shared/duration.js';
 import {
   sanitiseAlias,
   WEEKDAYS,
@@ -100,15 +101,15 @@ export function clockText(hass: Hass | undefined, at: string): string {
   }).format(Date.UTC(1970, 0, 1, hours, minutes));
 }
 
-/** A sun offset in words, signed: "+15 min", "−30 min", "+1 h 15 min", "−2 h". */
+/** A sun offset in words, signed: "+15 min", "−30 min", "+1 h 15 min", "−2 h" — "+1時間15分". */
 export function offsetWords(hass: Hass | undefined, minutes: number): string {
   const abs = Math.abs(minutes);
   const hours = Math.floor(abs / 60);
   const rest = abs % 60;
-  const parts: string[] = [];
-  if (hours) parts.push(`${hours} ${localize(hass, 'time.unit_h')}`);
-  if (rest || !hours) parts.push(`${rest} ${localize(hass, 'time.unit_min')}`);
-  return `${minutes < 0 ? '−' : '+'}${parts.join(' ')}`;
+  const parts: [number, string][] = [];
+  if (hours) parts.push([hours, localize(hass, 'time.unit_h')]);
+  if (rest || !hours) parts.push([rest, localize(hass, 'time.unit_min')]);
+  return `${minutes < 0 ? '−' : '+'}${withUnits(parts)}`;
 }
 
 /** A moment in words: the time on the house's clock, or the sun's event with its offset ("Sunset −30 min"). */

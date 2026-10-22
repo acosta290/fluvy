@@ -65,7 +65,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await settle(page, 300);
   check('a click opens the menu', (await d.expanded()) && (await d.menu.count()) === 1);
   check('the menu floats in the top layer', await d.inTopLayer());
-  check('it holds Automatic and the eight languages', (await d.rows.count()) === 9);
+  check('it holds Automatic and the nine languages', (await d.rows.count()) === 10);
   const chosen = d.select.locator('.fv-menu__item[aria-selected="true"]');
   check(
     'the chosen row is marked, once',
@@ -173,8 +173,8 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
     `field ${field.x},${field.width} menu ${menu.x},${menu.width} gap ${menu.y - field.y - field.height}`,
   );
   check(
-    'nine rows, whole: 8 + 9 × 44 tall',
-    Math.abs(menu.height - 404) < 1 && (await d.menu.getAttribute('data-placement')) === 'below',
+    'ten rows: eight whole and 24 of the ninth, 8 + 8 × 44 + 24 tall',
+    Math.abs(menu.height - 384) < 1 && (await d.menu.getAttribute('data-placement')) === 'below',
     `${menu.height}`,
   );
   await page.close();

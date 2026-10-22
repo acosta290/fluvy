@@ -4,7 +4,7 @@
  * this table; adding a language is one entry here, one catalogue, one integration translation file.
  */
 
-export const LANGUAGE_CODES = ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr'] as const;
+export const LANGUAGE_CODES = ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr', 'ja'] as const;
 
 /** A code as Home Assistant reports `hass.language` for it (`pt-BR`, not `pt_BR`). */
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
@@ -27,6 +27,11 @@ export interface LanguageInfo {
   /** Its English name: the select's hint, and what the docs say. */
   readonly english: string;
   readonly dayParts: DayParts;
+  /**
+   * How wide a weekday is written beside a day's number (the calendar's "Thursday 17"): `long` unless the language
+   * writes it short there (Japanese prints 17日（木）, never 17日（木曜日）).
+   */
+  readonly weekday?: 'long' | 'short';
 }
 
 export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
@@ -81,6 +86,15 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     english: 'Turkish',
     // "günaydın" until noon, "iyi günler" through the afternoon, "iyi akşamlar" from 18:00, "iyi geceler" late
     dayParts: { morning: 5, afternoon: 12, evening: 18, night: 22 },
+  },
+  ja: {
+    code: 'ja',
+    name: '日本語',
+    english: 'Japanese',
+    // three greetings: おはようございます until 11:00, こんにちは through the afternoon, こんばんは from 18:00 as the last
+    // band (no evening); おやすみなさい is a farewell before sleep, never a greeting, and never shows
+    dayParts: { morning: 5, afternoon: 11, night: 18 },
+    weekday: 'short',
   },
 };
 

@@ -1427,6 +1427,8 @@
     "all": "Toutes les automatisations",
     "more": "{count} de plus",
     "less": "Voir moins",
+    "on_of": "{on} sur {count} allumées",
+    "on_of_short": "{on}/{count} allumées",
     "empty": "Aucune automatisation",
     "empty_hint": "Touchez + pour ajouter un horaire",
     "empty_for": "Rien n’est encore prévu pour {name}",

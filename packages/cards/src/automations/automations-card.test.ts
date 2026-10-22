@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HassEntity, HomeAssistant } from '@fluvy/core';
+import { ensureLanguage, localize, type HassEntity, type HomeAssistant } from '@fluvy/core';
 import { glyph, type GlyphName } from '@fluvy/ui';
 import { render } from 'lit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -415,6 +415,22 @@ describe('the automations card', () => {
       expect(headSub(card)).toBe('1 of 2 on');
       expect(card.shadowRoot!.querySelector('.fv-card__head .fv-round')).toBeNull();
       expect(fixture.callApi).not.toHaveBeenCalled();
+    });
+
+    it('counts its automations in their own words, not the devices’ (Japanese 件, where a device is 台)', async () => {
+      await ensureLanguage('ja');
+      const fixture = house();
+      const hass = {
+        ...fixture.hass,
+        language: 'ja',
+        locale: { ...fixture.hass.locale, language: 'ja' },
+      };
+      const card = await mount(
+        { targets: ['light.kitchen'], show_next: false },
+        { ...fixture, hass },
+      );
+      expect(headSub(card)).toBe('2件中1件がオン');
+      expect(localize(hass, 'common.on_of', { on: 1, count: 2 })).toBe('2台中1台がオン');
     });
 
     it('says the lamp is not found, its `+` there and still, when the house has none of the targets', async () => {

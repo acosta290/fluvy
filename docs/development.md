@@ -69,7 +69,7 @@ in `tools/docs` holds this table to it):
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 32 KB | the lock, the alarm and its keypad, the camera, the printer, the job's times |
-| `appliances` | 53 KB | the appliances family and its English |
+| `appliances` | 54 KB | the appliances family and its English |
 | `appliance-art` | 32 KB | the appliances' product drawings |
 | `automations` | 20 KB | the automations card, the schedule model and its store |
 | `automations-sheet` | 16 KB | the schedule sheet |
@@ -249,7 +249,7 @@ rewrites it from what the run saw, keeping the reasons (a new entry's is `triage
 ### The facts guard
 
 `tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "fifty-five cards", "fifteen
-palettes", "five automatic dashboards", "eight languages", "five tabs", in any case, in words or in digits — in the
+palettes", "five automatic dashboards", "nine languages", "five tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;
 a source comment's count of cards too. It holds the every-page budget above to `finish.mjs` and the table of scripts

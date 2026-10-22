@@ -1427,6 +1427,8 @@
     "all": "Alle automatiseringen",
     "more": "{count} meer",
     "less": "Minder tonen",
+    "on_of": "{on} van {count} aan",
+    "on_of_short": "{on}/{count} aan",
     "empty": "Geen automatiseringen",
     "empty_hint": "Tik op + om een schema toe te voegen",
     "empty_for": "Nog niets gepland voor {name}",

@@ -14,8 +14,14 @@ export function counted(
     : localize(hass, 'common.devices', { count: ids.length });
 }
 
-/** "2 of 4 on" in its shorter forms, longest first ("2/4 on", then "2/4"): a line too narrow for the words keeps the count. */
-export const onOfShort = (hass: HomeAssistant | undefined, on: number, count: number): string[] => [
-  localize(hass, 'common.on_of_short', { on, count }),
-  `${on}/${count}`,
-];
+/**
+ * "2 of 4 on" in its shorter forms, longest first ("2/4 on", then "2/4"): a line too narrow for the words keeps the
+ * count. Devices count in the shared words; a card that counts something else says its own (the automations card,
+ * whose words a language may count with another word: Japanese 件, where a device is 台).
+ */
+export const onOfShort = (
+  hass: HomeAssistant | undefined,
+  on: number,
+  count: number,
+  said = localize(hass, 'common.on_of_short', { on, count }),
+): string[] => [said, `${on}/${count}`];

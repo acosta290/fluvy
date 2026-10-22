@@ -24,9 +24,14 @@ const PAD = 4;
 const GAP = 4;
 const MARGIN = 16;
 const MIN_WIDTH = 192;
-/** Every row up to nine is shown whole; from ten, eight and a half — the cut row says there is more. */
+/**
+ * Every row up to nine is shown whole; from ten, eight rows and 24 of the ninth — the cut row says there is more, and
+ * the menu stays on the 4 grid (half a row would not: the language menu has ten rows since Japanese).
+ */
 const MAX_ROWS = 9;
-const capRows = (count: number): number => (count <= MAX_ROWS ? count : MAX_ROWS - 0.5);
+const CUT = 24;
+const capHeight = (count: number): number =>
+  count <= MAX_ROWS ? ROW * count : ROW * (MAX_ROWS - 1) + CUT;
 const LEAVE_MS = 160;
 /** Letters typed closer than this spell one word. */
 const TYPE_AHEAD_MS = 500;
@@ -206,7 +211,7 @@ export class FluvySelect extends LitElement {
       width: visual.width / zoom,
     };
     const viewport = { width: window.innerWidth / zoom, height: window.innerHeight / zoom };
-    const wanted = PAD * 2 + ROW * capRows(Math.max(1, this.options.length));
+    const wanted = PAD * 2 + capHeight(Math.max(1, this.options.length));
     const below = viewport.height - MARGIN - (rect.bottom + GAP);
     const above = rect.top - GAP - MARGIN;
     const placement = wanted <= below || below >= above ? 'below' : 'above';

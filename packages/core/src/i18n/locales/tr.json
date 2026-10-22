@@ -1427,6 +1427,8 @@
     "all": "Tüm otomasyonlar",
     "more": "{count} daha",
     "less": "Daha az göster",
+    "on_of": "{on}/{count} açık",
+    "on_of_short": "{on}/{count} açık",
     "empty": "Otomasyon yok",
     "empty_hint": "Zamanlama eklemek için + öğesine dokun",
     "empty_for": "{name} için henüz bir şey planlanmadı",

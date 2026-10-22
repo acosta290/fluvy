@@ -252,6 +252,37 @@ const tr: Table = {
     'Otomatik panel Home Assistant içinde kurulur; Paneller sekmesi onun ön izlemesini gösterir',
 } as const;
 
+const ja: Table = {
+  'brand.sub': 'ライブデモ',
+  'family.home': 'ホーム',
+  'family.devices': 'デバイス',
+  'family.climate': '空調',
+  'family.energy': 'エネルギー',
+  'family.media': 'メディア',
+  'family.time': '時間',
+  'family.helpers': 'ヘルパー',
+  'page.panel': '設定',
+  'page.activity': 'アクティビティ',
+  'page.history': '履歴',
+  'mode.light': 'ライト',
+  'mode.dark': 'ダーク',
+  'device.phone': 'スマートフォン',
+  'device.phone-l': '大きなスマートフォン',
+  'device.tablet': 'タブレット',
+  'device.desktop': 'デスクトップ',
+  'palette.title': 'パレット',
+  'palette.custom': '設定パネルで自分のアクセントカラーを',
+  'links.install': 'インストール',
+  'links.github': 'GitHub',
+  'banner.text':
+    '仮想の家: ある木曜日の夜、Martaのアパート。ここにあるカード、ページ、設定はすべて本物です。Home Assistantの代わりに、サービス呼び出しの140 ms後に状態を変える小さな代役が動いています。何も接続されていません。',
+  'banner.ok': 'わかりました',
+  'notice.more_info': 'Home Assistantで{entity}の詳細を開きます',
+  'notice.navigate': 'Home Assistantで{path}を開きます',
+  'notice.auto':
+    '自動ダッシュボードはHome Assistantの中で組み立てられます。ダッシュボードタブにはそのプレビューが表示されます',
+} as const;
+
 const TABLES: Readonly<Record<LanguageCode, Table>> = {
   en,
   es,
@@ -261,6 +292,7 @@ const TABLES: Readonly<Record<LanguageCode, Table>> = {
   it,
   'pt-BR': ptBR,
   tr,
+  ja,
 };
 
 /** A word of the demo in `language`. */

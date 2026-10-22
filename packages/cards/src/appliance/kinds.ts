@@ -6,6 +6,7 @@ import { candidatesOf, entriesOf, knownPlatform, roleOf, type House } from './ro
 import type { ApplianceStep } from './status.js';
 import { KIND_WORDS, NOT_AN_APPLIANCE } from './words.generated.js';
 import { celsius } from './zones.js';
+import { says, type Rules } from '../shared/words.js';
 
 /*
  * What an appliance is. The card's own `kind` first; then what the integration says outright — Miele's model is the
@@ -13,9 +14,10 @@ import { celsius } from './zones.js';
  * (DEVICE_WASHER)"), and a WashTower is two devices named "<name> washer" and "<name> dryer"; then the keys only one
  * kind has (salt is a dishwasher's, i-Dos a washer's, a cavity's temperature an oven's, a setpoint that tops out below
  * 30 °C a compartment's; what LG's status can say — spinning, night dry, preheating — and what its older integration
- * writes in the device sensor's attributes); then the words of its name in any of the eight languages. Some things
- * are never an appliance, whatever they say: a vacuum (Home Connect's robot has no vacuum entity, only its keys), a
- * charger, a 3D printer, and — until 1.10 — a warming drawer, LG's Styler and its kimchi fridge.
+ * writes in the device sensor's attributes); then the words of its name in any of the nine languages, the longest of
+ * words that overlap winning (`shared/words.ts`: オーブントースター is a toaster, not an oven). Some things are never
+ * an appliance, whatever they say: a vacuum (Home Connect's robot has no vacuum entity, only its keys), a charger, a
+ * 3D printer, and — until 1.10 — a warming drawer, LG's Styler and its kimchi fridge.
  */
 
 export type ApplianceKind =
@@ -354,17 +356,38 @@ function byKeys(signals: KindSignals): KindVerdict | undefined {
   }
 }
 
-/** A name as the words read it: lower case, its accents taken off ("Kühlschrank" is "kuhlschrank"). */
+/**
+ * A name as the words read it (`plain` in tools/i18n/src/build.ts, the same): lower case, in ordinary width, its
+ * accents taken off ("Kühlschrank" is "kuhlschrank", "ＬＥＤ" is "led", half-width "ｶﾞﾚｰｼﾞ" is "ガレージ"); a kana keeps
+ * its voicing mark (が is not か) and is composed again.
+ */
 export function plain(text: string): string {
   return text
+    .normalize('NFKC')
     .normalize('NFD')
-    .replace(/\p{M}/gu, '')
+    .replace(/(?![\u3099\u309a])\p{M}/gu, '')
+    .normalize('NFC')
     .replace(/ı/g, 'i')
     .replace(/ß/g, 'ss')
     .toLowerCase();
 }
 
-/** By the words of its names (its own and its model) in any of the eight languages. */
+/**
+ * What a name says an appliance is, or that it is none (a vacuum, a hair dryer, a charger): the classes a plain name
+ * is read among, what is never one first, then the kinds in their order (`tools/i18n/src/build.ts` KINDS). The switch
+ * question reads them as one list beside a light's words (`strategy/home-registry.ts`); `byWords` asks `never` alone,
+ * first.
+ */
+export const APPLIANCE_WORDS: Rules<ApplianceKind | 'never'> = [
+  ['never', NOT_AN_APPLIANCE],
+  ...KIND_WORDS,
+];
+
+/**
+ * By the words of its names (its own and its model) in any of the nine languages. A word of what is never an
+ * appliance anywhere in them says none, before any kind is weighed against it: a longer kind's word around it does
+ * not make it one (全自動洗濯物たたみ機 folds the laundry, 洗濯物, and washes nothing, though 全自動洗濯 is a washer's word).
+ */
 export function byWords(
   ...names: ReadonlyArray<string | null | undefined>
 ): KindVerdict | undefined {
@@ -374,8 +397,8 @@ export function byWords(
     .join(' | ');
   if (!text) return undefined;
   if (NOT_AN_APPLIANCE.test(text)) return { excluded: 'name' };
-  const found = KIND_WORDS.find(([, pattern]) => pattern.test(text));
-  return found ? { kind: found[0], by: 'words' } : undefined;
+  const said = says(text, KIND_WORDS);
+  return said ? { kind: said, by: 'words' } : undefined;
 }
 
 /**

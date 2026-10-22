@@ -7,6 +7,7 @@ import {
   speaks,
   type HomeAssistant,
 } from '@fluvy/core';
+import { withUnit } from '../shared/duration.js';
 
 /**
  * The value of a date/time helper. `input_datetime`, `date` and `time` hold wall-clock values with no
@@ -197,7 +198,13 @@ export function durationShort(
         ? [Math.round(minutes / 60), 'hour']
         : [Math.round(minutes / 1440), 'day'];
   if (speaks(languageOf(hass)))
-    return `${value} ${localize(hass, unit === 'minute' ? 'time.unit_min' : unit === 'hour' ? 'time.unit_h' : 'time.unit_d')}`;
+    return withUnit(
+      value,
+      localize(
+        hass,
+        unit === 'minute' ? 'time.unit_min' : unit === 'hour' ? 'time.unit_h' : 'time.unit_d',
+      ),
+    );
   try {
     return new Intl.NumberFormat(language(hass), {
       style: 'unit',

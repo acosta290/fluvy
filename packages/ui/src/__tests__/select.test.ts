@@ -227,6 +227,18 @@ describe('the dropdown', () => {
     expect(menu()!.style.getPropertyValue('--fv-menu-h')).toBe('360px'); // 8 + 8 × 44
     expect(menu()!.dataset['placement']).toBe('below');
     await key('Escape');
+    // ten rows: eight whole and 24 of the ninth, on the 4 grid, the cut row saying there is more
+    node.options = [
+      ...LANGUAGES,
+      { value: 'tr', label: 'Türkçe', hint: 'Turkish' },
+      { value: 'ja', label: '日本語', hint: 'Japanese' },
+    ];
+    await node.updateComplete;
+    await key('ArrowDown');
+    expect(menu()!.style.getPropertyValue('--fv-menu-h')).toBe('384px'); // 8 + 8 × 44 + 24
+    await key('Escape');
+    node.options = LANGUAGES;
+    await node.updateComplete;
     // eight rows are 360 tall: from 700 down there is no room, so the menu opens over the field
     field().getBoundingClientRect = () => box(700);
     await key('ArrowDown');

@@ -2,7 +2,9 @@
 import { describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
 import '../index.js';
+import { findEnergyRoles } from './energy-roles.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
+import { HomeRegistry } from './home-registry.js';
 import {
   hcCoffee,
   hcDishwasher,
@@ -40,6 +42,165 @@ const entity = (
 
 const types = (cards: readonly { type: string }[]): string[] =>
   cards.map((c) => c.type.replace('custom:fluvy-', '').replace('-card', ''));
+
+describe('custom:fluvy-home strategy — a house named in Japanese', () => {
+  it('reads a switch as a light by its kana or kanji, a garden as outdoors, a full-width name in ordinary width', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.ribingu_no_denki', 'on', { friendly_name: 'リビングの電気' }),
+        entity('switch.shinshitsu', 'off', { friendly_name: '寝室の照明' }),
+        entity('switch.niwa', 'off', { friendly_name: '庭のライト' }),
+        entity('switch.led_tape', 'off', { friendly_name: 'ＬＥＤ テープ' }),
+        entity('switch.denki_ketoru', 'off', { friendly_name: '電気ケトル' }),
+        entity('switch.despot', 'off', { friendly_name: 'Despot' }),
+      ]),
+    );
+    const { lights } = registry;
+    for (const id of [
+      'switch.ribingu_no_denki',
+      'switch.shinshitsu',
+      'switch.niwa',
+      'switch.led_tape',
+    ])
+      expect(lights, id).toContain(id);
+    for (const id of ['switch.denki_ketoru', 'switch.despot']) expect(lights, id).not.toContain(id);
+    expect(registry.outdoor('switch.niwa')).toBe(true);
+    expect(registry.outdoor('switch.shinshitsu')).toBe(false);
+  });
+
+  it('reads a switch among a light’s words and the appliances’, the longest of words that overlap winning, and a place against the house’s', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.denki_potto', 'off', { friendly_name: '電気ポット' }),
+        entity('switch.oobun_toosutaa', 'off', { friendly_name: 'オーブントースター' }),
+        entity('switch.gasu_renji', 'off', { friendly_name: 'ガスレンジ' }),
+        entity('switch.niwa_no_raito', 'off', { friendly_name: '庭のライト' }),
+        entity('switch.katei_konsento', 'off', { friendly_name: '家庭用コンセント' }),
+        entity('switch.wasserkocher', 'off', { friendly_name: 'Wasserkocher Küche' }),
+        entity('switch.backofen_lampe', 'off', { friendly_name: 'Lampe Backofen' }),
+      ]),
+    );
+    const { lights, appliances } = registry;
+    // a kettle, a toaster, a hob on their plugs: the appliance's word holds the light's 電気, or stands alone
+    for (const id of [
+      'switch.denki_potto',
+      'switch.oobun_toosutaa',
+      'switch.gasu_renji',
+      'switch.wasserkocher',
+    ]) {
+      expect(lights, id).not.toContain(id);
+      expect(appliances, id).toContain(id);
+    }
+    // a light's word that stands apart from an appliance's keeps the light (the light's words are listed first)
+    for (const id of ['switch.niwa_no_raito', 'switch.backofen_lampe'])
+      expect(lights, id).toContain(id);
+    // 家庭 (the household) holds no garden 庭; 庭のライト is in the garden
+    expect(registry.outdoor('switch.katei_konsento')).toBe(false);
+    expect(registry.outdoor('switch.niwa_no_raito')).toBe(true);
+  });
+
+  it('names its energy readings’ roles: the sun, what is bought and sold, the battery, the charger, the house', () => {
+    const power = (id: string, friendly_name: string) =>
+      [
+        id,
+        {
+          entity_id: id,
+          state: '100',
+          attributes: { friendly_name, device_class: 'power', unit_of_measurement: 'W' },
+          last_changed: '',
+          last_updated: '',
+          context: { id: '', parent_id: null, user_id: null },
+        },
+      ] as const;
+    const registry = new HomeRegistry({
+      states: Object.fromEntries([
+        power('sensor.taiyoukou', '太陽光発電 電力'),
+        power('sensor.kaiden', '買電 電力'),
+        power('sensor.baiden', '売電 電力'),
+        power('sensor.chikudenchi', '蓄電池 電力'),
+        power('sensor.ev_juudenki', 'EV充電器 電力'),
+        power('sensor.katei', '家庭の消費電力'),
+      ]),
+      entities: {},
+      devices: {},
+      areas: {},
+      language: 'ja',
+    } as never);
+    expect(findEnergyRoles(registry, null)).toMatchObject({
+      solarPower: 'sensor.taiyoukou',
+      gridPower: 'sensor.kaiden',
+      gridImport: 'sensor.kaiden',
+      gridExport: 'sensor.baiden',
+      batteryPower: 'sensor.chikudenchi',
+      charger: 'sensor.ev_juudenki',
+      homePower: 'sensor.katei',
+    });
+  });
+});
+
+describe('custom:fluvy-home strategy — a place named by its device, no separator left hanging', () => {
+  /** A house of readings, each on a device of its own name, in no area: the place is the device's name. */
+  const readings = (devices: Record<string, string>, names: Record<string, string> = {}) =>
+    new HomeRegistry({
+      states: Object.fromEntries(
+        Object.keys(devices).map((id) => [
+          id,
+          {
+            entity_id: id,
+            state: '21',
+            attributes: { friendly_name: names[id] ?? devices[id], device_class: 'temperature' },
+            last_changed: '',
+            last_updated: '',
+            context: { id: '', parent_id: null, user_id: null },
+          },
+        ]),
+      ),
+      entities: Object.fromEntries(
+        Object.keys(devices).map((id) => [id, { entity_id: id, device_id: `d.${id}` }]),
+      ),
+      devices: Object.fromEntries(
+        Object.entries(devices).map(([id, name]) => [`d.${id}`, { id: `d.${id}`, name }]),
+      ),
+      areas: {},
+      language: 'ja',
+    } as never);
+
+  it('takes the separators the sensor words leave at its ends with them, in Japanese and in Latin letters', () => {
+    const registry = readings({
+      'sensor.kitchen': 'キッチン温度・湿度',
+      'sensor.bedroom': '寝室：温度',
+      'sensor.study': '書斎 ／ 温度計',
+      'sensor.hall': 'Hall · Temperature',
+      'sensor.attic': 'Attic temperature',
+      'sensor.porch': 'Temperature – Porch',
+    });
+    expect(registry.placeName('sensor.kitchen')).toBe('キッチン');
+    expect(registry.placeName('sensor.bedroom')).toBe('寝室');
+    expect(registry.placeName('sensor.study')).toBe('書斎');
+    expect(registry.placeName('sensor.hall')).toBe('Hall');
+    expect(registry.placeName('sensor.attic')).toBe('Attic');
+    expect(registry.placeName('sensor.porch')).toBe('Porch');
+  });
+
+  it('keeps a separator inside the place, and the entity’s name for a device named only by sensor words', () => {
+    const registry = readings(
+      { 'sensor.loft': 'Loft · Nord Temperatur', 'sensor.bare': '温湿度センサー' },
+      { 'sensor.bare': '温湿度センサー 書斎' },
+    );
+    expect(registry.placeName('sensor.loft')).toBe('Loft · Nord');
+    expect(registry.placeName('sensor.bare')).toBe(registry.displayName('sensor.bare'));
+    expect(registry.placeName('sensor.bare')).toBe('書斎');
+  });
+
+  it('reads an entity’s own name without the device’s in front of it, nor a separator at either end', () => {
+    const registry = readings(
+      { 'sensor.a': 'Kitchen sensor', 'sensor.b': '寝室センサー' },
+      { 'sensor.a': 'Kitchen sensor: Temperature', 'sensor.b': '寝室センサー／温度 ・' },
+    );
+    expect(registry.ownName('sensor.a')).toBe('Temperature');
+    expect(registry.ownName('sensor.b')).toBe('温度');
+  });
+});
 
 describe("custom:fluvy-home strategy — the grid meter's sign", () => {
   /** A grid meter found by its words, negative while the house imports at night. */
