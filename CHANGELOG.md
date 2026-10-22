@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-10-22
+
 ### Visible on upgrade
 
 - A light drawn in its bulb's colour shows a white by its warmth: a lit white or colour-temperature bulb takes its
