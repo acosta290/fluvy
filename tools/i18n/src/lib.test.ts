@@ -1,7 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { APPLIANCE_OUT, CJK, generate, generateAppliance, OUT, pattern, plain } from './build.js';
+import {
+  APPLIANCE_OUT,
+  CJK,
+  generate,
+  generateAppliance,
+  ordered,
+  OUT,
+  pattern,
+  plain,
+} from './build.js';
 import {
   catalogueCodes,
   compare,
@@ -93,9 +102,16 @@ describe('the catalogues on disk', () => {
 });
 
 describe('the generated patterns', () => {
+  /** The stem a pattern finds in a name: the first group that takes part in the match. */
+  const stem = (source: string, flags: string, name: string): string | undefined =>
+    new RegExp(source, flags)
+      .exec(name)
+      ?.slice(1)
+      .find((group) => group !== undefined);
+
   it('match a Latin stem in its shape and a kana or kanji stem as a substring, Japanese writing no spaces', () => {
-    expect(pattern(['light', 'spot', '照明', 'ライト'], 'word')).toBe(
-      '(?:^|[\\s_.-])(light|spot)(?:[\\s_.-]|$)|(照明|ライト)',
+    expect(pattern(['light', 'spot', '照明', 'ライト', 'ライトスタンド'], 'word')).toBe(
+      '(?:^|[\\s_.-])(light|spot)(?:[\\s_.-]|$)|(照明|ライトスタンド|ライト)',
     );
     const light = new RegExp(pattern(['light', 'spot', '照明', 'ライト', '電気'], 'word'), 'i');
     for (const name of [
@@ -124,16 +140,40 @@ describe('the generated patterns', () => {
         .replace(/\s{2,}/g, ' ')
         .trim(),
     ).toBe('Living room');
-    // a substring shape holds both as they are
-    expect(pattern(['washer', '洗濯機'], 'substring')).toBe('(washer|洗濯機)');
+    // a substring shape holds both in one alternation, a stem after the longer ones that begin with it
+    expect(pattern(['washer', '洗濯', '洗濯機'], 'substring')).toBe('(washer|洗濯機|洗濯)');
+  });
+
+  it('try a stem after every longer stem that begins with it: a prefix never hides the longer stem', () => {
+    // as the words list them, the shorter first: in kana and kanji (every shape a substring) and in a substring shape
+    expect(stem(pattern(['温度', '湿度', '温度計'], 'words'), 'gi', 'リビングの温度計')).toBe(
+      '温度計',
+    );
+    expect(stem(pattern(['温度', '湿度', '温度計'], 'words'), 'gi', 'リビングの温度')).toBe('温度');
+    const fridge = pattern(['frigo', 'refrigerateur', 'frigorifero'], 'substring');
+    expect(stem(fridge, 'i', 'frigorifero')).toBe('frigorifero');
+    expect(stem(fridge, 'i', 'frigo cuisine')).toBe('frigo');
+    // a Latin stem begins one in kanji, in the one alternation of a substring shape
+    expect(stem(pattern(['ev', 'ev充電'], 'substring'), 'i', 'ev充電器')).toBe('ev充電');
+    // stable: a stem waits only for the longer stems that begin with it, the listed order holds otherwise
+    expect(ordered(['温度', '湿度', '温度計', '温'])).toEqual(['湿度', '温度計', '温度', '温']);
+    // a stem of its own regex is longer by the letters every match of it begins with
+    expect(ordered(['secadora', 'dryer', 'secadora[ _-]de[ _-]roupas'])).toEqual([
+      'dryer',
+      'secadora[ _-]de[ _-]roupas',
+      'secadora',
+    ]);
+    // and never the shorter, nor longer by a letter it may go without (`所?`): these keep their places
+    for (const stems of [
+      ['kanso\\b', 'kansouki'],
+      ['(?<!ガス)レンジ', 'レンジ'],
+      ['pv\\b', 'pv'],
+      ['洗面所', '洗面所?(?:台|ボウル)'],
+    ])
+      expect(ordered(stems), stems.join(' ')).toEqual(stems);
   });
 
   it('capture the stem found as the first group that takes part in the match, never a separator around it', () => {
-    const stem = (source: string, flags: string, name: string): string | undefined =>
-      new RegExp(source, flags)
-        .exec(name)
-        ?.slice(1)
-        .find((group) => group !== undefined);
     const light = pattern(['light', 'spot', '照明', '電気'], 'word');
     expect(stem(light, 'i', 'switch.kitchen_light Kitchen light')).toBe('light');
     expect(stem(light, 'i', 'リビングの電気')).toBe('電気');

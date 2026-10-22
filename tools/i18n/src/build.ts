@@ -23,7 +23,9 @@
  * classes of words compete for one name (a light's against the appliances', the kinds' against each other), the
  * matcher (`packages/cards/src/shared/words.ts`) reads that group: of two words that overlap in the name the longer
  * wins, whatever the lists' order (電気ケトル is a kettle, not the light 電気; ガスレンジ a hob, not the microwave レンジ),
- * so a stem needs no lookaround against a longer word another list carries.
+ * so a stem needs no lookaround against a longer word another list carries. Inside one list the order is the build's:
+ * a stem is tried after every longer stem that begins with it (温度計 before 温度, "frigorifero" before "frigo"), so
+ * stems that nest need no care in the words; a stem of its own regex keeps its place.
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -83,9 +85,49 @@ const KINDS = [
   'blender',
 ] as const;
 
-/** A stem as a regex fragment: escaped, unless it carries regex of its own (a class, a boundary, an anchor, a lookaround). */
+/** A stem that carries regex of its own (a class, a boundary, an anchor, a lookaround); any other is its letters. */
+const OWN_REGEX = /[\\[\]$^]|\(\?/;
+
+/** A stem as a regex fragment: escaped, unless it carries regex of its own. */
 const fragment = (stem: string): string =>
-  /[\\[\]$^]|\(\?/.test(stem) ? stem : stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  OWN_REGEX.test(stem) ? stem : stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The letters every match of a stem begins with: a plain stem's are the stem; a stem of its own regex's, those before
+ * its first special character, without one that a `?`, `*` or `{` after it makes optional (`secadora[ _-]de[ _-]roupas`
+ * begins with "secadora"; `(?<!ガス)レンジ` with none that it is sure of).
+ */
+function lead(stem: string): string {
+  if (!OWN_REGEX.test(stem)) return stem;
+  const at = stem.search(/[\\()[\]?*+|^${.]/);
+  return stem.slice(0, /[?*{]/.test(stem.charAt(at)) ? Math.max(at - 1, 0) : at);
+}
+
+/**
+ * Stems in the order an alternation tries them. An alternation takes the first of its stems that matches where a
+ * match begins, so a stem tried before a longer one that begins with it would hide it (温度 before 温度計 leaves 計
+ * behind; "frigo" before "frigorifero" reads a fridge by five letters of eleven): each plain stem comes after every
+ * longer stem that begins with it (`secadora` after `secadora[ _-]de[ _-]roupas`, too), and otherwise the listed order
+ * holds — among the stems of their own regex always, since one is never taken for the shorter. Stable: the stems are
+ * taken in their listed order, each as soon as every stem it waits for is in.
+ */
+export function ordered(stems: readonly string[]): string[] {
+  const waits = stems.map((stem) =>
+    OWN_REGEX.test(stem)
+      ? []
+      : stems.flatMap((other, at) =>
+          other.length > stem.length && lead(other).startsWith(stem) ? [at] : [],
+        ),
+  );
+  const taken = new Set<number>();
+  while (taken.size < stems.length) {
+    const next = stems.findIndex(
+      (_, at) => !taken.has(at) && waits[at]!.every((other) => taken.has(other)),
+    );
+    taken.add(next);
+  }
+  return [...taken].map((at) => stems[at]!);
+}
 
 /** A character of a stem written in kana or kanji: Japanese has no word boundaries, so such a stem is a substring whatever the shape. */
 export const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
@@ -94,19 +136,18 @@ export const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]
  * A category's regex source: its Latin stems in the category's shape, its kana and kanji stems as substrings after
  * them (`(?:^|[\s_.-])(light|lamp)(?:[\s_.-]|$)|(照明|ライト)`); a whole-name match takes both scripts alike. Each
  * script's alternation is a capture group, the separators around a word are not: the first group that takes part in
- * a match is the stem found, which the matcher measures.
+ * a match is the stem found, which the matcher measures. Each alternation is `ordered`: no stem hides a longer one.
  */
 export function pattern(stems: readonly string[], shape: Shape): string {
   const unique = [...new Set(stems)];
-  const worded = unique
-    .filter((stem) => !CJK.test(stem))
+  const latin = ordered(unique.filter((stem) => !CJK.test(stem)));
+  const kana = ordered(unique.filter((stem) => CJK.test(stem)));
+  const worded = latin.map(fragment).join('|');
+  const cjk = kana.map(fragment).join('|');
+  // one alternation of both scripts: a Latin stem may begin one in kana or kanji ("ev" and "ev充電")
+  const both = ordered([...latin, ...kana])
     .map(fragment)
     .join('|');
-  const cjk = unique
-    .filter((stem) => CJK.test(stem))
-    .map(fragment)
-    .join('|');
-  const both = [worded, cjk].filter(Boolean).join('|');
   switch (shape) {
     case 'word':
       return [worded && `(?:^|[\\s_.-])(${worded})(?:[\\s_.-]|$)`, cjk && `(${cjk})`]
@@ -183,7 +224,7 @@ export async function generateAppliance(): Promise<string> {
   return [
     `// Generated by tools/i18n/src/build.ts from every language's naming words (packages/core/src/i18n/words/) — do not edit; run \`pnpm i18n build\`.`,
     '',
-    `/** What a name says is never an appliance: ${never.length} stems in ${codes.join(', ')} (a charger's are the strategy's); it competes with the kinds as one more class. */`,
+    `/** What a name says is never an appliance: ${never.length} stems in ${codes.join(', ')} (a charger's are the strategy's); an appliance's name with one of them is none, whatever kind's word overlaps it, and a switch's weighs them with the kinds. */`,
     `export const NOT_AN_APPLIANCE = ${literal(pattern(never, 'substring'), 'i')};`,
     '',
     `/** The kind a name says, in ${codes.join(', ')}: of two kinds whose words overlap in a name the longer wins, of two that stand apart the first listed (the more particular first). */`,
