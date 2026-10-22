@@ -90,6 +90,12 @@ const PLACE_WORDS: Rules<'outdoor' | 'home'> = [
   ['outdoor', OUTDOOR],
   ['home', HOME_POWER],
 ];
+/**
+ * The separators and spaces at a name's ends, once words are taken out of it: the device's name in front of its
+ * entity's ("Kitchen sensor: Temperature"), a reading's words after its place ("Kitchen · Temperature", 「寝室：温度」,
+ * 「キッチン温度・湿度」, whose 温度 and 湿度 leave 「キッチン ・」).
+ */
+const LOOSE_ENDS = /^[\s・：:·\-–—/／|]+|[\s・：:·\-–—/／|]+$/g;
 
 export type Registry = Pick<
   HomeAssistant,
@@ -172,7 +178,7 @@ export class HomeRegistry {
     const device = this.deviceName(id);
     const own =
       device && full.toLowerCase().startsWith(device.toLowerCase())
-        ? full.slice(device.length).replace(/^[\s:·-]+/, '')
+        ? full.slice(device.length).replace(LOOSE_ENDS, '')
         : full;
     return own || full;
   }
@@ -185,14 +191,17 @@ export class HomeRegistry {
   deviceLabel(id: string): string {
     return this.deviceName(id) ?? this.displayName(id);
   }
-  /** Where a reading is: the area, else the device's name without the sensor words, else the entity's name. */
+  /**
+   * Where a reading is: the area, else the device's name without the sensor words (and the separators they leave at
+   * its ends: 「寝室：温度」 is 寝室), else the entity's name.
+   */
   placeName(id: string): string {
     const area = this.areaName(this.areaOf(id));
     if (area) return area;
     const device = (this.deviceName(id) ?? '')
       .replace(PLACE_NOISE, ' ')
       .replace(/\s{2,}/g, ' ')
-      .trim();
+      .replace(LOOSE_ENDS, '');
     return device || this.displayName(id);
   }
   /** `name` for a card only when it improves on what the card would show by itself. */

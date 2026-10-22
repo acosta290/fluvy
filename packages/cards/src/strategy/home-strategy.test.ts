@@ -138,6 +138,70 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
   });
 });
 
+describe('custom:fluvy-home strategy — a place named by its device, no separator left hanging', () => {
+  /** A house of readings, each on a device of its own name, in no area: the place is the device's name. */
+  const readings = (devices: Record<string, string>, names: Record<string, string> = {}) =>
+    new HomeRegistry({
+      states: Object.fromEntries(
+        Object.keys(devices).map((id) => [
+          id,
+          {
+            entity_id: id,
+            state: '21',
+            attributes: { friendly_name: names[id] ?? devices[id], device_class: 'temperature' },
+            last_changed: '',
+            last_updated: '',
+            context: { id: '', parent_id: null, user_id: null },
+          },
+        ]),
+      ),
+      entities: Object.fromEntries(
+        Object.keys(devices).map((id) => [id, { entity_id: id, device_id: `d.${id}` }]),
+      ),
+      devices: Object.fromEntries(
+        Object.entries(devices).map(([id, name]) => [`d.${id}`, { id: `d.${id}`, name }]),
+      ),
+      areas: {},
+      language: 'ja',
+    } as never);
+
+  it('takes the separators the sensor words leave at its ends with them, in Japanese and in Latin letters', () => {
+    const registry = readings({
+      'sensor.kitchen': 'キッチン温度・湿度',
+      'sensor.bedroom': '寝室：温度',
+      'sensor.study': '書斎 ／ 温度計',
+      'sensor.hall': 'Hall · Temperature',
+      'sensor.attic': 'Attic temperature',
+      'sensor.porch': 'Temperature – Porch',
+    });
+    expect(registry.placeName('sensor.kitchen')).toBe('キッチン');
+    expect(registry.placeName('sensor.bedroom')).toBe('寝室');
+    expect(registry.placeName('sensor.study')).toBe('書斎');
+    expect(registry.placeName('sensor.hall')).toBe('Hall');
+    expect(registry.placeName('sensor.attic')).toBe('Attic');
+    expect(registry.placeName('sensor.porch')).toBe('Porch');
+  });
+
+  it('keeps a separator inside the place, and the entity’s name for a device named only by sensor words', () => {
+    const registry = readings(
+      { 'sensor.loft': 'Loft · Nord Temperatur', 'sensor.bare': '温湿度センサー' },
+      { 'sensor.bare': '温湿度センサー 書斎' },
+    );
+    expect(registry.placeName('sensor.loft')).toBe('Loft · Nord');
+    expect(registry.placeName('sensor.bare')).toBe(registry.displayName('sensor.bare'));
+    expect(registry.placeName('sensor.bare')).toBe('書斎');
+  });
+
+  it('reads an entity’s own name without the device’s in front of it, nor a separator at either end', () => {
+    const registry = readings(
+      { 'sensor.a': 'Kitchen sensor', 'sensor.b': '寝室センサー' },
+      { 'sensor.a': 'Kitchen sensor: Temperature', 'sensor.b': '寝室センサー／温度 ・' },
+    );
+    expect(registry.ownName('sensor.a')).toBe('Temperature');
+    expect(registry.ownName('sensor.b')).toBe('温度');
+  });
+});
+
 describe("custom:fluvy-home strategy — the grid meter's sign", () => {
   /** A grid meter found by its words, negative while the house imports at night. */
   const withMeter = (hourly: number) => {
