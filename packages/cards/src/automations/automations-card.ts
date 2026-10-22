@@ -974,9 +974,10 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
       addable && roundFits
         ? round('plus', 'quiet', s(this.hass, 'add'), () => this.add(), !this.canAdd)
         : nothing;
-    // an empty list's head counts nothing (its panel says it): never "0 of 0 on"
+    // an empty list's head counts nothing (its panel says it): never "0 of 0 on". Automations count in their own
+    // words, not the devices' (Japanese 件, not 台)
     const onOf = listedRows.length
-      ? this.t('common.on_of', { on: onCount, count: listedRows.length })
+      ? s(this.hass, 'on_of', { on: onCount, count: listedRows.length })
       : '';
     const fit = (sub: string) =>
       this.headFit.fit({
@@ -984,7 +985,15 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
         title,
         sub,
         // the count keeps its figure where its words would not hold ("1/2")
-        shorter: onOf && sub === onOf ? onOfShort(this.hass, onCount, listedRows.length) : [],
+        shorter:
+          onOf && sub === onOf
+            ? onOfShort(
+                this.hass,
+                onCount,
+                listedRows.length,
+                s(this.hass, 'on_of_short', { on: onCount, count: listedRows.length }),
+              )
+            : [],
         trailing: trailing === nothing ? 0 : 44,
       });
     const next =

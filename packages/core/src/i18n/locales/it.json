@@ -1427,6 +1427,8 @@
     "all": "Tutte le automazioni",
     "more": "{count} in più",
     "less": "Mostra meno",
+    "on_of": "{on} su {count} accesi",
+    "on_of_short": "{on}/{count} accesi",
     "empty": "Nessuna automazione",
     "empty_hint": "Tocca + per aggiungere una programmazione",
     "empty_for": "Ancora niente in programma per {name}",

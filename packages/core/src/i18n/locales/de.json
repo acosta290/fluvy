@@ -1427,6 +1427,8 @@
     "all": "Alle Automationen",
     "more": "{count} weitere",
     "less": "Weniger anzeigen",
+    "on_of": "{on} von {count} an",
+    "on_of_short": "{on}/{count} an",
     "empty": "Keine Automationen",
     "empty_hint": "Tippe auf +, um einen Zeitplan anzulegen",
     "empty_for": "Für {name} ist noch nichts geplant",

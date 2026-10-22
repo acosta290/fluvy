@@ -9,6 +9,8 @@
     "all": "All automations",
     "more": "{count} more",
     "less": "Show less",
+    "on_of": "{on} of {count} on",
+    "on_of_short": "{on}/{count} on",
     "empty": "No automations",
     "empty_hint": "Tap + to add a schedule",
     "empty_for": "Nothing scheduled for {name} yet",
