@@ -221,6 +221,37 @@ const ptBR: Table = {
     'O painel automático é construído dentro do Home Assistant; a aba Painel mostra uma prévia',
 };
 
+const ptPT: Table = {
+  'brand.sub': 'Demonstração ao vivo',
+  'family.home': 'Início',
+  'family.devices': 'Dispositivos',
+  'family.climate': 'Climatização',
+  'family.energy': 'Energia',
+  'family.media': 'Multimédia',
+  'family.time': 'Tempo',
+  'family.helpers': 'Auxiliares',
+  'page.panel': 'Definições',
+  'page.activity': 'Atividade',
+  'page.history': 'Histórico',
+  'mode.light': 'Claro',
+  'mode.dark': 'Escuro',
+  'device.phone': 'Telemóvel',
+  'device.phone-l': 'Telemóvel grande',
+  'device.tablet': 'Tablet',
+  'device.desktop': 'Computador',
+  'palette.title': 'Paleta',
+  'palette.custom': 'A sua cor de destaque, no painel de definições',
+  'links.install': 'Instalar',
+  'links.github': 'GitHub',
+  'banner.text':
+    'Uma casa simulada: o apartamento da Marta, numa quinta-feira à noite. Todos os cartões, páginas e definições são reais; um pequeno simulador substitui o Home Assistant e altera o estado 140 ms após cada chamada de serviço. Nada está ligado.',
+  'banner.ok': 'Percebi',
+  'notice.more_info': 'Abre os detalhes de {entity} no Home Assistant',
+  'notice.navigate': 'Abre {path} no Home Assistant',
+  'notice.auto':
+    'O painel automático é criado no Home Assistant; o separador Painel mostra uma pré-visualização',
+};
+
 const tr: Table = {
   'brand.sub': 'Canlı demo',
   'family.home': 'Ev',
@@ -291,6 +322,7 @@ const TABLES: Readonly<Record<LanguageCode, Table>> = {
   fr,
   it,
   'pt-BR': ptBR,
+  'pt-PT': ptPT,
   tr,
   ja,
 };
