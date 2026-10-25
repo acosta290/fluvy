@@ -355,7 +355,7 @@ const stills = (card) =>
     await page.close();
   }
   check(
-    'cameras: "Live" on one line inside its pill, its dot whole, in all nine languages',
+    'cameras: "Live" on one line inside its pill, its dot whole, in all ten languages',
     pills.every((p) => p.ok),
     JSON.stringify(pills),
   );
