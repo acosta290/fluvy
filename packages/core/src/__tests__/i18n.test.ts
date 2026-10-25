@@ -35,7 +35,7 @@ describe('the language registry', () => {
     expect(resolveLanguage('es-ES')).toBe('es');
     expect(resolveLanguage('pt-BR')).toBe('pt-BR');
     expect(resolveLanguage('pt')).toBe('pt-BR');
-    expect(resolveLanguage('pt-PT')).toBe('pt-BR');
+    expect(resolveLanguage('pt-PT')).toBe('pt-PT');
     expect(resolveLanguage('en-GB')).toBe('en');
     expect(resolveLanguage('zh-Hans')).toBe('en');
     expect(resolveLanguage(undefined)).toBe('en');
