@@ -292,6 +292,7 @@ export const sheet: SheetSpec = {
         {
           type: 'custom:fluvy-energy-flow-card',
           ...house19,
+          title: 'Auto',
           readouts: [
             { entity: 'sensor.fl_self_use', name: 'Self-powered' },
             { entity: 'sensor.fl_exported', name: 'Exported' },
@@ -301,6 +302,7 @@ export const sheet: SheetSpec = {
         {
           type: 'custom:fluvy-energy-flow-card',
           ...house19,
+          title: 'Watts',
           unit: 'W',
           decimals: 0,
           readouts: [
