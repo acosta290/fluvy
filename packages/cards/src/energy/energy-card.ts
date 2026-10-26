@@ -1101,10 +1101,6 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   /**
-   * A legend's figure: the day's energy at rest; while the chart is read, the power then (kW, "—" across a gap) in the
-   * row's one unit and precision (`row`, chosen by the largest figure read).
-   */
-  /**
    * A legend entry's figure in the row's unit and decimals: the power under the cursor while the chart is read (none
    * where the cursor has none), else the day's energy.
    */
