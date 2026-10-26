@@ -57,14 +57,14 @@ export const ROW_KEYS = [
 ] as const;
 
 /**
- * A row's form: the entity, its name and icon, what it says, its colours, its tap; on a card whose lights wear their
- * bulbs' colours (`bulb`), no colour chosen by default.
+ * A row's form: the entity, its name and icon, what it says, its colours, its tap. Its colour has none chosen by
+ * default: a light wears its bulb's on a card that shows them (`bulb`), the row the card's otherwise.
  */
 export const rowSchema = (domains?: readonly string[], bulb = false): HaFormSchemaItem[] => [
   entityField(domains),
   nameIconFields(),
   selectField('secondary', ['area', 'last-changed', 'state', 'none'], { custom: true }),
-  fieldRow(toneField(), accentField('color', { bulb })),
+  fieldRow(toneField(), accentField('color', bulb ? { bulb } : { item: true })),
   actionField(),
 ];
 

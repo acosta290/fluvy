@@ -193,10 +193,10 @@ describe('a light’s own colour in a list: none chosen by default, its bulb’s
         include_none: false,
         include_state: false,
       });
-    // a lock's rows have no bulb: their colour is the palette's accent until one is chosen
-    expect(colourOf(FluvyLockCard).selector?.['ui_color']).toMatchObject({
-      default_color: 'primary',
-    });
+    // a lock's rows have no bulb: none chosen either, the row wearing the card's colour until one is
+    const lock = colourOf(FluvyLockCard);
+    expect(lock.selector?.['ui_color']).toEqual({ include_none: false, include_state: false });
+    expect(lock.helper).toBe('editor.item_color_card_helper');
   });
 
   it('says what the light wears while none is chosen, and writes none', async () => {

@@ -438,4 +438,22 @@ describe('what the editor says under a field', () => {
     );
     expect(itemHelpers({ name: 'name', selector: { text: {} } }, key)).toBeUndefined();
   });
+  it('says a field’s own word where it has one — an item’s colour, what it wears while none is chosen', () => {
+    expect(
+      itemHelpers(
+        { name: 'color', selector: { ui_color: {} }, helper: 'editor.item_color_card_helper' },
+        key,
+      ),
+    ).toBe('Empty: the card’s colour');
+    expect(
+      itemHelpers(
+        { name: 'color', selector: { ui_color: {} }, helper: 'editor.item_color_helper' },
+        key,
+      ),
+    ).toBe('Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s');
+    // a colour with a default of its own (a card's) says nothing: the picker names the default
+    expect(
+      itemHelpers({ name: 'color', selector: { ui_color: { default_color: 'primary' } } }, key),
+    ).toBeUndefined();
+  });
 });

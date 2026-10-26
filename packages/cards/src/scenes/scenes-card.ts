@@ -163,7 +163,7 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
         entityField(DOMAINS),
         nameIconFields(),
         textField('subtitle'),
-        accentField(),
+        accentField('color', { item: true }),
         actionField(),
       ],
     },

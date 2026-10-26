@@ -4,6 +4,7 @@
  * src/panels/lovelace/types.ts, home-assistant-js-websocket) — there is no official npm package.
  * Diff against a newer tag when the floor version moves.
  */
+import type { MessageKey } from '../i18n/catalogue.js';
 
 export interface HassEntityAttributes {
   friendly_name?: string;
@@ -213,6 +214,11 @@ export interface HaFormSchemaItem {
    * house: Fluvy's editor leaves it out while it cannot, and keeps its value. Never handed to `ha-form`.
    */
   when?: (data: Readonly<Record<string, unknown>>, hass?: HomeAssistant) => boolean;
+  /**
+   * The word said under the field where it has one of its own (an item's colour: what it wears while none is
+   * chosen), as a catalogue key. Read by Fluvy's editors; `ha-form` passes it by.
+   */
+  helper?: MessageKey;
 }
 
 export interface LovelaceConfigForm {

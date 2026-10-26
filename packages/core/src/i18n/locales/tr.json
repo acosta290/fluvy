@@ -442,6 +442,7 @@
     "colors": "Hızlı renkler",
     "color_help": "Birini seç ya da Özel renk’i seçip alanından istediğin rengi seç",
     "item_color_helper": "Boşsa, kart gösteriyorsa ışığın ampul rengi, yoksa kartın rengi",
+    "item_color_card_helper": "Boşsa, kartın rengi",
     "rgb": "Herhangi bir renk",
     "swatch_name_help": "Yuvarlağın söylediği; boşsa rengin sözcüğü ya da hex kodu",
     "show_tilt": "Eğimi göster",

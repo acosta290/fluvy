@@ -271,22 +271,32 @@ export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: tone
  * colours where the look reaches the editor, or any colour typed — with the palette's accent as its default. A colour
  * that may be none (`card_color`) is none until one is chosen: the picker then says what the card draws, and offers
  * to clear it. One that follows its entity (`state`: a light card's, its bulb's) says so as Home Assistant's own
- * tile does, State by default. An item's that defaults to its bulb's, else the card's (`bulb`: an item of a card of
- * lights, tiles or rows), shows none chosen, and its helper says what it draws then.
+ * tile does, State by default. An item's has no default of its own — the picker would call the card's colour
+ * "Primary" — and shows none chosen, its helper saying what it wears then: its bulb's where the card shows bulbs'
+ * colours, else the card's (`bulb`: an item of a card of lights, tiles or rows), or the card's alone (`item`: a
+ * scene, a chip, a row of a lock, a camera or an alarm).
  */
 export const accentField = (
   name = 'color',
-  { none = false, state = false, bulb = false } = {},
-): HaFormSchemaItem => ({
-  name,
-  selector: {
-    ui_color: {
-      ...(bulb ? {} : { default_color: none ? 'none' : state ? 'state' : 'primary' }),
-      include_none: none,
-      include_state: state,
+  { none = false, state = false, bulb = false, item = false } = {},
+): HaFormSchemaItem => {
+  const helper = bulb
+    ? 'editor.item_color_helper'
+    : item
+      ? 'editor.item_color_card_helper'
+      : undefined;
+  return {
+    name,
+    selector: {
+      ui_color: {
+        ...(helper ? {} : { default_color: none ? 'none' : state ? 'state' : 'primary' }),
+        include_none: none,
+        include_state: state,
+      },
     },
-  },
-});
+    ...(helper ? { helper } : {}),
+  };
+};
 
 /** A tone and a colour on one row, then the card's own surface colour (`card_color`, none by default). */
 export const colourFields = ({ state = false } = {}): HaFormSchemaItem[] => [

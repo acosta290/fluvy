@@ -190,7 +190,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
         textField('name'),
         fieldRow(iconField(), textField('path')),
         entityField(undefined, 'entity', false),
-        accentField(),
+        accentField('color', { item: true }),
         actionField('action'),
       ],
     },

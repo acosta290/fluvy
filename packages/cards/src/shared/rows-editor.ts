@@ -133,23 +133,19 @@ export const itemLabels: Labeler = formLabels({
   presets: 'editor.presets',
 }).computeLabel;
 
-/** A colour picker with no default of its own (`accentField`'s `bulb`): none chosen, the item wears what it would. */
-const unchosen = (schema: HaFormSchemaItem): boolean => {
-  const picker = schema.selector?.['ui_color'] as { default_color?: string } | undefined;
-  return picker !== undefined && picker.default_color === undefined;
-};
+/** What a field says under itself where it has a word of its own (`helper`: an item's colour, what it wears while none is chosen). */
+const ownHelper = (schema: HaFormSchemaItem): string | undefined =>
+  schema.helper ? editorWord(schema.helper) : undefined;
 
 /**
- * What the editor says under an item's field: a row's second line takes a keyword or a template (its select), or
- * words of the person's own or a template (a text field); a colour none is chosen for by default, what the item wears
- * while none is.
+ * What the editor says under an item's field: its own word where it has one; a row's second line takes a keyword or
+ * a template (its select), or words of the person's own or a template (a text field).
  */
 export const itemHelpers: Labeler = (schema) =>
-  schema.name === 'secondary'
+  ownHelper(schema) ??
+  (schema.name === 'secondary'
     ? editorWord(schema.selector?.['select'] ? 'editor.secondary_helper' : 'editor.template_helper')
-    : unchosen(schema)
-      ? editorWord('editor.item_color_helper')
-      : undefined;
+    : undefined);
 
 /**
  * `ha-form` and `ha-sortable` belong to Home Assistant's editors; when a card's editor opens before
@@ -600,7 +596,8 @@ export class FluvyRowsEditor extends LitElement {
     const data = { ...withoutLists(defaults), ...withoutLists(this.config) };
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };
-    // the card's helpers are told what the form shows and the house (one that reads the sensor picked)
+    // the card's helpers are told what the form shows and the house (one that reads the sensor picked); a field with
+    // a word of its own says it where the card says nothing
     const own = spec.computeHelper;
     return html`
       <ha-form
@@ -608,12 +605,8 @@ export class FluvyRowsEditor extends LitElement {
         .data=${data}
         .schema=${this.schema(spec, asked)}
         .computeLabel=${spec.computeLabel}
-        .computeHelper=${
-          own
-            ? (schema: HaFormSchemaItem, localize: (key: string) => string) =>
-                own(schema, localize, data, this.hass)
-            : undefined
-        }
+        .computeHelper=${(schema: HaFormSchemaItem, localize: (key: string) => string) =>
+          own?.(schema, localize, data, this.hass) ?? ownHelper(schema)}
         @value-changed=${this.onCard}
       ></ha-form>
       ${spec.lists

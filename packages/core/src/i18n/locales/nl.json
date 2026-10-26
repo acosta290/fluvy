@@ -442,6 +442,7 @@
     "colors": "Snelle kleuren",
     "color_help": "Kies er een, of kies Eigen kleur en kies elke kleur in het veld eronder",
     "item_color_helper": "Leeg: bij een lamp de kleur van zijn peer waar de kaart die toont, anders die van de kaart",
+    "item_color_card_helper": "Leeg: de kleur van de kaart",
     "rgb": "Elke kleur",
     "swatch_name_help": "Wat het rondje zegt; leeg: het woord van de kleur of haar hexcode",
     "show_tilt": "Kanteling tonen",

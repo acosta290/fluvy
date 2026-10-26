@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { catalogue } from '../index.js';
 import type { Card } from './base.js';
 import { COMMON_ALIASES } from './config.js';
-import { editorDefaults, itemLabels, type FluvyRowsEditor } from './rows-editor.js';
+import { editorDefaults, itemHelpers, itemLabels, type FluvyRowsEditor } from './rows-editor.js';
 
 /**
  * The editors' contract (see `Card` in base.ts), held for every card of the catalogue: the editor is the base's,
@@ -149,6 +149,36 @@ describe('the editors’ contract', () => {
         expect(isWord(word, item.name), `${list.key}.${item.name}`).toBe(true);
       }
   });
+
+  /**
+   * An item's colour never says "Primary" for a default that is the card's: none chosen, nothing written, and the
+   * word under it says what the item wears then — its bulb's on a card that shows bulbs' colours, else the card's.
+   */
+  const CARDS_COLOUR = 'Empty: the card’s colour';
+  const BULBS_COLOUR =
+    'Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s';
+  it.each([
+    ['fluvy-lock-card', 'rows', CARDS_COLOUR],
+    ['fluvy-camera-card', 'rows', CARDS_COLOUR],
+    ['fluvy-alarm-card', 'rows', CARDS_COLOUR],
+    ['fluvy-scenes-card', 'scenes', CARDS_COLOUR],
+    ['fluvy-chips-card', 'chips', CARDS_COLOUR],
+    ['fluvy-lights-card', 'lights', BULBS_COLOUR],
+    ['fluvy-tiles-card', 'tiles', BULBS_COLOUR],
+    ['fluvy-entities-card', 'rows', BULBS_COLOUR],
+  ])(
+    '%s: an item’s colour shows none chosen, and says what the item wears then',
+    (tag, key, helper) => {
+      const list = cards.find((c) => c.tag === tag)?.card.lists.find((l) => l.key === key);
+      const colour = fields(list?.schema ?? []).find((item) => item.name === 'color');
+      expect(colour, `${tag}: ${key}.color`).toBeDefined();
+      const picker = (colour?.selector as { ui_color?: { default_color?: string } })?.ui_color;
+      expect(picker, `${tag}: a colour picker`).toBeDefined();
+      expect(picker?.default_color).toBeUndefined();
+      expect(colour?.default).toBeUndefined();
+      expect(itemHelpers(colour!, (k) => k)).toBe(helper);
+    },
+  );
 
   it.each(cards)('$tag: what the form and the lists show is base ∪ keys', ({ tag, card }) => {
     if (!card.keys.length) {
