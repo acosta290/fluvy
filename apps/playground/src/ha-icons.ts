@@ -1,4 +1,5 @@
 import {
+  mdiAirplane,
   mdiArchive,
   mdiBed,
   mdiBriefcase,
@@ -21,6 +22,7 @@ import {
   mdiLightningBolt,
   mdiMolecule,
   mdiOutdoorLamp,
+  mdiPackageVariantClosed,
   mdiSchool,
   mdiSilverwareForkKnife,
   mdiSofa,
@@ -28,6 +30,7 @@ import {
   mdiStove,
   mdiThermometerLines,
   mdiToilet,
+  mdiTrain,
   mdiTumbleDryer,
   mdiUmbrellaOutline,
   mdiVibrate,
@@ -43,6 +46,7 @@ import {
  * has a visible box. A sheet that names another icon, or draws another such class, adds it here.
  */
 const MDI: Readonly<Record<string, string>> = {
+  'mdi:airplane': mdiAirplane,
   'mdi:archive': mdiArchive,
   'mdi:bed': mdiBed,
   'mdi:briefcase': mdiBriefcase,
@@ -62,12 +66,14 @@ const MDI: Readonly<Record<string, string>> = {
   'mdi:lamp-outline': mdiLampOutline,
   'mdi:lightning-bolt': mdiLightningBolt,
   'mdi:outdoor-lamp': mdiOutdoorLamp,
+  'mdi:package-variant-closed': mdiPackageVariantClosed,
   'mdi:school': mdiSchool,
   'mdi:silverware-fork-knife': mdiSilverwareForkKnife,
   'mdi:sofa': mdiSofa,
   'mdi:sprout': mdiSprout,
   'mdi:stove': mdiStove,
   'mdi:toilet': mdiToilet,
+  'mdi:train': mdiTrain,
   'mdi:tumble-dryer': mdiTumbleDryer,
   'mdi:umbrella-outline': mdiUmbrellaOutline,
   'mdi:washing-machine': mdiWashingMachine,

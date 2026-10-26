@@ -111,6 +111,8 @@ const SOURCES = {
   'fluvy-printer-card': [['printer', 'Bambu Lab · printing', 0]],
   'fluvy-automations-card': [['automations', 'Rows', 0]],
   'fluvy-appliances-card': [['appliances', 'Appliances · rows', 0]],
+  // its stub finds no flights sensor in the house of every sheet: the issue's three aircraft
+  'fluvy-items-card': [['items', 'Items · flights', 0]],
 };
 
 /**
@@ -134,6 +136,11 @@ const FOUND = {
  * the live one's: it cannot know what the live rows say.
  */
 const BY_CONTENT = {
+  'fluvy-items-card': {
+    states: ['unavailable', 'unknown', 'missing'],
+    reason:
+      'its rows are what the sensor lists (a value that would leave a name under its room goes under the words, in half a section): the broken twin keeps the rows it declares, dashes at rest, at the height it declares',
+  },
   'fluvy-updates-card': {
     states: ['unavailable', 'unknown', 'missing'],
     reason:
