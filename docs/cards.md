@@ -62,6 +62,22 @@ entities:
     color: teal
 ```
 
+A chart is drawn in the house's chart style (fluvy's settings → Charts: `classic` from the factory, the chart every
+card drew before 1.11) unless the card names its own with `chart`: `classic`, `soft` (a soft copy under the line,
+hairlines at the quarters, Fluvy's knob at the line's end), `glow`, `minimal` (a thin line ending in its dot), `step`
+(each reading held across its slot, on a scale), and, for a sensor alone, `bars` and `columns`. The fine keys change
+one thing of the style and are offered only where the style draws it — `curve` (`smooth`, `straight`, `step`), `fill`
+(`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`),
+`show_grid` (`x`, `y`, `both`, `none`), `show_axis`, `highlight` (`min`, `max`, `both`, `current`) — and `animate:
+false` draws the chart still. A card's own key wins over the house's setting, which wins over the style's own default;
+a key the card never writes is the house's. A tile's spark is `minimal` where the card's style is, else classic.
+
+```yaml
+type: custom:fluvy-sensor-card
+entity: sensor.living_room_temperature
+chart: soft
+line_width: thin
+```
 A light that only switches on and off (its `supported_color_modes` is `onoff` alone) draws the light card as its
 head alone — the circle, the name, the state line and the switch, 84 px — in every style, and its editor offers only
 what the bulb does: no layout, stepper or live update, no temperature ruler, no quick colours.
@@ -483,7 +499,7 @@ show_reload: true
 | **Appliance** | `custom:fluvy-appliance-card` | A washer, dryer, dishwasher, oven, hob, fridge, coffee machine or small appliance on a plug, pictured: what it does, when it is ready, what it uses, its reminders. | `device`, `kind` (`auto`, `washer`, `dryer`, `washer_dryer`, `dishwasher`, `oven`, `microwave`, `hob`, `hood`, `fridge`, `freezer`, `wine`, `coffee`, `kettle`, `air_fryer`, `toaster`, `blender`, `sandwich_maker`, `appliance`), `variant` (`full`, `compact`, `ring`, `row`), `unit` (`both`, `main`, `sub`), `picture` (`art`, `icon`, `none`), `image`, `show_power`, `power_action`, `show_notify`, `show_hero`, `show_progress`, `progress_style` (`auto`, `bar`, `steps`), `time` (`both`, `left`, `end`), `show_zones`, `setpoint_style` (`readout`, `stepper`), `show_drinks`, `show_rows`, `drinks`, `row_values` (`inline`, `end`, `plain`), `readouts` (`program`, `temperature`, `spin`, `dryness`, `energy`, `water`, `cycles`, `detergent`, `elapsed`, `total`, `this_cycle`, `probe`, `power`), `show_maintenance`, `show_modes`, `modes_style` (`chips`, `tiles`), `modes` (`super_cool`, `super_freeze`, `eco`, `holiday`, `ice_maker`, `sabbath`, `child_lock`), `show_controls`, `show_programs`, `controls` (`start`, `pause`, `stop`, `power`, `light`), `unload_reminder`, `unload_after`, `done_for`, `door_alert`, `low_level`, `running_power`, `finished_after`, `rows` (a list: `key`, `entity`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `sensors` (a list: `entity`, `name`), `maintenance` (a list: `key`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `zones` (a list: `entity`, `name`, `icon`, `color`, `tap_action`, `hold_action`), `roles` (a list: `role`, `entity`) | — |
 | **Appliances** | `custom:fluvy-appliances-card` | The house’s appliances as live rows, or their whole cards side by side: what runs, what is done, what waits. | `title`, `subtitle`, `variant` (`rows`, `compact`, `tiles`, `cards`), `max_rows`, `picture` (`art`, `icon`, `none`), `show` (`all`, `active`), `sort` (`state`, `name`, `none`), `show_count`, `hide_empty`, `empty_text`, `appliances` (a list: `device`, `entity`, `name`, `icon`, `color`, `kind`, `tap_action`, `hold_action`) | — |
 | **Weather** | `custom:fluvy-weather-card` | Condition, temperature, feels-like, wind and the daily or hourly forecast. | `variant` (`full`, `compact`), `forecast` (`daily`, `hourly`, `both`), `days`, `show_forecast` | `forecast` → `show_forecast` |
-| **Sensor** | `custom:fluvy-sensor-card` | A sensor with its 24 h curve, trend, min, max and average, or up to three sensors on one chart. | `subtitle`, `variant` (`chart`, `tile`), `hours`, `show_stats`, `label`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `entities` (a list: `entity`, `name`, `icon`, `color`) | — |
+| **Sensor** | `custom:fluvy-sensor-card` | A sensor with its 24 h curve, trend, min, max and average, or up to three sensors on one chart. | `subtitle`, `variant` (`chart`, `tile`), `hours`, `show_stats`, `label`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `entities` (a list: `entity`, `name`, `icon`, `color`) | — |
 | **Readouts** | `custom:fluvy-readouts-card` | Up to four values side by side with their trends. | `hours`, `variant` (`grid`, `row`), `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `rows` (a list: `entity`, `name`, `unit`, `decimals`, `tap_action`) | `entities` → `rows` |
 | **People** | `custom:fluvy-people-card` | Who is home: avatars, zones, times and phone batteries, each person with a tap of their own. | `title`, `variant` (`grid`, `rows`), `map_path`, `show_zone`, `show_time`, `show_battery`, `empty_text`, `hide_empty`, `people` (a list: `entity`, `name`, `battery`, `color`, `since`, `tap_action`, `hold_action`) | `layout` → `variant`, `entities` → `people` |
 | **Openings** | `custom:fluvy-openings-card` | Doors, windows and motion at a glance, with what is open counted. | `title`, `subtitle`, `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_time`, `since_pattern`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `color`, `since`, `tap_action`, `hold_action`) | `entities` → `rows` |

@@ -62,6 +62,31 @@ its words a step deeper; where that is not enough, the panel says so under it ("
 else — a hue is never turned aside. The settings are an administrator's (read-only for everyone else), shown on the
 panel and the page at once, and saved from the bar ("Status colours · Warning · #dc630b").
 
+## Charts
+
+The house's chart settings (1.11, `charts` and `chartSets` in the house's data) decide how every chart and gauge is
+drawn where a card's config says nothing — the sensor's chart and tile, and each chart card as it takes the styles;
+the automatic dashboards and the History page write no chart key, so they follow the house too. From the factory the
+style is **Classic**, the chart every card drew before 1.11: nothing changes on upgrade.
+
+| Setting | Values (the factory's first) | What it draws |
+| --- | --- | --- |
+| **Style** | Classic · Soft · Glow · Minimal · Steps · Bars · Columns · Band | a card's `chart` where it names none; a style a card cannot draw (bars over several sensors, a band without one) is drawn Classic |
+| **Gauge** | Ticks · Dial · Ring · Ruler | a gauge's `gauge`: the dial's ticks, the thermostat's dial read, a ring lit to the value with Fluvy's knob at its end, the ruler in its read-only form |
+| **Line** | Regular · Thin · Bold | a style's line (2.5, 1.5 or 3 px); a card's `line_width` wins |
+| **Soft shadow** | 5 px · 3 · 7 under the line, 35 % · 25 · 45 | the soft copy of the line in Soft and Glow |
+| **Fill** | 18 % · 12 · 24 | the gradient under a line at its top (a flat fill two thirds of it); dark mode six points more |
+| **Gridlines** | Hairline · Dashed · None | the hairlines a style draws |
+| **Line's end** | Knob · Dot | Fluvy's knob (the thermostat's ball) or the classic dot where a style marks the end |
+| **Now** | Knob · Line | where the past meets the forecast: the knob on the line over a hairline, or the hairline alone |
+| **Bars' ends** | Both · Top | a bar rounded at both ends, or only away from its axis |
+| **Bubble** | Dark · In the series' colour | the value's bubble over a chart |
+| **Series colours** | From the palette · a saved set | the six colours of a chart's several series: the palette's (`--fluvy-graph-1…6`) or a set of six of the house's own, checked like the palette's (two closer than ΔE 8, or one too faint on the card, are said) |
+| **Motion** | On · Off | whether a chart draws itself in; a card's `animate` wins, and the system's reduced motion always holds |
+
+Classic takes none of these but motion. The rule is one, everywhere: a card's own key wins over the house's setting,
+which wins over the style's own default.
+
 ## Where they are stored
 
 In Home Assistant's own frontend data, not in a file of Fluvy's: the house under `frontend/set_system_data`

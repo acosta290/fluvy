@@ -111,16 +111,27 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
   ['Time', ['fluvy-clock-card', 'fluvy-calendar-card']],
 ];
 
+type Field = { name: string; selector?: Record<string, unknown> };
+
 /** Every field of a form, through its rows and its folded groups. */
-const flatten = (schema: Schema): { name: string; selector?: Record<string, unknown> }[] =>
+const flatten = (schema: Schema): Field[] =>
   schema.flatMap((item) => (item.schema ? flatten(item.schema) : [item]));
 
-/** A field as the table names it: the key, with a select's values after it. */
-function option(field: { name: string; selector?: Record<string, unknown> }): string {
-  const select = field.selector?.['select'] as
-    { options?: readonly { value: string }[] } | undefined;
-  const values = select?.options?.map((o) => `\`${o.value}\``);
-  return values?.length ? `\`${field.name}\` (${values.join(', ')})` : `\`${field.name}\``;
+/** A select's values, in its order. */
+const valuesOf = (field: Field): string[] =>
+  (
+    field.selector?.['select'] as { options?: readonly { value: string }[] } | undefined
+  )?.options?.map((o) => o.value) ?? [];
+
+/**
+ * A key as the table names it: the key, with a select's values after it. A key the form shows in turns (one select for
+ * a sensor alone, another beside others) is said once, with every value any of its selects offers.
+ */
+function option(field: Field, fields: readonly Field[]): string {
+  const values = [...new Set(fields.filter((f) => f.name === field.name).flatMap(valuesOf))];
+  return values.length
+    ? `\`${field.name}\` (${values.map((value) => `\`${value}\``).join(', ')})`
+    : `\`${field.name}\``;
 }
 
 function row(tag: string, name: string, description: string, card: Contract): string {
@@ -128,7 +139,9 @@ function row(tag: string, name: string, description: string, card: Contract): st
   const fields = flatten(card.getConfigForm().schema).filter(
     (f) => card.keys.includes(f.name) && !card.lists.some((list) => list.key === f.name),
   );
-  const own = fields.map(option);
+  const own = fields
+    .filter((field, index) => fields.findIndex((f) => f.name === field.name) === index)
+    .map((field) => option(field, fields));
   const lists = card.lists.map((list) => {
     const keys = flatten(list.schema).map((f) => `\`${f.name}\``);
     return `\`${list.key}\` (a list: ${keys.join(', ')})`;
