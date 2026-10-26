@@ -126,6 +126,16 @@ const TEMPLATE =
 const WEB =
   /\/packages\/(cards\/src\/(web-cards\.ts|web\/)|core\/src\/i18n\/locales\/en\/web\.json)/;
 
+/** The items' sheet: fetched the first time an item of an Items card is tapped, never by a dashboard that only lists. */
+const ITEMS_SHEET = /\/packages\/cards\/src\/items\/sheet\//;
+
+/**
+ * The Items card (the card, its fields and presets, and its English): fetched as the bundle starts and defined as it
+ * lands, as the template card is (`items-family.ts` stays in core: the name, the height).
+ */
+const ITEMS =
+  /\/packages\/(cards\/src\/(items-cards\.ts|items\/)|core\/src\/i18n\/locales\/en\/items\.json)/;
+
 /** The light card's colour controls (the quick colours' table and row, the hue maths): fetched by the first colour bulb drawn. */
 const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/colour\.ts/;
 
@@ -149,9 +159,9 @@ const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
  * page, the settings panel, the strategy and the heights it counts with the house, the wall, the weather card, the
  * media, energy (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their
  * pictures on their own), automations and alerts families (each sheet on its own), the template card, the web page
- * card, the cards' editor, the view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The
- * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
- * loud.
+ * card, the items card (its sheet on its own), the cards' editor, the view icons, the icon set's other part, and
+ * everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes
+ * the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -177,6 +187,8 @@ export const GROUPS = [
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
+  { name: 'items-sheet', test: ITEMS_SHEET },
+  { name: 'items', test: ITEMS },
   { name: 'light-colour', test: LIGHT_COLOUR },
   { name: 'editor', test: EDITOR },
   { name: 'view-icons', test: VIEW_ICONS },

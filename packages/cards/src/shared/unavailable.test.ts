@@ -162,6 +162,13 @@ const STATES = [
   }),
   state('sensor.phone_battery', '64', { unit_of_measurement: '%', device_class: 'battery' }),
   state('sun.sun', 'above_horizon', { next_rising: STAMP, next_setting: STAMP }),
+  // a FlightRadar24 sensor: the count as its state, the aircraft in `flights` (the Items card's stub)
+  state('sensor.flightradar24_current_in_area', '2', {
+    flights: [
+      { id: 'a1', callsign: 'KLM1412', altitude: 0, on_ground: 1, distance: 3.2 },
+      { id: 'b2', callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
+    ],
+  }),
 ];
 
 const hass = {

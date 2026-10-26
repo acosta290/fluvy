@@ -42,19 +42,19 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
 period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
-from their configs alone), wall mode (on a device that is a wall), the weather, template and web page cards and the media,
-energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are announced in core —
-`src/energy-family.ts` and its siblings, their names and heights — and defined as `src/energy-cards.ts` and its
-siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
-first card that reads a counter by them), the appliances' pictures (the first card that draws one), the schedule sheet,
-the alerts' sheet and the cameras' sheet (when one is opened), the light card's colour controls (the first colour
-bulb), the cards' visual editor (when a card is edited), the icon set's other part (the first time Home Assistant asks for one of its
-icons) and a language's catalogue (English's core part ships in core; a lazy family's
-English part travels with the family's chunk, registered as it lands).
+from their configs alone), wall mode (on a device that is a wall), the weather, template, web page and items cards and
+the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are
+announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
+`src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
+history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
+draws one), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the
+light card's colour controls (the first colour bulb), the cards' visual editor (when a card is edited), the icon set's
+other part (the first time Home Assistant asks for one of its icons) and a language's catalogue (English's core part
+ships in core; a lazy family's English part travels with the family's chunk, registered as it lands).
 `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group names its English part, or core
 keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes `manifest.json` with every file's
 size and hash and a **build stamp**, and fails the build when the initial set goes over **236 KB gzip** or carries a
@@ -82,6 +82,8 @@ in `tools/docs` holds this table to it):
 | `alerts-sheet` | 12 KB | the alerts' sheet |
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
+| `items` | 12 KB | the Items card, its fields and presets, its English |
+| `items-sheet` | 8 KB | an item's sheet |
 | `light-colour` | 4 KB | the light card's quick colours and hue ruler |
 | `weather` | 12 KB | the weather card |
 | `editor` | 8 KB | the cards' visual editor |

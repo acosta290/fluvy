@@ -69,6 +69,10 @@ const BUDGETS = {
   template: 8192,
   // the web page card: its card, its address and rounds rules, its English (1.11, #61)
   web: 8192,
+  // the items family: the card, its fields and presets, its English (1.11, #66)
+  items: 12_288,
+  // the items' sheet: fetched when an item is tapped
+  'items-sheet': 8192,
   // the light card's colour controls: the quick colours' table and row, fetched by the first colour bulb
   'light-colour': 4096,
   // the weather card

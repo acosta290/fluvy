@@ -48,6 +48,13 @@ const STATES = [
     entity_picture: '/api/camera_proxy/camera.porch?token=1',
     supported_features: 2,
   }),
+  // a FlightRadar24 sensor: the count as its state, the aircraft in `flights`
+  state('sensor.flights', '2', {
+    flights: [
+      { callsign: 'KLM1412', altitude: 0, on_ground: 1, distance: 3.2 },
+      { callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
+    ],
+  }),
   // a speaker playing a track: its seek line, the five rounds, its volume and the power round
   state('media_player.kitchen', 'playing', {
     supported_features: 311743,
@@ -197,6 +204,30 @@ describe('cameras out of reach', () => {
     expect(root(twin).querySelector('.dv-cam.is-off')).not.toBeNull();
     expect(texts(twin, '.dv-cam__off p')).toEqual(['Entity not found']);
   });
+});
+
+describe('items out of reach', () => {
+  it.each(KINDS)(
+    'keep the rows they declare, dashes in resting rings, a %s sensor saying so under the title',
+    async (kind) => {
+      const config = { type: 'custom:fluvy-items-card', entity: 'sensor.flights', max_rows: 3 };
+      const live = await draw(config, house());
+      const twin = await draw(config, away(['sensor.flights'], kind));
+      expect(root(twin).querySelector('.fv-card--empty')).toBeNull();
+      expect(root(twin).querySelector('.fv-empty-state')).toBeNull();
+      expect(root(twin).querySelector('.fv-card.is-unavailable')).not.toBeNull();
+      expect(root(twin).querySelectorAll('.fv-row.is-unavailable .fv-ico--off')).toHaveLength(3);
+      expect(texts(twin, '.fv-row__value')).toEqual(['—', '—', '—']);
+      expect(texts(twin, '.fv-card__sub')).toEqual([
+        kind === 'missing' ? 'Entity not found' : kind === 'unknown' ? 'Unknown' : 'Unavailable',
+      ]);
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+      // the list box keeps the declared rows' height whatever it holds
+      expect(
+        root(twin).querySelector<HTMLElement>('.it-list')?.style.getPropertyValue('--it-min'),
+      ).toBe('180px');
+    },
+  );
 });
 
 describe('people out of reach', () => {
