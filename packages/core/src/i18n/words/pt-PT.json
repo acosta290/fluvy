@@ -41,7 +41,13 @@
   "grid_export": ["exportação", "exportacao", "exporta", "injeção", "injecao", "injetada"],
   "battery": ["bateria", "armazenamento"],
   "charger": ["carregador", "wallbox", "posto de carregamento", "estação de carregamento"],
-  "home": ["casa", "habitação", "habitacao", "consumo total", "consumo da casa"],
+  "home": [
+    "casa(?![\\s_.-]*de[\\s_.-]*ba(nho|[nñ]o))",
+    "habitação",
+    "habitacao",
+    "consumo total",
+    "consumo da casa"
+  ],
   "today": ["hoje", "diário", "diario", "dia"],
   "not_appliance": [
     "férias",
@@ -100,6 +106,8 @@
   ],
   "appliance_dishwasher": [
     "maquina[ _-]de[ _-]lavar[ _-]loica",
+    "maquina[ _-]de[ _-]lavar[ _-]louca",
+    "maquina[ _-]da[ _-]lo[iu]ca",
     "lava[ _-]loica",
     "lava[ _-]louca",
     "lava[ _-]pratos"
@@ -112,11 +120,16 @@
   "appliance_dryer": ["maquina[ _-]de[ _-]secar", "secadora", "secador[ _-]de[ _-]roupa"],
   "appliance_microwave": ["micro[ _-]?ondas"],
   "appliance_oven": ["forno"],
-  "appliance_hob": ["placa", "inducao", "fogao", "fogao"],
+  "appliance_hob": [
+    "(^|[ _-])placa(?!s)(?![ _-]*(solar|fotovolt|de[ _-]rede|de[ _-]som|de[ _-]video|mae|base))",
+    "inducao",
+    "fogao",
+    "fogao"
+  ],
   "appliance_hood": ["exaustor"],
   "appliance_wine": ["garrafeira", "cave de vinho"],
   "appliance_fridge": ["frigorifico", "frigorifico", "refrigerador"],
-  "appliance_freezer": ["congelador", "arca congeladora", "arca"],
+  "appliance_freezer": ["congelador", "arca congeladora", "(^|[ _-])arca([ _-]|$)"],
   "appliance_coffee": ["maquina[ _-]de[ _-]cafe", "cafeteira"],
   "appliance_kettle": ["jarro[ _-]eletrico", "jarro[ _-]eletrico", "chaleira"],
   "appliance_air_fryer": ["fritadeira[ _-]de[ _-]ar", "air[ _-]?fryer"],

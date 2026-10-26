@@ -28,7 +28,7 @@
   "grid_export": ["exporta", "vertido", "excedente", "inyecta", "inyección", "inyeccion"],
   "battery": ["bater"],
   "charger": ["cargador", "punto de carga", "punto_de_carga", "estación de carga"],
-  "home": ["casa", "consumo_total"],
+  "home": ["casa(?![\\s_.-]*de[\\s_.-]*ba(nho|[nñ]o))", "consumo_total"],
   "today": ["hoy", "dia\\b", "día"],
   "not_appliance": [
     "forzar",

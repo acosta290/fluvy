@@ -145,6 +145,7 @@ describe('what an appliance is', () => {
       ['Vaatwasser', 'dishwasher'],
       ['Lava-louças', 'dishwasher'],
       ['Máquina de lavar loiça', 'dishwasher'],
+      ['Máquina de lavar louça', 'dishwasher'],
       ['Bulaşık makinesi', 'dishwasher'],
       ['Wäschetrockner', 'dryer'],
       ['Sèche-linge', 'dryer'],
@@ -211,8 +212,11 @@ describe('what an appliance is', () => {
       ['ワインセラー', 'wine'],
     ];
     for (const [name, kind] of names) expect(byWords(name), name).toEqual({ kind, by: 'words' });
-    // a name that says no kind says none
+    // a name that says no kind says none: a solar panel is no hob ("placa"), a brand ("marca") no freezer ("arca")
     expect(byWords('Steckdose Flur')).toBeUndefined();
+    expect(byWords('Placa solar')).toBeUndefined();
+    expect(byWords('Placas solares')).toBeUndefined();
+    expect(byWords('Marca X tomada')).toBeUndefined();
     // a word of another: a hood is not a "neighbourhood", a hob not a "hobby"
     expect(byWords('Neighbourhood lamp')).toBeUndefined();
     expect(byWords('Hobby room plug')).toBeUndefined();

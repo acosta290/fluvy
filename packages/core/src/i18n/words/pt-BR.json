@@ -33,7 +33,13 @@
   "grid_export": ["exportação", "exportacao", "exporta", "injeção", "injecao", "injetada"],
   "battery": ["bateria", "armazenamento"],
   "charger": ["carregador", "wallbox", "estação de recarga", "estacao de recarga"],
-  "home": ["casa", "residência", "residencia", "consumo total", "consumo da casa"],
+  "home": [
+    "casa(?![\\s_.-]*de[\\s_.-]*ba(nho|[nñ]o))",
+    "residência",
+    "residencia",
+    "consumo total",
+    "consumo da casa"
+  ],
   "today": ["hoje", "diário", "diario", "dia"],
   "not_appliance": [
     "férias",

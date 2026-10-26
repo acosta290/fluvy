@@ -7,8 +7,8 @@ export const NOT_AN_APPLIANCE = /(staubsauger|saugroboter|warmeschublade|warmhal
 export const KIND_WORDS = [
   /** washer_dryer: 25 stems. */
   ['washer_dryer', /(waschtrockner|wasch[ _-]trockner|washer[ _-]?dryer|wash[ _-]?dry|washcombo|lavasecadora|lavadora[ _-]secadora|lavante[ _-]sechante|lave[ _-]linge[ _-]sechant|lavasciuga|sentaku[ _-]?kansou|sentaku[ _-]?kanso|sentakukansouki|sentakukansoki|was[ _-]?droog[ _-]?combinatie|wasmachine[ _-]droger|lava[ _-]e[ _-]seca|lava[ _-]seca|maquina[ _-]de[ _-]lavar[ _-]e[ _-]secar|kurutmali|洗濯乾燥機|洗濯乾燥|洗乾)/i],
-  /** dishwasher: 29 stems. */
-  ['dishwasher', /(geschirrspul|spulmaschine|dish[ _-]?washer|lavavajillas|lavaplatos|lave[ _-]vaisselle|lavastoviglie|shokusenki|syokusenki|shokusen|syokusen|shokki[ _-]?arai|syokki[ _-]?arai|shokkiarai|vaatwas|lava[ _-]loucas|lava[ _-]pratos|maquina[ _-]de[ _-]lavar[ _-]loica|lava[ _-]loica|lava[ _-]louca|bulasik|食洗機|食洗器|食洗|食器洗浄|食器洗い乾燥機|食器洗い|食器洗)/i],
+  /** dishwasher: 31 stems. */
+  ['dishwasher', /(geschirrspul|spulmaschine|dish[ _-]?washer|lavavajillas|lavaplatos|lave[ _-]vaisselle|lavastoviglie|shokusenki|syokusenki|shokusen|syokusen|shokki[ _-]?arai|syokki[ _-]?arai|shokkiarai|vaatwas|lava[ _-]loucas|lava[ _-]pratos|maquina[ _-]de[ _-]lavar[ _-]loica|maquina[ _-]de[ _-]lavar[ _-]louca|maquina[ _-]da[ _-]lo[iu]ca|lava[ _-]loica|lava[ _-]louca|bulasik|食洗機|食洗器|食洗|食器洗浄|食器洗い乾燥機|食器洗い|食器洗)/i],
   /** washer: 23 stems. */
   ['washer', /(waschmaschine|waschautomat|washer|washing[ _-]?machine|lavadora|lave[ _-]linge|machine[ _-]a[ _-]laver|lavatrice|sentakuki|sentaku|doramushiki|wasmachine|maquina[ _-]de[ _-]lavar|lava[ _-]roupas|maquina[ _-]de[ _-]lavar[ _-]roupa|lava[ _-]roupa|camasir[ _-]makine|洗濯機|洗濯|全自動洗濯|二槽式|ドラム式)/i],
   /** dryer: 25 stems. */
@@ -20,7 +20,7 @@ export const KIND_WORDS = [
   /** oven: 18 stems. */
   ['oven', /(backofen|dampfgarer|(^|[ _-])ofen|oven|horno|(^|[ _-])four([ _-]|$)|cuisiniere|forno|oobun|obun|o-bun|(^|[ _-])oven|firin|オーブン|スチームオーブン|コンベクション)/i],
   /** hob: 44 stems. */
-  ['hob', /(kochfeld|induktion|(^|[ _-])hob([ _-]|$)|cooktop|induction|vitroceramica|induccion|placa[ _-]de[ _-](coccion|cocina|induccion)|table[ _-]de[ _-]cuisson|plaque[ _-](de[ _-]cuisson|a[ _-]induction|induction)|piano[ _-]cottura|induzione|(^|[ _-])ih([ _-]|$)|ih[ _-]?kukkingu|ih[ _-]?chouri|konro|gasu[ _-]?konro|gasu[ _-]?renji|gasu[ _-]?teeburu|kukkingu[ _-]?hiitaa|denjichouriki|kookplaat|inductie|inducao|placa|fogao|(^|[ _-])ocak([ _-]|$)|induksiyon|ihクッキング|ihヒーター|ih調理|ihコンロ|クッキングヒーター|コンロ|ガスコンロ|ガステーブル|ガスレンジ|電気コンロ|電磁調理器|ビルトインコンロ|卓上コンロ)/i],
+  ['hob', /(kochfeld|induktion|(^|[ _-])hob([ _-]|$)|cooktop|induction|vitroceramica|induccion|placa[ _-]de[ _-](coccion|cocina|induccion)|table[ _-]de[ _-]cuisson|plaque[ _-](de[ _-]cuisson|a[ _-]induction|induction)|piano[ _-]cottura|induzione|(^|[ _-])ih([ _-]|$)|ih[ _-]?kukkingu|ih[ _-]?chouri|konro|gasu[ _-]?konro|gasu[ _-]?renji|gasu[ _-]?teeburu|kukkingu[ _-]?hiitaa|denjichouriki|kookplaat|inductie|inducao|(^|[ _-])placa(?!s)(?![ _-]*(solar|fotovolt|de[ _-]rede|de[ _-]som|de[ _-]video|mae|base))|fogao|(^|[ _-])ocak([ _-]|$)|induksiyon|ihクッキング|ihヒーター|ih調理|ihコンロ|クッキングヒーター|コンロ|ガスコンロ|ガステーブル|ガスレンジ|電気コンロ|電磁調理器|ビルトインコンロ|卓上コンロ)/i],
   /** hood: 22 stems. */
   ['hood', /(dunstabzug|abzugshaube|(^|[ _-])hood([ _-]|$)|extractor|campana[ _-]extractora|(^|[ _-])campana([ _-]|$)|hotte|(^|[ _-])cappa([ _-]|$)|renji[ _-]?fuudo|renzi[ _-]?fuudo|renjifuudo|kankisen|afzuigkap|wasemkap|coifa|depurador|exaustor|davlumbaz|aspirator|レンジフード|キッチンフード|換気扇)/i],
   /** wine: 18 stems. */
@@ -28,7 +28,7 @@ export const KIND_WORDS = [
   /** fridge: 27 stems. */
   ['fridge', /(kuhlschrank|kuehlschrank|kuhl[ _-]?gefrier|fridge|refrigerator|nevera|frigorifico|refrigerador|refrigerateur|frigorifero|frigo|reizouko|reizoko|reizou|reizo\b|reitoureizou|koelkast|koel[ _-]?vries|geladeira|buzdolabi|冷蔵庫|冷蔵|冷凍冷蔵)/i],
   /** freezer: 24 stems. */
-  ['freezer', /(gefrier|tiefkuhl|freezer|congelador|congelateur|congelatore|reitouko|reitoko|reitou|reito\b|furiizaa|furiiza|vriezer|diepvries|arca congeladora|arca|dondurucu|冷凍庫|フリーザー|冷凍ストッカー|冷凍)/i],
+  ['freezer', /(gefrier|tiefkuhl|freezer|congelador|congelateur|congelatore|reitouko|reitoko|reitou|reito\b|furiizaa|furiiza|vriezer|diepvries|arca congeladora|(^|[ _-])arca([ _-]|$)|dondurucu|冷凍庫|フリーザー|冷凍ストッカー|冷凍)/i],
   /** coffee: 24 stems. */
   ['coffee', /(kaffee|coffee|espresso|cafetera|(^|[ _-])cafe([ _-]|$)|cafetiere|machine[ _-]a[ _-]cafe|expresso|caffe|koohii|koohi|kohii|kohi\b|esupuresso|koffie|cafeteira|maquina[ _-]de[ _-]cafe|kahve|コーヒーメーカー|エスプレッソ|コーヒー|全自動コーヒー)/i],
   /** kettle: 23 stems. */

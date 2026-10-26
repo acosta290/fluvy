@@ -101,7 +101,8 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     code: 'pt-PT',
     name: 'Português (Portugal)',
     english: 'Portuguese (Portugal)',
-    dayParts: { morning: 5, afternoon: 12, evening: 19, night: 24 },
+    // "boa tarde" runs until dinner or dark, 20:00 (a summer's daylight lasts past 21:00); "boa noite" from then on
+    dayParts: { morning: 5, afternoon: 12, evening: 20, night: 24 },
     ha: 'pt',
   },
   tr: {

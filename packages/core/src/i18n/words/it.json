@@ -29,7 +29,12 @@
   "grid_export": ["immissione", "immessa", "esporta", "cessione"],
   "battery": ["batteria", "accumulo"],
   "charger": ["wallbox", "colonnina", "stazione di ricarica", "caricatore"],
-  "home": ["casa", "abitazione", "consumo totale", "consumo casa"],
+  "home": [
+    "casa(?![\\s_.-]*de[\\s_.-]*ba(nho|[nñ]o))",
+    "abitazione",
+    "consumo totale",
+    "consumo casa"
+  ],
   "today": ["oggi", "giornaliero", "giornata", "giorno"],
   "not_appliance": [
     "vacanza",

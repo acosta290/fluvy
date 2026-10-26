@@ -136,6 +136,40 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
       homePower: 'sensor.katei',
     });
   });
+
+  it('never takes a bathroom for the house: "casa de banho" and "casa de baño" are rooms, "consumo da casa" is the house', () => {
+    const power = (id: string, friendly_name: string) =>
+      [
+        id,
+        {
+          entity_id: id,
+          state: '100',
+          attributes: { friendly_name, device_class: 'power', unit_of_measurement: 'W' },
+          last_changed: '',
+          last_updated: '',
+          context: { id: '', parent_id: null, user_id: null },
+        },
+      ] as const;
+    const house = (states: ReadonlyArray<ReturnType<typeof power>>, language: string) =>
+      new HomeRegistry({
+        states: Object.fromEntries(states),
+        entities: {},
+        devices: {},
+        areas: {},
+        language,
+      } as never);
+    const bathrooms = [
+      power('sensor.toalheiro_casa_de_banho_power', 'Toalheiro casa de banho'),
+      power('sensor.calefactor_casa_de_bano_power', 'Calefactor casa de baño'),
+    ];
+    expect(findEnergyRoles(house(bathrooms, 'pt-PT'), null).homePower).toBeUndefined();
+    expect(
+      findEnergyRoles(
+        house([...bathrooms, power('sensor.consumo_da_casa', 'Consumo da casa')], 'pt-PT'),
+        null,
+      ).homePower,
+    ).toBe('sensor.consumo_da_casa');
+  });
 });
 
 describe('custom:fluvy-home strategy — a place named by its device, no separator left hanging', () => {
