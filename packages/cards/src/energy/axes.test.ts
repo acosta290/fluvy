@@ -8,6 +8,7 @@ describe('a stacked energy chart’s power scale (issue #49)', () => {
     expect(powerScale(9.8, 3, false)).toEqual({
       ticks: [-5, 0, 5, 10],
       unit: 'kW',
+      divisor: 1000,
       decimals: 0,
       above: 2,
     });
@@ -20,6 +21,23 @@ describe('a stacked energy chart’s power scale (issue #49)', () => {
     expect(scale.unit).toBe('W');
     expect(scale.ticks).toEqual([0, 0.2, 0.4, 0.6, 0.8]);
     expect(scale.decimals).toBe(0);
+  });
+
+  it('reads in the unit asked, the ticks still in kW: a day under a kilowatt in kW, a day over one in W', () => {
+    expect(powerScale(0.8, 0, false, 'kW')).toMatchObject({
+      ticks: [0, 0.2, 0.4, 0.6, 0.8],
+      unit: 'kW',
+      divisor: 1000,
+      decimals: 1,
+    });
+    expect(powerScale(9.8, 3, false, 'W')).toMatchObject({
+      ticks: [-5, 0, 5, 10],
+      unit: 'W',
+      divisor: 1,
+      decimals: 0,
+    });
+    // a unit of another class, or one no converter knows, is not asked: the scale chooses
+    expect(powerScale(9.8, 3, false, 'kWh').unit).toBe('kW');
   });
 
   it('under the charge’s scale, gives a positive half of three a fourth, so the charge falls on quarters', () => {

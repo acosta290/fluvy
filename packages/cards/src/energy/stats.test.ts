@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
+import { resolveEntity, type EntityView, type HomeAssistant } from '@fluvy/core';
 import { html, render } from 'lit';
 import { describe, expect, it } from 'vitest';
 import type { TextRuler } from '../shared/fit.js';
+import { legendStats } from './legend.js';
 import { statsCols, type Stat } from './stats.js';
 
 /** A stand-in for the card's ruler: a label's letters at 7, a figure's (and its unit's) at 11 at s and 9 at xs. */
@@ -65,5 +67,47 @@ describe('statsCols', () => {
     const row = drawn(320, [{ label: 'Garage', value: '1,2', unit: 'kWh', name: true }, MONEY[0]!]);
     const labels = [...row.querySelectorAll('.fv-readout__label')];
     expect(labels.map((label) => label.hasAttribute('data-name'))).toEqual([true, false]);
+  });
+});
+
+describe('legendStats', () => {
+  const sensor = (state: string, unit: string) => ({
+    entity_id: '',
+    state,
+    attributes: { unit_of_measurement: unit },
+  });
+  const hass = {
+    states: {
+      'sensor.grid': sensor('2308', 'W'),
+      'sensor.solar': sensor('450', 'W'),
+      'sensor.day': sensor('11.2', 'kWh'),
+    },
+    entities: {},
+    language: 'en',
+  } as unknown as HomeAssistant;
+  const entity = (id: string): EntityView => resolveEntity(hass, id);
+  const items = [{ entity: 'sensor.grid' }, { entity: 'sensor.solar' }, { entity: 'sensor.day' }];
+  const figures = (stats: readonly Stat[]): string[] => stats.map((s) => `${s.value} ${s.unit}`);
+
+  it('reads every figure of a family in one unit, the largest deciding', () => {
+    expect(figures(legendStats(hass, items, entity))).toEqual(['2.3 kW', '0.45 kW', '11.2 kWh']);
+  });
+
+  it('reads in the unit and at the decimals the card asks, where its class converts', () => {
+    expect(figures(legendStats(hass, items, entity, { unit: 'W' }))).toEqual([
+      '2,308 W',
+      '450 W',
+      '11.2 kWh',
+    ]);
+    expect(figures(legendStats(hass, items, entity, { unit: 'Wh', decimals: 0 }))).toEqual([
+      '2 kW',
+      '0 kW',
+      '11,200 Wh',
+    ]);
+  });
+
+  it('lets an item ask for its own', () => {
+    const own = [{ entity: 'sensor.grid', unit: 'W', decimals: '1' }, items[1]!, items[2]!];
+    expect(figures(legendStats(hass, own, entity))).toEqual(['2,308.0 W', '0.45 kW', '11.2 kWh']);
   });
 });

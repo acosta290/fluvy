@@ -2,6 +2,7 @@ import { formatNumber, type HomeAssistant } from '@fluvy/core';
 import { css, svg, type SVGTemplateResult } from 'lit';
 
 import { niceTicks } from '../history-bars/scale.js';
+import { scaleFor, scaleNamed } from '../shared/units.js';
 
 /**
  * A chart's scales, one look for the history bars (1.8) and the energy card's stacked charts (1.9, issue #49): dashed
@@ -65,8 +66,10 @@ export const unitLabel = (unit: string, top: number, bottom: number): SVGTemplat
 /** A stacked energy chart's power scale: its ticks (kW, lowest first, zero among them) and how they are written. */
 export interface PowerScale {
   readonly ticks: readonly number[];
-  /** Watts below a kilowatt, else kilowatts. */
-  readonly unit: 'W' | 'kW';
+  /** The unit the labels read in: the one asked, else watts below a kilowatt and kilowatts from there. */
+  readonly unit: string;
+  /** Watts in that unit: what a tick in kW is brought to for its label. */
+  readonly divisor: number;
   /** The labels' decimals, in that unit. */
   readonly decimals: number;
   /** How many ticks lie above zero: the charge's scale divides 0–100 % among them. */
@@ -75,15 +78,19 @@ export interface PowerScale {
 
 /**
  * The power scale of a stacked energy chart from the day's highest stack `up` and its deepest outflow `down` (kW): the
- * history bars' scale (Heckbert's nice steps, four intervals at most, zero a tick), in watts below a kilowatt. Under
- * the charge's own scale (`charge`: 0 % on the zero line, 100 % on the top tick, labelled on the power's gridlines) a
- * positive half of three intervals gets a fourth on top, so the charge reads 0 · 25 · 50 · 75 · 100 % (or 0 · 50 ·
- * 100 %, or 0 · 100 %) on whole lines, never 33 %. That fourth is one of the four: where a tick below zero leaves it no
- * room, the scale takes the next step (−5 … 15 with the charge is −10 … 20, not −5 … 20).
+ * history bars' scale (Heckbert's nice steps, four intervals at most, zero a tick), in the unit asked (`unit`, of the
+ * watt ladder), else in watts below a kilowatt. Under the charge's own scale (`charge`: 0 % on the zero line, 100 % on
+ * the top tick, labelled on the power's gridlines) a positive half of three intervals gets a fourth on top, so the
+ * charge reads 0 · 25 · 50 · 75 · 100 % (or 0 · 50 · 100 %, or 0 · 100 %) on whole lines, never 33 %. That fourth is
+ * one of the four: where a tick below zero leaves it no room, the scale takes the next step (−5 … 15 with the charge
+ * is −10 … 20, not −5 … 20).
  */
-export function powerScale(up: number, down: number, charge: boolean): PowerScale {
-  const unit = Math.max(up, down) >= 1 ? 'kW' : 'W';
-  const k = unit === 'kW' ? 1 : 1000;
+export function powerScale(up: number, down: number, charge: boolean, unit?: string): PowerScale {
+  const scale =
+    (unit === undefined ? undefined : scaleNamed(unit, 'W')) ??
+    scaleFor(Math.max(up, down) * 1000, 'W');
+  // a kilowatt in the scale's unit
+  const k = 1000 / scale.divisor;
   const thirds = (ticks: readonly number[]): boolean =>
     charge && ticks.filter((t) => t > 0).length === 3;
   const four = niceTicks(-down * k, up * k, 4);
@@ -94,7 +101,8 @@ export function powerScale(up: number, down: number, charge: boolean): PowerScal
     : nice.ticks;
   return {
     ticks: ticks.map((t) => t / k),
-    unit,
+    unit: scale.unit,
+    divisor: scale.divisor,
     decimals: nice.decimals,
     above: ticks.filter((t) => t > 0).length,
   };

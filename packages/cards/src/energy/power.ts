@@ -5,49 +5,41 @@ import {
   type HomeAssistant,
   type ValueParts,
 } from '@fluvy/core';
+import { convert, unitClass } from '../history-bars/units.js';
+import {
+  decimalsOf,
+  figuresOf,
+  LADDERS,
+  precisionOf,
+  writeFigure,
+  type Figures,
+  type NumberOptions,
+} from '../shared/units.js';
 
 /**
- * Energy arithmetic shared by the three energy cards. Home Assistant lets every integration pick its
- * own unit — one house happily reports the grid in W, the inverter in kW and the meter in MWh — so
- * everything is brought to a base unit (W for power, Wh for energy) before it is compared, summed or
- * drawn, and a whole diagram is then displayed in ONE unit chosen from its largest figure.
+ * Energy arithmetic shared by the energy cards. Home Assistant lets every integration pick its own unit — one house
+ * happily reports the grid in W, the inverter in kW and the meter in MWh — so everything is brought to a base unit
+ * (W for power, Wh for energy) before it is compared, summed or drawn, and a whole diagram is then displayed in ONE
+ * unit: the one the card asks for, else the one chosen from its largest figure (`shared/units.ts`, the one rule).
  */
 
 export type Family = 'power' | 'energy';
 
-/** Every unit Home Assistant accepts on the `power` device class, in watts. */
-const POWER = new Map<string, number>([
-  ['mW', 1e-3],
-  ['W', 1],
-  ['kW', 1e3],
-  ['MW', 1e6],
-  ['GW', 1e9],
-  ['TW', 1e12],
-  ['BTU/h', 0.29307107],
-]);
+/** The watt ladders, power and energy: what a card of the family offers its figures in, whatever it draws. */
+export const WATT_LADDERS: readonly string[] = [...LADDERS.power, ...LADDERS.energy];
 
-/** Every unit Home Assistant accepts on the `energy` device class, in watt-hours. */
-const ENERGY = new Map<string, number>([
-  ['mWh', 1e-3],
-  ['Wh', 1],
-  ['kWh', 1e3],
-  ['MWh', 1e6],
-  ['GWh', 1e9],
-  ['TWh', 1e12],
-  ['J', 1 / 3600],
-  ['kJ', 1 / 3.6],
-  ['MJ', 1e3 / 3.6],
-  ['GJ', 1e6 / 3.6],
-  ['cal', 4.184 / 3600],
-  ['kcal', 4.184 / 3.6],
-  ['Mcal', 4184 / 3.6],
-  ['Gcal', 4.184e6 / 3.6],
-]);
+/** A set's unit and its decimals, as the family's cards hold them (`Figures` of the one rule). */
+export type { Figures as Scale } from '../shared/units.js';
+
+const BASE: Readonly<Record<Family, 'W' | 'Wh'>> = { power: 'W', energy: 'Wh' };
 
 /** The unit decides; a sensor that carries none is read by its device class. Anything else is not ours to convert. */
 export function family(view: EntityView): Family | null {
   const unit = view.unit.trim();
-  if (unit) return POWER.has(unit) ? 'power' : ENERGY.has(unit) ? 'energy' : null;
+  if (unit) {
+    const kind = unitClass(unit);
+    return kind === 'power' || kind === 'energy' ? kind : null;
+  }
   return view.deviceClass === 'power' ? 'power' : view.deviceClass === 'energy' ? 'energy' : null;
 }
 
@@ -58,54 +50,41 @@ export function family(view: EntityView): Family | null {
 export function watts(view: EntityView): number | null {
   if (view.status !== 'ok' || view.number === null) return null;
   const unit = view.unit.trim();
-  const factor = unit ? POWER.get(unit) : 1;
-  return factor === undefined ? null : view.number * factor;
+  if (unit && unitClass(unit) !== 'power') return null;
+  return unit ? convert(view.number, unit, 'W') : view.number;
 }
 
 /** The base-unit value (W or Wh) of a sensor that may be either family, so rows can be compared and summed. */
 export function baseValue(view: EntityView): number | null {
   const kind = family(view);
   if (!kind || view.status !== 'ok' || view.number === null) return null;
-  const factor = (kind === 'power' ? POWER : ENERGY).get(view.unit.trim()) ?? 1;
-  return view.number * factor;
-}
-
-export interface Scale {
-  readonly unit: string;
-  readonly divisor: number;
+  return convert(view.number, view.unit, BASE[kind]);
 }
 
 /**
- * One unit for a set of figures: the largest decides. 3 200 W and 400 W read as "3.2 kW" and
+ * One unit for a set of figures: the one asked, else the largest decides. 3 200 W and 400 W read as "3.2 kW" and
  * "0.4 kW", never as "3.2 kW" beside "400 W".
  */
-export function scaleOf(values: readonly (number | null)[], base: 'W' | 'Wh'): Scale {
+export function scaleOf(
+  values: readonly (number | null)[],
+  base: 'W' | 'Wh',
+  asked: NumberOptions = {},
+): Figures {
   let peak = 0;
   for (const v of values) if (v !== null && Number.isFinite(v)) peak = Math.max(peak, Math.abs(v));
-  if (peak >= 1e9) return { unit: `G${base}`, divisor: 1e9 };
-  if (peak >= 1e6) return { unit: `M${base}`, divisor: 1e6 };
-  if (peak >= 1e3) return { unit: `k${base}`, divisor: 1e3 };
-  return { unit: base, divisor: 1 };
+  return figuresOf(undefined, asked, base, peak);
 }
 
 /**
- * A base-unit figure in the set's unit, at the precision the design uses: "450" W, "3.2" kW, "286" kWh.
- * Scaled figures keep their decimal ("3.0", not "3") so a live readout does not change width as it
- * moves; a trickle in a big unit gets a second decimal rather than reading as nothing ("0.04" kW).
- * `null` prints the em dash: a missing number is never a 0.
+ * A base-unit figure in the set's unit, at the set's decimals: "450" W, "3.2" kW, "286" kWh. `null` prints the em
+ * dash: a missing number is never a 0.
  */
 export function scaled(
   hass: HomeAssistant | undefined,
   value: number | null,
-  scale: Scale,
+  scale: Figures,
 ): string {
-  if (value === null || !Number.isFinite(value)) return '—';
-  const v = value / scale.divisor;
-  const abs = Math.abs(v);
-  if (abs === 0) return formatNumber(hass, 0, { digits: 0 });
-  if (scale.divisor === 1) return formatNumber(hass, v, { digits: abs < 10 ? 1 : 0 });
-  const digits = abs >= 100 ? 0 : abs < 0.095 ? 2 : 1;
-  return formatNumber(hass, v, { digits, minDigits: digits });
+  return value === null || !Number.isFinite(value) ? '—' : writeFigure(hass, value, scale);
 }
 
 /** "Garage battery power" → "Garage battery": a device's name, without the words that say which of its sensors it is. */
@@ -133,59 +112,75 @@ export const share = (part: number, total: number): number =>
   total > 0 && Number.isFinite(part) ? Math.min(1, Math.max(0, part / total)) : 0;
 
 /**
- * What a readout prints for a power or energy sensor: the unit its own figure asks for (3 200 W →
- * "3.2 kW", 11 200 Wh → "11.2 kWh", 450 W → "450 W"). Only the watt ladder is rescaled — a meter in
- * MJ or a price keeps Home Assistant's own unit and formatting, display precision included.
+ * What a readout prints for a power or energy sensor: the unit the card asks for, else the one its own figure asks
+ * for (3 200 W → "3.2 kW", 11 200 Wh → "11.2 kWh", 450 W → "450 W"); its decimals, else the sensor's own precision in
+ * its own unit. Only the watt ladder is rescaled on its own — a meter in MJ or a price keeps Home Assistant's own unit
+ * and formatting, display precision included, unless a unit of its class is asked for.
  */
 export function readoutParts(
   hass: HomeAssistant | undefined,
   view: EntityView,
   raw?: number,
+  asked: NumberOptions = {},
 ): ValueParts {
   const kind = family(view);
   const unit = view.unit.trim();
   const base = kind === 'power' ? 'W' : 'Wh';
   // `raw` is a figure in the entity's own unit (a point of its history); without it, the entity's reading
   const value =
-    raw === undefined
-      ? baseValue(view)
-      : Number.isFinite(raw)
-        ? raw * ((kind === 'power' ? POWER : ENERGY).get(unit) ?? 1)
-        : null;
-  if (!kind || value === null || (unit !== '' && !unit.endsWith(base)))
+    raw === undefined ? baseValue(view) : Number.isFinite(raw) ? convert(raw, unit, base) : null;
+  const digits = decimalsOf(asked.decimals);
+  const named = typeof asked.unit === 'string' && unitClass(asked.unit) === kind;
+  if (!kind || value === null || (unit !== '' && !unit.endsWith(base) && !named))
     return raw === undefined
-      ? valueParts(hass, view)
-      : { value: formatNumber(hass, raw, { digits: Math.abs(raw) >= 100 ? 0 : 1 }), unit };
-  const scale = scaleOf([value], base);
-  return { value: scaled(hass, value, scale), unit: scale.unit };
+      ? valueParts(hass, view, digits === undefined ? {} : { digits, minDigits: digits })
+      : {
+          value: formatNumber(hass, raw, {
+            digits: digits ?? (Math.abs(raw) >= 100 ? 0 : 1),
+            ...(digits === undefined ? {} : { minDigits: digits }),
+          }),
+          unit,
+        };
+  const figures = figuresOf(hass, asked, base, value, view);
+  return { value: writeFigure(hass, value, figures), unit: figures.unit };
 }
 
 /**
- * A row of readouts read together: every energy figure in ONE unit and every power figure in ONE
- * unit, each chosen by the largest of its family ("0.2 kWh" beside "1.2 kWh", never "230 Wh"). A
- * sensor of any other kind keeps what Home Assistant would print.
+ * A row of readouts read together: every energy figure in ONE unit and every power figure in ONE unit, each chosen
+ * by the largest of its family ("0.2 kWh" beside "1.2 kWh", never "230 Wh") — or by what the card asks (`asked`), and
+ * an item that asks for its own (`own`) reads as it asks. A sensor of any other kind keeps what Home Assistant
+ * would print.
  */
 export function legendParts(
   hass: HomeAssistant | undefined,
   views: readonly EntityView[],
+  asked: NumberOptions = {},
+  own: ReadonlyArray<NumberOptions | undefined> = [],
 ): ValueParts[] {
   const bases = views.map((view) => ({ kind: family(view), value: baseValue(view) }));
-  const scale = (kind: Family): Scale =>
+  const scale = (kind: Family): Figures =>
     scaleOf(
       bases.filter((b) => b.kind === kind).map((b) => b.value),
-      kind === 'power' ? 'W' : 'Wh',
+      BASE[kind],
+      asked,
     );
   const scales = { power: scale('power'), energy: scale('energy') };
   return views.map((view, index) => {
     const { kind, value } = bases[index] ?? { kind: null, value: null };
-    if (!kind || value === null) return readoutParts(hass, view);
+    const mine = own[index];
+    const itself = mine !== undefined && (mine.unit !== undefined || mine.decimals !== undefined);
+    if (!kind || value === null || itself)
+      return readoutParts(hass, view, undefined, { ...asked, ...mine });
     return { value: scaled(hass, value, scales[kind]), unit: scales[kind].unit };
   });
 }
 
-/** A price or a running cost: money is written to the cent ("0.30", not "0.3") unless the user set a precision. */
+/**
+ * A price or a running cost: money is written to the cent ("0.30", not "0.3") unless the user set a precision — a
+ * card's `decimals` is for its energy figures, never its money.
+ */
 export function costParts(hass: HomeAssistant | undefined, view: EntityView): ValueParts {
   if (view.status !== 'ok' || view.number === null) return valueParts(hass, view);
-  const digits = hass?.entities?.[view.id]?.display_precision ?? 2;
+  const digits = precisionOf(hass, view) ?? 2;
   return { value: formatNumber(hass, view.number, { digits, minDigits: digits }), unit: view.unit };
 }

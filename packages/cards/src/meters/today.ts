@@ -1,12 +1,13 @@
 import { formatNumber, type HomeAssistant } from '@fluvy/core';
 import { houseMidnight } from '../energy-model/period.js';
 import { stepGain } from '../history-bars/gain.js';
+import { unitClass, unitsFor } from '../history-bars/units.js';
 
 /**
  * A water or gas meter's day, from Home Assistant's long-term statistics: what it has used since the house's
- * midnight, and what a typical day of it is. Everything is in the meter's own unit — the statistics are asked in it
- * (Home Assistant converts a meter whose unit changed over time), so a litre meter reads litres and a gas meter in
- * kWh reads kWh.
+ * midnight, and what a typical day of it is. Everything is in the unit the meter reads in — the statistics are asked
+ * in it (Home Assistant converts a meter whose unit changed over time, and one asked in another unit of its class),
+ * so a litre meter reads litres, or gallons where the card asks, and a gas meter in kWh reads kWh.
  */
 
 export type MeterKind = 'water' | 'gas';
@@ -20,19 +21,6 @@ export interface StatRow {
 
 const HOUR = 3_600_000;
 
-/** The volume units Home Assistant's statistics convert between (its `VolumeConverter`). */
-const VOLUME = new Set(['L', 'mL', 'gal', 'fl. oz.', 'm³', 'ft³', 'CCF']);
-/** The energy units a gas meter may count in (its `EnergyConverter`). */
-const ENERGY = new Set(['Wh', 'kWh', 'MWh', 'MJ', 'GJ']);
-
-/** The `units` a statistics request asks for to read a meter in its own unit; none for a unit it cannot convert. */
-export function statUnits(unit: string): Readonly<Record<string, string>> | undefined {
-  const u = unit.trim();
-  if (VOLUME.has(u)) return { volume: u };
-  if (ENERGY.has(u)) return { energy: u };
-  return undefined;
-}
-
 /** What a meter measures: its device class says; a meter counting energy is gas; anything else is taken as water. */
 export function kindOf(
   deviceClass: string,
@@ -41,7 +29,7 @@ export function kindOf(
 ): MeterKind {
   if (deviceClass === 'water') return 'water';
   if (deviceClass === 'gas') return 'gas';
-  if (ENERGY.has(unit.trim())) return 'gas';
+  if (unitClass(unit) === 'energy') return 'gas';
   return fallback;
 }
 
@@ -88,10 +76,14 @@ export function fractionOf(today: number | null, typical: number | null): number
 }
 
 /** A meter's figure: "84" L, "2.7" m³, "3.0" m³, "0.04" m³ — the decimal kept so a live figure keeps its width. */
-export function meterFigure(hass: HomeAssistant | undefined, value: number): string {
+export function meterFigure(
+  hass: HomeAssistant | undefined,
+  value: number,
+  decimals?: number,
+): string {
   const abs = Math.abs(value);
-  if (abs === 0) return formatNumber(hass, 0, { digits: 0 });
-  const digits = abs >= 10 ? 0 : abs >= 0.095 ? 1 : 2;
+  if (decimals === undefined && abs === 0) return formatNumber(hass, 0, { digits: 0 });
+  const digits = decimals ?? (abs >= 10 ? 0 : abs >= 0.095 ? 1 : 2);
   return formatNumber(hass, value, { digits, minDigits: digits });
 }
 
@@ -127,7 +119,7 @@ export function fetchToday(
   now: Date,
 ): Promise<readonly StatRow[] | null> {
   const midnight = houseMidnight(hass, now);
-  const units = statUnits(unit);
+  const units = unitsFor(unit);
   return ask(
     hass,
     `today|${id}|${unit}|${midnight.getTime()}|${Math.floor(now.getTime() / HOUR)}`,
@@ -150,7 +142,7 @@ export function fetchWeek(
   now: Date,
 ): Promise<readonly StatRow[] | null> {
   const midnight = houseMidnight(hass, now);
-  const units = statUnits(unit);
+  const units = unitsFor(unit);
   return ask(hass, `week|${id}|${unit}|${midnight.getTime()}`, {
     start_time: houseMidnight(hass, now, 7).toISOString(),
     end_time: midnight.toISOString(),
