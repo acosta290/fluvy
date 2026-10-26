@@ -186,6 +186,24 @@ rows:
     secondary: "{{ state_attr('climate.living', 'current_temperature') }} °C · {{ states('sensor.humidity') }} %"
 ```
 
+A row's time — the openings card's "2 h ago", a list row's *last change* line, a tile's, a person's — is Home
+Assistant's `last_changed`, which a restart or a reload resets. Where the house keeps the real one (1.11: a
+timestamp sensor such as `sensor.front_door_real_last_changed`, or an attribute of the entity's own), the row reads
+it from there with `since`: the sensor's id, or `attribute:<name>`, as an ISO date or an epoch in seconds or
+milliseconds; the editor offers the house's timestamp sensors, and takes any other typed. The openings card names one
+for every row at once with `since_pattern` — `sensor.{id}_real_last_changed`, `{id}` the row's object id, `{entity}`
+its whole id — and a row's own `since` wins. A sensor that is empty, unknown, unavailable or no moment at all leaves
+the row on Home Assistant's own time.
+
+```yaml
+type: custom:fluvy-openings-card
+since_pattern: sensor.{id}_real_last_changed
+rows:
+  - binary_sensor.front_door
+  - entity: binary_sensor.garage_door
+    since: attribute:last_opened
+```
+
 ## Template
 
 The template card is a tile — compact (the default), mini or large, the tile card's own — whose `name`,
