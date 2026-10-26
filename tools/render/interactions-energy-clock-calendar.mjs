@@ -530,8 +530,8 @@ async function moreInfos(page, run) {
     .locator('fluvy-energy-flow-card .fv-readout__value')
     .allTextContents();
   check(
-    'flow: totals share one unit (420 Wh beside 4.1 kWh reads 0.4 kWh)',
-    legend.map((t) => t.replace(/\s+/g, ' ').trim()).join(' | ') === '0.4kWh | 1.3kWh | 4.1kWh',
+    'flow: totals share one unit (420 Wh beside 4.1 kWh reads 0.42 kWh)',
+    legend.map((t) => t.replace(/\s+/g, ' ').trim()).join(' | ') === '0.42kWh | 1.3kWh | 4.1kWh',
     legend.join(' | '),
   );
   await page.close();
