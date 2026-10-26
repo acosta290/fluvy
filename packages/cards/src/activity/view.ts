@@ -5,6 +5,7 @@ import { keyed } from 'lit/directives/keyed.js';
 import {
   ACTIVITY_CARD,
   countTargets,
+  ensureFonts,
   formatDate,
   formatTime,
   languageOf,
@@ -251,6 +252,7 @@ export class FluvyActivity extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    ensureFonts();
     this.onPreferences();
     this.readAddress(true);
     window.addEventListener('location-changed', this.onLocation);

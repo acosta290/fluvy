@@ -7,6 +7,7 @@ import './english.js';
 import {
   countTargets,
   dateFormat,
+  ensureFonts,
   formatTime,
   languageOf,
   navigate,
@@ -273,6 +274,7 @@ export class FluvyHistory extends LitElement {
   private offWords: (() => void) | undefined;
   override connectedCallback(): void {
     super.connectedCallback();
+    ensureFonts();
     // a language's words arriving (fetched after the first paint) re-render the page in them
     this.offWords = onWords(() => this.requestUpdate());
     this.readAddress(true);

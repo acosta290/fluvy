@@ -357,6 +357,12 @@ function haStandIns(pencil) {
     plain.background === '' && plain.themeColor === '#03a9f4',
     `${plain.background} · ${plain.themeColor}`,
   );
+  /** The font files the page fetched (`fonts/` beside the bundle). */
+  const fonts = async () =>
+    (await tab.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name))).filter(
+      (name) => name.includes('/fonts/'),
+    );
+  check('another theme: the page fetches no font of ours', (await fonts()).length === 0);
   // Home Assistant applies the Fluvy theme: its sentinel, its font and its primary inline on <html>
   await tab.evaluate(() => {
     const style = document.documentElement.style;
@@ -366,6 +372,14 @@ function haStandIns(pencil) {
   });
   await tab.waitForTimeout(600);
   const worn = await tab.evaluate(() => window.exercise());
+  const fetchedFonts = await fonts();
+  check(
+    'the Fluvy theme: the page fetches Inter, both faces',
+    ['inter-variable.woff2', 'inter-italic-variable.woff2'].every((file) =>
+      fetchedFonts.some((name) => name.endsWith(`/fonts/${file}`)),
+    ),
+    fetchedFonts.join(', '),
+  );
   check(
     'the Fluvy theme: the chart takes the page’s font and primary',
     worn.font === 'Inter, sans-serif' && worn.series === '#856529',

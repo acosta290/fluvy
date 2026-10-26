@@ -5,6 +5,7 @@ import {
   type DevicePatch,
   type DeviceSettings,
   type EffectiveSettings,
+  ensureFonts,
   type HomeAssistant,
   type Look,
   type LookHandle,
@@ -263,6 +264,7 @@ export class FluvyPanel extends LitElement {
   private offWords: (() => void) | undefined;
   override connectedCallback(): void {
     super.connectedCallback();
+    ensureFonts();
     // a language's words arriving (fetched after the first paint) re-render the page in them
     this.offWords = onWords(() => this.requestUpdate());
     this.resize = new ResizeObserver((entries) => {

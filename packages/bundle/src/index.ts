@@ -4,7 +4,6 @@
  * them in the card picker.
  */
 import {
-  ensureFonts,
   registerIcons,
   setFontFolder,
   startLook,
@@ -45,10 +44,10 @@ if (host.__fluvy) {
   badge(`v${host.__fluvy.version} already running; this copy (v${version}) stands down`);
 } else {
   registerIcons();
-  // the fonts sit beside this file (`/local/fluvy/fonts/`); the code that loads them lives in `chunks/`
+  // the fonts sit beside this file (`/local/fluvy/fonts/`); the code that loads them lives in `chunks/`, and the look
+  // registers them once Fluvy is in use on the page (a page on another theme fetches none)
   const here: string = import.meta.url;
   setFontFolder(new URL('fonts/', here).href);
-  ensureFonts();
   const look = startLook();
   // the size this device reads its dashboards at (`?zoom=` remembered, the loader's early variable taken over)
   startZoom();
