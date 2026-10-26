@@ -296,16 +296,42 @@ describe('a select’s options as the house has them', () => {
     ) as FluvyRowsEditor;
     editor.setConfig({ type: 'custom:x' });
     const formOf = (): unknown =>
-      (editor as unknown as { schema(spec: unknown, data: unknown): unknown }).schema(
-        editor.spec,
-        {},
-      );
+      (
+        editor as unknown as { schema(spec: unknown, data: unknown, choices: unknown): unknown }
+      ).schema(editor.spec, {}, editor.spec?.choices?.({ type: 'custom:x' }, undefined) ?? {});
     const first = formOf();
     expect(formOf()).toBe(first);
     expect(first).not.toEqual(editor.spec?.schema);
     // a house that says nothing of them leaves the form as the card wrote it
     house = 'none';
     expect(formOf()).toEqual(editor.spec?.schema);
+  });
+
+  it('reaches the lists’ items too (a row’s since): the same form while they say the same', async () => {
+    const since = { name: 'since', selector: { select: { custom_value: true, options: [] } } };
+    const list: RowsListSpec = { ...rows, schema: [rows.schema[0]!, since] };
+    let house = 'heat';
+    const editor = await drawEditor(
+      listsEditor({ schema: [] }, [list], undefined, undefined, () =>
+        house === 'heat' ? { since: heat } : {},
+      ),
+      { type: 'custom:x', rows: ['sensor.a', 'sensor.b'] },
+    );
+    const forms = (): readonly HaFormSchemaItem[][] =>
+      [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')].map(
+        (form) => form.schema as HaFormSchemaItem[],
+      );
+    const [a, b] = forms();
+    expect(a?.[1]?.selector).toEqual({ select: { custom_value: true, options: heat } });
+    expect(b).toBe(a);
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toBe(a);
+    house = 'none';
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toEqual(list.schema);
+    expect(forms()[0]).not.toBe(a);
   });
 });
 

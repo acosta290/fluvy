@@ -9,6 +9,8 @@ export interface HelperRowConfig {
   icon?: string;
   /** The line under the title: context or time, never the entity's domain; may be a template. Defaults to its area; '' hides it. */
   secondary?: string;
+  /** Where its last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  since?: string;
   /** Quick-set chips under a time-only helper, as "HH:MM" (the sheet's Wake-up row). */
   presets?: readonly string[];
 }

@@ -32,8 +32,10 @@ import {
   type OptionWord,
   selectField,
   tintField,
+  sinceField,
 } from '../shared/form.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
+import { changedAt } from '../shared/since.js';
 import { isTemplate, PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 import { templateHeight } from '../template-family.js';
 import { activeOf, colourOf, iconRefOf, type TemplateColour } from './values.js';
@@ -49,6 +51,8 @@ export interface TemplateCardConfig extends FluvyCardConfig {
    * default without one), or words of your own — a template among them.
    */
   secondary?: Secondary;
+  /** Where the entity's last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  since?: string;
   active?: Active;
   /** `always`: the card's colour shows at rest too, a wash of it and its hairline (`on`, the default: only when on). */
   tint?: Tint;
@@ -109,6 +113,7 @@ export class FluvyTemplateCard extends FluvyTileCard {
 
   static override keys = configKeys<TemplateCardConfig>()([
     'secondary',
+    'since',
     'active',
     'tint',
     'variant',
@@ -144,6 +149,7 @@ export class FluvyTemplateCard extends FluvyTileCard {
   static override defaults: EditorDefaults = (config) => ({
     variant: 'compact',
     secondary: config['entity'] ? 'state' : 'none',
+    since: '',
     active: 'auto',
     tint: 'on',
   });
@@ -153,6 +159,8 @@ export class FluvyTemplateCard extends FluvyTileCard {
         entityField(undefined, 'entity', false),
         nameIconFields(),
         selectField('secondary', KEYWORDS, { custom: true }),
+        // where the last change is read from: an entity's
+        onlyWhen((data) => Boolean(data['entity']), sinceField()),
         fieldRow(
           selectField('variant', VARIANTS),
           selectField('active', ['auto', 'always', 'never'], { custom: true }),
@@ -294,9 +302,8 @@ export class FluvyTemplateCard extends FluvyTileCard {
     if (entity && (secondary === 'state' || view.status !== 'ok'))
       return super.tileLine(item, view, on, level, valueInHead, small);
     if (secondary === 'state' || secondary === 'none') return '';
-    const changed = view.stateObj
-      ? relativeTime(this.hass, new Date(view.stateObj.last_changed))
-      : '';
+    const at = changedAt(this.hass, view, this.own.since);
+    const changed = at ? relativeTime(this.hass, at) : '';
     if (secondary === 'area') return view.areaName || changed;
     if (secondary === 'last-changed') return changed;
     return isTemplate(secondary)

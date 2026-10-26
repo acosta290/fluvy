@@ -34,13 +34,15 @@ import {
   selectField,
   showIconField,
   titleFields,
+  sinceChoices,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { DETAILS, ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
 import { secondaryText } from '../shared/secondary.js';
+import { sinceIds } from '../shared/since.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
 import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
@@ -145,6 +147,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       schema: rowSchema(undefined, true),
     },
   ];
+  /** A row's `since` offers the house's timestamp sensors. */
+  static override choices: EditorChoices = sinceChoices;
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   private readonly texts = new TemplateTexts(this);
@@ -187,11 +191,16 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     return config;
   }
 
+  /** The rows' entities (a light group's members too), and what the rows' last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return withMembers(
-      this.rows().map((r) => r.entity),
-      this.hass,
-    );
+    const rows = this.rows();
+    return [
+      ...withMembers(
+        rows.map((r) => r.entity),
+        this.hass,
+      ),
+      ...sinceIds(rows),
+    ];
   }
 
   override getCardSize(): number {
@@ -278,7 +287,15 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           : '';
       const end = trailing === 'switch' ? SWITCH_SLOT : trailing === 'chevron' ? 44 : undefined;
       const sub = (short = false): string =>
-        secondaryText(this.hass, view, rows[i]?.secondary, trailing === 'value', this.texts, short);
+        secondaryText(
+          this.hass,
+          view,
+          rows[i]?.secondary,
+          trailing === 'value',
+          this.texts,
+          short,
+          rows[i]?.since,
+        );
       return { view, usable, trailing, value, end, sub };
     });
     const keep = this.head.rowsKeepIcon(

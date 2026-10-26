@@ -155,6 +155,28 @@ export const selectField = (
   },
 });
 /**
+ * Where a row's last change is read from (`since`, #67): one of the house's timestamp sensors (`sinceChoices`), or
+ * `attribute:<name>` of the row's own entity, typed.
+ */
+export const sinceField = (): HaFormSchemaItem => ({
+  ...selectField('since', [], { custom: true }),
+  helper: 'editor.since_help',
+});
+
+/** The house's timestamp sensors, by name, as a `since` select's choices: what a real last change is read from. */
+export const sinceChoices: EditorChoices = (_config, hass) => ({
+  since: Object.values(hass?.states ?? {})
+    .filter(
+      (state) =>
+        state.entity_id.startsWith('sensor.') && state.attributes.device_class === 'timestamp',
+    )
+    .map((state) => ({
+      value: state.entity_id,
+      label: state.attributes.friendly_name ?? state.entity_id,
+    })),
+});
+
+/**
  * An ordered subset of named choices (a compact row's `controls`): Home Assistant's select as chips that are
  * dragged into order, with a box to add the rest. The dropdown mode is asked for: with fewer than six choices the
  * selector would draw check boxes, which keep no order. `custom` lets a value of the person's own be typed as well

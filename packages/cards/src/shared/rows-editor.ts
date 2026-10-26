@@ -86,6 +86,7 @@ export type EditorChoices = (
   config: LovelaceCardConfig,
   hass: HomeAssistant | undefined,
 ) => Readonly<Record<string, readonly SelectOption[]>>;
+type Choices = ReturnType<EditorChoices>;
 
 /** A schema with the options of the selects `choices` names swapped in, through its grids; the rest is untouched. */
 export function withChoices(
@@ -375,6 +376,11 @@ export class FluvyRowsEditor extends LitElement {
   /** The card's form as it stands (the fields that can act, the house's options), kept while it is the same, likewise. */
   private chosen:
     { readonly key: string; readonly schema: readonly HaFormSchemaItem[] } | undefined;
+  /** Each list's item forms with the house's options in them, by the form the list says an item shows, kept while the options are the same. */
+  private readonly itemForms = new WeakMap<
+    readonly HaFormSchemaItem[],
+    { readonly key: string; readonly schema: readonly HaFormSchemaItem[] }
+  >();
 
   constructor() {
     super();
@@ -430,12 +436,30 @@ export class FluvyRowsEditor extends LitElement {
   private schema(
     spec: RowsEditorSpec,
     asked: Readonly<Record<string, unknown>>,
+    choices: Choices,
   ): readonly HaFormSchemaItem[] {
-    const choices = (this.config && spec.choices?.(this.config, this.hass)) || {};
     const shown = visibleFields(spec.schema, asked, this.hass);
     const key = JSON.stringify([choices, namesOf(shown)]);
     if (this.chosen?.key !== key) this.chosen = { key, schema: withChoices(shown, choices) };
     return this.chosen.schema;
+  }
+
+  /**
+   * An item's form: what its list says the item shows, its selects offering what the house has where the card says
+   * so (`choices`: a row's `since` from the house's timestamp sensors) — the same array for the same answer.
+   */
+  private itemSchema(
+    list: RowsListSpec,
+    item: Item,
+    choices: Choices,
+    key: string,
+  ): readonly HaFormSchemaItem[] {
+    const own = list.schemaOf?.(item) ?? list.schema;
+    const kept = this.itemForms.get(own);
+    if (kept?.key === key) return kept.schema;
+    const schema = withChoices(own, choices);
+    this.itemForms.set(own, { key, schema });
+    return schema;
   }
 
   /** The card's form edits everything but the lists: its value is the whole of that part (a cleared field is absent from it). */
@@ -553,7 +577,7 @@ export class FluvyRowsEditor extends LitElement {
     return helper;
   }
 
-  private renderList(list: RowsListSpec): TemplateResult {
+  private renderList(list: RowsListSpec, choices: Choices, key: string): TemplateResult {
     const items = this.items(list);
     return html`<div class="list">
       <p class="list__title">${this.t(list.title)}</p>
@@ -571,7 +595,7 @@ export class FluvyRowsEditor extends LitElement {
                 <ha-form
                   .hass=${this.hass}
                   .data=${item}
-                  .schema=${list.schemaOf?.(item) ?? list.schema}
+                  .schema=${this.itemSchema(list, item, choices, key)}
                   .computeLabel=${this.labeler(list)}
                   .computeHelper=${this.helper(list)}
                   @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
@@ -617,6 +641,9 @@ export class FluvyRowsEditor extends LitElement {
     );
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };
+    // the house's options for the selects, asked once for the card's form and for its lists' items
+    const choices = spec.choices?.(this.config, this.hass) ?? {};
+    const key = JSON.stringify(choices);
     // the card's helpers are told what the form shows and the house (one that reads the sensor picked); a field with
     // a word of its own says it where the card says nothing
     const own = spec.computeHelper;
@@ -624,7 +651,7 @@ export class FluvyRowsEditor extends LitElement {
       <ha-form
         .hass=${this.hass}
         .data=${data}
-        .schema=${this.schema(spec, asked)}
+        .schema=${this.schema(spec, asked, choices)}
         .computeLabel=${spec.computeLabel}
         .computeHelper=${(schema: HaFormSchemaItem, localize: (key: string) => string) =>
           own?.(schema, localize, data, this.hass) ?? ownHelper(schema)}
@@ -632,7 +659,7 @@ export class FluvyRowsEditor extends LitElement {
       ></ha-form>
       ${spec.lists
         .filter((list) => list.when?.(asked, this.hass) ?? true)
-        .map((list) => this.renderList(list))}
+        .map((list) => this.renderList(list, choices, key))}
     `;
   }
 }

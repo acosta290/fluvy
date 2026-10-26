@@ -58,6 +58,7 @@ import {
   tintField,
 } from '../shared/form.js';
 import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
+import { sinceIds } from '../shared/since.js';
 import { EMPTY, ROW, rowsOf } from '../shared/heights.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { statsRow } from '../shared/readouts.js';
@@ -396,9 +397,10 @@ export class FluvyRoomCard extends FluvyTileCard {
   protected override watched(): readonly string[] {
     const { members, climate } = this.contents();
     // every entity the area holds, shown or not: one whose state comes late fills the room, a hidden one moves the hint;
-    // and a light group's members (its colour is theirs)
+    // a light group's members (its colour is theirs); and what a tile's last change is read from (`since`)
+    const tiles = this.tiles();
     return withMembers(
-      idsOf([...members, ...this.tiles(), climate.temperature, climate.humidity]),
+      [...idsOf([...members, ...tiles, climate.temperature, climate.humidity]), ...sinceIds(tiles)],
       this.hass,
     );
   }

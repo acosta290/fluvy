@@ -50,10 +50,13 @@ import {
   onlyWhen,
   selectField,
   tintField,
+  sinceChoices,
+  sinceField,
 } from '../shared/form.js';
 import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
+import { changedAt, sinceIds } from '../shared/since.js';
 
 export type TileSize = 'large' | 'compact' | 'mini';
 export const TILE_SIZES: readonly TileSize[] = ['large', 'compact', 'mini'];
@@ -68,6 +71,8 @@ export interface TileItem {
   color?: string;
   /** Entities shown as small readouts in the foot of a large tile (a plug's power, its energy today, its cost): two, or three when the tile is wide; the first one joins the state line of a small tile. */
   readouts?: readonly string[];
+  /** Where its last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  since?: string;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
 }
@@ -202,22 +207,27 @@ export class FluvyTileCard extends Card<TileCardConfig> {
   static override keys = configKeys<TileCardConfig>()([
     'size',
     'readouts',
+    'since',
     'tint',
     'light_colors',
     'light_whites',
   ]);
   static override defaults: EditorDefaults = () => ({
     size: 'large',
+    since: '',
     tint: 'on',
     light_colors: lightDefaults().colors,
     light_whites: 'temperature',
   });
+  /** `since` offers the house's timestamp sensors. */
+  static override choices: EditorChoices = sinceChoices;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         entityField(),
         nameIconFields(),
         selectField('size', TILE_SIZES),
+        sinceField(),
         ...colourFields(),
         onlyWhen(tintsAtRest, tintField()),
         // a light's colours, for a light; readouts where they are drawn: a large tile's foot is its ruler when it has one
@@ -264,8 +274,16 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return size && TILE_SIZES.includes(size) ? size : 'large';
   }
 
+  /** The entity (a light group's members too), its readouts, and what its last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return withMembers([this.config?.entity ?? '', ...(this.config?.readouts ?? [])], this.hass);
+    return withMembers(
+      [
+        this.config?.entity ?? '',
+        ...(this.config?.readouts ?? []),
+        ...sinceIds(this.config ? [this.config] : []),
+      ],
+      this.hass,
+    );
   }
 
   /** What the foot ruler controls for this entity, if anything (`ruled`). */
@@ -306,24 +324,23 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * switch says, whatever the tile's fill does).
    */
   protected tileLine(
-    _item: TileItem,
+    item: TileItem,
     view: EntityView,
     on: boolean,
     level: number | null,
     valueInHead: boolean,
     small = false,
   ): string {
+    // when it last changed, as the tile's `since` says where that reads (#67)
+    const changed = changedAt(this.hass, view, item.since);
     if (view.status !== 'ok') {
       // a small tile has room for the word, not for "· 16 h ago" as well
-      const since =
-        view.stateObj && !small
-          ? ` · ${relativeTime(this.hass, new Date(view.stateObj.last_changed))}`
-          : '';
-      return `${stateText(this.hass, view)}${since}`;
+      const ago = changed && !small ? ` · ${relativeTime(this.hass, changed)}` : '';
+      return `${stateText(this.hass, view)}${ago}`;
     }
     if (valueInHead) {
       if (view.areaName) return view.areaName;
-      return view.stateObj ? relativeTime(this.hass, new Date(view.stateObj.last_changed)) : '';
+      return changed ? relativeTime(this.hass, changed) : '';
     }
     const text = stateText(this.hass, view);
     return on && level !== null && level > 0 && this.showsLevel()

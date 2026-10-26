@@ -25,6 +25,8 @@ import {
   showIconField,
   textField,
   titleFields,
+  sinceChoices,
+  sinceField,
 } from '../shared/form.js';
 
 import { nameOf, type HelperHost, type HelperRowConfig } from './context.js';
@@ -46,7 +48,8 @@ import { MAX_CHIPS, selectPiece, selectValue } from './select.js';
 import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { sinceIds } from '../shared/since.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { toneOf } from '../shared/colour.js';
@@ -292,11 +295,12 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       key: 'rows',
       alias: 'entities',
       title: 'editor.rows',
-      keys: ['entity', 'name', 'icon', 'secondary', 'presets'],
+      keys: ['entity', 'name', 'icon', 'secondary', 'since', 'presets'],
       schema: [
         entityField(),
         nameIconFields(),
         textField('secondary'),
+        sinceField(),
         {
           name: 'presets',
           selector: { select: { multiple: true, custom_value: true, options: [] } },
@@ -304,6 +308,8 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       ],
     },
   ];
+  /** A row's `since` offers the house's timestamp sensors. */
+  static override choices: EditorChoices = sinceChoices;
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
   static override defaults: EditorDefaults = () => ({ options_style: 'full' });
@@ -343,8 +349,10 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     return itemsOf(this.config?.rows ?? this.config?.entities);
   }
 
+  /** The rows' entities, and what their last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return this.rows().map((row) => row.entity);
+    const rows = this.rows();
+    return [...rows.map((row) => row.entity), ...sinceIds(rows)];
   }
 
   /**

@@ -37,9 +37,12 @@ import {
   selectField,
   showIconField,
   textField,
+  sinceChoices,
+  sinceField,
 } from '../shared/form.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { changedAt, sinceIds } from '../shared/since.js';
 import { renderAvatar } from '../shared/avatar.js';
 import { charging, personBattery, type BatterySource } from '../shared/battery.js';
 import { EMPTY, entryCount, HEAD, rowsOf, ROW } from '../shared/heights.js';
@@ -56,6 +59,8 @@ export interface PersonItem {
   /** The battery sensor of their phone (shown whatever `show_battery` says); else found from their tracker. */
   readonly battery?: string;
   readonly color?: string;
+  /** Where their last change is read from (#67): a timestamp sensor, or `attribute:<name>` of their own; else Home Assistant's. */
+  readonly since?: string;
   /** What a tap on them does (default: their details); a page of their own is `navigate`. */
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
@@ -218,15 +223,18 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
       alias: 'entities',
       title: 'editor.people',
       domains: ['person', 'device_tracker'],
-      keys: ['entity', 'name', 'battery', 'color', 'tap_action', 'hold_action'],
+      keys: ['entity', 'name', 'battery', 'color', 'since', 'tap_action', 'hold_action'],
       schema: [
         entityField(['person', 'device_tracker']),
         fieldRow(textField('name'), entityField(['sensor'], 'battery', false)),
         accentField(),
+        sinceField(),
         actionFields(),
       ],
     },
   ];
+  /** A person's `since` offers the house's timestamp sensors. */
+  static override choices: EditorChoices = sinceChoices;
   static override aliases: AliasSpec = {
     keys: [{ from: 'layout', to: 'variant' }],
     items: { people: ITEM_ALIASES },
@@ -283,11 +291,16 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
   }
 
   /** Watched: the people and the batteries shown beside them. */
+  /** The people, their phones' batteries, and what their last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return this.items().flatMap((item) => {
-      const battery = this.batteryOf(item);
-      return battery ? [item.entity, battery.entity] : [item.entity];
-    });
+    const items = this.items();
+    return [
+      ...items.flatMap((item) => {
+        const battery = this.batteryOf(item);
+        return battery ? [item.entity, battery.entity] : [item.entity];
+      }),
+      ...sinceIds(items),
+    ];
   }
 
   override getCardSize(): number {
@@ -316,7 +329,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
           ? charge.attr<number | null>(source.attribute)
           : charge.number;
     const presence: Presence = !usable ? 'off' : view.state === 'home' ? 'home' : 'away';
-    const changed = view.stateObj ? new Date(view.stateObj.last_changed) : null;
+    const changed = changedAt(this.hass, view, item.since);
     const picture = usable ? (view.attr<string | null>('entity_picture') ?? '') : '';
     return {
       item,

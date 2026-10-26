@@ -1,4 +1,4 @@
-import type { LovelaceConfigForm, LovelaceGridOptions } from '@fluvy/core';
+import type { FluvyCardConfig, LovelaceConfigForm, LovelaceGridOptions } from '@fluvy/core';
 import { css, html, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import {
@@ -24,6 +24,8 @@ import {
   selectField,
   tintField,
   toneField,
+  sinceChoices,
+  sinceField,
 } from '../shared/form.js';
 import type { BaseKey } from '../shared/base.js';
 import {
@@ -32,14 +34,24 @@ import {
   ITEM_ALIASES,
   type AliasSpec,
   type Columns,
+  type KnownKeys,
 } from '../shared/config.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { sinceIds } from '../shared/since.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { withMembers } from '../shared/light.js';
 import { lightDefaults, type LovelaceCardConfig } from '@fluvy/core';
 
-export interface TilesCardConfig extends TileCardConfig, EmptyList {
+/**
+ * The group's options are a tile's (its size, its tint, its lights' colours, readouts for every tile), but where a
+ * tile's last change is read from (`since`) is each tile's own: the group has none.
+ */
+export interface TilesCardConfig
+  extends
+    Pick<TileCardConfig, Exclude<KnownKeys<TileCardConfig>, 'since'>>,
+    FluvyCardConfig,
+    EmptyList {
   /** Entity ids, or tiles with their own name / icon / tone / colour / actions. */
   tiles?: readonly TileItem[];
   /** 1 to 4 per row, or `auto` — as many as fit (148 px compact and large, 84 px mini). Default: 2, 3 mini. */
@@ -107,16 +119,29 @@ export class FluvyTilesCard extends FluvyTileCard {
       key: 'tiles',
       alias: 'entities',
       title: 'editor.tiles',
-      keys: ['entity', 'name', 'icon', 'tone', 'color', 'readouts', 'tap_action', 'hold_action'],
+      keys: [
+        'entity',
+        'name',
+        'icon',
+        'tone',
+        'color',
+        'readouts',
+        'since',
+        'tap_action',
+        'hold_action',
+      ],
       schema: [
         entityField(),
         nameIconFields(),
         fieldRow(toneField(), accentField('color', { bulb: true })),
         entitiesField('readouts', ['sensor']),
+        sinceField(),
         actionFields(),
       ],
     },
   ];
+  /** A tile's `since` offers the house's timestamp sensors. */
+  static override choices: EditorChoices = sinceChoices;
   static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
   // the columns a group takes when it names none: three minis a row, else two
   static override defaults: EditorDefaults = (config) => ({
@@ -195,9 +220,11 @@ export class FluvyTilesCard extends FluvyTileCard {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
+  /** The tiles' entities (a light group's members too), their readouts, and what their last change is read from. */
   protected override watched(): readonly string[] {
+    const items = this.items();
     return withMembers(
-      this.items().flatMap((item) => [item.entity, ...(item.readouts ?? [])]),
+      [...items.flatMap((item) => [item.entity, ...(item.readouts ?? [])]), ...sinceIds(items)],
       this.hass,
     );
   }

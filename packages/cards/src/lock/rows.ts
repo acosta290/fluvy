@@ -23,6 +23,7 @@ import { statusToneOf, toneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
 import { withUnit } from '../shared/duration.js';
 import { secondaryText } from '../shared/secondary.js';
+import { changedAt, sinceIds } from '../shared/since.js';
 import { TemplateTexts } from '../shared/templates.js';
 import {
   accentField,
@@ -31,6 +32,7 @@ import {
   fieldRow,
   nameIconFields,
   selectField,
+  sinceField,
   toneField,
 } from '../shared/form.js';
 
@@ -40,6 +42,8 @@ export interface RowConfig {
   icon?: string;
   /** What the row says under its name: area, last change, state, none, an attribute, or a template; the area, else the time. */
   secondary?: Secondary;
+  /** Where its last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  since?: string;
   tap_action?: ActionConfig;
   tone?: Tone;
   color?: string;
@@ -51,6 +55,7 @@ export const ROW_KEYS = [
   'name',
   'icon',
   'secondary',
+  'since',
   'tap_action',
   'tone',
   'color',
@@ -64,6 +69,7 @@ export const rowSchema = (domains?: readonly string[], bulb = false): HaFormSche
   entityField(domains),
   nameIconFields(),
   selectField('secondary', ['area', 'last-changed', 'state', 'none'], { custom: true }),
+  sinceField(),
   fieldRow(toneField(), accentField('color', bulb ? { bulb } : { item: true })),
   actionField(),
 ];
@@ -112,16 +118,20 @@ const READ_OUT = new Set([
 /** Within half a day a time of day cannot be misread; after that a bare "21:40" would lie about the day. */
 const RECENT_MS = 12 * 3600_000;
 
-function lastChanged(view: EntityView): { date: Date; recent: boolean } | null {
-  if (!view.stateObj) return null;
-  const date = new Date(view.stateObj.last_changed);
-  if (Number.isNaN(date.getTime())) return null;
+/** When the entity last changed — as its `since` says where that reads (#67) — and whether that is recent. */
+function lastChanged(
+  hass: HomeAssistant | undefined,
+  view: EntityView,
+  since?: string,
+): { date: Date; recent: boolean } | null {
+  const date = changedAt(hass, view, since);
+  if (!date || Number.isNaN(date.getTime())) return null;
   return { date, recent: Date.now() - date.getTime() < RECENT_MS };
 }
 
 /** A recent change reads as its time ("21:40"), an older one as its age ("2 days ago"). */
-export function changedAt(hass: HomeAssistant | undefined, view: EntityView): string {
-  const changed = lastChanged(view);
+function changedTime(hass: HomeAssistant | undefined, view: EntityView, since?: string): string {
+  const changed = lastChanged(hass, view, since);
   if (!changed) return '';
   return changed.recent ? formatTime(hass, changed.date) : relativeTime(hass, changed.date);
 }
@@ -129,9 +139,9 @@ export function changedAt(hass: HomeAssistant | undefined, view: EntityView): st
 /** Head sub line of a lock or an alarm: "21:40 by Marta", else "Since 21:40", else the age of the state. */
 export function changedLine(hass: HomeAssistant | undefined, view: EntityView): string {
   if (view.status !== 'ok') return stateText(hass, view);
-  const changed = lastChanged(view);
+  const changed = lastChanged(hass, view);
   if (!changed) return view.areaName;
-  const time = changedAt(hass, view);
+  const time = changedTime(hass, view);
   const who = view.attr<string | null>('changed_by');
   if (who) return s(hass, 'by', { time, who });
   return changed.recent ? s(hass, 'since', { time }) : time;
@@ -142,10 +152,10 @@ export function changedLine(hass: HomeAssistant | undefined, view: EntityView): 
  * goes first), then its short form ("32 d ago"). Never a time cut.
  */
 export function changedShort(hass: HomeAssistant | undefined, view: EntityView): string[] {
-  const changed = lastChanged(view);
+  const changed = lastChanged(hass, view);
   if (view.status !== 'ok' || !changed) return [];
   return [
-    changedAt(hass, view),
+    changedTime(hass, view),
     ...(changed.recent ? [] : [relativeTime(hass, changed.date, new Date(), true)]),
   ];
 }
@@ -188,8 +198,13 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     return this.config?.show_rows === false ? 0 : this.rowList.length;
   }
 
+  /** The card's entity, its rows', and what the rows' last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return [this.config?.entity ?? '', ...this.rowList.map((row) => row.entity)];
+    return [
+      this.config?.entity ?? '',
+      ...this.rowList.map((row) => row.entity),
+      ...sinceIds(this.rowList),
+    ];
   }
 
   /**
@@ -243,10 +258,10 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     // the line says when it changed unless the row asks for another one (the area, its state, an attribute, a template,
     // none); in history that is the time of day (its age, once it is over half a day old)
     const mode = row.secondary ?? 'last-changed';
-    const changed = lastChanged(view);
+    const changed = lastChanged(this.hass, view, row.since);
     const time = events && mode === 'last-changed' && view.status === 'ok';
     const line = (short: boolean): string =>
-      secondaryText(this.hass, view, mode, trailing === 'value', this.texts, short);
+      secondaryText(this.hass, view, mode, trailing === 'value', this.texts, short, row.since);
     return {
       row,
       view,
@@ -261,7 +276,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
             ? 56
             : 44,
       title: row.name ?? view.name,
-      words: time ? changedAt(this.hass, view) : line(false),
+      words: time ? changedTime(this.hass, view, row.since) : line(false),
       short: time ? '' : line(true),
       // an age only where the line is one: a state's word (a row that cannot be read) is never shortened into one
       age:
@@ -278,8 +293,8 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
   }
 
   /** An age in its short form: "21 d", "3 h", "12 min" — "21日", "12分". */
-  private shortAge(view: EntityView): string {
-    const changed = lastChanged(view);
+  private shortAge(p: RowPlan): string {
+    const changed = lastChanged(this.hass, p.view, p.row.since);
     if (!changed) return '';
     const minutes = Math.max(1, Math.round((Date.now() - changed.date.getTime()) / 60_000));
     const [n, unit] =
@@ -302,8 +317,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       this.headFit.ruler.width('fv-row__sub', text) <= this.wordsRoom(p, keep);
     const word = view.status !== 'ok' && !fits(p.words) ? p.words : '';
     // a line the row cannot hold whole takes its shorter form ("32 d ago", "Not found"), read in full
-    const sub =
-      p.age && short ? this.shortAge(view) : word ? '' : fits(p.words) ? p.words : p.short;
+    const sub = p.age && short ? this.shortAge(p) : word ? '' : fits(p.words) ? p.words : p.short;
     return listRow({
       icon: keep ? iconOf(view, row.icon) : null,
       tone: events
