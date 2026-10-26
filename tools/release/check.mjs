@@ -95,12 +95,15 @@ const META = ['license', 'author', 'homepage', 'repository', 'bugs', 'engines'];
 
 for (const file of await workspaceManifests(root)) {
   const manifest = await readJson(file);
-  const name = relative(root, file);
+  const name = relative(root, file).replace(/\\/g, '/');
   if (manifest.version !== version) problem(`${name}: version ${manifest.version} ≠ ${version}`);
   for (const key of META) {
     const expected =
       key === 'repository' && file !== join(root, 'package.json')
-        ? { ...rootManifest.repository, directory: relative(root, dirname(file)) }
+        ? {
+            ...rootManifest.repository,
+            directory: relative(root, dirname(file)).replace(/\\/g, '/'),
+          }
         : rootManifest[key];
     if (JSON.stringify(manifest[key]) !== JSON.stringify(expected))
       problem(`${name}: "${key}" differs from the root package.json`);

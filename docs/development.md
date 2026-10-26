@@ -294,7 +294,7 @@ out.json` keeps every sample with its config.
 ### The facts guard
 
 `tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "fifty-seven cards", "fifteen
-palettes", "five automatic dashboards", "nine languages", "five tabs", in any case, in words or in digits — in the
+palettes", "five automatic dashboards", "ten languages", "five tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;
 a source comment's count of cards too. It holds the every-page budget above to `finish.mjs` and the table of scripts

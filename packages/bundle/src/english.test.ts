@@ -17,6 +17,7 @@ import { chunkOf } from '../groups.mjs';
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const PACKAGES = join(ROOT, 'packages');
 const ENGLISH = join(PACKAGES, 'core', 'src', 'i18n', 'locales', 'en');
+const slash = (path: string): string => path.replace(/\\/g, '/');
 
 type Tables = Readonly<Record<string, Readonly<Record<string, string>>>>;
 
@@ -161,14 +162,14 @@ function scan(entry: string, tables: Tables): Module[] {
  * neither registers the part nor imports the chunk that does.
  */
 function misplaced(modules: readonly Module[], parts: readonly Part[]): string[] {
-  const name = (id: string): string => relative(ROOT, id);
+  const name = (id: string): string => slash(relative(ROOT, id));
   const problems: string[] = [];
   // the chunks each chunk imports statically: every one of them is evaluated before it is
   const edges = new Map<string, Set<string>>();
   for (const { id, imports } of modules)
     for (const target of imports) {
-      const from = chunkOf(id);
-      const to = chunkOf(target);
+      const from = chunkOf(slash(id));
+      const to = chunkOf(slash(target));
       if (from !== to) edges.set(from, (edges.get(from) ?? new Set()).add(to));
     }
   const loaded = (chunk: string): Set<string> => {
@@ -178,7 +179,7 @@ function misplaced(modules: readonly Module[], parts: readonly Part[]): string[]
   };
   const registered = new Map<string, string>();
   for (const part of parts) {
-    const chunk = chunkOf(part.id);
+    const chunk = chunkOf(slash(part.id));
     if (chunk === 'core')
       problems.push(
         `${name(part.id)} lands in core: its family's group in groups.mjs must name it`,
@@ -187,18 +188,18 @@ function misplaced(modules: readonly Module[], parts: readonly Part[]): string[]
     if (!owners.length && Object.values(part.tables).some((table) => Object.keys(table).length))
       problems.push(`${name(part.id)} has words and no module registers it`);
     for (const owner of owners)
-      if (chunkOf(owner.id) !== chunk)
+      if (chunkOf(slash(owner.id)) !== chunk)
         problems.push(
-          `${name(owner.id)} registers ${name(part.id)} from ${chunkOf(owner.id)}, but the part lands in ${chunk}`,
+          `${name(owner.id)} registers ${name(part.id)} from ${chunkOf(slash(owner.id))}, but the part lands in ${chunk}`,
         );
     for (const namespace of Object.keys(part.tables)) registered.set(namespace, chunk);
   }
   for (const { id, says } of modules)
     for (const namespace of says) {
       const chunk = registered.get(namespace);
-      if (chunk && !loaded(chunkOf(id)).has(chunk))
+      if (chunk && !loaded(chunkOf(slash(id))).has(chunk))
         problems.push(
-          `${name(id)} (${chunkOf(id)}) says ${namespace}, whose English the ${chunk} chunk registers`,
+          `${name(id)} (${chunkOf(slash(id))}) says ${namespace}, whose English the ${chunk} chunk registers`,
         );
     }
   return problems;
@@ -221,7 +222,7 @@ const TABLES: Tables = Object.assign(
 );
 const MODULES = scan(join(PACKAGES, 'bundle', 'src', 'index.ts'), TABLES);
 const sayers = (namespace: string): string[] =>
-  MODULES.filter(({ says }) => says.has(namespace)).map(({ id }) => relative(ROOT, id));
+  MODULES.filter(({ says }) => says.has(namespace)).map(({ id }) => slash(relative(ROOT, id)));
 
 describe('a family’s English', () => {
   it('is said only where its chunk has registered it', () => {
@@ -282,13 +283,13 @@ describe('a family’s English', () => {
     for (const part of ALL_PARTS.filter(({ id }) => BEING_BUILT.has(basename(id)))) {
       const registrars = MODULES.filter(({ imports }) => imports.includes(part.id));
       expect(
-        registrars.map(({ id }) => relative(ROOT, id)),
+        registrars.map(({ id }) => slash(relative(ROOT, id))),
         `${basename(part.id)} is in the bundle now: take it off BEING_BUILT`,
       ).toEqual([]);
       for (const namespace of Object.keys(part.tables))
         expect(sayers(namespace), namespace).toEqual([]);
       // its group names it, so the card's chunk will carry it
-      expect(chunkOf(part.id)).not.toBe('core');
+      expect(chunkOf(slash(part.id))).not.toBe('core');
     }
   });
 });

@@ -12,7 +12,8 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
 | `nl` | Dutch | `packages/core/src/i18n/locales/nl.json` | — |
 | `fr` | French | `packages/core/src/i18n/locales/fr.json` | — |
 | `it` | Italian | `packages/core/src/i18n/locales/it.json` | — |
-| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` and `pt-PT` read it too | — |
+| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` reads it too | — |
+| `pt-PT` | Portuguese (Portugal) | `packages/core/src/i18n/locales/pt-PT.json` | — |
 | `tr` | Turkish | `packages/core/src/i18n/locales/tr.json` | — |
 | `ja` | Japanese | `packages/core/src/i18n/locales/ja.json` | [@vinjex](https://github.com/vinjex) |
 

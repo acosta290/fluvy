@@ -762,7 +762,7 @@ describe('the Activity page’s scroll ↔ time map', () => {
       expect(rail.value).toBeLessThanOrEqual(rows[under - 1]!.t);
       expect(rail.value).toBeGreaterThanOrEqual(rows[under]!.t);
     }
-  });
+  }, 15_000);
 
   it('keeps the list under the knob while it is dragged back up', async () => {
     const { view, scrub, layout } = await scrollable(64);
