@@ -34,6 +34,8 @@ const ON_DEMAND = new Set([
   'window',
   'windowOpen',
   'cctv',
+  'external',
+  'refresh',
 ]);
 
 const out = {};

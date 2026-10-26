@@ -163,6 +163,10 @@
       '<path d="M14 4h6v6"/><path d="m20 4-7 7"/><path d="M10 20H4v-6"/><path d="m4 20 7-7"/>',
     ),
     snapshot: svg('<circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8.5"/>'),
+    external: svg(
+      '<path d="M14 4h6v6"/><path d="m20 4-8.5 8.5"/><path d="M20 13v5.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4H11"/>',
+    ),
+    refresh: svg('<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20.5 3.75V8h-4.25"/>'),
     motion: svg(
       '<g transform="translate(2 0)"><circle cx="15" cy="5" r="1.8"/><path d="M11 21v-6l2.5-3-1.5-4L9 9.5"/><path d="M14 11.5 16.5 10"/><path d="m12 13.5 2.5 2 1.5 5.5"/><path d="M5 12 3 9"/><path d="M6 6.5 4 5"/></g>',
     ),
