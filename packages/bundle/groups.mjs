@@ -119,6 +119,13 @@ const ALERTS =
 const TEMPLATE =
   /\/packages\/(cards\/src\/(template-cards\.ts|template\/)|core\/src\/i18n\/locales\/en\/template\.json)/;
 
+/**
+ * The web page card (its card, what it decides of an address and a plate's rounds, and its English): fetched as the
+ * bundle starts and defined as it lands, as the template card is (`web-family.ts` stays in core: the name, the height).
+ */
+const WEB =
+  /\/packages\/(cards\/src\/(web-cards\.ts|web\/)|core\/src\/i18n\/locales\/en\/web\.json)/;
+
 /** The light card's colour controls (the quick colours' table and row, the hue maths): fetched by the first colour bulb drawn. */
 const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/colour\.ts/;
 
@@ -141,8 +148,8 @@ const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
  * page, the settings panel, the strategy and the heights it counts with the house, the wall, the weather card, the
  * media, energy (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their
- * pictures on their own), automations and alerts families (each sheet on its own), the template card, the cards'
- * editor, the view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The
+ * pictures on their own), automations and alerts families (each sheet on its own), the template card, the web page
+ * card, the cards' editor, the view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The
  * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
  * loud.
  * @type {readonly Group[]}
@@ -169,6 +176,7 @@ export const GROUPS = [
   { name: 'alerts-sheet', test: ALERTS_SHEET },
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
+  { name: 'web', test: WEB },
   { name: 'light-colour', test: LIGHT_COLOUR },
   { name: 'editor', test: EDITOR },
   { name: 'view-icons', test: VIEW_ICONS },

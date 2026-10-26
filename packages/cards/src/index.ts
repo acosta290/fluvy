@@ -40,6 +40,7 @@ import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, type FamilyEntry } from './energy-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
 import { TEMPLATE_FAMILY } from './template-family.js';
+import { WEB_FAMILY } from './web-family.js';
 import { WEATHER_FAMILY } from './weather-family.js';
 
 /** A card of the catalogue: its tag, its element, and what the card picker lists it as. */
@@ -253,7 +254,7 @@ type Family = readonly [
   chunk: () => Promise<{ readonly CARDS: readonly CatalogueEntry[] }>,
 ];
 
-/** The weather and template cards and the media, energy, devices, automations, appliances and alerts families. */
+/** The weather, template and web page cards and the media, energy, devices, automations, appliances and alerts families. */
 const FAMILIES: readonly Family[] = [
   [WEATHER_FAMILY, () => import('./weather-cards.js')],
   [MEDIA_FAMILY, () => import('./media-cards.js')],
@@ -263,6 +264,7 @@ const FAMILIES: readonly Family[] = [
   [APPLIANCES_FAMILY, () => import('./appliances-cards.js')],
   [ALERTS_FAMILY, () => import('./alerts-cards.js')],
   [TEMPLATE_FAMILY, () => import('./template-cards.js')],
+  [WEB_FAMILY, () => import('./web-cards.js')],
 ];
 
 // the families: listed and measured now, their elements fetched at once and defined as they land

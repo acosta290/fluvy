@@ -384,11 +384,12 @@ describe('custom:fluvy-home strategy', () => {
     );
     // the automations card is placed by hand (1.8): the automatic dashboards do not put it on a view; the appliance
     // card is drawn by the appliances card, which lays the strategy's out whole (#47); a template card says what its
-    // templates say, and only the person writes those (#59)
+    // templates say, and only the person writes those (#59), as only the person knows a web page's address (#61)
     const byHand = new Set([
       'custom:fluvy-automations-card',
       'custom:fluvy-appliance-card',
       'custom:fluvy-template-card',
+      'custom:fluvy-web-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

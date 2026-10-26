@@ -88,7 +88,7 @@ export function cameraRatio(value: unknown, native?: number): number {
 }
 
 /** The lowest a picture goes, whatever its shape: its two rounds (44) with 12 above and below. */
-const PLATE_FLOOR = 68;
+export const PLATE_FLOOR = 68;
 /** Under this a picture holds its rounds and the live pill, not the clock beside them (they would share a column). */
 export const CLOCK_PLATE = 108;
 /** Under this a picture's rounds share the rows of "Live" (12 + 24 + 8 + 44 + 12). */

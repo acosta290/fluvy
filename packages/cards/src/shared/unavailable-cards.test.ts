@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { outOfReachStates, type OutOfReach } from '@fluvy/demo-home/out-of-reach';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { PRINTER_HOUSE } from '../printer/fixtures.js';
+import { serveFrames } from '../web/fixtures.js';
 
 // the lazy families (the players, the cameras, the printers, the automations) are defined before a card is drawn
 await familiesDefined;
@@ -474,4 +475,43 @@ describe('rooms out of reach', () => {
     expect(labels(twin)).toEqual(labels(live));
     expect(texts(twin, '.am-area__stats .fv-readout__value').slice(0, 2)).toEqual(['—', '—']);
   });
+});
+
+describe('a web page kept back for https', () => {
+  // every frame is answered with a page of nothing, so happy-dom frames it without a word
+  serveFrames();
+  const PLAIN = { type: 'custom:fluvy-web-card', url: 'http://grafana.local:3000/d/abc' };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ['plate', 360],
+    ['plate', 172],
+    ['frame', 360],
+    ['bare', 172],
+  ])(
+    'keeps the %s plate at its size and its rounds at %i, the open one alive',
+    async (variant, width) => {
+      const config = { ...PLAIN, variant, show_reload: true };
+      const live = await draw(config, house(), width);
+      const liveBox = root(live).querySelector('[data-card]')!.getBoundingClientRect().height;
+      const liveRounds = texts(live, '.dv-cam__actions .fv-round').length;
+      document.body.replaceChildren();
+      vi.stubGlobal('location', { href: 'https://ha.example/lovelace/0', protocol: 'https:' });
+      const twin = await draw(config, house(), width);
+      expect(root(twin).querySelector('.wb-plate.is-off')).not.toBeNull();
+      expect(root(twin).querySelector('[data-card]')!.getBoundingClientRect().height).toBe(liveBox);
+      expect(root(twin).querySelector<HTMLElement>('.wb-plate')!.style.height).toBe(
+        root(live).querySelector<HTMLElement>('.wb-plate')!.style.height,
+      );
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+      const rounds = [
+        ...root(twin).querySelectorAll<HTMLButtonElement>('.dv-cam__actions .fv-round'),
+      ];
+      expect(rounds.length).toBe(liveRounds);
+      expect(rounds.map((el) => el.disabled)).toEqual(
+        rounds.map((el) => el.getAttribute('aria-label') !== 'Open in a new tab'),
+      );
+    },
+  );
 });

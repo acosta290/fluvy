@@ -67,6 +67,8 @@ const BUDGETS = {
   'alerts-sheet': 12_288,
   // the template card: its card on the tile's, the parsers of its templates' answers, its English (1.10, #59)
   template: 8192,
+  // the web page card: its card, its address and rounds rules, its English (1.11, #61)
+  web: 8192,
   // the light card's colour controls: the quick colours' table and row, fetched by the first colour bulb
   'light-colour': 4096,
   // the weather card
