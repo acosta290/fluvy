@@ -12,6 +12,7 @@ import {
   bandPath,
   chartBubble,
   linePath,
+  roundTicks,
   scrub,
   yAt,
   yOf,
@@ -92,56 +93,22 @@ function reading(page: FluvyHistory, number: number | null, scale: Scale): Readi
 const value = (page: FluvyHistory, track: Track, at: number, scale: Scale): Reading =>
   reading(page, valueAt(track.points, at), scale);
 
-const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
-
 /**
- * What the axis says: the window's own ends first — a reader must always know where it starts and where it stops —
- * and the round marks between them (hours through a day, whole days beyond) wherever there is room for one. A mark
- * too near an end, or near the mark before it, is not drawn: two labels on top of each other read as one smudge.
+ * What the axis says: the window's own ends first and the round marks between them where there is room for one —
+ * the chart engine's labeller of a window with two fixed ends (`roundTicks`), in the page's words.
  */
 export function axisLabels(page: FluvyHistory, width: number): (readonly [number, string])[] {
-  const { start, end } = page.range;
-  const span = end - start;
-  if (!(span > 0) || !(width > 0)) return [];
-  const longWindow = span > 8 * DAY;
-  const name = (t: number): string =>
-    span <= 2 * DAY ? page.time(t) : longWindow ? page.date(t) : page.day(t);
-  // a window of whole days ends on the last of them: the axis says what the title says
-  const lastNamed = span > 2 * DAY && new Date(end).getHours() === 0 ? end - 1 : end;
-  // the ends say more of themselves when the plain name would print the same words twice (a 24 h window's two
-  // clocks, a year's two Septembers): the day through a short window, the year through a long one
-  const same = name(start) === name(lastNamed);
-  const endName = (t: number): string =>
-    !same ? name(t) : span <= 2 * DAY ? `${page.weekday(t)} ${page.time(t)}` : page.dateYear(t);
-  // a mark costs its own ink and a gap; how many read well is the width's business (one per 200 or so)
-  const need = page.labelWidth(endName(end)) + 24;
-  const want = Math.max(2, Math.min(6, Math.round(width / 200)));
-  const marks = Math.max(1, Math.min(want, Math.floor(width / need)));
-  const room = need;
-  const hours = [1, 2, 3, 4, 6, 8, 12, 24];
-  const step =
-    span <= 2 * DAY
-      ? (hours.find((h) => span / (h * HOUR) <= marks) ?? 24) * HOUR
-      : Math.max(DAY, Math.ceil(span / marks / DAY) * DAY);
-  // the marks are evenly spaced by construction; only the two nearest the window's own ends give way to them
-  const keep = room / width;
-  const labels: [number, string][] = [[0, endName(start)]];
-  const first = new Date(start);
-  if (step >= DAY) first.setHours(0, 0, 0, 0);
-  else first.setMinutes(0, 0, 0);
-  const lastLabel = span > 2 * DAY ? endName(lastNamed) : endName(end);
-  for (let t = first.getTime(); t <= end; t += step) {
-    const fraction = (t - start) / span;
-    if (fraction <= keep) continue;
-    if (fraction >= 1 - keep) break;
-    const mark = name(t);
-    // a mark that reads like one of the window's ends is that end said twice: a smudge, not a scale
-    if (mark === labels[0]?.[1] || mark === lastLabel) continue;
-    labels.push([fraction, mark]);
-  }
-  labels.push([1, lastLabel]);
-  return labels;
+  return roundTicks({
+    start: page.range.start,
+    end: page.range.end,
+    width,
+    labelWidth: (text) => page.labelWidth(text),
+    time: (t) => page.time(t),
+    weekday: (t) => page.weekday(t),
+    day: (t) => page.day(t),
+    date: (t) => page.date(t),
+    dateYear: (t) => page.dateYear(t),
+  });
 }
 
 /**

@@ -36,7 +36,7 @@ export interface ChartFrame {
   readonly headroom: number;
   /** The room under the plot's floor (8 by default): the line's stroke and the soft copy have it. */
   readonly pad?: number;
-  /** The scale's column at the plot's start; none: as wide as its widest tick label and 8 (`measure`), where drawn. */
+  /** The scale's column at the plot's start; none: its widest tick label and 8 (`measure`), on the 4 grid, where drawn. */
   readonly left?: number;
 }
 
@@ -135,8 +135,10 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
   // the scale: nice under a horizontal grid and under bars, else what the card asks (a lone curve on its own ends)
   let ticks: Ticks | null = null;
   let scales: Scale[];
-  const wanted =
-    style.scale === 'nice' || bars ? 'nice' : (spec.scale ?? (all.length > 1 ? 'air' : 'tight'));
+  // bars stand on a nice scale; a scale the card names wins over the style's (several sensors keep one each)
+  const wanted = bars
+    ? 'nice'
+    : (spec.scale ?? (style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight'));
   if (wanted === 'nice') {
     const ends = reach(spec, bars && style.preset === 'columns' && all.length > 1);
     ticks = niceTicks(Math.min(0, ...ends), Math.max(0, ...ends));
@@ -153,13 +155,12 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
     const shared = tightScale(finite(all.flat()));
     scales = all.map(() => shared);
   }
-  // the scale's column: as wide as its widest label and the gap to the plot, where its labels are drawn
+  // the scale's column: its widest label and the gap to the plot, on the 4 grid (the axis row starts where it ends)
   const measured = (t: Ticks): number => {
     const { tick, measure } = spec;
     if (!tick || !measure) return 0;
-    return (
-      Math.ceil(Math.max(...t.ticks.map((value) => measure(tick(value, t.decimals))))) + AXIS_GAP
-    );
+    const widest = Math.max(...t.ticks.map((value) => measure(tick(value, t.decimals))));
+    return Math.ceil((widest + AXIS_GAP) / 4) * 4;
   };
   const left = frame.left ?? (ticks && style.axis && ticks.ticks.length > 1 ? measured(ticks) : 0);
   const plotWidth = Math.max(1, frame.width - left);

@@ -66,9 +66,10 @@ export const chartStyles = css`
     animation: fv-draw 900ms var(--fv-ease-out) both;
     animation-delay: calc(var(--fv-enter-delay, 0ms) + 120ms);
   }
+  /* the soft copy: the ink at 55 % over the card, at the house's strength (its stroke-opacity) */
   .fc-glow {
     fill: none;
-    stroke: var(--tone-ink, var(--fluvy-accent));
+    stroke: color-mix(in srgb, var(--tone-ink, var(--fluvy-accent)) 55%, var(--fluvy-card));
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -110,7 +111,7 @@ export const chartStyles = css`
   .fc-future--faint {
     stroke: var(--tone-ink, var(--fluvy-accent));
     stroke-dasharray: none;
-    opacity: 0.35;
+    stroke-opacity: 0.35;
   }
   /* every reading drawn: the classic dot, smaller, its stroke the card's */
   .fv-curve .fc-point {
@@ -184,7 +185,7 @@ export const chartStyles = css`
     stroke: var(--tone-ink, var(--fluvy-accent));
     stroke-width: 1;
     stroke-dasharray: 3 2;
-    opacity: 0.6;
+    stroke-opacity: 0.6;
   }
   .fc-bar-a {
     stop-color: var(--tone-ink, var(--fluvy-accent));
@@ -207,7 +208,7 @@ export const chartStyles = css`
     stroke: var(--tone-ink, var(--fluvy-accent));
     stroke-width: 1;
     stroke-dasharray: 2 4;
-    opacity: 0.7;
+    stroke-opacity: 0.7;
   }
   .fc-max__word {
     font-size: 10px;

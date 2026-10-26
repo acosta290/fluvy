@@ -116,9 +116,9 @@ export const cursorLine = (
     : svg`<line class="fc-cursor" x1=${px(x)} y1=${px(top)} x2=${px(x)} y2=${px(bottom)} />`;
 
 /**
- * The soft copy of a line under it: the same path moved down by `offset`, wider, at `opacity` — no filter, which would
- * re-rasterise on every frame of the draw-in and every scrub; `blur` names a filter for the static glow style, which
- * blurs its copy once.
+ * The soft copy of a line under it: the same path moved down by `offset`, wider, at `opacity` (its stroke's: the
+ * draw-in fades the element itself) — no filter, which would re-rasterise on every frame of the draw-in and every
+ * scrub; `blur` names a filter for the static glow style, which blurs its copy once.
  */
 export const shadowCopy = (
   d: string,
@@ -129,7 +129,7 @@ export const shadowCopy = (
     readonly blur?: string;
   },
 ): SVGTemplateResult =>
-  svg`<path class="fc-glow" d=${d} stroke-width=${o.width} opacity=${o.opacity} transform="translate(0 ${o.offset})" filter=${o.blur ? `url(#${o.blur})` : nothing} />`;
+  svg`<path class="fc-glow" d=${d} stroke-width=${o.width} stroke-opacity=${o.opacity} transform="translate(0 ${o.offset})" filter=${o.blur ? `url(#${o.blur})` : nothing} />`;
 
 /** A pill naming a highlighted window ("● Cheapest 13:00–15:00 · 0.078 €"), in its tone. */
 export const highlightPill = (tone: Tone, text: string): TemplateResult =>

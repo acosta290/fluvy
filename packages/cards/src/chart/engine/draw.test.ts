@@ -103,7 +103,8 @@ describe('a scale', () => {
     const ticks = [...drawing.querySelectorAll('.fc-tick')];
     expect(ticks.map((t) => t.textContent)).toEqual(['0', '10', '20', '30']);
     const left = plotOf(spec('step', { tick: String, measure })).left;
-    expect(left).toBe(14 + 8);
+    // its widest label (14) and the gap of 8, on the 4 grid
+    expect(left).toBe(24);
     for (const tick of ticks) {
       expect(tick.getAttribute('x')).toBe(String(left - 8));
       expect(tick.getAttribute('text-anchor')).toBe('end');
