@@ -6,6 +6,7 @@ import type automations from './locales/en/automations.json';
 import type devices from './locales/en/devices.json';
 import type energy from './locales/en/energy.json';
 import type history from './locales/en/history.json';
+import type items from './locales/en/items.json';
 import type job from './locales/en/job.json';
 import type media from './locales/en/media.json';
 import type panel from './locales/en/panel.json';
@@ -27,6 +28,7 @@ export type Catalogue = typeof core &
   typeof devices &
   typeof energy &
   typeof history &
+  typeof items &
   typeof job &
   typeof media &
   typeof panel &
