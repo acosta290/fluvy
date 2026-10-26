@@ -177,6 +177,23 @@ export const sinceChoices: EditorChoices = (_config, hass) => ({
 });
 
 /**
+ * A choice among values, each named by a word of the catalogue — a family's own words among them, where `selectField`
+ * takes the core's option words alone.
+ */
+export const choiceField = (
+  name: string,
+  options: ReadonlyArray<readonly [value: string, word: MessageKey]>,
+): HaFormSchemaItem => ({
+  name,
+  selector: {
+    select: {
+      mode: 'dropdown',
+      options: options.map(([value, word]) => ({ value, label: editorWord(word) })),
+    },
+  },
+});
+
+/**
  * An ordered subset of named choices (a compact row's `controls`): Home Assistant's select as chips that are
  * dragged into order, with a box to add the rest. The dropdown mode is asked for: with fewer than six choices the
  * selector would draw check boxes, which keep no order. `custom` lets a value of the person's own be typed as well

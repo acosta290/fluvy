@@ -4,6 +4,7 @@ import {
   actionField,
   boolField,
   byName,
+  choiceField,
   editorLabels,
   editorWord,
   fieldRow,
@@ -27,20 +28,6 @@ import { SEVERITIES, SEVERITY_WORDS } from './severity.js';
  */
 
 const s = strings('alerts');
-
-/** A choice among values, each named by a word of the catalogue. */
-export const choiceField = (
-  name: string,
-  options: ReadonlyArray<readonly [value: string, word: MessageKey]>,
-): HaFormSchemaItem => ({
-  name,
-  selector: {
-    select: {
-      mode: 'dropdown',
-      options: options.map(([value, word]) => ({ value, label: editorWord(word) })),
-    },
-  },
-});
 
 /** Values the person may also type (domains, device classes, states). */
 const valuesField = (name: string): HaFormSchemaItem => ({

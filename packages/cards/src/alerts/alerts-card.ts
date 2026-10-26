@@ -43,6 +43,7 @@ import { configKeys } from '../shared/config.js';
 import {
   actionFields,
   boolField,
+  choiceField,
   colourFields,
   emptyFields,
   fieldRow,
@@ -57,7 +58,7 @@ import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { Ticker } from '../shared/ticker.js';
 import { bindAction } from './actions.js';
 import { AlertEngine, type AlertResult, type AlertsState } from './engine.js';
-import { ALERTS_LIST, cardLabels, choiceField } from './form.js';
+import { ALERTS_LIST, cardLabels } from './form.js';
 import {
   alertIcon,
   alertName,
