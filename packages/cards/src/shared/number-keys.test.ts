@@ -59,6 +59,24 @@ describe('the cards whose figures take a unit and decimals', () => {
     },
   );
 
+  it('the energy card’s legend entries are offered their own sensor’s units, never the card’s sensor’s', () => {
+    const energy = cards.find(({ tag }) => tag === 'fluvy-energy-card')!.card;
+    const legend = energy.lists.find((list) => list.key === 'legend')!;
+    const sensor = (unit: string) => ({
+      entity_id: 'sensor.x',
+      state: '1',
+      attributes: { unit_of_measurement: unit },
+    });
+    const house = (unit: string) =>
+      ({ states: { 'sensor.x': sensor(unit) } }) as unknown as Parameters<
+        NonNullable<typeof legend.choices>
+      >[1];
+    const units = (unit: string) =>
+      legend.choices?.({ type: 'x', entity: 'sensor.x' }, house(unit))['unit']?.map((o) => o.value);
+    expect(units('kWh')).toEqual(['auto', 'Wh', 'kWh', 'MWh']);
+    expect(units('W')).toEqual(['auto', 'W', 'kW', 'MW']);
+  });
+
   // the history bars had both keys before: they lay their facts out by their figures' width, which the unit and the
   // decimals say, so their declared height reads them, as it did
   it.each(cards.filter(({ tag }) => tag !== 'fluvy-history-bars-card'))(

@@ -497,6 +497,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       domains: ['sensor'],
       keys: ['entity', 'name', 'unit', 'decimals'],
       schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
+      // an entry's units are its own sensor's class, never the card's sensor's
+      choices: unitChoicesOf,
     },
   ];
   /** The card's head is its sensor's name (`title` was the older word for it); a legend item's `label` is its name. */

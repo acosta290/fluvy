@@ -51,6 +51,11 @@ export interface RowsListSpec {
    * out of the editor while it cannot, its entries kept in the config.
    */
   readonly when?: HaFormSchemaItem['when'];
+  /**
+   * The options of an item's selects, asked of the item as a card's are of its config (a legend entry's units, of its
+   * own sensor's class): a list that says none offers the card's.
+   */
+  readonly choices?: EditorChoices;
 }
 
 type Labeler = FormLabeler;
@@ -376,10 +381,10 @@ export class FluvyRowsEditor extends LitElement {
   /** The card's form as it stands (the fields that can act, the house's options), kept while it is the same, likewise. */
   private chosen:
     { readonly key: string; readonly schema: readonly HaFormSchemaItem[] } | undefined;
-  /** Each list's item forms with the house's options in them, by the form the list says an item shows, kept while the options are the same. */
+  /** Each list's item forms with the house's options in them, by the form the list says an item shows, then by the options. */
   private readonly itemForms = new WeakMap<
     readonly HaFormSchemaItem[],
-    { readonly key: string; readonly schema: readonly HaFormSchemaItem[] }
+    Map<string, readonly HaFormSchemaItem[]>
   >();
 
   constructor() {
@@ -446,7 +451,8 @@ export class FluvyRowsEditor extends LitElement {
 
   /**
    * An item's form: what its list says the item shows, its selects offering what the house has where the card says
-   * so (`choices`: a row's `since` from the house's timestamp sensors) — the same array for the same answer.
+   * so (`choices`: a row's `since` from the house's timestamp sensors), or where the list asks the item (a legend
+   * entry's units) — the same array for the same answer, whichever item asks.
    */
   private itemSchema(
     list: RowsListSpec,
@@ -455,10 +461,14 @@ export class FluvyRowsEditor extends LitElement {
     key: string,
   ): readonly HaFormSchemaItem[] {
     const own = list.schemaOf?.(item) ?? list.schema;
-    const kept = this.itemForms.get(own);
-    if (kept?.key === key) return kept.schema;
-    const schema = withChoices(own, choices);
-    this.itemForms.set(own, { key, schema });
+    const asked = list.choices?.(item as LovelaceCardConfig, this.hass);
+    const answer = asked ? JSON.stringify(asked) : key;
+    const forms = this.itemForms.get(own) ?? new Map<string, readonly HaFormSchemaItem[]>();
+    this.itemForms.set(own, forms);
+    const kept = forms.get(answer);
+    if (kept) return kept;
+    const schema = withChoices(own, asked ?? choices);
+    forms.set(answer, schema);
     return schema;
   }
 

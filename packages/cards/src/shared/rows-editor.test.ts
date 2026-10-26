@@ -333,6 +333,34 @@ describe('a select’s options as the house has them', () => {
     expect(forms()[0]).toEqual(list.schema);
     expect(forms()[0]).not.toBe(a);
   });
+
+  it('a list that asks its items offers each its own answer, never the card’s (a legend entry’s units)', async () => {
+    const unit = { name: 'unit', selector: { select: { custom_value: true, options: [] } } };
+    const watts = [{ value: 'kW', label: 'kW' }];
+    const hours = [{ value: 'kWh', label: 'kWh' }];
+    const list: RowsListSpec = {
+      ...rows,
+      schema: [rows.schema[0]!, unit],
+      choices: (item) => (item['entity'] === 'sensor.power' ? { unit: watts } : {}),
+    };
+    const editor = await drawEditor(
+      listsEditor({ schema: [] }, [list], undefined, undefined, () => ({ unit: hours })),
+      { type: 'custom:x', rows: ['sensor.power', 'sensor.rain', 'sensor.power'] },
+    );
+    const forms = (): readonly HaFormSchemaItem[][] =>
+      [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')].map(
+        (form) => form.schema as HaFormSchemaItem[],
+      );
+    const [power, rain, again] = forms();
+    expect(power?.[1]?.selector).toEqual({ select: { custom_value: true, options: watts } });
+    // nothing of its own to offer: the list's options as they are, not the card's
+    expect(rain).toEqual(list.schema);
+    expect(again).toBe(power);
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toBe(power);
+    expect(forms()[1]).toBe(rain);
+  });
 });
 
 describe('a field or a list that cannot act (`when`)', () => {
