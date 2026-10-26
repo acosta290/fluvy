@@ -86,8 +86,10 @@ const BUDGETS = {
   pages: 12_288,
   activity: 32_768,
   history: 16_384,
-  // 24 KB since 1.9 (the appliances' and the alerts' words): 20 in 1.8, 16 before
-  lang: 24_576,
+  // 28 KB since 1.11 (the date picker's, the units', a row's real last change's, the web page's and the Items card's
+  // words, the flights preset's among them: Japanese, the longest, went 320 B over 24); 24 since 1.9 (the appliances'
+  // and the alerts' words), 20 in 1.8, 16 before
+  lang: 28_672,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

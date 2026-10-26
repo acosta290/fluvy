@@ -92,7 +92,7 @@ in `tools/docs` holds this table to it):
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the layers, the CSV, their chrome's sheet |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
-| `lang` | 24 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
+| `lang` | 28 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |
 
