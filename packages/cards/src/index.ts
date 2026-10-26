@@ -286,9 +286,12 @@ export const familiesDefined: Promise<unknown> = Promise.all([
   loadChartEngine(),
 ]);
 
-/** Every card with its element: the eager ones, then each family's (docs, tests). */
+/** Every card with its element: the eager ones, then each family's (docs, tests), the chart engine landed. */
 export async function catalogue(): Promise<readonly CatalogueEntry[]> {
-  const chunks = await Promise.all(FAMILIES.map(([, chunk]) => chunk()));
+  const [chunks] = await Promise.all([
+    Promise.all(FAMILIES.map(([, chunk]) => chunk())),
+    loadChartEngine(),
+  ]);
   return [...CATALOGUE, ...chunks.flatMap(({ CARDS }) => CARDS)];
 }
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)

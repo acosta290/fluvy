@@ -8,6 +8,7 @@ import {
   type ChartPreset,
   type FineKey,
 } from './chart-config.js';
+import { chartEngine } from './chart-load.js';
 import { boolField, fieldRow, onlyWhen, sectionField, selectField } from './form.js';
 
 /**
@@ -87,26 +88,29 @@ export function chartSection(caps: ChartCaps, several?: (data: Data) => boolean)
 }
 
 /**
- * What the Chart section shows while the config says nothing: the house's style, and what that style (or the one
- * chosen) draws on its own — the card's drawing, field by field, for the keys the card offers.
+ * What the Chart section shows while the config says nothing: the house's style, and what the style the card draws
+ * (its own, else the house's) draws on its own — resolved by the engine's one rule, so the editor says what the card
+ * draws, for the keys the card offers. The engine lands with the bundle, long before an editor opens; until it has,
+ * the section shows the style alone.
  */
 export function chartDefaultsFor(config: Data, caps: ChartCaps): Record<string, unknown> {
   const house = chartDefaults().settings;
-  const preset = styleOf(config);
+  const engine = chartEngine();
+  if (!engine) return { chart: house.style };
+  const style = engine.resolveStyle(config['chart'] as ChartPreset | undefined, {}, caps);
   const offered = new Set<string>(chartKeysFor(caps));
   const all: Record<string, unknown> = {
     chart: house.style,
-    curve: preset === 'step' ? 'step' : preset === 'band' ? 'straight' : 'smooth',
-    fill:
-      preset === 'glow' || preset === 'minimal' ? 'none' : preset === 'step' ? 'flat' : 'gradient',
-    line_width: preset === 'classic' ? 'regular' : house.line,
-    glow: preset === 'soft' || preset === 'glow',
-    show_points: preset === 'step' || preset === 'bars' || preset === 'columns' ? 'none' : 'end',
+    curve: style.curve,
+    fill: style.fill,
+    line_width: style.preset === 'classic' ? 'regular' : house.line,
+    glow: style.glow.kind !== 'none',
+    show_points: style.points,
     show_grid: 'auto',
-    show_axis: true,
-    show_now: preset !== 'classic' && preset !== 'minimal',
-    highlight: preset === 'step' ? 'both' : 'none',
-    animate: house.animate,
+    show_axis: style.axis,
+    show_now: style.now !== 'none',
+    highlight: style.highlight,
+    animate: style.animate,
   };
   return Object.fromEntries(Object.entries(all).filter(([key]) => offered.has(key)));
 }

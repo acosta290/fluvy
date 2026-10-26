@@ -21,6 +21,9 @@ type Host = ReactiveControllerHost & { readonly renderRoot: HTMLElement | Docume
 let arrived: ChartEngine | undefined;
 let pending: Promise<ChartEngine> | undefined;
 
+/** The engine once it has landed on the page (an editor's defaults read its rule); undefined until then. */
+export const chartEngine = (): ChartEngine | undefined => arrived;
+
 /** The engine, fetched the first time it is asked for (once for the page). */
 export const loadChartEngine = (): Promise<ChartEngine> =>
   (pending ??= import('../chart/engine/index.js').then((engine) => (arrived = engine)));
