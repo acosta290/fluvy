@@ -14,16 +14,7 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 
-import {
-  head,
-  ico,
-  icon,
-  readout,
-  scrub,
-  ScrubController,
-  type IconRef,
-  type Tone,
-} from '@fluvy/ui';
+import { head, ico, icon, readout, type IconRef, type Tone } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
@@ -38,12 +29,21 @@ import {
 
 import {
   AXIS_GAP,
-  axesStyles,
+  barGeometry,
+  barPath,
+  chartStyles,
   gridLines,
+  labelled,
+  labelsApart,
+  niceTicks,
+  scrub,
+  ScrubController,
+  thinStep,
   tickLabels,
   UNIT_COLUMN,
   unitLabel,
-} from '../energy/axes.js';
+  type Placed,
+} from '../chart/engine/index.js';
 import { HeadFit } from '../energy/head.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
@@ -120,16 +120,7 @@ import {
 } from './facts.js';
 import { countedKey, fetchCounted, withLive, type Counted, type Reading } from './live.js';
 import { Reads } from './reads.js';
-import {
-  barGeometry,
-  barPath,
-  labelled,
-  labelsApart,
-  niceTicks,
-  thinStep,
-  typical,
-  type Placed,
-} from './scale.js';
+import { typical } from './scale.js';
 
 const strings = words('history-bars');
 
@@ -368,7 +359,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     energyStyles,
-    axesStyles,
+    chartStyles,
     css`
       /* the readouts: beside the title (right-aligned, a divider between them), or on their own row under the head */
       .hb-readouts {

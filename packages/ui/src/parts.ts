@@ -733,25 +733,6 @@ export function barRow(o: BarRowOptions): TemplateResult {
   </div>`;
 }
 
-export interface StackItem {
-  readonly label: string;
-  readonly value: number;
-  readonly display: string;
-  readonly tone: Tone;
-}
-
-/** One stacked bar of segments and a legend with square swatches. */
-export function stack(items: readonly StackItem[]): TemplateResult {
-  const part = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
-  const total = items.reduce((sum, i) => sum + part(i.value), 0) || 1;
-  return html`<div class="fv-stack">
-      ${items.map((i) => html`<span class="fv-stack__seg fv-bar--${i.tone}" data-measure="value" style="width:${((part(i.value) / total) * 100).toFixed(2)}%"></span>`)}
-    </div>
-    <div class="fv-legend">
-      ${items.map((i) => html`<div class="fv-legend__row"><i class="fv-swatch fv-bar--${i.tone}"></i><span class="fv-legend__name">${i.label}</span><span class="fv-legend__value">${i.display}</span></div>`)}
-    </div>`;
-}
-
 /** Axis / ruler labels placed by value; the ends hug the edges. */
 function placed(
   cls: string,

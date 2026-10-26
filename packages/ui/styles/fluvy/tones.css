@@ -310,6 +310,24 @@
   background: var(--fluvy-border-strong);
 }
 
+.fv-tone--ok,
+.fv-ico--ok,
+.fv-badge--ok,
+.fv-option.is-active.fv-option--ok,
+.fv-tile--ok.is-on,
+.fv-ruler--ok,
+.fv-dial--ok,
+.fv-knob--ok,
+.fv-switch--ok {
+  --tone-ink: var(--fluvy-success);
+  --tone-fill: var(--fluvy-success-fill);
+  --tone-border: var(--fluvy-success-fill-border);
+  --tone-on: var(--fluvy-success-on-fill);
+}
+.fv-bar--ok {
+  background: var(--fluvy-success);
+}
+
 .fv-tone--warning,
 .fv-ico--warning,
 .fv-badge--warning,

@@ -512,7 +512,17 @@
     "tint_strength": "Renk yoğunluğu",
     "light_whites": "Beyazlar",
     "unit": "Birim",
-    "decimals": "Ondalık basamak"
+    "decimals": "Ondalık basamak",
+    "chart": "Grafik",
+    "curve": "Eğri",
+    "fill": "Dolgu",
+    "glow": "Yumuşak gölge",
+    "show_points": "Noktalar",
+    "show_grid": "Kılavuz çizgileri",
+    "show_axis": "Ölçeği göster",
+    "show_now": "Şimdiyi işaretle",
+    "animate": "Canlandır",
+    "gauge": "Gösterge"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -1668,7 +1678,26 @@
     "dark": "Koyu",
     "standard": "Standart",
     "strict": "Sıkı",
-    "fill": "Görünümü doldur"
+    "fill": "Görünümü doldur",
+    "classic": "Klasik",
+    "glow": "Parıltı",
+    "minimal": "Minimal",
+    "step": "Basamaklar",
+    "bars": "Çubuklar",
+    "columns": "Sütunlar",
+    "band": "Bant",
+    "smooth": "Yumuşak",
+    "straight": "Düz",
+    "gradient": "Geçişli",
+    "flat": "Düz renk",
+    "bold": "Kalın",
+    "end": "Sonda",
+    "x": "Dikey çizgiler",
+    "y": "Yatay çizgiler",
+    "both_axes": "İkisi de",
+    "min_max": "En düşük ve en yüksek",
+    "current": "Şimdiki",
+    "ticks": "Çentikler"
   },
   "tone": {
     "accent": "Vurgu",
@@ -1689,7 +1718,8 @@
     "neutral": "Nötr",
     "warning": "Uyarı",
     "vehicle": "Araç",
-    "danger": "Tehlike"
+    "danger": "Tehlike",
+    "ok": "İyi"
   },
   "energy-balance": {
     "title": "Enerji dengesi",

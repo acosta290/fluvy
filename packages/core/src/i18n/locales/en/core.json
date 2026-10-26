@@ -464,7 +464,17 @@
     "tint_strength": "How much colour",
     "light_whites": "Whites",
     "unit": "Unit",
-    "decimals": "Decimals"
+    "decimals": "Decimals",
+    "chart": "Chart",
+    "curve": "Curve",
+    "fill": "Fill",
+    "glow": "Soft shadow",
+    "show_points": "Points",
+    "show_grid": "Gridlines",
+    "show_axis": "Show the scale",
+    "show_now": "Mark now",
+    "animate": "Animate",
+    "gauge": "Gauge"
   },
   "strategy": {
     "home": "Home",
@@ -837,7 +847,26 @@
     "dark": "Dark",
     "standard": "Standard",
     "strict": "Strict",
-    "fill": "Fill the view"
+    "fill": "Fill the view",
+    "classic": "Classic",
+    "glow": "Glow",
+    "minimal": "Minimal",
+    "step": "Steps",
+    "bars": "Bars",
+    "columns": "Columns",
+    "band": "Band",
+    "smooth": "Smooth",
+    "straight": "Straight",
+    "gradient": "Gradient",
+    "flat": "Flat",
+    "bold": "Bold",
+    "end": "At the end",
+    "x": "Vertical lines",
+    "y": "Horizontal lines",
+    "both_axes": "Both",
+    "min_max": "Lowest and highest",
+    "current": "The current one",
+    "ticks": "Ticks"
   },
   "tone": {
     "accent": "Accent",
@@ -858,7 +887,8 @@
     "neutral": "Neutral",
     "warning": "Warning",
     "vehicle": "Car",
-    "danger": "Danger"
+    "danger": "Danger",
+    "ok": "Good"
   },
   "wall": {
     "paused": "Wall paused",

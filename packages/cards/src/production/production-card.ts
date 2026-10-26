@@ -14,7 +14,8 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { axis, head, readout, scrub, ScrubController, sheetStyles, type Tone } from '@fluvy/ui';
+import { axis, head, readout, sheetStyles, type Tone } from '@fluvy/ui';
+import { scrub, ScrubController } from '../chart/engine/index.js';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {

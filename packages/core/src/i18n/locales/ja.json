@@ -464,7 +464,17 @@
     "tint_strength": "色の強さ",
     "light_whites": "白色光",
     "unit": "単位",
-    "decimals": "小数点以下の桁数"
+    "decimals": "小数点以下の桁数",
+    "chart": "グラフ",
+    "curve": "曲線",
+    "fill": "塗りつぶし",
+    "glow": "やわらかい影",
+    "show_points": "点",
+    "show_grid": "グリッド線",
+    "show_axis": "目盛りを表示",
+    "show_now": "現在を表示",
+    "animate": "アニメーション",
+    "gauge": "ゲージ"
   },
   "strategy": {
     "home": "ホーム",
@@ -837,7 +847,26 @@
     "dark": "ダーク",
     "standard": "標準",
     "strict": "厳格",
-    "fill": "ビューいっぱい"
+    "fill": "ビューいっぱい",
+    "classic": "クラシック",
+    "glow": "グロー",
+    "minimal": "ミニマル",
+    "step": "階段",
+    "bars": "棒",
+    "columns": "縦棒",
+    "band": "帯",
+    "smooth": "なめらか",
+    "straight": "直線",
+    "gradient": "グラデーション",
+    "flat": "単色",
+    "bold": "太い",
+    "end": "終点",
+    "x": "縦線",
+    "y": "横線",
+    "both_axes": "両方",
+    "min_max": "最小と最大",
+    "current": "現在値",
+    "ticks": "目盛り"
   },
   "tone": {
     "accent": "アクセント",
@@ -858,7 +887,8 @@
     "neutral": "ニュートラル",
     "warning": "警告",
     "vehicle": "車",
-    "danger": "危険"
+    "danger": "危険",
+    "ok": "良好"
   },
   "wall": {
     "paused": "壁掛けモード一時停止中",

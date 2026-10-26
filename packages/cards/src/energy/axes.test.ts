@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { powerScale, tickText } from './axes.js';
+import { tickText } from '../chart/engine/axis.js';
+import { powerScale } from './axes.js';
 
 describe('a stacked energy chart’s power scale (issue #49)', () => {
   it('is the history bars’ scale: nice steps, four intervals at most, zero a tick', () => {

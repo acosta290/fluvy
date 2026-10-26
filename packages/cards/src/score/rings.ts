@@ -1,3 +1,4 @@
+import { arcDash as ringDash } from '../chart/engine/ring.js';
 import type { Scores } from '../energy-model/allocate.js';
 
 /**
@@ -49,11 +50,8 @@ export const RING_SMALL = 64;
 export const ringRadius = (size: number): number => size / 2 - 8;
 
 /** The arc's dash on a ring of `size`: its share of the circle (a figure outside 0 … 1 draws at the nearest end). */
-export function arcDash(value: number | null, size = RING): string {
-  const circumference = 2 * Math.PI * ringRadius(size);
-  const share = value === null || !Number.isFinite(value) ? 0 : Math.min(1, Math.max(0, value));
-  return `${(share * circumference).toFixed(1)} ${circumference.toFixed(1)}`;
-}
+export const arcDash = (value: number | null, size = RING): string =>
+  ringDash(value, ringRadius(size));
 
 /** The figure in a ring: a whole percent, as Home Assistant's gauges round it. */
 export const ringPercent = (value: number | null): number | null =>

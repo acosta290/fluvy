@@ -41,6 +41,7 @@ import { ENERGY_FAMILY, type FamilyEntry } from './energy-family.js';
 import { ITEMS_FAMILY } from './items-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
 import { TEMPLATE_FAMILY } from './template-family.js';
+import { loadChartEngine } from './shared/chart-load.js';
 import { WEB_FAMILY } from './web-family.js';
 import { WEATHER_FAMILY } from './weather-family.js';
 
@@ -276,8 +277,14 @@ const FAMILIES: readonly Family[] = [
 for (const [entries] of FAMILIES)
   for (const [tag, name, description, height] of entries)
     announceCard({ tag, name, description }, height);
-/** The families defined (what a test waits on before its page goes; the bundle never waits). */
-export const familiesDefined: Promise<unknown> = Promise.all(FAMILIES.map(([, chunk]) => chunk()));
+/**
+ * The families defined and the chart engine landed (what a test waits on before its page goes; the bundle never
+ * waits): the engine is fetched with the families, so a core card's chart is drawn before its history answers.
+ */
+export const familiesDefined: Promise<unknown> = Promise.all([
+  ...FAMILIES.map(([, chunk]) => chunk()),
+  loadChartEngine(),
+]);
 
 /** Every card with its element: the eager ones, then each family's (docs, tests). */
 export async function catalogue(): Promise<readonly CatalogueEntry[]> {

@@ -40,13 +40,13 @@ import {
   motionPreference,
   pillWidth,
   reducedMotion,
-  ScrubController,
   textWidth,
   zoomOf,
 } from '@fluvy/ui';
 import { pageStyles } from '@fluvy/ui/styles/page';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
+import { ScrubController } from '../chart/engine/index.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { Layers } from '../shared/layers.js';
 import { downloadCsv } from '../shared/csv.js';

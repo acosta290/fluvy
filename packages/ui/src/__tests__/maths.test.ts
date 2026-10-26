@@ -1,13 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import {
-  areaUnder,
-  bandPath,
-  curveGeometry,
-  plotScale,
-  plotY,
-  seriesPath,
-  seriesY,
-} from '../chart.js';
 import { isoWeek } from '../clock.js';
 import {
   clamp,
@@ -103,33 +94,6 @@ describe('precisionGain', () => {
   });
 });
 
-describe('curveGeometry', () => {
-  it('needs two points', () => {
-    expect(curveGeometry([], { w: 320, h: 120 })).toBeNull();
-    expect(curveGeometry([1], { w: 320, h: 120 })).toBeNull();
-  });
-  it('spans the extent and puts the cursor on the curve at "now"', () => {
-    const g = curveGeometry([0, 10], { w: 320, h: 120, pad: 8, extent: 0.5 });
-    expect(g).not.toBeNull();
-    expect(g!.cursorX).toBeCloseTo(160, 5);
-    expect(g!.cursorY).toBeCloseTo(8, 5); // the last value is the maximum → top padding
-    expect(g!.line.startsWith('M0.00,112.00')).toBe(true);
-  });
-  it('draws a flat series through the middle instead of dividing by zero', () => {
-    const g = curveGeometry([5, 5, 5], { w: 300, h: 100, pad: 10 });
-    expect(g!.cursorY).toBeCloseTo(50, 5);
-    expect(g!.line).not.toMatch(/NaN/);
-  });
-  it('refuses what it cannot draw: a zero width, a NaN, an empty extent', () => {
-    expect(curveGeometry([1, 2], { w: 0, h: 100 })).toBeNull();
-    expect(curveGeometry([1, Number.NaN], { w: 300, h: 100 })).toBeNull();
-    const g = curveGeometry([1, 2, 3], { w: 300, h: 100, extent: 0 });
-    expect(g).not.toBeNull();
-    expect(g!.line).not.toMatch(/NaN/);
-    expect(curveGeometry([1, 2], { w: 300, h: 100, cursor: Number.NaN })!.cursorX).toBe(300);
-  });
-});
-
 describe('small rules', () => {
   it('lays option tiles out so none gets too narrow', () => {
     expect([1, 2, 3, 4, 5, 6].map(optionColumns)).toEqual([1, 2, 3, 2, 3, 3]);
@@ -160,54 +124,5 @@ describe('chip columns', () => {
     expect(chipColumns(['Silent', 'Basic', 'Strong', 'Full Speed'])).toBe(2);
     expect(chipColumns(['1', '2', '3', '4', '5'])).toBe(5);
     expect(chipColumns(['Quiet', 'Low', 'Medium', 'High', 'Turbo', 'Auto'])).toBe(3);
-  });
-});
-
-describe('plots of several series (the History page)', () => {
-  const o = { w: 100, h: 50, pad: 0, padTop: 0, min: 0, max: 10 };
-
-  it('shares one scale, so two series can be compared by eye', () => {
-    expect(plotY(10, o)).toBe(0);
-    expect(plotY(0, o)).toBe(50);
-    expect(plotY(5, o)).toBe(25);
-    expect(plotY(99, o)).toBe(0); // a reading past the scale sits on its edge, never outside the chart
-  });
-
-  it('draws a stepped series as the recorder holds it', () => {
-    expect(seriesPath([0, 10], { ...o, step: true })).toBe('M0.00,50.00 H100.00 V0.00');
-    expect(seriesPath([5], o)).toBe(''); // one reading is not a line
-  });
-
-  it('reads the curve it drew: a dot placed by seriesY can never leave the line', () => {
-    const values = [3, 9, 1, 7, 2, 8, 4];
-    const plot = { w: 120, h: 50, pad: 0, min: 0, max: 10 };
-    // at every sample the curve passes exactly through its reading
-    for (let i = 0; i < values.length; i++) {
-      const x = (i / (values.length - 1)) * plot.w;
-      expect(seriesY(values, plot, x)).toBeCloseTo(plotY(values[i] as number, plot), 6);
-    }
-    // between two samples it stays within the pair it joins, plus the smoothing's own overshoot
-    for (let x = 0; x <= plot.w; x += 0.5) {
-      const y = seriesY(values, plot, x) as number;
-      expect(y).toBeGreaterThanOrEqual(-8);
-      expect(y).toBeLessThanOrEqual(plot.h + 8);
-    }
-    // a stepped series holds its reading until the next one
-    expect(seriesY([0, 10], { ...o, step: true }, 40)).toBe(plotY(0, o));
-    expect(seriesY([5], o, 10)).toBeNull(); // one reading is not a line
-  });
-
-  it('closes the area under a series, and the band a summary moved in', () => {
-    expect(areaUnder('M0,0 L10,0', o)).toBe('M0,0 L10,0 L100.00,50.00 L0,50.00 Z');
-    expect(bandPath([0, 0], [10, 10], o)).toBe(
-      'M0.00,0.00 L100.00,0.00 L100.00,50.00 L0.00,50.00 Z',
-    );
-  });
-
-  it('gives a scale its air, centres a flat series and can keep the floor at zero', () => {
-    expect(plotScale([[0, 10]])).toEqual({ min: -1, max: 11 });
-    expect(plotScale([[5, 5]])).toEqual({ min: 4, max: 6 });
-    expect(plotScale([[2, 10]], true)).toEqual({ min: 0, max: 10.8 });
-    expect(plotScale([[]])).toEqual({ min: 0, max: 1 });
   });
 });

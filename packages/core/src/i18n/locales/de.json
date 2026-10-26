@@ -512,7 +512,17 @@
     "tint_strength": "Wie viel Farbe",
     "light_whites": "Weißtöne",
     "unit": "Einheit",
-    "decimals": "Dezimalstellen"
+    "decimals": "Dezimalstellen",
+    "chart": "Diagramm",
+    "curve": "Kurve",
+    "fill": "Füllung",
+    "glow": "Weicher Schatten",
+    "show_points": "Punkte",
+    "show_grid": "Gitterlinien",
+    "show_axis": "Skala zeigen",
+    "show_now": "Jetzt markieren",
+    "animate": "Animieren",
+    "gauge": "Anzeige"
   },
   "strategy": {
     "home": "Zuhause",
@@ -1668,7 +1678,26 @@
     "dark": "Dunkel",
     "standard": "Standard",
     "strict": "Streng",
-    "fill": "Ansicht füllen"
+    "fill": "Ansicht füllen",
+    "classic": "Klassisch",
+    "glow": "Leuchten",
+    "minimal": "Minimal",
+    "step": "Stufen",
+    "bars": "Balken",
+    "columns": "Säulen",
+    "band": "Band",
+    "smooth": "Geglättet",
+    "straight": "Gerade",
+    "gradient": "Verlauf",
+    "flat": "Flach",
+    "bold": "Kräftig",
+    "end": "Am Ende",
+    "x": "Senkrechte Linien",
+    "y": "Waagerechte Linien",
+    "both_axes": "Beide",
+    "min_max": "Tiefst- und Höchstwert",
+    "current": "Der aktuelle",
+    "ticks": "Striche"
   },
   "tone": {
     "accent": "Akzent",
@@ -1689,7 +1718,8 @@
     "neutral": "Neutral",
     "warning": "Warnung",
     "vehicle": "Auto",
-    "danger": "Gefahr"
+    "danger": "Gefahr",
+    "ok": "Gut"
   },
   "energy-balance": {
     "title": "Energiebilanz",

@@ -5,7 +5,8 @@
  */
 import { isActiveState, plural, resolveEntity, stateText } from '@fluvy/core';
 import { spanAt, type Line, type Span } from '@fluvy/core/history';
-import { axis, head, scrub } from '@fluvy/ui';
+import { axis, head } from '@fluvy/ui';
+import { scrub } from '../chart/engine/index.js';
 import { html, nothing, type TemplateResult } from 'lit';
 
 import { axisLabels } from './chart.js';

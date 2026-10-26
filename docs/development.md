@@ -42,19 +42,21 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,chart,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
 period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
-from their configs alone), wall mode (on a device that is a wall), the weather, template, web page and items cards and
-the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are
-announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
-`src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
-history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
-draws one), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the
-light card's colour controls (the first colour bulb), the cards' visual editor (when a card is edited), the icon set's
-other part (the first time Home Assistant asks for one of its icons) and a language's catalogue (English's core part
-ships in core; a lazy family's English part travels with the family's chunk, registered as it lands).
+from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
+sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family and the History page import it
+from their own chunks), the weather, template, web page and items cards and the media, energy, devices, appliances,
+automations and alerts families (fetched as the bundle starts: their cards are announced in core —
+`src/energy-family.ts` and its siblings, their names and heights — and defined as `src/energy-cards.ts` and its
+siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
+first card that reads a counter by them), the appliances' pictures (the first card that draws one), the schedule
+sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the light card's colour
+controls (the first colour bulb), the cards' visual editor (when a card is edited), the icon set's other part (the
+first time Home Assistant asks for one of its icons) and a language's catalogue (English's core part ships in core; a
+lazy family's English part travels with the family's chunk, registered as it lands).
 `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group names its English part, or core
 keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes `manifest.json` with every file's
 size and hash and a **build stamp**, and fails the build when the initial set goes over **236 KB gzip** or carries a
@@ -69,6 +71,7 @@ in `tools/docs` holds this table to it):
 | `strategy` | 24 KB | the automatic dashboards |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
+| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the styles, their sheet |
 | `energy` | 80 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |

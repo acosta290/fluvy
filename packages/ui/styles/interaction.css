@@ -493,30 +493,14 @@
   }
 }
 
-.fv-curve .curve-line {
-  stroke-dasharray: 1;
-  animation: fv-draw 900ms var(--fv-ease-out) both;
-  animation-delay: calc(var(--fv-enter-delay, 0ms) + 120ms);
-}
-
-.fv-curve .curve-area,
-.fv-curve .curve-dot,
-.fv-curve .curve-cursor {
-  animation: fv-fade 500ms var(--fv-ease) both;
-  animation-delay: calc(var(--fv-enter-delay, 0ms) + 620ms);
-}
-
+/* a chart's draw-in (its line, then its fill, its dot and its cursor) and its bars' rise are the chart engine's
+   (packages/cards/src/chart/engine/styles.ts), on these keyframes */
 .fv-bar__fill,
 .fv-stack__seg {
   transform-origin: 0 50%;
   animation: fv-grow-x 640ms var(--fv-ease-out) both;
   animation-delay: calc(var(--fv-enter-delay, 0ms) + 160ms);
   transition: width var(--fv-slow) var(--fv-ease);
-}
-
-.fv-vbar {
-  transform-origin: 50% 100%;
-  animation: fv-grow-y 560ms var(--fv-ease-out) both;
 }
 
 /* ---------- unavailable / missing / loading ---------- */
@@ -639,16 +623,6 @@
   --mdc-icon-size: 16px;
   width: 16px;
   height: 16px;
-}
-
-.fv-vbar--on {
-  fill: var(--tone-ink, var(--fluvy-accent));
-}
-.fv-vbar--off {
-  fill: var(--fluvy-border-strong);
-}
-.fv-vbar--forecast {
-  fill: var(--tone-fill, var(--fluvy-accent-fill));
 }
 
 .fv-ruler-host,

@@ -512,7 +512,17 @@
     "tint_strength": "Hoeveel kleur",
     "light_whites": "Wittinten",
     "unit": "Eenheid",
-    "decimals": "Decimalen"
+    "decimals": "Decimalen",
+    "chart": "Grafiek",
+    "curve": "Curve",
+    "fill": "Vulling",
+    "glow": "Zachte schaduw",
+    "show_points": "Punten",
+    "show_grid": "Rasterlijnen",
+    "show_axis": "Schaal tonen",
+    "show_now": "Nu markeren",
+    "animate": "Animeren",
+    "gauge": "Meter"
   },
   "strategy": {
     "home": "Thuis",
@@ -1668,7 +1678,26 @@
     "dark": "Donker",
     "standard": "Standaard",
     "strict": "Strikt",
-    "fill": "Weergave vullen"
+    "fill": "Weergave vullen",
+    "classic": "Klassiek",
+    "glow": "Gloed",
+    "minimal": "Minimaal",
+    "step": "Treden",
+    "bars": "Staven",
+    "columns": "Kolommen",
+    "band": "Band",
+    "smooth": "Vloeiend",
+    "straight": "Recht",
+    "gradient": "Verloop",
+    "flat": "Egaal",
+    "bold": "Dik",
+    "end": "Aan het eind",
+    "x": "Verticale lijnen",
+    "y": "Horizontale lijnen",
+    "both_axes": "Beide",
+    "min_max": "Laagste en hoogste",
+    "current": "De huidige",
+    "ticks": "Streepjes"
   },
   "tone": {
     "accent": "Accent",
@@ -1689,7 +1718,8 @@
     "neutral": "Neutraal",
     "warning": "Waarschuwing",
     "vehicle": "Auto",
-    "danger": "Gevaar"
+    "danger": "Gevaar",
+    "ok": "Goed"
   },
   "energy-balance": {
     "title": "Energiebalans",

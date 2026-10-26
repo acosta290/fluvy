@@ -18,20 +18,23 @@ import {
   type Series,
 } from '@fluvy/core';
 
+import { axis, emptyState, head, readout, round, type Tone } from '@fluvy/ui';
+import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
-  axis,
+  AXIS_GAP,
   chartBubble,
-  curve,
-  emptyState,
-  head,
-  readout,
-  round,
+  chartStyles,
+  drawChart,
+  gridLines,
+  resolveStyle,
   sampleAt,
   scrub,
   ScrubController,
-  type Tone,
-} from '@fluvy/ui';
-import { energyStyles } from '@fluvy/ui/styles/energy';
+  tickLabels,
+  tickText,
+  UNIT_COLUMN,
+  unitLabel,
+} from '../chart/engine/index.js';
 
 import {
   css,
@@ -76,17 +79,7 @@ import {
 } from './collection-field.js';
 import { HeadFit } from './head.js';
 import { axisHolds } from '../shared/axis.js';
-import {
-  AXIS_GAP,
-  axesStyles,
-  gridLines,
-  powerScale,
-  tickLabels,
-  tickText,
-  UNIT_COLUMN,
-  unitLabel,
-  type PowerScale,
-} from './axes.js';
+import { powerScale, type PowerScale } from './axes.js';
 
 import { legendStats } from './legend.js';
 import { statsCols, statsStyles } from './stats.js';
@@ -356,7 +349,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     ...(Card.styles as CSSResultGroup[]),
     energyStyles,
     statsStyles,
-    axesStyles,
+    chartStyles,
     css`
       .ef-card {
         width: 100%;
@@ -1245,7 +1238,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       class="ef-chart fv-tone--${tone} ${thin ? 'is-thin' : ''}"
       ${scrub(this.scrubber)}
     >
-      ${curve(values, { w, h: CHART_HEIGHT, padTop: HEADROOM, extent, cursor: at?.cursor })}
+      ${drawChart({
+        frame: { width: w, height: CHART_HEIGHT, headroom: HEADROOM },
+        series: [{ values }],
+        style: resolveStyle('classic', {}, {}),
+        extent,
+        cursor: at?.cursor,
+        id: 'fv',
+      })}
       ${
         at
           ? chartBubble({

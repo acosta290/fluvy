@@ -4,21 +4,20 @@
  */
 import { formatNumber, plural, scaleUnit } from '@fluvy/core';
 import { sampleTrack, valueAt, type Track } from '@fluvy/core/history';
+import { axis, head, readout } from '@fluvy/ui';
+import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
-  areaUnder,
-  axis,
+  airScale,
+  areaPath,
   bandPath,
   chartBubble,
-  head,
-  plotScale,
-  plotY,
-  readout,
+  linePath,
   scrub,
-  seriesPath,
-  seriesY,
-  type PlotOptions,
-} from '@fluvy/ui';
-import { html, nothing, svg, type TemplateResult } from 'lit';
+  yAt,
+  yOf,
+  type PlotBox,
+  type Pt,
+} from '../chart/engine/index.js';
 
 import type { Chart } from './model.js';
 import type { FluvyHistory } from './view.js';
@@ -192,13 +191,15 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
         }
       : null,
   );
-  const plot: PlotOptions = {
-    w: Math.max(2, width * extent),
-    h: height,
-    padTop: HEADROOM,
-    pad: PAD,
-    ...plotScale([...series, ...bands.flatMap((band) => (band ? [band.low, band.high] : []))]),
-  };
+  // the plot: what has happened across `plotWidth`, every series on one scale between the headroom and the pad
+  const plotWidth = Math.max(2, width * extent);
+  const box: PlotBox = { top: HEADROOM, bottom: height - PAD };
+  const ends = airScale([
+    ...series,
+    ...bands.flatMap((band) => (band ? [band.low, band.high] : [])),
+  ]);
+  const pointsOf = (values: readonly number[]): Pt[] =>
+    values.map((v, i) => [(i / Math.max(1, values.length - 1)) * plotWidth, yOf(v, ends, box)]);
   const at = page.at;
   const cursorX = page.fraction(at) * width;
   const id = chart.key.replace(/\W+/g, '-');
@@ -207,7 +208,7 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
   const scale = scaleOf(chart, page.hass);
   const leadValue = lead ? value(page, lead, at, scale) : { text: '—', unit: scale.unit };
   const spoken = spokenOf(page, chart);
-  // what the card drew, high and low — the same numbers `plotScale` was built from, so a mark is always exactly
+  // what the card drew, high and low — the same numbers its scale was built from, so a mark is always exactly
   // at its value. What the house reached is the readouts' business: they are words, and cannot be read as a height
   const drawnValues = [
     ...series,
@@ -264,34 +265,35 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
       <svg width=${width} height=${height} viewBox="0 0 ${width} ${height}" aria-hidden="true">
         ${
           extent < 0.999
-            ? svg`<rect class="hs-future" x=${plot.w} y="0" width=${Math.max(0, width - plot.w)} height=${height} />
-                <line class="hs-edge" x1=${plot.w} y1="0" x2=${plot.w} y2=${height} />`
+            ? svg`<rect class="hs-future" x=${plotWidth} y="0" width=${Math.max(0, width - plotWidth)} height=${height} />
+                <line class="hs-edge" x1=${plotWidth} y1="0" x2=${plotWidth} y2=${height} />`
             : nothing
         }
         ${reach.map(([v, below]) => {
           const mark = reading(page, v, scale);
-          return svg`<line class="hs-rule" x1="0" y1=${plotY(v, plot).toFixed(2)} x2=${plot.w} y2=${plotY(v, plot).toFixed(2)} />
-            <text class="hs-rule__value" x="0" y=${(plotY(v, plot) + (below ? 12 : -5)).toFixed(2)}>${`${mark.text} ${mark.unit}`.trim()}</text>`;
+          const y = yOf(v, ends, box);
+          return svg`<line class="hs-rule" x1="0" y1=${y.toFixed(2)} x2=${plotWidth} y2=${y.toFixed(2)} />
+            <text class="hs-rule__value" x="0" y=${(y + (below ? 12 : -5)).toFixed(2)}>${`${mark.text} ${mark.unit}`.trim()}</text>`;
         })}
         ${chart.tracks.map((track, index) => {
-          const values = series[index] ?? [];
-          const path = seriesPath(values, plot);
+          const points = pointsOf(series[index] ?? []);
+          const path = linePath(points, 'smooth');
           const band = bands[index];
           return svg`<g class="hs-series" style="--series:${alone ? 'var(--fluvy-accent)' : `var(--fluvy-graph-${chart.colours[index] ?? 1})`};animation-delay:${index * 60}ms">
-            ${band ? svg`<path class="hs-band" d=${bandPath(band.low, band.high, plot)} />` : nothing}
+            ${band ? svg`<path class="hs-band" d=${bandPath(pointsOf(band.low), pointsOf(band.high))} />` : nothing}
             ${
               alone
                 ? svg`<linearGradient id=${`hs-fill-${id}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" class="hs-fill-a" />
                     <stop offset="1" class="hs-fill-b" />
                   </linearGradient>
-                  <path class="hs-area" d=${areaUnder(path, plot)} fill=${`url(#hs-fill-${id})`} />`
+                  <path class="hs-area" d=${areaPath(points, 'smooth', height)} fill=${`url(#hs-fill-${id})`} />`
                 : nothing
             }
             <path class="hs-line ${alone ? 'hs-line--alone' : ''}" d=${path} pathLength="1" />
             ${(() => {
               // the dot marks the line, so it reads the line: the same curve, solved at the cursor's x
-              const y = seriesY(values, plot, Math.min(cursorX, plot.w));
+              const y = yAt(points, 'smooth', Math.min(cursorX, plotWidth));
               return y === null || valueAt(track.points, at) === null
                 ? nothing
                 : svg`<circle class="hs-dot" cx=${cursorX.toFixed(2)} cy=${y.toFixed(2)} r="4" />`;

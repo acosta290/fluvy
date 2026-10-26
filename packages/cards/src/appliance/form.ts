@@ -5,8 +5,8 @@ import { VERIFIED_PLATFORMS, COMMUNITY_PLATFORMS } from './roles.js';
 
 /*
  * The appliance cards' editor parts: a choice whose words are the family's own (they travel with its chunk, never in
- * core's `option` table), a group that folds away (Home Assistant's expandable section: the appliance card's editor
- * is long), the kinds and the device picker filtered to the integrations the cards read.
+ * core's `option` table), the folding group every long editor shares (`sectionField`, the shared form's), the kinds
+ * and the device picker filtered to the integrations the cards read.
  */
 
 /** A choice among values, each named by a word of the catalogue (the family's, or core's `option` words). */
@@ -29,17 +29,7 @@ export const option = (value: OptionWord): readonly [string, MessageKey] => [
   `option.${value}`,
 ];
 
-/** A group of fields under a title of its own, folded until opened. */
-export const sectionField = (
-  title: MessageKey,
-  schema: readonly HaFormSchemaItem[],
-): HaFormSchemaItem => ({
-  type: 'expandable',
-  name: '',
-  title: editorWord(title),
-  flatten: true,
-  schema,
-});
+export { sectionField } from '../shared/form.js';
 
 /** What an appliance is, the card's guess first. */
 export const kindField = (name = 'kind'): HaFormSchemaItem =>

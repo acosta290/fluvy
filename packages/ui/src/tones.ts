@@ -23,6 +23,7 @@ export type Tone =
   | 'vehicle'
   | 'neutral'
   | 'off'
+  | 'ok'
   | 'warning'
   | 'danger'
   | 'notice';
@@ -71,6 +72,13 @@ export const TONE_VARS: Readonly<Record<Tone, ToneVars>> = {
   neutral: { ink: 'text-secondary', fill: 'page', border: 'border', on: 'text-secondary' },
   // an unreachable device: the disabled ink on nothing, in a dashed hairline
   off: { ink: 'unavailable', fill: 'transparent', border: 'unavailable-border', on: 'unavailable' },
+  // what is good or cheap (a price under its threshold, a window's best hours): the status success (1.11)
+  ok: {
+    ink: 'success',
+    fill: 'success-fill',
+    border: 'success-fill-border',
+    on: 'success-on-fill',
+  },
   warning: {
     ink: 'warning',
     fill: 'warning-fill',
@@ -116,6 +124,7 @@ export const TONES = [
   'gas',
   'vehicle',
   'neutral',
+  'ok',
   'warning',
   'danger',
 ] as const satisfies readonly Tone[];

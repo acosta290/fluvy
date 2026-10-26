@@ -512,7 +512,17 @@
     "tint_strength": "Intensité de la couleur",
     "light_whites": "Blancs",
     "unit": "Unité",
-    "decimals": "Décimales"
+    "decimals": "Décimales",
+    "chart": "Graphique",
+    "curve": "Courbe",
+    "fill": "Remplissage",
+    "glow": "Ombre douce",
+    "show_points": "Points",
+    "show_grid": "Quadrillage",
+    "show_axis": "Afficher l’échelle",
+    "show_now": "Marquer maintenant",
+    "animate": "Animer",
+    "gauge": "Jauge"
   },
   "strategy": {
     "home": "Accueil",
@@ -1668,7 +1678,26 @@
     "dark": "Sombre",
     "standard": "Standard",
     "strict": "Strict",
-    "fill": "Remplir la vue"
+    "fill": "Remplir la vue",
+    "classic": "Classique",
+    "glow": "Halo",
+    "minimal": "Minimal",
+    "step": "Paliers",
+    "bars": "Barres",
+    "columns": "Colonnes",
+    "band": "Bande",
+    "smooth": "Lissée",
+    "straight": "Droite",
+    "gradient": "Dégradé",
+    "flat": "Uni",
+    "bold": "Épaisse",
+    "end": "À la fin",
+    "x": "Lignes verticales",
+    "y": "Lignes horizontales",
+    "both_axes": "Les deux",
+    "min_max": "Le plus bas et le plus haut",
+    "current": "L’actuel",
+    "ticks": "Graduations"
   },
   "tone": {
     "accent": "Accent",
@@ -1689,7 +1718,8 @@
     "neutral": "Neutre",
     "warning": "Avertissement",
     "vehicle": "Voiture",
-    "danger": "Danger"
+    "danger": "Danger",
+    "ok": "Bon"
   },
   "energy-balance": {
     "title": "Bilan énergétique",

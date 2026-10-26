@@ -326,18 +326,3 @@ export const holdKey =
       hold();
     }
   };
-
-/**
- * Where the pointer is along the element that received the event, 0..1 — a mouse scrubs by hovering,
- * a finger only while pressing (a resting finger is about to scroll). `null` = not scrubbing.
- */
-export function scrubFraction(event: PointerEvent): number | null {
-  if (event.pointerType !== 'mouse' && event.buttons === 0 && event.type !== 'pointerdown')
-    return null;
-  const target = event.currentTarget as HTMLElement;
-  if (event.type === 'pointerdown' && event.pointerType !== 'mouse')
-    target.setPointerCapture?.(event.pointerId);
-  const rect = target.getBoundingClientRect();
-  if (!(rect.width > 0)) return null;
-  return Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-}

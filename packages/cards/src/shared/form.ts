@@ -241,6 +241,18 @@ export const fieldRow = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
   schema,
 });
 
+/** A group of fields under a title of its own, folded until opened (Home Assistant's expandable section). */
+export const sectionField = (
+  title: MessageKey,
+  schema: readonly HaFormSchemaItem[],
+): HaFormSchemaItem => ({
+  type: 'expandable',
+  name: '',
+  title: editorWord(title),
+  flatten: true,
+  schema,
+});
+
 /**
  * A form with only the items `keep` takes, asked of every row and every field: a row it refuses goes whole, and a row
  * that loses one of its fields keeps the other on its own line.

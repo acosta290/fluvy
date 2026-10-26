@@ -512,7 +512,17 @@
     "tint_strength": "Quanta cor",
     "light_whites": "Brancos",
     "unit": "Unidade",
-    "decimals": "Decimais"
+    "decimals": "Decimais",
+    "chart": "Gráfico",
+    "curve": "Curva",
+    "fill": "Preenchimento",
+    "glow": "Sombra suave",
+    "show_points": "Pontos",
+    "show_grid": "Linhas da grelha",
+    "show_axis": "Mostrar a escala",
+    "show_now": "Assinalar o agora",
+    "animate": "Animar",
+    "gauge": "Indicador"
   },
   "strategy": {
     "home": "Início",
@@ -1668,7 +1678,26 @@
     "dark": "Escuro",
     "standard": "Padrão",
     "strict": "Estrito",
-    "fill": "Preencher a vista"
+    "fill": "Preencher a vista",
+    "classic": "Clássico",
+    "glow": "Brilho",
+    "minimal": "Mínimo",
+    "step": "Degraus",
+    "bars": "Barras",
+    "columns": "Colunas",
+    "band": "Faixa",
+    "smooth": "Suavizada",
+    "straight": "Reta",
+    "gradient": "Gradiente",
+    "flat": "Uniforme",
+    "bold": "Grossa",
+    "end": "No fim",
+    "x": "Linhas verticais",
+    "y": "Linhas horizontais",
+    "both_axes": "Ambas",
+    "min_max": "O mínimo e o máximo",
+    "current": "O atual",
+    "ticks": "Marcas"
   },
   "tone": {
     "accent": "Destaque",
@@ -1689,7 +1718,8 @@
     "neutral": "Neutro",
     "warning": "Aviso",
     "vehicle": "Carro",
-    "danger": "Perigo"
+    "danger": "Perigo",
+    "ok": "Bom"
   },
   "energy-balance": {
     "title": "Balanço de energia",
