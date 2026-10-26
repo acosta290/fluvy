@@ -1,6 +1,12 @@
 import { setMotionPreference } from '@fluvy/ui';
 import { setHaptics } from '../actions.js';
-import { PREFERENCES_EVENT, refreshCards, resyncCardThemes, setLightDefaults } from '../card.js';
+import {
+  PREFERENCES_EVENT,
+  refreshCards,
+  resyncCardThemes,
+  setChartDefaults,
+  setLightDefaults,
+} from '../card.js';
 import { ensureFonts } from '../fonts.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { setLanguageOverride } from '../i18n/index.js';
@@ -57,6 +63,8 @@ export type LookPreview = Partial<
     | 'lightTint'
     | 'lightColors'
     | 'statuses'
+    | 'charts'
+    | 'chartSets'
   >
 >;
 
@@ -178,8 +186,9 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
-    // the lights' defaults: every card that leaves them to the house draws again
+    // the lights' and the charts' defaults: every card that leaves them to the house draws again
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });
+    setChartDefaults({ settings: now.charts, sets: now.chartSets });
     // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);

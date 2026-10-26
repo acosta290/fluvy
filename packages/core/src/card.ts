@@ -13,6 +13,7 @@ import type {
 import { languageOverride, localize, onWords, type MessageKey } from './i18n/index.js';
 import { idsOf, type EntityEntry } from './lists.js';
 import { AccentSheet } from './look/accent.js';
+import { CHART_DEFAULTS, type ChartSettings, type SavedSeries } from './settings/charts.js';
 import type { LightTint } from './settings/schema.js';
 
 /**
@@ -92,6 +93,26 @@ export const lightDefaults = (): HouseLights => houseLights;
 export function setLightDefaults(next: HouseLights): void {
   if (next.tint === houseLights.tint && next.colors === houseLights.colors) return;
   houseLights = { tint: next.tint, colors: next.colors };
+  for (const card of live) card.requestUpdate();
+}
+
+/**
+ * What the house says of charts where a card says nothing (fluvy's settings → Charts, 1.11): the style every chart
+ * and gauge is drawn in, its fine settings, and the house's saved sets of series colours. A card's own key wins.
+ */
+export interface HouseCharts {
+  readonly settings: ChartSettings;
+  readonly sets: readonly SavedSeries[];
+}
+let houseCharts: HouseCharts = { settings: CHART_DEFAULTS, sets: [] };
+
+/** The house's chart settings, as the settings last said (a card's own key wins). */
+export const chartDefaults = (): HouseCharts => houseCharts;
+
+/** The house's chart settings changed (saved, or previewed in the panel): every card draws again with them. */
+export function setChartDefaults(next: HouseCharts): void {
+  if (JSON.stringify(next) === JSON.stringify(houseCharts)) return;
+  houseCharts = { settings: { ...next.settings }, sets: [...next.sets] };
   for (const card of live) card.requestUpdate();
 }
 
