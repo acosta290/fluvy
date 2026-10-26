@@ -40,12 +40,15 @@ import {
   entityField,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   showIconField,
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { LADDERS, type NumberKeys } from '../shared/units.js';
 import {
   BATTERY_KEYS,
   hasPower,
@@ -61,7 +64,7 @@ import {
 
 const s = strings('batteries', 'energy-flow');
 
-export interface BatteriesCardConfig extends FluvyCardConfig {
+export interface BatteriesCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The batteries, each read as a source is. Empty: the Energy dashboard's (their power, state of charge, capacity). */
@@ -130,6 +133,8 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
     'batteries',
     'reserve',
     'mode',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -162,6 +167,8 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
       }).computeLabel,
     },
   ];
+  /** What the editor shows where the config says nothing: what the card does then. */
+  static override defaults: EditorDefaults = () => NUMBER_DEFAULTS;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -170,6 +177,7 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
         showIconField(),
         entityField(['select', 'input_select'], 'mode', false),
         ...colourFields(),
+        numberFields({ units: LADDERS.power }),
         actionFields(),
       ],
       ...editorLabels(s, { reserve: 'editor_reserve', mode: 'editor_mode' }),
@@ -332,6 +340,7 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
         v === null ? null : Math.abs(v),
       ),
       'W',
+      this.config,
     );
     const active = typeof net === 'number' && wayOf(net) !== 'idle';
     const badge = all.length ? this.badge(cells, net, tone) : null;

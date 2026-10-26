@@ -506,7 +506,9 @@
     "hide_empty": "Ocultar quando vazio",
     "light_colors": "Cada luz acesa na cor da sua lâmpada",
     "tint_strength": "Quanta cor",
-    "light_whites": "Brancos"
+    "light_whites": "Brancos",
+    "unit": "Unidade",
+    "decimals": "Decimais"
   },
   "strategy": {
     "home": "Início",
@@ -1360,8 +1362,6 @@
     "editor_period": "Cada barra é",
     "editor_stat": "Cada barra mostra",
     "editor_include_today": "Incluir a que está em andamento",
-    "editor_decimals": "Decimais",
-    "editor_unit": "Unidade",
     "editor_show_head": "Mostrar o cabeçalho",
     "editor_show_values": "Mostrar os valores sobre as barras",
     "editor_show_axis": "Mostrar a escala",
@@ -1540,6 +1540,7 @@
     "unit_d": "d"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

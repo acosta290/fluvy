@@ -60,7 +60,9 @@ import {
   entityField,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   onlyWhen,
   selectField,
   showIconField,
@@ -68,6 +70,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { LADDERS, type NumberKeys } from '../shared/units.js';
 import { BAR, layoutSankey, type LaidNode, type SankeyLayout } from './layout.js';
 import { idNamed, sankeyModel, type DeviceInput, type SankeyModel } from './model.js';
 
@@ -82,7 +85,7 @@ export interface EnergySankeyDevice {
   parent?: string;
 }
 
-export interface EnergySankeyCardConfig extends FluvyCardConfig {
+export interface EnergySankeyCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The span: today, the last 7 days, this month (default day). */
@@ -166,6 +169,8 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
     'collection_key',
     'devices',
     'max_devices',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -186,6 +191,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
     show_period: true,
     collection_key: '',
     max_devices: DEFAULT_MAX,
+    ...NUMBER_DEFAULTS,
   });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
@@ -204,6 +210,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         ),
         numberField('max_devices', 1, 20),
         ...colourFields(),
+        numberFields({ units: LADDERS.energy }),
         actionFields(),
       ],
       ...editorLabels(
@@ -371,7 +378,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
       this.config?.max_devices ?? DEFAULT_MAX,
     );
     const figures = [...model.sources, ...model.targets, ...model.kids].map((n) => n.value * 1000);
-    const scale = scaleOf([...figures, model.total * 1000], 'Wh');
+    const scale = scaleOf([...figures, model.total * 1000], 'Wh', this.config);
     const meter = (kind: PrefSource['kind'], side: 'energyIn' | 'energyOut'): string | undefined =>
       sources
         .filter((p) => p.kind === kind)

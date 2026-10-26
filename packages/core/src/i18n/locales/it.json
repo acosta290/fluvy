@@ -506,7 +506,9 @@
     "hide_empty": "Nascondi se vuota",
     "light_colors": "Ogni luce accesa nel colore della sua lampadina",
     "tint_strength": "Quanto colore",
-    "light_whites": "Bianchi"
+    "light_whites": "Bianchi",
+    "unit": "Unità",
+    "decimals": "Decimali"
   },
   "strategy": {
     "home": "Casa",
@@ -1360,8 +1362,6 @@
     "editor_period": "Una barra è",
     "editor_stat": "Una barra mostra",
     "editor_include_today": "Includi quella in corso",
-    "editor_decimals": "Decimali",
-    "editor_unit": "Unità",
     "editor_show_head": "Mostra l’intestazione",
     "editor_show_values": "Mostra i valori sopra le barre",
     "editor_show_axis": "Mostra la scala",
@@ -1540,6 +1540,7 @@
     "unit_d": "g"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

@@ -34,16 +34,29 @@ import {
   editorLabels,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
 } from '../shared/form.js';
 import { statsRow } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
-import { baseOf, ceilingFor, figure, scaleFor, toBase, type Scale } from './units.js';
+import {
+  baseOf,
+  ceilingFor,
+  figure,
+  figuresOf,
+  toBase,
+  writeFigure,
+  type Figures,
+  type NumberKeys,
+} from '../shared/units.js';
 import {
   fractionOf,
   labelRoom,
@@ -63,7 +76,7 @@ const ways = words('energy-flow');
 export type GaugeVariant = 'ring' | 'bar' | 'signed';
 export const GAUGE_VARIANTS: readonly GaugeVariant[] = ['ring', 'bar', 'signed'];
 
-export interface GaugeCardConfig extends FluvyCardConfig {
+export interface GaugeCardConfig extends FluvyCardConfig, NumberKeys {
   subtitle?: string;
   /**
    * `ring` (default): the dial. `bar`: the reading over a level bar, for a half column. `signed`: a value that can
@@ -198,9 +211,13 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     'label',
     'hours',
     'badge',
+    'unit',
+    'decimals',
   ]);
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'ring' });
+  static override defaults: EditorDefaults = () => ({ variant: 'ring', ...NUMBER_DEFAULTS });
+  /** The units the editor offers are the sensor's class's. */
+  static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -219,6 +236,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         },
         fieldRow(textField('label'), textField('badge')),
         numberField('hours', 1, 168),
+        numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(strings, { max_entity: 'max_entity', label: 'label', badge: 'badge' }, {}),
@@ -346,18 +364,19 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const max = this.ceiling(view, min, base.value);
     const series = this.series_;
 
-    const scale = scaleFor(
+    const scale = figuresOf(
+      this.hass,
+      this.config,
+      base.unit,
       Math.max(
         Math.abs(min),
         Math.abs(max ?? 0),
         Math.abs(value ?? 0),
         Math.abs((series?.max ?? 0) * base.value),
       ),
-      base.unit,
+      view,
     );
-    const precision =
-      scale.divisor === 1 ? this.hass?.entities?.[view.id]?.display_precision : undefined;
-    const shown = (raw: number): string => figure(this.hass, raw, scale, precision);
+    const shown = (raw: number): string => writeFigure(this.hass, raw, scale);
     const edgeDigits =
       Number.isInteger(min / scale.divisor) &&
       (max === null || Number.isInteger(max / scale.divisor))
@@ -518,7 +537,10 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const power = base.unit === 'W' || view.status === 'missing';
     const ends = this.extent(view, base.value, value);
     const series = this.series_;
-    const scale: Scale = scaleFor(
+    const scale: Figures = figuresOf(
+      this.hass,
+      this.config,
+      base.unit,
       Math.max(
         Math.abs(ends?.min ?? 0),
         Math.abs(ends?.max ?? 0),
@@ -526,10 +548,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         Math.abs((series?.min ?? 0) * base.value),
         Math.abs((series?.max ?? 0) * base.value),
       ),
-      base.unit,
+      view,
     );
-    const precision =
-      scale.divisor === 1 ? this.hass?.entities?.[view.id]?.display_precision : undefined;
     const way = (v: number): string =>
       v > 0 ? ways(this.hass, 'way_in') : v < 0 ? ways(this.hass, 'way_out') : '';
     // one precision for the value and its min / max / average — the entity's own, else the largest figure's — so
@@ -545,7 +565,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         .filter((v): v is number => typeof v === 'number')
         .map((v) => Math.abs(v) / scale.divisor),
     );
-    const digits = precision ?? (largest >= 100 ? 0 : largest >= 1 ? 1 : 2);
+    const digits = scale.digits ?? (largest >= 100 ? 0 : largest >= 1 ? 1 : 2);
     // a power meter: the magnitude, its direction after the unit (`ways`); anything else: the signed figure
     const said = (v: number | null, ways: boolean): { value: string; unit: string } => {
       if (v === null) return { value: '—', unit: '' };

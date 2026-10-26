@@ -284,6 +284,33 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the one rule for units and decimals: the figures as the house asks them beside the figures as they come
+    {
+      title: 'Units and decimals · W, no decimals',
+      width: 776,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          ...house19,
+          readouts: [
+            { entity: 'sensor.fl_self_use', name: 'Self-powered' },
+            { entity: 'sensor.fl_exported', name: 'Exported' },
+          ],
+          cols: 6,
+        },
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          ...house19,
+          unit: 'W',
+          decimals: 0,
+          readouts: [
+            { entity: 'sensor.fl_self_use', name: 'Self-powered' },
+            { entity: 'sensor.fl_exported', name: 'Exported', unit: 'Wh', decimals: 1 },
+          ],
+          cols: 6,
+        },
+      ],
+    },
     {
       title: 'Cross',
       cards: [{ type: 'custom:fluvy-energy-flow-card', ...house19, variant: 'cross' }],

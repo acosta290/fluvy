@@ -41,7 +41,14 @@ import { houseMidnight } from '../energy-model/period.js';
 import { rangeWords } from '../energy-model/range-words.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
 
-import { baseOf, ceilingFor, figure, scaleFor, toBase } from '../gauge/units.js';
+import {
+  baseOf,
+  ceilingFor,
+  figuresOf,
+  toBase,
+  writeFigure,
+  type NumberKeys,
+} from '../shared/units.js';
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 import { stateWord } from '../shared/domain.js';
@@ -53,10 +60,14 @@ import {
   editorLabels,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
+  NUMBER_DEFAULTS,
+  numberFields,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
@@ -76,7 +87,7 @@ export interface ProductionArray {
   name?: string;
 }
 
-export interface ProductionCardConfig extends FluvyCardConfig {
+export interface ProductionCardConfig extends FluvyCardConfig, NumberKeys {
   subtitle?: string;
   /** Today's forecast: its state is the day's total, its attributes may carry the hours (Solcast, Open-Meteo, a template). */
   forecast_entity?: string;
@@ -230,6 +241,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     'variant',
     'arrays',
     'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -251,10 +264,12 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     show_forecast: true,
     show_peak: true,
     collection_key: '',
+    ...NUMBER_DEFAULTS,
   });
-  /** The date pickers on the dashboard, for the key. */
-  static override choices: EditorChoices = (_config, hass) => ({
+  /** The date pickers on the dashboard, for the key; the units the editor offers are the meter's class's. */
+  static override choices: EditorChoices = (config, hass) => ({
     collection_key: collectionChoices(hass),
+    ...unitChoicesOf(config, hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -269,6 +284,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         ),
         fieldRow(boolField('show_forecast'), boolField('show_peak')),
         fieldRow(selectField('variant', ['full', 'compact']), collectionField()),
+        numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(
@@ -498,8 +514,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         ? Math.max(-9.99, Math.min(9.99, total / expected - 1))
         : null;
 
-    const scale = scaleFor(Math.max(total, forecastTotal ?? 0), base.unit);
-    const shown = (raw: number): string => figure(this.hass, raw, scale);
+    const scale = figuresOf(
+      this.hass,
+      this.config,
+      base.unit,
+      Math.max(total, forecastTotal ?? 0),
+      view,
+    );
+    const shown = (raw: number): string => writeFigure(this.hass, raw, scale);
 
     const peakHour = produced.reduce(
       (best, value, hour) => (value > (produced[best] ?? 0) ? hour : best),
@@ -509,10 +531,12 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const peakView =
       this.config?.peak_entity && !closed ? this.entity(this.config.peak_entity) : null;
     const peakBase = peakView ? baseOf(peakView) : null;
-    const peakScale = peakBase ? scaleFor(peakBase.value, peakBase.unit) : null;
+    const peakScale = peakBase
+      ? figuresOf(this.hass, this.config, peakBase.unit, peakBase.value, peakView ?? undefined)
+      : null;
     const peak = peakView
       ? peakBase && peakScale
-        ? { value: figure(this.hass, peakBase.value, peakScale), unit: peakScale.unit }
+        ? { value: writeFigure(this.hass, peakBase.value, peakScale), unit: peakScale.unit }
         : { value: '—', unit: '' }
       : known
         ? { value: shown(peakValue), unit: scale.unit }
@@ -787,7 +811,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       return hours ? (hovered !== null ? (hours[hovered] ?? 0) : sum(hours)) : null;
     });
     // one unit for the set, its decimal kept: "5.2 kWh" beside "6.0 kWh"
-    const scale = scaleOf(figures, 'Wh');
+    const scale = scaleOf(figures, 'Wh', this.config);
     const values = figures.map((v) => (v === null ? '—' : scaled(this.hass, v, scale)));
     // a figure is never cut: the legend takes as many columns as hold its widest (all, two, or one a line)
     const widest = Math.max(

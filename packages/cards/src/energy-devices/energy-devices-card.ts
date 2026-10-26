@@ -41,7 +41,9 @@ import {
   iconField,
   listed,
   nameIconFields,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   onlyWhen,
   showIconField,
   titleFields,
@@ -72,10 +74,12 @@ import {
   scaled,
   scaleOf,
   shortName,
+  WATT_LADDERS,
   type Family,
   type Scale,
 } from '../energy/power.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import type { Segment } from '../shared/fit.js';
@@ -98,7 +102,7 @@ const INDENT = 40;
 const INDENT_BARE = 12;
 const flow = strings('energy-flow');
 
-export interface DeviceRowConfig {
+export interface DeviceRowConfig extends NumberKeys {
   entity: string;
   name?: string;
   icon?: string;
@@ -111,7 +115,7 @@ export interface DeviceRowConfig {
   tap_action?: ActionConfig;
 }
 
-export interface EnergyDevicesCardConfig extends FluvyCardConfig {
+export interface EnergyDevicesCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The devices. Empty: the Energy dashboard's own (their meters over today, nested as it nests them). */
@@ -202,6 +206,8 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     'sort',
     'max_rows',
     'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -209,7 +215,18 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       alias: 'entities',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name', 'icon', 'parent', 'cost_entity', 'tone', 'color', 'tap_action'],
+      keys: [
+        'entity',
+        'name',
+        'icon',
+        'parent',
+        'cost_entity',
+        'tone',
+        'color',
+        'unit',
+        'decimals',
+        'tap_action',
+      ],
       schema: [
         entityField(['sensor']),
         nameIconFields(),
@@ -218,6 +235,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
           entityField(['sensor'], 'cost_entity', false),
         ),
         fieldRow(toneField(), accentField()),
+        numberFields({ units: WATT_LADDERS }),
         actionField(),
       ],
       computeLabel: formLabels({
@@ -228,7 +246,11 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ sort: true, collection_key: '' });
+  static override defaults: EditorDefaults = () => ({
+    sort: true,
+    collection_key: '',
+    ...NUMBER_DEFAULTS,
+  });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
     collection_key: collectionChoices(hass),
@@ -246,6 +268,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
           onlyWhen((data) => !listed(data, 'rows', 'entities').length, collectionField()),
         ),
         fieldRow(boolField('sort'), numberField('max_rows', 1, 20)),
+        numberFields({ units: WATT_LADDERS }),
         actionFields(),
       ],
       ...editorLabels(
@@ -437,9 +460,17 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     const plain = rows.filter(other);
 
     const values = rows.flatMap((row) => (row.value === null ? [] : [row.value]));
-    const scale = scaleOf([...values, total, tree.sum], kind === 'power' ? 'W' : 'Wh');
-    const figure = (v: number | null): string =>
-      v === null ? '—' : `${scaled(this.hass, v, scale)} ${scale.unit}`;
+    const base = kind === 'power' ? 'W' : 'Wh';
+    const scale = scaleOf([...values, total, tree.sum], base, this.config);
+    // a row that asks for a unit or decimals of its own reads as it asks; the rest read as the card does
+    const figure = (v: number | null, own?: NumberKeys): string => {
+      if (v === null) return '—';
+      const its =
+        own?.unit !== undefined || own?.decimals !== undefined
+          ? scaleOf([v], base, { ...this.config, ...own })
+          : scale;
+      return `${scaled(this.hass, v, its)} ${its.unit}`;
+    };
     const house = total ?? tree.sum;
 
     const tone: Tone = toneOf(this.config, 'accent');
@@ -575,7 +606,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       title: row.label,
       accent: this.accents.item(row.config.color),
       segments: this.secondary(row, parent, devices, c),
-      value: c.figure(row.value),
+      value: c.figure(row.value, row.config),
       fraction: barOf(row.value, c.tree.scale),
       barTone: row.config.color ? 'accent' : own && BAR_TONES.has(rowTone) ? rowTone : 'ink',
       onTap: (): void => this.tap(row.view.id, row.config.tap_action),
@@ -724,7 +755,7 @@ interface Context {
   readonly tree: DeviceTree<DeviceRow>;
   readonly total: number | null;
   readonly scale: Scale;
-  readonly figure: (v: number | null) => string;
+  readonly figure: (v: number | null, own?: NumberKeys) => string;
   readonly width: number;
   readonly tone: Tone;
   /** The rows have no circles (a narrow column). */

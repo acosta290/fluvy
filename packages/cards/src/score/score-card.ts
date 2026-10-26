@@ -58,12 +58,15 @@ import {
   entityField,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
+  numberFields,
   onlyWhen,
   selectField,
   showIconField,
   titleFields,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import {
   arcDash,
   hasCo2Signal,
@@ -83,7 +86,7 @@ import {
 const s = strings('energy-score');
 const flow = strings('energy-flow');
 
-export interface EnergyScoreCardConfig extends FluvyCardConfig {
+export interface EnergyScoreCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The span: today, the last 7 days, this month (default day). */
@@ -176,11 +179,14 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     'show_period',
     'collection_key',
     'co2',
+    'unit',
+    'decimals',
   ]);
   static override defaults: EditorDefaults = () => ({
     period: 'day',
     show_period: true,
     collection_key: '',
+    ...NUMBER_DEFAULTS,
   });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
@@ -199,6 +205,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
         ),
         entityField(['sensor'], 'co2', false),
         ...colourFields(),
+        numberFields({ units: ['kWh', 'MWh'] }),
         actionFields(),
       ],
       ...editorLabels(
@@ -513,6 +520,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     const scale = scaleOf(
       [imported, exported, net].map((v) => (v === null ? null : Math.abs(v) * 1000)),
       'Wh',
+      this.config,
     );
     const way = netWay(net, ZERO);
     const figure = (v: number | null, signed = false): { value: string; unit: string } =>

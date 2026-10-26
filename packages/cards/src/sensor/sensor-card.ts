@@ -1,19 +1,19 @@
 import {
   digitsOf,
   fetchHistory,
-  formatNumber,
   formatDate,
+  formatNumber,
   formatTime,
   isUsable,
   scaleUnit,
   stateText,
   strings,
-  valueParts,
   type EntityView,
   type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
+  type ValueParts,
 } from '@fluvy/core';
 
 import {
@@ -69,15 +69,20 @@ import {
   editorWord,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { askedParts, scaleNamed, type NumberKeys } from '../shared/units.js';
 import type { BaseKey } from '../shared/base.js';
 import { axisHolds } from '../shared/axis.js';
 import { labelOf, normaliseExtras, seriesTones, type SensorItem } from './series.js';
@@ -87,7 +92,7 @@ const s = strings('sensor');
 export type SensorVariant = 'chart' | 'tile';
 
 /** A sensor drawn beside the card's own (`entities`): its id, and the name, icon and colour it is shown with. */
-export interface SensorCardConfig extends FluvyCardConfig {
+export interface SensorCardConfig extends FluvyCardConfig, NumberKeys {
   /** Context in the sub line, before the window ("Temperature · last 24 h"). Defaults to the device class, as Home Assistant names it. */
   subtitle?: string;
   /**
@@ -438,6 +443,8 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     'hours',
     'show_stats',
     'variant',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -456,7 +463,13 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   ];
   static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'chart', show_stats: true });
+  static override defaults: EditorDefaults = () => ({
+    variant: 'chart',
+    show_stats: true,
+    ...NUMBER_DEFAULTS,
+  });
+  /** The units the editor offers are the sensor's class's. */
+  static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -467,6 +480,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         fieldRow(selectField('variant', ['chart', 'tile']), numberField('hours', 1, 168)),
         boolField('show_stats'),
         textField('label'),
+        numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(s, { show_stats: 'editor.show_stats' }, { label: 'editor.chart_label' }),
@@ -595,7 +609,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   }
 
   /** A statistic as the row says it: its number in the entity's precision (a scaled unit's own), and its unit. */
-  private statText(value: number | null, view: EntityView): { value: string; unit: string } {
+  private statText(value: number | null, view: EntityView): ValueParts {
     if (value === null) return { value: '—', unit: '' };
     const scaled = scaleUnit(value, view.unit);
     const magnitude = Math.abs(scaled.value);
@@ -607,10 +621,24 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           : magnitude >= 10
             ? 1
             : 2;
-    return {
-      value: formatNumber(this.hass, scaled.value, { digits, minDigits: digits }),
-      unit: scaled.unit,
-    };
+    return this.parts(view, value, digits);
+  }
+
+  /**
+   * A figure of a sensor on the card as the config asks it (`unit`, `decimals`); `digits` where the config asks for
+   * no decimals and no unit of the sensor's class — the decimals its reading is written with, so a statistic or a
+   * moment under the finger keeps the reading's width.
+   */
+  private parts(view: EntityView, value: number | null, digits?: number): ValueParts {
+    const asked = this.config;
+    const named =
+      typeof asked?.unit === 'string' && scaleNamed(asked.unit, view.unit) !== undefined;
+    return askedParts(
+      this.hass,
+      view,
+      named || digits === undefined ? asked : { ...asked, decimals: asked?.decimals ?? digits },
+      value,
+    );
   }
 
   /** The three statistics in as many equal columns as hold them, at the readout size they fit (`statsRow`). */
@@ -730,7 +758,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     };
     const name = this.config?.name ?? view.name;
     const tone = this.toneOf(view);
-    const parts = valueParts(this.hass, view);
+    const parts = this.parts(view, view.number);
     const numeric = charted(view);
     const series = this.live(view);
     // a trend says where the reading is going: a reading gone has none
@@ -833,7 +861,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const hours = this.drawn ?? this.hours;
     const width = down4(this.contentWidth);
     const family = getComputedStyle(this).fontFamily;
-    const parts = valueParts(this.hass, view);
+    const parts = this.parts(view, view.number);
     const stats = this.config?.show_stats ?? true;
 
     if (series !== undefined && values.length < 2) {
@@ -860,11 +888,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         ? null
         : {
             cursor: fraction as number,
-            ...valueParts(
-              this.hass,
-              { ...view, number: point },
-              { digits: digitsOf(this.hass, view, point) },
-            ),
+            ...this.parts(view, point, digitsOf(this.hass, view, point)),
             time: this.momentAt(fraction as number, hours),
           };
     // out of reach the curve is the window it had, in the off skin, its bubble at "now" saying "—"
@@ -1013,16 +1037,9 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         // the moment read is written as the reading now is (its precision): the figure never grows under the finger
         return point === null
           ? { label, value: '—', unit: '' }
-          : {
-              label,
-              ...valueParts(
-                this.hass,
-                { ...sensor, number: point },
-                { digits: digitsOf(this.hass, sensor, point) },
-              ),
-            };
+          : { label, ...this.parts(sensor, point, digitsOf(this.hass, sensor, point)) };
       }
-      return { label, ...valueParts(this.hass, sensor) };
+      return { label, ...this.parts(sensor, sensor.number) };
     });
     const fit = this.pairFit(texts);
     const plots = rows.map(({ series }) => {

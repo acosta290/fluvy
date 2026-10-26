@@ -251,6 +251,30 @@ variant: signed
 max: 5000                      # in the sensor's unit; the scale runs from -max to max
 ```
 
+## Units and decimals
+
+Every figure of the family follows one rule. A set read together — a diagram's sources, a legend, a row of readouts
+— is written in one unit, the one its largest figure asks for: 3,200 W beside 250 W reads "3.2 kW" and "0.25 kW",
+never "3.2 kW" beside "250 W". Its decimals are three significant places at most (0.25 · 3.2 · 11.2 · 142), a
+scaled figure keeping its one decimal so a live readout does not change width; a figure read alone, in the sensor's
+own unit, takes the precision set for the sensor in Home Assistant.
+
+Where you want something else, every card takes `unit` and `decimals`: `unit` is any unit of the figures' class (W,
+kW, MW for power; Wh, kWh, MWh for energy; L, m³, gal, ft³ for a water or gas meter) and is ignored where it is not —
+`unit: kW` on a card of energy totals changes nothing; `decimals` fixes the figures' decimals (0 to 3), so "2,308 W"
+reads beside "450 W" with `unit: W` and `decimals: 0`. A legend item, a readout, a device row or a meter may ask for
+its own, which wins over the card's. The editor offers both on one row, the units of the sensor's own class; a
+sensor whose unit converts to nothing shows no unit to choose. The energy card's power scale follows its `unit`,
+so its ticks and its legend agree.
+
+```yaml
+type: custom:fluvy-energy-flow-card
+unit: W                      # every power figure in watts, whatever its size
+decimals: 0
+readouts:
+  - { entity: sensor.grid_import_today, name: Imported, unit: Wh, decimals: 1 }
+```
+
 ## Honest by design
 
 A figure that cannot be read is "—", never a 0; a source that stops reporting is drawn as a dashed hairline and the

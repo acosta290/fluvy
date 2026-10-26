@@ -256,6 +256,21 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the one rule for units and decimals: the frame above as the house asks it — watts whatever the size, no decimals
+    {
+      title: 'Units and decimals · W, no decimals',
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.so_solar_power',
+          icon: 'sun',
+          subtitle: 'South roof · 5.4 kWp',
+          max_entity: 'sensor.so_solar_capacity',
+          unit: 'W',
+          decimals: 0,
+        },
+      ],
+    },
     // the reading over a level bar, for a half column
     {
       title: 'Gauge · bar',

@@ -458,7 +458,9 @@
     "hide_empty": "空のときは非表示",
     "light_colors": "点灯中の照明を電球の色で",
     "tint_strength": "色の強さ",
-    "light_whites": "白色光"
+    "light_whites": "白色光",
+    "unit": "単位",
+    "decimals": "小数点以下の桁数"
   },
   "strategy": {
     "home": "ホーム",
@@ -707,6 +709,7 @@
     "unit_d": "日"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",
@@ -1665,8 +1668,6 @@
     "editor_period": "バー1本の期間",
     "editor_stat": "バーの値",
     "editor_include_today": "進行中の期間を含める",
-    "editor_decimals": "小数点以下の桁数",
-    "editor_unit": "単位",
     "editor_show_head": "ヘッダーを表示",
     "editor_show_values": "バーの上に値を表示",
     "editor_show_axis": "目盛りを表示",

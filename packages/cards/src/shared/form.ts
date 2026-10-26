@@ -2,6 +2,7 @@ import {
   english,
   idsOf,
   localize,
+  resolveEntity,
   type HaFormSchemaItem,
   type HomeAssistant,
   type KeyOf,
@@ -10,6 +11,8 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
+import type { EditorChoices, SelectOption } from './rows-editor.js';
+import { LADDERS, ladderOf, unitClass } from './units.js';
 
 /** The words every card's editor shares, by field name: a card maps only its own fields (or another word). */
 export const SHARED_LABELS: Readonly<Record<string, MessageKey>> = {
@@ -355,3 +358,65 @@ export const entitiesField = (
   ...(required ? { required } : {}),
   selector: { entity: { multiple: true, ...(domains ? { domain: [...domains] } : {}) } },
 });
+
+/** The choices of a unit select: the automatic one, then each unit by its symbol. */
+export const unitChoices = (units: readonly string[]): SelectOption[] => [
+  { value: 'auto', label: editorWord('option.auto') },
+  ...units.map((value) => ({ value, label: value })),
+];
+
+/** Every unit a card's figures may be asked in: the ladders of power, energy, volume and distance. */
+const EVERY_LADDER: readonly string[] = Object.values(LADDERS).flat();
+const DECIMALS: readonly OptionWord[] = ['auto', '0', '1', '2', '3'];
+
+/**
+ * The unit a card's figures read in and their decimals, on one row — the last before the actions. `unit` offers the
+ * ladders given (every one by default, narrowed to the entity's class at render where the card says so, through
+ * `unitChoicesOf`), or a unit typed; `decimals` is fixed, or automatic (the sensor's own precision, else the figure's
+ * size). Neither default is written (`NUMBER_DEFAULTS`). `when` says while the unit can act: an entity whose unit
+ * has no ladder gives it nothing to do (`hasLadder`).
+ */
+export const numberFields = ({
+  units = EVERY_LADDER,
+  when,
+  decimals = DECIMALS,
+}: {
+  units?: readonly string[];
+  when?: HaFormSchemaItem['when'];
+  decimals?: readonly OptionWord[];
+} = {}): HaFormSchemaItem => {
+  const unit: HaFormSchemaItem = {
+    name: 'unit',
+    selector: {
+      select: { mode: 'dropdown', custom_value: true, options: unitChoices(units) },
+    },
+  };
+  return fieldRow(when ? onlyWhen(when, unit) : unit, selectField('decimals', decimals));
+};
+
+/** What the row shows where the config says nothing: automatic, both. */
+export const NUMBER_DEFAULTS = { unit: 'auto', decimals: 'auto' } as const;
+
+/** The unit of the card's entity as the editor's `when` and `choices` read it: none where the house does not hold it. */
+const unitOf = (
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): string | undefined => {
+  const id = data['entity'];
+  return typeof id === 'string' && hass?.states[id] ? resolveEntity(hass, id).unit : undefined;
+};
+
+/** Whether the card's entity's figures can be asked in another unit: its unit converts (one not there: shown). */
+export const hasLadder = (
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): boolean => {
+  const unit = unitOf(data, hass);
+  return unit === undefined || unitClass(unit) !== undefined;
+};
+
+/** The units the editor offers a card's entity: its class's ladder (a class without one: typed), as its `choices`. */
+export const unitChoicesOf: EditorChoices = (config, hass) => {
+  const unit = unitOf(config, hass);
+  return unit !== undefined && unitClass(unit) ? { unit: unitChoices(ladderOf(unit)) } : {};
+};

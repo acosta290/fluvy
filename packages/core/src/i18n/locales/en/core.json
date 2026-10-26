@@ -458,7 +458,9 @@
     "hide_empty": "Hide when empty",
     "light_colors": "Each light on in its bulb’s colour",
     "tint_strength": "How much colour",
-    "light_whites": "Whites"
+    "light_whites": "Whites",
+    "unit": "Unit",
+    "decimals": "Decimals"
   },
   "strategy": {
     "home": "Home",
@@ -707,6 +709,7 @@
     "unit_d": "d"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

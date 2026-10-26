@@ -2,7 +2,6 @@ import {
   isUsable,
   stateText,
   strings as words,
-  valueParts,
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
@@ -26,7 +25,15 @@ import { html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
 
-import { baseOf, figure, figureText, scaleFor, type Scale } from '../gauge/units.js';
+import {
+  askedParts,
+  baseOf,
+  figuresOf,
+  figureText,
+  writeFigure,
+  type Figures,
+  type NumberKeys,
+} from '../shared/units.js';
 
 import { Card, HEAD_BASE } from '../shared/base.js';
 
@@ -46,6 +53,8 @@ import {
   iconField,
   idsOnly,
   nameIconFields,
+  NUMBER_DEFAULTS,
+  numberFields,
   selectField,
   showIconField,
   textField,
@@ -84,7 +93,7 @@ function statColumns(raw: unknown, fallback: StatColumns): StatColumns {
   return n === 2 || n === 3 ? n : fallback;
 }
 
-export interface StatTileConfig {
+export interface StatTileConfig extends NumberKeys {
   entity: string;
   name?: string;
   icon?: string;
@@ -104,7 +113,7 @@ export interface StatRowConfig {
   tap_action?: ActionConfig;
 }
 
-export interface StatTilesCardConfig extends FluvyCardConfig, EmptyList {
+export interface StatTilesCardConfig extends FluvyCardConfig, EmptyList, NumberKeys {
   title?: string;
   subtitle?: string;
   /** Head badge: the entity's value, with `badge_label` in front of it ("Health 92 %"). */
@@ -241,14 +250,21 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     'badge_label',
     'tiles',
     'rows',
+    'unit',
+    'decimals',
     ...EMPTY_KEYS,
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'tiles',
       title: 'editor.tiles',
-      keys: ['entity', 'name', 'icon', 'tone', 'highlight'],
-      schema: [entityField(), nameIconFields(), fieldRow(toneField(), boolField('highlight'))],
+      keys: ['entity', 'name', 'icon', 'tone', 'highlight', 'unit', 'decimals'],
+      schema: [
+        entityField(),
+        nameIconFields(),
+        fieldRow(toneField(), boolField('highlight')),
+        numberFields(),
+      ],
     },
     {
       key: 'rows',
@@ -271,6 +287,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
   static override defaults: EditorDefaults = (config) => ({
     variant: 'full',
     columns: config.variant === 'compact' ? 'auto' : '2',
+    ...NUMBER_DEFAULTS,
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -284,6 +301,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         fieldRow({ name: 'badge_entity', selector: { entity: {} } }, textField('badge_label')),
         entitiesField('rows'),
         emptyFields(),
+        numberFields(),
         actionFields(),
       ],
       ...idsOnly('tiles', 'rows'),
@@ -339,25 +357,36 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
   }
 
   /** Tiles that measure the same thing share one unit, so the set reads as one figure (3.2 kW · 0.25 kW · 1.1 kW). */
-  private scales(views: readonly EntityView[]): Map<string, Scale> {
+  private scales(views: readonly EntityView[]): Map<string, Figures> {
     const peaks = new Map<string, number>();
     for (const view of views) {
       const quantity = baseOf(view);
       if (quantity)
         peaks.set(quantity.unit, Math.max(peaks.get(quantity.unit) ?? 0, Math.abs(quantity.value)));
     }
-    return new Map([...peaks].map(([unit, peak]) => [unit, scaleFor(peak, unit)]));
+    return new Map(
+      [...peaks].map(([unit, peak]) => [unit, figuresOf(this.hass, this.config, unit, peak)]),
+    );
   }
 
-  /** "3.2 kW": a scaled figure for power and energy, Home Assistant's own formatting (precision included) for the rest. */
-  private text(view: EntityView, scales?: Map<string, Scale>): string {
+  /**
+   * "3.2 kW": a scaled figure for power and energy, in the set's unit or the one asked, Home Assistant's own
+   * formatting (precision included) for the rest unless decimals are asked; a tile that asks for its own unit or
+   * decimals (`own`) reads as it asks.
+   */
+  private text(view: EntityView, scales?: Map<string, Figures>, own?: NumberKeys): string {
+    const asked =
+      own?.unit !== undefined || own?.decimals !== undefined
+        ? { ...this.config, ...own }
+        : this.config;
     const quantity = view.status === 'ok' ? baseOf(view) : null;
     const scale = quantity
-      ? (scales?.get(quantity.unit) ?? scaleFor(quantity.value, quantity.unit))
+      ? (asked === this.config && scales?.get(quantity.unit)) ||
+        figuresOf(this.hass, asked, quantity.unit, quantity.value, view)
       : null;
-    if (quantity && scale && scale.unit !== view.unit)
-      return figureText(this.hass, quantity.value, scale);
-    const parts = valueParts(this.hass, view);
+    if (quantity && scale && (scale.unit !== view.unit || scale.digits !== undefined))
+      return figureText(this.hass, quantity.value, scale, scale.digits);
+    const parts = askedParts(this.hass, view, asked);
     return parts.unit ? `${parts.value} ${parts.unit}` : parts.value;
   }
 
@@ -384,7 +413,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         key: tile.entity,
         label: tile.name ?? view.name,
         name: true,
-        value: this.text(view, scales),
+        value: this.text(view, scales, tile),
         glyph: iconOf(view, tile.icon),
         tone: tile.tone ?? tone,
         active: !gone(view) && (tile.highlight ?? false),
@@ -393,12 +422,14 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     });
 
     const leadBase = lead && lead.status === 'ok' ? baseOf(lead) : null;
-    const leadScale = leadBase ? scaleFor(leadBase.value, leadBase.unit) : null;
+    const leadScale = leadBase
+      ? figuresOf(this.hass, this.config, leadBase.unit, leadBase.value, lead ?? undefined)
+      : null;
     const leadParts =
-      leadBase && leadScale && leadScale.unit !== lead?.unit
-        ? { value: figure(this.hass, leadBase.value, leadScale), unit: leadScale.unit }
+      leadBase && leadScale && (leadScale.unit !== lead?.unit || leadScale.digits !== undefined)
+        ? { value: writeFigure(this.hass, leadBase.value, leadScale), unit: leadScale.unit }
         : lead
-          ? valueParts(this.hass, lead)
+          ? askedParts(this.hass, lead, this.config)
           : null;
 
     const width = this.contentWidth;

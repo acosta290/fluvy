@@ -69,7 +69,7 @@ import {
 import { isStale, liveWords, newestReport, staleShorter } from '../energy/freshness.js';
 import { HeadFit } from '../energy/head.js';
 import { legendStats } from '../energy/legend.js';
-import { scaled, scaleOf, shortName, watts, type Scale } from '../energy/power.js';
+import { scaled, scaleOf, shortName, WATT_LADDERS, watts, type Scale } from '../energy/power.js';
 import { statsCols, statsStyles } from '../energy/stats.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
@@ -88,7 +88,9 @@ import {
   entityField,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   onlyWhen,
   pickFields,
   selectField,
@@ -97,6 +99,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import {
   arcs,
   crossLayout,
@@ -139,7 +142,7 @@ export const FLOW_BADGES: readonly FlowBadge[] = ['solar', 'self_powered', 'grid
 export type FlowPeriod = 'live' | Period;
 export const FLOW_PERIODS: readonly FlowPeriod[] = ['live', ...PERIODS];
 
-export interface EnergyFlowReadout {
+export interface EnergyFlowReadout extends NumberKeys {
   entity: string;
   name?: string;
 }
@@ -151,7 +154,7 @@ export interface EnergyFlowConsumer {
   color?: string;
 }
 
-export interface EnergyFlowCardConfig extends FluvyCardConfig {
+export interface EnergyFlowCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** Where the energy comes from. Empty: the Energy dashboard's own (every grid connection, array and battery). */
@@ -371,6 +374,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     'show_period',
     'collection_key',
     'readouts',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -406,8 +411,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       key: 'readouts',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name'],
-      schema: [entityField(['sensor']), textField('name')],
+      keys: ['entity', 'name', 'unit', 'decimals'],
+      schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
     },
   ];
   static override aliases: AliasSpec = {
@@ -429,6 +434,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     variant: 'rows',
     show_period: true,
     collection_key: '',
+    ...NUMBER_DEFAULTS,
   });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
@@ -466,6 +472,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         ),
         entitiesField('readouts', ['sensor']),
         ...colourFields(),
+        numberFields({ units: WATT_LADDERS }),
         actionFields(),
       ],
       ...editorLabels(
@@ -718,7 +725,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       houseValue,
       ...consumers.map((c) => c.watts),
     ];
-    const scale = scaleOf(figures, base);
+    const scale = scaleOf(figures, base, this.config);
     const fig = (v: number | null): { value: string; unit: string } =>
       v === null
         ? { value: '—', unit: '' }
@@ -1072,7 +1079,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
           ? statsCols(
               this.head.ruler,
               w,
-              legendStats(this.hass, totals, (id) => this.entity(id)),
+              legendStats(this.hass, totals, (id) => this.entity(id), this.config),
             )
           : nothing
       }

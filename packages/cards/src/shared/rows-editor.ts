@@ -241,6 +241,24 @@ export const withList = (
 const namesOf = (schema: readonly HaFormSchemaItem[]): string[] =>
   schema.flatMap((item) => (item.schema ? namesOf(item.schema) : [item.name]));
 
+/** The fields of a schema whose selector is a select, through its rows: their choices are words. */
+const selectsOf = (schema: readonly HaFormSchemaItem[]): string[] =>
+  schema.flatMap((item) =>
+    item.schema ? selectsOf(item.schema) : item.selector?.['select'] ? [item.name] : [],
+  );
+
+/** A select's value as its choices word it: a number the YAML holds (`decimals: 2`, `columns: 2`) is shown as "2". */
+const worded = (
+  entries: Readonly<Record<string, unknown>>,
+  selects: ReadonlySet<string>,
+): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(
+    Object.entries(entries).map(([key, value]) => [
+      key,
+      selects.has(key) && typeof value === 'number' ? String(value) : value,
+    ]),
+  );
+
 const sameValue = (a: unknown, b: unknown): boolean =>
   a === b || JSON.stringify(a) === JSON.stringify(b);
 
@@ -593,7 +611,10 @@ export class FluvyRowsEditor extends LitElement {
         ),
       );
     const defaults = this.defaults();
-    const data = { ...withoutLists(defaults), ...withoutLists(this.config) };
+    const data = worded(
+      { ...withoutLists(defaults), ...withoutLists(this.config) },
+      new Set(selectsOf(spec.schema)),
+    );
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };
     // the card's helpers are told what the form shows and the house (one that reads the sensor picked); a field with

@@ -506,7 +506,9 @@
     "hide_empty": "Ausblenden, wenn leer",
     "light_colors": "Jedes Licht in der Farbe seiner Lampe",
     "tint_strength": "Wie viel Farbe",
-    "light_whites": "Weißtöne"
+    "light_whites": "Weißtöne",
+    "unit": "Einheit",
+    "decimals": "Dezimalstellen"
   },
   "strategy": {
     "home": "Zuhause",
@@ -1360,8 +1362,6 @@
     "editor_period": "Ein Balken steht für",
     "editor_stat": "Ein Balken zeigt",
     "editor_include_today": "Den laufenden einschließen",
-    "editor_decimals": "Dezimalstellen",
-    "editor_unit": "Einheit",
     "editor_show_head": "Kopf zeigen",
     "editor_show_values": "Werte über den Balken zeigen",
     "editor_show_axis": "Skala zeigen",
@@ -1540,6 +1540,7 @@
     "unit_d": "d"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

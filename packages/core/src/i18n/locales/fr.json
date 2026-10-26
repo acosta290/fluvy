@@ -506,7 +506,9 @@
     "hide_empty": "Masquer si vide",
     "light_colors": "Chaque lumière allumée à la couleur de son ampoule",
     "tint_strength": "Intensité de la couleur",
-    "light_whites": "Blancs"
+    "light_whites": "Blancs",
+    "unit": "Unité",
+    "decimals": "Décimales"
   },
   "strategy": {
     "home": "Accueil",
@@ -1360,8 +1362,6 @@
     "editor_period": "Une barre représente",
     "editor_stat": "Une barre montre",
     "editor_include_today": "Inclure celle en cours",
-    "editor_decimals": "Décimales",
-    "editor_unit": "Unité",
     "editor_show_head": "Afficher l’en-tête",
     "editor_show_values": "Afficher les valeurs au-dessus des barres",
     "editor_show_axis": "Afficher l’échelle",
@@ -1540,6 +1540,7 @@
     "unit_d": "j"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

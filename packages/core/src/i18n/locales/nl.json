@@ -506,7 +506,9 @@
     "hide_empty": "Verbergen indien leeg",
     "light_colors": "Elke lamp aan in de kleur van zijn peer",
     "tint_strength": "Hoeveel kleur",
-    "light_whites": "Wittinten"
+    "light_whites": "Wittinten",
+    "unit": "Eenheid",
+    "decimals": "Decimalen"
   },
   "strategy": {
     "home": "Thuis",
@@ -1360,8 +1362,6 @@
     "editor_period": "Een balk staat voor",
     "editor_stat": "Een balk toont",
     "editor_include_today": "De lopende meenemen",
-    "editor_decimals": "Decimalen",
-    "editor_unit": "Eenheid",
     "editor_show_head": "Kop tonen",
     "editor_show_values": "Waarden boven de balken tonen",
     "editor_show_axis": "Schaal tonen",
@@ -1540,6 +1540,7 @@
     "unit_d": "d"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

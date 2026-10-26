@@ -506,7 +506,9 @@
     "hide_empty": "Boşken gizle",
     "light_colors": "Açık her ışık kendi ampulünün renginde",
     "tint_strength": "Renk yoğunluğu",
-    "light_whites": "Beyazlar"
+    "light_whites": "Beyazlar",
+    "unit": "Birim",
+    "decimals": "Ondalık basamak"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -1360,8 +1362,6 @@
     "editor_period": "Her çubuk bir",
     "editor_stat": "Her çubuk şunu gösterir",
     "editor_include_today": "Süren dönemi dahil et",
-    "editor_decimals": "Ondalık basamak",
-    "editor_unit": "Birim",
     "editor_show_head": "Başlığı göster",
     "editor_show_values": "Çubukların üstünde değerleri göster",
     "editor_show_axis": "Ölçeği göster",
@@ -1540,6 +1540,7 @@
     "unit_d": "g"
   },
   "option": {
+    "0": "0",
     "1": "1",
     "2": "2",
     "3": "3",

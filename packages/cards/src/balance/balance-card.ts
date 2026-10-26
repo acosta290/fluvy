@@ -73,7 +73,7 @@ import {
 } from '../energy/freshness.js';
 import { HeadFit } from '../energy/head.js';
 import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
-import { scaled, scaleOf, type Scale } from '../energy/power.js';
+import { scaled, scaleOf, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { kindField, MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles } from '../energy/stats.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -88,7 +88,9 @@ import {
   editorLabels,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   onlyWhen,
   selectField,
   showIconField,
@@ -96,6 +98,7 @@ import {
   titleFields,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import { Ticker } from '../shared/ticker.js';
 import { gridWay, type GridWay } from '../grid/grid.js';
 import {
@@ -114,7 +117,7 @@ const f = strings('energy-flow');
 export type BalancePeriod = 'live' | Period;
 export const BALANCE_PERIODS: readonly BalancePeriod[] = ['live', ...PERIODS];
 
-export interface EnergyBalanceCardConfig extends FluvyCardConfig {
+export interface EnergyBalanceCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** Where the energy comes from, the flow's way. Empty: the Energy dashboard's own. */
@@ -226,6 +229,8 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
     'collection_key',
     'show_phases',
     'show_cost',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -250,6 +255,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
     collection_key: '',
     show_phases: true,
     show_cost: true,
+    ...NUMBER_DEFAULTS,
   });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
@@ -268,6 +274,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
         ),
         fieldRow(boolField('show_phases'), boolField('show_cost')),
         ...colourFields(),
+        numberFields({ units: WATT_LADDERS }),
         actionFields(),
       ],
       ...editorLabels(
@@ -492,6 +499,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
           ...(phases ?? []),
         ],
         period ? 'Wh' : 'W',
+        this.config,
       ),
       dead,
       stale: !period && isStale(this.newest(), this.now()),

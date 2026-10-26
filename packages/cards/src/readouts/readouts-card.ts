@@ -2,7 +2,6 @@ import {
   fetchHistory,
   stateText,
   strings,
-  valueParts,
   type ActionConfig,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -29,24 +28,27 @@ import {
   entityField,
   fieldRow,
   formLabels,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   selectField,
   textField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { askedParts, type NumberKeys } from '../shared/units.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('readouts');
 
-export interface ReadoutConfig {
+export interface ReadoutConfig extends NumberKeys {
   entity: string;
   name?: string;
   tap_action?: ActionConfig;
 }
 
-export interface ReadoutsCardConfig extends FluvyCardConfig, EmptyList {
+export interface ReadoutsCardConfig extends FluvyCardConfig, EmptyList, NumberKeys {
   /** The object form, for a per-readout `name` (same shape as the `rows` of `fluvy-entities-card`). Wins over `entities`. */
   rows?: ReadonlyArray<string | ReadoutConfig>;
   /** Window the trend is read from. Default 6 h. */
@@ -190,6 +192,8 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
     'rows',
     'hours',
     'variant',
+    'unit',
+    'decimals',
     ...EMPTY_KEYS,
   ]);
   static override lists: readonly RowsListSpec[] = [
@@ -198,12 +202,16 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
       alias: 'entities',
       title: 'editor.rows',
       domains: DOMAINS,
-      keys: ['entity', 'name', 'tap_action'],
-      schema: [entityField(DOMAINS), textField('name'), actionField()],
+      keys: ['entity', 'name', 'unit', 'decimals', 'tap_action'],
+      schema: [entityField(DOMAINS), textField('name'), numberFields(), actionField()],
     },
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  static override defaults: EditorDefaults = () => ({ variant: 'grid', hours: 6 });
+  static override defaults: EditorDefaults = () => ({
+    variant: 'grid',
+    hours: 6,
+    ...NUMBER_DEFAULTS,
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -212,6 +220,7 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
         accentField(),
         accentField('card_color', { none: true }),
         emptyFields(),
+        numberFields(),
       ],
       ...formLabels({}),
     };
@@ -346,7 +355,7 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
       ${items.map((item) => {
         const view = this.entity(item.entity);
         const label = item.name ?? view.name;
-        const parts = valueParts(this.hass, view);
+        const parts = askedParts(this.hass, view, { ...this.config, ...item });
         const trend = view.status === 'ok' ? this.trend(item.entity, view.number) : null;
         const said =
           view.status === 'ok'

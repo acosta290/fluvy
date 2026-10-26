@@ -48,7 +48,6 @@ import { HeadFit } from '../energy/head.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
-import { scaleFor, toBase, type Scale } from '../gauge/units.js';
 import { Card, HEAD_BASE } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
@@ -62,17 +61,22 @@ import {
   editorWord,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
   numberField,
+  numberFields,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
   type FormLabeler,
 } from '../shared/form.js';
 import { TextRuler } from '../shared/fit.js';
 import { statsColumns, statsSize, type StatText } from '../shared/readouts.js';
 import type { EditorDefaults, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
 import { TemplateTexts } from '../shared/templates.js';
+import { scaleFor, toBase, type Scale } from '../shared/units.js';
+import { convert, convertible } from './units.js';
 import { Ticker } from '../shared/ticker.js';
 import {
   additive,
@@ -126,7 +130,6 @@ import {
   typical,
   type Placed,
 } from './scale.js';
-import { convert, convertible } from './units.js';
 
 const strings = words('history-bars');
 
@@ -257,8 +260,8 @@ let gradients = 0;
 /** The words of a fact's own fields; the shared item words name the rest. */
 const OWN_LABELS: Readonly<Record<string, MessageKey>> = {
   kind: 'history-bars.editor_kind',
-  unit: 'history-bars.editor_unit',
-  decimals: 'history-bars.editor_decimals',
+  unit: 'editor.unit',
+  decimals: 'editor.decimals',
   factor: 'history-bars.editor_factor',
   of: 'history-bars.editor_of',
   template: 'history-bars.editor_template',
@@ -745,7 +748,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       reset: 'auto',
       source: 'auto',
       include_today: false,
-      decimals: 1,
+      decimals: '1',
+      unit: 'auto',
       date_format: 'date',
       show_head: true,
       show_values: true,
@@ -758,6 +762,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       facts: [...DEFAULT_FACTS],
     };
   };
+  /** The units the editor offers are the sensor's class's. */
+  static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -772,7 +778,6 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           wordsField('source', SOURCES, SOURCE_WORDS),
           selectField('date_format', ['date', 'weekday', 'short']),
         ),
-        fieldRow(numberField('decimals', 0, 3), textField('unit')),
         fieldRow(accentField('negative_color'), accentField('current_color')),
         fieldRow(boolField('include_today'), boolField('show_head')),
         fieldRow(boolField('show_values'), boolField('show_axis')),
@@ -782,6 +787,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         { name: 'head', selector: { object: {} } },
         { name: 'facts', selector: { object: {} } },
         fieldRow(numberField('co2_factor', 0, 2, 0.01), numberField('price', 0, 100, 0.001)),
+        // the figures' unit and decimals: one decimal by default, so a column of bars reads evenly
+        numberFields({ when: hasLadder, decimals: ['0', '1', '2', '3'] }),
         actionFields(),
       ],
       ...editorLabels(
@@ -797,8 +804,6 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           negative_color: 'editor_negative_color',
           current_color: 'editor_current_color',
           include_today: 'editor_include_today',
-          decimals: 'editor_decimals',
-          unit: 'editor_unit',
           show_head: 'editor_show_head',
           show_values: 'editor_show_values',
           show_axis: 'editor_show_axis',

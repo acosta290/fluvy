@@ -62,7 +62,7 @@ import {
 import { HeadFit } from '../energy/head.js';
 import { legendStats } from '../energy/legend.js';
 import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
-import { costParts, scaled, scaleOf, type Scale } from '../energy/power.js';
+import { costParts, scaled, scaleOf, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles, type Stat } from '../energy/stats.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -77,6 +77,8 @@ import {
   fieldRow,
   iconField,
   listed,
+  NUMBER_DEFAULTS,
+  numberFields,
   onlyWhen,
   showIconField,
   textField,
@@ -84,18 +86,19 @@ import {
 } from '../shared/form.js';
 import { statsSize } from '../shared/readouts.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import { Ticker } from '../shared/ticker.js';
 import { connectionOf, gridWay, meanOf, type GridWay } from './grid.js';
 
 const g = strings('grid');
 const f = strings('energy-flow');
 
-export interface GridReadout {
+export interface GridReadout extends NumberKeys {
   entity: string;
   name?: string;
 }
 
-export interface GridCardConfig extends FluvyCardConfig {
+export interface GridCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The grid read the way a source is: one signed sensor (+ import) … */
@@ -200,14 +203,16 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     'price',
     'readouts',
     'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'readouts',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name'],
-      schema: [entityField(['sensor']), textField('name')],
+      keys: ['entity', 'name', 'unit', 'decimals'],
+      schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
     },
   ];
   static override aliases: AliasSpec = {
@@ -215,7 +220,11 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     items: { readouts: ITEM_ALIASES },
   };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ invert: false, collection_key: '' });
+  static override defaults: EditorDefaults = () => ({
+    invert: false,
+    collection_key: '',
+    ...NUMBER_DEFAULTS,
+  });
   /** The date pickers on the dashboard, for the key. */
   static override choices: EditorChoices = (_config, hass) => ({
     collection_key: collectionChoices(hass),
@@ -232,6 +241,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
         // the Energy dashboard's totals (no readouts of its own) can follow a date picker
         onlyWhen((data) => !listed(data, 'readouts').length, collectionField()),
         ...colourFields(),
+        numberFields({ units: WATT_LADDERS }),
         actionFields(),
       ],
       ...editorLabels(
@@ -442,7 +452,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       way: gridWay(reading),
       dead: !!measure && (reading.in === null || reading.out === null),
       stale: !!measure && isStale(this.newest(source), this.now()),
-      scale: scaleOf([reading.in, reading.out, value, ...(phases ?? [])], 'W'),
+      scale: scaleOf([reading.in, reading.out, value, ...(phases ?? [])], 'W', this.config),
     };
   }
 
@@ -659,7 +669,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
   private renderTotals(m: Model, w: number): TemplateResult | typeof nothing {
     const own = this.readouts();
     const stats = own.length
-      ? legendStats(this.hass, own, (id) => this.entity(id))
+      ? legendStats(this.hass, own, (id) => this.entity(id), this.config)
       : this.todayStats(m);
     return stats.length ? statsCols(this.head.ruler, w, stats) : nothing;
   }
@@ -673,7 +683,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       data ? ids.reduce((sum, id) => sum + (data.byStat.get(id) ?? 0), 0) * 1000 : null;
     const imported = c.energyIn.length ? kwh(c.energyIn) : undefined;
     const exported = c.energyOut.length ? kwh(c.energyOut) : undefined;
-    const scale = scaleOf([imported ?? null, exported ?? null], 'Wh');
+    const scale = scaleOf([imported ?? null, exported ?? null], 'Wh', this.config);
     const energy = (label: string, v: number | null): Stat =>
       v === null
         ? { label, value: '—', unit: '' }

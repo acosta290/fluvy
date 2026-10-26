@@ -55,12 +55,16 @@ import {
   entitiesField,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   onlyWhen,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
 } from '../shared/form.js';
 
 import {
@@ -87,7 +91,7 @@ import {
 import { legendStats } from './legend.js';
 import { statsCols, statsStyles } from './stats.js';
 
-import { costParts, readoutParts, scaled, scaleOf } from './power.js';
+import { costParts, readoutParts, scaled, scaleOf, WATT_LADDERS, type Scale } from './power.js';
 import {
   CollectionFollower,
   collectionKeyOf,
@@ -147,18 +151,19 @@ import {
 } from './stack.js';
 import { energyLegend, type LegendEntry } from './legend-row.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import { sideStacked } from '../shared/value-row.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 
 const s = strings('energy');
 
-export interface EnergyLegendItem {
+export interface EnergyLegendItem extends NumberKeys {
   entity: string;
   name?: string;
 }
 
-export interface EnergyCardConfig extends FluvyCardConfig {
+export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys {
   subtitle?: string;
   /** Window of the curve. 24 (the default) draws today on a 00:00 … 24:00 axis; anything else rolls. */
   hours?: number;
@@ -482,14 +487,16 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     'line_width',
     'stack',
     'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'legend',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name'],
-      schema: [entityField(['sensor']), textField('name')],
+      keys: ['entity', 'name', 'unit', 'decimals'],
+      schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
     },
   ];
   /** The card's head is its sensor's name (`title` was the older word for it); a legend item's `label` is its name. */
@@ -508,10 +515,15 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     line_width: 'regular',
     stack: true,
     collection_key: '',
+    ...NUMBER_DEFAULTS,
   });
-  /** The date pickers on the dashboard, for the key. */
-  static override choices: EditorChoices = (_config, hass) => ({
+  /**
+   * The date pickers on the dashboard, for the key; the units the editor offers are the sensor's class's (a chart of
+   * the house's meters alone: every ladder).
+   */
+  static override choices: EditorChoices = (config, hass) => ({
     collection_key: collectionChoices(hass),
+    ...unitChoicesOf(config, hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -531,6 +543,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         fieldRow(selectField('line_width', ['regular', 'thin']), boolField('stack')),
         fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
         entitiesField('legend', ['sensor']),
+        numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(
@@ -930,13 +943,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   /** A power in watts as the readouts write it (W or kW, the house's precision). */
   private power(watts: number): { value: string; unit: string } {
-    const scale = scaleOf([watts], 'W');
+    const scale = scaleOf([watts], 'W', this.config);
     return { value: scaled(this.hass, watts, scale), unit: scale.unit };
-  }
-
-  /** A day's energy as the legend writes it: one decimal, none from 100. */
-  private kwh(v: number): string {
-    return formatNumber(this.hass, v, { digits: v >= 100 ? 0 : 1, minDigits: v >= 100 ? 0 : 1 });
   }
 
   private dayAxis(): ReadonlyArray<readonly [number, string]> {
@@ -966,12 +974,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       Math.max(0, ...this.powerMarks(scale).map((text) => this.head.ruler.width('ax-tick', text))) +
       AXIS_GAP;
     if (showAxis && charge) {
-      const scale = powerScale(up, down, true);
+      const scale = powerScale(up, down, true, this.config?.unit);
       const left = room(scale);
       const width = w - left - AXIS_GAP - this.head.ruler.width('ax-tick', this.percent(100));
       if (width >= PLOT_MIN_TWO) return { left, width, scale, axis: true, charge: true, grid };
     }
-    const scale = powerScale(up, down, false);
+    const scale = powerScale(up, down, false, this.config?.unit);
     const left = showAxis ? room(scale) : 0;
     if (showAxis && w - left >= PLOT_MIN)
       return { left, width: w - left, scale, axis: true, charge: false, grid };
@@ -980,8 +988,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   /** The power's tick labels, in its scale's unit. */
   private powerMarks(scale: PowerScale): string[] {
-    const k = scale.unit === 'W' ? 1000 : 1;
-    return scale.ticks.map((t) => tickText(this.hass, t * k, scale.decimals));
+    return scale.ticks.map((t) => tickText(this.hass, (t * 1000) / scale.divisor, scale.decimals));
   }
 
   /** A charge as its scale writes it ("75 %"). */
@@ -1097,18 +1104,19 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
    * A legend's figure: the day's energy at rest; while the chart is read, the power then (kW, "—" across a gap) in the
    * row's one unit and precision (`row`, chosen by the largest figure read).
    */
+  /**
+   * A legend entry's figure in the row's unit and decimals: the power under the cursor while the chart is read (none
+   * where the cursor has none), else the day's energy.
+   */
   private legendFigure(
-    row: { readonly divisor: number; readonly unit: string } | null,
+    row: Scale,
+    scrubbing: boolean,
     kw: number | undefined,
     kwhs: number | undefined,
   ): { value: string; unit: string } {
-    if (!row) return { value: this.kwh(kwhs ?? 0), unit: 'kWh' };
+    if (!scrubbing) return { value: scaled(this.hass, (kwhs ?? 0) * 1000, row), unit: row.unit };
     if (kw === undefined) return { value: '—', unit: '' };
-    const digits = row.divisor === 1 ? 0 : 1;
-    return {
-      value: formatNumber(this.hass, (kw * 1000) / row.divisor, { digits, minDigits: digits }),
-      unit: row.unit,
-    };
+    return { value: scaled(this.hass, kw * 1000, row), unit: row.unit };
   }
 
   /** The card's own title where it fits its head (with its circle and what trails it), else a shorter one. */
@@ -1210,7 +1218,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const time = range
       ? this.momentWords(range.start.getTime(), spanOf(range, now), cursor)
       : formatTime(this.hass, at);
-    return { cursor, parts: readoutParts(this.hass, view, point), time };
+    return { cursor, parts: readoutParts(this.hass, view, point, this.config), time };
   }
 
   private renderChart(
@@ -1276,8 +1284,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const last = this.series_?.values[this.series_.values.length - 1];
     const parts =
       live === null && range && last !== undefined
-        ? readoutParts(this.hass, view, last)
-        : readoutParts(this.hass, view);
+        ? readoutParts(this.hass, view, last, this.config)
+        : readoutParts(this.hass, view, undefined, this.config);
     const sub = missing
       ? stateText(this.hass, view)
       : (this.config?.subtitle ??
@@ -1312,7 +1320,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const figures = [
       parts,
       ...(curve
-        ? [curve.max, curve.min].map((raw) => readoutParts(this.hass, view, raw))
+        ? [curve.max, curve.min].map((raw) => readoutParts(this.hass, view, raw, this.config))
         : missing
           ? [this.power(10_000)]
           : []),
@@ -1357,7 +1365,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           ? statsCols(
               this.head.ruler,
               this.contentWidth,
-              legendStats(this.hass, legend, (id) => this.entity(id)),
+              legendStats(this.hass, legend, (id) => this.entity(id), this.config),
             )
           : nothing
       }
@@ -1401,7 +1409,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // the last bucket whose meters have closed, and reads it at rest
     const live = this.live();
     const house = live ? this.houseNow() : null;
-    const liveW = live && view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const liveW =
+      live && view && view.status === 'ok'
+        ? readoutParts(this.hass, view, undefined, this.config)
+        : null;
     const metersOnly = house === null && !liveW;
     const all = sourcesDay ? this.stackPoints(sourcesDay) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -1465,15 +1476,24 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
               ].map((kw) => kw * 1000)
             : [],
           'W',
+          this.config,
         )
-      : null;
+      : scaleOf(
+          day
+            ? [...LAYERS.map((k) => day.used[k]), day.charged, day.exported].map(
+                (kwh) => kwh * 1000,
+              )
+            : [],
+          'Wh',
+          this.config,
+        );
     const legend: LegendEntry[] =
       shape && (day || scrubbing)
         ? [
             ...LAYERS.filter((k) => shape.layers.some((l) => l.key === k)).map((k) => ({
               ink: `en-ink--${k}`,
               name: this.layerName(k),
-              ...this.legendFigure(row, cursorPoint?.used[k], day?.used[k]),
+              ...this.legendFigure(row, scrubbing, cursorPoint?.used[k], day?.used[k]),
             })),
             ...(below.has('charged')
               ? [
@@ -1481,7 +1501,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                     ink: 'en-ink--battery',
                     name: s(this.hass, 'charged'),
                     square: 'out' as const,
-                    ...this.legendFigure(row, cursorPoint?.charged, day?.charged),
+                    ...this.legendFigure(row, scrubbing, cursorPoint?.charged, day?.charged),
                   },
                 ]
               : []),
@@ -1491,7 +1511,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                     ink: 'en-ink--grid',
                     name: s(this.hass, 'exported'),
                     square: 'out' as const,
-                    ...this.legendFigure(row, cursorPoint?.exported, day?.exported),
+                    ...this.legendFigure(row, scrubbing, cursorPoint?.exported, day?.exported),
                   },
                 ]
               : []),
@@ -1655,7 +1675,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // low, so the chart ends on the last one that has, and that is the moment the top row and the cursor read at rest
     const live = this.live();
     const house = live ? this.houseNow() : null;
-    const liveW = live && view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const liveW =
+      live && view && view.status === 'ok'
+        ? readoutParts(this.hass, view, undefined, this.config)
+        : null;
     const metersOnly = house === null && !liveW;
     const all = day ? this.flowPoints(day) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -1762,21 +1785,30 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
               ].map((kw) => kw * 1000)
             : [],
           'W',
+          this.config,
         )
-      : null;
+      : scaleOf(
+          total
+            ? [...LAYERS.map((k) => total.into[k]), ...OUTFLOWS.map((k) => total.out[k])].map(
+                (kwh) => kwh * 1000,
+              )
+            : [],
+          'Wh',
+          this.config,
+        );
     const legend: LegendEntry[] =
       shape && (total || scrubbing)
         ? [
             ...shape.above.map((a) => ({
               ink: `en-ink--${a.key}`,
               name: this.layerName(a.key),
-              ...this.legendFigure(row, cursorPoint?.into[a.key], total?.into[a.key]),
+              ...this.legendFigure(row, scrubbing, cursorPoint?.into[a.key], total?.into[a.key]),
             })),
             ...shape.below.map((b) => ({
               ink: `en-ink--${b.key}`,
               name: this.outName(b.key),
               square: 'out' as const,
-              ...this.legendFigure(row, cursorPoint?.out[b.key], total?.out[b.key]),
+              ...this.legendFigure(row, scrubbing, cursorPoint?.out[b.key], total?.out[b.key]),
             })),
           ]
         : [];
