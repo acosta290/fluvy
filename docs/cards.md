@@ -357,6 +357,40 @@ alerts:
   - preset: updates
 ```
 
+## Web page
+
+The web page card frames a page — a lightning map, a chart of your own, a site — on a plate: under a head with the
+page's host on its line (`variant: plate`, the default; `title`, `subtitle` and `icon` are yours to set), alone on the
+card (`frame`) or with no card at all (`bare`). The plate keeps the shape asked for (`aspect_ratio`: `16:9` by default,
+`4:3`, `3:2`, `1:1`, `2:1`, `21:9`, Home Assistant's `56%`, or `fill` for the view's height in a panel or grid view)
+or the `height` written (in px, which wins); `scale` draws the page smaller (a dense map at `0.75` shows more of
+itself) and `refresh` asks for it again every so many minutes while the tab is shown and the card on screen. Its rounds
+sit at the plate's bottom end — open in a new tab, full screen (the plate itself; a phone that cannot opens the tab)
+and reload (`show_open`, `show_fullscreen`, `show_reload`) — and a narrow plate gives them up in order, the reload
+first. `look: dark` inverts the page where the page cannot be asked for a dark one — pictures invert too — and
+`auto` does so only while the card is dark. A skeleton covers the plate until the page loads; one still loading after
+twenty seconds says so and offers the tab. A page that refuses to be framed (its `X-Frame-Options` or its frame
+ancestors) loads all the same, blank: no card can tell from outside, and the open round is the way out.
+
+The page is framed as Home Assistant's own iframe card frames it: `sandbox: standard` (the default) is Home
+Assistant's set — forms, pop-ups, pointer lock, its own origin, scripts, modals, downloads — and
+`allow_open_top_navigation` lets a tap in the page send this tab elsewhere; `strict` keeps the page from its cookies
+and storage (no `allow-same-origin`), its pop-ups, modals and downloads; `off` lifts every limit, which only a page of
+your own deserves. The frame sends no referrer and takes `allow: fullscreen` as its permissions policy (`allow` names
+another). On an https dashboard an http page is never asked for — the browser would refuse it without a word — so the
+plate says the page needs https, at its size, its open round alive. Home Assistant's `type: iframe` card pastes in:
+`hide_background` is the bare plate, `disable_sandbox` the level `off`.
+
+```yaml
+type: custom:fluvy-web-card
+url: https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=41.39;x=2.17;z=8;d=2;dl=2;dc=0
+title: Lightning
+aspect_ratio: 4:3
+scale: 0.75
+refresh: 5
+show_reload: true
+```
+
 <!-- generated:cards -->
 
 ## Everyday
@@ -403,6 +437,7 @@ alerts:
 | **Hello** | `custom:fluvy-hello-card` | The greeting: name, date, weather and avatar. | `person`, `weather`, `show_weather`, `show_date`, `show_avatar` | — |
 | **Chips** | `custom:fluvy-chips-card` | A row of chips that navigate between views or open entities. | `tint` (`on`, `always`), `empty_text`, `hide_empty`, `chips` (a list: `name`, `icon`, `path`, `entity`, `color`, `action`) | `label` → `name` |
 | **Heading** | `custom:fluvy-heading-card` | A section title with its count and a link. | `title`, `heading_style` (`title`, `subtitle`), `variant` (`bar`, `plain`), `subtitle`, `path` | `meta` → `subtitle` |
+| **Web page** | `custom:fluvy-web-card` | A web page on a plate — a map, a chart, a site of your own — under a head, in a frame or bare; sandboxed as Home Assistant’s iframe card is, with a dark look and a scale. | `url`, `variant` (`plate`, `frame`, `bare`), `title`, `subtitle`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `fill`), `height`, `scale`, `refresh`, `look` (`page`, `dark`, `auto`), `sandbox` (`standard`, `strict`, `off`), `allow_open_top_navigation`, `allow`, `show_open`, `show_fullscreen`, `show_reload` | `hide_background` → `variant`, `disable_sandbox` → `sandbox` |
 
 ## Scenes, actions and helpers
 

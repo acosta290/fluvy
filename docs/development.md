@@ -42,11 +42,11 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
 period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
-from their configs alone), wall mode (on a device that is a wall), the weather and template cards and the media,
+from their configs alone), wall mode (on a device that is a wall), the weather, template and web page cards and the media,
 energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards are announced in core —
 `src/energy-family.ts` and its siblings, their names and heights — and defined as `src/energy-cards.ts` and its
 siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
@@ -81,11 +81,12 @@ in `tools/docs` holds this table to it):
 | `alerts` | 24 KB | the alerts card, its matcher, engine and memory, its English |
 | `alerts-sheet` | 12 KB | the alerts' sheet |
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
+| `web` | 8 KB | the web page card, its address and rounds rules, its English |
 | `light-colour` | 4 KB | the light card's quick colours and hue ruler |
 | `weather` | 12 KB | the weather card |
 | `editor` | 8 KB | the cards' visual editor |
 | `view-icons` | 4 KB | a view's icon from its name |
-| `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera |
+| `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the layers, the CSV, their chrome's sheet |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
