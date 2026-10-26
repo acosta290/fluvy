@@ -15,19 +15,27 @@ if (!customElements.get('fluvy-timer-card'))
 if (!customElements.get('fluvy-updates-card'))
   customElements.define('fluvy-updates-card', FluvyUpdatesCard);
 
-/* These cards read the real clock (a countdown, "ran 07:00", "in 16 days"), so their moments are built off it, not off the seeded `NOW`. */
-const REAL = Date.now();
-const at = (offsetSeconds: number): string => new Date(REAL + offsetSeconds * 1000).toISOString();
+/* These cards read the clock (a countdown, "ran 07:00", "in 16 days"), so their moments are built off it — the page's,
+   real or pinned by `?at=` — not off the seeded `NOW`. */
+const at = (offsetSeconds: number): string =>
+  new Date(Date.now() + offsetSeconds * 1000).toISOString();
 const today = (hours: number, minutes: number): string => {
-  const date = new Date(REAL);
+  const date = new Date();
   date.setHours(hours, minutes, 0, 0);
   return date.toISOString();
 };
+const ymd = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const day = (offsetDays: number): string => {
-  const date = new Date(REAL);
+  const date = new Date();
   date.setDate(date.getDate() + offsetDays);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return ymd(date);
 };
+/**
+ * The 10th of a month of the page's year: a date row frozen on it, so a narrow column shows the same pill whatever
+ * the day the sheet is looked at (a month's name as its language abbreviates it, never a year — it is this one).
+ */
+const tenth = (month: number): string => ymd(new Date(new Date().getFullYear(), month - 1, 10));
 
 interface TodoItem {
   uid: string;
@@ -103,232 +111,11 @@ const list = (message: Record<string, unknown>): { items: TodoItem[] } => ({
 const HELPERS_PAGE = { action: 'navigate', navigation_path: '/config/helpers' } as const;
 
 export const sheet: SheetSpec = {
-  states: [
-    /* Helpers */
-    [
-      'input_number.brightness',
-      '65.0',
-      {
-        friendly_name: 'Target brightness',
-        min: 0,
-        max: 100,
-        step: 1,
-        mode: 'slider',
-        unit_of_measurement: '%',
-      },
-    ],
-    [
-      'input_select.house_mode',
-      'Home',
-      { friendly_name: 'House mode', options: ['Home', 'Away', 'Night', 'Guests'] },
-    ],
-    [
-      'input_text.welcome',
-      'Welcome home, Marta',
-      { friendly_name: 'Welcome message', min: 0, max: 60, mode: 'text', pattern: null },
-    ],
-    ['input_boolean.guest', 'off', { friendly_name: 'Guest mode' }],
-
-    /* Actions */
-    ['scene.morning', today(7, 0), { friendly_name: 'Good morning', icon: 'sun' }],
-    ['scene.night', at(-86400 + 600), { friendly_name: 'Good night', icon: 'moon' }],
-    ['button.restart_ha', at(-3 * 86400), { friendly_name: 'Restart HA', icon: 'ha' }],
-    [
-      'script.backup',
-      'off',
-      { friendly_name: 'Backup now', icon: 'script', last_triggered: today(3, 0) },
-    ],
-    ['automation.sprinklers', 'on', { friendly_name: 'Water the garden', last_triggered: null }],
-    ['script.movie', 'on', { friendly_name: 'Movie time', icon: 'film', last_triggered: at(-40) }],
-    ['scene.ghost', 'unavailable', { friendly_name: 'Holiday lights' }],
-    ['scene.off', at(-7200), { friendly_name: 'Lights off', icon: 'bulb' }],
-    [
-      'script.lock_up',
-      'off',
-      { friendly_name: 'Lock up', icon: 'lock', last_triggered: at(-90000) },
-    ],
-    ['input_button.doorbell', at(-300), { friendly_name: 'Chime', icon: 'note' }],
-    ['scene.bedtime', 'unknown', { friendly_name: 'Bedtime', icon: 'moon' }],
-
-    /* Updates */
-    [
-      'update.core',
-      'on',
-      {
-        friendly_name: 'Home Assistant Core',
-        icon: 'ha',
-        installed_version: '2026.9.2',
-        latest_version: '2026.10.0',
-        in_progress: true,
-        update_percentage: 62,
-        supported_features: 5,
-      },
-    ],
-    [
-      'update.plug',
-      'on',
-      {
-        friendly_name: 'Sonoff plug firmware',
-        icon: 'plug',
-        installed_version: '1.4.2',
-        latest_version: '1.4.3',
-        in_progress: false,
-        update_percentage: null,
-        supported_features: 1,
-      },
-    ],
-    [
-      'update.vacuum',
-      'on',
-      {
-        friendly_name: 'Vacuum',
-        icon: 'vacuum',
-        installed_version: '3.5.8',
-        latest_version: '3.6.0',
-        in_progress: false,
-        update_percentage: null,
-        supported_features: 1,
-      },
-    ],
-    [
-      'update.router',
-      'off',
-      {
-        friendly_name: 'Router',
-        installed_version: '5.1.0',
-        latest_version: '5.1.0',
-        supported_features: 1,
-      },
-    ],
-    [
-      'update.bridge',
-      'on',
-      {
-        friendly_name: 'Zigbee bridge',
-        installed_version: '7.4',
-        latest_version: '7.5',
-        in_progress: true,
-        update_percentage: null,
-        supported_features: 1,
-      },
-    ],
-    [
-      'update.camera',
-      'on',
-      {
-        friendly_name: 'Doorbell camera',
-        installed_version: '2.0.1',
-        latest_version: '2.1.0',
-        supported_features: 0,
-      },
-    ],
-    ['update.ghost', 'unavailable', { friendly_name: 'Garage opener' }],
-    ['input_boolean.auto_update', 'on', { friendly_name: 'Auto-update at night' }],
-
-    /* To-do */
-    ['todo.groceries', '3', { friendly_name: 'Groceries', supported_features: 15 }],
-    ['todo.empty', '0', { friendly_name: 'Reading list', supported_features: 15 }],
-    ['todo.readonly', '1', { friendly_name: 'Shared list', supported_features: 0 }],
-    ['todo.chores', '3', { friendly_name: 'Chores', supported_features: 127 }],
-
-    /* Timer + counter. `remaining` is what was left when the timer last (re)started, as Home Assistant reports it. */
-    [
-      'timer.kitchen',
-      'active',
-      {
-        friendly_name: 'Kitchen timer',
-        duration: '0:30:00',
-        remaining: '0:12:36',
-        finishes_at: at(756),
-      },
-    ],
-    ['timer.idle', 'idle', { friendly_name: 'Laundry timer', duration: '1:00:00' }],
-    [
-      'timer.paused',
-      'paused',
-      { friendly_name: 'Tea timer', duration: '0:05:00', remaining: '0:03:12' },
-    ],
-    ['timer.ghost', 'unavailable', { friendly_name: 'Garage timer' }],
-    [
-      'counter.coffee',
-      '3',
-      { friendly_name: 'Coffee counter', minimum: 0, maximum: 20, step: 1, initial: 0 },
-    ],
-
-    /* Schedules */
-    [
-      'input_datetime.wake_up',
-      '06:45:00',
-      { friendly_name: 'Wake-up', has_date: false, has_time: true },
-    ],
-    [
-      'input_datetime.holiday',
-      day(16),
-      { friendly_name: 'Holiday start', has_date: true, has_time: false },
-    ],
-    ['sun.sun', 'above_horizon', { friendly_name: 'Sun' }],
-
-    /* Hard states */
-    [
-      'input_number.broken',
-      'unavailable',
-      { friendly_name: 'Pool target', min: 0, max: 40, step: 0.5, unit_of_measurement: '°C' },
-    ],
-    [
-      'number.offset',
-      '-1.5',
-      {
-        friendly_name: 'Thermostat offset',
-        min: -5,
-        max: 5,
-        step: 0.5,
-        mode: 'box',
-        unit_of_measurement: '°C',
-      },
-    ],
-    [
-      'input_select.zone',
-      'Kitchen',
-      {
-        friendly_name: 'Announce in',
-        options: [
-          'Kitchen',
-          'Living room',
-          'Bedroom',
-          'Office',
-          'Hallway',
-          'Bathroom',
-          'Garage',
-          'Garden',
-          'Attic',
-          'Basement',
-          'Studio',
-          'Terrace',
-        ],
-      },
-    ],
-    [
-      'input_text.code',
-      'ABC-1234',
-      { friendly_name: 'Door code', min: 4, max: 8, mode: 'text', pattern: '[A-Z]{3}-[0-9]{1,4}' },
-    ],
-    [
-      'input_text.wifi',
-      'correct horse',
-      { friendly_name: 'Guest Wi-Fi password', min: 8, max: 32, mode: 'password' },
-    ],
-    [
-      'input_datetime.alarm',
-      `${day(1)} 07:30:00`,
-      { friendly_name: 'Next alarm', has_date: true, has_time: true },
-    ],
-    ['input_button.ping', at(-1800), { friendly_name: 'Ping the phone' }],
-    [
-      'counter.nulls',
-      'unknown',
-      { friendly_name: 'Visits', minimum: null, maximum: null, step: null },
-    ],
-  ],
+  /* Built when the page asks, after its clock is pinned (`?at=`): the countdowns count from the page's clock, and the
+     frozen date rows sit in its year. */
+  get states() {
+    return STATES();
+  },
 
   ws: {
     'todo/item/list': list,
@@ -393,6 +180,8 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // three dates frozen on the 10th of September, November and December: the months whose names run longest in the
+    // languages ("Sept.", "nov.", "déc."), beside a name the pill squeezes and one it does not
     {
       title: 'Schedules',
       cards: [
@@ -409,6 +198,8 @@ export const sheet: SheetSpec = {
               presets: ['06:15', '06:45', '07:15'],
             },
             { entity: 'input_datetime.holiday', icon: 'calendar' },
+            { entity: 'input_datetime.renewal', icon: 'shield' },
+            { entity: 'input_datetime.rent', icon: 'key' },
             { entity: 'sun.sun', secondary: 'Sets at 20:12 · rises 07:48' },
           ],
         },
@@ -535,3 +326,236 @@ export const sheet: SheetSpec = {
     },
   ],
 };
+
+const STATES = (): SheetSpec['states'] => [
+  /* Helpers */
+  [
+    'input_number.brightness',
+    '65.0',
+    {
+      friendly_name: 'Target brightness',
+      min: 0,
+      max: 100,
+      step: 1,
+      mode: 'slider',
+      unit_of_measurement: '%',
+    },
+  ],
+  [
+    'input_select.house_mode',
+    'Home',
+    { friendly_name: 'House mode', options: ['Home', 'Away', 'Night', 'Guests'] },
+  ],
+  [
+    'input_text.welcome',
+    'Welcome home, Marta',
+    { friendly_name: 'Welcome message', min: 0, max: 60, mode: 'text', pattern: null },
+  ],
+  ['input_boolean.guest', 'off', { friendly_name: 'Guest mode' }],
+
+  /* Actions */
+  ['scene.morning', today(7, 0), { friendly_name: 'Good morning', icon: 'sun' }],
+  ['scene.night', at(-86400 + 600), { friendly_name: 'Good night', icon: 'moon' }],
+  ['button.restart_ha', at(-3 * 86400), { friendly_name: 'Restart HA', icon: 'ha' }],
+  [
+    'script.backup',
+    'off',
+    { friendly_name: 'Backup now', icon: 'script', last_triggered: today(3, 0) },
+  ],
+  ['automation.sprinklers', 'on', { friendly_name: 'Water the garden', last_triggered: null }],
+  ['script.movie', 'on', { friendly_name: 'Movie time', icon: 'film', last_triggered: at(-40) }],
+  ['scene.ghost', 'unavailable', { friendly_name: 'Holiday lights' }],
+  ['scene.off', at(-7200), { friendly_name: 'Lights off', icon: 'bulb' }],
+  ['script.lock_up', 'off', { friendly_name: 'Lock up', icon: 'lock', last_triggered: at(-90000) }],
+  ['input_button.doorbell', at(-300), { friendly_name: 'Chime', icon: 'note' }],
+  ['scene.bedtime', 'unknown', { friendly_name: 'Bedtime', icon: 'moon' }],
+
+  /* Updates */
+  [
+    'update.core',
+    'on',
+    {
+      friendly_name: 'Home Assistant Core',
+      icon: 'ha',
+      installed_version: '2026.9.2',
+      latest_version: '2026.10.0',
+      in_progress: true,
+      update_percentage: 62,
+      supported_features: 5,
+    },
+  ],
+  [
+    'update.plug',
+    'on',
+    {
+      friendly_name: 'Sonoff plug firmware',
+      icon: 'plug',
+      installed_version: '1.4.2',
+      latest_version: '1.4.3',
+      in_progress: false,
+      update_percentage: null,
+      supported_features: 1,
+    },
+  ],
+  [
+    'update.vacuum',
+    'on',
+    {
+      friendly_name: 'Vacuum',
+      icon: 'vacuum',
+      installed_version: '3.5.8',
+      latest_version: '3.6.0',
+      in_progress: false,
+      update_percentage: null,
+      supported_features: 1,
+    },
+  ],
+  [
+    'update.router',
+    'off',
+    {
+      friendly_name: 'Router',
+      installed_version: '5.1.0',
+      latest_version: '5.1.0',
+      supported_features: 1,
+    },
+  ],
+  [
+    'update.bridge',
+    'on',
+    {
+      friendly_name: 'Zigbee bridge',
+      installed_version: '7.4',
+      latest_version: '7.5',
+      in_progress: true,
+      update_percentage: null,
+      supported_features: 1,
+    },
+  ],
+  [
+    'update.camera',
+    'on',
+    {
+      friendly_name: 'Doorbell camera',
+      installed_version: '2.0.1',
+      latest_version: '2.1.0',
+      supported_features: 0,
+    },
+  ],
+  ['update.ghost', 'unavailable', { friendly_name: 'Garage opener' }],
+  ['input_boolean.auto_update', 'on', { friendly_name: 'Auto-update at night' }],
+
+  /* To-do */
+  ['todo.groceries', '3', { friendly_name: 'Groceries', supported_features: 15 }],
+  ['todo.empty', '0', { friendly_name: 'Reading list', supported_features: 15 }],
+  ['todo.readonly', '1', { friendly_name: 'Shared list', supported_features: 0 }],
+  ['todo.chores', '3', { friendly_name: 'Chores', supported_features: 127 }],
+
+  /* Timer + counter. `remaining` is what was left when the timer last (re)started, as Home Assistant reports it. */
+  [
+    'timer.kitchen',
+    'active',
+    {
+      friendly_name: 'Kitchen timer',
+      duration: '0:30:00',
+      remaining: '0:12:36',
+      finishes_at: at(756),
+    },
+  ],
+  ['timer.idle', 'idle', { friendly_name: 'Laundry timer', duration: '1:00:00' }],
+  [
+    'timer.paused',
+    'paused',
+    { friendly_name: 'Tea timer', duration: '0:05:00', remaining: '0:03:12' },
+  ],
+  ['timer.ghost', 'unavailable', { friendly_name: 'Garage timer' }],
+  [
+    'counter.coffee',
+    '3',
+    { friendly_name: 'Coffee counter', minimum: 0, maximum: 20, step: 1, initial: 0 },
+  ],
+
+  /* Schedules */
+  [
+    'input_datetime.wake_up',
+    '06:45:00',
+    { friendly_name: 'Wake-up', has_date: false, has_time: true },
+  ],
+  [
+    'input_datetime.holiday',
+    tenth(11),
+    { friendly_name: 'Holiday start', has_date: true, has_time: false },
+  ],
+  [
+    'input_datetime.renewal',
+    tenth(9),
+    { friendly_name: 'Insurance renewal', has_date: true, has_time: false },
+  ],
+  [
+    'input_datetime.rent',
+    tenth(12),
+    { friendly_name: 'Rent due', has_date: true, has_time: false },
+  ],
+  ['sun.sun', 'above_horizon', { friendly_name: 'Sun' }],
+
+  /* Hard states */
+  [
+    'input_number.broken',
+    'unavailable',
+    { friendly_name: 'Pool target', min: 0, max: 40, step: 0.5, unit_of_measurement: '°C' },
+  ],
+  [
+    'number.offset',
+    '-1.5',
+    {
+      friendly_name: 'Thermostat offset',
+      min: -5,
+      max: 5,
+      step: 0.5,
+      mode: 'box',
+      unit_of_measurement: '°C',
+    },
+  ],
+  [
+    'input_select.zone',
+    'Kitchen',
+    {
+      friendly_name: 'Announce in',
+      options: [
+        'Kitchen',
+        'Living room',
+        'Bedroom',
+        'Office',
+        'Hallway',
+        'Bathroom',
+        'Garage',
+        'Garden',
+        'Attic',
+        'Basement',
+        'Studio',
+        'Terrace',
+      ],
+    },
+  ],
+  [
+    'input_text.code',
+    'ABC-1234',
+    { friendly_name: 'Door code', min: 4, max: 8, mode: 'text', pattern: '[A-Z]{3}-[0-9]{1,4}' },
+  ],
+  [
+    'input_text.wifi',
+    'correct horse',
+    { friendly_name: 'Guest Wi-Fi password', min: 8, max: 32, mode: 'password' },
+  ],
+  [
+    'input_datetime.alarm',
+    `${day(1)} 07:30:00`,
+    { friendly_name: 'Next alarm', has_date: true, has_time: true },
+  ],
+  ['input_button.ping', at(-1800), { friendly_name: 'Ping the phone' }],
+  [
+    'counter.nulls',
+    'unknown',
+    { friendly_name: 'Visits', minimum: null, maximum: null, step: null },
+  ],
+];

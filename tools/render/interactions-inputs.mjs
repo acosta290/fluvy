@@ -9,8 +9,11 @@
  * hour timer are released on disconnect, and so are the weather forecast and to-do subscriptions; a tab
  * row tracks the open view; a double tap on an action is one run.
  */
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { BASE, calls, frame, reset, startSuite } from './lib/suite.mjs';
 
+const here = dirname(fileURLToPath(import.meta.url));
 const suite = await startSuite();
 const { browser, check } = suite;
 
@@ -838,6 +841,84 @@ for (const lang of ['de', 'fr', 'nl', 'pt-BR', 'es']) {
     'the openings head keeps its badge at 328 in five languages (the long title only beside it)',
     lost.length === 0,
     lost.join(' · '),
+  );
+}
+
+/* ---------- a date in a helper's row holds whole at a third of a section, whatever its month's name ---------- */
+// a value's pill is capped at 68 % of the row (`valueCap` mirrors the sheet's CSS: less 68 beside a circle, less 12
+// once the row gave it to the name, on the 4 grid), under the name it has the row; a date takes its figures where its
+// month's name would not hold ("10 de nov." in Portuguese at 211), and nothing in a pill is ever cut
+{
+  const ROWS = `/@fs${join(here, '..', '..', 'packages', 'cards', 'src', 'helpers', 'rows.ts')}`;
+  const schedules = (page) => frame(page, 'Schedules').locator('fluvy-helpers-card').first();
+  // the cap: the button forced wide takes exactly its max-width, which the function must say
+  const off = [];
+  for (const width of [211, 266, 320]) {
+    const page = await open('inputs', width);
+    const caps = await schedules(page).evaluate(async (card, rows) => {
+      const { valueCap } = await import(rows);
+      const out = [];
+      for (const row of card.shadowRoot.querySelectorAll('.fv-row:not(.fv-row--stack)')) {
+        const button = row.querySelector('.in-value:not(.in-value--action)');
+        if (!button) continue;
+        const kept = button.style.cssText;
+        button.style.cssText = 'width:9999px;flex:none';
+        const drawn = button.getBoundingClientRect().width;
+        button.style.cssText = kept;
+        const bare = row.classList.contains('fv-row--bare');
+        out.push({ drawn, said: valueCap(row.getBoundingClientRect().width, bare), bare });
+      }
+      return out;
+    }, ROWS);
+    if (!caps.length) off.push(`${width}: no capped button on one line`);
+    for (const cap of caps)
+      if (cap.drawn !== cap.said)
+        off.push(`${width}${cap.bare ? ' bare' : ''}: drawn ${cap.drawn}, said ${cap.said}`);
+    await page.close();
+  }
+  check(
+    'valueCap says what the sheet draws: the capped button’s max-width at 211, 266 and 320',
+    off.length === 0,
+    off.join(' · '),
+  );
+
+  // the pills: the three dates (September, November, December) in six languages, a clock pinned to each month
+  const cut = [];
+  const shown = [];
+  for (const lang of ['de', 'fr', 'es', 'pt-BR', 'ja', 'en']) {
+    for (const at of ['2026-09-10', '2026-11-10', '2026-12-10']) {
+      const page = await open('inputs', 211, `&lang=${lang}&at=${at}`);
+      const rows = await schedules(page).evaluate((card) =>
+        [...card.shadowRoot.querySelectorAll('.fv-row')].map((row) => {
+          const button = row.querySelector('.in-value');
+          const text = button?.querySelector('.in-value__text');
+          const edge =
+            row.getBoundingClientRect().right - (button?.getBoundingClientRect().right ?? 0);
+          return {
+            name: row.querySelector('.fv-row__title')?.textContent.trim() ?? '',
+            value: text?.textContent.trim() ?? '',
+            stacked: row.classList.contains('fv-row--stack'),
+            cut: !!text && (text.scrollWidth > text.clientWidth || edge < -0.5),
+          };
+        }),
+      );
+      for (const row of rows)
+        if (row.cut) cut.push(`${lang} ${at}: "${row.value}" under "${row.name}"`);
+      if (rows.length !== 5) cut.push(`${lang} ${at}: ${rows.length} rows`);
+      if (at === '2026-11-10')
+        shown.push(
+          `${lang}: ${rows
+            .filter((row) => row.value && !/:/.test(row.value))
+            .map((row) => `${row.value}${row.stacked ? ' (stacked)' : ''}`)
+            .join(' · ')}`,
+        );
+      await page.close();
+    }
+  }
+  check(
+    'a date’s pill is never cut at 211: September, November and December in de, fr, es, pt-BR, ja and en',
+    cut.length === 0,
+    cut.length ? cut.slice(0, 8).join(' · ') : shown.join(' | '),
   );
 }
 
