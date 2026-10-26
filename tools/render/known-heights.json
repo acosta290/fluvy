@@ -335,6 +335,13 @@
       "reason": "the Energy dashboard's devices (live): four are declared"
     },
     {
+      "frame": "period/Followers",
+      "tag": "fluvy-energy-devices-card",
+      "declared": 404,
+      "drawn": 556,
+      "reason": "the Energy dashboard's devices over a date picker's range (live): four are declared"
+    },
+    {
       "frame": "printer/A colour of its own · failed and paused",
       "tag": "fluvy-printer-card",
       "declared": 528,
