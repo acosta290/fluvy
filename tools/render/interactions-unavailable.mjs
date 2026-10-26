@@ -82,6 +82,8 @@ const SOURCES = {
   'fluvy-tiles-card': ['stub', ['actions', 'Tiles · large · one unavailable', 0]],
   // its stub names its entity by a template; the washer has its readouts beside its words
   'fluvy-template-card': ['stub', ['template', 'Large', 0]],
+  // no entity to take out of reach: listed as such (the plate kept back for https is held by `web-card.test.ts`)
+  'fluvy-web-card': ['stub', ['web', 'Plate · 16:9', 0]],
   'fluvy-light-card': ['stub', ['slider', 'On', 0]],
   'fluvy-thermostat-card': [['climate', 'Heat', 0]],
   'fluvy-cover-card': [['devices-motion', 'Blinds', 0]],
