@@ -84,25 +84,44 @@ export function timeText(hass: HomeAssistant | undefined, moment: Moment): strin
   });
 }
 
-/** "3 Oct" — day and month in the order of the user's profile, with the year once it is not this one. */
-export function dayText(
+/**
+ * A day in the order of the user's profile (Home Assistant's `date_format`: DMY, MDY, YMD), else the language's own,
+ * with the year once it is not this one: the month named ("3 Oct", "3 Oct 2027") or as a figure ("3/10", "3/10/27" —
+ * the parts bare of what a language hangs on them, "10." or "10日", joined by a slash).
+ */
+function dayIn(
   hass: HomeAssistant | undefined,
   moment: Moment,
-  now: Date = new Date(),
+  month: 'short' | 'numeric',
+  now = new Date(),
 ): string {
+  const figures = month === 'numeric';
   const year = moment.wall ? moment.date.getUTCFullYear() : moment.date.getFullYear();
   const options: Intl.DateTimeFormatOptions = {
     day: 'numeric',
-    month: 'short',
-    ...(year === now.getFullYear() ? {} : { year: 'numeric' }),
+    month,
+    ...(year === now.getFullYear() ? {} : { year: figures ? '2-digit' : 'numeric' }),
   };
   const order = hass?.locale?.date_format;
   if (order !== 'DMY' && order !== 'MDY' && order !== 'YMD') return format(hass, moment, options);
   const part = (type: 'day' | 'month' | 'year'): string =>
-    format(hass, moment, { [type]: options[type] }).replace(/\.$/, '');
+    format(hass, moment, { [type]: options[type] }).replace(figures ? /\D+$/ : /\.$/, '');
   const pieces = order === 'DMY' ? [part('day'), part('month')] : [part('month'), part('day')];
   if (options.year) pieces[order === 'YMD' ? 'unshift' : 'push'](part('year'));
-  return pieces.join(' ');
+  return pieces.join(figures ? '/' : ' ');
+}
+
+/** "3 Oct" — day and month in the order of the user's profile, with the year once it is not this one. */
+export function dayText(hass: HomeAssistant | undefined, moment: Moment, now?: Date): string {
+  return dayIn(hass, moment, 'short', now);
+}
+
+/**
+ * "3/10" — the same day as figures, the year in two ("3/10/27"): what a row's pill shows where the month's name
+ * would not hold in it ("10 de nov." at a third of a section).
+ */
+export function dayTextShort(hass: HomeAssistant | undefined, moment: Moment, now?: Date): string {
+  return dayIn(hass, moment, 'numeric', now);
 }
 
 /**
@@ -142,11 +161,13 @@ export function daysUntil(moment: Moment, now: Date = new Date()): number {
   );
 }
 
-const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
+/** A sub line starts as a sentence: "in 16 days" → "In 16 days". */
+export const sentenceCase = (text: string): string =>
+  text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
 /** "In 16 days", "Tomorrow", "3 days ago" — whole words: a sub line has the room. */
 export function relativeDays(hass: HomeAssistant | undefined, days: number): string {
-  return sentence(
+  return sentenceCase(
     new Intl.RelativeTimeFormat(language(hass), { numeric: 'auto', style: 'long' }).format(
       days,
       'day',

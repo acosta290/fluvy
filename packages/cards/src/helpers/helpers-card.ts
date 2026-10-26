@@ -233,7 +233,8 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       if (NUMBERS.has(domain) || TEXTS.has(domain)) return [];
       if (SWITCHES.has(domain)) return [{ name, end: SWITCH_SLOT }];
       if (BUTTONS.has(domain)) return [{ name, button: s(this.hass, 'run') }];
-      if (MOMENTS.has(domain)) return [{ name, button: momentValue(host, view, row) }];
+      if (MOMENTS.has(domain))
+        return [{ name, button: momentValue(host, view, row), capped: true }];
       if (!SELECTS.has(domain))
         return [{ name, end: this.ruler.width('fv-row__value', plainValue(host, view)) }];
       const value = selectValue(host, view);

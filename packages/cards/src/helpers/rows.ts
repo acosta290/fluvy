@@ -13,11 +13,13 @@ import {
 import { type TextRuler } from '../shared/fit.js';
 import {
   dayText,
+  dayTextShort,
   daysUntil,
   parseMomentText,
   presetTime,
   relativeAgo,
   relativeDays,
+  sentenceCase,
   timeText,
   type Moment,
 } from './datetime.js';
@@ -27,7 +29,9 @@ const s = strings('helpers');
 /** Below this content width a row's extras stop indenting to the text column. */
 const NARROW = 300;
 /** A row button's sides: its words plus 16 on either side, on the 4 grid (`fitPills`). */
-const BUTTON_SIDES = 32;
+export const BUTTON_SIDES = 32;
+/** The class a row button's words are laid out in. */
+const BUTTON_TEXT = 'fv-btn > in-value__text';
 /** A row's 44 circle and the 12 gaps on either side of its words. */
 const ROW_SIDES = 44 + 12 + 12;
 /** The least a row's name may have beside an action before the circles give way to it (the name itself when shorter). */
@@ -40,7 +44,17 @@ export interface RowEnd {
   readonly end?: number;
   /** The line under the name: its first segment holds the same room as the name ("Sets at 20:12"). */
   readonly sub?: string;
+  /** The button is a value's, capped at `valueCap`: it holds within the cap too, or the row gives way as for its name. */
+  readonly capped?: boolean;
 }
+
+/**
+ * The most a row's value button may take, as `styles.ts` caps `.in-value` (its lines 78 and 83): 68 % of the row
+ * less the circle's room (68, the circle and its gaps), less the one gap once the row gave the circle to its name —
+ * down to the 4 grid, as the browser rounds it.
+ */
+export const valueCap = (width: number, bare: boolean): number =>
+  Math.floor((0.68 * width - (bare ? 12 : ROW_SIDES)) / 4) * 4;
 
 /**
  * Whether a list's rows keep their circles. What ends a row is never cut — an action's word, a value's button, a
@@ -48,27 +62,36 @@ export interface RowEnd {
  * name, and every row of the list with it, so the names keep one column: the rows' rule (`HeadFit.rowsKeepIcon`).
  */
 export function rowsKeepIcon(ruler: TextRuler, width: number, rows: readonly RowEnd[]): boolean {
-  return rows.every((row) => holds(ruler, width - ROW_SIDES, row));
+  return rows.every((row) => holds(ruler, width, false, row));
 }
 
 /**
  * Whether a row puts its end under its name: where even without its circle the end would leave the name — or its
- * line's first segment — under 96 (or under itself): a German "Installieren" at 211, the sun's "Above horizon". The
- * words then have the row, the end the line under them.
+ * line's first segment — under 96 (or under itself), or would not hold within its cap: a German "Installieren" at
+ * 211, the sun's "Above horizon", a date at a third of a section. The words then have the row, the end the line under
+ * them, as wide as it is.
  */
 export const rowStacks = (ruler: TextRuler, width: number, row: RowEnd): boolean =>
-  !holds(ruler, width - 12, row) ||
-  !holds(ruler, width - 12, { ...row, name: row.sub?.split(' · ')[0] ?? '' }, 'fv-row__sub');
+  !holds(ruler, width, true, row) ||
+  !holds(ruler, width, true, { ...row, name: row.sub?.split(' · ')[0] ?? '' }, 'fv-row__sub');
 
-/** Whether a row's name keeps its room beside what ends it, in the row's `room` (less its circle and gaps). */
+/**
+ * Whether a row's name keeps its room beside what ends it, with its circle (the end has the row less the circle and
+ * the gaps) or without (`bare`: less the one gap), and a capped end holds within its cap.
+ */
 const holds = (
   ruler: TextRuler,
-  room: number,
-  { name, button = '', end }: RowEnd,
+  width: number,
+  bare: boolean,
+  { name, button = '', end, capped }: RowEnd,
   cls = 'fv-row__title',
-): boolean =>
-  room - (end ?? ruler.pill('fv-btn > in-value__text', button, BUTTON_SIDES)) >=
-  Math.min(NAME_MIN, ruler.width(cls, name));
+): boolean => {
+  const pill = end ?? ruler.pill(BUTTON_TEXT, button, BUTTON_SIDES);
+  return (
+    (!capped || pill <= valueCap(width, bare)) &&
+    width - (bare ? 12 : ROW_SIDES) - pill >= Math.min(NAME_MIN, ruler.width(cls, name))
+  );
+};
 
 /** Where the entity is, else when it last changed: a row's sub is context or time, never its state again. */
 function rowSub(host: HelperHost, view: EntityView, row: HelperRowConfig): string {
@@ -78,12 +101,11 @@ function rowSub(host: HelperHost, view: EntityView, row: HelperRowConfig): strin
   return Number.isNaN(changed.getTime()) ? '' : sentenceCase(relativeAgo(host.hass, changed));
 }
 
-const sentenceCase = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
-
 /**
  * The sheet's list row with a free trailing element — `listRow` only knows switch, value and chevron — a button with
- * `button` for its words. Where the rows gave their circles to their names (`host.bare`) and even so the button would
- * leave the name under its room, the button goes under the name (`rowStacks`).
+ * `button` for its words (`capped`: a value's, held to `valueCap`). Where the rows gave their circles to their names
+ * (`host.bare`) and even so the button would leave the name under its room, the button goes under the name
+ * (`rowStacks`).
  */
 function row(
   host: HelperHost,
@@ -93,10 +115,12 @@ function row(
   sub: string,
   trailing: TemplateResult,
   button: string,
+  capped = false,
 ): TemplateResult {
   const bare = host.bare;
   const stack =
-    bare && rowStacks(host.ruler, host.contentWidth, { name: nameOf(view, config), button, sub });
+    bare &&
+    rowStacks(host.ruler, host.contentWidth, { name: nameOf(view, config), button, sub, capped });
   return html`<div
     class="fv-row ${bare ? 'fv-row--bare' : ''} ${stack ? 'fv-row--stack' : ''} ${isUnusable(view) ? 'is-unavailable' : ''}"
   >
@@ -215,11 +239,23 @@ function momentParts(
   const custom = ownSecondary(host, config);
   if (!moment.hasTime)
     return {
-      value: dayText(host.hass, moment),
+      value: dateValue(host, moment),
       sub: custom ?? relativeDays(host.hass, daysUntil(moment)),
     };
   if (!moment.hasDate) return { value: timeText(host.hass, moment), sub: custom ?? view.areaName };
   return { value: timeText(host.hass, moment), sub: custom ?? dayText(host.hass, moment) };
+}
+
+/**
+ * A date as its row's pill holds it whole: its month named ("10 de nov.") where the pill's cap (`valueCap`) holds
+ * it, as figures ("10/11") where it does not, so the row keeps its line; where even the figures run over the cap the
+ * row stacks (`rowStacks`), and under the name the pill has the row.
+ */
+function dateValue(host: HelperHost, moment: Moment): string {
+  const long = dayText(host.hass, moment);
+  return host.ruler.pill(BUTTON_TEXT, long, BUTTON_SIDES) <= valueCap(host.contentWidth, host.bare)
+    ? long
+    : dayTextShort(host.hass, moment);
 }
 
 /**
@@ -242,6 +278,7 @@ export function momentRow(
     parts.sub,
     valueButton(host, view, nameOf(view, config), parts.value),
     parts.value,
+    true,
   );
   const settable = view.domain === 'input_datetime' || view.domain === 'time';
   if (!moment || moment.hasDate || !settable || !config.presets?.length) return main;

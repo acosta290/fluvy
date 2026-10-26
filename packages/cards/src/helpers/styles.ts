@@ -71,12 +71,9 @@ export const rowStyles = css`
     flex-basis: 100%;
   }
 
-  .fv-row--bare.fv-row--stack > .in-value {
-    max-width: 100%;
-  }
-
   /* an editable value wears the link-button shape; a very long one gives way to the name, never the reverse — its
-     cap on the 4 grid, so a capped button keeps whole pixels */
+     cap on the 4 grid, so a capped button keeps whole pixels (the rows' valueCap mirrors the two caps: a date takes
+     its figures where its month's name would not hold) */
   .in-value {
     max-width: round(down, calc(68% - 68px), 4px);
   }
@@ -84,6 +81,11 @@ export const rowStyles = css`
   /* a row that gave its circle to its name gives the button the circle's room too */
   .fv-row--bare > .in-value:not(.in-value--action) {
     max-width: round(down, calc(68% - 12px), 4px);
+  }
+
+  /* …and under the name, the whole row (after the cap's rule, which it ties on specificity) */
+  .fv-row--bare.fv-row--stack > .in-value {
+    max-width: 100%;
   }
 
   /* an action's word ("Install", "Run") is never cut: its button keeps its measured width, uncapped */
