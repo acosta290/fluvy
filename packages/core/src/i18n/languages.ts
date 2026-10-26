@@ -49,6 +49,11 @@ export interface LanguageInfo {
    * Brazil's).
    */
   readonly ha?: string;
+  /**
+   * What joins two parts of one line (the calendar's "Thursday 17 · 4 events"): " · " unless the language has a mark
+   * of its own (Japanese joins with 「・」, 17日（木）・イベント4件 — a space after a full-width bracket reads doubled).
+   */
+  readonly joiner?: string;
 }
 
 export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
@@ -120,6 +125,7 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     // band (no evening); おやすみなさい is a farewell before sleep, never a greeting, and never shows
     dayParts: { morning: 5, afternoon: 11, night: 18 },
     weekday: 'short',
+    joiner: '・',
   },
 };
 

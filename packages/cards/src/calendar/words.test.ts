@@ -17,7 +17,9 @@ describe('the calendar’s words', () => {
     // Japanese writes the weekday short, in full-width parentheses after the day: 17日（木）, never 17日（木曜日）
     const japanese = new Words(hass('ja'));
     expect(japanese.dayLabel(THURSDAY, null)).toBe('17日（木）');
-    expect(japanese.dayLabel(THURSDAY, 4)).toBe('17日（木） · イベント4件');
+    // …and joins the count with its own mark: a space after the full-width bracket would read doubled
+    expect(japanese.dayLabel(THURSDAY, 4)).toBe('17日（木）・イベント4件');
+    expect(japanese.dayAria(THURSDAY, 4)).toMatch(/木曜日・イベント4件$/);
     // the day's name elsewhere keeps its long form
     expect(japanese.weekday(THURSDAY, 'long')).toBe('木曜日');
   });

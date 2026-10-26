@@ -151,22 +151,29 @@ export class Words {
         : this.t('common.events', { count });
   }
 
+  /** What joins the two parts of a day's label: " · ", or the language's own mark (Japanese 「・」). */
+  private get joiner(): string {
+    return LANGUAGES[languageOf(this.hass)].joiner ?? ' · ';
+  }
+
   /**
    * "Thursday 17 · 4 events" — the label over a selected day's list, its weekday as wide as the language writes it
-   * there (「17日（木） · イベント4件」).
+   * there, joined as the language joins (「17日（木）・イベント4件」).
    */
   dayLabel(date: Date, count: number | null): string {
     const day = s(this.hass, 'day_label', {
       weekday: this.weekday(date, LANGUAGES[languageOf(this.hass)].weekday ?? 'long'),
       day: date.getDate(),
     });
-    return count === null ? day : `${day} · ${this.events(count).toLocaleLowerCase(this.language)}`;
+    return count === null
+      ? day
+      : `${day}${this.joiner}${this.events(count).toLocaleLowerCase(this.language)}`;
   }
 
   /** What a screen reader hears for a day cell: "Thursday 17 September · 4 events". */
   dayAria(date: Date, count: number | null): string {
     const day = capitalize(dateText(date, this.dates_, 'full'));
-    return count === null ? day : `${day} · ${this.events(count)}`;
+    return count === null ? day : `${day}${this.joiner}${this.events(count)}`;
   }
 
   /** How long until `start`: "In 13 min", "In 2 h 30 min" today, then the day's name, then its date. */
