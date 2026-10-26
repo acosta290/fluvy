@@ -82,7 +82,7 @@ there; *Recreate* takes them all back to their defaults):
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were) |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
-| `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr` | all | the dashboard's words in that language, whoever opens it |
+| `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja` | all | the dashboard's words in that language, whoever opens it |
 
 Without `language`, the dashboard's words follow the language of whoever opens it (Home Assistant's, or the one
 chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or

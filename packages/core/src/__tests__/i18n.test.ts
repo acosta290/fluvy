@@ -34,8 +34,11 @@ describe('the language registry', () => {
   it('resolves what Home Assistant reports to a language Fluvy has', () => {
     expect(resolveLanguage('es-ES')).toBe('es');
     expect(resolveLanguage('pt-BR')).toBe('pt-BR');
-    expect(resolveLanguage('pt')).toBe('pt-BR');
+    expect(resolveLanguage('pt_BR')).toBe('pt-BR');
+    // Home Assistant's `pt` is Portugal's Portuguese; Angola's and Mozambique's follow Portugal's norm
+    expect(resolveLanguage('pt')).toBe('pt-PT');
     expect(resolveLanguage('pt-PT')).toBe('pt-PT');
+    expect(resolveLanguage('pt-AO')).toBe('pt-PT');
     expect(resolveLanguage('en-GB')).toBe('en');
     expect(resolveLanguage('zh-Hans')).toBe('en');
     expect(resolveLanguage(undefined)).toBe('en');
@@ -93,7 +96,7 @@ describe('the words', () => {
     expect(localize({ language: 'es-ES' }, 'common.on')).toBe('Encendido');
     expect(localize({ language: 'sv' }, 'common.on')).toBe('On');
     expect(localize(undefined, 'person.count', { home: 2, total: 3 })).toBe('2 of 3 home');
-    expect(languageOf({ language: 'pt' })).toBe('pt-BR');
+    expect(languageOf({ language: 'pt' })).toBe('pt-PT');
   });
 
   it('follow the person’s choice over Home Assistant’s', () => {
@@ -140,6 +143,8 @@ describe('the words', () => {
     expect([away('fr', 1), away('fr', 2)]).toEqual(['1 indisponible', '2 indisponibles']);
     expect([away('it', 1), away('it', 2)]).toEqual(['1 non disponibile', '2 non disponibili']);
     expect([away('pt-BR', 1), away('pt-BR', 2)]).toEqual(['1 indisponível', '2 indisponíveis']);
+    // the two Portugueses count none apart: Brazil's says it in the singular, Portugal's in the plural
+    expect([away('pt-BR', 0), away('pt-PT', 0)]).toEqual(['0 indisponível', '0 indisponíveis']);
   });
 
   it('say one more as one, then two: "+1 autre", never "+1 autres"', () => {

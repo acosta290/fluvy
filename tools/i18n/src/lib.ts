@@ -193,41 +193,43 @@ export function flatten(value: unknown, prefix = ''): Record<string, string> {
   return {};
 }
 
+/**
+ * The integration's translation file for a language, where Home Assistant's code for it is not ours: Home Assistant
+ * reads `translations/<its language>.json`, and its code for Portugal's Portuguese is `pt` (`pt-BR` is Brazil's).
+ */
+const INTEGRATION_FILE: Readonly<Record<string, string>> = { 'pt-PT': 'pt' };
+
+/** The integration's translation file for a language: `translations/<code>.json`, under Home Assistant's code for it. */
+export const integrationFile = (language: string): string =>
+  `translations/${INTEGRATION_FILE[language] ?? language}.json`;
+
 /** The integration's translation file for a language, against `strings.json`: the same keys and placeholders. */
 export async function compareIntegration(language: string): Promise<Problem[]> {
   const problems: Problem[] = [];
   const source = flatten(
     JSON.parse(await readFile(join(INTEGRATION, 'strings.json'), 'utf8')) as unknown,
   );
-  const file = join(INTEGRATION, 'translations', `${language}.json`);
+  const file = integrationFile(language);
   let translated: Record<string, string>;
   try {
-    translated = flatten(JSON.parse(await readFile(file, 'utf8')) as unknown);
+    translated = flatten(JSON.parse(await readFile(join(INTEGRATION, file), 'utf8')) as unknown);
   } catch {
-    problems.push({ level: 'error', language, text: `translations/${language}.json: missing` });
+    problems.push({ level: 'error', language, text: `${file}: missing` });
     return problems;
   }
   for (const [key, text] of Object.entries(source)) {
     const own = translated[key];
     if (own === undefined)
-      problems.push({
-        level: 'error',
-        language,
-        text: `translations/${language}.json: ${key} missing`,
-      });
+      problems.push({ level: 'error', language, text: `${file}: ${key} missing` });
     else if (placeholders(own).join(',') !== placeholders(text).join(','))
       problems.push({
         level: 'error',
         language,
-        text: `translations/${language}.json: ${key} placeholders differ from strings.json`,
+        text: `${file}: ${key} placeholders differ from strings.json`,
       });
   }
   for (const key of Object.keys(translated))
     if (!(key in source))
-      problems.push({
-        level: 'error',
-        language,
-        text: `translations/${language}.json: ${key} is not in strings.json`,
-      });
+      problems.push({ level: 'error', language, text: `${file}: ${key} is not in strings.json` });
   return problems;
 }

@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +12,14 @@ export const PLAYGROUND = (process.env.PLAYGROUND ?? 'http://127.0.0.1:5183/').r
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PALETTES_JSON = resolve(HERE, '../../packages/tokens/dist/palettes.json');
+const CATALOGUE = resolve(HERE, '../../packages/core/src/i18n/locales');
+
+/** Every language the catalogue speaks, English first: its folder of parts and the others' files. */
+export async function everyLanguage() {
+  return (await readdir(CATALOGUE, { withFileTypes: true }))
+    .map((entry) => (entry.isDirectory() ? entry.name : entry.name.replace(/\.json$/, '')))
+    .sort((a, b) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b)));
+}
 
 /**
  * `--flag value` pairs on top of a defaults object. Unknown flags are an error.

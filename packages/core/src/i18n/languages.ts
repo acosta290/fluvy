@@ -43,6 +43,12 @@ export interface LanguageInfo {
    * writes it short there (Japanese prints 17日（木）, never 17日（木曜日）).
    */
   readonly weekday?: 'long' | 'short';
+  /**
+   * The code Home Assistant files the language under, where it differs from ours: what `hass.language` reports and
+   * what the integration's translation file is named (Portugal's Portuguese is Home Assistant's `pt`; `pt-BR` is
+   * Brazil's).
+   */
+  readonly ha?: string;
 }
 
 export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
@@ -96,6 +102,7 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     name: 'Português (Portugal)',
     english: 'Portuguese (Portugal)',
     dayParts: { morning: 5, afternoon: 12, evening: 19, night: 24 },
+    ha: 'pt',
   },
   tr: {
     code: 'tr',
@@ -130,16 +137,20 @@ export const offeredLanguages = (): readonly LanguageInfo[] => [
 ];
 
 /**
- * The language Fluvy speaks for a tag Home Assistant reports: the tag itself, else its base (`es-ES` → `es`), else the
- * variant shipped for that base (`pt` → `pt-BR`), else English.
+ * The language Fluvy speaks for a tag Home Assistant reports: the tag itself, else the language Home Assistant files
+ * under it (`pt` → `pt-PT`); the same for its base (`es-ES` → `es`, `pt-AO` → `pt-PT`); else the first variant
+ * shipped for that base, else English.
  */
 export function resolveLanguage(tag: string | undefined): LanguageCode {
   if (!tag) return 'en';
-  if (isLanguageCode(tag)) return tag;
-  const base = tag.split(/[-_]/)[0]?.toLowerCase() ?? '';
-  if (isLanguageCode(base)) return base;
-  const shipped = LANGUAGE_CODES.find((code) => code.split('-')[0] === base);
-  return shipped ?? 'en';
+  const code = tag.replace('_', '-');
+  const base = code.split('-')[0]?.toLowerCase() ?? '';
+  for (const candidate of [code, base]) {
+    if (isLanguageCode(candidate)) return candidate;
+    const filed = LANGUAGE_CODES.find((own) => LANGUAGES[own].ha === candidate);
+    if (filed) return filed;
+  }
+  return LANGUAGE_CODES.find((own) => own.split('-')[0] === base) ?? 'en';
 }
 
 /** Fluvy has words in this language (any variant of it): its own copy is used rather than Home Assistant's translation. */

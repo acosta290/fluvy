@@ -11,6 +11,7 @@
  * help row opens the translating guide in a new tab; under reduced motion the menu shows and hides without an
  * animation.
  */
+import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -65,7 +66,11 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await settle(page, 300);
   check('a click opens the menu', (await d.expanded()) && (await d.menu.count()) === 1);
   check('the menu floats in the top layer', await d.inTopLayer());
-  check('it holds Automatic and the ten languages', (await d.rows.count()) === 11);
+  const languages = await everyLanguage();
+  check(
+    `it holds Automatic and the ${languages.length} languages`,
+    (await d.rows.count()) === languages.length + 1,
+  );
   const chosen = d.select.locator('.fv-menu__item[aria-selected="true"]');
   check(
     'the chosen row is marked, once',
@@ -211,13 +216,13 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await settle(page, 200);
   check(
     'a letter opens on the first name starting with it',
-    (await d.active.textContent()).trim() === 'Português',
+    (await d.active.textContent()).trim() === 'Português (Brasil)',
   );
   await page.keyboard.type('es'); // "pes": no such name, the row stays
   await settle(page, 100);
   check(
     'letters that spell no name leave the row',
-    (await d.active.textContent()).trim() === 'Português',
+    (await d.active.textContent()).trim() === 'Português (Brasil)',
   );
   await settle(page, 600); // a pause starts a new word
   await page.keyboard.type('es');
@@ -274,7 +279,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   await settle(without, 300);
   check(
     'and over what follows: a tap on its last row chooses',
-    (await b.field.textContent()).trim() === 'Português' && !(await b.expanded()),
+    (await b.field.textContent()).trim() === 'Português (Brasil)' && !(await b.expanded()),
     (await b.field.textContent()).trim(),
   );
   await withTopLayer.close();

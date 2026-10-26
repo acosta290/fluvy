@@ -8,6 +8,7 @@
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-cameras.mjs
  */
+import { everyLanguage } from './lib.mjs';
 import { frame, moreInfo, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -335,8 +336,9 @@ const stills = (card) =>
 
 /* ---------- "Live" in every language: one line, inside its pill, its dot whole ---------- */
 {
+  const languages = await everyLanguage();
   const pills = [];
-  for (const lang of ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr', 'ja']) {
+  for (const lang of languages) {
     const page = await suite.sheet('cameras', { lang });
     const card = cardOf(page, 'Cameras · one');
     await card.scrollIntoViewIfNeeded();
@@ -355,7 +357,7 @@ const stills = (card) =>
     await page.close();
   }
   check(
-    'cameras: "Live" on one line inside its pill, its dot whole, in all ten languages',
+    `cameras: "Live" on one line inside its pill, its dot whole, in all ${languages.length} languages`,
     pills.every((p) => p.ok),
     JSON.stringify(pills),
   );

@@ -6,6 +6,7 @@
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   node interactions-security.mjs            (expects the playground dev server on :5183)
  */
+import { everyLanguage } from './lib.mjs';
 import { calls, frame, moreInfo, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -625,9 +626,10 @@ for (const width of [211, 360]) {
 }
 
 /* ---------- "Live" in every language: one line, inside its pill, its dot whole ---------- */
+const languages = await everyLanguage();
 {
   const pills = [];
-  for (const lang of ['en', 'es', 'de', 'nl', 'fr', 'it', 'pt-BR', 'tr']) {
+  for (const lang of languages) {
     const page = await suite.sheet('devices-security', { extra: `&lang=${lang}` });
     // a camera fetches its stills on screen only: each is brought into view
     const cameras = page.locator('fluvy-camera-card');
@@ -657,7 +659,7 @@ for (const width of [211, 360]) {
     await page.close();
   }
   check(
-    'camera: "Live" on one line inside its pill, its dot whole, in all eight languages',
+    `camera: "Live" on one line inside its pill, its dot whole, in all ${languages.length} languages`,
     pills.every((p) => p.ok),
     JSON.stringify(pills),
   );
@@ -669,7 +671,7 @@ for (const width of [211, 360]) {
 // but a name, and a name only as names may (96 beside its circle, 40 once the circle is given)
 {
   const cut = [];
-  for (const lang of ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr']) {
+  for (const lang of languages) {
     for (const width of [204, 211, 232, 256]) {
       const page = await open('devices-security', { width, lang });
       const found = await page.evaluate(() => {
@@ -714,7 +716,7 @@ for (const width of [211, 360]) {
     }
   }
   check(
-    'device rows at 204, 211, 232 and 256 in eight languages: circles give way together, ages one form, nothing cut but a name as names may',
+    `device rows at 204, 211, 232 and 256 in ${languages.length} languages: circles give way together, ages one form, nothing cut but a name as names may`,
     cut.length === 0,
     cut.slice(0, 8).join(' · '),
   );

@@ -16,6 +16,7 @@ import {
   compare,
   compareIntegration,
   englishParts,
+  integrationFile,
   LOCALES,
   readCatalogue,
   ROOT,
@@ -74,6 +75,12 @@ describe('the catalogues on disk', () => {
   it('have their integration translation, key for key with strings.json', async () => {
     for (const code of await catalogueCodes())
       expect((await compareIntegration(code)).map((p) => p.text)).toEqual([]);
+  });
+
+  it('name the integration translation by Home Assistant’s code: Portugal’s Portuguese is its `pt`', () => {
+    expect(integrationFile('pt-PT')).toBe('translations/pt.json');
+    expect(integrationFile('pt-BR')).toBe('translations/pt-BR.json');
+    expect(integrationFile('de')).toBe('translations/de.json');
   });
 
   it('are what the strategy’s generated words were built from', async () => {

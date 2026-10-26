@@ -21,4 +21,14 @@ describe('the calendar’s words', () => {
     // the day's name elsewhere keeps its long form
     expect(japanese.weekday(THURSDAY, 'long')).toBe('木曜日');
   });
+
+  it('write a short weekday short where the locale writes the word out: Portugal’s "quinta" is "qui"', () => {
+    for (const language of ['pt-PT', 'pt-BR']) {
+      const words = new Words(hass(language));
+      expect(words.weekday(THURSDAY, 'short')).toBe('qui');
+      expect(words.weekday(THURSDAY, 'long')).toBe('Quinta-feira');
+    }
+    expect(new Words(hass('en')).weekday(THURSDAY, 'short')).toBe('Thu');
+    expect(new Words(hass('fr')).weekday(THURSDAY, 'short')).toBe('jeu');
+  });
 });

@@ -72,6 +72,12 @@ const MEASURE_WORDS: Record<string, Record<string, string>> = {
     power: 'Potência',
     atmospheric_pressure: 'Pressão atmosférica',
   },
+  'pt-PT': {
+    temperature: 'Temperatura',
+    humidity: 'Humidade',
+    power: 'Potência',
+    atmospheric_pressure: 'Pressão atmosférica',
+  },
   tr: {
     temperature: 'Sıcaklık',
     humidity: 'Nem',
@@ -96,6 +102,8 @@ const OPENING_WORDS: Record<string, readonly [string, string]> = {
   it: ['Aperto/a', 'Chiuso/a'],
   nl: ['Open', 'Gesloten'],
   'pt-BR': ['Aberto', 'Fechado'],
+  // Home Assistant's own pt pair for a door and a window, its genders as it has them
+  'pt-PT': ['Aberto', 'Fechada'],
   tr: ['Açık', 'Kapalı'],
   ja: ['開', '閉'],
 };
@@ -108,6 +116,7 @@ const MOTION_WORDS: Record<string, readonly [string, string]> = {
   it: ['Rilevato', 'Assente'],
   nl: ['Gedetecteerd', 'Niet gedetecteerd'],
   'pt-BR': ['Detectado', 'Não detectado'],
+  'pt-PT': ['Detetado', 'Limpo'],
   tr: ['Algılandı', 'Temiz'],
   ja: ['検出', 'クリア'],
 };

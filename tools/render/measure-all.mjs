@@ -33,7 +33,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PLAYGROUND } from './lib.mjs';
+import { everyLanguage, PLAYGROUND } from './lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
@@ -54,12 +54,6 @@ const numbers = (name) =>
 
 const outDir = resolve(root, option('--out', 'out/measure'));
 const only = list('--only');
-/** Every language the catalogue speaks: English's folder and the others' files. */
-const catalogue = join(root, 'packages', 'core', 'src', 'i18n', 'locales');
-const everyLanguage = async () =>
-  (await readdir(catalogue, { withFileTypes: true }))
-    .map((entry) => (entry.isDirectory() ? entry.name : entry.name.replace(/\.json$/, '')))
-    .sort((a, b) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b)));
 const langs = list('--lang', 'en').includes('all') ? await everyLanguage() : list('--lang', 'en');
 const jobs = Math.max(1, Number(option('--jobs', '1')) || 1);
 const knownFile = option('--known', join(here, 'known-violations.json'));

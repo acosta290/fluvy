@@ -12,6 +12,7 @@
  * the distance only for someone away with a fix, and Home Assistant's map, which the playground cannot make,
  * gives way to the zones silently.
  */
+import { everyLanguage } from './lib.mjs';
 import { calls, frame, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -191,9 +192,10 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
 
 /* ---------- the room at 211, every language: its tile head and its hint ---------- */
 {
+  const languages = await everyLanguage();
   const heads = [];
   const hints = [];
-  for (const lang of ['en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR', 'tr']) {
+  for (const lang of languages) {
     const page = await suite.sheet('rooms', { width: 211, lang });
     const found = await page.evaluate(() =>
       [...document.querySelectorAll('fluvy-room-card')].map((card) => {
@@ -217,7 +219,8 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
     for (const card of found) {
       // a name cut beside its circle: the circle had to give way first
       if (card.cut && card.circle) heads.push(`${lang} "${card.name}" cut beside its circle`);
-      if (card.hint !== undefined && (card.lines > 3 || !/^2 /.test(card.hint)))
+      // the hint says its count, wherever the language puts it ("2 hidden…", "…エンティティ2件")
+      if (card.hint !== undefined && (card.lines > 3 || !/\b2\b/.test(card.hint)))
         hints.push(`${lang} ${card.lines} lines: "${card.hint}"`);
     }
     if (lang === 'en' || lang === 'de')
@@ -232,7 +235,7 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
     heads.slice(0, 6).join(' · '),
   );
   check(
-    'at 211 an administrator’s hint keeps its why in three lines at most, in eight languages',
+    `at 211 an administrator’s hint keeps its why in three lines at most, in ${languages.length} languages`,
     hints.length === 0,
     hints.slice(0, 6).join(' · '),
   );

@@ -12,8 +12,8 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
 | `nl` | Dutch | `packages/core/src/i18n/locales/nl.json` | — |
 | `fr` | French | `packages/core/src/i18n/locales/fr.json` | — |
 | `it` | Italian | `packages/core/src/i18n/locales/it.json` | — |
-| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` — `pt` reads it too | — |
-| `pt-PT` | Portuguese (Portugal) | `packages/core/src/i18n/locales/pt-PT.json` | — |
+| `pt-BR` | Portuguese (Brazil) | `packages/core/src/i18n/locales/pt-BR.json` | — |
+| `pt-PT` | Portuguese (Portugal) | `packages/core/src/i18n/locales/pt-PT.json` — `pt`, Home Assistant's code for Portugal, reads it; the integration's file is `translations/pt.json` | — |
 | `tr` | Turkish | `packages/core/src/i18n/locales/tr.json` | — |
 | `ja` | Japanese | `packages/core/src/i18n/locales/ja.json` | [@vinjex](https://github.com/vinjex) |
 
@@ -51,7 +51,8 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
   "evening", "night"), and, for a language that writes it short beside a day's number, `weekday: 'short'` (the
   calendar's 17日（木）).
 - **The integration** has a translation of its own texts (the Repairs it raises, its setup dialog) in
-  `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json`.
+  `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json` — under Home Assistant's code
+  for the language where it is not ours (`pt.json` for Portugal's Portuguese).
 
 ## Improving a translation
 

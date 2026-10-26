@@ -661,7 +661,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   at text + 32: the 4-grid rounding of Fluvy's own measured pills does not reach them (nothing blurs: the hairline is
   an inset shadow on whole pixels).
 - **Content**: the name (an icon tab writes its `aria-label`), the icon (24, Home Assistant's size), or both (a 20
-  icon, 8, the name). A view without an icon, asked for its icon, gets the one its name says in any of the nine
+  icon, 8, the name). A view without an icon, asked for its icon, gets the one its name says in any of the ten
   languages (a mask of the fluvy set in the tab's ink, from an on-demand table); a name that says none keeps its words.
 - **The dashboard's name** is a switch of its own in every style: before Home Assistant's own tabs too, and with
   hidden tabs the bar may hold the actions alone.
@@ -1198,7 +1198,7 @@ temperature on its way, a hob's plates, a fridge's compartments, a state and its
   machine", "Coffee system"); LG's model, which ends in its device type ("WM4000 (DEVICE_WASHER)", the older
   integration's "(TOWER_DRYER)"), a WashTower being two devices named "… washer" and "… dryer"; the keys only one kind
   has (salt is a dishwasher's, i-Dos a washer's, a cavity's temperature an oven's, Home Connect's programmes name their
-  appliance, a Matter setpoint that tops out under 30 °C is a compartment's); the words of its name in any of the nine
+  appliance, a Matter setpoint that tops out under 30 °C is a compartment's); the words of its name in any of the ten
   languages, read with its accents off (a "Sandwichtoaster" is a sandwich maker before it is a toaster). **Never
   one**: a vacuum (Home Connect's robot has no vacuum entity, only its keys; LG's robot and stick), a charger, a 3D
   printer (the printer card's: a washer is never a printer, a printer never an appliance), a hair dryer, and — until
