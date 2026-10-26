@@ -39,16 +39,30 @@ import {
   fieldRow,
   formLabels,
   iconField,
+  listed,
   nameIconFields,
   numberField,
+  onlyWhen,
   showIconField,
   titleFields,
   toneField,
 } from '../shared/form.js';
 
+import {
+  CollectionFollower,
+  collectionKeyOf,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
-import { fetchPeriod, type PeriodEnergy } from '../energy-model/period.js';
+import { allocateFollowed, fetchPeriod, type PeriodEnergy } from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+} from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 
 import {
@@ -61,7 +75,7 @@ import {
   type Family,
   type Scale,
 } from '../energy/power.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import type { Segment } from '../shared/fit.js';
@@ -108,6 +122,8 @@ export interface EnergyDevicesCardConfig extends FluvyCardConfig {
   sort?: boolean;
   /** Top-level rows shown at most (the biggest, when sorted); a row's devices follow it. */
   max_rows?: number;
+  /** An Energy date picker's key (`energy_…`): the Energy dashboard's devices over its range, with Home Assistant's own figures. */
+  collection_key?: string;
   /** The tests' clock: "now" for today's midnight. */
   _now?: string;
 }
@@ -158,10 +174,13 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
   ];
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   private period: PeriodEnergy | null | undefined;
   private periodKey = '';
+  /** The picker's answer the rows were last read from. */
+  private followed: EnergyDataLike | undefined;
   private ticker: number | undefined;
 
   /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
@@ -182,6 +201,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     'total',
     'sort',
     'max_rows',
+    'collection_key',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -208,7 +228,11 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
   ];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ sort: true });
+  static override defaults: EditorDefaults = () => ({ sort: true, collection_key: '' });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -216,16 +240,26 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         fieldRow(iconField(), showIconField()),
         ...colourFields(),
         entitiesField('entities', ['sensor']),
-        entityField(['sensor'], 'total', false),
+        // the Energy dashboard's devices (no rows of its own) can follow a date picker
+        fieldRow(
+          entityField(['sensor'], 'total', false),
+          onlyWhen((data) => !listed(data, 'rows', 'entities').length, collectionField()),
+        ),
         fieldRow(boolField('sort'), numberField('max_rows', 1, 20)),
         actionFields(),
       ],
       ...editorLabels(
         s,
         { sort: 'editor_sort', total: 'editor_total' },
-        { max_rows: 'editor.max_rows' },
+        { max_rows: 'editor.max_rows', ...COLLECTION_LABEL },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: EnergyDevicesCardConfig): EnergyDevicesCardConfig {
+    collectionKeyOf(config, 'fluvy-energy-devices-card');
+    return config;
   }
 
   static getStubConfig(
@@ -306,6 +340,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     super.willUpdate(changed);
     const hass = this.hass;
     if (!this.config || !hass || !this.fromPrefs) return;
+    this.follower.attach(hass, this.config.collection_key || undefined);
     if (this.isConnected) this.tick();
     if (!this.prefsAsked) {
       this.prefsAsked = true;
@@ -316,11 +351,24 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     }
     if (this.prefs === undefined) return;
     // today's change of every device meter (and the house's own, when given), the Energy dashboard's arithmetic
-    const now = this.now();
     const house = readPrefs(this.prefs);
     const extra = [...house.devices.map((d) => d.stat), this.config.total].filter(
       (id): id is string => !!id,
     );
+    // a picker on the view: its figures (and the house's own meter, asked over the same range), once per answer
+    const range = this.follower.range();
+    if (range) {
+      const data = this.follower.data();
+      if (!data || data === this.followed) return;
+      this.followed = data;
+      void allocateFollowed(hass, data.stats, house.sources, extra, range).then((allocated) => {
+        if (this.followed !== data) return;
+        this.period = allocated;
+        this.requestUpdate();
+      });
+      return;
+    }
+    const now = this.now();
     const key = `${Math.floor(now.getTime() / 300_000)}|${extra.join(',')}`;
     if (key === this.periodKey) return;
     this.periodKey = key;
@@ -401,7 +449,10 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     const first = rows[0]?.view;
     const width = this.contentWidth;
     const title = this.config?.title ?? s(this.hass, 'title');
-    const when = this.t(kind === 'power' ? 'energy.drawing_now' : 'common.today');
+    const range = this.follower.range();
+    const when = range
+      ? rangeWords(this.hass, range, this.now())
+      : this.t(kind === 'power' ? 'energy.drawing_now' : 'common.today');
     const fitted = this.head.fit({
       width,
       title,

@@ -46,6 +46,10 @@ const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
     return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
   });
 
+/** The chips a period card carries by default: 16 under the head, a 44 row; none while a date picker is followed. */
+const periodChips = (config: LovelaceCardConfig): number =>
+  config['show_period'] === false || config['collection_key'] ? 0 : 60;
+
 /** The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals. */
 export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const sources = Array.isArray(config['sources']) ? config['sources'].length : 0;
@@ -59,7 +63,7 @@ export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number 
   return (
     HEAD +
     stage +
-    (period && config['show_period'] !== false ? 60 : 0) +
+    (period ? periodChips(config) : 0) +
     (consumers ? 16 + ROW_BAR * (consumers + 1) : 0) +
     statsBlock(statsRows(readoutLabels(config, nameOf)))
   );
@@ -92,7 +96,7 @@ export function balanceHeight(config: LovelaceCardConfig): number {
   const phases = period || config['show_phases'] === false ? 0 : Math.max(0, ...grid.map(phasesOf));
   return (
     64 +
-    (period && config['show_period'] !== false ? 60 : 0) +
+    (period ? periodChips(config) : 0) +
     2 * BALANCE_BLOCK +
     (phases ? 20 + 28 + phases * PHASE_PITCH - 8 + 20 : 0) +
     (period && config['show_cost'] !== false ? 60 : 0) +
@@ -372,10 +376,6 @@ export const chargerHeight = (config: LovelaceCardConfig, options?: readonly str
   (config['level'] ? RULER : 0) +
   (config['session_energy'] || config['solar_share'] ? COLS : 0) +
   (config['mode'] ? optionBlock(optionRows(modeOptions(options))) : 0);
-
-/** The chips a period card carries by default: 16 under the head, a 44 row. */
-const periodChips = (config: LovelaceCardConfig): number =>
-  config['show_period'] === false ? 0 : 60;
 
 /**
  * The sankey's body at a 360 column for a house with the sun, a battery and a few devices: a tier of source words,

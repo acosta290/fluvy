@@ -53,21 +53,23 @@ const finite = (raw: unknown): number | null =>
  * last of them was compiled (its reading now, against the reading that hour ended on), by Home Assistant's own rule
  * (`stepGain`): a meter that reads below 90 % of that has been reset and counts from zero; a smaller dip is a dip.
  * `null` when it cannot be known: no statistics, or no reading now — the hour in progress would be missing, and a day
- * without it is not today.
+ * without it is not today. A day that is over (`closed`: one a date picker holds) is its hours alone.
  */
 export function todayOf(
   rows: readonly StatRow[],
   midnight: number,
   live: number | null,
+  closed = false,
 ): number | null {
-  if (!rows.length || live === null) return null;
+  if (!rows.length || (live === null && !closed)) return null;
   let finished = 0;
   let baseline: number | null = null;
   for (const row of [...rows].sort((a, b) => a.start - b.start)) {
     if (row.start >= midnight) finished += Math.max(0, finite(row.change) ?? 0);
     baseline = finite(row.state) ?? baseline;
   }
-  if (baseline === null) return null;
+  if (closed) return finished;
+  if (baseline === null || live === null) return null;
   return finished + stepGain(baseline, live);
 }
 

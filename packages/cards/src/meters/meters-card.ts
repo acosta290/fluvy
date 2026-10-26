@@ -23,11 +23,19 @@ import {
   type TemplateResult,
 } from 'lit';
 
+import { CollectionFollower, collectionKeyOf, followedMoment } from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { houseMidnight } from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
 import { isEntityId } from '../energy-model/outage.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+} from '../energy/collection-field.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { shortName } from '../energy/power.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -48,7 +56,7 @@ import {
   showIconField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   fetchToday,
   fetchWeek,
@@ -95,6 +103,8 @@ export interface MetersCardConfig extends FluvyCardConfig {
   rows?: ReadonlyArray<string | MeterRowConfig>;
   /** `full`: each meter's figure beside its bar (the default). `rows`: a bar row per meter, with its icon. */
   variant?: MetersVariant;
+  /** An Energy date picker's key (`energy_…`): the meters' use over the last day of its range (the day so far while it holds today). */
+  collection_key?: string;
   /** The tests' clock: "now" for today's midnight. */
   _now?: string;
 }
@@ -204,6 +214,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     'meters',
     'rows',
     'variant',
+    'collection_key',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -236,18 +247,28 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   ];
   static override aliases: AliasSpec = { items: { meters: ITEM_ALIASES, rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'full' });
+  static override defaults: EditorDefaults = () => ({ variant: 'full', collection_key: '' });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
         fieldRow(iconField(), selectField('variant', METERS_VARIANTS)),
-        showIconField(),
+        fieldRow(showIconField(), collectionField()),
         ...colourFields(),
         actionFields(),
       ],
-      ...editorLabels(s, {}),
+      ...editorLabels(s, {}, COLLECTION_LABEL),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: MetersCardConfig): MetersCardConfig {
+    collectionKeyOf(config, 'fluvy-meters-card');
+    return config;
   }
 
   static getStubConfig(
@@ -267,6 +288,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   /** The statistics each meter's today and week came from, by the question asked (a new hour asks again). */
@@ -316,9 +338,21 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     ].filter((id): id is string => !!id);
   }
 
-  private now(): Date {
+  /** The clock (a test's, `_now`). */
+  private clock(): Date {
     const pinned = this.config?._now ? Date.parse(this.config._now) : NaN;
     return new Date(Number.isFinite(pinned) ? pinned : Date.now());
+  }
+
+  /** The moment the day is read up to: the clock, or the end of the last day a date picker holds. */
+  private now(): Date {
+    const range = this.follower.range();
+    return range ? followedMoment(range, this.clock()) : this.clock();
+  }
+
+  /** The day read is over (a picker on a past day): a meter's reading now is not part of it. */
+  private get closed(): boolean {
+    return this.now().getTime() < this.clock().getTime();
   }
 
   /* ---------- lifecycle ---------- */
@@ -341,6 +375,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     this.shownHour = Math.floor(this.now().getTime() / 3_600_000);
     if (!(this.config.meters ?? []).length && !this.prefsAsked) {
       this.prefsAsked = true;
@@ -410,7 +445,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       const asked = this.days.get(m.entity);
       const day = asked?.midnight === midnight ? asked : undefined;
       const live = view.status === 'ok' ? view.number : null;
-      const today = day?.rows ? todayOf(day.rows, day.midnight, live) : null;
+      const today = day?.rows ? todayOf(day.rows, day.midnight, live, this.closed) : null;
       const typical =
         typeof m.typical === 'number' && Number.isFinite(m.typical) && m.typical >= 0
           ? m.typical
@@ -488,7 +523,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const title = this.config?.title ?? (only ? this.kindWord(only) : s(this.hass, 'title'));
     const typical = meters.some((m) => m.typical !== null);
     const first = meters[0]?.id;
-    const today = this.t('common.today');
+    const now = this.now();
+    const today = this.follower.range()
+      ? rangeWords(this.hass, { start: houseMidnight(this.hass, now), end: now }, this.clock())
+      : this.t('common.today');
     const sub =
       this.config?.subtitle ?? (typical ? `${today} · ${s(this.hass, 'vs_typical')}` : today);
     const fit = (round: boolean) =>

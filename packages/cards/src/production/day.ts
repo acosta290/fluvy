@@ -103,7 +103,10 @@ async function fromHistory(
   return { hours, baseline: at(midnight + current * HOUR) };
 }
 
-/** The day so far, or null when neither the statistics nor the history know the sensor. */
+/**
+ * The day so far — up to `now`: the clock, or the end of a day a date picker holds — or null when neither the
+ * statistics nor the history know the sensor.
+ */
 export async function loadDay(
   hass: HomeAssistant,
   entityId: string,

@@ -27,9 +27,18 @@ import {
   type TemplateResult,
 } from 'lit';
 
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+} from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { legendColumns } from '../energy/legend-row.js';
 import { family, scaled, scaleOf } from '../energy/power.js';
+import { CollectionFollower, collectionKeyOf, followedMoment } from '../energy-model/collection.js';
+import { houseMidnight } from '../energy-model/period.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
 
 import { baseOf, ceilingFor, figure, scaleFor, toBase } from '../gauge/units.js';
@@ -50,7 +59,7 @@ import {
   textField,
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { houseDay, loadDay, loadPowerDay, type DayRecord } from './day.js';
 
 import { hourlyForecast } from './forecast.js';
@@ -80,6 +89,8 @@ export interface ProductionCardConfig extends FluvyCardConfig {
   variant?: 'full' | 'compact';
   /** Several arrays (east and west roofs): each hour's bar stacked per array, and a legend of each one's day. */
   arrays?: ReadonlyArray<string | ProductionArray>;
+  /** An Energy date picker's key (`energy_…`): the card draws the last day of its range (the day so far while it holds today). */
+  collection_key?: string;
   /** Test hook, as in the clock cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
@@ -193,6 +204,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
   private readonly history = new Refresher<DayRecord | null>();
   private readonly arrayHistory = new Refresher<ReadonlyArray<DayRecord | null>>();
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   /** The card's meter while it is missing from the house: as the recorder describes it (its unit). */
   private readonly recorded = new RecordedSensors(this);
 
@@ -217,6 +229,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     'show_peak',
     'variant',
     'arrays',
+    'collection_key',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -237,6 +250,11 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     variant: 'full',
     show_forecast: true,
     show_peak: true,
+    collection_key: '',
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -250,14 +268,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
           { name: 'peak_entity', selector: { entity: { domain: ['sensor'] } } },
         ),
         fieldRow(boolField('show_forecast'), boolField('show_peak')),
-        selectField('variant', ['full', 'compact']),
+        fieldRow(selectField('variant', ['full', 'compact']), collectionField()),
         actionFields(),
       ],
       ...editorLabels(
         strings,
         { forecast_entity: 'forecast_entity', peak_entity: 'peak_entity' },
-        {},
+        COLLECTION_LABEL,
       ),
+      computeHelper: collectionHelper,
     };
   }
 
@@ -277,6 +296,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
   protected override prepare(config: ProductionCardConfig): ProductionCardConfig {
     if (!config.entity) throw new Error('fluvy-production-card: "entity" is required');
+    collectionKeyOf(config, 'fluvy-production-card');
     return config;
   }
 
@@ -310,7 +330,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     ].filter(Boolean);
   }
 
-  private now(): Date {
+  /** The clock (a test's, `_now`). */
+  private clock(): Date {
     const frozen = this.config?._now;
     if (frozen) {
       const date = new Date(frozen);
@@ -319,8 +340,28 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return new Date();
   }
 
+  /** The moment the day is read up to: the clock, or the end of the last day a date picker holds. */
+  private now(): Date {
+    const range = this.follower.range();
+    return range ? followedMoment(range, this.clock()) : this.clock();
+  }
+
+  /** The day read is over (a picker on a past day): the meter's reading now, its forecast and its peak are not its. */
+  private get closed(): boolean {
+    return this.now().getTime() < this.clock().getTime();
+  }
+
+  /** "Today", or the followed day. */
+  private dayWords(): string {
+    const now = this.now();
+    return this.follower.range()
+      ? rangeWords(this.hass, { start: houseMidnight(this.hass, now), end: now }, this.clock())
+      : this.t('common.today');
+  }
+
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
+    this.follower.attach(this.hass, this.config?.collection_key || undefined);
     this.loadHours();
   }
 
@@ -388,7 +429,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const base = toBase(1, view.unit);
     if (kind !== 'energy' || base.unit !== 'Wh') return null;
     const hours = record.hours.map((v) => Math.max(0, v ?? 0) * base.value);
-    if (record.baseline !== null && view.number !== null) {
+    if (record.baseline !== null && view.number !== null && !this.closed) {
       const gain = view.number - record.baseline;
       hours[hourNow] =
         (hours[hourNow] ?? 0) + (gain >= 0 ? gain : Math.max(0, view.number)) * base.value;
@@ -418,7 +459,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       { length: HOURS },
       (_unused, hour) => Math.max(0, record?.hours[hour] ?? 0) * base.value,
     );
-    if (record && record.baseline !== null && view.number !== null) {
+    const closed = this.closed;
+    if (record && record.baseline !== null && view.number !== null && !closed) {
       const gain = view.number - record.baseline;
       produced[hourNow] =
         (produced[hourNow] ?? 0) + (gain >= 0 ? gain : Math.max(0, view.number)) * base.value; // a meter below its last reading has reset
@@ -427,8 +469,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const hovered = known ? this.scrubber.value : null;
     const total = sum(produced);
 
+    // today's forecast and today's peak are not another day's
     const forecastView =
-      this.config?.forecast_entity && this.config.show_forecast !== false
+      this.config?.forecast_entity && this.config.show_forecast !== false && !closed
         ? this.entity(this.config.forecast_entity)
         : null;
     const hourly =
@@ -463,7 +506,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       0,
     );
     const peakValue = produced[peakHour] ?? 0;
-    const peakView = this.config?.peak_entity ? this.entity(this.config.peak_entity) : null;
+    const peakView =
+      this.config?.peak_entity && !closed ? this.entity(this.config.peak_entity) : null;
     const peakBase = peakView ? baseOf(peakView) : null;
     const peakScale = peakBase ? scaleFor(peakBase.value, peakBase.unit) : null;
     const peak = peakView
@@ -492,9 +536,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         title: name,
         sub:
           this.config?.subtitle ??
-          (versus
-            ? `${this.t('common.today')} · ${strings(this.hass, 'vs_forecast')}`
-            : this.t('common.today')),
+          (versus ? `${this.dayWords()} · ${strings(this.hass, 'vs_forecast')}` : this.dayWords()),
         badge: unusable
           ? { text: stateWord(this.hass, view), tone: 'off' }
           : delta !== null && compared

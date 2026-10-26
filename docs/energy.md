@@ -72,6 +72,41 @@ by hour (a day by day over a week or a month), and allocates each hour the way t
 the house did not use went to the battery first, then the sun charged the battery, then it was exported, then the
 battery exported, then the rest ran the house — and adds the hours up. The figures are the dashboard's own.
 
+## Following Home Assistant's date picker
+
+Home Assistant's Energy dashboard has one date picker for the whole view: its `energy-date-selection` card keeps a
+*collection* on the connection under a key that starts with `energy_` (`collection_key`; without one, HA's cards use
+`energy_<the dashboard's url path>`), and every energy card on the view reads that collection's range and the figures
+HA fetched for it. Give a Fluvy energy card the same key and it follows the picker:
+
+```yaml
+type: custom:fluvy-energy-flow-card
+period: day
+collection_key: energy_casa       # the key of a date picker on this dashboard (HA's card, or Fluvy's Energy period card)
+```
+
+- **What follows.** The flow, the balance, the sankey and the score (set `period` to anything but `live`), the
+  Energy devices card (the Energy dashboard's devices), the Grid card's totals (when it names no readouts), the
+  Energy card, Production and Water & gas. History bars keep their own `period` and `days`.
+- **What a follower does.** It takes the picker's range (the day, the week, the month, whatever was picked) and
+  draws **Home Assistant's own figures for it** — the statistics HA fetched once for the whole view, allocated the
+  way the dashboard allocates them — so a Fluvy card and HA's beside it say the same numbers and move together, and
+  no follower asks the recorder again. Its Day · Week · Month chips go (`show_period` has nothing to switch), and its
+  subtitle says the range: "Today", "Yesterday", "24 Oct", "17 – 23 Sep", "September", "2026". A week is HA's
+  calendar week, not the last seven days.
+- **Each card.** The flow, the balance, the sankey, the score and the devices card total the range (the balance's
+  money too). The Grid card's three totals are the range's, and its subtitle leads with it. The Energy card draws
+  the range in place of `hours`: a day on the day's axis, a longer range on its dates, with the house's power from
+  the power sensors HA names (else the meters: five-minute changes for a day, hours beyond); "right now" and the
+  batteries' charge are shown while the range holds now. Production and Water & gas are day cards: they draw the
+  range's last day (the day so far while the range holds today), and say the date.
+- **Until the picker is there.** A date picker's card may load after Fluvy's: the follower draws today without chips
+  until the collection appears, then follows it. The card's height never changes.
+- **A key of your own.** Any word starting with `energy_` is a key; a key without that prefix is refused with a
+  message, as HA's cards refuse it. Several Fluvy cards and HA's cards on one view share one picker through one key.
+  Fluvy's **Energy period** card is a picker of its own that keeps the same kind of collection, so HA's cards follow
+  it as well.
+
 ## The cards
 
 - **Energy flow** — where the energy comes from and where it goes. Variants `rows` (sources left, the house right),

@@ -19,17 +19,39 @@ import {
 } from 'lit';
 
 import {
+  CollectionFollower,
+  collectionKeyOf,
+  followPeriod,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
+import {
   costStats,
   currencySymbol,
   fetchInfo,
   fetchMoney,
+  moneyFromStats,
   moneyOf,
   type EnergyInfo,
   type Money,
 } from '../energy-model/costs.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { downLine } from '../energy-model/outage.js';
-import { fetchPeriod, PERIODS, type Period, type PeriodEnergy } from '../energy-model/period.js';
+import {
+  allocatePeriod,
+  fetchPeriod,
+  PERIODS,
+  type Period,
+  type PeriodEnergy,
+} from '../energy-model/period.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+  periodic,
+} from '../energy/collection-field.js';
 import { readPrefs, type EnergyPrefs, type SourceKind } from '../energy-model/prefs.js';
 import { readMeasure, type Directed } from '../energy-model/reading.js';
 import {
@@ -67,12 +89,13 @@ import {
   fieldRow,
   iconField,
   numberField,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { Ticker } from '../shared/ticker.js';
 import { gridWay, type GridWay } from '../grid/grid.js';
 import {
@@ -104,6 +127,8 @@ export interface EnergyBalanceCardConfig extends FluvyCardConfig {
   show_phases?: boolean;
   /** Over a period: what the grid cost, what feeding it paid, and the difference. */
   show_cost?: boolean;
+  /** An Energy date picker's key (`energy_…`): the balance follows its range, with Home Assistant's own figures, and the chips go. */
+  collection_key?: string;
   /** The tests' clock: "now" for the freshness words and the period. */
   _now?: string;
 }
@@ -198,6 +223,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
     'sources',
     'period',
     'show_period',
+    'collection_key',
     'show_phases',
     'show_cost',
   ]);
@@ -221,8 +247,13 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
   static override defaults: EditorDefaults = () => ({
     period: 'live',
     show_period: true,
+    collection_key: '',
     show_phases: true,
     show_cost: true,
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -230,17 +261,31 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
         titleFields(),
         fieldRow(iconField(), selectField('period', BALANCE_PERIODS)),
         showIconField(),
-        fieldRow(boolField('show_period'), boolField('show_phases')),
-        boolField('show_cost'),
+        // over a period, a date picker to follow; the chips while none is followed
+        fieldRow(
+          onlyWhen(periodic, collectionField()),
+          onlyWhen((data) => !following(data), boolField('show_period')),
+        ),
+        fieldRow(boolField('show_phases'), boolField('show_cost')),
         ...colourFields(),
         actionFields(),
       ],
       ...editorLabels(
         s,
         { show_phases: 'editor_show_phases', show_cost: 'editor_show_cost' },
-        { period: 'energy-flow.editor_period', show_period: 'energy-flow.editor_show_period' },
+        {
+          period: 'energy-flow.editor_period',
+          show_period: 'energy-flow.editor_show_period',
+          ...COLLECTION_LABEL,
+        },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: EnergyBalanceCardConfig): EnergyBalanceCardConfig {
+    collectionKeyOf(config, 'fluvy-energy-balance-card');
+    return config;
   }
 
   static getStubConfig(): EnergyBalanceCardConfig {
@@ -249,6 +294,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   private info: EnergyInfo | null | undefined;
@@ -256,6 +302,8 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
   private chosen: Period | undefined;
   private periodData: PeriodEnergy | null | undefined;
   private periodKey = '';
+  /** The picker's answer the totals and the money were last read from. */
+  private followed: EnergyDataLike | undefined;
   /** The five minutes the period's totals were last asked for in. */
   private asked = 0;
   private money: Map<string, number> | null | undefined;
@@ -294,7 +342,12 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
   private periodOf(): Period | null {
     const period = this.config?.period;
     if (!period || period === 'live' || !PERIODS.includes(period)) return null;
-    return this.chosen ?? period;
+    return followPeriod(this.follower, this.chosen ?? period);
+  }
+
+  /** The Energy dashboard's cost sensors: the picker's answer carries them, else they are asked for. */
+  private costInfo(): EnergyInfo | null | undefined {
+    return this.followed?.info ?? this.info;
   }
 
   private costShown(): boolean {
@@ -315,6 +368,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     this.ask(this.hass);
     this.model = this.build();
   }
@@ -329,7 +383,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
         this.requestUpdate();
       });
     }
-    if (!this.infoAsked && this.costShown()) {
+    if (!this.infoAsked && this.costShown() && !this.follower.following) {
       this.infoAsked = true;
       void fetchInfo(hass).then((info) => {
         this.info = info;
@@ -337,10 +391,20 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
       });
     }
     if (!period || this.prefs === undefined) return;
+    const house = readPrefs(this.prefs);
+    // a picker on the view: its figures and its money, read once per answer, and nothing asked of our own
+    if (this.follower.range()) {
+      const data = this.follower.data();
+      if (data && data !== this.followed) {
+        this.followed = data;
+        this.periodData = allocatePeriod(data.stats, house.sources);
+        this.money = moneyFromStats(costStats(house.sources, data.info), data.stats);
+      }
+      return;
+    }
     const now = new Date(this.now());
     this.asked = bucketOf(now.getTime());
     const bucket = `${period}|${this.asked}|${this.prefs ? 'p' : ''}`;
-    const house = readPrefs(this.prefs);
     if (bucket !== this.periodKey) {
       this.periodKey = bucket;
       void fetchPeriod(hass, house.sources, period, now).then((data) => {
@@ -413,7 +477,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
       in: grids.reduce((sum, g) => sum + (g.reading.in ?? 0), 0),
       out: grids.reduce((sum, g) => sum + (g.reading.out ?? 0), 0),
     };
-    const stats = costStats(readPrefs(this.prefs).sources, this.info);
+    const stats = costStats(readPrefs(this.prefs).sources, this.costInfo());
     const hasMoney = this.costShown() && (stats.cost.length > 0 || stats.compensation.length > 0);
     return {
       period,
@@ -454,6 +518,8 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
 
   private freshness(): string {
     const period = this.periodOf();
+    const range = this.follower.range();
+    if (range) return rangeWords(this.hass, range, new Date(this.now()));
     if (period === 'day') return s(this.hass, 'sub_day');
     if (period) return f(this.hass, `period_${period}`);
     return liveWords(this.hass, this.newest(), this.now());
@@ -532,7 +598,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
         ...this.headActions(),
       })}
       ${
-        period && this.config?.show_period !== false
+        period && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">
               ${chipRow(
                 PERIODS.map((p) => ({

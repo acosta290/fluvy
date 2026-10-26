@@ -17,15 +17,35 @@ import {
   type TemplateResult,
 } from 'lit';
 
+import {
+  CollectionFollower,
+  collectionKeyOf,
+  followPeriod,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { isEntityId as isEntity, meterOutage } from '../energy-model/outage.js';
-import { fetchPeriod, PERIODS, type Period, type PeriodEnergy } from '../energy-model/period.js';
+import {
+  allocateFollowed,
+  fetchPeriod,
+  PERIODS,
+  type Period,
+  type PeriodEnergy,
+} from '../energy-model/period.js';
 import {
   readPrefs,
   type EnergyPrefs,
   type HouseEnergy,
   type PrefSource,
 } from '../energy-model/prefs.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+} from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { deviceName, scaled, scaleOf, type Scale } from '../energy/power.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -41,12 +61,13 @@ import {
   fieldRow,
   iconField,
   numberField,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { BAR, layoutSankey, type LaidNode, type SankeyLayout } from './layout.js';
 import { idNamed, sankeyModel, type DeviceInput, type SankeyModel } from './model.js';
 
@@ -68,6 +89,8 @@ export interface EnergySankeyCardConfig extends FluvyCardConfig {
   period?: Period;
   /** Day · Week · Month chips (default true). */
   show_period?: boolean;
+  /** An Energy date picker's key (`energy_…`): the diagram follows its range, with Home Assistant's own figures, and the chips go. */
+  collection_key?: string;
   /** The house's devices. Empty: the Energy dashboard's, with its "upstream device" as the parent. */
   devices?: ReadonlyArray<string | EnergySankeyDevice>;
   /** Devices drawn by name before the rest join one "Other devices" bar (default 4). */
@@ -140,6 +163,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
     'subtitle',
     'period',
     'show_period',
+    'collection_key',
     'devices',
     'max_devices',
   ]);
@@ -160,7 +184,12 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   static override defaults: EditorDefaults = () => ({
     period: 'day',
     show_period: true,
+    collection_key: '',
     max_devices: DEFAULT_MAX,
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -168,16 +197,27 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         titleFields(),
         fieldRow(iconField(), selectField('period', PERIODS)),
         showIconField(),
-        fieldRow(boolField('show_period'), numberField('max_devices', 1, 20)),
+        // a date picker to follow; the chips while none is followed
+        fieldRow(
+          collectionField(),
+          onlyWhen((data) => !following(data), boolField('show_period')),
+        ),
+        numberField('max_devices', 1, 20),
         ...colourFields(),
         actionFields(),
       ],
       ...editorLabels(
         s,
         { period: 'editor_period', max_devices: 'editor_max_devices' },
-        { show_period: 'energy-flow.editor_show_period' },
+        { show_period: 'energy-flow.editor_show_period', ...COLLECTION_LABEL },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: EnergySankeyCardConfig): EnergySankeyCardConfig {
+    collectionKeyOf(config, 'fluvy-energy-sankey-card');
+    return config;
   }
 
   static getStubConfig(): EnergySankeyCardConfig {
@@ -186,12 +226,15 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private ticker: number | undefined;
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   private chosen: Period | undefined;
   private data: PeriodEnergy | null | undefined;
   private dataKey = '';
+  /** The picker's answer the diagram was last read from. */
+  private followed: EnergyDataLike | undefined;
 
   override getCardSize(): number {
     return Math.ceil(FluvyEnergySankeyCard.layoutHeight(this.config ?? { type: '' }) / 50);
@@ -204,7 +247,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
 
   private period(): Period {
     const own = this.config?.period;
-    return this.chosen ?? (own && PERIODS.includes(own) ? own : 'day');
+    return followPeriod(this.follower, this.chosen ?? (own && PERIODS.includes(own) ? own : 'day'));
   }
 
   private house(): HouseEnergy {
@@ -263,6 +306,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     if (!this.prefsAsked) {
       this.prefsAsked = true;
       void fetchPrefs(this.hass).then((prefs) => {
@@ -279,16 +323,30 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   }
 
   private askPeriod(): void {
-    if (!this.hass || this.prefs === undefined) return;
+    const hass = this.hass;
+    if (!hass || this.prefs === undefined) return;
     const sources = this.sources();
     if (!sources.length) return;
+    const devices = this.devices().map((d) => d.id);
+    // a picker on the view: its figures (and its own devices' meters, asked over the same range), once per answer
+    const range = this.follower.range();
+    if (range) {
+      const data = this.follower.data();
+      if (!data || data === this.followed) return;
+      this.followed = data;
+      void allocateFollowed(hass, data.stats, sources, devices, range).then((allocated) => {
+        if (this.followed !== data) return;
+        this.data = allocated;
+        this.requestUpdate();
+      });
+      return;
+    }
     const period = this.period();
     const now = this.now();
-    const devices = this.devices().map((d) => d.id);
     const key = `${period}|${Math.floor(now.getTime() / 300_000)}|${devices.join(',')}`;
     if (key === this.dataKey) return;
     this.dataKey = key;
-    void fetchPeriod(this.hass, sources, period, now, devices).then((data) => {
+    void fetchPeriod(hass, sources, period, now, devices).then((data) => {
       if (this.dataKey !== key) return; // a newer question is on its way
       this.data = data;
       this.requestUpdate();
@@ -409,9 +467,13 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         : '';
     const own = this.config?.subtitle ?? this.outage();
     const line = (words: string): string => [words, total].filter(Boolean).join(' · ');
-    const sub = own ?? line(flow(this.hass, `period_${period}`));
+    const range = this.follower.range();
+    const sub =
+      own ??
+      line(range ? rangeWords(this.hass, range, this.now()) : flow(this.hass, `period_${period}`));
     // "Since midnight" is "Today" where a column cannot hold it (es "Desde medianoche" in half a column)
-    const shorter = own === undefined && period === 'day' ? [line(this.t('common.today'))] : [];
+    const shorter =
+      own === undefined && !range && period === 'day' ? [line(this.t('common.today'))] : [];
     const fitted = this.head.fit({ width: w, title, sub, badge: null, shorter });
     let body: TemplateResult;
     if (!configured)
@@ -442,7 +504,7 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         ...this.headActions(),
       })}
       ${
-        configured && this.config?.show_period !== false
+        configured && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">
               ${chipRow(
                 PERIODS.map((p) => ({

@@ -34,6 +34,7 @@ import { dashboardOptions, mountDashboard } from './dashboard.js';
 import { defineIconStubs } from './ha-icons.js';
 import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
+import { MOCK_PERIODS, type MockPeriod } from './collection.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
@@ -54,6 +55,7 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  * ?accent=%23ff4a1a      a custom palette instead: &character=vivid &base=cool &fill=solid &highlight=%23e2ff3d
  * ?compare=linen,volt    the sheet once per palette, side by side (each column scoped to its palette)
  * ?template_delay=3000   how long the mock takes to answer a row's template, in ms (default 30: before the first paint)
+ * ?period=week           the range the Energy date pickers' collections start on (today | yesterday | week | month)
  * ?lights=on            the house's defaults for lights (fluvy's settings → Look): a light card's tint (off | on |
  *                        always) where it says none; &bulbs=1 a lit light in its bulb's colour on tiles, rows, rooms
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
@@ -208,6 +210,11 @@ const mock = createHass([...states.values()], {
     >,
   },
   ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
+  // the Energy date pickers' collections, on the range `?period=` names (today otherwise)
+  collections: selected.flatMap(([, s]) => s.collections ?? []),
+  ...(MOCK_PERIODS.includes(params.get('period') as MockPeriod)
+    ? { period: params.get('period') as MockPeriod }
+    : {}),
   ...(params.has('template_delay') ? { templateDelay: Number(params.get('template_delay')) } : {}),
   // &units=imperial, or a sheet that stands alone in a house in °F and miles
   ...(params.get('units') === 'imperial' ||

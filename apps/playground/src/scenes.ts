@@ -62,6 +62,11 @@ export interface SheetSpec {
   readonly units?: 'imperial';
   /** The integrations' own words by key (a repair's title); merged with every other sheet's. */
   readonly translations?: MockOptions['translations'];
+  /**
+   * The Energy date pickers' collections on the mock's connection (`energy_…`), for the cards that follow one; one
+   * with `after` lands that many ms later, as a picker's card loaded after ours would.
+   */
+  readonly collections?: MockOptions['collections'];
 }
 
 export { NOW } from './now.js';

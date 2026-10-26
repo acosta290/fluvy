@@ -57,11 +57,19 @@ import {
   fieldRow,
   iconField,
   numberField,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
 } from '../shared/form.js';
 
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+} from './collection-field.js';
 import { HeadFit } from './head.js';
 import { axisHolds } from '../shared/axis.js';
 import {
@@ -80,11 +88,33 @@ import { legendStats } from './legend.js';
 import { statsCols, statsStyles } from './stats.js';
 
 import { costParts, readoutParts, scaled, scaleOf } from './power.js';
+import {
+  CollectionFollower,
+  collectionKeyOf,
+  type EnergyDataLike,
+  type FollowedRange,
+} from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
-import { fetchPeriod, houseMidnight, type PeriodEnergy } from '../energy-model/period.js';
+import {
+  allocatePeriod,
+  fetchPeriod,
+  fetchRange,
+  fullDays,
+  houseMidnight,
+  type PeriodEnergy,
+  type Range,
+} from '../energy-model/period.js';
 import { allocate } from '../energy-model/allocate.js';
-import { fetchPowerDay, liveTotals, powerBuckets, powered } from '../energy-model/power-day.js';
+import {
+  bucketMinutes,
+  fetchMeanSeries,
+  fetchPowerDay,
+  liveTotals,
+  powerBuckets,
+  powered,
+} from '../energy-model/power-day.js';
 import { measureIds, readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import {
   chargedBatteries,
   chargeNow,
@@ -116,7 +146,7 @@ import {
   type StackPoint,
 } from './stack.js';
 import { energyLegend, type LegendEntry } from './legend-row.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { sideStacked } from '../shared/value-row.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
@@ -160,9 +190,24 @@ export interface EnergyCardConfig extends FluvyCardConfig {
   line_width?: 'thin' | 'regular';
   /** `sources` and `overview`: every source on the one before it (the default), or each drawn from zero on its own. */
   stack?: boolean;
+  /**
+   * An Energy date picker's key (`energy_…`): the chart draws its range in place of `hours` — a day's hours, a longer
+   * range's days — from Home Assistant's own figures where it has them.
+   */
+  collection_key?: string;
   /** Test hook, as in the clock and calendar cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
+
+const DAY = 86_400_000;
+
+/** A range's length in ms (an open one's, until now). */
+const spanOf = (range: Range, now: Date): number =>
+  (range.end ?? now).getTime() - range.start.getTime();
+
+/** Whether a range holds the moment: its "right now" reading is of the range. */
+const holdsNow = (range: Range, now: Date): boolean =>
+  now.getTime() >= range.start.getTime() && (!range.end || now.getTime() <= range.end.getTime());
 
 const CHART_HEIGHT = 120;
 /** The stacked chart of the `sources` variant: 160, the zero line where the day's use and export divide it. */
@@ -254,15 +299,18 @@ function minutesIntoDay(hass: HomeAssistant | undefined, now: Date): number {
 }
 
 /**
- * Today's buckets for the `sources` and `overview` variants: the power sensors' five-minute means (kW) or the meters'
- * blocks (kWh), one bucket's length, the house's midnight, and — from the meters — the hours as the Energy dashboard
- * allocates them, which the legend quotes so its figures match the dashboard's.
+ * Today's buckets for the `sources` and `overview` variants — or a followed range's: the power sensors' means (kW)
+ * or the meters' blocks (kWh), one bucket's length, where the day (or the range) starts and how long it is, and — from
+ * the meters — the hours as the Energy dashboard allocates them, which the legend quotes so its figures match the
+ * dashboard's.
  */
 interface SourcesDay {
   readonly buckets: readonly Bucket[];
   readonly minutes: number;
   readonly unit: 'kW' | 'kWh';
   readonly midnight: number;
+  /** The day's length (a day, or the followed range's). */
+  readonly span: number;
   readonly hours: PeriodEnergy | null;
 }
 
@@ -281,6 +329,8 @@ interface ChartWindow {
   readonly points: number;
   /** Fraction of the axis the series covers. */
   readonly extent: number;
+  /** A date picker's range: the series is its means, and over more than a day the axis is its dates. */
+  readonly range?: FollowedRange;
 }
 
 /**
@@ -405,6 +455,9 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   /** The request already made, so a re-render does not repeat it. */
   private asked = '';
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
+  /** The picker's answer the day was last drawn from. */
+  private followed: EnergyDataLike | undefined;
 
   constructor() {
     super();
@@ -428,6 +481,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     'show_grid',
     'line_width',
     'stack',
+    'collection_key',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -453,6 +507,11 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     show_grid: true,
     line_width: 'regular',
     stack: true,
+    collection_key: '',
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -461,10 +520,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         fieldRow(textField('name'), textField('subtitle')),
         fieldRow(iconField(), showIconField()),
         ...colourFields(),
+        // a date picker's range stands in for the window
         fieldRow(
-          numberField('hours', 1, 168),
           selectField('variant', ['full', 'compact', 'sources', 'overview']),
+          onlyWhen((data) => !following(data), numberField('hours', 1, 168)),
         ),
+        collectionField(),
         fieldRow(boolField('show_soc'), boolField('show_house')),
         fieldRow(boolField('show_axis'), boolField('show_grid')),
         fieldRow(selectField('line_width', ['regular', 'thin']), boolField('stack')),
@@ -476,8 +537,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         s,
         { cost_entity: 'cost', legend: 'editor_legend', stack: 'editor_stack' },
         // the history bars' words for the same two switches: one scale, one name
-        { show_axis: 'history-bars.editor_show_axis', show_grid: 'history-bars.editor_show_grid' },
+        {
+          show_axis: 'history-bars.editor_show_axis',
+          show_grid: 'history-bars.editor_show_grid',
+          ...COLLECTION_LABEL,
+        },
       ),
+      computeHelper: collectionHelper,
     };
   }
 
@@ -496,6 +562,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   protected override prepare(config: EnergyCardConfig): EnergyCardConfig {
     if (!config.entity && config.variant !== 'sources' && config.variant !== 'overview')
       throw new Error('fluvy-energy-card: "entity" is required');
+    collectionKeyOf(config, 'fluvy-energy-card');
     return config;
   }
 
@@ -556,6 +623,18 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   private chartWindow(now: Date = this.now()): ChartWindow {
+    // a date picker's range: a day on the day's axis (up to now while it holds it), a longer range on its dates
+    const range = this.follower.range();
+    if (range) {
+      const span = spanOf(range, now);
+      return {
+        day: fullDays(range.start, range.end ?? now) < 1,
+        hours: span / 3_600_000,
+        points: POINTS,
+        extent: clamp((now.getTime() - range.start.getTime()) / span, 0, 1),
+        range,
+      };
+    }
     const asked = clamp(Math.round(Number(this.config?.hours ?? 24)) || 24, 1, 168);
     const minutes = minutesIntoDay(this.hass, now);
     // the first hours of a day are a few pixels of curve blown up to full height: until there is a day to draw, the last 24 h roll
@@ -573,10 +652,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
+    this.follower.attach(this.hass, this.config?.collection_key || undefined);
     const previous = changed.get('config') as EnergyCardConfig | undefined;
     if (
       previous &&
-      (previous.entity !== this.config?.entity || previous.hours !== this.config?.hours)
+      (previous.entity !== this.config?.entity ||
+        previous.hours !== this.config?.hours ||
+        previous.collection_key !== this.config?.collection_key)
     ) {
       this.series_ = null; // another sensor or window: its curve is loading, the old one is not shown in its place
       this.loaded_ = false;
@@ -595,11 +677,16 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const id = this.config?.entity;
     const hass = this.hass;
     if (!id || !hass?.states[id]) return;
-    const { hours, points } = this.chartWindow();
-    const key = `${id}|${hours}|${points}|${Math.floor(this.now().getTime() / REFRESH)}`;
+    const { hours, points, range } = this.chartWindow();
+    // a picker's range: the sensor's means over it, from the recorder's statistics
+    const key = range
+      ? `${id}|${range.start.toISOString()}|${range.end?.toISOString() ?? ''}|${points}`
+      : `${id}|${hours}|${points}|${Math.floor(this.now().getTime() / REFRESH)}`;
     if (key === this.asked) return;
     this.asked = key;
-    const series = await fetchHistory(hass, id, hours, points);
+    const series = await (range
+      ? fetchMeanSeries(hass, id, range, points)
+      : fetchHistory(hass, id, hours, points));
     if (key !== this.asked) return; // a newer request owns the chart
     this.series_ = series;
     this.loaded_ = true;
@@ -614,6 +701,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   private async loadSources(): Promise<void> {
     const hass = this.hass;
     if (!hass) return;
+    const range = this.follower.range();
+    if (range) return this.loadFollowed(hass, range);
     const now = this.now();
     const key = `sources|${Math.floor(now.getTime() / 300_000)}`;
     if (key === this.asked) return;
@@ -626,7 +715,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       if (key !== this.asked) return;
       const buckets = rows ? powerBuckets(rows, all) : [];
       if (buckets.length) {
-        this.day_ = { buckets, minutes: 5, unit: 'kW', midnight, hours: null };
+        this.day_ = { buckets, minutes: 5, unit: 'kW', midnight, span: DAY, hours: null };
         this.loaded_ = true;
         return;
       }
@@ -650,16 +739,62 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           minutes,
           unit: 'kWh',
           midnight,
+          span: DAY,
           hours,
         }
       : null;
     this.loaded_ = true;
   }
 
-  /** The batteries' state of charge through today (`overview`). */
+  /**
+   * A date picker's range, once per answer: the power sensors' means as Home Assistant fetched them (its own "Power
+   * sources" graph's rows), else the meters over the range — five-minute changes for a day, hours beyond — and the
+   * legend's totals as Home Assistant allocated them.
+   */
+  private async loadFollowed(hass: HomeAssistant, range: Range): Promise<void> {
+    const data = this.follower.data();
+    if (!data || data === this.followed) return;
+    this.followed = data;
+    this.prefs ??= await fetchPrefs(hass);
+    const all = readPrefs(this.prefs).sources;
+    const midnight = range.start.getTime();
+    const span = spanOf(range, this.now());
+    if (powered(all)) {
+      const buckets = powerBuckets(data.stats, all);
+      if (buckets.length) {
+        const minutes = bucketMinutes(data.stats);
+        this.day_ = { buckets, minutes, unit: 'kW', midnight, span, hours: null };
+        this.loaded_ = true;
+        return;
+      }
+    }
+    const metered = all.filter((p) => p.energyIn.length || p.energyOut.length);
+    if (!metered.length) {
+      this.day_ = null;
+      this.loaded_ = true;
+      return;
+    }
+    const step = span <= DAY ? '5minute' : 'hour';
+    const fine = await fetchRange(hass, metered, range, [], step);
+    if (this.followed !== data) return;
+    const minutes = step === 'hour' ? 60 : fine ? meterBlock(fine.buckets) : 15;
+    this.day_ = fine
+      ? {
+          buckets: aggregate(fine.buckets, midnight, minutes),
+          minutes,
+          unit: 'kWh',
+          midnight,
+          span,
+          hours: allocatePeriod(data.stats, metered),
+        }
+      : null;
+    this.loaded_ = true;
+  }
+
+  /** The batteries' state of charge through today (`overview`): today's alone, so not another day a picker holds. */
   private async loadCharge(): Promise<void> {
     const hass = this.hass;
-    if (!hass || this.config?.show_soc === false) return;
+    if (!hass || this.config?.show_soc === false || !this.chargeShown()) return;
     const now = this.now();
     const key = `charge|${Math.floor(now.getTime() / 300_000)}`;
     if (key === this.askedCharge) return;
@@ -674,7 +809,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   /** Today's points by origin (`sources`), shaped once per day fetched. */
   private stackPoints(day: SourcesDay): StackPoint[] {
     const cached = this.shaped.get(day) ?? {};
-    cached.stack ??= stackOf(day.buckets, day.midnight, day.minutes, day.unit);
+    cached.stack ??= stackOf(day.buckets, day.midnight, day.minutes, day.unit, day.span);
     this.shaped.set(day, cached);
     return cached.stack;
   }
@@ -682,9 +817,58 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   /** Today's flows (`overview`), shaped once per day fetched. */
   private flowPoints(day: SourcesDay): FlowPoint[] {
     const cached = this.shaped.get(day) ?? {};
-    cached.flows ??= flowsOf(day.buckets, day.midnight, day.minutes, day.unit);
+    cached.flows ??= flowsOf(day.buckets, day.midnight, day.minutes, day.unit, day.span);
     this.shaped.set(day, cached);
     return cached.flows;
+  }
+
+  /** Where now is on the day (or the range): 0 at its start, 1 at its end, never past either. */
+  private nowAt(day: SourcesDay | null, now: Date): number {
+    if (!day) return minutesIntoDay(this.hass, now) / DAY_MINUTES;
+    return clamp((now.getTime() - day.midnight) / day.span, 0, 1);
+  }
+
+  /** The charge's line is today's: drawn while no picker is followed, or while the one followed holds today. */
+  private chargeShown(): boolean {
+    const range = this.follower.range();
+    return !range || (holdsNow(range, this.now()) && spanOf(range, this.now()) <= DAY);
+  }
+
+  /** Whether the "right now" reading belongs on the chart: no picker, or one whose range holds now. */
+  private live(): boolean {
+    const range = this.follower.range();
+    return !range || holdsNow(range, this.now());
+  }
+
+  /** A moment of a day (or a range `span` long from `start`), as the readouts write it: the time, with its date over more than a day. */
+  private momentWords(start: number, span: number, fraction: number): string {
+    const at = new Date(start + fraction * span);
+    if (span <= DAY) return formatTime(this.hass, at);
+    const zone = houseZone(this.hass);
+    return dateFormat(this.hass?.language ?? 'en', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: clock12(this.hass) ? 'h12' : 'h23',
+      ...(zone ? { timeZone: zone } : {}),
+    }).format(at);
+  }
+
+  /** The dates under a chart of more than a day: its start, its middle and its end (the two ends where they do not hold). */
+  private rangeMarks(range: Range): ReadonlyArray<readonly [number, string]> {
+    const now = this.now();
+    const span = spanOf(range, now);
+    const zone = houseZone(this.hass);
+    const format = dateFormat(this.hass?.language ?? 'en', {
+      day: 'numeric',
+      month: 'short',
+      ...(zone ? { timeZone: zone } : {}),
+    });
+    const mark = (f: number): readonly [number, string] =>
+      [f, format.format(new Date(range.start.getTime() + f * span - (f === 1 ? 1 : 0)))] as const;
+    const three = [mark(0), mark(0.5), mark(1)];
+    return axisHolds(this.head.ruler, this.contentWidth, three) ? three : [three[0]!, three[2]!];
   }
 
   /** The by-source legend's day: the power's integral, or the meters' hours as the dashboard allocates them. */
@@ -869,6 +1053,17 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           at: start <= 0 ? 0 : start + width >= w ? 1 : x / w,
         };
       });
+    // a picker's range over more than a day: its dates
+    const day = this.day_;
+    if (day && day.span > DAY)
+      return axis(
+        place(
+          this.rangeMarks({
+            start: new Date(day.midnight),
+            end: new Date(day.midnight + day.span),
+          }),
+        ).map((p) => [p.at, p.text] as const),
+      );
     const five = place(this.dayMarks([0, 6, 12, 18, 24]));
     const apart = five.every((p, i) => i === 0 || p.start - (five[i - 1]?.end ?? 0) >= 12);
     return axis(
@@ -945,6 +1140,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return this.config?.subtitle === undefined ? [''] : [];
   }
 
+  /** The stacked charts' own line ("Today · by source"): the range's words in place of today's while a picker is followed. */
+  private daySub(word: string): string {
+    const range = this.follower.range();
+    if (!range) return word;
+    const rest = word.split(' · ').slice(1).join(' · ');
+    return `${rangeWords(this.hass, range, this.now())}${rest ? ` · ${rest}` : ''}`;
+  }
+
   /**
    * "Right now" where it holds one line in `room` (a column, less the key beside it), else "Now" (it's "Adesso"): a
    * label never wraps onto its figure.
@@ -991,9 +1194,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   private scrubbed(
     values: readonly number[],
     view: EntityView,
-    extent: number,
-    day: boolean,
-    hours: number,
+    { extent, day, hours, range }: ChartWindow,
   ): { cursor: number; parts: { value: string; unit: string }; time: string } | null {
     const fraction = this.scrubber.value;
     if (fraction === null || values.length < 2 || !(extent > 0)) return null;
@@ -1001,10 +1202,15 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const point = sampleAt(values, cursor / extent);
     if (point === null) return null;
     const now = this.now();
-    const at = day
-      ? new Date(new Date(now).setHours(0, 0, 0, 0) + cursor * DAY_MINUTES * 60_000)
-      : new Date(now.getTime() - hours * 3_600_000 * (1 - cursor));
-    return { cursor, parts: readoutParts(this.hass, view, point), time: formatTime(this.hass, at) };
+    const at = range
+      ? new Date(range.start.getTime() + cursor * spanOf(range, now))
+      : day
+        ? new Date(new Date(now).setHours(0, 0, 0, 0) + cursor * DAY_MINUTES * 60_000)
+        : new Date(now.getTime() - hours * 3_600_000 * (1 - cursor));
+    const time = range
+      ? this.momentWords(range.start.getTime(), spanOf(range, now), cursor)
+      : formatTime(this.hass, at);
+    return { cursor, parts: readoutParts(this.hass, view, point), time };
   }
 
   private renderChart(
@@ -1063,15 +1269,25 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const off = !isUsable(view);
     const compact = this.compact;
     const tone: Tone = off ? 'off' : toneOf(this.config, 'solar');
-    const live = view.status === 'ok' ? view.number : null;
-    const { day, hours, extent } = this.chartWindow();
-    const parts = readoutParts(this.hass, view);
+    const window = this.chartWindow();
+    const { day, hours, extent, range } = window;
+    // a picker on a past range: the reading now is not the range's, and the readout says the range's last value
+    const live = view.status === 'ok' && this.live() ? view.number : null;
+    const last = this.series_?.values[this.series_.values.length - 1];
+    const parts =
+      live === null && range && last !== undefined
+        ? readoutParts(this.hass, view, last)
+        : readoutParts(this.hass, view);
     const sub = missing
       ? stateText(this.hass, view)
       : (this.config?.subtitle ??
-        (day
-          ? `${view.areaName || this.t('energy.home')} · ${this.t('common.today').toLowerCase()}`
-          : s(this.hass, 'last_hours', { hours: formatNumber(this.hass, hours, { digits: 0 }) })));
+        (range
+          ? `${view.areaName || this.t('energy.home')} · ${rangeWords(this.hass, range, this.now())}`
+          : day
+            ? `${view.areaName || this.t('energy.home')} · ${this.t('common.today').toLowerCase()}`
+            : s(this.hass, 'last_hours', {
+                hours: formatNumber(this.hass, hours, { digits: 0 }),
+              })));
     const cost =
       this.config?.cost_entity && this.config.show_cost !== false
         ? costParts(this.hass, this.entity(this.config.cost_entity))
@@ -1088,7 +1304,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     });
     const curveValues = [...(this.series_?.values ?? [])];
     if (live !== null && curveValues.length) curveValues[curveValues.length - 1] = live;
-    const at = this.loaded_ ? this.scrubbed(curveValues, view, extent, day, hours) : null;
+    const at = this.loaded_ ? this.scrubbed(curveValues, view, window) : null;
     // the cost beside the reading, or under it where the two do not hold the column: measured on what the reading
     // says now and while the curve is read (a time), at the curve's widest figures, so reading it never moves the row;
     // with no curve (a sensor that is not there), at the widest a house says, as an unavailable one keeps its curve's
@@ -1130,12 +1346,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         compact
           ? nothing
           : html`<div class="ef-top fv-value-row ${stacked ? 'is-stacked' : ''}">
-              ${readout({ label: at ? at.time : this.rightNow(), value: at ? at.parts.value : parts.value, unit: at ? at.parts.unit : parts.unit, size: live === null && view.status === 'ok' ? 'm' : 'l' })}
+              ${readout({ label: at ? at.time : live === null && range ? this.momentWords(range.start.getTime(), spanOf(range, this.now()), extent) : this.rightNow(), value: at ? at.parts.value : parts.value, unit: at ? at.parts.unit : parts.unit, size: live === null && view.status === 'ok' && !range ? 'm' : 'l' })}
               ${cost ? html`<div class="ef-top__side">${readout({ label: s(this.hass, 'cost'), value: cost.value, unit: cost.unit, size: 's' })}</div>` : nothing}
             </div>`
       }
       ${this.renderChart(extent, live, parts.value, parts.unit, at, off ? 'neutral' : tone, missing)}
-      ${axis(day ? this.dayAxis() : this.rollingAxis(hours))}
+      ${axis(range && !day ? this.rangeMarks(range) : day ? this.dayAxis() : this.rollingAxis(hours))}
       ${
         legend.length && !compact
           ? statsCols(
@@ -1168,7 +1384,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const id = this.config?.entity;
     const view = id ? this.entity(id) : undefined;
     const title = this.config?.name ?? this.houseTitle(view ? 44 : 0);
-    const sub = this.config?.subtitle ?? s(this.hass, 'by_source');
+    const sub = this.config?.subtitle ?? this.daySub(s(this.hass, 'by_source'));
     const fitted = this.head.fit({
       width: this.contentWidth,
       title,
@@ -1178,12 +1394,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     });
     const tone: Tone = toneOf(this.config, 'accent');
     const sourcesDay = this.day_;
-    const step = (sourcesDay?.minutes ?? 5) / DAY_MINUTES;
+    const step = ((sourcesDay?.minutes ?? 5) * 60_000) / (sourcesDay?.span ?? DAY);
     const now = this.now();
-    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
-    // meters only, as the whole house: the chart ends on the last bucket whose meters have closed, and reads it at rest
-    const house = this.houseNow();
-    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const nowAt = this.nowAt(sourcesDay, now);
+    // meters only, as the whole house (and a picker's past range, whose "right now" is not its): the chart ends on
+    // the last bucket whose meters have closed, and reads it at rest
+    const live = this.live();
+    const house = live ? this.houseNow() : null;
+    const liveW = live && view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
     const metersOnly = house === null && !liveW;
     const all = sourcesDay ? this.stackPoints(sourcesDay) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -1214,9 +1432,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const used = (p: StackPoint | undefined): number | null =>
       p ? LAYERS.reduce((sum, k) => sum + p.used[k], 0) : null;
     const at = (moment: number): string =>
-      formatTime(
-        this.hass,
-        new Date(houseMidnight(this.hass, now).getTime() + moment * 86_400_000),
+      this.momentWords(
+        sourcesDay?.midnight ?? houseMidnight(this.hass, now).getTime(),
+        sourcesDay?.span ?? DAY,
+        moment,
       );
     // a reading is always there (a dash when nothing can be read), so the row never comes and goes under the chart
     const rightNow = this.rightNow();
@@ -1419,7 +1638,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const id = this.config?.entity;
     const view = id ? this.entity(id) : undefined;
     const title = this.config?.name ?? this.houseTitle(view ? 44 : 0);
-    const sub = this.config?.subtitle ?? s(this.hass, 'whole_house');
+    const sub = this.config?.subtitle ?? this.daySub(s(this.hass, 'whole_house'));
     const fitted = this.head.fit({
       width: this.contentWidth,
       title,
@@ -1429,13 +1648,14 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     });
     const tone: Tone = toneOf(this.config, 'accent');
     const day = this.day_;
-    const step = (day?.minutes ?? 5) / DAY_MINUTES;
+    const step = ((day?.minutes ?? 5) * 60_000) / (day?.span ?? DAY);
     const now = this.now();
-    const nowAt = minutesIntoDay(this.hass, now) / DAY_MINUTES;
-    // no live power for the house (meters only): a bucket whose meters have not closed reads low, so the chart ends
-    // on the last one that has, and that is the moment the top row and the cursor read at rest
-    const house = this.houseNow();
-    const liveW = view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
+    const nowAt = this.nowAt(day, now);
+    // no live power for the house (meters only, or a picker's past range): a bucket whose meters have not closed reads
+    // low, so the chart ends on the last one that has, and that is the moment the top row and the cursor read at rest
+    const live = this.live();
+    const house = live ? this.houseNow() : null;
+    const liveW = live && view && view.status === 'ok' ? readoutParts(this.hass, view) : null;
     const metersOnly = house === null && !liveW;
     const all = day ? this.flowPoints(day) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -1448,8 +1668,11 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const showHouse = this.config?.show_house !== false;
     const stacking = this.config?.stack !== false;
 
-    // the batteries' charge: through today from the recorder, ending on the live reading
-    const batteries = this.config?.show_soc === false ? [] : chargedBatteries(this.prefSources());
+    // the batteries' charge: through today from the recorder, ending on the live reading (today's alone)
+    const batteries =
+      this.config?.show_soc === false || !this.chargeShown()
+        ? []
+        : chargedBatteries(this.prefSources());
     const levelNow = batteries.length
       ? chargeNow(batteries, (soc) => {
           const v = this.entity(soc);
@@ -1500,9 +1723,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         : (levelNow ?? charge[charge.length - 1]?.level ?? null);
 
     const at = (fraction: number): string =>
-      formatTime(
-        this.hass,
-        new Date(houseMidnight(this.hass, now).getTime() + fraction * 86_400_000),
+      this.momentWords(
+        day?.midnight ?? houseMidnight(this.hass, now).getTime(),
+        day?.span ?? DAY,
+        fraction,
       );
     // a reading is always there (a dash when nothing can be read), so the row never comes and goes over the chart
     const rightNow = this.rightNow(this.contentWidth - KEY);

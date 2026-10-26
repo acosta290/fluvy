@@ -20,9 +20,22 @@ import {
 } from 'lit';
 
 import { allocate, type Allocation, type Totals } from '../energy-model/allocate.js';
+import {
+  CollectionFollower,
+  collectionKeyOf,
+  followPeriod,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { downLine } from '../energy-model/outage.js';
-import { fetchPeriod, PERIODS, type Period, type PeriodEnergy } from '../energy-model/period.js';
+import {
+  allocatePeriod,
+  fetchPeriod,
+  PERIODS,
+  type Period,
+  type PeriodEnergy,
+} from '../energy-model/period.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import {
   readPrefs,
   type EnergyPrefs,
@@ -45,6 +58,14 @@ import {
   type LegacyFlowKeys,
   type SourceConfig,
 } from '../energy-model/sources.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+  periodic,
+} from '../energy/collection-field.js';
 import { isStale, liveWords, newestReport, staleShorter } from '../energy/freshness.js';
 import { HeadFit } from '../energy/head.js';
 import { legendStats } from '../energy/legend.js';
@@ -68,13 +89,14 @@ import {
   fieldRow,
   iconField,
   numberField,
+  onlyWhen,
   pickFields,
   selectField,
   showIconField,
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   arcs,
   crossLayout,
@@ -150,6 +172,8 @@ export interface EnergyFlowCardConfig extends FluvyCardConfig {
   period?: FlowPeriod;
   /** Day · Week · Month chips over a period's diagram. */
   show_period?: boolean;
+  /** An Energy date picker's key (`energy_…`): the diagram follows its range, with Home Assistant's own figures, and the chips go. */
+  collection_key?: string;
   /** Up to three totals under the diagram. */
   readouts?: ReadonlyArray<string | EnergyFlowReadout>;
   /** The tests' clock: "now" for the freshness words. */
@@ -345,6 +369,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     'badge',
     'period',
     'show_period',
+    'collection_key',
     'readouts',
   ]);
   static override lists: readonly RowsListSpec[] = [
@@ -403,6 +428,11 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     period: 'live',
     variant: 'rows',
     show_period: true,
+    collection_key: '',
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
   });
   static override getConfigForm(): LovelaceConfigForm {
     return {
@@ -429,7 +459,11 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
           },
           selectField('period', FLOW_PERIODS),
         ),
-        boolField('show_period'),
+        // over a period, a date picker to follow; the chips while none is followed
+        fieldRow(
+          onlyWhen(periodic, collectionField()),
+          onlyWhen((data) => !following(data), boolField('show_period')),
+        ),
         entitiesField('readouts', ['sensor']),
         ...colourFields(),
         actionFields(),
@@ -445,9 +479,15 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
           period: 'editor_period',
           show_period: 'editor_show_period',
         },
-        { flow_style: 'editor.flow_style' },
+        { flow_style: 'editor.flow_style', ...COLLECTION_LABEL },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: EnergyFlowCardConfig): EnergyFlowCardConfig {
+    collectionKeyOf(config, 'fluvy-energy-flow-card');
+    return config;
   }
 
   static getStubConfig(
@@ -472,12 +512,15 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
   private readonly head = new HeadFit(this);
   private readonly pulses = new PulseEngine(this);
+  private readonly follower = new CollectionFollower(this);
   private ticker: number | undefined;
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   private chosen: Period | undefined;
   private periodData: PeriodEnergy | null | undefined;
   private periodKey = '';
+  /** The picker's answer the totals were last allocated from. */
+  private followed: EnergyDataLike | undefined;
   private shownFreshness = '';
   private scene: Scene | undefined;
 
@@ -510,7 +553,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   private periodOf(): Period | null {
     const period = this.config?.period;
     if (!period || period === 'live' || !PERIODS.includes(period)) return null;
-    return this.chosen ?? period;
+    return followPeriod(this.follower, this.chosen ?? period);
   }
 
   protected override watched(): readonly string[] {
@@ -549,6 +592,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     this.askPrefs();
     this.askPeriod();
     this.shownFreshness = this.freshness();
@@ -581,11 +625,20 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   private askPeriod(): void {
     const period = this.periodOf();
     if (!period || !this.hass || this.prefs === undefined) return;
+    const house = readPrefs(this.prefs);
+    // a picker on the view: its figures, allocated once per answer, and nothing asked of our own
+    if (this.follower.range()) {
+      const data = this.follower.data();
+      if (data && data !== this.followed) {
+        this.followed = data;
+        this.periodData = allocatePeriod(data.stats, house.sources);
+      }
+      return;
+    }
     const now = new Date(this.now());
     const key = `${period}|${Math.floor(now.getTime() / 300_000)}|${this.prefs ? 'p' : ''}`;
     if (key === this.periodKey) return;
     this.periodKey = key;
-    const house = readPrefs(this.prefs);
     void fetchPeriod(this.hass, house.sources, period, now).then((data) => {
       this.periodData = data;
       this.requestUpdate();
@@ -836,9 +889,11 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
   private freshness(): string {
     const period = this.periodOf();
-    return period
-      ? s(this.hass, `period_${period}`)
-      : liveWords(this.hass, this.newest(), this.now());
+    if (!period) return liveWords(this.hass, this.newest(), this.now());
+    const range = this.follower.range();
+    return range
+      ? rangeWords(this.hass, range, new Date(this.now()))
+      : s(this.hass, `period_${period}`);
   }
 
   /** The head's badge: how much of the house runs on sun (or its self-sufficiency, or the grid's way). */
@@ -992,7 +1047,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         ...this.headActions(),
       })}
       ${
-        period && this.config?.show_period !== false
+        period && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">
               ${chipRow(
                 PERIODS.map((p) => ({
