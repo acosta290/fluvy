@@ -225,6 +225,36 @@ describe('a camera feed', () => {
     expect(asked).toHaveLength(2);
   });
 
+  it('marks the frame stale without a draw once the card has left the page, with one while it is on it', async () => {
+    const asked: string[] = [];
+    const c = card({
+      entity: 'camera.porch',
+      refresh: 1,
+      hass: house(asked, camera('camera.porch')),
+    });
+    let draws = 0;
+    c.el.requestUpdate = () => {
+      draws += 1;
+    };
+    c.connect();
+    c.feed.holder.report(true);
+    await c.answer(true);
+    const before = draws;
+    // off screen on the page: the stale mark is drawn
+    c.feed.holder.report(false);
+    expect(c.feed.stale).toBe(true);
+    expect(draws).toBe(before + 1);
+    // back, a fresh frame, then the card leaves the page: the mark is set for its return, nothing is drawn
+    c.feed.holder.report(true);
+    await c.answer(true);
+    expect(c.feed.stale).toBe(false);
+    const shown = draws;
+    c.el.remove();
+    c.disconnect();
+    expect(c.feed.stale).toBe(true);
+    expect(draws).toBe(shown);
+  });
+
   it('ends the stream’s session when the camera changes, or the card goes back to stills', () => {
     const c = card({
       entity: 'camera.porch',
