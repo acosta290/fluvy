@@ -6,7 +6,10 @@ import {
   fallbackCss,
   LIGHT_TINTS,
   lookRule,
+  parseChartSettings,
+  parseSavedSeries,
   resolveLanguage,
+  setChartDefaults,
   setLightDefaults,
   type HomeAssistant,
   type Look,
@@ -58,6 +61,9 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  * ?period=week           the range the Energy date pickers' collections start on (today | yesterday | week | month)
  * ?lights=on            the house's defaults for lights (fluvy's settings → Look): a light card's tint (off | on |
  *                        always) where it says none; &bulbs=1 a lit light in its bulb's colour on tiles, rows, rooms
+ * ?charts={"style":"soft"} the house's chart settings (fluvy's settings → Charts), as JSON: any of their fields, each
+ *                        read as the settings read it (an unknown word is its default), and `sets` the saved series
+ *                        colours (`[{"id":"warm","name":"Warm","colours":[six hexes]}]`, chosen by `series`)
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
  * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | wall | preferences)
@@ -151,6 +157,21 @@ if (look) {
 const houseTint = LIGHT_TINTS.find((tint) => tint === params.get('lights'));
 if (houseTint || params.has('bulbs'))
   setLightDefaults({ tint: houseTint ?? 'off', colors: params.get('bulbs') === '1' });
+
+// the house's chart settings, as fluvy's settings would hand them to every card
+if (params.has('charts')) {
+  const charts: unknown = (() => {
+    try {
+      return JSON.parse(params.get('charts') ?? '');
+    } catch {
+      return {};
+    }
+  })();
+  setChartDefaults({
+    settings: parseChartSettings(charts),
+    sets: parseSavedSeries((charts as { sets?: unknown } | null)?.sets),
+  });
+}
 
 const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';
