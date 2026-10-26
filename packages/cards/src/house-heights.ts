@@ -27,7 +27,7 @@ import { mediaHeight } from './media-family.js';
 import { roomHeight, type RoomCardConfig } from './room/room-card.js';
 import { isWord, sensorHeight, type SensorCardConfig } from './sensor/sensor-card.js';
 import { normaliseExtras } from './sensor/series.js';
-import { COLOURED } from './shared/light.js';
+import { COLOURED, dims } from './shared/light.js';
 import type { NameOf } from './shared/heights.js';
 import { statTilesHeight, type StatTilesCardConfig } from './stat-tiles/stat-tiles-card.js';
 import { thermostatHeight, type ThermostatCardConfig } from './thermostat/thermostat-card.js';
@@ -73,12 +73,16 @@ const namesIn =
 
 /**
  * What the bulb does: a colour bulb draws its ruler and swatches, a white one its temperature ruler, a dimmer (or one
- * the house has not described) neither.
+ * the house has not described) neither; one that only switches is its head alone.
  */
 function light(config: LightCardConfig, hass: HomeAssistant): number {
   const modes = listAttr(hass, config.entity, 'supported_color_modes');
   const colour = modes.some((mode) => COLOURED.has(mode));
-  return lightHeight(config, { colour, temperature: colour || modes.includes('color_temp') });
+  return lightHeight(config, {
+    colour,
+    temperature: colour || modes.includes('color_temp'),
+    dimmable: dims(modes),
+  });
 }
 
 /** The room's lights where the card lists none, their names, and who reads the empty panel's hint. */

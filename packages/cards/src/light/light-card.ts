@@ -53,7 +53,7 @@ import {
 import { rowsOf } from '../shared/heights.js';
 import {
   COLOURED,
-  DIMMABLE,
+  dims,
   hexOf,
   litColour,
   withMembers,
@@ -176,23 +176,42 @@ const modesOf = (
 };
 
 /**
+ * The editor's `when`s, from what the bulb does as the house reports it (`modesOf`; an entity the house has not
+ * described is a colour bulb, so every option shows): the dimmer's options while it dims, the temperature's with a
+ * white, the colours' with a colour.
+ */
+type BulbWhen = NonNullable<HaFormSchemaItem['when']>;
+const bulbDims: BulbWhen = (config, hass) => dims(modesOf(config, hass));
+const bulbWarms: BulbWhen = (config, hass) => {
+  const modes = modesOf(config, hass);
+  return !modes.length || modes.includes('color_temp');
+};
+const bulbColours: BulbWhen = (config, hass) => {
+  const modes = modesOf(config, hass);
+  return !modes.length || modes.some((mode) => COLOURED.has(mode));
+};
+
+/**
  * What a bulb does: a colour bulb draws its hue ruler and quick colours, a white one its temperature ruler, a dimmer
- * neither.
+ * neither; one that only switches draws its head alone (#65).
  */
 export interface BulbDoes {
   readonly colour: boolean;
   readonly temperature: boolean;
+  readonly dimmable: boolean;
 }
 /** Where the house is not there to say: a colour bulb. */
-const COLOUR_BULB: BulbDoes = { colour: true, temperature: true };
+const COLOUR_BULB: BulbDoes = { colour: true, temperature: true, dimmable: true };
 
 /**
  * The card's height at a 360 column, for the automatic dashboard's columns: the ruler slot (a label, the ruler and
  * its labels: 100) when a temperature or a hue ruler may show, and the quick colours (16 above, 44 rounds, six a row,
  * as many rows as the count takes; a named entry counts one) when they may — for what the bulb does, as the house
- * describes it (`house-heights.ts`), a colour bulb's where it is not there to say; a list of none draws no row.
+ * describes it (`house-heights.ts`), a colour bulb's where it is not there to say; a list of none draws no row. A
+ * bulb that only switches is its head alone, 84, whatever the config asks.
  */
 export function lightHeight(config: LightCardConfig, bulb: BulbDoes = COLOUR_BULB): number {
+  if (!bulb.dimmable) return 84;
   if (config.variant === 'compact') return 188;
   const slot =
     (config.show_temperature !== false && bulb.temperature) ||
@@ -213,8 +232,10 @@ const COMPACT_BELOW = 260;
  * slide away to slow down, hold for the 1 % scale), and a second ruler for colour temperature. A colour bulb gets a
  * row of quick colours under that ruler's slot, and the slot holds a hue ruler while the bulb is in a colour; the
  * card wears the bulb's colour as its accent. Half a section wide (or `variant: compact`) it keeps the head, with
- * the level in its state line, and the brightness ruler alone: two lamps share a line. The switch is never what a
- * narrow column costs: the head is fitted round it (the sub steps aside, then the icon circle), as the fan's is.
+ * the level in its state line, and the brightness ruler alone: two lamps share a line. A bulb that only switches
+ * (#65) draws its head alone — the circle, the name, the state line, the switch — in every style, 84 tall. The
+ * switch is never what a narrow column costs: the head is fitted round it (the sub steps aside, then the icon
+ * circle), as the fan's is.
  */
 export class FluvyLightCard extends Card<LightCardConfig> {
   /** The head, measured: what gives way in a narrow column is the sub, then the icon — never the switch. */
@@ -236,7 +257,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       .sl-bubble-row {
         pointer-events: none;
       }
-      .sl-card--compact {
+      /* the compact card, and the head alone of a bulb that only switches (#65), are as tall as they draw */
+      .sl-card--compact,
+      .sl-card--switch {
         min-height: 0;
       }
     `,
@@ -294,6 +317,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       key: 'colors',
       title: 'editor.colors',
       idKey: 'color',
+      // the quick colours are a colour bulb's: the list is edited while the bulb has a colour to take
+      when: bulbColours,
       get picker() {
         return swatchFieldsFor().color;
       },
@@ -336,12 +361,20 @@ export class FluvyLightCard extends Card<LightCardConfig> {
         entityField(['light']),
         nameIconFields(),
         showIconField(),
-        fieldRow(selectField('variant', ['auto', 'full', 'compact']), boolField('show_stepper')),
-        fieldRow(boolField('show_temperature'), boolField('show_color')),
+        // the editor offers what the bulb does (#65): the dimmer's layout, stepper and live update while it dims,
+        // the temperature ruler's options with a white, the colours' with a colour
+        onlyWhen(
+          bulbDims,
+          fieldRow(selectField('variant', ['auto', 'full', 'compact']), boolField('show_stepper')),
+        ),
+        fieldRow(
+          onlyWhen(bulbWarms, boolField('show_temperature')),
+          onlyWhen(bulbColours, boolField('show_color')),
+        ),
         // the list is edited row by row (the rows editor takes the field out of the form)
         { name: 'colors', selector: { object: {} } },
-        boolField('temperature_tint'),
-        boolField('live_update'),
+        onlyWhen(bulbWarms, boolField('temperature_tint')),
+        onlyWhen(bulbDims, boolField('live_update')),
         // its colour follows the light's unless one is given (Home Assistant's State, as its own tile's)
         ...colourFields({ state: true }),
         fieldRow(
@@ -353,9 +386,13 @@ export class FluvyLightCard extends Card<LightCardConfig> {
             selectField('tint_strength', STRENGTHS, { words: { full: 'full_colour' } }),
           ),
         ),
-        // how a white shows is the bulb's: none to choose while the card wears a colour or a tone of its own
+        // how a white shows is the bulb's: none to choose while the card wears a colour or a tone of its own, nor
+        // for a bulb that is never white
         onlyWhen(
-          ({ color, tone }) => (!color || color === 'state') && !tone,
+          (data, hass) =>
+            (!data['color'] || data['color'] === 'state') &&
+            !data['tone'] &&
+            (bulbWarms(data, hass) || bulbColours(data, hass)),
           selectField('light_whites', ['palette', 'temperature']),
         ),
         actionFields(),
@@ -395,6 +432,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   }
 
   override getCardSize(): number {
+    // a bulb that only switches is its head alone, once the house has said so
+    if (!dims(this.entity().attr<string[]>('supported_color_modes') ?? [])) return 2;
     return this.config?.variant === 'compact' ? 2 : 4;
   }
   /**
@@ -561,8 +600,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const unusable = !isUsable(view);
     const on = !unusable && (this.stateOf(view) === 'on' || (this.held?.value ?? 0) > 0);
     const modes = view.attr<string[]>('supported_color_modes') ?? [];
-    // a light Home Assistant has not described (gone, or unavailable since it started) draws as a dimmer
-    const dimmable = modes.some((m) => DIMMABLE.has(m)) || (unusable && !modes.length);
+    // a light Home Assistant has not described (gone, or unavailable since it started) draws as a dimmer; one that
+    // only switches, described as such (its attributes kept while it cannot be read), is its head alone (#65)
+    const dimmable = dims(modes);
     const raw = view.attr<number | null>('brightness');
     const reported = on && typeof raw === 'number' ? Math.max(1, Math.round((raw / 255) * 100)) : 0;
     // released only by an exact match or by time: a ±1 tolerance would swallow every single-step change
@@ -573,7 +613,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const shownLevel = this.preview_ ?? level;
     const w = this.contentWidth;
     const variant = this.config?.variant ?? 'auto';
-    const compact = variant === 'compact' || (variant === 'auto' && w < COMPACT_BELOW);
+    // the compact layout is the dimmer's: a bulb that only switches has one anatomy, its head
+    const compact =
+      dimmable && (variant === 'compact' || (variant === 'auto' && w < COMPACT_BELOW));
     const win = this.window_?.fine ? this.window_ : null;
     // on the fine scale the labels are the major ticks themselves (whole values); the ones too close to an end are left out
     const ticks: [number, string][] = win
@@ -682,7 +724,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
         : undefined;
 
     return html`<article
-      class="fv-card sl-card ${unusable ? 'is-unavailable is-off' : ''} ${compact ? 'sl-card--compact' : ''} ${full ? `is-lit fv-tone--${tone}` : lit && surface ? 'is-glow' : ''}"
+      class="fv-card sl-card ${unusable ? 'is-unavailable is-off' : ''} ${compact ? 'sl-card--compact' : dimmable ? '' : 'sl-card--switch'} ${full ? `is-lit fv-tone--${tone}` : lit && surface ? 'is-glow' : ''}"
       data-card
       data-accent=${accent ?? nothing}
       data-surface=${surface ?? nothing}

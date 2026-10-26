@@ -311,6 +311,7 @@ describe('lights and sensors', () => {
       entity('light.colour', 'on', { supported_color_modes: ['hs', 'color_temp'] }),
       entity('light.white', 'on', { supported_color_modes: ['color_temp'] }),
       entity('light.dimmer', 'off', { supported_color_modes: ['brightness'] }),
+      entity('light.onoff', 'on', { supported_color_modes: ['onoff'] }),
       entity('light.a', 'on', { friendly_name: 'Ceiling' }),
       entity('light.b', 'off', { friendly_name: 'Floor lamp' }),
       entity('sensor.temp', '21.4', { device_class: 'temperature', unit_of_measurement: '°C' }),
@@ -320,10 +321,12 @@ describe('lights and sensors', () => {
     registries,
   );
 
-  it('light: a colour bulb its ruler and swatches, a white one its ruler, a dimmer neither', () => {
+  it('light: a colour bulb its ruler and swatches, a white one its ruler, a dimmer neither, a switch its head', () => {
     expect(light({ entity: 'light.colour' }, hass)).toBe(428);
     expect(light({ entity: 'light.white' }, hass)).toBe(368);
     expect(light({ entity: 'light.dimmer' }, hass)).toBe(268);
+    expect(light({ entity: 'light.onoff' }, hass)).toBe(84);
+    expect(light({ entity: 'light.onoff', variant: 'compact' }, hass)).toBe(84);
     expect(light({ entity: 'light.gone' }, hass)).toBe(268);
     expect(light({ entity: 'light.colour' })).toBe(428);
   });

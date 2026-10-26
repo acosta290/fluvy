@@ -62,6 +62,10 @@ entities:
     color: teal
 ```
 
+A light that only switches on and off (its `supported_color_modes` is `onoff` alone) draws the light card as its
+head alone — the circle, the name, the state line and the switch, 84 px — in every style, and its editor offers only
+what the bulb does: no layout, stepper or live update, no temperature ruler, no quick colours.
+
 A colour bulb's quick colours (`colors`) are the house's own, any number in any order: `warm`, `cool`, a Home
 Assistant colour name, `#rrggbb`, `[r, g, b]`, `picker` (a round that opens the browser's colour picker), or any of
 those with a `name` its round says. The editor edits them row by row — a colour (the words, the picker, or *Custom

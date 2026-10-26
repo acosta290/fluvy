@@ -67,6 +67,14 @@ export const sheet: SheetSpec = {
         })),
       ),
     },
+    // #65: bulbs that only switch at half a section: the head alone, its switch never what the column costs
+    {
+      title: 'Light · on/off · half a section',
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.pantry', cols: 6 },
+        { type: 'custom:fluvy-light-card', entity: 'light.stairs', cols: 6 },
+      ],
+    },
     {
       title: 'Fan · compact · four columns',
       cards: thirds(

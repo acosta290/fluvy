@@ -17,6 +17,13 @@ export const DIMMABLE: ReadonlySet<string> = new Set([
   'white',
 ]);
 
+/**
+ * Whether a bulb dims, by the modes it reports; a light Home Assistant has not described (gone, or unavailable since
+ * it started) draws as a dimmer.
+ */
+export const dims = (modes: readonly string[]): boolean =>
+  !modes.length || modes.some((mode) => DIMMABLE.has(mode));
+
 /** `[r, g, b]` as `#rrggbb`: each channel rounded and kept to 0–255, any further channel (white, warm white) left out. */
 export const hexOf = (rgb: readonly number[]): string =>
   `#${rgb
