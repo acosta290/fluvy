@@ -389,8 +389,8 @@ function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTe
 }
 
 /**
- * One series' line and what lies under it, clipped to the plot: its band, its fill, its soft copy, the line, its
- * forecast. A series with fewer than two readings draws nothing (its readout says what there is).
+ * One series' line and what lies under it (its group clips it to the plot): its band, its fill, its soft copy, the
+ * line, its forecast. A series with fewer than two readings draws nothing (its readout says what there is).
  */
 function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult | typeof nothing {
   const { style, frame } = spec;
@@ -412,17 +412,13 @@ function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult
       frame.height,
       laid.scale === 'tight' ? String(frame.height) : px(frame.height),
     );
-    return group(
-      spec,
-      index,
-      svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="curve-fill-a" /><stop offset="1" class="curve-fill-b" /></linearGradient></defs>
-        <path class="curve-area" d=${area} fill=${`url(#${fillId})`} stroke="none" />
-        <path class="curve-line" d=${line} pathLength="1" style=${style.line === 2.5 ? nothing : `stroke-width:${style.line}px`} />${
-          forecast
-            ? svg`<path class="fc-future" d=${forecast} stroke-width=${style.line} />`
-            : nothing
-        }`,
-    );
+    return svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="curve-fill-a" /><stop offset="1" class="curve-fill-b" /></linearGradient></defs>
+      <path class="curve-area" d=${area} fill=${`url(#${fillId})`} stroke="none" />
+      <path class="curve-line" d=${line} pathLength="1" style=${style.line === 2.5 ? nothing : `stroke-width:${style.line}px`} />${
+        forecast
+          ? svg`<path class="fc-future" d=${forecast} stroke-width=${style.line} />`
+          : nothing
+      }`;
   }
   const xs = (pts as ReadonlyArray<Pt | null>).map((p) => p?.[0] ?? laid.left);
   const band =
@@ -435,43 +431,39 @@ function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult
   const filled = style.fill === 'gradient' || style.fill === 'flat';
   const area = filled ? areaPath(past, style.curve, laid.box.bottom) : '';
   const blurId = style.glow.kind === 'blur' ? `${spec.id}-blur-${index}` : undefined;
-  return group(
-    spec,
-    index,
-    svg`${band ? svg`<path class="fc-band" d=${band} />` : nothing}${
-      area && style.fill === 'gradient'
-        ? svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="fc-fill-a" /><stop offset="1" class="fc-fill-b" /></linearGradient></defs>
+  return svg`${band ? svg`<path class="fc-band" d=${band} />` : nothing}${
+    area && style.fill === 'gradient'
+      ? svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="fc-fill-a" /><stop offset="1" class="fc-fill-b" /></linearGradient></defs>
           <path class="fc-area" d=${area} fill=${`url(#${fillId})`} />`
-        : area
-          ? svg`<path class="fc-area fc-area--flat" d=${area} />`
-          : nothing
-    }${
-      style.glow.kind !== 'none' && line
-        ? svg`${
-            blurId
-              ? svg`<defs><filter id=${blurId} x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="3" /></filter></defs>`
-              : nothing
-          }${shadowCopy(line, {
-            offset: style.glow.offset - (blurId ? 1 : 0),
-            width: style.line + (blurId ? 3 : 4.5),
-            opacity: style.glow.opacity,
-            ...(blurId ? { blur: blurId } : {}),
-          })}`
+      : area
+        ? svg`<path class="fc-area fc-area--flat" d=${area} />`
         : nothing
-    }<path class="fc-line" d=${line} stroke-width=${style.line} pathLength="1" />${
-      forecast
-        ? svg`<path class="fc-future ${style.future === 'faint' ? 'fc-future--faint' : ''}" d=${forecast} stroke-width=${style.line} />`
-        : nothing
-    }${
-      style.points === 'all'
-        ? past.flatMap((p, i) =>
-            p && i < series.values.length
-              ? [point(style.curve === 'step' ? p[0] + laid.slot / 2 : p[0], p[1])]
-              : [],
-          )
-        : nothing
-    }`,
-  );
+  }${
+    style.glow.kind !== 'none' && line
+      ? svg`${
+          blurId
+            ? svg`<defs><filter id=${blurId} x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="3" /></filter></defs>`
+            : nothing
+        }${shadowCopy(line, {
+          offset: style.glow.offset - (blurId ? 1 : 0),
+          width: style.line + (blurId ? 3 : 4.5),
+          opacity: style.glow.opacity,
+          ...(blurId ? { blur: blurId } : {}),
+        })}`
+      : nothing
+  }<path class="fc-line" d=${line} stroke-width=${style.line} pathLength="1" />${
+    forecast
+      ? svg`<path class="fc-future ${style.future === 'faint' ? 'fc-future--faint' : ''}" d=${forecast} stroke-width=${style.line} />`
+      : nothing
+  }${
+    style.points === 'all'
+      ? past.flatMap((p, i) =>
+          p && i < series.values.length
+            ? [point(style.curve === 'step' ? p[0] + laid.slot / 2 : p[0], p[1])]
+            : [],
+        )
+      : nothing
+  }`;
 }
 
 /**
@@ -514,10 +506,10 @@ export function drawChart(spec: ChartSpec): TemplateResult {
       : scrubbed && style.cursor !== 'none'
         ? cursorLine(at, laid.box.top - 8, laid.box.bottom, 'hairline')
         : nothing;
-  // the marks: the lowest and the highest of a lone line (dots), and each line's end or reading in its style's look
-  const dots: SVGTemplateResult[] = [];
+  // each line's marks: its lowest and highest (a lone line's), and its end or its reading in its style's look
   const knobs: TemplateResult[] = [];
-  ys.forEach((y, index) => {
+  const marksOf = (index: number, y: number | null): SVGTemplateResult[] => {
+    const dots: SVGTemplateResult[] = [];
     if (
       !several &&
       (style.highlight === 'min' || style.highlight === 'max' || style.highlight === 'both')
@@ -535,11 +527,28 @@ export function drawChart(spec: ChartSpec): TemplateResult {
           );
       }
     if (y === null || !(scrubbed || (style.points !== 'none' && !(knobAtNow && index === 0))))
-      return;
+      return dots;
     if (style.end === 'knob')
       knobs.push(knob(at, y, paintOf(spec, index), spec.series[index]?.accent));
-    else dots.push(group(spec, index, dot(at, y)));
-  });
+    else dots.push(dot(at, y));
+    return dots;
+  };
+  // a series is one group: its body clipped to the plot, then its marks; the cursor lies under them — inside a lone
+  // line's group under its dot, before the groups of several (1.10's order, both)
+  const clipped = (content: unknown): SVGTemplateResult =>
+    svg`<g clip-path=${`url(#${clip})`}>${content}</g>`;
+  const layers = laid.bars
+    ? clipped(barsBody(spec, laid, drawn))
+    : spec.series.map((_s, index) => {
+        const body = lineBody(spec, laid, index);
+        const marks = marksOf(index, ys[index] ?? null);
+        if (body === nothing && !marks.length) return nothing;
+        return group(
+          spec,
+          index,
+          svg`${body === nothing ? nothing : clipped(body)}${several ? nothing : cursor}${marks}`,
+        );
+      });
   if (knobAtNow && nowX !== null && nowY !== null)
     knobs.push(knob(nowX, nowY, paintOf(spec, 0), spec.series[0]?.accent));
   return html`<svg
@@ -561,12 +570,8 @@ export function drawChart(spec: ChartSpec): TemplateResult {
           />
         </clipPath>
       </defs>
-      ${grid(spec, laid)}${tickColumn(spec, laid)}
-      <g clip-path=${`url(#${clip})`}>
-        ${laid.bars ? barsBody(spec, laid, drawn) : spec.series.map((_s, index) => lineBody(spec, laid, index))}
-      </g>
-      ${laid.bars ? barsWords(spec, laid, drawn) : nothing}${cursor}${dots}${
-        nowX === null ? nothing : nowLine(nowX, laid.box.top - 8, laid.box.bottom)
-      }</svg
+      ${grid(spec, laid)}${tickColumn(spec, laid)}${several || laid.bars ? cursor : nothing}${layers}${
+        laid.bars ? barsWords(spec, laid, drawn) : nothing
+      }${nowX === null ? nothing : nowLine(nowX, laid.box.top - 8, laid.box.bottom)}</svg
     >${knobs}`;
 }

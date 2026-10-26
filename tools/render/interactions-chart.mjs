@@ -94,9 +94,8 @@ const audit = (page) =>
         const cw = Number(clip.getAttribute('width'));
         const cy = box.top + Number(clip.getAttribute('y'));
         const ch = Number(clip.getAttribute('height'));
-        const layers = svg.querySelector('g[clip-path]');
         for (const path of svg.querySelectorAll('path')) {
-          if (!layers.contains(path)) wrong.push(`${name}: a path outside the clipped layers`);
+          if (!path.closest('g[clip-path]')) wrong.push(`${name}: a path outside the clipped layers`);
           const r = path.getBoundingClientRect();
           if (r.width === 0 && r.height === 0) continue;
           if (

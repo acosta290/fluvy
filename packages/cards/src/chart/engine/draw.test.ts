@@ -38,16 +38,16 @@ describe('every style', () => {
       const svg = drawing.querySelector('svg') as SVGSVGElement;
       expect(svg.getAttribute('data-measure')).toBe('drawn');
       const clip = drawing.querySelector('clipPath rect') as Element;
-      const layers = drawing.querySelector('g[clip-path]') as Element;
-      expect(layers.getAttribute('clip-path')).toBe('url(#c-clip)');
+      for (const layer of drawing.querySelectorAll('g[clip-path]'))
+        expect(layer.getAttribute('clip-path')).toBe('url(#c-clip)');
       // the plot: after the scale's column, the line's half width either side for its round caps
       const left = plotOf(spec(preset, { tick: String, measure: (t) => t.length * 7 })).left;
       const line = resolveStyle(preset, {}, caps).line;
       expect(Number(clip.getAttribute('x'))).toBeCloseTo(left - line / 2, 2);
       expect(Number(clip.getAttribute('width'))).toBeCloseTo(320 - left + line, 2);
-      // nothing that is a line, an area, a copy or a bar is drawn outside the clipped group
+      // nothing that is a line, an area, a copy or a bar is drawn outside a clipped group
       for (const path of drawing.querySelectorAll('path'))
-        expect(layers.contains(path), path.getAttribute('class') ?? '').toBe(true);
+        expect(path.closest('g[clip-path]'), path.getAttribute('class') ?? '').not.toBeNull();
     },
   );
 });
