@@ -1829,6 +1829,12 @@
     "editor_period": "期間",
     "editor_co2": "電力網の化石燃料の割合（%、空のとき：自宅のCO₂信号）"
   },
+  "energy-period": {
+    "yesterday": "昨日",
+    "follows": "日付選択に連動",
+    "editor_collection_key": "日付選択に連動する",
+    "editor_collection_key_help": "このダッシュボードにあるエネルギー日付選択のキー（Fluvyのエネルギー期間カード、またはHome Assistantのもの）"
+  },
   "history": {
     "title": "履歴",
     "search": "これらの項目を検索",

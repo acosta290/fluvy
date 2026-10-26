@@ -1800,6 +1800,12 @@
     "editor_period": "Periode",
     "editor_co2": "Fossiel aandeel van het net, % (leeg: het CO₂-signaal van het huis)"
   },
+  "energy-period": {
+    "yesterday": "Gisteren",
+    "follows": "Volgt de datumkiezer",
+    "editor_collection_key": "Een datumkiezer volgen",
+    "editor_collection_key_help": "De sleutel van een Energie-datumkiezer op dit dashboard (Fluvy’s kaart Energieperiode of die van Home Assistant)"
+  },
   "wall": {
     "paused": "Wand gepauzeerd",
     "resume": "Hervatten",

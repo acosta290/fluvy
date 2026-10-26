@@ -30,20 +30,22 @@ export interface StackPoint {
 export type Bucket = { readonly start: number; readonly totals: Totals };
 
 /**
- * Buckets into average power by origin, placed on the day by their middle. `kWh`: energy over the bucket (the meters'
- * change), turned into its average power; `kW`: the bucket is already a power (the power sensors' means).
+ * Buckets into average power by origin, placed on the day (or the followed range, `span` ms long) by their middle.
+ * `kWh`: energy over the bucket (the meters' change), turned into its average power; `kW`: the bucket is already a
+ * power (the power sensors' means).
  */
 export function stackOf(
   buckets: readonly Bucket[],
   dayStart: number,
   minutes = 5,
   unit: 'kWh' | 'kW' = 'kWh',
+  span = 86_400_000,
 ): StackPoint[] {
   const factor = unit === 'kW' ? 1 : 60 / minutes;
   return buckets.map((b) => {
     const a = allocate(b.totals);
     return {
-      at: (b.start + (minutes * 60_000) / 2 - dayStart) / 86_400_000,
+      at: (b.start + (minutes * 60_000) / 2 - dayStart) / span,
       used: {
         solar: a.usedSolar * factor,
         battery: a.usedBattery * factor,
@@ -312,16 +314,17 @@ export interface FlowPoint {
   readonly house: number;
 }
 
-/** Buckets into the sources' flows, placed on the day by their middle (`unit` as in `stackOf`). */
+/** Buckets into the sources' flows, placed on the day (or the range) by their middle (`unit`, `span` as in `stackOf`). */
 export function flowsOf(
   buckets: readonly Bucket[],
   dayStart: number,
   minutes = 5,
   unit: 'kWh' | 'kW' = 'kWh',
+  span = 86_400_000,
 ): FlowPoint[] {
   const factor = unit === 'kW' ? 1 : 60 / minutes;
   return buckets.map(({ start, totals: t }) => ({
-    at: (start + (minutes * 60_000) / 2 - dayStart) / 86_400_000,
+    at: (start + (minutes * 60_000) / 2 - dayStart) / span,
     into: {
       solar: t.solar * factor,
       battery: t.fromBattery * factor,

@@ -1800,6 +1800,12 @@
     "editor_period": "Zeitraum",
     "editor_co2": "Fossiler Anteil des Netzes, % (leer: das CO₂-Signal des Hauses)"
   },
+  "energy-period": {
+    "yesterday": "Gestern",
+    "follows": "Folgt der Datumsauswahl",
+    "editor_collection_key": "Einer Datumsauswahl folgen",
+    "editor_collection_key_help": "Der Schlüssel einer Energie-Datumsauswahl auf diesem Dashboard (Fluvys Karte Energiezeitraum oder die von Home Assistant)"
+  },
   "wall": {
     "paused": "Wand pausiert",
     "resume": "Fortsetzen",

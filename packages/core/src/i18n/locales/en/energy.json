@@ -286,5 +286,11 @@
     "net": "Net",
     "editor_period": "Period",
     "editor_co2": "The grid’s fossil share, % (empty: the house’s CO₂ signal)"
+  },
+  "energy-period": {
+    "yesterday": "Yesterday",
+    "follows": "Follows the date picker",
+    "editor_collection_key": "Follow a date picker",
+    "editor_collection_key_help": "The key of an Energy date picker on this dashboard (Fluvy’s Energy period card or Home Assistant’s)"
   }
 }

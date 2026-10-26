@@ -1800,6 +1800,12 @@
     "editor_period": "Periodo",
     "editor_co2": "Cuota fósil de la red, % (vacío: la señal de CO₂ de la casa)"
   },
+  "energy-period": {
+    "yesterday": "Ayer",
+    "follows": "Sigue al selector de fechas",
+    "editor_collection_key": "Seguir un selector de fechas",
+    "editor_collection_key_help": "La clave de un selector de fechas de Energía en este panel (la tarjeta Periodo de energía de Fluvy o el de Home Assistant)"
+  },
   "wall": {
     "paused": "Pared en pausa",
     "resume": "Reanudar",

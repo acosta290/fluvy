@@ -1800,6 +1800,12 @@
     "editor_period": "Période",
     "editor_co2": "Part fossile du réseau, % (vide : le signal CO₂ de la maison)"
   },
+  "energy-period": {
+    "yesterday": "Hier",
+    "follows": "Suit le sélecteur de dates",
+    "editor_collection_key": "Suivre un sélecteur de dates",
+    "editor_collection_key_help": "La clé d’un sélecteur de dates Énergie de ce tableau de bord (la carte Période d’énergie de Fluvy ou celui de Home Assistant)"
+  },
   "wall": {
     "paused": "Mur en pause",
     "resume": "Reprendre",

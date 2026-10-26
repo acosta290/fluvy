@@ -139,6 +139,8 @@ export interface HomeAssistant {
   user?: { id: string; name: string; is_admin: boolean };
   /** The panels this person's frontend has: a dashboard is one with `component_name: 'lovelace'`. */
   panels?: Record<string, HassPanel>;
+  /** The panel open now, by its url path (`lovelace`, `energy`, `dashboard-home`): what HA's energy cards key their collection on. */
+  panelUrl?: string;
   /** The actions Home Assistant offers, by domain then name (`notify.mobile_app_pixel_9`). */
   services?: Record<string, Record<string, unknown>>;
   connection: HassConnection;

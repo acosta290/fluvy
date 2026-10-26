@@ -1800,6 +1800,12 @@
     "editor_period": "Periodo",
     "editor_co2": "Quota fossile della rete, % (vuoto: il segnale CO₂ della casa)"
   },
+  "energy-period": {
+    "yesterday": "Ieri",
+    "follows": "Segue il selettore di date",
+    "editor_collection_key": "Segui un selettore di date",
+    "editor_collection_key_help": "La chiave di un selettore di date Energia in questa dashboard (la scheda Periodo energetico di Fluvy o quello di Home Assistant)"
+  },
   "wall": {
     "paused": "Parete in pausa",
     "resume": "Riprendi",

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { EntityView, HomeAssistant } from '@fluvy/core';
 import { allocate, lowCarbon, scores } from './allocate.js';
-import { allocatePeriod, houseMidnight } from './period.js';
+import {
+  allocatePeriod,
+  clearPeriodCache,
+  fetchRange,
+  fullDays,
+  houseMidnight,
+  rangeOf,
+  stepFor,
+} from './period.js';
 import { readPrefs, type EnergyPrefs } from './prefs.js';
 import { readMeasure, net } from './reading.js';
 import { bothWays, legacySources, measureOfSource, prefSources } from './sources.js';
@@ -447,5 +455,71 @@ describe('houseMidnight', () => {
     const now = new Date('2026-09-30T10:30:00Z'); // 12:30 in Madrid
     expect(houseMidnight(hass, now).toISOString()).toBe('2026-09-29T22:00:00.000Z');
     expect(houseMidnight(hass, now, 6).toISOString()).toBe('2026-09-23T22:00:00.000Z');
+  });
+});
+
+describe('a range', () => {
+  const sources = readPrefs({
+    energy_sources: [{ type: 'grid', stat_energy_from: 'sensor.in', stat_energy_to: 'sensor.out' }],
+  }).sources;
+  /** Whole days on the browser's clock, ending as Home Assistant ends a range (the last day's last moment). */
+  const days = (from: string, to = from): { start: Date; end: Date } => ({
+    start: new Date(`${from}T00:00:00`),
+    end: new Date(new Date(`${to}T00:00:00`).getTime() + 86_400_000 - 1),
+  });
+
+  it('is read in the buckets the Energy dashboard reads it in (getSuggestedPeriod)', () => {
+    expect(stepFor(days('2026-09-17'))).toBe('hour');
+    expect(stepFor(days('2026-09-15', '2026-09-17'))).toBe('hour'); // two full days
+    expect(stepFor(days('2026-09-14', '2026-09-17'))).toBe('day');
+    expect(stepFor(days('2026-09-01', '2026-09-30'))).toBe('day'); // one month: 29 days
+    expect(stepFor(days('2026-08-01', '2026-09-30'))).toBe('month'); // whole months over 35 days
+    expect(stepFor(days('2026-01-01', '2026-12-31'))).toBe('month');
+    expect(stepFor(days('2026-08-02', '2026-09-30'))).toBe('day'); // not from the first
+    expect(fullDays(days('2026-09-17').start, days('2026-09-17').end)).toBe(0);
+    expect(
+      fullDays(days('2026-09-14', '2026-09-20').start, days('2026-09-14', '2026-09-20').end),
+    ).toBe(6);
+  });
+
+  it('opens from a period’s start and from the year’s first day', () => {
+    const hass = {
+      config: { time_zone: 'Europe/Madrid' },
+      locale: { time_zone: 'server' },
+    } as unknown as HomeAssistant;
+    const now = new Date('2026-09-30T10:30:00Z');
+    expect(rangeOf(hass, now, 'day')).toEqual({ start: houseMidnight(hass, now) });
+    expect(rangeOf(hass, now, 'year').start.toISOString()).toBe('2025-12-31T23:00:00.000Z');
+  });
+
+  it('fetchRange sends the end when the range has one, and keeps an answer per range', async () => {
+    clearPeriodCache();
+    const asked: Record<string, unknown>[] = [];
+    const hass = {
+      callWS: async (message: Record<string, unknown>) => {
+        asked.push(message);
+        return {
+          'sensor.in': [{ start: 1, change: 2 }],
+          'sensor.out': [{ start: 1, change: 0.5 }],
+        };
+      },
+    } as unknown as HomeAssistant;
+    const week = days('2026-09-14', '2026-09-20');
+    const first = await fetchRange(hass, sources, week);
+    expect(first?.totals.fromGrid).toBe(2);
+    expect(asked[0]).toMatchObject({
+      type: 'recorder/statistics_during_period',
+      start_time: week.start.toISOString(),
+      end_time: week.end.toISOString(),
+      period: 'day',
+      statistic_ids: ['sensor.in', 'sensor.out'],
+    });
+    await fetchRange(hass, sources, week);
+    expect(asked).toHaveLength(1);
+    await fetchRange(hass, sources, days('2026-09-21', '2026-09-27'));
+    expect(asked).toHaveLength(2);
+    // an open range sends no end
+    await fetchRange(hass, sources, { start: week.start }, [], 'day');
+    expect(asked[2]).not.toHaveProperty('end_time');
   });
 });
