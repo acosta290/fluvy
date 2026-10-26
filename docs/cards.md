@@ -327,6 +327,53 @@ camera_view: live
 max_live: 2
 ```
 
+## Items
+
+The items card lists the items of a sensor's list attribute (#66) — the aircraft a FlightRadar24 sensor keeps in
+`flights`, a departures board, parcels on their way — a row each (60), a compact row (48, the name and the value) or a
+tile (76, two a row from a 320 column), under a head that counts them from the sensor's state. `attribute` names the
+list (`auto`, the default, takes the first attribute that holds one — `flights`, `items`, `entries` or `list` first);
+`items_template` is a template that gives the list instead (as JSON), so any sensor becomes one. Each item is shown by
+the fields the configuration maps — `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`,
+`item_image` and `item_url`: a field of the item (`altitude`, `airport.city`, `legs.0.from`) or words with `{field}`
+in them, `{a|b}` taking b where a is empty; a number is written in your locale with its digits, a date and time as a
+moment, and a " · " segment that says nothing goes — or by a preset that knows the integration's shape. `preset: auto`
+(the default) draws flights where the attribute is `flights` or the items carry a `callsign` or a `flight_number`: the
+callsign over the route (`AMS → BCN`) and the aircraft, the altitude in feet with a climbing or descending arrow (from
+`vertical_speed`, ±100 ft/min) or "On ground", the aircraft's photo as its circle, the nearest first — and hides the
+`item_*` fields; `none` keeps your mapping, `flights` asks for the preset. The figures keep the integration's units —
+feet, knots, feet a minute, kilometres — as the FlightRadar24 integration reports them. `sort` orders the list by a
+field (`sort_order`: `ascending` or `descending`; numbers as numbers, words as the language sorts them, items without
+the field last). `max_rows` (1–20, five) is the card's height, never the list's length: fewer items, the empty panel
+and a sensor out of reach keep the size. `show_count` puts the count under the title ("3 aircraft"; `subtitle` wins),
+`show_image` an item's picture in its circle (one that will not load falls back to the glyph). A tap on an item opens
+its sheet — the flight's airline, route, aircraft, altitude, speeds, heading, distance, position and times, with a
+round to the flight on flightradar24.com; a plain item's every field — or nothing (`item_tap: none`); the head's tap
+opens the sensor's details.
+
+```yaml
+type: custom:fluvy-items-card
+entity: sensor.flightradar24_current_in_area # the count as its state, the aircraft in `flights`
+title: Flights nearby
+max_rows: 5
+empty_text: Clear skies
+```
+
+A list of your own, mapped field by field:
+
+```yaml
+type: custom:fluvy-items-card
+entity: sensor.metro_departures
+attribute: departures
+preset: none
+item_name: "{line} → {destination}"
+item_secondary: Platform {platform}
+item_value: due
+item_unit: min
+sort: due
+variant: compact
+```
+
 ## Alerts
 
 The alerts card gathers what needs a look. Each alert is one line — a `preset` (`low_battery`, `unavailable`, `open`,
@@ -404,6 +451,7 @@ show_reload: true
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
 | **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
+| **Items** | `custom:fluvy-items-card` | The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24. | `title`, `subtitle`, `attribute` (`auto`), `preset` (`auto`, `none`, `flights`), `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`, `item_image`, `item_url`, `items_template`, `sort`, `sort_order` (`ascending`, `descending`), `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_image`, `item_tap` (`sheet`, `none`), `empty_text`, `hide_empty` | — |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Cover** | `custom:fluvy-cover-card` | Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favourites. | `subtitle`, `tilt_angle`, `variant` (`full`, `compact`), `favorites_style` (`full`, `chips`), `show_tilt`, `show_favorites`, `favorites` (a list: `name`, `position`, `tilt`) | — |
