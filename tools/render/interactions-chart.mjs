@@ -334,7 +334,7 @@ for (const mode of ['light', 'dark']) {
     await route.continue();
   });
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
-  await page.waitForFunction(() => customElements.get('fluvy-sensor-card') !== undefined);
+  await page.waitForFunction(() => window.customElements.get('fluvy-sensor-card') !== undefined);
   const seen = await page.evaluate(
     (values) =>
       new Promise((resolve) => {
