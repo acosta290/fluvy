@@ -1660,7 +1660,15 @@
     "temperature": "Le blanc de l’ampoule",
     "regular": "Normale",
     "thin": "Fine",
-    "motion": "Mouvement"
+    "motion": "Mouvement",
+    "plate": "En-tête et page",
+    "frame": "Page encadrée",
+    "bare": "Page seule",
+    "page": "Celui de la page",
+    "dark": "Sombre",
+    "standard": "Standard",
+    "strict": "Strict",
+    "fill": "Remplir la vue"
   },
   "tone": {
     "accent": "Accent",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Automatique suit l’entité. Un modèle est allumé sauf s’il donne off, false, no ou 0",
     "editor.icon_helper": "Une icône comme mdi:lightbulb, ou un modèle qui en donne une",
     "editor.color_helper": "En YAML, un modèle peut donner une couleur ou une tonalité"
+  },
+  "web": {
+    "card": "Page web",
+    "insecure": "Cette page a besoin de https",
+    "slow": "Toujours en chargement",
+    "open": "Ouvrir dans un nouvel onglet",
+    "reload": "Recharger",
+    "fullscreen": "Plein écran",
+    "exit_fullscreen": "Quitter le plein écran",
+    "editor.url": "Adresse",
+    "editor.height": "Hauteur (px)",
+    "editor.scale": "Échelle",
+    "editor.refresh": "Recharger toutes les (minutes)",
+    "editor.look": "Aspect",
+    "editor.look_helper": "Sombre inverse la page, images comprises. Automatique suit la carte",
+    "editor.sandbox": "Bac à sable",
+    "editor.sandbox_helper": "Standard est celui de Home Assistant. Strict prive la page de ses cookies, fenêtres surgissantes et téléchargements",
+    "editor.allow_open_top_navigation": "Un appui dans la page peut emmener cet onglet ailleurs",
+    "editor.allow": "Permissions (allow)",
+    "editor.show_open": "Afficher le bouton d’ouverture",
+    "editor.show_fullscreen": "Afficher le bouton plein écran",
+    "editor.show_reload": "Afficher le bouton de rechargement"
   }
 }

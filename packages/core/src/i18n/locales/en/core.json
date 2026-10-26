@@ -829,7 +829,15 @@
     "temperature": "The bulb’s white",
     "regular": "Regular",
     "thin": "Thin",
-    "motion": "Motion"
+    "motion": "Motion",
+    "plate": "Head and page",
+    "frame": "Page in a frame",
+    "bare": "Page alone",
+    "page": "The page’s own",
+    "dark": "Dark",
+    "standard": "Standard",
+    "strict": "Strict",
+    "fill": "Fill the view"
   },
   "tone": {
     "accent": "Accent",

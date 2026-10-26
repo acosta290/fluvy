@@ -1660,7 +1660,15 @@
     "temperature": "Il bianco della lampadina",
     "regular": "Normale",
     "thin": "Sottile",
-    "motion": "Movimento"
+    "motion": "Movimento",
+    "plate": "Intestazione e pagina",
+    "frame": "Pagina incorniciata",
+    "bare": "Solo la pagina",
+    "page": "Quello della pagina",
+    "dark": "Scuro",
+    "standard": "Standard",
+    "strict": "Rigido",
+    "fill": "Riempi la vista"
   },
   "tone": {
     "accent": "Accento",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Automatico segue l’entità. Un template è acceso a meno che non dia off, false, no o 0",
     "editor.icon_helper": "Un’icona come mdi:lightbulb, o un template che ne dia una",
     "editor.color_helper": "In YAML, un template può dare un colore o un tono"
+  },
+  "web": {
+    "card": "Pagina web",
+    "insecure": "Questa pagina richiede https",
+    "slow": "Ancora in caricamento",
+    "open": "Apri in una nuova scheda",
+    "reload": "Ricarica",
+    "fullscreen": "Schermo intero",
+    "exit_fullscreen": "Esci da schermo intero",
+    "editor.url": "Indirizzo",
+    "editor.height": "Altezza (px)",
+    "editor.scale": "Scala",
+    "editor.refresh": "Ricarica ogni (minuti)",
+    "editor.look": "Aspetto",
+    "editor.look_helper": "Scuro inverte la pagina, immagini comprese. Automatico segue la scheda",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Standard è quella di Home Assistant. Rigido toglie alla pagina i suoi cookie, i pop-up e i download",
+    "editor.allow_open_top_navigation": "Un tocco nella pagina può portare questa scheda altrove",
+    "editor.allow": "Permessi (allow)",
+    "editor.show_open": "Mostra il pulsante apri",
+    "editor.show_fullscreen": "Mostra il pulsante a schermo intero",
+    "editor.show_reload": "Mostra il pulsante ricarica"
   }
 }

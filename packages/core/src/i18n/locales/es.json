@@ -1660,7 +1660,15 @@
     "temperature": "El blanco de la bombilla",
     "regular": "Normal",
     "thin": "Fino",
-    "motion": "Movimiento"
+    "motion": "Movimiento",
+    "plate": "Cabecera y página",
+    "frame": "Página enmarcada",
+    "bare": "Solo la página",
+    "page": "El de la página",
+    "dark": "Oscuro",
+    "standard": "Estándar",
+    "strict": "Estricto",
+    "fill": "Llenar la vista"
   },
   "tone": {
     "accent": "Acento",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Automático sigue a la entidad. Una plantilla está encendida salvo que dé off, false, no o 0",
     "editor.icon_helper": "Un icono como mdi:lightbulb, o una plantilla que dé uno",
     "editor.color_helper": "En YAML, una plantilla puede dar un color o un tono"
+  },
+  "web": {
+    "card": "Página web",
+    "insecure": "Esta página necesita https",
+    "slow": "Aún cargando",
+    "open": "Abrir en una pestaña nueva",
+    "reload": "Recargar",
+    "fullscreen": "Pantalla completa",
+    "exit_fullscreen": "Salir de pantalla completa",
+    "editor.url": "Dirección",
+    "editor.height": "Altura (px)",
+    "editor.scale": "Escala",
+    "editor.refresh": "Recargar cada (minutos)",
+    "editor.look": "Aspecto",
+    "editor.look_helper": "Oscuro invierte la página, imágenes incluidas. Automático sigue a la tarjeta",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Estándar es el de Home Assistant. Estricto deja a la página sin sus cookies, ventanas emergentes ni descargas",
+    "editor.allow_open_top_navigation": "Un toque en la página puede llevar esta pestaña a otro sitio",
+    "editor.allow": "Permisos (allow)",
+    "editor.show_open": "Mostrar el botón de abrir",
+    "editor.show_fullscreen": "Mostrar el botón de pantalla completa",
+    "editor.show_reload": "Mostrar el botón de recargar"
   }
 }

@@ -1660,7 +1660,15 @@
     "temperature": "Weiß der Lampe",
     "regular": "Normal",
     "thin": "Dünn",
-    "motion": "Bewegung"
+    "motion": "Bewegung",
+    "plate": "Kopf und Seite",
+    "frame": "Seite im Rahmen",
+    "bare": "Seite allein",
+    "page": "Wie die Seite",
+    "dark": "Dunkel",
+    "standard": "Standard",
+    "strict": "Streng",
+    "fill": "Ansicht füllen"
   },
   "tone": {
     "accent": "Akzent",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Automatisch folgt der Entität. Ein Template ist an, außer es ergibt off, false, no oder 0",
     "editor.icon_helper": "Ein Symbol wie mdi:lightbulb oder ein Template, das eines ergibt",
     "editor.color_helper": "In YAML kann ein Template eine Farbe oder einen Ton ergeben"
+  },
+  "web": {
+    "card": "Webseite",
+    "insecure": "Diese Seite braucht https",
+    "slow": "Lädt noch",
+    "open": "In neuem Tab öffnen",
+    "reload": "Neu laden",
+    "fullscreen": "Vollbild",
+    "exit_fullscreen": "Vollbild beenden",
+    "editor.url": "Adresse",
+    "editor.height": "Höhe (px)",
+    "editor.scale": "Maßstab",
+    "editor.refresh": "Neu laden alle (Minuten)",
+    "editor.look": "Darstellung",
+    "editor.look_helper": "Dunkel kehrt die Seite um, Bilder eingeschlossen. Automatisch folgt der Karte",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Standard ist die von Home Assistant. Streng hält die Seite von ihren Cookies, Pop-ups und Downloads fern",
+    "editor.allow_open_top_navigation": "Ein Tipp in der Seite darf diesen Tab woanders hinführen",
+    "editor.allow": "Berechtigungen (allow)",
+    "editor.show_open": "Öffnen-Schaltfläche zeigen",
+    "editor.show_fullscreen": "Vollbild-Schaltfläche zeigen",
+    "editor.show_reload": "Neu-laden-Schaltfläche zeigen"
   }
 }

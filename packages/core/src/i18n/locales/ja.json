@@ -829,7 +829,15 @@
     "temperature": "電球の白色",
     "regular": "標準",
     "thin": "細い",
-    "motion": "動き"
+    "motion": "動き",
+    "plate": "見出しとページ",
+    "frame": "枠付きのページ",
+    "bare": "ページのみ",
+    "page": "ページのまま",
+    "dark": "ダーク",
+    "standard": "標準",
+    "strict": "厳格",
+    "fill": "ビューいっぱい"
   },
   "tone": {
     "accent": "アクセント",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "自動ではエンティティに従います。テンプレートはoff、false、no、0以外を返すとオンになります",
     "editor.icon_helper": "mdi:lightbulbのようなアイコン、またはアイコンを返すテンプレート",
     "editor.color_helper": "YAMLでは、テンプレートで色またはトーンを指定できます"
+  },
+  "web": {
+    "card": "Webページ",
+    "insecure": "このページにはhttpsが必要です",
+    "slow": "読み込み中",
+    "open": "新しいタブで開く",
+    "reload": "再読み込み",
+    "fullscreen": "全画面",
+    "exit_fullscreen": "全画面を終了",
+    "editor.url": "アドレス",
+    "editor.height": "高さ（px）",
+    "editor.scale": "倍率",
+    "editor.refresh": "再読み込みの間隔（分）",
+    "editor.look": "外観",
+    "editor.look_helper": "ダークはページの色を反転します（画像も含む）。自動はカードに従います",
+    "editor.sandbox": "サンドボックス",
+    "editor.sandbox_helper": "標準はHome Assistantと同じです。厳格ではCookie、ポップアップ、ダウンロードを使えません",
+    "editor.allow_open_top_navigation": "ページ内のタップでこのタブを移動できるようにする",
+    "editor.allow": "権限（allow）",
+    "editor.show_open": "開くボタンを表示",
+    "editor.show_fullscreen": "全画面ボタンを表示",
+    "editor.show_reload": "再読み込みボタンを表示"
   }
 }

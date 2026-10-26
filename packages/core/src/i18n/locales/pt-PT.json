@@ -1660,7 +1660,15 @@
     "temperature": "O branco da lâmpada",
     "regular": "Normal",
     "thin": "Fina",
-    "motion": "Movimento"
+    "motion": "Movimento",
+    "plate": "Cabeçalho e página",
+    "frame": "Página emoldurada",
+    "bare": "Só a página",
+    "page": "O da própria página",
+    "dark": "Escuro",
+    "standard": "Padrão",
+    "strict": "Estrito",
+    "fill": "Preencher a vista"
   },
   "tone": {
     "accent": "Destaque",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "O modo automático segue a entidade. Um modelo permanece ativo, a menos que devolva off, false, no ou 0",
     "editor.icon_helper": "Um ícone como mdi:lightbulb, ou um modelo que dê um",
     "editor.color_helper": "Em YAML, um modelo pode dar uma cor ou um tom"
+  },
+  "web": {
+    "card": "Página web",
+    "insecure": "Esta página precisa de https",
+    "slow": "Ainda a carregar",
+    "open": "Abrir num novo separador",
+    "reload": "Recarregar",
+    "fullscreen": "Ecrã inteiro",
+    "exit_fullscreen": "Sair do ecrã inteiro",
+    "editor.url": "Endereço",
+    "editor.height": "Altura (px)",
+    "editor.scale": "Escala",
+    "editor.refresh": "Recarregar a cada (minutos)",
+    "editor.look": "Aspeto",
+    "editor.look_helper": "Escuro inverte a página, imagens incluídas. Automático segue o cartão",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Padrão é o do Home Assistant. Estrito deixa a página sem os seus cookies, pop-ups e transferências",
+    "editor.allow_open_top_navigation": "Um toque na página pode levar este separador a outro sítio",
+    "editor.allow": "Permissões (allow)",
+    "editor.show_open": "Mostrar o botão de abrir",
+    "editor.show_fullscreen": "Mostrar o botão de ecrã inteiro",
+    "editor.show_reload": "Mostrar o botão de recarregar"
   }
 }

@@ -1660,7 +1660,15 @@
     "temperature": "Ampulün beyazı",
     "regular": "Normal",
     "thin": "İnce",
-    "motion": "Hareket"
+    "motion": "Hareket",
+    "plate": "Başlık ve sayfa",
+    "frame": "Çerçeveli sayfa",
+    "bare": "Yalnızca sayfa",
+    "page": "Sayfanın kendisi",
+    "dark": "Koyu",
+    "standard": "Standart",
+    "strict": "Sıkı",
+    "fill": "Görünümü doldur"
   },
   "tone": {
     "accent": "Vurgu",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Otomatik, varlığı izler. Bir şablon off, false, no ya da 0 vermedikçe açıktır",
     "editor.icon_helper": "mdi:lightbulb gibi bir simge ya da simge veren bir şablon",
     "editor.color_helper": "YAML’da bir şablon bir renk ya da ton verebilir"
+  },
+  "web": {
+    "card": "Web sayfası",
+    "insecure": "Bu sayfa https gerektirir",
+    "slow": "Hâlâ yükleniyor",
+    "open": "Yeni sekmede aç",
+    "reload": "Yeniden yükle",
+    "fullscreen": "Tam ekran",
+    "exit_fullscreen": "Tam ekrandan çık",
+    "editor.url": "Adres",
+    "editor.height": "Yükseklik (px)",
+    "editor.scale": "Ölçek",
+    "editor.refresh": "Yeniden yükleme aralığı (dakika)",
+    "editor.look": "Görünüm",
+    "editor.look_helper": "Koyu, sayfayı resimleriyle birlikte ters çevirir. Otomatik karta uyar",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Standart, Home Assistant’ınkidir. Sıkı, sayfayı çerezlerinden, açılır pencerelerinden ve indirmelerinden uzak tutar",
+    "editor.allow_open_top_navigation": "Sayfadaki bir dokunuş bu sekmeyi başka yere götürebilir",
+    "editor.allow": "İzinler (allow)",
+    "editor.show_open": "Aç düğmesini göster",
+    "editor.show_fullscreen": "Tam ekran düğmesini göster",
+    "editor.show_reload": "Yeniden yükle düğmesini göster"
   }
 }

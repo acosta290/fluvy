@@ -10,6 +10,7 @@ import type job from './locales/en/job.json';
 import type media from './locales/en/media.json';
 import type panel from './locales/en/panel.json';
 import type template from './locales/en/template.json';
+import type web from './locales/en/web.json';
 
 /**
  * The shape of a catalogue, taken from English (the source every other language mirrors key for key): one table
@@ -29,7 +30,8 @@ export type Catalogue = typeof core &
   typeof job &
   typeof media &
   typeof panel &
-  typeof template;
+  typeof template &
+  typeof web;
 
 export type Namespace = keyof Catalogue;
 

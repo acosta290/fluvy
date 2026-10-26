@@ -1660,7 +1660,15 @@
     "temperature": "Het wit van de lamp",
     "regular": "Normaal",
     "thin": "Dun",
-    "motion": "Beweging"
+    "motion": "Beweging",
+    "plate": "Kop en pagina",
+    "frame": "Pagina in een kader",
+    "bare": "Alleen de pagina",
+    "page": "Die van de pagina",
+    "dark": "Donker",
+    "standard": "Standaard",
+    "strict": "Strikt",
+    "fill": "Weergave vullen"
   },
   "tone": {
     "accent": "Accent",
@@ -2249,5 +2257,27 @@
     "editor.active_helper": "Automatisch volgt de entiteit. Een sjabloon is aan, tenzij het off, false, no of 0 geeft",
     "editor.icon_helper": "Een icoon zoals mdi:lightbulb, of een sjabloon dat er een geeft",
     "editor.color_helper": "In YAML kan een sjabloon een kleur of een toon geven"
+  },
+  "web": {
+    "card": "Webpagina",
+    "insecure": "Deze pagina heeft https nodig",
+    "slow": "Laadt nog",
+    "open": "In nieuw tabblad openen",
+    "reload": "Herladen",
+    "fullscreen": "Volledig scherm",
+    "exit_fullscreen": "Volledig scherm sluiten",
+    "editor.url": "Adres",
+    "editor.height": "Hoogte (px)",
+    "editor.scale": "Schaal",
+    "editor.refresh": "Herladen elke (minuten)",
+    "editor.look": "Weergave",
+    "editor.look_helper": "Donker keert de pagina om, afbeeldingen ook. Automatisch volgt de kaart",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Standaard is die van Home Assistant. Strikt houdt de pagina weg van haar cookies, pop-ups en downloads",
+    "editor.allow_open_top_navigation": "Een tik in de pagina mag dit tabblad ergens anders heen sturen",
+    "editor.allow": "Rechten (allow)",
+    "editor.show_open": "Knop openen tonen",
+    "editor.show_fullscreen": "Knop volledig scherm tonen",
+    "editor.show_reload": "Knop herladen tonen"
   }
 }
