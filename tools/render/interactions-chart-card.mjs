@@ -271,10 +271,29 @@ const pillsOf = (card) =>
     const hit = card.shadowRoot.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     return { box: [r.left, r.top, r.width, r.height].map(Math.round), seen: pill.contains(hit) };
   });
+/** The chart's marks (the cursor, the line's dot, now's knob): each as it is seen and how it came, its fade's wait and length. */
+const marksOf = (card) =>
+  Object.fromEntries(
+    Object.entries({
+      cursor: '.fc-cursor',
+      dot: 'svg.fc-chart .curve-dot',
+      knob: '.fc-knob',
+    }).map(([name, selector]) => {
+      const mark = card.shadowRoot.querySelector(selector);
+      const look = mark && getComputedStyle(mark);
+      return [name, look && `${look.opacity} ${look.animationDelay} ${look.animationDuration}`];
+    }),
+  );
 {
   const chart = nordpool.locator('.ch-chart');
   const box = await chart.boundingBox();
   const still = await nordpool.evaluate(pillsOf);
+  const first = await nordpool.evaluate(marksOf);
+  check(
+    'before it is read, now’s knob came as the first paint draws it: after the line, over 500 ms',
+    / 0\.62s 0\.5s$/.test(first.knob ?? ''),
+    JSON.stringify(first),
+  );
   await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
   await settle(page, 200);
   const read = await nordpool.evaluate((card) => ({
@@ -284,18 +303,17 @@ const pillsOf = (card) =>
       .querySelector('.ch-now .fv-readout__value')
       ?.textContent.replace(/\s+/g, ' ')
       .trim(),
-    cursor: card.shadowRoot.querySelector('.fc-cursor') !== null,
-    dot: card.shadowRoot.querySelector('svg.fc-chart .curve-dot') !== null,
   }));
+  const marks = await nordpool.evaluate(marksOf);
   const pills = await nordpool.evaluate(pillsOf);
   check(
-    'a pointer reads the chart: the cursor and its dot, the value row says the price and when — no bubble over it',
-    read.cursor &&
-      read.dot &&
+    'a pointer reads the chart: the cursor and its dot at once (the short fade), the value row says the price and when — no bubble over it',
+    marks.cursor === '1 0s 0.12s' &&
+      marks.dot === '1 0s 0.12s' &&
       read.bubbles === 0 &&
       /^\d\d:\d\d$/.test(read.label ?? '') &&
       /^0\.\d{3}\s*EUR\/kWh$/.test(read.value ?? ''),
-    JSON.stringify(read),
+    JSON.stringify({ ...read, marks }),
   );
   check(
     'while it is read the marked windows’ pills stay where they were, nothing over them',
@@ -305,6 +323,25 @@ const pillsOf = (card) =>
     JSON.stringify({ still, pills }),
   );
   await page.mouse.move(0, 0);
+  await settle(page, 200);
+  const back = await nordpool.evaluate(marksOf);
+  check(
+    'let go, now’s knob is back at once, in the short fade (not the first paint’s wait)',
+    back.knob === '1 0s 0.12s' && back.cursor === null,
+    JSON.stringify(back),
+  );
+  // reduced motion: the marks with the read, no fade at all
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height / 2);
+  await settle(page, 50);
+  const calm = await nordpool.evaluate(marksOf);
+  check(
+    'under reduced motion the cursor and its dot come with the read, unfaded',
+    calm.cursor === '1 0s 0.001s' && calm.dot === '1 0s 0.001s',
+    JSON.stringify(calm),
+  );
+  await page.mouse.move(0, 0);
+  await page.emulateMedia({ reducedMotion: null });
   await settle(page, 150);
   await chart.focus();
   await page.keyboard.press('Home');

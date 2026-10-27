@@ -126,6 +126,9 @@ class ScrubDirective extends Directive {
       for (const type of ['pointerup', 'pointercancel', 'pointerleave'])
         part.element.addEventListener(type, end);
     }
+    // a surface once read says so: from then on the marks a read brings and takes away come in the short fade, not
+    // the first paint's wait after the line (the engine's sheet)
+    if (controller.value !== null) part.element.setAttribute('data-read', '');
     return noChange;
   }
 }

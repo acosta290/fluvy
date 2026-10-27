@@ -103,11 +103,17 @@ export const chartStyles = css`
   .fc-glow,
   .fc-future,
   .fc-now,
-  .fc-cursor,
   .fc-chart .curve-dot,
   .fc-knob {
     animation: fv-fade 500ms var(--fv-ease) both;
     animation-delay: calc(var(--fv-enter-delay, 0ms) + 620ms);
+  }
+  /* the wait above is the first paint's, after the line. Once a chart has been read (its surface says so, scrub.ts)
+     the marks that come and go with a read — the cursor, the dot or the knob on each line, and now's knob back at
+     rest — arrive as its bubble does: in the short fade, at once (reduced motion: at once, interaction.css) */
+  [data-read] .fc-chart :is(.fc-cursor, .curve-cursor, .curve-dot),
+  [data-read] .fc-chart ~ .fc-knob {
+    animation: fv-fade var(--fv-fast) var(--fv-ease) both;
   }
   /* the forecast: dashed in the disabled ink, or the line's own, faint */
   .fc-future {
