@@ -9,6 +9,7 @@ import {
   type SettingsHass,
   TABS_DEFAULTS,
   CHROME_DEFAULTS,
+  CHART_DEFAULTS,
 } from '@fluvy/core';
 import { exportSettings, importPalette, importSettings } from './actions.js';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
@@ -1216,7 +1217,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     const strategy = { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] };
     const { panel, handle, settle } = await mount(true, {
@@ -1227,7 +1228,31 @@ describe('the settings panel', () => {
           : { views: [] };
       },
     });
-    await handle.store.saveHouse({ palette: 'volt', shape: 'round', pills: 'soft', frame: false });
+    // the Charts tab's choices and a set of the house's own colours travel with the rest (1.11)
+    const charts = {
+      ...CHART_DEFAULTS,
+      style: 'soft',
+      gauge: 'dial',
+      line: 'bold',
+      glow: { offset: 7, opacity: 0.45 },
+      grid: 'dashed',
+      endpoint: 'dot',
+      series: 'sea',
+      animate: false,
+    } as const;
+    const sea = {
+      id: 'sea',
+      name: 'Sea',
+      colours: ['#1f5fbf', '#2a9d8f', '#6a4c93', '#e76f51', '#264653', '#8ab17d'],
+    } as const;
+    await handle.store.saveHouse({
+      palette: 'volt',
+      shape: 'round',
+      pills: 'soft',
+      frame: false,
+      charts,
+      chartSets: [sea],
+    });
     await handle.store.savePersonal({ language: 'es', haptics: false });
     await settle();
     // the file the browser would download
@@ -1247,13 +1272,22 @@ describe('the settings panel', () => {
       shape: 'round',
       pills: 'soft',
       frame: false,
+      charts,
+      chartSets: [sea],
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
     expect(exported['dashboards']).toEqual({
       'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'] },
     });
     // another house, reset; the file brings it all back
-    await handle.store.saveHouse({ palette: 'linen', shape: 'soft', pills: 'round', frame: true });
+    await handle.store.saveHouse({
+      palette: 'linen',
+      shape: 'soft',
+      pills: 'round',
+      frame: true,
+      charts: CHART_DEFAULTS,
+      chartSets: [],
+    });
     await handle.store.savePersonal({ language: 'auto', haptics: true });
     importSettings(
       panel as unknown as FluvyPanel,
@@ -1269,6 +1303,8 @@ describe('the settings panel', () => {
     });
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().language).toBe('es');
+    expect(handle.settings().charts).toEqual(charts);
+    expect(handle.store.house.chartSets).toEqual([sea]);
     expect(saved.at(-1)?.config).toEqual({
       strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] },
     });

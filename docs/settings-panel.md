@@ -136,6 +136,15 @@ never trusted: a value that does not make sense falls back to its default. A cop
 the browser (`localStorage`, `fluvy:look`) only so that the page paints in the right colours before Home Assistant
 answers.
 
+**Backups.** Because both live in Home Assistant's frontend data, a Home Assistant backup keeps every setting of
+Fluvy's and a restore brings them back: the look and the saved palettes, the statuses' colours, the lights' defaults,
+the wall, the Charts tab (the style, the gauge, every detail, motion) and the house's own series colours. The panel's
+*Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic
+dashboard — and *Import* (an administrator's) reads it back on another house; a file from an earlier version brings
+what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size*, a device's
+wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
+dashboard's configuration, which Home Assistant's backups keep as well.
+
 ## "Everywhere" and the theme
 
 Home Assistant's own pages take Fluvy's design only while the theme Home Assistant wears for that person is **Fluvy**
