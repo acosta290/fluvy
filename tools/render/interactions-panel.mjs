@@ -12,8 +12,11 @@
  * animation. The Charts tab (1.11): it opens after Appearance with every style and gauge drawn as a tile and the
  * preview in both modes; a style tile applies at once and a card on the page that names no style redraws in it; the
  * fine settings show and hide with the style, the waves with a gauge that moves; motion off freezes the preview, the
- * tiles (the moving gauges' too) and the card; a new set of series colours is checked (two a breath apart are said,
- * by name), saved and worn, renamed in its place and let go.
+ * tiles (the moving gauges' too) and the card; a new set of series colours starts on the palette's six, followed, and
+ * is picked from the palette's colours (the picker's groups, each swatch in its token's colour, on one set of columns;
+ * a swatch follows the palette, a hex typed under Custom is fixed, each with its mark), checked (two a breath apart are
+ * said, by name), saved and worn, renamed in its place and let go; a palette chosen recolours a set that follows it
+ * and leaves a set of hexes as it was.
  */
 import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
@@ -467,23 +470,97 @@ const chartsTab = (page) => ({
 }
 
 {
-  // the house's own series colours: made, checked, kept, renamed, let go
+  // the house's own series colours: picked from the palette's (they follow it) or typed (fixed), checked, kept,
+  // renamed, let go
   const page = await suite.page('panel=charts');
   const c = chartsTab(page);
   await c.row('New set…').click();
   await settle(page, 300);
-  const fields = c.editor.locator('.pn-hexes .pn-hex__input');
+  const slots = c.editor.locator('.pn-slot');
+  const swatch = (name) => c.editor.locator(`.pn-dot[aria-label="${name}"]`);
+  const custom = c.editor.locator('.pn-hex__input');
+  const mark = async () => (await c.editor.locator('.pn-mark').textContent()).trim();
+  const slotWords = () => slots.evaluateAll((all) => all.map((s) => s.getAttribute('aria-label')));
   check(
-    'a new set opens on the palette’s six, both modes drawn',
-    (await fields.count()) === 6 &&
+    'a new set opens on the palette’s six, each following the palette, the first being picked; both modes drawn',
+    JSON.stringify(await slotWords()) ===
+      JSON.stringify(
+        [1, 2, 3, 4, 5, 6].map((n) => `Colour ${n}: Series ${n} · Follows the palette`),
+      ) &&
+      (await slots.first().getAttribute('aria-pressed')) === 'true' &&
+      (await mark()) === 'Follows the palette' &&
+      (await swatch('Series 1').getAttribute('aria-pressed')) === 'true' &&
       (await c.editor.locator('.pn-mode svg.fc-chart').count()) === 2 &&
       (await c.editor.locator('.fv-btn', { hasText: 'Save set' }).isDisabled()),
+    JSON.stringify(await slotWords()),
+  );
+  // the picker: the palette's twelve series colours, its accent with the statuses and the lit light, the energy states,
+  // each drawn as the panel's look has it in the mode on screen, every group on the same columns
+  const picker = await c.editor.evaluate((editor) => {
+    const rgb = (hex) =>
+      `rgb(${hex
+        .trim()
+        .slice(1)
+        .match(/../g)
+        .map((h) => parseInt(h, 16))
+        .join(', ')})`;
+    const dots = [...editor.querySelectorAll('.pn-dot')];
+    const token = (dot) => /var\((--fluvy-[\w-]+)\)/.exec(dot.getAttribute('style'))?.[1] ?? '';
+    return {
+      groups: [...editor.querySelectorAll('.pn-label')].map((label) => label.textContent.trim()),
+      count: dots.length,
+      wrong: dots
+        .filter(
+          (dot) =>
+            getComputedStyle(dot).backgroundColor !==
+            rgb(getComputedStyle(dot).getPropertyValue(token(dot))),
+        )
+        .map((dot) => dot.getAttribute('aria-label')),
+      // the columns: a slot, a series colour, a tone and an energy state in the same place
+      columns: [editor.querySelector('.pn-slot'), dots[0], dots[12], dots[18]].map((dot) =>
+        Math.round(dot.getBoundingClientRect().left + dot.offsetWidth / 2),
+      ),
+    };
+  });
+  check(
+    'the picker: twenty-four of the palette’s colours in three groups and Custom, each in its token’s colour, on one set of columns',
+    picker.groups.join() === 'Name,Colours,Series,Tones,Energy,Custom' &&
+      picker.count === 24 &&
+      picker.wrong.length === 0 &&
+      new Set(picker.columns).size === 1,
+    JSON.stringify(picker),
+  );
+  // a swatch picked names the palette's colour; two of the palette's own that sit together are said by their words
+  await slots.nth(1).click();
+  await swatch('Solar').click();
+  await settle(page, 200);
+  const solar = (await slotWords())[1];
+  await swatch('Accent').click();
+  await settle(page, 200);
+  check(
+    'a swatch picked follows the palette, by its name; two of the palette’s own that sit together are said by their words',
+    solar === 'Colour 2: Solar · Follows the palette' &&
+      (await c.editor.locator('.pn-status').textContent()).trim() ===
+        'Series 1 and Accent are too close to tell apart',
+    `${solar} | ${await c.editor.locator('.pn-status').textContent()}`,
+  );
+  // a hex typed under Custom is fixed: its mark says so, and no swatch is picked
+  const type = async (n, colour) => {
+    await slots.nth(n).click();
+    await custom.fill(colour);
+    await custom.press('Enter');
+  };
+  await type(0, '#2563eb');
+  await settle(page, 200);
+  check(
+    'a hex typed under Custom is fixed: its slot carries the lock, its mark says Fixed, no swatch is picked',
+    (await slotWords())[0] === 'Colour 1: #2563eb · Fixed' &&
+      (await mark()) === 'Fixed' &&
+      (await c.editor.locator('.pn-dot.is-active').count()) === 0,
+    `${(await slotWords())[0]} | ${await mark()}`,
   );
   const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
-  for (const [n, colour] of both.entries()) {
-    await fields.nth(n).fill(colour);
-    await fields.nth(n).press('Enter');
-  }
+  for (const [n, colour] of both.entries()) await type(n, colour);
   await settle(page, 200);
   check(
     'six that stand apart and read on either card pass',
@@ -514,10 +591,8 @@ const chartsTab = (page) => ({
       };
       return { light: read('light'), dark: read('dark') };
     });
-  await fields.nth(3).fill('#1e3a8a');
-  await fields.nth(3).press('Enter');
-  await fields.nth(4).fill('#f4e9d0');
-  await fields.nth(4).press('Enter');
+  await type(3, '#1e3a8a');
+  await type(4, '#f4e9d0');
   await settle(page, 200);
   const fitted = await worn();
   check(
@@ -536,13 +611,10 @@ const chartsTab = (page) => ({
       '#2563eb and #1e3a8a are too close to tell apart on a dark card',
     await c.editor.locator('.pn-status').textContent(),
   );
-  await fields.nth(3).fill('#dc2626');
-  await fields.nth(3).press('Enter');
-  await fields.nth(4).fill('#9333ea');
-  await fields.nth(4).press('Enter');
+  await type(3, '#dc2626');
+  await type(4, '#9333ea');
   await settle(page, 200);
-  await fields.nth(1).fill('#2463ea');
-  await fields.nth(1).press('Enter');
+  await type(1, '#2463ea');
   await settle(page, 200);
   check(
     'two colours a breath apart (ΔE under 8): the check says which, and why',
@@ -550,8 +622,7 @@ const chartsTab = (page) => ({
       '#2563eb and #2463ea are too close to tell apart',
     ),
   );
-  await fields.nth(1).fill('#d97706');
-  await fields.nth(1).press('Enter');
+  await type(1, '#d97706');
   await c.editor.locator('.pn-text input').fill('Dusk');
   await settle(page, 200);
   await c.editor.locator('.fv-btn', { hasText: 'Save set' }).click();
@@ -584,6 +655,61 @@ const chartsTab = (page) => ({
       (await c.set('From the palette').getAttribute('aria-pressed')) === 'true' &&
       (await barText(page)) === '',
     await barText(page),
+  );
+  await page.close();
+}
+
+{
+  // the house's sets as a palette is chosen: Garden names the palette's colours, Sea is hexes of its own
+  const page = await suite.page('panel=charts&state=sets');
+  /** A set's picture as drawn, and the colours its tokens are in the look the panel wears. */
+  const pictures = () =>
+    page.locator('fluvy-panel').evaluate((panel) => {
+      const rgb = (hex) =>
+        `rgb(${hex
+          .trim()
+          .slice(1)
+          .match(/../g)
+          .map((h) => parseInt(h, 16))
+          .join(', ')})`;
+      const row = (name) =>
+        [...panel.shadowRoot.querySelectorAll('.pn-set')].find(
+          (set) => set.querySelector('.pn-custom__title').textContent.trim() === name,
+        );
+      const fills = (name) =>
+        [...row(name).querySelectorAll('rect')].map((rect) => getComputedStyle(rect).fill);
+      const style = getComputedStyle(row('Garden'));
+      return {
+        garden: fills('Garden'),
+        sea: fills('Sea'),
+        tokens: [
+          '--fluvy-graph-4',
+          '--fluvy-state-energy-solar',
+          '--fluvy-graph-6',
+          '--fluvy-success',
+          '--fluvy-state-energy-water',
+          '--fluvy-graph-2',
+        ].map((token) => rgb(style.getPropertyValue(token))),
+      };
+    });
+  const linen = await pictures();
+  await page.locator('fluvy-panel #pn-tab-appearance').click();
+  await settle(page, 300);
+  await page
+    .locator('fluvy-panel .pn-swatch')
+    .filter({ has: page.locator('.pn-swatch__label', { hasText: /^Volt$/ }) })
+    .click();
+  await settle(page, 300);
+  await page.locator('fluvy-panel #pn-tab-charts').click();
+  await settle(page, 400);
+  const volt = await pictures();
+  check(
+    'a palette chosen recolours a set that follows it, in that palette’s own colours, and leaves a set of hexes as it was',
+    JSON.stringify(linen.garden) === JSON.stringify(linen.tokens) &&
+      JSON.stringify(volt.garden) === JSON.stringify(volt.tokens) &&
+      linen.garden.every((colour, n) => colour !== volt.garden[n]) &&
+      JSON.stringify(volt.sea) === JSON.stringify(linen.sea),
+    JSON.stringify({ linen, volt }),
   );
   await page.close();
 }

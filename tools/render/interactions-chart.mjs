@@ -24,6 +24,8 @@
  *   gauge card and its ruler on the humidity, and the History page drawn by the engine;
  * - a house's own set of series colours, worn fitted to each mode's card: the arrays' columns and their legend's
  *   squares, a navy as picked on the light card and lifted on the dark one, a cream the other way round;
+ * - a house's set that names the palette's colours follows the palette: the arrays wear Sage's on Sage and Volt's on
+ *   Volt (`?palette=`), the columns and their squares;
  * - no flash, on the built bundle with the engine's chunk 1.5 s late: one skeleton, then the curve, drawn once.
  */
 import { createServer } from 'node:http';
@@ -633,6 +635,66 @@ for (const mode of ['light', 'dark']) {
         JSON.stringify(worn[mode].columns.map((c) => c.colour)),
     ),
     JSON.stringify({ light: light.squares, dark: dark.squares }),
+  );
+}
+
+/* ---------- a house's set that names the palette's colours follows the palette ---------- */
+{
+  // the two arrays wear the palette's third series colour and its solar, whatever the palette is
+  const TOKENS = ['--fluvy-graph-3', '--fluvy-state-energy-solar'];
+  const charts = {
+    style: 'columns',
+    series: 'ours',
+    sets: [
+      {
+        id: 'ours',
+        name: 'Ours',
+        colours: ['graph-3', 'solar', 'graph-1', 'graph-2', 'graph-4', 'graph-5'],
+      },
+    ],
+  };
+  const worn = {};
+  for (const palette of ['sage', 'volt']) {
+    const page = await suite.sheet('arrays', {
+      extra: `&palette=${palette}&charts=${encodeURIComponent(JSON.stringify(charts))}`,
+    });
+    worn[palette] = await frame(page, 'Two arrays')
+      .locator('fluvy-production-card')
+      .first()
+      .evaluate((card, tokens) => {
+        // the page's look says what each token is: its hex as the browser writes a colour
+        const rgb = (hex) =>
+          `rgb(${hex
+            .trim()
+            .slice(1)
+            .match(/../g)
+            .map((h) => parseInt(h, 16))
+            .join(', ')})`;
+        const style = getComputedStyle(card);
+        const root = card.shadowRoot;
+        const columns = [];
+        for (const bar of root.querySelectorAll('.pr-chart .fc-bar:not(.fc-bar--hollow)')) {
+          const fill = getComputedStyle(bar).fill;
+          if (!columns.includes(fill)) columns.push(fill);
+        }
+        return {
+          tokens: tokens.map((token) => rgb(style.getPropertyValue(token))),
+          columns,
+          squares: [...root.querySelectorAll('.pr-legend .en-sq')].map(
+            (square) => getComputedStyle(square).backgroundColor,
+          ),
+        };
+      }, TOKENS);
+    await page.close();
+  }
+  check(
+    'a house’s set that names the palette’s colours wears each palette’s own: Sage’s on Sage, Volt’s on Volt, the columns and their squares',
+    ['sage', 'volt'].every(
+      (palette) =>
+        JSON.stringify(worn[palette].columns) === JSON.stringify(worn[palette].tokens) &&
+        JSON.stringify(worn[palette].squares) === JSON.stringify(worn[palette].tokens),
+    ) && worn.sage.tokens.every((colour, n) => colour !== worn.volt.tokens[n]),
+    JSON.stringify(worn),
   );
 }
 
