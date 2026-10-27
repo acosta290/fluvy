@@ -75,7 +75,10 @@ grid by phase, batteries, a car charger, where a day's energy went (a sankey), t
 power by source, the whole house on one chart with its batteries' charge (a power scale and gridlines on both), solar
 by array, consumption by device, gauges for anything, and a sensor's last days, weeks or months as bars from its
 long-term statistics — a counter read by its own readings when Home Assistant's sum is not the truth, today live.
-[How they read a house](docs/energy.md).
+An Energy period strip is the Energy dashboard's date picker: the energy cards that follow it — Fluvy's and Home
+Assistant's — move together to a day, a week, a month or a year, with Home Assistant's own figures, and the Energy
+usage card draws them as its usage graph, a column an hour, a day or a month. Every figure in the unit and the
+decimals you ask for. [How they read a house](docs/energy.md).
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="The energy cards: the flow of a three-phase house and the flow as a cross, the balance, the grid by phase, two batteries, a car charger, where the day's energy went and the energy score">
@@ -89,10 +92,19 @@ one chart.
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-sensors.png" width="960" alt="Security and sensor cards: a lock, an alarm, a camera, openings and motion, humidity, plants, a solar gauge and sensor tiles">
 </p>
 
+**Charts** — every chart and gauge drawn by one engine, in a style the house chooses once (`classic`, the chart
+Fluvy always drew, or `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`) or a card chooses for itself; a
+gauge read as Fluvy's own dial, ring or ruler, or moving with what it reads — a liquid, the sky over the ground, a
+tank, a battery, a pulse, the air, the sun. The Chart card draws any time series from what has happened to what is to
+come — a sensor's history, tomorrow's electricity prices, a solar forecast — with thresholds in their colours and the
+cheapest hours marked.
+
 **Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
 timeline, upcoming), clocks (analog, digital, world), readouts and trends, safety, helpers, updates, timers, to-do
 lists, and the house's automations: every one as a row with its switch and last run, and schedules written in a
-sheet as native Home Assistant automations — for the whole house, or for the one lamp a popup is about.
+sheet as native Home Assistant automations — for the whole house, or for the one lamp a popup is about. A web page on
+a plate (a map, a site of your own), and the items of a sensor's list as rows — the flights overhead, a departures
+board — each with a sheet of its details.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-home.png" width="960" alt="Home, time and helper cards">
@@ -125,8 +137,9 @@ the house wants them; a switch gives Home Assistant's pages back.
 ## The settings panel
 
 **Fluvy** in the sidebar: fifteen palettes in a pastel and an electric line, or your own accent with every
-contrast checked; three shapes; where the look applies; the automatic dashboard; and each person's own
-preferences — language, motion, haptics, a palette of their own. Changes apply live on every device, no reload.
+contrast checked; three shapes; how every chart and gauge is drawn, with the series' colours; where the look
+applies; the automatic dashboard; and each person's own preferences — language, motion, haptics, a palette of their
+own. Changes apply live on every device, no reload.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="720" alt="The Appearance tab: two presets tried, a custom accent picked, the look applied to the house">
@@ -159,9 +172,13 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with.
 - **Sixty-two cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
-  own (Home Assistant templates, a Mushroom template card pasted in) and a Cameras card for every camera at a glance.
+  own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
+  a Chart card for any time series, from a sensor's history to tomorrow's prices.
+- **Charts in a style of the house's**: classic, soft, glow, minimal, step, bars, columns or band, chosen once in the
+  settings panel or per card, and gauges that move with what they read.
 - **Energy as your meters read it**: a house that imports and exports at once shows both, per phase; with nothing
-  configured the cards read the Energy dashboard, and a day, a week or a month add up to its own figures.
+  configured the cards read the Energy dashboard, and a day, a week or a month add up to its own figures — or
+  follow its date picker, beside Home Assistant's own cards.
 - **Five automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall.
 - **Wall mode** for a tablet: no sidebar, no header, a screensaver with the clock, dark at night, the screen kept
   awake — `?kiosk` on the dashboard's address and the tablet remembers, a × in the corner is the way out.
@@ -209,6 +226,7 @@ exactly what to add or remove.
 Open **Fluvy** in the sidebar.
 
 - **Appearance** — the palette, the shape and the buttons, for the house; each person can keep their own.
+- **Charts** — the style every chart is drawn in, the gauge, the series' colours and motion, for the house.
 - **Scope** — where the look applies: your dashboards only, or everywhere in Home Assistant; whether the frame,
   the icons and the pages are Fluvy's.
 - **Dashboards** — create any of the five automatic dashboards with one tap and set its options, or add a

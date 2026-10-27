@@ -391,6 +391,36 @@ camera_view: live
 max_live: 2
 ```
 
+## Alerts
+
+The alerts card gathers what needs a look. Each alert is one line — a `preset` (`low_battery`, `unavailable`, `open`,
+`unlocked`, `hazards`, `errors`, `updates`, `lights_on`, `ha_alerts`, `repairs`) or a matcher of your own (ids,
+`entity_id` patterns, `domain`, `device_class`, `integration`, `area`, `floor`, `label`, `device`, `state`, `above`,
+`below`, `attribute`, `for`…) — and one definition drives its count, its list in the sheet and its buttons. A preset
+waits where a moment is no news — `unavailable` and `open` five minutes, `unlocked` ten — and `for` says otherwise
+(`for: 0` shows it at once). Alerts are ordered by `severity` (critical, warning, info; info in the palette's accent,
+or its blue where the accent is warm enough to pass for a warning), an alert can `escalate` after a while or past a
+count, and `conditions` take Home Assistant's own visibility shapes. `variant` draws them as `tiles` (the default),
+`mini`, `chips`, `rows` under a head, or a `banner` that turns through them; the card hides itself while all is clear
+(`hide_empty: false` keeps an "All clear" tile). A tap opens the alert's sheet — each entity with its state, where
+and how long, a button of its own (Lock, Close, Install, Dock, Acknowledge) and the alert's (Lock all, asked first) —
+and Snooze (an hour, eight, until tomorrow morning, until it changes; the snooze follows you to every device, or
+stays on this device with `snooze: device`); a long press opens every alert, the snoozed ones with Wake. Home
+Assistant's repairs (for administrators) and its `alert` entities are alerts too.
+
+```yaml
+type: custom:fluvy-alerts-card
+alerts:
+  - preset: unavailable
+    domain: light
+    name: Lights unavailable
+  - preset: low_battery
+  - preset: open
+    for: { minutes: 15 }
+  - preset: errors
+  - preset: updates
+```
+
 ## Items
 
 The items card lists the items of a sensor's list attribute (#66) — the aircraft a FlightRadar24 sensor keeps in
@@ -436,36 +466,6 @@ item_value: due
 item_unit: min
 sort: due
 variant: compact
-```
-
-## Alerts
-
-The alerts card gathers what needs a look. Each alert is one line — a `preset` (`low_battery`, `unavailable`, `open`,
-`unlocked`, `hazards`, `errors`, `updates`, `lights_on`, `ha_alerts`, `repairs`) or a matcher of your own (ids,
-`entity_id` patterns, `domain`, `device_class`, `integration`, `area`, `floor`, `label`, `device`, `state`, `above`,
-`below`, `attribute`, `for`…) — and one definition drives its count, its list in the sheet and its buttons. A preset
-waits where a moment is no news — `unavailable` and `open` five minutes, `unlocked` ten — and `for` says otherwise
-(`for: 0` shows it at once). Alerts are ordered by `severity` (critical, warning, info; info in the palette's accent,
-or its blue where the accent is warm enough to pass for a warning), an alert can `escalate` after a while or past a
-count, and `conditions` take Home Assistant's own visibility shapes. `variant` draws them as `tiles` (the default),
-`mini`, `chips`, `rows` under a head, or a `banner` that turns through them; the card hides itself while all is clear
-(`hide_empty: false` keeps an "All clear" tile). A tap opens the alert's sheet — each entity with its state, where
-and how long, a button of its own (Lock, Close, Install, Dock, Acknowledge) and the alert's (Lock all, asked first) —
-and Snooze (an hour, eight, until tomorrow morning, until it changes; the snooze follows you to every device, or
-stays on this device with `snooze: device`); a long press opens every alert, the snoozed ones with Wake. Home
-Assistant's repairs (for administrators) and its `alert` entities are alerts too.
-
-```yaml
-type: custom:fluvy-alerts-card
-alerts:
-  - preset: unavailable
-    domain: light
-    name: Lights unavailable
-  - preset: low_battery
-  - preset: open
-    for: { minutes: 15 }
-  - preset: errors
-  - preset: updates
 ```
 
 ## Web page

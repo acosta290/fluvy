@@ -48,22 +48,20 @@ period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashb
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
-card import it from their own chunks), the weather, template, Energy period, web page, items and chart cards and the
-media, energy, devices,
-appliances, automations and alerts families (fetched as the bundle starts: their cards are announced in core —
-`src/energy-family.ts` and its siblings, their names and heights — and defined as `src/energy-cards.ts` and its
-siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
-first card that reads a counter by them), the appliances' pictures (the first card that draws one), the schedule
-sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the light card's colour
-controls (the first colour bulb), the cards' visual editor and the forms of the cards every page carries (when a card
-is edited), the icon set's other part (the first time Home Assistant asks for one of its icons) and a language's
-catalogue (English's core part ships in core; a lazy family's English part travels with the family's chunk,
-registered as it lands).
-`packages/bundle/groups.mjs` says which chunk each module goes to; a family's group names its English part, or core
-keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes `manifest.json` with every file's
-size and hash and a **build stamp**, and fails the build when the initial set goes over **236 KB gzip** or carries a
-family's English; `tools/release/check.mjs --release` holds every chunk to its own budget (`BUDGETS`; the facts guard
-in `tools/docs` holds this table to it):
+card import it from their own chunks), the weather, template, Energy period and usage, web page, items and chart cards
+and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards
+are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
+`src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
+history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
+draws one), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the
+light card's colour controls (the first colour bulb), the cards' visual editor and the forms of the cards every page
+carries (when a card is edited), the icon set's other part (the first time Home Assistant asks for one of its icons)
+and a language's catalogue (English's core part ships in core; a lazy family's English part travels with the family's
+chunk, registered as it lands). `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group
+names its English part, or core keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
+`manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
+over **236 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
+budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 
 | Script | Budget (gzip) | What it is |
 | --- | --- | --- |
@@ -73,9 +71,9 @@ in `tools/docs` holds this table to it):
 | `strategy` | 24 KB | the automatic dashboards |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
-| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the styles, their sheet, a house's series colours fitted to each mode |
+| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
 | `chart-card` | 16 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
-| `energy-period` | 16 KB | the Energy period card: the strip, its picker and its sheet |
+| `energy-period` | 16 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
 | `energy` | 80 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
