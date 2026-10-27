@@ -37,11 +37,12 @@ describe('the settings panel’s drawings', () => {
   it('draws a gauge’s tile in its style', () => {
     const ring = host(previewGauge('ring', {}, { size: 96, format: String, small: true }));
     expect(ring.querySelector('.fc-gauge__value b')?.textContent).toBe('62');
-    expect(
-      host(previewGauge('ruler', {}, { size: 96, format: String, small: true })).querySelector(
-        'fluvy-ruler',
-      ),
-    ).not.toBeNull();
+    // the ruler over its reading, as the dial and the ring hold theirs
+    const ruler = host(previewGauge('ruler', {}, { size: 96, format: String, small: true }));
+    expect(ruler.querySelector('.fc-gauge--ruler > fluvy-ruler + .fc-reading')).not.toBeNull();
+    expect(ruler.querySelector('.fc-reading__figure')?.textContent?.replace(/\s+/g, '')).toBe(
+      '62%',
+    );
   });
 
   it('draws a moving gauge’s tile on a reading of its kind, moving, in its own tone', () => {

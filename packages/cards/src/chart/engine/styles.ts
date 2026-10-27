@@ -361,6 +361,16 @@ export const chartStyles = css`
     font-size: 22px;
     line-height: 28px;
   }
+  /* the ruler over its reading, centred, as a mark's: 12 between them, a tile's 8 */
+  .fc-gauge--ruler {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .fc-gauge--ruler.fc-gauge--small {
+    gap: 8px;
+  }
 
   /* ---------- the moving gauges: a scene in the gauge's room, its reading by rule ---------- */
   .fc-scene {

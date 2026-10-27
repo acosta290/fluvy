@@ -2,7 +2,7 @@ import type { HomeAssistant } from '@fluvy/core';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { GAUGE_PRESETS, type Reads, type ResolvedGauge } from './presets.js';
 import { arcDash, knobAt } from './ring.js';
-import { drawScene } from './scenes.js';
+import { drawScene, fitReading, reading } from './scenes.js';
 
 /**
  * The gauges (the owner's call, 2026-10-26: no circles of the engine's own): the still ones are Fluvy's controls read.
@@ -10,10 +10,10 @@ import { drawScene } from './scenes.js';
  * in its opening); `dial` the thermostat's dial read (`<fluvy-dial readonly>`: the ticks, its disc with the reading,
  * its knob on the value — in a tile a knob its ring can carry, touching the disc's rim as the thermostat's does);
  * `ring` a ring of the border lit to the value in the tone, Fluvy's knob at its end and the reading in its middle;
- * `ruler` the ruler read (`<fluvy-ruler readonly>`, lit to the value, its knob whole). Every knob is the
- * thermostat's ball, its dot and its lift on its halo. The gauges that move with what they read (`GAUGE_PRESETS` says
- * which) are scenes in the gauge's room (`scenes.ts`), still on their first frame when the house or the card says
- * `animate: false` or the system asks for less motion.
+ * `ruler` the ruler read (`<fluvy-ruler readonly>`, lit to the value, its knob whole, its reading under it). Every
+ * knob is the thermostat's ball, its dot and its lift on its halo. The gauges that move with what they read
+ * (`GAUGE_PRESETS` says which) are scenes in the gauge's room (`scenes.ts`), still on their first frame when the house
+ * or the card says `animate: false` or the system asks for less motion.
  */
 
 const px = (n: number): string => n.toFixed(2);
@@ -135,10 +135,13 @@ function ring(o: GaugeOptions): TemplateResult {
   </div>`;
 }
 
-/** The ruler read: lit to the value, its knob whole on it. */
+/**
+ * The ruler read: lit to the value, its knob whole on it, and its reading under it, centred, as a mark's is (the
+ * drawing alone where the card writes the reading itself: `bare`).
+ */
 function ruler(o: GaugeOptions): TemplateResult {
   const f = share(o);
-  return html`<fluvy-ruler
+  const control = html`<fluvy-ruler
     readonly
     .length=${o.size}
     .min=${o.min}
@@ -150,6 +153,21 @@ function ruler(o: GaugeOptions): TemplateResult {
     .label=${o.label ?? ''}
     .format=${o.format}
   ></fluvy-ruler>`;
+  if (o.bare) return control;
+  const read =
+    f === null
+      ? fitReading('—', '', '', o.size, Infinity, o.small === true)
+      : fitReading(
+          o.format(o.value as number),
+          o.unit ?? '',
+          '',
+          o.size,
+          Infinity,
+          o.small === true,
+        );
+  return html`<div class="fc-gauge fc-gauge--ruler ${o.small ? 'fc-gauge--small' : ''}">
+    ${control}${reading(read)}
+  </div>`;
 }
 
 /**

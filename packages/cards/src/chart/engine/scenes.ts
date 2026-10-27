@@ -111,7 +111,7 @@ export function fitReading(
 }
 
 /** The reading drawn: placed in a box (`at`, white in the water), or in the flow under a mark, centred. */
-function reading(r: Reading, at?: { x: number; y: number; wet?: boolean }): TemplateResult {
+export function reading(r: Reading, at?: { x: number; y: number; wet?: boolean }): TemplateResult {
   return html`<div
     class="fc-reading fc-reading--${r.size} ${at ? '' : 'fc-reading--under'} ${at?.wet ? 'is-wet' : ''}"
     style=${at ? `left:${at.x}px;top:${at.y}px` : ''}
