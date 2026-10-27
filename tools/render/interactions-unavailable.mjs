@@ -74,8 +74,8 @@ const DECLARED = 8;
  * Where a card's twins come from: its stub (`'stub'`, in the house of every sheet), and where the stub leaves out what
  * the card is for — a cover without a position, a player with nothing playing, a calendar without events, a list of
  * the Energy dashboard's — or misses a case worth its own twins (the owner's switch with its readouts beside a lamp's
- * ruler), a playground frame's config: [sheet, frame title, index of the card in the frame], in that sheet's house.
- * A card not named here is drawn from its stub alone.
+ * ruler), a playground frame's config: [sheet, frame title, index of the card in the frame], in that sheet's house —
+ * at half a section where the frame asks for it (`cols` 6 or fewer). A card not named here is drawn from its stub alone.
  */
 const SOURCES = {
   'fluvy-tile-card': ['stub', ['actions', 'Tile · large', 0]],
@@ -115,6 +115,8 @@ const SOURCES = {
   'fluvy-items-card': [['items', 'Items · flights', 0]],
   // its stub reads the first price list of the house; the issue's card: Nordpool stepped, its thresholds, its windows
   'fluvy-chart-card': ['stub', ['chart', 'Chart · Nordpool', 0]],
+  // a moving gauge in a half card: its window's row one a row, whatever its figures say
+  'fluvy-gauge-card': ['stub', ['animated', 'Moving · tiles', 0]],
 };
 
 /**
@@ -193,11 +195,14 @@ const plan = (page, tag, source) =>
       const card = window.customElements.get(tag);
       const hass = window.fluvyMock.hass();
       let base;
+      // the columns a frame asks for its card (half a section at 6 or fewer)
+      let asked;
       try {
         if (source) {
           const [sheet, title, index] = source;
           const frame = window.fluvySheets[sheet]?.frames.find((f) => f.title === title);
           // its own columns stay its frame's: the twins are given theirs
+          asked = frame?.cards[index]?.cols;
           const config = Object.fromEntries(
             Object.entries(frame?.cards[index] ?? {}).filter(([key]) => key !== 'cols'),
           );
@@ -238,7 +243,7 @@ const plan = (page, tag, source) =>
           } catch {
             // a card that cannot say takes the section
           }
-          const half = typeof columns === 'number' && columns <= 6;
+          const half = (typeof columns === 'number' && columns <= 6) || asked <= 6;
           return { variant, config, half, widths: half ? HALF : FULL };
         }),
       };

@@ -142,6 +142,20 @@ describe('the ring’s moving gauges', () => {
     expect(root.querySelector('.so-gauge > fluvy-dial')?.hasAttribute('gauge')).toBe(true);
   });
 
+  it('lays its window’s row one a row in a half card, live or out of reach: the figures never set its height', async () => {
+    const columns = async (state: string, width: number): Promise<string | undefined> => {
+      const card = await mount({ variant: 'ring', gauge: 'pulse' }, house(undefined, state));
+      (card as unknown as { width: number }).width = width;
+      await card.updateComplete;
+      return card.shadowRoot!.querySelector<HTMLElement>('.so-cols')?.style.gridTemplateColumns;
+    };
+    for (const state of ['2308', 'unavailable'])
+      expect([await columns(state, 152), await columns(state, 172)]).toEqual([
+        'repeat(1, minmax(0, 1fr))',
+        'repeat(1, minmax(0, 1fr))',
+      ]);
+  });
+
   it('rests on its first frame where the card says so', async () => {
     const root = (await mount({ variant: 'ring', gauge: 'sun', animate: false }, house()))
       .shadowRoot!;

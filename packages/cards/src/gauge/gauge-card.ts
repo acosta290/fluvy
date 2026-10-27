@@ -30,7 +30,8 @@ import { ChartLoader } from '../shared/chart-load.js';
 import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
-import { statsRow } from '../shared/readouts.js';
+import type { TextRuler } from '../shared/fit.js';
+import { statsRow, statsSize, type StatsRow, type StatText } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
 import {
@@ -103,6 +104,16 @@ const TICK = 12;
 /** The history cache in core lives five minutes; asking again sooner would only return the same window. */
 /** Below this share of the range the source is resting: the badge says so and the head goes neutral. */
 const IDLE = 0.02;
+
+/**
+ * The window's row (min, max, average) in a half card (under 171 of content): one a row, whatever its figures say —
+ * they come and go with the recorder (out of reach and unrecorded, "—"), and the card keeps its height through them
+ * (the owner's rule); from the full card's floor, as many columns as hold its labels and figures (`statsRow`).
+ */
+const windowRow = (ruler: TextRuler, width: number, stats: readonly StatText[]): StatsRow =>
+  width < 171
+    ? { columns: 1, size: statsSize(ruler, width, stats, 1), odd: false }
+    : statsRow(ruler, width, stats);
 
 type LabelKey =
   'energy' | 'temperature' | 'pressure' | 'speed' | 'illuminance' | 'current' | 'voltage';
@@ -389,7 +400,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       value: raw === undefined ? '—' : shown(raw * base.value),
       unit: raw === undefined ? '' : scale.unit,
     }));
-    const row = statsRow(this.head.ruler, width, stats);
+    const row = windowRow(this.head.ruler, width, stats);
     const fitted = this.head.fit({
       width,
       title: name,
@@ -657,7 +668,7 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const labelFits = r.width('en-gauge__label', label) <= room;
 
     // the directions make the figures long: as many columns as hold them and their labels, two and one before one a line
-    const row = statsRow(this.head.ruler, width, stats);
+    const row = windowRow(this.head.ruler, width, stats);
     const fitted = this.head.fit({
       width,
       title: name,

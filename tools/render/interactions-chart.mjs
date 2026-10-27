@@ -18,7 +18,8 @@
  * - the moving gauges (the `animated` sheet) in both modes: each runs, on transform, opacity and the dash offset only
  *   and unfiltered; nothing leaves its box; its reading inside it, never across the waterline or any sweep of the
  *   weather, a mark's centred under it; out of reach, told not to move, under the house's motion off and under reduced
- *   motion every one rests on its first frame (the liquid still a wave);
+ *   motion every one rests on its first frame (the liquid still a wave); in a half card (152, 172) each as tall as
+ *   its twin out of reach;
  * - the cards that take the styles, on their own sheets under the house's soft in both modes: every rule above held
  *   (the energy line, a production day), a stacked chart's hairlines and lighter fills, the distribution's pills and
  *   the bars' deepening ink, the history bars and the arrays classic (soft is not theirs), the house's ring on the
@@ -888,6 +889,30 @@ for (const mode of ['light', 'dark']) {
     );
     await page.close();
   }
+  // out of reach keeps its size in a half card (the owner's rule): each tile as tall as its twin out of reach and
+  // unrecorded, its window's row one a row whatever its figures say
+  const twins = [];
+  for (const width of [152, 172]) {
+    const page = await suite.sheet('animated', { width: 2 * width + 16 });
+    const heights = (title) =>
+      frame(page, title)
+        .locator('fluvy-gauge-card')
+        .evaluateAll((cards) =>
+          cards.map((card) =>
+            Math.round(card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height),
+          ),
+        );
+    const live = await heights('Moving · tiles');
+    const away = await heights('Moving · out of reach');
+    if (live.length < 7 || live.some((h, i) => h !== away[i]))
+      twins.push(`${width}: ${live.join(' ')} · out of reach ${away.join(' ')}`);
+    await page.close();
+  }
+  check(
+    'in a half card (152, 172) each moving gauge is as tall as its twin out of reach',
+    twins.length === 0,
+    twins.join(' | '),
+  );
   // the house's motion off, and a system that asks for less: every gauge on its first frame
   const off = await suite.sheet('animated', {
     extra: `&charts=${encodeURIComponent(JSON.stringify({ animate: false }))}`,
