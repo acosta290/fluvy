@@ -58,7 +58,10 @@ export interface ChartSpec {
    * always stand on it.
    */
   readonly zero?: boolean;
-  /** What else a nice scale must reach: the readings of lines drawn over these bars on the same scale. */
+  /**
+   * What else a nice scale must reach: what the card draws on the same scale beside the series (the readings of lines
+   * drawn over these bars, the period before as ghost columns under them).
+   */
   readonly reach?: readonly number[];
   /** The fraction of the plot's width the series covers: a day's axis at 21:47 → 0.908. */
   readonly extent?: number;
@@ -433,7 +436,11 @@ function litBars(spec: ChartSpec, laid: Laid): (slot: number) => boolean {
     (pick === 'current' && slot === current);
 }
 
-/** The bars of one or several series, clipped to the plot: the classic gradient, the ink, the quiet ones, the forecast hollow. */
+/**
+ * The bars of one or several series, clipped to the plot: the classic gradient, the ink, the quiet ones, the forecast
+ * hollow. A bar that hangs from the zero line says so in its class (`fc-bar--hanging`), for a card that draws what went
+ * out apart from what came in.
+ */
 function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTemplateResult {
   const { style } = spec;
   const lit = litBars(spec, laid);
@@ -446,7 +453,7 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
   }${drawn.map((c) => {
     const hollow = laid.nowIndex !== null && c.slot > laid.nowIndex;
     const quiet = !hollow && highlights && !lit(c.slot);
-    const bar = svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`;
+    const bar = svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''} ${c.sign < 0 ? 'fc-bar--hanging' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`;
     // a bar over a threshold wears its ink
     const over = thresholdAt(spec, c.value);
     return over ? painted(seriesPaint(over.colour), bar) : group(spec, c.series, bar);

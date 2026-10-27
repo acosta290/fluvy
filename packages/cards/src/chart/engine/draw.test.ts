@@ -179,6 +179,19 @@ describe('bars', () => {
     expect([...drawing.querySelectorAll('.fc-value')].map((t) => t.textContent)).toEqual(['24.6']);
     expect(drawing.querySelector('.fc-max__word')?.textContent).toBe('MAX');
   });
+
+  it('stack by sign in columns, a hanging part saying so, on a scale that reaches what the card draws beside them', () => {
+    const columns = spec('columns', {
+      series: [{ values: [2, 3] }, { values: [1, 0] }, { values: [-1.5, -0.5] }],
+      kind: 'bars',
+    });
+    const drawing = host(drawChart(columns));
+    expect(drawing.querySelectorAll('.fc-bar').length).toBe(5);
+    expect(drawing.querySelectorAll('.fc-bar--hanging').length).toBe(2);
+    // the stacks reach 3 and −1.5: −2 … 4 by 2; the period before beside them reaches 7 and −3: −5 … 10 by 5
+    expect(plotOf(columns).ticks?.ticks).toEqual([-2, 0, 2, 4]);
+    expect(plotOf({ ...columns, reach: [7, -3] }).ticks?.ticks).toEqual([-5, 0, 5, 10]);
+  });
 });
 
 describe('a chart of its series’ own (the Chart card’s)', () => {
