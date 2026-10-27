@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { preloadLanguages, type HomeAssistant } from '@fluvy/core';
 import { render, type TemplateResult } from 'lit';
 import { describe, expect, it } from 'vitest';
 
@@ -53,6 +54,34 @@ describe('the settings panel’s drawings', () => {
     expect(tile('tank').querySelectorAll('.fc-bubble').length).toBeGreaterThan(0);
     expect(tile('pulse').classList.contains('fv-tone--accent')).toBe(true);
     expect(tile('pulse').classList.contains('is-still')).toBe(false);
+  });
+
+  it('says a moving gauge’s words in the panel’s language', async () => {
+    await preloadLanguages();
+    const said = (preset: 'battery' | 'air', language: string) =>
+      host(
+        previewGauge(
+          preset,
+          {},
+          {
+            size: 120,
+            format: String,
+            small: true,
+            hass: { language } as HomeAssistant,
+          },
+        ),
+      ).querySelector('.fc-reading__word')?.textContent;
+    expect([said('battery', 'en'), said('air', 'en')]).toEqual(['Charging', 'Breeze']);
+    expect([said('battery', 'de'), said('air', 'de')]).toEqual(['Lädt', 'Brise']);
+    expect([said('battery', 'ja'), said('air', 'ja')]).toEqual(['充電中', 'そよ風']);
+    // and the preview's gauge with them
+    const air = host(
+      previewChart(
+        { gauge: 'air' },
+        { mode: 'light', width: 200, format: String, hass: { language: 'de' } as HomeAssistant },
+      ),
+    );
+    expect(air.querySelector('.fc-preview__gauge .fc-reading__word')?.textContent).toBe('Brise');
   });
 
   it('previews a chart, its bars and the house’s gauge in one mode, the bubble where the style shows one', () => {

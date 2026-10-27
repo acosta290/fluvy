@@ -3,6 +3,7 @@ import {
   type ChartPreset,
   type ChartSettings,
   type GaugePreset,
+  type HomeAssistant,
 } from '@fluvy/core';
 import type { PaletteMode } from '@fluvy/tokens/runtime';
 import { html, type TemplateResult } from 'lit';
@@ -87,6 +88,8 @@ export interface GaugePreviewOptions {
   readonly format: (value: number) => string;
   /** A tile's drawing (the small dial, a thinner ring), or the preview's. */
   readonly small: boolean;
+  /** The house, for the words a moving gauge says (charging, a breeze) in the panel's language. */
+  readonly hass?: HomeAssistant | undefined;
 }
 
 /**
@@ -119,6 +122,7 @@ export function previewGauge(
     unit: '%',
     tone: style.tone ?? 'accent',
     small: o.small,
+    hass: o.hass,
     ...SAMPLES[style.preset],
   });
 }
@@ -131,6 +135,8 @@ export interface ChartPreviewOptions {
   readonly format: (value: number) => string;
   /** The page's face, for the bubble's width. */
   readonly family?: string;
+  /** The house, for the gauge's words in the panel's language. */
+  readonly hass?: HomeAssistant | undefined;
 }
 
 /**
@@ -174,6 +180,7 @@ export function previewChart(
         size: gauge === 'ruler' ? o.width : Math.min(112, o.width),
         format: o.format,
         small: true,
+        hass: o.hass,
       })}
     </div>
   </div>`;

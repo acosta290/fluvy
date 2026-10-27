@@ -160,6 +160,7 @@ function gaugeCard(ctx: PanelContext): TemplateResult {
             size: preset === 'ruler' ? width : Math.min(width, GAUGE_SIZE),
             format: formatter(ctx),
             small: true,
+            hass: ctx.hass,
           }),
       })),
       ctx.admin ? (key) => ctx.editCharts({ gauge: key as GaugePreset }) : null,
@@ -555,7 +556,12 @@ export function chartsPreview(ctx: PanelContext, width: number | undefined): Tem
   return html`<section class="fv-card pn-card pn-card--preview">
     ${head({ icon: 'eye', title: ctx.t('preview.title'), sub: ctx.t('charts.preview_sub') })}
     ${modes(ctx, width, (mode, inner) =>
-      previewChart(ctx.shown.charts, { mode, width: inner, format: formatter(ctx) }),
+      previewChart(ctx.shown.charts, {
+        mode,
+        width: inner,
+        format: formatter(ctx),
+        hass: ctx.hass,
+      }),
     )}
   </section>`;
 }

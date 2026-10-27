@@ -17,7 +17,7 @@
  * a swatch follows the palette, a hex typed under Custom is fixed, each with its mark), checked (two a breath apart are
  * said, by name), saved and worn, renamed in its place and let go; a palette chosen recolours a set that follows it
  * and leaves a set of hexes as it was; at a 320 phone, in every language, the sets and the editor's dots stay in their
- * cards and the page does not scroll sideways.
+ * cards and the page does not scroll sideways; the moving gauges' tiles say their words in the panel's language.
  */
 import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
@@ -756,6 +756,29 @@ const chartsTab = (page) => ({
     wrong.length === 0,
     wrong.join(' | '),
   );
+}
+
+{
+  // the gauges that move say their words on their tiles in the panel's language, never English under another
+  const said = async (lang) => {
+    const page = await suite.page(`panel=charts&lang=${lang}`);
+    const words = await page
+      .locator('fluvy-panel .pn-art--gauge .fc-reading__word')
+      .evaluateAll((all) => all.map((word) => word.textContent.trim()));
+    await page.close();
+    return words;
+  };
+  const english = await said('en');
+  for (const lang of ['de', 'ja']) {
+    const words = await said(lang);
+    check(
+      `the moving gauges’ tiles speak ${lang}: ${words.join(' · ')}`,
+      english.length >= 2 &&
+        words.length >= english.length &&
+        words.every((word) => !english.includes(word)),
+      `${JSON.stringify(english)} → ${JSON.stringify(words)}`,
+    );
+  }
 }
 
 /* ---------- reduced motion ---------- */
