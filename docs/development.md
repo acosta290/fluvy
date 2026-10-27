@@ -72,7 +72,7 @@ in `tools/docs` holds this table to it):
 | `strategy` | 24 KB | the automatic dashboards |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
-| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the styles, their sheet |
+| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the styles, their sheet, a house's series colours fitted to each mode |
 | `energy-period` | 16 KB | the Energy period card: the strip, its picker and its sheet |
 | `energy` | 80 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |

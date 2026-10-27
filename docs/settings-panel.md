@@ -82,7 +82,7 @@ style is **Classic**, the chart every card drew before 1.11: nothing changes on 
 | **Now** | Knob · Line | where the past meets the forecast: the knob on the line over a hairline, or the hairline alone |
 | **Bars' ends** | Both · Top | a bar rounded at both ends, or only away from its axis |
 | **Bubble** | Dark · In the series' colour | the value's bubble over a chart |
-| **Series colours** | From the palette · a saved set | the six colours of a chart's several series: the palette's (`--fluvy-graph-1…6`) or a set of six of the house's own, checked like the palette's (two closer than ΔE 8, or one too faint on the card, are said) |
+| **Series colours** | From the palette · a saved set | the six colours of a chart's several series: the palette's (`--fluvy-graph-1…6`) or a set of six of the house's own, its hues kept and each mode wearing it fitted to its card as the palette's are built (two still closer than ΔE 8 are said) |
 | **Waves** | Medium · Low · High | how tall a moving gauge's waves stand (4, 7 or 10 px); offered once a gauge that moves is chosen |
 | **Motion** | On · Off | whether a chart draws itself in; a card's `animate` wins, and the system's reduced motion always holds |
 
@@ -114,13 +114,16 @@ Soft"); Discard puts the saved ones back.
   A style's bars' ends count wherever a card of slots (the history bars) draws it; the bubble is every style's while a
   chart is read.
 - **Series colours**: the palette's six (its swatches as the look being chosen derives them, in the mode on screen),
-  then the house's own sets; a tap wears one. **New set…** opens six colour fields on the palette's six — each typed
-  as a hex or picked from the system's picker — and checks them as the palette's own are built: two closer than 8
-  (ΔE2000) are named ("#2563eb and #2463ea are too close to tell apart"), and so is a colour under 3:1 on the light or
-  the dark card ("#f4e9d0 is too faint on a light card"); the two cards show the six lines side by side. A set is worn
-  in both modes, so a colour that reads on both cards is a mid one. **Save set** keeps it with the house at once (up to
-  twelve, as its palettes) and wears it, an edit for the bar; **Edit this set** renames or recolours the one worn in its
-  place, and **Delete this set** lets it go — charts that wore it wear the palette's again.
+  then the house's own sets, each pictured as the mode on screen wears it; a tap wears one. **New set…** opens six
+  colour fields on the palette's six — each typed as a hex or picked from the system's picker. A set keeps its six
+  hues as chosen, and each mode wears it fitted to its card as the palette's own six are built: a colour that does not
+  read at 3:1 there is lifted (dark) or deepened (light) only as far as it takes, at its hue, and a little further where
+  that sets it 8 apart (ΔE2000) from the ones before it; a colour that reads is worn as picked. So a navy is lifted on
+  the dark card and a cream deepened on the light one, and only what fitting cannot fix is said: two colours still
+  closer than 8 ("#2563eb and #2463ea are too close to tell apart"), or brought together on one card ("… on a light
+  card"). The two cards show the six lines side by side, as each wears them. **Save set** keeps it with the house at
+  once (up to twelve, as its palettes) and wears it, an edit for the bar; **Edit this set** renames or recolours the
+  one worn in its place, and **Delete this set** lets it go — charts that wore it wear the palette's again.
 - **Preview**: a sensor's day with its bubble, the day's energy as bars and the house's gauge, drawn in the settings
   being chosen, in the light mode and the dark one side by side (under the cards, or in the side column on a wide
   screen). With motion off, every drawing is its resting frame.
