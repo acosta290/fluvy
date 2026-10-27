@@ -105,7 +105,39 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
 - **A key of your own.** Any word starting with `energy_` is a key; a key without that prefix is refused with a
   message, as HA's cards refuse it. Several Fluvy cards and HA's cards on one view share one picker through one key.
   Fluvy's **Energy period** card is a picker of its own that keeps the same kind of collection, so HA's cards follow
-  it as well.
+  it as well (below).
+
+### The Energy period card
+
+`custom:fluvy-energy-period-card` is the view's date picker as a strip: ‹ the span ›, Today and, when asked for,
+Compare. The span's words ("Today", "17 – 23 Sep", "September") open a sheet with the presets — today and
+yesterday, this week, this month, this year — and a date grid for a span of your own, in whole days.
+
+```yaml
+type: custom:fluvy-energy-period-card
+variant: stacked                # row (the default) · compact · stacked (the row over Day · Week · Month · Year)
+periods: [day, week, month, year, custom]   # what it offers, in this order (custom: the sheet's date grid)
+show_compare: true              # Compare: the period before beside the span, on the charts that draw it
+```
+
+- **The dashboard's own picker.** Without a `collection_key` the strip drives `energy_<the dashboard's url path>`,
+  the key Home Assistant's own energy cards take without one: HA's cards on the dashboard follow it, and Fluvy's
+  follow it given that key. Any `energy_…` key of your own works as it does for a follower.
+- **Home Assistant's code, not a copy.** Where a picker already holds the key (HA's date card on the view, another
+  strip), the strip drives it. Where none does, it asks Home Assistant for its own date card and keeps it hidden
+  inside the strip: HA makes the collection and fetches its figures with its own code (the Energy preferences, the
+  hourly refresh, yesterday until today's first hour of statistics). HA's date card on the same view moves the strip,
+  and the strip moves it.
+- **What it remembers.** A preset picked on the strip (Today, a chip, a preset in the sheet) is remembered where HA
+  remembers its own, so the dashboard reopens on it in HA and in Fluvy alike; walking with ‹ › or a span of your own
+  is not, as in HA.
+- **Narrow columns.** Compare and Today give their words for their glyphs, the span takes its short words ("24 Oct",
+  "Sep", "2026"), then Today and Compare go and, in half a section, the arrows: the sheet behind the span's words has
+  them all. `compact` is the span alone between its arrows, in a 60 strip.
+- **Only on a dashboard.** The strip needs a dashboard around it to make a picker; anywhere else it says so, at its
+  size, its buttons off.
+- **The automatic Energy dashboard.** Its Today view leads with the strip across the view, and the day's flow,
+  sankey, score and balance follow it (their chips are gone).
 
 ## The cards
 

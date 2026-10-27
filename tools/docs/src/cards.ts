@@ -89,6 +89,7 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
   [
     'Energy',
     [
+      'fluvy-energy-period-card',
       'fluvy-energy-card',
       'fluvy-energy-flow-card',
       'fluvy-energy-balance-card',
