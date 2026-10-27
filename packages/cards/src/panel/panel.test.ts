@@ -1338,18 +1338,30 @@ describe('the settings panel', () => {
           : { views: [] };
       },
     });
-    // the Charts tab's choices and a set of the house's own colours travel with the rest (1.11)
+    // the Charts tab's choices and a set of the house's own colours travel with the rest (1.11): every one off its
+    // default, so a key lost on the way would come back as the default and be seen
     const charts = {
       ...CHART_DEFAULTS,
       style: 'soft',
       gauge: 'dial',
       line: 'bold',
       glow: { offset: 7, opacity: 0.45 },
+      fill: 24,
       grid: 'dashed',
       endpoint: 'dot',
+      caps: 'top',
+      now: 'line',
+      wave: 'high',
+      bubble: 'tone',
       series: 'sea',
       animate: false,
     } as const;
+    expect(
+      Object.entries(charts).filter(
+        ([key, value]) =>
+          JSON.stringify(value) === JSON.stringify(CHART_DEFAULTS[key as keyof typeof charts]),
+      ),
+    ).toEqual([]);
     const sea = {
       id: 'sea',
       name: 'Sea',
