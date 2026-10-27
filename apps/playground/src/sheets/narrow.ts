@@ -119,6 +119,23 @@ export const sheet: SheetSpec = {
         })),
       ),
     },
+    // the Energy period strip at its floor, half a section: the arrows, the span's short words, the glyphs as they hold;
+    // no picker holds its key, so Home Assistant's date card (the playground's) makes the collection
+    {
+      title: 'Energy period · half a section',
+      cards: [
+        { show_compare: true },
+        { variant: 'compact' },
+        { variant: 'stacked' },
+        { variant: 'stacked', show_compare: true },
+      ].map((more) => ({
+        type: 'custom:fluvy-energy-period-card',
+        collection_key: 'energy_narrow',
+        _now: '2026-09-17T21:47:12',
+        cols: 6,
+        ...more,
+      })),
+    },
     // Home Assistant's own gap: a 320 section gives each half 156, not Fluvy's 152
     {
       title: "Half a section · Home Assistant's 8 px gaps",

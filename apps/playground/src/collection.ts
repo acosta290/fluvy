@@ -5,6 +5,12 @@ import type {
   EnergyDataLike,
   Statistics,
 } from '../../../packages/cards/src/energy-model/collection.js';
+import {
+  presetSpan,
+  shiftSpan,
+  storageKey,
+  type Preset,
+} from '../../../packages/cards/src/energy-period/picker.js';
 import { co2SignalOf } from '../../../packages/cards/src/energy-model/fossil.js';
 import {
   fullDays,
@@ -23,7 +29,8 @@ import {
  * connection as `_<key>`: a card given the key finds it there, subscribes, and is handed an `EnergyData` built from
  * the sheet's preferences (`energy/get_prefs`) and its statistics (`recorder/statistics_during_period`, in the
  * buckets Home Assistant would ask for) over the range it holds — today unless `?period=` says otherwise — moved by
- * `setPeriod` and `refresh()` as a picker moves it.
+ * `setPeriod` and `refresh()` as a picker moves it, and the period before beside it once `setCompare('previous')`.
+ * Home Assistant's card helpers make its date card (`stubCardHelpers`), which makes a collection when connected.
  */
 
 export type MockPeriod = 'today' | 'yesterday' | 'week' | 'month';
@@ -67,7 +74,11 @@ const finePeriod = (range: Range): '5minute' | 'hour' | 'day' => {
 };
 
 /** What Home Assistant's `getEnergyData` fetches for a range, from the sheet's answers. */
-async function energyData(hass: HomeAssistant, range: Range): Promise<EnergyDataLike> {
+async function energyData(
+  hass: HomeAssistant,
+  range: Range,
+  compare: CompareMode = '',
+): Promise<EnergyDataLike> {
   const prefs = (await hass
     .callWS<EnergyPrefs>({ type: 'energy/get_prefs' })
     .catch(() => null)) ?? {
@@ -97,7 +108,10 @@ async function energyData(hass: HomeAssistant, range: Range): Promise<EnergyData
       : Promise.resolve({});
   const co2 = co2SignalOf(hass);
   const imports = house.sources.filter((s) => s.kind === 'grid').flatMap((s) => s.energyIn);
-  const [energy, power, fossil] = await Promise.all([
+  // the period before, as long as this one, walked as the pickers walk it
+  const before =
+    compare && range.end ? shiftSpan(hass, { start: range.start, end: range.end }, -1) : undefined;
+  const [energy, power, fossil, energyBefore] = await Promise.all([
     ask(energyIds, stepFor(range), ['change'], { energy: 'kWh' }),
     ask(powerIds, finePeriod(range), ['mean'], { power: 'kW' }),
     co2 && imports.length
@@ -112,10 +126,26 @@ async function energyData(hass: HomeAssistant, range: Range): Promise<EnergyData
           })
           .catch(() => null)
       : Promise.resolve(undefined),
+    before
+      ? hass
+          .callWS<Statistics>({
+            type: 'recorder/statistics_during_period',
+            start_time: before.start.toISOString(),
+            end_time: before.end.toISOString(),
+            statistic_ids: energyIds,
+            period: stepFor(before),
+            types: ['change'],
+            units: { energy: 'kWh' },
+          })
+          .catch(() => ({}))
+      : Promise.resolve(undefined),
   ]);
   return {
     start: range.start,
     ...(range.end ? { end: range.end } : {}),
+    ...(before && energyBefore
+      ? { startCompare: before.start, endCompare: before.end, statsCompare: energyBefore }
+      : {}),
     prefs,
     stats: { ...energy, ...power },
     ...(co2 ? { co2SignalEntity: co2 } : {}),
@@ -131,6 +161,8 @@ export function mockCollection(
   const subscribers = new Set<(data: EnergyDataLike) => void>();
   let state: EnergyDataLike | undefined;
   let active = 0;
+  /** The last refresh asked: an earlier one answering after it is dropped, as Home Assistant drops it. */
+  let asked = 0;
   const collection: MockCollection = {
     key,
     start: range.start,
@@ -161,10 +193,67 @@ export function mockCollection(
       collection.compare = compare;
     },
     async refresh() {
-      const data = await energyData(hass(), { start: collection.start, end: collection.end });
+      const ask = ++asked;
+      const data = await energyData(
+        hass(),
+        { start: collection.start, end: collection.end },
+        collection.compare,
+      );
+      if (ask !== asked) return;
       state = data;
       for (const subscriber of subscribers) subscriber(data);
     },
   };
   return collection;
+}
+
+/** Home Assistant's own date card, as far as its helpers make it: connected with its `hass`, it makes the collection. */
+class MockDateSelection extends HTMLElement {
+  hass: HomeAssistant | undefined;
+  private key = '';
+  readonly updateComplete = Promise.resolve(true);
+  /** The house and the moment the collection is made for (`stubCardHelpers`). */
+  static house: (() => HomeAssistant) | undefined;
+  static now = new Date();
+
+  setConfig(config: { readonly collection_key?: string }): void {
+    this.key = config.collection_key ?? '';
+  }
+
+  connectedCallback(): void {
+    const house = MockDateSelection.house;
+    const connection = this.hass?.connection as unknown as Record<string, unknown> | undefined;
+    if (!house || !connection || !this.key || connection[`_${this.key}`]) return;
+    // as Home Assistant does, on the preset the dashboard last picked (today by default)
+    let word: Preset = 'today';
+    try {
+      word = (localStorage.getItem(storageKey(this.key)) as Preset | null) ?? 'today';
+    } catch {
+      // no storage: today
+    }
+    connection[`_${this.key}`] = mockCollection(
+      house,
+      this.key,
+      presetSpan(house(), word, MockDateSelection.now),
+    );
+  }
+}
+
+/**
+ * `window.loadCardHelpers`, as the Energy period card asks it: Home Assistant's date card for a key no picker holds
+ * yet. Any other card is not made here (the map's zones and a camera's still stand in, as without the helpers).
+ */
+export function stubCardHelpers(house: () => HomeAssistant, now: Date): void {
+  MockDateSelection.house = house;
+  MockDateSelection.now = now;
+  if (!customElements.get('hui-energy-date-selection-card'))
+    customElements.define('hui-energy-date-selection-card', MockDateSelection);
+  window.loadCardHelpers = async () => ({
+    createCardElement: (config: { readonly type?: string; readonly collection_key?: string }) => {
+      if (config.type !== 'energy-date-selection') return undefined;
+      const card = document.createElement('hui-energy-date-selection-card') as MockDateSelection;
+      card.setConfig(config);
+      return card;
+    },
+  });
 }
