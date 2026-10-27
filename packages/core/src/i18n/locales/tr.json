@@ -2397,6 +2397,8 @@
     "card": "Web sayfası",
     "insecure": "Bu sayfa https gerektirir",
     "slow": "Hâlâ yükleniyor",
+    "insecure_short": "https gerekli",
+    "slow_short": "Yükleniyor",
     "open": "Yeni sekmede aç",
     "reload": "Yeniden yükle",
     "fullscreen": "Tam ekran",

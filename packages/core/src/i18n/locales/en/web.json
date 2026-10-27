@@ -3,6 +3,8 @@
     "card": "Web page",
     "insecure": "This page needs https",
     "slow": "Still loading",
+    "insecure_short": "Needs https",
+    "slow_short": "Loading",
     "open": "Open in a new tab",
     "reload": "Reload",
     "fullscreen": "Full screen",

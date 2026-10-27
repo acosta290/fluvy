@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { roundsFit, sandboxOf, webUrl, type Round } from './url.js';
+import { roundsFit, sandboxOf, stateLayout, webUrl, type PlateRoom, type Round } from './url.js';
 
 /** A dashboard served over https, and one over plain http on the home network. */
 const SECURE = { href: 'https://ha.example/lovelace/0', protocol: 'https:' };
@@ -106,5 +106,73 @@ describe('roundsFit', () => {
     [320, [], []],
   ])('at %i, %j keeps %j', (width, wanted, kept) => {
     expect(roundsFit(width, wanted)).toEqual(kept);
+  });
+});
+
+describe('stateLayout', () => {
+  /** The off plate's words as English lays them out at 13/500 ("This page needs https", "Needs https"). */
+  const OFF = { full: 140, short: 76, glyph: true };
+  /** The slow plate's: "Still loading", "Loading", and the link to the tab with its dot. */
+  const SLOW = { full: 84, short: 52, link: 140 };
+  const at = (width: number, height: number, rounds = 2): PlateRoom => ({ width, height, rounds });
+
+  it('lays the globe over the words above the rounds where the plate holds both (a phone’s 288 × 164)', () => {
+    // 164 less the rounds' 56 and the block's 76 leaves 32: 16 above it, 16 under it
+    expect(stateLayout(at(288, 164), OFF)).toEqual({
+      place: 'above',
+      glyph: true,
+      words: 'full',
+      link: false,
+      top: 16,
+      reserve: 56,
+    });
+    // a bare phone card's 328 × 184 leaves 52: the block starts on the 4 grid, the odd 4 under it
+    expect(stateLayout(at(328, 184), OFF)).toMatchObject({ glyph: true, top: 24 });
+  });
+
+  it('gives the globe up, then the full words, before anything goes under the rounds', () => {
+    // 266's plate (226 × 128): 56 over the rounds within its 8s, the globe and a line 76 — the line alone
+    expect(stateLayout(at(226, 128), OFF)).toMatchObject({ glyph: false, words: 'full' });
+    // 211's (171 × 96): one line of 24 and its 8 above and below; the full words are 140 of 139
+    expect(stateLayout(at(171, 96), OFF)).toMatchObject({
+      place: 'above',
+      glyph: false,
+      words: 'short',
+    });
+  });
+
+  it('goes beside the rounds on a plate wide and low, short where the full words do not hold there', () => {
+    expect(stateLayout(at(320, 68), OFF)).toEqual({
+      place: 'beside',
+      glyph: false,
+      words: 'full',
+      link: false,
+      reserve: 12 + 96 + 16,
+    });
+    expect(stateLayout(at(240, 68), OFF)).toMatchObject({ place: 'beside', words: 'short' });
+  });
+
+  it('says nothing where nothing holds: a half card’s plate of 68 or 76, and a bare one of 84', () => {
+    expect(stateLayout(at(112, 68, 1), OFF)).toBeUndefined();
+    expect(stateLayout(at(132, 76), OFF)).toBeUndefined();
+    expect(stateLayout(at(152, 84), OFF)).toBeUndefined();
+  });
+
+  it('keeps the globe alone on a plate tall and too narrow for the words', () => {
+    expect(stateLayout(at(100, 140, 1), OFF)).toMatchObject({ glyph: true, words: 'none' });
+  });
+
+  it('offers the tab on the slow line where the line holds it, else the words alone', () => {
+    expect(stateLayout(at(320, 180), SLOW)).toMatchObject({ words: 'full', link: true });
+    expect(stateLayout(at(226, 128), SLOW)).toMatchObject({ words: 'full', link: false });
+    expect(stateLayout(at(100, 128), SLOW)).toMatchObject({ words: 'short', link: false });
+  });
+
+  it('takes the whole plate where it has no rounds, and any room where the view or the screen decides it', () => {
+    expect(stateLayout(at(171, 96, 0), OFF)).toMatchObject({ glyph: true, reserve: 0 });
+    expect(stateLayout(at(171, Number.POSITIVE_INFINITY), OFF)).toMatchObject({
+      glyph: true,
+      words: 'short',
+    });
   });
 });

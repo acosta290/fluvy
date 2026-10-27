@@ -40,7 +40,16 @@ import {
 import type { EditorDefaults } from '../shared/rows-editor.js';
 import { MINUTE, Ticker } from '../shared/ticker.js';
 import { webHeight } from '../web-family.js';
-import { roundsFit, sandboxOf, webUrl, type Round, type SandboxLevel, type WebUrl } from './url.js';
+import {
+  roundsFit,
+  sandboxOf,
+  stateLayout,
+  webUrl,
+  type PlateRoom,
+  type Round,
+  type SandboxLevel,
+  type WebUrl,
+} from './url.js';
 
 const s = strings('web');
 
@@ -78,6 +87,10 @@ export interface WebCardConfig extends FluvyCardConfig {
   show_open?: boolean;
   show_fullscreen?: boolean;
   show_reload?: boolean;
+  /** Test hook: the dashboard read as served over https, as the playground's is not. Undocumented. */
+  _https?: boolean;
+  /** Test hook: a page that never answers, the plate saying so at once (the playground). Undocumented. */
+  _slow?: boolean;
 }
 
 const VARIANTS: readonly WebVariant[] = ['plate', 'frame', 'bare'];
@@ -97,6 +110,9 @@ const RATIOS = [
 const ALLOW = 'fullscreen';
 /** A page that has not loaded after this long says so, and offers the tab. */
 const SLOW = 20_000;
+/** The slow state's line: 6 between its words, the dot and the link; the link's 8 on either side of its words. */
+const LINE_GAP = 6;
+const LINK_SIDES = 16;
 /** Home Assistant's iframe card's switches, read as a variant and a level (`aliases`) and let go. */
 const PASTED: readonly string[] = ['hide_background', 'disable_sandbox'];
 
@@ -199,57 +215,60 @@ export class FluvyWebCard extends Card<WebCardConfig> {
         inset: 0;
         border-radius: 0;
       }
-      /* still loading: one line over the skeleton, the tab offered as a link */
-      .wb-slow {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 0 6px;
-        padding: 0 16px;
-        font-size: 13px;
-        font-weight: 500;
-        line-height: 24px;
-        color: var(--fluvy-text-secondary);
-        text-align: center;
-      }
-      .wb-slow__open {
-        min-height: 44px;
-        padding: 0 8px;
-        color: var(--fluvy-primary);
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
       /* an http page on an https dashboard: the unavailable skin — page fill, dashed hairline, one glyph, one line */
       .wb-plate.is-off {
         background: var(--fluvy-page);
         outline: 1px dashed var(--fluvy-unavailable-border);
         outline-offset: -1px;
       }
-      .wb-off {
+      /* a state's words (still loading, kept back), never under the rounds: centred in the room over their row, or at
+         the plate's start beside it (stateLayout); one line, its short form where the full one would not hold */
+      .wb-state {
         position: absolute;
+        top: 0;
         left: 0;
         right: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         padding: 0 16px;
       }
-      .wb-off p {
-        max-width: 100%;
+      .wb-state--beside {
+        top: auto;
+        bottom: 12px;
+        left: 16px;
+        height: 44px;
+        align-items: flex-start;
+        padding: 0;
+      }
+      .wb-state__line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .wb-state__words {
         font-size: 13px;
         font-weight: 500;
         line-height: 24px;
+        white-space: nowrap;
+        color: var(--fluvy-text-secondary);
+      }
+      .is-off .wb-state__words {
         color: var(--fluvy-unavailable);
-        text-align: center;
-        overflow-wrap: anywhere;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
+      }
+      /* still loading, where the line holds it: the tab offered as a link of 44 */
+      .wb-state__open {
+        min-height: 44px;
+        padding: 0 8px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 24px;
+        white-space: nowrap;
+        color: var(--fluvy-primary);
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
       .wb-plate:fullscreen {
         border-radius: 0;
@@ -410,16 +429,22 @@ export class FluvyWebCard extends Card<WebCardConfig> {
   /** When the page was last asked for: what `refresh` counts from. */
   private shownAt = 0;
   private slowTimer: number | undefined;
+  /** The playground's page that never answers (`_slow`): no frame is asked for, the plate is still loading at once. */
+  private never = false;
 
   /**
    * The address is read here, once per config: a scheme no page can be framed from (`javascript:`, `data:`, `blob:`,
    * none) is refused with a readable error; an http page on an https dashboard is kept back, said on the plate.
    */
   protected override prepare(config: WebCardConfig): WebCardConfig {
-    const page = webUrl(config.url, location);
+    const place = config._https
+      ? { href: location.href.replace(/^http:/, 'https:'), protocol: 'https:' }
+      : location;
+    const page = webUrl(config.url, place);
     if (page.state === 'refused')
       throw new Error('fluvy-web-card: "url" must be an http or https address');
     this.page = page;
+    this.never = config._slow === true;
     const key = [
       page.href,
       sandboxOf(this.level(config), config.allow_open_top_navigation === true) ?? '',
@@ -442,10 +467,10 @@ export class FluvyWebCard extends Card<WebCardConfig> {
   private load(): void {
     this.shownAt = Date.now();
     this.loaded_ = false;
-    this.slow_ = false;
+    this.slow_ = this.never && this.page?.state === 'ok';
     window.clearTimeout(this.slowTimer);
     this.slowTimer =
-      this.page?.state === 'ok'
+      this.page?.state === 'ok' && !this.never
         ? window.setTimeout(() => {
             this.slow_ = true;
           }, SLOW)
@@ -574,15 +599,55 @@ export class FluvyWebCard extends Card<WebCardConfig> {
 
   /* ---------- render ---------- */
 
-  /** The off block: the 44 globe, 8 and its line of 24 (two on a plate too narrow for one), centred on the 4 grid. */
-  private renderOff(width: number, height: number): TemplateResult {
-    const text = s(this.hass, 'insecure');
-    const lines = this.head.ruler.width('wb-off p', text) > width - 32 ? 2 : 1;
-    const block = 44 + 8 + 24 * lines;
-    const top = Math.max(0, Math.round((height - block) / 2 / 4) * 4);
-    return html`<div class="wb-off" style="top:${top}px;height:${block}px">
-      <span class="fv-ico fv-ico--off" data-icon>${glyph('globe')}</span>
-      <p>${text}</p>
+  /**
+   * A state's words on the plate, laid where they hold whole and clear of the rounds (`stateLayout`): kept back (`off`:
+   * the globe over "This page needs https", the off plate's anatomy) or still loading (the words, the tab offered on
+   * their line where it holds; the open round is there where it does not).
+   */
+  private renderState(state: 'off' | 'slow', plate: PlateRoom): TemplateResult | typeof nothing {
+    const hass = this.hass;
+    const off = state === 'off';
+    const full = s(hass, off ? 'insecure' : 'slow');
+    const short = s(hass, off ? 'insecure_short' : 'slow_short');
+    const open = s(hass, 'open');
+    const ruler = this.head.ruler;
+    const words = (text: string): number => ruler.width('wb-state__words', text);
+    const fit = stateLayout(plate, {
+      full: words(full),
+      short: words(short),
+      ...(off
+        ? { glyph: true }
+        : {
+            link:
+              LINE_GAP + words('·') + LINE_GAP + ruler.width('wb-state__open', open) + LINK_SIDES,
+          }),
+    });
+    if (!fit) return nothing;
+    const text = fit.words === 'full' ? full : fit.words === 'short' ? short : '';
+    const beside = fit.place === 'beside';
+    // on the 4 grid where the plate's height is known; centred over the rounds where the view or the screen decides it
+    const place = beside
+      ? `right:${fit.reserve}px`
+      : fit.top === undefined
+        ? `bottom:${fit.reserve}px`
+        : `top:${fit.top}px`;
+    return html`<div class="wb-state ${beside ? 'wb-state--beside' : ''}" style=${place}>
+      ${fit.glyph ? html`<span class="fv-ico fv-ico--off" data-icon>${glyph('globe')}</span>` : nothing}
+      ${
+        text
+          ? html`<p class="wb-state__line">
+              <span class="wb-state__words">${text}</span>
+              ${
+                fit.link
+                  ? html`<span class="wb-state__words" aria-hidden="true">·</span>
+                      <button class="wb-state__open" data-target @click=${() => this.open()}>
+                        ${open}
+                      </button>`
+                  : nothing
+              }
+            </p>`
+          : nothing
+      }
     </div>`;
   }
 
@@ -597,42 +662,43 @@ export class FluvyWebCard extends Card<WebCardConfig> {
     const height = webPlate(config, width);
     const scale = this.scale();
     const rounds = this.rounds(width);
+    // the view's or the screen's height: room enough for any state
+    const room: PlateRoom = {
+      width,
+      height: fills || this.fullscreen_ ? Number.POSITIVE_INFINITY : height,
+      rounds: rounds.length,
+    };
     return html`<div
       class="dv-cam fv-plate wb-plate ${off ? 'is-off' : ''}"
       style=${fills ? nothing : `height:${height}px`}
     >
       ${
         off
-          ? this.renderOff(width, height)
-          : html`${keyed(
-              `${this.generation_}\n${this.frameKey}`,
-              html`<iframe
-                class="wb-frame ${this.loaded_ ? 'is-on' : ''} ${this.inverted() ? 'is-dark' : ''}"
-                src=${page.href}
-                sandbox=${sandboxOf(this.level(), config.allow_open_top_navigation === true) ?? nothing}
-                allow=${config.allow ?? ALLOW}
-                title=${title}
-                referrerpolicy="no-referrer"
-                loading="lazy"
-                style=${
-                  scale < 1
-                    ? `transform:scale(${scale});width:calc(100% / ${scale});height:calc(100% / ${scale})`
-                    : nothing
-                }
-                @load=${this.onLoad}
-              ></iframe>`,
-            )}
+          ? this.renderState('off', room)
+          : html`${
+              this.never
+                ? nothing
+                : keyed(
+                    `${this.generation_}\n${this.frameKey}`,
+                    html`<iframe
+                      class="wb-frame ${this.loaded_ ? 'is-on' : ''} ${this.inverted() ? 'is-dark' : ''}"
+                      src=${page.href}
+                      sandbox=${sandboxOf(this.level(), config.allow_open_top_navigation === true) ?? nothing}
+                      allow=${config.allow ?? ALLOW}
+                      title=${title}
+                      referrerpolicy="no-referrer"
+                      loading="lazy"
+                      style=${
+                        scale < 1
+                          ? `transform:scale(${scale});width:calc(100% / ${scale});height:calc(100% / ${scale})`
+                          : nothing
+                      }
+                      @load=${this.onLoad}
+                    ></iframe>`,
+                  )
+            }
             ${this.loaded_ ? nothing : html`<span class="fv-skeleton wb-skeleton"></span>`}
-            ${
-              this.slow_
-                ? html`<p class="wb-slow">
-                    <span>${s(this.hass, 'slow')} ·</span>
-                    <button class="wb-slow__open" data-target @click=${() => this.open()}>
-                      ${s(this.hass, 'open')}
-                    </button>
-                  </p>`
-                : nothing
-            }`
+            ${this.slow_ ? this.renderState('slow', room) : nothing}`
       }
       <div class="dv-cam__actions">${rounds.map((name) => this.renderRound(name, off))}</div>
     </div>`;
@@ -654,8 +720,9 @@ export class FluvyWebCard extends Card<WebCardConfig> {
         ${this.renderPlate(config, page, width, title)}
       </article>`;
     const sub = config.subtitle ?? page.host;
-    // the head gives way in its order (the sub, then the circle) before the title is cut
-    const fitted = this.head.fit({ width, title, sub });
+    // the head gives way in its order (the sub, then the circle) before the title is cut; a host too long for a half
+    // card's line ("grafana.local:3000") goes whole rather than cut
+    const fitted = this.head.fit({ width, title, sub, shorter: [''] });
     return html`<article class="fv-card wb-card" data-card>
       ${head({
         icon: fitted.icon ? (config.icon ?? 'globe') : null,

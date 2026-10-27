@@ -2397,6 +2397,8 @@
     "card": "Pagina web",
     "insecure": "Questa pagina richiede https",
     "slow": "Ancora in caricamento",
+    "insecure_short": "Richiede https",
+    "slow_short": "Caricamento",
     "open": "Apri in una nuova scheda",
     "reload": "Ricarica",
     "fullscreen": "Schermo intero",

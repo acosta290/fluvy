@@ -8,10 +8,15 @@ const WEB = 'custom:fluvy-web-card';
 /** Two pages of the playground's own origin: their `load` reaches the card, so the plate draws. */
 const PAGE = '/web/page.html';
 const DARK = '/web/page-dark.html';
+/** An http page, kept back on a dashboard read as served over https (`_https`: the playground is not). */
+const PLAIN = { type: WEB, url: 'http://grafana.local:3000/d/house', _https: true };
+/** A page that never answers (`_slow`): the plate says it is still loading at once, not after twenty seconds. */
+const NEVER = { type: WEB, url: PAGE, _slow: true };
 
 /**
  * The web page card (#61): a page on a plate under a head, in a frame or bare; its shape, its height, its scale,
- * its looks, its sandbox levels and its reload, at a full card, a half card and a wide band.
+ * its looks, its sandbox levels and its reload, at a full card, a half card and a wide band; an http page kept back
+ * and a page still loading, their words clear of the rounds wherever the plate holds them.
  */
 export const sheet: SheetSpec = {
   states: [],
@@ -91,6 +96,55 @@ export const sheet: SheetSpec = {
           title: 'Was type: iframe',
           hide_background: true,
         },
+      ],
+    },
+    // an http page on an https dashboard: the off plate's globe over its words above the rounds, their short form,
+    // the words alone, or beside the rounds on a plate wide and low — never under them
+    {
+      title: 'Insecure',
+      cards: [
+        { ...PLAIN, title: 'Grafana', show_reload: true },
+        { ...PLAIN, variant: 'frame' },
+        { ...PLAIN, variant: 'bare' },
+        { ...PLAIN, height: 68, title: 'A low plate' },
+      ],
+    },
+    {
+      title: 'Insecure · half pairs',
+      cards: [
+        { ...PLAIN, title: 'Grafana', cols: 6 },
+        { ...PLAIN, variant: 'frame', show_reload: true, cols: 6 },
+      ],
+    },
+    {
+      title: 'Insecure · half pairs · bare',
+      cards: [
+        { ...PLAIN, variant: 'bare', show_reload: true, cols: 6 },
+        { ...PLAIN, variant: 'bare', cols: 6 },
+      ],
+    },
+    // still loading: the words over the skeleton with the tab on their line where it holds, else alone
+    {
+      title: 'Slow',
+      cards: [
+        { ...NEVER, title: 'Lightning', show_reload: true },
+        { ...NEVER, variant: 'frame' },
+        { ...NEVER, variant: 'bare' },
+        { ...NEVER, height: 68, title: 'A low plate' },
+      ],
+    },
+    {
+      title: 'Slow · half pairs',
+      cards: [
+        { ...NEVER, title: 'Lightning', cols: 6 },
+        { ...NEVER, variant: 'frame', show_reload: true, cols: 6 },
+      ],
+    },
+    {
+      title: 'Slow · half pairs · bare',
+      cards: [
+        { ...NEVER, variant: 'bare', show_reload: true, cols: 6 },
+        { ...NEVER, variant: 'bare', cols: 6 },
       ],
     },
   ],

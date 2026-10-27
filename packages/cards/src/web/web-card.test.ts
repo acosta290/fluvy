@@ -318,18 +318,26 @@ describe('loading', () => {
     const { card, root, frame } = await drawn({});
     vi.advanceTimersByTime(19_000);
     await card.updateComplete;
-    expect(root.querySelector('.wb-slow')).toBeNull();
+    expect(root.querySelector('.wb-state')).toBeNull();
     vi.advanceTimersByTime(1_000);
     await card.updateComplete;
-    const slow = root.querySelector('.wb-slow')!;
+    const slow = root.querySelector('.wb-state')!;
     expect(slow.textContent!.replace(/\s+/g, ' ').trim()).toBe('Still loading · Open in a new tab');
     expect(slow.querySelector('button')).not.toBeNull();
-    // the skeleton stays under the words
+    // the skeleton stays under the words, and the words in the room over the rounds: 180 less 56 less 44, halved
     expect(root.querySelector('.wb-skeleton')).not.toBeNull();
+    expect(slow.getAttribute('style')).toBe('top:40px');
     frame()!.dispatchEvent(new Event('load'));
     await card.updateComplete;
-    expect(root.querySelector('.wb-slow')).toBeNull();
+    expect(root.querySelector('.wb-state')).toBeNull();
     expect(root.querySelector('.wb-skeleton')).toBeNull();
+  });
+
+  it('the playground’s page that never answers: no frame asked for, still loading at once', async () => {
+    const { root, frame } = await drawn({ _slow: true });
+    expect(frame()).toBeNull();
+    expect(root.querySelector('.wb-skeleton')).not.toBeNull();
+    expect(root.querySelector('.wb-state__words')!.textContent!.trim()).toBe('Still loading');
   });
 
   it('a config with the same address keeps the loaded frame; a new address loads afresh', async () => {
@@ -394,8 +402,10 @@ describe('an http page on an https dashboard', () => {
     expect(plate.style.height).toBe(liveHeight);
     expect(card.getCardSize()).toBe(liveSize);
     expect(frame()).toBeNull();
-    expect(root.querySelector('.wb-off p')!.textContent!.trim()).toBe('This page needs https');
-    expect(root.querySelector('.wb-off .fv-ico--off svg')).not.toBeNull();
+    expect(root.querySelector('.wb-state__words')!.textContent!.trim()).toBe(
+      'This page needs https',
+    );
+    expect(root.querySelector('.wb-state .fv-ico--off svg')).not.toBeNull();
     const rounds = [...root.querySelectorAll<HTMLButtonElement>('.dv-cam__actions .fv-round')];
     expect(rounds.map((el) => [el.getAttribute('aria-label'), el.disabled])).toEqual([
       ['Reload', true],
@@ -404,6 +414,12 @@ describe('an http page on an https dashboard', () => {
     ]);
     // the head still says where the page is
     expect(root.querySelector('.fv-card__sub')!.textContent!.trim()).toBe('grafana.local:3000');
+  });
+
+  it('is read so by the playground’s hook, on a dashboard that is not', async () => {
+    const { root, frame } = await drawn({ url: PLAIN, _https: true });
+    expect(root.querySelector('.wb-plate.is-off')).not.toBeNull();
+    expect(frame()).toBeNull();
   });
 
   it('is framed on an http dashboard', async () => {

@@ -2397,6 +2397,8 @@
     "card": "Webpagina",
     "insecure": "Deze pagina heeft https nodig",
     "slow": "Laadt nog",
+    "insecure_short": "Https nodig",
+    "slow_short": "Laadt",
     "open": "In nieuw tabblad openen",
     "reload": "Herladen",
     "fullscreen": "Volledig scherm",

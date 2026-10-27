@@ -5,10 +5,12 @@
  * every frame holds its declared height; the bare variant draws no card; the plate fills the screen and leaves it;
  * the automatic look follows the page's mode; a reload asks for the page again; a scale draws the page larger under
  * the plate; a half card gives its rounds up in order; a page asked for every minute is asked for again once the
- * minute has passed; Home Assistant's own iframe card pastes in.
+ * minute has passed; Home Assistant's own iframe card pastes in; an http page kept back and a page still loading say
+ * so clear of the rounds and whole, at every card width from half a section to a band, in every language.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-web.mjs
  */
+import { everyLanguage } from './lib.mjs';
 import { frame, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -223,6 +225,119 @@ const page = await suite.sheet('web');
     JSON.stringify({ before, half, after, other }),
   );
   await timed.close();
+}
+
+/* ---------- the states' words: clear of the rounds and whole, at every width, in every language ---------- */
+{
+  /**
+   * Every insecure and slow card of a page: the words' and the glyph's boxes against the rounds' and the plate's —
+   * a word under a round, past the plate's edge or past its own line is a fault — and what the plate kept of the state.
+   */
+  const states = (page) =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('[data-frame*="/Insecure"], [data-frame*="/Slow"]')].flatMap(
+        (frameEl) =>
+          [...frameEl.querySelectorAll('fluvy-web-card')].map((el) => {
+            const root = el.shadowRoot;
+            const plate = root.querySelector('.wb-plate').getBoundingClientRect();
+            const rounds = [...root.querySelectorAll('.dv-cam__actions .fv-round')].map((b) =>
+              b.getBoundingClientRect(),
+            );
+            const range = document.createRange();
+            const runs = [...root.querySelectorAll('.wb-state__words, .wb-state__open')].flatMap(
+              (node) => {
+                range.selectNodeContents(node);
+                return [...range.getClientRects()].map((rect) => ({ node, rect }));
+              },
+            );
+            const glyph = root.querySelector('.wb-state .fv-ico')?.getBoundingClientRect();
+            const hit = (a, b) =>
+              a.left < b.right - 0.5 &&
+              b.left < a.right - 0.5 &&
+              a.top < b.bottom - 0.5 &&
+              b.top < a.bottom - 0.5;
+            const inside = (a) =>
+              a.left >= plate.left - 0.5 &&
+              a.right <= plate.right + 0.5 &&
+              a.top >= plate.top - 0.5 &&
+              a.bottom <= plate.bottom + 0.5;
+            const tops = runs.map(({ rect }) => rect.top);
+            const boxes = [...runs.map(({ rect }) => rect), ...(glyph ? [glyph] : [])];
+            return {
+              frame: frameEl.dataset.frame.split('/').pop(),
+              width: Math.round(plate.width),
+              height: Math.round(plate.height),
+              words: runs.map(({ node }) => node.textContent.trim()).join(' '),
+              glyph: Boolean(glyph),
+              under: boxes.some((box) => rounds.some((round) => hit(box, round))),
+              out: boxes.some((box) => !inside(box)),
+              wrapped: tops.length > 0 && Math.max(...tops) - Math.min(...tops) > 4,
+            };
+          }),
+      ),
+    );
+  const faults = [];
+  let seen = 0;
+  let said = 0;
+  // full cards at 211, 266, a 360 phone's 328, 360 and a band; half a section at 152 (a 320 section) and 172 (360)
+  for (const lang of await everyLanguage())
+    for (const width of [211, 266, 320, 328, 360, 1400]) {
+      const page = await suite.sheet('web', { width, lang });
+      for (const state of await states(page)) {
+        seen += 1;
+        if (state.words) said += 1;
+        if (state.under || state.out || state.wrapped)
+          faults.push(
+            `${lang} @ ${width} ${state.frame} ${state.width}×${state.height}: ${JSON.stringify(state)}`,
+          );
+      }
+      await page.close();
+    }
+  check(
+    'kept back or still loading: the words and the globe never under a round, never past the plate, one line',
+    faults.length === 0 && seen > 0,
+    faults.slice(0, 6).join(' | ') || `${seen} plates, ${said} with words`,
+  );
+}
+
+/* ---------- the states at a full card: the off plate's anatomy, the slow line with its link ---------- */
+{
+  const page = await suite.sheet('web');
+  const seen = await frame(page, 'Insecure')
+    .locator('fluvy-web-card')
+    .first()
+    .evaluate((el) => {
+      const root = el.shadowRoot;
+      return {
+        words: root.querySelector('.wb-state__words')?.textContent.trim(),
+        glyph: Boolean(root.querySelector('.wb-state .fv-ico--off')),
+        frame: Boolean(root.querySelector('iframe')),
+        rounds: [...root.querySelectorAll('.dv-cam__actions .fv-round')].map(
+          (b) => `${b.getAttribute('aria-label')}${b.disabled ? ' (off)' : ''}`,
+        ),
+      };
+    });
+  check(
+    'an http page on an https dashboard: no frame, the globe over why, the open round alone alive',
+    !seen.frame &&
+      seen.glyph &&
+      seen.words === 'This page needs https' &&
+      seen.rounds.join('|') === 'Reload (off)|Open in a new tab|Full screen (off)',
+    JSON.stringify(seen),
+  );
+  const slow = await frame(page, 'Slow')
+    .locator('fluvy-web-card')
+    .first()
+    .evaluate((el) => ({
+      line: el.shadowRoot.querySelector('.wb-state__line')?.textContent.replace(/\s+/g, ' ').trim(),
+      skeleton: Boolean(el.shadowRoot.querySelector('.wb-skeleton')),
+    }));
+  check(
+    'still loading: the words over the skeleton, the tab offered on their line',
+    slow.skeleton && slow.line === 'Still loading · Open in a new tab',
+    JSON.stringify(slow),
+  );
+  await page.close();
 }
 
 await suite.finish();

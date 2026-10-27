@@ -2154,15 +2154,22 @@ a card's entrance).
   reload first, then the open; the full-screen round stays, and every one is back in full screen. Full screen is the
   plate's own (`requestFullscreen` on the plate, as the camera's); a phone that has none (iPhone) opens the tab.
 - **Loading.** A skeleton covers the plate until the frame's `load`; after twenty seconds without one the plate says
-  "Still loading · Open in a new tab", the tab a link of 44 over the skeleton. A page that refuses to be framed loads
+  "Still loading · Open in a new tab", the tab a link of 44 over the skeleton where the line holds it (the open round
+  is the way where it does not). A page that refuses to be framed loads
   all the same, blank: no card can tell from outside (the docs say the open round is the way out). A config whose
   address, sandbox and permissions are unchanged keeps the loaded frame (the frame is keyed by them and by its reload
   count); a change asks for a new one.
 - **Insecure.** On an https dashboard an http page is never asked for (the browser refuses it without a word): the
-  off plate at its size — page fill, dashed hairline, the globe on the off circle, "This page needs https" on one line
-  (two on a plate too narrow) centred on the 4 grid — its reload and full-screen rounds disabled, its open round
-  alive. The address itself is read once, on `setConfig`: a scheme no page can be framed from (`javascript:`,
-  `data:`, `blob:`, none) is refused with a readable error; a relative address resolves against the dashboard.
+  off plate at its size — page fill, dashed hairline, the globe on the off circle over "This page needs https" — its
+  reload and full-screen rounds disabled, its open round alive. The address itself is read once, on `setConfig`: a
+  scheme no page can be framed from (`javascript:`, `data:`, `blob:`, none) is refused with a readable error; a
+  relative address resolves against the dashboard.
+- **A state's words never sit under the rounds** (`stateLayout`): they are centred in the room the plate leaves over
+  its rounds' 56, 8 at least above and below, on one line — the globe over the words in full, then over their short
+  form ("Needs https"); the slow line with its link, then without it; the words alone, in full, then short ("Loading");
+  beside the rounds at the plate's start where the plate is wide and low (a `height` of 68 across a full card); the
+  globe alone. Where nothing holds (a half card's plate of 68 or 76, a bare one of 84) the skin, the skeleton and the
+  rounds say it.
 - **The looks.** `page` (the default) is the page's own colours; `dark` inverts the frame (`invert(.92)
   hue-rotate(180deg)` — the one thing that reaches a cross-origin page; pictures invert too, said in the docs); `auto`
   inverts only while the card is dark.

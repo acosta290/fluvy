@@ -2397,6 +2397,8 @@
     "card": "Webページ",
     "insecure": "このページにはhttpsが必要です",
     "slow": "読み込み中",
+    "insecure_short": "httpsが必要",
+    "slow_short": "読み込み中",
     "open": "新しいタブで開く",
     "reload": "再読み込み",
     "fullscreen": "全画面",
