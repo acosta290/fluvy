@@ -1935,6 +1935,17 @@
     "editor_show_today": "Afficher le bouton Aujourd’hui",
     "editor_show_compare": "Afficher le bouton Comparer"
   },
+  "energy-usage": {
+    "title": "Consommation d’énergie",
+    "title_short": "Conso",
+    "other": "Autres",
+    "editor_sources": "Sources (aucune : celles du tableau Énergie)",
+    "editor_max_sources": "Sources avant que le reste devienne « Autres »",
+    "editor_show_returns": "Afficher ce qui a été chargé et injecté",
+    "editor_show_legend": "Afficher la légende",
+    "editor_show_period": "Puces Jour · Semaine · Mois · Année",
+    "editor_compare": "Afficher la période précédente derrière les colonnes"
+  },
   "wall": {
     "paused": "Mur en pause",
     "resume": "Reprendre",

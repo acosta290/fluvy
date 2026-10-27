@@ -1935,6 +1935,17 @@
     "editor_show_today": "Bugün düğmesini göster",
     "editor_show_compare": "Karşılaştır düğmesini göster"
   },
+  "energy-usage": {
+    "title": "Enerji kullanımı",
+    "title_short": "Kullanım",
+    "other": "Diğer",
+    "editor_sources": "Kaynaklar (yoksa: Enerji panosununkiler)",
+    "editor_max_sources": "Geri kalanı “Diğer” olmadan önceki kaynak sayısı",
+    "editor_show_returns": "Şarj edileni ve verileni göster",
+    "editor_show_legend": "Açıklamayı göster",
+    "editor_show_period": "Gün · Hafta · Ay · Yıl çipleri",
+    "editor_compare": "Önceki dönemi sütunların arkasında göster"
+  },
   "wall": {
     "paused": "Duvar duraklatıldı",
     "resume": "Sürdür",

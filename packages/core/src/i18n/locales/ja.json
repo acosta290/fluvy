@@ -1904,6 +1904,17 @@
     "editor_show_today": "今日ボタンを表示",
     "editor_show_compare": "比較ボタンを表示"
   },
+  "energy-usage": {
+    "title": "エネルギー使用量",
+    "title_short": "使用量",
+    "other": "その他",
+    "editor_sources": "供給元（未設定：エネルギーダッシュボードのもの）",
+    "editor_max_sources": "個別に表示する供給元の数（残りは「その他」）",
+    "editor_show_returns": "充電と売電を表示",
+    "editor_show_legend": "凡例を表示",
+    "editor_show_period": "日 · 週 · 月 · 年のチップ",
+    "editor_compare": "前の期間を棒の後ろに表示"
+  },
   "history": {
     "title": "履歴",
     "search": "これらの項目を検索",

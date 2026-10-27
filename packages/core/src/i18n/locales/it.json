@@ -1935,6 +1935,17 @@
     "editor_show_today": "Mostra il pulsante Oggi",
     "editor_show_compare": "Mostra il pulsante Confronta"
   },
+  "energy-usage": {
+    "title": "Consumo di energia",
+    "title_short": "Consumo",
+    "other": "Altre",
+    "editor_sources": "Fonti (nessuna: quelle della dashboard Energia)",
+    "editor_max_sources": "Fonti prima che il resto diventi “Altre”",
+    "editor_show_returns": "Mostra ciò che è stato caricato e immesso",
+    "editor_show_legend": "Mostra la legenda",
+    "editor_show_period": "Chip Giorno · Settimana · Mese · Anno",
+    "editor_compare": "Mostra il periodo precedente dietro le colonne"
+  },
   "wall": {
     "paused": "Parete in pausa",
     "resume": "Riprendi",

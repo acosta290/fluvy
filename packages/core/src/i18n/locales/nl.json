@@ -1935,6 +1935,17 @@
     "editor_show_today": "Knop Vandaag tonen",
     "editor_show_compare": "Knop Vergelijken tonen"
   },
+  "energy-usage": {
+    "title": "Energieverbruik",
+    "title_short": "Verbruik",
+    "other": "Overige",
+    "editor_sources": "Bronnen (geen: die van het Energie-dashboard)",
+    "editor_max_sources": "Bronnen voordat de rest “Overige” wordt",
+    "editor_show_returns": "Geladen en teruggeleverd tonen",
+    "editor_show_legend": "Legenda tonen",
+    "editor_show_period": "Chips Dag · Week · Maand · Jaar",
+    "editor_compare": "De periode ervoor achter de kolommen tonen"
+  },
   "wall": {
     "paused": "Wand gepauzeerd",
     "resume": "Hervatten",

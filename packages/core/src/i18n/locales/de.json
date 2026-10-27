@@ -1935,6 +1935,17 @@
     "editor_show_today": "Heute-Schaltfläche zeigen",
     "editor_show_compare": "Vergleichen-Schaltfläche zeigen"
   },
+  "energy-usage": {
+    "title": "Energieverbrauch",
+    "title_short": "Verbrauch",
+    "other": "Weitere",
+    "editor_sources": "Quellen (keine: die des Energie-Dashboards)",
+    "editor_max_sources": "Quellen, bevor der Rest „Weitere“ wird",
+    "editor_show_returns": "Geladenes und Eingespeistes zeigen",
+    "editor_show_legend": "Legende zeigen",
+    "editor_show_period": "Chips Tag · Woche · Monat · Jahr",
+    "editor_compare": "Den Zeitraum davor hinter den Säulen zeigen"
+  },
   "wall": {
     "paused": "Wand pausiert",
     "resume": "Fortsetzen",
