@@ -390,6 +390,21 @@ export const sankeyHeight = (config: LovelaceCardConfig): number =>
 export const scoreHeight = (config: LovelaceCardConfig): number =>
   HEAD + periodChips(config) + 4 + 112 + 60;
 
+/** The Energy period card's chips row, under its row: the day, week, month and year (custom stays in its sheet). */
+const GRAINS = ['day', 'week', 'month', 'year'];
+
+/**
+ * The Energy period strip: a 44 row in the card's 20 (84); compact, a 36 pill row in 12 (60); stacked, the row and,
+ * 8 under it, the chips of its periods — four short words, one row at a 360 column (136).
+ */
+export function periodHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'compact') return 60;
+  const periods: unknown[] = Array.isArray(config['periods']) ? config['periods'] : GRAINS;
+  return config['variant'] === 'stacked' && GRAINS.some((grain) => periods.includes(grain))
+    ? 136
+    : 84;
+}
+
 export type FamilyEntry = readonly [
   tag: string,
   name: string,
@@ -469,5 +484,15 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
     'Fluvy · Energy score',
     'Self-powered, sun used and low-carbon as rings, the Energy dashboard’s own gauges, over imported, exported and net.',
     scoreHeight,
+  ],
+];
+
+/** The Energy period card: its own chunk (`energy-period-cards.ts`), fetched at start as the energy family's is. */
+export const ENERGY_PERIOD_FAMILY: readonly FamilyEntry[] = [
+  [
+    'fluvy-energy-period-card',
+    'Fluvy · Energy period',
+    'The view’s date picker as a strip: ‹ the day, week, month or year › and back to today, Home Assistant’s own, so its energy cards follow it as Fluvy’s do.',
+    periodHeight,
   ],
 ];

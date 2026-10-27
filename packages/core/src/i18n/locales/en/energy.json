@@ -289,6 +289,22 @@
     "yesterday": "Yesterday",
     "follows": "Follows the date picker",
     "editor_collection_key": "Follow a date picker",
-    "editor_collection_key_help": "The key of an Energy date picker on this dashboard (Fluvy’s Energy period card or Home Assistant’s)"
+    "editor_collection_key_help": "The key of an Energy date picker on this dashboard (Fluvy’s Energy period card or Home Assistant’s)",
+    "name": "Energy period",
+    "description": "What this view’s energy cards show",
+    "previous": "Previous period",
+    "next": "Next period",
+    "this_week": "This week",
+    "this_month": "This month",
+    "this_year": "This year",
+    "custom": "Custom",
+    "chip_year": "Year",
+    "compare": "Compare",
+    "compare_help": "Compare with the period before",
+    "only_dashboard": "Only on a dashboard",
+    "variant_stacked": "With the periods",
+    "editor_periods": "Periods",
+    "editor_show_today": "Show the Today button",
+    "editor_show_compare": "Show the Compare button"
   }
 }

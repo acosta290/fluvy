@@ -40,6 +40,8 @@ const BUDGETS = {
   // 1.10 (its sheet left core, 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the
   // power chart's axes); 64 before
   energy: 81_920,
+  // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it
+  'energy-period': 16_384,
   // the history bars' readings: the resets and the steps, the recorder's history, fetched by the first card needing them
   'history-bars-readings': 8192,
   // the media family: the player and the now-playing strip

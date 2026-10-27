@@ -59,3 +59,33 @@ describe('the date picker’s words', () => {
     }
   });
 });
+
+describe('the date grid in whole days (the Energy period card’s custom span)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  it('offers no hours and no presets, and a picked day comes back whole', async () => {
+    await import('./date-picker.js');
+    const picker = document.createElement('fluvy-date-picker') as FluvyDates;
+    picker.wholeDays = true;
+    picker.noPresets = true;
+    const day = new Date(2026, 8, 14);
+    const next = new Date(2026, 8, 15);
+    picker.range = { start: day.getTime(), end: next.getTime() };
+    picker.now = new Date(2026, 8, 17, 21, 47).getTime();
+    document.body.append(picker);
+    await picker.updateComplete;
+    const root = picker.shadowRoot!;
+    expect(root.querySelector('.ad-times')).toBeNull();
+    expect(root.querySelector('.ad-presets')).toBeNull();
+    // hours set before do not count: the first day from its midnight, the last to the next
+    picker.fromTime = 10 * 60;
+    picker.toTime = 5 * 60;
+    await picker.updateComplete;
+    const picked: unknown[] = [];
+    picker.addEventListener('fluvy-dates', (event) =>
+      picked.push((event as CustomEvent<{ range: unknown }>).detail.range),
+    );
+    root.querySelector<HTMLButtonElement>('.ad-apply .fv-btn')!.click();
+    expect(picked).toEqual([{ start: day.getTime(), end: next.getTime() }]);
+  });
+});
