@@ -8,6 +8,7 @@
  *   node visual.mjs --jobs 8        that many suites at once, each one's lines printed together when it ends (the
  *                                   suites share nothing but the playground; CI runs them one after the other)
  */
+import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
