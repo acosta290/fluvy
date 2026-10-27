@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Schwellen",
     "editor.threshold_value": "Ab",
     "editor.threshold_helper": "Die Linie nimmt diese Farbe ab diesem Wert an, bis zur nächsten Schwelle",
+    "editor.series_n": "Reihe {n}",
+    "editor.notice": "Hinweis",
+    "editor.color_helper": "Leer: die Farbe der Karte, bei mehreren die Reihenfarben der Palette. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben",
     "editor.highlight_hours": "Hervorgehobene Stunden",
     "editor.show_legend": "Legende anzeigen",
     "editor.show_head": "Aktuellen Wert anzeigen"

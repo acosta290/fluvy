@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Limites",
     "editor.threshold_value": "A partir de",
     "editor.threshold_helper": "A linha ganha esta cor a partir deste valor, até o próximo limite",
+    "editor.series_n": "Série {n}",
+    "editor.notice": "Informação",
+    "editor.color_helper": "Vazio, a cor do cartão, ou as cores das séries da paleta quando há várias. As cores da paleta a acompanham; um nome de cor ou um #hex fica como foi digitado",
     "editor.highlight_hours": "Horas para destacar",
     "editor.show_legend": "Mostrar a legenda",
     "editor.show_head": "Mostrar o valor atual"

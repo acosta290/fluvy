@@ -13,7 +13,9 @@
  * - reading: a pointer moves the cursor and its dot, the value row says the price and when, and no bubble rides over it
  *   — the marked windows' pills stay where they were, seen; the keys move it (Home, →), Escape lets it go; without the
  *   head the bubble says it in its 44 above the plot; two series read in the row's lines, the time a pill on the axis;
- * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines.
+ * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines;
+ * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
+ *   legend's swatch.
  */
 import { frame, settle, startSuite } from './lib/suite.mjs';
 
@@ -428,5 +430,45 @@ const pillsOf = (card) =>
   );
 }
 await page.close();
+
+/* ---------- a series that names a colour of the palette's follows the palette ---------- */
+{
+  // the forecast after the measured names the palette's fourth series colour: Sage's on Sage, Volt's on Volt
+  const worn = {};
+  for (const palette of ['sage', 'volt']) {
+    const sheet = await suite.sheet('chart', { extra: `&palette=${palette}` });
+    worn[palette] = await frame(sheet, 'Chart · measured and forecast')
+      .locator('fluvy-chart-card')
+      .first()
+      .evaluate((card) => {
+        const hex = getComputedStyle(card).getPropertyValue('--fluvy-graph-4').trim();
+        const root = card.shadowRoot;
+        const outside = [...root.querySelectorAll('.fc-legend__item')].find((item) =>
+          item.textContent.trim().startsWith('Outside'),
+        );
+        return {
+          token: `rgb(${hex
+            .slice(1)
+            .match(/../g)
+            .map((h) => parseInt(h, 16))
+            .join(', ')})`,
+          lines: [...root.querySelectorAll('svg.fc-chart .fc-line')].map(
+            (line) => getComputedStyle(line).stroke,
+          ),
+          swatch: getComputedStyle(outside.querySelector('.fc-legend__swatch')).backgroundColor,
+        };
+      });
+    await sheet.close();
+  }
+  check(
+    'a series that names the palette’s fourth series colour wears Sage’s on Sage and Volt’s on Volt, its line and its swatch',
+    ['sage', 'volt'].every(
+      (palette) =>
+        worn[palette].lines.includes(worn[palette].token) &&
+        worn[palette].swatch === worn[palette].token,
+    ) && worn.sage.token !== worn.volt.token,
+    JSON.stringify(worn),
+  );
+}
 
 await suite.finish();

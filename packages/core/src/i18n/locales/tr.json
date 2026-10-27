@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Eşikler",
     "editor.threshold_value": "Başlangıç",
     "editor.threshold_helper": "Çizgi bu değerden itibaren bir sonraki eşiğe kadar bu rengi alır",
+    "editor.series_n": "Seri {n}",
+    "editor.notice": "Bilgi",
+    "editor.color_helper": "Boşsa, kartın rengi; birden fazlaysa paletin seri renkleri. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır",
     "editor.highlight_hours": "Vurgulanacak saatler",
     "editor.show_legend": "Göstergeyi göster",
     "editor.show_head": "Şimdiki değeri göster"

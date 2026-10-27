@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Drempels",
     "editor.threshold_value": "Vanaf",
     "editor.threshold_helper": "De lijn krijgt deze kleur vanaf deze waarde, tot de volgende drempel",
+    "editor.series_n": "Reeks {n}",
+    "editor.notice": "Melding",
+    "editor.color_helper": "Leeg: de kleur van de kaart, of bij meerdere de reekskleuren van het palet. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt",
     "editor.highlight_hours": "Uren om uit te lichten",
     "editor.show_legend": "Legenda tonen",
     "editor.show_head": "Huidige waarde tonen"

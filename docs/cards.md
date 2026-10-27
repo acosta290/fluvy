@@ -520,6 +520,12 @@ moment and a value, a map of moments to values, or a day's values; quarters stay
 negative. `span` is the window: `24h` (the default) or any `<N>h` or `<N>d` rolling to now, `today`, or
 `today+tomorrow`, which is today alone until tomorrow's prices are published.
 
+A series wears the card's colour alone, and the palette's series colours (or the house's set, fluvy's settings →
+Charts) beside others; its own `color` wins over both. It may name a colour of the palette's, which follows the
+palette and the mode as the rest of the house does — `graph-1` … `graph-12` (the palette's series colours), `accent`,
+`ok`, `warning`, `danger`, `notice`, `light`, and the energy states `solar`, `grid`, `battery`, `water`, `gas` and
+`home` — the editor offers them by name; a Home Assistant colour's name or a `#rrggbb` stays as it is.
+
 `thresholds` colour the line from a value up to the next threshold, each in a tone — `ok` is the good, cheap one: the
 line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. `highlight`
 marks the cheapest and the dearest window of what is to come (`min`, `max` or `both`; a price's in the ok and the
@@ -562,6 +568,7 @@ series:
     name: Living room
   - entity: weather.home # its hourly forecast
     name: Outside
+    color: graph-4 # the palette's fourth series colour, whatever the palette
 span: today+tomorrow
 chart: soft
 ```

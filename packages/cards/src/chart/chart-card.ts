@@ -2,6 +2,7 @@ import {
   formatDate,
   formatNumber,
   formatTime,
+  isPaletteRef,
   isUsable,
   stateText,
   strings,
@@ -116,6 +117,7 @@ import {
   quarterTicks,
   readAt,
   readingsOf,
+  refInk,
   resolveStyle,
   roundTicks,
   scrub,
@@ -133,6 +135,10 @@ import {
 } from './engine/index.js';
 
 const s = strings('chart-card');
+
+/** A colour a series writes on itself as its ink — a series colour, or one of the palette's by its token — not a tone. */
+const ownInk = (colour: SeriesColour): boolean =>
+  colour.startsWith('series-') || colour.startsWith('var(');
 
 export type ChartVariant = 'full' | 'compact' | 'tile';
 export type { ChartSeriesConfig, SeriesKind, Windows } from './config.js';
@@ -845,13 +851,17 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         (scale.unit === view.unit ? precisionOf(this.hass, view) : undefined) ??
         (scale.divisor === 1 ? carried(readings, written) : undefined);
       const usable = isUsable(view) || (view.status === 'missing' && !several);
+      // a colour of its own: a name or a hex as the card's accent sheet derives it, or one of the palette's by its
+      // token (it follows the palette and the mode)
       const accent = usable ? this.accents.item(item.color) : undefined;
       const colour: SeriesColour = !isUsable(view)
         ? 'off'
         : accent
           ? 'accent'
-          : (item.tone ??
-            (several ? (`series-${index + 1}` as SeriesColour) : toneOf(this.config, 'accent')));
+          : item.color && isPaletteRef(item.color)
+            ? (refInk(item.color) as SeriesColour)
+            : (item.tone ??
+              (several ? (`series-${index + 1}` as SeriesColour) : toneOf(this.config, 'accent')));
       const holding: Holding =
         recorded && source === 'history'
           ? { hold: Infinity, until: window.now }
@@ -1489,7 +1499,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         return {
           name: d.name,
           ...(d.accent ? { accent: d.accent } : {}),
-          ...(colour.startsWith('series-')
+          ...(ownInk(colour)
             ? { paint: seriesPaint(colour) }
             : d.accent
               ? {}
@@ -1525,7 +1535,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const usable = isUsable(view);
     const tone: Tone = !usable
       ? 'off'
-      : lead.accent || lead.colour.startsWith('series-')
+      : lead.accent || ownInk(lead.colour)
         ? 'accent'
         : (lead.colour as Tone);
     const parts = this.figureOf(lead, lead.now);

@@ -259,7 +259,8 @@ export const sheet: SheetSpec = {
           title: 'Temperature',
           series: [
             { entity: 'sensor.ch_living_temperature', name: 'Living room' },
-            { entity: 'weather.ch_home', name: 'Outside' },
+            // the palette's fourth series colour, whatever the palette
+            { entity: 'weather.ch_home', name: 'Outside', color: 'graph-4' },
           ],
           span: 'today+tomorrow',
           chart: 'soft',

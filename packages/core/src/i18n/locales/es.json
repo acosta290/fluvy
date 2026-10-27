@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Umbrales",
     "editor.threshold_value": "Desde",
     "editor.threshold_helper": "La línea toma este color desde este valor hacia arriba, hasta el umbral siguiente",
+    "editor.series_n": "Serie {n}",
+    "editor.notice": "Información",
+    "editor.color_helper": "Vacío, el color de la tarjeta, o los colores de las series de la paleta si hay varias. Los colores de la paleta la siguen; un nombre de color o un #hex se queda como se escribió",
     "editor.highlight_hours": "Horas que destacar",
     "editor.show_legend": "Mostrar la leyenda",
     "editor.show_head": "Mostrar el valor actual"

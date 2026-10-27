@@ -2517,6 +2517,9 @@
     "editor.thresholds": "しきい値",
     "editor.threshold_value": "開始値",
     "editor.threshold_helper": "この値から次のしきい値まで、線がこの色になります",
+    "editor.series_n": "系列{n}",
+    "editor.notice": "通知",
+    "editor.color_helper": "空のときはカードの色、複数のときはパレットの系列の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます",
     "editor.highlight_hours": "ハイライトする時間",
     "editor.show_legend": "凡例を表示",
     "editor.show_head": "現在の値を表示"

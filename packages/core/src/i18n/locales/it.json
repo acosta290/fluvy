@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Soglie",
     "editor.threshold_value": "Da",
     "editor.threshold_helper": "La linea prende questo colore da questo valore in su, fino alla soglia successiva",
+    "editor.series_n": "Serie {n}",
+    "editor.notice": "Informazione",
+    "editor.color_helper": "Vuoto, il colore della scheda, o i colori delle serie della palette se sono più d’una. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto",
     "editor.highlight_hours": "Ore da evidenziare",
     "editor.show_legend": "Mostra la legenda",
     "editor.show_head": "Mostra il valore attuale"

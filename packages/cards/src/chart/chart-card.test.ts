@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { chartHeight } from '../chart-family.js';
 import { familiesDefined } from '../index.js';
 import { FluvyChartCard, type ChartCardConfig } from './chart-card.js';
-import { capsIn, defaultWindows, isPrice, seriesOf, windowAt } from './config.js';
+import { capsIn, defaultWindows, isPrice, SERIES_LIST, seriesOf, windowAt } from './config.js';
 import type { Reading } from './data/attribute.js';
 import { sourceOf } from './data/sources.js';
 import { gains, slotted, spanOf, stepOf, windowOf } from './data/span.js';
@@ -516,5 +516,62 @@ describe('the Chart card’s editor', () => {
     expect(defaults['highlight']).toBe('both');
     const names = JSON.stringify(FluvyChartCard.getConfigForm().schema);
     expect(names.match(/"name":"highlight"/g)).toHaveLength(1);
+  });
+
+  it('offers a series the palette’s colours by their words, and keeps a colour typed (1.11)', () => {
+    const field = JSON.stringify(SERIES_LIST.schema).match(
+      /\{"name":"color".*?"helper":"[^"]+"\}/,
+    )?.[0];
+    const { selector, helper } = JSON.parse(field ?? '{}') as {
+      selector: { select: { custom_value: boolean; options: { value: string; label: string }[] } };
+      helper: string;
+    };
+    expect(selector.select.custom_value).toBe(true);
+    expect(selector.select.options.map((o) => o.value)).toEqual([
+      ...Array.from({ length: 12 }, (_u, n) => `graph-${n + 1}`),
+      ...['accent', 'ok', 'warning', 'danger', 'notice', 'light'],
+      ...['solar', 'grid', 'battery', 'water', 'gas', 'home'],
+    ]);
+    expect(selector.select.options.map((o) => o.label).slice(10, 18)).toEqual([
+      'Series 11',
+      'Series 12',
+      'Accent',
+      'Good',
+      'Warning',
+      'Danger',
+      'Notice',
+      'Light',
+    ]);
+    expect(selector.select.options.at(-1)?.label).toBe('House');
+    expect(helper).toBe('chart-card.editor.color_helper');
+  });
+});
+
+describe('a series’ own colour', () => {
+  it('is one of the palette’s by its token, or a colour name as the card’s accent sheet derives it (1.11)', async () => {
+    const card = await draw({
+      series: [
+        { entity: 'sensor.temperature', color: 'graph-9' },
+        { entity: 'sensor.nordpool', color: 'solar' },
+        { entity: 'sensor.nordpool_morning', color: 'teal' },
+      ],
+    });
+    const groups = [
+      ...root(card).querySelectorAll('svg.fc-chart g[style], svg.fc-chart g[data-accent]'),
+    ];
+    const inks = groups.map((g) => g.getAttribute('style'));
+    expect(inks).toContain('--tone-ink:var(--fluvy-graph-9)');
+    expect(inks).toContain('--tone-ink:var(--fluvy-state-energy-solar)');
+    expect(groups.some((g) => g.hasAttribute('data-accent'))).toBe(true);
+    // the legend's swatches wear the same paint
+    expect(
+      [...root(card).querySelectorAll('.fc-legend__item')].map((item) =>
+        item.getAttribute('style'),
+      ),
+    ).toEqual([
+      '--tone-ink:var(--fluvy-graph-9)',
+      '--tone-ink:var(--fluvy-state-energy-solar)',
+      null,
+    ]);
   });
 });

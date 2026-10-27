@@ -2517,6 +2517,9 @@
     "editor.thresholds": "Seuils",
     "editor.threshold_value": "À partir de",
     "editor.threshold_helper": "La ligne prend cette couleur à partir de cette valeur, jusqu’au seuil suivant",
+    "editor.series_n": "Série {n}",
+    "editor.notice": "Information",
+    "editor.color_helper": "Vide, la couleur de la carte, ou les couleurs des séries de la palette s’il y en a plusieurs. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi",
     "editor.highlight_hours": "Heures à mettre en avant",
     "editor.show_legend": "Afficher la légende",
     "editor.show_head": "Afficher la valeur actuelle"
