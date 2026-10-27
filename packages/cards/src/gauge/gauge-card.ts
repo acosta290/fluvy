@@ -1,16 +1,18 @@
 import {
+  chartDefaults,
   fetchHistory,
   formatNumber,
   isUsable,
   strings as words,
   type EntityView,
   type FluvyCardConfig,
+  type GaugePreset,
   type LovelaceGridOptions,
   type MessageKey,
   type Series,
 } from '@fluvy/core';
 
-import { head, readout, rulerLabels, sheetStyles, type Tone } from '@fluvy/ui';
+import { dialLabelTop, head, readout, rulerLabels, sheetStyles, type Tone } from '@fluvy/ui';
 
 import {
   css,
@@ -23,6 +25,7 @@ import {
 } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
+import { ChartLoader } from '../shared/chart-load.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
 
@@ -77,7 +80,18 @@ export interface GaugeCardConfig extends FluvyCardConfig, NumberKeys {
   hours?: number;
   /** Head badge. Defaults to "Producing" / "Idle", read from the value. */
   badge?: string;
+  /** The ring's style: its ticks (1.10's), the thermostat's dial read, or a ring with its knob; none: the house's. */
+  gauge?: GaugePreset;
 }
+
+/** The gauge styles the ring draws in its room: its ticks (the dial since 1.0), the thermostat's dial read, a ring. */
+export const DIALS: readonly GaugePreset[] = ['ticks', 'dial', 'ring'];
+
+/** The style a config's ring draws: its own, else the house's, else its ticks. */
+export const dialOf = (config: Readonly<Record<string, unknown>> | undefined): GaugePreset => {
+  const wanted = (config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge;
+  return DIALS.includes(wanted) ? wanted : 'ticks';
+};
 
 /** The sheet's ring: R 96 with 12 px ticks needs a 240 box, which a 300 px card still holds. */
 const RADIUS = 96;
@@ -176,6 +190,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
 
   private readonly history = new Refresher<Series | null>();
   private readonly head = new HeadFit(this);
+  /** The chart engine, for a ring drawn in a style: its ticks are the card's own and wait for nothing. */
+  private readonly charts = new ChartLoader(this);
 
   constructor() {
     super();
@@ -345,6 +361,10 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const radius = Math.min(RADIUS, Math.max(48, Math.floor((width / 2 - TICK - 12) / 4) * 4));
     const box = Math.ceil((radius + TICK + 12) / 4) * 8; // the dial's own box: twice its half, which sits on the 4 grid
     const inset = Math.max(0, Math.floor((width - box) / 2));
+    const dial = dialOf(this.config);
+    // the dial's height, down to its range's labels: the room a style's ring keeps
+    const tall = dialLabelTop(radius, TICK) + 16;
+    const engine = this.charts.engine;
 
     const stats = (
       [
@@ -397,28 +417,48 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
                 [0, edge(min)],
                 [1, max === null ? '—' : edge(max)],
               ])}`
-          : html`<div class="so-gauge">
-              <fluvy-dial
-                gauge
-                style="margin-left:${inset}px"
-                .radius=${radius}
-                .tick=${TICK}
-                .large=${true}
-                .stepper=${false}
-                .tone=${unusable ? 'neutral' : tone}
-                .min=${min}
-                .max=${max ?? min + 1}
-                .fill=${value === null || max === null ? 0 : (value - min) / (max - min)}
-                .value=${value ?? undefined}
-                .unit=${value === null ? '' : scale.unit}
-                .label=${this.innerLabel(view)}
-                .text=${value === null ? '—' : undefined}
-                .minLabel=${edge(min)}
-                .maxLabel=${max === null ? '—' : edge(max)}
-                ?disabled=${value === null}
-                .format=${shown}
-              ></fluvy-dial>
-            </div>`
+          : dial !== 'ticks'
+            ? // a style's ring in the dial's room (its box, the height down to its range): the engine's, once here
+              html`<div class="so-gauge">
+                <div style="margin-left:${inset}px;width:${box}px;height:${tall}px">
+                  ${engine?.drawGauge({
+                    style: engine.resolveGauge(dial, {}),
+                    // a ring is as tall as the dial's room, a dial its box
+                    size: dial === 'ring' ? tall : box,
+                    min,
+                    max: max ?? min,
+                    value: max === null || unusable ? null : value,
+                    format: shown,
+                    unit: scale.unit,
+                    label: this.innerLabel(view),
+                    minLabel: edge(min),
+                    maxLabel: max === null ? '—' : edge(max),
+                    tone,
+                  })}
+                </div>
+              </div>`
+            : html`<div class="so-gauge">
+                <fluvy-dial
+                  gauge
+                  style="margin-left:${inset}px"
+                  .radius=${radius}
+                  .tick=${TICK}
+                  .large=${true}
+                  .stepper=${false}
+                  .tone=${unusable ? 'neutral' : tone}
+                  .min=${min}
+                  .max=${max ?? min + 1}
+                  .fill=${value === null || max === null ? 0 : (value - min) / (max - min)}
+                  .value=${value ?? undefined}
+                  .unit=${value === null ? '' : scale.unit}
+                  .label=${this.innerLabel(view)}
+                  .text=${value === null ? '—' : undefined}
+                  .minLabel=${edge(min)}
+                  .maxLabel=${max === null ? '—' : edge(max)}
+                  ?disabled=${value === null}
+                  .format=${shown}
+                ></fluvy-dial>
+              </div>`
       }
       <div
         class="so-cols fv-cols so-cols--center ${row.odd ? 'fv-cols--odd' : ''}"

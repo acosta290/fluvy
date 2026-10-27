@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
-import type { HomeAssistant } from '@fluvy/core';
+import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { FluvyGaugeCard, type GaugeCardConfig } from './gauge-card.js';
+import * as gaugeEditor from './gauge-editor.js';
 
 await familiesDefined;
 
@@ -73,5 +74,43 @@ describe('the gauge’s unit and decimals (issue #69)', () => {
       expect(FluvyGaugeCard.layoutHeight({ type: '', variant, unit: 'W', decimals: 0 })).toBe(
         FluvyGaugeCard.layoutHeight({ type: '', variant }),
       );
+  });
+});
+
+describe('the ring’s gauge styles', () => {
+  const ring = (gauge?: GaugeCardConfig['gauge']) =>
+    mount({ variant: 'ring', ...(gauge ? { gauge } : {}) }, house());
+
+  it('draws its ticks as 1.10 did while the house keeps its factory gauge: the dial in gauge mode, its own', async () => {
+    const card = await ring();
+    const dial = card.shadowRoot!.querySelector('.so-gauge > fluvy-dial');
+    expect(dial?.hasAttribute('gauge')).toBe(true);
+    expect((dial as unknown as { radius: number }).radius).toBe(96);
+    expect(card.shadowRoot!.querySelector('.fc-gauge')).toBeNull();
+  });
+
+  it('draws the thermostat’s dial read, and a ring with its knob, in the dial’s room', async () => {
+    const dial = await ring('dial');
+    const read = dial.shadowRoot!.querySelector('.so-gauge fluvy-dial');
+    expect(read?.hasAttribute('readonly')).toBe(true);
+    expect(read?.hasAttribute('gauge')).toBe(false);
+    const root = (await ring('ring')).shadowRoot!;
+    expect(root.querySelector('.fc-ring__lit')).not.toBeNull();
+    expect(root.querySelector('.fc-gauge .fv-knob')).not.toBeNull();
+    // the dial's room: its box wide, as tall as it is down to its range's labels, the ring as tall as it
+    const room = root.querySelector('.so-gauge > div') as HTMLElement;
+    expect([room.style.width, room.style.height]).toEqual(['240px', '224px']);
+    expect((root.querySelector('.fc-gauge') as HTMLElement).style.height).toBe('224px');
+  });
+
+  it('offers the ring its three styles, and the bar and the signed ring none', () => {
+    const field = gaugeEditor.getConfigForm().schema.find((item) => item.name === 'gauge') as
+      HaFormSchemaItem | undefined;
+    const options = (field?.selector as { select: { options: { value: string }[] } }).select
+      .options;
+    expect(options.map((o) => o.value)).toEqual(['ticks', 'dial', 'ring']);
+    expect(field?.when?.({})).toBe(true);
+    expect(field?.when?.({ variant: 'bar' })).toBe(false);
+    expect(field?.when?.({ variant: 'signed' })).toBe(false);
   });
 });

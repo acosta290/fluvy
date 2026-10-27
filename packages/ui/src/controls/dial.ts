@@ -31,6 +31,15 @@ const SWEEP = 270;
 const STEPS = 54;
 
 /**
+ * Where a dial of radius `R` writes its range, under its ticks' end on the 4 grid: its height is 16 more (and the
+ * stepper's row where it has one) — the room a gauge drawn in a dial's place keeps.
+ */
+export function dialLabelTop(R: number, tick: number): number {
+  const half = Math.ceil((R + tick + 12) / 4) * 4; // half-size on the 4 grid so the box centres on it
+  return Math.ceil((half + (R + tick) * Math.SQRT1_2 + 8) / 4) * 4;
+}
+
+/**
  * The fluvy dial: a circular ruler. Ticks radiate outward from radius R across a 270° sweep, a soft
  * disc carries the value, and the one knob rides the ring (two knobs for a heat/cool range). With
  * `gauge` it is a read-only meter: no disc, no knob, an uppercase label over the figure; with `readonly` it is the
@@ -445,8 +454,7 @@ export class FluvyDial extends LitElement {
     const w = half * 2;
     const cx = half;
     const cy = half;
-    const endY = cy + (R + tick) * Math.SQRT1_2;
-    const labelTop = Math.ceil((endY + 8) / 4) * 4;
+    const labelTop = dialLabelTop(R, tick);
     const stepTop = labelTop + 16 + 12;
     const showStepper = this.stepper && !this.gauge && !this.readonly;
     const h = showStepper ? stepTop + 44 : labelTop + 16;

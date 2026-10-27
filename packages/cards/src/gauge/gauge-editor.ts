@@ -11,6 +11,7 @@ import {
   NUMBER_DEFAULTS,
   numberField,
   numberFields,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
@@ -18,7 +19,7 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
-import { GAUGE_VARIANTS, type GaugeCardConfig } from './gauge-card.js';
+import { DIALS, dialOf, GAUGE_VARIANTS, type GaugeCardConfig } from './gauge-card.js';
 
 /** The gauge card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -37,10 +38,15 @@ export const keys = configKeys<GaugeCardConfig>()([
   'badge',
   'unit',
   'decimals',
+  'gauge',
 ]);
 
 /** What the editor shows where the config says nothing: what the card does then. */
-export const defaults: EditorDefaults = () => ({ variant: 'ring', ...NUMBER_DEFAULTS });
+export const defaults: EditorDefaults = (config) => ({
+  variant: 'ring',
+  gauge: dialOf(config),
+  ...NUMBER_DEFAULTS,
+});
 
 /** The units the editor offers are the sensor's class's. */
 export const choices = unitChoicesOf;
@@ -51,6 +57,8 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(['sensor', 'number', 'input_number', 'counter']),
       fieldRow(textField('name'), textField('subtitle')),
       fieldRow(iconField(), selectField('variant', GAUGE_VARIANTS)),
+      // the ring's style: a bar and a signed ring have one look each
+      onlyWhen((data) => (data['variant'] ?? 'ring') === 'ring', selectField('gauge', DIALS)),
       showIconField(),
       ...colourFields(),
       fieldRow(
