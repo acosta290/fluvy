@@ -27,7 +27,8 @@ export const withCards = (sections: readonly Section[]): Section[] =>
 /**
  * The template's frame: the greeting first in the first section, the views as chips under it when the dashboard
  * asks for them (and has more than one; a wall opens with neither), then empty sections up to the template's columns;
- * a band across them (a section spanning the columns: the appliances) after the columns, on a row of its own.
+ * a band across them (a section spanning the columns) on a row of its own — before the columns where the view leads
+ * with it (the Energy dashboard's period strip on its Today view), else after them (the appliances).
  */
 export function framed(
   view: View,
@@ -43,13 +44,16 @@ export function framed(
           ...(ctx.greetingTabs && tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
         ]
       : [];
-  const across = view.sections.filter((section) => section.column_span);
+  // the bands before the first column lead; a view of bands alone (every appliance) keeps them under the greeting
+  const columns = view.sections.findIndex((section) => !section.column_span);
+  const lead = columns > 0 ? view.sections.slice(0, columns) : [];
+  const across = view.sections.slice(lead.length).filter((section) => section.column_span);
   const [first, ...rest] = view.sections.filter((section) => !section.column_span);
   const sections: Section[] = first
     ? [{ ...first, cards: [...header, ...first.cards] }, ...rest]
     : [{ type: 'grid', cards: header }];
   while (sections.length < template.columns) sections.push({ type: 'grid', cards: [] });
-  return { ...view, sections: [...sections, ...across] };
+  return { ...view, sections: [...lead, ...sections, ...across] };
 }
 
 /** A grid meter found by its words (not given by the energy preferences) takes the sign its last day shows. */
@@ -88,6 +92,7 @@ export async function buildContext(
     t: config.language ? wordsIn(config.language) : (key) => home.t(key),
     // the dashboard the strategy is generated for: the page's first path segment
     base,
+    panelUrl: hass.panelUrl || base.slice(1),
     weather: config.weather ?? home.weather[0],
     energy: await houseEnergy(hass, home),
     style: {

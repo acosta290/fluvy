@@ -176,10 +176,14 @@ describe('the dashboard templates', () => {
       expect(views.length).toBeGreaterThan(0);
       for (const view of views) {
         expect(view.max_columns).toBe(template.columns);
-        // the columns, then a band across all of them where the view has one (the appliances)
+        // the columns, side by side, and a band across all of them where the view has one: before them where the view
+        // leads with it (the Energy dashboard's period strip), else after them (the appliances)
         const across = view.sections.filter((section) => section.column_span);
         expect(view.sections.length - across.length).toBe(template.columns);
-        expect(view.sections.slice(template.columns)).toEqual(across);
+        const first = view.sections.findIndex((section) => !section.column_span);
+        expect(
+          view.sections.slice(first, first + template.columns).some((s) => s.column_span),
+        ).toBe(false);
         for (const band of across) expect(band.column_span).toBe(template.columns);
       }
     }
@@ -237,6 +241,38 @@ describe('the dashboard templates', () => {
       if (template.id === 'home')
         expect(rooms.some((room) => room.path.startsWith('room-'))).toBe(tabs.includes('rooms'));
     }
+  });
+
+  it('lead the Energy dashboard’s Today view with the period strip, its cards following it; Now stays live', async () => {
+    const hass = { ...(everything() as object), panelUrl: 'fluvy-energy' } as never;
+    const { views } = await generate({ type: 'custom:fluvy-energy' }, hass);
+    const today = views.find((view) => view.path === 'today')!;
+    const [band, first] = today.sections;
+    expect(band!.column_span).toBe(3);
+    expect(band!.cards).toEqual([
+      {
+        type: 'custom:fluvy-energy-period-card',
+        collection_key: 'energy_fluvy-energy',
+        grid_options: { columns: 'full' },
+      },
+    ]);
+    // the greeting still opens the columns
+    expect(first!.cards[0]!.type).toBe('custom:fluvy-hello-card');
+    const followers = cardsOf([{ ...today, sections: today.sections.slice(1) }]).filter((card) =>
+      card.type.startsWith('custom:fluvy-energy'),
+    );
+    expect(followers.map((card) => card.type).sort()).toEqual([
+      'custom:fluvy-energy-balance-card',
+      'custom:fluvy-energy-flow-card',
+      'custom:fluvy-energy-sankey-card',
+      'custom:fluvy-energy-score-card',
+    ]);
+    for (const card of followers) expect(card['collection_key']).toBe('energy_fluvy-energy');
+    // the live view and the home dashboard's energy keep their own periods
+    const now = views.find((view) => view.path === 'now')!;
+    expect(cardsOf([now]).some((card) => 'collection_key' in card)).toBe(false);
+    const home = await generate({ type: 'custom:fluvy-home' }, hass);
+    expect(cardsOf(home.views).some((card) => 'collection_key' in card)).toBe(false);
   });
 
   it('leave out the views `hide` names, never the first', async () => {
