@@ -5,6 +5,331 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- A Home Assistant in `pt` (Portugal's code) reads Portugal's catalogue, where it read Brazil's. The language menu
+  names the two Portugueses by their country, "Português (Brasil)" and "Português (Portugal)", and holds eleven rows:
+  eight and the top of the ninth show, the rest scrolls (#64).
+- The automatic Energy dashboard's Today view opens with the Energy period strip across the view, and its day's flow,
+  sankey, score and balance follow it: their Day · Week · Month chips are gone (each card 60 px shorter) and their
+  subtitle says the span. The strip's arrows and its sheet move them together, to yesterday, a week, a month or a
+  year. The Now view, the Home dashboard's energy view and every card a person placed are as they were (#62).
+- A light card of a light that only switches on and off is its head alone — the circle, the name, the state line and
+  the switch, 84 px — where its head stood in a dimmer's 256 px box with nothing under it; a compact one declares the
+  84 it draws (it declared 188). Its editor offers only what the bulb does: an on/off light's no layout, stepper or
+  live update, no temperature, colours or whites; a dimmer's no longer the temperature and the colours, a white's no
+  longer the colours (#65).
+- Every energy figure is written by one rule, the gauge's (#69): no decimal from 100, one from 1, up to two under it,
+  a scaled figure keeping its one decimal. On the energy family's cards a power between 10 and 100 W takes its decimal
+  ("45.3 W" where it read "45 W"), one under a watt two ("0.25 W" where it read "0.3 W"), a kilowatt figure under
+  1 kW up to two ("0.25 kW" where it read "0.3 kW"; "0.4 kW" stays); the energy card's legend writes a day's energy
+  in the row's unit ("500 Wh" where it read "0.5 kWh", "0.04 kWh" where it read "0.0 kWh"); and a readout in the
+  sensor's own unit takes the precision set for the sensor in Home Assistant. The history bars' editor offers its
+  unit as a choice of the sensor's class, and shows none for a sensor whose unit converts to nothing (a rain gauge: it
+  had no effect).
+- A helpers card's date at a narrow column reads as figures ("10/11") where its month's name was cut at the pill's
+  end ("10 de nov."), and a value's pill stacked under its name (a date, a long select option) is as wide as its words,
+  where it was cut at the row's cap.
+- A stat tile answers a tap with its entity's details (Home Assistant's dialog, with the history), and takes the
+  pointer's hairline and the finger's press as a tile does; it was a still figure. `tap_action: none` on a tile keeps
+  it still (#71).
+- The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
+- The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
+  Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses
+  another style.
+- The editor's colour field of a lock, camera or alarm row, a scene or a chip shows none chosen where it said Primary;
+  what the item draws is unchanged.
+- Dutch: the energy score's self-powered ring reads "Zelfvoorzienend", and "Zelfstandig" where half a column cannot
+  hold it (#70). Japanese: a calendar's selected-day label reads 「17日（木）・イベント4件」. Portuguese (Portugal): the
+  calendar's upcoming list writes "qui 29" where it wrote "quinta 29".
+
+### Added
+
+- **Chart styles.** Every chart can be drawn in a style of its own — `classic` (the chart you know, the factory
+  default), `soft`, `glow`, `minimal`, `step`, `bars`, `columns` and `band` — chosen once for the house in fluvy's
+  settings or per card with `chart`, with fine keys for the curve, the fill, the line, the soft shadow, the points,
+  the gridlines, the scale, now and the highlight, and `animate`. Every card that draws a chart takes them, each
+  offered only what it draws: the sensor (`classic`, `soft`, `glow`, `minimal`, `step`, and `bars` or `columns` where
+  its readings add up; its tile's spark classic or minimal), the energy card's line (`classic`, `soft`, `glow`,
+  `minimal`, `step`) and its stacked charts by source and of the whole house (`classic`, `soft`, `step`;
+  `line_width: bold`), the history bars (`classic`, `bars` with a `highlight`, `columns`; the mini row `classic` or
+  `minimal`), production (`classic`, `soft` for one meter, `columns`), the distribution's stack and the bars card
+  (`classic`, `soft`). A card that names none draws the house's style where it can, else its classic. The History
+  page follows the house's style.
+- **Gauge styles**: `ticks`, `dial` (the thermostat's dial, read), `ring` and `ruler` — Fluvy's own controls, read,
+  every knob the thermostat's whole ball — on the gauge card's ring (`gauge`: `ticks`, `dial`, `ring`) and the
+  humidity's ruler (`ticks`, `ruler`).
+- **Gauges that move with what they read**: `gauge: liquid` (a percentage), `thermo` (a temperature: a sky over the
+  ground — snow, a mild sun and a cloud, heat haze, a desert with saguaros from 35 °C), `tank` (water stored: bubbles
+  while it fills), `battery` (bubbles and the bolt while it charges), `pulse` (power: rings that beat faster with more
+  of it), `air` (wind: streamlines as fast as the wind) and `sun` (the sun's power: rays that grow and turn with it),
+  on the gauge card's ring wherever its sensor is of their kind, and `liquid` on the humidity card's band. Each card's
+  editor offers the ones that read its sensor, and `animate: false` (or the house's motion off, or the system's
+  reduced motion) rests them on their first frame.
+- **The Charts tab** in fluvy's settings, after Appearance: how every chart and gauge of the house is drawn where a
+  card says nothing of its own, chosen once like the look — the style and the gauge (the controls and the seven that
+  move) as tiles drawn in the settings chosen, the fine settings the style draws with (the line, the soft shadow, the
+  fill, the gridlines, the line's end, now, the bars' ends, the bubble; the waves of a moving gauge), motion, and the
+  series colours: the palette's six or a set of six of the house's own — each colour picked from the palette's
+  swatches (its twelve series colours, its accent and statuses, the energy states), which follows the palette and the
+  mode, or a hex of the house's own, kept fixed at its hue and fitted to each mode's card (a navy lifted to read on a
+  dark card, a cream deepened on a light one) — a new set starting on the palette's six, so choosing a green palette
+  gives the same green in the charts; only two colours too close to tell apart are named — kept with a name (twelve
+  at most), renamed, let go. A preview draws a chart, its bars and a gauge in both modes side by side, and every card
+  on the page that names no style redraws as the choices move; everything is saved from the bar, kept in the house's
+  settings (version 3) and so in Home Assistant's backups and Fluvy's settings file. Someone who is not an
+  administrator reads it.
+- The **`ok` tone** (the success role): what is good or cheap.
+- **The Chart card** (`custom:fluvy-chart-card`, #68): any time series on one chart — a sensor's history or its
+  long-term statistics, a list in its attributes or a weather's forecast — from what has happened to what is to come,
+  now marked and what is to come dashed, in the house's chart style or its own. It reads Nordpool's prices today and
+  tomorrow (`raw_today` and `raw_tomorrow`, hours or quarters, and the plain `today`/`tomorrow`; today alone until
+  tomorrow is published), Tibber's map of hours to prices, ENTSO-E's and Frank Energie's prices, Solcast's forecast
+  and its percentiles, and any list of moments and values — keys found by their usual names or named (`time_key`,
+  `value_key`), quarters kept, negative prices kept. Its window (`span`) rolls to now — 24 hours, any hours or days —
+  or is the house's day, alone or with tomorrow. Each of six series a line, an area, columns or a band, with its
+  own colour (one of the palette's by its name — `graph-3`, `accent`, `ok`, `solar` … — which follows the palette, a
+  colour name or a hex), unit and decimals; `thresholds` colour the line where it crosses them; `highlight` marks and
+  names the cheapest and dearest stretch of what is to come (`highlight_hours` long, an hour by default);
+  `show_head` writes the value now with its change on the period before; `show_legend`; `variant` full, compact or a
+  tile; read by pointer, finger or keys.
+- **`collection_key` on nine energy cards (#62).** Energy flow, Energy balance, Where it went, Energy score, Energy
+  devices, Grid, Energy, Production and Water & gas take the key of an Energy date picker on the dashboard (Home
+  Assistant's `energy-date-selection` card, or Fluvy's Energy period card — any key starting with `energy_`) and
+  follow its range with Home Assistant's own figures: the statistics Home Assistant fetched once for the whole view,
+  allocated the way the Energy dashboard allocates them, so a Fluvy card and Home Assistant's beside it say the same
+  numbers and move together, and no follower asks the recorder again. A follower's Day · Week · Month chips go and its
+  subtitle says the range ("Today", "Yesterday", "24 Oct", "17 – 23 Sep", "September", "2026"); a week is Home
+  Assistant's calendar week. The period cards total the range (the balance's money too); the Grid card's totals and
+  the devices card follow it; the Energy card draws the range in place of `hours` (a day on the day's axis, a longer
+  range on its dates, the house's power from the sensors Home Assistant names or the meters); Production and Water &
+  gas draw the range's last day. A picker's card that loads after ours is found on the next update: until then the
+  card draws today, without chips, at the same height. The editor offers the keys found on the dashboard ("Follow a
+  date picker"), hides the chips' switch and the Energy card's `hours` while a key is set, and a key without the
+  `energy_` prefix is refused with a message, as Home Assistant's cards refuse it.
+- **Energy period** (`custom:fluvy-energy-period-card`, #62): the Energy dashboard's date picker as a strip — ‹ the
+  span ›, Today (away from today) and, asked for, Compare. The span's words ("Today", "17 – 23 Sep", "September",
+  "2026") open a sheet with the presets — today, yesterday, this week, this month, this year — and a date grid for a
+  span of one's own, in whole days; ‹ › walk the span by its own grain (a day, a week from the house's first weekday,
+  a month, a year), as Home Assistant's picker walks it, and never past today. It drives an Energy date picker's
+  collection — the dashboard's own (`energy_<its url>`) unless `collection_key` names another — so Home Assistant's
+  energy cards on the dashboard follow it as Fluvy's do: where a picker already holds the key it drives that one, and
+  where none does it has Home Assistant make its own date card, hidden inside the strip, so the collection is made and
+  fed by Home Assistant's code (the Energy preferences, the hourly refresh, yesterday until today's first hour). Home
+  Assistant's date card on the same view moves it, and it moves that one. A preset is remembered where Home Assistant
+  remembers its own, so the dashboard reopens on it in both. Three layouts on the 4 grid: `row` (84), `compact` (60:
+  the span between its arrows) and `stacked` (136: the row over Day · Week · Month · Year chips); `periods` (an
+  ordered subset of day, week, month, year, custom), `show_today`, `show_compare`, tone and colours. In a narrow
+  column Compare and Today give their words for their glyphs, the span takes its short words ("24 Oct", "Sep"), then
+  Today and Compare go and, in half a section, the arrows — the sheet has them all; the stacked periods keep their one
+  line and scroll where the four do not hold it, so the strip is as tall at every width. Across a wide band the
+  capsule and the periods run 360 at most, on the strip's start. On a page that is no dashboard it says "Only on a
+  dashboard", at its size, its buttons off.
+- **Energy usage** (`custom:fluvy-energy-usage-card`, #62): Home Assistant's energy usage graph as a Fluvy card — a
+  column for each hour of a day, each day of a week or a month, each month of a year, stacked from the line up by
+  where the house took its energy from (the sun, the battery, the grid) and down by what went into the battery and out
+  to the grid, each in its source's colour, from the Energy dashboard's statistics allocated hour by hour as the
+  dashboard allocates them (so its figures are Home Assistant's). What the house used over the range in the head, each
+  series' total in the legend, a slot's whole stack in a bubble under a finger (the keys walk the slots). `period`
+  (`day`, `week`, `month`, `year`, with Day · Week · Month · Year chips), `compare` (the period before as ghost
+  columns behind the bars), `collection_key` (it follows an Energy date picker — Home Assistant's or the Energy period
+  card — with Home Assistant's own figures for its range, the picker's Compare drawing the ghosts), `sources` (the
+  sources drawn, in the order they stack, each with its `name`, `color` — a colour of the palette's, which follows the
+  palette, a colour name or a hex — and `show`), `max_sources` (the rest fold into "Other"), `show_period` (the
+  chips), `show_returns`, `show_legend`, `variant` (`full`, `compact`, `mini`), `chart` (`classic`, `soft`,
+  `columns`), `show_axis`, `show_grid`, `animate`, `unit` and `decimals`. With no Energy dashboard it says so.
+- **`unit` and `decimals`** on every card that writes an energy figure — the energy flow, energy, balance, grid,
+  devices, where-it-went, score, production, meters, batteries and car charger cards, the gauge, the sensor, stat tiles
+  and readouts cards — and on their lists' items (a flow's and a grid's readouts, an energy card's legend, a device
+  row, a meter, a tile, a readout): the figures read in the unit asked (W, kW, MW; Wh, kWh, MWh; L, m³, gal, ft³ for
+  a meter) at the decimals asked, where the sensor's unit converts to it; the energy card's power scale and the
+  sensor's chart follow its `unit`. The editor offers both on one row, the units of the sensor's own class; the
+  history bars' unit is chosen the same way (#69).
+- A **Web page** card (`custom:fluvy-web-card`, #61): a page on a plate — under a head with the page's host on its
+  line, alone on the card or bare — in the shape or at the height you choose, drawn smaller with `scale`, asked for
+  again every so many minutes, with open-in-a-new-tab, full-screen and reload rounds; a dark look that inverts the page
+  and an automatic one that follows the card; Home Assistant's own sandbox by default, a strict one or none; no
+  referrer. On an https dashboard an http page says it needs https instead of failing silently. Home Assistant's
+  `type: iframe` card pastes in.
+- An **Items** card (`custom:fluvy-items-card`, #66) that lists the items of a sensor's list attribute — flights
+  overhead, departures, parcels — as rows, compact rows or tiles, each named, lined and valued by the fields you map
+  (a field of the item, or words with `{field}` in them) or by a preset: FlightRadar24's flights are recognised on
+  their own, with the route and the aircraft, the altitude with a climbing or descending arrow, the aircraft's photo
+  and the nearest first. A template can give the list instead, so any sensor becomes one. `max_rows` is the card's
+  height, sorting by any field, the count under the title, and a tap opens the item's sheet with all its details and
+  its link.
+- A row's **real last change** (`since`, #67): where Home Assistant's `last_changed` is a restart's, a row reads its
+  time from a timestamp sensor or an attribute of its own (the sensor's id, or `attribute:<name>`, as an ISO date or
+  an epoch in seconds or milliseconds) — on the openings card, on an entities, lock, camera or alarm row, a tile, a
+  tiles group's or a room's tile, a template card, a person and a helper row. The openings card names one for every
+  row at once (`since_pattern: sensor.{id}_real_last_changed`, `{id}` the row's object id, `{entity}` its whole id; a
+  row's own `since` wins). What does not read — empty, unknown, unavailable, not a moment — leaves the row on Home
+  Assistant's own time. The editors offer the house's timestamp sensors and take any other typed.
+- **Stat tiles take a tap (#71)**: each tile opens its entity's details — Home Assistant's dialog, with the history —
+  on a tap, or runs a `tap_action` and a `hold_action` of its own (nothing on a hold by default), both set per tile in
+  the editor's tiles list; with a keyboard, Tab to a tile and Enter or Space opens it, Shift+F10 or the menu key holds.
+  A tile that cannot be read is no button.
+- **Portuguese (Portugal)** (`pt-PT`), the tenth language, translated and read in context by @andrefilipegsilva (#64):
+  the catalogue, the naming words the automatic dashboards read a house by, the integration's texts and the demo's
+  strings, read once more on top of his catalogue — meanings, one gender, AO90 spellings ("detetado"), the gerunds and
+  other Brazilian leftovers, and the labels too long for tiles, buttons and readouts; the greeting says "boa tarde"
+  until 20:00. Its naming words know "máquina de lavar louça" (a dishwasher), "Placa solar" (no hob) and "casa de
+  banho" (a bathroom, never the house's power).
+- Two glyphs, `fluvy:external` (an arrow leaving its box) and `fluvy:refresh` (a circular arrow), in Home Assistant's
+  icon pickers too.
+
+### Changed
+
+- Dutch: the energy score's self-powered ring reads "Zelfvoorzienend", and "Zelfstandig" where half a column cannot
+  hold the long word — a short form, `energy-score.self_powered_short`, in every catalogue, which the card takes by
+  measure. Thanks to @evertwoud (#70).
+- A Home Assistant in `pt` (Portugal's code) reads Portugal's catalogue; it read Brazil's. Home Assistant files
+  European Portuguese under `pt` and Brazil's under `pt-BR`: Fluvy's registry now carries the code Home Assistant files
+  a language under where it differs from ours (`ha: 'pt'`) and resolves a tag through it — `pt` → `pt-PT`, `pt-AO`
+  and `pt-MZ` (Portugal's norm) → `pt-PT`, `pt_BR` → `pt-BR`. The integration's Portuguese texts (its setup dialog,
+  the Repairs it raises) are in `translations/pt.json`, the file Home Assistant reads for `pt` (#64).
+- The automatic Energy dashboard's Today view opens with the Energy period strip, and its day's flow, sankey, score and
+  balance follow it, without their chips (#62).
+- Every energy figure follows one rule for its decimals, the gauge's: no decimal from 100, one from 1, up to two
+  under it, a scaled figure keeping its one decimal. On the energy family's cards a power between 10 and 100 W now
+  takes its decimal ("45.3 W" where it read "45 W"), one under a watt two, and a kilowatt figure under 1 kW up to two
+  ("0.25 kW" where it read "0.3 kW"); the energy card's legend writes a day's energy in the row's unit, Wh where
+  every figure is under a kilowatt-hour; a readout in the sensor's own unit takes the precision set for the sensor in
+  Home Assistant, as the gauge's does (#69).
+- A select in a card's editor shows a number the YAML holds as its word (`decimals: 2`, `columns: 2`), where it showed
+  nothing chosen.
+- The calendar's upcoming list and week head write a short weekday short in every language: where a locale writes the
+  whole word for its short form (Portugal's "quinta", never "qui."), the first three letters are taken, as the locales
+  that abbreviate write it.
+- The history bars read the keyboard with the chart engine's controller: Shift with ← → moves five bars.
+- A chart's dot, while the chart is read, stands on the drawn curve where 1.10 put it on the straight line between two
+  readings (under a pixel; at rest it is where it was).
+- The settings panel has six tabs: Charts comes after Appearance.
+
+### Fixed
+
+- A light that only switches on and off (`supported_color_modes: ['onoff']`) draws the light card as its head alone —
+  the circle, the name, the state line and the switch, 84 px — in every style, where its head stood in a dimmer's
+  256 px box with nothing under it (and declared 268, or 188 compact); its editor offers only what the bulb does
+  (#65).
+- A date in a helper's row at a narrow column takes its numeric form ("10/11") where its month's name would be cut —
+  seen in Portuguese on 25 October ("10 de nov." at a third of a section); under its name, a stacked value's pill now
+  has the whole row (its 100 % used to lose the cascade to the row's cap), so it is never cut there either.
+- An item's colour on a lock, camera or alarm row, a scene or a chip no longer says "Primary" in the editor where the
+  item wears the card's colour: none is chosen by default, nothing is written, and the word under the field says what
+  the item wears then ("Empty: the card's colour"; a light's on a card that shows bulbs' colours says its bulb's, as
+  before).
+- An item's unit or decimals written as a number in YAML (`decimals: 2` on a legend entry, a readout, a row, a meter,
+  a tile) is shown chosen in the item's select in the visual editor, as the card's own fields already were.
+- Inter is registered on a page only once Fluvy is in use on it (a card of ours, the theme on, the look covering the
+  app, a wall, a dashboard that wears the look, one of our pages or the settings panel): a page on another theme with
+  none of our cards fetches no font of ours.
+- A camera feed leaving the page no longer asks its card to draw again.
+- Japanese: the calendar's day label joins its parts with 「・」 ("17日（木）・イベント4件"), no doubled space after the
+  full-width bracket; the joiner is the language's, in its registry entry.
+- "Casa de banho" (Portugal's bathroom) is never the house's power: the guard is on the `casa` stem of Spanish,
+  Italian and Brazilian Portuguese too.
+
+### Development
+
+- **The chart engine**, `packages/cards/src/chart/engine/`, in its own chunk `chart` (budget 24 KB): one Catmull-Rom,
+  one bar path, one time-axis labeller, one nice scale, the styles and their resolution, the series colours and their
+  check, the gauges and the moving gauges' scenes, the sheet; `drawChart`, `drawRead`, `readAt`, `plotOf`,
+  `resolveStyle`, `resolveGauge`, `drawGauge`, `previewChart` for the panel. `ui/src/chart.ts` and the scrub
+  controller left core for it; a core card loads it with `ChartLoader` (`shared/chart-load.ts`) behind its skeleton,
+  the lazy families import it. A card names the styles it draws and the keys its chart acts on (`ChartCaps.styles`,
+  `ChartCaps.keys`), the Chart section of its editor is the engine's (`engine/fields.ts`: `chartSection`, one select
+  per variant a config may leave, `chartKeysFor`, `chartDefaultsFor`, `gaugeField`, `seriesColourField`), and
+  reading a card's chart keys (`CHART_KEYS`, `chartKeysOf`, `styleOf`) is the engine's too; core keeps their types in
+  `shared/chart-config.ts`. `readingsOf(deviceClass, stateClass, unit)` says what a sensor's readings are (bars or
+  not, a scale that holds zero or not, a mean or a gain); the unit a set of figures is written in is
+  `shared/units.ts`'s. `ChartSpec` takes `thresholds`, `stretches`, `reach` (ghost columns a card draws under its
+  bars) and `ticks` (a nice scale a card lays itself), a `ChartSeries` its own `curve` and `fill`; a bar below the
+  zero line says so in its class (`fc-bar--hanging`). `<fluvy-dial readonly>`: the thermostat's dial with its disc
+  and knob, nothing to drag and no stepper; `dialLabelTop` (ui) is the dial's own height rule. The engine's English is
+  a part of its own (`en/chart.json`, namespace `chart`).
+- Classic held to 1.10: `classic.test.ts` holds the engine to 1.10's paths byte for byte
+  (`__fixtures__/classic-1.10.json`: the sensor's curve and area, the energy card's line, extent and cursor, the
+  tile's spark, the History page), the history bars' and production's bars as snapshots recorded on the 1.10 cards.
+  `interactions-chart.mjs` proves classic unchanged in the browser, nothing leaving the plot and text placed by rule in
+  every style in both modes, no flash with the engine's chunk late, the cards' own sheets and the History page under
+  the house's soft, and the moving gauges on the `animated` sheet in both modes — running on transform, opacity and
+  the dash offset alone, unfiltered, nothing out of its box, the reading never across the water or the weather, still
+  under the house's motion off, the card's `animate: false`, out of reach and under reduced motion. `scenes.test`
+  holds the reading clear of the waves and of every sweep of the weather at the five rooms the gauge card gives (152
+  to 360) and every share. The `chart-styles` sheet draws every card that takes the styles in a style of its own, with
+  its sheet's house, for the measurer.
+- The house's chart settings (`CHART_PRESETS`, `GAUGE_PRESETS`, `ChartSettings`, `SavedSeries`, `CHART_DEFAULTS`,
+  `parseChartSettings`, `parseSavedSeries`, `setChartDefaults` in core; house settings version 3): a saved set's colour
+  is a hex or a colour of the palette's (core's `isPaletteRef`), and a colour the settings cannot read becomes the
+  palette's series colour in its place instead of dropping the set. The engine's `HOUSE_ACTS` (which of the house's
+  settings each style draws with; a test holds it to `resolveStyle`), `preview.ts` (the panel's drawings),
+  `PALETTE_REFS`, `refInk`, `refHex`, `setInks` and `fitSet(colours, choice, statuses?)`; the tokens' `fitSeries`
+  (`@fluvy/tokens/series`, in the `chart` chunk through `groups.mjs` so core carries none of it) fits a set's hexes to
+  a palette's mode, the palette's colours kept and the hexes set apart from them; a contrast fit is the tokens' one
+  walk (`ensureContrast` walks by the ratio; `fitLightness` and `FitOptions` are gone), every palette's output byte for
+  byte as before. `SeriesPaint` is `{ className, style }` (`seriesInk` is gone; a legend wears `seriesPaint`'s paint).
+  `palette.test.ts` holds every reference to the token the look writes, in all fifteen palettes, both modes and with
+  the house's statuses. The panel's `swatches()`, the set editor's `slots()` and `picker()`.
+- The playground's panel: `?panel=charts` with `&state=styled` (the soft style and the liquid), `sets` (three sets of
+  the house's, one worn) and `editor` (a set being made, mixing hexes and the palette's colours, two too close);
+  `&sheet=` keeps a sheet's house beside the panel (`&frames=none` for a suite's own cards); its memory look applies
+  the house's charts as Home Assistant does. `interactions-panel.mjs` proves the tab, a card on the page redrawn in the
+  style chosen, the rows by style, motion off, the eleven gauge tiles and the Waves row, a set's whole life — its
+  picker, its marks, a swatch stored by name and a hex under Custom fixed, a navy lifted on the dark card and a cream
+  deepened on the light one — and a palette chosen recolouring a set that follows it while a set of hexes stays;
+  `panel.test.ts` proves the settings file carries the charts and their sets. `measure-all.mjs` reads
+  `panel-charts`, `panel-charts-styled` and `panel-charts-editor`.
+- The Chart card's chunk, `chart-card` (budget 16 KB), beside the engine's, its English a part of its own
+  (`en/chart-card.json`, namespace `chart-card`): `chart/chart-card.ts`, `chart/config.ts`, `chart/data/` —
+  `attribute.ts` (the lists), `statistics.ts` (one cache for every chart card's reads, history's too), `sources.ts`
+  (history, statistics, forecasts), `span.ts` (the window and its slots). `interactions-chart-card.mjs` and the
+  playground's `chart` sheet.
+- The energy collection: `energy-model/collection.ts` (`isCollectionKey`, `collectionKeyOf`, `findCollection`, the
+  `CollectionFollower` reactive controller, `followPeriod`, `followedMoment`), `energy-model/period.ts` (`Range`,
+  `Step`, `stepFor` — Home Assistant's `getSuggestedPeriod` —, `rangeOf`, `fetchRange` with `fetchPeriod` as its
+  wrapper, `allocateFollowed`), `costs.ts` (`fetchMoneyRange`, `moneyFromStats`), `fossil.ts` (`fetchFossilRange`,
+  `fossilOf`), `power-day.ts` (`fetchMeanSeries`, `bucketMinutes`), `range-words.ts`, `energy/collection-field.ts`.
+  The Energy period card's chunk, `energy-period` (budget 16 KB), holds the strip, `energy-period/picker.ts` (the
+  presets, `shiftSpan` — Home Assistant's `shiftDateRange` —, `grainOf`, `midnightOf`, `storageKey`) and the Energy
+  usage card (`energy-usage/series.ts`: `slotsOf`, `slotEnergy`, `usageSeries`, `foldAt`, `usedOf`, `returnedOf`),
+  each with its English in a part of its own (`energy-period-card`, `energy-usage`). The pages' date grid
+  (`FluvyDates`) takes `whole-days` and `no-presets`; `StrategyContext.panelUrl`; the automatic dashboards' frame keeps
+  a band that leads a view before its columns. Playground: a mock collection as Home Assistant keeps one
+  (`SheetSpec.collections`, `?period=today|yesterday|week|month`), `window.loadCardHelpers` making Home Assistant's
+  date card, the `period` and `usage` sheets; the `interactions-period` and `interactions-usage` suites.
+  `heights.mjs` holds a frame whose spec says `heights: [152, 172]` at half a section too, in every language; the
+  measurer reads a control where it is drawn (what a scrolling row clips of it is not there).
+- `packages/cards/src/shared/units.ts` is the one module for units and figures (the old `gauge/units.ts` and
+  `energy/power.ts` maps fold into it; `history-bars/units.ts` is the energy family's part of it); `figuresOf`,
+  `writeFigure`, `scaleNamed`, `askedParts`; `numberFields()` in `shared/form.ts` for the editors, and a list may ask
+  its items for their selects' options.
+- `shared/since.ts` (`changedAt(hass, view, since)`), `sinceField` and `sinceChoices` in `shared/form.ts`; the rows
+  editor applies a card's `choices` to its lists' item forms too (`itemSchema`, cached by the item's form and the
+  choices). `listRow` takes a value's glyph (`valueGlyph`) and an icon that is a picture (a `TemplateResult`);
+  `choiceField` moved from the alerts chunk into `shared/form.ts`. The Web page card's chunk `web` (budget 8 KB), the
+  Items card's `items` (12) and `items-sheet` (8); `web/fixtures.ts` lets happy-dom load frames in the tests.
+- A card every page carries keeps its editor — its base fields, keys, lists, defaults, choices and form — in a module
+  of its own beside it (`tile/tile-editor.ts`), which its `editor()` fetches with the visual editor (the new `forms`
+  chunk, budget 12 KB); a card of a family fetched on demand still declares it on its class. Home Assistant asks
+  `getConfigElement()` alone, so nothing it shows changes; whoever reads a card's editor (the tests, the docs
+  generator, the unavailable suite) asks `await Card.editor()`; `editors.test.ts` fails a card of `CATALOGUE` that
+  declares its editor on its class. Core is 6.3 KB lighter for it.
+- Budgets: every page and core 236 KB, as in 1.10 (every page 229.1 KB with the five new cards announced); a
+  language's catalogue 28 KB (24 before: the 1.11 cards' words took Japanese, the longest, 320 B over); new chunks of
+  their own: `chart` (24 KB), `chart-card` (16), `energy-period` (16), `web` (8), `items` (12), `items-sheet` (8) and
+  `forms` (12).
+- `tools/render/lib.mjs` exports `everyLanguage()` (the catalogue's languages, English first); the cameras, security,
+  rooms and panel suites and `measure-all` derive their language lists and counts from it, so a new language is
+  measured everywhere without a list to update. `tools/i18n` names the integration's translation file through Home
+  Assistant's code for the language (`integrationFile('pt-PT')` → `translations/pt.json`).
+- Every package keeps vitest's module cache in its own `node_modules/.vitest-cache` (`fsModuleCachePath`): the
+  workspace's shared cache was emptied by whichever package first saw the lockfile changed, and two packages running
+  at once raced over it (ENOTEMPTY).
+- The cards' table in `docs/cards.md` says a key the form shows in turns once, with every value.
+- Dev dependencies: typescript-eslint 8.72.0, vite 8.3.5, happy-dom 21.0.4, @happy-dom/global-registrator 21.0.4
+  (#63).
+
 ## [1.10.0] — 2026-10-22
 
 ### Visible on upgrade
