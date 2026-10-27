@@ -9,18 +9,30 @@ import { FluvySensorCard, type SensorCardConfig } from './sensor-card.js';
 await familiesDefined;
 
 const { TEMP, HUM } = fixtures.inputs;
+/** A day of an energy meter (kWh, counting up): what it gained each half hour, added up. */
+const METER = TEMP.reduce<number[]>((sums, v, i) => [...sums, (sums[i - 1] ?? 1000) + v / 40], []);
 
 /** A house whose recorder answers every window with the readings, one in the middle of each of its 48 slots. */
 const house = (): HomeAssistant => {
-  const readings: Record<string, readonly number[]> = { 'sensor.temp': TEMP, 'sensor.hum': HUM };
-  const sensor = (name: string, values: readonly number[], unit: string, deviceClass: string) => ({
+  const readings: Record<string, readonly number[]> = {
+    'sensor.temp': TEMP,
+    'sensor.hum': HUM,
+    'sensor.meter': METER,
+  };
+  const sensor = (
+    name: string,
+    values: readonly number[],
+    unit: string,
+    deviceClass: string,
+    stateClass = 'measurement',
+  ) => ({
     entity_id: name,
     state: String(values[values.length - 1]),
     attributes: {
       friendly_name: name,
       unit_of_measurement: unit,
       device_class: deviceClass,
-      state_class: 'measurement',
+      state_class: stateClass,
     },
     last_changed: '',
     last_updated: '',
@@ -33,6 +45,7 @@ const house = (): HomeAssistant => {
     states: {
       'sensor.temp': sensor('sensor.temp', TEMP, '°C', 'temperature'),
       'sensor.hum': sensor('sensor.hum', HUM, '%', 'humidity'),
+      'sensor.meter': sensor('sensor.meter', METER, 'kWh', 'energy', 'total_increasing'),
     },
     entities: {},
     devices: {},
@@ -109,17 +122,32 @@ describe('the sensor’s chart, drawn by the engine', () => {
     expect(root.querySelector('.curve-line')).toBeNull();
   });
 
-  it('puts a stepped chart on a nice scale, its ticks in a column the axis row starts after', async () => {
+  it('puts a stepped temperature on a nice scale of its own range, its ticks in a column the axis row starts after', async () => {
     const card = await mount({ chart: 'step' });
     const root = card.shadowRoot!;
+    // 16.2 … 23.5 °C: a measurement never forces zero
     expect([...root.querySelectorAll('.fc-tick')].map((t) => t.textContent)).toEqual([
-      '0',
-      '10',
+      '16',
+      '18',
       '20',
-      '30',
+      '22',
+      '24',
     ]);
     const axis = root.querySelector('.am-chart + div') as HTMLElement;
     expect(parseFloat(axis.style.marginInlineStart)).toBeGreaterThan(0);
+  });
+
+  it('draws a meter’s day as 24 bars, each what it gained in its hour, on a scale from zero', async () => {
+    const card = await mount({ entity: 'sensor.meter', chart: 'bars' });
+    const root = card.shadowRoot!;
+    expect(root.querySelectorAll('.am-chart .fc-bar').length).toBe(24);
+    expect(Number(root.querySelector('.fc-tick')?.textContent)).toBe(0);
+  });
+
+  it('draws no bars for a temperature, whose readings do not add up: its style is drawn classic', async () => {
+    const card = await mount({ chart: 'bars' });
+    expect(card.shadowRoot!.querySelectorAll('.am-chart .fc-bar').length).toBe(0);
+    expect(card.shadowRoot!.querySelectorAll('.am-chart .curve-line').length).toBe(1);
   });
 
   it('draws the tile’s spark classic, or minimal where the card says so', async () => {
@@ -138,10 +166,10 @@ describe('the sensor’s editor', () => {
   const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
     schema.flatMap((item) => (item.schema ? fields(item.schema) : [item]));
   const all = fields(section.schema ?? []);
-  const shown = (data: Record<string, unknown>): string[] =>
+  const shown = (data: Record<string, unknown>, hass?: HomeAssistant): string[] =>
     (section.schema ?? [])
-      .filter((item) => !item.when || item.when(data))
-      .flatMap((item) => fields([item]).filter((field) => !field.when || field.when(data)))
+      .filter((item) => !item.when || item.when(data, hass))
+      .flatMap((item) => fields([item]).filter((field) => !field.when || field.when(data, hass)))
       .map(
         (field) =>
           `${field.name}${field.name === 'chart' ? `:${JSON.stringify((field.selector as { select: { options: { value: string }[] } }).select.options.map((o) => o.value))}` : ''}`,
@@ -171,8 +199,13 @@ describe('the sensor’s editor', () => {
     expect(shown({ chart: 'bars' })).not.toContain('curve');
   });
 
-  it('offers bars to one sensor, the lines only to several, and no highlight over several', () => {
-    expect(shown({})[0]).toBe('chart:["classic","soft","glow","minimal","step","bars","columns"]');
+  it('offers bars to one sensor whose readings add up, the lines only to a measurement or several, and no highlight over several', () => {
+    const lines = 'chart:["classic","soft","glow","minimal","step"]';
+    expect(shown({ entity: 'sensor.meter' }, house())[0]).toBe(
+      'chart:["classic","soft","glow","minimal","step","bars","columns"]',
+    );
+    expect(shown({ entity: 'sensor.temp' }, house())[0]).toBe(lines);
+    expect(shown({})[0]).toBe(lines);
     const several = shown({ entities: ['sensor.hum'], chart: 'step' });
     expect(several[0]).toBe('chart:["classic","soft","glow","minimal","step"]');
     expect(several).not.toContain('highlight');

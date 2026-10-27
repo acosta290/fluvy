@@ -1,4 +1,9 @@
-import { chartDefaults, type GaugePreset, type HaFormSchemaItem } from '@fluvy/core';
+import {
+  chartDefaults,
+  type GaugePreset,
+  type HaFormSchemaItem,
+  type HomeAssistant,
+} from '@fluvy/core';
 import {
   acts,
   CHART_KEYS,
@@ -15,8 +20,8 @@ import { boolField, fieldRow, onlyWhen, sectionField, selectField } from './form
  * The editor's "Chart" section, one for every card that draws a chart: the style, then the fine keys the chosen
  * style acts on and the card can draw (`acts`) — a key that cannot act in a style is not shown in it, and one the
  * card can never draw is not in its form at all. The style the rules read while the card says none is the house's,
- * as the card draws then. A card whose series may be one or several (the sensor and the sensors beside it) says
- * which its config holds: several are never bars, and a highlight would claim to be every one of them.
+ * as the card draws then. A card whose abilities follow its config says what a config allows (`capsOf`): the sensor
+ * draws bars only alone and where its readings add up, and a highlight over several would claim to be every one.
  */
 
 type Data = Readonly<Record<string, unknown>>;
@@ -31,30 +36,48 @@ export function chartKeysFor(caps: ChartCaps): ReadonlyArray<keyof ChartKeys> {
   );
 }
 
+/** What a card can draw with a config (and the house it shows): its caps, narrowed by what the config holds. */
+export type CapsOf = (data: Data, hass?: HomeAssistant) => ChartCaps;
+
+const same = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
 /**
  * The Chart section: the style, the curve and the fill, the line and its soft shadow, the points and the grid, the
- * scale and now, the highlight and the motion. `several` says when the config holds several series.
+ * scale and now, the highlight and the motion. `caps` is all a card may draw; `capsOf`, what a config allows. Where
+ * the styles offered differ with it (bars, a band), the style is one select for each list, shown in turn.
  */
-export function chartSection(caps: ChartCaps, several?: (data: Data) => boolean): HaFormSchemaItem {
-  const capsOf = (data: Data): ChartCaps =>
-    several?.(data) ? { ...caps, several: true, bars: false } : caps;
+export function chartSection(caps: ChartCaps, capsOf?: CapsOf): HaFormSchemaItem {
+  const allowed = (data: Data, hass?: HomeAssistant): ChartCaps => capsOf?.(data, hass) ?? caps;
   const offered = new Set(chartKeysFor(caps));
   const fine = (key: FineKey, item: HaFormSchemaItem): HaFormSchemaItem[] =>
-    offered.has(key) ? [onlyWhen((data) => acts(key, styleOf(data), capsOf(data)), item)] : [];
+    offered.has(key)
+      ? [onlyWhen((data, hass) => acts(key, styleOf(data), allowed(data, hass)), item)]
+      : [];
   const row = (...items: HaFormSchemaItem[][]): HaFormSchemaItem[] => {
     const kept = items.flat();
     return kept.length > 1 ? [fieldRow(...kept)] : kept;
   };
-  // the styles the card can draw: with several series beside it, the lines only
-  const styles = several
+  // every list of styles a config may leave: all of them, without bars, without a band, without either
+  const lists = capsOf
     ? [
-        onlyWhen((data) => !several(data), selectField('chart', presetsFor(caps))),
-        onlyWhen(
-          several,
-          selectField('chart', presetsFor({ ...caps, several: true, bars: false })),
-        ),
+        caps,
+        { ...caps, bars: false },
+        { ...caps, band: false },
+        { ...caps, bars: false, band: false },
       ]
-    : [selectField('chart', presetsFor(caps))];
+        .map(presetsFor)
+        .filter((list, index, all) => all.findIndex((other) => same(other, list)) === index)
+    : [presetsFor(caps)];
+  const styles =
+    lists.length > 1
+      ? lists.map((list) =>
+          onlyWhen(
+            (data, hass) => same(presetsFor(allowed(data, hass)), list),
+            selectField('chart', list),
+          ),
+        )
+      : lists.map((list) => selectField('chart', list));
   return sectionField('editor.chart', [
     ...styles,
     ...row(
