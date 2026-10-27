@@ -1026,13 +1026,10 @@ export const panelStyles = css`
   }
   .pn-mark {
     gap: 4px;
-    height: 24px;
-    padding: 0 10px 0 8px;
-    font-size: 12px;
   }
   .pn-mark svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
   .pn-check.pn-status {
     margin-top: 0;

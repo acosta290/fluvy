@@ -432,7 +432,7 @@ function picker(
       )}`;
   return html`<div class="pn-slot-head">
       <span class="pn-slot-head__title">${ctx.t('charts.colour', { n: picking + 1 })}</span>
-      <span class="fv-badge pn-mark fv-tone--${follows ? 'accent' : 'neutral'}"
+      <span class="fv-badge pn-mark fv-tone--${follows ? 'accent' : 'neutral'}" data-fit="28"
         >${icon(follows ? 'palette' : 'lock')}${ctx.t(follows ? 'charts.follows' : 'charts.fixed')}</span
       >
     </div>
