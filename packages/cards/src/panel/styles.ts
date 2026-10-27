@@ -192,9 +192,9 @@ export const panelStyles = css`
   }
   .pn-tabs.is-wide .pn-tabs__row {
     display: grid;
-    /* five equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
+    /* six equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
        what is left: a word is never cut for the sake of equal cells */
-    grid-template-columns: repeat(5, minmax(max-content, 1fr));
+    grid-template-columns: repeat(6, minmax(max-content, 1fr));
     column-gap: 8px;
     justify-content: start;
     padding: 0;
@@ -916,6 +916,121 @@ export const panelStyles = css`
     height: 100%;
     opacity: 0;
     cursor: pointer;
+  }
+
+  /* the Charts tab's tiles (the styles, the gauges): two a row on a phone, four on a wide panel, every row full */
+  .pn-tiles,
+  .pn-modes {
+    display: grid;
+    grid-template-columns: repeat(2, round(down, calc((100% - var(--pn-gap)) / 2 + 0.01px), 1px));
+    gap: var(--pn-gap);
+    justify-content: start;
+  }
+  .pn-tiles--four {
+    grid-template-columns: repeat(
+      4,
+      round(down, calc((100% - 3 * var(--pn-gap)) / 4 + 0.01px), 1px)
+    );
+  }
+  .pn-tiles--static .pn-tile,
+  .pn-sets--static .pn-set {
+    pointer-events: none;
+  }
+  /* a chart's picture: the engine's drawing on the card's surface, as a palette's is its page (the knob's halo is that
+     surface, so it cuts the line under it) */
+  .pn-art--chart {
+    --sw-page: var(--fluvy-card);
+    --sw-border: var(--fluvy-border);
+    --knob-halo: var(--fluvy-card);
+  }
+  @container pn (min-width: 648px) {
+    .pn-art--style {
+      height: 96px;
+    }
+  }
+  /* a gauge's picture is the dial's own height (96 across and its opening, 100 down) inside its 8: the dial's disc on
+     the grid, the ring and the ruler centred on it */
+  .pn-art--gauge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 116px;
+  }
+  /* what the chosen style lets the house tune, said where there is nothing to tune */
+  .pn-note {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--fluvy-text-secondary);
+    text-wrap: pretty;
+  }
+  /* the sets of series colours: a row each, as the custom palette's (its picture, its name, a check when worn) */
+  .pn-sets {
+    display: grid;
+    gap: var(--pn-gap);
+  }
+  .pn-set .pn-custom__title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .pn-set .pn-art {
+    padding: 8px 12px;
+  }
+  /* a set's six colours: two a row on a phone, three on a wide panel, under their label */
+  .pn-hexes {
+    display: grid;
+    grid-template-columns: repeat(2, round(down, calc((100% - var(--pn-gap)) / 2 + 0.01px), 1px));
+    gap: var(--pn-gap);
+    justify-content: start;
+  }
+  @container pn (min-width: 648px) {
+    .pn-hexes {
+      grid-template-columns: repeat(
+        3,
+        round(down, calc((100% - 2 * var(--pn-gap)) / 3 + 0.01px), 1px)
+      );
+    }
+  }
+  .pn-label + .pn-hexes {
+    margin-top: -4px;
+  }
+  .pn-check.pn-status {
+    margin-top: 0;
+  }
+  /* the two modes side by side, each a card in its own colours (the look scoped to it), its name over its drawings */
+  .pn-mode {
+    --knob-halo: var(--fluvy-card);
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: var(--fluvy-radius-control);
+    background: var(--fluvy-card);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    color: var(--fluvy-text);
+  }
+  .pn-mode__name {
+    margin: 0;
+  }
+  .fc-preview {
+    display: grid;
+    gap: 12px;
+  }
+  .fc-preview__gauge {
+    display: flex;
+    justify-content: center;
+  }
+  /* the light half of a dark panel: a light card's fills, not the dark mode's six points more */
+  :host .pn-day .fc-chart {
+    --fc-boost: 0;
+  }
+  /* the bubble arrives with the dot it belongs to, once the line has drawn itself (at once, still) */
+  .fc-preview .fc-chart:not(.is-still) ~ .fv-bubble {
+    animation: fv-fade 500ms var(--fv-ease) both;
+    animation-delay: 620ms;
   }
 
   /* the preview: the cards at their real size, laid out by the width it has (under the settings, or in the side

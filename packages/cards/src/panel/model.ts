@@ -8,6 +8,7 @@ import {
   tabsOf,
   paletteKey,
   paletteOf,
+  type ChartSettings,
   type DevicePatch,
   type DeviceSettings,
   type EffectiveSettings,
@@ -38,21 +39,34 @@ import {
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import type { ChipFit } from '../shared/chips.js';
 import type { Template } from '../strategy/templates.js';
+import { chartLines } from './chart-words.js';
 import { knownPalettes, matchOf } from './palettes.js';
+import type { SeriesDraft } from './series.js';
 
 /** Where a person who speaks a language better than we do can help. */
 export const TRANSLATING_URL = 'https://github.com/acosta290/fluvy/blob/main/docs/translating.md';
 
-/** The panel's tabs, one row of them (Fluvy's own facts — its version, its file — close Preferences). */
-export type Tab = 'appearance' | 'scope' | 'dashboard' | 'wall' | 'preferences';
-export const TABS: readonly Tab[] = ['appearance', 'scope', 'dashboard', 'wall', 'preferences'];
+/**
+ * The panel's tabs, one row of them (Fluvy's own facts — its version, its file — close Preferences); the charts are
+ * chosen like the look, so their tab follows Appearance.
+ */
+export type Tab = 'appearance' | 'charts' | 'scope' | 'dashboard' | 'wall' | 'preferences';
+export const TABS: readonly Tab[] = [
+  'appearance',
+  'charts',
+  'scope',
+  'dashboard',
+  'wall',
+  'preferences',
+];
 
 export type StringKey = KeyOf<'panel'>;
 
-/** The house's settings the tabs edit (an administrator's to save); `wall` always whole. */
+/** The house's settings the tabs edit (an administrator's to save); `wall` and `charts` always whole. */
 export type HouseEdit = Partial<
   Pick<
     EffectiveSettings,
+    | 'charts'
     | 'scope'
     | 'dashboards'
     | 'frame'
@@ -123,6 +137,11 @@ export interface PanelContext {
   editHouse(edit: HouseEdit): void;
   /** A wall setting, on the latest of the wall's (two taps before a render never lose the first). */
   editWall(patch: Partial<WallSettings>): void;
+  /** A chart setting, on the latest of the house's chart settings, as the wall's are edited. */
+  editCharts(patch: Partial<ChartSettings>): void;
+  /** The set of series colours being made or changed (the Charts tab's editor), when one is open. */
+  readonly seriesDraft: SeriesDraft | undefined;
+  setSeriesDraft(draft: SeriesDraft | undefined): void;
   editPersonal(edit: PersonalEdit): void;
   editStrategy(urlPath: string, edit: StrategyEdit): void;
   /** This device's own settings — a wall panel or not, its size (its own memory, saved from the apply bar like the rest). */
@@ -417,6 +436,7 @@ export function changeLines(ctx: PanelContext): string[] {
         lines.push(
           `${t('statuses.title')} · ${t(`statuses.${name}`)} · ${house.statuses[name] ?? t('statuses.auto')}`,
         );
+  lines.push(...chartLines(ctx));
   if (house.scope)
     lines.push(t(house.scope === 'everywhere' ? 'change.everywhere' : 'change.dashboards'));
   if (house.dashboards) lines.push(`${t('scope.list')} · ${shown.dashboards.length}`);

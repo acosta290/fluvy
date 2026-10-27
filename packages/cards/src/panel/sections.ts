@@ -86,14 +86,14 @@ import {
 } from './model.js';
 
 /** One rhythm for every choice inside a card: 8 between cells on a phone, 12 on a wide panel. */
-const gap = (ctx: PanelContext): number => (ctx.wide ? 12 : 8);
+export const gap = (ctx: PanelContext): number => (ctx.wide ? 12 : 8);
 
 /**
  * A short choice (a variant, a language): one full row of chips, the chosen one on the accent fill — laid out by
  * measure, as a card's chips are: as many a row as the labels suggest (or `columns`) while every word holds its cell,
  * else fewer (three go two and one), never a word cut (pt-BR's "Quando ligado" in a phone's column).
  */
-function choice(
+export function choice(
   ctx: PanelContext,
   items: readonly { readonly key: string; readonly label: string; readonly active: boolean }[],
   onSelect: ((key: string) => void) | null,
@@ -314,11 +314,15 @@ function hexOf(text: string): Hex | undefined {
   return match ? `#${(match[1] ?? '').toLowerCase()}` : undefined;
 }
 
-/** Any colour: typed as a hex in our own field, or picked from the system's well behind its swatch (`onColor` null: read only). */
-function hexField(
+/**
+ * Any colour: typed as a hex in our own field, or picked from the system's well behind its swatch (`onColor` null: read
+ * only); `label` names it where several stand together.
+ */
+export function hexField(
   value: Hex,
   ctx: PanelContext,
   onColor: ((color: Hex) => void) | null,
+  label = ctx.t('custom.hex'),
 ): TemplateResult {
   return html`<div class="fv-field pn-hex">
     <input
@@ -327,7 +331,7 @@ function hexField(
       spellcheck="false"
       autocomplete="off"
       maxlength="7"
-      aria-label=${ctx.t('custom.hex')}
+      aria-label=${label}
       ?readonly=${!onColor}
       .value=${value}
       @change=${(event: Event) => {

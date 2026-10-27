@@ -848,6 +848,176 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('chooses the house’s charts like its look: a style and a gauge as tiles, what the style tunes, motion (1.11)', async () => {
+    const { panel, root, chip, row, button, handle, previews, settle } = await mount();
+    const host = panel as unknown as { content: number };
+    panel.tab = 'charts';
+    host.content = 288;
+    await settle();
+    const tile = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.pn-tile')].find(
+        (b) => b.querySelector('.pn-swatch__label')?.textContent?.trim() === name,
+      )!;
+    const labels = () =>
+      [...root.querySelectorAll('.pn-card .pn-label')].map((p) => p.textContent?.trim());
+    // eight styles and four gauges, each drawn by the engine; classic and ticks from the factory
+    expect(root.querySelectorAll('.pn-art--style svg.fc-chart').length).toBe(8);
+    expect(root.querySelectorAll('.pn-art--gauge').length).toBe(4);
+    expect(tile('Classic').getAttribute('aria-pressed')).toBe('true');
+    expect(tile('Ticks').getAttribute('aria-pressed')).toBe('true');
+    // classic tunes nothing but motion: it says so, and offers no row
+    expect(labels()).toEqual([]);
+    expect(root.textContent).toContain('Classic is the chart as Fluvy has always drawn it');
+    expect(row('Motion')).toBeDefined();
+    // a style: on the panel's preview and every card of the page at once, saved from the bar
+    tile('Soft').click();
+    await settle();
+    expect(previews.at(-1)).toEqual({ charts: { ...handle.settings().charts, style: 'soft' } });
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Charts · Style · Soft');
+    expect(root.querySelector('.fc-preview svg.fc-chart--soft')).not.toBeNull();
+    // the rows the soft style draws with, none it does not (the waves are a moving gauge's)
+    expect(labels()).toEqual([
+      'Line',
+      'Soft shadow',
+      'Shadow strength',
+      'Fill',
+      'Gridlines',
+      'Line’s end',
+      'Now',
+      'Bars’ ends',
+      'Bubble',
+    ]);
+    tile('Bars').click();
+    await settle();
+    expect(labels()).toEqual(['Gridlines', 'Bars’ ends', 'Bubble']);
+    tile('Soft').click();
+    await settle();
+    chip('Bold')!.click();
+    await settle();
+    chip('7 px')!.click();
+    await settle();
+    tile('Ring').click();
+    await settle();
+    expect(handle.settings().charts.style).toBe('classic');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('4 changes');
+    // motion off: the previews draw their resting frame
+    row('Motion')!.querySelector<HTMLElement>('.fv-hit')!.click();
+    await settle();
+    expect(root.querySelectorAll('.fc-preview svg.fc-chart:not(.is-still)').length).toBe(0);
+    expect(root.querySelectorAll('.pn-art--style svg.fc-chart.is-still').length).toBe(8);
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().charts).toMatchObject({
+      style: 'soft',
+      gauge: 'ring',
+      line: 'bold',
+      glow: { offset: 7, opacity: 0.35 },
+      animate: false,
+    });
+    expect(root.querySelector('.pn-foot:not(.is-leaving) .pn-bar')).toBeNull();
+    panel.remove();
+    // someone who is not an administrator reads them, and changes nothing
+    const guest = await mount(false);
+    guest.panel.tab = 'charts';
+    await guest.settle();
+    expect(guest.root.textContent).toContain('Only an administrator can change this');
+    [...guest.root.querySelectorAll<HTMLButtonElement>('.pn-tile')]
+      .find((b) => b.textContent?.includes('Glow'))!
+      .click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(
+      expect.objectContaining({ charts: expect.anything() }),
+    );
+    expect(guest.row('New set…')).toBeUndefined();
+    guest.panel.remove();
+  });
+
+  it('makes, checks, keeps, renames and lets go of the house’s own series colours (1.11)', async () => {
+    const { panel, root, row, handle, settle } = await mount();
+    panel.tab = 'charts';
+    (panel as unknown as { content: number }).content = 288;
+    await settle();
+    const editor = () => root.querySelector<HTMLElement>('.pn-editor');
+    const hexes = () => [...root.querySelectorAll<HTMLInputElement>('.pn-hexes .pn-hex__input')];
+    const set = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.pn-set')].find(
+        (b) => b.querySelector('.pn-custom__title')?.textContent?.trim() === name,
+      );
+    const saveButton = () =>
+      [...editor()!.querySelectorAll<HTMLButtonElement>('.fv-btn')].find(
+        (b) => b.textContent?.trim() === 'Save set',
+      )!;
+    // the palette's six, worn from the factory
+    expect(set('From the palette')?.getAttribute('aria-pressed')).toBe('true');
+    row('New set…')!.click();
+    await settle();
+    // six fields on the palette's own six, no name yet: nothing to save
+    const six = paletteOf('linen').light.graph.slice(0, 6);
+    expect(hexes().map((input) => input.value)).toEqual(six);
+    expect(saveButton().disabled).toBe(true);
+    // a set is worn in both modes: six that read on either card pass
+    const type = async (n: number, colour: string) => {
+      const field = hexes()[n]!;
+      field.value = colour;
+      field.dispatchEvent(new Event('change'));
+      await settle();
+    };
+    const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
+    for (const [n, colour] of both.entries()) await type(n, colour);
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(editor()!.textContent).toContain('Every colour stands apart and reads on either card');
+    // two colours a breath apart: it says which, and why
+    await type(1, '#2463ea');
+    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
+      '#2563eb and #2463ea are too close to tell apart',
+    );
+    await type(4, '#f4e9d0');
+    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
+      '#f4e9d0 is too faint on a light card',
+    );
+    await type(4, '#3b2a1a');
+    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
+      '#3b2a1a is too faint on a dark card',
+    );
+    // both modes drawn side by side, six lines each
+    expect(editor()!.querySelectorAll('.pn-mode svg.fc-chart').length).toBe(2);
+    const name = editor()!.querySelector<HTMLInputElement>('.pn-text input')!;
+    name.value = 'Dusk';
+    name.dispatchEvent(new Event('input'));
+    await settle();
+    saveButton().click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    // kept by the house at once, the editor closed, the charts wearing it from the bar
+    expect(handle.store.house.chartSets.map((s) => [s.id, s.name])).toEqual([['dusk', 'Dusk']]);
+    expect(editor()).toBeNull();
+    expect(set('Dusk')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Charts · Series colours · Dusk',
+    );
+    // renamed in its place
+    row('Edit this set')!.click();
+    await settle();
+    const rename = editor()!.querySelector<HTMLInputElement>('.pn-text input')!;
+    rename.value = 'Evening';
+    rename.dispatchEvent(new Event('input'));
+    await settle();
+    saveButton().click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.chartSets.map((s) => [s.id, s.name])).toEqual([['dusk', 'Evening']]);
+    // let go: the charts wear the palette's again, and nothing waits in the bar
+    row('Edit this set')!.click();
+    await settle();
+    row('Delete this set')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.chartSets).toEqual([]);
+    expect(set('From the palette')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.pn-foot:not(.is-leaving) .pn-bar')).toBeNull();
+    panel.remove();
+  });
+
   it('lays a row of choices out by measure: three while every word holds its third, else two and one', async () => {
     const { panel, chip } = await mount();
     const host = panel as unknown as {

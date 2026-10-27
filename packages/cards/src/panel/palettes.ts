@@ -55,8 +55,11 @@ export const knownPalettes = (saved: readonly PaletteFile[]): readonly PaletteFi
   ...COMMUNITY_PALETTES.filter((file) => !saved.some((own) => own.name === file.name)),
 ];
 
-/** A file name from a title: lower case, no accents, dashes between the words (`Warm Sand` → `warm-sand`). */
-export function slugOf(title: string): string {
+/**
+ * A file name from a title: lower case, no accents, dashes between the words (`Warm Sand` → `warm-sand`); a title with
+ * no letters to keep is `fallback`.
+ */
+export function slugOf(title: string, fallback = 'palette'): string {
   const slug = title
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -65,7 +68,7 @@ export function slugOf(title: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
     .replace(/-+$/g, '');
-  return slug.length >= 2 ? slug : 'palette';
+  return slug.length >= 2 ? slug : fallback;
 }
 
 /** A palette as a file, when its words are well formed (a title is needed). */

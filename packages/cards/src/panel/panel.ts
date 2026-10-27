@@ -29,6 +29,7 @@ import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { statusesKey } from '@fluvy/tokens/runtime';
 
 import { baseStyles, fitPills, ico, motionPreference, reducedMotion, sideScroll } from '@fluvy/ui';
+import { chartStyles } from '../chart/engine/index.js';
 
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
@@ -73,6 +74,8 @@ import {
 } from './sections.js';
 
 import { panelStyles } from './styles.js';
+import { charts, chartsPreview } from './charts.js';
+import type { SeriesDraft } from './series.js';
 
 import {
   aboutFacts,
@@ -85,6 +88,8 @@ import {
   importSettings,
   resetHouse,
   recreateDashboard,
+  removeSet,
+  saveSet,
   showInSidebar,
 } from './actions.js';
 
@@ -102,6 +107,8 @@ const WIDE = 648;
 const SIDE = 1184;
 /** A card's sides (20 each): its content is the open tab's column less them. */
 const CARD_SIDES = 40;
+/** The side column's width (styles.ts): the preview's card in it is that less its sides. */
+const SIDE_COLUMN = 400;
 /** From this width the apply bar's pair stands beside its words, 352 wide (styles.ts). */
 const BAR_BESIDE = 760;
 /** How long the apply bar takes to leave (it enters in 220). */
@@ -129,6 +136,7 @@ export class FluvyPanel extends LitElement {
     strategyEdits: { state: true },
     deviceEdit: { state: true },
     share: { state: true },
+    seriesDraft: { state: true },
     showAllCommunity: { state: true },
     tryOnApp: { state: true },
     dashboards: { state: true },
@@ -145,7 +153,8 @@ export class FluvyPanel extends LitElement {
     noTheme: { type: Boolean, reflect: true, attribute: 'no-theme' },
   };
 
-  static override styles = [...baseStyles, panelStyles];
+  // the Charts tab's tiles and previews are the chart engine's drawings (its chunk is fetched as the bundle starts)
+  static override styles = [...baseStyles, chartStyles, panelStyles];
 
   declare hass?: HomeAssistant;
   declare narrow: boolean;
@@ -162,6 +171,8 @@ export class FluvyPanel extends LitElement {
   declare deviceEdit: DevicePatch;
   /** The Share card's words for the custom palette in the draft. */
   declare share: ShareDraft;
+  /** The set of series colours open in the Charts tab's editor (undefined: none). */
+  declare seriesDraft: SeriesDraft | undefined;
   declare showAllCommunity: boolean;
   declare tryOnApp: boolean;
   declare dashboards: readonly DashboardInfo[];
@@ -247,6 +258,7 @@ export class FluvyPanel extends LitElement {
     this.resetArmed = false;
     this.recreateArmed = '';
     this.share = { title: '', author: '' };
+    this.seriesDraft = undefined;
     this.showAllCommunity = false;
     this.wide = false;
     this.side = false;
@@ -369,7 +381,9 @@ export class FluvyPanel extends LitElement {
       this.lookSheet.replaceSync(
         // the panel in the app's mode; a wall preview at night in the dark one, scoped to it
         lookRule(this.draft, this.dark ? 'dark' : 'light', ':host', false, statuses) +
-          lookRule(this.draft, 'dark', '.pn-night', false, statuses),
+          lookRule(this.draft, 'dark', '.pn-night', false, statuses) +
+          // the Charts tab draws both modes side by side: the day's tokens scoped to its light half
+          lookRule(this.draft, 'light', '.pn-day', false, statuses),
       );
     }
     resyncCardThemes(); // the preview's cards derive their colours on the look being chosen
@@ -666,6 +680,15 @@ export class FluvyPanel extends LitElement {
         const wall = { ...(this.houseEdit.wall ?? this.settings.wall), ...patch };
         this.houseEdit = unsaved({ ...this.houseEdit, wall }, this.settings);
       },
+      editCharts: (patch) => {
+        if (!this.settings) return;
+        const next = { ...(this.houseEdit.charts ?? this.settings.charts), ...patch };
+        this.houseEdit = unsaved({ ...this.houseEdit, charts: next }, this.settings);
+      },
+      seriesDraft: this.seriesDraft,
+      setSeriesDraft: (draft) => {
+        this.seriesDraft = draft;
+      },
       editPersonal: (edit) => {
         if (this.settings)
           this.personalEdit = unsaved({ ...this.personalEdit, ...edit }, this.settings);
@@ -838,6 +861,11 @@ export class FluvyPanel extends LitElement {
           savePalette: (file) => savePalette(this, ctx, file),
           removePalette: (name) => removePalette(this, ctx, name),
         });
+      case 'charts':
+        return charts(ctx, {
+          saveSet: (draft) => saveSet(this, ctx, draft),
+          removeSet: (id) => removeSet(this, ctx, id),
+        });
       case 'scope': {
         const source = this.themeSource();
         return scope(
@@ -908,6 +936,9 @@ export class FluvyPanel extends LitElement {
       );
     }
     house.setDark(undefined);
+    // the charts as the settings draw them: in the side column (its 400 less a card's sides), or under the cards
+    if (this.tab === 'charts')
+      return chartsPreview(ctx, this.side ? SIDE_COLUMN - CARD_SIDES : this.content || undefined);
     if (this.tab !== 'appearance' && !this.side) return undefined;
     return appearancePreview(
       ctx,
