@@ -2,11 +2,12 @@ import {
   formatDate,
   formatNumber,
   formatTime,
+  houseZone,
   localize,
   type EntityView,
   type HomeAssistant,
 } from '@fluvy/core';
-import { sameDay } from '../shared/dates.js';
+import { sameDay, shortWeekday } from '../shared/dates.js';
 import { fitLine, type TextRuler } from '../shared/fit.js';
 
 /*
@@ -79,10 +80,16 @@ export function valueAt(item: Item, path: string): unknown {
 export const present = (value: unknown): boolean =>
   value !== undefined && value !== null && value !== '';
 
-/** A moment as a line: its time today, its short date and time otherwise. */
+/**
+ * A moment as a line: its time today, its short date and time otherwise — the weekday short as the calendar writes it
+ * ("qui, 17/09 19:27" in Portugal, whose own short weekday is the word written out: "quinta").
+ */
 export function formatWhen(hass: HomeAssistant | undefined, date: Date, now = new Date()): string {
   const time = formatTime(hass, date);
-  return sameDay(date, now) ? time : `${formatDate(hass, date, 'short')} ${time}`;
+  if (sameDay(date, now)) return time;
+  const weekday = formatDate(hass, date, 'weekday');
+  const short = shortWeekday(hass?.language ?? 'en', date, houseZone(hass));
+  return `${formatDate(hass, date, 'short').replace(weekday, short)} ${time}`;
 }
 
 /**

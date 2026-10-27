@@ -11,7 +11,7 @@ import {
 } from '@fluvy/core';
 import { isoWeek } from '@fluvy/ui';
 import { dateLocale, dateText } from '../clock/time.js';
-import { addDays, sameDay } from '../shared/dates.js';
+import { addDays, sameDay, shortWeekday } from '../shared/dates.js';
 
 const s = strings('calendar');
 
@@ -78,15 +78,11 @@ export class Words {
   }
 
   weekday(date: Date, style: 'long' | 'short' | 'narrow'): string {
-    const name = formatter(this.language, { weekday: style }).format(date);
-    if (style === 'long') return capitalize(name);
     // a locale whose short weekday is the long one's first word written out (Portugal's "quinta", never "qui.") is
     // cut to its first three letters, as the locales that abbreviate write it
-    const whole =
-      style === 'short' &&
-      name.length > 3 &&
-      formatter(this.language, { weekday: 'long' }).format(date).startsWith(name);
-    return bare(whole ? name.slice(0, 3) : name);
+    if (style === 'short') return bare(shortWeekday(this.language, date));
+    const name = formatter(this.language, { weekday: style }).format(date);
+    return style === 'long' ? capitalize(name) : bare(name);
   }
 
   /** "September" */

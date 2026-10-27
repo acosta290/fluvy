@@ -71,6 +71,21 @@ describe('a value as a line', () => {
     expect(formatValue(hass, { nested: 1 })).toBe('');
     expect(formatValue(hass, [1, 2])).toBe('');
   });
+
+  it('writes a moment’s weekday short as the calendar does, in every language', () => {
+    // Friday 19 September 2025 in the house's zone: not today (its time as the clock writes it)
+    const at = (language: string): string =>
+      formatValue({ ...hass, language } as HomeAssistant, 1_758_300_000, { epoch: true }).replace(
+        / \d{2}:\d{2}$/,
+        '',
+      );
+    // Portugal's own short weekday is the word written out ("sexta"): three letters, as the calendar writes it
+    expect(at('pt-PT')).toBe('sex, 19/09');
+    expect(at('pt-BR')).toBe('sex., 19 de set.');
+    expect(at('de')).toBe('Fr., 19. Sept.');
+    expect(at('fr')).toBe('ven. 19 sept.');
+    expect(at('ja')).toBe('9月19日(金)');
+  });
 });
 
 describe('a line resolved', () => {
