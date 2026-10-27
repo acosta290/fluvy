@@ -52,6 +52,30 @@ describe('every style', () => {
   );
 });
 
+describe('the gridlines', () => {
+  it.each(['classic', 'soft', 'glow', 'minimal'] as const)(
+    '%s: draws the vertical ones, the horizontal ones at the ticks, or both, as the card asks',
+    (preset) => {
+      const lines = (show_grid: 'x' | 'y' | 'both'): { across: number; down: number } => {
+        const drawing = host(
+          drawChart({ ...spec(preset), style: resolveStyle(preset, { show_grid }, caps) }),
+        );
+        const grid = [...drawing.querySelectorAll('.fc-grid')];
+        return {
+          down: grid.filter((l) => l.getAttribute('x1') === l.getAttribute('x2')).length,
+          across: grid.filter((l) => l.getAttribute('y1') === l.getAttribute('y2')).length,
+        };
+      };
+      const ticks = plotOf(spec(preset, { style: resolveStyle(preset, { show_grid: 'y' }, caps) }))
+        .ticks?.ticks.length;
+      expect(ticks).toBeGreaterThan(1);
+      expect(lines('x')).toEqual({ down: 5, across: 0 });
+      expect(lines('y')).toEqual({ down: 0, across: ticks });
+      expect(lines('both')).toEqual({ down: 5, across: ticks });
+    },
+  );
+});
+
 describe('the end of a line and now', () => {
   it('is Fluvy’s knob on the line’s end in the soft style, the classic dot in classic and minimal', () => {
     const soft = host(drawChart(spec('soft')));

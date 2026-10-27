@@ -103,6 +103,42 @@ describe('a style’s settings: the card’s key › the house’s › the style
     expect(resolveStyle('soft', {}, LINE).scale).toBe('tight');
   });
 
+  it.each([
+    ['classic', 'none'],
+    ['soft', 'x'],
+    ['glow', 'none'],
+    ['minimal', 'none'],
+  ] as const)(
+    '%s: stands on a nice scale where it draws horizontal lines, whoever asked for them',
+    (preset, own) => {
+      const choices = [undefined, 'auto', true, false, 'none', 'x', 'y', 'both'] as const;
+      expect(
+        choices.map((show_grid) => {
+          const style = resolveStyle(preset, show_grid === undefined ? {} : { show_grid }, LINE);
+          return [style.grid.axes, style.scale];
+        }),
+      ).toEqual([
+        [own, 'tight'],
+        [own, 'tight'],
+        [own, 'tight'],
+        ['none', 'tight'],
+        ['none', 'tight'],
+        ['x', 'tight'],
+        ['y', 'nice'],
+        ['both', 'nice'],
+      ]);
+    },
+  );
+
+  it('keeps a style’s own scale where its horizontal lines are turned off', () => {
+    for (const preset of ['step', 'band'] as const) {
+      const off = resolveStyle(preset, { show_grid: 'none' }, { bars: true, band: true });
+      expect([off.grid.axes, off.scale]).toEqual(['none', 'nice']);
+    }
+    const plain = resolveStyle('step', {}, LINE, house({ grid: 'none' }));
+    expect([plain.grid.axes, plain.scale]).toEqual(['none', 'nice']);
+  });
+
   it('turns the gridlines off with the house, or the card’s choice', () => {
     expect(resolveStyle('soft', {}, LINE, house({ grid: 'none' })).grid.axes).toBe('none');
     expect(resolveStyle('soft', { show_grid: 'both' }, LINE).grid.axes).toBe('both');

@@ -12,7 +12,8 @@
  *   with its end, the scale's ticks right-aligned on one column 8 before the plot, a style's bubble inside the plot;
  * - the forecast: Fluvy's knob on now's hairline, the forecast dashed from it;
  * - a measurement's scale keeps to its range (a temperature is not drawn from zero), a meter's day in bars is 24 of an
- *   hour from zero, every gauge's knob is Fluvy's whole knob, and the read dial in a tile holds its reading;
+ *   hour from zero, the gridlines a card asks for are drawn (the horizontal ones at the ticks), every gauge's knob is
+ *   Fluvy's whole knob, and the read dial in a tile holds its reading;
  * - reading: a pointer moves the cursor and the bubble says when; the keys move it (← Home), Escape lets it go;
  * - the moving gauges (the `animated` sheet) in both modes: each runs, on transform, opacity and the dash offset only
  *   and unfiltered; nothing leaves its box; its reading inside it, never across the waterline or any sweep of the
@@ -378,6 +379,30 @@ for (const mode of ['light', 'dark']) {
     'a meter’s day in bars: 24, an hour each, on a scale from zero',
     bars.bars === 24 && bars.floor === 0,
     JSON.stringify(bars),
+  );
+  // the gridlines a card asks for, on a style whose own are vertical: the quarters, the ticks, or both
+  const grids = await frame(page, 'Grid · vertical, horizontal, both')
+    .locator('fluvy-sensor-card')
+    .evaluateAll((cards) =>
+      cards.map((card) => {
+        const lines = [...card.shadowRoot.querySelectorAll('.am-chart .fc-grid')];
+        const down = lines.filter((l) => l.getAttribute('x1') === l.getAttribute('x2')).length;
+        const ticks = card.shadowRoot.querySelectorAll('.am-chart .fc-tick').length;
+        return [down, lines.length - down, ticks];
+      }),
+    );
+  const [x, y, both] = grids;
+  check(
+    'soft’s gridlines as asked: x the five quarters, y a line at every tick, both the two',
+    grids.length === 3 &&
+      x[0] === 5 &&
+      x[1] === 0 &&
+      y[0] === 0 &&
+      y[1] > 1 &&
+      y[1] === y[2] &&
+      both[0] === 5 &&
+      both[1] === both[2],
+    JSON.stringify(grids),
   );
   // every gauge's knob is the thermostat's ball: its dot, its lift — never the read-only marker
   const knobs = await page.evaluate(() => {

@@ -382,6 +382,9 @@ export function resolveStyle(
         ? gridChoice
         : spec.grid;
   const nowOn = (own('show_now') ?? spec.now) && caps.now === true;
+  // horizontal lines stand on a nice scale (zero a tick): the ones drawn, or the style's own where they are turned off
+  // (a step without its lines keeps its scale and its ticks)
+  const across = (grid: PresetSpec['grid']): boolean => grid === 'y' || grid === 'both';
   return {
     preset: name,
     curve: own('curve') ?? spec.curve,
@@ -400,7 +403,7 @@ export function resolveStyle(
     points: own('show_points') ?? (spec.end === 'none' ? 'none' : 'end'),
     end: spec.end === 'house' ? house.endpoint : 'dot',
     grid: { axes, kind: !classic && house.grid === 'dashed' ? 'dashed' : 'hairline' },
-    scale: spec.grid === 'y' || spec.grid === 'both' || isBars(name) ? 'nice' : 'tight',
+    scale: across(axes) || across(spec.grid) || isBars(name) ? 'nice' : 'tight',
     axis: (own('show_axis') ?? true) && caps.axis !== false,
     now: nowOn ? house.now : 'none',
     future: spec.future,
