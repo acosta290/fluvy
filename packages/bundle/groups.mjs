@@ -60,14 +60,23 @@ const MEDIA =
 const HISTORY_BARS_READINGS = /\/packages\/cards\/src\/history-bars\/(readings|history)\.ts/;
 
 /**
- * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, the tokens' fitting of a house's set of
- * series colours, and the Chart card with its English, which join it): fetched as the bundle starts, with the
- * families. A core card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it
- * behind the skeleton it shows while its history loads), a card in a lazy chunk (energy, history bars, the History
- * page) by a static import from its own chunk.
+ * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, the gauges that move and their English,
+ * and the tokens' fitting of a house's set of series colours): fetched as the bundle starts, with the families. A core
+ * card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it behind the skeleton
+ * it shows while its history loads), a card in a lazy chunk (energy, history bars, the History page, the Chart card)
+ * by a static import from its own chunk.
  */
 const CHART =
-  /\/packages\/(cards\/src\/(chart-cards\.ts|chart\/)|tokens\/src\/build\/series\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
+  /\/packages\/(cards\/src\/chart\/(engine\/|english\.ts)|tokens\/src\/build\/series\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
+
+/**
+ * The Chart card (the card, what reads its series — history, statistics, a list in an attribute, a forecast — its
+ * editor and its English, a part of its own): fetched as the bundle starts and defined as it lands, as the items card
+ * is (`chart-family.ts` stays in core: the name, the height). A chunk of its own beside the engine's: the sensor's
+ * chart waits on that one, which stays as small as it can. Named after the engine: the engine's English is its own.
+ */
+const CHART_CARD =
+  /\/packages\/(cards\/src\/(chart-cards\.ts|chart\/)|core\/src\/i18n\/locales\/en\/chart-card\.json)/;
 
 /**
  * The Energy period card (the strip that drives an Energy date picker's collection, its picker, its sheet and its
@@ -183,12 +192,12 @@ const FORMS = /\/packages\/cards\/src\/([\w-]+)\/\1-editor\.ts$/;
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
  * page, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
- * every page carries, the weather card, the media, the chart engine, the Energy period card, energy (the history bars'
- * readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
- * automations and alerts families (each sheet on its own), the template card, the web page card, the items card (its
- * sheet on its own), the cards' editor, the view icons, the icon set's other part, and everything else (Fluvy's
- * packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this
- * order; the priorities only say so out loud.
+ * every page carries, the weather card, the media, the chart engine, the Chart card, the Energy period card, energy
+ * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
+ * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the items
+ * card (its sheet on its own), the cards' editor, the view icons, the icon set's other part, and everything else
+ * (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in
+ * this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -205,6 +214,7 @@ export const GROUPS = [
   { name: 'media', test: MEDIA },
   { name: 'history-bars-readings', test: HISTORY_BARS_READINGS },
   { name: 'chart', test: CHART },
+  { name: 'chart-card', test: CHART_CARD },
   { name: 'energy-period', test: ENERGY_PERIOD },
   { name: 'energy', test: ENERGY },
   { name: 'cameras-sheet', test: CAMERAS_SHEET },

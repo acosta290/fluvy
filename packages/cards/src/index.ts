@@ -36,6 +36,7 @@ import { defineStrategies } from './strategy/define.js';
 import { ALERTS_FAMILY } from './alerts-family.js';
 import { APPLIANCES_FAMILY } from './appliances-family.js';
 import { AUTOMATIONS_FAMILY } from './automations-family.js';
+import { CHART_FAMILY } from './chart-family.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
 import { ITEMS_FAMILY } from './items-family.js';
@@ -257,7 +258,7 @@ type Family = readonly [
 ];
 
 /**
- * The weather, template, Energy period, web page and items cards and the media, energy, devices, automations,
+ * The weather, template, Energy period, web page, items and chart cards and the media, energy, devices, automations,
  * appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
@@ -272,6 +273,7 @@ const FAMILIES: readonly Family[] = [
   [TEMPLATE_FAMILY, () => import('./template-cards.js')],
   [WEB_FAMILY, () => import('./web-cards.js')],
   [ITEMS_FAMILY, () => import('./items-cards.js')],
+  [CHART_FAMILY, () => import('./chart-cards.js')],
 ];
 
 // the families: listed and measured now, their elements fetched at once and defined as they land

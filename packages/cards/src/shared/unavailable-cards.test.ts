@@ -55,6 +55,16 @@ const STATES = [
       { callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
     ],
   }),
+  // a Nordpool sensor: the price now as its state, the day's hours in `raw_today`
+  state('sensor.nordpool', '0.125', {
+    unit_of_measurement: 'EUR/kWh',
+    raw_today: Array.from({ length: 24 }, (_unused, h) => ({
+      start: `2026-10-17T${String(h).padStart(2, '0')}:00:00+00:00`,
+      end: `2026-10-17T${String(h + 1).padStart(2, '0')}:00:00+00:00`,
+      value: 0.1 + h / 100,
+    })),
+    raw_tomorrow: [],
+  }),
   // a speaker playing a track: its seek line, the five rounds, its volume and the power round
   state('media_player.kitchen', 'playing', {
     supported_features: 311743,
@@ -204,6 +214,37 @@ describe('cameras out of reach', () => {
     expect(root(twin).querySelector('.dv-cam.is-off')).not.toBeNull();
     expect(texts(twin, '.dv-cam__off p')).toEqual(['Entity not found']);
   });
+});
+
+describe('charts out of reach', () => {
+  it.each(KINDS)(
+    'keep their value row, the chart’s room and its axis, a %s sensor saying so under the title',
+    async (kind) => {
+      const config = {
+        type: 'custom:fluvy-chart-card',
+        series: ['sensor.nordpool'],
+        span: 'today',
+        chart: 'step',
+        highlight: 'both',
+        _now: STAMP,
+      };
+      const live = await draw(config, house());
+      const twin = await draw(config, away(['sensor.nordpool'], kind));
+      // in the off skin where it cannot be reached; unknown, it is there with nothing to say (as the sensor card)
+      expect(root(twin).querySelector('.fv-card.is-unavailable') !== null).toBe(kind !== 'unknown');
+      expect(texts(twin, '.ch-now .fv-readout__value')).toEqual(['—']);
+      expect(texts(twin, '.fv-card__sub')).toEqual([
+        kind === 'missing' ? 'Entity not found' : kind === 'unknown' ? 'Unknown' : 'Unavailable',
+      ]);
+      // its list where Home Assistant keeps it (unknown), else its history, asked of the recorder: the chart's room
+      // keeps its 120 and the window's clock stays under it
+      expect(root(twin).querySelector('.ch-top')).not.toBeNull();
+      expect(root(twin).querySelector('.ch-chart > .fv-skeleton, .ch-chart > svg')).not.toBeNull();
+      expect(root(twin).querySelector<HTMLElement>('.ch-chart')?.style.height).toBe('120px');
+      expect(root(twin).querySelector('.ch-axis .fv-axis')).not.toBeNull();
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+    },
+  );
 });
 
 describe('items out of reach', () => {

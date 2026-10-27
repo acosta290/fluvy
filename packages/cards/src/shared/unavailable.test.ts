@@ -169,6 +169,16 @@ const STATES = [
       { id: 'b2', callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
     ],
   }),
+  // a Nordpool sensor: the price now as its state, the day's hours in `raw_today` (the Chart card's stub)
+  state('sensor.nordpool_kwh_es', '0.125', {
+    unit_of_measurement: 'EUR/kWh',
+    raw_today: Array.from({ length: 24 }, (_unused, h) => ({
+      start: `2026-10-17T${String(h).padStart(2, '0')}:00:00+00:00`,
+      end: `2026-10-17T${String(h + 1).padStart(2, '0')}:00:00+00:00`,
+      value: 0.1 + h / 100,
+    })),
+    raw_tomorrow: [],
+  }),
 ];
 
 const hass = {

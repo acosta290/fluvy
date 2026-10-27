@@ -387,7 +387,7 @@ describe('custom:fluvy-home strategy', () => {
     // templates say, and only the person writes those (#59), as only the person knows a web page's address (#61); an
     // items card lists what a sensor's attribute holds, and only the person says what its items are (#66); the Energy
     // period strip leads the Energy dashboard's Today view (1.11), while the home's energy view keeps its cards' own
-    // periods
+    // periods; a chart card draws the series the person names, in a list or a forecast only they know of (#68)
     const byHand = new Set([
       'custom:fluvy-automations-card',
       'custom:fluvy-appliance-card',
@@ -395,6 +395,7 @@ describe('custom:fluvy-home strategy', () => {
       'custom:fluvy-web-card',
       'custom:fluvy-items-card',
       'custom:fluvy-energy-period-card',
+      'custom:fluvy-chart-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(
