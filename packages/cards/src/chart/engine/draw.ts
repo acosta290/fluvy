@@ -2,7 +2,7 @@ import { html, nothing, svg, type SVGTemplateResult, type TemplateResult } from 
 import { AXIS_GAP } from './axis.js';
 import { columns, type Column } from './bars.js';
 import { chartBubble, cursorLine, dot, knob, nowLine, point, shadowCopy } from './decor.js';
-import type { ChartSeries } from './model.js';
+import type { ChartSeries, Curve, Stretch, Threshold } from './model.js';
 import { seriesPaint, type SeriesPaint } from './palette.js';
 import { areaPath, bandPath, linePath, splitAt, yAt, type Pt } from './path.js';
 import { isBars, type ResolvedStyle } from './presets.js';
@@ -58,12 +58,21 @@ export interface ChartSpec {
    * always stand on it.
    */
   readonly zero?: boolean;
+  /** What else a nice scale must reach: the readings of lines drawn over these bars on the same scale. */
+  readonly reach?: readonly number[];
   /** The fraction of the plot's width the series covers: a day's axis at 21:47 → 0.908. */
   readonly extent?: number;
   /** Where now falls, as a fraction of the series: beyond it the forecast is drawn as the style says, now marked. */
   readonly now?: number | null | undefined;
   /** Where the chart is read (a fraction of the plot's width); none: at the end of what has happened. */
   readonly cursor?: number | null | undefined;
+  /**
+   * The scale's lines the readings are coloured from (each from its value up to the next): every line drawn again in
+   * each one's ink, clipped to its stretch of the scale — split where it crosses one — and every bar in its value's.
+   */
+  readonly thresholds?: readonly Threshold[];
+  /** Stretches of the plot marked behind everything (a window of the cheapest hours), in their tone's fill. */
+  readonly stretches?: readonly Stretch[];
   /** A tick label's words, where the style draws a scale. */
   readonly tick?: (value: number, decimals: number) => string;
   /** A text's width as the card's ruler measures it at the ticks' face (11/500): the scale's column is sized by it. */
@@ -92,9 +101,13 @@ interface Laid {
   readonly count: number;
   /** A reading's slot (bars, steps), or the distance between two readings (lines). */
   readonly slot: number;
+  /** A series' slot whatever the style: what a stepped one holds each of its readings across. */
+  readonly heldOf: (index: number) => number;
   readonly points: ReadonlyArray<ReadonlyArray<Pt | null>>;
   /** The index of the last reading that has happened; null when the chart has no now of its own. */
   readonly nowIndex: number | null;
+  /** The same for a series of its own curve and length: a stepped one counts its slots, a line its points. */
+  readonly nowOf: (stepped: boolean, length?: number) => number | null;
   /** Where the chart reads at rest: the end of what has happened (a step's in its slot's middle). */
   readonly restX: number;
   readonly cursorX: number;
@@ -107,11 +120,19 @@ const given = (n: number | null | undefined): n is number =>
 const finite = (values: ReadonlyArray<number | null>): number[] =>
   values.filter((v): v is number => v !== null && Number.isFinite(v));
 
-/** The lows and highs of every band the chart draws: a band is in the scale only where the style draws it. */
+/** How a series joins its readings, and what lies under it: its own, else the style's. */
+const curveOf = (spec: ChartSpec, index: number): Curve =>
+  spec.series[index]?.curve ?? spec.style.curve;
+const fillOf = (spec: ChartSpec, index: number): NonNullable<ChartSeries['fill']> =>
+  spec.series[index]?.fill ?? spec.style.fill;
+
+/** The lows and highs of every band the chart draws: a band is in the scale only where it is drawn. */
 const bandsOf = (spec: ChartSpec, bars: boolean): number[][] =>
-  bars || spec.style.fill !== 'band'
+  bars
     ? []
-    : spec.series.flatMap((s) => (s.band ? [[...s.band.low], [...s.band.high]] : []));
+    : spec.series.flatMap((s, index) =>
+        s.band && fillOf(spec, index) === 'band' ? [[...s.band.low], [...s.band.high]] : [],
+      );
 
 /** The ends a nice scale must reach: every reading and band drawn, or the stacks' rises and falls for stacked columns. */
 function reach(spec: ChartSpec, bars: boolean, stacked: boolean): number[] {
@@ -146,7 +167,10 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
     ? 'nice'
     : (spec.scale ?? (style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight'));
   if (wanted === 'nice') {
-    const ends = reach(spec, bars, bars && style.preset === 'columns' && all.length > 1);
+    const ends = [
+      ...reach(spec, bars, bars && style.preset === 'columns' && all.length > 1),
+      ...(spec.reach ?? []),
+    ];
     ticks = niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
     scales = all.map(() => ticks as Ticks);
   } else if (typeof wanted === 'object') scales = all.map(() => wanted);
@@ -172,29 +196,35 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
   const box: PlotBox = { top: frame.headroom, bottom: frame.height - (frame.pad ?? 8) };
   // bars and steps hold a slot each; a line's readings are its points, end to end
   const slot = count > 0 ? span / (bars || step ? count : Math.max(1, count - 1)) : span;
+  // a stepped series holds each of its readings across its own slot (a day's 24 prices beside a line's 25 points)
+  const heldOf = (index: number): number => span / Math.max(1, all[index]?.length ?? count);
   const points = bars
     ? all.map(() => [])
     : all.map((values, index) => {
         const scale = scales[index] as Scale;
         const last = Math.max(1, values.length - 1);
+        const stepped = curveOf(spec, index) === 'step';
+        const held = heldOf(index);
         const pts: Array<Pt | null> = values.map((v, i) =>
           v === null || !Number.isFinite(v)
             ? null
-            : [left + (step ? i * slot : (i / last) * span), yOf(v, scale, box)],
+            : [left + (stepped ? i * held : (i / last) * span), yOf(v, scale, box)],
         );
         // a step holds its last reading across its slot: the line runs on to the slot's end
-        if (step && pts.length) {
+        if (stepped && pts.length) {
           const end = pts[pts.length - 1];
-          pts.push(end ? [left + values.length * slot, end[1]] : null);
+          pts.push(end ? [left + values.length * held, end[1]] : null);
         }
         return pts;
       });
   const f = spec.now;
-  const nowIndex = !given(f)
-    ? null
-    : bars || step
-      ? Math.min(count - 1, Math.max(0, Math.ceil(clamp01(f) * count) - 1))
-      : Math.round(clamp01(f) * Math.max(0, count - 1));
+  const nowOf = (stepped: boolean, length = count): number | null =>
+    !given(f)
+      ? null
+      : stepped
+        ? Math.min(length - 1, Math.max(0, Math.ceil(clamp01(f) * length) - 1))
+        : Math.round(clamp01(f) * Math.max(0, length - 1));
+  const nowIndex = nowOf(bars || step);
   const lastIndex = nowIndex ?? count - 1;
   const restX =
     bars || step
@@ -214,8 +244,10 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
     ticks,
     count,
     slot,
+    heldOf,
     points,
     nowIndex,
+    nowOf,
     restX,
     cursorX,
   };
@@ -255,7 +287,7 @@ export function readAt(
   const x = laid.bars ? laid.left + (index + 0.5) * laid.slot : laid.cursorX;
   return {
     x,
-    ys: laid.points.map((pts) => (laid.bars ? null : yAt(pts, spec.style.curve, x))),
+    ys: laid.points.map((pts, i) => (laid.bars ? null : yAt(pts, curveOf(spec, i), x))),
     index,
   };
 }
@@ -274,10 +306,76 @@ const extreme = (values: ReadonlyArray<number | null>, pick: 'min' | 'max'): num
 /** A series' group: its tone's class, its ink, or the person's own colour as the card's accent sheet keys it. */
 const paintOf = (spec: ChartSpec, index: number): SeriesPaint =>
   seriesPaint(spec.series[index]?.colour);
-const group = (spec: ChartSpec, index: number, content: unknown): SVGTemplateResult => {
-  const paint = paintOf(spec, index);
-  return svg`<g class=${paint.className || nothing} data-accent=${spec.series[index]?.accent ?? nothing} style=${paint.style ?? nothing}>${content}</g>`;
+const painted = (
+  paint: SeriesPaint,
+  content: unknown,
+  accent?: string,
+  clip?: string,
+): SVGTemplateResult =>
+  svg`<g class=${paint.className || nothing} data-accent=${accent ?? nothing} style=${paint.style ?? nothing} clip-path=${clip ? `url(#${clip})` : nothing}>${content}</g>`;
+const group = (spec: ChartSpec, index: number, content: unknown): SVGTemplateResult =>
+  painted(paintOf(spec, index), content, spec.series[index]?.accent);
+
+/** The thresholds from the lowest up, each with the value the next one starts at (none above the highest). */
+const thresholdsOf = (spec: ChartSpec): Array<Threshold & { readonly next: number | null }> => {
+  const sorted = [...(spec.thresholds ?? [])]
+    .filter((t) => Number.isFinite(t.value))
+    .sort((a, b) => a.value - b.value);
+  return sorted.map((t, i) => ({ ...t, next: sorted[i + 1]?.value ?? null }));
 };
+
+/** The threshold a value falls in (the highest it reaches), none under the lowest: a bar's colour. */
+const thresholdAt = (spec: ChartSpec, value: number): Threshold | undefined =>
+  thresholdsOf(spec)
+    .filter((t) => value >= t.value)
+    .pop();
+
+/**
+ * A line again in each threshold's ink, clipped to its stretch of the scale (from its value up to the next one's):
+ * where the readings cross a threshold the line changes colour, curve and all. The forecast keeps its dashes.
+ */
+function thresholdRuns(
+  spec: ChartSpec,
+  laid: Laid,
+  index: number,
+  paths: { readonly line: string; readonly forecast: string; readonly lineClass: string },
+): SVGTemplateResult | typeof nothing {
+  const thresholds = thresholdsOf(spec);
+  if (!thresholds.length) return nothing;
+  const scale = laid.scales[index] as Scale;
+  const width = spec.style.line;
+  return svg`${thresholds.map((t, k) => {
+    const id = `${spec.id}-run-${index}-${k}`;
+    // a higher value is higher on the plot: the stretch runs from the next threshold's y down to this one's
+    const top = t.next === null ? 0 : Math.max(0, yOf(t.next, scale, laid.box));
+    const bottom = Math.min(spec.frame.height, yOf(t.value, scale, laid.box));
+    if (!(bottom > top)) return nothing;
+    return svg`<defs><clipPath id=${id}><rect x="0" y=${px(top)} width=${spec.frame.width} height=${px(bottom - top)} /></clipPath></defs>${painted(
+      seriesPaint(t.colour),
+      svg`${paths.line ? svg`<path class="${paths.lineClass} fc-run" d=${paths.line} stroke-width=${width} pathLength="1" />` : nothing}${
+        paths.forecast
+          ? svg`<path class="fc-future fc-run" d=${paths.forecast} stroke-width=${width} />`
+          : nothing
+      }`,
+      undefined,
+      id,
+    )}`;
+  })}`;
+}
+
+/** The marked stretches of the plot (a window's cheapest hours), behind every layer, in their tone's fill. */
+function stretches(spec: ChartSpec, laid: Laid): SVGTemplateResult | typeof nothing {
+  if (!spec.stretches?.length) return nothing;
+  return svg`${spec.stretches.map((s) => {
+    const from = laid.left + clamp01(Math.min(s.from, s.to)) * laid.span;
+    const to = laid.left + clamp01(Math.max(s.from, s.to)) * laid.span;
+    if (!(to > from)) return nothing;
+    return painted(
+      seriesPaint(s.colour),
+      svg`<rect class="fc-stretch" x=${px(from)} y=${laid.box.top} width=${px(to - from)} height=${laid.box.bottom - laid.box.top} />`,
+    );
+  })}`;
+}
 
 /** The vertical hairlines at the plot's quarters, and the horizontal ones at the ticks (the zero line strong). */
 function grid(spec: ChartSpec, laid: Laid): SVGTemplateResult {
@@ -348,11 +446,10 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
   }${drawn.map((c) => {
     const hollow = laid.nowIndex !== null && c.slot > laid.nowIndex;
     const quiet = !hollow && highlights && !lit(c.slot);
-    return group(
-      spec,
-      c.series,
-      svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`,
-    );
+    const bar = svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`;
+    // a bar over a threshold wears its ink
+    const over = thresholdAt(spec, c.value);
+    return over ? painted(seriesPaint(over.colour), bar) : group(spec, c.series, bar);
   })}`;
 }
 
@@ -401,41 +498,52 @@ function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult
   const pts = laid.points[index] as ReadonlyArray<Pt | null>;
   const scale = laid.scales[index] as Scale;
   const several = spec.series.length > 1;
+  const curve = curveOf(spec, index);
+  const fill = fillOf(spec, index);
+  const nowIndex =
+    laid.nowIndex === null ? null : laid.nowOf(curve === 'step', series.values.length);
   const { past, future } =
-    laid.nowIndex === null ? { past: pts, future: [] } : splitAt(pts, laid.nowIndex, style.curve);
-  const line = linePath(past, style.curve);
-  const forecast = linePath(future, style.curve);
+    nowIndex === null ? { past: pts, future: [] } : splitAt(pts, nowIndex, curve);
+  const line = linePath(past, curve);
+  const forecast = linePath(future, curve);
   if (!line && !forecast) return nothing;
   const fillId = several || spec.id !== 'fv' ? `${spec.id}-fill-${index}` : `${spec.id}-fill`;
-  if (style.preset === 'classic') {
+  if (style.preset === 'classic' && (fill === 'gradient' || fill === 'none')) {
     // 1.10's curve: its area down to the drawing's floor — a lone curve's (on its own ends) written bare, as 1.0 did
-    const area = areaPath(
-      past,
-      style.curve,
-      frame.height,
-      laid.scale === 'tight' ? String(frame.height) : px(frame.height),
-    );
-    return svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="curve-fill-a" /><stop offset="1" class="curve-fill-b" /></linearGradient></defs>
-      <path class="curve-area" d=${area} fill=${`url(#${fillId})`} stroke="none" />
+    const area =
+      fill === 'none'
+        ? ''
+        : areaPath(
+            past,
+            curve,
+            frame.height,
+            laid.scale === 'tight' ? String(frame.height) : px(frame.height),
+          );
+    return svg`${
+      area
+        ? svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="curve-fill-a" /><stop offset="1" class="curve-fill-b" /></linearGradient></defs>
+      <path class="curve-area" d=${area} fill=${`url(#${fillId})`} stroke="none" />`
+        : nothing
+    }
       <path class="curve-line" d=${line} pathLength="1" style=${style.line === 2.5 ? nothing : `stroke-width:${style.line}px`} />${
         forecast
           ? svg`<path class="fc-future" d=${forecast} stroke-width=${style.line} />`
           : nothing
-      }`;
+      }${thresholdRuns(spec, laid, index, { line, forecast, lineClass: 'curve-line' })}`;
   }
   const xs = (pts as ReadonlyArray<Pt | null>).map((p) => p?.[0] ?? laid.left);
   const band =
-    style.fill === 'band' && series.band
+    fill === 'band' && series.band
       ? bandPath(
           series.band.low.map((v, i): Pt => [xs[i] ?? laid.left, yOf(v, scale, laid.box)]),
           series.band.high.map((v, i): Pt => [xs[i] ?? laid.left, yOf(v, scale, laid.box)]),
         )
       : '';
-  const filled = style.fill === 'gradient' || style.fill === 'flat';
-  const area = filled ? areaPath(past, style.curve, laid.box.bottom) : '';
+  const filled = fill === 'gradient' || fill === 'flat';
+  const area = filled ? areaPath(past, curve, laid.box.bottom) : '';
   const blurId = style.glow.kind === 'blur' ? `${spec.id}-blur-${index}` : undefined;
   return svg`${band ? svg`<path class="fc-band" d=${band} />` : nothing}${
-    area && style.fill === 'gradient'
+    area && fill === 'gradient'
       ? svg`<defs><linearGradient id=${fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="fc-fill-a" /><stop offset="1" class="fc-fill-b" /></linearGradient></defs>
           <path class="fc-area" d=${area} fill=${`url(#${fillId})`} />`
       : area
@@ -458,11 +566,11 @@ function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult
     forecast
       ? svg`<path class="fc-future ${style.future === 'faint' ? 'fc-future--faint' : ''}" d=${forecast} stroke-width=${style.line} />`
       : nothing
-  }${
+  }${thresholdRuns(spec, laid, index, { line, forecast, lineClass: 'fc-line' })}${
     style.points === 'all'
       ? past.flatMap((p, i) =>
           p && i < series.values.length
-            ? [point(style.curve === 'step' ? p[0] + laid.slot / 2 : p[0], p[1])]
+            ? [point(curve === 'step' ? p[0] + laid.heldOf(index) / 2 : p[0], p[1])]
             : [],
         )
       : nothing
@@ -483,7 +591,7 @@ export function drawChart(spec: ChartSpec): TemplateResult {
   const several = spec.series.length > 1;
   // where each line is read: at the cursor, or at rest on the end of what has happened
   const at = scrubbed ? laid.cursorX : laid.restX;
-  const ys = laid.bars ? [] : laid.points.map((pts) => yAt(pts, style.curve, at));
+  const ys = laid.bars ? [] : laid.points.map((pts, i) => yAt(pts, curveOf(spec, i), at));
   const marked = ys.filter((y): y is number => y !== null);
   const drawn = laid.bars
     ? columns({
@@ -528,7 +636,7 @@ export function drawChart(spec: ChartSpec): TemplateResult {
         if (p)
           dots.push(
             dot(
-              style.curve === 'step' ? p[0] + laid.slot / 2 : p[0],
+              curveOf(spec, index) === 'step' ? p[0] + laid.heldOf(index) / 2 : p[0],
               p[1],
               pick === 'min' ? 'ok' : 'danger',
             ),
@@ -578,7 +686,7 @@ export function drawChart(spec: ChartSpec): TemplateResult {
           />
         </clipPath>
       </defs>
-      ${grid(spec, laid)}${tickColumn(spec, laid)}${several || laid.bars ? cursor : nothing}${layers}${
+      ${spec.stretches?.length ? clipped(stretches(spec, laid)) : nothing}${grid(spec, laid)}${tickColumn(spec, laid)}${several || laid.bars ? cursor : nothing}${layers}${
         laid.bars ? barsWords(spec, laid, drawn) : nothing
       }${nowX === null ? nothing : nowLine(nowX, laid.box.top - 8, laid.box.bottom)}</svg
     >${knobs}`;

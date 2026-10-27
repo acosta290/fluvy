@@ -48,7 +48,15 @@
  */
 import '../english.js';
 
-export type { ChartPoint, ChartSeries, Curve, SeriesColour, Window } from './model.js';
+export type {
+  ChartPoint,
+  ChartSeries,
+  Curve,
+  SeriesColour,
+  Stretch,
+  Threshold,
+  Window,
+} from './model.js';
 export { bucket, evenly, readingsOf, sampleAt, type BucketRule, type Readings } from './model.js';
 export {
   airScale,

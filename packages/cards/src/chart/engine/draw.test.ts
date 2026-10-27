@@ -181,6 +181,97 @@ describe('bars', () => {
   });
 });
 
+describe('a chart of its series’ own (the Chart card’s)', () => {
+  const PRICES = [0.1, 0.12, 0.3, 0.32, 0.18, 0.08];
+  const scaled = (preset: Parameters<typeof resolveStyle>[0], more: Partial<ChartSpec> = {}) =>
+    spec(preset, { series: [{ values: PRICES }], scale: { min: 0, max: 0.4 }, ...more });
+
+  it('draws a line again in each threshold’s ink, clipped from its value up to the next one’s', () => {
+    const thresholds = [
+      { value: 0.25, colour: 'danger' as const },
+      { value: 0.15, colour: 'warning' as const },
+    ];
+    const drawing = host(drawChart(scaled('soft', { thresholds })));
+    const line = drawing.querySelector('.fc-line:not(.fc-run)')?.getAttribute('d');
+    const runs = [...drawing.querySelectorAll('g[clip-path] > .fc-run')];
+    expect(runs.map((run) => run.parentElement?.getAttribute('class'))).toEqual([
+      'fv-tone--warning',
+      'fv-tone--danger',
+    ]);
+    // the very line, split where it crosses: the warning's stretch from 0.25 down to 0.15, the danger's above
+    for (const run of runs) expect(run.getAttribute('d')).toBe(line);
+    const rect = (id: string) => drawing.querySelector(`clipPath#${id} rect`) as Element;
+    const y = (v: number): number => 44 + (1 - v / 0.4) * (120 - 44 - 8);
+    expect(Number(rect('c-run-0-0').getAttribute('y'))).toBeCloseTo(y(0.25), 2);
+    expect(Number(rect('c-run-0-0').getAttribute('height'))).toBeCloseTo(y(0.15) - y(0.25), 2);
+    expect(Number(rect('c-run-0-1').getAttribute('y'))).toBe(0);
+    expect(Number(rect('c-run-0-1').getAttribute('height'))).toBeCloseTo(y(0.25), 2);
+    // every run inside the plot's clip too
+    for (const run of runs) expect(run.closest(`g[clip-path="url(#c-clip)"]`)).not.toBeNull();
+  });
+
+  it('keeps a bar over a threshold in its ink, the rest in the series’', () => {
+    const drawing = host(
+      drawChart(scaled('bars', { thresholds: [{ value: 0.25, colour: 'danger' }] })),
+    );
+    const tones = [...drawing.querySelectorAll('.fc-bar')].map(
+      (bar) => bar.parentElement?.getAttribute('class') ?? '',
+    );
+    expect(tones.filter((tone) => tone === 'fv-tone--danger').length).toBe(2);
+  });
+
+  it('marks a stretch of the plot behind every layer, clipped to it, from its fractions', () => {
+    const drawing = host(
+      drawChart(scaled('classic', { stretches: [{ from: 0.5, to: 0.75, colour: 'ok' }] })),
+    );
+    const stretch = drawing.querySelector('.fc-stretch') as Element;
+    expect(stretch.parentElement?.getAttribute('class')).toBe('fv-tone--ok');
+    expect(stretch.closest('g[clip-path="url(#c-clip)"]')).not.toBeNull();
+    expect(Number(stretch.getAttribute('x'))).toBe(160);
+    expect(Number(stretch.getAttribute('width'))).toBe(80);
+    // drawn first: everything else lies over it
+    const svg = drawing.querySelector('svg') as SVGSVGElement;
+    expect(svg.querySelector('g[clip-path]')?.contains(stretch)).toBe(true);
+  });
+
+  it('holds a stepped series across its own slots beside a smooth one', () => {
+    const drawing = host(
+      drawChart(
+        spec('soft', {
+          series: [
+            { values: [1, 2, 3, 4], curve: 'step' },
+            { values: [1, 2, 3, 4, 5], fill: 'none' },
+          ],
+        }),
+      ),
+    );
+    const [stepped, smooth] = [...drawing.querySelectorAll('.fc-line')].map(
+      (line) => line.getAttribute('d') ?? '',
+    );
+    // four slots of 80: held across each, to the plot's end
+    expect(stepped).toMatch(
+      /^M0\.00,[\d.]+ H80\.00 V[\d.]+ H160\.00 V[\d.]+ H240\.00 V[\d.]+ H320\.00 V[\d.]+$/,
+    );
+    expect(smooth).toMatch(/^M0\.00,[\d.]+ C/);
+    // the smooth one draws no fill of its own
+    expect(drawing.querySelectorAll('.fc-area').length).toBe(1);
+  });
+
+  it('draws a classic curve without its area where its series says none', () => {
+    const drawing = host(drawChart(spec('classic', { series: [{ values: DAY, fill: 'none' }] })));
+    expect(drawing.querySelector('.curve-line')).not.toBeNull();
+    expect(drawing.querySelector('.curve-area')).toBeNull();
+  });
+
+  it('reaches the readings of lines drawn over its bars on the same nice scale', () => {
+    const ticks = (reach?: number[]) =>
+      plotOf(spec('bars', { series: [{ values: [1, 2, 3] }], ...(reach ? { reach } : {}) })).ticks
+        ?.ticks;
+    expect(ticks()).toEqual([0, 1, 2, 3]);
+    expect(ticks([9])).toEqual([0, 2.5, 5, 7.5, 10]);
+  });
+});
+
 describe('the gauges, each one of Fluvy’s controls read-only', () => {
   const gauge = (preset: Parameters<typeof resolveGauge>[0], value: number | null = 62) =>
     host(

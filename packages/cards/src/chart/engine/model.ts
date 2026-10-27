@@ -39,6 +39,26 @@ export interface ChartSeries {
   readonly name?: string;
   /** What a summarised reading moved between, drawn as a band behind the line. */
   readonly band?: { readonly low: readonly number[]; readonly high: readonly number[] };
+  /** How this series' line joins its readings, where it is not the style's (a price stepped beside a smooth forecast). */
+  readonly curve?: Curve;
+  /** What lies under this series' line, where it is not the style's: its gradient or flat fill, its band, nothing. */
+  readonly fill?: 'gradient' | 'flat' | 'band' | 'none';
+}
+
+/**
+ * A line of a chart's scale its readings are coloured from, upwards (a price from 0.25 in the danger's ink): what
+ * runs above `value`, up to the next one, wears `colour` — the line split where it crosses it, a bar by its value.
+ */
+export interface Threshold {
+  readonly value: number;
+  readonly colour: SeriesColour;
+}
+
+/** A stretch of the plot marked behind the lines (the day's cheapest hours): its ends as fractions of what the series cover. */
+export interface Stretch {
+  readonly from: number;
+  readonly to: number;
+  readonly colour: SeriesColour;
 }
 
 /**

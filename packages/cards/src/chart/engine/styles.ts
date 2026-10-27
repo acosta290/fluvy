@@ -122,6 +122,17 @@ export const chartStyles = css`
     stroke-dasharray: none;
     stroke-opacity: 0.35;
   }
+  /* a threshold's stretch of a line is the line again in its ink, the forecast's dashes too */
+  .fc-future.fc-run {
+    stroke: var(--tone-ink, var(--fluvy-accent));
+  }
+  /* a marked stretch of the plot (a window of the cheapest hours): its tone's fill at a little over half, behind all */
+  .fc-stretch {
+    fill: var(--tone-fill, var(--fluvy-accent-fill));
+    fill-opacity: 0.55;
+    animation: fv-fade 500ms var(--fv-ease) both;
+    animation-delay: calc(var(--fv-enter-delay, 0ms) + 620ms);
+  }
   /* every reading drawn: the classic dot, smaller, its stroke the card's */
   .fv-curve .fc-point {
     stroke-width: 2;
