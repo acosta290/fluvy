@@ -196,9 +196,15 @@ export const sheet: SheetSpec = {
       title: 'Items · empty · one row',
       cards: [card({ entity: 'sensor.it_none', variant: 'compact', max_rows: 1 })],
     },
+    // nothing known of the list out of reach: the plain list's anatomy, the sensor's name over its state
     {
       title: 'Items · out of reach',
       cards: [card({ entity: 'sensor.it_gone', max_rows: 3 })],
+    },
+    // the config names the flights' list: out of reach the card keeps their anatomy and words, the plane in its rings
+    {
+      title: 'Items · out of reach · flights',
+      cards: [card({ entity: 'sensor.it_gone', attribute: 'flights', max_rows: 3 })],
     },
     // rows and compact rows hold the height they declare at half a section too, in every language (heights.mjs)
     {

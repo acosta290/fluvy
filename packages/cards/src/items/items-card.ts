@@ -163,6 +163,15 @@ interface Listing {
   readonly items: Item[];
 }
 
+/**
+ * The preset each list was last drawn by while its sensor could be read, by the list (its sensor, its attribute, its
+ * template): out of reach, a card keeps the anatomy it had — a flights card stays "Flights nearby" with its plane —
+ * on this view or another the house opens later.
+ */
+const lastPreset = new Map<string, Preset | undefined>();
+const listKey = (config: ItemsCardConfig): string =>
+  [config.entity ?? '', config.attribute ?? '', config.items_template ?? ''].join('\n');
+
 /** How the tiles share their room: the item's circle, and the value's arrow. */
 interface TileLayout {
   readonly circles: boolean;
@@ -446,10 +455,26 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
       pending = line === PENDING_LINE;
       items = pending ? [] : asItems(parseList(line));
     } else if (usable) ({ name: attribute, items } = listAttribute(view, config.attribute));
-    const preset = presetOf(config, attribute, items);
+    const preset = usable ? presetOf(config, attribute, items) : this.restingPreset(view);
+    if (usable && !pending) lastPreset.set(listKey(config), preset);
     const sort = config.sort ?? preset?.sort;
     const order = config.sort_order ?? preset?.order ?? 'ascending';
     return { view, usable, pending, preset, items: sortItems(items, sort, order) };
+  }
+
+  /**
+   * The preset of a list out of reach, so the card keeps its anatomy and its words: the one the config asks for or
+   * names (`preset`, an `attribute: flights`), else what the sensor's attributes still say, else the one the list was
+   * last drawn by. Where nothing is known the card stays the plain list it would be — never a guess the words would
+   * take back once the sensor answers.
+   */
+  private restingPreset(view: EntityView): Preset | undefined {
+    const config = this.config ?? { type: '' };
+    const still = listAttribute(view, config.attribute);
+    return (
+      presetOf(config, still.name, still.items) ??
+      ((config.preset ?? 'auto') === 'auto' ? lastPreset.get(listKey(config)) : undefined)
+    );
   }
 
   /** Items as they are drawn: by the preset, or by the config's mapping. */

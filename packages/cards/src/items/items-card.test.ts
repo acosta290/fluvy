@@ -299,6 +299,37 @@ describe('the Items card drawn', () => {
     expect(tiles.shadowRoot!.querySelectorAll('.it-tile.is-unavailable')).toHaveLength(3);
   });
 
+  it('keeps its preset out of reach: what the config names, else what its list was last drawn by', async () => {
+    const icons = (card: Inner): string[] =>
+      [...root(card).querySelectorAll<HTMLElement & { icon?: string }>('.fv-row ha-icon')].map(
+        (el) => el.icon ?? '',
+      );
+    // nothing known of the list: the plain list, the sensor's name over its state
+    const plain = await draw({ entity: 'sensor.gone', max_rows: 2 });
+    expect(texts(plain, '.fv-card__title')).toEqual(['gone']);
+    // the config names the flights' list
+    const named = await draw({ entity: 'sensor.gone', attribute: 'flights', max_rows: 2 });
+    expect(texts(named, '.fv-card__title')).toEqual(['Flights nearby']);
+    expect(icons(named)).toEqual(['mdi:airplane', 'mdi:airplane']);
+    // a list drawn as flights while its sensor answered keeps them once it is out of reach, as Home Assistant writes
+    // it: its state unavailable, its list gone
+    const live = house();
+    const card = await draw({ entity: 'sensor.flights', max_rows: 2 }, 360, live);
+    expect(texts(card, '.fv-card__title')).toEqual(['Flights nearby']);
+    const away = house(undefined, [
+      ...STATES.filter((s) => s.entity_id !== 'sensor.flights'),
+      state('sensor.flights', 'unavailable'),
+    ]);
+    card.hass = away;
+    await card.updateComplete;
+    expect(texts(card, '.fv-card__title')).toEqual(['Flights nearby']);
+    expect(texts(card, '.fv-row__value')).toEqual(['—', '—']);
+    expect(icons(card)).toEqual(['mdi:airplane', 'mdi:airplane']);
+    // a card asked for no preset never takes one back
+    const none = await draw({ entity: 'sensor.flights', preset: 'none', max_rows: 2 }, 360, away);
+    expect(texts(none, '.fv-card__title')).toEqual(['flights']);
+  });
+
   it('shows a flight’s photo in its circle, and its glyph where the photo will not load', async () => {
     const card = await draw({ max_rows: 1 });
     const img = root(card).querySelector<HTMLImageElement>('.it-pic img')!;

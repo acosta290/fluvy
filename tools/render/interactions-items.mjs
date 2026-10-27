@@ -133,6 +133,56 @@ const heights = (card) =>
   await page.close();
 }
 
+/* ---------- out of reach, a flights card keeps its anatomy and its words ---------- */
+{
+  const page = await suite.sheet('items');
+  /** A card's head and rows as its anatomy says them: the title, the head's glyph, the rows' glyphs and values. */
+  const anatomy = (card) =>
+    card.evaluate((el) => {
+      const root = el.shadowRoot;
+      const glyphOf = (circle) => circle?.querySelector('ha-icon')?.icon ?? (circle ? 'glyph' : '');
+      return {
+        title: root.querySelector('.fv-card__title')?.textContent.trim(),
+        head: glyphOf(root.querySelector('.fv-card__head > .fv-ico')),
+        rows: [...root.querySelectorAll('.fv-row')].map(
+          (row) =>
+            `${glyphOf(row.querySelector('.fv-ico'))} ${row.querySelector('.fv-row__value')?.textContent.trim()}`,
+        ),
+        height: Math.round(root.querySelector('[data-card]').getBoundingClientRect().height),
+      };
+    });
+  const one = cardOf(page, 'Items · one aircraft');
+  await one.scrollIntoViewIfNeeded();
+  const live = await anatomy(one);
+  // the sensor goes out of reach as Home Assistant writes it: its list gone with its state
+  await page.evaluate(() =>
+    window.fluvyMock.set('sensor.it_one', 'unavailable', { flights: undefined }),
+  );
+  await settle(page, 600);
+  const away = await anatomy(one);
+  check(
+    'items: a flights card whose sensor goes out of reach keeps its words, its plane and its height, its rows at rest',
+    live.title === 'Flights nearby' &&
+      away.title === live.title &&
+      away.head === 'mdi:airplane' &&
+      away.rows.length === 3 &&
+      away.rows.every((row) => row === 'mdi:airplane —') &&
+      away.height === live.height,
+    JSON.stringify({ live, away }),
+  );
+  const named = await anatomy(cardOf(page, 'Items · out of reach · flights'));
+  const plain = await anatomy(cardOf(page, 'Items · out of reach'));
+  check(
+    'items: out of reach, the flights the config names keep their anatomy; a list nothing is known of stays a plain list',
+    named.title === 'Flights nearby' &&
+      named.rows.every((row) => row === 'mdi:airplane —') &&
+      plain.title === 'FlightRadar24 Current in area' &&
+      plain.rows.every((row) => row === 'glyph —'),
+    JSON.stringify({ named, plain }),
+  );
+  await page.close();
+}
+
 /* ---------- the rows at 211 and 152: whole, the line giving way before it is cut ---------- */
 {
   for (const [width, title, expected] of [

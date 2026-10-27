@@ -2234,6 +2234,13 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
 - **The head** counts from the sensor's state ("3 aircraft"; the whole list's length where the state is no number;
   `subtitle` wins, `show_count: false` drops it). Its title is the card's, else the preset's, else the sensor's name;
   its tap is the sensor's details.
+- **Out of reach, the card keeps its anatomy** (an unavailable card keeps its size and anatomy): a sensor out of reach
+  cannot say what it lists, so under `preset: auto` the preset is the one the config names (`attribute: flights`),
+  else the one the sensor's attributes still say, else the one the list was last drawn by while it answered (kept for
+  the session, on this view or another) — "Flights nearby" with the plane in the head's circle and in every resting
+  ring, its rows laid out as the live ones are. Where nothing is known (a dashboard opened while the sensor is out of
+  reach) the card is the plain list it would be — the sensor's name, the list glyph — and stays so until the sensor
+  answers: no word is guessed to be taken back.
 - **Pictures** (`show_image`, on by default) fill a 44 circle (`object-fit: cover`); one that will not load gives way
   to the glyph, in the row and in the sheet. Home Assistant's own paths go through `hassUrl`.
 - **The sheet** (`item_tap: sheet`, the default; `none` makes the rows still): the cameras sheet's shape — a modal
