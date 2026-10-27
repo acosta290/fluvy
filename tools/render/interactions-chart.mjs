@@ -14,6 +14,10 @@
  * - a measurement's scale keeps to its range (a temperature is not drawn from zero), a meter's day in bars is 24 of an
  *   hour from zero, every gauge's knob is Fluvy's whole knob, and the read dial in a tile holds its reading;
  * - reading: a pointer moves the cursor and the bubble says when; the keys move it (← Home), Escape lets it go;
+ * - the cards that take the styles, on their own sheets under the house's soft in both modes: every rule above held
+ *   (the energy line, a production day), a stacked chart's hairlines and lighter fills, the distribution's pills and
+ *   the bars' deepening ink, the history bars and the arrays classic (soft is not theirs), the house's ring on the
+ *   gauge card and its ruler on the humidity, and the History page drawn by the engine;
  * - no flash, on the built bundle with the engine's chunk 1.5 s late: one skeleton, then the curve, drawn once.
  */
 import { createServer } from 'node:http';
@@ -120,6 +124,8 @@ const audit = (page) =>
         ];
         for (const mark of marks) {
           const r = mark.getBoundingClientRect();
+          // a mark the card does not show (out of reach, its reading at now is not real) stands nowhere
+          if (r.width === 0 && r.height === 0) continue;
           if (r.top < box.top - 0.5 || r.bottom > box.bottom + 8.5)
             wrong.push(
               `${name}: ${mark.getAttribute('class')} leaves the chart's room (${r.top.toFixed(1)}…${r.bottom.toFixed(1)} of ${box.top.toFixed(1)}…${box.bottom.toFixed(1)})`,
@@ -418,6 +424,128 @@ for (const mode of ['light', 'dark']) {
     'the read dial in a tile: its reading whole inside the disc, its knob touching the rim and no more',
     tile.inside && tile.apart >= -2,
     JSON.stringify(tile),
+  );
+  await page.close();
+}
+
+/* ---------- the cards that take the styles, under the house's soft ---------- */
+{
+  /** A sheet under a house whose chart settings are `charts`: its cards say no style, so they draw the house's. */
+  const housed = (name, charts, extra = '') =>
+    suite.sheet(name, { extra: `${extra}&charts=${encodeURIComponent(JSON.stringify(charts))}` });
+  /** What a card of a frame holds, by selector: how many there are of each. */
+  const count = (page, title, tag, selectors) =>
+    frame(page, title)
+      .locator(tag)
+      .first()
+      .evaluate(
+        (card, sels) => sels.map((sel) => card.shadowRoot.querySelectorAll(sel).length),
+        selectors,
+      );
+  const SOFT = { style: 'soft' };
+  for (const mode of ['light', 'dark']) {
+    const dark = mode === 'dark' ? '&mode=dark' : '';
+    // the energy card's line, the production card's day: the engine's drawing, every rule held
+    for (const name of ['energy', 'flow', 'solar', 'arrays', 'history-bars']) {
+      const page = await housed(name, SOFT, dark);
+      const { charts, wrong } = await audit(page);
+      check(
+        `${mode}, ${name} under the house's soft: ${charts} charts — nothing leaves its plot, every word placed by rule`,
+        wrong.length === 0,
+        wrong.slice(0, 4).join(' | '),
+      );
+      await page.close();
+    }
+  }
+  const energy = await housed('energy', SOFT);
+  const [line, glow, knob] = await count(energy, 'Energy', 'fluvy-energy-card', [
+    '.ef-chart .fc-line',
+    '.ef-chart .fc-glow',
+    '.ef-chart .fv-knob',
+  ]);
+  check(
+    'energy under the house’s soft: its line soft, its copy under it, Fluvy’s knob at now',
+    line === 1 && glow === 1 && knob === 1,
+    JSON.stringify({ line, glow, knob }),
+  );
+  await energy.close();
+  const flow = await housed('flow', SOFT);
+  const [soft, hairlines, dashes] = await count(
+    flow,
+    'Issue #49 · the whole house, scaled',
+    'fluvy-energy-card',
+    ['.en-chart.is-soft', '.en-chart .fc-grid', '.en-chart .ax-grid'],
+  );
+  check(
+    'a stacked chart under the house’s soft: lighter fills, hairlines in place of the dashes',
+    soft === 1 && hairlines > 0 && dashes === 0,
+    JSON.stringify({ soft, hairlines, dashes }),
+  );
+  await flow.close();
+  const solar = await housed('solar', SOFT);
+  const [bars, quiet, hollow, so] = await count(solar, 'Production', 'fluvy-production-card', [
+    '.pr-chart .fc-bar',
+    '.pr-chart .fc-bar--quiet',
+    '.pr-chart .fc-bar--hollow',
+    '.so-bars',
+  ]);
+  const [stack] = await count(solar, 'Distribution', 'fluvy-distribution-card', [
+    '.fv-stack.is-soft',
+  ]);
+  const [rows] = await count(solar, 'Strings & inverter', 'fluvy-bars-card', ['.so-rows.is-soft']);
+  check(
+    'production, the distribution and the bars under the house’s soft: an hour a bar, the best lit and the forecast hollow; pills; deepening bars',
+    hollow > 0 && quiet === bars - hollow - 1 && so === 0 && stack === 1 && rows === 1,
+    JSON.stringify({ bars, quiet, hollow, so, stack, rows }),
+  );
+  await solar.close();
+  // a style a card does not draw is its classic: soft is neither the history bars' nor the arrays'
+  const history = await housed('history-bars', SOFT);
+  const [gradient] = await count(history, 'Solar production', 'fluvy-history-bars-card', [
+    'linearGradient',
+  ]);
+  await history.close();
+  const arrays = await housed('arrays', SOFT);
+  const [ramp] = await count(arrays, 'Two arrays', 'fluvy-production-card', ['rect.en-bar']);
+  await arrays.close();
+  check(
+    'under the house’s soft the history bars and the arrays keep their classic: soft is not theirs',
+    gradient > 0 && ramp > 0,
+    JSON.stringify({ gradient, ramp }),
+  );
+  // the gauges: the house's ring on the gauge card, the house's ruler on the humidity
+  const gauges = await housed('solar', { gauge: 'ring' });
+  const [lit, ticks] = await count(gauges, 'Solar power', 'fluvy-gauge-card', [
+    '.fc-ring__lit',
+    'fluvy-dial[gauge]',
+  ]);
+  await gauges.close();
+  const ruler = await housed('solar', { gauge: 'ruler' });
+  const [read, marker] = await count(ruler, 'Humidity', 'fluvy-humidity-card', [
+    'fluvy-ruler[readonly]',
+    'fluvy-ruler[marker]',
+  ]);
+  await ruler.close();
+  check(
+    'the house’s ring on the gauge card, its ruler read lit on the humidity',
+    lit === 1 && ticks === 0 && read === 1 && marker === 0,
+    JSON.stringify({ lit, ticks, read, marker }),
+  );
+  // the History page follows the house: its lines the engine's, every rule held
+  const page = await suite.page(
+    `history=1&live=0&at=2026-09-17T21:47:12&charts=${encodeURIComponent(JSON.stringify(SOFT))}`,
+  );
+  await page.waitForFunction(
+    () => document.querySelector('fluvy-history')?.shadowRoot?.querySelector('.fc-chart') !== null,
+  );
+  const drawn = await audit(page);
+  const classic = await page.evaluate(
+    () => document.querySelector('fluvy-history').shadowRoot.querySelectorAll('.hs-line').length,
+  );
+  check(
+    `the History page follows the house’s soft: ${drawn.charts} charts the engine’s, every rule held`,
+    drawn.charts > 0 && classic === 0 && drawn.wrong.length === 0,
+    drawn.wrong.slice(0, 4).join(' | '),
   );
   await page.close();
 }

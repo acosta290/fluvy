@@ -7,7 +7,12 @@ import {
   type ChartEngine,
 } from '../../../../packages/cards/src/shared/chart-load.js';
 import type { ScrubController } from '../../../../packages/cards/src/chart/engine/index.js';
-import type { FrameSpec, SheetSpec } from '../scenes.js';
+import { mergeWs, type FrameSpec, type SheetSpec } from '../scenes.js';
+import { sheet as arrays } from './arrays.js';
+import { sheet as energy } from './energy.js';
+import { sheet as flow } from './flow.js';
+import { sheet as historyBars } from './history-bars.js';
+import { sheet as solar } from './solar.js';
 
 if (!customElements.get('fluvy-sensor-card'))
   customElements.define('fluvy-sensor-card', FluvySensorCard);
@@ -324,6 +329,62 @@ const fine = (
   cards: values.map((value) => sensor({ chart, [key]: value, name: `${key}: ${String(value)}` })),
 });
 
+/**
+ * The cards that take the styles (1.11), each in a style it draws, as its own sheet draws it with that sheet's house
+ * (its states, its history and statistics, its Energy dashboard): what the measurer reads in every language. The
+ * chart suite reads the sheets themselves under the house's soft.
+ */
+const HOUSES = [energy, flow, solar, arrays, historyBars] as const;
+const from = (house: SheetSpec, title: string, style: Record<string, unknown>) =>
+  (house.frames.find((frame) => frame.title === title)?.cards ?? []).map((card) => ({
+    ...card,
+    ...style,
+  }));
+const ADOPTED: readonly FrameSpec[] = [
+  { title: 'Adopted · energy · soft', cards: from(energy, 'Energy', { chart: 'soft' }) },
+  {
+    title: 'Adopted · energy · step, compact',
+    width: 392,
+    cards: from(energy, 'Energy · compact', { chart: 'step' }),
+  },
+  {
+    title: 'Adopted · by source · soft',
+    cards: from(flow, 'House power by source', { chart: 'soft' }),
+  },
+  {
+    title: 'Adopted · the whole house · step',
+    cards: from(flow, 'The whole house', { chart: 'step' }),
+  },
+  {
+    title: 'Adopted · history bars · bars',
+    cards: from(historyBars, 'Solar production', { chart: 'bars', highlight: 'max' }),
+  },
+  {
+    title: 'Adopted · history bars · columns, mini minimal',
+    cards: [
+      ...from(historyBars, 'Compact', { chart: 'columns' }),
+      ...from(historyBars, 'Mini', { chart: 'minimal' }),
+    ],
+  },
+  { title: 'Adopted · production · soft', cards: from(solar, 'Production', { chart: 'soft' }) },
+  { title: 'Adopted · arrays · columns', cards: from(arrays, 'Two arrays', { chart: 'columns' }) },
+  {
+    title: 'Adopted · gauge · dial, ring',
+    cards: [
+      ...from(solar, 'Solar power', { gauge: 'dial' }),
+      ...from(solar, 'Solar power', { gauge: 'ring' }),
+    ],
+  },
+  { title: 'Adopted · humidity · ruler', cards: from(solar, 'Humidity', { gauge: 'ruler' }) },
+  {
+    title: 'Adopted · distribution, bars · soft',
+    cards: [
+      ...from(solar, 'Distribution', { chart: 'soft' }),
+      ...from(solar, 'Strings & inverter', { chart: 'soft' }),
+    ],
+  },
+];
+
 export const sheet: SheetSpec = {
   states: [
     [
@@ -356,12 +417,19 @@ export const sheet: SheetSpec = {
         state_class: 'total_increasing',
       },
     ],
+    // the adopted cards' houses
+    ...HOUSES.flatMap((house) => house.states),
   ],
-  history: {
-    'sensor.cs_temperature': TEMPERATURE,
-    'sensor.cs_humidity': HUMIDITY,
-    'sensor.cs_energy': METER,
-  },
+  history: Object.assign(
+    {
+      'sensor.cs_temperature': TEMPERATURE,
+      'sensor.cs_humidity': HUMIDITY,
+      'sensor.cs_energy': METER,
+    },
+    ...HOUSES.map((house) => house.history ?? {}),
+  ),
+  statistics: Object.assign({}, ...HOUSES.map((house) => house.statistics ?? {})),
+  ws: mergeWs(HOUSES.map((house) => house.ws)),
   frames: [
     // the lines on the day's temperature; the bars on the house's meter, whose readings add up
     ...STYLES.map((chart) => ({
@@ -402,5 +470,6 @@ export const sheet: SheetSpec = {
     fine('Soft shadow · on, off', 'soft', 'glow', [true, false]),
     fine('Highlight · lowest, highest, both', 'step', 'highlight', ['min', 'max', 'both']),
     fine('Scale · shown, hidden', 'step', 'show_axis', [true, false]),
+    ...ADOPTED,
   ],
 };
