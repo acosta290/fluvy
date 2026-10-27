@@ -946,7 +946,11 @@ describe('the settings panel', () => {
     (panel as unknown as { content: number }).content = 288;
     await settle();
     const editor = () => root.querySelector<HTMLElement>('.pn-editor');
-    const hexes = () => [...root.querySelectorAll<HTMLInputElement>('.pn-hexes .pn-hex__input')];
+    const slots = () => [...editor()!.querySelectorAll<HTMLButtonElement>('.pn-slot')];
+    const swatch = (name: string) =>
+      editor()!.querySelector<HTMLButtonElement>(`.pn-dot[aria-label="${name}"]`)!;
+    const custom = () => editor()!.querySelector<HTMLInputElement>('.pn-hex__input')!;
+    const mark = () => editor()!.querySelector('.pn-mark')?.textContent?.trim();
     const set = (name: string) =>
       [...root.querySelectorAll<HTMLButtonElement>('.pn-set')].find(
         (b) => b.querySelector('.pn-custom__title')?.textContent?.trim() === name,
@@ -959,17 +963,65 @@ describe('the settings panel', () => {
     expect(set('From the palette')?.getAttribute('aria-pressed')).toBe('true');
     row('New set…')!.click();
     await settle();
-    // six fields on the palette's own six, no name yet: nothing to save
-    const six = paletteOf('linen').light.graph.slice(0, 6);
-    expect(hexes().map((input) => input.value)).toEqual(six);
+    // the palette's own six, each following the palette, the first being picked; no name yet: nothing to save
+    expect(slots().map((slot) => slot.getAttribute('aria-label'))).toEqual(
+      [1, 2, 3, 4, 5, 6].map((n) => `Colour ${n}: Series ${n} · Follows the palette`),
+    );
+    expect(slots()[0]!.getAttribute('aria-pressed')).toBe('true');
+    expect(editor()!.querySelector('.pn-slot-head__title')?.textContent).toBe('Colour 1');
+    expect(mark()).toBe('Follows the palette');
+    expect(swatch('Series 1').getAttribute('aria-pressed')).toBe('true');
+    // the picker: the palette's twelve, its accent with the statuses and the lit light, the energy states, each by its
+    // token; Custom starts on the colour's hex here
+    expect(
+      [...editor()!.querySelectorAll('.pn-label')].map((label) => label.textContent?.trim()),
+    ).toEqual(['Name', 'Colours', 'Series', 'Tones', 'Energy', 'Custom']);
+    expect(
+      [...editor()!.querySelectorAll('.pn-dot')].map((dot) => dot.getAttribute('aria-label')),
+    ).toEqual([
+      ...Array.from({ length: 12 }, (_u, n) => `Series ${n + 1}`),
+      'Accent',
+      'Success',
+      'Warning',
+      'Danger',
+      'Notice',
+      'Light',
+      'Solar',
+      'Grid',
+      'Battery',
+      'Water',
+      'Gas',
+      'House',
+    ]);
+    expect(swatch('Solar').getAttribute('style')).toContain(
+      '--dot:var(--fluvy-state-energy-solar)',
+    );
+    expect(custom().value).toBe(paletteOf('linen').light.graph[0]);
     expect(saveButton().disabled).toBe(true);
-    // six that read on either card and stand apart pass
+    // picking a swatch names the palette's colour: the second follows the palette's solar
+    slots()[1]!.click();
+    await settle();
+    swatch('Solar').click();
+    await settle();
+    expect(slots()[1]!.getAttribute('aria-label')).toBe('Colour 2: Solar · Follows the palette');
+    // two of the palette's own that sit together are said by their words
+    swatch('Accent').click();
+    await settle();
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
+      'Series 1 and Accent are too close to tell apart',
+    );
+    // six that read on either card and stand apart pass: a hex typed under Custom is fixed
     const type = async (n: number, colour: string) => {
-      const field = hexes()[n]!;
-      field.value = colour;
-      field.dispatchEvent(new Event('change'));
+      slots()[n]!.click();
+      await settle();
+      custom().value = colour;
+      custom().dispatchEvent(new Event('change'));
       await settle();
     };
+    await type(0, '#2563eb');
+    expect(slots()[0]!.getAttribute('aria-label')).toBe('Colour 1: #2563eb · Fixed');
+    expect(mark()).toBe('Fixed');
+    expect(editor()!.querySelector('.pn-dot.is-active')).toBeNull();
     const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
     for (const [n, colour] of both.entries()) await type(n, colour);
     expect(editor()!.querySelector('.pn-status')).toBeNull();
@@ -1000,6 +1052,15 @@ describe('the settings panel', () => {
     expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
       '#93c5fd and #60a5fa are too close to tell apart on a light card',
     );
+    // a fixed colour made the palette's again: both modes draw it by its token, as each mode's look has it
+    slots()[2]!.click();
+    await settle();
+    swatch('Series 3').click();
+    await settle();
+    expect([inks('light')[2], inks('dark')[2]]).toEqual([
+      '--tone-ink:var(--fluvy-graph-3)',
+      '--tone-ink:var(--fluvy-graph-3)',
+    ]);
     // both modes drawn side by side, six lines each
     expect(editor()!.querySelectorAll('.pn-mode svg.fc-chart').length).toBe(2);
     expect([inks('light').length, inks('dark').length]).toEqual([6, 6]);
@@ -1010,8 +1071,15 @@ describe('the settings panel', () => {
     saveButton().click();
     await new Promise((resolve) => setTimeout(resolve, 20));
     await settle();
-    // kept by the house at once, the editor closed, the charts wearing it from the bar
-    expect(handle.store.house.chartSets.map((s) => [s.id, s.name])).toEqual([['dusk', 'Dusk']]);
+    // kept by the house at once — its hexes as typed, the palette's colour by its name — the editor closed, the charts
+    // wearing it from the bar
+    expect(handle.store.house.chartSets).toEqual([
+      {
+        id: 'dusk',
+        name: 'Dusk',
+        colours: ['#93c5fd', '#d97706', 'graph-3', '#dc2626', '#3b2a1a', '#60a5fa'],
+      },
+    ]);
     expect(editor()).toBeNull();
     expect(set('Dusk')?.getAttribute('aria-pressed')).toBe('true');
     expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
@@ -1266,13 +1334,19 @@ describe('the settings panel', () => {
       name: 'Sea',
       colours: ['#1f5fbf', '#2a9d8f', '#6a4c93', '#e76f51', '#264653', '#8ab17d'],
     } as const;
+    // a set that follows the palette: its colours named, a hex of its own among them
+    const garden = {
+      id: 'garden',
+      name: 'Garden',
+      colours: ['graph-1', 'accent', 'ok', 'solar', '#1f5fbf', 'graph-12'],
+    } as const;
     await handle.store.saveHouse({
       palette: 'volt',
       shape: 'round',
       pills: 'soft',
       frame: false,
       charts,
-      chartSets: [sea],
+      chartSets: [sea, garden],
     });
     await handle.store.savePersonal({ language: 'es', haptics: false });
     await settle();
@@ -1294,7 +1368,7 @@ describe('the settings panel', () => {
       pills: 'soft',
       frame: false,
       charts,
-      chartSets: [sea],
+      chartSets: [sea, garden],
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
     expect(exported['dashboards']).toEqual({
@@ -1325,7 +1399,7 @@ describe('the settings panel', () => {
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().language).toBe('es');
     expect(handle.settings().charts).toEqual(charts);
-    expect(handle.store.house.chartSets).toEqual([sea]);
+    expect(handle.store.house.chartSets).toEqual([sea, garden]);
     expect(saved.at(-1)?.config).toEqual({
       strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] },
     });

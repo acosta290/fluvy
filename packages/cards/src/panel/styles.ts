@@ -979,23 +979,60 @@ export const panelStyles = css`
   .pn-set .pn-art {
     padding: 8px 12px;
   }
-  /* a set's six colours: two a row on a phone, three on a wide panel, under their label */
-  .pn-hexes {
-    display: grid;
-    grid-template-columns: repeat(2, round(down, calc((100% - var(--pn-gap)) / 2 + 0.01px), 1px));
-    gap: var(--pn-gap);
-    justify-content: start;
+  /* a set's six colours, on the picker's columns: each a 36 dot in its 44, the one being picked ringed in the accent
+     with the card between, each carrying its mark (the palette's where it follows the palette, a lock where fixed) */
+  .pn-slot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--dot-ink);
+    cursor: pointer;
   }
-  @container pn (min-width: 648px) {
-    .pn-hexes {
-      grid-template-columns: repeat(
-        3,
-        round(down, calc((100% - 2 * var(--pn-gap)) / 3 + 0.01px), 1px)
-      );
-    }
+  .pn-slot::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid color-mix(in oklab, var(--dot) 86%, var(--fluvy-text));
+    border-radius: 50%;
+    background: var(--dot);
   }
-  .pn-label + .pn-hexes {
-    margin-top: -4px;
+  .pn-slot svg {
+    position: relative;
+    width: 16px;
+    height: 16px;
+  }
+  .pn-slot.is-active {
+    box-shadow: inset 0 0 0 2px var(--fluvy-accent);
+  }
+  /* the colour being picked: its number, and its mark in words at the end of the row */
+  .pn-slot-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 8px;
+  }
+  .pn-slot-head__title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+  .pn-mark {
+    gap: 4px;
+    height: 24px;
+    padding: 0 10px 0 8px;
+    font-size: 12px;
+  }
+  .pn-mark svg {
+    width: 14px;
+    height: 14px;
   }
   .pn-check.pn-status {
     margin-top: 0;

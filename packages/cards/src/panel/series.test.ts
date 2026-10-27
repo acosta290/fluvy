@@ -23,6 +23,13 @@ describe('the house’s sets of series colours', () => {
     expect(setOf({ id: 'sea', name: 'Night sea', colours: SIX }, [set('sea')])?.id).toBe('sea');
     expect(setOf({ name: '', colours: SIX }, [])).toBeUndefined();
     expect(setOf({ name: 'Five', colours: SIX.slice(0, 5) }, [])).toBeUndefined();
+    // the palette's colours by name beside hexes, the colour being picked left behind
+    const mixed = ['graph-1', 'accent', '#b45309', 'solar', 'graph-12', 'home'];
+    expect(setOf({ name: 'Mixed', colours: mixed, slot: 3 }, [])).toEqual({
+      id: 'mixed',
+      name: 'Mixed',
+      colours: mixed,
+    });
   });
 
   it('keeps twelve, an edited one in its place', () => {

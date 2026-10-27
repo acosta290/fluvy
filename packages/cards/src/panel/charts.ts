@@ -1,5 +1,6 @@
 import {
   formatNumber,
+  isPaletteRef,
   localize,
   PALETTE_SERIES,
   paletteOf,
@@ -7,24 +8,28 @@ import {
   type ChartPreset,
   type GaugePreset,
 } from '@fluvy/core';
-import type { Hex, PaletteMode } from '@fluvy/tokens/runtime';
-import { head, icon, listRow } from '@fluvy/ui';
+import type { PaletteMode, PaletteModeColors } from '@fluvy/tokens/runtime';
+import { head, icon, listRow, type ChoosableTone } from '@fluvy/ui';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
   CHART_PRESETS,
   fitSet,
   GAUGE_PRESETS,
   HOUSE_ACTS,
+  PALETTE_REFS,
   previewChart,
   previewGauge,
   previewSeries,
   previewStyle,
+  refHex,
+  refInk,
   seriesCheck,
+  setInks,
   type FittedSet,
 } from '../chart/engine/index.js';
 import { FINE_ROWS } from './chart-words.js';
-import type { PanelContext } from './model.js';
-import { choice, gap, hexField } from './sections.js';
+import type { PanelContext, StringKey } from './model.js';
+import { choice, gap, hexField, inkOn, swatches } from './sections.js';
 import { chosenSet, roomForSet, SET_NAME_MAX, type SeriesDraft } from './series.js';
 
 /*
@@ -198,11 +203,32 @@ function detailsCard(ctx: PanelContext): TemplateResult {
 
 /* ---------- the series colours ---------- */
 
-/** The palette's six series colours, as the look being chosen derives them in the mode on screen. */
-const PALETTE_INKS = Array.from(
-  { length: SERIES_COUNT },
-  (_unused, n) => `var(--fluvy-graph-${n + 1})`,
-);
+/** The palette's own six series colours: what the charts wear from the factory, and what a new set starts from. */
+const PALETTE_SIX = PALETTE_REFS.series.slice(0, SERIES_COUNT);
+/** The palette's six, as the look being chosen derives them in the mode on screen. */
+const PALETTE_INKS = PALETTE_SIX.map(refInk);
+
+/** The look being chosen in the house's status colours being shown: what the panel wears, and its sets with it. */
+const fitOf = (ctx: PanelContext, colours: readonly string[]): FittedSet =>
+  fitSet(colours, ctx.draft.palette, ctx.shown.statuses);
+
+/** The look being chosen in the mode on screen: what a colour of the palette's is here. */
+const onScreen = (ctx: PanelContext): PaletteModeColors =>
+  paletteOf(ctx.draft.palette, ctx.shown.statuses)[ctx.mode];
+
+/**
+ * A colour as the set editor names it: a colour of the palette's by its word (the statuses as the status colours call
+ * them, the others as the tones do), a hex as typed.
+ */
+function colourName(ctx: PanelContext, colour: string): string {
+  if (!isPaletteRef(colour)) return colour;
+  if (colour.startsWith('graph-'))
+    return ctx.t('charts.series_n', { n: colour.slice('graph-'.length) });
+  if (colour === 'ok') return ctx.t('statuses.success');
+  if (colour === 'warning' || colour === 'danger' || colour === 'notice')
+    return ctx.t(`statuses.${colour}`);
+  return localize(ctx.hass, `tone.${(colour === 'home' ? 'house' : colour) as ChoosableTone}`);
+}
 /** The six columns of a set's picture, as tall as a chart's series might stand. */
 const COLUMNS = [24, 34, 18, 30, 22, 36] as const;
 
@@ -265,7 +291,7 @@ function seriesCard(ctx: PanelContext): TemplateResult {
       ${sets.map((set) =>
         setRow(
           set.name,
-          fitSet(set.colours, ctx.draft.palette)[ctx.mode],
+          setInks(set.colours, fitOf(ctx, set.colours), ctx.mode),
           chosen?.id === set.id,
           pick(set.id),
         ),
@@ -298,14 +324,8 @@ function seriesCard(ctx: PanelContext): TemplateResult {
                       tone: 'accent',
                       title: ctx.t('charts.new'),
                       sub: ctx.t('charts.new_sub'),
-                      onTap: () =>
-                        ctx.setSeriesDraft({
-                          name: '',
-                          colours: paletteOf(ctx.draft.palette)[ctx.mode].graph.slice(
-                            0,
-                            SERIES_COUNT,
-                          ),
-                        }),
+                      // the palette's six, named: a new set follows the palette until a colour is made fixed
+                      onTap: () => ctx.setSeriesDraft({ name: '', colours: PALETTE_SIX }),
                     })
                   : nothing
               }
@@ -319,13 +339,13 @@ function seriesCard(ctx: PanelContext): TemplateResult {
 /**
  * What fitting leaves of a set, in words: each mode wears it fitted to its card (`fitSet`: every colour reads there), so
  * only two colours too close to tell apart are said (ΔE2000 under 8, once fitted) — on both cards, or on the one where
- * fitting brought them together — naming the colours as typed, so the field to change is plain.
+ * fitting brought them together — naming the colours as picked (a hex as typed), so the one to change is plain.
  */
-function setWarnings(ctx: PanelContext, colours: readonly Hex[], fitted: FittedSet): string[] {
+function setWarnings(ctx: PanelContext, colours: readonly string[], fitted: FittedSet): string[] {
   return seriesCheck(fitted).map(({ a, b, mode }) =>
     ctx.t(mode ? `charts.close_${mode}` : 'charts.close', {
-      a: colours[a] ?? '',
-      b: colours[b] ?? '',
+      a: colourName(ctx, colours[a] ?? ''),
+      b: colourName(ctx, colours[b] ?? ''),
     }),
   );
 }
@@ -355,15 +375,91 @@ function modes(
 }
 
 /**
- * A set of series colours being made or changed: its name, its six colours (the palette's to start with), what fitting
- * leaves of them to say, how a light and a dark card wear them, and Save — the house keeps it and the charts wear it.
+ * A set's six colours, each a dot as picked, the one being picked ringed in the accent; each carries its mark — the
+ * palette's where it is a colour of the palette's (it follows the palette and the mode), a lock where it is a hex
+ * (fixed). On the picker's columns: six a row on a phone, the first six of its twelve on a wide panel.
+ */
+function slots(
+  ctx: PanelContext,
+  draft: SeriesDraft,
+  onSlot: (slot: number) => void,
+): TemplateResult {
+  const colors = onScreen(ctx);
+  const picking = draft.slot ?? 0;
+  return html`<div class="pn-dots">
+    ${draft.colours.map((colour, n) => {
+      const follows = isPaletteRef(colour);
+      return html`<button
+        class="pn-slot ${n === picking ? 'is-active' : ''}"
+        data-target
+        style=${`--dot:${follows ? refInk(colour) : colour};--dot-ink:${inkOn(follows ? refHex(colour, colors) : colour)}`}
+        aria-label=${`${ctx.t('charts.colour', { n: n + 1 })}: ${colourName(ctx, colour)} · ${ctx.t(follows ? 'charts.follows' : 'charts.fixed')}`}
+        aria-pressed=${n === picking ? 'true' : 'false'}
+        @click=${() => onSlot(n)}
+      >
+        ${icon(follows ? 'palette' : 'lock')}
+      </button>`;
+    })}
+  </div>`;
+}
+
+/**
+ * The colour being picked: its number and its mark in words, then the palette's colours to pick from — its twelve series
+ * colours, its accent with the statuses and the lit light, the energy states, each drawn as the look being chosen has it
+ * in the mode on screen and named by its word, every group on the same columns — and Custom, a hex of one's own (on a
+ * colour of the palette's: that colour's hex here, to start from).
+ */
+function picker(
+  ctx: PanelContext,
+  draft: SeriesDraft,
+  onPick: (colour: string) => void,
+): TemplateResult {
+  const colors = onScreen(ctx);
+  const picking = draft.slot ?? 0;
+  const colour = draft.colours[picking] ?? '';
+  const follows = isPaletteRef(colour);
+  const group = (label: StringKey, refs: readonly string[]): TemplateResult =>
+    html`<p class="fv-label pn-label">${ctx.t(label)}</p>
+      ${swatches(
+        refs.map((ref) => ({
+          key: ref,
+          label: colourName(ctx, ref),
+          paint: refInk(ref),
+          ink: inkOn(refHex(ref, colors)),
+        })),
+        colour,
+        onPick,
+      )}`;
+  return html`<div class="pn-slot-head">
+      <span class="pn-slot-head__title">${ctx.t('charts.colour', { n: picking + 1 })}</span>
+      <span class="fv-badge pn-mark fv-tone--${follows ? 'accent' : 'neutral'}"
+        >${icon(follows ? 'palette' : 'lock')}${ctx.t(follows ? 'charts.follows' : 'charts.fixed')}</span
+      >
+    </div>
+    ${group('charts.group_series', PALETTE_REFS.series)}
+    ${group('charts.group_tones', PALETTE_REFS.tones)}
+    ${group('charts.group_energy', PALETTE_REFS.energy)}
+    <p class="fv-label pn-label">${ctx.t('charts.custom')}</p>
+    ${hexField(
+      follows ? refHex(colour, colors) : colour,
+      ctx,
+      onPick,
+      ctx.t('charts.colour', { n: picking + 1 }),
+    )}`;
+}
+
+/**
+ * A set of series colours being made or changed: its name, its six colours (the palette's to start with, each followed
+ * as the palette has it until a hex makes it fixed) and the picker of the one being picked, what fitting leaves of them
+ * to say, how a light and a dark card wear them, and Save — the house keeps it and the charts wear it.
  */
 function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions): TemplateResult {
   const set = (patch: Partial<SeriesDraft>): void => ctx.setSeriesDraft({ ...draft, ...patch });
   const room = roomForSet(ctx.settings.chartSets, draft.id);
   const whole = draft.name.trim() !== '' && room;
-  const fitted = fitSet(draft.colours, ctx.draft.palette);
+  const fitted = fitOf(ctx, draft.colours);
   const warnings = setWarnings(ctx, draft.colours, fitted);
+  const picking = draft.slot ?? 0;
   const id = draft.id;
   return html`<section class="fv-card pn-card pn-editor">
     ${head({ icon: 'palette', title: ctx.t(id ? 'charts.editor_edit' : 'charts.editor_new'), sub: ctx.t('charts.editor_sub') })}
@@ -379,17 +475,10 @@ function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions)
       /></span>
     </label>
     <p class="fv-label pn-label">${ctx.t('charts.colours')}</p>
-    <div class="pn-hexes" data-fill-row>
-      ${draft.colours.map((colour, n) =>
-        hexField(
-          colour,
-          ctx,
-          (picked) =>
-            set({ colours: draft.colours.map((own, index) => (index === n ? picked : own)) }),
-          ctx.t('charts.colour', { n: n + 1 }),
-        ),
-      )}
-    </div>
+    ${slots(ctx, draft, (slot) => set({ slot }))}
+    ${picker(ctx, draft, (picked) =>
+      set({ colours: draft.colours.map((own, n) => (n === picking ? picked : own)) }),
+    )}
     ${
       warnings.length
         ? html`<div class="pn-status pn-status--warning pn-check" role="status">
@@ -398,7 +487,11 @@ function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions)
         : html`<p class="pn-hint pn-hint--after pn-check">${ctx.t('charts.check_ok')}</p>`
     }
     ${modes(ctx, ctx.fit?.width, (mode, width) =>
-      previewSeries(fitted[mode], ctx.shown.charts, { mode, width, height: 64 }),
+      previewSeries(setInks(draft.colours, fitted, mode), ctx.shown.charts, {
+        mode,
+        width,
+        height: 64,
+      }),
     )}
     ${room ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('charts.full')}</p>`}
     <div class="pn-pair" data-fill-row>

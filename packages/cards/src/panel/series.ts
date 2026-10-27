@@ -1,17 +1,21 @@
 import { MAX_SAVED_SERIES, PALETTE_SERIES, parseHouse, type SavedSeries } from '@fluvy/core';
-import type { Hex } from '@fluvy/tokens/runtime';
 import { slugOf } from './palettes.js';
 
 /*
  * The house's own sets of six series colours (1.11), kept as its palettes are: made in the Charts tab, saved with a
- * name (twelve at most), renamed, removed, and chosen like a palette — by the charts' `series`, a set's id.
+ * name (twelve at most), renamed, removed, and chosen like a palette — by the charts' `series`, a set's id. A set's
+ * colour is one of the palette's (it follows the palette) or a hex (fixed).
  */
 
-/** A set being made or changed in the Charts tab: its id when it is one of the house's. */
+/**
+ * A set being made or changed in the Charts tab: its id when it is one of the house's, and which of its colours is
+ * being picked (the first where none is said).
+ */
 export interface SeriesDraft {
   readonly id?: string;
   readonly name: string;
-  readonly colours: readonly Hex[];
+  readonly colours: SavedSeries['colours'];
+  readonly slot?: number;
 }
 
 /** The longest name a set keeps. */

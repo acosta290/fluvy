@@ -268,7 +268,7 @@ function gallery(ctx: PanelContext): TemplateResult {
 }
 
 /** Black or white, whichever reads better on a colour (WCAG luminance): the check on a chosen dot. */
-function inkOn(color: Hex): string {
+export function inkOn(color: Hex): string {
   const n = Number.parseInt(color.slice(1), 16);
   const linear = (c: number): number => {
     const v = c / 255;
@@ -280,9 +280,46 @@ function inkOn(color: Hex): string {
 }
 
 /**
+ * A colour to pick: its key, its name, how it is drawn — a hex, or a colour of the palette's by its token — and the ink
+ * that reads on it (its check); none drawn: the dot that picks no colour.
+ */
+export interface Swatch {
+  readonly key: string;
+  readonly label: string;
+  readonly paint?: string;
+  readonly ink?: string;
+}
+
+/**
  * Colour dots, six a row on a phone and twelve on a wide panel (the highlights under the accents, column for column);
  * `six`: six a row at every width (a row of its own); `onPick` null: shown to someone who may not change them.
  */
+export function swatches(
+  items: readonly Swatch[],
+  chosen: string,
+  onPick: ((key: string) => void) | null,
+  six = false,
+): TemplateResult {
+  return html`<div class="pn-dots ${six ? 'pn-dots--six' : ''} ${onPick ? '' : 'pn-dots--static'}">
+    ${items.map((item) => {
+      const active = item.key === chosen;
+      return html`<button
+        class="pn-dot ${item.paint ? '' : 'pn-dot--none'} ${active ? 'is-active' : ''}"
+        data-target
+        style=${item.paint ? `--dot:${item.paint};--dot-ink:${item.ink}` : nothing}
+        aria-label=${item.label}
+        title=${item.label}
+        aria-pressed=${active ? 'true' : 'false'}
+        tabindex=${onPick ? nothing : '-1'}
+        @click=${() => onPick?.(item.key)}
+      >
+        ${active ? icon('check') : item.paint ? nothing : icon('ban')}
+      </button>`;
+    })}
+  </div>`;
+}
+
+/** Hexes as colour dots (`swatches`), each named by its hex; `null`: the dot that picks none. */
 function dots(
   colors: readonly (Hex | null)[],
   chosen: Hex | undefined,
@@ -290,22 +327,16 @@ function dots(
   onPick: ((color: Hex | undefined) => void) | null,
   six = false,
 ): TemplateResult {
-  return html`<div class="pn-dots ${six ? 'pn-dots--six' : ''} ${onPick ? '' : 'pn-dots--static'}">
-    ${colors.map((color) => {
-      const active = (color ?? undefined) === chosen;
-      return html`<button
-        class="pn-dot ${color ? '' : 'pn-dot--none'} ${active ? 'is-active' : ''}"
-        data-target
-        style=${color ? `--dot:${color};--dot-ink:${inkOn(color)}` : nothing}
-        aria-label=${color ?? ctx.t('custom.none')}
-        aria-pressed=${active ? 'true' : 'false'}
-        tabindex=${onPick ? nothing : '-1'}
-        @click=${() => onPick?.(color ?? undefined)}
-      >
-        ${active ? icon('check') : color ? nothing : icon('ban')}
-      </button>`;
-    })}
-  </div>`;
+  return swatches(
+    colors.map((color) =>
+      color
+        ? { key: color, label: color, paint: color, ink: inkOn(color) }
+        : { key: '', label: ctx.t('custom.none') },
+    ),
+    chosen ?? '',
+    onPick && ((key) => onPick(key || undefined)),
+    six,
+  );
 }
 
 /** "#FF4A1A", "ff4a1a" → "#ff4a1a"; anything else → undefined. */
