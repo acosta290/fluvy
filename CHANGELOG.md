@@ -44,7 +44,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   temperature gauge shows two and one where it showed three (60 px taller), a signed meter's row at 211 may stand one
   a line, and a signed ring at 266 to 328 may be a little smaller. At a section's 360 a ring and a bar are as they
   were. In a half column (152, 172) the row stands one a line, so a tile is 420 tall where a live one with
-  short figures stood 352 to 360.
+  short figures stood 352 to 360, and a signed meter there writes its direction with a sign ("−1.8 kW", the scale
+  "−5 kW · 5 kW") where its short figures left room for the words ("1.8 kW out").
 - The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
 - The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
   Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses
