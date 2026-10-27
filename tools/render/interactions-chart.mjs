@@ -14,6 +14,10 @@
  * - a measurement's scale keeps to its range (a temperature is not drawn from zero), a meter's day in bars is 24 of an
  *   hour from zero, every gauge's knob is Fluvy's whole knob, and the read dial in a tile holds its reading;
  * - reading: a pointer moves the cursor and the bubble says when; the keys move it (← Home), Escape lets it go;
+ * - the moving gauges (the `animated` sheet) in both modes: each runs, on transform, opacity and the dash offset only
+ *   and unfiltered; nothing leaves its box; its reading inside it, never across the waterline or any sweep of the
+ *   weather, a mark's centred under it; out of reach, told not to move, under the house's motion off and under reduced
+ *   motion every one rests on its first frame (the liquid still a wave);
  * - the cards that take the styles, on their own sheets under the house's soft in both modes: every rule above held
  *   (the energy line, a production day), a stacked chart's hairlines and lighter fills, the distribution's pills and
  *   the bars' deepening ink, the history bars and the arrays classic (soft is not theirs), the house's ring on the
@@ -630,6 +634,202 @@ for (const mode of ['light', 'dark']) {
     ),
     JSON.stringify({ light: light.squares, dark: dark.squares }),
   );
+}
+
+/* ---------- the moving gauges: running when on, still when off, nothing out of its box, text placed ---------- */
+{
+  /**
+   * Every moving gauge of the page, read where it is drawn: its box, what of it leaves the box, its reading's place
+   * (a box's in its larger part, clear of the waves and of the weather's every sweep; a mark's centred under it) and
+   * its running animations — what each moves, and whether it is filtered.
+   */
+  const scenes = (page) =>
+    page.evaluate(() => {
+      const out = [];
+      const rect = (el) => el.getBoundingClientRect();
+      const meets = (a, b) =>
+        a.left < b.right - 0.5 &&
+        b.left < a.right - 0.5 &&
+        a.top < b.bottom - 0.5 &&
+        b.top < a.bottom - 0.5;
+      const inside = (a, b) =>
+        a.left >= b.left - 0.5 &&
+        a.right <= b.right + 0.5 &&
+        a.top >= b.top - 0.5 &&
+        a.bottom <= b.bottom + 0.5;
+      const px = (el, name) => parseFloat(el.style.getPropertyValue(name)) || 0;
+      for (const host of document.querySelectorAll('[data-frame] > *')) {
+        const scene = host.shadowRoot?.querySelector('.fc-scene');
+        if (!scene) continue;
+        const box = rect(scene);
+        const reading = scene.querySelector('.fc-reading');
+        const read = reading ? rect(reading) : null;
+        const wrong = [];
+        if (read && !inside(read, box)) wrong.push('its reading leaves its box');
+        // a mark's drawing inside the box, the reading centred under it
+        if (scene.classList.contains('fc-scene--mark')) {
+          const art = scene.firstElementChild;
+          if (!inside(rect(art), box)) wrong.push('its drawing leaves its box');
+          const centre = (r) => r.left + r.width / 2;
+          if (read && Math.abs(centre(read) - centre(box)) > 1)
+            wrong.push('its reading off centre');
+          if (read && read.top < rect(art).bottom - 0.5) wrong.push('its reading over its drawing');
+        }
+        // the water: the reading clear of the waves' reach (the first wave's crest to its trough)
+        const wave = scene.querySelector('.fc-water__back');
+        if (wave && read) {
+          const [, line] = /^M[-\d.]+,([-\d.]+)/.exec(wave.getAttribute('d'));
+          const top = rect(scene.querySelector('svg')).top;
+          const amp = Number(line) - wave.getBBox().y;
+          const reach = {
+            left: box.left,
+            right: box.right,
+            top: top + Number(line) - amp,
+            bottom: top + Number(line) + amp,
+          };
+          if (meets(read, reach)) wrong.push('its reading across the waterline');
+        }
+        // the sky: the reading clear of every part of the weather, through all its motion
+        if (scene.classList.contains('fc-sky') && read) {
+          const parts = [
+            ...[
+              ...scene.querySelectorAll(
+                '.fc-sky__halo, .fc-sky__rays, .fc-sky__sun, .fc-sky__cactus',
+              ),
+            ].map(rect),
+            // a flake down its fall, the cloud across its drift, the haze up its rise
+            ...[...scene.querySelectorAll('.fc-snow')].map((g) => {
+              const r = rect(g);
+              return {
+                left: r.left - 6,
+                right: r.right + 6,
+                top: r.top,
+                bottom: r.bottom + px(g, '--fall'),
+              };
+            }),
+            ...[...scene.querySelectorAll('.fc-drift')].map((g) => {
+              const r = rect(g);
+              return {
+                left: r.left,
+                right: r.right + px(g, '--span'),
+                top: r.top,
+                bottom: r.bottom,
+              };
+            }),
+            ...[...scene.querySelectorAll('.fc-haze')].map((p) => {
+              const r = rect(p);
+              return {
+                left: r.left,
+                right: r.right,
+                top: r.top + px(p, '--rise'),
+                bottom: r.bottom,
+              };
+            }),
+          ];
+          if (parts.some((part) => meets(read, part))) wrong.push('its reading across the weather');
+        }
+        const running = scene
+          .getAnimations({ subtree: true })
+          .filter((a) => a.playState === 'running');
+        const moved = new Set(
+          running.flatMap((a) =>
+            a.effect
+              .getKeyframes()
+              .flatMap((k) =>
+                Object.keys(k).filter(
+                  (p) => !['offset', 'computedOffset', 'easing', 'composite'].includes(p),
+                ),
+              ),
+          ),
+        );
+        const filtered = running.some(
+          (a) =>
+            a.effect.target.closest('[filter]') ||
+            getComputedStyle(a.effect.target).filter !== 'none',
+        );
+        out.push({
+          frame: host.closest('[data-frame]').dataset.frame,
+          kind: [...scene.classList].find((c) => /^fc-(water|sky|battery|pulse|air|sun)$/.test(c)),
+          running: running.length,
+          moved: [...moved],
+          filtered,
+          wrong,
+        });
+      }
+      return out;
+    });
+  const named = (list) =>
+    list.map((s) => `${s.frame} ${s.kind}: ${s.wrong.join(', ') || s.moved.join(' ')}`);
+  for (const mode of ['light', 'dark']) {
+    const page = await suite.sheet('animated', { extra: mode === 'dark' ? '&mode=dark' : '' });
+    const all = await scenes(page);
+    const moving = all.filter((s) =>
+      /\/Moving · (liquid|thermo|tank|battery|pulse|air|sun|tiles)$/.test(s.frame),
+    );
+    check(
+      `${mode}: every moving gauge (${moving.length}) runs, moving only transform, opacity and the dash offset, unfiltered`,
+      moving.length >= 28 &&
+        moving.every((s) => s.running > 0 && !s.filtered) &&
+        all.every((s) =>
+          s.moved.every((p) => ['transform', 'opacity', 'strokeDashoffset'].includes(p)),
+        ),
+      named(moving.filter((s) => !s.running || s.filtered))
+        .slice(0, 4)
+        .join(' | '),
+    );
+    const wrong = all.filter((s) => s.wrong.length);
+    check(
+      `${mode}: nothing leaves its box, the reading placed by rule — never across the water or the weather (${all.length})`,
+      all.length >= 40 && wrong.length === 0,
+      named(wrong).slice(0, 4).join(' | '),
+    );
+    const resting = all.filter((s) => /out of reach|still$/.test(s.frame));
+    check(
+      `${mode}: told not to move, or out of reach, a gauge rests on its first frame (${resting.length})`,
+      resting.length >= 14 && resting.every((s) => s.running === 0),
+      named(resting.filter((s) => s.running))
+        .slice(0, 4)
+        .join(' | '),
+    );
+    await page.close();
+  }
+  // the house's motion off, and a system that asks for less: every gauge on its first frame
+  const off = await suite.sheet('animated', {
+    extra: `&charts=${encodeURIComponent(JSON.stringify({ animate: false }))}`,
+  });
+  const still = await scenes(off);
+  check(
+    `the house’s motion off: every gauge (${still.length}) rests on its first frame, its rules held`,
+    still.length >= 40 && still.every((s) => s.running === 0 && !s.wrong.length),
+    named(still.filter((s) => s.running || s.wrong.length))
+      .slice(0, 4)
+      .join(' | '),
+  );
+  await off.close();
+  const reduced = await suite.sheet('animated');
+  await reduced.emulateMedia({ reducedMotion: 'reduce' });
+  await settle(reduced);
+  const calm = await scenes(reduced);
+  check(
+    `reduced motion: every gauge (${calm.length}) rests on its first frame`,
+    calm.length >= 40 && calm.every((s) => s.running === 0),
+    named(calm.filter((s) => s.running))
+      .slice(0, 4)
+      .join(' | '),
+  );
+  // the waves rest as waves, never a flat line: still a crest above the line
+  const crest = await reduced.evaluate(() => {
+    const card = [...document.querySelectorAll('[data-frame$="Moving · liquid"] > *')][1];
+    const wave = card.shadowRoot.querySelector('.fc-water__back');
+    const [, line] = /^M[-\d.]+,([-\d.]+)/.exec(wave.getAttribute('d'));
+    return Number(line) - wave.getBBox().y;
+  });
+  check(
+    'at rest the liquid is still a wave, its crests 7 over the line',
+    Math.abs(crest - 7) < 0.5,
+    String(crest),
+  );
+  await reduced.close();
 }
 
 /* ---------- no flash: the built bundle, the engine's chunk 1.5 s late ---------- */
