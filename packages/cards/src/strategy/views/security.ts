@@ -22,7 +22,7 @@ function overviewView(ctx: StrategyContext): Section[] {
     ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
     ...home.gateways.slice(0, 2).map((id) => full('cover', { entity: id, ...home.named(id) })),
     ...when(home.openings.length, () => [
-      full('openings', { title: t('strategy.sensors'), entities: home.openings.slice(0, 8) }),
+      full('openings', { title: t('strategy.sensors'), entities: [...home.openings] }),
     ]),
     ...when(home.cameras.length, () => [cameras(home.cameras.slice(0, 4), ctx)]),
   ]);

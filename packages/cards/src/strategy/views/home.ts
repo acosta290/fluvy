@@ -235,7 +235,7 @@ export function securityView(ctx: StrategyContext): Section[] {
     ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
     ...home.gateways.slice(0, 2).map((id) => full('cover', { entity: id, ...home.named(id) })),
     ...when(home.openings.length, () => [
-      full('openings', { title: t('strategy.sensors'), entities: home.openings.slice(0, 8) }),
+      full('openings', { title: t('strategy.sensors'), entities: [...home.openings] }),
     ]),
     ...when(home.cameras.length, () => [full('cameras', { cameras: home.cameras.slice(0, 4) })]),
   ]);
@@ -304,7 +304,7 @@ export function sensorsView(ctx: StrategyContext): Section[] {
     ]),
     // with a security view the openings live there
     when(!secured(home) && openings.length, () => [
-      full('openings', { title: t('strategy.sensors'), entities: openings.slice(0, 8) }),
+      full('openings', { title: t('strategy.sensors'), entities: [...openings] }),
     ]),
     when(plants.length, () => [
       full('bars', { title: t('strategy.plants'), rows: plants.slice(0, 4) }),
