@@ -113,6 +113,8 @@ const TILE_HEIGHT = 84;
 const TILE_COMPACT = 64;
 /** A tile's two sides (12 px of padding each), which its words sit between. */
 const TILE_SIDES = 24;
+/** The narrowest a tile is laid: a finger's target, whatever little its figure takes (#71). */
+const TILE_MIN = 44;
 /** The room a tile's figure takes when none can be read: "88.8 kWh" in its 16/600 type, about 76 px. */
 const STAND_IN = 76;
 /** The big readout above the tiles (`.fv-value-row`: 64 tall, 16 above it). */
@@ -131,9 +133,10 @@ function tileGap(width: number, count: number): number {
 /**
  * Tiles a row: as asked, or measured — as many as the count suggests (three, four as two by two) while the widest
  * label and the widest value fit a cell's content; else two — and fewer than that, down to one a row, where the
- * cells would not hold the widest value: a figure never wraps. A figure that cannot be read (`null`) is laid out as
- * the widest the others show, or as `standIn` where none can be read, so the tiles keep their rows while a sensor is
- * away (the owner's rule, 1.9). The widths are the words' as the tile's own classes draw them.
+ * cells would not hold the widest value or would be narrower than a finger's 44: a figure never wraps, a tile is
+ * always a target. A figure that cannot be read (`null`) is laid out as the widest the others show, or as `standIn`
+ * where none can be read, so the tiles keep their rows while a sensor is away (the owner's rule, 1.9). The widths are
+ * the words' as the tile's own classes draw them.
  */
 export function statTileColumns(
   asked: StatColumns,
@@ -149,7 +152,9 @@ export function statTileColumns(
     asked === 'auto'
       ? optionColumnsFor(labels.map(String), width, gap, () => Math.max(figure, ...labels))
       : asked;
-  while (columns > 1 && figure > (width - gap(columns) * (columns - 1)) / columns - TILE_SIDES)
+  // the narrowest cell that holds the widest figure between its sides and is still a target
+  const cell = Math.max(figure + TILE_SIDES, TILE_MIN);
+  while (columns > 1 && cell > (width - gap(columns) * (columns - 1)) / columns)
     columns = columns > 2 ? 2 : 1;
   return columns;
 }

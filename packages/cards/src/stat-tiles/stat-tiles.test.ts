@@ -28,6 +28,16 @@ describe('stat tiles a row', () => {
     expect(statTileColumns(3, 320, labels, [90, 40, 40, 40], 70)).toBe(2);
   });
 
+  it('never lays a tile narrower than a finger’s 44, however little its figure takes (#71)', () => {
+    // three in a 172 column's 132 would be 36 wide (12 apart) round single digits: two a row, 60 each
+    expect(statTileColumns(3, 132, [8, 8, 8], [8, 8, 8], 70)).toBe(2);
+    expect(statTileColumns('auto', 132, [8, 8, 8], [8, 8, 8], 70)).toBe(2);
+    // and two that would be under it, one: two in 76 would be 32 (12 apart)
+    expect(statTileColumns(2, 76, [8, 8], [8, 8], 70)).toBe(1);
+    // 44 itself is a target: three in 140 (4 apart) stay three
+    expect(statTileColumns(3, 140, [8, 8, 8], [8, 8, 8], 70)).toBe(3);
+  });
+
   it('keeps its rows while a sensor is away: a figure that cannot be read takes the widest of the others', () => {
     const live = statTileColumns('auto', 171, labels, [60, 50, 58, 40], 70);
     expect(statTileColumns('auto', 171, labels, [null, 50, 58, null], 70)).toBe(1);
