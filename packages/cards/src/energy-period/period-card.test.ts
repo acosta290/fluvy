@@ -129,7 +129,8 @@ describe('the Energy period card drives the collection', () => {
     expect(date(card)).toBe('Today');
     // nothing after today to walk to
     expect(button(card, 'Next period').disabled).toBe(true);
-    expect(button(card, 'Today').disabled).toBe(true);
+    // on today the capsule says it: no Today button beside it
+    expect(root(card).querySelector('.ep-pill')).toBeNull();
     await tap(card, 'Previous period');
     expect(iso(collection.periods.at(-1)!)).toEqual(iso(span('yesterday')));
     expect(collection.refreshed).toBe(1);
@@ -139,6 +140,7 @@ describe('the Energy period card drives the collection', () => {
     expect(iso(collection.periods.at(-1)!)).toEqual(iso(span('today')));
     expect(collection.refreshed).toBe(3);
     expect(localStorage.getItem(`energy-default-period-_${KEY}`)).toBe('today');
+    expect(root(card).querySelector('.ep-pill')).toBeNull();
   });
 
   it('walks a week, a month and a year by their grain', async () => {

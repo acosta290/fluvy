@@ -11,7 +11,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { glyph, toggle, type ChipItem } from '@fluvy/ui';
+import { chips, glyph, sideScroll, toggle, type ChipItem } from '@fluvy/ui';
 import {
   css,
   html,
@@ -36,7 +36,7 @@ import {
   collectionHelper,
 } from '../energy/collection-field.js';
 import { Card, type BaseKey } from '../shared/base.js';
-import { chipRow } from '../shared/chips.js';
+import { chipRow, fitsOneRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import type { DatesDetail, PickerString } from '../shared/date-picker.js';
@@ -133,6 +133,10 @@ const STEP = 44;
 const GAP = 8;
 const DATE_SIDES = 12;
 const PILL_SIDES = 32;
+/** The widest the capsule and the periods' chips run: a band across a view keeps them on its start, never stretched. */
+const CAP = 360;
+/** A scrolling row's fades, at a side with more behind it. */
+const FADE = 24;
 /** The sheet's presets for each period. */
 const PRESETS: Readonly<Record<PeriodKey, readonly (Preset | 'custom')[]>> = {
   day: ['today', 'yesterday'],
@@ -180,6 +184,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         flex: 1 1 auto;
         align-items: center;
         min-width: 0;
+        max-width: ${CAP}px;
         height: 44px;
       }
       .ep-walk::before {
@@ -248,6 +253,47 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       }
       .ep-owner {
         display: none;
+      }
+      /* the periods' chips, under the capsule and no wider */
+      .ep-card > .fv-chips {
+        max-width: ${CAP}px;
+      }
+      /* a column too narrow for them on one line: they keep it and scroll, as a tab row does (the 4 each side keep a
+         chip's focus ring whole), fading at a side with more behind it */
+      .ep-grains {
+        position: relative;
+        max-width: ${CAP + 8}px;
+        margin: 8px -4px 0;
+        padding: 0 4px;
+        overflow: auto hidden;
+        overscroll-behavior-x: contain;
+        scroll-padding: 0 ${FADE + 4}px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(
+          to right,
+          transparent,
+          var(--fluvy-text) var(--fade-start, 0px),
+          var(--fluvy-text) calc(100% - var(--fade-end, 0px)),
+          transparent
+        );
+        mask-image: linear-gradient(
+          to right,
+          transparent,
+          var(--fluvy-text) var(--fade-start, 0px),
+          var(--fluvy-text) calc(100% - var(--fade-end, 0px)),
+          transparent
+        );
+      }
+      .ep-grains::-webkit-scrollbar {
+        display: none;
+      }
+      .ep-grains > .fv-chips {
+        flex-wrap: nowrap;
+        width: max-content;
+        margin-top: 0;
+      }
+      .ep-grains.is-dragging .fv-chip {
+        pointer-events: none;
       }
       /* the sheet: a modal bottom sheet, as the cameras' */
       dialog {
@@ -516,6 +562,8 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.finishClose();
+    this.grains?.stop();
+    this.grains = undefined;
   }
 
   /**
@@ -558,6 +606,11 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
   private span(collection = this.collection()): Span {
     const today = presetSpan(this.hass, 'today', this.now());
     return collection ? { start: collection.start, end: collection.end ?? today.end } : today;
+  }
+
+  /** The span is today: the capsule says it, and the Today button has nothing to do. */
+  private onToday(): boolean {
+    return sameSpan(this.span(), presetSpan(this.hass, 'today', this.now()));
   }
 
   private periods(): readonly PeriodKey[] {
@@ -665,6 +718,8 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
+    // after the pills are fitted: the stacked strip's scrolling periods
+    if (this.variant === 'stacked') this.settleGrains(grainOf(this.hass, this.span()));
     const dialog = this.renderRoot.querySelector('dialog');
     if (dialog && !dialog.open && this.sheetOpen_ && !this.leaving_) {
       dialog.showModal();
@@ -677,7 +732,8 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
   /** The strip's form for its column: the first of `FORMS` that holds it. */
   private form(room: number, long: string, short: string): Form {
     const compact = this.variant === 'compact';
-    const today = !compact && this.config?.show_today !== false;
+    // Today only away from today: on it, the capsule says so and its room is the capsule's
+    const today = !compact && this.config?.show_today !== false && !this.onToday();
     const compare = !compact && this.config?.show_compare === true;
     const date = compact ? 'ep-card--compact > ep-date' : 'ep-date';
     const pill = (word: string): number => this.ruler.pill('fv-btn fv-btn--pill', word, PILL_SIDES);
@@ -714,7 +770,6 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
     const short = note ?? shortWords(hass, span, grain, now);
     const form = this.form(this.width - (compact ? 24 : 40), long, short);
     const tone = toneOf(this.config, 'accent');
-    const isToday = sameSpan(span, presetSpan(hass, 'today', now));
     const comparing = this.comparing();
     const pill = (
       shown: Shown,
@@ -806,7 +861,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
               : nothing
           }
         </div>
-        ${pill(form.today, today, today, 'clock', ready && !isToday, () => this.pick('today'), !ready || isToday)}
+        ${pill(form.today, today, today, 'clock', true, () => this.pick('today'), false)}
         ${pill(
           form.compare,
           p(hass, 'compare'),
@@ -835,10 +890,35 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       tone,
       disabled: !ready,
     }));
-    return chipRow(items, (key) => this.pick(GRAIN_PRESET[key as Grain]), 'full', {
-      ruler: this.ruler,
-      width: this.contentWidth,
-    });
+    const select = (key: string): void => this.pick(GRAIN_PRESET[key as Grain]);
+    const fit = { ruler: this.ruler, width: Math.min(this.contentWidth, CAP) };
+    if (fitsOneRow(items, fit)) return chipRow(items, select, 'full', fit);
+    // too narrow for them on one line (half a section): they keep it and scroll, the span's grain in view — the strip
+    // keeps its height at every width
+    return html`<div class="ep-grains" data-scroll-row @scroll=${() => this.settleGrains()}>
+      ${chips(items, select)}
+    </div>`;
+  }
+
+  /** The scrolling periods: bound to the mouse once, their grain brought into view when it changes, their fades. */
+  private grains: { readonly el: HTMLElement; readonly stop: () => void } | undefined;
+  private grainShown: PeriodKey | undefined;
+  private settleGrains(grain?: PeriodKey): void {
+    const row = this.renderRoot.querySelector<HTMLElement>('.ep-grains') ?? undefined;
+    if (this.grains?.el !== row) {
+      this.grains?.stop();
+      this.grains = row ? { el: row, stop: sideScroll(row) } : undefined;
+      this.grainShown = undefined;
+    }
+    if (!row) return;
+    const active = row.querySelector<HTMLElement>('.fv-chip.is-active');
+    if (grain !== undefined && grain !== this.grainShown && active) {
+      this.grainShown = grain;
+      row.scrollLeft = Math.max(0, active.offsetLeft - (row.clientWidth - active.offsetWidth) / 2);
+    }
+    const hidden = row.scrollWidth - row.clientWidth;
+    row.style.setProperty('--fade-start', `${row.scrollLeft > 1 ? FADE : 0}px`);
+    row.style.setProperty('--fade-end', `${hidden - row.scrollLeft > 1 ? FADE : 0}px`);
   }
 
   private renderDialog(span: Span, now: Date): TemplateResult | typeof nothing {
