@@ -4,7 +4,7 @@ import {
   type ChartSettings,
   type GaugePreset,
 } from '@fluvy/core';
-import type { Hex, PaletteMode } from '@fluvy/tokens/runtime';
+import type { PaletteMode } from '@fluvy/tokens/runtime';
 import { html, type TemplateResult } from 'lit';
 import { drawChart, drawRead, readAt, type ChartSpec } from './draw.js';
 import { drawGauge, type GaugeOptions } from './gauge.js';
@@ -182,10 +182,10 @@ export function previewChart(
 /**
  * A set of six series colours as a chart of several sensors draws them, in the house's line: six days, one above the
  * other on one scale, without a fill or a mark to stand between the colours and the card — the colours as the mode
- * wears them (`fitSet`).
+ * wears them (`setInks`: a hex fitted to its card, a colour of the palette's by its token).
  */
 export function previewSeries(
-  colours: readonly Hex[],
+  colours: readonly string[],
   settings: Partial<ChartSettings>,
   o: { readonly mode: PaletteMode; readonly width: number; readonly height: number },
 ): TemplateResult {

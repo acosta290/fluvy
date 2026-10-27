@@ -91,12 +91,24 @@ export interface ChartSettings {
   readonly animate: boolean;
 }
 
-/** A set of six series colours of the house's own, chosen like a palette. */
+/**
+ * A set of six series colours of the house's own, chosen like a palette. Each is a colour of the palette's
+ * (`isPaletteRef`: worn as the palette and the mode have it, so the set follows them) or a hex of its own (fixed: its
+ * hue kept, fitted to each mode's card).
+ */
 export interface SavedSeries {
   readonly id: string;
   readonly name: string;
-  readonly colours: readonly Hex[];
+  readonly colours: readonly (Hex | PaletteRef)[];
 }
+/**
+ * A colour of the palette's a set or a series may name (1.11): its accent, its twelve series colours (`graph-1`…), the
+ * statuses and the lit light, the energy states — the chart engine's `refInk` says which token each one is.
+ */
+export type PaletteRef = string;
+const REF =
+  /^(accent|graph-([1-9]|1[0-2])|ok|warning|danger|notice|light|solar|grid|battery|water|gas|home)$/;
+export const isPaletteRef = (colour: string): boolean => REF.test(colour);
 export const SERIES_COUNT = 6;
 export const MAX_SAVED_SERIES = 12;
 
@@ -152,15 +164,25 @@ export function parseChartSettings(raw: unknown): ChartSettings {
   };
 }
 
-/** A saved set of series colours: an id, a name and six well-formed hexes, or nothing. */
+/**
+ * A saved set of series colours: an id, a name and six colours, or nothing. A colour is a hex or a colour of the
+ * palette's; anything else is the palette's own series colour in its place.
+ */
 export function parseSavedSeriesSet(raw: unknown): SavedSeries | undefined {
   if (!isRecord(raw)) return undefined;
   const { id, name, colours } = raw;
   if (typeof id !== 'string' || !ID.test(id) || typeof name !== 'string' || !name.trim())
     return undefined;
   if (!Array.isArray(colours) || colours.length !== SERIES_COUNT) return undefined;
-  if (!colours.every((c): c is string => typeof c === 'string' && HEX.test(c))) return undefined;
-  return { id, name: name.trim(), colours: colours.map((c) => c.toLowerCase() as Hex) };
+  return {
+    id,
+    name: name.trim(),
+    colours: colours.map((c: unknown, n) =>
+      typeof c === 'string' && (HEX.test(c) || isPaletteRef(c))
+        ? c.toLowerCase()
+        : `graph-${n + 1}`,
+    ),
+  };
 }
 
 /** The house's saved series sets: the well-formed ones, the first of each id, twelve at most. */

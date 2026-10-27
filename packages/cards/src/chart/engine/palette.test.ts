@@ -1,9 +1,23 @@
-import { CHART_DEFAULTS, paletteOf, type HouseCharts } from '@fluvy/core';
+import {
+  CHART_DEFAULTS,
+  declarationsOf,
+  isPaletteRef,
+  paletteOf,
+  type HouseCharts,
+} from '@fluvy/core';
 import { fromHex, hueDistance } from '@fluvy/tokens';
 import { contrastRatio, PALETTE_NAMES, type Hex } from '@fluvy/tokens/runtime';
 import { describe, expect, it } from 'vitest';
 
-import { fitSet, seriesCheck, seriesPaint } from './palette.js';
+import {
+  fitSet,
+  PALETTE_REFS,
+  refHex,
+  refInk,
+  seriesCheck,
+  seriesPaint,
+  setInks,
+} from './palette.js';
 
 const SET: Hex[] = ['#1d4ed8', '#b45309', '#15803d', '#b91c1c', '#7e22ce', '#0f766e'];
 const withSet: HouseCharts = {
@@ -93,6 +107,63 @@ describe('a set of series colours fitted to each mode, and what fitting cannot f
     // two pale blues deepened to read on the light card meet there; on the dark card both read as they are, apart
     expect(seriesCheck(fitSet(['#93c5fd', '#60a5fa'], 'linen'))).toEqual([
       { a: 0, b: 1, mode: 'light' },
+    ]);
+  });
+});
+
+describe('the colours of the palette’s a set or a series may name (1.11)', () => {
+  const ALL = [...PALETTE_REFS.series, ...PALETTE_REFS.tones, ...PALETTE_REFS.energy];
+
+  it('are twenty-four, each read by core as the palette’s and a token the look writes as its hex, in every palette and mode, in the house’s status colours too', () => {
+    expect(ALL).toHaveLength(24);
+    for (const statuses of [{}, { warning: '#dc630b', danger: '#9f1239' }])
+      for (const palette of PALETTE_NAMES)
+        for (const mode of ['light', 'dark'] as const) {
+          const written = new Map(
+            declarationsOf({ palette, shape: 'soft', pills: 'round' }, mode, statuses),
+          );
+          const colors = paletteOf(palette, statuses)[mode];
+          for (const ref of ALL) {
+            expect(isPaletteRef(ref), ref).toBe(true);
+            // `var(--fluvy-…)`: the token the look writes
+            const token = refInk(ref).slice('var('.length, -1);
+            expect(written.get(token), `${palette} ${mode} ${ref}`).toBe(refHex(ref, colors));
+          }
+        }
+  });
+
+  it('follow the palette: a set of them is Sage’s colours on Sage and Volt’s on Volt, in each mode, worn by its tokens', () => {
+    const refs = ['graph-1', 'accent', 'ok', 'solar', 'graph-9', 'home'];
+    const sage = fitSet(refs, 'sage');
+    const volt = fitSet(refs, 'volt');
+    for (const mode of ['light', 'dark'] as const) {
+      expect(sage[mode]).toEqual(refs.map((ref) => refHex(ref, paletteOf('sage')[mode])));
+      expect(volt[mode]).toEqual(refs.map((ref) => refHex(ref, paletteOf('volt')[mode])));
+      sage[mode].forEach((hex, n) => expect(hex, refs[n]).not.toBe(volt[mode][n]));
+    }
+    // drawn by their tokens: the look in force there says which colour, no set fitted to ask
+    expect(setInks(refs, sage, 'dark')).toEqual(refs.map(refInk));
+    const garden: HouseCharts = {
+      settings: { ...CHART_DEFAULTS, series: 'garden' },
+      sets: [{ id: 'garden', name: 'Garden', colours: [...refs.slice(0, 4), '#1e3a8a', 'home'] }],
+    };
+    expect(seriesPaint('series-4', garden)).toEqual({
+      className: '',
+      style: '--tone-ink:var(--fluvy-state-energy-solar)',
+    });
+    // a hex among them keeps its hue, fitted to each mode
+    const { light, dark } = fitSet(garden.sets[0]!.colours, 'linen');
+    expect(seriesPaint('series-5', garden)).toEqual({
+      className: 'fc-set',
+      style: `--fc-light:${light[4]};--fc-dark:${dark[4]}`,
+    });
+  });
+
+  it('stand as the palette has them, so two that sit together are said; the house’s status colours are theirs', () => {
+    expect(seriesCheck(fitSet(['accent', 'accent', 'graph-2'], 'linen'))).toEqual([{ a: 0, b: 1 }]);
+    const statuses = { warning: '#dc630b' };
+    expect(fitSet(['warning'], 'linen', statuses).light).toEqual([
+      paletteOf('linen', statuses).light.semantic.warning.ink,
     ]);
   });
 });

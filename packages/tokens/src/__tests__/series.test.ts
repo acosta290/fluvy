@@ -46,6 +46,16 @@ describe('a set of series colours fitted to a palette’s mode', () => {
     expect(contrastRatio(cream as string, light.surface.card)).toBeLessThan(GATES.icon + 0.1);
   });
 
+  it('keeps a colour of the palette’s own as the palette has it, and sets the ones after it apart from it', () => {
+    const { light } = derivePalette(seeds.linen);
+    // the light card's own pale accent fill, which would be deepened were it a pick, then a hex a breath from it
+    const own = light.accent.fill;
+    const [kept, after] = fitSeries([own, own], light, [true]);
+    expect(kept).toBe(own);
+    expect(contrastRatio(after as string, light.surface.card)).toBeGreaterThanOrEqual(GATES.icon);
+    expect(deltaE(kept as string, after as string)).toBeGreaterThanOrEqual(GATES.graphSeparation);
+  });
+
   it('cannot set apart two hues a breath apart: what the panel says', () => {
     for (const mode of PALETTE_MODES) {
       const [a, b] = fitSeries(['#2563eb', '#2463ea'], derivePalette(seeds.linen)[mode]);

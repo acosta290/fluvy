@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CHART_DEFAULTS,
   HOUSE_DEFAULTS,
+  isPaletteRef,
   MAX_SAVED_SERIES,
   MAX_SAVED_PALETTES,
   parseHouse,
@@ -185,7 +186,6 @@ describe('parsing stored settings', () => {
         { id: 'warm', name: 'Again', colours: six },
         { id: 'five', name: 'Five', colours: six.slice(0, 5) },
         { id: 'named', name: '', colours: six },
-        { id: 'bad', name: 'Bad', colours: [...six.slice(0, 5), 'red'] },
         ...Array.from({ length: 20 }, (_u, i) => ({ id: `s${i}`, name: `S${i}`, colours: six })),
       ],
     }).chartSets;
@@ -193,6 +193,43 @@ describe('parsing stored settings', () => {
     expect(sets.map((set) => set.id).slice(0, 3)).toEqual(['warm', 's0', 's1']);
     expect(sets.length).toBe(MAX_SAVED_SERIES);
     expect(parseHouse({ chartSets: 'none' }).chartSets).toEqual([]);
+  });
+
+  it('reads a set’s colours as the palette’s by name or hexes of its own, anything else the palette’s in its place (1.11)', () => {
+    const [set] = parseHouse({
+      chartSets: [
+        {
+          id: 'mixed',
+          name: 'Mixed',
+          colours: ['graph-12', 'accent', '#B45309', 'red', 'graph-13', null],
+        },
+      ],
+    }).chartSets;
+    // a palette's colour by its name follows the palette; Home Assistant's red, a series past twelve and nothing are
+    // the palette's own series colour in that place
+    expect(set?.colours).toEqual([
+      'graph-12',
+      'accent',
+      '#b45309',
+      'graph-4',
+      'graph-5',
+      'graph-6',
+    ]);
+    for (const ref of [
+      'accent',
+      'graph-1',
+      'graph-12',
+      'ok',
+      'warning',
+      'danger',
+      'notice',
+      'light',
+    ])
+      expect(isPaletteRef(ref), ref).toBe(true);
+    for (const ref of ['solar', 'grid', 'battery', 'water', 'gas', 'home'])
+      expect(isPaletteRef(ref), ref).toBe(true);
+    for (const word of ['graph-0', 'graph-13', 'house', 'Accent', 'primary', 'red', '#b45309'])
+      expect(isPaletteRef(word), word).toBe(false);
   });
 
   it('reads the wall settings field by field, each broken one as its default', () => {

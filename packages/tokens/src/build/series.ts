@@ -18,16 +18,21 @@ const APART = 25;
  * The colours on one palette × mode, in order. Each goes away from the card (deeper in light, lighter in dark) until it
  * holds the icon's contrast on it, then further only where that sets it at least `GATES.graphSeparation` (ΔE2000) from
  * every colour before it — as a status picked by the house is set apart from the others. A colour that already holds
- * both is kept as it was picked.
+ * both is kept as it was picked, and so is one `kept` names (a colour of the palette's own, worn as the palette has
+ * it); the colours after it are set apart from it all the same.
  */
-export function fitSeries(colours: readonly Hex[], colors: PaletteModeColors): Hex[] {
+export function fitSeries(
+  colours: readonly Hex[],
+  colors: PaletteModeColors,
+  kept: readonly boolean[] = [],
+): Hex[] {
   const card = colors.surface.card;
   const away = colors.mode === 'light' ? 'darker' : 'lighter';
   const fitted: Hex[] = [];
-  for (const pick of colours) {
+  for (const [n, pick] of colours.entries()) {
     const apart = (hex: Hex): boolean =>
       fitted.every((other) => deltaE(hex, other) >= GATES.graphSeparation);
-    if (contrastRatio(pick, card) >= GATES.icon && apart(pick)) {
+    if (kept[n] || (contrastRatio(pick, card) >= GATES.icon && apart(pick))) {
       fitted.push(pick);
       continue;
     }
