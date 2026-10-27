@@ -2153,12 +2153,14 @@ a card's entrance).
   screen — the open and the full-screen ones by default. A plate too narrow for them gives them up in order, the
   reload first, then the open; the full-screen round stays, and every one is back in full screen. Full screen is the
   plate's own (`requestFullscreen` on the plate, as the camera's); a phone that has none (iPhone) opens the tab.
-- **Loading.** A skeleton covers the plate until the frame's `load`; after twenty seconds without one the plate says
-  "Still loading · Open in a new tab", the tab a link of 44 over the skeleton where the line holds it (the open round
-  is the way where it does not). A page that refuses to be framed loads
-  all the same, blank: no card can tell from outside (the docs say the open round is the way out). A config whose
-  address, sandbox and permissions are unchanged keeps the loaded frame (the frame is keyed by them and by its reload
-  count); a change asks for a new one.
+- **Loading.** A skeleton covers the plate until the frame's `load`; twenty seconds without one, counted from when the
+  plate is on screen (the frame loads lazily: a card scrolled to late has its twenty seconds), the plate says "Still
+  loading · Open in a new tab", the tab a link of 44 over the skeleton where the line holds it (the open round is the
+  way where it does not). A card taken out of the page stops its clock; put back, its frame asks for the page anew,
+  under the skeleton, and the clock starts afresh. A page that refuses to be framed loads all the same, blank: no card
+  can tell from outside (the docs say the open round is the way out). A config whose address, sandbox and
+  permissions are unchanged keeps the loaded frame (the frame is keyed by them and by its reload count); a change
+  asks for a new one.
 - **Insecure.** On an https dashboard an http page is never asked for (the browser refuses it without a word): the
   off plate at its size — page fill, dashed hairline, the globe on the off circle over "This page needs https" — its
   reload and full-screen rounds disabled, its open round alive. The address itself is read once, on `setConfig`: a

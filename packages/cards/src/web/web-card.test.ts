@@ -60,6 +60,31 @@ const secure = (): void => {
   vi.stubGlobal('location', { href: 'https://ha.example/lovelace/0', protocol: 'https:' });
 };
 
+/** The viewport as the test says it: every observer the cards make hears `show` (happy-dom's never speak). */
+const viewport = (): { show: (onScreen: boolean) => void } => {
+  const reports: IntersectionObserverCallback[] = [];
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(report: IntersectionObserverCallback) {
+        reports.push(report);
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
+        return [];
+      }
+    },
+  );
+  return {
+    show: (onScreen) => {
+      const entries = [{ isIntersecting: onScreen }] as unknown as IntersectionObserverEntry[];
+      for (const report of reports) report(entries, {} as IntersectionObserver);
+    },
+  };
+};
+
 // every frame is answered with a page of nothing, so its load is real; `hang` holds a page back
 const frames = serveFrames();
 
@@ -315,7 +340,9 @@ describe('loading', () => {
   it('twenty seconds without a load: the plate says so and offers the tab; a load clears it', async () => {
     frames.hang(true);
     vi.useFakeTimers();
+    const screen = viewport();
     const { card, root, frame } = await drawn({});
+    screen.show(true);
     vi.advanceTimersByTime(19_000);
     await card.updateComplete;
     expect(root.querySelector('.wb-state')).toBeNull();
@@ -331,6 +358,61 @@ describe('loading', () => {
     await card.updateComplete;
     expect(root.querySelector('.wb-state')).toBeNull();
     expect(root.querySelector('.wb-skeleton')).toBeNull();
+  });
+
+  it('the clock starts when the plate comes on screen: a card scrolled to late has its twenty seconds', async () => {
+    frames.hang(true);
+    vi.useFakeTimers();
+    const screen = viewport();
+    const { card, root } = await drawn({});
+    screen.show(false);
+    vi.advanceTimersByTime(60_000);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-state')).toBeNull();
+    screen.show(true);
+    vi.advanceTimersByTime(19_000);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-state')).toBeNull();
+    // off screen again, the page goes on loading: the clock goes on with it
+    screen.show(false);
+    vi.advanceTimersByTime(1_000);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-state')).not.toBeNull();
+  });
+
+  it('a card taken out of the page stops its clock; put back, it starts it afresh', async () => {
+    frames.hang(true);
+    vi.useFakeTimers();
+    const screen = viewport();
+    const { card, root } = await drawn({});
+    screen.show(true);
+    vi.advanceTimersByTime(10_000);
+    card.remove();
+    vi.advanceTimersByTime(30_000);
+    expect(card.slow_).toBe(false);
+    document.body.append(card);
+    await card.updateComplete;
+    screen.show(true);
+    vi.advanceTimersByTime(19_000);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-state')).toBeNull();
+    vi.advanceTimersByTime(1_000);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-state')).not.toBeNull();
+  });
+
+  it('a loaded frame put back in the page loads again: the skeleton covers it until it has', async () => {
+    const { card, root, frame } = await drawn({});
+    await untilLoaded(card);
+    await card.updateComplete;
+    expect(root.querySelector('.wb-skeleton')).toBeNull();
+    frames.hang(true);
+    card.remove();
+    document.body.append(card);
+    await card.updateComplete;
+    expect(card.loaded_).toBe(false);
+    expect(root.querySelector('.wb-skeleton')).not.toBeNull();
+    expect(frame()!.classList.contains('is-on')).toBe(false);
   });
 
   it('the playground’s page that never answers: no frame asked for, still loading at once', async () => {

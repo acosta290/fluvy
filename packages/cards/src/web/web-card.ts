@@ -429,6 +429,9 @@ export class FluvyWebCard extends Card<WebCardConfig> {
   /** When the page was last asked for: what `refresh` counts from. */
   private shownAt = 0;
   private slowTimer: number | undefined;
+  /** The plate is on screen, by the viewport's last word: what starts a lazy frame, and its slow clock. */
+  private seen = false;
+  private observer: IntersectionObserver | undefined;
   /** The playground's page that never answers (`_slow`): no frame is asked for, the plate is still loading at once. */
   private never = false;
 
@@ -463,23 +466,43 @@ export class FluvyWebCard extends Card<WebCardConfig> {
 
   /* ---------- the frame's life ---------- */
 
-  /** A frame is on its way: the skeleton covers the plate, the slow clock starts. */
+  /** A frame is on its way: the skeleton covers the plate, the slow clock starts once the plate is on screen. */
   private load(): void {
     this.shownAt = Date.now();
     this.loaded_ = false;
     this.slow_ = this.never && this.page?.state === 'ok';
+    this.stopClock();
+    this.startClock();
+  }
+
+  /**
+   * The slow clock: twenty seconds from when a frame on its way is in the page and on screen — the frame loads lazily,
+   * so a card scrolled to long after the page opened starts its page, and its clock, only then.
+   */
+  private startClock(): void {
+    if (
+      this.slowTimer !== undefined ||
+      !this.seen ||
+      !this.isConnected ||
+      this.loaded_ ||
+      this.slow_ ||
+      this.never ||
+      this.page?.state !== 'ok'
+    )
+      return;
+    this.slowTimer = window.setTimeout(() => {
+      this.slowTimer = undefined;
+      this.slow_ = true;
+    }, SLOW);
+  }
+
+  private stopClock(): void {
     window.clearTimeout(this.slowTimer);
-    this.slowTimer =
-      this.page?.state === 'ok' && !this.never
-        ? window.setTimeout(() => {
-            this.slow_ = true;
-          }, SLOW)
-        : undefined;
+    this.slowTimer = undefined;
   }
 
   private readonly onLoad = (): void => {
-    window.clearTimeout(this.slowTimer);
-    this.slowTimer = undefined;
+    this.stopClock();
     this.loaded_ = true;
     this.slow_ = false;
   };
@@ -501,13 +524,26 @@ export class FluvyWebCard extends Card<WebCardConfig> {
   override connectedCallback(): void {
     super.connectedCallback();
     document.addEventListener('fullscreenchange', this.onFullscreen);
+    // the viewport's first word, a frame from now, starts the clock (at once where there is no observer)
+    this.seen = typeof IntersectionObserver !== 'function';
+    if (!this.seen) {
+      this.observer = new IntersectionObserver((entries) => {
+        this.seen = entries[entries.length - 1]?.isIntersecting ?? true;
+        this.startClock();
+      });
+      this.observer.observe(this);
+    }
+    // a frame put back in the page asks for its page anew: the skeleton covers it again, its clock starts afresh
+    if (this.hasUpdated) this.load();
+    else this.startClock();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('fullscreenchange', this.onFullscreen);
-    window.clearTimeout(this.slowTimer);
-    this.slowTimer = undefined;
+    this.observer?.disconnect();
+    this.observer = undefined;
+    this.stopClock();
   }
 
   protected override updated(changed: PropertyValues): void {
