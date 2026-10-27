@@ -127,6 +127,37 @@ describe('a scale', () => {
   });
 });
 
+describe('what the scale and the marks read', () => {
+  const band = { low: DAY.map((v) => v - 6), high: DAY.map((v) => v + 6) };
+
+  it('holds a band only where the style draws it', () => {
+    const ticks = (preset: 'step' | 'band') =>
+      [
+        ...host(
+          drawChart(
+            spec(preset, {
+              series: [{ values: DAY, band }],
+              tick: String,
+              measure: (t) => t.length * 7,
+            }),
+          ),
+        ).querySelectorAll('.fc-tick'),
+      ].map((t) => t.textContent);
+    expect(ticks('step')).toEqual(['18', '20', '22', '24', '26']);
+    expect(ticks('band')).toEqual(['10', '20', '30', '40']);
+  });
+
+  it('marks the lowest and the highest of what has happened, never a forecast’s', () => {
+    // the lowest reading is the last one, in the forecast: no mark there
+    const values = [20, 22, 25, 23, 21, 19, 17];
+    const drawing = host(drawChart(spec('step', { series: [{ values }], now: 0.5 })));
+    const marks = [...drawing.querySelectorAll('.curve-dot')];
+    const nowX = Number(drawing.querySelector('.fc-now')?.getAttribute('x1'));
+    expect(marks.length).toBe(2);
+    for (const mark of marks) expect(Number(mark.getAttribute('cx'))).toBeLessThanOrEqual(nowX);
+  });
+});
+
 describe('bars', () => {
   it('hold a slot each, the forecast hollow, read at their slot’s middle', () => {
     const bars = spec('bars', { now: 0.5 });

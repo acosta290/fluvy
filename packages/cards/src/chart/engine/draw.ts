@@ -107,14 +107,16 @@ const given = (n: number | null | undefined): n is number =>
 const finite = (values: ReadonlyArray<number | null>): number[] =>
   values.filter((v): v is number => v !== null && Number.isFinite(v));
 
-/** The ends a nice scale must reach: every reading and band, or the stacks' rises and falls for stacked columns. */
-function reach(spec: ChartSpec, stacked: boolean): number[] {
+/** The lows and highs of every band the chart draws: a band is in the scale only where the style draws it. */
+const bandsOf = (spec: ChartSpec, bars: boolean): number[][] =>
+  bars || spec.style.fill !== 'band'
+    ? []
+    : spec.series.flatMap((s) => (s.band ? [[...s.band.low], [...s.band.high]] : []));
+
+/** The ends a nice scale must reach: every reading and band drawn, or the stacks' rises and falls for stacked columns. */
+function reach(spec: ChartSpec, bars: boolean, stacked: boolean): number[] {
   const all = spec.series.map((s) => s.values);
-  if (!stacked)
-    return [
-      ...finite(all.flat()),
-      ...spec.series.flatMap((s) => (s.band ? [...s.band.low, ...s.band.high] : [])),
-    ];
+  if (!stacked) return [...finite(all.flat()), ...bandsOf(spec, bars).flat()];
   const count = Math.max(0, ...all.map((values) => values.length));
   return Array.from({ length: count }, (_unused, i) => {
     let up = 0;
@@ -144,16 +146,13 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
     ? 'nice'
     : (spec.scale ?? (style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight'));
   if (wanted === 'nice') {
-    const ends = reach(spec, bars && style.preset === 'columns' && all.length > 1);
+    const ends = reach(spec, bars, bars && style.preset === 'columns' && all.length > 1);
     ticks = niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
     scales = all.map(() => ticks as Ticks);
   } else if (typeof wanted === 'object') scales = all.map(() => wanted);
   else if (wanted === 'own') scales = all.map((values) => airScale([values], spec.zero));
   else if (wanted === 'air') {
-    const shared = airScale(
-      [...all, ...spec.series.flatMap((s) => (s.band ? [s.band.low, s.band.high] : []))],
-      spec.zero,
-    );
+    const shared = airScale([...all, ...bandsOf(spec, bars)], spec.zero);
     scales = all.map(() => shared);
   } else {
     const shared = tightScale(finite(all.flat()));
@@ -520,7 +519,12 @@ export function drawChart(spec: ChartSpec): TemplateResult {
     )
       for (const pick of ['min', 'max'] as const) {
         if (style.highlight !== pick && style.highlight !== 'both') continue;
-        const p = laid.points[index]?.[extreme(spec.series[index]?.values ?? [], pick)];
+        // the lowest and highest of what has happened: the forecast's are the Chart card's window to name
+        const past = (spec.series[index]?.values ?? []).slice(
+          0,
+          (laid.nowIndex ?? laid.count - 1) + 1,
+        );
+        const p = laid.points[index]?.[extreme(past, pick)];
         if (p)
           dots.push(
             dot(

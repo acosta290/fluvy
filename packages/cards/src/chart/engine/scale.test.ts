@@ -81,7 +81,15 @@ describe('nice ticks for a measurement', () => {
   it('keep to its own range when it never reaches zero: a day at 17 … 23 °C reads on 16 · 18 · 20 · 22 · 24', () => {
     expect(niceTicks(17, 23, 4, false).ticks).toEqual([16, 18, 20, 22, 24]);
     expect(niceTicks(1003.2, 1021.7, 4, false).ticks).toEqual([1000, 1010, 1020, 1030]);
-    expect(niceTicks(-12.4, -3.1, 4, false).ticks).toEqual([-12.5, -10, -7.5, -5, -2.5]);
+    expect(niceTicks(-12.4, -3.1, 4, false).ticks).toEqual([-15, -10, -5, 0]);
+  });
+
+  it('keep to whole steps where one fits, and write whole ticks whole', () => {
+    // a band's 15.8 … 25.5 °C: 2.5 would write 15.0 · 17.5 · 20.0, a 5 holds it in three
+    expect(niceTicks(15.8, 25.5, 4, false)).toMatchObject({ ticks: [15, 20, 25, 30], decimals: 0 });
+    // below the units a 0.5 is preferred to a 0.25 the same way; a scale anchored at zero keeps 1.10's steps
+    expect(niceTicks(0.31, 1.24, 4, false).ticks).toEqual([0, 0.5, 1, 1.5]);
+    expect(niceTicks(0, 9).ticks).toEqual([0, 2.5, 5, 7.5, 10]);
   });
 
   it('take zero in when the readings reach or cross it, and stand a flat one in a range around it', () => {

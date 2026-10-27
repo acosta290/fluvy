@@ -232,6 +232,42 @@ for (const mode of ['light', 'dark']) {
     String(hollow),
   );
 
+  // the bars and columns samples are the day's energy: their scale is its own (about 2 kWh), not a temperature's
+  for (const chart of ['bars', 'columns']) {
+    const top = await frame(page, `Forecast · ${chart}`)
+      .locator('pg-chart-sample')
+      .first()
+      .evaluate((card) =>
+        Math.max(
+          ...[...card.shadowRoot.querySelectorAll('.fc-tick')].map((t) => Number(t.textContent)),
+        ),
+      );
+    check(
+      `${chart}: the day’s energy on its own scale (top tick ${top} kWh)`,
+      top > 1 && top <= 3,
+      String(top),
+    );
+  }
+  // the step sample: whole ticks of its own range, and no mark past now — the knob is the only ball there
+  const stepped = await frame(page, 'Forecast · step')
+    .locator('pg-chart-sample')
+    .first()
+    .evaluate((card) => {
+      const svg = card.shadowRoot.querySelector('svg.fc-chart');
+      const now = Number(svg.querySelector('.fc-now').getAttribute('x1'));
+      return {
+        ticks: [...svg.querySelectorAll('.fc-tick')].map((t) => t.textContent),
+        past: [...svg.querySelectorAll('.curve-dot')].every(
+          (dot) => Number(dot.getAttribute('cx')) <= now + 0.5,
+        ),
+      };
+    });
+  check(
+    'step: its scale whole (16 · 18 · 20 · 22 · 24), no mark on the forecast',
+    stepped.ticks.join(' ') === '16 18 20 22 24' && stepped.past,
+    JSON.stringify(stepped),
+  );
+
   /* ---------- reading by pointing, then by keys ---------- */
   const chart = sample.locator('.pg-chart');
   // a pointer reaches what is on screen: the frame is brought into view first

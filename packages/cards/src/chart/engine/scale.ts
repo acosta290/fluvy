@@ -63,14 +63,16 @@ export interface NiceStep {
 
 /**
  * The smallest of Heckbert's steps from `least` up that `fits`: 1, 2, 2.5 or 5 times a power of ten, with the decimals
- * it is written with.
+ * it is written with. `plain` passes over a 2.5 that writes a decimal the 5 after it does not, where that 5 fits too
+ * (15 · 20 · 25, never 15.0 · 17.5 · 20.0).
  */
-function firstNice(least: number, fits: (step: number) => boolean): NiceStep {
+function firstNice(least: number, fits: (step: number) => boolean, plain = false): NiceStep {
   let exponent = Math.floor(Math.log10(least));
   for (let round = 0; round < 4; round++, exponent++) {
     const base = 10 ** exponent;
     for (const [fraction, extra] of NICE) {
       const step = fraction * base;
+      if (plain && extra && exponent <= 0 && fits(5 * base)) continue;
       // 2.5 keeps its half only up to the units (0.25, 2.5); 25 and 250 are whole
       if (fits(step))
         return { step, decimals: Math.max(0, -exponent) + (exponent <= 0 ? extra : 0) };
@@ -97,7 +99,8 @@ export interface Ticks extends Scale {
  * A scale from `lo` to `hi` on nice numbers: the smallest nice step whose ticks reach both ends in `intervals` or fewer.
  * It holds zero where `zero` says the quantity starts there (bars standing on it, power, energy, a price, a count — the
  * default, as the history bars' scale has always been), and wherever the readings reach or cross it; a measurement
- * that never does (17 … 23 °C) keeps to its own range (16 · 18 · 20 · 22 · 24). A scale across zero is widened to whole
+ * that never does (17 … 23 °C) keeps to its own range (16 · 18 · 20 · 22 · 24) and to whole steps where one fits (a 5
+ * rather than a 2.5). Ticks that are all whole are written whole. A scale across zero is widened to whole
  * ticks on both sides of it, so it can need a larger step than its span asks (−5.05 … 2.55 by 2.5 is −7.5 … 5, five
  * intervals; by 5, −10 … 5). A set with nothing in it (both ends zero) is the one tick, zero: the chart then draws its
  * stubs and no scale; a flat measurement is given one either side.
@@ -117,13 +120,20 @@ export function niceTicks(lo: number, hi: number, intervals = 4, zero = true): T
   const { step, decimals } = firstNice(
     (high - low) / intervals,
     (s) => highest(s) - lowest(s) <= intervals,
+    !zero,
   );
   const first = lowest(step);
   const count = highest(step) - first;
   const ticks = Array.from({ length: count + 1 }, (_unused, i) =>
     Number(((first + i) * step).toFixed(decimals)),
   );
-  return { min: ticks[0] ?? 0, max: ticks[count] ?? 0, step, ticks, decimals };
+  return {
+    min: ticks[0] ?? 0,
+    max: ticks[count] ?? 0,
+    step,
+    ticks,
+    decimals: ticks.every(Number.isInteger) ? 0 : decimals,
+  };
 }
 
 /** The plot's band on the y axis: where the scale's top and its floor are, in px from the drawing's top. */
