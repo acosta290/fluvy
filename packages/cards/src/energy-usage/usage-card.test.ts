@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant } from '@fluvy/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usageHeight } from '../energy-family.js';
 import type { EnergyCollectionLike, EnergyDataLike } from '../energy-model/collection.js';
+import type { HeadFit } from '../energy/head.js';
 import { allocatePeriod, clearPeriodCache } from '../energy-model/period.js';
 import { readPrefs } from '../energy-model/prefs.js';
 import { familiesDefined } from '../index.js';
@@ -231,6 +232,46 @@ describe('the Energy usage card', () => {
     chart.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await card.updateComplete;
     expect(root(card).querySelector('.eu-bubble')).toBeNull();
+  });
+
+  it('keeps its bubble inside a card of half a section: the time over its total, the parts’ figures bare', async () => {
+    const card = await mount({ compare: true });
+    // seven pixels a character, whatever the face: the layout is what is read here, not the font
+    vi.spyOn((card as unknown as { head: HeadFit }).head.ruler, 'width').mockImplementation(
+      (_cls, text) => text.length * 7,
+    );
+    card.width = 152;
+    card.requestUpdate();
+    await card.updateComplete;
+    const chart = root(card).querySelector<HTMLElement>('.eu-chart') as HTMLElement;
+    chart.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await card.updateComplete;
+    for (let i = 0; i < 13; i++)
+      chart.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await card.updateComplete;
+    const bubble = root(card).querySelector<HTMLElement>('.eu-bubble') as HTMLElement;
+    const lines = [...bubble.querySelectorAll('.eu-bubble__line')].map((line) => ({
+      text: [...line.children].map((part) => part.textContent?.trim()).join(' '),
+      stacked: line.classList.contains('is-stacked'),
+    }));
+    // the time over the slot's use, its unit said there once; "Charged 0.5 kWh" would not hold 120, so every part's
+    // figure goes bare beside its name — and the day before, still too wide, puts its figure under its words
+    expect(lines).toEqual([
+      { text: '13:00 – 14:00 0.9 kWh', stacked: true },
+      { text: 'Solar 0.9', stacked: false },
+      { text: 'Charged 0.5', stacked: false },
+      { text: 'Exported 0.6', stacked: false },
+      { text: 'Yesterday 0.45', stacked: true },
+    ]);
+    // 112 of content: the bubble (24 + "Exported 0.6", 109) leans into the padding, never past 16 of it
+    const left = parseFloat(bubble.style.left);
+    expect(bubble.style.width).toBe('133px');
+    expect(left).toBeGreaterThanOrEqual(-16);
+    expect(left + 133).toBeLessThanOrEqual(128);
+    // a reader still hears every figure with its unit
+    expect(chart.getAttribute('aria-label')).toBe(
+      '13:00 – 14:00: 0.9 kWh, Solar 0.9 kWh, Charged 0.5 kWh, Exported 0.6 kWh, Yesterday 0.45 kWh',
+    );
   });
 
   it('asks for the unit and the decimals the card asks for', async () => {

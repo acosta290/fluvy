@@ -1036,7 +1036,10 @@ statistics allocated hour by hour as the dashboard allocates them, so its figure
   lines of 18): the slot's time ("13:00 – 14:00", "Mon, Sep 14", "September 2026") and what the house used in it,
   13/600; then each part of the stack from its top down and what went out from the line down, 12/500, an 8 square in
   its ink; then the same slot of the period before. Beside the cursor where it holds, else on its other side, inside
-  the card — it may rise over the head, never past the card.
+  the card — it may rise over the head, never past the card. In a card too narrow for its lines (half a section) it
+  leans up to 16 into the card's padding (4 short of its edge, as it rises 4 short of its top), the time stands over
+  its total, the parts' figures go bare (their unit said once, by the total, as the scale says it beside its ticks),
+  and a line that still does not hold puts its figure under its words, at the end.
 - **The period before.** `compare` (or a followed picker's Compare) draws it as one quiet column a slot behind the
   bars — what the house used up, what went out down — 1.8 × the bar's width (never wider than its slot less 2), the
   text's ink at 9 % (14 in dark mode), the bars' ends; the scale reaches it.

@@ -4,7 +4,9 @@
  * answered for any range at the sheets' moment. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5209/ node interactions-usage.mjs
  * What it proves: a pointer over the chart reads a slot's whole stack in the bubble — its parts above the line add up
- * to the slot's use, what went out is listed under them — and the bubble stays inside the card; the keys walk the
+ * to the slot's use, what went out is listed under them — and the bubble stays inside the card, in half a section too
+ * (the `narrow` sheet's usage frames at 152 and 172, in English, German, Portugal's Portuguese and Japanese: compact,
+ * mini and full, the pointer at a tenth, the middle and nine tenths, its words whole inside it); the keys walk the
  * slots (Home, → a slot, End, Escape); the period before is drawn as ghosts only where it is compared, and the bubble
  * says its figure; the chips change the span and its axis; the card follows an Energy period strip on its collection
  * — ‹ moves it to yesterday, Compare draws the ghosts — without chips of its own; in dark mode the same.
@@ -99,6 +101,77 @@ for (const mode of ['light', 'dark']) {
   });
   check(`${mode}: the mini strip’s bubble stays inside its card`, miniInside);
   await page.close();
+}
+
+/* ---------- half a section ---------- */
+/**
+ * Where a card's bubble lies under a pointer at `fraction`: whether it is inside the card, and the bubble's words that
+ * are not whole inside its padding (8 · 12).
+ */
+async function bubbleAt(page, card, fraction) {
+  await point(page, card, fraction);
+  const found = await card.evaluate((host) => {
+    const root = host.shadowRoot;
+    const outer = root.querySelector('article').getBoundingClientRect();
+    const bubble = root.querySelector('.eu-bubble');
+    if (!bubble) return null;
+    const box = bubble.getBoundingClientRect();
+    const range = document.createRange();
+    const cut = [...bubble.querySelectorAll('.eu-bubble__line > span')].flatMap((part) => {
+      range.selectNodeContents(part);
+      const text = range.getBoundingClientRect();
+      return text.left < box.left + 11.5 ||
+        text.right > box.right - 11.5 ||
+        text.top < box.top + 7.5 ||
+        text.bottom > box.bottom - 7.5
+        ? [part.textContent.trim()]
+        : [];
+    });
+    const inside =
+      box.left >= outer.left - 0.5 &&
+      box.right <= outer.right + 0.5 &&
+      box.top >= outer.top - 0.5 &&
+      box.bottom <= outer.bottom + 0.5;
+    const at = (r) => [r.left, r.right, r.top, r.bottom].map(Math.round).join(' ');
+    return { inside, cut, where: `card ${at(outer)} · bubble ${at(box)}` };
+  });
+  await page.mouse.move(2, 2);
+  await settle(page, 150);
+  return found;
+}
+
+for (const lang of ['en', 'de', 'pt-PT', 'ja']) {
+  for (const width of [320, 360]) {
+    const page = await suite.sheet('narrow', { width, lang });
+    const wrong = [];
+    let read = 0;
+    for (const title of [
+      'Energy usage · half a section',
+      'Energy usage · half a section, chips and legend',
+    ]) {
+      const cards = frame(page, title).locator('fluvy-energy-usage-card');
+      for (let n = 0; n < (await cards.count()); n++) {
+        for (const fraction of [0.1, 0.5, 0.9]) {
+          const found = await bubbleAt(page, cards.nth(n), fraction);
+          if (found) read += 1;
+          if (!found || !found.inside || found.cut.length)
+            wrong.push(
+              `${title.length > 30 ? 'chips' : 'plain'} #${n} at ${fraction}: ${
+                found
+                  ? `${found.where}${found.cut.length ? ` cut ${found.cut.join(', ')}` : ''}`
+                  : 'no bubble'
+              }`,
+            );
+        }
+      }
+    }
+    check(
+      `${lang} at ${(width - 16) / 2}: every bubble of half a section stays inside its card, its words whole (${read} read)`,
+      read >= 18 && wrong.length === 0,
+      wrong.join('; '),
+    );
+    await page.close();
+  }
 }
 
 /* ---------- the keys ---------- */

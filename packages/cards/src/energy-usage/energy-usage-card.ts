@@ -11,7 +11,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { axis, head } from '@fluvy/ui';
+import { axis, head, linesNeeded } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
@@ -203,6 +203,8 @@ const PAD = 8;
 const GHOST = 1.8;
 /** The room above the chart in the card (its padding, the head and 16 under it): the bubble may rise into it, 4 short. */
 const ABOVE = 76;
+/** How far the bubble may lean into the card's padding where the content's width does not hold it: 4 short of its edge. */
+const LEAN = 16;
 /** The bubble's padding (8 · 12), its lines (18), the square and its gap, the gap before a figure. */
 const BUBBLE_X = 24;
 const BUBBLE_Y = 16;
@@ -364,6 +366,23 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       .eu-bubble__head {
         font-size: 13px;
         font-weight: 600;
+      }
+      /* a line whose words and figure do not hold side by side in a narrow card: the figure under its words, at the end */
+      .eu-bubble__line.is-stacked {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+      }
+      .eu-bubble__line.is-stacked > span:first-child {
+        align-items: flex-start;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .eu-bubble__line.is-stacked > span:last-child {
+        align-self: flex-end;
+      }
+      .eu-bubble__line.is-stacked .en-sq {
+        margin-top: 5px;
       }
       .eu-bubble .en-sq {
         width: 8px;
@@ -1102,7 +1121,9 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   /**
    * The bubble of the slot read: its time and what the house used in it, each series' part (the top of the stack
    * first, then what went out from the line down), and the same slot of the period before — beside the cursor where it
-   * holds, kept inside the card.
+   * holds, kept inside the card. Each line holds its words and its figure side by side; in a card too narrow for that
+   * the parts' figures go bare, their unit said once by the slot's total (as the scale says it beside its ticks), and a
+   * line that still does not hold puts its figure under its words.
    */
   private bubble(
     drawn: Drawn,
@@ -1111,8 +1132,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     index: number,
     figures: Figures,
   ): { readonly template: TemplateResult; readonly label: string } {
-    const value = (kWh: number): string =>
-      `${writeFigure(this.hass, Math.abs(kWh) * 1000, figures)} ${figures.unit}`;
+    const bare = (kWh: number): string => writeFigure(this.hass, Math.abs(kWh) * 1000, figures);
+    const value = (kWh: number): string => `${bare(kWh)} ${figures.unit}`;
     const heading = this.slotWords(drawn, drawn.grain, index);
     const used = value(usedOf(drawn.energy[index]));
     const parts = series.map((s, i) => [s, s.values[index] ?? 0, i] as const);
@@ -1121,7 +1142,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       ...parts.filter(([, v]) => v < 0),
     ].map(([s, v, i]) => ({
       name: this.nameOf(s),
-      value: value(v),
+      kWh: v,
       paint: paints[i],
       out: s.key === 'charged' || s.key === 'exported',
     }));
@@ -1133,62 +1154,84 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
               drawn.grain === 'hour'
                 ? rangeWords(this.hass, before.range, this.now())
                 : this.slotWords(before, drawn.grain, index),
-            value: value(usedOf(before.energy[index])),
+            kWh: usedOf(before.energy[index]),
           }
         : undefined;
-    // its width: the widest line, measured in its own face
-    const ruler = this.head.ruler;
-    const line = (name: string, figure: string, lead: number): number =>
-      lead + ruler.width('eu-bubble', name) + FIGURE_GAP + ruler.width('eu-bubble', figure);
-    const width = Math.ceil(
-      BUBBLE_X +
-        Math.max(
-          ruler.width('eu-bubble eu-bubble__head', heading) +
-            FIGURE_GAP +
-            ruler.width('eu-bubble eu-bubble__head', used),
-          ...rows.map((row) => line(row.name, row.value, SQUARE)),
-          earlier ? line(earlier.name, earlier.value, SQUARE) : 0,
-        ),
-    );
-    const height = BUBBLE_Y + LINE * (1 + rows.length + (earlier ? 1 : 0));
+    // the room the card gives it: the content's width and up to 16 of its padding each side
     const w = this.contentWidth;
+    const room = w + 2 * LEAN - BUBBLE_X;
+    const ruler = this.head.ruler;
+    // a line side by side where it holds the room, else its figure under its words (which wrap where alone they do not)
+    const lay = (face: string, lead: number, words: string, figure: string) => {
+      const measure = (text: string): number => ruler.width(face, text);
+      const name = lead + measure(words);
+      const side = name + FIGURE_GAP + measure(figure);
+      return side <= room
+        ? { figure, width: side, lines: 1, stacked: false }
+        : {
+            figure,
+            width: Math.min(room, Math.max(name, measure(figure))),
+            lines: linesNeeded(words, room - lead, measure) + 1,
+            stacked: true,
+          };
+    };
+    const laidOut = (figure: (kWh: number) => string) => {
+      const lines = [
+        lay('eu-bubble eu-bubble__head', 0, heading, used),
+        ...rows.map((row) => lay('eu-bubble', SQUARE, row.name, figure(row.kWh))),
+        ...(earlier ? [lay('eu-bubble', SQUARE, earlier.name, figure(earlier.kWh))] : []),
+      ];
+      return { lines, count: lines.reduce((sum, line) => sum + line.lines, 0) };
+    };
+    const whole = laidOut(value);
+    const laid = whole.lines.slice(1).some((line) => line.stacked) ? laidOut(bare) : whole;
+    const [first, ...lines] = laid.lines;
+    const width = Math.ceil(BUBBLE_X + Math.max(...laid.lines.map((line) => line.width)));
+    const height = BUBBLE_Y + LINE * laid.count;
     const x = this.plot.left + (index + 0.5) * this.plot.slot;
     const right = x + 12;
-    const leftSide = x - 12 - width;
-    const left = Math.max(0, Math.min(w - width, right + width <= w ? right : leftSide));
+    const beside = right + width <= w ? right : x - 12 - width;
+    // inside the content's width where it holds the bubble, else into the padding by what it lacks
+    const lean = Math.min(LEAN, Math.max(0, width - w));
+    const left = Math.min(w + lean - width, Math.max(-lean, beside));
     const top = Math.max(-ABOVE, Math.min(0, this.frameHeight() - height));
+    const line = (
+      laidLine: { readonly figure: string; readonly stacked: boolean } | undefined,
+      words: unknown,
+      head = false,
+    ): TemplateResult =>
+      html`<div
+        class="eu-bubble__line ${head ? 'eu-bubble__head' : ''} ${laidLine?.stacked ? 'is-stacked' : ''}"
+      >
+        <span>${words}</span><span>${laidLine?.figure}</span>
+      </div>`;
     const template = html`<div
       class="eu-bubble"
       data-measure="value"
       style="left:${left}px;top:${top}px;width:${width}px"
     >
-      <div class="eu-bubble__line eu-bubble__head"><span>${heading}</span><span>${used}</span></div>
-      ${rows.map(
-        (row) =>
-          html`<div class="eu-bubble__line">
-            <span
-              ><i
-                class="en-sq ${inkOf(row.paint)} ${row.out ? 'is-out' : ''}"
-                data-accent=${row.paint?.accent ?? nothing}
-                style=${row.paint?.own ? `--ink:${row.paint.own}` : nothing}
-              ></i
-              >${row.name}</span
-            ><span>${row.value}</span>
-          </div>`,
+      ${line(first, heading, true)}
+      ${rows.map((row, i) =>
+        line(
+          lines[i],
+          html`<i
+              class="en-sq ${inkOf(row.paint)} ${row.out ? 'is-out' : ''}"
+              data-accent=${row.paint?.accent ?? nothing}
+              style=${row.paint?.own ? `--ink:${row.paint.own}` : nothing}
+            ></i
+            >${row.name}`,
+        ),
       )}
       ${
         earlier
-          ? html`<div class="eu-bubble__line">
-              <span><i class="en-sq eu-sq--ghost"></i>${earlier.name}</span
-              ><span>${earlier.value}</span>
-            </div>`
+          ? line(lines[rows.length], html`<i class="en-sq eu-sq--ghost"></i>${earlier.name}`)
           : nothing
       }
     </div>`;
     const label = [
       `${heading}: ${used}`,
-      ...rows.map((row) => `${row.name} ${row.value}`),
-      ...(earlier ? [`${earlier.name} ${earlier.value}`] : []),
+      ...rows.map((row) => `${row.name} ${value(row.kWh)}`),
+      ...(earlier ? [`${earlier.name} ${value(earlier.kWh)}`] : []),
     ].join(', ');
     return { template, label };
   }
