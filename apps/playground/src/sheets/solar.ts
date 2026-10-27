@@ -558,6 +558,30 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // a tile is a button (#71): its details by default (Home Assistant's dialog, with the history), its own tap and
+    // hold where it asks for them; `none` leaves it still, and a dead tile is no button
+    {
+      title: 'Tiles · a tap on each tile',
+      cards: [
+        {
+          type: 'custom:fluvy-stat-tiles-card',
+          title: 'Solar',
+          icon: 'sun',
+          tone: 'solar',
+          tiles: [
+            { entity: 'sensor.so_solar_power', name: 'Output', icon: 'sun', highlight: true },
+            {
+              entity: 'sensor.so_battery_level',
+              name: 'Battery',
+              tap_action: { action: 'navigate', navigation_path: '/energy' },
+              hold_action: { action: 'more-info' },
+            },
+            { entity: 'sensor.so_grid_export', name: 'Export', tap_action: { action: 'none' } },
+            { entity: 'sensor.so_battery_power_dead', name: 'Battery power' },
+          ],
+        },
+      ],
+    },
     {
       title: 'Production · no statistics, history only',
       cards: [
