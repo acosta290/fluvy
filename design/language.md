@@ -342,7 +342,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   and the printing card is 528 with one row; the side clock is 208 analog and 132 digital, its forecast row 60; the
   sensor card is 164 for a word, 276 for several sensors (a line each where a name would not hold its column).
 - **Stat tiles a row**: as asked, or measured; and fewer, down to one a row, where a cell would not hold the widest
-  figure — a figure never wraps (1.9: the full variant's "21.5 °C" no longer breaks under its number at 211).
+  figure — a figure never wraps (1.9: the full variant's "21.5 °C" no longer breaks under its number at 211) — or
+  would be narrower than a finger's 44 (1.11: three single digits asked in a 172 column were 36 wide; two a row).
 - Energy: see § Energy (1.4) below — the flow, its motion and the companion cards.
 - Charts are scrubbable: a mouse over a curve or a bar strip reads the value under it (a finger while pressing; a vertical swipe still scrolls) — the dot, the dashed cursor and the bubble follow, the bubble adds the time ("3.1 kW · 10:15"), the card's big readout shows the scrubbed figure with the time as its label; on leaving, everything returns to now.
 - The colour-temperature ruler tints its ticks with a faint warm → cool gradient (amber → cool grey-blue, opacity 0.85) and the knob's dot takes the colour under it; the ring keeps the tone. `temperature_tint: false` gives the neutral ticks of the brightness ruler.
@@ -1314,9 +1315,10 @@ breeze under 30, 0.9 s strong wind) and `sun` (what the sun gives: rays that len
   style its lines through the engine over the page's room and rules, on the page's own scale (its two rules keep their
   figures), a lone line in the accent and several each in its entity's graph colour.
 
-**Motion.** A chart draws itself in (900 ms), its marks fade in after; `animate: false` (the card's, else the house's)
-or the system's reduced motion draws its resting frame at once. The fade owns `opacity`: a layer's own strength is its
-`stroke-opacity` / `fill-opacity`.
+**Motion.** A chart draws itself in (900 ms), its marks fade in after; once it has been read, the marks a read brings
+and takes away (the cursor, the mark on each line, now's knob back at rest) come at once in the short fade (120 ms), as
+the bubble does. `animate: false` (the card's, else the house's) or the system's reduced motion draws its resting frame
+at once. The fade owns `opacity`: a layer's own strength is its `stroke-opacity` / `fill-opacity`.
 
 **Reading.** A pointer over the plot (a finger held on it) reads it: the cursor (classic's dashes, a style's hairline),
 the mark there, the bubble saying when; ← → (Shift five) Home End read it from the keyboard, Escape lets it go.
@@ -2570,11 +2572,12 @@ last entry taken out in the editor — is a card, never a configuration error (#
   drawings and on every card of the page that names no style (the look engine's preview sets the house's chart
   settings), saved from the bar ("Charts · Style · Soft"). Four cards and the preview: **Style** and **Gauges** as the
   house's Apple-like tiles (the palettes' swatch: a picture over its name, the chosen one in the accent's fill with a
-  check), two a row on a phone and four on a wide panel; each picture is the engine's drawing on the card's surface in
-  the fine settings chosen — a day of temperature with its forecast after two thirds (the bars styles on a day of
-  energy, twelve slots), a control gauge on 62 % in a 116 picture that is the small dial's own height (its disc on the
-  grid; the ring and the ruler centred), each moving gauge on a reading of its kind (21.5 °C, 620 of 1,000 L, 1.8 kW
-  …), moving as it would.
+  check), two a row on a phone and four on a wide panel, a last row short of them sharing the width among its own
+  (the eleventh gauge takes a phone's row whole, the last three share a wide panel's); each picture is the engine's
+  drawing on the card's surface in the fine settings chosen — a day of temperature with its forecast after two thirds
+  (the bars styles on a day of energy, twelve slots), a control gauge on 62 % in a 116 picture that is the small dial's
+  own height (its disc on the grid; the ring and the ruler centred), each moving gauge on a reading of its kind
+  (21.5 °C, 620 of 1,000 L, 1.8 kW …), moving as it would.
   **Details**: the fine settings the chosen style draws with, a label over a row of chips each, never one it does not
   draw with (the engine's `HOUSE_ACTS`); classic offers none and says so in one line; the Waves of a moving gauge
   while the house's gauge moves; **Motion** as the last row, a switch. **Series colours**: rows as the custom

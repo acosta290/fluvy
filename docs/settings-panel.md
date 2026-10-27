@@ -95,9 +95,9 @@ The tab chooses them as the Appearance tab chooses the look, and every change is
 drawings and on every card of the page that names no style — and saved from the bar with the rest ("Charts · Style ·
 Soft"); Discard puts the saved ones back.
 
-- **Style** and **Gauges**: a tile each (two a row on a phone, four on a wide panel), the engine drawing the style on
-  a day of temperature with its forecast (the bars styles on a day of energy) and the gauge on 62 %, in the fine
-  settings chosen; the chosen one in the accent's fill with its check.
+- **Style** and **Gauges**: a tile each (two a row on a phone, four on a wide panel, a last row's few sharing its
+  width), the engine drawing the style on a day of temperature with its forecast (the bars styles on a day of energy)
+  and the gauge on 62 %, in the fine settings chosen; the chosen one in the accent's fill with its check.
 - **Details**: the fine settings the chosen style draws with, a row of chips each — no other is offered (the engine's
   `HOUSE_ACTS`). Classic takes none, and says so; then **Motion**, which every chart has.
 

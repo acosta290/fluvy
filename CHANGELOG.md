@@ -32,7 +32,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   where it was cut at the row's cap.
 - A stat tile answers a tap with its entity's details (Home Assistant's dialog, with the history), and takes the
   pointer's hairline and the finger's press as a tile does; it was a still figure. `tap_action: none` on a tile keeps
-  it still (#71).
+  it still (#71). A tile is never laid narrower than a finger's 44: three asked in a narrow column (single digits at
+  172) go two a row where they were 36 wide.
 - The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
 - The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
   Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses
