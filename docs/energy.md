@@ -128,8 +128,8 @@ show_compare: true              # Compare: the period before beside the span, on
   inside the strip: HA makes the collection and fetches its figures with its own code (the Energy preferences, the
   hourly refresh, yesterday until today's first hour of statistics). HA's date card on the same view moves the strip,
   and the strip moves it.
-- **What it remembers.** A preset picked on the strip (Today, a chip, a preset in the sheet) is remembered where HA
-  remembers its own, so the dashboard reopens on it in HA and in Fluvy alike; walking with ‹ › or a span of your own
+- **What it remembers.** A preset picked on the strip (Today, a chip, a preset in the sheet) is remembered in this
+  browser, where HA remembers its own, so the dashboard reopens on it in HA and in Fluvy alike; walking with ‹ › or a span of your own
   is not, as in HA.
 - **Narrow columns, wide bands.** Compare and Today give their words for their glyphs, the span takes its short words
   ("24 Oct", "Sep", "2026"), then Today and Compare go and, in half a section, the arrows: the sheet behind the span's

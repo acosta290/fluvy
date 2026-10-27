@@ -1239,9 +1239,10 @@ every bar where the slot holds 30, over none where it does not. The bubble centr
 inside the plot's width — its tail moves, not the pill (the classic bubble leans 16 into the card's padding, as 1.0
 drew it).
 
-**Colours.** A lone series wears its card's colour › its tone › the accent; several wear the palette's six series
-colours (`--fluvy-graph-1…6`, ΔE2000 ≥ 8 pairwise, icon contrast on the card) or the house's saved set, unless the
-card names its own. A saved set's colour is **one of the palette's** or **a hex of its own**. One of the palette's
+**Colours.** A lone series wears its card's colour › its tone › the accent; several on the Chart and Energy usage
+cards wear the palette's six series colours (`--fluvy-graph-1…6`, ΔE2000 ≥ 8 pairwise, icon contrast on the card) or
+the house's saved set, unless the card names its own; the sensor card's several sensors keep their measures' tones
+(§ Several sensors), the History page its hashed graph colours. A saved set's colour is **one of the palette's** or **a hex of its own**. One of the palette's
 is named, not copied — its twelve series colours (`graph-1` … `graph-12`), its accent, the statuses (`ok`,
 `warning`, `danger`, `notice`), the lit light (`light`) and the energy states (`solar`, `grid`, `battery`, `water`,
 `gas`, `home`) — and worn by its token (`var(--fluvy-graph-3)`, `var(--fluvy-state-energy-solar)` …), so the set
