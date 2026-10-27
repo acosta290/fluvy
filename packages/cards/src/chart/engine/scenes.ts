@@ -758,7 +758,7 @@ function pulse(o: GaugeOptions, room: Room): TemplateResult {
       on
         ? [0, 1, 2].map(
             (i) => svg`<circle
-              class="fc-ring"
+              class="fc-pulse__ring"
               cx=${c}
               cy=${c}
               r=${r}

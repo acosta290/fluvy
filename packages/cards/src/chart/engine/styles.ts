@@ -633,7 +633,7 @@ export const chartStyles = css`
     transform-box: fill-box;
     animation: fc-bubble var(--d, 3s) ease-in var(--delay, 0s) infinite;
   }
-  .fc-ring {
+  .fc-pulse__ring {
     fill: none;
     stroke: var(--tone-ink, var(--fluvy-accent));
     stroke-width: 2;

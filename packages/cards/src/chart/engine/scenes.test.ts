@@ -226,7 +226,7 @@ describe('a moving gauge drawn', () => {
       ) as HTMLElement;
       expect([scene.style.width, scene.style.height]).toEqual(['224px', '208px']);
       expect(scene.querySelector('.fc-reading b')?.textContent).toBe('—');
-      expect(scene.querySelector('.fc-bubble, .fc-ring, .fc-snow')).toBeNull();
+      expect(scene.querySelector('.fc-bubble, .fc-pulse__ring, .fc-snow')).toBeNull();
       expect(
         scene.classList.contains('fv-tone--neutral') || scene.classList.contains('fc-sky--none'),
       ).toBe(true);
@@ -255,7 +255,7 @@ describe('a moving gauge drawn', () => {
           drawGauge(
             gauge('pulse', { value: watts, max: 8000, reads: { deviceClass: 'power', unit: 'W' } }),
           ),
-        ).querySelector('.fc-ring') as SVGElement | null
+        ).querySelector('.fc-pulse__ring') as SVGElement | null
       )?.style.getPropertyValue('--d');
     expect([beat(200), beat(1800), beat(6400)]).toEqual(['3.2s', '1.8s', '0.95s']);
     expect(beat(0)).toBeUndefined();
@@ -325,7 +325,7 @@ describe('the motion, in the engine’s sheet', () => {
       /:host\(\[reduced-motion\]\) \.fc-scene \*\s*\{\s*animation: none !important;/,
     );
     // what exists only moving starts unseen: at rest, there is none
-    for (const part of ['fc-bubble', 'fc-ring', 'fc-snow'])
+    for (const part of ['fc-bubble', 'fc-pulse__ring', 'fc-snow'])
       expect(css).toMatch(new RegExp(`\\.${part}\\s*\\{[^}]*opacity: 0;`));
   });
 });

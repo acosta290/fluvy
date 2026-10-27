@@ -527,6 +527,14 @@ for (const mode of ['light', 'dark']) {
     '.fc-ring__lit',
     'fluvy-dial[gauge]',
   ]);
+  // seen and still: no moving gauge's rule reaches the ring (the pulse's rings once shared its name and hid it)
+  const ring = await frame(gauges, 'Solar power')
+    .locator('fluvy-gauge-card')
+    .first()
+    .evaluate((card) => {
+      const look = getComputedStyle(card.shadowRoot.querySelector('.fc-gauge.fc-ring'));
+      return `${look.opacity} ${look.animationName}`;
+    });
   await gauges.close();
   const ruler = await housed('solar', { gauge: 'ruler' });
   const [read, marker] = await count(ruler, 'Humidity', 'fluvy-humidity-card', [
@@ -535,9 +543,9 @@ for (const mode of ['light', 'dark']) {
   ]);
   await ruler.close();
   check(
-    'the house’s ring on the gauge card, its ruler read lit on the humidity',
-    lit === 1 && ticks === 0 && read === 1 && marker === 0,
-    JSON.stringify({ lit, ticks, read, marker }),
+    'the house’s ring on the gauge card, seen and still, its ruler read lit on the humidity',
+    lit === 1 && ticks === 0 && ring === '1 none' && read === 1 && marker === 0,
+    JSON.stringify({ lit, ticks, ring, read, marker }),
   );
   // the History page follows the house: its lines the engine's, every rule held
   const page = await suite.page(
