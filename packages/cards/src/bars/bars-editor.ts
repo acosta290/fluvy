@@ -22,6 +22,7 @@ import {
   toneField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { softIn } from '../shared/chart-config.js';
 import { configKeys } from '../shared/config.js';
 import { EMPTY_KEYS } from '../shared/lists.js';
 import type { BarsCardConfig, BarsVariant } from './bars-card.js';
@@ -55,6 +56,7 @@ export const keys = configKeys<BarsCardConfig>()([
   'variant',
   'badge_ok',
   'badge_warn',
+  'chart',
   ...EMPTY_KEYS,
 ]);
 
@@ -91,14 +93,17 @@ export const lists: readonly RowsListSpec[] = [
   },
 ];
 
-export const defaults: EditorDefaults = () => ({ variant: 'full' });
+export const defaults: EditorDefaults = (config) => ({
+  variant: 'full',
+  chart: softIn(config) ? 'soft' : 'classic',
+});
 
 export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       titleFields(),
       fieldRow(iconField(), selectField('variant', VARIANTS)),
-      showIconField(),
+      fieldRow(showIconField(), selectField('chart', ['classic', 'soft'])),
       ...colourFields(),
       entitiesField('rows', undefined, true),
       fieldRow(textField('badge_ok'), textField('badge_warn')),

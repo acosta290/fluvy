@@ -282,6 +282,20 @@
   height: 12px;
 }
 
+/* the soft chart style (1.11) on a stack and a list of bars: each part a pill, its ink deepening along it */
+.is-soft .fv-stack__seg {
+  border-radius: 6px;
+}
+
+.is-soft .fv-stack__seg,
+.is-soft .fv-bar__fill {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--fluvy-card) 40%, transparent),
+    transparent
+  );
+}
+
 .fv-legend {
   margin-top: 12px;
 }

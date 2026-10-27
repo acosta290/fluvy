@@ -15,6 +15,7 @@ import { html, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import type { Segment } from '../shared/fit.js';
 import { HeadFit } from '../energy/head.js';
+import { softIn, type ChartKeys } from '../shared/chart-config.js';
 
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
@@ -55,7 +56,8 @@ export interface BarRowConfig {
   tap_action?: ActionConfig;
 }
 
-export interface BarsCardConfig extends FluvyCardConfig, EmptyList {
+/** `chart`: the bars classic (1.10's) or soft (their ink deepening along them); none: the house's. */
+export interface BarsCardConfig extends FluvyCardConfig, EmptyList, Pick<ChartKeys, 'chart'> {
   title?: string;
   subtitle?: string;
   rows?: ReadonlyArray<string | BarRowConfig>;
@@ -353,7 +355,9 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         cut: fitted.cut,
         ...this.headActions(),
       })}
-      <div class="so-rows" @keydown=${this.onRowsKey}>${panel ?? body}</div>
+      <div class="so-rows ${softIn(this.config) ? 'is-soft' : ''}" @keydown=${this.onRowsKey}>
+        ${panel ?? body}
+      </div>
     </article>`;
   }
 }

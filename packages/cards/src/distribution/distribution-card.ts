@@ -13,6 +13,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { repeat } from 'lit/directives/repeat.js';
 
 import { HeadFit } from '../energy/head.js';
+import { softIn, type ChartKeys } from '../shared/chart-config.js';
 import type { Segment } from '../shared/fit.js';
 
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
@@ -34,7 +35,9 @@ export interface DistributionEntityConfig {
 }
 
 /** `entities` holds the power sensors: ids, or `{ entity, name, tone }` objects where YAML wants a name or a tone per segment. */
-export interface DistributionCardConfig extends FluvyCardConfig, EmptyList {
+/** `chart`: the stack classic (1.10's) or soft (each part a pill, its ink deepening along it); none: the house's. */
+export interface DistributionCardConfig
+  extends FluvyCardConfig, EmptyList, Pick<ChartKeys, 'chart'> {
   title?: string;
   subtitle?: string;
   /** Rows the legend shows; when there are more, the smallest are summed into one neutral "Other". */
@@ -311,7 +314,9 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
                 },
               )}
             </div>`
-          : html`<div class="fv-stack ${segments.length ? '' : 'is-empty'}">
+          : html`<div
+                class="fv-stack ${segments.length ? '' : 'is-empty'} ${softIn(this.config) ? 'is-soft' : ''}"
+              >
                 ${repeat(
                   segments,
                   (part) => part.key,

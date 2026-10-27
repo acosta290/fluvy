@@ -12,6 +12,7 @@ import {
   iconField,
   idsOnly,
   numberField,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
@@ -19,6 +20,7 @@ import {
   toneField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { softIn } from '../shared/chart-config.js';
 import { configKeys } from '../shared/config.js';
 import { EMPTY_KEYS } from '../shared/lists.js';
 import type { DistributionCardConfig } from './distribution-card.js';
@@ -45,6 +47,7 @@ export const keys = configKeys<DistributionCardConfig>()([
   'max_rows',
   'variant',
   'total',
+  'chart',
   ...EMPTY_KEYS,
 ]);
 
@@ -59,7 +62,10 @@ export const lists: readonly RowsListSpec[] = [
 ];
 
 /** What the editor shows where the config says nothing: what the card does then. */
-export const defaults: EditorDefaults = () => ({ variant: 'stack' });
+export const defaults: EditorDefaults = (config) => ({
+  variant: 'stack',
+  chart: softIn(config) ? 'soft' : 'classic',
+});
 
 export function getConfigForm(): LovelaceConfigForm {
   return {
@@ -69,6 +75,8 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       entitiesField('entities', ['sensor'], true),
       fieldRow(numberField('max_rows', 2, 10), selectField('variant', ['stack', 'rows'])),
+      // the stack's style: the rows draw no bar
+      onlyWhen((data) => data['variant'] !== 'rows', selectField('chart', ['classic', 'soft'])),
       entityField(['sensor'], 'total', false),
       emptyFields(),
       actionFields(),

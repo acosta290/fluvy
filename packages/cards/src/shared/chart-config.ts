@@ -1,4 +1,4 @@
-import type { ChartPreset, GaugePreset } from '@fluvy/core';
+import { chartDefaults, type ChartPreset, type GaugePreset } from '@fluvy/core';
 
 /**
  * What a card says of its chart: the named style (`chart`) and the fine keys that override the style's own and the
@@ -85,3 +85,10 @@ export function chartKeysOf(config: Readonly<Record<string, unknown>> | undefine
   if (config) for (const key of CHART_KEYS) if (config[key] !== undefined) out[key] = config[key];
   return out as ChartKeys;
 }
+
+/**
+ * Whether a card drawn classic or soft alone (a distribution's stack, a list of bars) is soft: its own `chart`, else the
+ * house's style — every other style draws it classic.
+ */
+export const softIn = (config: Readonly<Record<string, unknown>> | undefined): boolean =>
+  ((config?.['chart'] as ChartPreset | undefined) ?? chartDefaults().settings.style) === 'soft';
