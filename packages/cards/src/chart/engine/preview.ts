@@ -5,9 +5,8 @@ import {
   type GaugePreset,
 } from '@fluvy/core';
 import type { Hex, PaletteMode } from '@fluvy/tokens/runtime';
-import { html, nothing, type TemplateResult } from 'lit';
-import { chartBubble } from './decor.js';
-import { drawChart, readAt, type ChartSpec } from './draw.js';
+import { html, type TemplateResult } from 'lit';
+import { drawChart, drawRead, readAt, type ChartSpec } from './draw.js';
 import { drawGauge } from './gauge.js';
 import type { ChartSeries, SeriesColour } from './model.js';
 import { isBars, resolveGauge, resolveStyle } from './presets.js';
@@ -137,23 +136,12 @@ export function previewChart(
     now: NOW,
     id: `fc-preview-${o.mode}-line`,
   };
-  const { style } = line;
-  const classic = style.preset === 'classic';
-  const read = readAt(line, null);
-  const bubble = style.label
-    ? chartBubble({
-        x: read.x,
-        width: o.width,
-        value: o.format(DAY[read.index] as number),
-        unit: '°C',
-        ...(o.family ? { family: o.family } : {}),
-        ...(classic ? {} : { lean: 0, look: style.bubble }),
-      })
-    : nothing;
+  // at rest, the reading now: the bubble where the style shows one
+  const rest = { value: o.format(DAY[readAt(line, null).index] as number), unit: '°C' };
   const bars = resolveStyle(undefined, {}, EVERYTHING, house);
   const gauge = resolveGauge(undefined, {}, house).preset;
   return html`<div class="fc-preview" data-mode=${o.mode}>
-    ${plot(o.width, 120, html`${drawChart(line)}${bubble}`)}
+    ${plot(o.width, 120, drawRead(line, null, rest, o.family))}
     ${plot(
       o.width,
       64,
