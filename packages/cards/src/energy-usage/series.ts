@@ -115,7 +115,7 @@ export interface UsageSeries {
 }
 
 /** A `sources` entry as an object: a bare kind is one shown with its own words. */
-export const sourceOf = (entry: UsageSource | UsageKind): UsageSource =>
+const sourceOf = (entry: UsageSource | UsageKind): UsageSource =>
   typeof entry === 'string' ? { type: entry } : entry;
 
 /**

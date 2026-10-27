@@ -193,7 +193,6 @@ const FIGURE_GAP = 16;
 
 /** What the card draws of its range: its slots, each slot's energy, and the period before's beside them. */
 interface Drawn {
-  readonly range: Range;
   readonly grain: Grain;
   readonly slots: readonly number[];
   readonly energy: readonly SlotEnergy[];
@@ -578,7 +577,6 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const end = (range.end ?? now).getTime();
     const beforeSlots = before ? slotsOf(this.hass, before.range, grain, now) : [];
     return {
-      range,
       grain,
       slots,
       energy: slotEnergy(buckets, slots, end),
@@ -804,7 +802,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const followed = this.follower.range();
     const now = this.now();
     const sources = this.sources();
-    // the preferences the card reads (a followed picker's, else the house's) are there and name no meter
+    // the preferences the card reads (a followed picker's, else the house's) are on their way, or name a meter
     const configured =
       (this.follower.data()?.prefs ?? this.prefs) === undefined || sources.length > 0;
     const drawn = configured ? this.drawn : undefined;
