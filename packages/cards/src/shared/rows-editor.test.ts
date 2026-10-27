@@ -398,6 +398,34 @@ describe('a select’s options as the house has them', () => {
     expect(forms()[0]).not.toBe(a);
   });
 
+  it('shows a toggle a select grew out of as its word, and writes it back only when another is picked', async () => {
+    // 1.10's `show_grid: true` and `false` on a select of Automatic, None and the axes
+    const schema = [
+      selectField('show_grid', ['auto', 'none', 'x', 'y', 'both']),
+      textField('title'),
+    ];
+    for (const [held, word] of [
+      [true, 'auto'],
+      [false, 'none'],
+    ] as const) {
+      const editor = await drawEditor(listsEditor({ schema }, []), {
+        type: 'custom:x',
+        show_grid: held,
+      });
+      expect(cardForm(editor).data['show_grid']).toBe(word);
+      // another field changed: the toggle stays as the config holds it
+      let next = nextConfig(editor);
+      cardForm(editor).change('title', 'Power');
+      expect(await next).toEqual({ type: 'custom:x', show_grid: held, title: 'Power' });
+      await editor.updateComplete;
+      // a word picked is written
+      next = nextConfig(editor);
+      cardForm(editor).change('show_grid', 'y');
+      expect((await next)['show_grid']).toBe('y');
+      editor.remove();
+    }
+  });
+
   it('shows an item’s number in its select as the select words it (a legend entry’s decimals: 2 in YAML)', async () => {
     const decimals = {
       name: 'decimals',

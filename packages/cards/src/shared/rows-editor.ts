@@ -264,21 +264,53 @@ export const withList = (
 const namesOf = (schema: readonly HaFormSchemaItem[]): string[] =>
   schema.flatMap((item) => (item.schema ? namesOf(item.schema) : [item.name]));
 
-/** The fields of a schema whose selector is a select, through its rows: their choices are words. */
-const selectsOf = (schema: readonly HaFormSchemaItem[]): string[] =>
-  schema.flatMap((item) =>
-    item.schema ? selectsOf(item.schema) : item.selector?.['select'] ? [item.name] : [],
+/** The fields of a schema whose selector is a select, through its rows, each with the values it offers: words. */
+const selectsOf = (schema: readonly HaFormSchemaItem[]): Map<string, readonly unknown[]> =>
+  new Map(
+    schema.flatMap((item): Array<[string, readonly unknown[]]> => {
+      if (item.schema) return [...selectsOf(item.schema)];
+      const select = item.selector?.['select'] as { options?: readonly unknown[] } | undefined;
+      return select
+        ? [[item.name, (select.options ?? []).map((o) => (o as { value?: unknown })?.value ?? o)]]
+        : [];
+    }),
   );
 
-/** A select's value as its choices word it: a number the YAML holds (`decimals: 2`, `columns: 2`) is shown as "2". */
+/**
+ * A value as a select that offers `offered` words it: a number the YAML holds (`decimals: 2`, `columns: 2`) as "2",
+ * and a toggle the select grew out of (1.10's `show_grid: true`) as what it meant — on its Automatic, off its None.
+ */
+const wordOf = (value: unknown, offered: readonly unknown[] | undefined): unknown => {
+  if (offered && typeof value === 'number') return String(value);
+  if (offered?.includes('auto') && offered.includes('none') && typeof value === 'boolean')
+    return value ? 'auto' : 'none';
+  return value;
+};
+
+/** A form's values as its selects word them (`wordOf`). */
 const worded = (
   entries: Readonly<Record<string, unknown>>,
-  selects: ReadonlySet<string>,
+  selects: ReadonlyMap<string, readonly unknown[]>,
 ): Readonly<Record<string, unknown>> =>
   Object.fromEntries(
-    Object.entries(entries).map(([key, value]) => [
+    Object.entries(entries).map(([key, value]) => [key, wordOf(value, selects.get(key))]),
+  );
+
+/**
+ * The form's value with a toggle's words (`wordOf`) back as the toggle the config holds: nothing is rewritten that the
+ * person did not pick.
+ */
+const unworded = (
+  value: Readonly<Record<string, unknown>>,
+  held: Readonly<Record<string, unknown>>,
+  selects: ReadonlyMap<string, readonly unknown[]>,
+): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
       key,
-      selects.has(key) && typeof value === 'number' ? String(value) : value,
+      typeof held[key] === 'boolean' && entry === wordOf(held[key], selects.get(key))
+        ? held[key]
+        : entry,
     ]),
   );
 
@@ -505,7 +537,11 @@ export class FluvyRowsEditor extends LitElement {
         .filter((key): key is string => Boolean(key) && config[key as string] !== undefined)
         .map((key) => [key, config[key]]),
     );
-    const own = withoutUntouchedDefaults(event.detail.value, config, this.defaults());
+    const own = withoutUntouchedDefaults(
+      unworded(event.detail.value, config, selectsOf(this.spec?.schema ?? [])),
+      config,
+      this.defaults(),
+    );
     this.commit({ ...own, ...lists, type: config.type } as LovelaceCardConfig);
   }
 
@@ -627,7 +663,7 @@ export class FluvyRowsEditor extends LitElement {
               </div>
               <ha-form
                 .hass=${this.hass}
-                .data=${worded(item, new Set(selectsOf(schema)))}
+                .data=${worded(item, selectsOf(schema))}
                 .schema=${schema}
                 .computeLabel=${this.labeler(list)}
                 .computeHelper=${this.helper(list)}
@@ -670,7 +706,7 @@ export class FluvyRowsEditor extends LitElement {
     const defaults = this.defaults();
     const data = worded(
       { ...withoutLists(defaults), ...withoutLists(this.config) },
-      new Set(selectsOf(spec.schema)),
+      selectsOf(spec.schema),
     );
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };
