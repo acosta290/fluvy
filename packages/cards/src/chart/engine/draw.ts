@@ -52,7 +52,11 @@ export interface ChartSpec {
    * series on its own aired scale (`own`: units differ, each line is read against its readout), or the ends given.
    */
   readonly scale?: 'tight' | 'air' | 'own' | Scale;
-  /** An aired scale keeps its floor at zero for what only grows from it (power, rain). */
+  /**
+   * The quantity starts at zero (a counter, power, rain, a price, a percentage from nothing): its scale holds zero. A
+   * measurement (a temperature, a humidity, a pressure) keeps to its own range unless its readings reach zero; bars
+   * always stand on it.
+   */
   readonly zero?: boolean;
   /** The fraction of the plot's width the series covers: a day's axis at 21:47 → 0.908. */
   readonly extent?: number;
@@ -141,7 +145,7 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
     : (spec.scale ?? (style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight'));
   if (wanted === 'nice') {
     const ends = reach(spec, bars && style.preset === 'columns' && all.length > 1);
-    ticks = niceTicks(Math.min(0, ...ends), Math.max(0, ...ends));
+    ticks = niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
     scales = all.map(() => ticks as Ticks);
   } else if (typeof wanted === 'object') scales = all.map(() => wanted);
   else if (wanted === 'own') scales = all.map((values) => airScale([values], spec.zero));

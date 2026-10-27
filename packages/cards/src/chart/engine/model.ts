@@ -73,3 +73,29 @@ export function sampleAt(values: readonly number[], fraction: number): number | 
   const t = at - i;
   return (values[i] as number) + ((values[i + 1] as number) - (values[i] as number)) * t;
 }
+
+/** How a slot's readings make one bar: their mean (a measurement), or what a counter gained (`change`; `increase` for
+ * one that only grows, where a fall is a reset and what it shows since is the gain). */
+export type BucketRule = 'mean' | 'change' | 'increase';
+
+/**
+ * Evenly spaced readings gathered into `count` bars (at most one a reading), each the slot's readings by `rule`: the
+ * mean of a measurement's, or the counter's gain across its slot — from the slot before's last reading (the first
+ * slot's from its own first) to its own last.
+ */
+export function bucket(values: readonly number[], count: number, rule: BucketRule): number[] {
+  const n = values.length;
+  const bars = Math.min(n, Math.max(0, Math.floor(count)));
+  return Array.from({ length: bars }, (_unused, k) => {
+    const from = Math.floor((k * n) / bars);
+    const to = Math.floor(((k + 1) * n) / bars);
+    if (rule === 'mean') {
+      let sum = 0;
+      for (let i = from; i < to; i++) sum += values[i] as number;
+      return sum / (to - from);
+    }
+    const end = values[to - 1] as number;
+    const gain = end - (values[Math.max(0, from - 1)] as number);
+    return rule === 'increase' && gain < 0 ? end : gain;
+  });
+}

@@ -101,7 +101,8 @@ describe('a scale', () => {
     const measure = (text: string): number => text.length * 7;
     const drawing = host(drawChart(spec('step', { tick: String, measure })));
     const ticks = [...drawing.querySelectorAll('.fc-tick')];
-    expect(ticks.map((t) => t.textContent)).toEqual(['0', '10', '20', '30']);
+    // a measurement keeps to its own range (18 … 24.6): zero is no tick of it
+    expect(ticks.map((t) => t.textContent)).toEqual(['18', '20', '22', '24', '26']);
     const left = plotOf(spec('step', { tick: String, measure })).left;
     // its widest label (14) and the gap of 8, on the 4 grid
     expect(left).toBe(24);
@@ -109,7 +110,16 @@ describe('a scale', () => {
       expect(tick.getAttribute('x')).toBe(String(left - 8));
       expect(tick.getAttribute('text-anchor')).toBe('end');
     }
-    expect(drawing.querySelectorAll('.fc-grid--zero').length).toBe(1);
+    expect(drawing.querySelectorAll('.fc-grid--zero').length).toBe(0);
+    // a quantity that starts at zero holds it, its zero line strong
+    const power = host(drawChart(spec('step', { tick: String, measure, zero: true })));
+    expect([...power.querySelectorAll('.fc-tick')].map((t) => t.textContent)).toEqual([
+      '0',
+      '10',
+      '20',
+      '30',
+    ]);
+    expect(power.querySelectorAll('.fc-grid--zero').length).toBe(1);
   });
 
   it('draws no column without words to write in it', () => {
@@ -175,8 +185,13 @@ describe('the gauges, each one of Fluvy’s controls read-only', () => {
     expect(none.querySelector('.fc-gauge__value b')?.textContent).toBe('—');
   });
 
-  it('draws the ruler in its read-only form, its marker on the value', () => {
+  it('draws the ruler read, its knob whole on the value (the thermostat’s ball, not the marker)', () => {
     const ruler = gauge('ruler').querySelector('fluvy-ruler') as FluvyRuler;
-    expect([ruler.marker, ruler.value, ruler.length]).toEqual([true, 62, 176]);
+    expect([ruler.readonly, ruler.marker, ruler.value, ruler.length]).toEqual([
+      true,
+      false,
+      62,
+      176,
+    ]);
   });
 });

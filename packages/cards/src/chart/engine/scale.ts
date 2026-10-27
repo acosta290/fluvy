@@ -1,7 +1,8 @@
 /**
  * The scales a chart is drawn on: the series' own ends (`tight`, a lone curve), the ends with a tenth of air
- * (`air`, several curves compared by eye), and nice numbers (Heckbert's 1 · 2 · 2.5 · 5 times a power of ten,
- * zero always a tick) wherever a y axis or gridlines are drawn; and the unit a set of figures is written in.
+ * (`air`, several curves compared by eye), and nice numbers (Heckbert's 1 · 2 · 2.5 · 5 times a power of ten, zero a
+ * tick where the quantity starts there) wherever a y axis or gridlines are drawn; and the unit a set of figures is
+ * written in.
  */
 
 /** The ends of a scale, lowest first. */
@@ -93,15 +94,24 @@ export interface Ticks extends Scale {
 }
 
 /**
- * A scale from `lo` to `hi` that always holds zero: the smallest nice step whose ticks reach both ends in `intervals`
- * or fewer. A signed scale is widened to whole ticks on both sides of zero, so it can need a larger step than its span
- * asks (−5.05 … 2.55 by 2.5 is −7.5 … 5, five intervals; by 5, −10 … 5). A set with nothing in it (both ends zero) is
- * the one tick, zero: the chart then draws its stubs and no scale.
+ * A scale from `lo` to `hi` on nice numbers: the smallest nice step whose ticks reach both ends in `intervals` or fewer.
+ * It holds zero where `zero` says the quantity starts there (bars standing on it, power, energy, a price, a count — the
+ * default, as the history bars' scale has always been), and wherever the readings reach or cross it; a measurement
+ * that never does (17 … 23 °C) keeps to its own range (16 · 18 · 20 · 22 · 24). A scale across zero is widened to whole
+ * ticks on both sides of it, so it can need a larger step than its span asks (−5.05 … 2.55 by 2.5 is −7.5 … 5, five
+ * intervals; by 5, −10 … 5). A set with nothing in it (both ends zero) is the one tick, zero: the chart then draws its
+ * stubs and no scale; a flat measurement is given one either side.
  */
-export function niceTicks(lo: number, hi: number, intervals = 4): Ticks {
-  const low = Math.min(0, Number.isFinite(lo) ? lo : 0);
-  const high = Math.max(0, Number.isFinite(hi) ? hi : 0);
-  if (high - low <= 0) return { min: 0, max: 0, step: 0, ticks: [0], decimals: 0 };
+export function niceTicks(lo: number, hi: number, intervals = 4, zero = true): Ticks {
+  const from = Number.isFinite(lo) ? lo : 0;
+  const to = Number.isFinite(hi) ? hi : 0;
+  let low = zero ? Math.min(0, from) : from;
+  let high = zero ? Math.max(0, to) : to;
+  if (high - low <= 0) {
+    if (zero || high === 0) return { min: 0, max: 0, step: 0, ticks: [0], decimals: 0 };
+    low -= 1;
+    high += 1;
+  }
   const lowest = (step: number): number => Math.floor(low / step + 1e-9);
   const highest = (step: number): number => Math.ceil(high / step - 1e-9);
   const { step, decimals } = firstNice(

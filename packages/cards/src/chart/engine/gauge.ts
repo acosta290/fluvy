@@ -6,8 +6,10 @@ import { arcDash, knobAt } from './ring.js';
  * The gauges (the owner's call, 2026-10-26: no circles of the engine's own): every one is Fluvy's controls read-only.
  * `ticks` is the gauge card's ring since 1.0 (`<fluvy-dial gauge>`: 54 ticks over 270° lit to the value, the figure
  * in its opening); `dial` the thermostat's dial read (`<fluvy-dial readonly>`: the ticks, its disc with the reading,
- * its knob on the value); `ring` a ring of the border lit to the value in the tone, Fluvy's knob at its end and the
- * reading in its middle; `ruler` the ruler in its read-only form (`<fluvy-ruler marker>`, lit to the value). The
+ * its knob on the value — in a tile a knob its ring can carry, touching the disc's rim as the thermostat's does);
+ * `ring` a ring of the border lit to the value in the tone, Fluvy's knob at its end and the reading in its middle;
+ * `ruler` the ruler read (`<fluvy-ruler readonly>`, lit to the value, its knob whole). Every knob is the
+ * thermostat's ball, its dot and its lift on its halo. The
  * animated gauges come in a later block through the same door: a style in `GAUGE_PRESETS` that says it moves, drawn
  * still on its first frame when the house or the card says `animate: false` or the system asks for less motion.
  */
@@ -42,6 +44,9 @@ const share = (o: GaugeOptions): number | null =>
     ? null
     : Math.min(1, Math.max(0, (o.value - o.min) / (o.max - o.min)));
 
+/** The read dial's knob in a tile: its 40 ring carries 20, which touches the disc's rim and leaves the reading whole. */
+const TILE_KNOB = 20;
+
 /** A dial's radius in a box of `size`: its ticks and their 12 px of room inside it, on the 4 grid (the gauge card's rule). */
 export const dialRadius = (size: number, tick: number): number =>
   Math.max(24, Math.floor((size / 2 - tick - 12) / 4) * 4);
@@ -56,6 +61,7 @@ function dial(o: GaugeOptions, readonly: boolean): TemplateResult {
     .radius=${dialRadius(o.size, tick)}
     .tick=${tick}
     .large=${!o.small}
+    .knob=${readonly && o.small ? TILE_KNOB : undefined}
     .stepper=${false}
     .tone=${f === null ? 'neutral' : o.tone}
     .min=${o.min}
@@ -117,11 +123,11 @@ function ring(o: GaugeOptions): TemplateResult {
   </div>`;
 }
 
-/** The ruler in its read-only form: lit to the value, its marker on it. */
+/** The ruler read: lit to the value, its knob whole on it. */
 function ruler(o: GaugeOptions): TemplateResult {
   const f = share(o);
   return html`<fluvy-ruler
-    marker
+    readonly
     .length=${o.size}
     .min=${o.min}
     .max=${o.max}

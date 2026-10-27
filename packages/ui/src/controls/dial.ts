@@ -88,6 +88,7 @@ export class FluvyDial extends LitElement {
     increaseLabel: { type: String, attribute: 'increase-label' },
     gauge: { type: Boolean },
     readonly: { type: Boolean },
+    knob: { type: Number },
     large: { type: Boolean },
     stepper: { type: Boolean },
     disabled: { type: Boolean },
@@ -124,6 +125,8 @@ export class FluvyDial extends LitElement {
   declare increaseLabel: string;
   declare gauge: boolean;
   declare readonly: boolean;
+  /** The knob's size; none: the dial's own (36, or 28 small). A read dial in a tile takes one its ring can carry. */
+  declare knob: number | undefined;
   declare large: boolean;
   declare stepper: boolean;
   declare disabled: boolean;
@@ -484,7 +487,7 @@ export class FluvyDial extends LitElement {
       marker = svg`<circle cx=${(cx + (R + tick + 6) * Math.cos(a)).toFixed(2)} cy=${(cy + (R + tick + 6) * Math.sin(a)).toFixed(2)} r="3" class="dl-current" />`;
     }
 
-    const knobSize = this.large ? 36 : 28;
+    const knobSize = this.knob ?? (this.large ? 36 : 28);
     const knobs = this.gauge || this.disabled ? [] : fractions;
     const selected = this.isRange && this.dragIndex === -1 ? this.lastTouched : -1; // the range knob the stepper drives
     const [min, max] = this.range;

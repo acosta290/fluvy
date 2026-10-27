@@ -29,7 +29,8 @@
  *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf, unitScale), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
- *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt), `palette.ts` (seriesInk, seriesPaint,
+ *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket), `palette.ts` (seriesInk,
+ *   seriesPaint,
  *   seriesCheck)
  *
  * The 1.10 geometry is kept byte for byte (`classic.test.ts` against `__fixtures__/classic-1.10.json`): a card that
@@ -43,7 +44,7 @@ import { drawGauge } from './gauge.js';
 import { resolveGauge, resolveStyle } from './presets.js';
 
 export type { ChartPoint, ChartSeries, Curve, SeriesColour, Window } from './model.js';
-export { evenly, sampleAt } from './model.js';
+export { bucket, evenly, sampleAt, type BucketRule } from './model.js';
 export {
   airScale,
   niceStep,

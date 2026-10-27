@@ -77,6 +77,21 @@ describe('nice ticks', () => {
   });
 });
 
+describe('nice ticks for a measurement', () => {
+  it('keep to its own range when it never reaches zero: a day at 17 … 23 °C reads on 16 · 18 · 20 · 22 · 24', () => {
+    expect(niceTicks(17, 23, 4, false).ticks).toEqual([16, 18, 20, 22, 24]);
+    expect(niceTicks(1003.2, 1021.7, 4, false).ticks).toEqual([1000, 1010, 1020, 1030]);
+    expect(niceTicks(-12.4, -3.1, 4, false).ticks).toEqual([-12.5, -10, -7.5, -5, -2.5]);
+  });
+
+  it('take zero in when the readings reach or cross it, and stand a flat one in a range around it', () => {
+    expect(niceTicks(-3, 8, 4, false).ticks).toEqual([-5, 0, 5, 10]);
+    expect(niceTicks(0, 7.6, 4, false).ticks).toEqual([0, 2, 4, 6, 8]);
+    expect(niceTicks(21, 21, 4, false).ticks).toEqual([20, 20.5, 21, 21.5, 22]);
+    expect(niceTicks(0, 0, 4, false).ticks).toEqual([0]);
+  });
+});
+
 describe('a lone series’ own ends', () => {
   it('are its lowest and highest readings; a flat series says so', () => {
     expect(tightScale([3, 9, 1, 7])).toEqual({ min: 1, max: 9, flat: false });
