@@ -7,7 +7,7 @@ import {
 import type { Hex, PaletteMode } from '@fluvy/tokens/runtime';
 import { html, type TemplateResult } from 'lit';
 import { drawChart, drawRead, readAt, type ChartSpec } from './draw.js';
-import { drawGauge } from './gauge.js';
+import { drawGauge, type GaugeOptions } from './gauge.js';
 import type { ChartSeries, SeriesColour } from './model.js';
 import { isBars, resolveGauge, resolveStyle } from './presets.js';
 
@@ -89,22 +89,37 @@ export interface GaugePreviewOptions {
   readonly small: boolean;
 }
 
-/** A gauge style on one reading (62 %), as the house's settings draw it. */
+/**
+ * The reading a moving gauge is previewed on, of the kind it reads and moving as it would: a mild day, a tank filling,
+ * a battery charging, a house drawing 1.8 kW, a breeze, 2.6 kW of sun. The controls and the liquid read 62 %.
+ */
+const SAMPLES: Partial<Record<GaugePreset, Partial<GaugeOptions>>> = {
+  thermo: { value: 21.5, unit: '°C', reads: { deviceClass: 'temperature', unit: '°C' } },
+  tank: { value: 620, max: 1000, unit: 'L', rise: 240, reads: { deviceClass: 'water', unit: 'L' } },
+  battery: { rise: 18, reads: { deviceClass: 'battery', unit: '%' } },
+  pulse: { value: 1.8, max: 8, unit: 'kW', reads: { deviceClass: 'power', unit: 'kW' } },
+  air: { value: 18, max: 60, unit: 'km/h', reads: { deviceClass: 'wind_speed', unit: 'km/h' } },
+  sun: { value: 2.6, max: 6, unit: 'kW', reads: { deviceClass: 'power', unit: 'kW' } },
+};
+
+/** A gauge style on one reading (62 %, or one of the kind a moving gauge reads), as the house's settings draw it. */
 export function previewGauge(
   preset: GaugePreset | undefined,
   settings: Partial<ChartSettings>,
   o: GaugePreviewOptions,
 ): TemplateResult {
+  const style = resolveGauge(preset, {}, houseOf(settings));
   return drawGauge({
-    style: resolveGauge(preset, {}, houseOf(settings)),
+    style,
     size: o.size,
     min: 0,
     max: 100,
     value: 62,
     format: o.format,
     unit: '%',
-    tone: 'accent',
+    tone: style.tone ?? 'accent',
     small: o.small,
+    ...SAMPLES[style.preset],
   });
 }
 

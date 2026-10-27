@@ -744,7 +744,8 @@ export const panelStyles = css`
       height: 96px;
     }
   }
-  .pn-art svg {
+  /* the picture the panel draws itself fills its miniature; the engine's drawings in a tile keep their own size */
+  .pn-art > svg {
     display: block;
     width: 100%;
     height: 100%;

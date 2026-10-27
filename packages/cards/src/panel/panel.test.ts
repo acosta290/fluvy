@@ -861,9 +861,11 @@ describe('the settings panel', () => {
       )!;
     const labels = () =>
       [...root.querySelectorAll('.pn-card .pn-label')].map((p) => p.textContent?.trim());
-    // eight styles and four gauges, each drawn by the engine; classic and ticks from the factory
+    // eight styles and eleven gauges (Fluvy's four controls, the seven that move, each on a reading of its kind), each
+    // drawn by the engine; classic and ticks from the factory
     expect(root.querySelectorAll('.pn-art--style svg.fc-chart').length).toBe(8);
-    expect(root.querySelectorAll('.pn-art--gauge').length).toBe(4);
+    expect(root.querySelectorAll('.pn-art--gauge').length).toBe(11);
+    expect(root.querySelectorAll('.pn-art--gauge .fc-scene').length).toBe(7);
     expect(tile('Classic').getAttribute('aria-pressed')).toBe('true');
     expect(tile('Ticks').getAttribute('aria-pressed')).toBe('true');
     // classic tunes nothing but motion: it says so, and offers no row
@@ -897,8 +899,13 @@ describe('the settings panel', () => {
     await settle();
     chip('7 px')!.click();
     await settle();
+    // a gauge that moves: its waves are the house's to tune
+    tile('Liquid').click();
+    await settle();
+    expect(labels().at(-1)).toBe('Waves');
     tile('Ring').click();
     await settle();
+    expect(labels()).not.toContain('Waves');
     expect(handle.settings().charts.style).toBe('classic');
     expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('4 changes');
     // motion off: the previews draw their resting frame

@@ -43,6 +43,18 @@ describe('the settings panel’s drawings', () => {
     ).not.toBeNull();
   });
 
+  it('draws a moving gauge’s tile on a reading of its kind, moving, in its own tone', () => {
+    const tile = (preset: 'thermo' | 'tank' | 'pulse') =>
+      host(previewGauge(preset, {}, { size: 96, format: String, small: true })).querySelector(
+        '.fc-scene',
+      ) as HTMLElement;
+    expect(tile('thermo').querySelector('.fc-reading b')?.textContent).toBe('21.5');
+    expect(tile('thermo').classList.contains('fc-sky--mild')).toBe(true);
+    expect(tile('tank').querySelectorAll('.fc-bubble').length).toBeGreaterThan(0);
+    expect(tile('pulse').classList.contains('fv-tone--accent')).toBe(true);
+    expect(tile('pulse').classList.contains('is-still')).toBe(false);
+  });
+
   it('previews a chart, its bars and the house’s gauge in one mode, the bubble where the style shows one', () => {
     const soft = preview({ style: 'soft', gauge: 'ring' });
     expect(soft.querySelector('.fc-preview')?.getAttribute('data-mode')).toBe('dark');
