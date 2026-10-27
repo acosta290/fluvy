@@ -1,6 +1,6 @@
 # The cards
 
-Sixty cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Sixty-one cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
 options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
@@ -501,6 +501,71 @@ refresh: 5
 show_reload: true
 ```
 
+## Chart
+
+The chart card draws any time series (#68) — a sensor's history, its long-term statistics, a list in its attributes or
+a weather's forecast — from what has happened to what is to come, now marked and what is to come dashed. `series`
+lists them, six at most: an entity, or the entity with what it says of itself — `source` (`history`, `statistics`,
+`attribute` or `forecast`; by default a weather's forecast, the list its attributes hold where it holds one of the
+usual ones, else its history), `attribute` (the list; one that says today reads its tomorrow after it, as Nordpool's
+`raw_today` and `raw_tomorrow`), `time_key` and `value_key` where the list's keys are not the usual ones (`start`,
+`from`, `time`, `period_start`, `datetime` …; `value`, `price`, `pv_estimate`, `temperature` …), `stat` and `period`
+for statistics (a meter's change and a measurement's mean by default; an hour a reading through a week, a day beyond),
+`name`, `tone` or `color`, `unit` and `decimals` (a unit its sensor's converts to scales its figures; any other names
+the unit its list is written in — Solcast's kW under a kWh sensor), `curve`, `fill` and `kind`: `line`, `area`,
+`columns` (drawn under the lines, on one scale) or `band` (its lows and highs). The lists read are Nordpool's (24 hours
+or 96 quarters a day, and its plain `today` and `tomorrow`), Tibber's map of hours to prices, ENTSO-E's and Frank
+Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band), and any list of entries with a
+moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative price stays
+negative. `span` is the window: `24h` (the default) or any `<N>h` or `<N>d` rolling to now, `today`, or
+`today+tomorrow`, which is today alone until tomorrow's prices are published.
+
+`thresholds` colour the line from a value up to the next threshold, each in a tone — `ok` is the good, cheap one: the
+line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. `highlight`
+marks the cheapest and the dearest window of what is to come (`min`, `max` or `both`; a price's in the ok and the
+danger tones, any other series' in its own) as a stretch of the plot behind the line and a pill that names it —
+"Cheapest 13:00–15:00 · 0.078 EUR/kWh", shorter where the row is narrow — over `highlight_hours` (one by default);
+the `step` style marks both unless told otherwise. `show_head` writes the value now big over the chart with its change
+on the period before ("+5 %": a rolling window against as long a stretch before it, a calendar day against the day
+before; from history or statistics), and `show_legend` names two or three series in the value row, four or more under
+the axis. The chart is drawn in the house's chart style or the card's own (`chart`, and every fine key of the sensor's
+chart above); a pointer, a held finger or the keys (← → a slot, Home, End, Escape) read it, and the value row reads
+with it. `variant`: `full` (the head, the value row, the chart and its axis), `compact` (the head, the chart, its
+axis) or `tile` (the value over a spark of every series). Its height is its variant's and its series count's —
+loading, empty or out of reach it keeps it — and where the value row has nothing to say, the chart takes its room.
+
+```yaml
+type: custom:fluvy-chart-card
+title: Electricity price
+icon: mdi:flash
+series:
+  - entity: sensor.nordpool_kwh_nl_eur_3_10_021 # raw_today and raw_tomorrow, read on their own
+    tone: ok # the line where it is cheap
+span: today+tomorrow
+chart: step
+thresholds:
+  - tone: warning
+    value: 0.18
+  - tone: danger
+    value: 0.26
+highlight: both
+highlight_hours: 2
+```
+
+The measured temperature and the forecast after it, on one chart:
+
+```yaml
+type: custom:fluvy-chart-card
+title: Temperature
+series:
+  - entity: sensor.living_room_temperature
+    name: Living room
+  - entity: weather.home # its hourly forecast
+    name: Outside
+span: today+tomorrow
+chart: soft
+```
+
 <!-- generated:cards -->
 
 ## Everyday
@@ -582,6 +647,7 @@ show_reload: true
 | **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of read-only stat tiles. | `title`, `subtitle`, `variant` (`full`, `compact`), `columns` (`auto`, `2`, `3`), `badge_entity`, `badge_label`, `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`, `unit`, `decimals`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `tiles` |
 | **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
 | **History bars** | `custom:fluvy-history-bars-card` | A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money. | `subtitle`, `variant` (`full`, `compact`, `mini`), `days`, `period` (`day`, `week`, `month`), `stat` (`change`, `state`, `mean`, `max`, `min`), `reset` (`auto`, `never`, `day`, `week`, `month`, `year`), `source` (`auto`, `history`), `date_format` (`date`, `weekday`, `short`), `negative_color`, `current_color`, `include_today`, `show_head`, `show_values`, `show_axis`, `show_grid`, `show_dates`, `show_facts`, `co2_factor`, `price`, `chart` (`classic`, `bars`, `columns`, `minimal`), `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`0`, `1`, `2`, `3`), `head` (a list: `kind`, `name`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`), `facts` (a list: `kind`, `name`, `icon`, `color`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`) | `title` → `name` |
+| **Chart** | `custom:fluvy-chart-card` | Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found. | `title`, `subtitle`, `span` (`24h`, `today`, `today+tomorrow`, `48h`, `7d`, `30d`), `variant` (`full`, `compact`, `tile`), `show_head`, `show_legend`, `highlight` (`none`, `min`, `max`, `both`), `highlight_hours`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `show_now`, `animate`, `series` (a list: `entity`, `name`, `source`, `attribute`, `time_key`, `value_key`, `stat`, `period`, `kind`, `curve`, `fill`, `tone`, `color`, `unit`, `decimals`), `thresholds` (a list: `tone`, `value`) | — |
 | **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`) | `entities` → `rows` |
 | **Distribution** | `custom:fluvy-distribution-card` | One stacked bar and a legend: who draws what. | `title`, `subtitle`, `max_rows`, `variant` (`stack`, `rows`), `chart` (`classic`, `soft`), `total`, `empty_text`, `hide_empty`, `entities` (a list: `entity`, `name`, `tone`, `color`) | — |
 | **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `gauge` (`ticks`, `ruler`, `liquid`), `animate`, `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |

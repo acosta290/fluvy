@@ -107,6 +107,7 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
       'fluvy-stat-tiles-card',
       'fluvy-production-card',
       'fluvy-history-bars-card',
+      'fluvy-chart-card',
       'fluvy-bars-card',
       'fluvy-distribution-card',
       'fluvy-humidity-card',
