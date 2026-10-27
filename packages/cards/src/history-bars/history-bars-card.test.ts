@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HomeAssistant } from '@fluvy/core';
+import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import type { FluvyRowsEditor } from '../shared/rows-editor.js';
@@ -551,6 +551,30 @@ describe('the history bars tell the truth (#44, #45)', () => {
 });
 
 describe('the history bars’ editor', () => {
+  it('offers the bars classic, bars and columns, the mini row classic and minimal, and a highlight only to bars', () => {
+    const section = (FluvyHistoryBarsCard.getConfigForm().schema as HaFormSchemaItem[]).find(
+      (item) => item.type === 'expandable' && item.schema?.some((field) => field.name === 'chart'),
+    ) as HaFormSchemaItem;
+    const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+      schema.flatMap((item) => (item.schema ? fields(item.schema) : [item]));
+    const shown = (data: Record<string, unknown>): string[] =>
+      (section.schema ?? [])
+        .filter((item) => !item.when || item.when(data))
+        .flatMap((item) => fields([item]).filter((field) => !field.when || field.when(data)))
+        .map(
+          (field) =>
+            `${field.name}${field.name === 'chart' ? `:${(field.selector as { select: { options: { value: string }[] } }).select.options.map((o) => o.value).join(',')}` : ''}`,
+        );
+    expect(shown({})).toEqual(['chart:classic,bars,columns', 'animate']);
+    expect(shown({ chart: 'bars' })).toEqual([
+      'chart:classic,bars,columns',
+      'highlight',
+      'animate',
+    ]);
+    expect(shown({ chart: 'columns' })).toEqual(['chart:classic,bars,columns', 'animate']);
+    expect(shown({ variant: 'mini' })).toEqual(['chart:classic,minimal', 'animate']);
+  });
+
   it('shows when it resets, where it is read from and the two colours, with what the card does by default', () => {
     expect(FluvyHistoryBarsCard.keys).toEqual(
       expect.arrayContaining(['reset', 'source', 'negative_color', 'current_color']),
@@ -858,6 +882,54 @@ describe('the history bars card', () => {
     expect(card.shadowRoot!.querySelectorAll('.hb-bar').length).toBe(7);
     expect(readouts(card)[0]).toMatch(/kWh$/);
     expect(texts(card, '.fv-card__sub')).toEqual(['Entity not found · Last 7 days']);
+  });
+
+  it('draws classic as 1.10 did, bar for bar, while the house keeps its factory style', async () => {
+    const card = await mount({ include_today: true }, house(week()).hass);
+    const root = card.shadowRoot!;
+    // recorded on 1.10's card: the bars' paths (the one in progress too), the dashed gridlines, the gradient
+    expect({
+      bars: [...root.querySelectorAll('.hb-bar')].map((b) => b.getAttribute('d')),
+      grid: [...root.querySelectorAll('.ax-grid')].map((l) => l.getAttribute('y1')),
+      gradient: root.querySelectorAll('linearGradient').length,
+    }).toMatchSnapshot();
+  });
+
+  it('draws the bars style: the ink flat, rounded at both ends, the highest lit and the rest quiet, hairlines across', async () => {
+    const card = await mount({ chart: 'bars', highlight: 'max' }, house(week()).hass);
+    const root = card.shadowRoot!;
+    const bars = [...root.querySelectorAll('.hb-bar')];
+    expect(root.querySelector('linearGradient')).toBeNull();
+    expect(root.querySelector('.ax-grid')).toBeNull();
+    expect(root.querySelectorAll('.fc-grid').length).toBe(5);
+    // 35.4 lit, the six others quiet
+    expect(bars.filter((b) => b.getAttribute('style')?.includes('--fluvy-border')).length).toBe(6);
+    expect(bars[0]?.getAttribute('style')).not.toContain('--fluvy-border');
+    // an arc at each of its four corners
+    expect(bars[0]?.getAttribute('d')?.match(/a/g)?.length).toBe(4);
+  });
+
+  it('draws columns without a highlight, and stands still where motion is off', async () => {
+    const card = await mount(
+      { chart: 'columns', highlight: 'max', animate: false },
+      house(week()).hass,
+    );
+    const root = card.shadowRoot!;
+    expect(
+      [...root.querySelectorAll('.hb-bar')].some((b) =>
+        b.getAttribute('style')?.includes('--fluvy-border'),
+      ),
+    ).toBe(false);
+    expect(root.querySelector('.hb-chart.is-still')).not.toBeNull();
+  });
+
+  it('draws the mini row’s sparkline as a minimal line where asked, its bars classic', async () => {
+    const minimal = await mount({ variant: 'mini', chart: 'minimal' }, house(week()).hass);
+    expect(minimal.shadowRoot!.querySelectorAll('.hb-spark .fc-line').length).toBe(1);
+    expect(minimal.shadowRoot!.querySelector('.hb-spark .fv-vbar')).toBeNull();
+    // bars is not the mini row's: it draws classic
+    const bars = await mount({ variant: 'mini', chart: 'bars' }, house(week()).hass);
+    expect(bars.shadowRoot!.querySelectorAll('.hb-spark .fv-vbar').length).toBe(7);
   });
 
   it('draws the compact and mini layouts', async () => {

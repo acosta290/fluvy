@@ -35,6 +35,17 @@ export const gridLines = (
     return svg`<line class=${className} x1=${x1} x2=${x2} y1=${at} y2=${at}></line>`;
   })}`;
 
+/** A card's own gridlines in its style: classic's dashes, a style's hairlines, dashed where the house says so. */
+export const gridClass = (style: {
+  readonly preset: string;
+  readonly grid: { readonly kind: string };
+}): string =>
+  style.preset === 'classic'
+    ? 'ax-grid'
+    : style.grid.kind === 'dashed'
+      ? 'fc-grid fc-grid--dashed'
+      : 'fc-grid';
+
 /** Tick labels ending at `x`, each centred on its `y`: a scale on the plot's start, or one ending on the card's edge. */
 export const tickLabels = (
   marks: ReadonlyArray<readonly [y: number, text: string]>,

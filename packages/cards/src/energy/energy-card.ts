@@ -26,6 +26,7 @@ import {
   chartSection,
   chartStyles,
   drawRead,
+  gridClass,
   gridLines,
   plotOf,
   readingsOf,
@@ -1067,11 +1068,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           frame.scale.ticks.filter((t) => t !== 0).map(y),
           frame.left,
           frame.left + frame.width,
-          style.preset === 'classic'
-            ? undefined
-            : style.grid.kind === 'dashed'
-              ? 'fc-grid fc-grid--dashed'
-              : 'fc-grid',
+          gridClass(style),
         )
       : nothing;
   }

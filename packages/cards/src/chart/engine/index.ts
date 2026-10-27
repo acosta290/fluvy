@@ -78,6 +78,7 @@ export {
 } from './bars.js';
 export {
   AXIS_GAP,
+  gridClass,
   gridLines,
   quarterTicks,
   roundTicks,
