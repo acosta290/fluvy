@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "Flüge in der Nähe",
+    "title_short": "Flüge",
     "count_one": "{n} Flugzeug",
     "count": "{n} Flugzeuge",
     "empty": "Keine Flugzeuge in der Nähe",

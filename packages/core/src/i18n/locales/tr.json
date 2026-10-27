@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "Yakındaki uçuşlar",
+    "title_short": "Uçuşlar",
     "count_one": "{n} uçak",
     "count": "{n} uçak",
     "empty": "Yakında uçak yok",

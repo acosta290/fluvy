@@ -28,7 +28,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
+import { HeadFit, ROW_NAME_MIN, type FittedHead } from '../energy/head.js';
 import { itemsHeight, itemsList, maxRows, TILE_GAP } from '../items-family.js';
 import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
@@ -758,13 +758,19 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     const empty = !dead && !listing.pending && !items.length;
     const emptyKey = listing.preset?.empty ?? 'items.empty';
     const panel = emptyPanel(this, empty, this.glyph(listing.preset), emptyKey);
-    const title = this.heading(listing);
-    const fitted = this.headFit.fit({
-      width: this.contentWidth,
-      title,
-      sub: dead ? stateText(this.hass, listing.view) : (config?.subtitle ?? this.count(listing)),
-      shorter: [''],
-    });
+    const sub = dead
+      ? stateText(this.hass, listing.view)
+      : (config?.subtitle ?? this.count(listing));
+    const fit = (title: string): FittedHead =>
+      this.headFit.fit({ width: this.contentWidth, title, sub, shorter: [''] });
+    let title = this.heading(listing);
+    let fitted = fit(title);
+    // the preset's title is the card's own words, not a name: where even the circle's room would leave it cut, its
+    // short form ("Flüge in der Nähe" → "Flüge"); a title of the person's own keeps a name's ellipsis
+    if (fitted.cut && config?.title === undefined && listing.preset) {
+      title = this.t(listing.preset.short);
+      fitted = fit(title);
+    }
     const variant = config?.variant ?? 'rows';
     const tiles = variant === 'tiles';
     // the box the config declares at this column, whatever the list holds: its tiles' rows as many a row as it lays

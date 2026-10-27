@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "Voli nelle vicinanze",
+    "title_short": "Voli",
     "count_one": "{n} aereo",
     "count": "{n} aerei",
     "empty": "Nessun aereo nelle vicinanze",

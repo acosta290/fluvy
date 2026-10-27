@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "Vuelos cercanos",
+    "title_short": "Vuelos",
     "count_one": "{n} avión",
     "count": "{n} aviones",
     "empty": "Sin aviones cerca",

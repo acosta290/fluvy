@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "Vluchten in de buurt",
+    "title_short": "Vluchten",
     "count_one": "{n} vliegtuig",
     "count": "{n} vliegtuigen",
     "empty": "Geen vliegtuigen in de buurt",

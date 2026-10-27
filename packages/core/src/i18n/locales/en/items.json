@@ -34,6 +34,7 @@
   },
   "flights": {
     "title": "Flights nearby",
+    "title_short": "Flights",
     "count_one": "{n} aircraft",
     "count": "{n} aircraft",
     "empty": "No aircraft nearby",

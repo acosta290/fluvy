@@ -47,6 +47,8 @@ export interface Preset {
   readonly id: Exclude<PresetName, 'auto' | 'none'>;
   readonly icon: IconRef;
   readonly title: MessageKey;
+  /** The title's short form, for a head too narrow for the full one ("Flights nearby" → "Flights"). */
+  readonly short: MessageKey;
   /** The head's count of the items, a plural. */
   readonly count: MessageKey;
   readonly empty: MessageKey;
@@ -213,6 +215,7 @@ export const FLIGHTS: Preset = {
   id: 'flights',
   icon: 'mdi:airplane',
   title: 'flights.title',
+  short: 'flights.title_short',
   count: 'flights.count',
   empty: 'flights.empty',
   link: 'flights.open',

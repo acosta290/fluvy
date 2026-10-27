@@ -2452,6 +2452,7 @@
   },
   "flights": {
     "title": "付近のフライト",
+    "title_short": "フライト",
     "count_one": "{n}機",
     "count": "{n}機",
     "empty": "付近に航空機はありません",

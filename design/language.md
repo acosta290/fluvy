@@ -2207,7 +2207,9 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
   `none` keeps the mapping; `flights` asks for it. The flights row: the callsign (else the flight number) over
   "AMS → BCN · Boeing 737-800", the altitude in feet with `trendUp`/`trendDown` before it (the vertical speed past
   ±100 ft/min) or "On ground" in the quiet ink, the aircraft's small photo in its circle, the nearest first. The head
-  says "Flights nearby" and "3 aircraft"; the empty panel "No aircraft nearby". The units are the integration's (ft,
+  says "Flights nearby" and "3 aircraft" — "Flights" where even the circle's room would leave the full words cut (a
+  preset's title is the card's own words, not a name, so it takes its short form, measured, as the Dutch score's
+  word does; a title of the person's own keeps a name's ellipsis); the empty panel "No aircraft nearby". The units are the integration's (ft,
   kt, ft/min, km), as it reports them.
 - **Variants.** `rows` (60, the default), `compact` (48: the name and the value, the 40 circle with the glyph),
   `tiles` (76 inner compact tiles, two a row from a 288 column — a 360 phone's card — one under it).

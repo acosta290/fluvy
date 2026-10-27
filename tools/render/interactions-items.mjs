@@ -172,6 +172,7 @@ const heights = (card) =>
 {
   const WIDTHS = [152, 172, 211, 266, 328, 360];
   const faults = [];
+  const cuts = [];
   let seen = 0;
   for (const lang of await everyLanguage()) {
     const page = await suite.sheet('items', { lang });
@@ -199,18 +200,28 @@ const heights = (card) =>
             cards.push({ card, width, variant, entity, max });
           }
       await new Promise((resolve) => setTimeout(resolve, 1200));
-      return cards.map(({ card, width, variant, entity, max }) => ({
-        width,
-        variant,
-        entity,
-        max,
-        drawn: Math.round(
-          card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height,
-        ),
-        declared: card.constructor.layoutHeight(card.config),
-      }));
+      return cards.map(({ card, width, variant, entity, max }) => {
+        const title = card.shadowRoot.querySelector('.fv-card__title');
+        const words = title?.querySelector('.fv-card__tap') ?? title;
+        return {
+          width,
+          variant,
+          entity,
+          max,
+          drawn: Math.round(
+            card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height,
+          ),
+          declared: card.constructor.layoutHeight(card.config),
+          title: words?.textContent.trim() ?? '',
+          cut: Boolean(words && words.scrollWidth > words.clientWidth + 1),
+        };
+      });
     }, WIDTHS);
     seen += drawn.length;
+    // the preset's heading is the card's words: its short form where the full one would be cut, never an ellipsis
+    for (const one of drawn)
+      if (one.entity !== 'sensor.it_gone' && one.cut)
+        cuts.push(`${lang} @ ${one.width}: "${one.title}"`);
     for (const width of WIDTHS)
       for (const variant of ['rows', 'compact', 'tiles'])
         for (const max of [3, 2]) {
@@ -231,6 +242,11 @@ const heights = (card) =>
     'items: three aircraft, one, none or out of reach, every variant keeps one height at every width — the declared one but for the tiles one a row under 288',
     faults.length === 0 && seen > 0,
     faults.slice(0, 6).join(' | ') || `${seen} cards`,
+  );
+  check(
+    'items: the flights’ heading never ends in an ellipsis: "Flights nearby" where it holds, "Flights" where it would not',
+    cuts.length === 0 && seen > 0,
+    [...new Set(cuts)].slice(0, 8).join(' | '),
   );
 }
 
