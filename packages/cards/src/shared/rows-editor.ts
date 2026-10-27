@@ -9,7 +9,13 @@ import {
 } from '@fluvy/core';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
 import { normaliseConfig, type AliasSpec } from './config.js';
-import { editorWord, type FormLabeler, formLabels, visibleFields } from './form.js';
+import {
+  editorWord,
+  type FormLabeler,
+  formLabels,
+  NUMBER_DEFAULTS,
+  visibleFields,
+} from './form.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
 export interface RowsListSpec {
@@ -197,10 +203,21 @@ export const toItem = (raw: unknown, idKey: string, also: readonly string[] = []
   return null;
 };
 
-/** An item back to its config entry: empty fields dropped, an entity with nothing else goes back to its bare id — the config stays as small as the user wrote it. */
+/**
+ * A number's "Automatic" (`unit`, `decimals`: `NUMBER_DEFAULTS`): what the card does where its config says nothing,
+ * so it is dropped as an empty field is, never written.
+ */
+const automatic = (key: string, value: unknown): boolean =>
+  value === 'auto' && key in NUMBER_DEFAULTS;
+
+/** An item back to its config entry: empty fields (and a number's Automatic) dropped, an entity with nothing else goes back to its bare id — the config stays as small as the user wrote it. */
 export const compact = (item: Item, idKey: string): Entry => {
   const keys = Object.keys(item).filter(
-    (key) => item[key] !== undefined && item[key] !== '' && item[key] !== null,
+    (key) =>
+      item[key] !== undefined &&
+      item[key] !== '' &&
+      item[key] !== null &&
+      !automatic(key, item[key]),
   );
   return keys.length === 1 && keys[0] === idKey && idKey === 'entity'
     ? (item[idKey] as string)
@@ -268,7 +285,10 @@ const worded = (
 const sameValue = (a: unknown, b: unknown): boolean =>
   a === b || JSON.stringify(a) === JSON.stringify(b);
 
-/** The form's value as config: a default the user left as it was stays out of the config (it was only shown). */
+/**
+ * The form's value as config: a default the user left as it was stays out of the config (it was only shown), and a
+ * number's Automatic chosen after a value takes the key out, as a cleared field does.
+ */
 export const withoutUntouchedDefaults = (
   value: Readonly<Record<string, unknown>>,
   config: LovelaceCardConfig,
@@ -276,7 +296,9 @@ export const withoutUntouchedDefaults = (
 ): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(value).filter(
-      ([key, entry]) => key in config || !(key in defaults) || !sameValue(entry, defaults[key]),
+      ([key, entry]) =>
+        !automatic(key, entry) &&
+        (key in config || !(key in defaults) || !sameValue(entry, defaults[key])),
     ),
   );
 

@@ -9,7 +9,16 @@ import {
   shownNames,
   type FormStub,
 } from './fixtures/editor.js';
-import { boolField, fieldRow, holdsLight, onlyWhen, selectField, textField } from './form.js';
+import {
+  boolField,
+  fieldRow,
+  holdsLight,
+  NUMBER_DEFAULTS,
+  numberFields,
+  onlyWhen,
+  selectField,
+  textField,
+} from './form.js';
 import {
   FluvyRowsEditor,
   compact,
@@ -96,6 +105,14 @@ describe('rows editor lists', () => {
 
   it('writes an entity with nothing else back as its bare id, and drops empty fields', () => {
     expect(compact({ entity: 'sensor.a', name: '', icon: undefined }, 'entity')).toBe('sensor.a');
+    // a number's Automatic is what an absent key does: dropped as an empty field is
+    expect(compact({ entity: 'sensor.a', unit: 'auto', decimals: 'auto' }, 'entity')).toBe(
+      'sensor.a',
+    );
+    expect(compact({ entity: 'sensor.a', unit: 'auto', decimals: '1' }, 'entity')).toEqual({
+      entity: 'sensor.a',
+      decimals: '1',
+    });
     expect(compact({ entity: 'sensor.a', name: 'Sun' }, 'entity')).toEqual({
       entity: 'sensor.a',
       name: 'Sun',
@@ -237,6 +254,53 @@ describe('editor defaults', () => {
       ),
     ).toEqual({ variant: 'dial', fan_style: 'chips', show_fan: false, modes: ['off'] });
     expect(withoutUntouchedDefaults({ title: 'x' }, config, defaults)).toEqual({ title: 'x' });
+  });
+
+  it('never writes a number’s Automatic, even chosen after a value the config held', () => {
+    const config = { type: 't', unit: 'kWh', decimals: 2 };
+    expect(
+      withoutUntouchedDefaults({ unit: 'auto', decimals: '2' }, config, NUMBER_DEFAULTS),
+    ).toEqual({ decimals: '2' });
+    expect(
+      withoutUntouchedDefaults({ unit: 'kWh', decimals: 'auto' }, config, NUMBER_DEFAULTS),
+    ).toEqual({ unit: 'kWh' });
+    // another key's "auto" is a word of its own
+    expect(
+      withoutUntouchedDefaults({ show_icon: 'auto' }, { type: 't', show_icon: 'never' }, {}),
+    ).toEqual({
+      show_icon: 'auto',
+    });
+  });
+
+  it('takes the key out of the card and of an item when Automatic is chosen in the editor', async () => {
+    const list: RowsListSpec = { ...rows, schema: [...rows.schema, numberFields()] };
+    const element = await drawEditor(
+      listsEditor({ schema: [numberFields()] }, [list], () => NUMBER_DEFAULTS),
+      {
+        type: 'custom:x',
+        unit: 'kWh',
+        decimals: 2,
+        rows: [{ entity: 'sensor.a', unit: 'Wh', decimals: 0 }],
+      },
+    );
+    const card = nextConfig(element);
+    cardForm(element).change('unit', 'auto');
+    expect(await card).toEqual({
+      type: 'custom:x',
+      decimals: '2',
+      rows: [{ entity: 'sensor.a', unit: 'Wh', decimals: 0 }],
+    });
+    await element.updateComplete;
+    const item = nextConfig(element);
+    const forms = element.shadowRoot!.querySelectorAll<FormStub>('ha-form');
+    (forms[1] as FormStub).change('unit', 'auto');
+    // the item's select hands its number back as its word, as the card's does
+    expect(await item).toEqual({
+      type: 'custom:x',
+      decimals: '2',
+      rows: [{ entity: 'sensor.a', decimals: '0' }],
+    });
+    element.remove();
   });
 });
 
