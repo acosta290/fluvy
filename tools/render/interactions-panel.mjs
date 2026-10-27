@@ -467,6 +467,57 @@ const chartsTab = (page) => ({
     (await c.editor.locator('.pn-status').count()) === 0 &&
       (await c.editor.locator('.pn-check').textContent()).includes('Every colour stands apart'),
   );
+  // each mode's lines as its card wears them: the colour drawn, and its contrast on that mode's card
+  const worn = () =>
+    c.editor.evaluate((editor) => {
+      const luminance = (css) => {
+        const [r, g, b] = css.match(/\d+/g).map((v) => {
+          const c = Number(v) / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const read = (mode) => {
+        const card = luminance(
+          getComputedStyle(editor.querySelector(`.pn-mode[data-mode="${mode}"]`)).backgroundColor,
+        );
+        return [...editor.querySelectorAll(`.pn-mode[data-mode="${mode}"] .fc-line`)].map(
+          (line) => {
+            const colour = getComputedStyle(line).stroke;
+            const [hi, lo] = [luminance(colour), card].sort((a, b) => b - a);
+            return { colour, contrast: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100 };
+          },
+        );
+      };
+      return { light: read('light'), dark: read('dark') };
+    });
+  await fields.nth(3).fill('#1e3a8a');
+  await fields.nth(3).press('Enter');
+  await fields.nth(4).fill('#f4e9d0');
+  await fields.nth(4).press('Enter');
+  await settle(page, 200);
+  const fitted = await worn();
+  check(
+    'a navy is lifted to read on the dark card and a cream deepened on the light one; each drawn as typed on the other',
+    fitted.dark[3].contrast >= 3 &&
+      fitted.dark[3].colour !== 'rgb(30, 58, 138)' &&
+      fitted.light[3].colour === 'rgb(30, 58, 138)' &&
+      fitted.light[4].contrast >= 3 &&
+      fitted.light[4].colour !== 'rgb(244, 233, 208)' &&
+      fitted.dark[4].colour === 'rgb(244, 233, 208)',
+    JSON.stringify({ navy: fitted.dark[3], cream: fitted.light[4] }),
+  );
+  check(
+    'nothing is said of a colour fitting fixes; the navy lifted beside the blue is, on the dark card',
+    (await c.editor.locator('.pn-status').textContent()).trim() ===
+      '#2563eb and #1e3a8a are too close to tell apart on a dark card',
+    await c.editor.locator('.pn-status').textContent(),
+  );
+  await fields.nth(3).fill('#dc2626');
+  await fields.nth(3).press('Enter');
+  await fields.nth(4).fill('#9333ea');
+  await fields.nth(4).press('Enter');
+  await settle(page, 200);
   await fields.nth(1).fill('#2463ea');
   await fields.nth(1).press('Enter');
   await settle(page, 200);

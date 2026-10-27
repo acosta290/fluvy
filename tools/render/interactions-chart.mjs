@@ -18,6 +18,8 @@
  *   (the energy line, a production day), a stacked chart's hairlines and lighter fills, the distribution's pills and
  *   the bars' deepening ink, the history bars and the arrays classic (soft is not theirs), the house's ring on the
  *   gauge card and its ruler on the humidity, and the History page drawn by the engine;
+ * - a house's own set of series colours, worn fitted to each mode's card: the arrays' columns and their legend's
+ *   squares, a navy as picked on the light card and lifted on the dark one, a cream the other way round;
  * - no flash, on the built bundle with the engine's chunk 1.5 s late: one skeleton, then the curve, drawn once.
  */
 import { createServer } from 'node:http';
@@ -548,6 +550,86 @@ for (const mode of ['light', 'dark']) {
     drawn.wrong.slice(0, 4).join(' | '),
   );
   await page.close();
+}
+
+/* ---------- a house's own set of series colours, worn fitted to each mode's card ---------- */
+{
+  // a navy, too deep for a dark card, and a cream, too pale for a light one: the arrays' columns wear them
+  const SET = ['#1e3a8a', '#f4e9d0', '#15803d', '#b91c1c', '#7e22ce', '#0f766e'];
+  const charts = {
+    style: 'columns',
+    series: 'mine',
+    sets: [{ id: 'mine', name: 'Mine', colours: SET }],
+  };
+  const worn = {};
+  for (const mode of ['light', 'dark']) {
+    const page = await suite.sheet('arrays', {
+      extra: `${mode === 'dark' ? '&mode=dark' : ''}&charts=${encodeURIComponent(JSON.stringify(charts))}`,
+    });
+    worn[mode] = await frame(page, 'Two arrays')
+      .locator('fluvy-production-card')
+      .first()
+      .evaluate((card) => {
+        const luminance = (css) => {
+          const [r, g, b] = (
+            css.startsWith('#')
+              ? css
+                  .slice(1)
+                  .match(/../g)
+                  .map((h) => parseInt(h, 16))
+              : css.match(/\d+/g)
+          ).map((v) => {
+            const c = Number(v) / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const ground = luminance(getComputedStyle(card).getPropertyValue('--fluvy-card').trim());
+        const read = (el, property) => {
+          const colour = getComputedStyle(el)[property];
+          const [hi, lo] = [luminance(colour), ground].sort((a, b) => b - a);
+          return { colour, contrast: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100 };
+        };
+        const root = card.shadowRoot;
+        // each hour's segments, an array's colour each: the arrays' colours in their order (the hollow forecast aside)
+        const columns = new Map();
+        for (const bar of root.querySelectorAll(
+          '.pr-chart g.fc-set .fc-bar:not(.fc-bar--hollow)',
+        )) {
+          const seen = read(bar, 'fill');
+          if (!columns.has(seen.colour)) columns.set(seen.colour, seen);
+        }
+        return {
+          columns: [...columns.values()],
+          squares: [...root.querySelectorAll('.pr-legend .en-sq.fc-set')].map((square) =>
+            read(square, 'backgroundColor'),
+          ),
+        };
+      });
+    await page.close();
+  }
+  const [navy, cream] = ['rgb(30, 58, 138)', 'rgb(244, 233, 208)'];
+  const { light, dark } = worn;
+  check(
+    'a house’s set worn fitted to each mode: the navy as picked on the light card and lifted to read on the dark one, the cream the other way round',
+    light.columns.length === 2 &&
+      light.columns[0].colour === navy &&
+      light.columns[1].colour !== cream &&
+      light.columns[1].contrast >= 3 &&
+      dark.columns[0].colour !== navy &&
+      dark.columns[0].contrast >= 3 &&
+      dark.columns[1].colour === cream,
+    JSON.stringify({ light: light.columns, dark: dark.columns }),
+  );
+  check(
+    'the legend’s squares wear their columns’ colours, in each mode',
+    ['light', 'dark'].every(
+      (mode) =>
+        JSON.stringify(worn[mode].squares.map((s) => s.colour)) ===
+        JSON.stringify(worn[mode].columns.map((c) => c.colour)),
+    ),
+    JSON.stringify({ light: light.squares, dark: dark.squares }),
+  );
 }
 
 /* ---------- no flash: the built bundle, the engine's chunk 1.5 s late ---------- */
