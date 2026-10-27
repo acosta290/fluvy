@@ -7,6 +7,7 @@ import {
   type EntityView,
   type FluvyCardConfig,
   type GaugePreset,
+  type HomeAssistant,
   type LovelaceGridOptions,
   type MessageKey,
   type Series,
@@ -39,11 +40,14 @@ import {
   ceilingFor,
   figure,
   figuresOf,
+  scaleFor,
+  scaleNamed,
   toBase,
   writeFigure,
   type Figures,
   type NumberKeys,
 } from '../shared/units.js';
+import type { Reading } from '../shared/value-row.js';
 import {
   fractionOf,
   labelRoom,
@@ -105,15 +109,63 @@ const TICK = 12;
 /** Below this share of the range the source is resting: the badge says so and the head goes neutral. */
 const IDLE = 0.02;
 
+/** A unit of heat: its figures go below zero, whatever range the card is given. */
+const COLD = /^°[CF]$/;
+
 /**
- * The window's row (min, max, average) in a half card (under 171 of content): one a row, whatever its figures say —
- * they come and go with the recorder (out of reach and unrecorded, "—"), and the card keeps its height through them
- * (the owner's rule); from the full card's floor, as many columns as hold its labels and figures (`statsRow`).
+ * The unit each sensor was last read in, by its id: a sensor gone from the house says no unit, and its card keeps the
+ * layout it had — on this view or another the house opens later.
  */
-const windowRow = (ruler: TextRuler, width: number, stats: readonly StatText[]): StatsRow =>
-  width < 171
+const unitsSeen = new Map<string, string>();
+
+/**
+ * The widest figure the card can write: three figures and a separator where it writes its decimals by the figure's
+ * size (`figure`: 0.25 · 3.2 · 142), else `whole` figures at the decimals it fixes; `whole` figures where they are
+ * more (a range of 1 000 L); the minus where its figures can go below zero. Tabular figures: every one as wide.
+ */
+export function widestFigure(
+  hass: HomeAssistant | undefined,
+  digits: number | undefined,
+  whole: number,
+  minus: boolean,
+): string {
+  const decimals = digits ?? (whole > 3 ? 0 : 1);
+  const figures = digits === undefined && whole <= 3 ? 2 : whole;
+  const shown = formatNumber(hass, Number(`${'8'.repeat(figures)}.${'8'.repeat(decimals)}`), {
+    digits: decimals,
+    minDigits: decimals,
+  });
+  return minus ? `−${shown}` : shown;
+}
+
+/**
+ * The window's row (min, max, average), laid out by its labels and the widest figure the card can write (`widest`),
+ * never by the figures it writes now — they come and go with the sensor and the recorder (out of reach and
+ * unrecorded, "—"), and the card keeps one height through them (the owner's rule): one a row in a half card (under
+ * 171 of content), else as many columns as hold the labels and that figure (`statsRow`).
+ */
+const windowRow = (
+  ruler: TextRuler,
+  width: number,
+  labels: readonly string[],
+  widest: Reading,
+): StatsRow => {
+  const stats: StatText[] = labels.map((label) => ({ label, ...widest }));
+  return width < 171
     ? { columns: 1, size: statsSize(ruler, width, stats, 1), odd: false }
     : statsRow(ruler, width, stats);
+};
+
+const XS = 'fv-readout fv-readout--xs > fv-readout__value';
+
+/** The widest of the readings a card can write, as a readout of the row draws it. */
+const widestOf = (ruler: TextRuler, readings: readonly Reading[]): Reading =>
+  readings.reduce((wide, one) =>
+    ruler.width(XS, one.value, 'fv-unit', one.unit ?? '') >
+    ruler.width(XS, wide.value, 'fv-unit', wide.unit ?? '')
+      ? one
+      : wide,
+  );
 
 type LabelKey =
   'energy' | 'temperature' | 'pressure' | 'speed' | 'illuminance' | 'current' | 'voltage';
@@ -306,6 +358,49 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return peak > min ? min + ceilingFor(peak - min) : null;
   }
 
+  /**
+   * The unit the card lays its figures out in: its sensor's; for a sensor that is not there, the one it was last read
+   * in, else a power meter's, what the card is most often for.
+   */
+  private unitOf(view: EntityView): string {
+    if (view.status === 'missing') return unitsSeen.get(view.id) ?? 'W';
+    unitsSeen.set(view.id, view.unit);
+    return view.unit;
+  }
+
+  /**
+   * What the card's figures can be, from its config and its sensor's unit alone (`unitOf`), each with the unit it reads
+   * in (`widestFigure`): a W, Wh or VA figure in its own and in the larger one a house reads (kW, or the range's where
+   * the config gives a larger), each under a thousand; one in the unit the config asks, as many whole figures as the
+   * range the config gives — where it gives no top, three, and a house's five in the ladder's own unit, which is never
+   * scaled up ("88,888 W"); any other in the sensor's own, alike. `way` follows the unit (a power meter's direction,
+   * its wider word).
+   */
+  private readings(view: EntityView, minus: boolean, way = ''): Reading[] {
+    const config = this.config;
+    const base = toBase(1, this.unitOf(view));
+    const range = [config?.min, config?.max]
+      .filter((v): v is number => typeof v === 'number')
+      .map((v) => Math.abs(v * base.value));
+    const asked = typeof config?.unit === 'string' && scaleNamed(config.unit, base.unit);
+    const scaled = scaleFor(1e3, base.unit).divisor > 1;
+    const ladder = scaled && !asked;
+    const peaks = ladder ? [1, Math.max(1e3, ...range)] : [Math.max(1, ...range)];
+    return peaks.map((peak) => {
+      const scale = figuresOf(this.hass, config, base.unit, peak, view);
+      const wholes = range.map((v) => String(Math.round(v / scale.divisor)).length);
+      const whole = ladder
+        ? 3
+        : typeof config?.max === 'number'
+          ? Math.max(1, ...wholes)
+          : Math.max(scaled && scale.divisor < 1e3 ? 5 : 3, ...wholes);
+      return {
+        value: widestFigure(this.hass, scale.digits, whole, minus),
+        unit: way ? `${scale.unit} ${way}` : scale.unit,
+      };
+    });
+  }
+
   private innerLabel(view: EntityView): string {
     const configured = this.config?.label;
     if (configured !== undefined) return configured;
@@ -400,7 +495,14 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       value: raw === undefined ? '—' : shown(raw * base.value),
       unit: raw === undefined ? '' : scale.unit,
     }));
-    const row = windowRow(this.head.ruler, width, stats);
+    // a range below zero, or a temperature, writes its minus
+    const minus = (this.config?.min ?? 0) < 0 || COLD.test(this.unitOf(view).trim());
+    const row = windowRow(
+      this.head.ruler,
+      width,
+      stats.map(({ label }) => label),
+      widestOf(this.head.ruler, this.readings(view, minus)),
+    );
     const fitted = this.head.fit({
       width,
       title: name,
@@ -515,18 +617,17 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     factor: number,
     value: number | null,
   ): { min: number; max: number } | null {
+    const named = this.namedRange(factor);
+    if (named) return named;
     const positive = (v: unknown): v is number =>
       typeof v === 'number' && Number.isFinite(v) && v > 0;
-    const configured = this.config?.max;
     const own = view.attr<number | null>('max');
     const rated = this.config?.max_entity ? baseOf(this.entity(this.config.max_entity)) : null;
-    let max: number | null = positive(configured)
-      ? configured * factor
-      : positive(own)
-        ? own * factor
-        : rated && positive(rated.value)
-          ? rated.value
-          : null;
+    let max: number | null = positive(own)
+      ? own * factor
+      : rated && positive(rated.value)
+        ? rated.value
+        : null;
     if (max === null) {
       if (this.series_ === undefined) return null;
       const swing = Math.max(
@@ -541,6 +642,16 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return { min: typeof min === 'number' && min < 0 ? min * factor : -max, max };
   }
 
+  /** The signed ring's ends as the config names them (`max`; `min` below zero, else `-max`), in the base unit. */
+  private namedRange(factor: number): { min: number; max: number } | null {
+    const { min, max } = this.config ?? {};
+    if (!(typeof max === 'number' && Number.isFinite(max) && max > 0)) return null;
+    return {
+      min: typeof min === 'number' && min < 0 ? min * factor : -max * factor,
+      max: max * factor,
+    };
+  }
+
   /**
    * A value that can be negative, on a ring with zero at the top: lit from zero to the value in the card's tone (the
    * grid's by default: a meter cannot know where its energy came from); a power meter says its direction in the unit
@@ -550,8 +661,9 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const unusable = !isUsable(view);
     const base = toBase(1, view.unit);
     const value = view.number === null || unusable ? null : view.number * base.value;
-    // a meter that is not there has no unit to say what it is: it is laid out as the grid meter this gauge is for
-    const power = base.unit === 'W' || view.status === 'missing';
+    // a meter that is not there says no unit: it is laid out in the one it was last read in, else as the grid meter
+    // this gauge is for (`unitOf`)
+    const power = toBase(1, this.unitOf(view)).unit === 'W';
     const ends = this.extent(view, base.value, value);
     const series = this.series_;
     const scale: Figures = figuresOf(
@@ -593,19 +705,18 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         unit: direction ? `${scale.unit} ${direction}` : scale.unit,
       };
     };
-    const edgeDigits =
-      ends &&
-      Number.isInteger(ends.min / scale.divisor) &&
-      Number.isInteger(ends.max / scale.divisor)
-        ? 0
-        : 1;
-    const edge = (v: number, ways: boolean): string => {
-      const shown = formatNumber(this.hass, (ways ? Math.abs(v) : v) / scale.divisor, {
-        digits: edgeDigits,
-        minDigits: edgeDigits,
+    // an end in a scale: whole where both ends are ("−5 kW · 5 kW"), else at one decimal ("2.5 kW out")
+    const endDigits = (range: { min: number; max: number }, at: Figures): number =>
+      Number.isInteger(range.min / at.divisor) && Number.isInteger(range.max / at.divisor) ? 0 : 1;
+    const endOf = (v: number, ways: boolean, at: Figures, digits: number): string => {
+      const shown = formatNumber(this.hass, (ways ? Math.abs(v) : v) / at.divisor, {
+        digits,
+        minDigits: digits,
       }).replace(/^-/, '−');
-      return [shown, scale.unit, ways ? way(v) : ''].filter(Boolean).join(' ');
+      return [shown, at.unit, ways ? way(v) : ''].filter(Boolean).join(' ');
     };
+    const edgeDigits = ends ? endDigits(ends, scale) : 1;
+    const edge = (v: number, ways: boolean): string => endOf(v, ways, scale, edgeDigits);
 
     const fraction = value === null || !ends ? null : fractionOf(value, ends.min, ends.max);
     const active = fraction !== null && Math.abs(fraction) > IDLE;
@@ -627,23 +738,39 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
 
     const width = this.contentWidth;
     const r = this.head.ruler;
-    const statWidth = (stat: { value: string; unit: string }): number =>
-      r.width('fv-readout fv-readout--xs > fv-readout__value', stat.value, 'fv-unit', stat.unit);
-    // the gauge with its power's directions in words, or signed: everything in one way, the needle saying which
+    const config = this.config;
+    const wider = [way(1), way(-1)].reduce((a, b) =>
+      r.width('en-gauge__end', b) > r.width('en-gauge__end', a) ? b : a,
+    );
+    // the ring's ends as the config names them, written as the card writes them; else the widest a range read from
+    // the sensor or its window can write (a ceiling: three figures at most, "888 kW out")
+    const named = this.namedRange(base.value);
+    const namedAt =
+      named && figuresOf(this.hass, config, base.unit, Math.max(-named.min, named.max), view);
+    const unit = widestOf(r, this.readings(view, false)).unit ?? '';
+    const ceiling = formatNumber(this.hass, 888, { digits: 0 });
+    const laidEnd = (v: -1 | 1, ways: boolean): string =>
+      named && namedAt
+        ? endOf(v < 0 ? named.min : named.max, ways, namedAt, endDigits(named, namedAt))
+        : [ways || v > 0 ? ceiling : `−${ceiling}`, unit, ways ? way(v) : '']
+            .filter(Boolean)
+            .join(' ');
+    // the gauge with its power's directions in words, or signed: everything in one way, the needle saying which —
+    // decided, as its ring and its row are laid out, by what the card can write, never by what it writes now: the
+    // card keeps one height live, at any value and out of reach (the owner's rule), its ends "—" while it is away
     const lay = (ways: boolean) => {
       const [left, right] = ends ? [edge(ends.min, ways), edge(ends.max, ways)] : ['—', '—'];
-      // a range nobody can name (the meter away, its window not read yet) reads "—" at its ends, and the ring is laid
-      // out for a household's, a 5 kW connection ("5 kW out", its wider end): it keeps its size while the meter is away
-      const leftW = r.width('en-gauge__end', ends ? left : `5 kW ${way(-1)}`);
-      const rightW = r.width('en-gauge__end', right);
+      const widest = widestOf(r, this.readings(view, !ways, ways ? wider : ''));
+      const leftW = r.width('en-gauge__end', laidEnd(-1, ways));
+      const rightW = r.width('en-gauge__end', laidEnd(1, ways));
       const g = signedGeometry(width, Math.max(leftW, rightW));
       const shown = said(value, ways);
-      const fits = (size: ValueSize): boolean =>
+      const fits = (reading: Reading, size: ValueSize): boolean =>
         r.width(
           size === 'l' ? 'en-gauge__value' : 'en-gauge__value en-gauge__value--m',
-          shown.value,
+          reading.value,
           'en-gauge__unit',
-          shown.unit,
+          reading.unit ?? '',
         ) <= valueRoom(g, size);
       const stats = (
         [
@@ -655,20 +782,28 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         label: this.t(name),
         ...said(raw === undefined ? null : raw * base.value, ways),
       }));
-      // the words hold while the value fits its ring, the two ends their line and every statistic the column
+      // the words hold while the widest figure fits its ring, the two ends their line and a statistic the column
       const holds =
-        fits('m') && leftW + 8 + rightW <= width && stats.every((stat) => statWidth(stat) <= width);
-      return { left, right, g, shown, size: (fits('l') ? 'l' : 'm') as ValueSize, stats, holds };
+        fits(widest, 'm') &&
+        leftW + 8 + rightW <= width &&
+        r.width(XS, widest.value, 'fv-unit', widest.unit ?? '') <= width;
+      const size: ValueSize = fits(shown, 'l') ? 'l' : 'm';
+      return { left, right, g, shown, size, stats, widest, holds };
     };
     const worded = lay(power);
-    const { left, right, g, shown, size, stats } = worded.holds ? worded : lay(false);
+    const { left, right, g, shown, size, stats, widest } = worded.holds ? worded : lay(false);
     const box = valueBox(g, size);
     const label = this.innerLabel(view);
     const room = labelRoom(g, size);
     const labelFits = r.width('en-gauge__label', label) <= room;
 
     // the directions make the figures long: as many columns as hold them and their labels, two and one before one a line
-    const row = windowRow(this.head.ruler, width, stats);
+    const row = windowRow(
+      r,
+      width,
+      stats.map(({ label }) => label),
+      widest,
+    );
     const fitted = this.head.fit({
       width,
       title: name,

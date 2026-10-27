@@ -1,8 +1,15 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
+import { ensureLanguage, type HaFormSchemaItem, type HomeAssistant } from '@fluvy/core';
+import { describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
-import { FluvyGaugeCard, type GaugeCardConfig } from './gauge-card.js';
+import { TextRuler } from '../shared/fit.js';
+import {
+  FluvyGaugeCard,
+  GAUGE_VARIANTS,
+  widestFigure,
+  type GaugeCardConfig,
+  type GaugeVariant,
+} from './gauge-card.js';
 import * as gaugeEditor from './gauge-editor.js';
 
 await familiesDefined;
@@ -172,5 +179,121 @@ describe('the ring’s moving gauges', () => {
     expect(animate?.when?.({ ...config, gauge: 'thermo' }, hass)).toBe(false);
     expect(animate?.when?.({ ...config, gauge: 'ring' }, hass)).toBe(false);
     expect(gaugeEditor.defaults({ ...config, gauge: 'thermo' }, hass)['gauge']).toBe('ticks');
+  });
+});
+
+describe('the window’s row and the signed ring, laid out by what the card can write', () => {
+  /** A stand-in for the card's ruler: a label's letters at 7, a figure's with its unit at 11 at s and 9 at xs, any other 8. */
+  const pace = (cls: string): number =>
+    cls.includes('fv-readout__label')
+      ? 7
+      : cls.includes('fv-readout--xs')
+        ? 9
+        : cls.includes('fv-readout--s')
+          ? 11
+          : 8;
+  const now = Date.now() / 1000;
+  /** A day of readings swaying a tenth about `value`, as the recorder gives it. */
+  const day = (value: number) =>
+    Array.from({ length: 49 }, (_unused, i) => ({
+      s: String(Math.round(value * (1 + 0.1 * Math.sin(i / 5)) * 100) / 100),
+      lu: now - (48 - i) * 1800,
+    }));
+  /** A house in `language` with a sensor at each of `values` (its day recorded), and one out of reach, unrecorded. */
+  const readings = (
+    language: string,
+    prefix: string,
+    attributes: Readonly<Record<string, string>>,
+    values: readonly number[],
+  ): HomeAssistant => {
+    const seeds: [string, string][] = [
+      ...values.map((v): [string, string] => [`sensor.${prefix}_${v}`, String(v)]),
+      [`sensor.${prefix}_away`, 'unavailable'],
+    ];
+    return {
+      language,
+      locale: { language, number_format: 'language', time_format: '24' },
+      states: Object.fromEntries(
+        seeds.map(([id, state]) => [
+          id,
+          { entity_id: id, state, attributes, last_changed: '', last_updated: '' },
+        ]),
+      ),
+      entities: {},
+      devices: {},
+      areas: {},
+      localize: (key: string) => key,
+      formatEntityState: (s: { state: string }) => s.state,
+      callWS: async ({ entity_ids: [id = ''] }: { entity_ids: string[] }) => {
+        const value = values.find((v) => `sensor.${prefix}_${v}` === id);
+        return value === undefined ? {} : { [id]: day(value) };
+      },
+    } as unknown as HomeAssistant;
+  };
+  /**
+   * What sets the card's height, its range left to the window: its row's columns and readouts' size, and a signed
+   * ring's height.
+   */
+  const layout = async (
+    hass: HomeAssistant,
+    entity: string,
+    variant: GaugeVariant,
+    width: number,
+  ): Promise<string> => {
+    const card = document.createElement('fluvy-gauge-card') as CardElement;
+    card.setConfig({ type: 'custom:fluvy-gauge-card', entity, variant });
+    card.hass = hass;
+    document.body.append(card);
+    await card.updateComplete;
+    (card as unknown as { width: number }).width = width;
+    await new Promise((done) => setTimeout(done, 0)); // the window answers
+    await card.updateComplete;
+    const root = card.shadowRoot!;
+    const row = root.querySelector<HTMLElement>('.so-cols')!;
+    const sizes = new Set([...row.querySelectorAll('.fv-readout')].map((r) => r.className));
+    const ring = root.querySelector<HTMLElement>('.en-gauge')?.style.height ?? '';
+    card.remove();
+    return [row.style.gridTemplateColumns, row.className, ...sizes, ring].join(' · ');
+  };
+
+  it('is one at any value and out of reach, from the full card’s floor to a phone, in every language', async () => {
+    await Promise.all((['de', 'pt-PT', 'ja'] as const).map((code) => ensureLanguage(code)));
+    const ruler = vi
+      .spyOn(TextRuler.prototype, 'width')
+      .mockImplementation(
+        (cls: string, text: string, _unit?: string, unit = '') =>
+          (text.length + (unit ? unit.length + 1 : 0)) * pace(cls),
+      );
+    try {
+      const sensors = [
+        ['wind', { unit_of_measurement: 'km/h', device_class: 'wind_speed' }, [4, 18, 46]],
+        ['charge', { unit_of_measurement: '%', device_class: 'battery' }, [0, 50, 100]],
+      ] as const;
+      const differ: string[] = [];
+      for (const [prefix, attributes, values] of sensors)
+        for (const language of ['en', 'de', 'pt', 'ja'])
+          for (const variant of GAUGE_VARIANTS)
+            for (const width of [211, 266, 328, 360]) {
+              const hass = readings(language, prefix, attributes, values);
+              const ids = [...values.map((v) => `sensor.${prefix}_${v}`), `sensor.${prefix}_away`];
+              const layouts = new Set<string>();
+              for (const id of ids) layouts.add(await layout(hass, id, variant, width));
+              if (layouts.size > 1)
+                differ.push(
+                  `${prefix} ${language} ${variant} @${width}: ${[...layouts].join(' | ')}`,
+                );
+            }
+      expect(differ).toEqual([]);
+    } finally {
+      ruler.mockRestore();
+    }
+  }, 60_000);
+
+  it('writes its widest figure by the figures’ rule: three and a separator, or the decimals fixed and a range’s whole figures', () => {
+    const hass = house();
+    expect(widestFigure(hass, undefined, 3, false)).toBe('88.8');
+    expect(widestFigure(hass, undefined, 4, false)).toBe('8,888');
+    expect(widestFigure(hass, 1, 3, true)).toBe('−888.8');
+    expect(widestFigure(hass, 0, 2, false)).toBe('88');
   });
 });

@@ -34,6 +34,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   pointer's hairline and the finger's press as a tile does; it was a still figure. `tap_action: none` on a tile keeps
   it still (#71). A tile is never laid narrower than a finger's 44: three asked in a narrow column (single digits at
   172) go two a row where they were 36 wide.
+- A gauge card is one height whatever its sensor reads and while it is out of reach: from 211 up its min · max ·
+  average row is laid out by the widest figure the card can write (three figures and a separator in its unit, five
+  in watts it is asked not to scale, the range's whole figures where its `max` has more, a temperature's minus), where
+  it followed today's figures, and the signed ring by the range its config names, else the widest a day can give
+  ("888 kW out"). A gauge whose figures were short now keeps the room of long ones: at a tablet's 266 a wind or a
+  temperature gauge shows two and one where it showed three (60 px taller), a signed meter's row at 211 may stand one
+  a line, and a signed ring at 266 to 328 may be a little smaller. At a section's 360 a ring and a bar are as they
+  were.
 - The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
 - The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
   Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses

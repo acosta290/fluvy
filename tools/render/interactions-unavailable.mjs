@@ -115,8 +115,9 @@ const SOURCES = {
   'fluvy-items-card': [['items', 'Items · flights', 0]],
   // its stub reads the first price list of the house; the issue's card: Nordpool stepped, its thresholds, its windows
   'fluvy-chart-card': ['stub', ['chart', 'Chart · Nordpool', 0]],
-  // a moving gauge in a half card: its window's row one a row, whatever its figures say
-  'fluvy-gauge-card': ['stub', ['animated', 'Moving · tiles', 0]],
+  // a moving gauge in a half card, and the wind's at full width (18 km/h, its day's figures): its window's row and its
+  // signed ring laid out by what the card can write, never by what it writes now
+  'fluvy-gauge-card': ['stub', ['animated', 'Moving · tiles', 0], ['animated', 'Moving · air', 1]],
 };
 
 /**

@@ -20,7 +20,9 @@
  *   and unfiltered; nothing leaves its box; its reading inside it, never across the waterline or any sweep of the
  *   weather, a mark's centred under it; out of reach, told not to move, under the house's motion off and under reduced
  *   motion every one rests on its first frame (the liquid still a wave); in a half card (152, 172) each as tall as
- *   its twin out of reach;
+ *   its twin out of reach; and from 211 to a phone (211, 266, 328, 360), in English, German, Japanese and Portugal's
+ *   Portuguese, every gauge of the sheet — moving, and on the plain ring, the bar and the signed ring — one height at
+ *   its low, middle and high values and out of reach, unrecorded;
  * - the cards that take the styles, on their own sheets under the house's soft in both modes: every rule above held
  *   (the energy line, a production day), a stacked chart's hairlines and lighter fills, the distribution's pills and
  *   the bars' deepening ink, the history bars and the arrays classic (soft is not theirs), the house's ring on the
@@ -926,6 +928,64 @@ for (const mode of ['light', 'dark']) {
     'in a half card (152, 172) each moving gauge is as tall as its twin out of reach',
     twins.length === 0,
     twins.join(' | '),
+  );
+  // and from the full card's floor to a phone, where the window's row takes as many columns as hold it: every gauge of
+  // the sheet, moving and on the plain ring, the bar and the signed ring, one height at its low, middle and high values
+  // and out of reach and unrecorded — laid out by what it can write, never by what it writes now
+  const apart = [];
+  for (const lang of ['en', 'de', 'ja', 'pt-PT']) {
+    const page = await suite.page(`sheet=animated&lang=${lang}&frames=none`, {
+      viewport: { width: 1600, height: 1200 },
+    });
+    apart.push(
+      ...(
+        await page.evaluate(async () => {
+          const cards = [];
+          // each gauge's frame: its first card on the low value
+          const gauges = window.fluvySheets.animated.frames
+            .map((f) => f.cards[0])
+            .filter((c) => c.type === 'custom:fluvy-gauge-card' && c.entity.endsWith('_low'));
+          for (const width of [211, 266, 328, 360])
+            for (const config of gauges)
+              for (const [variant, gauge] of [
+                ['ring', config.gauge],
+                ['ring', 'ticks'],
+                ['bar', 'ticks'],
+                ['signed', 'ticks'],
+              ])
+                for (const level of ['low', 'mid', 'high', 'away']) {
+                  const box = document.createElement('div');
+                  box.style.width = `${width}px`;
+                  const card = document.createElement('fluvy-gauge-card');
+                  card.setConfig({
+                    ...config,
+                    entity: config.entity.replace(/_low$/, `_${level}`),
+                    variant,
+                    gauge,
+                  });
+                  card.hass = window.fluvyMock.hass();
+                  box.append(card);
+                  document.getElementById('stage').append(box);
+                  cards.push({ card, key: `${width} ${variant}/${gauge} ${config.gauge}` });
+                }
+          await new Promise((done) => setTimeout(done, 1500));
+          const by = new Map();
+          for (const { card, key } of cards) {
+            const h = card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height;
+            by.set(key, [...(by.get(key) ?? []), Math.round(h)]);
+          }
+          return [...by]
+            .filter(([, hs]) => new Set(hs).size > 1)
+            .map(([k, hs]) => `${k}: ${hs.join('/')}`);
+        })
+      ).map((line) => `${lang} ${line}`),
+    );
+    await page.close();
+  }
+  check(
+    'from 211 to a phone, in four languages, every gauge (moving and plain; ring, bar, signed) is one height low, mid, high and out of reach',
+    apart.length === 0,
+    apart.slice(0, 6).join(' | '),
   );
   // the house's motion off, and a system that asks for less: every gauge on its first frame
   const off = await suite.sheet('animated', {
