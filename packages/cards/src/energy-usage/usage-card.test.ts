@@ -129,6 +129,13 @@ describe('the Energy usage card', () => {
     // 24 hour slots, the columns stacked by source
     expect(root(card).querySelectorAll('.eu-chart .fc-bar').length).toBeGreaterThan(0);
     expect(root(card).querySelectorAll('.eu-chart .fc-bar--hanging').length).toBeGreaterThan(0);
+    // one column a slot, its parts flush whatever the house's bars' ends: at 20:00 the battery's part under the grid's,
+    // at 13:00 the charge between the line and the export, end square; only the outer ends are rounded
+    const parts = [...root(card).querySelectorAll('.eu-chart .fc-bar')].map(
+      (bar) => bar.getAttribute('d') ?? '',
+    );
+    expect(parts.filter((d) => d.includes('a0,0')).length).toBe(2);
+    expect(parts.filter((d) => /a[1-9]/.test(d)).length).toBe(parts.length - 2);
     expect(legend(card)).toEqual([
       { name: 'Solar', ink: 'en-ink--solar', accent: null, out: false },
       { name: 'Battery', ink: 'en-ink--battery', accent: null, out: false },

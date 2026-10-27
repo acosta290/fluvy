@@ -1,4 +1,5 @@
 import { houseZone, wallClock, type HomeAssistant } from '@fluvy/core';
+import { niceTicks, type Ticks } from '../chart/engine/index.js';
 import { allocate, type Totals } from '../energy-model/allocate.js';
 import type { Range, Step } from '../energy-model/period.js';
 import type { SourceKind } from '../energy-model/prefs.js';
@@ -8,7 +9,7 @@ import { midnightOf } from '../energy-period/picker.js';
  * The Energy usage card's figures, pure: a range in its slots (a day's hours, a week's or a month's days, a year's
  * months), each slot's energy by where the house took it from and where it went — Home Assistant's own series, from
  * the dashboard's own arithmetic (`allocate`, bucket by bucket) — and the series a card draws of them, in the order
- * and the colours it asks for, the sources past `max_sources` folded into one.
+ * and the colours it asks for, the sources past `max_sources` folded into one, on a scale that hugs them.
  */
 
 /** A slot's grain: the buckets the range is read in (Home Assistant's `getSuggestedPeriod`). */
@@ -209,3 +210,47 @@ export const usedOf = (slot: SlotEnergy | undefined): number =>
 /** What left the house in a slot (kWh): into the battery and out to the grid. */
 export const returnedOf = (slot: SlotEnergy | undefined): number =>
   slot ? slot.charged + slot.exported : 0;
+
+/** Heckbert's nice fractions within a decade, and the decimal a step of each writes below the units. */
+const NICE: ReadonlyArray<readonly [fraction: number, decimal: 0 | 1]> = [
+  [1, 0],
+  [2, 0],
+  [2.5, 1],
+  [5, 0],
+];
+
+/**
+ * The scale the columns stand on, hugging what they reach on both sides of zero (`low` the deepest fall, `high` the
+ * tallest rise): of the nice steps (1 · 2 · 2.5 · 5 × 10ⁿ), the one whose outermost tick on each side — the first of
+ * its multiples at or beyond that side's extreme — spans the least, three to five ticks over the whole (the more where
+ * two span alike). A week rising to 18 and falling to 9 reads −10 · 0 · 10 · 20, not −20 … 40. Nothing either side:
+ * zero alone.
+ */
+export function usageTicks(low: number, high: number): Ticks {
+  const lo = Math.min(0, low);
+  const hi = Math.max(0, high);
+  if (!(hi > lo)) return niceTicks(0, 0);
+  let best: { step: number; from: number; to: number; decimals: number } | undefined;
+  const first = Math.floor(Math.log10((hi - lo) / 4)) - 1;
+  for (let exponent = first; exponent <= first + 3; exponent++)
+    for (const [fraction, decimal] of NICE) {
+      const step = fraction * 10 ** exponent;
+      const from = Math.floor(lo / step + 1e-9);
+      const to = Math.ceil(hi / step - 1e-9);
+      if (to - from < 2 || to - from > 4) continue;
+      if (best && (to - from) * step >= (best.to - best.from) * best.step - 1e-9) continue;
+      best = { step, from, to, decimals: Math.max(0, -exponent) + (exponent <= 0 ? decimal : 0) };
+    }
+  if (!best) return niceTicks(lo, hi);
+  const { step, from, to, decimals } = best;
+  const ticks = Array.from({ length: to - from + 1 }, (_unused, i) =>
+    Number(((from + i) * step).toFixed(decimals)),
+  );
+  return {
+    min: ticks[0] as number,
+    max: ticks[ticks.length - 1] as number,
+    step,
+    ticks,
+    decimals: ticks.every(Number.isInteger) ? 0 : decimals,
+  };
+}

@@ -582,8 +582,9 @@ Energy period card) with Home Assistant's own statistics for its range: its chip
 the ghosts. `sources` lists the sources drawn, in the order they stack, each with its `name`, its `color` and `show`
 (none: every source the Energy dashboard has); past `max_sources` the last fold into "Other"; `show_returns: false`
 leaves out what went out, `show_legend: false` the legend. `variant: compact` is the chart and its axis alone, `mini` a
-strip under the head. `chart` draws the columns `classic` (the chart engine's columns), `soft` (a step lighter) or
-`columns`, `show_axis` and `show_grid` turn the scale and its gridlines off, and `unit` and `decimals` say how the
+strip under the head. Each slot is one column, its parts flush and only its outer ends rounded, on a scale that hugs
+what the columns reach on both sides of zero; `chart` draws them `classic` or `columns` in their inks, or `soft` a step
+lighter; `show_axis` and `show_grid` turn the scale and its gridlines off, and `unit` and `decimals` say how the
 figures read. With no Energy dashboard the card says so.
 
 ```yaml

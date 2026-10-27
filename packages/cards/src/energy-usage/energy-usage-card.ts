@@ -109,6 +109,7 @@ import { figuresOf, writeFigure, type Figures, type NumberKeys } from '../shared
 import {
   returnedOf,
   slotEnergy,
+  usageTicks,
   slotsOf,
   USAGE_KINDS,
   usageSeries,
@@ -160,9 +161,9 @@ export interface EnergyUsageCardConfig
 }
 
 /**
- * What the chart can draw: stacked columns on a nice scale from zero, several series, the scale beside them. Classic
- * here is the engine's columns with the house's caps (its classic bar is one series' gradient); soft draws them a
- * step lighter; columns is the engine's own.
+ * What the chart can draw: stacked columns on a scale through zero, several series, the scale beside them. Every style
+ * draws one column a slot, its parts flush and only its outer ends rounded (classic's bar is one series' gradient, so
+ * classic is the engine's columns here); soft draws the parts a step lighter.
  */
 const CAPS: ChartCaps = {
   bars: true,
@@ -942,27 +943,35 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const ghostUp = before ? drawn.slots.map((_t, i) => usedOf(before.energy[i])) : [];
     const ghostDown =
       before && returns ? drawn.slots.map((_t, i) => returnedOf(before.energy[i])) : [];
-    // the slots' unit: the tallest stack's, up or down, the ghosts' with them
-    const peak = Math.max(
+    // what the columns reach, the ghosts with them: the tallest rise and the deepest fall
+    const rise = Math.max(
       0,
-      ...drawn.slots.map((_t, i) =>
-        Math.max(
-          series.reduce((sum, s) => sum + Math.max(0, s.values[i] ?? 0), 0),
-          -series.reduce((sum, s) => sum + Math.min(0, s.values[i] ?? 0), 0),
-        ),
-      ),
       ...ghostUp,
-      ...ghostDown,
+      ...drawn.slots.map((_t, i) =>
+        series.reduce((sum, s) => sum + Math.max(0, s.values[i] ?? 0), 0),
+      ),
     );
-    const figures = figuresOf(this.hass, this.config, 'Wh', peak * 1000);
+    const fall = Math.max(
+      0,
+      ...ghostDown,
+      ...drawn.slots.map(
+        (_t, i) => -series.reduce((sum, s) => sum + Math.min(0, s.values[i] ?? 0), 0),
+      ),
+    );
+    // the slots' unit: the larger of the two's
+    const figures = figuresOf(this.hass, this.config, 'Wh', Math.max(rise, fall) * 1000);
     const shown = (kWh: number): number => (kWh * 1000) / figures.divisor;
     const caps = capsIn(this.config ?? {});
     const chosen = styleOf(this.config, caps);
-    // drawn as the engine's columns whatever the style's name (classic's bar is one series' gradient); the strip has
-    // no gridlines but the zero line
+    // drawn as the engine's columns whatever the style's name (classic's bar is one series' gradient): one column a
+    // slot, its parts flush, rounded only at its outermost end on each side of the line whatever the house says of a
+    // bar's ends; the strip has no gridlines but the zero line
     const resolved = resolveStyle('columns', chartKeysOf(this.config), caps);
-    const style: ResolvedStyle =
-      variant === 'mini' ? { ...resolved, grid: { ...resolved.grid, axes: 'none' } } : resolved;
+    const style: ResolvedStyle = {
+      ...resolved,
+      caps: 'top',
+      ...(variant === 'mini' ? { grid: { ...resolved.grid, axes: 'none' as const } } : {}),
+    };
     const paints = series.map((s) => this.paintOf(s));
     const chartSeries: ChartSeries[] = series.map((s, i) => ({
       values: s.values.map(shown),
@@ -976,7 +985,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       style,
       kind: 'bars',
       zero: true,
-      reach: [...ghostUp.map(shown), ...ghostDown.map((v) => -shown(v))],
+      ticks: usageTicks(-shown(fall), shown(rise)),
       cursor: hovered === null || !count ? null : (hovered + 0.5) / count,
       tick: (value, decimals) => tickText(this.hass, value, decimals),
       measure: (text) => this.head.ruler.width('ax-tick', text),
@@ -997,15 +1006,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const at = (v: number): number => (ticks ? yOf(v, ticks, box) : box.bottom);
     const ghosts =
       before && ticks
-        ? this.ghosts(
-            plot.left,
-            plot.width,
-            count,
-            ghostUp.map(shown),
-            ghostDown.map(shown),
-            at,
-            style,
-          )
+        ? this.ghosts(plot.left, plot.width, count, ghostUp.map(shown), ghostDown.map(shown), at)
         : nothing;
     const total = drawn.energy.reduce((sum, slot) => sum + usedOf(slot), 0);
     const label =
@@ -1052,7 +1053,10 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       }`;
   }
 
-  /** The period before: one quiet column a slot, what the house used up and what went out down, behind the bars. */
+  /**
+   * The period before: one quiet column a slot, what the house used up and what went out down, behind the bars,
+   * rounded at its outer ends as the columns are.
+   */
   private ghosts(
     left: number,
     width: number,
@@ -1060,20 +1064,18 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     up: readonly number[],
     down: readonly number[],
     at: (value: number) => number,
-    style: ResolvedStyle,
   ): TemplateResult {
     const { slot, bar } = barGeometry(count, width);
     const ghost = Math.max(2, Math.min(slot - 2, Math.round(bar * GHOST)));
     const radius = Math.min(4, ghost / 2);
     const zero = at(0);
-    const both = style.caps === 'both';
     return svg`${up.map((value, i) => {
       const x = left + i * slot + (slot - ghost) / 2;
       const rise = value > 0 ? zero - at(value) : 0;
       const fall = (down[i] ?? 0) > 0 ? at(-(down[i] ?? 0)) - zero : 0;
-      return svg`${rise >= 1 ? svg`<path class="eu-ghost" d=${barPath(x, zero - rise, ghost, rise, radius, both ? 'both' : 'top')}></path>` : nothing}${
+      return svg`${rise >= 1 ? svg`<path class="eu-ghost" d=${barPath(x, zero - rise, ghost, rise, radius, 'top')}></path>` : nothing}${
         fall >= 1
-          ? svg`<path class="eu-ghost" d=${barPath(x, zero, ghost, fall, radius, both ? 'both' : 'bottom')}></path>`
+          ? svg`<path class="eu-ghost" d=${barPath(x, zero, ghost, fall, radius, 'bottom')}></path>`
           : nothing
       }`;
     })}`;

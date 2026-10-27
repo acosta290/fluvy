@@ -12,6 +12,7 @@ import {
   slotEnergy,
   slotsOf,
   usageSeries,
+  usageTicks,
   usedOf,
   type SlotEnergy,
 } from './series.js';
@@ -222,6 +223,43 @@ describe('the series drawn', () => {
     expect(series.map((s) => s.key)).toEqual(['solar', 'other', 'charged', 'exported']);
     expect(series[1]?.values).toEqual([2.5, 1]);
     expect(series[1]?.kind).toBeUndefined();
+  });
+});
+
+describe('the scale hugs the columns on both sides of zero', () => {
+  it('the step whose outermost ticks span the least, three to five of them, each side at or beyond its extreme', () => {
+    // a week rising to 18 and falling to 9: −10 · 0 · 10 · 20, where the engine's first step that fits read −20 … 40
+    expect(usageTicks(-9, 18).ticks).toEqual([-10, 0, 10, 20]);
+    // past −10 the fall needs −20: by 10 that is six ticks, so the step that spans least in five or fewer is 25
+    expect(usageTicks(-10.5, 20.1).ticks).toEqual([-25, 0, 25]);
+    // a day: −1.2 … 1.6 — by 1 and by 2 they span alike, the more ticks win
+    expect(usageTicks(-1.2, 1.6).ticks).toEqual([-2, -1, 0, 1, 2]);
+    // a rise alone: from zero, written with the step's decimals
+    const day = usageTicks(0, 1.6);
+    expect(day.ticks).toEqual([0, 0.5, 1, 1.5, 2]);
+    expect(day.decimals).toBe(1);
+    // 640: 750 hugs it closer than 800
+    expect(usageTicks(0, 640).ticks).toEqual([0, 250, 500, 750]);
+    // a month of a year in kWh
+    expect(usageTicks(-412, 803).ticks).toEqual([-500, 0, 500, 1000]);
+  });
+
+  it('every tick reaches the extremes and never more than five stand; nothing at all is zero alone', () => {
+    for (const [low, high] of [
+      [-0.03, 0.4],
+      [-7.7, 2.2],
+      [0, 99],
+      [-1234, 5678],
+      [-0.6, 0],
+    ] as const) {
+      const { ticks } = usageTicks(low, high);
+      expect(ticks.length).toBeGreaterThanOrEqual(3);
+      expect(ticks.length).toBeLessThanOrEqual(5);
+      expect(ticks[0]).toBeLessThanOrEqual(low);
+      expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(high);
+      expect(ticks).toContain(0);
+    }
+    expect(usageTicks(0, 0).ticks).toEqual([0]);
   });
 });
 
