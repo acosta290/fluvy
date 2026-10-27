@@ -1791,6 +1791,7 @@
     "title": "Pontuação energética",
     "title_short": "Nota",
     "self_powered": "Autonomia",
+    "self_powered_short": "Autonomia",
     "sun_used": "Autoconsumo",
     "low_carbon": "Baixo carbono",
     "imported": "Importada",

@@ -1820,6 +1820,7 @@
     "title": "エネルギースコア",
     "title_short": "スコア",
     "self_powered": "自給率",
+    "self_powered_short": "自給率",
     "sun_used": "太陽光利用",
     "low_carbon": "低炭素",
     "imported": "買電",

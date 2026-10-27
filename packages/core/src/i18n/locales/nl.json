@@ -1791,6 +1791,7 @@
     "title": "Energiescore",
     "title_short": "Score",
     "self_powered": "Zelfvoorzienend",
+    "self_powered_short": "Zelfstandig",
     "sun_used": "Zon benut",
     "low_carbon": "CO₂-arm",
     "imported": "Import",

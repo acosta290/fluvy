@@ -1791,6 +1791,7 @@
     "title": "Energie-Score",
     "title_short": "Score",
     "self_powered": "Autark",
+    "self_powered_short": "Autark",
     "sun_used": "PV genutzt",
     "low_carbon": "CO₂-arm",
     "imported": "Bezogen",

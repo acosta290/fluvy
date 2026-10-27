@@ -1791,6 +1791,7 @@
     "title": "Enerji karnesi",
     "title_short": "Karne",
     "self_powered": "Öz yeterli",
+    "self_powered_short": "Öz yeterli",
     "sun_used": "Öz tüketim",
     "low_carbon": "Düşük CO₂",
     "imported": "Alınan",
