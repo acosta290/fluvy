@@ -151,18 +151,35 @@ export function devicesHeight(config: LovelaceCardConfig): number {
 const LEGEND_LEAD = 20;
 /** A legend row (40) and the 8 between rows. */
 const LEGEND_ROW = 40;
+/** The least room between two neighbours' names in a legend's row: the house's smallest step. */
+const LEGEND_APART = 8;
 
 /**
- * The rows a legend of `names` takes at a 360 column (`legendColumns`): as many columns as names (three at most
- * in one row of more), two of four, else one, the widest name deciding.
+ * The columns a legend takes in `width`, its items `widths` wide (a square and its name): as many as there are items
+ * (three at most in a row of more), two of four, else one — the first in which every item holds its column, two
+ * neighbours' names, centred in theirs, stand 8 apart and the widest figure (`figure`) holds a column; `gap` is the
+ * room between columns. Two pixels over a column (its rounding, the ruler's own pixel) is not a reason to fold: the
+ * name is centred and overhangs it, where its neighbours leave it the room.
  */
-export function legendRows(names: readonly string[], width = COLUMN): number {
-  const count = names.length;
-  if (!count) return 0;
-  const widest = Math.max(0, ...names.map((name) => LEGEND_LEAD + textWidth(name, 'legend')));
+export function legendFold(widths: readonly number[], width: number, figure = 0, gap = 0): number {
+  const count = widths.length;
   const candidates = count <= 3 ? [count, 1] : count === 4 ? [4, 2, 1] : [count, 3, 2, 1];
-  const columns = candidates.find((n) => width / n + 2 >= widest) ?? 1;
-  return rowsOf(count, columns);
+  const holds = (n: number): boolean => {
+    const column = (width - gap * (n - 1)) / n;
+    const apart = (i: number): boolean =>
+      (i + 1) % n === 0 ||
+      i + 1 === count ||
+      column + gap - ((widths[i] ?? 0) + (widths[i + 1] ?? 0)) / 2 >= LEGEND_APART;
+    return column >= figure && widths.every((item, i) => item <= column + 2 && apart(i));
+  };
+  return candidates.find(holds) ?? 1;
+}
+
+/** The rows a legend of `names` takes at a 360 column (`legendFold`), its names measured as the legend writes them. */
+export function legendRows(names: readonly string[], width = COLUMN): number {
+  if (!names.length) return 0;
+  const widths = names.map((name) => LEGEND_LEAD + textWidth(name, 'legend'));
+  return rowsOf(names.length, legendFold(widths, width));
 }
 
 /**

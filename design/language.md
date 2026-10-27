@@ -827,7 +827,8 @@ heads stay). A figure animates only when its text changes.
 
 **Legends and blocks.** Distribution's idiom: a 12 px bar of segments with 2 px gaps and 6 px end radii; 12 × 12
 squares, the name 14/500 and the figure 16/600 under it, in equal centred columns — measured: when a name does not
-fit its column the row folds (four into two by two, three or fewer into one a line). A block is its LABEL (11/600
+fit its column, or two neighbours' names would stand closer than 8, the row folds (four into two by two, three or
+fewer into one a line). A block is its LABEL (11/600
 caps) and total on one 20 px line, the bar 8 under, the legend 12 under that.
 
 **Phases.** A row per phase: its name (and voltage) in 40, a bar centred on zero in the grid's colour both ways

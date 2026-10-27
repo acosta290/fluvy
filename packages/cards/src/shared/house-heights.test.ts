@@ -2,7 +2,7 @@
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { printerHeight } from '../devices-family.js';
-import { devicesHeight, legendRows } from '../energy-family.js';
+import { devicesHeight, legendFold, legendRows } from '../energy-family.js';
 import { appliancesHeight } from '../appliances-family.js';
 import { alertsHeight } from '../alerts-family.js';
 import { houseHeightOf } from '../house-heights.js';
@@ -542,6 +542,19 @@ describe('the energy family and the lists', () => {
         hass,
       ),
     ).toBe(flowHeight({ type: 'x', sources }) + 60);
+  });
+
+  it('a legend folds where two neighbours’ names would stand closer than 8, not only where one overhangs', () => {
+    // Solar · Other · Charged · Exported in a 360 card: Charged and Exported fill their 80 columns and would touch
+    expect(legendFold([58, 68, 79, 81], 320)).toBe(2);
+    expect(legendFold([58, 72, 50, 58], 320)).toBe(4);
+    // a name two pixels over its column holds it where its neighbours leave it the room
+    expect(legendFold([50, 82, 50], 240)).toBe(3);
+    expect(legendFold([76, 82, 50], 240)).toBe(1);
+    // the room between columns counts between neighbours too
+    expect(legendFold([90, 90, 90], 320, 0, 12)).toBe(3);
+    // a house with a battery and the grid and no sun: four names, two rows of two
+    expect(legendRows(['Battery', 'Grid', 'Charged', 'Exported'])).toBe(2);
   });
 
   it('production: the legend in the rows the arrays’ names take', () => {

@@ -1,11 +1,13 @@
 import { html, nothing, type TemplateResult } from 'lit';
 import { optionGrid } from '@fluvy/ui';
+import { legendFold } from '../energy-family.js';
 import type { TextRuler } from '../shared/fit.js';
 
 /**
  * The energy cards' legend (Distribution's idiom): a 12 px square in the item's ink, its name 14/500 and its figure
  * 16/600 under it, in equal centred columns. The names are measured in their own class: when one does not fit its
- * column the row folds (four into two by two, three or fewer into one a line) rather than cut a word.
+ * column, or two neighbours' would stand closer than 8, the row folds (four into two by two, three or fewer into one
+ * a line) rather than cut a word or let two meet.
  */
 export interface LegendEntry {
   /** The ink class (`en-ink--solar`), and the item's own colour when it has one. */
@@ -24,8 +26,9 @@ export interface LegendEntry {
 const LEAD = 20;
 
 /**
- * How many columns the legend takes: all, or folded (four into two by two, three or fewer into one a line) when a
- * name — or the widest figure, `figure` — does not fit its column; `gap` is the room between columns.
+ * How many columns the legend takes (`legendFold`), its names measured in their own class: all, or folded when a name
+ * — or the widest figure, `figure` — does not fit its column, or two neighbours' names would meet; `gap` is the room
+ * between columns.
  */
 export function legendColumns(
   names: readonly string[],
@@ -34,16 +37,11 @@ export function legendColumns(
   figure = 0,
   gap = 0,
 ): number {
-  const count = names.length;
-  const widest = Math.max(0, ...names.map((name) => LEAD + ruler.width('en-legend__name', name)));
-  const candidates = count <= 3 ? [count, 1] : count === 4 ? [4, 2, 1] : [count, 3, 2, 1];
-  // two pixels over a column (its rounding, the ruler's own pixel) is not a reason to fold the row: the name is centred
-  // and its neighbours' names are narrower than their columns
-  return (
-    candidates.find((n) => {
-      const column = (width - gap * (n - 1)) / n;
-      return column + 2 >= widest && column >= figure;
-    }) ?? 1
+  return legendFold(
+    names.map((name) => LEAD + ruler.width('en-legend__name', name)),
+    width,
+    figure,
+    gap,
   );
 }
 
