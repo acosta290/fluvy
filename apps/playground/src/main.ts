@@ -378,6 +378,7 @@ for (const column of columns)
       el.dataset[frame.measure === false ? 'stress' : 'frame'] = `${name}/${frame.title}`;
       el.style.width = `${frame.width ?? width}px`;
       if (frame.gap !== undefined) el.style.gap = `${frame.gap}px`;
+      if (frame.heights) el.dataset['heights'] = frame.heights.join(',');
       if (frame.statuses) wearStatuses(el, frame.statuses, column);
       const total = frame.columns ?? 12;
       if (frame.columns) el.style.gridTemplateColumns = `repeat(${total}, minmax(0, 1fr))`;

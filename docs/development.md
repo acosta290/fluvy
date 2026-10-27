@@ -296,7 +296,9 @@ the height drawn and the reason — the few cards whose drawing depends on live 
 printer's job, a calendar's events, the house's appliances), which declare their documented default. A known drift no
 longer seen as listed fails too: the file only shrinks. `--write-known` rewrites it from what the run saw, keeping the
 reasons (a new entry's is `triage`, to be written by hand); `--only climate,home` measures some sheets, `--json
-out.json` keeps every sample with its config.
+out.json` keeps every sample with its config. A frame whose spec says its heights hold under the full-card floor too
+(`heights: [152, 172]`, the Energy period strip's half a section) is drawn again at those card widths in every
+language, and there no drift is known.
 
 ### The facts guard
 

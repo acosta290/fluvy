@@ -21,6 +21,11 @@ export interface FrameSpec {
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   /**
+   * Card widths under the full-card floor (half a section: 152, 172) at which its cards draw what they declare too:
+   * `heights.mjs` draws the frame again at each, in every language, and holds every card to its height there.
+   */
+  readonly heights?: readonly number[];
+  /**
    * The cards, each with the columns it is given (`cols`, of 12: Home Assistant's `grid_options.columns`). As Home
    * Assistant does, a card is held to its own `getGridOptions()` minimum and maximum: a 4 asked of a card whose
    * minimum is 6 draws at 6.

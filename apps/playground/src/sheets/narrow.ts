@@ -119,10 +119,12 @@ export const sheet: SheetSpec = {
         })),
       ),
     },
-    // the Energy period strip at its floor, half a section: the arrows, the span's short words, the glyphs as they hold;
-    // no picker holds its key, so Home Assistant's date card (the playground's) makes the collection
+    // the Energy period strip at its floor, half a section: the arrows, the span's short words, the glyphs as they hold,
+    // the stacked periods scrolling on their one line — at the height it declares (heights.mjs holds it there); no
+    // picker holds its key, so Home Assistant's date card (the playground's) makes the collection
     {
       title: 'Energy period · half a section',
+      heights: [152, 172],
       cards: [
         { show_compare: true },
         { variant: 'compact' },
