@@ -114,3 +114,37 @@ describe('the ring’s gauge styles', () => {
     expect(field?.when?.({ variant: 'signed' })).toBe(false);
   });
 });
+
+describe('the ring’s moving gauges', () => {
+  it('draws one that reads the sensor in the dial’s room, in its own tone where the card names none', async () => {
+    const root = (await mount({ variant: 'ring', gauge: 'pulse' }, house())).shadowRoot!;
+    const scene = root.querySelector('.so-gauge .fc-pulse') as HTMLElement;
+    expect([scene.style.width, scene.style.height]).toEqual(['240px', '224px']);
+    expect(scene.classList.contains('fv-tone--accent')).toBe(true);
+    expect(root.querySelector('.fc-reading b')?.textContent).toBe('2.3');
+  });
+
+  it('draws one that does not read it as its ticks: the sky is for a temperature', async () => {
+    const root = (await mount({ variant: 'ring', gauge: 'thermo' }, house())).shadowRoot!;
+    expect(root.querySelector('.fc-scene')).toBeNull();
+    expect(root.querySelector('.so-gauge > fluvy-dial')?.hasAttribute('gauge')).toBe(true);
+  });
+
+  it('rests on its first frame where the card says so', async () => {
+    const root = (await mount({ variant: 'ring', gauge: 'sun', animate: false }, house()))
+      .shadowRoot!;
+    expect(root.querySelector('.fc-sun')?.classList.contains('is-still')).toBe(true);
+  });
+
+  it('offers the ring the gauges that read the sensor, and motion only beside one of them', () => {
+    const hass = house();
+    const config = { type: 'custom:fluvy-gauge-card', entity: 'sensor.grid' };
+    const gauges = gaugeEditor.choices(config, hass)['gauge']?.map((o) => o.value);
+    expect(gauges).toEqual(['ticks', 'dial', 'ring', 'pulse', 'sun']);
+    const animate = gaugeEditor.getConfigForm().schema.find((item) => item.name === 'animate');
+    expect(animate?.when?.({ ...config, gauge: 'pulse' }, hass)).toBe(true);
+    expect(animate?.when?.({ ...config, gauge: 'thermo' }, hass)).toBe(false);
+    expect(animate?.when?.({ ...config, gauge: 'ring' }, hass)).toBe(false);
+    expect(gaugeEditor.defaults({ ...config, gauge: 'thermo' }, hass)['gauge']).toBe('ticks');
+  });
+});

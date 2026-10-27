@@ -147,13 +147,20 @@ export const selectField = (
     select: {
       mode: 'dropdown',
       ...(custom ? { custom_value: true } : {}),
-      options: options.map((value) => ({
-        value,
-        label: localize(editorLanguage(), `option.${words[value] ?? value}`),
-      })),
+      options: optionChoices(options, words),
     },
   },
 });
+
+/** A select's choices: each value with its words (`option.*`, or another value's where `words` says so). */
+export const optionChoices = (
+  options: readonly OptionWord[],
+  words: Partial<Record<OptionWord, OptionWord>> = {},
+): SelectOption[] =>
+  options.map((value) => ({
+    value,
+    label: localize(editorLanguage(), `option.${words[value] ?? value}`),
+  }));
 /**
  * Where a row's last change is read from (`since`, #67): one of the house's timestamp sensors (`sinceChoices`), or
  * `attribute:<name>` of the row's own entity, typed.

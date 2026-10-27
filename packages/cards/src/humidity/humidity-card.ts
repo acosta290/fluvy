@@ -25,6 +25,7 @@ import {
 } from 'lit';
 
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
+import { ChartLoader } from '../shared/chart-load.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
 
@@ -52,15 +53,22 @@ export interface HumidityCardConfig extends FluvyCardConfig {
   /** A humidifier, dehumidifier or plain switch shown as a row with its switch. */
   humidifier_entity?: string;
   /**
-   * The comfort ruler's style: its ticks with the reading's marker (1.10's, `ticks`), or the ruler read, lit to the
-   * reading with Fluvy's knob on it (`ruler`); none: the house's — a dial or a ring has no room here, and reads ticks.
+   * The comfort band's style: the ruler's ticks with the reading's marker (1.10's, `ticks`), the ruler read, lit to
+   * the reading with Fluvy's knob on it (`ruler`), or the liquid, its level the reading (`liquid`); none: the house's
+   * — any other has no room here, and reads ticks.
    */
   gauge?: GaugePreset;
+  /** Whether the liquid moves; none: the house's (still, it rests on its first frame). */
+  animate?: boolean;
 }
 
-/** Whether a config's ruler is read lit with Fluvy's knob: its own `gauge`, else the house's, is the ruler. */
-export const litRuler = (config: Readonly<Record<string, unknown>> | undefined): boolean =>
-  ((config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge) === 'ruler';
+/** The comfort band's style: its own `gauge`, else the house's, where it is the ruler or the liquid; else the ticks. */
+export const bandOf = (
+  config: Readonly<Record<string, unknown>> | undefined,
+): 'ticks' | 'ruler' | 'liquid' => {
+  const wanted = (config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge;
+  return wanted === 'ruler' || wanted === 'liquid' ? wanted : 'ticks';
+};
 
 /** The history cache in core lives five minutes; asking again sooner would only return the same window. */
 /** The band opens this far outside the ticks that bound it, so neither tick is bitten by its edge. */
@@ -113,6 +121,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
 
   private readonly history = new Refresher<Series | null>();
   private readonly head = new HeadFit(this);
+  /** The chart engine, for the liquid: the ruler is the card's own and waits for nothing. */
+  private readonly charts = new ChartLoader(this);
 
   constructor() {
     super();
@@ -320,7 +330,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     // `dark` on the ruler: its lit ticks glow in dark mode, and nothing else tells a control which mode it is in; it
     // is read with its marker (the classic ruler) or lit to the reading with Fluvy's knob
     const parts = valueParts(this.hass, view);
-    const lit = litRuler(this.config);
+    const band = bandOf(this.config);
+    const engine = this.charts.engine;
     // the dew point beside the humidity in the longest of its words that leaves the dew point its room ("Humidity"
     // where "Relative humidity" would wrap), else under it: measured at the widest humidity and under both of the
     // side's words, so the humidity going unknown never moves the row; alone, the longest the column holds (de's
@@ -388,30 +399,47 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
         ${readout({ label: relative, value: parts.value, unit: value === null ? '' : parts.unit || '%', size: 'l' })}
         ${side ? html`<div class="so-top__side">${readout({ label: side.label, value: side.value, unit: side.unit, size: 's' })}</div>` : nothing}
       </div>
-      <div class="so-band">
-        <span
-          class="so-band__zone"
-          data-measure="value"
-          style="left:${bandLeft}px;width:${bandRight - bandLeft}px"
-        ></span>
-        <fluvy-ruler
-          ?marker=${!lit}
-          ?readonly=${lit}
-          ?dark=${this.dark}
-          .value=${value ?? 0}
-          .min=${0}
-          .max=${100}
-          .step=${1}
-          .length=${width}
-          .knob=${36}
-          .tone=${unusable ? 'neutral' : markerTone}
-          ?inactive=${value === null}
-          unit="%"
-          .label=${`${name} · ${strings(this.hass, 'relative')}`}
-          .format=${(raw: number) => formatNumber(this.hass, raw, { digits: 0 })}
-        ></fluvy-ruler>
-      </div>
-      ${rulerLabels(labels)}
+      ${
+        band === 'liquid'
+          ? // the liquid takes the ruler's room and its labels' (64), its level the reading
+            html`<div class="so-band">
+              ${engine?.drawGauge({
+                style: engine.resolveGauge('liquid', this.config ?? {}),
+                size: width,
+                height: 64,
+                min: 0,
+                max: 100,
+                value: unusable ? null : value,
+                format: String,
+                tone: markerTone,
+                bare: true,
+              })}
+            </div>`
+          : html`<div class="so-band">
+                <span
+                  class="so-band__zone"
+                  data-measure="value"
+                  style="left:${bandLeft}px;width:${bandRight - bandLeft}px"
+                ></span>
+                <fluvy-ruler
+                  ?marker=${band === 'ticks'}
+                  ?readonly=${band === 'ruler'}
+                  ?dark=${this.dark}
+                  .value=${value ?? 0}
+                  .min=${0}
+                  .max=${100}
+                  .step=${1}
+                  .length=${width}
+                  .knob=${36}
+                  .tone=${unusable ? 'neutral' : markerTone}
+                  ?inactive=${value === null}
+                  unit="%"
+                  .label=${`${name} · ${strings(this.hass, 'relative')}`}
+                  .format=${(raw: number) => formatNumber(this.hass, raw, { digits: 0 })}
+                ></fluvy-ruler>
+              </div>
+              ${rulerLabels(labels)}`
+      }
       ${
         this.trendHours > 0 || humidifier
           ? html`<div class="so-rows">

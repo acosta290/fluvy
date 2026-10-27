@@ -8,9 +8,12 @@ import {
 import { afterEach, describe, expect, it } from 'vitest';
 import { FluvyHumidityCard, type HumidityCardConfig } from './humidity-card.js';
 import * as humidityEditor from './humidity-editor.js';
+import { loadChartEngine } from '../shared/chart-load.js';
 
 if (!customElements.get('fluvy-humidity-card'))
   customElements.define('fluvy-humidity-card', FluvyHumidityCard);
+// the liquid is the chart engine's: it lands as the bundle starts, so a card has it from its first render
+await loadChartEngine();
 
 const house = (): HomeAssistant =>
   ({
@@ -65,14 +68,37 @@ describe('the humidity’s ruler, in its gauge styles', () => {
     expect(ruler(await mount({}))?.hasAttribute('marker')).toBe(true);
   });
 
-  it('offers its two looks, the classic one by its word', () => {
-    const field = humidityEditor
+  it('offers its three looks, the classic one by its word, and motion beside the liquid', () => {
+    const row = humidityEditor
       .getConfigForm()
-      .schema.find((item) => item.name === 'gauge') as HaFormSchemaItem;
+      .schema.find((item) => item.schema?.some((field) => field.name === 'gauge'));
+    const [gauge, animate] = row?.schema as HaFormSchemaItem[];
     expect(
-      (field.selector as { select: { options: { value: string }[] } }).select.options.map(
+      (gauge?.selector as { select: { options: { value: string }[] } }).select.options.map(
         (o) => o.value,
       ),
-    ).toEqual(['ticks', 'ruler']);
+    ).toEqual(['ticks', 'ruler', 'liquid']);
+    expect(animate?.name).toBe('animate');
+    expect(animate?.when?.({ gauge: 'liquid' })).toBe(true);
+    expect(animate?.when?.({ gauge: 'ruler' })).toBe(false);
+  });
+});
+
+describe('the humidity’s liquid', () => {
+  it('takes the ruler’s room and its labels’, its level the reading, where the card or the house says liquid', async () => {
+    const card = await mount({ gauge: 'liquid' });
+    const scene = card.shadowRoot!.querySelector('.so-band .fc-water') as HTMLElement;
+    expect(scene.style.height).toBe('64px');
+    expect(ruler(card)).toBeNull();
+    expect(card.shadowRoot!.querySelector('.fv-ruler-labels')).toBeNull();
+    // the figure is the readout's over it: the liquid says nothing
+    expect(scene.querySelector('.fc-reading')).toBeNull();
+    setChartDefaults({ settings: { ...CHART_DEFAULTS, gauge: 'liquid' }, sets: [] });
+    expect((await mount({})).shadowRoot!.querySelector('.so-band .fc-water')).not.toBeNull();
+  });
+
+  it('rests on its first frame where the card says so', async () => {
+    const card = await mount({ gauge: 'liquid', animate: false });
+    expect(card.shadowRoot!.querySelector('.fc-water')?.classList.contains('is-still')).toBe(true);
   });
 });

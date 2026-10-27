@@ -79,17 +79,22 @@ export interface GaugeCardConfig extends FluvyCardConfig, NumberKeys {
   hours?: number;
   /** Head badge. Defaults to "Producing" / "Idle", read from the value. */
   badge?: string;
-  /** The ring's style: its ticks (1.10's), the thermostat's dial read, or a ring with its knob; none: the house's. */
+  /**
+   * The ring's style: its ticks (1.10's), the thermostat's dial read, a ring with its knob, or a gauge that moves with
+   * what the sensor reads (a liquid, the sky, a tank, a battery, a pulse, the air, the sun); none: the house's.
+   */
   gauge?: GaugePreset;
+  /** Whether a moving gauge moves; none: the house's (still, it rests on its first frame). */
+  animate?: boolean;
 }
 
-/** The gauge styles the ring draws in its room: its ticks (the dial since 1.0), the thermostat's dial read, a ring. */
-export const DIALS: readonly GaugePreset[] = ['ticks', 'dial', 'ring'];
-
-/** The style a config's ring draws: its own, else the house's, else its ticks. */
+/**
+ * The style a config's ring wants: its own, else the house's — any but the ruler, which has no room there; a moving
+ * one is drawn where it reads the sensor (the engine's `resolveGauge`), else the ticks.
+ */
 export const dialOf = (config: Readonly<Record<string, unknown>> | undefined): GaugePreset => {
   const wanted = (config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge;
-  return DIALS.includes(wanted) ? wanted : 'ticks';
+  return wanted === 'ruler' ? 'ticks' : wanted;
 };
 
 /** The sheet's ring: R 96 with 12 px ticks needs a 240 box, which a 300 px card still holds. */
@@ -344,7 +349,15 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
       formatNumber(this.hass, raw / scale.divisor, { digits: edgeDigits, minDigits: edgeDigits });
 
     const active = value !== null && value > min + (max === null ? 0 : (max - min) * IDLE);
-    const tone: Tone = toneOf(this.config, 'solar');
+    const engine = this.charts.engine;
+    const dial = dialOf(this.config);
+    const reads = { deviceClass: view.deviceClass, unit: base.unit };
+    // a style's ring is the engine's: a moving one where it reads the sensor (else the ticks), in its own tone
+    const style =
+      dial === 'ticks'
+        ? undefined
+        : engine?.resolveGauge(dial, this.config ?? {}, undefined, reads);
+    const tone: Tone = toneOf(this.config, style?.tone ?? 'solar');
     const headTone: Tone = unusable ? 'off' : active ? tone : 'neutral';
     const badgeText =
       unusable || value === null
@@ -360,10 +373,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const radius = Math.min(RADIUS, Math.max(48, Math.floor((width / 2 - TICK - 12) / 4) * 4));
     const box = Math.ceil((radius + TICK + 12) / 4) * 8; // the dial's own box: twice its half, which sits on the 4 grid
     const inset = Math.max(0, Math.floor((width - box) / 2));
-    const dial = dialOf(this.config);
     // the dial's height, down to its range's labels: the room a style's ring keeps
     const tall = dialLabelTop(radius, TICK) + 16;
-    const engine = this.charts.engine;
 
     const stats = (
       [
@@ -416,24 +427,35 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
                 [0, edge(min)],
                 [1, max === null ? '—' : edge(max)],
               ])}`
-          : dial !== 'ticks'
+          : style?.preset !== 'ticks' && dial !== 'ticks'
             ? // a style's ring in the dial's room (its box, the height down to its range): the engine's, once here
               html`<div class="so-gauge">
                 <div style="margin-left:${inset}px;width:${box}px;height:${tall}px">
-                  ${engine?.drawGauge({
-                    style: engine.resolveGauge(dial, {}),
-                    // a ring is as tall as the dial's room, a dial its box
-                    size: dial === 'ring' ? tall : box,
-                    min,
-                    max: max ?? min,
-                    value: max === null || unusable ? null : value,
-                    format: shown,
-                    unit: scale.unit,
-                    label: this.innerLabel(view),
-                    minLabel: edge(min),
-                    maxLabel: max === null ? '—' : edge(max),
-                    tone,
-                  })}
+                  ${
+                    style &&
+                    engine?.drawGauge({
+                      style,
+                      // a ring as tall as the dial's room, a dial its box; a moving gauge the room, in the column
+                      size: dial === 'ring' ? tall : dial === 'dial' ? box : Math.min(box, width),
+                      height: tall,
+                      reads,
+                      // how fast it moves an hour, over the window's last two slots (an hour of a day's), in the
+                      // sensor's unit: a volume's or a percentage's, which no unit is scaled from
+                      rise:
+                        series &&
+                        ((series.values.at(-1)! - series.values.at(-3)!) * 24) / this.hours,
+                      hass: this.hass,
+                      min,
+                      max: max ?? min,
+                      value: max === null || unusable ? null : value,
+                      format: shown,
+                      unit: scale.unit,
+                      label: this.innerLabel(view),
+                      minLabel: edge(min),
+                      maxLabel: max === null ? '—' : edge(max),
+                      tone,
+                    })
+                  }
                 </div>
               </div>`
             : html`<div class="so-gauge">
