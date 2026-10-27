@@ -339,9 +339,10 @@ const chartsTab = (page) => ({
       (await page.locator('fluvy-panel #pn-tab-charts').getAttribute('aria-selected')) === 'true',
   );
   check(
-    'eight styles and four gauges as tiles, each drawn by the engine; classic and ticks chosen',
+    'eight styles and eleven gauges (four controls, seven that move) as tiles, each drawn by the engine; classic and ticks chosen',
     (await page.locator('fluvy-panel .pn-art--style svg.fc-chart').count()) === 8 &&
-      (await page.locator('fluvy-panel .pn-art--gauge').count()) === 4 &&
+      (await page.locator('fluvy-panel .pn-art--gauge').count()) === 11 &&
+      (await page.locator('fluvy-panel .pn-art--gauge .fc-scene').count()) === 7 &&
       (await c.tile('Classic').getAttribute('aria-pressed')) === 'true' &&
       (await c.tile('Ticks').getAttribute('aria-pressed')) === 'true',
   );
