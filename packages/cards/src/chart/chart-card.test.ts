@@ -342,6 +342,40 @@ describe('a price list: Nordpool today and tomorrow', () => {
     expect(root(card).querySelector('.fc-now')).not.toBeNull();
   });
 
+  it('steps never narrower than 6: a phone’s card reads the quarters by the hour, a wide one keeps them', async () => {
+    const steps = async (width: number): Promise<number[]> => {
+      const card = await draw(NORDPOOL, house(), width);
+      const d = root(card).querySelector('.fc-line:not(.fc-run)')?.getAttribute('d') ?? '';
+      expect(d.match(/M/g)).toHaveLength(1);
+      const xs = (d.match(/H[\d.]+/g) ?? []).map((h) => Number(h.slice(1)));
+      return xs.slice(1).map((x, i) => x - (xs[i] as number));
+    };
+    const phone = await steps(360);
+    expect(Math.min(...phone)).toBeGreaterThanOrEqual(6);
+    // two days of quarters across a wide card: 192 slots, each still 6 or more
+    const wide = await steps(1400);
+    expect(Math.min(...wide)).toBeGreaterThanOrEqual(6);
+    expect(wide.length).toBeGreaterThan(3 * phone.length);
+  });
+
+  it('says the day of a midnight between its axis’s ends', async () => {
+    // the axis's marks are the browser's clock: a house on it, not the server's
+    const local = {
+      ...house(),
+      locale: { language: 'en', number_format: 'language', time_format: '24' },
+    };
+    const card = await draw(NORDPOOL, local as HomeAssistant);
+    expect(texts(card, '.ch-axis .fv-axis > *')).toEqual(['Thu 00:00', 'Fri 00:00', 'Sat 00:00']);
+  });
+
+  it('raises its plot under the value row, the bubble riding over the row while read', async () => {
+    const card = await draw(NORDPOOL);
+    expect(root(card).querySelector('.ch-chart.is-tight')).not.toBeNull();
+    // without the value row the bubble keeps its room above the plot
+    const bare = await draw({ ...NORDPOOL, show_head: false, highlight: 'none' });
+    expect(root(bare).querySelector('.ch-chart.is-tight')).toBeNull();
+  });
+
   it('marks the cheapest and the dearest two hours of what is to come, and names them', async () => {
     const card = await draw(NORDPOOL);
     const stretches = [...root(card).querySelectorAll('.fc-stretch')];

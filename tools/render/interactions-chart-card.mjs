@@ -130,12 +130,21 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
     const knobs = [...root.querySelectorAll('.ch-chart > .fv-knob')];
     const knob = knobs[0]?.getBoundingClientRect();
     const future = svg.querySelector('.fc-future:not(.fc-run)');
-    // a stepped price holds its quarter: now stands in its slot's middle, what is to come starts with the next slot
-    const plot = svg.querySelector('clipPath rect');
-    const slot = Number(plot.getAttribute('width')) / 192;
+    const line = svg.querySelector('.fc-line:not(.fc-run)');
+    // the steps of the past: each H the start of the next slot (every one as wide as its slot)
+    const steps = (line.getAttribute('d').match(/H[\d.]+/g) ?? []).map((h) => Number(h.slice(1)));
+    const widths = steps.slice(1).map((x, i) => x - steps[i]);
+    // a stepped price holds its slot: now stands in its slot's middle, what is to come starts with the next slot
+    const slot = Math.min(...widths);
     const runs = [...svg.querySelectorAll('.fc-run')].map(
       (run) => run.parentElement.className.baseVal,
     );
+    const band = (cls) =>
+      [...svg.querySelectorAll(`g.fv-tone--${cls} > .fc-run`)].map((run) => ({
+        line: run.classList.contains('fc-line'),
+        moves: (run.getAttribute('d').match(/M/g) ?? []).length,
+        same: run.getAttribute('d') === line.getAttribute('d'),
+      }));
     const stretches = [...svg.querySelectorAll('.fc-stretch')].map(
       (s) => s.parentElement.className.baseVal,
     );
@@ -144,18 +153,63 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
       text: pill.textContent.trim(),
       label: pill.getAttribute('aria-label'),
     }));
+    // the plot under the row that says the reading: its top gridline 12 under the chart's room
+    const top = Math.min(
+      ...[...svg.querySelectorAll('.fc-grid')].map((g) => g.getBoundingClientRect().top),
+    );
+    const row = root.querySelector('.ch-top').getBoundingClientRect();
+    const axis = [...root.querySelectorAll('.ch-axis .fv-axis > *')].map((l) =>
+      l.textContent.trim(),
+    );
     return {
       now,
       knobs: knobs.length,
       knob: knob ? knob.left + knob.width / 2 : null,
       slot,
+      widths: [Math.min(...widths), Math.max(...widths)],
+      moves: (line.getAttribute('d').match(/M/g) ?? []).length,
+      futureMoves: (future.getAttribute('d').match(/M/g) ?? []).length,
+      bands: { warning: band('warning'), danger: band('danger') },
       starts: box.left + Number(/^M([\d.]+)/.exec(future.getAttribute('d'))?.[1]),
       dashes: getComputedStyle(future).strokeDasharray,
       runs: [...new Set(runs)].sort(),
       stretches,
       pills,
+      gap: top - row.bottom,
+      axis,
     };
   });
+  check(
+    'Nordpool: the past is one continuous stepped path, each step at least 6 wide (no beads), the future one dashed path',
+    drawn.moves === 1 &&
+      drawn.futureMoves === 1 &&
+      drawn.widths[0] >= 5.9 &&
+      Math.abs(drawn.widths[1] - drawn.widths[0]) < 0.05,
+    JSON.stringify({ moves: drawn.moves, future: drawn.futureMoves, widths: drawn.widths }),
+  );
+  check(
+    'Nordpool: each threshold’s band is that one path again, clipped — the past’s and the future’s, never pieces',
+    ['warning', 'danger'].every((tone) => {
+      const runs = drawn.bands[tone];
+      return (
+        runs.length === 2 &&
+        runs.filter((run) => run.line).length === 1 &&
+        runs.every((run) => run.moves === 1) &&
+        runs.find((run) => run.line)?.same === true
+      );
+    }),
+    JSON.stringify(drawn.bands),
+  );
+  check(
+    'Nordpool: the plot rises under the value row (its top 12 under the chart’s room), no band of nothing',
+    drawn.gap >= 12 && drawn.gap <= 25,
+    String(drawn.gap),
+  );
+  check(
+    'Nordpool: the axis’s midnight between the ends says its day',
+    JSON.stringify(drawn.axis) === JSON.stringify(['Thu 00:00', 'Fri 00:00', 'Sat 00:00']),
+    JSON.stringify(drawn.axis),
+  );
   check(
     'Nordpool: one knob, Fluvy’s, centred on now’s hairline',
     drawn.knobs === 1 && Math.abs(drawn.knob - drawn.now) < 0.6,
@@ -212,17 +266,22 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
   const box = await chart.boundingBox();
   await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
   await settle(page, 200);
-  const read = await nordpool.evaluate((card) => ({
-    bubble: card.shadowRoot
-      .querySelector('.ch-chart > .fv-bubble')
-      ?.textContent.replace(/\s+/g, ' ')
-      .trim(),
-    label: card.shadowRoot.querySelector('.ch-now .fv-readout__label')?.textContent.trim(),
-    cursor: card.shadowRoot.querySelector('.fc-cursor') !== null,
-  }));
+  const read = await nordpool.evaluate((card) => {
+    const bubble = card.shadowRoot.querySelector('.ch-chart > .fv-bubble');
+    return {
+      bubble: bubble?.textContent.replace(/\s+/g, ' ').trim(),
+      label: card.shadowRoot.querySelector('.ch-now .fv-readout__label')?.textContent.trim(),
+      cursor: card.shadowRoot.querySelector('.fc-cursor') !== null,
+      // the bubble rides over the value row: its top above the chart's
+      rides:
+        (bubble?.getBoundingClientRect().top ?? Infinity) <
+        card.shadowRoot.querySelector('.ch-chart').getBoundingClientRect().top,
+    };
+  });
   check(
-    'a pointer reads the chart: the cursor, the bubble’s price and when, the value row with it',
+    'a pointer reads the chart: the cursor, the bubble’s price and when riding over the row, the row with it',
     read.cursor &&
+      read.rides &&
       /^0\.\d{3} EUR\/kWh\s*\d\d:\d\d$/.test(read.bubble ?? '') &&
       /^\d\d:\d\d$/.test(read.label ?? '') &&
       (read.bubble ?? '').endsWith(read.label),
@@ -248,8 +307,8 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
     bubble: card.shadowRoot.querySelector('.ch-chart > .fv-bubble') !== null,
   }));
   check(
-    'the keys read it too: Home its start, → the next slot, Escape lets it go',
-    home === '00:00' && next === '00:15' && after.label === 'Now' && !after.bubble,
+    'the keys read it too: Home its start, → the next slot (an hour at 360), Escape lets it go',
+    home === '00:00' && next === '01:00' && after.label === 'Now' && !after.bubble,
     JSON.stringify({ home, next, after }),
   );
 }

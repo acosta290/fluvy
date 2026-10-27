@@ -122,6 +122,7 @@ import {
   ScrubController,
   seriesPaint,
   tickText,
+  type ChartFrame,
   type ChartSeries,
   type ChartSpec,
   type Reading as Said,
@@ -166,6 +167,17 @@ export interface ChartCardConfig extends FluvyCardConfig, HeadConfig, Omit<Chart
 const CHART = 120;
 const HEADROOM = 44;
 const ROW = 80;
+/**
+ * Under a value row that says the reading, the plot rises to 12 under the chart's top — the knob's room, whole — and
+ * the bubble, which only shows while the chart is read, rides over the row (its top 4 under the room it would have had).
+ */
+const TIGHT = 12;
+/** A stepped line's least slot: under it the steps of a line 2.5 wide read as beads (a phone's card reads a day by the hour). */
+const STEP_MIN = 5;
+/** The most a scale's column takes of a plot's width ("−0.10" and its gap): a step is counted on what is left. */
+const SCALE_MOST = 48;
+/** The round lengths of time a stepped line's slots take, finest first: quarters, half hours, hours … days. */
+const ROUND_STEPS = [5, 10, 15, 20, 30, 60, 120, 180, 240, 360, 720, 1440].map((m) => m * 60_000);
 /** The tile's spark: 24 tall, 4 around it. */
 const SPARK = 24;
 /** The most bars a window is read in: an hour each over two days. */
@@ -327,6 +339,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       .ch-chart > .fv-bubble {
         animation: fv-fade 500ms var(--fv-ease) both;
         animation-delay: calc(var(--fv-enter-delay, 0ms) + 620ms);
+      }
+      /* under a row that says the reading the plot has the bubble's room: while read, the bubble rides over the row */
+      .ch-chart.is-tight > .fv-bubble {
+        top: ${4 - (HEADROOM - TIGHT)}px;
       }
       /* several series: each one's forecast keeps its colour, dashed, so the legend still says whose it is */
       .ch-several .fc-future {
@@ -749,6 +765,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     items: readonly ChartSeriesConfig[],
     days: readonly [Day, Day],
     columns: boolean,
+    stepped: boolean,
   ): number {
     const length = window.end - window.start;
     const steps = items.map((item, index) => {
@@ -758,7 +775,13 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       const readings = this.readingsOf(item, index, source, this.entity(item.entity), days);
       return readings?.length ? stepOf(readings) : HOUR;
     });
-    const step = Math.max(length / MOST_SLOTS, Math.min(...steps, length / 2));
+    let step = Math.max(length / MOST_SLOTS, Math.min(...steps, length / 2));
+    // a step narrower than its line is a bead, not a step: a stepped line holds each slot at least STEP_MIN across, on
+    // a round length of time (a narrow card reads a day's quarters as half hours or hours, a wide one as quarters)
+    if (stepped) {
+      const least = (length * STEP_MIN) / Math.max(1, this.contentWidth - SCALE_MOST);
+      step = ROUND_STEPS.find((round) => round >= Math.max(step, least)) ?? step;
+    }
     const count = Math.min(MOST_SLOTS, Math.max(2, Math.round(length / step)));
     return columns ? Math.min(count, MOST_BARS, Math.max(2, Math.round(length / HOUR))) : count;
   }
@@ -914,12 +937,19 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         nowWord: this.t('common.now'),
         holds: (items) => axisHolds(ruler, width, items),
       });
-    const ends = (items: ReadonlyArray<readonly [number, string]>): boolean =>
+    type Items = ReadonlyArray<readonly [number, string]>;
+    // every label 12 apart, the two ends too (the axis's rule holds three or more)
+    const holds = (items: Items): boolean =>
+      axisHolds(ruler, width, items) &&
       ruler.width('fv-axis', items[0]?.[1] ?? '') +
         ruler.width('fv-axis', items[items.length - 1]?.[1] ?? '') +
         12 <=
-      width;
-    const marks = roundTicks({
+        width;
+    const length = window.end - window.start;
+    const at = (fraction: number): number => window.start + fraction * length;
+    const midnight = (t: number): boolean => dayStart(this.hass, new Date(t)) === t;
+    // a midnight between the ends says its day ("Fri 00:00"): a bare 00:00 could be either
+    const marks: Items = roundTicks({
       start: window.start,
       end: window.end,
       width,
@@ -929,18 +959,21 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       day: (t) => formatDate(this.hass, new Date(t), 'day'),
       date: (t) => formatDate(this.hass, new Date(t), 'short'),
       dateYear: (t) => formatDate(this.hass, new Date(t), 'short'),
-    });
-    const short: ReadonlyArray<readonly [number, string]> =
-      window.end - window.start > DAY
-        ? [
-            [0, weekday(window.start)],
-            [1, weekday(window.end - 1)],
-          ]
-        : [
-            [0, time(window.start)],
-            [1, time(window.end)],
-          ];
-    return [marks, short].find(ends) ?? [short[0] as readonly [number, string]];
+    }).map(([fraction, text], index, all) =>
+      index > 0 && index < all.length - 1 && midnight(at(fraction))
+        ? [fraction, `${weekday(at(fraction))} ${time(at(fraction))}`]
+        : [fraction, text],
+    );
+    // where the times do not hold, the days its midnights begin (Thu · Fri · Sat), else its ends' alone
+    const days: Items = Array.from({ length: Math.round(length / DAY) + 1 }, (_unused, n) =>
+      dayStart(this.hass, new Date(window.start + DAY / 2), n),
+    )
+      .filter((t) => t <= window.end)
+      .map((t) => [(t - window.start) / length, weekday(t)]);
+    const ends: Items = [days[0], days[days.length - 1]].filter(
+      (item): item is readonly [number, string] => item !== undefined,
+    );
+    return [marks, days, ends].find(holds) ?? ends.slice(0, 1);
   }
 
   /* ---------- the marked windows ---------- */
@@ -1051,7 +1084,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       capsFor(items.length, window.now < window.end),
     );
     const columns = isBars(style.preset) || items.some((item) => item.kind === 'columns');
-    const count = this.slotCount(window, items, days, columns);
+    const stepped = style.curve === 'step' || items.some((item) => item.curve === 'step');
+    const count = this.slotCount(window, items, days, columns, stepped);
     const drawn = this.drawn(window, count, items, days, style);
     return this.variant === 'tile'
       ? this.renderTile(drawn, window)
@@ -1093,11 +1127,16 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const row = full && (showHead || marks.length > 0 || inRow);
     // the value row's room is the chart's where the row has nothing to say
     const height = CHART + (full && !row ? ROW : 0);
+    // under a row that says the reading the plot takes the bubble's room, and the bubble rides over the row while read
+    const headroom = full && row ? TIGHT : HEADROOM;
     // the scale's column folds first where it would leave the plot under its least (half a section)
-    const scaled = loading || empty ? null : this.specs(drawn, window, style, marks, width, height);
+    const scaled =
+      loading || empty
+        ? null
+        : this.specs(drawn, window, style, marks, { width, height, headroom });
     const specs =
       scaled && width - plotOf(scaled.main).left < PLOT_MIN
-        ? this.specs(drawn, window, { ...style, axis: false }, marks, width, height)
+        ? this.specs(drawn, window, { ...style, axis: false }, marks, { width, height, headroom })
         : scaled;
     const fraction = this.scrubber.value;
     const read =
@@ -1124,7 +1163,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           : nothing
       }
       <div
-        class="ch-chart fv-tone--${off ? 'off' : toneOf(config, 'accent')}"
+        class="ch-chart fv-tone--${off ? 'off' : toneOf(config, 'accent')} ${headroom === TIGHT ? 'is-tight' : ''}"
         style="height:${height}px;width:${width}px"
         role="img"
         tabindex="0"
@@ -1167,8 +1206,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     window: Window,
     style: ResolvedStyle,
     marks: readonly Marked[],
-    width: number,
-    height: number,
+    frame: ChartFrame,
   ): Specs {
     const lead = drawn[0] as Drawn;
     const bars = isBars(style.preset);
@@ -1188,7 +1226,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       ...(d.band ? { band: d.band } : {}),
     });
     const common = {
-      frame: { width, height, headroom: HEADROOM },
+      frame,
       zero,
       now: nowFraction(window),
       thresholds: thresholdsOf(this.config),
