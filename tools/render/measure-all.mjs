@@ -91,6 +91,11 @@ const PANEL = [
   ['appearance-palettes', 'appearance&state=custom,palettes'],
   // the house's status colours made its own: a status's colours, its field and the line that says two are close
   ['appearance-statuses', 'appearance&state=statuses'],
+  // the Charts tab: classic (nothing to tune but motion), the soft style with every row it acts on and the house's
+  // sets, a set being made with the check's words under it
+  ['charts', 'charts'],
+  ['charts-styled', 'charts&state=styled,sets'],
+  ['charts-editor', 'charts&state=sets,editor'],
   ['scope', 'scope'],
   ['dashboard', 'dashboard&state=dashboards'],
   ['wall', 'wall&state=wall'],

@@ -2,12 +2,14 @@ import { DEMO_AREAS, DEMO_DASHBOARDS } from '@fluvy/demo-home';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import '@fluvy/cards/panel';
 import {
+  CHART_DEFAULTS,
   WALL_DEFAULTS,
   writeDevice,
   type HassEntity,
   type HomeAssistant,
   type Look,
   type LookHandle,
+  type SavedSeries,
 } from '@fluvy/core';
 import { createMemoryLook, type MemoryLook } from './look-memory.js';
 
@@ -20,7 +22,9 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created
  * (`dashboards`), a dashboard's Recreate row armed (`recreate`), this browser a wall panel (`wall`), three palettes
  * saved by the house (`palettes`), the wall dark with a veil on the mesh (`night`), a warning of the house's own saved
- * and a danger in its very colour waiting (`statuses`). Several join with commas.
+ * and a danger in its very colour waiting (`statuses`), the house's charts in the soft style (`styled`), three sets of
+ * series colours kept by the house, the second worn (`sets`), a new set being made with two colours too close and one
+ * too faint (`editor`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -40,7 +44,29 @@ export type PanelState =
   | 'wall'
   | 'palettes'
   | 'night'
-  | 'statuses';
+  | 'statuses'
+  | 'styled'
+  | 'sets'
+  | 'editor';
+
+/** Three sets of series colours a house might keep: the earth's, the sea's, an evening's. */
+const SETS: readonly SavedSeries[] = [
+  {
+    id: 'garden',
+    name: 'Garden',
+    colours: ['#2f7d32', '#8a6d1d', '#1f6f8b', '#b4532a', '#6a4c93', '#3f6b4f'],
+  },
+  {
+    id: 'sea',
+    name: 'Sea',
+    colours: ['#1d4ed8', '#0f766e', '#7c3aed', '#0e7490', '#be185d', '#4d7c0f'],
+  },
+  {
+    id: 'evening',
+    name: 'Evening',
+    colours: ['#c2410c', '#9d174d', '#6d28d9', '#b45309', '#1e40af', '#047857'],
+  },
+];
 
 /** The dashboards our templates create, as the panel would (the home's is `fluvy-auto` in the demo home already). */
 const TEMPLATE_DASHBOARDS = [
@@ -121,6 +147,16 @@ export function mountPanel(
   if (has('everywhere')) void store.saveHouse({ scope: 'everywhere', frame: true });
   // #47's orange as the house's warning
   if (has('statuses')) void store.saveHouse({ statuses: { warning: '#dc630b' } });
+  // the house's charts in the soft style (every fine row it acts on), and its own sets of series colours, Sea worn
+  if (has('styled') || has('sets'))
+    void store.saveHouse({
+      charts: {
+        ...CHART_DEFAULTS,
+        ...(has('styled') ? { style: 'soft' as const } : {}),
+        ...(has('sets') ? { series: 'sea' } : {}),
+      },
+      ...(has('sets') ? { chartSets: SETS } : {}),
+    });
   // the wall at night: always dark, veiled at 40 %, on the mesh (the tab's preview shows it so)
   if (has('night'))
     void store.saveHouse({
@@ -140,6 +176,7 @@ export function mountPanel(
     tryOnApp: boolean;
     houseEdit: Record<string, unknown>;
     personalEdit: Record<string, unknown>;
+    seriesDraft: unknown;
     notice: string;
     updateComplete: Promise<boolean>;
   };
@@ -176,6 +213,12 @@ export function mountPanel(
     }
     // a danger in the warning's very colour, not saved yet: the panel says the two are close
     if (has('statuses')) panel.houseEdit = { statuses: { warning: '#dc630b', danger: '#dc630b' } };
+    // a set being made: two blues a breath apart, and a cream that fades into a light card
+    if (has('editor'))
+      panel.seriesDraft = {
+        name: 'Dusk',
+        colours: ['#1d4ed8', '#1f52dc', '#b45309', '#15803d', '#f4e9d0', '#7e22ce'],
+      };
     if (has('saved')) panel.notice = hass.language === 'es' ? 'Guardado' : 'Saved';
     if (has('menu'))
       void panel.updateComplete.then(() => {

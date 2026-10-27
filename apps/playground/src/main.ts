@@ -66,7 +66,8 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  *                        colours (`[{"id":"warm","name":"Warm","colours":[six hexes]}]`, chosen by `series`)
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
- * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | wall | preferences)
+ * ?panel=appearance      fluvy's settings panel (appearance | charts | scope | dashboard | wall | preferences);
+ *                        &sheet= keeps a sheet's house beside it (&frames=none: a suite mounts its own cards in it)
  * &state=pending,guest     …at a moment of its own (see `PanelState` in panel.ts)
  * &nopopover=1             …in a browser without the Popover API (the dropdown's fixed fallback)
  * ?history=1             Fluvy's History page on a made-up house (&moment=week|month|states|many|empty|loading|sources|dates)
@@ -182,10 +183,10 @@ const at = params.get('at');
 if (at) pinClock(at);
 const panelTab = params.get('panel');
 const panelStates = (params.get('state') ?? '').split(',').filter(Boolean) as PanelState[];
-// the panel stands alone: no sheet frames beside it; a fixture sheet is asked for by name
+// the panel stands alone unless a sheet is named beside it; a fixture sheet is asked for by name
 const fixture = only && !SHEETS[only] ? await loadFixture(only) : undefined;
 const selected: Array<[string, SheetSpec]> =
-  panelTab || activity || history
+  (panelTab && !only) || activity || history
     ? []
     : fixture && only
       ? [[only, fixture]]

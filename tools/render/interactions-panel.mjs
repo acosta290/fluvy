@@ -9,7 +9,10 @@
  * as wide as the field; in a short viewport it opens over the field, as tall as the room there; letters find a
  * name; Tab chooses and moves on to the next control; a browser without the Popover API draws the same box; the
  * help row opens the translating guide in a new tab; under reduced motion the menu shows and hides without an
- * animation.
+ * animation. The Charts tab (1.11): it opens after Appearance with every style and gauge drawn as a tile and the
+ * preview in both modes; a style tile applies at once and a card on the page that names no style redraws in it; the
+ * fine settings show and hide with the style; motion off freezes the preview, the tiles and the card; a new set of
+ * series colours is checked (two a breath apart are said, by name), saved and worn, renamed in its place and let go.
  */
 import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
@@ -305,6 +308,208 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
       opened[0].target === '_blank' &&
       opened[0].features === 'noopener',
     JSON.stringify(opened),
+  );
+  await page.close();
+}
+
+/* ---------- the Charts tab (1.11) ---------- */
+
+/** The Charts tab's parts on a page of the panel. */
+const chartsTab = (page) => ({
+  tile: (name) =>
+    page.locator('fluvy-panel .pn-tile').filter({
+      has: page.locator('.pn-swatch__label', { hasText: new RegExp(`^${name}$`) }),
+    }),
+  labels: () =>
+    page
+      .locator('fluvy-panel .pn-card .pn-label')
+      .evaluateAll((all) => all.map((label) => label.textContent.trim())),
+  row: (title) => page.locator('fluvy-panel .fv-row', { hasText: title }),
+  set: (name) => page.locator('fluvy-panel .pn-set', { hasText: name }),
+  editor: page.locator('fluvy-panel .pn-editor'),
+});
+
+{
+  // the house of the chart styles' sheet beside the panel, and a sensor's card on the page that names no style
+  const page = await suite.page('panel=charts&sheet=chart-styles&frames=none');
+  const c = chartsTab(page);
+  check(
+    'the Charts tab opens after Appearance',
+    (await page.locator('fluvy-panel [role="tab"]').nth(1).textContent()).trim() === 'Charts' &&
+      (await page.locator('fluvy-panel #pn-tab-charts').getAttribute('aria-selected')) === 'true',
+  );
+  check(
+    'eight styles and four gauges as tiles, each drawn by the engine; classic and ticks chosen',
+    (await page.locator('fluvy-panel .pn-art--style svg.fc-chart').count()) === 8 &&
+      (await page.locator('fluvy-panel .pn-art--gauge').count()) === 4 &&
+      (await c.tile('Classic').getAttribute('aria-pressed')) === 'true' &&
+      (await c.tile('Ticks').getAttribute('aria-pressed')) === 'true',
+  );
+  check(
+    'a chart, its bars and a gauge previewed in both modes side by side',
+    (await page.locator('fluvy-panel .pn-card--preview .pn-mode').count()) === 2 &&
+      (await page.locator('fluvy-panel .pn-mode.pn-night .fc-preview svg.fc-chart').count()) ===
+        2 &&
+      (await page.locator('fluvy-panel .pn-mode.pn-day .fc-preview svg.fc-chart').count()) === 2,
+  );
+  const sensor = await page.evaluateHandle(async () => {
+    const card = document.createElement('fluvy-sensor-card');
+    card.setConfig({
+      type: 'custom:fluvy-sensor-card',
+      entity: 'sensor.cs_temperature',
+      _now: '2026-09-17T21:47:12',
+    });
+    card.hass = window.fluvyMock.hass();
+    document.body.append(card);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return card;
+  });
+  const drawn = () =>
+    sensor.evaluate((card) => card.shadowRoot.querySelector('svg.fc-chart')?.getAttribute('class'));
+  check(
+    'a card that names no style draws the house’s: classic from the factory',
+    !/fc-chart--/.test((await drawn()) ?? 'none'),
+    await drawn(),
+  );
+  await c.tile('Soft').click();
+  await settle(page, 400);
+  check(
+    'a style tile applies at once: the card on the page redraws in it, the bar names it',
+    /fc-chart--soft/.test((await drawn()) ?? '') &&
+      (await barText(page)) === 'Charts · Style · Soft' &&
+      (await c.tile('Soft').getAttribute('aria-pressed')) === 'true',
+    await drawn(),
+  );
+  check(
+    'the preview draws the soft style in both modes, its line and its bars',
+    (await page.locator('fluvy-panel .fc-preview svg.fc-chart--soft').count()) === 4,
+  );
+  check(
+    'the soft style offers what it draws with: its soft shadow, its line’s end, now',
+    JSON.stringify(await c.labels()) ===
+      JSON.stringify([
+        'Line',
+        'Soft shadow',
+        'Shadow strength',
+        'Fill',
+        'Gridlines',
+        'Line’s end',
+        'Now',
+        'Bars’ ends',
+        'Bubble',
+      ]),
+    JSON.stringify(await c.labels()),
+  );
+  await c.tile('Bars').click();
+  await settle(page, 300);
+  check(
+    'bars hide what they do not draw with (the line, its shadow, its end, now)',
+    JSON.stringify(await c.labels()) === JSON.stringify(['Gridlines', 'Bars’ ends', 'Bubble']),
+    JSON.stringify(await c.labels()),
+  );
+  await c.tile('Classic').click();
+  await settle(page, 300);
+  check(
+    'classic offers nothing to tune but motion, and says why',
+    (await c.labels()).length === 0 &&
+      (await page.locator('fluvy-panel .pn-note').textContent()).includes('Classic is the chart') &&
+      (await barText(page)) === '' &&
+      !/fc-chart--/.test((await drawn()) ?? 'none'),
+  );
+  // motion off: the previews and the tiles draw their resting frame, nothing animates
+  await c.tile('Soft').click();
+  await settle(page, 200);
+  await c.row('Motion').locator('.fv-hit').click();
+  await settle(page, 300);
+  const moving = await page.evaluate(() => {
+    const root = document.querySelector('fluvy-panel').shadowRoot;
+    const charts = [...root.querySelectorAll('.fc-preview svg.fc-chart, .pn-art--style svg')];
+    return {
+      charts: charts.length,
+      still: charts.filter((svg) => svg.classList.contains('is-still')).length,
+      animated: [
+        ...root.querySelectorAll('.fc-preview .fc-line, .fc-preview .fc-bar, .fc-preview .fv-knob'),
+      ]
+        .map((el) => getComputedStyle(el).animationName)
+        .filter((name) => name !== 'none').length,
+    };
+  });
+  check(
+    'motion off freezes the preview: every drawing still, not one animation',
+    moving.charts === 12 && moving.still === 12 && moving.animated === 0,
+    JSON.stringify(moving),
+  );
+  check('and the card on the page with it', /is-still/.test((await drawn()) ?? ''), await drawn());
+  await page.close();
+}
+
+{
+  // the house's own series colours: made, checked, kept, renamed, let go
+  const page = await suite.page('panel=charts');
+  const c = chartsTab(page);
+  await c.row('New set…').click();
+  await settle(page, 300);
+  const fields = c.editor.locator('.pn-hexes .pn-hex__input');
+  check(
+    'a new set opens on the palette’s six, both modes drawn',
+    (await fields.count()) === 6 &&
+      (await c.editor.locator('.pn-mode svg.fc-chart').count()) === 2 &&
+      (await c.editor.locator('.fv-btn', { hasText: 'Save set' }).isDisabled()),
+  );
+  const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
+  for (const [n, colour] of both.entries()) {
+    await fields.nth(n).fill(colour);
+    await fields.nth(n).press('Enter');
+  }
+  await settle(page, 200);
+  check(
+    'six that stand apart and read on either card pass',
+    (await c.editor.locator('.pn-status').count()) === 0 &&
+      (await c.editor.locator('.pn-check').textContent()).includes('Every colour stands apart'),
+  );
+  await fields.nth(1).fill('#2463ea');
+  await fields.nth(1).press('Enter');
+  await settle(page, 200);
+  check(
+    'two colours a breath apart (ΔE under 8): the check says which, and why',
+    (await c.editor.locator('.pn-status').textContent()).includes(
+      '#2563eb and #2463ea are too close to tell apart',
+    ),
+  );
+  await fields.nth(1).fill('#d97706');
+  await fields.nth(1).press('Enter');
+  await c.editor.locator('.pn-text input').fill('Dusk');
+  await settle(page, 200);
+  await c.editor.locator('.fv-btn', { hasText: 'Save set' }).click();
+  await settle(page, 400);
+  check(
+    'saved: the house keeps it, the editor closes, the charts wear it from the bar',
+    (await c.editor.count()) === 0 &&
+      (await c.set('Dusk').getAttribute('aria-pressed')) === 'true' &&
+      (await barText(page)) === 'Charts · Series colours · Dusk',
+    await barText(page),
+  );
+  await c.row('Edit this set').click();
+  await settle(page, 300);
+  await c.editor.locator('.pn-text input').fill('Evening');
+  await c.editor.locator('.fv-btn', { hasText: 'Save set' }).click();
+  await settle(page, 400);
+  check(
+    'renamed in its place, still worn',
+    (await c.set('Evening').count()) === 1 &&
+      (await c.set('Dusk').count()) === 0 &&
+      (await c.set('Evening').getAttribute('aria-pressed')) === 'true',
+  );
+  await c.row('Edit this set').click();
+  await settle(page, 300);
+  await c.row('Delete this set').click();
+  await settle(page, 400);
+  check(
+    'let go: the palette’s six worn again, nothing left waiting in the bar',
+    (await c.set('Evening').count()) === 0 &&
+      (await c.set('From the palette').getAttribute('aria-pressed')) === 'true' &&
+      (await barText(page)) === '',
+    await barText(page),
   );
   await page.close();
 }
