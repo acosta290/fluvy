@@ -1,7 +1,5 @@
 import {
-  CHART_PRESET_NAMES,
   formatNumber,
-  GAUGE_PRESET_NAMES,
   localize,
   PALETTE_SERIES,
   paletteOf,
@@ -13,6 +11,7 @@ import type { Hex, PaletteMode } from '@fluvy/tokens/runtime';
 import { head, icon, listRow } from '@fluvy/ui';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
+  CHART_PRESETS,
   GAUGE_PRESETS,
   HOUSE_ACTS,
   previewChart,
@@ -56,6 +55,10 @@ function artWidth(ctx: PanelContext): number | undefined {
   const n = tileColumns(ctx);
   return Math.floor((ctx.fit.width - (n - 1) * gap(ctx)) / n + 0.01) - 32;
 }
+
+/** The engine's styles and gauges, in the order the settings know them. */
+const STYLES = Object.keys(CHART_PRESETS) as ChartPreset[];
+const GAUGES = Object.keys(GAUGE_PRESETS) as GaugePreset[];
 
 /** A style's drawing room down: the picture's 72 on a phone (96 on a wide panel) less its 8 above and below. */
 const STYLE_ART = { phone: 56, wide: 80 } as const;
@@ -111,7 +114,7 @@ function styleCard(ctx: PanelContext): TemplateResult {
     ${head({ icon: 'chart', title: ctx.t('charts.style'), sub: ctx.t(ctx.admin ? 'charts.style_sub' : 'scope.admin_only') })}
     ${tiles(
       ctx,
-      CHART_PRESET_NAMES.map((preset) => ({
+      STYLES.map((preset) => ({
         key: preset,
         label: localize(ctx.hass, `option.${preset}`),
         active: charts.style === preset,
@@ -130,7 +133,7 @@ function gaugeCard(ctx: PanelContext): TemplateResult {
     ${head({ icon: 'thermo', title: ctx.t('charts.gauge'), sub: ctx.t(ctx.admin ? 'charts.gauge_sub' : 'scope.admin_only') })}
     ${tiles(
       ctx,
-      GAUGE_PRESET_NAMES.map((preset) => ({
+      GAUGES.map((preset) => ({
         key: preset,
         label: localize(ctx.hass, `option.${preset}`),
         active: charts.gauge === preset,

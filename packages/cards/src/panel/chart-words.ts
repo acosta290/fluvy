@@ -1,17 +1,17 @@
 import {
-  BAR_CAPS,
-  BUBBLE_LOOKS,
-  CHART_ENDPOINTS,
-  CHART_FILLS,
-  CHART_GRIDS,
-  CHART_LINES,
-  GLOW_OFFSETS,
-  GLOW_OPACITIES,
   localize,
-  NOW_MARKERS,
-  WAVE_HEIGHTS,
+  type BarCaps,
+  type BubbleLook,
+  type ChartEndpoint,
+  type ChartFill,
+  type ChartGrid,
+  type ChartLine,
   type ChartSettings,
+  type GlowOffset,
+  type GlowOpacity,
+  type NowMarker,
   type SavedSeries,
+  type WaveHeight,
 } from '@fluvy/core';
 import type { HouseKey } from '../chart/engine/index.js';
 import type { PanelContext, StringKey } from './model.js';
@@ -19,13 +19,17 @@ import { chosenSet } from './series.js';
 
 /*
  * The house's chart settings in words: what the Charts tab's fine rows offer, each value as its chip says it, and the
- * apply bar's line for every setting that changed. One table, so a chip and the bar never name a value two ways.
+ * apply bar's line for every setting that changed. One table, so a chip and the bar never name a value two ways. A
+ * row's values are the keys of its words, typed by the setting: the compiler holds them to the settings' own (none
+ * missing, none more), in the order they read.
  */
+
+type Word = (ctx: PanelContext) => string;
 
 /** A value of a fine setting: its key as the chip carries it, and its words. */
 interface Choice {
   readonly key: string;
-  readonly word: (ctx: PanelContext) => string;
+  readonly word: Word;
 }
 
 /** A fine setting as a row of chips: the style must act on it (`HOUSE_ACTS`), or a gauge must move (the waves). */
@@ -39,76 +43,113 @@ export interface FineRow {
   patch(charts: ChartSettings, key: string): Partial<ChartSettings>;
 }
 
-const panelWord =
-  (key: StringKey, values?: Record<string, string | number>) =>
-  (ctx: PanelContext): string =>
+const say =
+  (key: StringKey, values?: Record<string, string | number>): Word =>
+  (ctx) =>
     ctx.t(key, values);
-const percent = (count: number) => panelWord('wall.percent', { count: Math.round(count * 100) });
+const option =
+  (value: ChartLine): Word =>
+  (ctx) =>
+    localize(ctx.hass, `option.${value}`);
+const px = (n: GlowOffset): Word => say('charts.px', { n });
+const percent = (share: number): Word => say('wall.percent', { count: Math.round(share * 100) });
 
-/** A row over one flat setting, its values in the order the settings list them. */
-function flat<K extends 'line' | 'fill' | 'grid' | 'endpoint' | 'now' | 'caps' | 'bubble' | 'wave'>(
-  key: K,
+/** A chip's key as the setting holds it: a figure, or a word. */
+const valueOf = (key: string): string | number => (Number.isNaN(Number(key)) ? key : Number(key));
+
+/** A row over a setting: its words by value, where it reads the value and how a chip changes it. */
+function row<V extends string | number>(
   acts: FineRow['acts'],
   label: StringKey,
-  values: readonly ChartSettings[K][],
-  word: (value: ChartSettings[K]) => Choice['word'],
+  words: Readonly<Record<V, Word>>,
+  get: (charts: ChartSettings) => V,
+  set: (charts: ChartSettings, value: V) => Partial<ChartSettings>,
 ): FineRow {
   return {
     acts,
     label,
-    choices: values.map((value) => ({ key: String(value), word: word(value) })),
-    chosen: (charts) => String(charts[key]),
-    patch: (_charts, chosen) =>
-      ({ [key]: values.find((value) => String(value) === chosen) }) as Partial<ChartSettings>,
+    choices: Object.entries<Word>(words).map(([key, word]) => ({ key, word })),
+    chosen: (charts) => String(get(charts)),
+    patch: (charts, chosen) => set(charts, valueOf(chosen) as V),
   };
 }
 
 /** The fine settings in the order the Details card lists them (each shown only where the style acts on it). */
 export const FINE_ROWS: readonly FineRow[] = [
-  flat(
-    'line',
+  row<ChartLine>(
     'line',
     'charts.line',
-    CHART_LINES,
-    (value) => (ctx) => localize(ctx.hass, `option.${value}`),
+    { thin: option('thin'), regular: option('regular'), bold: option('bold') },
+    (charts) => charts.line,
+    (_charts, line) => ({ line }),
   ),
-  {
-    acts: 'glow',
-    label: 'charts.glow',
-    choices: GLOW_OFFSETS.map((n) => ({ key: String(n), word: panelWord('charts.px', { n }) })),
-    chosen: (charts) => String(charts.glow.offset),
-    patch: (charts, chosen) => ({
-      glow: {
-        ...charts.glow,
-        offset: GLOW_OFFSETS.find((n) => String(n) === chosen) ?? charts.glow.offset,
-      },
-    }),
-  },
-  {
-    acts: 'glow',
-    label: 'charts.glow_opacity',
-    choices: GLOW_OPACITIES.map((n) => ({ key: String(n), word: percent(n) })),
-    chosen: (charts) => String(charts.glow.opacity),
-    patch: (charts, chosen) => ({
-      glow: {
-        ...charts.glow,
-        opacity: GLOW_OPACITIES.find((n) => String(n) === chosen) ?? charts.glow.opacity,
-      },
-    }),
-  },
-  flat('fill', 'fill', 'charts.fill', CHART_FILLS, (value) => percent(value / 100)),
-  flat('grid', 'grid', 'charts.grid', CHART_GRIDS, (value) => panelWord(`charts.grid_${value}`)),
-  flat('endpoint', 'endpoint', 'charts.endpoint', CHART_ENDPOINTS, (value) =>
-    panelWord(`charts.${value}`),
+  row<GlowOffset>(
+    'glow',
+    'charts.glow',
+    { 3: px(3), 5: px(5), 7: px(7) },
+    (charts) => charts.glow.offset,
+    (charts, offset) => ({ glow: { ...charts.glow, offset } }),
   ),
-  flat('now', 'now', 'charts.now', NOW_MARKERS, (value) =>
-    panelWord(value === 'line' ? 'charts.now_line' : 'charts.knob'),
+  row<GlowOpacity>(
+    'glow',
+    'charts.glow_opacity',
+    { 0.25: percent(0.25), 0.35: percent(0.35), 0.45: percent(0.45) },
+    (charts) => charts.glow.opacity,
+    (charts, opacity) => ({ glow: { ...charts.glow, opacity } }),
   ),
-  flat('caps', 'caps', 'charts.caps', BAR_CAPS, (value) => panelWord(`charts.caps_${value}`)),
-  flat('bubble', 'bubble', 'charts.bubble', BUBBLE_LOOKS, (value) =>
-    panelWord(`charts.bubble_${value}`),
+  row<ChartFill>(
+    'fill',
+    'charts.fill',
+    { 12: percent(0.12), 18: percent(0.18), 24: percent(0.24) },
+    (charts) => charts.fill,
+    (_charts, fill) => ({ fill }),
   ),
-  flat('wave', 'wave', 'charts.wave', WAVE_HEIGHTS, (value) => panelWord(`charts.wave_${value}`)),
+  row<ChartGrid>(
+    'grid',
+    'charts.grid',
+    {
+      hairline: say('charts.grid_hairline'),
+      dashed: say('charts.grid_dashed'),
+      none: say('charts.grid_none'),
+    },
+    (charts) => charts.grid,
+    (_charts, grid) => ({ grid }),
+  ),
+  row<ChartEndpoint>(
+    'endpoint',
+    'charts.endpoint',
+    { knob: say('charts.knob'), dot: say('charts.dot') },
+    (charts) => charts.endpoint,
+    (_charts, endpoint) => ({ endpoint }),
+  ),
+  row<NowMarker>(
+    'now',
+    'charts.now',
+    { knob: say('charts.knob'), line: say('charts.now_line') },
+    (charts) => charts.now,
+    (_charts, now) => ({ now }),
+  ),
+  row<BarCaps>(
+    'caps',
+    'charts.caps',
+    { top: say('charts.caps_top'), both: say('charts.caps_both') },
+    (charts) => charts.caps,
+    (_charts, caps) => ({ caps }),
+  ),
+  row<BubbleLook>(
+    'bubble',
+    'charts.bubble',
+    { dark: say('charts.bubble_dark'), tone: say('charts.bubble_tone') },
+    (charts) => charts.bubble,
+    (_charts, bubble) => ({ bubble }),
+  ),
+  row<WaveHeight>(
+    'wave',
+    'charts.wave',
+    { low: say('charts.wave_low'), mid: say('charts.wave_mid'), high: say('charts.wave_high') },
+    (charts) => charts.wave,
+    (_charts, wave) => ({ wave }),
+  ),
 ];
 
 /** The series colours chosen, by name: a saved set's, else the palette's (a set removed elsewhere is the palette's). */

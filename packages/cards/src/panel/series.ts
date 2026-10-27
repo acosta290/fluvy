@@ -1,9 +1,4 @@
-import {
-  MAX_SAVED_SERIES,
-  PALETTE_SERIES,
-  parseSavedSeriesSet,
-  type SavedSeries,
-} from '@fluvy/core';
+import { MAX_SAVED_SERIES, PALETTE_SERIES, parseHouse, type SavedSeries } from '@fluvy/core';
 import type { Hex } from '@fluvy/tokens/runtime';
 import { slugOf } from './palettes.js';
 
@@ -34,9 +29,12 @@ export function setIdOf(name: string, sets: readonly SavedSeries[]): string {
   return id;
 }
 
-/** The set a draft saves as, when it is whole (a name, six colours): an edited one keeps its id. */
+/**
+ * The set a draft saves as, as the house's settings read it — when it is whole (a name, six colours) and nothing
+ * otherwise; an edited one keeps its id.
+ */
 export const setOf = (draft: SeriesDraft, sets: readonly SavedSeries[]): SavedSeries | undefined =>
-  parseSavedSeriesSet({ ...draft, id: draft.id ?? setIdOf(draft.name, sets) });
+  parseHouse({ chartSets: [{ ...draft, id: draft.id ?? setIdOf(draft.name, sets) }] }).chartSets[0];
 
 /** Whether the house can keep this set: one it already keeps changes in its place, a new one needs room. */
 export const roomForSet = (sets: readonly SavedSeries[], id?: string): boolean =>
