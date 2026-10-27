@@ -22,10 +22,13 @@ import { axis, emptyState, head, readout, round, type Tone } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   AXIS_GAP,
-  chartBubble,
+  chartDefaultsFor,
+  chartSection,
   chartStyles,
-  drawChart,
+  drawRead,
   gridLines,
+  plotOf,
+  readingsOf,
   resolveStyle,
   sampleAt,
   scrub,
@@ -34,7 +37,16 @@ import {
   tickText,
   UNIT_COLUMN,
   unitLabel,
+  type ChartSpec,
+  type ResolvedStyle,
 } from '../chart/engine/index.js';
+import {
+  chartKeysOf,
+  type ChartCaps,
+  type ChartKeys,
+  type GridChoice,
+  type LineWidth,
+} from '../shared/chart-config.js';
 
 import {
   css,
@@ -144,7 +156,7 @@ import {
 } from './stack.js';
 import { energyLegend, type LegendEntry } from './legend-row.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import type { NumberKeys } from '../shared/units.js';
+import { figuresOf, toBase, type NumberKeys } from '../shared/units.js';
 import { sideStacked } from '../shared/value-row.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
@@ -156,7 +168,11 @@ export interface EnergyLegendItem extends NumberKeys {
   name?: string;
 }
 
-export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys {
+/**
+ * The chart keys (`shared/chart-config.ts`): the line's style and its fine keys; on a stacked chart (`sources`,
+ * `overview`) the style (classic, soft or step), the line's width, the gridlines and the scale.
+ */
+export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys, Omit<ChartKeys, 'show_now'> {
   subtitle?: string;
   /** Window of the curve. 24 (the default) draws today on a 00:00 … 24:00 axis; anything else rolls. */
   hours?: number;
@@ -178,14 +194,17 @@ export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys {
   /** `overview`: the house's use as a line over the sources. */
   show_house?: boolean;
   /**
-   * `sources` and `overview`: the power's scale at the chart's start (kW or W) and, under the charge's line, its own
-   * 0–100 % at the end — each where the plot keeps its room (on by default).
+   * The scale: on a stacked chart the power's at the chart's start (kW or W) and, under the charge's line, its own
+   * 0–100 % at the end — each where the plot keeps its room (on by default); on the line, where its style draws one.
    */
   show_axis?: boolean;
-  /** `sources` and `overview`: dashed gridlines across the chart at the power's ticks (on by default). */
-  show_grid?: boolean;
-  /** The chart's lines: `regular` (2 px, the default) or `thin` (1 px). */
-  line_width?: 'thin' | 'regular';
+  /**
+   * The gridlines: on a stacked chart across it at the power's ticks (on by default; `false` or `none` takes them
+   * away, as `x` does — a stacked chart draws none down it); on the line, as its style draws them.
+   */
+  show_grid?: GridChoice;
+  /** The chart's lines: `regular` (2 px on a stacked chart, the default), `thin` (1 px) or `bold` (3 px). */
+  line_width?: LineWidth;
   /** `sources` and `overview`: every source on the one before it (the default), or each drawn from zero on its own. */
   stack?: boolean;
   /**
@@ -198,6 +217,26 @@ export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys {
 }
 
 const DAY = 86_400_000;
+
+/**
+ * What the card's charts draw: a sensor's line (`full`, `compact`) in the line styles, on a scale of its own where a
+ * style draws one, its window ending at now; a stacked chart (`sources`, `overview`) classic, soft or stepped, its
+ * stacks the house's own geometry (`stack.ts`), its line's width, gridlines and scale the keys that act on it.
+ */
+const LINE_CAPS: ChartCaps = { axis: true, styles: ['classic', 'soft', 'glow', 'minimal', 'step'] };
+const STACK_CAPS: ChartCaps = {
+  axis: true,
+  styles: ['classic', 'soft', 'step'],
+  keys: ['line_width', 'show_grid', 'show_axis'],
+};
+const stackedIn = (data: Readonly<Record<string, unknown>>): boolean =>
+  data['variant'] === 'sources' || data['variant'] === 'overview';
+const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
+  stackedIn(data) ? STACK_CAPS : LINE_CAPS;
+
+/** Whether a stacked chart draws its gridlines: on, unless asked away (or asked down the chart only, which it draws none of). */
+const gridOn = (choice: GridChoice | undefined): boolean =>
+  choice !== false && choice !== 'none' && choice !== 'x';
 
 /** A range's length in ms (an open one's, until now). */
 const spanOf = (range: Range, now: Date): number =>
@@ -362,7 +401,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         overflow: visible;
       } /* the dot at "now" stays whole when now is the edge of the axis */
       .is-unavailable .fv-curve .curve-dot,
-      .is-unavailable .fv-curve .curve-cursor {
+      .is-unavailable .fv-curve .curve-cursor,
+      .is-unavailable .ef-chart .fv-knob {
         display: none;
       } /* the history is real; a reading at "now" is not */
       .fv-axis span {
@@ -407,6 +447,22 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       }
       .is-thin .en-soc-halo {
         stroke-width: 3;
+      }
+      /* bold lines (3 px), a stacked chart's */
+      .is-bold .en-area-line,
+      .is-bold .en-house,
+      .is-bold .en-soc {
+        stroke-width: 3;
+      }
+      .is-bold .en-soc-halo {
+        stroke-width: 5;
+      }
+      /* the soft style: lighter fills under the same edges, hairlines across */
+      .is-soft .en-area {
+        fill: color-mix(in srgb, var(--ink) 24%, var(--fluvy-card));
+      }
+      .is-soft .en-area.is-own {
+        fill: color-mix(in srgb, var(--ink) 16%, transparent);
       }
     `,
   ];
@@ -482,6 +538,13 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     'collection_key',
     'unit',
     'decimals',
+    'chart',
+    'curve',
+    'fill',
+    'glow',
+    'show_points',
+    'highlight',
+    'animate',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -500,17 +563,15 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     items: { legend: ITEM_ALIASES },
   };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
+  static override defaults: EditorDefaults = (config) => ({
     variant: 'full',
     show_cost: true,
     show_soc: true,
     show_house: true,
-    show_axis: true,
-    show_grid: true,
-    line_width: 'regular',
     stack: true,
     collection_key: '',
     ...NUMBER_DEFAULTS,
+    ...chartDefaultsFor(config, capsIn(config)),
   });
   /**
    * The date pickers on the dashboard, for the key; the units the editor offers are the sensor's class's (a chart of
@@ -534,22 +595,18 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         ),
         collectionField(),
         fieldRow(boolField('show_soc'), boolField('show_house')),
-        fieldRow(boolField('show_axis'), boolField('show_grid')),
-        fieldRow(selectField('line_width', ['regular', 'thin']), boolField('stack')),
+        boolField('stack'),
         fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
         entitiesField('legend', ['sensor']),
+        // the line's styles, or a stacked chart's: what each variant draws
+        chartSection([LINE_CAPS, STACK_CAPS], capsIn),
         numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(
         s,
         { cost_entity: 'cost', legend: 'editor_legend', stack: 'editor_stack' },
-        // the history bars' words for the same two switches: one scale, one name
-        {
-          show_axis: 'history-bars.editor_show_axis',
-          show_grid: 'history-bars.editor_show_grid',
-          ...COLLECTION_LABEL,
-        },
+        COLLECTION_LABEL,
       ),
       computeHelper: collectionHelper,
     };
@@ -864,7 +921,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   }
 
   /** The dates under a chart of more than a day: its start, its middle and its end (the two ends where they do not hold). */
-  private rangeMarks(range: Range): ReadonlyArray<readonly [number, string]> {
+  private rangeMarks(
+    range: Range,
+    width = this.contentWidth,
+  ): ReadonlyArray<readonly [number, string]> {
     const now = this.now();
     const span = spanOf(range, now);
     const zone = houseZone(this.hass);
@@ -876,7 +936,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const mark = (f: number): readonly [number, string] =>
       [f, format.format(new Date(range.start.getTime() + f * span - (f === 1 ? 1 : 0)))] as const;
     const three = [mark(0), mark(0.5), mark(1)];
-    return axisHolds(this.head.ruler, this.contentWidth, three) ? three : [three[0]!, three[2]!];
+    return axisHolds(this.head.ruler, width, three) ? three : [three[0]!, three[2]!];
   }
 
   /** The by-source legend's day: the power's integral, or the meters' hours as the dashboard allocates them. */
@@ -942,11 +1002,11 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return { value: scaled(this.hass, watts, scale), unit: scale.unit };
   }
 
-  private dayAxis(): ReadonlyArray<readonly [number, string]> {
+  private dayAxis(width = this.contentWidth): ReadonlyArray<readonly [number, string]> {
     const five = this.dayMarks([0, 6, 12, 18, 24]);
     // five labels that cannot keep 12 apart in the chart's width (a narrow card) read as three: midnight, noon, midnight
     // (the first sits on the start, the next centred a quarter in: a quarter less one and a half labels is their gap)
-    const room = (this.contentWidth / 4 - 12) / 1.5;
+    const room = (width / 4 - 12) / 1.5;
     const fits = five.every(([, text]) => this.head.ruler.width('fv-axis', text) <= room);
     return fits ? five : this.dayMarks([0, 12, 24]);
   }
@@ -958,10 +1018,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
    * labels leave the plot PLOT_MIN, the charge's beside it where both leave PLOT_MIN_TWO (it folds first, into the
    * readout that says the charge), the gridlines across whatever plot is left. `charge`: the charge's line is drawn.
    */
-  private frame(up: number, down: number, charge: boolean): Frame {
+  private frame(up: number, down: number, charge: boolean, style: ResolvedStyle): Frame {
     const w = this.contentWidth;
     const showAxis = this.config?.show_axis !== false;
-    const grid = this.config?.show_grid !== false;
+    // a style's gridlines go with the house's (a house that draws none); classic keeps the card's own
+    const grid =
+      gridOn(this.config?.show_grid) && (style.preset === 'classic' || style.grid.axes !== 'none');
     const bare: Frame = { left: 0, width: w, scale: null, axis: false, charge: false, grid: false };
     if (!showAxis && !grid) return bare;
     const room = (scale: PowerScale): number =>
@@ -991,15 +1053,42 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return `${formatNumber(this.hass, level, { digits: 0 })} %`;
   }
 
-  /** The gridlines under a scaled chart's areas: every tick's but zero's, whose line is the plot's solid baseline. */
-  private gridOf(frame: Frame, y: (kw: number) => number): SVGTemplateResult | typeof nothing {
+  /**
+   * The gridlines under a scaled chart's areas: every tick's but zero's, whose line is the plot's solid baseline —
+   * classic's dashes, a style's hairlines (dashed where the house says so).
+   */
+  private gridOf(
+    frame: Frame,
+    y: (kw: number) => number,
+    style: ResolvedStyle,
+  ): SVGTemplateResult | typeof nothing {
     return frame.scale && frame.grid
       ? gridLines(
           frame.scale.ticks.filter((t) => t !== 0).map(y),
           frame.left,
           frame.left + frame.width,
+          style.preset === 'classic'
+            ? undefined
+            : style.grid.kind === 'dashed'
+              ? 'fc-grid fc-grid--dashed'
+              : 'fc-grid',
         )
       : nothing;
+  }
+
+  /** A stacked chart's style: its own, else the house's — classic, soft or step. */
+  private stackStyle(): ResolvedStyle {
+    return resolveStyle(this.config?.chart, chartKeysOf(this.config), STACK_CAPS);
+  }
+
+  /** A stacked chart's classes: its scale, its lines' width, a soft style's lighter fills. */
+  private stackClass(frame: Frame, style: ResolvedStyle): string {
+    const width = this.config?.line_width;
+    return [
+      frame.scale ? 'is-scaled' : '',
+      width === 'thin' ? 'is-thin' : width === 'bold' ? 'is-bold' : '',
+      style.preset === 'soft' ? 'is-soft' : '',
+    ].join(' ');
   }
 
   /**
@@ -1174,7 +1263,10 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     });
   }
 
-  private rollingAxis(hours: number): ReadonlyArray<readonly [number, string]> {
+  private rollingAxis(
+    hours: number,
+    width = this.contentWidth,
+  ): ReadonlyArray<readonly [number, string]> {
     const days = hours >= 48;
     const back = (h: number): string =>
       s(this.hass, days ? 'days_ago' : 'hours_ago', {
@@ -1186,7 +1278,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       [0.5, back(hours / 2)],
       [1, this.t('common.now')],
     ] as const;
-    return axisHolds(this.head.ruler, this.contentWidth, three) ? three : [three[0], three[2]];
+    return axisHolds(this.head.ruler, width, three) ? three : [three[0], three[2]];
   }
 
   /** The point under the pointer: where the cursor goes, what it reads and when that was. */
@@ -1230,37 +1322,69 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     }
     // history is up to five minutes old; the curve ends on the reading the bubble quotes
     if (live !== null) values[values.length - 1] = live;
-    const w = this.contentWidth;
-    const family = getComputedStyle(this).fontFamily;
-    const thin = this.config?.line_width === 'thin';
-    // the chart wears the card's tone: its curve is drawn in the same ink as the head
+    const spec = this.lineSpec(values, extent, at?.cursor);
+    const thin = spec.style.preset === 'classic' && this.config?.line_width === 'thin';
+    // the chart wears the card's tone: its curve is drawn in the same ink as the head; its bubble says what is read,
+    // else now (a reading that is not there says nothing)
     return html`<div
       class="ef-chart fv-tone--${tone} ${thin ? 'is-thin' : ''}"
       ${scrub(this.scrubber)}
     >
-      ${drawChart({
-        frame: { width: w, height: CHART_HEIGHT, headroom: HEADROOM },
-        series: [{ values }],
-        style: resolveStyle('classic', {}, {}),
-        extent,
-        cursor: at?.cursor,
-        id: 'fv',
-      })}
-      ${
-        at
-          ? chartBubble({
-              x: at.cursor * w,
-              width: w,
-              value: at.parts.value,
-              unit: at.parts.unit,
-              time: at.time,
-              family,
-            })
-          : live !== null
-            ? chartBubble({ x: extent * w, width: w, value, unit, family })
-            : nothing
-      }
+      ${drawRead(
+        spec,
+        at ? { ...at.parts, time: at.time } : null,
+        live === null ? null : { value, unit },
+        getComputedStyle(this).fontFamily,
+      )}
     </div>`;
+  }
+
+  /**
+   * The line's style for the card's keys: its own, else the house's (classic from the factory). A classic line asked
+   * thin keeps 1.10's 1 px (the card's own rule) where the engine's thin is 1.5.
+   */
+  private lineStyle(): ResolvedStyle {
+    const fine = chartKeysOf(this.config);
+    const style = resolveStyle(this.config?.chart, fine, LINE_CAPS);
+    if (style.preset !== 'classic' || fine.line_width !== 'thin') return style;
+    const own = { ...fine };
+    delete own.line_width;
+    return resolveStyle('classic', own, LINE_CAPS);
+  }
+
+  /**
+   * The line's chart: the sensor's window across the card (or the plot after a style's scale, its column sized by the
+   * card's ruler, in the unit the card's figures take for the window's peak: kW for a house that peaks at 3 kW), the
+   * day's extent drawn so far, read at `cursor` (a fraction of the plot).
+   */
+  private lineSpec(
+    values: readonly number[],
+    extent: number,
+    cursor: number | undefined,
+  ): ChartSpec {
+    const view = this.entity();
+    const style = this.lineStyle();
+    const base = toBase(1, view.unit);
+    const peak = Math.max(0, ...values.map(Math.abs)) * base.value;
+    const factor =
+      style.scale === 'nice'
+        ? base.value / figuresOf(this.hass, this.config, base.unit, peak, view).divisor
+        : 1;
+    const spec: ChartSpec = {
+      frame: { width: this.contentWidth, height: CHART_HEIGHT, headroom: HEADROOM },
+      series: [{ values: factor === 1 ? values : values.map((v) => v * factor) }],
+      style,
+      extent,
+      cursor,
+      zero: readingsOf(view.deviceClass, view.attr('state_class'), view.unit).zero,
+      tick: (value, decimals) => tickText(this.hass, value, decimals),
+      measure: (text) => this.head.ruler.width('fc-tick', text),
+      id: 'fv',
+    };
+    // a pointer over the scale's column reads the plot's start
+    const { left, width } = plotOf(spec);
+    this.plotSpan = left > 0 ? [left, width] : null;
+    return spec;
   }
 
   protected renderCard(): TemplateResult {
@@ -1333,6 +1457,25 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
         ),
         [{ label: s(this.hass, 'cost'), ...cost }],
       );
+    // the chart, then its clock under the plot: after a style's scale where it draws one
+    const chart = this.renderChart(
+      extent,
+      live,
+      parts.value,
+      parts.unit,
+      at,
+      off ? 'neutral' : tone,
+      missing,
+    );
+    const left = this.plotSpan?.[0] ?? 0;
+    const room = this.contentWidth - left;
+    const times = axis(
+      range && !day
+        ? this.rangeMarks(range, room)
+        : day
+          ? this.dayAxis(room)
+          : this.rollingAxis(hours, room),
+    );
 
     return html`<article class="fv-card ef-card ${off ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
@@ -1356,8 +1499,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
               ${cost ? html`<div class="ef-top__side">${readout({ label: s(this.hass, 'cost'), value: cost.value, unit: cost.unit, size: 's' })}</div>` : nothing}
             </div>`
       }
-      ${this.renderChart(extent, live, parts.value, parts.unit, at, off ? 'neutral' : tone, missing)}
-      ${axis(range && !day ? this.rangeMarks(range) : day ? this.dayAxis() : this.rollingAxis(hours))}
+      ${chart} ${left > 0 ? html`<div style="margin-inline-start:${left}px">${times}</div>` : times}
       ${
         legend.length && !compact
           ? statsCols(
@@ -1422,14 +1564,20 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     const H = SOURCES_CHART;
     const stacked = this.config?.stack !== false;
     const { up, down } = stackExtent(points, stacked);
-    const frame = this.frame(up, down, false);
+    const style = this.stackStyle();
+    const frame = this.frame(up, down, false, style);
     // under a scale its top tick sits on the tag's line, as the whole house's does
     const top = frame.scale ? OVERVIEW_TOP : HEADROOM;
     const range = frame.scale
       ? ([frame.scale.ticks[0] ?? 0, frame.scale.ticks[frame.scale.ticks.length - 1] ?? 0] as const)
       : undefined;
     const shape = points.length
-      ? stackShape(points, frame.width, H, top, step, { left: frame.left, range, stacked })
+      ? stackShape(points, frame.width, H, top, step, {
+          left: frame.left,
+          range,
+          stacked,
+          held: style.preset === 'step',
+        })
       : null;
     this.plotSpan = shape ? [frame.left, frame.width] : null;
     // the cursor: where the pointer reads, on the bucket it reads, never past the chart's end; nothing across a gap
@@ -1541,7 +1689,6 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
             ),
           ]
         : [];
-    const thin = this.config?.line_width === 'thin';
     return html`<article class="fv-card ef-card" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
@@ -1578,7 +1725,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                 }
               </div>`
             : html`<div
-                class="en-chart ${frame.scale ? 'is-scaled' : ''} ${thin ? 'is-thin' : ''}"
+                class="en-chart ${this.stackClass(frame, style)}"
                 data-plot="${frame.left} ${frame.width}"
                 ${scrub(this.scrubber)}
               >
@@ -1589,7 +1736,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                   aria-hidden="true"
                   data-measure="drawn"
                 >
-                  ${this.gridOf(frame, shape.y)}
+                  ${this.gridOf(frame, shape.y, style)}
                   ${[...shape.layers]
                     .reverse()
                     .map(
@@ -1709,7 +1856,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       : [];
 
     const { up, down } = flowExtent(points, stacking);
-    const frame = this.frame(up, down, charge.length > 1);
+    const style = this.stackStyle();
+    const frame = this.frame(up, down, charge.length > 1, style);
     const range = frame.scale
       ? ([frame.scale.ticks[0] ?? 0, frame.scale.ticks[frame.scale.ticks.length - 1] ?? 0] as const)
       : undefined;
@@ -1718,6 +1866,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           left: frame.left,
           range,
           stacked: stacking,
+          held: style.preset === 'step',
         })
       : null;
     this.plotSpan = shape ? [frame.left, frame.width] : null;
@@ -1875,7 +2024,6 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       }
     }
     const own = stacking ? '' : 'is-own';
-    const thin = this.config?.line_width === 'thin';
     return html`<article class="fv-card ef-card ef-card--overview" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
@@ -1915,7 +2063,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                 }
               </div>`
             : html`<div
-                class="en-chart ${frame.scale ? 'is-scaled' : ''} ${thin ? 'is-thin' : ''}"
+                class="en-chart ${this.stackClass(frame, style)}"
                 data-plot="${frame.left} ${frame.width}"
                 ${scrub(this.scrubber)}
               >
@@ -1926,7 +2074,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                   aria-hidden="true"
                   data-measure="drawn"
                 >
-                  ${this.gridOf(frame, shape.y)}
+                  ${this.gridOf(frame, shape.y, style)}
                   ${[...shape.above]
                     .reverse()
                     .map(

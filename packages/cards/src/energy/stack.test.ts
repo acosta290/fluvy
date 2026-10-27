@@ -117,6 +117,29 @@ describe('the house by source', () => {
     expect(grid?.line).toContain('M30.0,');
     expect(grid?.line).toContain('35.0,');
   });
+
+  it('holds every bucket’s reading across it in the step style, its edges level within a bucket', () => {
+    const points = stackOf(
+      [bucket(0, { fromGrid: 0.05 }), bucket(5, { fromGrid: 0.1 }), bucket(10, { fromGrid: 0.05 })],
+      DAY,
+    );
+    const step = 5 / 1440;
+    const straight = stackShape(points, 1440, 160, 12, step).layers[0]?.line ?? '';
+    const held = stackShape(points, 1440, 160, 12, step, { held: true }).layers[0]?.line ?? '';
+    // three points joined, or six corners: each bucket level from its start to its end
+    expect(straight.split(' L')).toHaveLength(3);
+    const corners = held
+      .slice(1)
+      .split(' L')
+      .map((p) => p.split(',').map(Number) as [number, number]);
+    expect(corners).toHaveLength(6);
+    expect(corners.map(([x]) => x)).toEqual([0, 5, 5, 10, 10, 15]);
+    for (let i = 0; i < 6; i += 2) expect(corners[i]?.[1]).toBe(corners[i + 1]?.[1]);
+    // the area under the classic line is the one 1.10 drew
+    expect(stackShape(points, 1440, 160, 12, step, { held: false }).layers[0]?.area).toBe(
+      stackShape(points, 1440, 160, 12, step).layers[0]?.area,
+    );
+  });
 });
 
 describe('coarse meters', () => {
