@@ -99,3 +99,40 @@ export function bucket(values: readonly number[], count: number, rule: BucketRul
     return rule === 'increase' && gain < 0 ? end : gain;
   });
 }
+
+/** What a sensor's readings are, as its chart reads them. */
+export interface Readings {
+  /** They add up, so they may stand as bars: a counter, or a quantity (energy, power, rain, gas, water, a price). */
+  readonly bars: boolean;
+  /** The quantity starts at zero, so its scale holds it: what adds up, a battery, a bare percentage. */
+  readonly zero: boolean;
+  /** How a slot's readings make its bar: a counter's gain (`increase` where it only grows), else their mean. */
+  readonly rule: BucketRule;
+}
+
+/** The measures that add up. A measurement of a state (a temperature, a humidity, a pressure) never does. */
+const QUANTITIES = new Set([
+  'energy',
+  'power',
+  'precipitation',
+  'precipitation_intensity',
+  'gas',
+  'water',
+  'volume',
+  'monetary',
+]);
+
+/**
+ * What a sensor's readings are by what Home Assistant says of it (its device and state classes, its unit): a counter
+ * (`total`, `total_increasing`: a meter) reads as what it gained in each slot; a quantity adds up and starts at zero;
+ * a measurement keeps to its own range, its bars would only be its line in pieces.
+ */
+export function readingsOf(deviceClass: unknown, stateClass: unknown, unit: unknown): Readings {
+  const counter = stateClass === 'total' || stateClass === 'total_increasing';
+  const bars = counter || QUANTITIES.has(String(deviceClass ?? ''));
+  return {
+    bars,
+    zero: bars || deviceClass === 'battery' || (unit === '%' && !deviceClass),
+    rule: !counter ? 'mean' : stateClass === 'total_increasing' ? 'increase' : 'change',
+  };
+}

@@ -5,19 +5,18 @@ import {
   type HomeAssistant,
 } from '@fluvy/core';
 import {
-  acts,
   CHART_KEYS,
-  presetsFor,
   type ChartCaps,
   type ChartKeys,
   type ChartPreset,
   type FineKey,
-} from './chart-config.js';
-import { chartEngine } from './chart-load.js';
-import { boolField, fieldRow, onlyWhen, sectionField, selectField } from './form.js';
+} from '../../shared/chart-config.js';
+import { boolField, fieldRow, onlyWhen, sectionField, selectField } from '../../shared/form.js';
+import { acts, presetsFor, resolveStyle } from './presets.js';
 
 /**
- * The editor's "Chart" section, one for every card that draws a chart: the style, then the fine keys the chosen
+ * The editor's "Chart" section, one for every card that draws a chart — the engine's, so every editor opens once it
+ * has landed (`Card.getConfigElement` waits for it; it is fetched as the bundle starts): the style, then the fine keys the chosen
  * style acts on and the card can draw (`acts`) — a key that cannot act in a style is not shown in it, and one the
  * card can never draw is not in its form at all. The style the rules read while the card says none is the house's,
  * as the card draws then. A card whose abilities follow its config says what a config allows (`capsOf`): the sensor
@@ -112,15 +111,12 @@ export function chartSection(caps: ChartCaps, capsOf?: CapsOf): HaFormSchemaItem
 
 /**
  * What the Chart section shows while the config says nothing: the house's style, and what the style the card draws
- * (its own, else the house's) draws on its own — resolved by the engine's one rule, so the editor says what the card
- * draws, for the keys the card offers. The engine lands with the bundle, long before an editor opens; until it has,
- * the section shows the style alone.
+ * (its own, else the house's) draws on its own — resolved by the one rule the card is drawn with, so the editor says
+ * what the card draws, for the keys the card offers.
  */
 export function chartDefaultsFor(config: Data, caps: ChartCaps): Record<string, unknown> {
   const house = chartDefaults().settings;
-  const engine = chartEngine();
-  if (!engine) return { chart: house.style };
-  const style = engine.resolveStyle(config['chart'] as ChartPreset | undefined, {}, caps);
+  const style = resolveStyle(config['chart'] as ChartPreset | undefined, {}, caps);
   const offered = new Set<string>(chartKeysFor(caps));
   const all: Record<string, unknown> = {
     chart: house.style,

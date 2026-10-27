@@ -23,13 +23,16 @@
  *                                             dial, ring, ruler
  *   ScrubController · scrub(controller)       reading a chart by pointing at it (`scrub.ts`): one owner for every
  *                                             chart that scrubs, the keys that read it without a pointer
+ *   chartSection(caps, capsOf?) · chartDefaultsFor(config, caps) · chartKeysFor(caps) · gaugeField(options)
+ *                                             the editor's Chart section (`fields.ts`): an editor opens once the
+ *                                             engine has landed (`Card.getConfigElement`)
  *   chartStyles · adopt(root)                 the engine's sheet (`styles.ts`)
  *   previewChart(settings, mode)              the settings panel's preview: a small chart and a gauge as the
  *                                             settings draw them
  *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf, unitScale), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
- *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket), `palette.ts` (seriesInk,
+ *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket, readingsOf), `palette.ts` (seriesInk,
  *   seriesPaint,
  *   seriesCheck)
  *
@@ -44,7 +47,7 @@ import { drawGauge } from './gauge.js';
 import { resolveGauge, resolveStyle } from './presets.js';
 
 export type { ChartPoint, ChartSeries, Curve, SeriesColour, Window } from './model.js';
-export { bucket, evenly, sampleAt, type BucketRule } from './model.js';
+export { bucket, evenly, readingsOf, sampleAt, type BucketRule, type Readings } from './model.js';
 export {
   airScale,
   niceStep,
@@ -110,10 +113,14 @@ export {
   type LegendItem,
 } from './decor.js';
 export { dialRadius, drawGauge, type GaugeOptions } from './gauge.js';
+export { chartDefaultsFor, chartKeysFor, chartSection, gaugeField, type CapsOf } from './fields.js';
 export {
+  ACTS,
+  acts,
   CHART_PRESETS,
   GAUGE_PRESETS,
   isBars,
+  presetsFor,
   resolveGauge,
   resolveStyle,
   type GaugeSpec,

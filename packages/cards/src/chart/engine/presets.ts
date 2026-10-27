@@ -1,10 +1,9 @@
 import { chartDefaults, type ChartPreset, type ChartSettings, type GaugePreset } from '@fluvy/core';
 import {
-  acts,
-  presetsFor,
   type ChartCaps,
   type ChartKeys,
   type Curve,
+  type FineKey,
   type Highlight,
 } from '../../shared/chart-config.js';
 
@@ -152,6 +151,54 @@ export const CHART_PRESETS: Readonly<Record<ChartPreset, PresetSpec>> = {
     bars: 'ink',
   },
 };
+
+const LINE: readonly FineKey[] = [
+  'curve',
+  'fill',
+  'line_width',
+  'show_points',
+  'show_grid',
+  'show_axis',
+  'animate',
+];
+
+/** The fine keys each style acts on: a key a style cannot draw is not offered in it, and does nothing in it. */
+export const ACTS: Readonly<Record<ChartPreset, readonly FineKey[]>> = {
+  classic: LINE,
+  soft: [...LINE, 'glow', 'show_now', 'highlight'],
+  glow: [...LINE, 'glow', 'show_now', 'highlight'],
+  minimal: [...LINE, 'show_now'],
+  step: [
+    'fill',
+    'line_width',
+    'show_points',
+    'show_grid',
+    'show_axis',
+    'show_now',
+    'highlight',
+    'animate',
+  ],
+  bars: ['show_grid', 'show_axis', 'show_now', 'highlight', 'animate'],
+  columns: ['show_grid', 'show_axis', 'show_now', 'animate'],
+  band: ['line_width', 'show_points', 'show_grid', 'show_axis', 'show_now', 'animate'],
+};
+
+/** The styles a card can draw with what it has: the line styles always, bars and columns with slots, the band with a band. */
+export function presetsFor(caps: ChartCaps): ChartPreset[] {
+  const out: ChartPreset[] = ['classic', 'soft', 'glow', 'minimal', 'step'];
+  if (caps.bars) out.push('bars', 'columns');
+  if (caps.band) out.push('band');
+  return out;
+}
+
+/** Whether a fine key acts in a style on a card that can draw it. */
+export function acts(key: FineKey, preset: ChartPreset, caps: ChartCaps): boolean {
+  if (!ACTS[preset].includes(key)) return false;
+  if (key === 'show_now') return caps.now === true;
+  if (key === 'show_axis') return caps.axis !== false;
+  if (key === 'highlight') return !caps.several;
+  return true;
+}
 
 /** The styles drawn as bars: a value per slot, never a line. */
 export const isBars = (preset: ChartPreset): boolean => preset === 'bars' || preset === 'columns';

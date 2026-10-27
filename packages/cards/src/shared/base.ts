@@ -8,6 +8,7 @@ import {
 import { baseStyles, fitPills, pressCover } from '@fluvy/ui';
 import { nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 import type { ShowIcon } from '../energy/head.js';
+import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
@@ -73,7 +74,8 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
    * editor is fetched the first time a card is edited (Home Assistant awaits this): a dashboard never loads it.
    */
   static async getConfigElement(): Promise<HTMLElement> {
-    const { listsEditor } = await import('./rows-editor.js');
+    // a chart card's Chart section is the chart engine's: it lands with the bundle, so this waits on nothing in practice
+    const [{ listsEditor }] = await Promise.all([import('./rows-editor.js'), loadChartEngine()]);
     return listsEditor(
       this.getConfigForm(),
       this.lists,

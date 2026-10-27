@@ -45,8 +45,7 @@ import {
 import { HeadFit } from '../energy/head.js';
 import { Card } from '../shared/base.js';
 import { chartKeysOf, type ChartCaps, type ChartKeys } from '../shared/chart-config.js';
-import { chartDefaultsFor, chartSection } from '../shared/chart-fields.js';
-import { ChartLoader, type ChartEngine } from '../shared/chart-load.js';
+import { chartEngine, ChartLoader, type ChartEngine } from '../shared/chart-load.js';
 import type { ChartSpec, ScrubController } from '../chart/engine/index.js';
 
 import { toneOf } from '../shared/colour.js';
@@ -117,32 +116,6 @@ const CHART_HEIGHT = 120;
 const HEADROOM = 44; // the bubble's room above the curve (design/language.md)
 const HOUR_MS = 3_600_000;
 
-/** The measures that add up, so their readings may stand as bars: energy, power, rain, gas, water, a price. */
-const QUANTITIES = new Set([
-  'energy',
-  'power',
-  'precipitation',
-  'precipitation_intensity',
-  'gas',
-  'water',
-  'volume',
-  'monetary',
-]);
-/** A counter: its readings are what it has counted so far (a meter), so a slot's bar is what it gained there. */
-const counting = (stateClass: unknown): boolean =>
-  stateClass === 'total' || stateClass === 'total_increasing';
-/**
- * Whether a sensor's readings mean something as bars: a counter, or a quantity that adds up (`QUANTITIES`) — never a
- * measurement of a state, a temperature, a humidity or a pressure, whose bars would only be its line in pieces.
- */
-const addsUp = (deviceClass: string | undefined, stateClass: unknown): boolean =>
-  counting(stateClass) || QUANTITIES.has(deviceClass ?? '');
-/** Whether its scale holds zero: what adds up starts there, and so does a battery's or a bare percentage. */
-const startsAtZero = (view: EntityView): boolean =>
-  addsUp(view.deviceClass, view.attr('state_class')) ||
-  view.deviceClass === 'battery' ||
-  (view.unit === '%' && !view.deviceClass);
-
 /**
  * What the sensor's chart can draw: a rolling window that ends at now (no now of its own, no forecast), a scale, and
  * bars where it is alone and its readings add up (several sensors each keep their own scale: lines only).
@@ -153,11 +126,14 @@ const severalIn = (data: Readonly<Record<string, unknown>>): boolean =>
   normaliseExtras(data['entities']).length > 0;
 const capsIn = (data: Readonly<Record<string, unknown>>, hass?: HomeAssistant): ChartCaps => {
   if (severalIn(data)) return { axis: true, several: true };
+  // whether its readings add up is the engine's to say: it lands with the bundle, long before an editor opens
   const attributes = hass?.states[String(data['entity'] ?? '')]?.attributes ?? {};
-  return {
-    axis: true,
-    bars: addsUp(attributes['device_class'] as string | undefined, attributes['state_class']),
-  };
+  const readings = chartEngine()?.readingsOf(
+    attributes['device_class'],
+    attributes['state_class'],
+    attributes['unit_of_measurement'],
+  );
+  return { axis: true, bars: readings?.bars ?? false };
 };
 /** The bars a window is read in: an hour each over a day, never more than 24. */
 const MAX_BARS = 24;
@@ -524,11 +500,13 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     variant: 'chart',
     show_stats: true,
     ...NUMBER_DEFAULTS,
-    ...chartDefaultsFor(config, capsIn(config, hass)),
+    ...chartEngine()?.chartDefaultsFor(config, capsIn(config, hass)),
   });
   /** The units the editor offers are the sensor's class's. */
   static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
+    // the Chart section is the engine's, here as an editor opens (it waits for the engine)
+    const chart = chartEngine()?.chartSection(CHART_CAPS, capsIn);
     return {
       schema: [
         entityField(['sensor', 'number', 'input_number', 'counter']),
@@ -538,7 +516,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         fieldRow(selectField('variant', ['chart', 'tile']), numberField('hours', 1, 168)),
         boolField('show_stats'),
         textField('label'),
-        chartSection(CHART_CAPS, capsIn),
+        ...(chart ? [chart] : []),
         numberFields({ when: hasLadder }),
         actionFields(),
       ],
@@ -998,28 +976,16 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     width: number,
     hours: number,
   ): ChartSpec {
-    const stateClass = view.attr('state_class');
-    const base = this.chartBase(engine, {
-      axis: true,
-      bars: addsUp(view.deviceClass, stateClass),
-    });
-    const slotted = engine.isBars(base.style.preset);
-    const drawn = slotted
-      ? engine.bucket(
-          values,
-          Math.min(MAX_BARS, Math.max(1, Math.round(hours))),
-          !counting(stateClass)
-            ? 'mean'
-            : stateClass === 'total_increasing'
-              ? 'increase'
-              : 'change',
-        )
+    const readings = engine.readingsOf(view.deviceClass, view.attr('state_class'), view.unit);
+    const base = this.chartBase(engine, { axis: true, bars: readings.bars });
+    const drawn = engine.isBars(base.style.preset)
+      ? engine.bucket(values, Math.min(MAX_BARS, Math.max(1, Math.round(hours))), readings.rule)
       : values;
     return {
       ...base,
       frame: { width, height: CHART_HEIGHT, headroom: HEADROOM },
       series: [{ values: drawn }],
-      zero: startsAtZero(view),
+      zero: readings.zero,
       id: 'fv',
     };
   }
