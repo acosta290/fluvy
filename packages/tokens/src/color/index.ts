@@ -1,6 +1,6 @@
 export { composite, contrastRatio, relativeLuminance, roundRatio } from './contrast.js';
 export { deltaE, minPairwiseDeltaE } from './delta-e.js';
-export { ensureContrast, fitLightness, type FitDirection, type FitOptions } from './fit.js';
+export { ensureContrast, type FitDirection } from './fit.js';
 export {
   assertHex,
   fromHex,
