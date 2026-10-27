@@ -186,7 +186,7 @@ show_compare: true              # Compare: the period before beside the span, on
   Both charts by source carry a power scale on the left (W or kW, negatives below the line) with dashed gridlines
   across, and the whole house a 0–100 % scale for the charge on the right, on the same lines. In a narrow column
   the charge's scale goes first (its readout and the "100 %" at the top still say it), then the power's.
-  `show_axis: false` and `show_grid: false` turn them off. `line_width: thin` draws every line 1 px.
+  `show_axis: false` and `show_grid: false` turn them off. `line_width: thin` draws every line 1 px, `bold` 3 px.
 
   The sources are stacked: each one sits on the one before it, so the battery's band starts where the sun's ends and
   its top is the two added together (5.6 kW of sun and 4.2 kW from the battery top out at 9.8 kW). Each band keeps
@@ -202,6 +202,20 @@ show_compare: true              # Compare: the period before beside the span, on
   `never` for a lifetime meter) so a reset or a restart is never counted twice; a sensor with no state class reads
   the recorder's history; today is live and the average, highest and lowest are the finished bars'.
 - **Gauge** — `variant: signed` for a meter that can be negative: zero at the top, "1.8 kW out".
+
+`chart` draws a card's chart in a style of its own, or in the house's where it names none (fluvy's settings → Charts,
+`classic` from the factory: the charts as 1.10 drew them), each card offered only the styles it draws:
+
+- the energy card's line `classic`, `soft`, `glow`, `minimal` or `step` (a stepped power reads on a scale from zero,
+  in the card's unit, the hours under the plot after it); its stacked charts `classic`, `soft` (lighter fills, the
+  house's hairlines across) or `step` (each bucket held across it);
+- the history bars `classic`, `bars` (the ink, flat, rounded as the house's bars are; `highlight` lights the highest,
+  the lowest or the bar in progress and quiets the rest) or `columns`; the mini row's sparkline `classic` or `minimal`;
+- production `classic`, `soft` (one meter's day an hour a bar, the best hour in the ink and the rest quiet, the hours
+  to come the forecast's, hollow, now marked) or `columns` (the arrays stacked in the series' colours).
+
+The fine keys of [the cards](cards.md) change one thing of a style where it draws it, and `animate: false` draws the
+chart still. A gauge's `gauge` is `ticks` (its ring as before), `dial` or `ring`.
 
 ## A configuration each
 
