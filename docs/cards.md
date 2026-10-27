@@ -65,7 +65,9 @@ entities:
 A chart is drawn in the house's chart style (fluvy's settings → Charts: `classic` from the factory, the chart every
 card drew before 1.11) unless the card names its own with `chart`: `classic`, `soft` (a soft copy under the line,
 hairlines at the quarters, Fluvy's knob at the line's end), `glow`, `minimal` (a thin line ending in its dot), `step`
-(each reading held across its slot, on a scale), and, for a sensor alone, `bars` and `columns`. The fine keys change
+(each reading held across its slot, on a scale of its own range), and, for a sensor alone whose readings add up (a
+meter, energy, power, rain, gas, water, a price — not a temperature, a humidity or a pressure), `bars` and `columns`:
+the window in at most 24 bars, an hour each over a day, each what the meter gained there or the slot's mean. The fine keys change
 one thing of the style and are offered only where the style draws it — `curve` (`smooth`, `straight`, `step`), `fill`
 (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`),
 `show_grid` (`x`, `y`, `both`, `none`), `show_axis`, `highlight` (`min`, `max`, `both`, `current`) — and `animate:

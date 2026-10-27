@@ -72,7 +72,7 @@ style is **Classic**, the chart every card drew before 1.11: nothing changes on 
 | Setting | Values (the factory's first) | What it draws |
 | --- | --- | --- |
 | **Style** | Classic · Soft · Glow · Minimal · Steps · Bars · Columns · Band | a card's `chart` where it names none; a style a card cannot draw (bars over several sensors, a band without one) is drawn Classic |
-| **Gauge** | Ticks · Dial · Ring · Ruler | a gauge's `gauge`: the dial's ticks, the thermostat's dial read, a ring lit to the value with Fluvy's knob at its end, the ruler in its read-only form |
+| **Gauge** | Ticks · Dial · Ring · Ruler | a gauge's `gauge`: the dial's ticks, the thermostat's dial read, a ring lit to the value with Fluvy's knob at its end, the ruler read — every knob the thermostat's ball |
 | **Line** | Regular · Thin · Bold | a style's line (2.5, 1.5 or 3 px); a card's `line_width` wins |
 | **Soft shadow** | 5 px · 3 · 7 under the line, 35 % · 25 · 45 | the soft copy of the line in Soft and Glow |
 | **Fill** | 18 % · 12 · 24 | the gradient under a line at its top (a flat fill two thirds of it); dark mode six points more |
