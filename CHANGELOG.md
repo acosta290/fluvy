@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A weather entity is never "on": its condition ("rainy", "sunny") read as an on state, so a room card in an area
+  with the weather counted one more device on ("1 of 8") whatever the weather was, and nothing on the room's page
+  said which.
+
 ## [1.10.0] — 2026-10-22
 
 ### Visible on upgrade

@@ -247,6 +247,12 @@ describe('isActive', () => {
     expect(isActive(resolveEntity(h, 'vacuum.a'))).toBe(false);
     expect(isActive(resolveEntity(h, 'light.b'))).toBe(false);
   });
+
+  it('never reads a weather condition as on', () => {
+    const h = hass({ 'weather.home': { state: 'rainy' }, 'weather.away': { state: 'sunny' } });
+    expect(isActive(resolveEntity(h, 'weather.home'))).toBe(false);
+    expect(isActive(resolveEntity(h, 'weather.away'))).toBe(false);
+  });
 });
 
 describe('domainOf', () => {
