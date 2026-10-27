@@ -218,6 +218,13 @@ export const historyStyles = css`
     overflow: visible;
   }
 
+  /* a style's lines (the house's, drawn by the engine) lie over the page's room and rules */
+  .hs-plot > .fc-chart {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
   /* every part of a series takes its colour from the one variable the group sets */
   .hs-series {
     color: var(--series, var(--fluvy-accent));

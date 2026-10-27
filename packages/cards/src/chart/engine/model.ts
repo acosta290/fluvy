@@ -23,9 +23,11 @@ export interface Window {
 
 /**
  * The colour of a series: one of the palette's tones, one of the six series colours the palette derives
- * (`series-1` … `series-6`, or the house's saved set's), the accent, or a colour of the person's own.
+ * (`series-1` … `series-6`, or the house's saved set's), the accent, a colour of the person's own, or one of the
+ * palette's variables (the History page's graph colour of an entity, `var(--fluvy-graph-9)`).
  */
-export type SeriesColour = Tone | `series-${1 | 2 | 3 | 4 | 5 | 6}` | 'accent' | `#${string}`;
+export type SeriesColour =
+  Tone | `series-${1 | 2 | 3 | 4 | 5 | 6}` | 'accent' | `#${string}` | `var(--${string})`;
 
 /** One series of a chart: its readings evenly spaced across the plot, and how it is drawn apart from the others. */
 export interface ChartSeries {

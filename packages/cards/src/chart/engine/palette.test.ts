@@ -24,6 +24,11 @@ describe('series colours', () => {
     expect(seriesPaint('heat')).toEqual({ className: 'fv-tone--heat' });
     expect(seriesPaint('series-3', withSet)).toEqual({ className: '', ink: '#15803d' });
     expect(seriesPaint('#123456')).toEqual({ className: '', ink: '#123456' });
+    // the History page's graph colour of an entity, one of the palette's twelve
+    expect(seriesPaint('var(--fluvy-graph-9)')).toEqual({
+      className: '',
+      ink: 'var(--fluvy-graph-9)',
+    });
     expect(seriesPaint(undefined)).toEqual({ className: '' });
   });
 });

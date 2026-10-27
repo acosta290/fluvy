@@ -31,7 +31,7 @@ export function seriesPaint(
   house: HouseCharts = chartDefaults(),
 ): SeriesPaint {
   if (colour === undefined) return { className: '' };
-  if (colour.startsWith('#')) return { className: '', ink: colour };
+  if (colour.startsWith('#') || colour.startsWith('var(')) return { className: '', ink: colour };
   if (colour.startsWith('series-'))
     return { className: '', ink: seriesInk(Number(colour.slice('series-'.length)) - 1, house) };
   return { className: `fv-tone--${colour}` };

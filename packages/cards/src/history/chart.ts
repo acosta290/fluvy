@@ -11,7 +11,9 @@ import {
   areaPath,
   bandPath,
   chartBubble,
+  drawRead,
   linePath,
+  resolveStyle,
   roundTicks,
   scrub,
   yAt,
@@ -20,6 +22,7 @@ import {
   type Pt,
 } from '../chart/engine/index.js';
 
+import type { ChartCaps } from '../shared/chart-config.js';
 import type { Chart } from './model.js';
 import type { FluvyHistory } from './view.js';
 
@@ -197,6 +200,10 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
           [low, true],
         ]
     : [];
+  // the house's style (the page has no setting of its own; classic from the factory): the lines, their band
+  const caps: ChartCaps = { band: bands.some(Boolean), several: !alone, axis: false };
+  const style = resolveStyle(undefined, {}, caps);
+  const classic = style.preset === 'classic';
 
   return html`<article class="fv-card hs-card">
     ${head({
@@ -242,11 +249,13 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
           return svg`<line class="hs-rule" x1="0" y1=${y.toFixed(2)} x2=${plotWidth} y2=${y.toFixed(2)} />
             <text class="hs-rule__value" x="0" y=${(y + (below ? 12 : -5)).toFixed(2)}>${`${mark.text} ${mark.unit}`.trim()}</text>`;
         })}
-        ${chart.tracks.map((track, index) => {
-          const points = pointsOf(series[index] ?? []);
-          const path = linePath(points, 'smooth');
-          const band = bands[index];
-          return svg`<g class="hs-series" style="--series:${alone ? 'var(--fluvy-accent)' : `var(--fluvy-graph-${chart.colours[index] ?? 1})`};animation-delay:${index * 60}ms">
+        ${
+          classic
+            ? chart.tracks.map((track, index) => {
+                const points = pointsOf(series[index] ?? []);
+                const path = linePath(points, 'smooth');
+                const band = bands[index];
+                return svg`<g class="hs-series" style="--series:${alone ? 'var(--fluvy-accent)' : `var(--fluvy-graph-${chart.colours[index] ?? 1})`};animation-delay:${index * 60}ms">
             ${band ? svg`<path class="hs-band" d=${bandPath(pointsOf(band.low), pointsOf(band.high))} />` : nothing}
             ${
               alone
@@ -266,22 +275,53 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
                 : svg`<circle class="hs-dot" cx=${cursorX.toFixed(2)} cy=${y.toFixed(2)} r="4" />`;
             })()}
           </g>`;
-        })}
-        ${svg`<line class="hs-cursor" x1=${cursorX.toFixed(2)} y1=${HEADROOM - 8} x2=${cursorX.toFixed(2)} y2=${height - PAD} />`}
+              })
+            : nothing
+        }
+        ${
+          classic
+            ? svg`<line class="hs-cursor" x1=${cursorX.toFixed(2)} y1=${HEADROOM - 8} x2=${cursorX.toFixed(2)} y2=${height - PAD} />`
+            : nothing
+        }
       </svg>
       ${
         // a bubble names one reading: with several series it would claim to be all of them, and the
         // legend already reads every one of them at the cursor's time
-        page.scrubbed && alone
-          ? chartBubble({
-              x: cursorX,
-              width,
-              value: leadValue.text,
-              unit: leadValue.unit,
-              time: page.moment(at),
-              ...(page.family ? { family: page.family } : {}),
-            })
-          : nothing
+        classic
+          ? page.scrubbed && alone
+            ? chartBubble({
+                x: cursorX,
+                width,
+                value: leadValue.text,
+                unit: leadValue.unit,
+                time: page.moment(at),
+                ...(page.family ? { family: page.family } : {}),
+              })
+            : nothing
+          : // a style's lines over the page's room and rules, on the same scale: a lone one in the accent, several
+            // each in its graph colour
+            drawRead(
+              {
+                frame: { width, height, headroom: HEADROOM, pad: PAD },
+                series: chart.tracks.map((_track, index) => ({
+                  values: series[index] ?? [],
+                  colour: alone
+                    ? 'accent'
+                    : (`var(--fluvy-graph-${chart.colours[index] ?? 1})` as const),
+                  ...(bands[index] ? { band: bands[index] } : {}),
+                })),
+                style,
+                scale: ends,
+                extent,
+                cursor: page.scrubbed ? page.fraction(at) : null,
+                id: `hs-${id}`,
+              },
+              page.scrubbed && alone
+                ? { value: leadValue.text, unit: leadValue.unit, time: page.moment(at) }
+                : null,
+              null,
+              page.family,
+            )
       }
     </div>
     ${axis(axisLabels(page, width))}

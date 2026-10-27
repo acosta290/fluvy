@@ -46,7 +46,7 @@ import {
 import { pageStyles } from '@fluvy/ui/styles/page';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
-import { ScrubController } from '../chart/engine/index.js';
+import { chartStyles, ScrubController } from '../chart/engine/index.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { Layers } from '../shared/layers.js';
 import { downloadCsv } from '../shared/csv.js';
@@ -85,7 +85,8 @@ const SLACK = HOUR;
 export type HistoryLayer = 'picking' | 'sourcing';
 
 export class FluvyHistory extends LitElement {
-  static override styles = [...baseStyles, pageStyles, historyStyles];
+  // the engine's sheet for a chart drawn in the house's style
+  static override styles = [...baseStyles, pageStyles, chartStyles, historyStyles];
 
   static override properties = {
     hass: { attribute: false },
