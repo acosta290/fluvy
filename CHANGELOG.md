@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The automatic dashboards hand every opening to their Sensors card (the Home dashboard's Security and Sensors views,
+  the Security dashboard's overview), which shows four and folds the rest under "All sensors": they handed it only
+  the first eight, so from the ninth on a leak, smoke or window sensor was in no list on those views.
+
 ## [1.10.0] — 2026-10-22
 
 ### Visible on upgrade

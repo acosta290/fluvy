@@ -767,6 +767,22 @@ describe('custom:fluvy-home strategy', () => {
     expect(openings.entities).toEqual(['binary_sensor.kitchen_leak']);
   });
 
+  it('hands every opening to the sensors card, which folds them itself', async () => {
+    const windows = Array.from({ length: 10 }, (_, i) =>
+      entity(`binary_sensor.window_${i}`, 'off', { device_class: 'window' }),
+    );
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home' },
+      house(windows),
+    );
+    const sensors = views.find((v) => v.path === 'sensors')!.sections.flatMap((s) => s.cards);
+    const openings = sensors.find((c) => c.type === 'custom:fluvy-openings-card') as unknown as {
+      entities: string[];
+    };
+    expect(openings.entities).toHaveLength(11);
+    expect(openings.entities).toContain('binary_sensor.window_9');
+  });
+
   it("speaks the dashboard's language and leaves out hidden views", async () => {
     const hass = house() as unknown as { language: string };
     hass.language = 'es';
