@@ -866,6 +866,27 @@ describe('the settings panel', () => {
     expect(root.querySelectorAll('.pn-art--style svg.fc-chart').length).toBe(8);
     expect(root.querySelectorAll('.pn-art--gauge').length).toBe(11);
     expect(root.querySelectorAll('.pn-art--gauge .fc-scene').length).toBe(7);
+    // every row full: two a row on a phone, the eleventh gauge's row its own; four on a wide panel, the last three
+    // gauges sharing theirs
+    const rows = (kind: 'style' | 'gauge') =>
+      [...root.querySelector(`.pn-art--${kind}`)!.closest('.pn-tiles')!.children].map(
+        (line) => line.querySelectorAll('.pn-tile').length,
+      );
+    expect([rows('style'), rows('gauge')]).toEqual([
+      [2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 1],
+    ]);
+    const wide = panel as unknown as { wide: boolean };
+    wide.wide = true;
+    host.content = 600;
+    await settle();
+    expect([rows('style'), rows('gauge')]).toEqual([
+      [4, 4],
+      [4, 4, 3],
+    ]);
+    wide.wide = false;
+    host.content = 288;
+    await settle();
     expect(tile('Classic').getAttribute('aria-pressed')).toBe('true');
     expect(tile('Ticks').getAttribute('aria-pressed')).toBe('true');
     // classic tunes nothing but motion: it says so, and offers no row

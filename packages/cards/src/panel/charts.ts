@@ -53,13 +53,21 @@ const formatter =
 
 /* ---------- the tiles ---------- */
 
-/** Tiles a row: two on a phone, four on a wide panel — the eight styles fill two rows, the four gauges one. */
-const tileColumns = (ctx: PanelContext): number => (ctx.wide ? 4 : 2);
+/**
+ * The tiles' rows: two a row on a phone, four on a wide panel, and a last row short of them shares the card's width
+ * among its own, so no row is left part empty — the eight styles fill theirs; of the eleven gauges the last takes a
+ * phone's row whole (an odd last tile, as a room's) and the last three share a wide panel's.
+ */
+function tileRows<T>(ctx: PanelContext, items: readonly T[]): T[][] {
+  const n = ctx.wide ? 4 : 2;
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += n) rows.push(items.slice(i, i + n));
+  return rows;
+}
 
-/** A tile's drawing room across: the tile's share of the card less its 8 and its picture's 8 on each side. */
-function artWidth(ctx: PanelContext): number | undefined {
+/** A tile's drawing room across in a row of `n`: its share of the card less its 8 and its picture's 8 on each side. */
+function artWidth(ctx: PanelContext, n: number): number | undefined {
   if (!ctx.fit) return undefined;
-  const n = tileColumns(ctx);
   return Math.floor((ctx.fit.width - (n - 1) * gap(ctx)) / n + 0.01) - 32;
 }
 
@@ -76,7 +84,8 @@ interface Tile {
   readonly key: string;
   readonly label: string;
   readonly active: boolean;
-  readonly art: TemplateResult | typeof nothing;
+  /** Its picture, drawn `width` across (its row's share). */
+  readonly art: (width: number) => TemplateResult;
 }
 
 /**
@@ -89,33 +98,36 @@ function tiles(
   onPick: ((key: string) => void) | null,
   kind: 'style' | 'gauge',
 ): TemplateResult {
-  return html`<div
-    class="pn-tiles ${ctx.wide ? 'pn-tiles--four' : ''} ${onPick ? '' : 'pn-tiles--static'}"
-    data-fill-row
-  >
-    ${items.map(
-      (item) =>
-        html`<button
-          class="pn-swatch pn-tile ${item.active ? 'is-active' : ''}"
-          data-target
-          aria-pressed=${item.active ? 'true' : 'false'}
-          tabindex=${onPick ? nothing : '-1'}
-          @click=${() => onPick?.(item.key)}
-        >
-          <span class="pn-art pn-art--chart pn-art--${kind} fv-tone--accent">${item.art}</span>
-          <span class="pn-swatch__name"
-            ><span class="pn-swatch__label">${item.label}</span>${
-              item.active ? icon('check') : nothing
-            }</span
-          >
-        </button>`,
-    )}
+  return html`<div class="pn-tiles ${onPick ? '' : 'pn-tiles--static'}">
+    ${tileRows(ctx, items).map((row) => {
+      const width = artWidth(ctx, row.length);
+      return html`<div class="pn-tiles__row" style="--n:${row.length}" data-fill-row>
+        ${row.map(
+          (item) =>
+            html`<button
+              class="pn-swatch pn-tile ${item.active ? 'is-active' : ''}"
+              data-target
+              aria-pressed=${item.active ? 'true' : 'false'}
+              tabindex=${onPick ? nothing : '-1'}
+              @click=${() => onPick?.(item.key)}
+            >
+              <span class="pn-art pn-art--chart pn-art--${kind} fv-tone--accent"
+                >${width ? item.art(width) : nothing}</span
+              >
+              <span class="pn-swatch__name"
+                ><span class="pn-swatch__label">${item.label}</span>${
+                  item.active ? icon('check') : nothing
+                }</span
+              >
+            </button>`,
+        )}
+      </div>`;
+    })}
   </div>`;
 }
 
 function styleCard(ctx: PanelContext): TemplateResult {
   const charts = ctx.shown.charts;
-  const width = artWidth(ctx);
   const height = ctx.wide ? STYLE_ART.wide : STYLE_ART.phone;
   return html`<section class="fv-card pn-card">
     ${head({ icon: 'chart', title: ctx.t('charts.style'), sub: ctx.t(ctx.admin ? 'charts.style_sub' : 'scope.admin_only') })}
@@ -125,7 +137,7 @@ function styleCard(ctx: PanelContext): TemplateResult {
         key: preset,
         label: localize(ctx.hass, `option.${preset}`),
         active: charts.style === preset,
-        art: width ? previewStyle(preset, charts, width, height) : nothing,
+        art: (width) => previewStyle(preset, charts, width, height),
       })),
       ctx.admin ? (key) => ctx.editCharts({ style: key as ChartPreset }) : null,
       'style',
@@ -135,7 +147,6 @@ function styleCard(ctx: PanelContext): TemplateResult {
 
 function gaugeCard(ctx: PanelContext): TemplateResult {
   const charts = ctx.shown.charts;
-  const width = artWidth(ctx);
   return html`<section class="fv-card pn-card">
     ${head({ icon: 'thermo', title: ctx.t('charts.gauge'), sub: ctx.t(ctx.admin ? 'charts.gauge_sub' : 'scope.admin_only') })}
     ${tiles(
@@ -144,13 +155,12 @@ function gaugeCard(ctx: PanelContext): TemplateResult {
         key: preset,
         label: localize(ctx.hass, `option.${preset}`),
         active: charts.gauge === preset,
-        art: width
-          ? previewGauge(preset, charts, {
-              size: preset === 'ruler' ? width : Math.min(width, GAUGE_SIZE),
-              format: formatter(ctx),
-              small: true,
-            })
-          : nothing,
+        art: (width) =>
+          previewGauge(preset, charts, {
+            size: preset === 'ruler' ? width : Math.min(width, GAUGE_SIZE),
+            format: formatter(ctx),
+            small: true,
+          }),
       })),
       ctx.admin ? (key) => ctx.editCharts({ gauge: key as GaugePreset }) : null,
       'gauge',

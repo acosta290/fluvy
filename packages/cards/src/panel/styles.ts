@@ -919,19 +919,26 @@ export const panelStyles = css`
     cursor: pointer;
   }
 
-  /* the Charts tab's tiles (the styles, the gauges): two a row on a phone, four on a wide panel, every row full */
-  .pn-tiles,
+  /* the Charts tab's tiles (the styles, the gauges): rows of two on a phone, four on a wide panel, and a last row short
+     of them sharing the width among its own (charts.ts), so every row is full; the previews' two modes side by side */
+  .pn-tiles {
+    display: grid;
+    gap: var(--pn-gap);
+  }
+  .pn-tiles__row {
+    display: grid;
+    grid-template-columns: repeat(
+      var(--n),
+      round(down, calc((100% - (var(--n) - 1) * var(--pn-gap)) / var(--n) + 0.01px), 1px)
+    );
+    gap: var(--pn-gap);
+    justify-content: start;
+  }
   .pn-modes {
     display: grid;
     grid-template-columns: repeat(2, round(down, calc((100% - var(--pn-gap)) / 2 + 0.01px), 1px));
     gap: var(--pn-gap);
     justify-content: start;
-  }
-  .pn-tiles--four {
-    grid-template-columns: repeat(
-      4,
-      round(down, calc((100% - 3 * var(--pn-gap)) / 4 + 0.01px), 1px)
-    );
   }
   .pn-tiles--static .pn-tile,
   .pn-sets--static .pn-set {
