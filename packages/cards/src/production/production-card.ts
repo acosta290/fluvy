@@ -15,7 +15,20 @@ import {
 } from '@fluvy/core';
 
 import { axis, head, readout, sheetStyles, type Tone } from '@fluvy/ui';
-import { scrub, ScrubController } from '../chart/engine/index.js';
+import {
+  chartDefaultsFor,
+  chartSection,
+  chartStyles,
+  drawChart,
+  resolveStyle,
+  scrub,
+  ScrubController,
+  seriesInk,
+  type ChartSeries,
+  type SeriesColour,
+  type ResolvedStyle,
+} from '../chart/engine/index.js';
+import { chartKeysOf, type ChartCaps, type ChartKeys } from '../shared/chart-config.js';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
@@ -88,7 +101,15 @@ export interface ProductionArray {
   name?: string;
 }
 
-export interface ProductionCardConfig extends FluvyCardConfig, NumberKeys {
+/**
+ * The chart keys (`shared/chart-config.ts`): the bars' style — classic, soft, or columns —, an hour a highlight
+ * lights, the marker at now, and motion.
+ */
+export interface ProductionCardConfig
+  extends
+    FluvyCardConfig,
+    NumberKeys,
+    Pick<ChartKeys, 'chart' | 'highlight' | 'show_now' | 'animate'> {
   subtitle?: string;
   /** Today's forecast: its state is the day's total, its attributes may carry the hours (Solcast, Open-Meteo, a template). */
   forecast_entity?: string;
@@ -132,6 +153,27 @@ const sum = (values: readonly number[]): number =>
   values.reduce((total, value) => total + value, 0);
 
 /**
+ * What the day's bars are drawn in: classic (1.10's: the sheet's bars over the forecast, the arrays stacked in the
+ * ink's ramp), soft (rounded, the best hour in the ink and the rest quiet, a highlight's own lit) or columns (the arrays
+ * stacked in the series' colours); in a style the hours to come are the forecast's, hollow, now marked.
+ */
+const DAY_CAPS: ChartCaps = {
+  bars: true,
+  now: true,
+  styles: ['classic', 'soft', 'columns'],
+  keys: ['highlight', 'show_now', 'animate'],
+};
+const ARRAYS_CAPS: ChartCaps = {
+  bars: true,
+  now: true,
+  several: true,
+  styles: ['classic', 'columns'],
+  keys: ['show_now', 'animate'],
+};
+const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
+  Array.isArray(data['arrays']) && data['arrays'].length ? ARRAYS_CAPS : DAY_CAPS;
+
+/**
  * A growing meter's day, hour by hour: the recorded hours as solid bars, the hour in progress read
  * live from the sensor, the forecast standing behind them and carrying on past "now", the day's
  * figures above and its peak below. With several arrays, each hour's bar is stacked per array — the
@@ -148,6 +190,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,
     energyStyles,
+    chartStyles,
     css`
       /* the sheet paints the bars solar; another tone brings its own ink (a ruler tone class carries nothing but the tone's variables) */
       .so-bars .so-bar__fill {
@@ -244,6 +287,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     'collection_key',
     'unit',
     'decimals',
+    'chart',
+    'highlight',
+    'show_now',
+    'animate',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -260,12 +307,13 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     items: { arrays: ITEM_ALIASES },
   };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
+  static override defaults: EditorDefaults = (config) => ({
     variant: 'full',
     show_forecast: true,
     show_peak: true,
     collection_key: '',
     ...NUMBER_DEFAULTS,
+    ...chartDefaultsFor(config, capsIn(config)),
   });
   /** The date pickers on the dashboard, for the key; the units the editor offers are the meter's class's. */
   static override choices: EditorChoices = (config, hass) => ({
@@ -285,6 +333,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         ),
         fieldRow(boolField('show_forecast'), boolField('show_peak')),
         fieldRow(selectField('variant', ['full', 'compact']), collectionField()),
+        // the day's bars, or the arrays' stacks
+        chartSection([DAY_CAPS, ARRAYS_CAPS], capsIn),
         numberFields({ when: hasLadder }),
         actionFields(),
       ],
@@ -580,8 +630,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     // 24 bars of 8 spread over the column: the boundary between hour h−1 and h is where the label for h belongs
     const pitch = (this.contentWidth - 8) / 23;
     const boundary = (hour: number): number => (hour * pitch - (pitch - 8) / 2) / this.contentWidth;
-    // the arrays' chart centres a bar in each hour's slot: the boundary of hour h is h / 24
-    const at = (hour: number): number => (arrays.length ? hour / HOURS : boundary(hour));
+    // the arrays' chart and a style centre a bar in each hour's slot: the boundary of hour h is h / 24
+    const style = resolveStyle(
+      this.config?.chart,
+      chartKeysOf(this.config),
+      arrays.length ? ARRAYS_CAPS : DAY_CAPS,
+    );
+    const classic = style.preset === 'classic';
+    const at = (hour: number): number =>
+      arrays.length || !classic ? hour / HOURS : boundary(hour);
     const top = narrow ? 'm' : 'l';
     // the day's figure with the forecast beside it, in the longest of its words that leaves the forecast its room
     // ("So far" where "So far today" would wrap); else the forecast under it, and the longest the column holds:
@@ -658,31 +715,44 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       }
       ${
         arrays.length
-          ? this.renderArrays(arrays, { hourNow, forecast, unusable, tone, name, hovered })
+          ? this.renderArrays(arrays, { hourNow, forecast, unusable, tone, name, hovered, style })
           : loading
             ? html`<div class="fv-skeleton so-skeleton"></div>`
-            : html`<div
-                class="so-bars fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''}"
-                role="img"
-                aria-label=${known ? `${strings(this.hass, 'so_far')}: ${shown(total)} ${scale.unit}` : name}
-                ${scrub(this.scrubber)}
-              >
-                ${produced.map((value, hour) => {
-                  const ahead = step(forecast?.[hour] ?? 0);
-                  const done = step(value);
-                  // a day with nothing in it still draws its baseline: one quiet stub per hour
-                  return html`<span
-                    class="so-bar ${hovered === hour ? 'is-hover' : ''}"
-                    style="--bar-delay:${hour * 18}ms"
-                  >
-                    ${ahead > 0 || ceiling === 0 ? html`<span class="so-bar__forecast" data-measure="value" style="height:${ahead || 4}px"></span>` : nothing}
-                    ${done > 0 ? html`<span class="so-bar__fill" data-measure="value" style="height:${done}px"></span>` : nothing}
-                  </span>`;
-                })}
-              </div>`
+            : !classic
+              ? this.renderStyled(
+                  style,
+                  // the hours so far, then the forecast's, hollow
+                  [
+                    {
+                      values: produced.map((value, hour) =>
+                        hour <= hourNow || closed ? value : (forecast?.[hour] ?? null),
+                      ),
+                    },
+                  ],
+                  { now: closed ? null : hourNow, unusable, tone, name, hovered },
+                )
+              : html`<div
+                  class="so-bars fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''}"
+                  role="img"
+                  aria-label=${known ? `${strings(this.hass, 'so_far')}: ${shown(total)} ${scale.unit}` : name}
+                  ${scrub(this.scrubber)}
+                >
+                  ${produced.map((value, hour) => {
+                    const ahead = step(forecast?.[hour] ?? 0);
+                    const done = step(value);
+                    // a day with nothing in it still draws its baseline: one quiet stub per hour
+                    return html`<span
+                      class="so-bar ${hovered === hour ? 'is-hover' : ''}"
+                      style="--bar-delay:${hour * 18}ms"
+                    >
+                      ${ahead > 0 || ceiling === 0 ? html`<span class="so-bar__forecast" data-measure="value" style="height:${ahead || 4}px"></span>` : nothing}
+                      ${done > 0 ? html`<span class="so-bar__fill" data-measure="value" style="height:${done}px"></span>` : nothing}
+                    </span>`;
+                  })}
+                </div>`
       }
       ${axis(this.contentWidth < AXIS_FULL ? [ticks[0], ticks[2], ticks[4]].filter((tick) => !!tick) : ticks)}
-      ${arrays.length ? this.renderLegend(arrays, hourNow, hovered, unusable ? 'neutral' : tone) : nothing}
+      ${arrays.length ? this.renderLegend(arrays, hourNow, hovered, unusable ? 'neutral' : tone, !classic) : nothing}
       ${compact || arrays.length ? nothing : this.renderStats(peak, known && peakValue > 0 ? this.hourLabel(peakHour) : '—', known ? formatNumber(this.hass, sunHours, { digits: 1 }) : null)}
     </article>`;
   }
@@ -732,12 +802,25 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       readonly tone: Tone;
       readonly name: string;
       readonly hovered: number | null;
+      readonly style: ResolvedStyle;
     },
   ): TemplateResult {
     if (this.arrays_ === undefined)
       return html`<div class="en-chart pr-chart"><div class="fv-skeleton so-skeleton"></div></div>`;
     const w = this.contentWidth;
     const series = arrays.map((a, i) => this.arrayHours(i, this.entity(a.entity), o.hourNow));
+    // columns: each array in its series' colour, the forecast after now hollow on the first
+    if (o.style.preset !== 'classic')
+      return this.renderStyled(
+        o.style,
+        series.map((hours, i) => ({
+          values: Array.from({ length: HOURS }, (_u, hour) =>
+            hour <= o.hourNow ? (hours?.[hour] ?? 0) : i ? null : (o.forecast?.[hour] ?? null),
+          ),
+          colour: `series-${i + 1}` as SeriesColour,
+        })),
+        { ...o, now: o.hourNow, height: CHART_HEIGHT },
+      );
     const stack = (hour: number): number => sum(series.map((s) => (s ? (s[hour] ?? 0) : 0)));
     const future = (hour: number): number => (hour > o.hourNow ? (o.forecast?.[hour] ?? 0) : 0);
     const ceiling = ceilingFor(
@@ -799,12 +882,50 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     </div>`;
   }
 
-  /** Each array's day so far (or, under the pointer, its hour): the Distribution's legend, one unit for all. */
+  /**
+   * The day in a style, drawn by the engine: an hour a bar across the column, on a scale from zero (the arrays
+   * stacked), the hours to come hollow and now marked where the style marks it, read by the hour under the pointer.
+   */
+  private renderStyled(
+    style: ResolvedStyle,
+    series: ChartSeries[],
+    o: {
+      readonly now: number | null;
+      readonly unusable: boolean;
+      readonly tone: Tone;
+      readonly name: string;
+      readonly hovered: number | null;
+      readonly height?: number;
+    },
+  ): TemplateResult {
+    return html`<div
+      class="en-chart pr-chart fv-tone--${o.unusable ? 'neutral' : o.tone}"
+      role="img"
+      aria-label=${o.name}
+      ${scrub(this.scrubber)}
+    >
+      ${drawChart({
+        frame: { width: this.contentWidth, height: o.height ?? BAR_HEIGHT, headroom: 4, pad: 0 },
+        series,
+        style,
+        kind: 'bars',
+        now: o.now === null ? null : (o.now + 1) / HOURS,
+        cursor: o.hovered === null ? null : (o.hovered + 0.5) / HOURS,
+        id: 'pr',
+      })}
+    </div>`;
+  }
+
+  /**
+   * Each array's day so far (or, under the pointer, its hour): the Distribution's legend, one unit for all, each
+   * array's square in the ink's ramp — or in its series' colour, as a style's columns are (`series`).
+   */
   private renderLegend(
     arrays: readonly ProductionArray[],
     hourNow: number,
     hovered: number | null,
     tone: Tone,
+    series: boolean,
   ): TemplateResult {
     const views = arrays.map((a) => this.entity(a.entity));
     const figures = arrays.map((_a, i) => {
@@ -838,7 +959,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         // the Distribution's legend centres each item in its column
         return html`<span class="en-legend__item" data-align="center">
           <span class="en-legend__name"
-            ><i class="en-sq ${RAMP[i] ?? ''}"></i
+            ><i
+              class="en-sq ${series ? '' : (RAMP[i] ?? '')}"
+              style=${series ? `background:${seriesInk(i)}` : nothing}
+            ></i
             ><span class="en-legend__text" data-name>${names[i]}</span></span
           >
           <span class="en-legend__value"
