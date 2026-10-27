@@ -1790,7 +1790,7 @@
   "energy-score": {
     "title": "Energiescore",
     "title_short": "Score",
-    "self_powered": "Autarkie",
+    "self_powered": "Zelfvoorzienend",
     "sun_used": "Zon benut",
     "low_carbon": "CO₂-arm",
     "imported": "Import",
