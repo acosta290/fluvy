@@ -191,6 +191,9 @@ describe('bars', () => {
     // the stacks reach 3 and −1.5: −2 … 4 by 2; the period before beside them reaches 7 and −3: −5 … 10 by 5
     expect(plotOf(columns).ticks?.ticks).toEqual([-2, 0, 2, 4]);
     expect(plotOf({ ...columns, reach: [7, -3] }).ticks?.ticks).toEqual([-5, 0, 5, 10]);
+    // a scale the card lays itself is drawn as given
+    const given = { min: -2, max: 4, step: 2, ticks: [-2, 0, 2, 4], decimals: 0 };
+    expect(plotOf({ ...columns, ticks: given }).ticks).toBe(given);
   });
 });
 

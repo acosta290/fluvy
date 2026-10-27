@@ -63,6 +63,8 @@ export interface ChartSpec {
    * drawn over these bars, the period before as ghost columns under them).
    */
   readonly reach?: readonly number[];
+  /** A nice scale a card lays itself (the usage card's, hugging its stacks on both sides of zero): drawn as given. */
+  readonly ticks?: Ticks;
   /** The fraction of the plot's width the series covers: a day's axis at 21:47 → 0.908. */
   readonly extent?: number;
   /** Where now falls, as a fraction of the series: beyond it the forecast is drawn as the style says, now marked. */
@@ -174,7 +176,8 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
       ...reach(spec, bars, bars && style.preset === 'columns' && all.length > 1),
       ...(spec.reach ?? []),
     ];
-    ticks = niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
+    ticks =
+      spec.ticks ?? niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
     scales = all.map(() => ticks as Ticks);
   } else if (typeof wanted === 'object') scales = all.map(() => wanted);
   else if (wanted === 'own') scales = all.map((values) => airScale([values], spec.zero));
