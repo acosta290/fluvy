@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { airScale, niceStep, niceTicks, tightScale, unitScale, yOf } from './scale.js';
+import { airScale, niceStep, niceTicks, tightScale, yOf } from './scale.js';
 
 describe('a nice step', () => {
   it('is 1, 2, 2.5 or 5 times a power of ten, the smallest that spans the range in four steps or fewer', () => {
@@ -138,19 +138,5 @@ describe('where a value sits', () => {
     expect(yOf(99, { min: 0, max: 10 }, box)).toBe(0);
     expect(yOf(-4, { min: 0, max: 10 }, { top: 44, bottom: 112 })).toBe(112);
     expect(yOf(5, { min: 5, max: 5 }, { top: 44, bottom: 112 })).toBe(78);
-  });
-});
-
-describe('the unit a set of figures is written in', () => {
-  it('is chosen by the largest, up to giga, for the base units that scale', () => {
-    expect(unitScale(3200, 'W')).toEqual({ unit: 'kW', divisor: 1000 });
-    expect(unitScale(400, 'W')).toEqual({ unit: 'W', divisor: 1 });
-    expect(unitScale(-2.5e6, 'Wh')).toEqual({ unit: 'MWh', divisor: 1e6 });
-    expect(unitScale(4e9, 'VA')).toEqual({ unit: 'GVA', divisor: 1e9 });
-  });
-
-  it('passes any other unit, and a figure that is not one, through', () => {
-    expect(unitScale(12_000, 'L')).toEqual({ unit: 'L', divisor: 1 });
-    expect(unitScale(Number.NaN, 'W')).toEqual({ unit: 'W', divisor: 1 });
   });
 });

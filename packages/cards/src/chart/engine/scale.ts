@@ -1,8 +1,8 @@
 /**
  * The scales a chart is drawn on: the series' own ends (`tight`, a lone curve), the ends with a tenth of air
  * (`air`, several curves compared by eye), and nice numbers (Heckbert's 1 · 2 · 2.5 · 5 times a power of ten, zero a
- * tick where the quantity starts there) wherever a y axis or gridlines are drawn; and the unit a set of figures is
- * written in.
+ * tick where the quantity starts there) wherever a y axis or gridlines are drawn. The unit a set of figures is
+ * written in is `shared/units.ts`'s, one rule for every figure.
  */
 
 /** The ends of a scale, lowest first. */
@@ -151,25 +151,4 @@ export function yOf(value: number, scale: Scale, box: PlotBox): number {
   if (scale.max === scale.min) return box.top + span / 2;
   const clamped = Math.min(scale.max, Math.max(scale.min, value));
   return box.top + (1 - (clamped - scale.min) / (scale.max - scale.min)) * span;
-}
-
-/** The unit a set of figures is written in, and what each is divided by to be. */
-export interface UnitScale {
-  readonly unit: string;
-  readonly divisor: number;
-}
-
-const SCALABLE = /^(Wh|W|VA)$/;
-
-/**
- * One unit for a set of figures in a base unit (W, Wh, VA): the largest decides — 3 200 W and 400 W read as
- * "3.2 kW" and "0.4 kW", never as "3.2 kW" beside "400 W" — up to gigawatts; any other unit passes through.
- */
-export function unitScale(peak: number, base: string): UnitScale {
-  const size = Math.abs(peak);
-  if (!SCALABLE.test(base) || !Number.isFinite(size)) return { unit: base, divisor: 1 };
-  if (size >= 1e9) return { unit: `G${base}`, divisor: 1e9 };
-  if (size >= 1e6) return { unit: `M${base}`, divisor: 1e6 };
-  if (size >= 1e3) return { unit: `k${base}`, divisor: 1e3 };
-  return { unit: base, divisor: 1 };
 }

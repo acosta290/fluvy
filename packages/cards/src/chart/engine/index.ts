@@ -29,7 +29,7 @@
  *   chartStyles · adopt(root)                 the engine's sheet (`styles.ts`)
  *   previewChart(settings, mode)              the settings panel's preview: a small chart and a gauge as the
  *                                             settings draw them
- *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf, unitScale), `path.ts`
+ *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
  *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket, readingsOf), `palette.ts` (seriesInk,
@@ -53,14 +53,12 @@ export {
   niceStep,
   niceTicks,
   tightScale,
-  unitScale,
   yOf,
   type NiceStep,
   type PlotBox,
   type Scale,
   type Ticks,
   type TightScale,
-  type UnitScale,
 } from './scale.js';
 export { areaPath, bandPath, linePath, runsOf, splitAt, yAt, type Pt } from './path.js';
 export {
