@@ -8,6 +8,7 @@ import type chartCard from './locales/en/chart-card.json';
 import type devices from './locales/en/devices.json';
 import type energy from './locales/en/energy.json';
 import type energyPeriod from './locales/en/energy-period.json';
+import type energyUsage from './locales/en/energy-usage.json';
 import type history from './locales/en/history.json';
 import type items from './locales/en/items.json';
 import type job from './locales/en/job.json';
@@ -33,6 +34,7 @@ export type Catalogue = typeof core &
   typeof devices &
   typeof energy &
   typeof energyPeriod &
+  typeof energyUsage &
   typeof history &
   typeof items &
   typeof job &

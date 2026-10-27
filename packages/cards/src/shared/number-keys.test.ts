@@ -32,6 +32,7 @@ describe('the cards whose figures take a unit and decimals', () => {
       'fluvy-energy-flow-card',
       'fluvy-energy-sankey-card',
       'fluvy-energy-score-card',
+      'fluvy-energy-usage-card',
       'fluvy-ev-charger-card',
       'fluvy-gauge-card',
       'fluvy-grid-card',

@@ -80,11 +80,11 @@ const CHART_CARD =
 
 /**
  * The Energy period card (the strip that drives an Energy date picker's collection, its picker, its sheet and its
- * English; the period's words its followers share are the energy family's, which it imports first): fetched as the
- * bundle starts, as the energy family is, and named before it. The Energy usage card (`energy-usage/`) is to join it.
+ * English; the period's words its followers share are the energy family's, which it imports first) and the Energy
+ * usage card (its series and its English): fetched as the bundle starts, as the energy family is, and named before it.
  */
 const ENERGY_PERIOD =
-  /\/packages\/(cards\/src\/(energy-period-cards\.ts|energy-period\/)|core\/src\/i18n\/locales\/en\/energy-period\.json)/;
+  /\/packages\/(cards\/src\/(energy-period-cards\.ts|energy-(period|usage)\/)|core\/src\/i18n\/locales\/en\/energy-(period|usage)\.json)/;
 
 /**
  * The energy family (its cards, the flow's drawing and motion, the model they share, every `energy/` helper but the

@@ -258,8 +258,8 @@ type Family = readonly [
 ];
 
 /**
- * The weather, template, Energy period, web page, items and chart cards and the media, energy, devices, automations,
- * appliances and alerts families.
+ * The weather, template, web page, items and chart cards, the Energy period and Energy usage cards, and the media,
+ * energy, devices, automations, appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
   [WEATHER_FAMILY, () => import('./weather-cards.js')],

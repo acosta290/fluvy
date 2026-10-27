@@ -405,6 +405,43 @@ export function periodHeight(config: LovelaceCardConfig): number {
     : 84;
 }
 
+/**
+ * The sources an Energy dashboard meters, as the usage card's legend names them in English: what it draws where it
+ * lists none, in its order.
+ */
+const USAGE_WORDS: Readonly<Record<string, string>> = {
+  solar: 'Solar',
+  battery: 'Battery',
+  grid: 'Grid',
+};
+
+/**
+ * The Energy usage card at a 360 column: the head, the period's chips, the chart (its plot and 20 of room) and its
+ * hours or dates, and the legend: the sources shown (a kind listed twice is its first) and what was charged and
+ * exported, in the rows their names take, 12 between them — the card keeps that room whatever the house lacks of it,
+ * and folding sources into "Other" (`max_sources`) never takes a row more. Compact is the head, a 96 plot and its
+ * axis; mini the head and a 48 strip.
+ */
+export function usageHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'mini') return HEAD + 68;
+  if (config['variant'] === 'compact') return HEAD + 140;
+  const names = new Map<unknown, string>();
+  const listed = listLength(config, ['sources']) ? config['sources'] : Object.keys(USAGE_WORDS);
+  for (const item of listed as unknown[]) {
+    const s = (typeof item === 'string' ? { type: item } : (item ?? {})) as Record<string, unknown>;
+    const word = USAGE_WORDS[s['type'] as string];
+    if (word && s['show'] !== false && !names.has(s['type']))
+      names.set(s['type'], String(s['name'] ?? word));
+  }
+  const shown = [...names.values()];
+  if (config['show_returns'] !== false) {
+    if (names.has('battery')) shown.push('Charged');
+    if (names.has('grid')) shown.push('Exported');
+  }
+  const rows = config['show_legend'] === false ? 0 : legendRows(shown);
+  return HEAD + periodChips(config) + 204 + (rows && 4 + rows * 52);
+}
+
 export type FamilyEntry = readonly [
   tag: string,
   name: string,
@@ -487,12 +524,21 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
   ],
 ];
 
-/** The Energy period card: its own chunk (`energy-period-cards.ts`), fetched at start as the energy family's is. */
+/**
+ * The Energy period and Energy usage cards: their own chunk (`energy-period-cards.ts`), fetched at start as the energy
+ * family's is.
+ */
 export const ENERGY_PERIOD_FAMILY: readonly FamilyEntry[] = [
   [
     'fluvy-energy-period-card',
     'Fluvy · Energy period',
     'The view’s date picker as a strip: ‹ the day, week, month or year › and back to today, Home Assistant’s own, so its energy cards follow it as Fluvy’s do.',
     periodHeight,
+  ],
+  [
+    'fluvy-energy-usage-card',
+    'Fluvy · Energy usage',
+    'Energy used by the hour, the day or the month, stacked by source.',
+    usageHeight,
   ],
 ];
