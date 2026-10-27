@@ -1902,6 +1902,7 @@
     "title": "Score énergétique",
     "title_short": "Score",
     "self_powered": "Autonome",
+    "self_powered_short": "Autonome",
     "sun_used": "Soleil gardé",
     "low_carbon": "Bas carbone",
     "imported": "Soutirée",

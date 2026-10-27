@@ -452,9 +452,17 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   private renderScores(w: number): TemplateResult {
     const rings = this.rings();
+    // a ring's word, the self-powered one in its short form where the long would not hold the card's width (a long
+    // Dutch "Zelfvoorzienend" in half a column)
+    const label = (key: Ring['key']): string => {
+      const long = s(this.hass, key);
+      return key === 'self_powered' && this.head.ruler.width('en-score__label', long) > w
+        ? s(this.hass, 'self_powered_short')
+        : long;
+    };
     const widest = Math.max(
       0,
-      ...rings.map((r) => this.head.ruler.width('en-score__label', s(this.hass, r.key))),
+      ...rings.map((r) => this.head.ruler.width('en-score__label', label(r.key))),
     );
     const lay = ringLayout(rings.length, w, widest);
     const size = lay.small ? RING_SMALL : RING;
@@ -488,7 +496,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
             percent === null ? nothing : html`<span class="en-unit">%</span>`
           }</span
         >
-        <span class="en-score__label">${s(this.hass, r.key)}</span>
+        <span class="en-score__label">${label(r.key)}</span>
       </div>`;
     };
     // three rings in a full column spread over it (the approved row); fewer, or a narrower column, stay centred

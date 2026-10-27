@@ -1902,6 +1902,7 @@
     "title": "Punteggio energetico",
     "title_short": "Punteggio",
     "self_powered": "Autonomia",
+    "self_powered_short": "Autonomia",
     "sun_used": "Sole usato",
     "low_carbon": "Basso CO₂",
     "imported": "Prelevata",

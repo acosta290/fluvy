@@ -1902,6 +1902,7 @@
     "title": "Nota de energia",
     "title_short": "Nota",
     "self_powered": "Autonomia",
+    "self_powered_short": "Autonomia",
     "sun_used": "Sol usado",
     "low_carbon": "Baixo CO₂",
     "imported": "Importada",
