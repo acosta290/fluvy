@@ -32,6 +32,19 @@ const TEMPERATURE = day(
     1.4 * t,
 );
 const HUMIDITY = day((t) => 58 - 18 * Math.exp(-((t - 0.6) ** 2) / 0.08) + 2.5 * Math.sin(t * 7));
+/** The house's day of energy, an hour a slot (kWh): a quiet night, the morning, the evening's peak. */
+const USAGE = Array.from(
+  { length: 24 },
+  (_unused, h) =>
+    Math.round(
+      (0.3 + 0.9 * Math.exp(-((h - 8) ** 2) / 3) + 1.6 * Math.exp(-((h - 20) ** 2) / 4)) * 100,
+    ) / 100,
+);
+/** Its meter over the day (kWh, counting up), at the 48 points a card asks for: a half hour's use a point. */
+const METER = USAGE.flatMap((kwh) => [kwh / 2, kwh / 2]).reduce<number[]>(
+  (sums, half, i) => [...sums, Math.round(((sums[i - 1] ?? 1824) + half) * 1000) / 1000],
+  [],
+);
 
 /** The readings' lows and highs, as a summary keeps them: the band drawn behind the line. */
 const BAND = {
@@ -79,7 +92,7 @@ class ChartGauge extends LitElement implements LovelaceCard {
     wide: { state: true },
   };
 
-  declare config: { gauge?: string; title?: string; value?: number | null; cols?: number };
+  declare config: { gauge?: string; title?: string; value?: number | null };
   declare engine: ChartEngine | undefined;
   declare wide: number;
   private readonly watch = new ResizeObserver(([entry]) => {
@@ -124,7 +137,8 @@ class ChartGauge extends LitElement implements LovelaceCard {
 
   protected override render(): TemplateResult {
     const engine = this.engine;
-    const small = (this.config.cols ?? 12) < 12;
+    // a tile is half a section: under the full card's floor (211)
+    const small = this.wide < 211;
     // the card's content: its width less the card's 20 on each side (16 in a tile)
     const content = Math.max(0, this.wide - (small ? 32 : 40));
     const style = engine?.resolveGauge(this.config.gauge as 'ticks', {});
@@ -234,10 +248,14 @@ class ChartSample extends LitElement implements LovelaceCard {
       {},
       { now: true, bars: true, band: true, axis: true },
     );
+    // bars stand for what adds up: the day's energy, an hour a bar, from zero; the lines read the temperature
+    const slotted = engine.isBars(style.preset);
+    const values = slotted ? USAGE : TEMPERATURE;
     const spec = {
       frame: { width, height: 120, headroom: 44 },
-      series: [{ values: TEMPERATURE, band: BAND }],
+      series: [{ values, band: BAND }],
       style,
+      zero: slotted,
       now: NOW_AT,
       cursor: this.scrubber.value,
       id: 'pg',
@@ -250,7 +268,7 @@ class ChartSample extends LitElement implements LovelaceCard {
     const read = engine.readAt(spec, this.scrubber.value);
     const hours = (fraction: number): string =>
       `${String(Math.floor(fraction * 24) % 24).padStart(2, '0')}:00`;
-    const reading = TEMPERATURE[read.index] ?? 0;
+    const reading = values[read.index] ?? 0;
     const bubble =
       this.scrubber.value !== null || style.label
         ? engine.chartBubble({
@@ -259,7 +277,7 @@ class ChartSample extends LitElement implements LovelaceCard {
             start: plot.left,
             lean: style.preset === 'classic' ? 16 : 0,
             value: reading.toFixed(1),
-            unit: '°C',
+            unit: slotted ? 'kWh' : '°C',
             ...(this.scrubber.value !== null
               ? { time: hours((read.x - plot.left) / plot.width) }
               : {}),
@@ -328,10 +346,33 @@ export const sheet: SheetSpec = {
         ...MEASURE,
       },
     ],
+    [
+      'sensor.cs_energy',
+      String(METER[47]),
+      {
+        friendly_name: 'House energy',
+        unit_of_measurement: 'kWh',
+        device_class: 'energy',
+        state_class: 'total_increasing',
+      },
+    ],
   ],
-  history: { 'sensor.cs_temperature': TEMPERATURE, 'sensor.cs_humidity': HUMIDITY },
+  history: {
+    'sensor.cs_temperature': TEMPERATURE,
+    'sensor.cs_humidity': HUMIDITY,
+    'sensor.cs_energy': METER,
+  },
   frames: [
-    ...STYLES.map((chart) => ({ title: `Style · ${chart}`, cards: [sensor({ chart })] })),
+    // the lines on the day's temperature; the bars on the house's meter, whose readings add up
+    ...STYLES.map((chart) => ({
+      title: `Style · ${chart}`,
+      cards: [
+        sensor({
+          chart,
+          ...(chart === 'bars' || chart === 'columns' ? { entity: 'sensor.cs_energy' } : {}),
+        }),
+      ],
+    })),
     {
       title: 'Tiles · classic and minimal',
       cards: [

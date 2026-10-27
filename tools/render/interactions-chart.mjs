@@ -11,6 +11,8 @@
  * - text placement, in every style and both modes: the axis's first label flush with the plot's start and its last
  *   with its end, the scale's ticks right-aligned on one column 8 before the plot, a style's bubble inside the plot;
  * - the forecast: Fluvy's knob on now's hairline, the forecast dashed from it;
+ * - a measurement's scale keeps to its range (a temperature is not drawn from zero), a meter's day in bars is 24 of an
+ *   hour from zero, every gauge's knob is Fluvy's whole knob, and the read dial in a tile holds its reading;
  * - reading: a pointer moves the cursor and the bubble says when; the keys move it (← Home), Escape lets it go;
  * - no flash, on the built bundle with the engine's chunk 1.5 s late: one skeleton, then the curve, drawn once.
  */
@@ -225,8 +227,8 @@ for (const mode of ['light', 'dark']) {
     .first()
     .evaluate((card) => card.shadowRoot.querySelectorAll('.fc-bar--hollow').length);
   check(
-    'bars: the forecast’s bars are hollow (the last third of the day)',
-    hollow === 16,
+    'bars: the day’s energy an hour a bar, the forecast’s eight hollow',
+    hollow === 8,
     String(hollow),
   );
 
@@ -295,6 +297,91 @@ for (const mode of ['light', 'dark']) {
     'the sensor in soft: read at its middle, the knob moves there and the bubble says when',
     Math.abs(sensor.knob - (plot.x + plot.width / 2)) < 1 && /\d{2}:\d{2}/.test(sensor.time),
     JSON.stringify(sensor),
+  );
+  await page.close();
+}
+
+/* ---------- the scale of a measurement, a meter's bars, the gauges' knobs ---------- */
+{
+  const page = await suite.sheet('chart-styles');
+  const ticks = (title, tag = 'fluvy-sensor-card') =>
+    frame(page, title)
+      .locator(tag)
+      .first()
+      .evaluate((card) =>
+        [...card.shadowRoot.querySelectorAll('.fc-tick')].map((t) => t.textContent),
+      );
+  const step = await ticks('Style · step');
+  check(
+    'a stepped temperature reads on its own range, not from zero (16 · 18 · 20 · 22 · 24)',
+    step.join(' ') === '16 18 20 22 24',
+    step.join(' '),
+  );
+  const bars = await frame(page, 'Style · bars')
+    .locator('fluvy-sensor-card')
+    .first()
+    .evaluate((card) => ({
+      bars: card.shadowRoot.querySelectorAll('.am-chart .fc-bar').length,
+      floor: Number(card.shadowRoot.querySelector('.fc-tick')?.textContent),
+    }));
+  check(
+    'a meter’s day in bars: 24, an hour each, on a scale from zero',
+    bars.bars === 24 && bars.floor === 0,
+    JSON.stringify(bars),
+  );
+  // every gauge's knob is the thermostat's ball: its dot, its lift — never the read-only marker
+  const knobs = await page.evaluate(() => {
+    const out = [];
+    const walk = (root) => {
+      for (const el of root.querySelectorAll('*')) {
+        if (el.matches('.fv-knob')) out.push(el);
+        if (el.shadowRoot) walk(el.shadowRoot);
+      }
+    };
+    for (const gauge of document.querySelectorAll('pg-chart-gauge')) walk(gauge.shadowRoot);
+    return out.map((knob) => ({
+      marker: knob.classList.contains('fv-knob--marker'),
+      dot: getComputedStyle(knob, '::after').display !== 'none',
+      // its ring, its lift and its halo: three shadows
+      lift: (getComputedStyle(knob).boxShadow.match(/(rgba?|color|oklch)\(/g) ?? []).length >= 3,
+    }));
+  });
+  check(
+    `every gauge’s knob (${knobs.length}) is Fluvy’s whole knob: its dot and its lift, no marker`,
+    knobs.length >= 6 && knobs.every((k) => !k.marker && k.dot && k.lift),
+    JSON.stringify(knobs.filter((k) => k.marker || !k.dot || !k.lift)),
+  );
+  // the read dial in a tile: the reading whole inside the disc, the knob only touching its rim
+  const tile = await frame(page, 'Gauge · dial')
+    .locator('pg-chart-gauge')
+    .first()
+    .evaluate((card) => {
+      const dial = card.shadowRoot.querySelector('fluvy-dial').shadowRoot;
+      const disc = dial.querySelector('.fv-dial__disc').getBoundingClientRect();
+      const value = dial.querySelector('.fv-dial__value').getBoundingClientRect();
+      const knob = dial.querySelector('.fv-knob').getBoundingClientRect();
+      const centre = (r) => [r.left + r.width / 2, r.top + r.height / 2];
+      const [dx, dy] = centre(disc);
+      const [kx, ky] = centre(knob);
+      const r = disc.width / 2;
+      // every corner of the reading's line inside the disc's circle
+      const inside = [
+        [value.left, value.top],
+        [value.right, value.top],
+        [value.left, value.bottom],
+        [value.right, value.bottom],
+      ].every(([x, y]) => Math.hypot(x - dx, y - dy) <= r + 0.5);
+      return {
+        inside,
+        apart: Math.hypot(kx - dx, ky - dy) - r - knob.width / 2,
+        disc: disc.width,
+        knob: knob.width,
+      };
+    });
+  check(
+    'the read dial in a tile: its reading whole inside the disc, its knob touching the rim and no more',
+    tile.inside && tile.apart >= -2,
+    JSON.stringify(tile),
   );
   await page.close();
 }
