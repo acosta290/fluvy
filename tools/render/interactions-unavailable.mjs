@@ -113,6 +113,8 @@ const SOURCES = {
   'fluvy-appliances-card': [['appliances', 'Appliances · rows', 0]],
   // its stub finds no flights sensor in the house of every sheet: the issue's three aircraft
   'fluvy-items-card': [['items', 'Items · flights', 0]],
+  // its stub reads the first price list of the house; the issue's card: Nordpool stepped, its thresholds, its windows
+  'fluvy-chart-card': ['stub', ['chart', 'Chart · Nordpool', 0]],
 };
 
 /**
