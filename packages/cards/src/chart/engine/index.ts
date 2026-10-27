@@ -29,8 +29,12 @@
  *                                             the editor's Chart section (`fields.ts`): an editor opens once the
  *                                             engine has landed (`Card.getConfigElement`)
  *   chartStyles · adopt(root)                 the engine's sheet (`styles.ts`)
- *   previewChart(settings, mode)              the settings panel's preview: a small chart and a gauge as the
- *                                             settings draw them
+ *   HOUSE_ACTS                                the house's chart settings each style draws with: what the
+ *                                             settings panel offers for the style chosen
+ *   previewStyle · previewGauge · previewChart · previewSeries
+ *                                             the settings panel's Charts tab (`preview.ts`): a style's tile, a
+ *                                             gauge's, the preview of a chart, its bars and a gauge in one mode, a
+ *                                             set of series colours — each on the settings being chosen
  *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
@@ -41,13 +45,6 @@
  * The 1.10 geometry is kept byte for byte (`classic.test.ts` against `__fixtures__/classic-1.10.json`): a card that
  * says `chart: classic`, and every card until the house chooses another style, draws exactly what it drew.
  */
-import { CHART_DEFAULTS, type ChartSettings } from '@fluvy/core';
-import type { PaletteMode } from '@fluvy/tokens/runtime';
-import { html, type TemplateResult } from 'lit';
-import { drawChart } from './draw.js';
-import { drawGauge } from './gauge.js';
-import { resolveGauge, resolveStyle } from './presets.js';
-
 export type { ChartPoint, ChartSeries, Curve, SeriesColour, Window } from './model.js';
 export { bucket, evenly, readingsOf, sampleAt, type BucketRule, type Readings } from './model.js';
 export {
@@ -123,12 +120,14 @@ export {
   CHART_PRESETS,
   chartKeysOf,
   GAUGE_PRESETS,
+  HOUSE_ACTS,
   isBars,
   presetsFor,
   resolveGauge,
   resolveStyle,
   styleOf,
   type GaugeSpec,
+  type HouseKey,
   type PresetSpec,
   type ResolvedGauge,
   type ResolvedStyle,
@@ -151,46 +150,11 @@ export {
   type ChartSpec,
   type Reading,
 } from './draw.js';
-
-/** A day of temperature, the one series every style is previewed on: the past two thirds, the rest forecast. */
-const PREVIEW = Array.from({ length: 24 }, (_unused, i) => {
-  const t = i / 23;
-  return Math.round((17.8 + 6.9 * Math.exp(-((t - 0.62) ** 2) / 0.07) - 1.4 * t) * 10) / 10;
-});
-
-/**
- * The settings panel's preview: one small chart and one gauge drawn with a set of chart settings, as the appearance
- * preview draws the look — what the Charts tab shows while its settings move, in either mode (`data-mode`: the
- * fills' dark points). The chart's wrapper is positioned, so its knobs sit on it.
- */
-export function previewChart(
-  settings: Partial<ChartSettings>,
-  mode: PaletteMode,
-  width = 240,
-): TemplateResult {
-  const house: ChartSettings = { ...CHART_DEFAULTS, ...settings };
-  const style = resolveStyle(undefined, {}, { now: true, axis: false }, house);
-  const gauge = resolveGauge(undefined, {}, house);
-  return html`<div class="fc-preview" data-mode=${mode}>
-    <div class="fc-preview__chart" style="position:relative;width:${width}px;height:96px">
-      ${drawChart({
-        frame: { width, height: 96, headroom: 24, pad: 8 },
-        series: [{ values: PREVIEW }],
-        style,
-        now: 2 / 3,
-        id: 'fc-preview',
-      })}
-    </div>
-    ${drawGauge({
-      style: gauge,
-      size: gauge.preset === 'ruler' ? width : 112,
-      min: 0,
-      max: 100,
-      value: 62,
-      format: (value) => String(Math.round(value)),
-      unit: '%',
-      tone: 'accent',
-      small: true,
-    })}
-  </div>`;
-}
+export {
+  previewChart,
+  previewGauge,
+  previewSeries,
+  previewStyle,
+  type ChartPreviewOptions,
+  type GaugePreviewOptions,
+} from './preview.js';

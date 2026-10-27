@@ -1,7 +1,15 @@
-import { CHART_DEFAULTS, type ChartSettings } from '@fluvy/core';
+import { CHART_DEFAULTS, type ChartPreset, type ChartSettings } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 
-import { CHART_PRESETS, GAUGE_PRESETS, resolveGauge, resolveStyle } from './presets.js';
+import {
+  CHART_PRESETS,
+  GAUGE_PRESETS,
+  HOUSE_ACTS,
+  resolveGauge,
+  resolveStyle,
+  type HouseKey,
+  type ResolvedStyle,
+} from './presets.js';
 
 const house = (settings: Partial<ChartSettings>): ChartSettings => ({
   ...CHART_DEFAULTS,
@@ -120,6 +128,40 @@ describe('a style’s settings: the card’s key › the house’s › the style
       'band',
     ]);
   });
+});
+
+describe('the house’s settings each style draws with', () => {
+  /** Each house setting moved off the factory's, and what of the resolved style it moves. */
+  const MOVED: Record<HouseKey, [Partial<ChartSettings>, (style: ResolvedStyle) => unknown]> = {
+    line: [{ line: 'bold' }, (s) => s.line],
+    // a style without a soft shadow draws none, whatever its offset says
+    glow: [
+      { glow: { offset: 7, opacity: 0.45 } },
+      (s) => (s.glow.kind === 'none' ? 'none' : s.glow),
+    ],
+    fill: [{ fill: 24 }, (s) => s.fillOpacity],
+    grid: [{ grid: 'dashed' }, (s) => s.grid],
+    endpoint: [{ endpoint: 'dot' }, (s) => s.end],
+    now: [{ now: 'line' }, (s) => s.now],
+    caps: [{ caps: 'top' }, (s) => s.caps],
+    bubble: [{ bubble: 'tone' }, (s) => s.bubble],
+  };
+  const ALL = { now: true, bars: true, band: true, axis: true } as const;
+
+  it.each(Object.keys(CHART_PRESETS) as ChartPreset[])(
+    '%s: offers what moves its drawing, and classic nothing',
+    (preset) => {
+      for (const [key, [moved, read]] of Object.entries(MOVED) as [
+        HouseKey,
+        (typeof MOVED)[HouseKey],
+      ][]) {
+        const before = read(resolveStyle(preset, {}, ALL));
+        const after = read(resolveStyle(preset, {}, ALL, house(moved)));
+        if (HOUSE_ACTS[preset].includes(key)) expect(after, key).not.toEqual(before);
+        if (preset === 'classic') expect(after, key).toEqual(before);
+      }
+    },
+  );
 });
 
 describe('a card’s gauge style', () => {

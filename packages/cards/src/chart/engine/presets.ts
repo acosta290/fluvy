@@ -205,6 +205,27 @@ export const ACTS: Readonly<Record<ChartPreset, readonly FineKey[]>> = {
   band: ['line_width', 'show_points', 'show_grid', 'show_axis', 'show_now', 'animate'],
 };
 
+/** A house chart setting a style draws with (fluvy's settings → Charts): motion and the gauges' waves aside. */
+export type HouseKey = 'line' | 'glow' | 'fill' | 'grid' | 'endpoint' | 'now' | 'caps' | 'bubble';
+
+/**
+ * The house's chart settings each style draws with, as `resolveStyle` reads them: the panel offers only these for the
+ * style chosen. `classic` takes none (it is 1.10's chart); every other style takes the bars' ends (a card of slots
+ * draws bars in it) and the bubble (every style shows it while the chart is read); the line where one is drawn, the
+ * soft shadow where the style has one, the fill where it is a gradient or flat, the gridlines where it draws some, the
+ * line's end where the style marks it with the house's, now where a knob can stand on the line.
+ */
+export const HOUSE_ACTS: Readonly<Record<ChartPreset, readonly HouseKey[]>> = {
+  classic: [],
+  soft: ['line', 'glow', 'fill', 'grid', 'endpoint', 'now', 'caps', 'bubble'],
+  glow: ['line', 'glow', 'endpoint', 'now', 'caps', 'bubble'],
+  minimal: ['line', 'caps', 'bubble'],
+  step: ['line', 'fill', 'grid', 'now', 'caps', 'bubble'],
+  bars: ['grid', 'caps', 'bubble'],
+  columns: ['grid', 'caps', 'bubble'],
+  band: ['line', 'grid', 'now', 'caps', 'bubble'],
+};
+
 /**
  * The styles a card can draw with what it has: the line styles, bars and columns with slots, the band with a band —
  * of the ones it lists, where it lists them.
