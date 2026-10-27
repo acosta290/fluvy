@@ -1,4 +1,5 @@
 import {
+  actionRuns,
   isUsable,
   stateText,
   strings as words,
@@ -36,6 +37,7 @@ import {
 
 import { Card, type CardEditor } from '../shared/base.js';
 
+import { DETAILS } from '../lock/rows.js';
 import { iconOf, stateWord } from '../shared/domain.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
@@ -73,6 +75,10 @@ export interface StatTileConfig extends NumberKeys {
   tone?: Tone;
   /** Fills the tile with its tone — the one figure of the set that matters more than the rest. */
   highlight?: boolean;
+  /** The tile's tap: its entity's details (Home Assistant's dialog, with its history) by default. */
+  tap_action?: ActionConfig;
+  /** A still press on the tile: nothing by default. */
+  hold_action?: ActionConfig;
 }
 
 export interface StatRowConfig {
@@ -193,10 +199,10 @@ export function statTilesHeight(config: StatTilesCardConfig, nameOf?: NameOf): n
 }
 
 /**
- * A set of figures as read-only tiles: the option-tile anatomy (glyph top-left, label, value) without
- * the interaction, two per row, one of them optionally filled with its tone — or, compact, 64 px tiles
- * of label over value, three a row when they fit. An optional big readout sits above them, optional
- * plain rows below.
+ * A set of figures as tiles: the option-tile anatomy (glyph top-left, label, value), two per row, one of them
+ * optionally filled with its tone — or, compact, 64 px tiles of label over value, three a row when they fit. A tile
+ * that can be read is a button: its tap opens its details, a hold runs only where it asks for one. An optional big
+ * readout sits above them, optional plain rows below.
  */
 export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
   /** The card's height at a 360 column from its config alone: the tiles a row by their count (`statTilesHeight`). */
@@ -326,6 +332,15 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         tone: tile.tone ?? tone,
         active: !gone(view) && (tile.highlight ?? false),
         unavailable: gone(view),
+        // its own tap (its details by default) and hold (none by default), each where it runs; a figure that cannot
+        // be read has neither (`options()`)
+        onTap: actionRuns(tile.tap_action, view.id)
+          ? () => this.tap(view.id, tile.tap_action ?? DETAILS)
+          : undefined,
+        onHold:
+          tile.hold_action && actionRuns(tile.hold_action, view.id)
+            ? () => this.hold(view.id, tile.hold_action)
+            : undefined,
       };
     });
 

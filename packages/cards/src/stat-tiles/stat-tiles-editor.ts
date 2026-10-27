@@ -55,12 +55,23 @@ export const lists: readonly RowsListSpec[] = [
   {
     key: 'tiles',
     title: 'editor.tiles',
-    keys: ['entity', 'name', 'icon', 'tone', 'highlight', 'unit', 'decimals'],
+    keys: [
+      'entity',
+      'name',
+      'icon',
+      'tone',
+      'highlight',
+      'unit',
+      'decimals',
+      'tap_action',
+      'hold_action',
+    ],
     schema: [
       entityField(),
       nameIconFields(),
       fieldRow(toneField(), boolField('highlight')),
       numberFields(),
+      actionFields(),
     ],
   },
   {

@@ -199,7 +199,7 @@ const CATALOGUE: readonly CatalogueEntry[] = [
     'fluvy-stat-tiles-card',
     FluvyStatTilesCard,
     'Fluvy · Stat tiles',
-    'A headline value and a grid of read-only stat tiles.',
+    'A headline value and a grid of stat tiles.',
   ],
   [
     'fluvy-bars-card',

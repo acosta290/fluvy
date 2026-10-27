@@ -306,6 +306,10 @@ export interface OptionItem {
   readonly active?: boolean;
   /** What it stands for cannot be read: the Unavailable surface (the dashed hairline, the off ink), no tap. */
   readonly unavailable?: boolean;
+  /** A figure's own tap (tiles with no choice to make): a button laid over its tile, named by its label and value. */
+  readonly onTap?: (() => void) | undefined;
+  /** A figure's still press of 500 ms (or the keyboard's menu key); the click that follows is swallowed. */
+  readonly onHold?: (() => void) | undefined;
 }
 
 /** Up to three tiles share a row; four make a 2 × 2; more wrap in threes — a tile never gets too narrow for its value. */
@@ -338,6 +342,7 @@ export function optionGrid(
 /**
  * Option tiles: glyph top-left, label, value; active = tone fill only. They share the column in equal cells and
  * every row is full. `compact`: the 64 tile without its glyph row — the label over the value (`height` is then 64).
+ * Without `onSelect` they are figures: still, or pressed as a tile is where one has a tap or a hold of its own.
  */
 export function options(
   items: readonly OptionItem[],
@@ -354,7 +359,13 @@ export function options(
     style="grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr));gap:${gap}px"
   >
     ${items.map((o, index) => {
-      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
+      // a figure that can be read and has a tap or a hold of its own is pressed as a tile is: a button laid over it,
+      // read as what it says ("Output · 3.2 kW")
+      const cover =
+        stat && !o.unavailable && (o.onTap ?? o.onHold)
+          ? pressCover(`${o.label} · ${o.value ?? ''}`, o.onTap, o.onHold)
+          : nothing;
+      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${cover === nothing ? '' : 'fv-tile--tap '}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
       const body = html`${compact ? nothing : html`<span class="fv-option__glyph">${icon(o.glyph)}</span>`}<span
           class="fv-option__label"
           data-name=${o.name ? '' : nothing}
@@ -365,7 +376,7 @@ export function options(
       // a minimum, not a height: a tile whose value takes two lines grows, and its row grows with it
       const style = `min-height:${height}px${grid.spans[index] === 1 ? '' : `;grid-column:span ${grid.spans[index]}`}`;
       return stat
-        ? html`<div class=${cls} data-card style=${style}>${body}</div>`
+        ? html`<div class=${cls} data-card style=${style}>${body}${cover}</div>`
         : html`<button
             class=${cls}
             data-target

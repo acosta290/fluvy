@@ -194,7 +194,9 @@
   color: var(--fluvy-text-secondary);
 }
 
+/* a figure's tile: still, or pressed as a tile is (`fv-tile--tap`) through the button laid over it */
 .fv-option--stat {
+  position: relative;
   cursor: default;
 }
 
