@@ -230,6 +230,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   full-width bracket; the joiner is the language's, in its registry entry.
 - "Casa de banho" (Portugal's bathroom) is never the house's power: the guard is on the `casa` stem of Spanish,
   Italian and Brazilian Portuguese too.
+- Home Assistant's Create automation (and Create script) chooser opens again under Fluvy's theme: it opened empty, the
+  page dimmed with no dialog on it, because Home Assistant takes the dialog's maximum height from its minimum, which
+  Fluvy set to 0. It is as tall as what it lists, up to the screen's height (#73).
 
 ### Development
 
