@@ -109,8 +109,8 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
 
 ### The Energy period card
 
-`custom:fluvy-energy-period-card` is the view's date picker as a strip: ‹ the span ›, Today and, when asked for,
-Compare. The span's words ("Today", "17 – 23 Sep", "September") open a sheet with the presets — today and
+`custom:fluvy-energy-period-card` is the view's date picker as a strip: ‹ the span ›, Today (away from today) and,
+when asked for, Compare. The span's words ("Today", "17 – 23 Sep", "September") open a sheet with the presets — today and
 yesterday, this week, this month, this year — and a date grid for a span of your own, in whole days.
 
 ```yaml
@@ -131,9 +131,11 @@ show_compare: true              # Compare: the period before beside the span, on
 - **What it remembers.** A preset picked on the strip (Today, a chip, a preset in the sheet) is remembered where HA
   remembers its own, so the dashboard reopens on it in HA and in Fluvy alike; walking with ‹ › or a span of your own
   is not, as in HA.
-- **Narrow columns.** Compare and Today give their words for their glyphs, the span takes its short words ("24 Oct",
-  "Sep", "2026"), then Today and Compare go and, in half a section, the arrows: the sheet behind the span's words has
-  them all. `compact` is the span alone between its arrows, in a 60 strip.
+- **Narrow columns, wide bands.** Compare and Today give their words for their glyphs, the span takes its short words
+  ("24 Oct", "Sep", "2026"), then Today and Compare go and, in half a section, the arrows: the sheet behind the span's
+  words has them all. `stacked` keeps its periods on one line, which scrolls where the four do not hold it, so the
+  strip is as tall at every width. Across a wide band the capsule and the periods run 360 at most, on the strip's
+  start. `compact` is the span alone between its arrows, in a 60 strip.
 - **Only on a dashboard.** The strip needs a dashboard around it to make a picker; anywhere else it says so, at its
   size, its buttons off.
 - **The automatic Energy dashboard.** Its Today view leads with the strip across the view, and the day's flow,
