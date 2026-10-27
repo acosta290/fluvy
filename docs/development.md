@@ -181,7 +181,10 @@ the Popover API away, as an older WebView has none; `panel=dashboard&state=dashb
 created, `recreate` its Recreate row armed; `panel=wall&state=wall` makes this browser a wall panel), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
 wall panel on the real controller: `after=` minutes, `bg=wall` the mesh), `activity=1&moment=burst`, `history=1&moment=week`,
 `frames=none` (the house with no frame drawn: a suite mounts its own cards in it, as `interactions-unavailable.mjs` its
-live and unavailable twins). The
+live and unavailable twins), `dashboard=home&viewtheme=Fluvy` (the view as Home Assistant themes a view, a section or a
+card: the shipped theme file written on it, the look by the bundle's engine and its watch; `viewtheme=Sandstone` the
+same file under another name, `lookscope=dashboards` the look on the dashboard alone; without `dashboard` the stage is
+the themed wrapper, as a section has no shadow root of its own — `interactions-view-theme.mjs` proves #72 on it). The
 playground's `hass` is a small, honest stand-in: a state store, service calls that change it after a delay, and
 canned answers for the reads the cards make. Its WebSocket is one table of answers by message type
 (`apps/playground/src/ws.ts`): Home Assistant's own reads are answered from the house — history for every entity

@@ -41,6 +41,7 @@ import { MOCK_PERIODS, type MockPeriod } from './collection.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
+import { mountViewTheme } from './themes.js';
 import { outOfReachView } from './out-of-reach.js';
 import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js';
 
@@ -79,6 +80,10 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  *                        (&tabs= &content= &tabtitle= &views= &icons= &edit= &subview= &scope= — see dashboard.ts)
  * ?frames=none           the house of the sheets asked for (every sheet's without `sheet`), none of their frames drawn:
  *                        a suite mounts its own cards in it (`fluvyCatalogue`, `fluvySheets`, `fluvyOutOfReach`)
+ * ?viewtheme=Fluvy       the frames in a view Home Assistant themed (a dashboard's view, else the stage, as a section):
+ *                        the look by the bundle's engine and its watch, Fluvy's theme file written on the view as Home
+ *                        Assistant writes it (#72); &viewtheme=Sandstone the same file under another name;
+ *                        &lookscope=dashboards the look on the dashboard alone (see themes.ts)
  */
 const params = new URLSearchParams(location.search);
 const dark = params.get('mode') === 'dark';
@@ -147,7 +152,9 @@ function requestedLook(): Look | null {
   };
 }
 const look = requestedLook();
-if (look) {
+const viewTheme = params.get('viewtheme');
+// a themed view's page wears the look by the bundle's engine (themes.ts)
+if (look && !viewTheme) {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(lookRule(look, dark ? 'dark' : 'light', ':root', true, statuses));
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
@@ -408,6 +415,14 @@ for (const column of columns)
       column.append(el);
     }
   }
+if (viewTheme)
+  await mountViewTheme(columns[0] ?? stage, {
+    theme: viewTheme,
+    look: look ?? { palette: DEFAULT_PALETTE, shape: DEFAULT_SHAPE, pills: DEFAULT_PILL },
+    dark,
+    statuses,
+    dashboards: params.get('lookscope') === 'dashboards',
+  });
 
 // the mock and the shared text measurer, for the interaction tests; the cards, the sheets and a house with entities out
 // of reach, for a suite that mounts its own
