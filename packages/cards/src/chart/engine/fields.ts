@@ -25,8 +25,11 @@ import { acts, presetsFor, resolveStyle } from './presets.js';
 
 type Data = Readonly<Record<string, unknown>>;
 
-const styleOf = (data: Data): ChartPreset =>
-  (data['chart'] as ChartPreset | undefined) ?? chartDefaults().settings.style;
+/** The style a config draws: its own, else the house's — classic where the card cannot draw it. */
+const styleOf = (data: Data, caps: ChartCaps): ChartPreset => {
+  const wanted = (data['chart'] as ChartPreset | undefined) ?? chartDefaults().settings.style;
+  return presetsFor(caps).includes(wanted) ? wanted : 'classic';
+};
 
 /** The chart keys a card offers: every one its caps let act in one of its styles, alone or several. */
 export function chartKeysFor(caps: ChartCaps): ReadonlyArray<keyof ChartKeys> {
@@ -38,36 +41,53 @@ export function chartKeysFor(caps: ChartCaps): ReadonlyArray<keyof ChartKeys> {
 /** What a card can draw with a config (and the house it shows): its caps, narrowed by what the config holds. */
 export type CapsOf = (data: Data, hass?: HomeAssistant) => ChartCaps;
 
+const isList = (caps: ChartCaps | readonly ChartCaps[]): caps is readonly ChartCaps[] =>
+  Array.isArray(caps);
+
 const same = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && a.every((value, index) => value === b[index]);
 
 /**
  * The Chart section: the style, the curve and the fill, the line and its soft shadow, the points and the grid, the
- * scale and now, the highlight and the motion. `caps` is all a card may draw; `capsOf`, what a config allows. Where
- * the styles offered differ with it (bars, a band), the style is one select for each list, shown in turn.
+ * scale and now, the highlight and the motion. `caps` is all a card may draw — or, for a card whose variants draw
+ * apart (the energy card's line and its stacked charts), what each of them may; `capsOf`, what a config allows.
+ * Where the styles offered differ with it (bars, a band, a variant), the style is one select for each list, shown in
+ * turn.
  */
-export function chartSection(caps: ChartCaps, capsOf?: CapsOf): HaFormSchemaItem {
-  const allowed = (data: Data, hass?: HomeAssistant): ChartCaps => capsOf?.(data, hass) ?? caps;
-  const offered = new Set(chartKeysFor(caps));
+export function chartSection(
+  caps: ChartCaps | readonly ChartCaps[],
+  capsOf?: CapsOf,
+): HaFormSchemaItem {
+  // every caps a config may leave: the variants', or all of them without bars, without a band, without either
+  const every: readonly ChartCaps[] = isList(caps)
+    ? caps
+    : capsOf
+      ? [
+          caps,
+          { ...caps, bars: false },
+          { ...caps, band: false },
+          { ...caps, bars: false, band: false },
+        ]
+      : [caps];
+  const allowed = (data: Data, hass?: HomeAssistant): ChartCaps =>
+    capsOf?.(data, hass) ?? (every[0] as ChartCaps);
+  const offered = new Set(every.flatMap(chartKeysFor));
   const fine = (key: FineKey, item: HaFormSchemaItem): HaFormSchemaItem[] =>
     offered.has(key)
-      ? [onlyWhen((data, hass) => acts(key, styleOf(data), allowed(data, hass)), item)]
+      ? [
+          onlyWhen((data, hass) => {
+            const can = allowed(data, hass);
+            return acts(key, styleOf(data, can), can);
+          }, item),
+        ]
       : [];
   const row = (...items: HaFormSchemaItem[][]): HaFormSchemaItem[] => {
     const kept = items.flat();
     return kept.length > 1 ? [fieldRow(...kept)] : kept;
   };
-  // every list of styles a config may leave: all of them, without bars, without a band, without either
-  const lists = capsOf
-    ? [
-        caps,
-        { ...caps, bars: false },
-        { ...caps, band: false },
-        { ...caps, bars: false, band: false },
-      ]
-        .map(presetsFor)
-        .filter((list, index, all) => all.findIndex((other) => same(other, list)) === index)
-    : [presetsFor(caps)];
+  const lists = every
+    .map(presetsFor)
+    .filter((list, index, all) => all.findIndex((other) => same(other, list)) === index);
   const styles =
     lists.length > 1
       ? lists.map((list) =>
@@ -104,22 +124,22 @@ export function chartSection(caps: ChartCaps, capsOf?: CapsOf): HaFormSchemaItem
           words: { both: 'min_max' },
         }),
       ),
-      [boolField('animate')],
+      fine('animate', boolField('animate')),
     ),
   ]);
 }
 
 /**
- * What the Chart section shows while the config says nothing: the house's style, and what the style the card draws
- * (its own, else the house's) draws on its own — resolved by the one rule the card is drawn with, so the editor says
- * what the card draws, for the keys the card offers.
+ * What the Chart section shows while the config says nothing: the house's style (classic where the card cannot draw
+ * it), and what the style the card draws (its own, else the house's) draws on its own — resolved by the one rule the
+ * card is drawn with, so the editor says what the card draws, for the keys the card offers.
  */
 export function chartDefaultsFor(config: Data, caps: ChartCaps): Record<string, unknown> {
   const house = chartDefaults().settings;
   const style = resolveStyle(config['chart'] as ChartPreset | undefined, {}, caps);
   const offered = new Set<string>(chartKeysFor(caps));
   const all: Record<string, unknown> = {
-    chart: house.style,
+    chart: style.preset,
     curve: style.curve,
     fill: style.fill,
     line_width: style.preset === 'classic' ? 'regular' : house.line,

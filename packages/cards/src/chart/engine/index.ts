@@ -19,6 +19,8 @@
  *   plotOf(spec) · readAt(spec, fraction)     where the plot is (the axis row starts at its `left`); where each line
  *                                             is at a fraction of the plot, and the reading there: the bubble's place
  *   chartBubble(o)                            the value bubble (`decor.ts`): `look` the style's, `lean` 16 for classic
+ *   drawRead(spec, read, rest, family?)       a chart and its bubble: what it reads at its cursor, else what has
+ *                                             happened ends on where the style labels it, placed by the style
  *   drawGauge(o)                              a gauge in its style (`gauge.ts`): Fluvy's controls read-only — ticks,
  *                                             dial, ring, ruler
  *   ScrubController · scrub(controller)       reading a chart by pointing at it (`scrub.ts`): one owner for every
@@ -135,7 +137,15 @@ export {
 } from './palette.js';
 export { adopt, chartStyles } from './styles.js';
 export { scrub, ScrubController, scrubFraction } from './scrub.js';
-export { drawChart, plotOf, readAt, type ChartFrame, type ChartSpec } from './draw.js';
+export {
+  drawChart,
+  drawRead,
+  plotOf,
+  readAt,
+  type ChartFrame,
+  type ChartSpec,
+  type Reading,
+} from './draw.js';
 
 /** A day of temperature, the one series every style is previewed on: the past two thirds, the rest forecast. */
 const PREVIEW = Array.from({ length: 24 }, (_unused, i) => {

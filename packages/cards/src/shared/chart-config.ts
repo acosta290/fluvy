@@ -69,6 +69,14 @@ export interface ChartCaps {
   readonly several?: boolean;
   /** The card has room for a scale's tick labels. */
   readonly axis?: boolean;
+  /**
+   * The styles a card draws where they are not every line style (with bars, columns and a band as the caps above
+   * allow): the history bars draw classic, bars and columns; a stacked chart classic, soft and step. A style it does
+   * not list is drawn classic.
+   */
+  readonly styles?: readonly ChartPreset[];
+  /** The fine keys its chart acts on where they are not every one a style acts on: a stacked chart's line, grid and scale. */
+  readonly keys?: readonly FineKey[];
 }
 
 /** The chart keys of a config, as given. */

@@ -829,11 +829,13 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       <div class="am-chart fv-tone--${tone}" style="width:${width}px" ${this.scrubs(engine)}>
         ${
           engine && spec
-            ? this.drawOne(engine, { ...spec, cursor: at?.cursor }, at, {
-                value: parts.value,
-                unit: parts.unit,
+            ? // at now (where the style labels it), or where it is read with when, on the line there
+              engine.drawRead(
+                { ...spec, cursor: at?.cursor },
+                at,
+                { value: parts.value, unit: parts.unit },
                 family,
-              })
+              )
             : html`<div class="fv-skeleton"></div>`
         }
       </div>
@@ -885,34 +887,6 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       zero: readings.zero,
       id: 'fv',
     };
-  }
-
-  /**
-   * One sensor's chart and its bubble: at now (the style's label at rest; `classic` and the styles that say so), or
-   * where it is read, with when — the bubble on what the line is there, kept inside the plot.
-   */
-  private drawOne(
-    engine: ChartEngine,
-    spec: ChartSpec,
-    at: { readonly value: string; readonly unit: string; readonly time: string } | null,
-    now: { readonly value: string; readonly unit: string; readonly family: string },
-  ): TemplateResult {
-    const { style } = spec;
-    const read = engine.readAt(spec, spec.cursor ?? null);
-    const classic = style.preset === 'classic';
-    const bubble =
-      at || style.label
-        ? engine.chartBubble({
-            x: read.x,
-            width: spec.frame.width,
-            value: at?.value ?? now.value,
-            unit: at?.unit ?? now.unit,
-            ...(at ? { time: at.time } : {}),
-            family: now.family,
-            ...(classic ? {} : { lean: 0, start: engine.plotOf(spec).left, look: style.bubble }),
-          })
-        : nothing;
-    return html`${engine.drawChart(spec)}${bubble}`;
   }
 
   /**

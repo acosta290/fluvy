@@ -183,17 +183,20 @@ export const ACTS: Readonly<Record<ChartPreset, readonly FineKey[]>> = {
   band: ['line_width', 'show_points', 'show_grid', 'show_axis', 'show_now', 'animate'],
 };
 
-/** The styles a card can draw with what it has: the line styles always, bars and columns with slots, the band with a band. */
+/**
+ * The styles a card can draw with what it has: the line styles, bars and columns with slots, the band with a band —
+ * of the ones it lists, where it lists them.
+ */
 export function presetsFor(caps: ChartCaps): ChartPreset[] {
   const out: ChartPreset[] = ['classic', 'soft', 'glow', 'minimal', 'step'];
   if (caps.bars) out.push('bars', 'columns');
   if (caps.band) out.push('band');
-  return out;
+  return caps.styles ? out.filter((preset) => caps.styles?.includes(preset)) : out;
 }
 
 /** Whether a fine key acts in a style on a card that can draw it. */
 export function acts(key: FineKey, preset: ChartPreset, caps: ChartCaps): boolean {
-  if (!ACTS[preset].includes(key)) return false;
+  if (!ACTS[preset].includes(key) || (caps.keys && !caps.keys.includes(key))) return false;
   if (key === 'show_now') return caps.now === true;
   if (key === 'show_axis') return caps.axis !== false;
   if (key === 'highlight') return !caps.several;

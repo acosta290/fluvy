@@ -209,7 +209,9 @@ describe('the sensor’s editor', () => {
     expect(shown({})).not.toContain('glow');
     expect(shown({ chart: 'soft' })).toContain('glow');
     expect(shown({ chart: 'step' })).toContain('highlight');
-    expect(shown({ chart: 'bars' })).not.toContain('curve');
+    expect(shown({ chart: 'bars', entity: 'sensor.meter' }, house())).not.toContain('curve');
+    // a temperature asked for bars draws classic, and the editor shows what classic acts on
+    expect(shown({ chart: 'bars', entity: 'sensor.temp' }, house())).toContain('curve');
   });
 
   it('offers bars to one sensor whose readings add up, the lines only to a measurement or several, and no highlight over several', () => {

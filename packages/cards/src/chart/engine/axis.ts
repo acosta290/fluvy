@@ -20,11 +20,19 @@ export const tickText = (
 ): string =>
   formatNumber(hass, value, { digits: decimals, minDigits: decimals }).replace(/^-/, '−');
 
-/** A dashed gridline at each `y` from `x1` to `x2`, on the pixel grid (a 1 px line on a half pixel is one pixel). */
-export const gridLines = (ys: readonly number[], x1: number, x2: number): SVGTemplateResult =>
+/**
+ * A gridline at each `y` from `x1` to `x2`, on the pixel grid (a 1 px line on a half pixel is one pixel): the classic
+ * dashes (`ax-grid`), or a style's hairlines (`fc-grid`, dashed with `fc-grid--dashed`).
+ */
+export const gridLines = (
+  ys: readonly number[],
+  x1: number,
+  x2: number,
+  className = 'ax-grid',
+): SVGTemplateResult =>
   svg`${ys.map((y) => {
     const at = Math.round(y) + 0.5;
-    return svg`<line class="ax-grid" x1=${x1} x2=${x2} y1=${at} y2=${at}></line>`;
+    return svg`<line class=${className} x1=${x1} x2=${x2} y1=${at} y2=${at}></line>`;
   })}`;
 
 /** Tick labels ending at `x`, each centred on its `y`: a scale on the plot's start, or one ending on the card's edge. */

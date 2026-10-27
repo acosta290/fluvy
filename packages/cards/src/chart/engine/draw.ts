@@ -1,7 +1,7 @@
 import { html, nothing, svg, type SVGTemplateResult, type TemplateResult } from 'lit';
 import { AXIS_GAP } from './axis.js';
 import { columns, type Column } from './bars.js';
-import { cursorLine, dot, knob, nowLine, point, shadowCopy } from './decor.js';
+import { chartBubble, cursorLine, dot, knob, nowLine, point, shadowCopy } from './decor.js';
 import type { ChartSeries } from './model.js';
 import { seriesPaint, type SeriesPaint } from './palette.js';
 import { areaPath, bandPath, linePath, splitAt, yAt, type Pt } from './path.js';
@@ -582,4 +582,41 @@ export function drawChart(spec: ChartSpec): TemplateResult {
         laid.bars ? barsWords(spec, laid, drawn) : nothing
       }${nowX === null ? nothing : nowLine(nowX, laid.box.top - 8, laid.box.bottom)}</svg
     >${knobs}`;
+}
+
+/** What a chart's bubble says: a value, its unit and, while the chart is read, when that was. */
+export interface Reading {
+  readonly value: string;
+  readonly unit?: string;
+  readonly time?: string;
+}
+
+/**
+ * A chart and its bubble: what it reads where it is read (`read`, at its cursor), else at rest what has happened
+ * ends on (`rest`) where the style labels it. The bubble stands on its x: classic's leans 16 into the card's padding
+ * as 1.0 drew it; a style's stays inside the plot, in the style's look.
+ */
+export function drawRead(
+  spec: ChartSpec,
+  read: Reading | null,
+  rest: Reading | null,
+  family?: string,
+): TemplateResult {
+  const { style } = spec;
+  const shown = read ?? (style.label ? rest : null);
+  return html`${drawChart(spec)}${
+    shown
+      ? chartBubble({
+          x: readAt(spec, spec.cursor ?? null).x,
+          width: spec.frame.width,
+          value: shown.value,
+          ...(shown.unit === undefined ? {} : { unit: shown.unit }),
+          ...(shown.time === undefined ? {} : { time: shown.time }),
+          ...(family === undefined ? {} : { family }),
+          ...(style.preset === 'classic'
+            ? {}
+            : { lean: 0, start: plotOf(spec).left, look: style.bubble }),
+        })
+      : nothing
+  }`;
 }
