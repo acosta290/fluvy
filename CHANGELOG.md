@@ -34,6 +34,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   pointer's hairline and the finger's press as a tile does; it was a still figure. `tap_action: none` on a tile keeps
   it still (#71). A tile is never laid narrower than a finger's 44: three asked in a narrow column (single digits at
   172) go two a row where they were 36 wide.
+- The editor of a sensor card or an energy card holding 1.10's `show_grid: true` or `false` shows Automatic or None,
+  where it showed nothing chosen; the card draws as it did.
 - A gauge card is one height whatever its sensor reads and while it is out of reach: from 211 up its min · max ·
   average row is laid out by the widest figure the card can write (three figures and a separator in its unit, five
   in watts it is asked not to scale, the range's whole figures where its `max` has more, a temperature's minus), where
@@ -41,16 +43,19 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   ("888 kW out"). A gauge whose figures were short now keeps the room of long ones: at a tablet's 266 a wind or a
   temperature gauge shows two and one where it showed three (60 px taller), a signed meter's row at 211 may stand one
   a line, and a signed ring at 266 to 328 may be a little smaller. At a section's 360 a ring and a bar are as they
-  were.
+  were. In a half column (152, 172) the row stands one a line, so a tile is 420 tall where a live one with
+  short figures stood 352 to 360.
 - The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
 - The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
   Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses
   another style.
 - The editor's colour field of a lock, camera or alarm row, a scene or a chip shows none chosen where it said Primary;
   what the item draws is unchanged.
-- Dutch: the energy score's self-powered ring reads "Zelfvoorzienend", and "Zelfstandig" where half a column cannot
-  hold it (#70). Japanese: a calendar's selected-day label reads 「17日（木）・イベント4件」. Portuguese (Portugal): the
-  calendar's upcoming list writes "qui 29" where it wrote "quinta 29".
+- Dutch: the energy score's self-powered ring reads "Zelfvoorzienend", and "Zelfstandig" where the long word would lay
+  the rings fewer a row (three in a row in a section's column, as "Autarkie" kept them) or not hold half a column
+  (#70). Japanese: a calendar's selected-day label reads 「17日（木）・イベント4件」. Portuguese (Portugal): the
+  calendar's upcoming list writes "qui 29" where it wrote "quinta 29", and the energy score's low-carbon ring "Baixo
+  CO₂" where "Baixo carbono" would break its row of three.
 
 ### Added
 
@@ -344,6 +349,17 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The cards' table in `docs/cards.md` says a key the form shows in turns once, with every value.
 - Dev dependencies: typescript-eslint 8.72.0, vite 8.3.5, happy-dom 21.0.4, @happy-dom/global-registrator 21.0.4
   (#63).
+- The gates run faster: `visual.mjs --jobs N` runs that many suites at once (each one's lines printed together when
+  it ends; CI keeps one at a time), as `measure-all.mjs --jobs N` already did.
+- The measurer no longer excuses an ellipsis because a `title` carries the cut words: only a person's own text
+  (`data-name`, a name's class) may end in one.
+- New and stronger checks: the heights gate holds the Chart card's four and six rooms and every gauge, moving or not,
+  to one height at 152, 172, 211 and 266 in every language; the chart suite reads the gridlines a card asks for and
+  the classic fills' paint (28 % alone, 16 % shared); the panel suite fails on any console error on the Charts tab,
+  with and without reduced motion; the web sheet draws a page kept back and a page still loading; the items suite
+  holds three aircraft, one, none and out of reach to one height, measured at rest; the settings' export test
+  round-trips every chart setting off its default; a view themed Fluvy as Home Assistant themes it
+  (`?viewtheme=`, `interactions-view-theme`).
 
 ## [1.10.0] — 2026-10-22
 
