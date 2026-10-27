@@ -137,8 +137,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   card — with Home Assistant's own figures for its range, the picker's Compare drawing the ghosts), `sources` (the
   sources drawn, in the order they stack, each with its `name`, `color` — a colour of the palette's, which follows the
   palette, a colour name or a hex — and `show`), `max_sources` (the rest fold into "Other"), `show_period` (the
-  chips), `show_returns`, `show_legend`, `variant` (`full`, `compact`, `mini`), `chart` (`classic`, `soft`,
-  `columns`), `show_axis`, `show_grid`, `animate`, `unit` and `decimals`. With no Energy dashboard it says so.
+  chips), `show_returns`, `show_legend`, `variant` (`full`, `compact`, `mini`), `chart` (`classic`, `soft`),
+  `show_axis`, `show_grid`, `animate`, `unit` and `decimals`. With no Energy dashboard it says so.
 - **`unit` and `decimals`** on every card that writes an energy figure — the energy flow, energy, balance, grid,
   devices, where-it-went, score, production, meters, batteries and car charger cards, the gauge, the sensor, stat tiles
   and readouts cards — and on their lists' items (a flow's and a grid's readouts, an energy card's legend, a device

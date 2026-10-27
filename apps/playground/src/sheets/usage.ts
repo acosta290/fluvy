@@ -269,6 +269,7 @@ export const sheet: SheetSpec = {
       hass: usageHome,
       cards: [
         usage({ chart: 'soft', period: 'week' }),
+        // `columns` is classic's look, not offered: a config that still names it draws classic
         usage({ chart: 'columns', period: 'month' }),
       ],
     },

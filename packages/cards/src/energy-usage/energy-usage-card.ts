@@ -181,13 +181,14 @@ export interface EnergyUsageCardConfig
 /**
  * What the chart can draw: stacked columns on a scale through zero, several series, the scale beside them. Every style
  * draws one column a slot, its parts flush and only its outer ends rounded (classic's bar is one series' gradient, so
- * classic is the engine's columns here); soft draws the parts a step lighter.
+ * classic is the engine's columns here, and `columns` — the same look — is not offered: a config that names it draws
+ * classic); soft draws the parts a step lighter.
  */
 const CAPS: ChartCaps = {
   bars: true,
   several: true,
   axis: true,
-  styles: ['classic', 'soft', 'columns'],
+  styles: ['classic', 'soft'],
   keys: ['show_grid', 'show_axis', 'animate'],
 };
 /** The mini strip: the same columns with no room for a scale or its gridlines. */
@@ -1003,7 +1004,10 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     // drawn as the engine's columns whatever the style's name (classic's bar is one series' gradient): one column a
     // slot, its parts flush, rounded only at its outermost end on each side of the line whatever the house says of a
     // bar's ends; the strip has no gridlines but the zero line
-    const resolved = resolveStyle('columns', chartKeysOf(this.config), caps);
+    const resolved = resolveStyle('columns', chartKeysOf(this.config), {
+      ...caps,
+      styles: ['columns'],
+    });
     const style: ResolvedStyle = {
       ...resolved,
       caps: 'top',

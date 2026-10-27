@@ -217,8 +217,9 @@ show_compare: true              # Compare: the period before beside the span, on
 - the energy card's line `classic`, `soft`, `glow`, `minimal` or `step` (a stepped power reads on a scale from zero,
   in the card's unit, the hours under the plot after it); its stacked charts `classic`, `soft` (lighter fills, the
   house's hairlines across) or `step` (each bucket held across it);
-- the Energy usage card's columns `classic` or `columns` (one column a slot, its parts flush, only its outer ends
-  rounded, on a scale that hugs them on both sides of zero) or `soft` (each part a step lighter);
+- the Energy usage card's columns `classic` (one column a slot, its parts flush, only its outer ends rounded, on a
+  scale that hugs them on both sides of zero; a card that names `columns`, the same look, draws it) or `soft` (each
+  part a step lighter);
 - the history bars `classic`, `bars` (the ink, flat, rounded as the house's bars are; `highlight` lights the highest,
   the lowest or the bar in progress and quiets the rest) or `columns`; the mini row's sparkline `classic` or `minimal`;
 - production `classic`, `soft` (one meter's day an hour a bar, the best hour in the ink and the rest quiet, the hours

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HomeAssistant } from '@fluvy/core';
+import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usageHeight } from '../energy-family.js';
 import type { EnergyCollectionLike, EnergyDataLike } from '../energy-model/collection.js';
@@ -200,6 +200,23 @@ describe('the Energy usage card', () => {
     expect(selector.select.custom_value).toBe(true);
     expect(selector.select.options).toHaveLength(24);
     expect(helper).toBe('energy-usage.editor_color_helper');
+  });
+
+  it('offers classic and soft, and draws a config that names columns — the same look — as classic', async () => {
+    const chart = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+      schema.flatMap((item) =>
+        item.schema ? chart(item.schema) : item.name === 'chart' ? [item] : [],
+      );
+    const offered = chart(FluvyEnergyUsageCard.getConfigForm().schema).map((field) =>
+      (field.selector?.['select'] as { options: { value: string }[] }).options.map(
+        (option) => option.value,
+      ),
+    );
+    // one select for the chart and the strip alike
+    expect(offered).toEqual([['classic', 'soft']]);
+    const drawn = async (style: string): Promise<string> =>
+      (root(await mount({ chart: style })).querySelector('.eu-chart') as HTMLElement).outerHTML;
+    expect(await drawn('columns')).toBe(await drawn('classic'));
   });
 
   it('draws the period before as ghost columns only when asked to compare', async () => {

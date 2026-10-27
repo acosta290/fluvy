@@ -1018,7 +1018,8 @@ statistics allocated hour by hour as the dashboard allocates them, so its figure
   energy ink (`--fluvy-state-energy-*`; a person's `color` over it, a colour of the palette's by its token); what went
   out is the same ink at 60 %. One column a slot, its parts flush, only its outermost end on each side of the line
   rounded — whatever the house says of a bar's ends, which is about single bars (the chart engine's columns in every
-  style: `classic` and `columns` in the inks, `soft` each part at 72 % of its ink over the card). The scale hugs the
+  style: `classic` in the inks, `soft` each part at 72 % of its ink over the card; `columns` would be classic's look
+  under a second name, so it is not offered, and a card that names it draws classic). The scale hugs the
   columns: of the nice steps (1 · 2 · 2.5 · 5 × 10ⁿ), the one whose outermost tick on each side (the first multiple at
   or beyond that side's extreme) spans the least, three to five ticks in all, the more where two span alike — a week
   rising to 18 and falling to 9 reads −10 · 0 · 10 · 20; the unit rotated beside its ticks, the gridlines the
