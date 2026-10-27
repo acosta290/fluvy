@@ -3,7 +3,7 @@ import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { chartHeight } from '../chart-family.js';
 import { familiesDefined } from '../index.js';
-import { FluvyChartCard, type ChartCardConfig } from './chart-card.js';
+import { FluvyChartCard, legendColumns, type ChartCardConfig } from './chart-card.js';
 import { capsIn, defaultWindows, isPrice, SERIES_LIST, seriesOf, windowAt } from './config.js';
 import type { Reading } from './data/attribute.js';
 import { sourceOf } from './data/sources.js';
@@ -309,6 +309,44 @@ describe('the Chart card’s height at a 360 column', () => {
       const chart = root(card).querySelector<HTMLElement>('.ch-chart');
       expect(chart?.style.height).toBe('120px');
     }
+  });
+});
+
+describe('a legend of four series or more', () => {
+  it('lies in the columns under the axis that hold its items, by count and width alone, else in the value row', () => {
+    // a card's content at 360, 320, 266, 211, 172 and 152; with its readings, then names alone
+    const widths = [320, 280, 226, 171, 132, 112];
+    expect(widths.map((w) => legendColumns(4, w, true))).toEqual([2, 2, 0, 0, 0, 0]);
+    expect(widths.map((w) => legendColumns(4, w, false))).toEqual([2, 2, 2, 2, 0, 0]);
+    expect([460, 320, 226].map((w) => legendColumns(6, w, true))).toEqual([3, 2, 0]);
+  });
+
+  it('keeps the card at its height: the plot gives the lines it takes past its room, and takes what it leaves', async () => {
+    const series = ['sensor.temperature', 'sensor.cellar', 'sensor.nordpool', 'sensor.gone'];
+    const laid = async (more: Record<string, unknown>, width: number) => {
+      const card = await draw({ series, ...more }, house(), width);
+      return {
+        cols: root(card)
+          .querySelector<HTMLElement>('.ch-legend')
+          ?.style.getPropertyValue('--ch-cols'),
+        lines: root(card).querySelectorAll('.ch-lines .fc-legend__item').length,
+        row: root(card).querySelector<HTMLElement>('.ch-top')?.style.height,
+        plot: root(card).querySelector<HTMLElement>('.ch-chart')?.style.height,
+      };
+    };
+    // two lines under the axis at 360: the 44 the card's height counts
+    expect(await laid({}, 360)).toEqual({ cols: '2', lines: 0, row: '', plot: '120px' });
+    // narrower, the value row's four lines (76, 12 past its 64), the legend's 44 the plot's
+    for (const width of [266, 211, 152])
+      expect(await laid({}, width)).toEqual({
+        cols: undefined,
+        lines: 4,
+        row: '76px',
+        plot: '152px',
+      });
+    // six at 360: three lines under the axis, the third the plot's
+    const six = [...series, 'sensor.nordpool_morning', 'weather.home'];
+    expect(await laid({ series: six }, 360)).toMatchObject({ cols: '2', plot: '100px' });
   });
 });
 

@@ -21,8 +21,9 @@ export interface FrameSpec {
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   /**
-   * Card widths under the full-card floor (half a section: 152, 172) at which its cards draw what they declare too:
-   * `heights.mjs` draws the frame again at each, in every language, and holds every card to its height there.
+   * Card widths at which its half cards (`cols: 6`) draw what they declare too — half a section (152, 172) or a narrow
+   * column's (211, 266, half a wider one): `heights.mjs` draws the frame again at each, in every language, and holds
+   * every card to its height there.
    */
   readonly heights?: readonly number[];
   /**

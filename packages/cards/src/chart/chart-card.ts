@@ -188,8 +188,18 @@ const ROUND_STEPS = [5, 10, 15, 20, 30, 60, 120, 180, 240, 360, 720, 1440].map((
 const SPARK = 24;
 /** The most bars a window is read in: an hour each over two days. */
 const MOST_BARS = 48;
-/** A legend line (12/500 on 16). */
+/** A legend line (12/500 on 16), and the 4 between two. */
 const LEGEND_LINE = 16;
+const LEGEND_GAP = 4;
+/**
+ * A legend item's least room in a column beside others: its swatch and a name's first letters (12, 8 and 48), and the
+ * reading after them where it says one (8 and 56, "21.4 °C" and room to spare).
+ */
+const LEGEND_NAME = 68;
+const LEGEND_READING = 64;
+/** The value row's height: the reading now, or a legend's lines (`TOP`); and the 8 over a legend under the axis. */
+const TOP = 64;
+const UNDER = 8;
 /** A marked window's pill's sides (`.fc-pill`: 10 each, its dot 6 and the 6 after it); the change's (its glyph). */
 const PILL_SIDES = 32;
 const DELTA_SIDES = 30;
@@ -200,6 +210,19 @@ const PLOT_MIN = 120;
 const SIZES = ['l', 'm', 's', 'xs'] as const;
 
 const down4 = (n: number): number => Math.max(4, Math.floor(n / 4) * 4);
+/** How tall `lines` legend lines stand. */
+const linesTall = (lines: number): number => lines * (LEGEND_LINE + LEGEND_GAP) - LEGEND_GAP;
+
+/**
+ * How many a row a legend of four series or more lays under the axis, by their count and the card's width alone: three
+ * (five or six) or two where each column holds an item; none (0) where two would not, and the legend's lines go in the
+ * value row, one a row, as two or three series' do. Never by the names themselves: the card's height never waits on
+ * its words.
+ */
+export function legendColumns(count: number, width: number, reading: boolean): number {
+  const item = LEGEND_NAME + (reading ? LEGEND_READING : 0);
+  return [count > 4 ? 3 : 2, 2].find((cols) => (width - (cols - 1) * 16) / cols >= item) ?? 0;
+}
 const capitalise = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
 /** One series as this render draws it. */
@@ -387,7 +410,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         align-items: flex-end;
         justify-content: space-between;
         gap: ${GAP}px;
-        height: 64px;
+        height: ${TOP}px;
         margin-top: 16px;
       }
       .ch-now {
@@ -438,12 +461,13 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       .ch-lines .fc-legend__name {
         flex: 1;
       }
-      /* a legend of four series or more under the axis: two lines in two or three equal columns */
+      /* a legend of four series or more under the axis: two or three equal columns where each holds its item (in the
+         value row's lines where they would not: \`legendColumns\`) */
       .ch-legend > .fc-legend {
         display: grid;
         grid-template-columns: repeat(var(--ch-cols, 3), minmax(0, 1fr));
-        gap: 4px 16px;
-        margin: 8px 0 0;
+        gap: ${LEGEND_GAP}px 16px;
+        margin: ${UNDER}px 0 0;
       }
       .ch-legend .fc-legend__item {
         height: ${LEGEND_LINE}px;
@@ -1152,10 +1176,22 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const marks = !several && !loading && !empty ? this.marked(lead, window, count) : [];
     const showHead = config?.show_head !== false;
     const legendShown = several && config?.show_legend !== false;
-    const inRow = legendShown && drawn.length <= 3;
+    // a legend of four or more under the axis in the columns that hold its items; two or three series', and one whose
+    // columns would cut its names (a narrow card), the value row's lines, one a row, each reading at its end
+    const cols = legendColumns(drawn.length, width, showHead);
+    const inRow = legendShown && (drawn.length <= 3 || cols === 0);
     const row = full && (showHead || marks.length > 0 || inRow);
-    // the value row's room is the chart's where the row has nothing to say
-    const height = CHART + (full && !row ? ROW : 0);
+    const under = full && legendShown && !inRow;
+    // the card's height is its config's alone (`chartHeight`): its room for a legend of four or more (two lines under
+    // the axis) is the plot's where the legend takes less, and what it takes more of — a third line under the axis,
+    // lines past the value row's — the plot gives; the value row's room is the chart's where the row has nothing to say
+    const room = full && legendShown && drawn.length > 3 ? UNDER + linesTall(2) : 0;
+    const legendMore = under
+      ? UNDER + linesTall(Math.ceil(drawn.length / cols))
+      : row && inRow
+        ? Math.max(0, linesTall(drawn.length) - TOP)
+        : 0;
+    const height = CHART + (full && !row ? ROW : 0) + room - legendMore;
     // a row that says the reading reads the chart with it — the value, the time its label, or the legend's lines, the
     // time on the axis — and no bubble is drawn: the plot takes the bubble's room. A row of the marked windows' pills
     // alone leaves the bubble its room, over the plot and under the pills.
@@ -1224,8 +1260,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         ${when ? this.whenPill(when.time, when.x - left, width - left) : nothing}
       </div>
       ${
-        full && legendShown && !inRow
-          ? html`<div class="ch-legend" style="--ch-cols:${drawn.length === 4 ? 2 : 3}">
+        under
+          ? html`<div class="ch-legend" style="--ch-cols:${cols}">
               ${this.legendOf(drawn, showHead ? values : null)}
             </div>`
           : nothing
@@ -1387,7 +1423,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     shown: { readonly showHead: boolean; readonly inRow: boolean },
   ): TemplateResult {
     if (shown.inRow)
-      return html`<div class="ch-top">
+      return html`<div
+        class="ch-top"
+        style=${drawn.length > 3 ? `height:${Math.max(TOP, linesTall(drawn.length))}px` : nothing}
+      >
         <div class="ch-lines">${this.legendOf(drawn, shown.showHead ? values : null)}</div>
       </div>`;
     const width = this.contentWidth;

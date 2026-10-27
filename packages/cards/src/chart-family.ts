@@ -13,8 +13,9 @@ export const seriesCount = (config: LovelaceCardConfig): number =>
 
 /**
  * The Chart card at a 360 column, by its variant and its series alone: the full card 320 — the head, the value row,
- * the chart and its axis — and 44 more where a legend of four series or more takes two lines under the axis; the
- * compact card 240 (the head, the chart, the axis); the tile 168. Empty, loading or out of reach, it keeps them.
+ * the chart and its axis — and 44 more where a legend of four series or more takes two lines under the axis (a line
+ * more, where a narrower card lays it one a row, is the plot's); the compact card 240 (the head, the chart, the axis);
+ * the tile 168. At every width, empty, loading or out of reach, it keeps them.
  */
 export function chartHeight(config: LovelaceCardConfig): number {
   if (config['variant'] === 'tile') return 168;

@@ -537,11 +537,12 @@ danger tones, any other series' in its own) as a stretch of the plot behind the 
 the `step` style marks both unless told otherwise. `show_head` writes the value now big over the chart with its change
 on the period before ("+5 %": a rolling window against as long a stretch before it, a calendar day against the day
 before; from history or statistics), and `show_legend` names two or three series in the value row, four or more under
-the axis. The chart is drawn in the house's chart style or the card's own (`chart`, and every fine key of the sensor's
+the axis — in the value row too, one a row, where the card is too narrow for its columns to hold every name. The chart is drawn in the house's chart style or the card's own (`chart`, and every fine key of the sensor's
 chart above); a pointer, a held finger or the keys (← → a slot, Home, End, Escape) read it, and the value row reads
 with it. `variant`: `full` (the head, the value row, the chart and its axis), `compact` (the head, the chart, its
-axis) or `tile` (the value over a spark of every series). Its height is its variant's and its series count's —
-loading, empty or out of reach it keeps it — and where the value row has nothing to say, the chart takes its room.
+axis) or `tile` (the value over a spark of every series). Its height is its variant's and its series count's at every
+width — loading, empty or out of reach it keeps it — and where the value row has nothing to say, the chart takes its
+room, as it gives the legend the lines it takes past its own.
 
 ```yaml
 type: custom:fluvy-chart-card

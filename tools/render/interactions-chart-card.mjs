@@ -14,6 +14,8 @@
  *   — the marked windows' pills stay where they were, seen; the keys move it (Home, →), Escape lets it go; without the
  *   head the bubble says it in its 44 above the plot; two series read in the row's lines, the time a pill on the axis;
  * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines;
+ * - four rooms: their legend under the axis in two columns at 360, the value row's lines at 266 and 211 (where the
+ *   columns would cut the names), every name legible, the card at the height it declares;
  * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
  *   legend's swatch.
  */
@@ -467,6 +469,43 @@ const marksOf = (card) =>
   );
 }
 await page.close();
+
+/* ---------- a legend of four or more: names that read at every width, the card at its height ---------- */
+{
+  // under the axis in two columns at 360; at 266 and 211 the value row's lines, one a row, each reading at its end;
+  // every name its first letters at the least, and the card the height it declares
+  const wrong = [];
+  for (const width of [360, 266, 211]) {
+    const page = await suite.sheet('chart', { width });
+    const laid = await frame(page, 'Chart · four rooms')
+      .locator('fluvy-chart-card')
+      .first()
+      .evaluate((card) => {
+        const root = card.shadowRoot;
+        return {
+          under: root.querySelectorAll('.ch-legend .fc-legend__item').length,
+          inRow: root.querySelectorAll('.ch-lines .fc-legend__item').length,
+          // a name's box: the room it has, against what it needs (three letters and the ellipsis at the least)
+          names: [...root.querySelectorAll('.fc-legend__name')].map((name) => [
+            Math.round(name.getBoundingClientRect().width),
+            name.scrollWidth,
+          ]),
+          height: Math.round(root.querySelector('[data-card]').getBoundingClientRect().height),
+          declared: card.constructor.layoutHeight(card.config),
+        };
+      });
+    const legible = laid.names.every(([room, needs]) => room >= Math.min(needs, 32));
+    const placed = width === 360 ? laid.under === 4 : laid.inRow === 4;
+    if (!legible || !placed || laid.height !== laid.declared)
+      wrong.push(`${width} ${JSON.stringify(laid)}`);
+    await page.close();
+  }
+  check(
+    'four rooms: the legend under the axis at 360, in the value row at 266 and 211, every name legible, the card at its height',
+    wrong.length === 0,
+    wrong.join(' | '),
+  );
+}
 
 /* ---------- a series that names a colour of the palette's follows the palette ---------- */
 {

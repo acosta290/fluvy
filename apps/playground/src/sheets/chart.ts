@@ -14,7 +14,8 @@ if (!customElements.get('fluvy-chart-card'))
  * sensor in the morning, before tomorrow is published; a Tibber-shaped `prices` map as columns; a Solcast forecast
  * list in kW under a kWh sensor; a weather's hourly forecast (`weather/subscribe_forecast`) after the measured
  * temperature; a sensor's history with its change on yesterday; its statistics' band; four rooms on one chart (the
- * legend under the axis); compact, tiles, empty, out of reach and half a section.
+ * legend under the axis), and four and six at half a section and in a narrow column; compact, tiles, empty, out of
+ * reach and half a section.
  */
 
 const QUARTER = 15 * 60_000;
@@ -144,15 +145,13 @@ const NORDPOOL = card({
   highlight_hours: 2,
 });
 
-const ROOMS = card({
-  title: 'Rooms',
-  series: [
-    'sensor.ch_living_temperature',
-    'sensor.ch_office_temperature',
-    'sensor.ch_bedroom_temperature',
-    'sensor.ch_kitchen_temperature',
-  ],
-});
+const FOUR_ROOMS = [
+  'sensor.ch_living_temperature',
+  'sensor.ch_office_temperature',
+  'sensor.ch_bedroom_temperature',
+  'sensor.ch_kitchen_temperature',
+];
+const ROOMS = card({ title: 'Rooms', series: FOUR_ROOMS });
 
 export const sheet: SheetSpec = {
   states: [
@@ -198,6 +197,8 @@ export const sheet: SheetSpec = {
     sensor('sensor.ch_bedroom_temperature', '19.6', 'Bedroom', TEMPERATURE),
     sensor('sensor.ch_kitchen_temperature', '21.1', 'Kitchen', TEMPERATURE),
     sensor('sensor.ch_cellar_temperature', '14.2', 'Cellar', TEMPERATURE),
+    sensor('sensor.ch_bathroom_temperature', '23.4', 'Bathroom', TEMPERATURE),
+    sensor('sensor.ch_hall_temperature', '18.2', 'Hall', TEMPERATURE),
     ['sensor.ch_gone', 'unavailable', { friendly_name: 'Nordpool', ...PRICE }],
   ],
   history: {
@@ -206,6 +207,8 @@ export const sheet: SheetSpec = {
     'sensor.ch_bedroom_temperature': room(18.9, 1.4),
     'sensor.ch_kitchen_temperature': room(20.2, 2.2),
     'sensor.ch_cellar_temperature': [],
+    'sensor.ch_bathroom_temperature': room(22.8, 2.6),
+    'sensor.ch_hall_temperature': room(17.6, 1.1),
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -311,6 +314,20 @@ export const sheet: SheetSpec = {
     {
       title: 'Chart · out of reach',
       cards: [card({ series: ['sensor.ch_gone'], span: 'today+tomorrow', chart: 'step' })],
+    },
+    // four rooms and six at half a section and in a narrow column (211, 266: half a wider one): the legend one a row
+    // where its columns would cut the names, the plot giving up the lines it takes, the card at its height
+    {
+      title: 'Chart · rooms at half a section',
+      heights: [152, 172, 211, 266],
+      cards: [
+        { ...ROOMS, cols: 6 },
+        card({
+          title: 'Rooms',
+          series: [...FOUR_ROOMS, 'sensor.ch_bathroom_temperature', 'sensor.ch_hall_temperature'],
+          cols: 6,
+        }),
+      ],
     },
     {
       title: 'Chart · half a section',
