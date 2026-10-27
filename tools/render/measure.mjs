@@ -1233,7 +1233,10 @@ function audit(opts) {
             control: inControl(el, frame),
           });
         }
-        const painted = sized && el.hasAttribute('data-control') ? drawnBox(el) : null;
+        // a control is drawn where its words are: what a scroller clips of it (a scrolling row's chips past its edge,
+        // laid over the next card) is not there
+        const drawn = sized && el.hasAttribute('data-control') ? drawnBox(el) : null;
+        const [painted] = drawn ? shownBoxes([drawn], up(el), frame) : [];
         if (painted)
           pressed.push({
             el,
