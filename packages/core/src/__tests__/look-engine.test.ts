@@ -59,6 +59,25 @@ describe('the look engine', () => {
     expect(text(look.panelSheet)).not.toContain('!important');
   });
 
+  it('dresses the elements Home Assistant themed with Fluvy in the look, in either scope, and follows it', () => {
+    const { look, text } = engine();
+    const volt = { palette: 'volt', shape: 'soft', pills: 'round' } as const;
+    look.apply(settings({ look: volt, scope: 'dashboards' }), false);
+    const sheet = look.themedSheet();
+    expect(look.themedSheet()).toBe(sheet);
+    const light = text(sheet);
+    expect(light).toContain('[fluvy-themed]');
+    expect(light).toMatch(/--primary-color: ?#5a6ff0 ?!important/);
+    expect(light).toMatch(/--fluvy-palette: ?volt ?!important/);
+    look.apply(settings({ look: volt, scope: 'everywhere' }), false);
+    expect(text(sheet)).toBe(light);
+    // the mode and the palette, as the page around them
+    look.apply(settings({ look: volt, scope: 'everywhere' }), true);
+    expect(text(sheet)).not.toBe(light);
+    look.apply(settings({ look: { ...volt, palette: 'mint' }, scope: 'everywhere' }), true);
+    expect(text(sheet)).toMatch(/--fluvy-palette: ?mint ?!important/);
+  });
+
   it('follows the mode, and does nothing again for the same look', () => {
     const { look, page, text } = engine();
     const volt = settings({

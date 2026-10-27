@@ -4,6 +4,12 @@ export const PAGE_ATTRIBUTE = 'fluvy-look';
 /** On a dashboard's `ha-panel-lovelace`: this dashboard wears the look (the `dashboards` scope). */
 export const PANEL_ATTRIBUTE = 'fluvy-look';
 
+/**
+ * On an element Home Assistant themed with the theme named Fluvy (a view, a section, a card's `theme:`): it wears the
+ * look over the theme file's colours (`themed.ts`).
+ */
+export const THEMED_ATTRIBUTE = 'fluvy-themed';
+
 /** On `<html>`: the house keeps Home Assistant's own Activity page (fluvy's settings). */
 export const ORIGINAL_ACTIVITY = 'fluvy-original-activity';
 /** Set while the house keeps Home Assistant's own History page. */

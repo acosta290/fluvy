@@ -233,6 +233,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - Home Assistant's Create automation (and Create script) chooser opens again under Fluvy's theme: it opened empty, the
   page dimmed with no dialog on it, because Home Assistant takes the dialog's maximum height from its minimum, which
   Fluvy set to 0. It is as tall as what it lists, up to the screen's height (#73).
+- A view, a section or a card set to Home Assistant's Fluvy theme (its *Theme*, or a card's `theme:`) wears the palette
+  you chose, in your mode, as the page around it does; it wore Linen's colours there, the theme file's own, over the
+  palette (#72). A view in another theme keeps that theme.
 
 ### Development
 

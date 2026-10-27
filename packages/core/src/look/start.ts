@@ -33,6 +33,7 @@ import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
 import { chromeOf, tabsOf } from './css.js';
 import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
+import { watchThemes } from './themed.js';
 import {
   FLAT_ATTRIBUTE,
   markRoots,
@@ -208,6 +209,9 @@ export function startLook(): LookHandle | undefined {
   void patchEditDialog(env.customElements, wears, resyncCardThemes);
   // the view tabs as the house chose them, in every dashboard's header (re-marked on each of its updates)
   void patchViewRoots(env.customElements, tabsFor);
+  // a view, a section or a card Home Assistant themed with the theme named Fluvy wears the look over the theme file's
+  // colours it wrote on it (the cards inside look again when one is marked)
+  const offThemes = watchThemes(env.document, () => engine.themedSheet(), resyncCardThemes);
   const offFrames = onPanelFrame((frame) =>
     engine.addDocument(frame.document, frame.createSheet()),
   );
@@ -261,6 +265,7 @@ export function startLook(): LookHandle | undefined {
     stop: () => {
       observer.disconnect();
       offFrames();
+      offThemes();
       store.stop();
       handle = undefined;
     },
