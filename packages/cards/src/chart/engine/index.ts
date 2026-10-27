@@ -38,9 +38,8 @@
  *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
- *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket, readingsOf), `palette.ts` (seriesInk,
- *   seriesPaint,
- *   seriesCheck)
+ *   arcPath, arcDash, radialTicks, knobAt), `model.ts` (evenly, sampleAt, bucket, readingsOf), `palette.ts`
+ *   (seriesPaint, fitSet: a house's set fitted to each mode's card, seriesCheck: what fitting cannot fix)
  *
  * The 1.10 geometry is kept byte for byte (`classic.test.ts` against `__fixtures__/classic-1.10.json`): a card that
  * says `chart: classic`, and every card until the house chooses another style, draws exactly what it drew.
@@ -133,9 +132,10 @@ export {
   type ResolvedStyle,
 } from './presets.js';
 export {
+  fitSet,
   seriesCheck,
-  seriesInk,
   seriesPaint,
+  type FittedSet,
   type SeriesPaint,
   type SeriesWarning,
 } from './palette.js';

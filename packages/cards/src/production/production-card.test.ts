@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import {
+  CHART_DEFAULTS,
+  setChartDefaults,
+  type HaFormSchemaItem,
+  type HomeAssistant,
+} from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
+import { fitSet } from '../chart/engine/index.js';
 import { familiesDefined } from '../index.js';
 import { FluvyProductionCard, type ProductionCardConfig } from './production-card.js';
 
@@ -119,7 +125,38 @@ describe('the production card’s bars, in their styles', () => {
     );
     expect(
       [...root.querySelectorAll('.pr-legend .en-sq')].map((sq) => sq.getAttribute('style')),
-    ).toEqual(['background:var(--fluvy-graph-1)', 'background:var(--fluvy-graph-2)']);
+    ).toEqual([
+      '--tone-ink:var(--fluvy-graph-1);background:var(--tone-ink)',
+      '--tone-ink:var(--fluvy-graph-2);background:var(--tone-ink)',
+    ]);
+  });
+
+  it('wears the house’s own set where it names one: each column and its square the set’s colour fitted to each mode', async () => {
+    const colours = ['#1e3a8a', '#f4e9d0', '#15803d', '#b91c1c', '#7e22ce', '#0f766e'] as const;
+    setChartDefaults({
+      settings: { ...CHART_DEFAULTS, style: 'columns', series: 'mine' },
+      sets: [{ id: 'mine', name: 'Mine', colours }],
+    });
+    try {
+      const root = (await mount(ARRAYS)).shadowRoot!;
+      // no look runs here: the set is worn on the default palette
+      const { light, dark } = fitSet(colours, 'linen');
+      const worn = (n: number) => `--fc-light:${light[n]};--fc-dark:${dark[n]}`;
+      expect(
+        new Set(
+          [...root.querySelectorAll('.pr-chart g.fc-set')].map((g) => g.getAttribute('style')),
+        ),
+      ).toEqual(new Set([worn(0), worn(1)]));
+      expect(
+        [...root.querySelectorAll('.pr-legend .en-sq.fc-set')].map((sq) =>
+          sq.getAttribute('style'),
+        ),
+      ).toEqual([`${worn(0)};background:var(--tone-ink)`, `${worn(1)};background:var(--tone-ink)`]);
+      // the navy lifted for the dark card, the cream deepened for the light one
+      expect([dark[0] !== colours[0], light[1] !== colours[1]]).toEqual([true, true]);
+    } finally {
+      setChartDefaults({ settings: CHART_DEFAULTS, sets: [] });
+    }
   });
 
   it('draws the arrays classic where the house is soft: soft is one meter’s', async () => {

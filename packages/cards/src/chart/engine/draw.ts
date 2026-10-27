@@ -276,7 +276,7 @@ const paintOf = (spec: ChartSpec, index: number): SeriesPaint =>
   seriesPaint(spec.series[index]?.colour);
 const group = (spec: ChartSpec, index: number, content: unknown): SVGTemplateResult => {
   const paint = paintOf(spec, index);
-  return svg`<g class=${paint.className || nothing} data-accent=${spec.series[index]?.accent ?? nothing} style=${paint.ink ? `--tone-ink:${paint.ink}` : nothing}>${content}</g>`;
+  return svg`<g class=${paint.className || nothing} data-accent=${spec.series[index]?.accent ?? nothing} style=${paint.style ?? nothing}>${content}</g>`;
 };
 
 /** The vertical hairlines at the plot's quarters, and the horizontal ones at the ticks (the zero line strong). */

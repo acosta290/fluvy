@@ -60,13 +60,14 @@ const MEDIA =
 const HISTORY_BARS_READINGS = /\/packages\/cards\/src\/history-bars\/(readings|history)\.ts/;
 
 /**
- * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, and the Chart card with its English, which
- * join it): fetched as the bundle starts, with the families. A core card reaches it through `shared/chart-load.ts`
- * (a dynamic import: the sensor's chart waits on it behind the skeleton it shows while its history loads), a card in
- * a lazy chunk (energy, history bars, the History page) by a static import from its own chunk.
+ * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, the tokens' fitting of a house's set of
+ * series colours, and the Chart card with its English, which join it): fetched as the bundle starts, with the
+ * families. A core card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it
+ * behind the skeleton it shows while its history loads), a card in a lazy chunk (energy, history bars, the History
+ * page) by a static import from its own chunk.
  */
 const CHART =
-  /\/packages\/(cards\/src\/(chart-cards\.ts|chart\/)|core\/src\/i18n\/locales\/en\/chart\.json)/;
+  /\/packages\/(cards\/src\/(chart-cards\.ts|chart\/)|tokens\/src\/build\/series\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
 
 /**
  * The Energy period card (the strip that drives an Energy date picker's collection, its picker, its sheet and its

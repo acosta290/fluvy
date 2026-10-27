@@ -956,7 +956,7 @@ describe('the settings panel', () => {
     const six = paletteOf('linen').light.graph.slice(0, 6);
     expect(hexes().map((input) => input.value)).toEqual(six);
     expect(saveButton().disabled).toBe(true);
-    // a set is worn in both modes: six that read on either card pass
+    // six that read on either card and stand apart pass
     const type = async (n: number, colour: string) => {
       const field = hexes()[n]!;
       field.value = colour;
@@ -967,21 +967,35 @@ describe('the settings panel', () => {
     for (const [n, colour] of both.entries()) await type(n, colour);
     expect(editor()!.querySelector('.pn-status')).toBeNull();
     expect(editor()!.textContent).toContain('Every colour stands apart and reads on either card');
+    // the lines each mode draws: the set as that mode's card wears it
+    const inks = (mode: 'light' | 'dark') =>
+      [...editor()!.querySelectorAll(`.pn-mode[data-mode="${mode}"] g[style]`)].map((g) =>
+        g.getAttribute('style'),
+      );
+    // a colour too pale for the light card, or too deep for the dark one, is worn fitted there: nothing to say
+    await type(4, '#f4e9d0');
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(inks('dark')[4]).toBe('--tone-ink:#f4e9d0');
+    expect(inks('light')[4]).not.toBe('--tone-ink:#f4e9d0');
+    await type(4, '#3b2a1a');
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(inks('light')[4]).toBe('--tone-ink:#3b2a1a');
+    expect(inks('dark')[4]).not.toBe('--tone-ink:#3b2a1a');
     // two colours a breath apart: it says which, and why
     await type(1, '#2463ea');
-    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
       '#2563eb and #2463ea are too close to tell apart',
     );
-    await type(4, '#f4e9d0');
-    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
-      '#f4e9d0 is too faint on a light card',
-    );
-    await type(4, '#3b2a1a');
-    expect(editor()!.querySelector('.pn-status')?.textContent).toContain(
-      '#3b2a1a is too faint on a dark card',
+    // two pale blues deepened to read on the light card meet there: it says where
+    await type(1, '#d97706');
+    await type(0, '#93c5fd');
+    await type(5, '#60a5fa');
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
+      '#93c5fd and #60a5fa are too close to tell apart on a light card',
     );
     // both modes drawn side by side, six lines each
     expect(editor()!.querySelectorAll('.pn-mode svg.fc-chart').length).toBe(2);
+    expect([inks('light').length, inks('dark').length]).toEqual([6, 6]);
     const name = editor()!.querySelector<HTMLInputElement>('.pn-text input')!;
     name.value = 'Dusk';
     name.dispatchEvent(new Event('input'));

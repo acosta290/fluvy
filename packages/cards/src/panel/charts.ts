@@ -12,6 +12,7 @@ import { head, icon, listRow } from '@fluvy/ui';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
   CHART_PRESETS,
+  fitSet,
   GAUGE_PRESETS,
   HOUSE_ACTS,
   previewChart,
@@ -19,6 +20,7 @@ import {
   previewSeries,
   previewStyle,
   seriesCheck,
+  type FittedSet,
 } from '../chart/engine/index.js';
 import { FINE_ROWS } from './chart-words.js';
 import type { PanelContext } from './model.js';
@@ -240,8 +242,8 @@ function setRow(
 }
 
 /**
- * The colours of a chart's several series: the palette's six, or one of the house's sets — chosen with one tap; an
- * administrator makes a new set (twelve at most) or changes the one chosen.
+ * The colours of a chart's several series: the palette's six, or one of the house's sets — each pictured as the mode on
+ * screen wears it, chosen with one tap; an administrator makes a new set (twelve at most) or changes the one chosen.
  */
 function seriesCard(ctx: PanelContext): TemplateResult {
   const { admin } = ctx;
@@ -260,7 +262,14 @@ function seriesCard(ctx: PanelContext): TemplateResult {
         pick(PALETTE_SERIES),
         ctx.t('charts.palette_sub'),
       )}
-      ${sets.map((set) => setRow(set.name, set.colours, chosen?.id === set.id, pick(set.id)))}
+      ${sets.map((set) =>
+        setRow(
+          set.name,
+          fitSet(set.colours, ctx.draft.palette)[ctx.mode],
+          chosen?.id === set.id,
+          pick(set.id),
+        ),
+      )}
     </div>
     ${
       // the editor open is the one way on: no second draft over it
@@ -308,27 +317,17 @@ function seriesCard(ctx: PanelContext): TemplateResult {
 }
 
 /**
- * What the tokens' gates say of a set, in words: two colours too close to tell apart (ΔE2000 under 8), and a colour
- * too faint on the card of either mode (under the icon's 3:1) — each naming the colours, so the field to change is
- * plain.
+ * What fitting leaves of a set, in words: each mode wears it fitted to its card (`fitSet`: every colour reads there), so
+ * only two colours too close to tell apart are said (ΔE2000 under 8, once fitted) — on both cards, or on the one where
+ * fitting brought them together — naming the colours as typed, so the field to change is plain.
  */
-function setWarnings(ctx: PanelContext, colours: readonly Hex[]): string[] {
-  const palette = paletteOf(ctx.draft.palette, ctx.shown.statuses);
-  const light = seriesCheck(colours, palette.light.surface.card);
-  const dark = seriesCheck(colours, palette.dark.surface.card);
-  const out: string[] = [];
-  // two colours are as close on either card: the light one's check says it once
-  for (const warning of light)
-    if (warning.kind === 'close')
-      out.push(ctx.t('charts.close', { a: colours[warning.a] ?? '', b: colours[warning.b] ?? '' }));
-  for (const [mode, warnings] of [
-    ['light', light],
-    ['dark', dark],
-  ] as const)
-    for (const warning of warnings)
-      if (warning.kind === 'faint')
-        out.push(ctx.t(`charts.faint_${mode}`, { colour: colours[warning.index] ?? '' }));
-  return out;
+function setWarnings(ctx: PanelContext, colours: readonly Hex[], fitted: FittedSet): string[] {
+  return seriesCheck(fitted).map(({ a, b, mode }) =>
+    ctx.t(mode ? `charts.close_${mode}` : 'charts.close', {
+      a: colours[a] ?? '',
+      b: colours[b] ?? '',
+    }),
+  );
 }
 
 /**
@@ -356,14 +355,15 @@ function modes(
 }
 
 /**
- * A set of series colours being made or changed: its name, its six colours (the palette's to start with), what the
- * gates say of them, how they read on a light and a dark card, and Save — the house keeps it and the charts wear it.
+ * A set of series colours being made or changed: its name, its six colours (the palette's to start with), what fitting
+ * leaves of them to say, how a light and a dark card wear them, and Save — the house keeps it and the charts wear it.
  */
 function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions): TemplateResult {
   const set = (patch: Partial<SeriesDraft>): void => ctx.setSeriesDraft({ ...draft, ...patch });
   const room = roomForSet(ctx.settings.chartSets, draft.id);
   const whole = draft.name.trim() !== '' && room;
-  const warnings = setWarnings(ctx, draft.colours);
+  const fitted = fitSet(draft.colours, ctx.draft.palette);
+  const warnings = setWarnings(ctx, draft.colours, fitted);
   const id = draft.id;
   return html`<section class="fv-card pn-card pn-editor">
     ${head({ icon: 'palette', title: ctx.t(id ? 'charts.editor_edit' : 'charts.editor_new'), sub: ctx.t('charts.editor_sub') })}
@@ -398,7 +398,7 @@ function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions)
         : html`<p class="pn-hint pn-hint--after pn-check">${ctx.t('charts.check_ok')}</p>`
     }
     ${modes(ctx, ctx.fit?.width, (mode, width) =>
-      previewSeries(draft.colours, ctx.shown.charts, { mode, width, height: 64 }),
+      previewSeries(fitted[mode], ctx.shown.charts, { mode, width, height: 64 }),
     )}
     ${room ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('charts.full')}</p>`}
     <div class="pn-pair" data-fill-row>

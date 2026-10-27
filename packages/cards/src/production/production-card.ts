@@ -23,7 +23,7 @@ import {
   styleOf,
   scrub,
   ScrubController,
-  seriesInk,
+  seriesPaint,
   type ChartSeries,
   type SeriesColour,
   type ResolvedStyle,
@@ -952,12 +952,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     >
       ${arrays.map((_a, i) => {
         const v = figures[i] ?? null;
+        // a square in its series' colour, as the columns wear it (the house's set's in the mode's), or a step of the ink
+        const paint = series ? seriesPaint(`series-${i + 1}` as SeriesColour) : undefined;
         // the Distribution's legend centres each item in its column
         return html`<span class="en-legend__item" data-align="center">
           <span class="en-legend__name"
             ><i
-              class="en-sq ${series ? '' : (RAMP[i] ?? '')}"
-              style=${series ? `background:${seriesInk(i)}` : nothing}
+              class="en-sq ${paint ? paint.className : (RAMP[i] ?? '')}"
+              style=${paint ? `${paint.style};background:var(--tone-ink)` : nothing}
             ></i
             ><span class="en-legend__text" data-name>${names[i]}</span></span
           >

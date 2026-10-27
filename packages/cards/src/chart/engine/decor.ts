@@ -83,7 +83,7 @@ export const KNOB = 16;
 /** The paint a series' marks wear: its tone's class, its ink, or the person's own colour (the card's accent sheet). */
 const painted = (paint: SeriesPaint | undefined): { className: string; style: string } => ({
   className: paint?.className ?? '',
-  style: paint?.ink ? `;--tone-ink:${paint.ink}` : '',
+  style: paint?.style ? `;${paint.style}` : '',
 });
 
 /**
@@ -142,8 +142,8 @@ export interface LegendItem {
   /** The swatch's tone, or a colour of its own as the card's accent sheet keys it. */
   readonly tone?: Tone;
   readonly accent?: string;
-  /** The ink as a CSS value where neither names it (a series colour). */
-  readonly ink?: string;
+  /** A series colour's paint (`seriesPaint`) where neither names it: the palette's, or the house's set's in each mode. */
+  readonly paint?: SeriesPaint;
   readonly value?: string;
 }
 
@@ -153,9 +153,9 @@ export const legend = (items: readonly LegendItem[]): TemplateResult =>
     ${items.map(
       (item) =>
         html`<li
-          class="fc-legend__item ${item.tone ? `fv-tone--${item.tone}` : ''}"
+          class="fc-legend__item ${item.tone ? `fv-tone--${item.tone}` : ''} ${item.paint?.className ?? ''}"
           data-accent=${item.accent ?? nothing}
-          style=${item.ink ? `--tone-ink:${item.ink}` : nothing}
+          style=${item.paint?.style ?? nothing}
         >
           <i class="fc-legend__swatch"></i
           ><span class="fc-legend__name" data-name>${item.name}</span>${

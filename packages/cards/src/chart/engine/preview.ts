@@ -166,7 +166,8 @@ export function previewChart(
 
 /**
  * A set of six series colours as a chart of several sensors draws them, in the house's line: six days, one above the
- * other on one scale, without a fill or a mark to stand between the colours and the card.
+ * other on one scale, without a fill or a mark to stand between the colours and the card — the colours as the mode
+ * wears them (`fitSet`).
  */
 export function previewSeries(
   colours: readonly Hex[],

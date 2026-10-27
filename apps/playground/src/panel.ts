@@ -24,7 +24,7 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * saved by the house (`palettes`), the wall dark with a veil on the mesh (`night`), a warning of the house's own saved
  * and a danger in its very colour waiting (`statuses`), the house's charts in the soft style (`styled`), three sets of
  * series colours kept by the house, the second worn (`sets`), a new set being made with two colours too close and one
- * too faint (`editor`). Several join with commas.
+ * too pale for a light card, which it wears deepened (`editor`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -213,7 +213,8 @@ export function mountPanel(
     }
     // a danger in the warning's very colour, not saved yet: the panel says the two are close
     if (has('statuses')) panel.houseEdit = { statuses: { warning: '#dc630b', danger: '#dc630b' } };
-    // a set being made: two blues a breath apart, and a cream that fades into a light card
+    // a set being made: two blues a breath apart (said), a cream the light card wears deepened and a purple the dark one
+    // wears lifted (fitted, nothing to say)
     if (has('editor'))
       panel.seriesDraft = {
         name: 'Dusk',

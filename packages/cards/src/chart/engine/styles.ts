@@ -4,9 +4,10 @@ import { css } from 'lit';
  * The engine's sheet: everything a chart or a gauge drawn by it is styled with, one copy for every card that draws
  * one. The classic classes keep their names (`fv-curve`, `curve-line`, `curve-area`, `curve-dot`, `curve-cursor`,
  * `curve-fill-a/b`, `fv-vbar`, `ax-grid`, `ax-tick`, `ax-unit`: the suites and the cards' own rules query them); the
- * engine's own are `fc-*`. A series' ink is the tone its group carries (`--tone-ink`), the accent where none; the
- * fills, the soft copy and the bars derive from it here, once. A card in a lazy chunk adds `chartStyles` to its
- * styles; a core card has the engine adopt it as it lands (`adopt`).
+ * engine's own are `fc-*`. A series' ink is the tone its group carries (`--tone-ink`; on `fc-set`, the mode's of the two
+ * colours a house's set carries), the accent where none; the fills, the soft copy and the bars derive from it here,
+ * once. A card in a lazy chunk adds `chartStyles` to its styles; a core card has the engine adopt it as it lands
+ * (`adopt`).
  */
 export const chartStyles = css`
   /* ---------- the classic curve (1.0): its line, its fill, its cursor and its dot ---------- */
@@ -56,6 +57,14 @@ export const chartStyles = css`
   :host([dark]) .fc-chart,
   [data-mode='dark'] .fc-chart {
     --fc-boost: 0.06;
+  }
+  /* a colour of the house's own set carries itself fitted to the light card and the dark one: it wears the mode's */
+  .fc-set {
+    --tone-ink: var(--fc-light);
+  }
+  :host([dark]) .fc-set,
+  [data-mode='dark'] .fc-set {
+    --tone-ink: var(--fc-dark);
   }
   .fc-line {
     fill: none;
