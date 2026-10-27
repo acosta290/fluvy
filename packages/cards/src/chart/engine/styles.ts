@@ -345,6 +345,442 @@ export const chartStyles = css`
     line-height: 28px;
   }
 
+  /* ---------- the moving gauges: a scene in the gauge's room, its reading by rule ---------- */
+  .fc-scene {
+    position: relative;
+    flex: none;
+  }
+  .fc-scene svg {
+    display: block;
+  }
+  .fc-scene--box {
+    overflow: hidden;
+    border-radius: var(--fluvy-radius-lg, 16px);
+  }
+  .fc-scene--box > svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .fc-scene--small.fc-scene--box,
+  .fc-scene--small .fc-air__band {
+    border-radius: var(--fluvy-radius-control, 12px);
+  }
+  /* a mark over its reading, centred */
+  .fc-scene--mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* the reading: the figure (its value bold, its unit after it in the secondary ink), a word under it */
+  .fc-reading {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .fc-scene--box > .fc-reading {
+    position: absolute;
+  }
+  .fc-reading--under {
+    align-items: center;
+    text-align: center;
+  }
+  .fc-reading__figure {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 36px;
+    color: var(--fluvy-text-secondary);
+  }
+  .fc-reading__figure b {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fluvy-text);
+  }
+  .fc-reading__word {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--fluvy-text-secondary);
+  }
+  .fc-reading--m .fc-reading__figure {
+    font-size: 13px;
+    line-height: 28px;
+  }
+  .fc-reading--m b {
+    font-size: 24px;
+  }
+  .fc-reading--s .fc-reading__figure {
+    font-size: 12px;
+    line-height: 24px;
+  }
+  .fc-reading--s b {
+    font-size: 20px;
+  }
+  .fc-reading--m .fc-reading__word,
+  .fc-reading--s .fc-reading__word {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  /* in the water: the card's colour over the ink */
+  .fc-reading.is-wet b {
+    color: var(--fluvy-card);
+  }
+  .fc-reading.is-wet .fc-reading__figure,
+  .fc-reading.is-wet .fc-reading__word {
+    color: color-mix(in srgb, var(--fluvy-card) 80%, transparent);
+  }
+
+  /* the liquid and the tank: the tone's fill, two waves of its ink, light bubbles in both modes */
+  .fc-water {
+    background: var(--tone-fill, var(--fluvy-accent-fill));
+  }
+  /* without a reading, an empty box (and an air without wind) in the grey the sky has then: its room kept, out of reach
+     too, where the card is the page's */
+  .fc-water.fv-tone--neutral,
+  .fv-tone--neutral .fc-air__band,
+  .fc-sky {
+    background: color-mix(
+      in srgb,
+      var(--fc-sky, var(--fluvy-text-disabled)) 11%,
+      var(--fluvy-card)
+    );
+  }
+  .fc-water__back,
+  .fc-water__front,
+  .fc-battery__charge {
+    fill: var(--tone-ink, var(--fluvy-accent));
+  }
+  .fc-water__back {
+    fill-opacity: 0.9;
+  }
+  .fc-water__front {
+    fill-opacity: 0.5;
+  }
+  .fc-water--tank .fc-water__back {
+    fill-opacity: 0.45;
+  }
+  .fc-water--tank .fc-water__front {
+    fill-opacity: 0.85;
+  }
+
+  /* the sky, tinted by the comfort's tone: cold the fifth series colour, mild the accent, warm the warning, extreme
+     the danger (stronger) */
+  .fc-sky {
+    --fc-sky: var(--fluvy-graph-5);
+  }
+  .fc-sky--mild {
+    --fc-sky: var(--fluvy-accent);
+  }
+  .fc-sky--warm {
+    --fc-sky: var(--fluvy-warning);
+  }
+  .fc-sky--extreme {
+    --fc-sky: var(--fluvy-danger);
+    background: color-mix(in srgb, var(--fc-sky) 16%, var(--fluvy-card));
+  }
+  .fc-sky--none {
+    --fc-sky: var(--fluvy-text-disabled);
+  }
+  .fc-snow line {
+    stroke: var(--fc-sky);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+  }
+  .fc-sky__drift,
+  .fc-sky__cloud {
+    fill: color-mix(in srgb, #fff 60%, var(--fluvy-card));
+  }
+  .fc-sky__edge {
+    fill: none;
+    stroke: var(--fc-sky);
+    stroke-opacity: 0.35;
+    stroke-width: 1.5;
+  }
+  .fc-sky__cloud {
+    stroke: var(--fc-sky);
+    stroke-opacity: 0.25;
+    stroke-width: 1.25;
+    stroke-linejoin: round;
+  }
+  .fc-sky__hill {
+    fill: var(--fluvy-graph-4);
+    fill-opacity: 0.45;
+  }
+  .fc-sky__ground {
+    fill: var(--fluvy-warning);
+    fill-opacity: 0.4;
+  }
+  .fc-sky__ground--dunes {
+    fill-opacity: 0.55;
+  }
+  .fc-sky__plain {
+    fill: var(--fluvy-border);
+  }
+  .fc-sky__cactus {
+    fill: none;
+    stroke: var(--fluvy-success);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* Fluvy's sun, outlined */
+  .fc-sky__halo {
+    fill: var(--fluvy-state-energy-solar-fill);
+  }
+  .fc-sky__rays line {
+    stroke: var(--fluvy-state-energy-solar);
+    stroke-linecap: round;
+  }
+  .fc-sky__sun {
+    fill: var(--fluvy-state-energy-solar-fill);
+    stroke: var(--fluvy-state-energy-solar);
+  }
+
+  /* the battery: its outline in the strong border on the page, its charge in the tone */
+  .fc-battery__shape {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .fc-battery__nub {
+    width: 36%;
+    margin-bottom: -2px;
+    border-radius: 2.5px 2.5px 0 0;
+    background: var(--fluvy-border-strong);
+  }
+  .fc-battery__body {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    border: 2.5px solid var(--fluvy-border-strong);
+    background: var(--fluvy-page);
+  }
+  .fc-battery__well {
+    position: absolute;
+    inset: 4px;
+    overflow: hidden;
+  }
+  .fc-battery__bolt {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    overflow: visible;
+    transform: translate(-50%, -50%);
+  }
+
+  /* the pulse and the sun: a disc in the tone, its halo, its rings (below) or its rays */
+  .fc-pulse__halo,
+  .fc-pulse__disc,
+  .fc-sun__glow,
+  .fc-sun__core {
+    fill: var(--tone-ink, var(--fluvy-accent));
+  }
+  .fc-pulse__bolt {
+    fill: var(--fluvy-card);
+  }
+  .fc-sun__rays line {
+    stroke: var(--tone-ink, var(--fluvy-accent));
+    stroke-linecap: round;
+  }
+
+  /* the air: streamlines in the tone over a band of the page */
+  .fc-air__band {
+    overflow: hidden;
+    border-radius: var(--fluvy-radius-lg, 16px);
+    background: var(--fluvy-page);
+  }
+  .fc-air__line {
+    fill: none;
+    stroke: var(--tone-ink, var(--fluvy-accent));
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  /* the motion, one keyframe set: transform, opacity and the dash offset only. What exists only moving (a bubble,
+     light in both modes; a ring; a flake) starts unseen, so a gauge at rest has none */
+  .fc-wave {
+    animation: fc-wave var(--d, 9s) linear infinite;
+  }
+  .fc-bubble {
+    fill: rgb(255 255 255 / 0.75);
+    opacity: 0;
+    transform-box: fill-box;
+    animation: fc-bubble var(--d, 3s) ease-in var(--delay, 0s) infinite;
+  }
+  .fc-ring {
+    fill: none;
+    stroke: var(--tone-ink, var(--fluvy-accent));
+    stroke-width: 2;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fc-pulse var(--d, 2s) cubic-bezier(0.2, 0.6, 0.3, 1) var(--delay, 0s) infinite;
+  }
+  .fc-dash {
+    animation: fc-dash var(--d, 3s) linear infinite;
+  }
+  .fc-spin {
+    transform-box: view-box;
+    animation: fc-spin var(--d, 30s) linear infinite;
+  }
+  .fc-breath {
+    opacity: var(--o1, 0.2);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fc-breath var(--d, 4s) ease-in-out infinite;
+  }
+  .fc-snow {
+    opacity: 0;
+    animation: fc-snow var(--d, 5s) linear var(--delay, 0s) infinite;
+  }
+  .fc-drift {
+    animation: fc-drift var(--d, 24s) linear infinite;
+  }
+  /* the haze: short wavy strokes in the sky's tone, rising off the ground */
+  .fc-haze {
+    fill: none;
+    stroke: var(--fc-sky);
+    stroke-opacity: 0.55;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    animation: fc-haze var(--d, 3s) ease-in-out var(--delay, 0s) infinite;
+  }
+  /* the battery's bolt, glowing while it charges */
+  .fc-bolt {
+    fill: var(--fluvy-card);
+    stroke: var(--tone-ink, var(--fluvy-accent));
+    stroke-width: 1;
+    stroke-linejoin: round;
+    animation: fc-glow 1.6s ease-in-out infinite;
+  }
+  @keyframes fc-wave {
+    to {
+      transform: translateX(var(--shift, -50%));
+    }
+  }
+  @keyframes fc-bubble {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    12% {
+      opacity: 0.85;
+    }
+    85% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: translateY(var(--rise, -60px));
+      opacity: 0;
+    }
+  }
+  @keyframes fc-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(var(--k, 2.2));
+      opacity: 0;
+    }
+  }
+  @keyframes fc-dash {
+    to {
+      stroke-dashoffset: var(--loop, -240px);
+    }
+  }
+  @keyframes fc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes fc-breath {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: var(--o1, 0.2);
+    }
+    50% {
+      transform: scale(1.12);
+      opacity: var(--o2, 0.35);
+    }
+  }
+  @keyframes fc-snow {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.85;
+    }
+    50% {
+      transform: translate(var(--sway, 6px), calc(var(--fall, 60px) * 0.5));
+    }
+    90% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(0, var(--fall, 60px));
+      opacity: 0;
+    }
+  }
+  @keyframes fc-drift {
+    0% {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(var(--span, 300px));
+      opacity: 0;
+    }
+  }
+  @keyframes fc-haze {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(var(--rise, -14px));
+      opacity: 0;
+    }
+  }
+  @keyframes fc-glow {
+    0%,
+    100% {
+      opacity: 0.95;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+  /* a gauge told not to move, or a system (or the house) that asks for less: its first frame — the waves, the rays
+     and the cloud where they start, what exists only moving gone */
+  .fc-scene.is-still * {
+    animation: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fc-scene * {
+      animation: none !important;
+    }
+  }
+  :host([reduced-motion]) .fc-scene * {
+    animation: none !important;
+  }
+
   /* a chart told not to move: its resting frame at once, whatever the system says of motion */
   .fc-chart.is-still,
   .fc-chart.is-still *,

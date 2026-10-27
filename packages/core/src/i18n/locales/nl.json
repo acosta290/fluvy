@@ -1757,7 +1757,14 @@
     "both_axes": "Beide",
     "min_max": "Laagste en hoogste",
     "current": "De huidige",
-    "ticks": "Streepjes"
+    "ticks": "Streepjes",
+    "liquid": "Vloeistof",
+    "thermo": "Hemel",
+    "tank": "Tank",
+    "battery": "Batterij",
+    "pulse": "Puls",
+    "air": "Lucht",
+    "sun": "Zon"
   },
   "tone": {
     "accent": "Accent",
@@ -2442,5 +2449,18 @@
     "departure": "Vertrek",
     "arrival": "Aankomst",
     "open": "Openen op Flightradar24"
+  },
+  "chart": {
+    "gauge.cold": "Koud",
+    "gauge.cool": "Fris",
+    "gauge.comfortable": "Comfortabel",
+    "gauge.warm": "Warm",
+    "gauge.hot": "Heet",
+    "gauge.extreme": "Extreme hitte",
+    "gauge.calm": "Windstil",
+    "gauge.breeze": "Bries",
+    "gauge.strong": "Harde wind",
+    "gauge.charging": "Laadt op",
+    "gauge.filling": "Vult zich"
   }
 }

@@ -866,7 +866,14 @@
     "both_axes": "Both",
     "min_max": "Lowest and highest",
     "current": "The current one",
-    "ticks": "Ticks"
+    "ticks": "Ticks",
+    "liquid": "Liquid",
+    "thermo": "Sky",
+    "tank": "Tank",
+    "battery": "Battery",
+    "pulse": "Pulse",
+    "air": "Air",
+    "sun": "Sun"
   },
   "tone": {
     "accent": "Accent",

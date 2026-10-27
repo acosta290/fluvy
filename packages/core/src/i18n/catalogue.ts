@@ -3,6 +3,7 @@ import type activity from './locales/en/activity.json';
 import type alerts from './locales/en/alerts.json';
 import type appliances from './locales/en/appliances.json';
 import type automations from './locales/en/automations.json';
+import type chart from './locales/en/chart.json';
 import type devices from './locales/en/devices.json';
 import type energy from './locales/en/energy.json';
 import type energyPeriod from './locales/en/energy-period.json';
@@ -26,6 +27,7 @@ export type Catalogue = typeof core &
   typeof alerts &
   typeof appliances &
   typeof automations &
+  typeof chart &
   typeof devices &
   typeof energy &
   typeof energyPeriod &

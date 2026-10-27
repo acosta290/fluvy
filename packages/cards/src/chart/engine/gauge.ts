@@ -1,17 +1,19 @@
+import type { HomeAssistant } from '@fluvy/core';
 import { html, nothing, svg, type TemplateResult } from 'lit';
-import type { ResolvedGauge } from './presets.js';
+import { GAUGE_PRESETS, type Reads, type ResolvedGauge } from './presets.js';
 import { arcDash, knobAt } from './ring.js';
+import { drawScene } from './scenes.js';
 
 /**
- * The gauges (the owner's call, 2026-10-26: no circles of the engine's own): every one is Fluvy's controls read-only.
+ * The gauges (the owner's call, 2026-10-26: no circles of the engine's own): the still ones are Fluvy's controls read.
  * `ticks` is the gauge card's ring since 1.0 (`<fluvy-dial gauge>`: 54 ticks over 270° lit to the value, the figure
  * in its opening); `dial` the thermostat's dial read (`<fluvy-dial readonly>`: the ticks, its disc with the reading,
  * its knob on the value — in a tile a knob its ring can carry, touching the disc's rim as the thermostat's does);
  * `ring` a ring of the border lit to the value in the tone, Fluvy's knob at its end and the reading in its middle;
  * `ruler` the ruler read (`<fluvy-ruler readonly>`, lit to the value, its knob whole). Every knob is the
- * thermostat's ball, its dot and its lift on its halo. The
- * animated gauges come in a later block through the same door: a style in `GAUGE_PRESETS` that says it moves, drawn
- * still on its first frame when the house or the card says `animate: false` or the system asks for less motion.
+ * thermostat's ball, its dot and its lift on its halo. The gauges that move with what they read (`GAUGE_PRESETS` says
+ * which) are scenes in the gauge's room (`scenes.ts`), still on their first frame when the house or the card says
+ * `animate: false` or the system asks for less motion.
  */
 
 const px = (n: number): string => n.toFixed(2);
@@ -34,8 +36,18 @@ export interface GaugeOptions {
   readonly maxLabel?: string;
   /** The tone the gauge is lit in. */
   readonly tone: string;
-  /** A tile's drawing: the small dial, a thinner ring. */
+  /** A tile's drawing: the small dial, a thinner ring, a moving gauge's smaller type. */
   readonly small?: boolean;
+  /** A moving gauge's room is `size` wide and this tall (none: square). */
+  readonly height?: number;
+  /** What the sensor reads: its device class and the unit `value` is in (a °F, a W, an m/s a moving gauge reads). */
+  readonly reads?: Reads;
+  /** How fast the reading moves, in its unit an hour (the card's last hour): a tank filling, a battery charging. */
+  readonly rise?: number | null | undefined;
+  /** The house, for the words a moving gauge says (the comfort, the wind) in its language. */
+  readonly hass?: HomeAssistant | undefined;
+  /** The drawing alone, the reading written elsewhere by the card (the humidity's liquid, under its figure). */
+  readonly bare?: boolean;
 }
 
 /** The value's share of the range, 0 … 1; null when there is none to light. */
@@ -140,8 +152,12 @@ function ruler(o: GaugeOptions): TemplateResult {
   ></fluvy-ruler>`;
 }
 
-/** A gauge in its style, `size` wide: a dial's or a ring's box (the reading inside it), or a ruler's length. */
+/**
+ * A gauge in its style, `size` wide: a dial's or a ring's box (the reading inside it), a ruler's length, or a moving
+ * gauge's room (`height` tall).
+ */
 export function drawGauge(o: GaugeOptions): TemplateResult {
+  if (GAUGE_PRESETS[o.style.preset].motion) return drawScene(o);
   switch (o.style.preset) {
     case 'dial':
       return dial(o, true);

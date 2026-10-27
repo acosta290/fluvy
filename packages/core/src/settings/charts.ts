@@ -21,11 +21,26 @@ export const CHART_PRESET_NAMES = [
 export type ChartPreset = (typeof CHART_PRESET_NAMES)[number];
 
 /**
- * The named styles a gauge may be drawn in, each one of Fluvy's own controls read-only: the dial's ticks (`ticks`, the
- * gauge card's ring since 1.0), the thermostat's dial with its disc and its knob (`dial`), a ring lit to the value with
- * the knob at its end (`ring`), the ruler with its marker (`ruler`). The animated gauges come in a later block.
+ * The named styles a gauge may be drawn in: Fluvy's own controls read-only — the dial's ticks (`ticks`, the gauge
+ * card's ring since 1.0), the thermostat's dial with its disc and its knob (`dial`), a ring lit to the value with the
+ * knob at its end (`ring`), the ruler with its marker (`ruler`) — and the gauges that move with what they read, each
+ * where it reads the sensor: a liquid (`liquid`, a percentage), the sky over the ground (`thermo`, a temperature), a
+ * tank (`tank`, a level or a volume), a battery (`battery`), a pulse (`pulse`, power), the air (`air`, wind) and the
+ * sun (`sun`, what the sun gives).
  */
-export const GAUGE_PRESET_NAMES = ['ticks', 'dial', 'ring', 'ruler'] as const;
+export const GAUGE_PRESET_NAMES = [
+  'ticks',
+  'dial',
+  'ring',
+  'ruler',
+  'liquid',
+  'thermo',
+  'tank',
+  'battery',
+  'pulse',
+  'air',
+  'sun',
+] as const;
 export type GaugePreset = (typeof GAUGE_PRESET_NAMES)[number];
 
 export const CHART_LINES = ['thin', 'regular', 'bold'] as const;
@@ -66,7 +81,7 @@ export interface ChartSettings {
   readonly caps: BarCaps;
   /** Now, where the past meets the forecast: Fluvy's knob on the line (one ball with the line's end), or a hairline. */
   readonly now: NowMarker;
-  /** How tall the liquid gauges' waves are (4, 7 or 10 px): the animated gauges' own. */
+  /** How tall the waves of the gauges that hold a liquid are (4, 7 or 10 px): the moving gauges' own. */
   readonly wave: WaveHeight;
   /** The value's bubble: dark (the text's ink, as 1.0 drew it) or in the series' tone. */
   readonly bubble: BubbleLook;

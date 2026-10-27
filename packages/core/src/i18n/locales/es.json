@@ -1757,7 +1757,14 @@
     "both_axes": "Ambas",
     "min_max": "El mínimo y el máximo",
     "current": "El actual",
-    "ticks": "Marcas"
+    "ticks": "Marcas",
+    "liquid": "Líquido",
+    "thermo": "Cielo",
+    "tank": "Depósito",
+    "battery": "Batería",
+    "pulse": "Pulso",
+    "air": "Aire",
+    "sun": "Sol"
   },
   "tone": {
     "accent": "Acento",
@@ -2442,5 +2449,18 @@
     "departure": "Salida",
     "arrival": "Llegada",
     "open": "Abrir en Flightradar24"
+  },
+  "chart": {
+    "gauge.cold": "Frío",
+    "gauge.cool": "Fresco",
+    "gauge.comfortable": "Confort",
+    "gauge.warm": "Cálido",
+    "gauge.hot": "Calor",
+    "gauge.extreme": "Calor extremo",
+    "gauge.calm": "Calma",
+    "gauge.breeze": "Brisa",
+    "gauge.strong": "Viento fuerte",
+    "gauge.charging": "Cargando",
+    "gauge.filling": "Llenándose"
   }
 }

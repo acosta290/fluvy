@@ -866,7 +866,14 @@
     "both_axes": "両方",
     "min_max": "最小と最大",
     "current": "現在値",
-    "ticks": "目盛り"
+    "ticks": "目盛り",
+    "liquid": "液体",
+    "thermo": "空",
+    "tank": "タンク",
+    "battery": "バッテリー",
+    "pulse": "パルス",
+    "air": "風",
+    "sun": "太陽"
   },
   "tone": {
     "accent": "アクセント",
@@ -2442,5 +2449,18 @@
     "departure": "出発",
     "arrival": "到着",
     "open": "Flightradar24で開く"
+  },
+  "chart": {
+    "gauge.cold": "寒い",
+    "gauge.cool": "涼しい",
+    "gauge.comfortable": "快適",
+    "gauge.warm": "暖かい",
+    "gauge.hot": "暑い",
+    "gauge.extreme": "猛暑",
+    "gauge.calm": "無風",
+    "gauge.breeze": "そよ風",
+    "gauge.strong": "強風",
+    "gauge.charging": "充電中",
+    "gauge.filling": "給水中"
   }
 }

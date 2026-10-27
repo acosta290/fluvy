@@ -165,11 +165,23 @@ describe('the house’s settings each style draws with', () => {
 });
 
 describe('a card’s gauge style', () => {
-  it('is the card’s own › the house’s (ticks from the factory), each one of Fluvy’s controls, none moving yet', () => {
+  it('is the card’s own › the house’s (ticks from the factory): Fluvy’s controls, and the gauges that move', () => {
     expect(resolveGauge(undefined, {}).preset).toBe('ticks');
     expect(resolveGauge(undefined, {}, house({ gauge: 'ring' })).preset).toBe('ring');
     expect(resolveGauge('dial', {}, house({ gauge: 'ring' })).preset).toBe('dial');
-    expect(Object.keys(GAUGE_PRESETS)).toEqual(['ticks', 'dial', 'ring', 'ruler']);
+    expect(Object.keys(GAUGE_PRESETS)).toEqual([
+      'ticks',
+      'dial',
+      'ring',
+      'ruler',
+      'liquid',
+      'thermo',
+      'tank',
+      'battery',
+      'pulse',
+      'air',
+      'sun',
+    ]);
     expect(resolveGauge('ruler', { animate: true }).animate).toBe(false);
     expect(resolveGauge(undefined, {}, house({ wave: 'high' })).wave).toBe(10);
   });

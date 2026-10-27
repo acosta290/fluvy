@@ -1,0 +1,15 @@
+{
+  "chart": {
+    "gauge.cold": "Cold",
+    "gauge.cool": "Cool",
+    "gauge.comfortable": "Comfortable",
+    "gauge.warm": "Warm",
+    "gauge.hot": "Hot",
+    "gauge.extreme": "Extreme heat",
+    "gauge.calm": "Calm",
+    "gauge.breeze": "Breeze",
+    "gauge.strong": "Strong wind",
+    "gauge.charging": "Charging",
+    "gauge.filling": "Filling"
+  }
+}

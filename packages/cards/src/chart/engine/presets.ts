@@ -1,4 +1,5 @@
 import { chartDefaults, type ChartPreset, type ChartSettings, type GaugePreset } from '@fluvy/core';
+import type { Tone } from '@fluvy/ui';
 import {
   type ChartCaps,
   type ChartKeys,
@@ -249,14 +250,31 @@ export function acts(key: FineKey, preset: ChartPreset, caps: ChartCaps): boolea
 /** The styles drawn as bars: a value per slot, never a line. */
 export const isBars = (preset: ChartPreset): boolean => preset === 'bars' || preset === 'columns';
 
+/** What a sensor's readings are, as a gauge asks: its device class (Home Assistant's) and the unit its value is in. */
+export interface Reads {
+  readonly deviceClass?: string | undefined;
+  readonly unit?: string | undefined;
+}
+
+/** A sensor of one of these device classes, or one whose value comes in one of these units. */
+const of =
+  (classes: readonly string[], units: readonly string[] = []) =>
+  (reads: Reads): boolean =>
+    classes.includes(reads.deviceClass ?? '') || units.includes(reads.unit ?? '');
+
 /**
- * A gauge style, each one of Fluvy's own controls read-only: the dial's ticks (`<fluvy-dial gauge>`, 54 over 270°
- * lit to the value), the thermostat's dial with its disc and its knob (`<fluvy-dial readonly>`), a ring lit to the
- * value with the knob at its end, the ruler with its marker (`<fluvy-ruler marker>`). `motion` says whether a gauge
- * moves: none of these does; the animated gauges, a later block, come in through the same door, each saying so here.
+ * A gauge style. Fluvy's own controls read-only — the dial's ticks (`<fluvy-dial gauge>`, 54 over 270° lit to the
+ * value), the thermostat's dial with its disc and its knob (`<fluvy-dial readonly>`), a ring lit to the value with the
+ * knob at its end, the ruler with its marker (`<fluvy-ruler marker>`) — read anything. The gauges that move with what
+ * they read (`motion`, drawn in `scenes.ts`) each read one kind of sensor (`reads`): the liquid a percentage (a
+ * humidity, a moisture), the sky over the ground a temperature, the tank a volume or a level, the battery its charge,
+ * the pulse power, the air the wind (or a ventilation's flow), the sun what the sun gives (power, irradiance).
  */
 export interface GaugeSpec {
   readonly motion: boolean;
+  readonly reads?: (reads: Reads) => boolean;
+  /** The tone a moving gauge wears where its card names none (the sky's is the comfort's, whatever the card says). */
+  readonly tone?: Tone;
 }
 
 export const GAUGE_PRESETS: Readonly<Record<GaugePreset, GaugeSpec>> = {
@@ -264,7 +282,32 @@ export const GAUGE_PRESETS: Readonly<Record<GaugePreset, GaugeSpec>> = {
   dial: { motion: false },
   ring: { motion: false },
   ruler: { motion: false },
+  liquid: { motion: true, reads: of(['humidity', 'moisture'], ['%']), tone: 'water' },
+  thermo: { motion: true, reads: of(['temperature'], ['°C', '°F', 'K']) },
+  tank: {
+    motion: true,
+    reads: of(['volume', 'volume_storage', 'water', 'distance'], ['L', 'm³', 'gal', 'ft³']),
+    tone: 'water',
+  },
+  battery: { motion: true, reads: of(['battery']), tone: 'battery' },
+  pulse: { motion: true, reads: of(['power'], ['W']), tone: 'accent' },
+  air: {
+    motion: true,
+    reads: of(['wind_speed', 'speed', 'volume_flow_rate'], ['km/h', 'm/s']),
+    tone: 'cool',
+  },
+  sun: { motion: true, reads: of(['power', 'irradiance'], ['W', 'W/m²']), tone: 'solar' },
 };
+
+/** Whether a gauge style draws a sensor's readings: every control does; a moving gauge, the ones it reads. */
+export const gaugeReads = (preset: GaugePreset, reads: Reads): boolean =>
+  GAUGE_PRESETS[preset].reads?.(reads) ?? true;
+
+/** The moving gauges that read a sensor, in the settings' order: what an editor offers beside a card's controls. */
+export const movingFor = (reads: Reads): GaugePreset[] =>
+  (Object.keys(GAUGE_PRESETS) as GaugePreset[]).filter(
+    (preset) => GAUGE_PRESETS[preset].motion && gaugeReads(preset, reads),
+  );
 
 /** The line widths in px: the house's `regular` is 2.5; a thin style draws one step thinner, never under 1.5. */
 const LINE_PX = { thin: 1.5, regular: 2.5, bold: 3 } as const;
@@ -377,24 +420,32 @@ export const styleOf = (
 
 export interface ResolvedGauge {
   readonly preset: GaugePreset;
-  /** The liquid gauges' wave height in px (the animated gauges' own). */
+  /** How high the waves of a gauge that holds a liquid rise, in px (the moving gauges' own). */
   readonly wave: number;
   /** Whether the gauge moves: the card's (or the house's) `animate`, and a style that has motion to show. */
   readonly animate: boolean;
+  /** The tone a moving gauge wears where its card names none. */
+  readonly tone?: Tone;
 }
 
 const WAVE_PX = { low: 4, mid: 7, high: 10 } as const;
 
-/** A card's gauge style, resolved as a chart's is: its own key, the house's settings, the style's defaults. */
+/**
+ * A card's gauge style, resolved as a chart's is: its own key, the house's settings, the style's defaults. Told what
+ * the card's sensor reads, a moving gauge that does not read it (the sky for a power) is the card's ticks.
+ */
 export function resolveGauge(
   preset: GaugePreset | undefined,
-  fine: { readonly animate?: boolean },
+  fine: { readonly animate?: boolean | undefined },
   house: ChartSettings = chartDefaults().settings,
+  reads?: Reads,
 ): ResolvedGauge {
-  const name = preset ?? house.gauge;
+  const wanted = preset ?? house.gauge;
+  const name = !reads || gaugeReads(wanted, reads) ? wanted : 'ticks';
   return {
     preset: name,
     wave: WAVE_PX[house.wave],
     animate: (fine.animate ?? house.animate) && GAUGE_PRESETS[name].motion,
+    ...(GAUGE_PRESETS[name].tone ? { tone: GAUGE_PRESETS[name].tone } : {}),
   };
 }

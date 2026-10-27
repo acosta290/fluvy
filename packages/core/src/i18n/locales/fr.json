@@ -1757,7 +1757,14 @@
     "both_axes": "Les deux",
     "min_max": "Le plus bas et le plus haut",
     "current": "L’actuel",
-    "ticks": "Graduations"
+    "ticks": "Graduations",
+    "liquid": "Liquide",
+    "thermo": "Ciel",
+    "tank": "Réservoir",
+    "battery": "Batterie",
+    "pulse": "Pulsation",
+    "air": "Air",
+    "sun": "Soleil"
   },
   "tone": {
     "accent": "Accent",
@@ -2442,5 +2449,18 @@
     "departure": "Départ",
     "arrival": "Arrivée",
     "open": "Ouvrir sur Flightradar24"
+  },
+  "chart": {
+    "gauge.cold": "Froid",
+    "gauge.cool": "Frais",
+    "gauge.comfortable": "Confortable",
+    "gauge.warm": "Chaud",
+    "gauge.hot": "Très chaud",
+    "gauge.extreme": "Chaleur extrême",
+    "gauge.calm": "Calme",
+    "gauge.breeze": "Brise",
+    "gauge.strong": "Vent fort",
+    "gauge.charging": "En charge",
+    "gauge.filling": "Remplissage"
   }
 }

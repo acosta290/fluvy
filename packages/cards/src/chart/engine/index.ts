@@ -22,7 +22,9 @@
  *   drawRead(spec, read, rest, family?)       a chart and its bubble: what it reads at its cursor, else what has
  *                                             happened ends on where the style labels it, placed by the style
  *   drawGauge(o)                              a gauge in its style (`gauge.ts`): Fluvy's controls read-only — ticks,
- *                                             dial, ring, ruler
+ *                                             dial, ring, ruler — or a gauge that moves with what it reads
+ *                                             (`scenes.ts`: liquid, thermo, tank, battery, pulse, air, sun), in its
+ *                                             room; `movingFor(reads)` the ones that read a sensor
  *   ScrubController · scrub(controller)       reading a chart by pointing at it (`scrub.ts`): one owner for every
  *                                             chart that scrubs, the keys that read it without a pointer
  *   chartSection(caps, capsOf?) · chartDefaultsFor(config, caps) · chartKeysFor(caps) · gaugeField(options)
@@ -44,6 +46,8 @@
  * The 1.10 geometry is kept byte for byte (`classic.test.ts` against `__fixtures__/classic-1.10.json`): a card that
  * says `chart: classic`, and every card until the house chooses another style, draws exactly what it drew.
  */
+import '../english.js';
+
 export type { ChartPoint, ChartSeries, Curve, SeriesColour, Window } from './model.js';
 export { bucket, evenly, readingsOf, sampleAt, type BucketRule, type Readings } from './model.js';
 export {
@@ -119,8 +123,10 @@ export {
   CHART_PRESETS,
   chartKeysOf,
   GAUGE_PRESETS,
+  gaugeReads,
   HOUSE_ACTS,
   isBars,
+  movingFor,
   presetsFor,
   resolveGauge,
   resolveStyle,
@@ -128,6 +134,7 @@ export {
   type GaugeSpec,
   type HouseKey,
   type PresetSpec,
+  type Reads,
   type ResolvedGauge,
   type ResolvedStyle,
 } from './presets.js';

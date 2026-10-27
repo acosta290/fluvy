@@ -1757,7 +1757,14 @@
     "both_axes": "İkisi de",
     "min_max": "En düşük ve en yüksek",
     "current": "Şimdiki",
-    "ticks": "Çentikler"
+    "ticks": "Çentikler",
+    "liquid": "Sıvı",
+    "thermo": "Gökyüzü",
+    "tank": "Depo",
+    "battery": "Batarya",
+    "pulse": "Nabız",
+    "air": "Hava",
+    "sun": "Güneş"
   },
   "tone": {
     "accent": "Vurgu",
@@ -2442,5 +2449,18 @@
     "departure": "Kalkış",
     "arrival": "Varış",
     "open": "Flightradar24’te aç"
+  },
+  "chart": {
+    "gauge.cold": "Soğuk",
+    "gauge.cool": "Serin",
+    "gauge.comfortable": "Rahat",
+    "gauge.warm": "Ilık",
+    "gauge.hot": "Sıcak",
+    "gauge.extreme": "Aşırı sıcak",
+    "gauge.calm": "Durgun",
+    "gauge.breeze": "Esinti",
+    "gauge.strong": "Kuvvetli rüzgâr",
+    "gauge.charging": "Şarj oluyor",
+    "gauge.filling": "Doluyor"
   }
 }
