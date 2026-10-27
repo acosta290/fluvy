@@ -144,6 +144,18 @@ describe('the sensor’s chart, drawn by the engine', () => {
     expect(Number(root.querySelector('.fc-tick')?.textContent)).toBe(0);
   });
 
+  it('draws its scale in the unit the card asks, as its figures read', async () => {
+    const kwh = await mount({ entity: 'sensor.meter', chart: 'bars' });
+    const wh = await mount({ entity: 'sensor.meter', chart: 'bars', unit: 'Wh' });
+    const top = (card: FluvySensorCard): number =>
+      Math.max(
+        ...[...card.shadowRoot!.querySelectorAll('.fc-tick')].map((t) =>
+          Number(t.textContent?.replace(/,/g, '')),
+        ),
+      );
+    expect(top(wh)).toBe(top(kwh) * 1000);
+  });
+
   it('draws no bars for a temperature, whose readings do not add up: its style is drawn classic', async () => {
     const card = await mount({ chart: 'bars' });
     expect(card.shadowRoot!.querySelectorAll('.am-chart .fc-bar').length).toBe(0);

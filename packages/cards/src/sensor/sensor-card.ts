@@ -666,6 +666,12 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
    * no decimals and no unit of the sensor's class — the decimals its reading is written with, so a statistic or a
    * moment under the finger keeps the reading's width.
    */
+  /** What the sensor's readings are divided by to read in the unit the card asks (1 where it asks none of their class). */
+  private divisor(view: EntityView): number {
+    const asked = this.config?.unit;
+    return (typeof asked === 'string' ? scaleNamed(asked, view.unit)?.divisor : undefined) ?? 1;
+  }
+
   private parts(view: EntityView, value: number | null, digits?: number): ValueParts {
     const asked = this.config;
     const named =
@@ -913,11 +919,15 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const read = engine && spec && fraction !== null ? engine.readAt(spec, fraction) : null;
     const bars = spec?.series[0]?.values ?? [];
     const slotted = spec !== null && engine !== undefined && engine.isBars(spec.style.preset);
+    // a bar is drawn in the unit the card asks: its reading is brought back to the sensor's own, as every figure is
+    const bar = read ? bars[read.index] : undefined;
     const point =
       !engine || !read
         ? null
         : slotted
-          ? (bars[read.index] ?? null)
+          ? bar === undefined || bar === null
+            ? null
+            : bar * this.divisor(view)
           : engine.sampleAt(values, fraction as number);
     const at =
       point === null || read === null
@@ -978,9 +988,12 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   ): ChartSpec {
     const readings = engine.readingsOf(view.deviceClass, view.attr('state_class'), view.unit);
     const base = this.chartBase(engine, { axis: true, bars: readings.bars });
+    // in the unit the card asks (its scale reads kW where its figures do), the curve's shape the same
+    const divisor = this.divisor(view);
+    const shown = divisor === 1 ? values : values.map((v) => v / divisor);
     const drawn = engine.isBars(base.style.preset)
-      ? engine.bucket(values, Math.min(MAX_BARS, Math.max(1, Math.round(hours))), readings.rule)
-      : values;
+      ? engine.bucket(shown, Math.min(MAX_BARS, Math.max(1, Math.round(hours))), readings.rule)
+      : shown;
     return {
       ...base,
       frame: { width, height: CHART_HEIGHT, headroom: HEADROOM },
