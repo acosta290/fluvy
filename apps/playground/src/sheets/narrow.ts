@@ -6,6 +6,7 @@ import { sheet as security } from './devices-security.js';
 import { sheet as rooms } from './rooms.js';
 import { sheet as slider } from './slider.js';
 import { sheet as solar } from './solar.js';
+import { sheet as usage, usageHome } from './usage.js';
 
 /** Three cards on a line: four columns each. */
 const thirds = (cards: readonly LovelaceCardConfig[]): SheetSpec['frames'][number]['cards'] =>
@@ -27,6 +28,7 @@ export const sheet: SheetSpec = {
     ...security.states,
     ...solar.states,
     ...rooms.states,
+    ...usage.states,
   ],
   registry: {
     entities: { ...security.registry?.entities, ...rooms.registry?.entities },
@@ -133,6 +135,35 @@ export const sheet: SheetSpec = {
       ].map((more) => ({
         type: 'custom:fluvy-energy-period-card',
         collection_key: 'energy_narrow',
+        _now: '2026-09-17T21:47:12',
+        cols: 6,
+        ...more,
+      })),
+    },
+    // the Energy usage card at half a section: compact, mini and the full chart without its chips and its legend hold
+    // what they declare at every width (heights.mjs holds them there); the head's total gives way first
+    {
+      title: 'Energy usage · half a section',
+      heights: [152, 172],
+      hass: usageHome,
+      cards: [
+        { variant: 'compact' },
+        { variant: 'mini', period: 'week' },
+        { show_period: false, show_legend: false, period: 'month' },
+        { variant: 'compact', period: 'year', compare: true },
+      ].map((more) => ({
+        type: 'custom:fluvy-energy-usage-card',
+        _now: '2026-09-17T21:47:12',
+        cols: 6,
+        ...more,
+      })),
+    },
+    // …and the full card there, its chips and its legend taking the rows their words need
+    {
+      title: 'Energy usage · half a section, chips and legend',
+      hass: usageHome,
+      cards: [{}, { period: 'week', compare: true }].map((more) => ({
+        type: 'custom:fluvy-energy-usage-card',
         _now: '2026-09-17T21:47:12',
         cols: 6,
         ...more,
