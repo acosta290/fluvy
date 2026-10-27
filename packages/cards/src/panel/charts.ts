@@ -253,7 +253,10 @@ const setArt = (inks: readonly string[]): TemplateResult =>
     </svg></span
   >`;
 
-/** A set as a row to choose it by: its picture, its name (the house's own words), a check when it is the one worn. */
+/**
+ * A set as a row to choose it by: its picture, its name, a check when it is the one worn. A set's name is the house's
+ * own words, which may end in their ellipsis (`data-name`); the palette's row is said in ours, whole, with its line.
+ */
 function setRow(
   title: string,
   inks: readonly string[],
@@ -270,7 +273,7 @@ function setRow(
   >
     ${setArt(inks)}
     <span class="pn-custom__text">
-      <span class="pn-custom__title" data-name>${title}</span>
+      <span class="pn-custom__title" ?data-name=${!sub}>${title}</span>
       ${sub ? html`<span class="pn-custom__sub">${sub}</span>` : nothing}
     </span>
     ${active ? html`<span class="pn-custom__tail">${icon('check')}</span>` : nothing}

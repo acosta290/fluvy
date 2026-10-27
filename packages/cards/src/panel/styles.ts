@@ -862,6 +862,13 @@ export const panelStyles = css`
       --n: 12;
     }
   }
+  /* three a row where six 44s cannot keep 4 between them (a 284 content, from 356: a 320 phone's 248): a dot is never
+     smaller than a finger's 44, so the row wraps */
+  @container pn (max-width: 355px) {
+    .pn-dots {
+      --n: 3;
+    }
+  }
   /* colours shown to someone who may not change them */
   .pn-dots--static .pn-dot {
     pointer-events: none;
@@ -973,14 +980,20 @@ export const panelStyles = css`
     color: var(--fluvy-text-secondary);
     text-wrap: pretty;
   }
-  /* the sets of series colours: a row each, as the custom palette's (its picture, its name, a check when worn) */
+  /* the sets of series colours: a row each, as the custom palette's (its picture, its name, a check when worn), as wide
+     as the card: what the words need never widens it */
   .pn-sets {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--pn-gap);
   }
+  /* the words wrap as the custom palette's do, on two lines at most; a set's name (the house's own words) ends in its
+     ellipsis where a word is wider than its line or a third line would start */
   .pn-set .pn-custom__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
   }
   .pn-set .pn-art {

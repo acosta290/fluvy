@@ -16,7 +16,8 @@
  * is picked from the palette's colours (the picker's groups, each swatch in its token's colour, on one set of columns;
  * a swatch follows the palette, a hex typed under Custom is fixed, each with its mark), checked (two a breath apart are
  * said, by name), saved and worn, renamed in its place and let go; a palette chosen recolours a set that follows it
- * and leaves a set of hexes as it was.
+ * and leaves a set of hexes as it was; at a 320 phone, in every language, the sets and the editor's dots stay in their
+ * cards and the page does not scroll sideways.
  */
 import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
@@ -712,6 +713,49 @@ const chartsTab = (page) => ({
     JSON.stringify({ linen, volt }),
   );
   await page.close();
+}
+
+{
+  // a 320 phone, in every language: the sets as wide as their card, the set editor's dots inside it (three a row where
+  // six 44s do not fit, never smaller), and the page not scrolled sideways
+  const wrong = [];
+  for (const lang of await everyLanguage()) {
+    const page = await suite.page(`panel=charts&state=sets,editor&lang=${lang}`, {
+      viewport: { width: 320, height: 1000 },
+    });
+    const fit = await page.locator('fluvy-panel').evaluate((panel) => {
+      const root = panel.shadowRoot;
+      /** Whether a box stays inside its card's padding box, edge to edge. */
+      const inside = (el) => {
+        const card = el.closest('.fv-card');
+        const c = card.getBoundingClientRect();
+        const pad = getComputedStyle(card);
+        const r = el.getBoundingClientRect();
+        return (
+          r.left >= c.left + parseFloat(pad.paddingLeft) - 0.5 &&
+          r.right <= c.right - parseFloat(pad.paddingRight) + 0.5
+        );
+      };
+      const rows = [...root.querySelectorAll('.pn-set')];
+      const dots = [...root.querySelectorAll('.pn-dots > *')];
+      return {
+        sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        rows: rows.length,
+        rowsOut: rows.filter((row) => !inside(row)).length,
+        dots: dots.length,
+        dotsOut: dots.filter((dot) => !inside(dot)).length,
+        small: dots.filter((dot) => dot.getBoundingClientRect().width < 44).length,
+      };
+    });
+    if (fit.sideways || fit.rows < 2 || fit.rowsOut || fit.dots < 30 || fit.dotsOut || fit.small)
+      wrong.push(`${lang} ${JSON.stringify(fit)}`);
+    await page.close();
+  }
+  check(
+    'at a 320 phone in every language the sets and the set editor’s dots stay in their cards, no sideways scroll',
+    wrong.length === 0,
+    wrong.join(' | '),
+  );
 }
 
 /* ---------- reduced motion ---------- */
