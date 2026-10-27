@@ -596,27 +596,28 @@ export class FluvyRowsEditor extends LitElement {
         @item-moved=${(event: CustomEvent<{ oldIndex: number; newIndex: number }>) => this.onMove(list, event)}
       >
         <div class="items">
-          ${items.map(
-            (item, index) =>
-              html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
-                <div class="handle" aria-hidden="true">
-                  <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
-                </div>
-                <ha-form
-                  .hass=${this.hass}
-                  .data=${item}
-                  .schema=${this.itemSchema(list, item, choices, key)}
-                  .computeLabel=${this.labeler(list)}
-                  .computeHelper=${this.helper(list)}
-                  @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
-                ></ha-form>
-                <ha-icon-button
-                  .label=${this.t('editor.remove')}
-                  @click=${() => this.removeItem(list, index)}
-                  ><ha-icon icon="mdi:close"></ha-icon
-                ></ha-icon-button>
-              </div>`,
-          )}
+          ${items.map((item, index) => {
+            const schema = this.itemSchema(list, item, choices, key);
+            // an item's selects read a number its YAML holds as their word, as the card's form does (`decimals: 2`)
+            return html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
+              <div class="handle" aria-hidden="true">
+                <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
+              </div>
+              <ha-form
+                .hass=${this.hass}
+                .data=${worded(item, new Set(selectsOf(schema)))}
+                .schema=${schema}
+                .computeLabel=${this.labeler(list)}
+                .computeHelper=${this.helper(list)}
+                @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
+              ></ha-form>
+              <ha-icon-button
+                .label=${this.t('editor.remove')}
+                @click=${() => this.removeItem(list, index)}
+                ><ha-icon icon="mdi:close"></ha-icon
+              ></ha-icon-button>
+            </div>`;
+          })}
         </div>
       </ha-sortable>
       <div class="add">

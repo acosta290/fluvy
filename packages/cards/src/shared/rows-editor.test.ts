@@ -334,6 +334,24 @@ describe('a select’s options as the house has them', () => {
     expect(forms()[0]).not.toBe(a);
   });
 
+  it('shows an item’s number in its select as the select words it (a legend entry’s decimals: 2 in YAML)', async () => {
+    const decimals = {
+      name: 'decimals',
+      selector: {
+        select: { options: ['auto', '0', '1', '2', '3'].map((v) => ({ value: v, label: v })) },
+      },
+    };
+    const list: RowsListSpec = { ...rows, schema: [rows.schema[0]!, decimals] };
+    const editor = await drawEditor(listsEditor({ schema: [] }, [list]), {
+      type: 'custom:x',
+      rows: [{ entity: 'sensor.a', decimals: 2 }, { entity: 'sensor.b' }],
+    });
+    const items = [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')];
+    expect(items[0]!.data).toEqual({ entity: 'sensor.a', decimals: '2' });
+    // an item that says nothing keeps saying nothing
+    expect(items[1]!.data).toEqual({ entity: 'sensor.b' });
+  });
+
   it('a list that asks its items offers each its own answer, never the card’s (a legend entry’s units)', async () => {
     const unit = { name: 'unit', selector: { select: { custom_value: true, options: [] } } };
     const watts = [{ value: 'kW', label: 'kW' }];
