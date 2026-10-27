@@ -1,6 +1,6 @@
 # The cards
 
-Fifty-nine cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Sixty cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
 options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
