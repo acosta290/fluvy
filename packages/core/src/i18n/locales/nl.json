@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Geladen en teruggeleverd tonen",
     "editor_show_legend": "Legenda tonen",
     "editor_show_period": "Chips Dag · Week · Maand · Jaar",
-    "editor_compare": "De periode ervoor achter de kolommen tonen"
+    "editor_compare": "De periode ervoor achter de kolommen tonen",
+    "editor_color_helper": "Leeg: de eigen kleur van zijn energie. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt"
   },
   "wall": {
     "paused": "Wand gepauzeerd",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Bries",
     "gauge.strong": "Harde wind",
     "gauge.charging": "Laadt op",
-    "gauge.filling": "Vult zich"
+    "gauge.filling": "Vult zich",
+    "colour.series_n": "Reeks {n}",
+    "colour.notice": "Melding"
   },
   "chart-card": {
     "title": "Grafiek",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Drempels",
     "editor.threshold_value": "Vanaf",
     "editor.threshold_helper": "De lijn krijgt deze kleur vanaf deze waarde, tot de volgende drempel",
-    "editor.series_n": "Reeks {n}",
-    "editor.notice": "Melding",
     "editor.color_helper": "Leeg: de kleur van de kaart, of bij meerdere de reekskleuren van het palet. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt",
     "editor.highlight_hours": "Uren om uit te lichten",
     "editor.show_legend": "Legenda tonen",

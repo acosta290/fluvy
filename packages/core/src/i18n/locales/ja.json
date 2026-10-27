@@ -1913,7 +1913,8 @@
     "editor_show_returns": "充電と売電を表示",
     "editor_show_legend": "凡例を表示",
     "editor_show_period": "日 · 週 · 月 · 年のチップ",
-    "editor_compare": "前の期間を棒の後ろに表示"
+    "editor_compare": "前の期間を棒の後ろに表示",
+    "editor_color_helper": "空のときはそのエネルギー自身の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます"
   },
   "history": {
     "title": "履歴",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "そよ風",
     "gauge.strong": "強風",
     "gauge.charging": "充電中",
-    "gauge.filling": "給水中"
+    "gauge.filling": "給水中",
+    "colour.series_n": "系列{n}",
+    "colour.notice": "通知"
   },
   "chart-card": {
     "title": "グラフ",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "しきい値",
     "editor.threshold_value": "開始値",
     "editor.threshold_helper": "この値から次のしきい値まで、線がこの色になります",
-    "editor.series_n": "系列{n}",
-    "editor.notice": "通知",
     "editor.color_helper": "空のときはカードの色、複数のときはパレットの系列の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます",
     "editor.highlight_hours": "ハイライトする時間",
     "editor.show_legend": "凡例を表示",

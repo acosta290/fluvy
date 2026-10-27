@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Geladenes und Eingespeistes zeigen",
     "editor_show_legend": "Legende zeigen",
     "editor_show_period": "Chips Tag · Woche · Monat · Jahr",
-    "editor_compare": "Den Zeitraum davor hinter den Säulen zeigen"
+    "editor_compare": "Den Zeitraum davor hinter den Säulen zeigen",
+    "editor_color_helper": "Leer: die eigene Farbe seiner Energie. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben"
   },
   "wall": {
     "paused": "Wand pausiert",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Brise",
     "gauge.strong": "Starker Wind",
     "gauge.charging": "Lädt",
-    "gauge.filling": "Füllt sich"
+    "gauge.filling": "Füllt sich",
+    "colour.series_n": "Reihe {n}",
+    "colour.notice": "Hinweis"
   },
   "chart-card": {
     "title": "Diagramm",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Schwellen",
     "editor.threshold_value": "Ab",
     "editor.threshold_helper": "Die Linie nimmt diese Farbe ab diesem Wert an, bis zur nächsten Schwelle",
-    "editor.series_n": "Reihe {n}",
-    "editor.notice": "Hinweis",
     "editor.color_helper": "Leer: die Farbe der Karte, bei mehreren die Reihenfarben der Palette. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben",
     "editor.highlight_hours": "Hervorgehobene Stunden",
     "editor.show_legend": "Legende anzeigen",

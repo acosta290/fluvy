@@ -166,6 +166,41 @@ describe('the Energy usage card', () => {
     expect(root(card).querySelector('.en-period')).toBeNull();
   });
 
+  it('a source in a colour of the palette’s wears its token, its columns and its squares, what it exported too (1.11)', async () => {
+    const card = await mount({
+      show_period: false,
+      sources: [{ type: 'grid', color: 'graph-5' }, 'solar', 'battery'],
+    });
+    const token = 'var(--fluvy-graph-5)';
+    const squares = [...root(card).querySelectorAll('.en-legend__item')].map((item) => [
+      item.querySelector('.en-legend__text')?.textContent?.trim(),
+      item.querySelector('.en-sq')?.getAttribute('style') ?? null,
+    ]);
+    expect(squares).toEqual([
+      ['Grid', `--ink:${token}`],
+      ['Solar', null],
+      ['Battery', null],
+      ['Charged', null],
+      ['Exported', `--ink:${token}`],
+    ]);
+    expect(
+      [...root(card).querySelectorAll('.eu-chart g[style]')].some(
+        (g) => g.getAttribute('style') === `--tone-ink:${token}`,
+      ),
+    ).toBe(true);
+    // the editor offers the palette's colours by their words, and keeps a colour typed
+    const field = JSON.stringify(FluvyEnergyUsageCard.lists[0]?.schema).match(
+      /\{"name":"color".*?"helper":"[^"]+"\}/,
+    )?.[0];
+    const { selector, helper } = JSON.parse(field ?? '{}') as {
+      selector: { select: { custom_value: boolean; options: { value: string }[] } };
+      helper: string;
+    };
+    expect(selector.select.custom_value).toBe(true);
+    expect(selector.select.options).toHaveLength(24);
+    expect(helper).toBe('energy-usage.editor_color_helper');
+  });
+
   it('draws the period before as ghost columns only when asked to compare', async () => {
     const plain = await mount({});
     expect(root(plain).querySelector('.eu-ghost')).toBeNull();

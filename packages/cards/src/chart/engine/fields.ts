@@ -1,17 +1,31 @@
 import {
   chartDefaults,
+  strings,
   type GaugePreset,
   type HaFormSchemaItem,
   type HomeAssistant,
+  type MessageKey,
 } from '@fluvy/core';
+import type { ChoosableTone } from '@fluvy/ui';
 import {
   type ChartCaps,
   type ChartKeys,
   type ChartPreset,
   type FineKey,
 } from '../../shared/chart-config.js';
-import { boolField, fieldRow, onlyWhen, sectionField, selectField } from '../../shared/form.js';
+import {
+  boolField,
+  editorLanguage,
+  editorWord,
+  fieldRow,
+  onlyWhen,
+  sectionField,
+  selectField,
+} from '../../shared/form.js';
+import { PALETTE_REFS } from './palette.js';
 import { acts, CHART_KEYS, presetsFor, resolveStyle } from './presets.js';
+
+const s = strings('chart');
 
 /**
  * The editor's "Chart" section, one for every card that draws a chart — the engine's, so every editor opens once it
@@ -156,3 +170,31 @@ export function chartDefaultsFor(config: Data, caps: ChartCaps): Record<string, 
 /** A gauge's style, among those the card can draw. */
 export const gaugeField = (options: readonly GaugePreset[]): HaFormSchemaItem =>
   selectField('gauge', options);
+
+/**
+ * A series' own colour (`color`), on every card that draws several: one of the palette's, which follows it and the mode
+ * — the settings' set editor's swatches, its twelve series colours, its accent with the statuses and the lit light, the
+ * energy states, by their words (the tones' where they are one) — or a colour name or a hex typed, kept as it is;
+ * `helper` says what the card draws while it is empty.
+ */
+export function seriesColourField(helper: MessageKey): HaFormSchemaItem {
+  const word = (ref: string): string =>
+    ref.startsWith('graph-')
+      ? s(editorLanguage(), 'colour.series_n', { n: ref.slice('graph-'.length) })
+      : ref === 'notice'
+        ? s(editorLanguage(), 'colour.notice')
+        : editorWord(`tone.${(ref === 'home' ? 'house' : ref) as ChoosableTone}`);
+  return {
+    name: 'color',
+    selector: {
+      select: {
+        mode: 'dropdown',
+        custom_value: true,
+        options: [...PALETTE_REFS.series, ...PALETTE_REFS.tones, ...PALETTE_REFS.energy].map(
+          (value) => ({ value, label: word(value) }),
+        ),
+      },
+    },
+    helper,
+  };
+}

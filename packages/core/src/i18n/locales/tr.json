@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Şarj edileni ve verileni göster",
     "editor_show_legend": "Açıklamayı göster",
     "editor_show_period": "Gün · Hafta · Ay · Yıl çipleri",
-    "editor_compare": "Önceki dönemi sütunların arkasında göster"
+    "editor_compare": "Önceki dönemi sütunların arkasında göster",
+    "editor_color_helper": "Boşsa, enerjisinin kendi rengi. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır"
   },
   "wall": {
     "paused": "Duvar duraklatıldı",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Esinti",
     "gauge.strong": "Kuvvetli rüzgâr",
     "gauge.charging": "Şarj oluyor",
-    "gauge.filling": "Doluyor"
+    "gauge.filling": "Doluyor",
+    "colour.series_n": "Seri {n}",
+    "colour.notice": "Bilgi"
   },
   "chart-card": {
     "title": "Grafik",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Eşikler",
     "editor.threshold_value": "Başlangıç",
     "editor.threshold_helper": "Çizgi bu değerden itibaren bir sonraki eşiğe kadar bu rengi alır",
-    "editor.series_n": "Seri {n}",
-    "editor.notice": "Bilgi",
     "editor.color_helper": "Boşsa, kartın rengi; birden fazlaysa paletin seri renkleri. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır",
     "editor.highlight_hours": "Vurgulanacak saatler",
     "editor.show_legend": "Göstergeyi göster",

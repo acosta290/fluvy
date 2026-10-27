@@ -11,6 +11,8 @@ export interface LegendEntry {
   /** The ink class (`en-ink--solar`), and the item's own colour when it has one. */
   readonly ink: string;
   readonly accent?: string | undefined;
+  /** A colour of the palette's the square wears as its ink (`var(--fluvy-graph-3)`): it follows the palette. */
+  readonly paint?: string;
   readonly name: string;
   readonly value: string;
   readonly unit: string;
@@ -89,7 +91,10 @@ export function energyLegend(
           data-accent=${item.accent ?? nothing}
           style=${grid ? `grid-column:span ${grid.spans[index] ?? 1}` : nothing}
           ><span class="en-legend__name"
-            ><i class="en-sq ${item.ink} ${item.square ? `is-${item.square}` : ''}"></i
+            ><i
+              class="en-sq ${item.ink} ${item.square ? `is-${item.square}` : ''}"
+              style=${item.paint ? `--ink:${item.paint}` : nothing}
+            ></i
             ><span class="en-legend__text">${item.name}</span></span
           ><span class="en-legend__value"
             >${item.value}${item.unit ? html`<span class="en-unit">${item.unit}</span>` : nothing}</span

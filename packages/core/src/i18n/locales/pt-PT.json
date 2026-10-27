@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Mostrar o que foi carregado e exportado",
     "editor_show_legend": "Mostrar a legenda",
     "editor_show_period": "Chips Dia · Semana · Mês · Ano",
-    "editor_compare": "Mostrar o período anterior atrás das colunas"
+    "editor_compare": "Mostrar o período anterior atrás das colunas",
+    "editor_color_helper": "Vazio: a cor própria da sua energia. As cores da paleta acompanham-na; um nome de cor ou um #hex fica tal como foi escrito"
   },
   "wall": {
     "paused": "Modo de parede em pausa",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Brisa",
     "gauge.strong": "Vento forte",
     "gauge.charging": "A carregar",
-    "gauge.filling": "A encher"
+    "gauge.filling": "A encher",
+    "colour.series_n": "Série {n}",
+    "colour.notice": "Informação"
   },
   "chart-card": {
     "title": "Gráfico",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Limiares",
     "editor.threshold_value": "A partir de",
     "editor.threshold_helper": "A linha ganha esta cor a partir deste valor, até ao limiar seguinte",
-    "editor.series_n": "Série {n}",
-    "editor.notice": "Informação",
     "editor.color_helper": "Vazio: a cor do cartão, ou as cores das séries da paleta quando há várias. As cores da paleta acompanham-na; um nome de cor ou um #hex fica tal como foi escrito",
     "editor.highlight_hours": "Horas a destacar",
     "editor.show_legend": "Mostrar a legenda",

@@ -124,7 +124,14 @@ export {
   type LegendItem,
 } from './decor.js';
 export { dialRadius, drawGauge, type GaugeOptions } from './gauge.js';
-export { chartDefaultsFor, chartKeysFor, chartSection, gaugeField, type CapsOf } from './fields.js';
+export {
+  chartDefaultsFor,
+  chartKeysFor,
+  chartSection,
+  gaugeField,
+  seriesColourField,
+  type CapsOf,
+} from './fields.js';
 export {
   ACTS,
   acts,

@@ -10,6 +10,8 @@
     "gauge.breeze": "Breeze",
     "gauge.strong": "Strong wind",
     "gauge.charging": "Charging",
-    "gauge.filling": "Filling"
+    "gauge.filling": "Filling",
+    "colour.series_n": "Series {n}",
+    "colour.notice": "Notice"
   }
 }

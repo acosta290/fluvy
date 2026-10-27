@@ -1,5 +1,5 @@
 import { strings, type HaFormSchemaItem } from '@fluvy/core';
-import type { ChoosableTone, Tone } from '@fluvy/ui';
+import type { Tone } from '@fluvy/ui';
 import type { ChartCaps, ChartPreset, Curve, FillKind } from '../shared/chart-config.js';
 import {
   choiceField,
@@ -27,7 +27,7 @@ import {
   type Stat,
 } from './data/sources.js';
 import { dayStart, DAY, spanOf } from './data/span.js';
-import { CHART_PRESETS, PALETTE_REFS, resolveStyle, type Threshold } from './engine/index.js';
+import { CHART_PRESETS, resolveStyle, seriesColourField, type Threshold } from './engine/index.js';
 
 /*
  * What a Chart card's config says, read without the card: its series and its thresholds as items, what it can draw,
@@ -211,37 +211,11 @@ const NAME = fieldRow(textField('name'), sourceField());
 const ATTRIBUTE = selectField('attribute', ['auto'], { custom: true });
 const KEYS = fieldRow(textField('time_key'), textField('value_key'));
 const VALUE_KEY = textField('value_key');
-/**
- * A series' own colour: one of the palette's, which follows it and the mode — the settings' set editor's swatches, its
- * twelve series colours, its accent with the statuses and the lit light, the energy states, by their words (the tones'
- * where they are one) — or a colour name or a hex typed, kept as it is.
- */
-const colourField = (): HaFormSchemaItem => {
-  const word = (ref: string): string =>
-    ref.startsWith('graph-')
-      ? s(editorLanguage(), 'editor.series_n', { n: ref.slice('graph-'.length) })
-      : ref === 'notice'
-        ? s(editorLanguage(), 'editor.notice')
-        : editorWord(`tone.${(ref === 'home' ? 'house' : ref) as ChoosableTone}`);
-  return {
-    name: 'color',
-    selector: {
-      select: {
-        mode: 'dropdown',
-        custom_value: true,
-        options: [...PALETTE_REFS.series, ...PALETTE_REFS.tones, ...PALETTE_REFS.energy].map(
-          (value) => ({ value, label: word(value) }),
-        ),
-      },
-    },
-    helper: 'chart-card.editor.color_helper',
-  };
-};
-
 const STATISTICS = fieldRow(statField(), periodField());
 const DRAWN = fieldRow(kindField(), selectField('curve', ['smooth', 'straight', 'step']));
 const FILL = selectField('fill', ['gradient', 'flat', 'none']);
-const COLOUR = fieldRow(toneField(), colourField());
+// a colour of its own: one of the palette's (it follows the palette), or a colour name or a hex
+const COLOUR = fieldRow(toneField(), seriesColourField('chart-card.editor.color_helper'));
 const NUMBERS = numberFields();
 
 /** The fields of a series by where it is read from: the same array for the same answer, so its form is kept. */

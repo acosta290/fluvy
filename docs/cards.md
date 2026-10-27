@@ -586,8 +586,9 @@ picker is followed — `day` (today, the default), `week`, `month` or `year`, ea
 Month · Year chips (`show_period`) — and `compare` draws the period before as quiet ghost columns behind the bars, its
 figure in the bubble. Given a `collection_key` the card follows that Energy date picker (Home Assistant's own, or the
 Energy period card) with Home Assistant's own statistics for its range: its chips go, and the picker's Compare draws
-the ghosts. `sources` lists the sources drawn, in the order they stack, each with its `name`, its `color` and `show`
-(none: every source the Energy dashboard has); past `max_sources` the last fold into "Other"; `show_returns: false`
+the ghosts. `sources` lists the sources drawn, in the order they stack, each with its `name`, its `color` (a colour of
+the palette's, as a Chart card's series may name one, which follows the palette; or a colour name or a `#rrggbb`) and
+`show` (none: every source the Energy dashboard has); past `max_sources` the last fold into "Other"; `show_returns: false`
 leaves out what went out, `show_legend: false` the legend. `variant: compact` is the chart and its axis alone, `mini` a
 strip under the head. Each slot is one column, its parts flush and only its outer ends rounded, on a scale that hugs
 what the columns reach on both sides of zero; `chart` draws them `classic` or `columns` in their inks, or `soft` a step

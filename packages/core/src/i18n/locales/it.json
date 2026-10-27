@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Mostra ciò che è stato caricato e immesso",
     "editor_show_legend": "Mostra la legenda",
     "editor_show_period": "Chip Giorno · Settimana · Mese · Anno",
-    "editor_compare": "Mostra il periodo precedente dietro le colonne"
+    "editor_compare": "Mostra il periodo precedente dietro le colonne",
+    "editor_color_helper": "Vuoto, il colore proprio della sua energia. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto"
   },
   "wall": {
     "paused": "Parete in pausa",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Brezza",
     "gauge.strong": "Vento forte",
     "gauge.charging": "In carica",
-    "gauge.filling": "In riempimento"
+    "gauge.filling": "In riempimento",
+    "colour.series_n": "Serie {n}",
+    "colour.notice": "Informazione"
   },
   "chart-card": {
     "title": "Grafico",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Soglie",
     "editor.threshold_value": "Da",
     "editor.threshold_helper": "La linea prende questo colore da questo valore in su, fino alla soglia successiva",
-    "editor.series_n": "Serie {n}",
-    "editor.notice": "Informazione",
     "editor.color_helper": "Vuoto, il colore della scheda, o i colori delle serie della palette se sono più d’una. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto",
     "editor.highlight_hours": "Ore da evidenziare",
     "editor.show_legend": "Mostra la legenda",

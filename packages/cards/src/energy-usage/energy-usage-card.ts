@@ -2,6 +2,7 @@ import {
   clock12,
   dateFormat,
   houseZone,
+  isPaletteRef,
   localize,
   strings,
   wallClock,
@@ -32,8 +33,10 @@ import {
   labelsApart,
   plotOf,
   resolveStyle,
+  refInk,
   scrub,
   ScrubController,
+  seriesColourField,
   styleOf,
   thinStep,
   tickText,
@@ -86,7 +89,6 @@ import { chipRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import {
-  accentField,
   actionFields,
   boolField,
   colourFields,
@@ -126,6 +128,22 @@ const u = strings('energy-usage');
 const flow = strings('energy-flow');
 const sankey = strings('energy-sankey');
 const periodCard = strings('energy-period-card');
+
+/**
+ * How a series is painted: its columns' colour, and its squares' — its source's ink (`en-ink--<ink>`), the person's own
+ * colour (the card's accent sheet keys it), or one of the palette's by its token (`own`: it follows the palette and the
+ * mode), worn as the squares' ink.
+ */
+interface Paint {
+  readonly ink: string;
+  readonly colour: SeriesColour;
+  readonly accent?: string | undefined;
+  readonly own?: string;
+}
+
+/** A square's ink class: its source's, or none where it wears a colour of the palette's of its own. */
+const inkOf = (paint: Paint | undefined): string =>
+  paint?.own ? '' : `en-ink--${paint?.ink ?? 'home'}`;
 
 export type UsageVariant = 'full' | 'compact' | 'mini';
 const VARIANTS: readonly UsageVariant[] = ['full', 'compact', 'mini'];
@@ -228,7 +246,7 @@ const KIND_FIELD: HaFormSchemaItem = {
 /** A source's editor fields: its kind, its name and colour, and whether it is drawn. */
 const SOURCE_FIELDS: HaFormSchemaItem[] = [
   KIND_FIELD,
-  fieldRow(textField('name'), accentField('color', { item: true })),
+  fieldRow(textField('name'), seriesColourField('energy-usage.editor_color_helper')),
   boolField('show'),
 ];
 
@@ -670,14 +688,14 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     return flow(this.hass, `kind_${key}`);
   }
 
-  /** How a series is painted: its source's ink, or the person's own colour (the card's accent sheet keys it). */
-  private paintOf(series: UsageSeries): {
-    readonly ink: string;
-    readonly colour: SeriesColour;
-    readonly accent?: string | undefined;
-  } {
+  /** How a series is painted (`Paint`). */
+  private paintOf(series: UsageSeries): Paint {
     const accent = series.color ? this.accents.item(series.color) : undefined;
     if (accent) return { ink: 'accent', colour: 'accent', accent };
+    if (series.color && isPaletteRef(series.color)) {
+      const own = refInk(series.color);
+      return { ink: '', colour: own as SeriesColour, own };
+    }
     if (!series.kind) return { ink: 'home', colour: 'var(--eu-other)' };
     return { ink: series.kind, colour: `var(--fluvy-state-energy-${series.kind})` };
   }
@@ -1089,7 +1107,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   private bubble(
     drawn: Drawn,
     series: readonly UsageSeries[],
-    paints: ReadonlyArray<{ readonly ink: string; readonly accent?: string | undefined }>,
+    paints: readonly Paint[],
     index: number,
     figures: Figures,
   ): { readonly template: TemplateResult; readonly label: string } {
@@ -1104,8 +1122,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     ].map(([s, v, i]) => ({
       name: this.nameOf(s),
       value: value(v),
-      ink: paints[i]?.ink ?? 'home',
-      accent: paints[i]?.accent,
+      paint: paints[i],
       out: s.key === 'charged' || s.key === 'exported',
     }));
     const before = this.comparing() ? drawn.before : undefined;
@@ -1151,8 +1168,9 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
           html`<div class="eu-bubble__line">
             <span
               ><i
-                class="en-sq en-ink--${row.ink} ${row.out ? 'is-out' : ''}"
-                data-accent=${row.accent ?? nothing}
+                class="en-sq ${inkOf(row.paint)} ${row.out ? 'is-out' : ''}"
+                data-accent=${row.paint?.accent ?? nothing}
+                style=${row.paint?.own ? `--ink:${row.paint.own}` : nothing}
               ></i
               >${row.name}</span
             ><span>${row.value}</span>
@@ -1178,12 +1196,13 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   /** The legend: each series in its ink with its total over the range, what went out in its square at 60 %. */
   private legend(
     series: readonly UsageSeries[],
-    paints: ReadonlyArray<{ readonly ink: string; readonly accent?: string | undefined }>,
+    paints: readonly Paint[],
     totals: Figures,
   ): LegendEntry[] {
     return series.map((s, i) => ({
-      ink: `en-ink--${paints[i]?.ink ?? 'home'}`,
+      ink: inkOf(paints[i]),
       accent: paints[i]?.accent,
+      ...(paints[i]?.own ? { paint: paints[i]?.own } : {}),
       name: this.nameOf(s),
       value: writeFigure(this.hass, s.total * 1000, totals),
       unit: totals.unit,

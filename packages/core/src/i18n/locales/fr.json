@@ -1951,7 +1951,8 @@
     "editor_show_returns": "Afficher ce qui a été chargé et injecté",
     "editor_show_legend": "Afficher la légende",
     "editor_show_period": "Puces Jour · Semaine · Mois · Année",
-    "editor_compare": "Afficher la période précédente derrière les colonnes"
+    "editor_compare": "Afficher la période précédente derrière les colonnes",
+    "editor_color_helper": "Vide, la couleur propre à son énergie. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi"
   },
   "wall": {
     "paused": "Mur en pause",
@@ -2480,7 +2481,9 @@
     "gauge.breeze": "Brise",
     "gauge.strong": "Vent fort",
     "gauge.charging": "En charge",
-    "gauge.filling": "Remplissage"
+    "gauge.filling": "Remplissage",
+    "colour.series_n": "Série {n}",
+    "colour.notice": "Information"
   },
   "chart-card": {
     "title": "Graphique",
@@ -2517,8 +2520,6 @@
     "editor.thresholds": "Seuils",
     "editor.threshold_value": "À partir de",
     "editor.threshold_helper": "La ligne prend cette couleur à partir de cette valeur, jusqu’au seuil suivant",
-    "editor.series_n": "Série {n}",
-    "editor.notice": "Information",
     "editor.color_helper": "Vide, la couleur de la carte, ou les couleurs des séries de la palette s’il y en a plusieurs. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi",
     "editor.highlight_hours": "Heures à mettre en avant",
     "editor.show_legend": "Afficher la légende",

@@ -34,8 +34,6 @@
     "editor.thresholds": "Thresholds",
     "editor.threshold_value": "From",
     "editor.threshold_helper": "The line takes this colour from this value up, to the next threshold",
-    "editor.series_n": "Series {n}",
-    "editor.notice": "Notice",
     "editor.color_helper": "Empty: the card’s colour, or the palette’s series colours for several. The palette’s colours follow it; a colour name or a #hex stays as typed",
     "editor.highlight_hours": "Hours to highlight",
     "editor.show_legend": "Show legend",
