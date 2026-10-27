@@ -96,8 +96,12 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(['sensor', 'number', 'input_number', 'counter']),
       fieldRow(textField('name'), textField('subtitle')),
       fieldRow(iconField(), selectField('variant', GAUGE_VARIANTS)),
-      // the ring's style: a bar and a signed ring have one look each; its options are the sensor's (`choices`)
-      onlyWhen((data) => (data['variant'] ?? 'ring') === 'ring', selectField('gauge', DIALS)),
+      // the ring's style: a bar and a signed ring have one look each; of the moving ones, those that read the sensor
+      // (`choices`)
+      onlyWhen(
+        (data) => (data['variant'] ?? 'ring') === 'ring',
+        selectField('gauge', [...DIALS, ...(chartEngine()?.MOVING ?? [])]),
+      ),
       // a moving gauge moves, or rests on its first frame
       onlyWhen(moving, boolField('animate')),
       showIconField(),

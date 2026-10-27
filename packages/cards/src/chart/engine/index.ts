@@ -126,6 +126,7 @@ export {
   gaugeReads,
   HOUSE_ACTS,
   isBars,
+  MOVING,
   movingFor,
   presetsFor,
   resolveGauge,

@@ -103,12 +103,23 @@ describe('the ring’s gauge styles', () => {
     expect((root.querySelector('.fc-gauge') as HTMLElement).style.height).toBe('224px');
   });
 
-  it('offers the ring its three styles, and the bar and the signed ring none', () => {
+  it('offers the ring its three styles and the moving ones, and the bar and the signed ring none', () => {
     const field = gaugeEditor.getConfigForm().schema.find((item) => item.name === 'gauge') as
       HaFormSchemaItem | undefined;
     const options = (field?.selector as { select: { options: { value: string }[] } }).select
       .options;
-    expect(options.map((o) => o.value)).toEqual(['ticks', 'dial', 'ring']);
+    expect(options.map((o) => o.value)).toEqual([
+      'ticks',
+      'dial',
+      'ring',
+      'liquid',
+      'thermo',
+      'tank',
+      'battery',
+      'pulse',
+      'air',
+      'sun',
+    ]);
     expect(field?.when?.({})).toBe(true);
     expect(field?.when?.({ variant: 'bar' })).toBe(false);
     expect(field?.when?.({ variant: 'signed' })).toBe(false);

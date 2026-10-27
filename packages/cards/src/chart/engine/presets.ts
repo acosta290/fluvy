@@ -303,11 +303,14 @@ export const GAUGE_PRESETS: Readonly<Record<GaugePreset, GaugeSpec>> = {
 export const gaugeReads = (preset: GaugePreset, reads: Reads): boolean =>
   GAUGE_PRESETS[preset].reads?.(reads) ?? true;
 
-/** The moving gauges that read a sensor, in the settings' order: what an editor offers beside a card's controls. */
+/** The gauges that move, in the settings' order. */
+export const MOVING: readonly GaugePreset[] = (Object.keys(GAUGE_PRESETS) as GaugePreset[]).filter(
+  (preset) => GAUGE_PRESETS[preset].motion,
+);
+
+/** The moving gauges that read a sensor: what an editor offers beside a card's controls. */
 export const movingFor = (reads: Reads): GaugePreset[] =>
-  (Object.keys(GAUGE_PRESETS) as GaugePreset[]).filter(
-    (preset) => GAUGE_PRESETS[preset].motion && gaugeReads(preset, reads),
-  );
+  MOVING.filter((preset) => gaugeReads(preset, reads));
 
 /** The line widths in px: the house's `regular` is 2.5; a thin style draws one step thinner, never under 1.5. */
 const LINE_PX = { thin: 1.5, regular: 2.5, bold: 3 } as const;
