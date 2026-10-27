@@ -1847,7 +1847,9 @@
     "yesterday": "Gisteren",
     "follows": "Volgt de datumkiezer",
     "editor_collection_key": "Een datumkiezer volgen",
-    "editor_collection_key_help": "De sleutel van een Energie-datumkiezer op dit dashboard (Fluvy’s kaart Energieperiode of die van Home Assistant)",
+    "editor_collection_key_help": "De sleutel van een Energie-datumkiezer op dit dashboard (Fluvy’s kaart Energieperiode of die van Home Assistant)"
+  },
+  "energy-period-card": {
     "name": "Energieperiode",
     "description": "Wat de energiekaarten van deze weergave tonen",
     "previous": "Vorige periode",

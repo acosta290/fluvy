@@ -1876,7 +1876,9 @@
     "yesterday": "昨日",
     "follows": "日付選択に連動",
     "editor_collection_key": "日付選択に連動する",
-    "editor_collection_key_help": "このダッシュボードにあるエネルギー日付選択のキー（Fluvyのエネルギー期間カード、またはHome Assistantのもの）",
+    "editor_collection_key_help": "このダッシュボードにあるエネルギー日付選択のキー（Fluvyのエネルギー期間カード、またはHome Assistantのもの）"
+  },
+  "energy-period-card": {
     "name": "エネルギー期間",
     "description": "このビューのエネルギーカードが表示する期間",
     "previous": "前の期間",

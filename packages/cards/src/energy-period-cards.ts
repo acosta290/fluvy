@@ -1,5 +1,6 @@
-// the energy family's words first (the card's are among them): they are here before it speaks
+// the words first: the energy family's (the period's, which the followers share), then the card's own
 import './energy/english.js';
+import './energy-period/english.js';
 import { registerCard } from '@fluvy/core';
 import { ENERGY_PERIOD_FAMILY } from './energy-family.js';
 import { FluvyEnergyPeriodCard } from './energy-period/energy-period-card.js';

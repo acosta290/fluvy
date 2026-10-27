@@ -5,6 +5,7 @@ import type appliances from './locales/en/appliances.json';
 import type automations from './locales/en/automations.json';
 import type devices from './locales/en/devices.json';
 import type energy from './locales/en/energy.json';
+import type energyPeriod from './locales/en/energy-period.json';
 import type history from './locales/en/history.json';
 import type items from './locales/en/items.json';
 import type job from './locales/en/job.json';
@@ -27,6 +28,7 @@ export type Catalogue = typeof core &
   typeof automations &
   typeof devices &
   typeof energy &
+  typeof energyPeriod &
   typeof history &
   typeof items &
   typeof job &

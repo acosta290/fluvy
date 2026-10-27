@@ -70,7 +70,9 @@ import {
   type Span,
 } from './picker.js';
 
-const p = strings('energy-period');
+const p = strings('energy-period-card');
+/** The period's words the followers share (yesterday), the energy family's. */
+const period = strings('energy-period');
 const flow = strings('energy-flow');
 /** The date grid's words: the pages' shared ones (core's). */
 const page = strings('page');
@@ -973,7 +975,11 @@ function periodWord(hass: Pick<HomeAssistant, 'language'> | undefined, key: Peri
 
 /** A preset's word in the sheet. */
 function presetWord(hass: HomeAssistant | undefined, preset: Preset | 'custom'): string {
-  return preset === 'today' ? localize(hass, 'common.today') : p(hass, preset);
+  return preset === 'today'
+    ? localize(hass, 'common.today')
+    : preset === 'yesterday'
+      ? period(hass, preset)
+      : p(hass, preset);
 }
 
 /**

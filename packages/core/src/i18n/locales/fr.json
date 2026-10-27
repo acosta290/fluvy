@@ -1847,7 +1847,9 @@
     "yesterday": "Hier",
     "follows": "Suit le sélecteur de dates",
     "editor_collection_key": "Suivre un sélecteur de dates",
-    "editor_collection_key_help": "La clé d’un sélecteur de dates Énergie de ce tableau de bord (la carte Période d’énergie de Fluvy ou celui de Home Assistant)",
+    "editor_collection_key_help": "La clé d’un sélecteur de dates Énergie de ce tableau de bord (la carte Période d’énergie de Fluvy ou celui de Home Assistant)"
+  },
+  "energy-period-card": {
     "name": "Période d’énergie",
     "description": "Ce qu’affichent les cartes d’énergie de cette vue",
     "previous": "Période précédente",

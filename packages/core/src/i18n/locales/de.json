@@ -1847,7 +1847,9 @@
     "yesterday": "Gestern",
     "follows": "Folgt der Datumsauswahl",
     "editor_collection_key": "Einer Datumsauswahl folgen",
-    "editor_collection_key_help": "Der Schlüssel einer Energie-Datumsauswahl auf diesem Dashboard (Fluvys Karte Energiezeitraum oder die von Home Assistant)",
+    "editor_collection_key_help": "Der Schlüssel einer Energie-Datumsauswahl auf diesem Dashboard (Fluvys Karte Energiezeitraum oder die von Home Assistant)"
+  },
+  "energy-period-card": {
     "name": "Energiezeitraum",
     "description": "Was die Energiekarten dieser Ansicht zeigen",
     "previous": "Vorheriger Zeitraum",
