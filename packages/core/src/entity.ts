@@ -179,8 +179,15 @@ export const firstWeather = (hass: HomeAssistant | undefined): string | undefine
   Object.keys(hass?.states ?? {}).find((id) => id.startsWith('weather.'));
 
 export function isActiveState(domain: string, state: string): boolean {
-  // A sensor only measures: "21.5 °C" is not an on state, so it never takes the active fill.
-  if (domain === 'sensor' || domain === 'number' || domain === 'input_number') return false;
+  // A sensor only measures: "21.5 °C" is not an on state, so it never takes the active fill. Nor does the weather:
+  // "rainy" or "sunny" is what it reports, and an area with a weather entity would count a device "on" all day.
+  if (
+    domain === 'sensor' ||
+    domain === 'number' ||
+    domain === 'input_number' ||
+    domain === 'weather'
+  )
+    return false;
   if (domain === 'climate' || domain === 'water_heater') return state !== 'off';
   return !ACTIVE_OFF.has(state);
 }

@@ -10,6 +10,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The automatic dashboards hand every opening to their Sensors card (the Home dashboard's Security and Sensors views,
   the Security dashboard's overview), which shows four and folds the rest under "All sensors": they handed it only
   the first eight, so from the ninth on a leak, smoke or window sensor was in no list on those views.
+- A weather entity is never "on": its condition ("rainy", "sunny") read as an on state, so a room card in an area
+  with the weather counted one more device on ("1 of 8") whatever the weather was, and nothing on the room's page
+  said which.
 
 ## [1.10.0] — 2026-10-22
 
