@@ -95,6 +95,8 @@ const HOUR_MS = 3_600_000;
 
 /** The bars a window is read in: an hour each over a day, never more than 24. */
 const MAX_BARS = 24;
+/** The tile's spark: classic, or minimal where the card's style is (a thin line ending in its dot). */
+const SPARK_CAPS: ChartCaps = { styles: ['classic', 'minimal'] };
 
 const down4 = (n: number): number => Math.max(4, Math.floor(n / 4) * 4);
 const capitalise = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
@@ -894,12 +896,10 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
    * dot), else the classic curve with its fill and its dot.
    */
   private spark(engine: ChartEngine, values: readonly number[], width: number): TemplateResult {
-    const fine = engine.chartKeysOf(this.config);
-    const minimal = engine.resolveStyle(this.config?.chart, fine, {}).preset === 'minimal';
     return engine.drawChart({
       frame: { width, height: 24, headroom: 4, pad: 4 },
       series: [{ values }],
-      style: engine.resolveStyle(minimal ? 'minimal' : 'classic', fine, {}),
+      style: engine.styleOf(this.config, SPARK_CAPS),
       id: 'fv',
     });
   }

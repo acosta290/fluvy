@@ -275,6 +275,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         ? null
         : { text: dead ? stateText(this.hass, views[0] as EntityView) : text(total), tone },
     });
+    // soft: each part of the stack a pill, its ink deepening along it
+    const soft = softIn(this.config) ? 'is-soft' : '';
 
     return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
@@ -314,9 +316,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
                 },
               )}
             </div>`
-          : html`<div
-                class="fv-stack ${segments.length ? '' : 'is-empty'} ${softIn(this.config) ? 'is-soft' : ''}"
-              >
+          : html`<div class="fv-stack ${segments.length ? '' : 'is-empty'} ${soft}">
                 ${repeat(
                   segments,
                   (part) => part.key,

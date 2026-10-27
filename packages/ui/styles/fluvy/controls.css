@@ -282,13 +282,11 @@
   height: 12px;
 }
 
-/* the soft chart style (1.11) on a stack and a list of bars: each part a pill, its ink deepening along it */
-.is-soft .fv-stack__seg {
-  border-radius: 6px;
-}
-
+/* the soft chart style (1.11) on a stack and a list of bars: each part a pill (a bar is one already), its ink
+   deepening along it */
 .is-soft .fv-stack__seg,
 .is-soft .fv-bar__fill {
+  border-radius: 6px;
   background-image: linear-gradient(
     90deg,
     color-mix(in srgb, var(--fluvy-card) 40%, transparent),

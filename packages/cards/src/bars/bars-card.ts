@@ -332,6 +332,8 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     const title = this.config?.title ?? strings(this.hass, 'levels');
     // nothing measured is nothing to call good: the badge waits for a row
     const panel = emptyPanel(this, !rows.length, 'sliders', 'common.no_readings');
+    // soft: the bars' ink deepens along them
+    const list = softIn(this.config) ? 'so-rows is-soft' : 'so-rows';
     const fitted = this.head.fit({
       width,
       title,
@@ -355,9 +357,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         cut: fitted.cut,
         ...this.headActions(),
       })}
-      <div class="so-rows ${softIn(this.config) ? 'is-soft' : ''}" @keydown=${this.onRowsKey}>
-        ${panel ?? body}
-      </div>
+      <div class=${list} @keydown=${this.onRowsKey}>${panel ?? body}</div>
     </article>`;
   }
 }
