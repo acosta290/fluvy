@@ -422,6 +422,8 @@ export interface ResolvedGauge {
   readonly preset: GaugePreset;
   /** How high the waves of a gauge that holds a liquid rise, in px (the moving gauges' own). */
   readonly wave: number;
+  /** Whether the style is one that moves with what it reads: a scene in the gauge's room, not a control. */
+  readonly motion: boolean;
   /** Whether the gauge moves: the card's (or the house's) `animate`, and a style that has motion to show. */
   readonly animate: boolean;
   /** The tone a moving gauge wears where its card names none. */
@@ -445,6 +447,7 @@ export function resolveGauge(
   return {
     preset: name,
     wave: WAVE_PX[house.wave],
+    motion: GAUGE_PRESETS[name].motion,
     animate: (fine.animate ?? house.animate) && GAUGE_PRESETS[name].motion,
     ...(GAUGE_PRESETS[name].tone ? { tone: GAUGE_PRESETS[name].tone } : {}),
   };

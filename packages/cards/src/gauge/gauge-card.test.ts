@@ -119,7 +119,8 @@ describe('the ring’s moving gauges', () => {
   it('draws one that reads the sensor in the dial’s room, in its own tone where the card names none', async () => {
     const root = (await mount({ variant: 'ring', gauge: 'pulse' }, house())).shadowRoot!;
     const scene = root.querySelector('.so-gauge .fc-pulse') as HTMLElement;
-    expect([scene.style.width, scene.style.height]).toEqual(['240px', '224px']);
+    // the column's width (the card's 360 less its padding), the dial's height down to its range
+    expect([scene.style.width, scene.style.height]).toEqual(['320px', '224px']);
     expect(scene.classList.contains('fv-tone--accent')).toBe(true);
     expect(root.querySelector('.fc-reading b')?.textContent).toBe('2.3');
   });

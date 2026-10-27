@@ -23,13 +23,13 @@ import { chartStyles } from './styles.js';
 
 const MOVING = ['liquid', 'thermo', 'tank', 'battery', 'pulse', 'air', 'sun'] as const;
 
-/** The rooms the gauge card gives its ring at 152, 172, 211 and 266, and at a section's 360 and wider. */
+/** The rooms the gauge card gives a moving gauge at 152, 172, 211 and 266, and at a section's 360 and wider. */
 const ROOMS: readonly Room[] = [
   { w: 112, h: 140, small: true },
   { w: 132, h: 140, small: true },
-  { w: 168, h: 160, small: false },
-  { w: 224, h: 208, small: false },
-  { w: 240, h: 224, small: false },
+  { w: 171, h: 160, small: false },
+  { w: 226, h: 208, small: false },
+  { w: 320, h: 224, small: false },
 ];
 
 const host = (template: TemplateResult): HTMLElement => {

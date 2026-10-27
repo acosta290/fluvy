@@ -373,6 +373,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const radius = Math.min(RADIUS, Math.max(48, Math.floor((width / 2 - TICK - 12) / 4) * 4));
     const box = Math.ceil((radius + TICK + 12) / 4) * 8; // the dial's own box: twice its half, which sits on the 4 grid
     const inset = Math.max(0, Math.floor((width - box) / 2));
+    // the room a style's ring is drawn in: the dial's box, centred; a moving gauge's, the column's width
+    const [left, room] = style?.motion ? [0, width] : [inset, box];
     // the dial's height, down to its range's labels: the room a style's ring keeps
     const tall = dialLabelTop(radius, TICK) + 16;
 
@@ -430,13 +432,13 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
           : style?.preset !== 'ticks' && dial !== 'ticks'
             ? // a style's ring in the dial's room (its box, the height down to its range): the engine's, once here
               html`<div class="so-gauge">
-                <div style="margin-left:${inset}px;width:${box}px;height:${tall}px">
+                <div style="margin-left:${left}px;width:${room}px;height:${tall}px">
                   ${
                     style &&
                     engine?.drawGauge({
                       style,
-                      // a ring as tall as the dial's room, a dial its box; a moving gauge the room, in the column
-                      size: dial === 'ring' ? tall : dial === 'dial' ? box : Math.min(box, width),
+                      // a ring as tall as the dial's room, a dial its box, a moving gauge its room
+                      size: dial === 'ring' ? tall : room,
                       height: tall,
                       reads,
                       // how fast it moves an hour, over the window's last two slots (an hour of a day's), in the

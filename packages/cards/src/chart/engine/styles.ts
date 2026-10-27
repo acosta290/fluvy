@@ -395,6 +395,10 @@ export const chartStyles = css`
     line-height: 36px;
     color: var(--fluvy-text-secondary);
   }
+  /* the unit on the value's baseline, its own line no taller than itself: the figure's line is the value's */
+  .fc-reading__figure span {
+    line-height: 1;
+  }
   .fc-reading__figure b {
     font-size: 32px;
     font-weight: 700;
