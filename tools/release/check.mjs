@@ -34,7 +34,7 @@ const BUDGETS = {
   'house-heights': 4096,
   wall: 16_384,
   // the chart engine (1.11): the scales, paths, bars, axes, rings and gauges every chart card draws with, the styles,
-  // their sheet; the Chart card joins it. Planned at 19–20 KB
+  // their sheet, the gauges that move (7 KB of it); the Chart card joins it. Planned at 19–20 KB before those
   chart: 24_576,
   // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 80 KB since
   // 1.10 (its sheet left core, 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the
