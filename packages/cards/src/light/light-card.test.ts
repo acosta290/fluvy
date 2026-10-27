@@ -5,11 +5,12 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
 import { FluvyLightCard, lightHeight, type BulbDoes, type LightCardConfig } from './light-card.js';
+import * as lightEditor from './light-editor.js';
 
 // the index fetches the lazy families: they land before this file's page goes
 afterAll(() => familiesDefined);
 
-const list = FluvyLightCard.lists[0]!;
+const list = lightEditor.lists[0]!;
 const names = (schema: ReadonlyArray<{ name: string; schema?: readonly unknown[] }>): string[] =>
   schema.flatMap((item) =>
     item.schema ? names(item.schema as ReadonlyArray<{ name: string }>) : [item.name],
@@ -74,7 +75,7 @@ describe('the light card’s quick colours in the editor', () => {
 
   it('shows the bulb’s own default six as rows: whites first with a temperature, colours alone without', () => {
     const colours = (hass: HomeAssistant | undefined): unknown =>
-      FluvyLightCard.defaults!({ type: 'custom:fluvy-light-card', entity: 'light.lamp' }, hass)[
+      lightEditor.defaults({ type: 'custom:fluvy-light-card', entity: 'light.lamp' }, hass)[
         'colors'
       ];
     expect(colours(house(['hs', 'color_temp']))).toEqual([

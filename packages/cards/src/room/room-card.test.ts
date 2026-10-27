@@ -4,6 +4,7 @@ import { areaEntities, localize, preloadLanguages, type HomeAssistant } from '@f
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
 import { FluvyRoomCard, type RoomCardConfig } from './room-card.js';
+import * as roomEditor from './room-editor.js';
 
 // the index fetches the lazy families: they land before this file's page goes
 afterAll(() => familiesDefined);
@@ -282,7 +283,7 @@ describe('a room finds what is in it (#39)', () => {
   });
 
   it('shows in the editor the variant it draws and the readings it found', () => {
-    const defaults = FluvyRoomCard.defaults(
+    const defaults = roomEditor.defaults(
       { type: 'custom:fluvy-room-card', area: 'kuche' },
       house(),
     );
@@ -291,7 +292,7 @@ describe('a room finds what is in it (#39)', () => {
       temperature_entity: 'sensor.kuche_t',
       humidity_entity: 'sensor.kuche_h',
     });
-    const pictured = FluvyRoomCard.defaults(
+    const pictured = roomEditor.defaults(
       { type: 'custom:fluvy-room-card', area: 'garten', picture: '/local/garten.jpg' },
       house(),
     );
@@ -429,7 +430,7 @@ describe('the room card’s editor offers what acts in the room’s style (#58)'
     const names = await shown({ variant: 'tile', size: 'mini', readouts: ['sensor.garten_t'] });
     expect(names).not.toContain('size');
     expect(names).not.toContain('readouts');
-    expect(FluvyRoomCard.keys).not.toContain('size');
-    expect(FluvyRoomCard.keys).not.toContain('readouts');
+    expect(roomEditor.keys).not.toContain('size');
+    expect(roomEditor.keys).not.toContain('readouts');
   });
 });

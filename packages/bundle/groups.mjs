@@ -166,6 +166,14 @@ const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
 /**
+ * The editors the cards every page carries keep in a module of their own (`tile/tile-editor.ts`: a card's form, its
+ * lists, what it does by default — `Card.editor()`), and the template card's, which is built on the tile's: fetched
+ * with the visual editor, the first time one of them is edited. Named before the families, so a family's folder never
+ * keeps one.
+ */
+const FORMS = /\/packages\/cards\/src\/([\w-]+)\/\1-editor\.ts$/;
+
+/**
  * @typedef {object} Group
  * @property {string | ((id: string) => string)} name the chunk's name (`chunks/<name>-<hash>.js`)
  * @property {RegExp | ((id: string) => boolean)} test whether a module (its absolute path) belongs to it
@@ -173,12 +181,13 @@ const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy and the heights it counts with the house, the wall, the weather card, the
- * media, the chart engine, the Energy period card, energy (the history bars' readings on their own), devices (the
- * cameras' sheet on its own), appliances (their pictures on their own), automations and alerts families (each sheet
- * on its own), the template card, the web page card, the items card (its sheet on its own), the cards' editor, the
- * view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own
- * entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * page, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
+ * every page carries, the weather card, the media, the chart engine, the Energy period card, energy (the history bars'
+ * readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
+ * automations and alerts families (each sheet on its own), the template card, the web page card, the items card (its
+ * sheet on its own), the cards' editor, the view icons, the icon set's other part, and everything else (Fluvy's
+ * packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this
+ * order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -190,6 +199,7 @@ export const GROUPS = [
   { name: 'strategy', test: STRATEGY },
   { name: 'house-heights', test: HOUSE_HEIGHTS },
   { name: 'wall', test: WALL },
+  { name: 'forms', test: FORMS },
   { name: 'weather', test: WEATHER },
   { name: 'media', test: MEDIA },
   { name: 'history-bars-readings', test: HISTORY_BARS_READINGS },

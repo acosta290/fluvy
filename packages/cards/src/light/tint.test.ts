@@ -12,6 +12,7 @@ import { FluvyEntitiesCard } from '../entities/entities-card.js';
 import { FluvyTileCard } from '../tile/tile-card.js';
 import { FluvyTilesCard } from '../tiles/tiles-card.js';
 import { FluvyLightCard } from './light-card.js';
+import * as lightEditor from './light-editor.js';
 
 // the index fetches the lazy families: they land before this file's page goes
 afterAll(() => familiesDefined);
@@ -290,7 +291,7 @@ describe('the light card’s editor (#41)', () => {
   const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
     schema.flatMap((item) => (item.schema ? fields(item.schema) : [item]));
   const field = (name: string) =>
-    fields(FluvyLightCard.getConfigForm().schema).find((item) => item.name === name)!;
+    fields(lightEditor.getConfigForm().schema).find((item) => item.name === name)!;
   const options = (name: string) =>
     (field(name).selector?.['select'] as { options: { value: string; label: string }[] }).options;
 
@@ -306,9 +307,9 @@ describe('the light card’s editor (#41)', () => {
       ['full', 'Full colour'],
     ]);
     expect(options('light_whites').map((o) => o.value)).toEqual(['palette', 'temperature']);
-    const row = FluvyLightCard.getConfigForm().schema.find((item) =>
-      item.schema?.some((inner) => inner.name === 'tint'),
-    );
+    const row = lightEditor
+      .getConfigForm()
+      .schema.find((item) => item.schema?.some((inner) => inner.name === 'tint'));
     expect(row?.schema?.map((item) => item.name)).toEqual(['tint', 'tint_strength']);
   });
 
@@ -321,7 +322,7 @@ describe('the light card’s editor (#41)', () => {
   });
 
   it('shows the house’s default where the card says none', () => {
-    const defaults = () => FluvyLightCard.defaults!({ type: 'custom:fluvy-light-card' }, undefined);
+    const defaults = () => lightEditor.defaults({ type: 'custom:fluvy-light-card' }, undefined);
     expect(defaults()).toMatchObject({
       tint: 'off',
       tint_strength: 'full',

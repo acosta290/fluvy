@@ -1,4 +1,4 @@
-import type { FluvyCardConfig, LovelaceConfigForm, LovelaceGridOptions } from '@fluvy/core';
+import type { FluvyCardConfig, LovelaceCardConfig, LovelaceGridOptions } from '@fluvy/core';
 import { css, html, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import {
@@ -7,41 +7,18 @@ import {
   type TileItem,
   type TileSize,
 } from '../tile/tile-card.js';
-
-import {
-  accentField,
-  actionFields,
-  colourFields,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  holdsLight,
-  lightColourFields,
-  nameIconFields,
-  onlyWhen,
-  selectField,
-  tintField,
-  toneField,
-  sinceChoices,
-  sinceField,
-} from '../shared/form.js';
-import type { BaseKey } from '../shared/base.js';
+import type { CardEditor } from '../shared/base.js';
 import {
   columnsOf,
-  configKeys,
   ITEM_ALIASES,
   type AliasSpec,
   type Columns,
   type KnownKeys,
 } from '../shared/config.js';
-import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { sinceIds } from '../shared/since.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { withMembers } from '../shared/light.js';
-import { lightDefaults, type LovelaceCardConfig } from '@fluvy/core';
 
 /**
  * The group's options are a tile's (its size, its tint, its lights' colours, readouts for every tile), but where a
@@ -58,8 +35,7 @@ export interface TilesCardConfig
   columns?: Columns;
 }
 
-const SIZES: readonly TileSize[] = ['compact', 'mini', 'large'];
-const COLUMNS = ['1', '2', '3', '4', 'auto'] as const;
+export const SIZES: readonly TileSize[] = ['compact', 'mini', 'large'];
 /** The tiles' column gap (the theme's section grid gap). */
 const GAP = 16;
 /** The narrowest a grouped tile draws whole: a group too narrow for the columns asked lays out fewer, in more rows. */
@@ -102,70 +78,10 @@ export class FluvyTilesCard extends FluvyTileCard {
     `,
   ];
 
-  /** The group has no entity of its own: its tone and colour are its tiles' default. */
-  static override base: readonly BaseKey[] = ['entities', 'tone', 'color', 'card_color'];
-  static override keys = configKeys<TilesCardConfig>()([
-    'size',
-    'readouts',
-    'tiles',
-    'columns',
-    'tint',
-    'light_colors',
-    'light_whites',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'tiles',
-      alias: 'entities',
-      title: 'editor.tiles',
-      keys: [
-        'entity',
-        'name',
-        'icon',
-        'tone',
-        'color',
-        'readouts',
-        'since',
-        'tap_action',
-        'hold_action',
-      ],
-      schema: [
-        entityField(),
-        nameIconFields(),
-        fieldRow(toneField(), accentField('color', { bulb: true })),
-        entitiesField('readouts', ['sensor']),
-        sinceField(),
-        actionFields(),
-      ],
-    },
-  ];
-  /** A tile's `since` offers the house's timestamp sensors. */
-  static override choices: EditorChoices = sinceChoices;
-  static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
-  // the columns a group takes when it names none: three minis a row, else two
-  static override defaults: EditorDefaults = (config) => ({
-    size: 'compact',
-    columns: config['size'] === 'mini' ? '3' : '2',
-    tint: 'on',
-    light_colors: lightDefaults().colors,
-    light_whites: 'temperature',
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', undefined, true),
-        fieldRow(selectField('size', SIZES), selectField('columns', COLUMNS)),
-        ...colourFields(),
-        tintField(),
-        // a light's colours where the group holds a light
-        onlyWhen(holdsLight('tiles', 'entities'), lightColourFields()),
-        entitiesField('readouts', ['sensor']),
-        emptyFields(),
-      ],
-      ...formLabels({ readouts: 'editor.readouts' }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./tiles-editor.js');
   }
+  static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
 
   static override getStubConfig(_hass: unknown, entities: readonly string[]): TilesCardConfig {
     const picked = entities.filter((id) => /^(light|switch)\./.test(id)).slice(0, 4);

@@ -217,7 +217,8 @@ const plan = (page, tag, source) =>
       }
       const fields = (schema) =>
         schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
-      const form = fields(card.getConfigForm?.().schema ?? []);
+      // its editor as the base reads it: its class's, or the module a card every page carries keeps it in
+      const form = fields((await card.editor?.())?.getConfigForm().schema ?? []);
       const axis = form.find((f) => f.name === 'variant') ?? form.find((f) => f.name === 'size');
       const options = axis?.selector?.select?.options?.map((o) => o.value ?? o) ?? [];
       const variants = options.length

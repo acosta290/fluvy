@@ -22,12 +22,15 @@ type Schema = readonly {
   type?: string;
   schema?: Schema;
 }[];
-interface Contract {
-  base: readonly string[];
+/** What a card's editor shows (its class's, or the module a card every page carries keeps it in). */
+interface Editor {
   keys: readonly string[];
-  lists: readonly { key: string; alias?: string; schema: Schema }[];
-  aliases?: { keys?: readonly { from: string; to: string }[]; drop?: readonly string[] };
+  lists?: readonly { key: string; alias?: string; schema: Schema }[];
   getConfigForm(): { schema: Schema };
+}
+interface Contract {
+  aliases?: { keys?: readonly { from: string; to: string }[]; drop?: readonly string[] };
+  editor(): Promise<Editor>;
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -135,22 +138,29 @@ function option(field: Field, fields: readonly Field[]): string {
     : `\`${field.name}\``;
 }
 
-function row(tag: string, name: string, description: string, card: Contract): string {
+function row(
+  tag: string,
+  name: string,
+  description: string,
+  card: Contract,
+  editor: Editor,
+): string {
+  const cardLists = editor.lists ?? [];
   // a list's own key is said once, as the list
-  const fields = flatten(card.getConfigForm().schema).filter(
-    (f) => card.keys.includes(f.name) && !card.lists.some((list) => list.key === f.name),
+  const fields = flatten(editor.getConfigForm().schema).filter(
+    (f) => editor.keys.includes(f.name) && !cardLists.some((list) => list.key === f.name),
   );
   const own = fields
     .filter((field, index) => fields.findIndex((f) => f.name === field.name) === index)
     .map((field) => option(field, fields));
-  const lists = card.lists.map((list) => {
+  const lists = cardLists.map((list) => {
     const keys = flatten(list.schema).map((f) => `\`${f.name}\``);
     return `\`${list.key}\` (a list: ${keys.join(', ')})`;
   });
   const options = [...own, ...lists];
   const reads = [
     ...(card.aliases?.keys ?? []).map((m) => `\`${m.from}\` → \`${m.to}\``),
-    ...card.lists.filter((list) => list.alias).map((list) => `\`${list.alias}\` → \`${list.key}\``),
+    ...cardLists.filter((list) => list.alias).map((list) => `\`${list.alias}\` → \`${list.key}\``),
     ...(card.aliases?.drop ?? []).map((key) => `\`${key}\` (folded in)`),
   ];
   const cells = [
@@ -164,10 +174,12 @@ function row(tag: string, name: string, description: string, card: Contract): st
 }
 
 const catalogue = new Map(
-  CATALOGUE.map(([tag, element, name, description]) => [
-    tag,
-    { element: element as unknown as Contract, name, description },
-  ]),
+  await Promise.all(
+    CATALOGUE.map(async ([tag, element, name, description]) => {
+      const card = element as unknown as Contract;
+      return [tag, { card, editor: await card.editor(), name, description }] as const;
+    }),
+  ),
 );
 const placed = new Set(SECTIONS.flatMap(([, tags]) => tags));
 const missing = [...catalogue.keys()].filter((tag) => !placed.has(tag));
@@ -177,7 +189,7 @@ const tables = SECTIONS.map(([title, tags]) => {
   const rows = tags.map((tag) => {
     const entry = catalogue.get(tag);
     if (!entry) throw new Error(`${tag} is in a section but not in the catalogue`);
-    return row(tag, entry.name, entry.description, entry.element);
+    return row(tag, entry.name, entry.description, entry.card, entry.editor);
   });
   return `## ${title}\n\n| Card | Type | What it is | Options | Reads |\n| --- | --- | --- | --- | --- |\n${rows.join('\n')}`;
 }).join('\n\n');

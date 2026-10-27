@@ -5,7 +5,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   entriesOf,
 } from '@fluvy/core';
@@ -35,34 +34,10 @@ import {
   type NumberKeys,
 } from '../shared/units.js';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
-
-import {
-  accentField,
-  actionField,
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  idsOnly,
-  nameIconFields,
-  NUMBER_DEFAULTS,
-  numberFields,
-  selectField,
-  showIconField,
-  textField,
-  titleFields,
-  toneField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { optionColumnsFor } from '../shared/options.js';
 import {
@@ -75,7 +50,7 @@ import {
   textWidth,
   type NameOf,
 } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { TemplateTexts } from '../shared/templates.js';
 
 const strings = words('stat-tiles');
@@ -83,8 +58,6 @@ const strings = words('stat-tiles');
 export type StatTilesVariant = 'full' | 'compact';
 /** Tiles a row: two, three, or as many as the labels and values allow (three when they fit, else two). */
 export type StatColumns = 2 | 3 | 'auto';
-const VARIANTS: readonly StatTilesVariant[] = ['full', 'compact'];
-const COLUMNS = ['auto', '2', '3'] as const;
 
 /** A `columns` as written (a number, a numeral in quotes, "auto", nonsense) to one the card lays out. */
 function statColumns(raw: unknown, fallback: StatColumns): StatColumns {
@@ -240,78 +213,13 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   private readonly texts = new TemplateTexts(this);
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<StatTilesCardConfig>()([
-    'title',
-    'subtitle',
-    'variant',
-    'columns',
-    'badge_entity',
-    'badge_label',
-    'tiles',
-    'rows',
-    'unit',
-    'decimals',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'tiles',
-      title: 'editor.tiles',
-      keys: ['entity', 'name', 'icon', 'tone', 'highlight', 'unit', 'decimals'],
-      schema: [
-        entityField(),
-        nameIconFields(),
-        fieldRow(toneField(), boolField('highlight')),
-        numberFields(),
-      ],
-    },
-    {
-      key: 'rows',
-      title: 'editor.rows',
-      keys: ['entity', 'name', 'icon', 'secondary', 'tone', 'color', 'tap_action'],
-      schema: [
-        entityField(),
-        nameIconFields(),
-        textField('secondary'),
-        fieldRow(toneField(), accentField()),
-        actionField(),
-      ],
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./stat-tiles-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'entities', to: 'tiles' }],
     items: { rows: ITEM_ALIASES, tiles: ITEM_ALIASES },
   };
-  /** Two a row in full; compact tiles take three when they fit. */
-  static override defaults: EditorDefaults = (config) => ({
-    variant: 'full',
-    columns: config.variant === 'compact' ? 'auto' : '2',
-    ...NUMBER_DEFAULTS,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(selectField('variant', VARIANTS), selectField('columns', COLUMNS)),
-        entitiesField('tiles', undefined, true),
-        fieldRow(entityField(undefined, 'entity', false), textField('name')),
-        fieldRow({ name: 'badge_entity', selector: { entity: {} } }, textField('badge_label')),
-        entitiesField('rows'),
-        emptyFields(),
-        numberFields(),
-        actionFields(),
-      ],
-      ...idsOnly('tiles', 'rows'),
-      ...editorLabels(
-        strings,
-        { tiles: 'tiles', rows: 'rows', badge_entity: 'badge_entity', badge_label: 'badge_label' },
-        {},
-      ),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): StatTilesCardConfig {
     return {

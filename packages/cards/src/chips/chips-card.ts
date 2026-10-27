@@ -3,7 +3,6 @@ import {
   strings,
   type ActionConfig,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { icon, reducedMotion, sheetStyles, sideScroll, zoomOf, type IconRef } from '@fluvy/ui';
@@ -15,22 +14,10 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card, type BaseKey } from '../shared/base.js';
-import {
-  actionField,
-  emptyFields,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  textField,
-  tintField,
-  accentField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('chips');
 
@@ -177,41 +164,13 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
     this.besideMark_ = false;
   }
 
-  /** The row's accessible name is the base's `name`; the tabs are its own. */
-  static override base: readonly BaseKey[] = ['name'];
-  static override keys = configKeys<ChipsCardConfig>()(['chips', 'tint', ...EMPTY_KEYS]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'chips',
-      idKey: 'name',
-      title: 'editor.tabs',
-      keys: ['name', 'icon', 'path', 'entity', 'action', 'color'],
-      schema: [
-        textField('name'),
-        fieldRow(iconField(), textField('path')),
-        entityField(undefined, 'entity', false),
-        accentField('color', { item: true }),
-        actionField('action'),
-      ],
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./chips-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'label', to: 'name' }],
     items: { chips: ITEM_ALIASES },
   };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ tint: 'on' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        textField('name'),
-        { name: 'chips', required: true, selector: { object: {} } },
-        tintField(),
-        emptyFields(),
-      ],
-      ...formLabels({ chips: 'editor.tabs' }),
-    };
-  }
 
   static getStubConfig(): ChipsCardConfig {
     return {

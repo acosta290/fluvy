@@ -1,33 +1,19 @@
-import { stateText, strings, type LovelaceConfigForm, type LovelaceGridOptions } from '@fluvy/core';
+import { stateText, strings, type LovelaceGridOptions } from '@fluvy/core';
 import { forgetTextWidths, sheetStyles } from '@fluvy/ui';
 import { nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
-import {
-  accentField,
-  editorLabels,
-  entitiesField,
-  entityField,
-  fieldRow,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-  toneField,
-} from '../shared/form.js';
 import {
   calendarsOf,
   daysOf,
   idsOf,
   toneOf,
   viewOf,
-  VIEWS,
   type CalendarCardConfig,
   type CalendarItem,
   type CalendarView,
 } from './config.js';
 import {
-  WEEKDAYS,
   addDays,
   addMonths,
   firstWeekday,
@@ -49,8 +35,6 @@ import { NEXT_DAYS, tileView } from './views/tile.js';
 import { upcomingView } from './views/upcoming.js';
 import { weekView } from './views/week.js';
 import { Words } from './words.js';
-import { configKeys } from '../shared/config.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 
 const s = strings('calendar');
 
@@ -59,13 +43,6 @@ export type { CalendarCardConfig, CalendarView } from './config.js';
 const REFRESH = 15 * 60_000; // while visible, a window is read again this often
 const RETRY = 60_000; // a calendar that failed is asked again after a minute, then ever more patiently (up to REFRESH)
 const IDLE = 10 * 60_000; // a day someone picked gives way to today again after this long
-
-const EDITOR_LABELS = {
-  tile: 'editor_tile',
-  first_weekday: 'editor_first_weekday',
-  start_hour: 'editor_start_hour',
-  end_hour: 'editor_end_hour',
-} as const;
 
 /**
  * Every calendar of the approved sheet on one card, chosen with `view`: the day's agenda, the month,
@@ -142,55 +119,8 @@ export class FluvyCalendarCard extends Card<CalendarCardConfig> {
     this.clock = new Date();
   }
 
-  /* ---------- Lovelace ---------- */
-
-  /** A calendar card has no entity of its own: its calendars are its list, its colour the accent (today, the selection). */
-  static override base: readonly BaseKey[] = ['entities', 'color', 'card_color', 'show_icon'];
-  static override keys = configKeys<CalendarCardConfig>()([
-    'calendars',
-    'variant',
-    'tile',
-    'title',
-    'first_weekday',
-    'days',
-    'start_hour',
-    'end_hour',
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'calendars',
-      alias: 'entities',
-      title: 'editor.rows',
-      domains: ['calendar'],
-      keys: ['entity', 'name', 'tone', 'color'],
-      schema: [entityField(['calendar']), textField('name'), fieldRow(toneField(), accentField())],
-    },
-  ];
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'agenda',
-    tile: 'date',
-    first_weekday: 'language',
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', ['calendar'], true),
-        fieldRow(selectField('variant', VIEWS), textField('title')),
-        showIconField(),
-        fieldRow(
-          selectField('tile', ['date', 'next']),
-          selectField('first_weekday', ['language', ...WEEKDAYS]),
-        ),
-        fieldRow(numberField('days', 1, 31), numberField('start_hour', 0, 23)),
-        fieldRow(
-          numberField('end_hour', 1, 24),
-          accentField(),
-          accentField('card_color', { none: true }),
-        ),
-      ],
-      ...editorLabels(s, EDITOR_LABELS, { days: 'editor.days' }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./calendar-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): CalendarCardConfig {

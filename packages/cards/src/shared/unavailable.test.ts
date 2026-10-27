@@ -207,7 +207,7 @@ const hass = {
 
 type CardClass = CustomElementConstructor & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;
-  getConfigForm?(): { schema: readonly FormItem[] };
+  editor(): Promise<{ getConfigForm(): { schema: readonly FormItem[] } }>;
 };
 type FormItem = {
   name: string;
@@ -272,6 +272,14 @@ const fields = (schema: readonly FormItem[]): FormItem[] =>
   schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
 
 /** Each card's variants from its stub: its editor's `variant` (or a tile's `size`), each written over the stub. */
+const forms = new Map(
+  await Promise.all(
+    (await catalogue()).map(
+      async ([tag, element]) =>
+        [tag, (await (element as unknown as CardClass).editor()).getConfigForm()] as const,
+    ),
+  ),
+);
 const variants = (await catalogue()).flatMap(([tag, element]) => {
   const card = element as unknown as CardClass;
   let stub: LovelaceCardConfig;
@@ -280,7 +288,7 @@ const variants = (await catalogue()).flatMap(([tag, element]) => {
   } catch {
     return [];
   }
-  const form = fields(card.getConfigForm?.().schema ?? []);
+  const form = fields(forms.get(tag)?.schema ?? []);
   const axis = form.find((f) => f.name === 'variant') ?? form.find((f) => f.name === 'size');
   const options = (axis?.selector?.select?.options ?? []).map((o) =>
     typeof o === 'string' ? o : o.value,

@@ -7,7 +7,6 @@ import {
   toggleEntity,
   valueParts,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
 } from '@fluvy/core';
@@ -25,26 +24,13 @@ import {
 
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  iconField,
-  numberField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { ROW } from '../shared/heights.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 import { sideStacked } from '../shared/value-row.js';
 
 const strings = words('humidity');
@@ -122,51 +108,11 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     this.series_ = undefined;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<HumidityCardConfig>()([
-    'subtitle',
-    'low',
-    'high',
-    'temperature_entity',
-    'hours',
-    'show_trend',
-    'humidifier_entity',
-  ]);
+  static override editor(): Promise<CardEditor> {
+    return import('./humidity-editor.js');
+  }
   /** `trend_hours` was the window's older name; `trend_hours: 0` still hides the row. */
   static override aliases: AliasSpec = { keys: [{ from: 'trend_hours', to: 'hours' }] };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ show_trend: true });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['sensor', 'number', 'input_number']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(numberField('low', 0, 100), numberField('high', 0, 100)),
-        {
-          name: 'temperature_entity',
-          selector: { entity: { domain: ['sensor'], device_class: 'temperature' } },
-        },
-        {
-          name: 'humidifier_entity',
-          selector: { entity: { domain: ['humidifier', 'switch', 'fan', 'input_boolean'] } },
-        },
-        fieldRow(numberField('hours', 1, 48), boolField('show_trend')),
-        actionFields(),
-      ],
-      ...editorLabels(
-        strings,
-        {
-          low: 'low',
-          high: 'high',
-          temperature_entity: 'temperature_entity',
-          humidifier_entity: 'humidifier_entity',
-        },
-        {},
-      ),
-    };
-  }
 
   static getStubConfig(
     hass: { states?: Record<string, { attributes: { device_class?: string } }> } | undefined,

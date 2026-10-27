@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
 import { FluvyOpeningsCard } from './openings-card.js';
+import * as openingsEditor from './openings-editor.js';
 
 // the index defines the cards' tags before a page needs them
 await familiesDefined;
@@ -158,12 +159,12 @@ describe('the openings card’s real last change (#67)', () => {
 
   describe('its editor', () => {
     it('offers a row’s since among the house’s timestamp sensors, any other typed', () => {
-      const list = FluvyOpeningsCard.lists[0]!;
+      const list = openingsEditor.lists[0]!;
       const since = list.schema.find((item) => item.name === 'since');
       expect(list.keys).toContain('since');
       expect(since?.selector?.['select']).toMatchObject({ custom_value: true, options: [] });
       expect(since?.helper).toBe('editor.since_help');
-      const choices = FluvyOpeningsCard.choices!({ type: 'custom:fluvy-openings-card' }, hass);
+      const choices = openingsEditor.choices({ type: 'custom:fluvy-openings-card' }, hass);
       expect(choices['since']?.map((option) => option.value)).toEqual([
         'sensor.front_door_real_last_changed',
         'sensor.kitchen_window_real_last_changed',

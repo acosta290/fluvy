@@ -7,7 +7,6 @@ import {
   valueParts,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -27,22 +26,9 @@ import {
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { batteryOf } from '../shared/battery.js';
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  nameIconFields,
-  selectField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
 import {
   actionGap,
   actionsThatFit,
@@ -52,12 +38,11 @@ import {
   pretty,
   shownStateText,
 } from '../cover/common.js';
-import { configKeys, type RowStyle } from '../shared/config.js';
+import type { RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
 import { chipBlock, chipRows, COMPACT, drawnAs } from '../shared/heights.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const vacuumStrings = strings('vacuum');
 
@@ -191,52 +176,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   private readonly suctionHold = new Hold<string | null>(this);
   private readonly head = new HeadFit(this);
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<VacuumCardConfig>()([
-    'subtitle',
-    'variant',
-    'show_battery',
-    'area_entity',
-    'duration_entity',
-    'remaining_entity',
-    'battery_entity',
-    'suction_style',
-  ]);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'full',
-    suction_style: 'full',
-    show_battery: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['vacuum', 'lawn_mower']),
-        nameIconFields(),
-        showIconField(),
-        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
-        fieldRow(boolField('show_battery'), entityField(['sensor'], 'battery_entity', false)),
-        fieldRow(
-          entityField(['sensor'], 'area_entity', false),
-          entityField(['sensor'], 'duration_entity', false),
-        ),
-        fieldRow(
-          entityField(['sensor'], 'remaining_entity', false),
-          selectField('suction_style', ['full', 'chips']),
-        ),
-        ...colourFields(),
-        actionFields(),
-      ],
-      ...editorLabels(
-        vacuumStrings,
-        { area_entity: 'area', duration_entity: 'elapsed' },
-        {
-          battery_entity: 'vacuum.battery',
-          remaining_entity: 'timer.remaining',
-          suction_style: 'editor.suction_style',
-        },
-      ),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./vacuum-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): VacuumCardConfig {

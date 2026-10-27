@@ -83,6 +83,9 @@ const BUDGETS = {
   // the weather card
   weather: 12_288,
   editor: 8192,
+  // the editors of the cards every page carries: their forms, lists and defaults, fetched with the visual editor
+  // (1.11: they left core, 6.3 KB)
+  forms: 12_288,
   'view-icons': 4096,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,

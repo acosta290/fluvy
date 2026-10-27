@@ -6,7 +6,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -28,23 +27,9 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  entityField,
-  fieldRow,
-  formLabels,
-  nameIconFields,
-  selectField,
-  showIconField,
-  textField,
-  whenOffField,
-} from '../shared/form.js';
 import {
   Burst,
   Hold,
@@ -53,13 +38,12 @@ import {
   releasePresses,
   StableTemplate,
 } from '../cover/common.js';
-import { configKeys, type RowStyle, type WhenOff } from '../shared/config.js';
+import type { RowStyle, WhenOff } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { axisHolds } from '../shared/axis.js';
 import { firstFit } from '../shared/fit.js';
 import { chipBlock, chipRows, COMPACT, drawnAs, ROW } from '../shared/heights.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 
 const fanStrings = strings('fan');
@@ -213,45 +197,8 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     this.fine = null;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<FanCardConfig>()([
-    'subtitle',
-    'variant',
-    'show_stepper',
-    'show_presets',
-    'preset_style',
-    'show_oscillation',
-    'show_direction',
-    'when_off',
-  ]);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'full',
-    show_stepper: true,
-    preset_style: 'full',
-    show_presets: true,
-    show_oscillation: true,
-    show_direction: true,
-    when_off: 'all',
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['fan']),
-        nameIconFields(),
-        showIconField(),
-        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
-        boolField('show_stepper'),
-        fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
-        fieldRow(boolField('show_oscillation'), boolField('show_direction')),
-        whenOffField(),
-        ...colourFields(),
-        actionFields(),
-      ],
-      ...formLabels({
-        show_presets: 'fan.preset',
-      }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./fan-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): FanCardConfig {

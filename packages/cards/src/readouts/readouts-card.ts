@@ -5,7 +5,6 @@ import {
   type ActionConfig,
   type FluvyCardConfig,
   type HomeAssistant,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { glyph, sheetStyles } from '@fluvy/ui';
@@ -18,27 +17,12 @@ import {
   type TemplateResult,
 } from 'lit';
 import { contentWidth } from '../hello/fit.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
-import {
-  accentField,
-  actionField,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  NUMBER_DEFAULTS,
-  numberField,
-  numberFields,
-  selectField,
-  textField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { askedParts, type NumberKeys } from '../shared/units.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('readouts');
 
@@ -63,7 +47,6 @@ interface Baseline {
   readonly range: number;
 }
 
-const DOMAINS: readonly string[] = ['sensor', 'number', 'input_number', 'counter'];
 const MAX = 4;
 const GAP = 16;
 /** Narrower than this a column cannot hold an 11/600 uppercase label ("TEMPERATURE" is 90 px): the strip drops a column instead of clipping one. */
@@ -186,45 +169,10 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
     new FontsSettled(this);
   }
 
-  /** A strip of readouts has no entity of its own; its colour is its figures' accent. */
-  static override base: readonly BaseKey[] = ['entities', 'color', 'card_color'];
-  static override keys = configKeys<ReadoutsCardConfig>()([
-    'rows',
-    'hours',
-    'variant',
-    'unit',
-    'decimals',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      domains: DOMAINS,
-      keys: ['entity', 'name', 'unit', 'decimals', 'tap_action'],
-      schema: [entityField(DOMAINS), textField('name'), numberFields(), actionField()],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  static override defaults: EditorDefaults = () => ({
-    variant: 'grid',
-    hours: 6,
-    ...NUMBER_DEFAULTS,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', DOMAINS, true),
-        fieldRow(numberField('hours', 1, 48), selectField('variant', ['grid', 'row'])),
-        accentField(),
-        accentField('card_color', { none: true }),
-        emptyFields(),
-        numberFields(),
-      ],
-      ...formLabels({}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./readouts-editor.js');
   }
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
 
   static getStubConfig(
     hass: HomeAssistant | undefined,

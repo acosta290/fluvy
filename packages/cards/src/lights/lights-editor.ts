@@ -1,0 +1,98 @@
+import type { LovelaceConfigForm } from '@fluvy/core';
+import type { BaseKey } from '../shared/base.js';
+import { configKeys } from '../shared/config.js';
+import {
+  accentField,
+  actionFields,
+  areaField,
+  boolField,
+  colourFields,
+  emptyFields,
+  entityField,
+  fieldRow,
+  formLabels,
+  iconField,
+  lightColourFields,
+  nameIconFields,
+  onlyWhen,
+  selectField,
+  showIconField,
+  textField,
+  tintField,
+} from '../shared/form.js';
+import { EMPTY_KEYS } from '../shared/lists.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { LIGHTS_VARIANTS, type LightsCardConfig } from './lights-card.js';
+
+/** The lights card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
+
+export const base: readonly BaseKey[] = [
+  'name',
+  'icon',
+  'tone',
+  'color',
+  'card_color',
+  'tap_action',
+  'hold_action',
+  'show_icon',
+];
+
+export const keys = configKeys<LightsCardConfig>()([
+  'area',
+  'lights',
+  'variant',
+  'show_count',
+  'show_level',
+  'show_brightness',
+  'light_colors',
+  'light_whites',
+  'tint',
+  ...EMPTY_KEYS,
+]);
+
+export const lists: readonly RowsListSpec[] = [
+  {
+    key: 'lights',
+    title: 'lights.editor_lights',
+    domains: ['light'],
+    keys: ['entity', 'name', 'icon', 'color'],
+    schema: [
+      entityField(['light']),
+      fieldRow(textField('name'), iconField()),
+      accentField('color', { bulb: true }),
+    ],
+  },
+];
+
+export const defaults: EditorDefaults = () => ({
+  variant: 'row',
+  show_count: true,
+  show_level: true,
+  show_brightness: false,
+  light_colors: true,
+  light_whites: 'temperature',
+  tint: 'on',
+});
+
+export function getConfigForm(): LovelaceConfigForm {
+  return {
+    schema: [
+      areaField(),
+      nameIconFields(),
+      showIconField(),
+      fieldRow(selectField('variant', LIGHTS_VARIANTS), boolField('show_brightness')),
+      fieldRow(boolField('show_count'), boolField('show_level')),
+      lightColourFields(),
+      ...colourFields(),
+      // the tiles' colour at rest: the row and the chips have no surface to wash
+      onlyWhen(({ variant }) => variant === 'tiles', tintField()),
+      emptyFields(),
+      actionFields(),
+    ],
+    ...formLabels({
+      show_level: 'lights.editor_show_level',
+      show_brightness: 'lights.editor_show_brightness',
+      tint: 'lights.editor_tint',
+    }),
+  };
+}

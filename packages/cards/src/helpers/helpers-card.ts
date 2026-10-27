@@ -1,33 +1,10 @@
 import { strings } from '@fluvy/core';
-import type {
-  EntityView,
-  FluvyCardConfig,
-  LovelaceConfigForm,
-  LovelaceGridOptions,
-} from '@fluvy/core';
+import type { EntityView, FluvyCardConfig, LovelaceGridOptions } from '@fluvy/core';
 import { head, sheetStyles } from '@fluvy/ui';
 
 import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
-import { Card, type BaseKey } from '../shared/base.js';
-
-import {
-  actionFields,
-  colourFields,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  nameIconFields,
-  selectField,
-  showIconField,
-  textField,
-  titleFields,
-  sinceChoices,
-  sinceField,
-} from '../shared/form.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { nameOf, type HelperHost, type HelperRowConfig } from './context.js';
 import { compactNumber, isBoxedNumber, numberBlocks } from './number.js';
@@ -48,13 +25,12 @@ import { MAX_CHIPS, selectPiece, selectValue } from './select.js';
 import { rowStyles } from './styles.js';
 
 import { textBlocks } from './text.js';
-import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { sinceIds } from '../shared/since.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { toneOf } from '../shared/colour.js';
 import { chipRows, EMPTY, HEAD, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, idsOf, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, idsOf, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { TemplateTexts } from '../shared/templates.js';
 
 const s = strings('helpers');
@@ -272,61 +248,10 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     return { ...host, bare: !this.rowsKeepIcon(host) };
   }
 
-  /** A card of many helpers has no entity of its own: its head's icon, tone and colour, its tap ("…") and its hold. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<HelpersCardConfig>()([
-    'title',
-    'subtitle',
-    'rows',
-    'options_style',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      keys: ['entity', 'name', 'icon', 'secondary', 'since', 'presets'],
-      schema: [
-        entityField(),
-        nameIconFields(),
-        textField('secondary'),
-        sinceField(),
-        {
-          name: 'presets',
-          selector: { select: { multiple: true, custom_value: true, options: [] } },
-        },
-      ],
-    },
-  ];
-  /** A row's `since` offers the house's timestamp sensors. */
-  static override choices: EditorChoices = sinceChoices;
-  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ options_style: 'full' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), selectField('options_style', ['full', 'chips'])),
-        showIconField(),
-        ...colourFields(),
-        entitiesField('entities', undefined, true),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...formLabels({ options_style: 'editor.options_style' }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./helpers-editor.js');
   }
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): HelpersCardConfig {
     const helpers = entities.filter((id) =>

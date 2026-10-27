@@ -6,8 +6,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type HaFormSchemaItem,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -20,47 +18,18 @@ import { HeadFit } from '../energy/head.js';
 
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
-
-import {
-  accentField,
-  actionField,
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  idsOnly,
-  nameIconFields,
-  selectField,
-  showIconField,
-  textField,
-  titleFields,
-  toneField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { EMPTY, HEAD, ROW, ROW_BAR, ROW_COMPACT } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 
 const strings = words('bars');
 
 export type BarsVariant = 'full' | 'compact';
-const VARIANTS: readonly BarsVariant[] = ['full', 'compact'];
-
-const anyNumber = (name: string): HaFormSchemaItem => ({
-  name,
-  selector: { number: { mode: 'box', step: 'any' } },
-});
 
 export interface BarRowConfig {
   entity: string;
@@ -156,82 +125,13 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   /** A row's own context when it is a template: rendered by Home Assistant, live. */
   private readonly texts = new TemplateTexts(this);
 
-  /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
-  static override base: readonly BaseKey[] = [
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<BarsCardConfig>()([
-    'title',
-    'subtitle',
-    'rows',
-    'variant',
-    'badge_ok',
-    'badge_warn',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      title: 'editor.rows',
-      keys: [
-        'entity',
-        'name',
-        'icon',
-        'secondary',
-        'sub_entity',
-        'min',
-        'max',
-        'low',
-        'high',
-        'tone',
-        'color',
-        'plain',
-        'tap_action',
-      ],
-      schema: [
-        entityField(),
-        nameIconFields(),
-        textField('secondary'),
-        entitiesField('sub_entity'),
-        fieldRow(toneField(), accentField()),
-        fieldRow(anyNumber('min'), anyNumber('max')),
-        fieldRow(anyNumber('low'), anyNumber('high')),
-        fieldRow(boolField('plain'), actionField()),
-      ],
-      computeLabel: formLabels({ sub_entity: 'editor.sub_entity' }).computeLabel,
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./bars-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'entities', to: 'rows' }],
     items: { rows: ITEM_ALIASES },
   };
-  static override defaults: EditorDefaults = () => ({ variant: 'full' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), selectField('variant', VARIANTS)),
-        showIconField(),
-        ...colourFields(),
-        entitiesField('rows', undefined, true),
-        fieldRow(textField('badge_ok'), textField('badge_warn')),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...idsOnly('rows'),
-      ...editorLabels(
-        strings,
-        { rows: 'rows', badge_ok: 'badge_ok', badge_warn: 'badge_warn' },
-        {},
-      ),
-    };
-  }
 
   static getStubConfig(
     hass: { states?: Record<string, { attributes: { device_class?: string } }> } | undefined,

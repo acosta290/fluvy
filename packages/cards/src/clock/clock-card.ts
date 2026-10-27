@@ -1,11 +1,8 @@
 import {
   isTimeZone,
   reducedMotion,
-  strings,
   wallClock,
   type FluvyCardConfig,
-  type HaFormSchemaItem,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { isoWeek, sheetStyles, type Tone } from '@fluvy/ui';
@@ -17,17 +14,8 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
-import {
-  accentField,
-  actionField,
-  boolField,
-  entityField,
-  formLabels,
-  selectField,
-  textField,
-} from '../shared/form.js';
 import { TextRuler } from '../shared/fit.js';
 import { heroAnalog, heroDigital, side, tile, type ClockModel } from './layouts.js';
 import { ForecastFeed, offersDaily, readSky, type Forecast, type Sky } from './sky.js';
@@ -43,10 +31,7 @@ import {
   type ClockFormat,
   type ClockParts,
 } from './time.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
-
-const s = strings('clock', 'weather');
+import type { AliasSpec } from '../shared/config.js';
 
 export interface ClockCardConfig extends FluvyCardConfig {
   /** The analog face, or big tabular digits. */
@@ -72,19 +57,6 @@ export interface ClockCardConfig extends FluvyCardConfig {
   /** Test hook (undocumented): an ISO instant that freezes the clock, so a render can be held against the sheet. */
   _now?: string;
 }
-
-const CORE_LABELS = {
-  weather: 'editor.weather',
-  show_seconds: 'editor.seconds',
-} as const;
-const OWN_LABELS = {
-  numerals: 'editor.numerals',
-  show_week: 'editor.week',
-  hour12: 'editor.hour12',
-  time_zone: 'editor.time_zone',
-} as const;
-
-const isOwnLabel = (name: string): name is keyof typeof OWN_LABELS => name in OWN_LABELS;
 
 /** A time that cannot be read: its slot, a dash. */
 const NO_TIME: ClockParts = { time: '—', seconds: '', period: '' };
@@ -189,21 +161,9 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     });
   }
 
-  /** A clock has no entity: it honours a tap and the card's colour (the face's accent). */
-  static override base: readonly BaseKey[] = ['tap_action', 'color', 'card_color'];
-  static override keys = configKeys<ClockCardConfig>()([
-    'face',
-    'variant',
-    'numerals',
-    'show_seconds',
-    'hour12',
-    'weather',
-    'show_forecast',
-    'show_week',
-    'time_zone',
-    'title',
-    'show_date',
-  ]);
+  static override editor(): Promise<CardEditor> {
+    return import('./clock-editor.js');
+  }
   /**
    * The older names: `variant` said analog or digital (now `face`) and `layout` the look (now `variant`, read by
    * the shared aliases after these); `seconds`, `date`, `week` and `forecast` are the `show_*` toggles.
@@ -217,53 +177,6 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
       { from: 'forecast', to: 'show_forecast' },
     ],
   };
-  static override defaults: EditorDefaults = (config, hass) => {
-    const analog = config['face'] !== 'digital';
-    const hero = config['variant'] !== 'side' && config['variant'] !== 'tile';
-    return {
-      face: 'analog',
-      variant: 'hero',
-      numerals: 'none',
-      show_seconds: analog && hero,
-      hour12: resolveHour12(hass, undefined),
-      show_date: true,
-      show_week: false,
-      show_forecast: Boolean(config['weather']),
-    };
-  };
-  static override getConfigForm(): LovelaceConfigForm {
-    const core = formLabels(CORE_LABELS);
-    const grid = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
-      type: 'grid',
-      name: '',
-      flatten: true,
-      schema,
-    });
-    return {
-      schema: [
-        grid(
-          selectField('face', ['analog', 'digital']),
-          selectField('variant', ['hero', 'side', 'tile']),
-        ),
-        grid(selectField('numerals', ['none', 'quarters', 'all']), textField('title')),
-        boolField('show_seconds'),
-        boolField('hour12'),
-        boolField('show_date'),
-        boolField('show_week'),
-        entityField(['weather'], 'weather', false),
-        boolField('show_forecast'),
-        textField('time_zone'),
-        accentField(),
-        accentField('card_color', { none: true }),
-        actionField(),
-      ],
-      computeLabel: (schema, localize) =>
-        core.computeLabel?.(schema, localize) ??
-        (isOwnLabel(schema.name)
-          ? s({ language: document.documentElement.lang || 'en' }, OWN_LABELS[schema.name])
-          : undefined),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ClockCardConfig {
     const weather = entities.find((id) => id.startsWith('weather.'));

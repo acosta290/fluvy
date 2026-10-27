@@ -3,7 +3,6 @@ import {
   strings as words,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -18,32 +17,12 @@ import type { Segment } from '../shared/fit.js';
 
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
-
-import {
-  accentField,
-  actionFields,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  idsOnly,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-  titleFields,
-  toneField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { iconOf } from '../shared/domain.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const strings = words('distribution');
 
@@ -123,53 +102,10 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  /** A share of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<DistributionCardConfig>()([
-    'title',
-    'subtitle',
-    'max_rows',
-    'variant',
-    'total',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'entities',
-      title: 'editor.entities',
-      domains: ['sensor'],
-      keys: ['entity', 'name', 'tone', 'color'],
-      schema: [entityField(['sensor']), textField('name'), fieldRow(toneField(), accentField())],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'stack' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        entitiesField('entities', ['sensor'], true),
-        fieldRow(numberField('max_rows', 2, 10), selectField('variant', ['stack', 'rows'])),
-        entityField(['sensor'], 'total', false),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...idsOnly('entities'),
-      ...editorLabels(strings, { max_rows: 'max_rows', total: 'editor_total' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./distribution-editor.js');
   }
+  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
 
   static getStubConfig(
     hass: { states?: Record<string, { attributes: { device_class?: string } }> } | undefined,

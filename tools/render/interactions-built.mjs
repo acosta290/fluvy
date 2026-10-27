@@ -9,6 +9,8 @@
  *   never loaded;
  * - the schedule sheet's details say "Open in Home Assistant" and "Traces", and the Activity page's chunk never
  *   loaded;
+ * - a card every page carries keeps its editor's form in the forms chunk: no dashboard fetches it, and the card's
+ *   editor brings it, worded;
  * - on a page that wears another theme, the patches leave Home Assistant's stand-in elements as Home Assistant draws
  *   them (a chart's font and colour, an icon's path, no attribute of ours, no Inter or sheet in HACS's frame, the
  *   page's chrome), and once Home Assistant applies the Fluvy theme they take Fluvy's;
@@ -149,6 +151,7 @@ for (const lang of ['en', 'de']) {
   await tab.waitForTimeout(300);
   const fetched = () =>
     tab.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name));
+  const formsAtStart = (await fetched()).some((name) => name.includes('/chunks/forms-'));
 
   // the wall's pieces, as the controller mounts them on a device that is a wall
   const wall = await tab.evaluate(
@@ -210,6 +213,27 @@ for (const lang of ['en', 'de']) {
   check(
     `${lang}: …without the Activity page's chunk`,
     !(await fetched()).some((name) => name.includes('/chunks/activity-')),
+  );
+
+  // the tile card's editor, as Home Assistant asks for it: the rows editor with the card's form, its fields worded
+  check(`${lang}: a dashboard never fetches the cards' forms`, !formsAtStart);
+  const editor = await tab.evaluate(async () => {
+    const element = await window.customElements.get('fluvy-tile-card').getConfigElement();
+    const { schema, computeLabel } = element.spec;
+    return {
+      tag: element.localName,
+      fields: schema.length,
+      size: computeLabel({ name: 'size' }, (key) => key),
+    };
+  });
+  check(
+    `${lang}: a card's editor brings its form, worded`,
+    editor.tag === 'fluvy-rows-editor' && editor.fields > 0 && editor.size === words.editor.size,
+    JSON.stringify(editor),
+  );
+  check(
+    `${lang}: …from the forms chunk`,
+    (await fetched()).some((name) => name.includes('/chunks/forms-')),
   );
   check(`${lang}: no page error`, errors.length === 0, errors.join(' | '));
   await tab.close();

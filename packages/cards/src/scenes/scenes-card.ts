@@ -6,7 +6,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -16,41 +15,18 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { agoShort } from '../helpers/datetime.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
 import { TextRuler } from '../shared/fit.js';
 
 import { FontsSettled } from '../shared/fonts.js';
-
-import {
-  accentField,
-  actionField,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  nameIconFields,
-  selectField,
-  textField,
-  tintField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import {
-  columnsOf,
-  configKeys,
-  ITEM_ALIASES,
-  type AliasSpec,
-  type Columns,
-} from '../shared/config.js';
+import { columnsOf, ITEM_ALIASES, type AliasSpec, type Columns } from '../shared/config.js';
 import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('scenes');
-
-const DOMAINS: readonly string[] = ['scene', 'script', 'button', 'input_button', 'automation'];
 
 export interface SceneItemConfig {
   entity: string;
@@ -143,50 +119,10 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
     `,
   ];
 
-  /** A grid of scenes has no entity of its own: its colour is the lit tile's, a hold on a tile is the base's. */
-  static override base: readonly BaseKey[] = ['entities', 'color', 'card_color', 'hold_action'];
-  static override keys = configKeys<ScenesCardConfig>()([
-    'title',
-    'scenes',
-    'columns',
-    'tint',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'scenes',
-      alias: 'entities',
-      title: 'editor.scenes',
-      domains: DOMAINS,
-      keys: ['entity', 'name', 'icon', 'subtitle', 'color', 'tap_action'],
-      schema: [
-        entityField(DOMAINS),
-        nameIconFields(),
-        textField('subtitle'),
-        accentField('color', { item: true }),
-        actionField(),
-      ],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { scenes: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ columns: 'auto', tint: 'on' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        fieldRow(textField('title'), selectField('columns', ['auto', '1', '2'])),
-        entitiesField('entities', DOMAINS, true),
-        fieldRow(
-          accentField(),
-          accentField('card_color', { none: true }),
-          actionField('hold_action'),
-        ),
-        tintField(),
-        emptyFields(),
-      ],
-      ...formLabels({}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./scenes-editor.js');
   }
+  static override aliases: AliasSpec = { items: { scenes: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ScenesCardConfig {
     return {

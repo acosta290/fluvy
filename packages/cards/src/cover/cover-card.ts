@@ -6,7 +6,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -27,23 +26,9 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  nameIconFields,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
 import {
   actionGap,
   actionsThatFit,
@@ -55,9 +40,8 @@ import {
   shownStateText,
   StableTemplate,
 } from './common.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { HeadFit } from '../energy/head.js';
 import { COMPACT, drawnAs, listLength } from '../shared/heights.js';
 import {
@@ -207,55 +191,10 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     this.fine = null;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<CoverCardConfig>()([
-    'subtitle',
-    'variant',
-    'favorites',
-    'favorites_style',
-    'show_tilt',
-    'show_favorites',
-    'tilt_angle',
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'favorites',
-      idKey: 'name',
-      title: 'editor.favorites',
-      keys: ['name', 'position', 'tilt'],
-      schema: [
-        textField('name'),
-        fieldRow(numberField('position', 0, 100), numberField('tilt', 0, 100)),
-      ],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { favorites: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'full',
-    favorites_style: 'full',
-    show_tilt: true,
-    show_favorites: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['cover', 'valve']),
-        nameIconFields(),
-        showIconField(),
-        fieldRow(textField('subtitle'), numberField('tilt_angle', 0, 360)),
-        fieldRow(
-          selectField('variant', ['full', 'compact']),
-          selectField('favorites_style', ['full', 'chips']),
-        ),
-        fieldRow(boolField('show_tilt'), boolField('show_favorites')),
-        { name: 'favorites', selector: { object: {} } },
-        ...colourFields(),
-        actionFields(),
-      ],
-      ...editorLabels(coverStrings, { tilt_angle: 'tilt_angle' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./cover-editor.js');
   }
+  static override aliases: AliasSpec = { items: { favorites: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): CoverCardConfig {
     return {

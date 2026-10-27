@@ -2,6 +2,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { FluvyHeadingCard, type HeadingCardConfig } from './heading-card.js';
+import * as headingEditor from './heading-editor.js';
 
 if (!customElements.get('fluvy-heading-card'))
   customElements.define('fluvy-heading-card', FluvyHeadingCard);
@@ -47,13 +48,11 @@ describe('the heading card’s styles (#47)', () => {
   });
 
   it('offers both styles in its editor, the group’s where the config says none', () => {
-    const fields = JSON.stringify(FluvyHeadingCard.getConfigForm().schema);
+    const fields = JSON.stringify(headingEditor.getConfigForm().schema);
     expect(fields).toContain('"name":"heading_style"');
     expect(fields).toContain('"value":"title"');
     expect(fields).toContain('"value":"subtitle"');
-    expect(
-      FluvyHeadingCard.defaults?.({ type: 'custom:fluvy-heading-card' }, undefined),
-    ).toMatchObject({
+    expect(headingEditor.defaults({ type: 'custom:fluvy-heading-card' }, undefined)).toMatchObject({
       heading_style: 'subtitle',
     });
   });

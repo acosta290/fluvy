@@ -14,6 +14,7 @@ import {
   stepTarget,
   type ThermostatCardConfig,
 } from './thermostat-card.js';
+import * as thermostatEditor from './thermostat-editor.js';
 
 // the index fetches the families: they land before this file's page goes
 afterAll(() => familiesDefined);
@@ -107,7 +108,7 @@ describe('the modes, in one order for the card and its editor (#46)', () => {
 
   it('shows the editor the order the card draws, so taking one out never turns the rest round', () => {
     const defaults = (state: HassEntity): unknown =>
-      FluvyThermostatCard.defaults!(
+      thermostatEditor.defaults(
         { type: 'custom:fluvy-thermostat-card', entity: state.entity_id },
         house(state),
       )['modes'];
@@ -120,14 +121,14 @@ describe('the modes, in one order for the card and its editor (#46)', () => {
 
   it('offers the entity’s own modes in the editor, worded as the card words them, dragged into order', () => {
     const hass = house(homematic);
-    const choices = FluvyThermostatCard.choices!(config(), hass);
+    const choices = thermostatEditor.choices(config(), hass);
     expect(choices['modes']).toEqual([
       { value: 'off', label: 'Off' },
       { value: 'heat', label: 'Heat' },
       { value: 'auto', label: 'Auto' },
     ]);
-    expect(FluvyThermostatCard.choices!(config({ entity: 'climate.none' }), hass)).toEqual({});
-    const field = FluvyThermostatCard.getConfigForm().schema.find((item) => item.name === 'modes');
+    expect(thermostatEditor.choices(config({ entity: 'climate.none' }), hass)).toEqual({});
+    const field = thermostatEditor.getConfigForm().schema.find((item) => item.name === 'modes');
     expect(field?.selector?.['select']).toMatchObject({ multiple: true, reorder: true });
   });
 

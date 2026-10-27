@@ -3,13 +3,11 @@ import {
   isUsable,
   localize,
   readText,
-  resolveEntity,
   stateText,
   writeText,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
 } from '@fluvy/core';
@@ -34,30 +32,13 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorWord,
-  entityField,
-  fieldRow,
-  formLabels,
-  nameIconFields,
-  orderedField,
-  selectField,
-  showIconField,
-  textField,
-  whenOffField,
-} from '../shared/form.js';
-
 import { HeadFit } from '../energy/head.js';
 import { optionCell, optionColumnsFor, optionsHold, valuesHeld } from '../shared/options.js';
-import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
-import { configKeys, type WhenOff } from '../shared/config.js';
+import type { WhenOff } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { chipBlock, chipRows, optionBlock, optionRows } from '../shared/heights.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
@@ -148,7 +129,7 @@ const MODE_TONE: Record<string, Tone> = {
   off: 'neutral',
 };
 /** A climate's modes, in Home Assistant's order: the card draws them so, and has a word for each. */
-const MODE_ORDER = ['off', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'];
+export const MODE_ORDER = ['off', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'];
 /** Unless the config lists its own, a water heater shows its first six operations, a humidifier Off and five modes. */
 const SHOWN = 6;
 /** The modes a thermostat is counted with where the house is not there to say (a missing one draws these). */
@@ -184,7 +165,7 @@ export function modeOrder(view: EntityView): string[] {
 }
 
 /** The modes drawn where the config lists none: a climate's all, a water heater's and a humidifier's first six. */
-const defaultModes = <T>(climate: boolean, modes: readonly T[]): T[] =>
+export const defaultModes = <T>(climate: boolean, modes: readonly T[]): T[] =>
   climate ? [...modes] : modes.slice(0, SHOWN);
 
 /** What a thermostat offers as the house describes it: its modes, presets and fan speeds, a range (a low, a high). */
@@ -309,81 +290,8 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     `,
   ];
 
-  static override base = HEAD_BASE;
-  /** What the editor shows where the config says nothing; the modes as the card draws them, in its order. */
-  static override defaults: EditorDefaults = (config, hass) => {
-    const entity = config['entity'];
-    const view = resolveEntity(hass, typeof entity === 'string' ? entity : undefined);
-    const modes = defaultModes(view.domain === 'climate', modeOrder(view));
-    return {
-      variant: 'dial',
-      show_stepper: true,
-      show_current: true,
-      show_modes: true,
-      modes_style: 'tiles',
-      preset_style: 'full',
-      fan_style: 'full',
-      show_presets: true,
-      show_fan: true,
-      when_off: 'all',
-      ...(modes.length ? { modes } : {}),
-    };
-  };
-  /** The modes the editor offers are the entity's own, worded as the card words them. */
-  static override choices: EditorChoices = (config, hass) => {
-    const entity = config['entity'];
-    const view = resolveEntity(hass, typeof entity === 'string' ? entity : undefined);
-    const modes = modeOrder(view);
-    return modes.length
-      ? { modes: modes.map((value) => ({ value, label: modeLabel(hass, view, value) })) }
-      : {};
-  };
-  static override keys = configKeys<ThermostatCardConfig>()([
-    'subtitle',
-    'show_presets',
-    'show_fan',
-    'variant',
-    'show_stepper',
-    'show_current',
-    'show_modes',
-    'modes',
-    'modes_style',
-    'preset_style',
-    'fan_style',
-    'when_off',
-  ]);
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['climate', 'water_heater', 'humidifier']),
-        nameIconFields(),
-        fieldRow(textField('subtitle'), showIconField()),
-        fieldRow(selectField('variant', ['dial', 'compact', 'ruler']), boolField('show_stepper')),
-        fieldRow(boolField('show_modes'), selectField('modes_style', ['tiles', 'chips', 'full'])),
-        // a climate's seven until the entity is known: then its own (`choices`), dragged into the order they show in
-        orderedField(
-          'modes',
-          MODE_ORDER.map((value) => ({
-            value,
-            label: editorWord(`climate.mode.${value}` as MessageKey),
-          })),
-        ),
-        boolField('show_current'),
-        fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
-        fieldRow(boolField('show_fan'), selectField('fan_style', ['full', 'chips'])),
-        whenOffField(),
-        ...colourFields(),
-        actionFields(),
-      ],
-      ...formLabels({
-        modes: 'editor.modes',
-        modes_style: 'editor.modes_style',
-        show_presets: 'climate.preset',
-        preset_style: 'editor.preset_style',
-        show_fan: 'climate.fan',
-        fan_style: 'editor.fan_style',
-      }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./thermostat-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ThermostatCardConfig {

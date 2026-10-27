@@ -7,7 +7,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import {
@@ -23,30 +22,13 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { agoShort } from '../helpers/datetime.js';
 import { HeadFit } from '../energy/head.js';
 import { mapHead, mapRow } from '../shared/map-head.js';
-import { Card, type BaseKey } from '../shared/base.js';
-import {
-  accentField,
-  actionFields,
-  boolField,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  selectField,
-  showIconField,
-  textField,
-  sinceChoices,
-  sinceField,
-} from '../shared/form.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { changedAt, sinceIds } from '../shared/since.js';
 import { renderAvatar } from '../shared/avatar.js';
 import { charging, personBattery, type BatterySource } from '../shared/battery.js';
 import { EMPTY, entryCount, HEAD, rowsOf, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('people');
 
@@ -197,72 +179,13 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     this.broken_ = new Set();
   }
 
-  /** The people have no entity of their own: the head's icon and the card's colour are the base fields it honours. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<PeopleCardConfig>()([
-    'title',
-    'people',
-    'variant',
-    'map_path',
-    'show_zone',
-    'show_time',
-    'show_battery',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'people',
-      alias: 'entities',
-      title: 'editor.people',
-      domains: ['person', 'device_tracker'],
-      keys: ['entity', 'name', 'battery', 'color', 'since', 'tap_action', 'hold_action'],
-      schema: [
-        entityField(['person', 'device_tracker']),
-        fieldRow(textField('name'), entityField(['sensor'], 'battery', false)),
-        accentField(),
-        sinceField(),
-        actionFields(),
-      ],
-    },
-  ];
-  /** A person's `since` offers the house's timestamp sensors. */
-  static override choices: EditorChoices = sinceChoices;
+  static override editor(): Promise<CardEditor> {
+    return import('./people-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'layout', to: 'variant' }],
     items: { people: ITEM_ALIASES },
   };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    show_battery: false,
-    variant: 'grid',
-    show_zone: true,
-    show_time: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', ['person', 'device_tracker'], true),
-        fieldRow(textField('title'), iconField()),
-        showIconField(),
-        fieldRow(selectField('variant', ['grid', 'rows']), textField('map_path')),
-        fieldRow(boolField('show_zone'), boolField('show_time')),
-        boolField('show_battery'),
-        accentField(),
-        accentField('card_color', { none: true }),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...editorLabels(s, { map_path: 'editor.map_path' }, {}),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): PeopleCardConfig {
     return {

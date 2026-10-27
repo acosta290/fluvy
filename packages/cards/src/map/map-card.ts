@@ -6,7 +6,6 @@ import {
   type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { chips, head, icon, round, sheetStyles, type ChipItem } from '@fluvy/ui';
@@ -21,34 +20,9 @@ import {
 import { renderAvatar, type Presence } from '../shared/avatar.js';
 import { HeadFit } from '../energy/head.js';
 import { mapHead, mapRow } from '../shared/map-head.js';
-import { Card, type BaseKey } from '../shared/base.js';
-import { configKeys } from '../shared/config.js';
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  nameIconFields,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
-import {
-  EMPTY_KEYS,
-  emptyPanel,
-  idsOf,
-  listOf,
-  type EmptyList,
-  type EntityEntry,
-} from '../shared/lists.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { emptyPanel, idsOf, listOf, type EmptyList, type EntityEntry } from '../shared/lists.js';
 import {
   distanceFromHome,
   groupByZone,
@@ -135,66 +109,8 @@ export class FluvyMapCard extends Card<MapCardConfig> {
     this.mapFailed_ = false;
   }
 
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<MapCardConfig>()([
-    'title',
-    'zones',
-    'variant',
-    'map_shape',
-    'hours_to_show',
-    'default_zoom',
-    'fit_zones',
-    'show_empty',
-    'show_distance',
-    'map_path',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'zones',
-      title: 'editor.zones',
-      domains: ['zone'],
-      keys: ['entity', 'name', 'icon'],
-      schema: [entityField(['zone']), nameIconFields()],
-    },
-  ];
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'zones',
-    map_shape: 'wide',
-    fit_zones: false,
-    show_empty: false,
-    show_distance: false,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', ['person', 'device_tracker'], true),
-        entitiesField('zones', ['zone']),
-        fieldRow(textField('title'), iconField()),
-        showIconField(),
-        fieldRow(
-          selectField('variant', ['zones', 'map', 'rows']),
-          selectField('map_shape', ['wide', 'square']),
-        ),
-        fieldRow(numberField('hours_to_show', 0, 168), numberField('default_zoom', 1, 20)),
-        fieldRow(boolField('fit_zones'), boolField('show_empty')),
-        fieldRow(boolField('show_distance'), textField('map_path')),
-        ...colourFields(),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...formLabels({ hours_to_show: 'editor.hours', map_path: 'editor.map_path' }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./map-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): MapCardConfig {

@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,chart,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,view-icons,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,chart,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,forms,view-icons,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
 period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
@@ -54,9 +54,10 @@ appliances, automations and alerts families (fetched as the bundle starts: their
 siblings land; Home Assistant builds a card again the moment its tag is defined), the history bars' readings (the
 first card that reads a counter by them), the appliances' pictures (the first card that draws one), the schedule
 sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the light card's colour
-controls (the first colour bulb), the cards' visual editor (when a card is edited), the icon set's other part (the
-first time Home Assistant asks for one of its icons) and a language's catalogue (English's core part ships in core; a
-lazy family's English part travels with the family's chunk, registered as it lands).
+controls (the first colour bulb), the cards' visual editor and the forms of the cards every page carries (when a card
+is edited), the icon set's other part (the first time Home Assistant asks for one of its icons) and a language's
+catalogue (English's core part ships in core; a lazy family's English part travels with the family's chunk,
+registered as it lands).
 `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group names its English part, or core
 keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes `manifest.json` with every file's
 size and hash and a **build stamp**, and fails the build when the initial set goes over **236 KB gzip** or carries a
@@ -91,6 +92,7 @@ in `tools/docs` holds this table to it):
 | `light-colour` | 4 KB | the light card's quick colours and hue ruler |
 | `weather` | 12 KB | the weather card |
 | `editor` | 8 KB | the cards' visual editor |
+| `forms` | 12 KB | the editors of the cards every page carries: their forms, lists and defaults |
 | `view-icons` | 4 KB | a view's icon from its name |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the layers, the CSV, their chrome's sheet |
@@ -134,7 +136,11 @@ the brand files (`tools/brand/README.md`), the strategy's golden snapshot (`vite
 
 Every card's visual editor is one element, the rows editor (`packages/cards/src/shared/rows-editor.ts`, the `editor`
 chunk, fetched the first time a card is edited), built by the base class from what the card declares; a card never
-writes an editor of its own.
+writes an editor of its own. A card of a family fetched on demand declares it on its class (`static lists`,
+`getConfigForm()` …); a card every page carries keeps it in a module of its own beside it (`tile/tile-editor.ts`,
+exporting `base`, `keys`, `lists`, `defaults`, `choices` and `getConfigForm`), which its `editor()` fetches with the
+rows editor — the `forms` chunk, so no dashboard loads what only an editor says (so does the template card, built on
+the tile's). Whoever reads a card's editor asks `await Card.editor()`.
 
 - **The form** is the card's `getConfigForm()`: Home Assistant's `ha-form` schema, written with the builders of
   `shared/form.ts`. A list the card declares in `static lists` (`RowsListSpec`) leaves the form and is edited item by

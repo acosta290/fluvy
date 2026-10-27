@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import fixtures from '../chart/engine/__fixtures__/classic-1.10.json' with { type: 'json' };
 import { familiesDefined } from '../index.js';
 import { FluvySensorCard, type SensorCardConfig } from './sensor-card.js';
+import * as sensorEditor from './sensor-editor.js';
 
 // the chart engine lands with the families: the card draws its chart from its first render after the history
 await familiesDefined;
@@ -172,7 +173,7 @@ describe('the sensor’s chart, drawn by the engine', () => {
 });
 
 describe('the sensor’s editor', () => {
-  const section = (FluvySensorCard.getConfigForm().schema as HaFormSchemaItem[]).find(
+  const section = (sensorEditor.getConfigForm().schema as HaFormSchemaItem[]).find(
     (item) => item.type === 'expandable' && item.schema?.some((field) => field.name === 'chart'),
   ) as HaFormSchemaItem;
   const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>

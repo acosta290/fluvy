@@ -12,10 +12,15 @@ type CardClass = typeof Card & {
 const names = (schema: readonly HaFormSchemaItem[]): string[] =>
   schema.flatMap((item) => (item.schema ? names(item.schema) : [item.name]));
 
-/** The cards whose figures take a unit and decimals (`numberFields`): those that declare the keys. */
-const cards = (await catalogue())
-  .map(([tag, element]) => ({ tag, card: element as unknown as CardClass }))
-  .filter(({ card }) => card.keys.includes('unit') && card.keys.includes('decimals'));
+/** The cards whose figures take a unit and decimals (`numberFields`): those whose editor declares the keys. */
+const cards = (
+  await Promise.all(
+    (await catalogue()).map(async ([tag, element]) => {
+      const card = element as unknown as CardClass;
+      return { tag, card, editor: await card.editor() };
+    }),
+  )
+).filter(({ editor }) => editor.keys.includes('unit') && editor.keys.includes('decimals'));
 
 describe('the cards whose figures take a unit and decimals', () => {
   it('are the energy family, the gauge, the sensor, the stat tiles and the readouts', () => {
@@ -41,8 +46,8 @@ describe('the cards whose figures take a unit and decimals', () => {
 
   it.each(cards)(
     '$tag: shows them on one row, the last before the actions, and never writes auto',
-    ({ card }) => {
-      const form = card.getConfigForm();
+    ({ editor }) => {
+      const form = editor.getConfigForm();
       const shown = names(form.schema);
       const unit = shown.indexOf('unit');
       expect(unit).toBeGreaterThan(-1);
@@ -53,15 +58,15 @@ describe('the cards whose figures take a unit and decimals', () => {
         after.every((name) => name === 'tap_action' || name === 'hold_action'),
         after.join(),
       ).toBe(true);
-      const defaults = card.defaults?.({ type: 'custom:x' }, undefined) ?? {};
+      const defaults = editor.defaults?.({ type: 'custom:x' }, undefined) ?? {};
       expect(defaults['unit']).toBe('auto');
       expect(typeof defaults['decimals']).toBe('string');
     },
   );
 
   it('the energy card’s legend entries are offered their own sensor’s units, never the card’s sensor’s', () => {
-    const energy = cards.find(({ tag }) => tag === 'fluvy-energy-card')!.card;
-    const legend = energy.lists.find((list) => list.key === 'legend')!;
+    const energy = cards.find(({ tag }) => tag === 'fluvy-energy-card')!.editor;
+    const legend = energy.lists!.find((list) => list.key === 'legend')!;
     const sensor = (unit: string) => ({
       entity_id: 'sensor.x',
       state: '1',

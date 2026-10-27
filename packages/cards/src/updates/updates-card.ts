@@ -6,7 +6,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -18,30 +17,13 @@ import { rowButton, rowsKeepIcon, rowStacks, type RowEnd } from '../helpers/rows
 
 import { rowStyles } from '../helpers/styles.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-
-import {
-  actionField,
-  boolField,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  showIconField,
-  textField,
-  titleFields,
-} from '../shared/form.js';
-import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { HeadFit } from '../energy/head.js';
 import { HEAD, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, hideEmpty, idsOf, listOf, type EmptyList } from '../shared/lists.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import { hideEmpty, idsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('updates');
 
@@ -117,52 +99,8 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
     `,
   ];
 
-  /** A card of many updates has no entity of its own: its head's icon, tone and colour, and a hold on the head. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<UpdatesCardConfig>()([
-    'title',
-    'subtitle',
-    'show_up_to_date',
-    'toggle',
-    'toggle_secondary',
-    ...EMPTY_KEYS,
-  ]);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ show_up_to_date: false });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        boolField('show_up_to_date'),
-        entitiesField('entities', ['update'], true),
-        fieldRow(
-          entityField(['input_boolean', 'switch', 'automation'], 'toggle', false),
-          textField('toggle_secondary'),
-        ),
-        emptyFields(),
-        actionField('hold_action'),
-      ],
-      // this card's own options are worded by its own strings
-      ...editorLabels(
-        s,
-        {
-          show_up_to_date: 'show_up_to_date',
-          toggle: 'toggle',
-          toggle_secondary: 'toggle_secondary',
-        },
-        {},
-      ),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./updates-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): UpdatesCardConfig {

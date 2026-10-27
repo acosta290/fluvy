@@ -5,7 +5,6 @@ import {
   strings as words,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
   type Series,
@@ -25,25 +24,9 @@ import {
 
 import { HeadFit } from '../energy/head.js';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
-import {
-  actionFields,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  hasLadder,
-  iconField,
-  NUMBER_DEFAULTS,
-  numberField,
-  numberFields,
-  selectField,
-  showIconField,
-  textField,
-  unitChoicesOf,
-} from '../shared/form.js';
 import { statsRow } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
@@ -66,9 +49,7 @@ import {
   valueRoom,
   type ValueSize,
 } from './signed.js';
-import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const strings = words('gauge');
 const ways = words('energy-flow');
@@ -201,46 +182,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     this.series_ = undefined;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<GaugeCardConfig>()([
-    'subtitle',
-    'variant',
-    'min',
-    'max',
-    'max_entity',
-    'label',
-    'hours',
-    'badge',
-    'unit',
-    'decimals',
-  ]);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'ring', ...NUMBER_DEFAULTS });
-  /** The units the editor offers are the sensor's class's. */
-  static override choices = unitChoicesOf;
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['sensor', 'number', 'input_number', 'counter']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), selectField('variant', GAUGE_VARIANTS)),
-        showIconField(),
-        ...colourFields(),
-        fieldRow(
-          numberField('min', -1_000_000, 1_000_000, 0.1),
-          numberField('max', -1_000_000, 1_000_000, 0.1),
-        ),
-        {
-          name: 'max_entity',
-          selector: { entity: { domain: ['sensor', 'number', 'input_number'] } },
-        },
-        fieldRow(textField('label'), textField('badge')),
-        numberField('hours', 1, 168),
-        numberFields({ when: hasLadder }),
-        actionFields(),
-      ],
-      ...editorLabels(strings, { max_entity: 'max_entity', label: 'label', badge: 'badge' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./gauge-editor.js');
   }
 
   static getStubConfig(
