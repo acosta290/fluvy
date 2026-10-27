@@ -134,8 +134,11 @@ const TWO_TILES = 288;
 /** A tile's two sides (16 each); its circle (44) and the gap after it. */
 const TILE_SIDES = 32;
 const CIRCLE = 56;
-/** The least a tile's name keeps beside its circle: where an inner tile gives its icon away (104 inside, less 56). */
-const TILE_NAME_MIN = 48;
+/**
+ * The least a name keeps: a tile's beside its circle (where an inner tile gives its icon away: 104 inside, less 56), a
+ * compact row's beside its value.
+ */
+const NAME_MIN = 48;
 /** A compact tile's words, as the ruler lays them out. */
 const TILE_NAME = 'fv-tile fv-tile--compact > fv-tile__name';
 const TILE_STATE = 'fv-tile fv-tile--compact > fv-tile__state';
@@ -177,6 +180,24 @@ interface TileLayout {
   readonly circles: boolean;
   readonly glyphs: boolean;
 }
+
+/** How the compact rows share their room with their values: the value's arrow and its unit, or its place. */
+interface RowShare {
+  readonly glyphs: boolean;
+  readonly units: boolean;
+  /** The value under the name, in the row's 48. */
+  readonly under: boolean;
+}
+
+const WHOLE: RowShare = { glyphs: true, units: true, under: false };
+/** What a compact row's value gives a name under its least, in turn: its arrow, then its unit. */
+const GIVING: readonly RowShare[] = [
+  WHOLE,
+  { glyphs: false, units: true, under: false },
+  { glyphs: false, units: false, under: false },
+];
+/** Where not even the bare figure leaves a name its least: the value under the name, whole again. */
+const UNDER: RowShare = { glyphs: true, units: true, under: true };
 
 /** What tells an item from the others while the list moves under its sheet: its `id`, else its name. */
 const keyOf = ({ item, shown }: Drawn): string => {
@@ -512,10 +533,11 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
       : ico(shown.icon, tone, { small });
   }
 
-  /** What ends a row: its value, and the glyph before it. */
-  private valueEnd(shown: Shown): number {
-    return shown.value
-      ? this.headFit.ruler.width('fv-row__value', shown.value) + (shown.glyph ? GLYPH : 0)
+  /** What ends a row: its value (bare where its unit gave way), and the glyph before it where it keeps it. */
+  private valueEnd(shown: Shown, { glyphs, units }: RowShare = WHOLE): number {
+    const value = units ? shown.value : (shown.bare ?? shown.value);
+    return value
+      ? this.headFit.ruler.width('fv-row__value', value) + (glyphs && shown.glyph ? GLYPH : 0)
       : 0;
   }
 
@@ -616,7 +638,10 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
    * A row an item (60), or a compact one (48, the name and the value); out of reach, rows of dashes at rest. Every
    * row is laid out alike, by the column and the widest value the card can show (`widest`): where that value would
    * leave a name under its least even without the circle, every value goes under its name in the line's place, and
-   * the rows keep their 60; else the circles give way together where a name needs their room.
+   * the rows keep their 60; else the circles give way together where a name needs their room. A compact row without
+   * its circle gives the names their room from its value, every row's together — the arrow, then the unit ("12,500"),
+   * then the value goes under the name, whole again, the row keeping its 48 — until each name keeps itself (up to 96,
+   * as `rowNameRoom` asks) and never less than 48: three callsigns whole in half a section.
    */
   private renderRows(
     items: readonly Drawn[],
@@ -626,7 +651,9 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
   ): TemplateResult {
     const width = this.contentWidth;
     const shown = items.map(({ shown }) => shown);
-    const end = Math.max(0, ...[...shown, ...widest].map((one) => this.valueEnd(one)));
+    const ends = (share: RowShare): number =>
+      Math.max(0, ...[...shown, ...widest].map((one) => this.valueEnd(one, share)));
+    const end = ends(WHOLE);
     const stack = !compact && this.headFit.rowRoom(width, '', { icon: false, end }) < ROW_NAME_MIN;
     const keepIcon =
       !stack &&
@@ -641,6 +668,14 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         compact,
       );
     const room = this.headFit.rowRoom(width, '', { icon: keepIcon, compact, end });
+    const least = Math.max(NAME_MIN, ...shown.map((one) => this.headFit.rowNameRoom(one.name)));
+    const share =
+      compact && !keepIcon
+        ? (GIVING.find(
+            (one) =>
+              this.headFit.rowRoom(width, '', { icon: false, compact, end: ends(one) }) >= least,
+          ) ?? UNDER)
+        : WHOLE;
     const taps = !dead && this.config?.item_tap !== 'none';
     return html`${shown.map((one, i) =>
       listRow({
@@ -650,11 +685,11 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         name: true,
         sub: compact || stack ? '' : this.headFit.fitRowSub(one.secondary, room),
         trailing: 'value',
-        value: one.value,
-        valueGlyph: one.glyph,
+        value: share.units ? one.value : (one.bare ?? one.value),
+        valueGlyph: share.glyphs ? one.glyph : undefined,
         ...(one.quiet ? { quiet: true } : {}),
         compact,
-        stack,
+        stack: stack || share.under,
         unavailable: dead,
         onTap: taps ? () => void this.openSheet(keyOf(items[i]!)) : undefined,
       }),
@@ -684,7 +719,7 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
       const room = this.tileRoom - (circles ? CIRCLE : 0);
       return items.every(
         (shown) =>
-          room >= Math.min(TILE_NAME_MIN, ruler.width(TILE_NAME, shown.name)) &&
+          room >= Math.min(NAME_MIN, ruler.width(TILE_NAME, shown.name)) &&
           room >=
             (shown.value
               ? ruler.width(TILE_STATE, shown.value) + (glyphs && shown.glyph ? GLYPH : 0)

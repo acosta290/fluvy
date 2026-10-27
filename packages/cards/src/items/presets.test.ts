@@ -57,7 +57,8 @@ describe('the flights preset', () => {
 
   it('values the altitude in feet, climbing or descending by the vertical speed, or on the ground', () => {
     const level = FLIGHTS.row(flight({}), hass);
-    expect(level.value).toBe('34,000 ft');
+    // bare where a compact row is too narrow for the unit
+    expect([level.value, level.bare]).toEqual(['34,000 ft', '34,000']);
     expect(level.glyph).toBeUndefined();
     expect(level.quiet).toBeUndefined();
     const climbing = FLIGHTS.row(flight({ altitude: 12_500, vertical_speed: 2400 }), hass);
@@ -67,8 +68,9 @@ describe('the flights preset', () => {
     // under a hundred feet a minute is level flight
     expect(FLIGHTS.row(flight({ vertical_speed: 64 }), hass).glyph).toBeUndefined();
     const grounded = FLIGHTS.row(flight({ altitude: 0, on_ground: 1, vertical_speed: 0 }), hass);
-    expect([grounded.value, grounded.quiet, grounded.glyph]).toEqual([
+    expect([grounded.value, grounded.bare, grounded.quiet, grounded.glyph]).toEqual([
       'On ground',
+      undefined,
       true,
       undefined,
     ]);
@@ -143,12 +145,13 @@ describe('a list mapped field by field', () => {
     icon: 'mdi:train',
   };
 
-  it('draws the name, the line, the value with its unit, the icon and the link from the item', () => {
+  it('draws the name, the line, the value with its unit (and bare), the icon and the link from the item', () => {
     const row = rowOf(train, mappingOf(config), hass, 'list');
     expect(row).toEqual({
       name: 'L3 → Trinitat Nova',
       secondary: 'Platform 2',
       value: '5 min',
+      bare: '5',
       icon: 'mdi:train',
       image: '',
       url: 'https://metro.example/L3',

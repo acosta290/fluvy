@@ -22,7 +22,10 @@ import {
 export interface Shown {
   readonly name: string;
   readonly secondary: string;
+  /** The value with its unit ("12,500 ft"). */
   readonly value: string;
+  /** The value without its unit ("12,500"), where it has one: a compact row too narrow for the unit says it bare. */
+  readonly bare?: string;
   /** A 16 glyph before the value (climbing, descending). */
   readonly glyph?: IconRef;
   /** The value is a state in words, in the secondary ink. */
@@ -113,13 +116,13 @@ export function rowOf(
   icon: IconRef,
 ): Shown {
   const mapped = resolveField(item, mapping.icon, hass);
+  const value = resolveField(item, mapping.value, hass);
+  const unit = resolveField(item, mapping.unit, hass);
   return {
     name: resolveField(item, mapping.name, hass),
     secondary: resolveField(item, mapping.secondary, hass),
-    value: withUnit(
-      resolveField(item, mapping.value, hass),
-      resolveField(item, mapping.unit, hass),
-    ),
+    value: withUnit(value, unit),
+    ...(value && unit ? { bare: value } : {}),
     icon: mapped.includes(':') ? (mapped as IconRef) : icon,
     image: resolveField(item, mapping.image, hass),
     url: resolveField(item, mapping.url, hass),
@@ -225,14 +228,12 @@ export const FLIGHTS: Preset = {
     const altitude = valueAt(item, 'altitude');
     const grounded = onGround(item);
     const glyph = grounded ? undefined : trend(item);
+    const feet = typeof altitude === 'number' ? formatNumber(hass, altitude, { digits: 0 }) : '';
     return {
       name: resolveField(item, FLIGHT_NAME, hass),
       secondary: resolveField(item, FLIGHT_LINE, hass),
-      value: grounded
-        ? localize(hass, 'flights.on_ground')
-        : typeof altitude === 'number'
-          ? `${formatNumber(hass, altitude, { digits: 0 })} ft`
-          : '',
+      value: grounded ? localize(hass, 'flights.on_ground') : withUnit(feet, 'ft'),
+      ...(grounded || !feet ? {} : { bare: feet }),
       ...(grounded ? { quiet: true } : {}),
       ...(glyph ? { glyph } : {}),
       icon: 'mdi:airplane',
@@ -240,11 +241,12 @@ export const FLIGHTS: Preset = {
       url: flightLink(item),
     };
   },
-  widest: (hass) =>
-    [
+  widest: (hass) => {
+    // the figures are tabular: every five-figure altitude is as wide as this one, its arrow before it
+    const feet = formatNumber(hass, 88_888, { digits: 0 });
+    return [
       { value: localize(hass, 'flights.on_ground'), quiet: true },
-      // the figures are tabular: every five-figure altitude is as wide as this one, its arrow before it
-      { value: `${formatNumber(hass, 88_888, { digits: 0 })} ft`, glyph: 'trendUp' as const },
+      { value: withUnit(feet, 'ft'), bare: feet, glyph: 'trendUp' as const },
     ].map((shown) => ({
       name: '',
       secondary: '',
@@ -252,7 +254,8 @@ export const FLIGHTS: Preset = {
       image: '',
       url: '',
       ...shown,
-    })),
+    }));
+  },
   sheet: (item, hass) =>
     FLIGHT_SHEET.map(([label, pattern, unit = '', format]) => ({
       label: localize(hass, label),

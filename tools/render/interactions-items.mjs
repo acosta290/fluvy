@@ -5,9 +5,11 @@
  * falls back to the glyph; the head counts the aircraft from the sensor's state; the tiles give their arrows away
  * before their photos, and have them back once the photos have gone (half a section); every variant keeps one height
  * at every card width from half a section to a phone's and in every language, whether the sensor lists three aircraft,
- * one, none or is out of reach — the height it declares, but for the tiles one a row under a 288 column; the lines
- * under the names are never cut at 211 in German, Japanese and Portuguese (their segments give way, or the values go
- * under the names); a tap opens the item's sheet, which keeps its flight, and Close, Escape and the scrim close it.
+ * one, none or is out of reach — the height it declares, but for the tiles one a row under a 288 column; compact rows
+ * in half a section (152, 172) keep the three callsigns whole in every language, each name's box 48 at least, the
+ * value giving way (its arrow, its unit, then under the name, the row its 48); the lines under the names are never
+ * cut at 211 in German, Japanese and Portuguese (their segments give way, or the values go under the names); a tap
+ * opens the item's sheet, which keeps its flight, and Close, Escape and the scrim close it.
  * Real cards on the playground's simulated hass.
  * Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-items.mjs
@@ -297,6 +299,67 @@ const heights = (card) =>
     'items: the flights’ heading never ends in an ellipsis: "Flights nearby" where it holds, "Flights" where it would not',
     cuts.length === 0 && seen > 0,
     [...new Set(cuts)].slice(0, 8).join(' | '),
+  );
+}
+
+/* ---------- compact rows at half a section: every name keeps its least, the value giving way ---------- */
+{
+  const short = [];
+  let names = 0;
+  for (const lang of await everyLanguage()) {
+    const page = await suite.sheet('items', { lang });
+    const drawn = await page.evaluate(async () => {
+      const stage = document.createElement('div');
+      document.body.append(stage);
+      const cards = [152, 172].map((width) => {
+        const box = document.createElement('div');
+        box.style.width = `${width}px`;
+        const card = document.createElement('fluvy-items-card');
+        card.setConfig({
+          type: 'custom:fluvy-items-card',
+          entity: 'sensor.it_flights',
+          variant: 'compact',
+          max_rows: 3,
+        });
+        card.hass = window.fluvyMock.hass();
+        box.append(card);
+        stage.append(box);
+        return { card, width };
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      return cards.flatMap(({ card, width }) =>
+        [...card.shadowRoot.querySelectorAll('.fv-row--compact')].map((row) => {
+          const name = row.querySelector('.fv-row__title');
+          // its first four letters and the ellipsis, in its own face
+          const probe = name.cloneNode(false);
+          probe.textContent = `${name.textContent.trim().slice(0, 4)}…`;
+          probe.style.cssText = 'position:absolute;visibility:hidden;width:max-content';
+          row.append(probe);
+          const least = probe.getBoundingClientRect().width;
+          probe.remove();
+          return {
+            width,
+            name: name.textContent.trim(),
+            box: Math.round(name.getBoundingClientRect().width),
+            least: Math.ceil(least),
+            cut: name.scrollWidth > name.clientWidth + 0.5,
+            value: row.querySelector('.fv-row__value')?.textContent.trim() ?? '',
+            height: Math.round(row.getBoundingClientRect().height),
+          };
+        }),
+      );
+    });
+    names += drawn.length;
+    // never under 48 nor cut below its first four letters; the three callsigns, under 96, whole
+    for (const one of drawn)
+      if (one.box < 48 || one.box < one.least || one.cut || one.height !== 48)
+        short.push(`${lang} @ ${one.width}: ${one.name} ${one.box} (${one.value}, ${one.height})`);
+    await page.close();
+  }
+  check(
+    'items: compact at 152 and 172, every language, the three callsigns whole in boxes of 48 and more, each row its 48 — the value giving way (arrow, unit, under the name)',
+    short.length === 0 && names === 60,
+    short.slice(0, 6).join(' | ') || `${names} names`,
   );
 }
 

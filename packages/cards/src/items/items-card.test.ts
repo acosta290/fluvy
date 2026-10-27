@@ -383,6 +383,40 @@ describe('the Items card drawn', () => {
     width.mockRestore();
   });
 
+  it('gives a compact row’s name its least from the value, every row’s together: its arrow, its unit, its place', async () => {
+    // happy-dom lays nothing out: words of 7 a letter; the flights' widest ends a row at 83 ("↗ 88,888 ft")
+    const width = vi
+      .spyOn(TextRuler.prototype, 'width')
+      .mockImplementation((_cls: string, text: string) => text.length * 7);
+    const glyphs = (card: Inner): number =>
+      root(card).querySelectorAll('.fv-row__value > svg').length;
+    const under = (card: Inner): number => root(card).querySelectorAll('.fv-row--stack').length;
+    // 180 of content: without the circles, the names keep 48 beside the whole values
+    const wide = await draw({ variant: 'compact' }, 220);
+    expect([glyphs(wide), under(wide)]).toEqual([2, 0]);
+    // 140: the arrows go, every row's, the units stay
+    const narrower = await draw({ variant: 'compact' }, 180);
+    expect([glyphs(narrower), under(narrower)]).toEqual([0, 0]);
+    expect(texts(narrower, '.fv-row__value')).toEqual(['On ground', '4,200 ft', '12,500 ft']);
+    // half a section (112): not even bare ("On ground" has no unit to give) — the values go under the names, whole
+    const half = await draw({ variant: 'compact' }, 152);
+    expect([glyphs(half), under(half)]).toEqual([2, 3]);
+    expect(root(half).querySelectorAll('.fv-row--compact')).toHaveLength(3);
+    // a mapped figure with its unit says it bare before it leaves the name's line
+    const due = await draw(
+      {
+        entity: 'sensor.departures',
+        variant: 'compact',
+        item_name: '{line}',
+        item_value: 'due',
+        item_unit: 'min',
+      },
+      120,
+    );
+    expect([texts(due, '.fv-row__value'), under(due)]).toEqual([['5', '2'], 0]);
+    width.mockRestore();
+  });
+
   it('opens an item’s sheet on a tap, its chunk fetched the first time, unless the tap does nothing', async () => {
     const card = await draw({});
     root(card).querySelector<HTMLElement>('.fv-row--tap')!.click();
