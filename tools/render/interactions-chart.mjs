@@ -937,6 +937,8 @@ for (const mode of ['light', 'dark']) {
     const page = await suite.page(`sheet=animated&lang=${lang}&frames=none`, {
       viewport: { width: 1600, height: 1200 },
     });
+    // measured at rest: a card mid-way through its entrance (a scale) is not its height
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     apart.push(
       ...(
         await page.evaluate(async () => {

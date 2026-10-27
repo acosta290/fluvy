@@ -46,9 +46,19 @@ const heights = (card) =>
     declared: el.constructor.layoutHeight(el.config),
   }));
 
+/**
+ * The page, its boxes measured at rest: no entrance — a card mid-way through its rise (a scale) is not its height, and
+ * on a loaded machine the suite's waits end long before a staggered rise does (its layout is the declared one all
+ * along: `offsetHeight` says so from the first frame).
+ */
+const atRest = async (page) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  return page;
+};
+
 /* ---------- the rows: nearest first, the arrows, the photo that fails, the count, the heights ---------- */
 {
-  const page = await suite.sheet('items');
+  const page = await atRest(await suite.sheet('items'));
   const card = cardOf(page, 'Items · flights');
   await card.scrollIntoViewIfNeeded();
   await settle(page, 900);
@@ -227,7 +237,7 @@ const heights = (card) =>
   const cuts = [];
   let seen = 0;
   for (const lang of await everyLanguage()) {
-    const page = await suite.sheet('items', { lang });
+    const page = await atRest(await suite.sheet('items', { lang }));
     // three aircraft, one, none, the sensor out of reach, and more aircraft than rows: each variant at each width
     const drawn = await page.evaluate(async (widths) => {
       const stage = document.createElement('div');
@@ -307,7 +317,7 @@ const heights = (card) =>
   const short = [];
   let names = 0;
   for (const lang of await everyLanguage()) {
-    const page = await suite.sheet('items', { lang });
+    const page = await atRest(await suite.sheet('items', { lang }));
     const drawn = await page.evaluate(async () => {
       const stage = document.createElement('div');
       document.body.append(stage);
