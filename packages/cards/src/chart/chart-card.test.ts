@@ -3,6 +3,7 @@ import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { chartHeight } from '../chart-family.js';
 import { familiesDefined } from '../index.js';
+import { visibleFields } from '../shared/form.js';
 import { FluvyChartCard, legendColumns, type ChartCardConfig } from './chart-card.js';
 import { capsIn, defaultWindows, isPrice, SERIES_LIST, seriesOf, windowAt } from './config.js';
 import type { Reading } from './data/attribute.js';
@@ -554,6 +555,20 @@ describe('the Chart card’s editor', () => {
     expect(defaults['highlight']).toBe('both');
     const names = JSON.stringify(FluvyChartCard.getConfigForm().schema);
     expect(names.match(/"name":"highlight"/g)).toHaveLength(1);
+  });
+
+  it('offers the legend only where one is drawn: several series on the full card', () => {
+    const offered = (config: Record<string, unknown>) =>
+      JSON.stringify(visibleFields(FluvyChartCard.getConfigForm().schema, config)).includes(
+        '"name":"show_legend"',
+      );
+    const two = { series: ['sensor.temperature', 'sensor.cellar'] };
+    expect(offered(two)).toBe(true);
+    expect(offered({ ...two, variant: 'full' })).toBe(true);
+    expect(offered({ series: ['sensor.temperature'] })).toBe(false);
+    expect(offered({})).toBe(false);
+    expect(offered({ ...two, variant: 'compact' })).toBe(false);
+    expect(offered({ ...two, variant: 'tile' })).toBe(false);
   });
 
   it('offers a series the palette’s colours by their words, and keeps a colour typed (1.11)', () => {

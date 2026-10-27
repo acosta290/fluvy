@@ -600,6 +600,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const lone = (data: Readonly<Record<string, unknown>>): boolean => seriesOf(data).length < 2;
     const marked = (data: Readonly<Record<string, unknown>>): boolean =>
       lone(data) && (data['highlight'] ?? defaultWindows(data['chart'])) !== 'none';
+    // a legend names several series, on the full card alone (the compact one and the tile draw none)
+    const legended = (data: Readonly<Record<string, unknown>>): boolean =>
+      !lone(data) && (data['variant'] ?? 'full') === 'full';
     const helper: FormHelper = (schema) =>
       schema.name === 'span' ? s(editorLanguage(), 'editor.span_helper') : undefined;
     // the Chart section is the engine's, but for the highlight: this card marks its windows with it, in every style
@@ -616,7 +619,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         // the lists are edited item by item (the rows editor takes these fields out of the form)
         { name: 'series', selector: { object: {} } },
         fieldRow(spanField(), selectField('variant', ['full', 'compact', 'tile'])),
-        fieldRow(boolField('show_head'), boolField('show_legend')),
+        fieldRow(boolField('show_head'), onlyWhen(legended, boolField('show_legend'))),
         fieldRow(
           onlyWhen(
             lone,
