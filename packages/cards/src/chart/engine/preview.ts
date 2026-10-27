@@ -29,12 +29,15 @@ const BAND = {
   low: DAY.map((v, i) => Math.round((v - 1.4 - 0.4 * Math.sin(i / 3)) * 10) / 10),
   high: DAY.map((v, i) => Math.round((v + 1.1 + 0.4 * Math.cos(i / 4)) * 10) / 10),
 };
-/** The house's day of energy in twelve slots of two hours (kWh): a quiet night, the morning, the evening's peak. */
+/**
+ * The house's day of energy in twelve slots of two hours (kWh): a quiet night, the midday's peak before now (the bar a
+ * style lights as the highest is one that has happened), a lesser evening in the forecast.
+ */
 const ENERGY = Array.from(
   { length: 12 },
   (_unused, slot) =>
     Math.round(
-      (0.6 + 1.8 * Math.exp(-((slot - 4) ** 2) / 2) + 3.2 * Math.exp(-((slot - 10) ** 2) / 2)) *
+      (0.6 + 3.2 * Math.exp(-((slot - 6) ** 2) / 2) + 1.8 * Math.exp(-((slot - 10) ** 2) / 2)) *
         100,
     ) / 100,
 );

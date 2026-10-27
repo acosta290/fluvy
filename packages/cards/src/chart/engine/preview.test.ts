@@ -48,6 +48,10 @@ describe('the settings panel’s drawings', () => {
     expect(soft.querySelector('.fc-preview')?.getAttribute('data-mode')).toBe('dark');
     expect(soft.querySelector('#fc-preview-dark-line-clip')).not.toBeNull();
     expect(soft.querySelectorAll('.fc-bar').length).toBe(12);
+    // the soft style lights its highest bar, one that has happened: the rest quiet, the forecast hollow
+    expect(soft.querySelectorAll('.fc-bar:not(.fc-bar--quiet):not(.fc-bar--hollow)')).toHaveLength(
+      1,
+    );
     expect(soft.querySelector('.fv-bubble.fv-bubble--tone')).toBeNull();
     expect(soft.querySelector('.fv-bubble b')?.textContent).toMatch(/^\d+(\.\d)?$/);
     expect(soft.querySelector('.fc-ring')).not.toBeNull();
