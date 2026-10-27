@@ -761,7 +761,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   /**
    * The axis under the plot, on the plot's width: a day's hours at 0 · 6 · 12 · 18 · 24 (0 · 12 · 24, or its ends,
    * where they do not stand apart); else a label centred under each column, the days of a week by name, the rest by
-   * number, the months by name — every n-th from the first where they would crowd, kept inside the plot.
+   * number, the months by name — every n-th from the first where they would crowd, kept inside the plot; never fewer
+   * than two: the first and the middle (Jan · Jul) at the most, else the ends (Jan · Dec, J · D), as a day keeps its.
    */
   private axisMarks(drawn: Drawn, width: number): ReadonlyArray<readonly [number, string]> {
     const { slots, grain } = drawn;
@@ -793,16 +794,28 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     let texts = grain === 'day' && count > 7 ? words({ day: 'numeric' }) : words(named);
     if (count <= 7 && grain === 'day' && Math.max(...widths(texts)) + 12 > slot)
       texts = words({ weekday: 'narrow' });
-    const sizes = widths(texts);
-    const centre = (i: number): number => {
-      const half = (sizes[i] ?? 0) / 2;
-      return Math.min(width - half, Math.max(half, (i + 0.5) * slot));
-    };
-    const placed = (step: number): Placed[] =>
-      texts.flatMap((_t, i) => (i % step === 0 ? [{ x: centre(i), width: sizes[i] ?? 0 }] : []));
-    let step = thinStep(Math.max(...sizes), slot);
-    while (step < count && !labelsApart(placed(step))) step++;
-    return texts.flatMap((text, i) => (i % step === 0 ? [[centre(i) / width, text] as const] : []));
+    // each label centred under its column, kept inside the plot
+    const centred = (words: readonly string[]): (Placed & { readonly text: string })[] =>
+      widths(words).map((size, i) => ({
+        text: words[i] ?? '',
+        x: Math.min(width - size / 2, Math.max(size / 2, (i + 0.5) * slot)),
+        width: size,
+      }));
+    const labels = centred(texts);
+    const every = (step: number) => labels.filter((_label, i) => i % step === 0);
+    const middle = Math.ceil(count / 2);
+    let step = thinStep(Math.max(...labels.map((label) => label.width)), slot);
+    while (step <= middle && !labelsApart(every(step))) step++;
+    // never fewer than two: where not even the first and the middle stand apart, the ends — the months by their
+    // initials where their names would crowd even there, as a week's days take theirs
+    const ends = (all: typeof labels) => all.filter((_label, i) => i === 0 || i === count - 1);
+    const kept =
+      step <= middle
+        ? every(step)
+        : grain === 'month' && !labelsApart(ends(labels))
+          ? ends(centred(words({ month: 'narrow' })))
+          : ends(labels);
+    return kept.map((label) => [label.x / width, label.text] as const);
   }
 
   /* ---------- reading ---------- */

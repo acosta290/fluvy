@@ -291,6 +291,28 @@ describe('the Energy usage card', () => {
     );
   });
 
+  it('writes two months under a year at least, however narrow: the first and the middle, else the ends', async () => {
+    // the words `per` pixels a character
+    const months = async (width: number, per = 7): Promise<string[]> => {
+      const card = await mount({ period: 'year', variant: 'compact' });
+      vi.spyOn((card as unknown as { head: HeadFit }).head.ruler, 'width').mockImplementation(
+        (_cls, text) => text.length * per,
+      );
+      card.width = width;
+      card.requestUpdate();
+      await card.updateComplete;
+      return [...root(card).querySelectorAll('.eu-axis span')].map(
+        (label) => label.textContent?.trim() ?? '',
+      );
+    };
+    // a full column: every other month, twelve slots of 24
+    expect(await months(360)).toEqual(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']);
+    // half a section: not even the first and the middle stand 12 apart, so the ends; where even those would crowd
+    // (a wider face), their initials
+    expect(await months(152)).toEqual(['Jan', 'Dec']);
+    expect(await months(152, 10)).toEqual(['J', 'D']);
+  });
+
   it('asks for the unit and the decimals the card asks for', async () => {
     const card = await mount({ unit: 'Wh', decimals: 0 });
     expect(badge(card)).toBe('3,400 Wh');

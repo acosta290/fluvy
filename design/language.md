@@ -1027,7 +1027,8 @@ statistics allocated hour by hour as the dashboard allocates them, so its figure
   under, 16 tall, starting where the plot does: a day's hours at 0 · 6 · 12 · 18 · 24 (0 · 12 · 24, or its ends,
   where they do not stand 12 apart), else a label centred under each column — a week's days by name (their initials
   where a name does not hold its column), a longer run of days by number, the months by name — every n-th from the
-  first where they would crowd, kept inside the plot.
+  first where they would crowd, kept inside the plot, never fewer than two: the first and the middle (Jan · Jul) at
+  the most, else the ends (Jan · Dec; the months' initials where even those would not stand 12 apart).
 - **What it says.** The head's badge is what the house used over the range (it gives way first in a narrow head; the
   title "Energy usage" takes its short word, "Usage", where it would be cut). The legend (the energy family's: the
   square, the name 14/500, the figure 16/600 under it) lists the sources drawn and what went out (Charged, Exported,
