@@ -1912,6 +1912,7 @@
     "self_powered_short": "Autonomía",
     "sun_used": "Sol usado",
     "low_carbon": "Bajo en CO₂",
+    "low_carbon_short": "Bajo en CO₂",
     "imported": "Importada",
     "exported": "Exportada",
     "net": "Neto",

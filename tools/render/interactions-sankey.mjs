@@ -9,8 +9,11 @@
  * inside the column; a period switch asks the statistics again; a tap opens a meter's more-info; a meter down, a
  * device missing, no Energy dashboard and unreadable statistics each say so. The score's rings are Home Assistant's
  * gauges (the fossil energy asked the way the Energy dashboard asks it), a ring the house cannot have is left out
- * and the rest stay centred, the net says its way, and taps open the grid's meter and the CO₂ signal.
+ * and the rest stay centred, the net says its way, and taps open the grid's meter and the CO₂ signal; in every
+ * language the rings lie as many a row as in English at 211, 266 and 360, a long word in its short form where it would
+ * lose one, and no word is cut.
  */
+import { everyLanguage } from './lib.mjs';
 import { BASE, frame, moreInfo, reset, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -408,6 +411,44 @@ const drawing = (card) =>
       'Grid · unavailable · since 21:35',
   );
   await page.close();
+}
+
+{
+  // every language lays the rings as many a row as English does: a long word takes its short form where it would lose
+  // a row (Dutch "Zelfvoorzienend", Portuguese "Baixo carbono" at 360), and no word is cut
+  const laid = async (lang, width) => {
+    const page = await suite.sheet('sankey', { width, lang });
+    const rings = await score(page, 'Energy score · as approved').evaluate((c) => {
+      const labels = [...c.shadowRoot.querySelectorAll('.en-score__label')];
+      return {
+        rows: new Set(
+          [...c.shadowRoot.querySelectorAll('.en-score')].map((r) =>
+            Math.round(r.getBoundingClientRect().top),
+          ),
+        ).size,
+        words: labels.map((l) => l.textContent.trim()).join(' · '),
+        cut: labels.filter((l) => l.scrollWidth > l.clientWidth + 1).length,
+      };
+    });
+    await page.close();
+    return rings;
+  };
+  const languages = await everyLanguage();
+  const wrong = [];
+  for (const width of [211, 266, 360]) {
+    const [english, ...others] = await Promise.all(languages.map((lang) => laid(lang, width)));
+    others.forEach((rings, n) => {
+      if (rings.rows !== english.rows || rings.cut)
+        wrong.push(
+          `${languages[n + 1]} at ${width}: ${JSON.stringify(rings)}, English ${english.rows}`,
+        );
+    });
+  }
+  check(
+    'in every language the rings lie as many a row as in English at 211, 266 and 360, no word cut',
+    wrong.length === 0,
+    wrong.join(' | '),
+  );
 }
 
 /* ---------- a card leaves nothing running ---------- */

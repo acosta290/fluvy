@@ -1912,6 +1912,7 @@
     "self_powered_short": "Autark",
     "sun_used": "PV genutzt",
     "low_carbon": "CO₂-arm",
+    "low_carbon_short": "CO₂-arm",
     "imported": "Bezogen",
     "exported": "Eingespeist",
     "net": "Netto",

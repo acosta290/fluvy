@@ -79,6 +79,7 @@ import {
   ringPercent,
   ringRadius,
   ringsOf,
+  shortWords,
   totalsLayout,
   type Ring,
 } from './rings.js';
@@ -103,6 +104,12 @@ export interface EnergyScoreCardConfig extends FluvyCardConfig, NumberKeys {
 
 /** Below this (kWh), a net reads "0" and has no direction. */
 const ZERO = 0.005;
+
+/** The rings' words that have a short form, the same word where a language needs none. */
+const SHORT: Partial<Record<Ring['key'], 'self_powered_short' | 'low_carbon_short'>> = {
+  self_powered: 'self_powered_short',
+  low_carbon: 'low_carbon_short',
+};
 
 /**
  * How the house did over a period, as Home Assistant's own Energy gauges say it — how much of what it used did not
@@ -452,19 +459,16 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   private renderScores(w: number): TemplateResult {
     const rings = this.rings();
-    // a ring's word, the self-powered one in its short form where the long would not hold the card's width (a long
-    // Dutch "Zelfvoorzienend" in half a column)
-    const label = (key: Ring['key']): string => {
-      const long = s(this.hass, key);
-      return key === 'self_powered' && this.head.ruler.width('en-score__label', long) > w
-        ? s(this.hass, 'self_powered_short')
-        : long;
-    };
-    const widest = Math.max(
-      0,
-      ...rings.map((r) => this.head.ruler.width('en-score__label', label(r.key))),
-    );
-    const lay = ringLayout(rings.length, w, widest);
+    // the rings' words: the long ones, or their short forms where those lay the rings better (`shortWords`: a long
+    // Dutch "Zelfvoorzienend" lost a row of three, a Portuguese "Baixo carbono" too)
+    const long = (key: Ring['key']): string => s(this.hass, key);
+    const short = (key: Ring['key']): string => s(this.hass, SHORT[key] ?? key);
+    const widest = (word: (key: Ring['key']) => string): number =>
+      Math.max(0, ...rings.map((r) => this.head.ruler.width('en-score__label', word(r.key))));
+    const label = shortWords(rings.length, w, { long: widest(long), short: widest(short) })
+      ? short
+      : long;
+    const lay = ringLayout(rings.length, w, widest(label));
     const size = lay.small ? RING_SMALL : RING;
     const c = size / 2;
     const co2 = this.co2();

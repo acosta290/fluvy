@@ -93,6 +93,22 @@ export function ringLayout(count: number, width: number, widestLabel: number): R
   return { columns, column, spread, gap, small: column < RING };
 }
 
+/**
+ * Whether the rings say their short words (`self_powered_short`, `low_carbon_short`), given the widest label of each
+ * set: where a long word is wider than the column itself, or where the long words lay fewer rings a row than there are
+ * and the short ones lay more — a Dutch "Zelfvoorzienend" laid three rings two and one at 360, where 1.10's "Autarkie"
+ * kept them in a row. A short word that lays the rings no better leaves the long one its place.
+ */
+export function shortWords(
+  count: number,
+  width: number,
+  widest: { readonly long: number; readonly short: number },
+): boolean {
+  if (widest.long > width) return true;
+  const long = ringLayout(count, width, widest.long).columns;
+  return long < count && ringLayout(count, width, widest.short).columns > long;
+}
+
 export type TotalsLayout = 'columns' | 'fluid' | 'stacked';
 
 /**
