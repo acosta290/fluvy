@@ -1,7 +1,7 @@
 /**
  * The facts guard: what the prose says in numbers is what the code says. A count spelled in the README, the docs,
  * the package description, the contributing guide or the design language — "sixty cards", "fifteen palettes",
- * "five automatic dashboards", "eight languages", "five tabs" — is read back and held to the catalogue, the palette
+ * "five automatic dashboards", "eight languages", "six tabs" — is read back and held to the catalogue, the palette
  * registry, the strategy's templates, the language registry and the panel's tabs; the every-page budget the
  * development guide names is held to `finish.mjs`, and its table of scripts to `check.mjs`'s `BUDGETS`, name for name
  * and kilobyte for kilobyte. The CHANGELOG is history and is never read.
