@@ -2210,17 +2210,25 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
   says "Flights nearby" and "3 aircraft"; the empty panel "No aircraft nearby". The units are the integration's (ft,
   kt, ft/min, km), as it reports them.
 - **Variants.** `rows` (60, the default), `compact` (48: the name and the value, the 40 circle with the glyph),
-  `tiles` (76 inner compact tiles, two a row from a 320 column, one under it). Out of the rows' rule (the circles give
-  way together, a value that would leave a name under its room goes under the words) the tiles share their room every
-  tile together: the circle where each name keeps 48 beside it and each value holds whole — the value's arrow gives
-  way first, then the circle, and the arrows are back once the circles have gone (half a section).
+  `tiles` (76 inner compact tiles, two a row from a 288 column — a 360 phone's card — one under it).
+- **Every row is laid out alike**, by the column and the widest value the card can show — the preset's ("On ground",
+  a five-figure altitude with its arrow), else the widest the whole list holds — never by one item's words: where that
+  value would leave a name under its 96 even without the circle (211 and under, for flights), every row puts its
+  value under its name in the line's place (the name's 20, 4, the value's 20: the row keeps its 60); else the circles
+  give way together where a name needs their room, and the lines give way by their segments. The tiles share their
+  room the same way, every tile together: the circle where each name keeps 48 beside it and each value the card can
+  show holds whole — the value's arrow gives way first, then the circle, and the arrows are back once the circles
+  have gone (half a section).
 - **The value's glyph** is a `listRow` option of its own (`valueGlyph`): a 16 glyph before the figure, the two centred
   on the value's line 4 apart (`.fv-row__value--glyph`), weighed with the value wherever a row fits its words.
 - **Heights.** `max_rows` (1–20, five) is the card's height, never the list's length: HEAD + 60 × n (five → 400),
-  HEAD + 48 × n, HEAD + rows × 76 + 8 between. The list's box holds that height whatever it shows: fewer items, the
-  empty panel — in the box's middle, rounded down to the 4 grid; in a box shorter than the panel's 120, its words
-  alone at the box's height — and a sensor out of reach (resting dashed rings, "—" names and values, as many rows as
-  declared, the state under the title).
+  HEAD + 48 × n, HEAD + rows × 76 + 8 between (`itemsList`). The list's box holds that height at every width whatever
+  it shows: fewer items, the empty panel — as tall as its words lay out across the card (120 at least: a German "Keine
+  Flugzeuge in der Nähe" takes four lines in half a section), in the box's middle rounded down to the 4 grid; in a box
+  shorter than the panel, its words alone at the box's height — and a sensor out of reach (resting dashed rings, "—"
+  names and values, as many rows as declared, the state under the title). The tiles one a row under 288 hold
+  `max_rows` rows of them there, whatever the list holds: the one width at which the card draws taller than it
+  declares at 360 (half a section, a third of one).
 - **The head** counts from the sensor's state ("3 aircraft"; the whole list's length where the state is no number;
   `subtitle` wins, `show_count: false` drops it). Its title is the card's, else the preset's, else the sensor's name;
   its tap is the sensor's details.

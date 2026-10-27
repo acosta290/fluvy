@@ -8,7 +8,7 @@ import { HEAD, ROW, ROW_COMPACT, rowsOf } from './shared/heights.js';
  * this file: it stays tiny.
  */
 
-/** A tile of the `tiles` variant and the gap between tiles; two a row from a 320 content column. */
+/** A tile of the `tiles` variant and the gap between tiles; two a row from a 288 content column (a phone's card). */
 export const TILE = 76;
 export const TILE_GAP = 8;
 
@@ -19,20 +19,24 @@ export const maxRows = (config: LovelaceCardConfig): number => {
 };
 
 /**
- * The Items card at a 360 column: the head, then `max_rows` rows of 60 (`rows`), of 48 (`compact`), or tiles of 76
- * two a row, 8 apart (`tiles`) — whatever the list holds: fewer items, the empty panel and a sensor out of reach keep
- * the size.
+ * The list's box under the head, from the config alone: `max_rows` rows of 60 (`rows`, a value that would not hold
+ * beside its name going under it in the same 60), of 48 (`compact`), or tiles of 76 `columns` a row, 8 apart
+ * (`tiles`: two in a column of 288 or more, one under it) — whatever the list holds: fewer items, the empty panel and
+ * a sensor out of reach keep the size.
  */
-export function itemsHeight(config: LovelaceCardConfig): number {
+export function itemsList(config: LovelaceCardConfig, columns = 2): number {
   const n = maxRows(config);
   const variant = config['variant'];
-  if (variant === 'compact') return HEAD + ROW_COMPACT * n;
+  if (variant === 'compact') return ROW_COMPACT * n;
   if (variant === 'tiles') {
-    const rows = rowsOf(n, 2);
-    return HEAD + rows * TILE + (rows - 1) * TILE_GAP;
+    const rows = rowsOf(n, columns);
+    return rows * TILE + (rows - 1) * TILE_GAP;
   }
-  return HEAD + ROW * n;
+  return ROW * n;
 }
+
+/** The Items card at a 360 column: the head and the list's box. */
+export const itemsHeight = (config: LovelaceCardConfig): number => HEAD + itemsList(config);
 
 export const ITEMS_FAMILY: readonly FamilyEntry[] = [
   [

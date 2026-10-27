@@ -2,7 +2,7 @@
 import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
-import { itemsHeight } from '../items-family.js';
+import { itemsHeight, itemsList } from '../items-family.js';
 import { TextRuler } from '../shared/fit.js';
 import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
 import type { FormHelper } from '../shared/rows-editor.js';
@@ -146,6 +146,29 @@ describe('the Items card’s height at a 360 column', () => {
     expect(height({ max_rows: 99 })).toBe(1300);
     expect(height({ max_rows: 'many' })).toBe(400);
     expect(FluvyItemsCard.layoutHeight({ type: 'custom:fluvy-items-card', max_rows: 2 })).toBe(220);
+  });
+
+  it('holds its list’s box from the config at any width: tiles one a row hold their rows there', () => {
+    const box = (config: Record<string, unknown>, columns?: number) =>
+      itemsList({ type: 'custom:fluvy-items-card', ...config }, columns);
+    expect(box({ max_rows: 3 })).toBe(180);
+    expect(box({ max_rows: 3 }, 1)).toBe(180);
+    expect(box({ variant: 'tiles', max_rows: 3 })).toBe(160);
+    expect(box({ variant: 'tiles', max_rows: 3 }, 1)).toBe(244);
+  });
+
+  it('draws that box whatever the list holds — three aircraft, none or out of reach — at its width', async () => {
+    const box = async (entity: string, width: number): Promise<string> => {
+      const card = await draw({ entity, variant: 'tiles', max_rows: 3 }, width);
+      return root(card).querySelector<HTMLElement>('.it-list')!.style.getPropertyValue('--it-min');
+    };
+    for (const [width, held] of [
+      [360, '160px'],
+      [328, '160px'],
+      [211, '244px'],
+    ] as const)
+      for (const entity of ['sensor.flights', 'sensor.none', 'sensor.gone'])
+        expect(await box(entity, width), `${entity} @ ${width}`).toBe(held);
   });
 
   it('says its size from it', async () => {

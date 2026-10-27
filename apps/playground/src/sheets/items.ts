@@ -200,8 +200,10 @@ export const sheet: SheetSpec = {
       title: 'Items · out of reach',
       cards: [card({ entity: 'sensor.it_gone', max_rows: 3 })],
     },
+    // rows and compact rows hold the height they declare at half a section too, in every language (heights.mjs)
     {
       title: 'Items · half a section',
+      heights: [152, 172],
       cards: [
         card({ cols: 6, max_rows: 3 }),
         { ...BOARD, cols: 6, variant: 'compact', max_rows: 3 },

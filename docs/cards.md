@@ -425,7 +425,8 @@ alerts:
 
 The items card lists the items of a sensor's list attribute (#66) — the aircraft a FlightRadar24 sensor keeps in
 `flights`, a departures board, parcels on their way — a row each (60), a compact row (48, the name and the value) or a
-tile (76, two a row from a 320 column), under a head that counts them from the sensor's state. `attribute` names the
+tile (76, two a row from a phone's card, one a row in a narrower one), under a head that counts them from the sensor's
+state. `attribute` names the
 list (`auto`, the default, takes the first attribute that holds one — `flights`, `items`, `entries` or `list` first);
 `items_template` is a template that gives the list instead (as JSON), so any sensor becomes one. Each item is shown by
 the fields the configuration maps — `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`,
@@ -439,7 +440,8 @@ callsign over the route (`AMS → BCN`) and the aircraft, the altitude in feet w
 feet, knots, feet a minute, kilometres — as the FlightRadar24 integration reports them. `sort` orders the list by a
 field (`sort_order`: `ascending` or `descending`; numbers as numbers, words as the language sorts them, items without
 the field last). `max_rows` (1–20, five) is the card's height, never the list's length: fewer items, the empty panel
-and a sensor out of reach keep the size. `show_count` puts the count under the title ("3 aircraft"; `subtitle` wins),
+and a sensor out of reach keep the size, at every width (where a value would not hold beside its name, every row puts
+its value under its name, in the same height). `show_count` puts the count under the title ("3 aircraft"; `subtitle` wins),
 `show_image` an item's picture in its circle (one that will not load falls back to the glyph). A tap on an item opens
 its sheet — the flight's airline, route, aircraft, altitude, speeds, heading, distance, position and times, with a
 round to the flight on flightradar24.com; a plain item's every field — or nothing (`item_tap: none`); the head's tap

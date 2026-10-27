@@ -1,4 +1,5 @@
 import {
+  localize,
   plural,
   resolveEntity,
   stateText,
@@ -27,12 +28,12 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { HeadFit } from '../energy/head.js';
-import { rowStacks } from '../helpers/rows.js';
-import { itemsHeight, maxRows, TILE_GAP } from '../items-family.js';
+import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
+import { itemsHeight, itemsList, maxRows, TILE_GAP } from '../items-family.js';
 import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
+import { lineCount } from '../shared/fit.js';
 import {
   actionFields,
   boolField,
@@ -52,7 +53,7 @@ import {
   textField,
   titleFields,
 } from '../shared/form.js';
-import { EMPTY, HEAD } from '../shared/heights.js';
+import { EMPTY } from '../shared/heights.js';
 import { EMPTY_KEYS, emptyPanel, type EmptyList } from '../shared/lists.js';
 import type { EditorChoices, EditorDefaults, FormHelper } from '../shared/rows-editor.js';
 import { isTemplate, PENDING_LINE, TemplateTexts } from '../shared/templates.js';
@@ -105,7 +106,7 @@ export interface ItemsCardConfig extends FluvyCardConfig, HeadConfig, EmptyList 
   sort_order?: SortOrder;
   /** The rows the card declares (1–20, five by default): its height, never the list's length. */
   max_rows?: number;
-  /** `rows` (60, the default), `compact` (48, the name and the value) or `tiles` (76, two a row from 320). */
+  /** `rows` (60, the default), `compact` (48, the name and the value) or `tiles` (76, two a row from 288). */
   variant?: ItemsVariant;
   /** The head's line counts the items from the sensor's state (`subtitle` wins). */
   show_count?: boolean;
@@ -128,8 +129,8 @@ const FIELD_KEYS = [
   'item_url',
 ] as const;
 
-/** The tiles a row: two from a 320 content column, one under it. */
-const TWO_TILES = 320;
+/** The tiles a row: two from a 288 content column (a phone's card: its 328 less the card's 20s), one under it. */
+const TWO_TILES = 288;
 /** A tile's two sides (16 each); its circle (44) and the gap after it. */
 const TILE_SIDES = 32;
 const CIRCLE = 56;
@@ -140,6 +141,10 @@ const TILE_NAME = 'fv-tile fv-tile--compact > fv-tile__name';
 const TILE_STATE = 'fv-tile fv-tile--compact > fv-tile__state';
 /** A value's glyph (16) and the gap after it. */
 const GLYPH = 20;
+/** The empty panel: its 16 on either side, its 44 ring and the 8 under it, a line of its words. */
+const PANEL_SIDES = 32;
+const PANEL_RING = 52;
+const PANEL_LINE = 20;
 
 /** An item as the card draws it, with where it came from. */
 interface Drawn {
@@ -237,14 +242,12 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         height: 100%;
         object-fit: cover;
       }
-      /* a value that would leave the name under its room goes under the words, at their start, and the row grows
-         (the rows' rule, as the entities card draws it) */
+      /* where the widest value the card can show would leave a name under its room, every row puts its value under
+         its name, in the line's place: the row keeps its 60 (the name's 20, 4, the value's 20) */
       .fv-row--stack {
         flex-wrap: wrap;
+        align-content: center;
         row-gap: 4px;
-        height: auto;
-        min-height: 60px;
-        padding: 8px 0;
       }
       .fv-row--stack > .fv-row__text {
         flex-basis: 100%;
@@ -491,6 +494,16 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
       : 0;
   }
 
+  /**
+   * The values every row and tile is laid out by, so that what the list holds now never decides one's anatomy: the
+   * widest a preset can show ("On ground", a five-figure altitude and its arrow), else those of the whole list.
+   */
+  private widest(listing: Listing): readonly Shown[] {
+    return listing.preset
+      ? listing.preset.widest(this.hass)
+      : this.drawn(listing, listing.items).map(({ shown }) => shown);
+  }
+
   /* ---------- the sheet ---------- */
 
   /** What the sheet asks of the card: the item open, as it stands now, and the card's colours. */
@@ -574,40 +587,43 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     return plural(this.hass, listing.preset?.count ?? 'items.count', n);
   }
 
-  /** A row an item (60), or a compact one (48, the name and the value); out of reach, rows of dashes at rest. */
-  private renderRows(items: readonly Drawn[], compact: boolean, dead: boolean): TemplateResult {
+  /**
+   * A row an item (60), or a compact one (48, the name and the value); out of reach, rows of dashes at rest. Every
+   * row is laid out alike, by the column and the widest value the card can show (`widest`): where that value would
+   * leave a name under its least even without the circle, every value goes under its name in the line's place, and
+   * the rows keep their 60; else the circles give way together where a name needs their room.
+   */
+  private renderRows(
+    items: readonly Drawn[],
+    widest: readonly Shown[],
+    compact: boolean,
+    dead: boolean,
+  ): TemplateResult {
     const width = this.contentWidth;
     const shown = items.map(({ shown }) => shown);
-    const ends = shown.map((one) => this.valueEnd(one));
-    const keepIcon = this.headFit.rowsKeepIcon(
-      width,
-      shown.map((one, i) => ({
-        title: one.name,
-        value: one.value,
-        end: ends[i] ?? 0,
-        sub: compact ? '' : (one.secondary.split(' · ')[0] ?? ''),
-      })),
-      compact,
-    );
-    const taps = !dead && this.config?.item_tap !== 'none';
-    return html`${shown.map((one, i) => {
-      const end = ends[i] ?? 0;
-      // a bare row whose value would still leave the name under its room puts the value under the words
-      const stack =
-        !compact &&
-        !keepIcon &&
-        rowStacks(this.headFit.ruler, width, { name: one.name, sub: one.secondary, end });
-      const room = this.headFit.rowRoom(width, '', {
-        icon: keepIcon,
+    const end = Math.max(0, ...[...shown, ...widest].map((one) => this.valueEnd(one)));
+    const stack = !compact && this.headFit.rowRoom(width, '', { icon: false, end }) < ROW_NAME_MIN;
+    const keepIcon =
+      !stack &&
+      this.headFit.rowsKeepIcon(
+        width,
+        shown.map((one) => ({
+          title: one.name,
+          value: one.value,
+          end,
+          sub: compact ? '' : (one.secondary.split(' · ')[0] ?? ''),
+        })),
         compact,
-        end: stack ? 0 : end,
-      });
-      return listRow({
+      );
+    const room = this.headFit.rowRoom(width, '', { icon: keepIcon, compact, end });
+    const taps = !dead && this.config?.item_tap !== 'none';
+    return html`${shown.map((one, i) =>
+      listRow({
         icon: keepIcon ? (compact ? one.icon : this.circle(one, dead ? 'off' : 'neutral')) : null,
         tone: dead ? 'off' : 'neutral',
         title: one.name,
         name: true,
-        sub: compact ? '' : this.headFit.fitRowSub(one.secondary, room),
+        sub: compact || stack ? '' : this.headFit.fitRowSub(one.secondary, room),
         trailing: 'value',
         value: one.value,
         valueGlyph: one.glyph,
@@ -616,11 +632,11 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         stack,
         unavailable: dead,
         onTap: taps ? () => void this.openSheet(keyOf(items[i]!)) : undefined,
-      });
-    })}`;
+      }),
+    )}`;
   }
 
-  /** The tiles a row: two from a 320 content column, one under it. */
+  /** The tiles a row: two from a 288 content column (a phone's card), one under it. */
   private get tileColumns(): number {
     return this.contentWidth >= TWO_TILES ? 2 : 1;
   }
@@ -634,15 +650,15 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
 
   /**
    * How the tiles share their room, every tile's together: the circle where each name keeps its least beside it and
-   * each value (or its line's first segment) holds whole — the value's arrow giving way first; where not even then,
-   * the circle gives its room to the words and the arrows are back.
+   * each value the card can show (`widest` among them) or its line's first segment holds whole — the value's arrow
+   * giving way first; where not even then, the circle gives its room to the words and the arrows are back.
    */
-  private tileLayout(items: readonly Drawn[]): TileLayout {
+  private tileLayout(items: readonly Shown[]): TileLayout {
     const ruler = this.headFit.ruler;
     const holds = ({ circles, glyphs }: TileLayout): boolean => {
       const room = this.tileRoom - (circles ? CIRCLE : 0);
       return items.every(
-        ({ shown }) =>
+        (shown) =>
           room >= Math.min(TILE_NAME_MIN, ruler.width(TILE_NAME, shown.name)) &&
           room >=
             (shown.value
@@ -660,12 +676,16 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
 
   /**
    * A tile an item (76): its circle, its name over its value (its line where it has no value, its segments giving way
-   * from the end); two a row from 320. The tiles share their room as `tileLayout` says: in half a section the words
+   * from the end); two a row from 288. The tiles share their room as `tileLayout` says: in half a section the words
    * take the whole tile, as a compact tile squeezed gives its name the circle's room.
    */
-  private renderTiles(items: readonly Drawn[], dead: boolean): TemplateResult {
+  private renderTiles(
+    items: readonly Drawn[],
+    widest: readonly Shown[],
+    dead: boolean,
+  ): TemplateResult {
     const taps = !dead && this.config?.item_tap !== 'none';
-    const { circles, glyphs } = this.tileLayout(items);
+    const { circles, glyphs } = this.tileLayout([...items.map(({ shown }) => shown), ...widest]);
     const room = this.tileRoom - (circles ? CIRCLE : 0);
     return html`${items.map((one) => {
       const { shown } = one;
@@ -695,6 +715,21 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     })}`;
   }
 
+  /**
+   * The empty panel's height as its words lay out across the card: its ring, the 8 under it and its lines of 20 within
+   * its 16s, 120 at least — a German "Keine Flugzeuge in der Nähe" takes four lines in half a section. A box shorter
+   * than that holds the words alone.
+   */
+  private panelHeight(text: string): number {
+    const width = this.contentWidth - PANEL_SIDES;
+    const measure = (words: string): number =>
+      this.headFit.ruler.width('fv-empty-state__text', words);
+    const lines = lineCount(text, width, measure);
+    // words that break anywhere (Japanese) fill their lines
+    const count = Number.isFinite(lines) ? lines : Math.ceil(measure(text) / width);
+    return Math.max(EMPTY, PANEL_SIDES + PANEL_RING + PANEL_LINE * count);
+  }
+
   /** Out of reach, the card keeps its rows: dashes in the resting rings, as many as it declares. */
   private resting(listing: Listing): Drawn[] {
     const glyph = this.glyph(listing.preset);
@@ -721,12 +756,8 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
       ? this.resting(listing)
       : this.drawn(listing, listing.items.slice(0, maxRows(config ?? { type: '' })));
     const empty = !dead && !listing.pending && !items.length;
-    const panel = emptyPanel(
-      this,
-      empty,
-      this.glyph(listing.preset),
-      listing.preset?.empty ?? 'items.empty',
-    );
+    const emptyKey = listing.preset?.empty ?? 'items.empty';
+    const panel = emptyPanel(this, empty, this.glyph(listing.preset), emptyKey);
     const title = this.heading(listing);
     const fitted = this.headFit.fit({
       width: this.contentWidth,
@@ -736,9 +767,12 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     });
     const variant = config?.variant ?? 'rows';
     const tiles = variant === 'tiles';
-    const min = itemsHeight(config ?? { type: '' }) - HEAD;
-    const short = panel !== undefined && min < EMPTY;
-    const inset = panel && !short ? Math.floor((min - EMPTY) / 8) * 4 : 0;
+    // the box the config declares at this column, whatever the list holds: its tiles' rows as many a row as it lays
+    const min = itemsList(config ?? { type: '' }, this.tileColumns);
+    const widest = this.widest(listing);
+    const tall = panel ? this.panelHeight(config?.empty_text ?? localize(this.hass, emptyKey)) : 0;
+    const short = panel !== undefined && min < tall;
+    const inset = panel && !short ? Math.floor((min - tall) / 8) * 4 : 0;
     return html`<article class="fv-card ${dead ? 'is-unavailable' : ''}" data-card>
       ${head({
         icon: fitted.icon ? this.glyph(listing.preset) : null,
@@ -754,7 +788,7 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         class="it-list ${tiles && !panel ? 'it-tiles' : ''} ${panel ? 'is-empty' : ''} ${short ? 'is-short' : ''}"
         style="--it-min:${min}px;--it-inset:${inset}px;--it-cols:${this.tileColumns}"
       >
-        ${panel ?? (tiles ? this.renderTiles(items, dead) : this.renderRows(items, variant === 'compact', dead))}
+        ${panel ?? (tiles ? this.renderTiles(items, widest, dead) : this.renderRows(items, widest, variant === 'compact', dead))}
       </div>
       ${
         this.sheetReady_

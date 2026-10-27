@@ -55,6 +55,11 @@ export interface Preset {
   readonly sort: string;
   readonly order: SortOrder;
   row(item: Item, hass: HomeAssistant | undefined): Shown;
+  /**
+   * The widest values a row can show, with their glyphs: the card lays every row out by them, so what the list holds
+   * now never decides a row's anatomy.
+   */
+  widest(hass: HomeAssistant | undefined): readonly Shown[];
   sheet(item: Item, hass: HomeAssistant | undefined): SheetRow[];
 }
 
@@ -232,6 +237,19 @@ export const FLIGHTS: Preset = {
       url: flightLink(item),
     };
   },
+  widest: (hass) =>
+    [
+      { value: localize(hass, 'flights.on_ground'), quiet: true },
+      // the figures are tabular: every five-figure altitude is as wide as this one, its arrow before it
+      { value: `${formatNumber(hass, 88_888, { digits: 0 })} ft`, glyph: 'trendUp' as const },
+    ].map((shown) => ({
+      name: '',
+      secondary: '',
+      icon: 'mdi:airplane',
+      image: '',
+      url: '',
+      ...shown,
+    })),
   sheet: (item, hass) =>
     FLIGHT_SHEET.map(([label, pattern, unit = '', format]) => ({
       label: localize(hass, label),

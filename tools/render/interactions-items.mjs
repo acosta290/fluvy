@@ -3,12 +3,16 @@
  * Interaction tests for the Items card (#66): the issue's three aircraft as rows at 360, 211 and 152 — the nearest
  * first, the climb and descent arrows, "On ground" — each card at the height it declares; a photo that never arrives
  * falls back to the glyph; the head counts the aircraft from the sensor's state; the tiles give their arrows away
- * before their photos, and have them back once the photos have gone (half a section); the lines under the names are
- * never cut at 211 in German, Japanese and Portuguese (their segments give way); a tap opens the item's sheet, which
- * keeps its flight, and Close, Escape and the scrim close it. Real cards on the playground's simulated hass.
+ * before their photos, and have them back once the photos have gone (half a section); every variant keeps one height
+ * at every card width from half a section to a phone's and in every language, whether the sensor lists three aircraft,
+ * one, none or is out of reach — the height it declares, but for the tiles one a row under a 288 column; the lines
+ * under the names are never cut at 211 in German, Japanese and Portuguese (their segments give way, or the values go
+ * under the names); a tap opens the item's sheet, which keeps its flight, and Close, Escape and the scrim close it.
+ * Real cards on the playground's simulated hass.
  * Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-items.mjs
  */
+import { everyLanguage } from './lib.mjs';
 import { frame, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -162,6 +166,72 @@ const heights = (card) =>
     }
     await page.close();
   }
+}
+
+/* ---------- the height the config declares, whatever the list holds, at every width and in every language ---------- */
+{
+  const WIDTHS = [152, 172, 211, 266, 328, 360];
+  const faults = [];
+  let seen = 0;
+  for (const lang of await everyLanguage()) {
+    const page = await suite.sheet('items', { lang });
+    // three aircraft, one, none, the sensor out of reach, and more aircraft than rows: each variant at each width
+    const drawn = await page.evaluate(async (widths) => {
+      const stage = document.createElement('div');
+      document.body.append(stage);
+      const cards = [];
+      for (const width of widths)
+        for (const variant of ['rows', 'compact', 'tiles'])
+          for (const [entity, max] of [
+            ['sensor.it_flights', 3],
+            ['sensor.it_one', 3],
+            ['sensor.it_none', 3],
+            ['sensor.it_gone', 3],
+            ['sensor.it_flights', 2],
+          ]) {
+            const box = document.createElement('div');
+            box.style.width = `${width}px`;
+            const card = document.createElement('fluvy-items-card');
+            card.setConfig({ type: 'custom:fluvy-items-card', entity, variant, max_rows: max });
+            card.hass = window.fluvyMock.hass();
+            box.append(card);
+            stage.append(box);
+            cards.push({ card, width, variant, entity, max });
+          }
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      return cards.map(({ card, width, variant, entity, max }) => ({
+        width,
+        variant,
+        entity,
+        max,
+        drawn: Math.round(
+          card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height,
+        ),
+        declared: card.constructor.layoutHeight(card.config),
+      }));
+    }, WIDTHS);
+    seen += drawn.length;
+    for (const width of WIDTHS)
+      for (const variant of ['rows', 'compact', 'tiles'])
+        for (const max of [3, 2]) {
+          const set = drawn.filter(
+            (one) => one.width === width && one.variant === variant && one.max === max,
+          );
+          const heights = new Set(set.map((one) => one.drawn));
+          // the tiles lay one a row under a 288 column: there the box holds as many rows, whatever the list holds
+          const declared = variant !== 'tiles' || width >= 328;
+          if (heights.size > 1 || (declared && set.some((one) => one.drawn !== one.declared)))
+            faults.push(
+              `${lang} ${variant} @ ${width} max ${max}: ${set.map((one) => `${one.entity.slice(10)}=${one.drawn}/${one.declared}`).join(' ')}`,
+            );
+        }
+    await page.close();
+  }
+  check(
+    'items: three aircraft, one, none or out of reach, every variant keeps one height at every width — the declared one but for the tiles one a row under 288',
+    faults.length === 0 && seen > 0,
+    faults.slice(0, 6).join(' | ') || `${seen} cards`,
+  );
 }
 
 /* ---------- the lines in German, Japanese and Portuguese at 211: the head's and the rows', never cut ---------- */

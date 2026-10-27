@@ -11,7 +11,7 @@ export const BADGE_SIDES = 28;
 /* a compact row's circle (40) and its gap: the head's smaller circle too */
 const ICON_COMPACT = 40 + 12;
 /** The least a row's name may have beside its value before the circle gives way to it (the name itself when shorter). */
-const ROW_NAME_MIN = 96;
+export const ROW_NAME_MIN = 96;
 /** The least a head's name keeps beside a circle it must show (`always`): two letters and the ellipsis at 16/600. */
 const NAME_FLOOR = 40;
 
