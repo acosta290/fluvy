@@ -17,6 +17,7 @@ import {
   GAUGE_PRESETS,
   HOUSE_ACTS,
   PALETTE_REFS,
+  PREVIEW_LEAST,
   previewChart,
   previewGauge,
   previewSeries,
@@ -65,10 +66,17 @@ function tileRows<T>(ctx: PanelContext, items: readonly T[]): T[][] {
   return rows;
 }
 
+/**
+ * A drawing's width where the engine's drawings hold it (`PREVIEW_LEAST`); none narrower, nor before the column is laid
+ * out: the drawing waits, never drawn inside out.
+ */
+const drawable = (width: number | undefined): number | undefined =>
+  width !== undefined && width >= PREVIEW_LEAST ? width : undefined;
+
 /** A tile's drawing room across in a row of `n`: its share of the card less its 8 and its picture's 8 on each side. */
 function artWidth(ctx: PanelContext, n: number): number | undefined {
   if (!ctx.fit) return undefined;
-  return Math.floor((ctx.fit.width - (n - 1) * gap(ctx)) / n + 0.01) - 32;
+  return drawable(Math.floor((ctx.fit.width - (n - 1) * gap(ctx)) / n + 0.01) - 32);
 }
 
 /** The engine's styles and gauges, in the order the settings know them. */
@@ -373,7 +381,7 @@ function modes(
   width: number | undefined,
   draw: (mode: PaletteMode, width: number) => TemplateResult,
 ): TemplateResult {
-  const inner = width && Math.floor((width - gap(ctx)) / 2 + 0.01) - 24;
+  const inner = drawable(width && Math.floor((width - gap(ctx)) / 2 + 0.01) - 24);
   return html`<div class="pn-modes" data-fill-row>
     ${(['light', 'dark'] as const).map(
       (mode) =>

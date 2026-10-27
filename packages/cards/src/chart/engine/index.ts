@@ -36,7 +36,8 @@
  *   previewStyle · previewGauge · previewChart · previewSeries
  *                                             the settings panel's Charts tab (`preview.ts`): a style's tile, a
  *                                             gauge's, the preview of a chart, its bars and a gauge in one mode, a
- *                                             set of series colours — each on the settings being chosen
+ *                                             set of series colours — each on the settings being chosen, at least
+ *                                             `PREVIEW_LEAST` across
  *   the maths, pure and tested: `scale.ts` (tightScale, airScale, niceTicks, niceStep, yOf), `path.ts`
  *   (linePath, areaPath, bandPath, yAt, splitAt), `bars.ts` (barGeometry, barPath, columns, thinStep, labelled,
  *   labelsApart), `axis.ts` (tickText, gridLines, tickLabels, unitLabel, quarterTicks, roundTicks), `ring.ts` (polar,
@@ -179,6 +180,7 @@ export {
   type Reading,
 } from './draw.js';
 export {
+  PREVIEW_LEAST,
   previewChart,
   previewGauge,
   previewSeries,

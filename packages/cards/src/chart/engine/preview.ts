@@ -55,6 +55,13 @@ const houseOf = (settings: Partial<ChartSettings>): ChartSettings => ({
 const sampleOf = (preset: ChartPreset): ChartSeries =>
   isBars(preset) ? { values: ENERGY } : { values: DAY, band: BAND };
 
+/**
+ * The narrowest a preview is drawn across: every drawing holds its parts from here (a ring its knob inside its border
+ * from 24, a moving gauge its art over its reading from 32, the battery its body and its well from 68). Narrower, a
+ * size would come out below 0, which a browser refuses: the panel leaves the box empty.
+ */
+export const PREVIEW_LEAST = 72;
+
 /** A drawing in a wrapper of its size, positioned: its knobs (and a bubble) are placed on it. */
 const plot = (width: number, height: number, content: unknown): TemplateResult =>
   html`<div class="fc-plot" style="position:relative;width:${width}px;height:${height}px">

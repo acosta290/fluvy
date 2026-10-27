@@ -17,10 +17,12 @@
  * a swatch follows the palette, a hex typed under Custom is fixed, each with its mark), checked (two a breath apart are
  * said, by name), saved and worn, renamed in its place and let go; a palette chosen recolours a set that follows it
  * and leaves a set of hexes as it was; at a 320 phone, in every language, the sets and the editor's dots stay in their
- * cards and the page does not scroll sideways; the moving gauges' tiles say their words in the panel's language.
+ * cards and the page does not scroll sideways; the moving gauges' tiles say their words in the panel's language; the
+ * tab logs no console error (a drawing never comes out at a size below 0), light and dark, at 320, 360, 412 and 1400,
+ * with motion and under reduced motion, nor when the panel is hidden and shown again.
  */
 import { everyLanguage } from './lib.mjs';
-import { settle, startSuite } from './lib/suite.mjs';
+import { BASE, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -779,6 +781,43 @@ const chartsTab = (page) => ({
       `${JSON.stringify(english)} → ${JSON.stringify(words)}`,
     );
   }
+}
+
+{
+  // not one console error on the Charts tab: every drawing is drawn once its column is laid out, at a width it holds —
+  // never at the side column's grid caught on the phone's for a frame (under reduced motion), nor for a hidden panel's
+  // column of no width; each page the tab's every drawing (the tiles, the preview, a set being made)
+  const wrong = [];
+  const look = async (width, mode, reducedMotion) => {
+    const page = await suite.browser.newPage({ viewport: { width, height: 1000 }, reducedMotion });
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await page.goto(`${BASE}?panel=charts&state=styled,sets,editor&mode=${mode}`);
+    await page.waitForSelector('html[data-ready="1"]');
+    await settle(page, 900);
+    const panel = page.locator('fluvy-panel');
+    await panel.evaluate((element) => (element.style.display = 'none'));
+    await settle(page, 200);
+    await panel.evaluate((element) => (element.style.display = ''));
+    await settle(page, 400);
+    if (errors.length)
+      wrong.push(`${width} ${mode} ${reducedMotion}: ${[...new Set(errors)].join(' · ')}`);
+    await page.close();
+  };
+  for (const width of [320, 360, 412, 1400])
+    await Promise.all(
+      ['light', 'dark'].flatMap((mode) =>
+        ['no-preference', 'reduce'].map((motion) => look(width, mode, motion)),
+      ),
+    );
+  check(
+    'the Charts tab logs no console error, light and dark, at 320, 360, 412 and 1400, under reduced motion, hidden and shown again',
+    wrong.length === 0,
+    wrong.join(' | ').slice(0, 600),
+  );
 }
 
 /* ---------- reduced motion ---------- */

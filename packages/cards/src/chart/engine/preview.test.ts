@@ -3,7 +3,14 @@ import { preloadLanguages, type HomeAssistant } from '@fluvy/core';
 import { render, type TemplateResult } from 'lit';
 import { describe, expect, it } from 'vitest';
 
-import { previewChart, previewGauge, previewSeries, previewStyle } from './preview.js';
+import { CHART_PRESETS, GAUGE_PRESETS } from './presets.js';
+import {
+  PREVIEW_LEAST,
+  previewChart,
+  previewGauge,
+  previewSeries,
+  previewStyle,
+} from './preview.js';
 
 const host = (template: TemplateResult): HTMLElement => {
   const element = document.createElement('div');
@@ -124,5 +131,44 @@ describe('the settings panel’s drawings', () => {
     expect(
       lines.querySelectorAll('.fc-area, .fc-glow, .fc-grid, .curve-dot, .fv-knob'),
     ).toHaveLength(0);
+  });
+
+  it('holds every drawing from PREVIEW_LEAST across: no size comes out below 0', () => {
+    /** The sizes a drawing gives that a browser refuses (a width, a height, a radius or a viewBox's below 0). */
+    const below = (template: TemplateResult): string[] =>
+      [...host(template).querySelectorAll('*')].flatMap((element) =>
+        ['width', 'height', 'r', 'viewBox']
+          .map((name) => [name, element.getAttribute(name)] as const)
+          .filter(
+            ([name, value]) =>
+              value !== null &&
+              (name === 'viewBox' ? value.split(/\s+/).slice(2) : [value]).some(
+                (size) => Number(size) < 0,
+              ),
+          )
+          .map(([name, value]) => `${element.tagName}[${name}="${value}"]`),
+      );
+    // the gauges' geometry is the tightest (the battery under its reading): every width up to a tile's largest
+    const sizes = Array.from({ length: 96 - PREVIEW_LEAST + 1 }, (_unused, i) => PREVIEW_LEAST + i);
+    for (const preset of Object.keys(GAUGE_PRESETS) as (keyof typeof GAUGE_PRESETS)[])
+      for (const size of sizes)
+        expect(
+          below(previewGauge(preset, {}, { size, format: String, small: true })),
+          `${preset} at ${size}`,
+        ).toEqual([]);
+    for (const preset of Object.keys(CHART_PRESETS) as (keyof typeof CHART_PRESETS)[])
+      expect(below(previewStyle(preset, {}, PREVIEW_LEAST, 56)), preset).toEqual([]);
+    expect(
+      below(
+        previewChart({ gauge: 'battery' }, { mode: 'light', width: PREVIEW_LEAST, format: String }),
+      ),
+    ).toEqual([]);
+    expect(
+      below(previewSeries(['graph-1'], {}, { mode: 'light', width: PREVIEW_LEAST, height: 64 })),
+    ).toEqual([]);
+    // narrower, the battery's would: the least is the geometry's, not a guess
+    expect(
+      below(previewGauge('battery', {}, { size: PREVIEW_LEAST - 8, format: String, small: true })),
+    ).not.toEqual([]);
   });
 });

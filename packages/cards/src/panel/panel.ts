@@ -285,7 +285,9 @@ export class FluvyPanel extends LitElement {
           this.wide = contentRect.width >= WIDE;
           this.side = contentRect.width >= SIDE;
           this.beside = contentRect.width >= BAR_BESIDE;
-        } else this.content = Math.floor(contentRect.width) - CARD_SIDES;
+        }
+        // a column of no width (the panel hidden) is not laid out: 0, never a card's sides below it
+        else this.content = Math.max(0, Math.floor(contentRect.width) - CARD_SIDES);
     });
     this.resize.observe(this);
     this.toggleAttribute('reduced-motion', motionPreference() === 'reduced');
