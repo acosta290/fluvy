@@ -1010,7 +1010,8 @@ own date card, hidden inside the strip, so the collection is made and fed by Hom
 ## Energy usage (1.11)
 
 The Energy usage card (#62) is Home Assistant's energy usage graph in the house's idiom, from the Energy dashboard's
-statistics allocated hour by hour as the dashboard allocates them, so its figures are Home Assistant's.
+statistics allocated bucket by bucket (an hour, a day, a month: Home Assistant's grain for the range) as the dashboard
+allocates them, so its figures are Home Assistant's.
 
 - **The chart.** A column a slot — an hour of a day, a day of a week or a month, a month of a year (Home Assistant's
   own grain for the range) — stacked from the zero line up by where the house took it from (the sun at the foot, the

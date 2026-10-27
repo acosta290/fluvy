@@ -100,8 +100,8 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
   the power sensors HA names (else the meters: five-minute changes for a day, hours beyond); "right now" and the
   batteries' charge are shown while the range holds now. Production and Water & gas are day cards: they draw the
   range's last day (the day so far while the range holds today), and say the date.
-- **Until the picker is there.** A date picker's card may load after Fluvy's: the follower draws today without chips
-  until the collection appears, then follows it. The card's height never changes.
+- **Until the picker is there.** A date picker's card may load after Fluvy's: the follower draws its own period
+  (today by default) without chips until the collection appears, then follows it. The card's height never changes.
 - **A key of your own.** Any word starting with `energy_` is a key; a key without that prefix is refused with a
   message, as HA's cards refuse it. Several Fluvy cards and HA's cards on one view share one picker through one key.
   Fluvy's **Energy period** card is a picker of its own that keeps the same kind of collection, so HA's cards follow
@@ -195,8 +195,8 @@ show_compare: true              # Compare: the period before beside the span, on
 - **Energy usage** — the house's energy as Home Assistant's usage graph draws it: a column an hour of a day, a day of
   a week or a month, a month of a year, stacked from the line up by where it came from (the sun, the battery, the grid)
   and down by what went into the battery and out to the grid, each in its source's colour, from the Energy dashboard's
-  statistics allocated hour by hour as the dashboard allocates them — so the head's total and the legend's are Home
-  Assistant's. A finger on the chart reads a slot's whole stack; `compare: true` draws the period before as ghost
+  statistics allocated bucket by bucket (an hour, a day, a month) as the dashboard allocates them — so the head's
+  total and the legend's are Home Assistant's. A finger on the chart reads a slot's whole stack; `compare: true` draws the period before as ghost
   columns behind (following a picker, its own Compare does); `sources` names, colours, orders or hides the sources,
   `max_sources` folds the rest into "Other", `show_returns: false` leaves out what went out; `variant: compact` or
   `mini` keep the chart alone or a strip.

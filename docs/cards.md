@@ -579,8 +579,9 @@ chart: soft
 The energy usage card draws the house's energy as Home Assistant's usage graph does (#62): a column for each hour of a
 day, each day of a week or a month, each month of a year, stacked from the line up by where the house took it from —
 the sun, the battery, the grid on top — and down by what went into the battery and out to the grid, each in its
-source's colour. The figures are the Energy dashboard's statistics allocated the dashboard's own way, hour by hour, so
-an hour's import is never netted against another hour's export and the card says what Home Assistant's graph says. The
+source's colour. The figures are the Energy dashboard's statistics allocated the dashboard's own way, bucket by bucket
+(an hour of a day, a day of a week or a month, a month of a year), so one bucket's import is never netted against
+another's export and the card says what Home Assistant's graph says. The
 head says what the house used over the range, the legend each series' total, and a finger on the chart reads a slot's
 whole stack in a bubble (← → walk the slots from the keyboard, Escape lets go). `period` is the span while no date
 picker is followed — `day` (today, the default), `week`, `month` or `year`, each its calendar span, with Day · Week ·

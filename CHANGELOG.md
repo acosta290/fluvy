@@ -105,7 +105,7 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   the devices card follow it; the Energy card draws the range in place of `hours` (a day on the day's axis, a longer
   range on its dates, the house's power from the sensors Home Assistant names or the meters); Production and Water &
   gas draw the range's last day. A picker's card that loads after ours is found on the next update: until then the
-  card draws today, without chips, at the same height. The editor offers the keys found on the dashboard ("Follow a
+  card draws its own period (today by default), without chips, at the same height. The editor offers the keys found on the dashboard ("Follow a
   date picker"), hides the chips' switch and the Energy card's `hours` while a key is set, and a key without the
   `energy_` prefix is refused with a message, as Home Assistant's cards refuse it.
 - **Energy period** (`custom:fluvy-energy-period-card`, #62): the Energy dashboard's date picker as a strip — ‹ the
@@ -129,8 +129,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - **Energy usage** (`custom:fluvy-energy-usage-card`, #62): Home Assistant's energy usage graph as a Fluvy card — a
   column for each hour of a day, each day of a week or a month, each month of a year, stacked from the line up by
   where the house took its energy from (the sun, the battery, the grid) and down by what went into the battery and out
-  to the grid, each in its source's colour, from the Energy dashboard's statistics allocated hour by hour as the
-  dashboard allocates them (so its figures are Home Assistant's). What the house used over the range in the head, each
+  to the grid, each in its source's colour, from the Energy dashboard's statistics allocated bucket by bucket (an
+  hour, a day, a month) as the dashboard allocates them (so its figures are Home Assistant's). What the house used over the range in the head, each
   series' total in the legend, a slot's whole stack in a bubble under a finger (the keys walk the slots). `period`
   (`day`, `week`, `month`, `year`, with Day · Week · Month · Year chips), `compare` (the period before as ghost
   columns behind the bars), `collection_key` (it follows an Energy date picker — Home Assistant's or the Energy period
