@@ -5,7 +5,8 @@
  *   PLAYGROUND=http://127.0.0.1:5199/ node interactions-chart.mjs     (the bundle's check needs `pnpm build` first)
  * What it proves:
  * - classic unchanged: the sensor's curve and area, and two sensors' curves, are 1.10's paths byte for byte (the
- *   strings recorded before the engine, `chart/engine/__fixtures__/classic-1.10.json`, on the same day);
+ *   strings recorded before the engine, `chart/engine/__fixtures__/classic-1.10.json`, on the same day), and their
+ *   fills 1.10's paint (one sensor's at 28 %, two sharing the plot at 16 %);
  * - nothing leaves the plot, in every style and both modes: every line, area, copy and bar inside the chart's clip box,
  *   the dot, the knob and the bubble whole inside the chart's room and the card;
  * - text placement, in every style and both modes: the axis's first label flush with the plot's start and its last
@@ -77,6 +78,19 @@ const paths = (locator, selector) =>
   check(
     'classic, two sensors: the first one’s area is 1.10’s, byte for byte',
     (await paths(two, '.am-chart .curve-area'))[0] === fixtures.areaUnder.sensor,
+  );
+  // the paint as 1.10 drew it, not the paths alone: one sensor's fill at 28 %, two sharing the plot at 16 %
+  const fills = (card) =>
+    card.evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.am-chart .curve-fill-a')].map((stop) =>
+        Number(getComputedStyle(stop).stopOpacity),
+      ),
+    );
+  const [lone, shared] = [await fills(one), await fills(two)];
+  check(
+    'classic: one sensor’s fill at 28 %, two sensors’ at 16 %, as 1.10 painted them',
+    lone.length === 1 && lone[0] === 0.28 && shared.length === 2 && shared.every((o) => o === 0.16),
+    JSON.stringify({ lone, shared }),
   );
   await page.close();
 }

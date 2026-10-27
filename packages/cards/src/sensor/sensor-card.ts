@@ -343,8 +343,9 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       .am-pair .fv-readout__value {
         white-space: nowrap;
       }
-      /* two or three curves share the plot: lighter fills, so neither hides the other */
-      .am-multi .curve-fill-a {
+      /* two or three curves share the plot: lighter fills, so neither hides the other (over the engine's sheet, which
+         a core card adopts after its own) */
+      .fv-curve.am-multi .curve-fill-a {
         stop-opacity: 0.16;
       }
       /* the axis row carries the time while the chart is read: a pill in the bubble's colours over the hours under the cursor */
