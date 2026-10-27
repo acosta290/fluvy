@@ -25,9 +25,9 @@
  * A box is placed by its parent (a flex or grid's justify, text-align for an inline-level box), never by its own
  * text-align; text centred in its own box, or in a fitted pill, has no left edge of its own.
  *
- * An ellipsis is a name's answer to a narrow column, nothing else's. A name says so (`data-name`, a class that says
- * `name`, or a `title` that holds its words — which excuses a name's words only, never a figure, and never a state or a
- * status line's: a class that says `sub`, `line`, `state` or `status`), or is one the house gives (an entity's, a
+ * An ellipsis is a name's answer to a narrow column, nothing else's. A name says so (`data-name`, or a class that says
+ * `name` — never a state or a status line's: a class that says `sub`, `line`, `state` or `status`; a `title` that holds
+ * the words is no proof, a head's button carries one wherever it is cut), or is one the house gives (an entity's, a
  * device's, an area's, a person's, what a player plays) or a card's config (its `name`, its `title`): a card writes it
  * as it is. Text cut with an ellipsis — or a line clamp's — is read
  * where the cut falls: a figure, a unit or a percentage cut anywhere (`cut-figure`: "Schauer · 6…"), a word inside a
@@ -619,10 +619,10 @@ function audit(opts) {
 
   /**
    * Whether a box holds a name (the one text an ellipsis may end): it says so (`data-name`, or a class that says
-   * `name`: `'declared'`), or it carries its words whole in a `title`, as a name read on hover does (`'title'`). A
-   * title excuses a name's words only: a figure it cuts is still `cut-figure`, and a state or a status line (a class
-   * that says `sub`, `line`, `state` or `status`: what a thing is doing, "Préchauffage 7…") is never a name, whatever
-   * its tooltip says.
+   * `name`: `'declared'`). A `title` that carries the words whole is no name's proof: a head's button carries its
+   * title whole wherever it is cut, the card's own words ("Flights nearby") as much as a person's; only `data-name`
+   * says the words are a person's own. A state or a status line (a class that says `sub`, `line`, `state` or
+   * `status`: what a thing is doing, "Préchauffage 7…") is never a name.
    */
   const cls = (node) => (typeof node.className === 'string' ? node.className : '');
   const STATUS_WORD = /^(?:sub|line|state|status)$/i;
@@ -631,12 +631,9 @@ function audit(opts) {
       .split(/[\s_-]+/)
       .some((word) => STATUS_WORD.test(word));
   const namedBox = (el, frame) => {
-    const words = (el.textContent || '').replace(/\s+/g, ' ').trim();
     for (let node = el; node && node !== frame; node = up(node)) {
       if (node.hasAttribute?.('data-name') || /name/i.test(cls(node))) return 'declared';
       if (statusLine(node)) return false;
-      if (words && (node.getAttribute?.('title') || '').replace(/\s+/g, ' ').includes(words))
-        return 'title';
       if (node.tagName === 'BUTTON' || node.getAttribute?.('role') === 'button') return false;
     }
     return false;
