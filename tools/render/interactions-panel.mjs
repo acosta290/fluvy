@@ -11,8 +11,9 @@
  * help row opens the translating guide in a new tab; under reduced motion the menu shows and hides without an
  * animation. The Charts tab (1.11): it opens after Appearance with every style and gauge drawn as a tile and the
  * preview in both modes; a style tile applies at once and a card on the page that names no style redraws in it; the
- * fine settings show and hide with the style; motion off freezes the preview, the tiles and the card; a new set of
- * series colours is checked (two a breath apart are said, by name), saved and worn, renamed in its place and let go.
+ * fine settings show and hide with the style, the waves with a gauge that moves; motion off freezes the preview, the
+ * tiles (the moving gauges' too) and the card; a new set of series colours is checked (two a breath apart are said,
+ * by name), saved and worn, renamed in its place and let go.
  */
 import { everyLanguage } from './lib.mjs';
 import { settle, startSuite } from './lib/suite.mjs';
@@ -408,6 +409,17 @@ const chartsTab = (page) => ({
     JSON.stringify(await c.labels()) === JSON.stringify(['Gridlines', 'Bars’ ends', 'Bubble']),
     JSON.stringify(await c.labels()),
   );
+  // a gauge that moves: its waves are the house's to tune; a control has none
+  await c.tile('Liquid').click();
+  await settle(page, 300);
+  const waves = await c.labels();
+  await c.tile('Ticks').click();
+  await settle(page, 300);
+  check(
+    'a gauge that moves offers its waves, under the style’s rows; a control none',
+    waves.at(-1) === 'Waves' && !(await c.labels()).includes('Waves'),
+    JSON.stringify(waves),
+  );
   await c.tile('Classic').click();
   await settle(page, 300);
   check(
@@ -433,11 +445,21 @@ const chartsTab = (page) => ({
       ]
         .map((el) => getComputedStyle(el).animationName)
         .filter((name) => name !== 'none').length,
+      // the gauges that move, on their tiles
+      scenes: root.querySelectorAll('.pn-art--gauge .fc-scene').length,
+      running: [...root.querySelectorAll('.pn-art--gauge .fc-scene')].flatMap((scene) =>
+        scene.getAnimations({ subtree: true }),
+      ).length,
     };
   });
   check(
     'motion off freezes the preview: every drawing still, not one animation',
     moving.charts === 12 && moving.still === 12 && moving.animated === 0,
+    JSON.stringify(moving),
+  );
+  check(
+    'and the gauges that move rest on their tiles, on their first frame',
+    moving.scenes === 7 && moving.running === 0,
     JSON.stringify(moving),
   );
   check('and the card on the page with it', /is-still/.test((await drawn()) ?? ''), await drawn());

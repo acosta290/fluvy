@@ -22,9 +22,10 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created
  * (`dashboards`), a dashboard's Recreate row armed (`recreate`), this browser a wall panel (`wall`), three palettes
  * saved by the house (`palettes`), the wall dark with a veil on the mesh (`night`), a warning of the house's own saved
- * and a danger in its very colour waiting (`statuses`), the house's charts in the soft style (`styled`), three sets of
- * series colours kept by the house, the second worn (`sets`), a new set being made with two colours too close and one
- * too pale for a light card, which it wears deepened (`editor`). Several join with commas.
+ * and a danger in its very colour waiting (`statuses`), the house's charts in the soft style with a gauge that moves
+ * (`styled`: every fine row, its waves too), three sets of series colours kept by the house, the second worn
+ * (`sets`), a new set being made with two colours too close and one too pale for a light card, which it wears deepened
+ * (`editor`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -147,12 +148,13 @@ export function mountPanel(
   if (has('everywhere')) void store.saveHouse({ scope: 'everywhere', frame: true });
   // #47's orange as the house's warning
   if (has('statuses')) void store.saveHouse({ statuses: { warning: '#dc630b' } });
-  // the house's charts in the soft style (every fine row it acts on), and its own sets of series colours, Sea worn
+  // the house's charts in the soft style with the liquid for its gauge (every fine row they act on, the waves too), and
+  // its own sets of series colours, Sea worn
   if (has('styled') || has('sets'))
     void store.saveHouse({
       charts: {
         ...CHART_DEFAULTS,
-        ...(has('styled') ? { style: 'soft' as const } : {}),
+        ...(has('styled') ? { style: 'soft' as const, gauge: 'liquid' as const } : {}),
         ...(has('sets') ? { series: 'sea' } : {}),
       },
       ...(has('sets') ? { chartSets: SETS } : {}),
