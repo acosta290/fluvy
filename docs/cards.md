@@ -88,6 +88,25 @@ bars card `classic` or `soft` (each part a pill, its ink deepening along it). A 
 its end) — the bar and the signed ring keep their one look; the humidity card's ruler `ticks` (its marker, the classic
 one) or `ruler` (read lit to the value, Fluvy's knob on it). A gauge that names none draws the house's where it can,
 else its classic. The History page draws its charts in the house's style; it has no setting of its own.
+
+A gauge card's ring may also move with what its sensor reads, each offered only for the sensors it reads: `liquid` (a
+percentage, a humidity: two slow waves, the reading in the larger of water and air), `thermo` (a temperature: a sky
+over the ground — snow falling on a drift when it is cold, a mild sun and a drifting cloud, heat haze over dry ground,
+a desert with its saguaros from 35 °C), `tank` (a volume or a level: bubbles while it fills, as fast as it fills),
+`battery` (its charge as a level, the warning's under 40 % and the danger's under 20 %; bubbles and the bolt while it
+charges), `pulse` (power: rings that beat faster with more of it), `air` (wind, or a ventilation's flow: streamlines as
+fast as the wind) and `sun` (power or irradiance from the sun: rays that lengthen and turn with it). How fast a tank
+fills or a battery charges is read off the card's last hour; a moving gauge the sensor does not read (a sky for a
+power) draws the ticks. The humidity card's band takes `liquid` too, its level the reading under the figure. Each
+takes the column's width and the dial's height, so the card keeps its size. `animate: false` — the card's, else the
+house's motion in fluvy's settings — rests a moving gauge on its first frame, still a wave, its bubbles, rings and
+snow gone, as a system that asks for less motion does.
+
+```yaml
+type: custom:fluvy-gauge-card
+entity: sensor.terrace_temperature
+gauge: thermo
+```
 A light that only switches on and off (its `supported_color_modes` is `onoff` alone) draws the light card as its
 head alone — the circle, the name, the state line and the switch, 84 px — in every style, and its editor offers only
 what the bulb does: no layout, stepper or live update, no temperature ruler, no quick colours.
@@ -559,13 +578,13 @@ show_reload: true
 | **Energy score** | `custom:fluvy-energy-score-card` | Self-powered, sun used and low-carbon as rings, the Energy dashboard’s own gauges, over imported, exported and net. | `title`, `subtitle`, `period` (`day`, `week`, `month`), `collection_key`, `show_period`, `co2`, `unit` (`auto`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`) | — |
 | **Energy devices** | `custom:fluvy-energy-devices-card` | Where the energy goes, device by device on one scale: nested circuits, and what no meter measures. | `title`, `subtitle`, `total`, `collection_key`, `sort`, `max_rows`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `rows` (a list: `entity`, `name`, `icon`, `parent`, `cost_entity`, `tone`, `color`, `unit`, `decimals`, `tap_action`) | `entities` → `rows` |
 | **Water & gas** | `custom:fluvy-meters-card` | Today’s water and gas against a typical day, what flows right now, and a leak sensor or a valve beside them. | `title`, `subtitle`, `variant` (`full`, `rows`), `collection_key`, `unit` (`auto`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `meters` (a list: `entity`, `rate`, `typical`, `name`, `icon`, `kind`, `unit`, `decimals`), `rows` (a list: `entity`, `name`, `icon`) | — |
-| **Gauge** | `custom:fluvy-gauge-card` | A ring gauge for any numeric sensor with min, max and average, or centred on zero for a meter that runs both ways. | `subtitle`, `variant` (`ring`, `bar`, `signed`), `gauge` (`ticks`, `dial`, `ring`), `min`, `max`, `max_entity`, `label`, `badge`, `hours`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`) | — |
+| **Gauge** | `custom:fluvy-gauge-card` | A ring gauge for any numeric sensor with min, max and average, or centred on zero for a meter that runs both ways. | `subtitle`, `variant` (`ring`, `bar`, `signed`), `gauge` (`ticks`, `dial`, `ring`, `liquid`, `thermo`, `tank`, `battery`, `pulse`, `air`, `sun`), `animate`, `min`, `max`, `max_entity`, `label`, `badge`, `hours`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`) | — |
 | **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of read-only stat tiles. | `title`, `subtitle`, `variant` (`full`, `compact`), `columns` (`auto`, `2`, `3`), `badge_entity`, `badge_label`, `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`, `unit`, `decimals`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `tiles` |
 | **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
 | **History bars** | `custom:fluvy-history-bars-card` | A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money. | `subtitle`, `variant` (`full`, `compact`, `mini`), `days`, `period` (`day`, `week`, `month`), `stat` (`change`, `state`, `mean`, `max`, `min`), `reset` (`auto`, `never`, `day`, `week`, `month`, `year`), `source` (`auto`, `history`), `date_format` (`date`, `weekday`, `short`), `negative_color`, `current_color`, `include_today`, `show_head`, `show_values`, `show_axis`, `show_grid`, `show_dates`, `show_facts`, `co2_factor`, `price`, `chart` (`classic`, `bars`, `columns`, `minimal`), `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`0`, `1`, `2`, `3`), `head` (a list: `kind`, `name`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`), `facts` (a list: `kind`, `name`, `icon`, `color`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`) | `title` → `name` |
 | **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`) | `entities` → `rows` |
 | **Distribution** | `custom:fluvy-distribution-card` | One stacked bar and a legend: who draws what. | `title`, `subtitle`, `max_rows`, `variant` (`stack`, `rows`), `chart` (`classic`, `soft`), `total`, `empty_text`, `hide_empty`, `entities` (a list: `entity`, `name`, `tone`, `color`) | — |
-| **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `gauge` (`ticks`, `ruler`), `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |
+| **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `gauge` (`ticks`, `ruler`, `liquid`), `animate`, `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |
 
 ## Time
 
