@@ -116,13 +116,11 @@ const card = (g: Gauge, level: string, more: Record<string, unknown> = {}): Love
 });
 
 const states: StateSeed[] = GAUGES.flatMap((g) => [
-  ...g.values.map(
-    ([value], i): StateSeed => [
-      id(g, LEVELS[i] as string),
-      String(value),
-      { friendly_name: g.name, ...g.reads, ...MEASURE },
-    ],
-  ),
+  ...g.values.map(([value], i): StateSeed => [
+    id(g, LEVELS[i] as string),
+    String(value),
+    { friendly_name: g.name, ...g.reads, ...MEASURE },
+  ]),
   [id(g, 'away'), 'unavailable', { friendly_name: g.name, ...g.reads, ...MEASURE }],
 ]);
 
