@@ -11,7 +11,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { glyph, listRow, type ChipItem } from '@fluvy/ui';
+import { glyph, toggle, type ChipItem } from '@fluvy/ui';
 import {
   css,
   html,
@@ -171,34 +171,37 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         gap: ${GAP}px;
         height: 44px;
       }
-      .ep-card--compact .ep-row {
-        height: 36px;
-      }
       /* ‹ the span ›: one capsule, the steps at its ends */
       .ep-walk {
+        position: relative;
         display: flex;
         flex: 1 1 auto;
         align-items: center;
         min-width: 0;
         height: 44px;
+      }
+      .ep-walk::before {
+        content: '';
+        position: absolute;
+        inset: 0;
         border-radius: var(--fluvy-radius-pill, 9999px);
         background: var(--fluvy-inset, var(--fluvy-page));
       }
-      .ep-card--compact .ep-walk {
-        height: 36px;
+      /* compact: a 36 capsule in the 12 of its card, its parts a finger's 44 reaching 4 past it */
+      .ep-card--compact .ep-row {
+        margin: -4px 0;
+      }
+      .ep-card--compact .ep-walk::before {
+        inset: 4px 0;
       }
       .ep-step,
       .ep-date {
+        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         height: 44px;
         border-radius: var(--fluvy-radius-pill, 9999px);
-      }
-      /* a 36 capsule, its parts a finger's 44 */
-      .ep-card--compact .ep-step,
-      .ep-card--compact .ep-date {
-        margin: -4px 0;
       }
       .ep-step {
         flex: none;
@@ -302,8 +305,15 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         width: 100%;
         text-align: start;
       }
+      /* the sheet's line wraps at its words, as its title does, and the head grows with it */
+      .ep-sheet .fv-sheet__head {
+        height: auto;
+        min-height: 44px;
+      }
       .ep-sheet .fv-card__sub {
         margin-top: 0;
+        white-space: normal;
+        text-wrap: balance;
       }
       .ep-turn {
         display: flex;
@@ -324,8 +334,20 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       .ep-dates {
         margin-top: 16px;
       }
+      /* Compare: its words, wrapping at them, and the switch at the row's end */
       .ep-compare-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
         margin-top: 16px;
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 20px;
+      }
+      .ep-compare-row > span:first-child {
+        flex: 1 1 auto;
+        min-width: 0;
       }
       .ep-close {
         display: grid;
@@ -914,15 +936,12 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       ${
         this.config?.show_compare === true
           ? html`<div class="ep-compare-row">
-              ${listRow({
-                icon: null,
-                tone: 'neutral',
-                title: p(hass, 'compare_help'),
-                trailing: 'switch',
-                on: this.comparing(),
-                switchTone: tone,
-                onToggle: (on) => this.setCompare(on),
-              })}
+              <span aria-hidden="true">${p(hass, 'compare_help')}</span>${toggle(
+                this.comparing(),
+                tone,
+                (on) => this.setCompare(on),
+                p(hass, 'compare_help'),
+              )}
             </div>`
           : nothing
       }
