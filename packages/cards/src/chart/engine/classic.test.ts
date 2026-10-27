@@ -8,7 +8,7 @@ import { drawChart, type ChartSpec } from './draw.js';
 import { sampleAt } from './model.js';
 import { areaPath, bandPath, linePath, yAt, type Pt } from './path.js';
 import { resolveStyle } from './presets.js';
-import { arcDash, radialTicks } from './ring.js';
+import { arcDash, signedTicks } from './ring.js';
 import { airScale, niceStep, niceTicks, yOf, type PlotBox, type Scale } from './scale.js';
 
 /**
@@ -212,25 +212,7 @@ describe('the rings and the signed gauge’s ticks', () => {
       [fixtures.ticksOf.narrow, 1, fixtures.ticksOf.narrowUp],
     ] as const;
     for (const [g, fraction, want] of cases) {
-      const ticks = radialTicks({
-        cx: g.cx,
-        cy: g.cy,
-        r: g.r,
-        count: 41,
-        from: -225,
-        sweep: 270,
-        length: (i) => (i % 10 === 0 ? g.major : g.minor),
-        // lit from zero (the top, the middle tick) to the value, either way
-        lit: (i, place) => {
-          const f = 2 * place - 1;
-          return (
-            fraction !== null &&
-            (i === 20 ||
-              (fraction < 0 && f <= 0 && f >= fraction - 1e-9) ||
-              (fraction > 0 && f >= 0 && f <= fraction + 1e-9))
-          );
-        },
-      });
+      const ticks = signedTicks(g, fraction);
       expect(ticks.map((t) => t.lit)).toEqual(want.map((t) => t.lit));
       ticks.forEach((t, i) => {
         const w = want[i] as (typeof want)[number];

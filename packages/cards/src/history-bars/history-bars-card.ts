@@ -40,7 +40,7 @@ import {
   labelled,
   labelsApart,
   niceTicks,
-  resolveStyle,
+  styleOf,
   scrub,
   ScrubController,
   thinStep,
@@ -51,7 +51,7 @@ import {
   type ResolvedStyle,
 } from '../chart/engine/index.js';
 import { HeadFit } from '../energy/head.js';
-import { chartKeysOf, type ChartCaps, type ChartKeys } from '../shared/chart-config.js';
+import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
@@ -889,11 +889,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
 
   /** The chart's style: the card's own, else the house's — of those its variant draws, else classic. */
   private get chartStyle(): ResolvedStyle {
-    return resolveStyle(
-      this.config?.chart,
-      chartKeysOf(this.config),
-      this.variant === 'mini' ? MINI_CAPS : BARS_CAPS,
-    );
+    return styleOf(this.config, this.variant === 'mini' ? MINI_CAPS : BARS_CAPS);
   }
   private get period(): Period {
     const p = this.config?.period;

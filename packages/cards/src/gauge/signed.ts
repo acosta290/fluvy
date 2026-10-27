@@ -2,12 +2,10 @@
  * The signed gauge: a value that can be negative (a grid meter) on 41 ticks over 270° with zero at the top — the
  * left side from `min` to zero, the right side from zero to `max`, each its own scale — lit from zero to the value.
  * At 320 it is the approved drawing: R 104 about (160, 124), majors 16 and minors 8, the ends' words beside the
- * ring's feet, 220 tall. Narrower, the ring shrinks to the column and the ends' words go under its feet.
+ * ring's feet, 220 tall. Narrower, the ring shrinks to the column and the ends' words go under its feet. Its ticks are
+ * the chart engine's (`signedTicks`).
  */
 
-export const TICKS = 40;
-/** Degrees each side of the top. */
-export const SWEEP = 135;
 const R_MAX = 104;
 const COS45 = Math.SQRT1_2;
 
@@ -58,38 +56,6 @@ export function signedGeometry(width: number, endWidth: number): SignedGeometry 
 export function fractionOf(value: number, min: number, max: number): number {
   if (value < 0) return min < 0 ? Math.max(-1, value / -min) : -1;
   return max > 0 ? Math.min(1, value / max) : 1;
-}
-
-export interface Tick {
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
-  readonly lit: boolean;
-}
-
-const on = (cx: number, cy: number, r: number, deg: number): [number, number] => {
-  const rad = (deg * Math.PI) / 180;
-  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-};
-
-/** Every tick, lit from zero to `fraction` (the zero tick with it); none lit when the value is unknown. */
-export function ticksOf(g: SignedGeometry, fraction: number | null): Tick[] {
-  const out: Tick[] = [];
-  for (let i = 0; i <= TICKS; i++) {
-    const f = -1 + (2 * i) / TICKS;
-    const deg = f * SWEEP - 90;
-    const len = i % 10 === 0 ? g.major : g.minor;
-    const [x1, y1] = on(g.cx, g.cy, g.r, deg);
-    const [x2, y2] = on(g.cx, g.cy, g.r - len, deg);
-    const lit =
-      fraction !== null &&
-      (i === TICKS / 2 ||
-        (fraction < 0 && f <= 0 && f >= fraction - 1e-9) ||
-        (fraction > 0 && f >= 0 && f <= fraction + 1e-9));
-    out.push({ x1, y1, x2, y2, lit });
-  }
-  return out;
 }
 
 export type ValueSize = 'l' | 'm';

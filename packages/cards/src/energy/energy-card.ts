@@ -23,6 +23,7 @@ import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   AXIS_GAP,
   chartDefaultsFor,
+  chartKeysOf,
   chartSection,
   chartStyles,
   drawRead,
@@ -32,6 +33,7 @@ import {
   readingsOf,
   resolveStyle,
   sampleAt,
+  styleOf,
   scrub,
   ScrubController,
   tickLabels,
@@ -41,13 +43,7 @@ import {
   type ChartSpec,
   type ResolvedStyle,
 } from '../chart/engine/index.js';
-import {
-  chartKeysOf,
-  type ChartCaps,
-  type ChartKeys,
-  type GridChoice,
-  type LineWidth,
-} from '../shared/chart-config.js';
+import type { ChartCaps, ChartKeys, GridChoice, LineWidth } from '../shared/chart-config.js';
 
 import {
   css,
@@ -1075,7 +1071,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
 
   /** A stacked chart's style: its own, else the house's — classic, soft or step. */
   private stackStyle(): ResolvedStyle {
-    return resolveStyle(this.config?.chart, chartKeysOf(this.config), STACK_CAPS);
+    return styleOf(this.config, STACK_CAPS);
   }
 
   /** A stacked chart's classes: its scale, its lines' width, a soft style's lighter fills. */

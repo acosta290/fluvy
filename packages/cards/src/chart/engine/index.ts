@@ -96,6 +96,7 @@ export {
   knobAt,
   polar,
   radialTicks,
+  signedTicks,
   type RadialTicksOptions,
   type Tick,
 } from './ring.js';
@@ -118,12 +119,15 @@ export { chartDefaultsFor, chartKeysFor, chartSection, gaugeField, type CapsOf }
 export {
   ACTS,
   acts,
+  CHART_KEYS,
   CHART_PRESETS,
+  chartKeysOf,
   GAUGE_PRESETS,
   isBars,
   presetsFor,
   resolveGauge,
   resolveStyle,
+  styleOf,
   type GaugeSpec,
   type PresetSpec,
   type ResolvedGauge,

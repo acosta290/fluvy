@@ -5,14 +5,13 @@ import {
   type HomeAssistant,
 } from '@fluvy/core';
 import {
-  CHART_KEYS,
   type ChartCaps,
   type ChartKeys,
   type ChartPreset,
   type FineKey,
 } from '../../shared/chart-config.js';
 import { boolField, fieldRow, onlyWhen, sectionField, selectField } from '../../shared/form.js';
-import { acts, presetsFor, resolveStyle } from './presets.js';
+import { acts, CHART_KEYS, presetsFor, resolveStyle } from './presets.js';
 
 /**
  * The editor's "Chart" section, one for every card that draws a chart — the engine's, so every editor opens once it

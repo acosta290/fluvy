@@ -152,6 +152,28 @@ export const CHART_PRESETS: Readonly<Record<ChartPreset, PresetSpec>> = {
   },
 };
 
+/** Every chart key, in the editor's order. */
+export const CHART_KEYS = [
+  'chart',
+  'curve',
+  'fill',
+  'line_width',
+  'glow',
+  'show_points',
+  'show_grid',
+  'show_axis',
+  'show_now',
+  'highlight',
+  'animate',
+] as const satisfies readonly (keyof ChartKeys)[];
+
+/** The chart keys of a config, as given. */
+export function chartKeysOf(config: Readonly<Record<string, unknown>> | undefined): ChartKeys {
+  const out: Record<string, unknown> = {};
+  if (config) for (const key of CHART_KEYS) if (config[key] !== undefined) out[key] = config[key];
+  return out as ChartKeys;
+}
+
 const LINE: readonly FineKey[] = [
   'curve',
   'fill',
@@ -324,6 +346,13 @@ export function resolveStyle(
     animate: fine.animate ?? house.animate,
   };
 }
+
+/** A card's style from its config: its `chart` and its fine keys, for what it can draw (`resolveStyle`). */
+export const styleOf = (
+  config: Readonly<Record<string, unknown>> | undefined,
+  caps: ChartCaps,
+): ResolvedStyle =>
+  resolveStyle(config?.['chart'] as ChartPreset | undefined, chartKeysOf(config), caps);
 
 export interface ResolvedGauge {
   readonly preset: GaugePreset;

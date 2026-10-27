@@ -20,7 +20,7 @@ import {
   chartSection,
   chartStyles,
   drawChart,
-  resolveStyle,
+  styleOf,
   scrub,
   ScrubController,
   seriesInk,
@@ -28,7 +28,7 @@ import {
   type SeriesColour,
   type ResolvedStyle,
 } from '../chart/engine/index.js';
-import { chartKeysOf, type ChartCaps, type ChartKeys } from '../shared/chart-config.js';
+import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
@@ -631,11 +631,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const pitch = (this.contentWidth - 8) / 23;
     const boundary = (hour: number): number => (hour * pitch - (pitch - 8) / 2) / this.contentWidth;
     // the arrays' chart and a style centre a bar in each hour's slot: the boundary of hour h is h / 24
-    const style = resolveStyle(
-      this.config?.chart,
-      chartKeysOf(this.config),
-      arrays.length ? ARRAYS_CAPS : DAY_CAPS,
-    );
+    const style = styleOf(this.config, arrays.length ? ARRAYS_CAPS : DAY_CAPS);
     const classic = style.preset === 'classic';
     const at = (hour: number): number =>
       arrays.length || !classic ? hour / HOURS : boundary(hour);

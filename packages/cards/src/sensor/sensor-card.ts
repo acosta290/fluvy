@@ -42,7 +42,7 @@ import {
 
 import { HeadFit } from '../energy/head.js';
 import { Card, type CardEditor } from '../shared/base.js';
-import { chartKeysOf, type ChartCaps, type ChartKeys } from '../shared/chart-config.js';
+import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { ChartLoader, type ChartEngine } from '../shared/chart-load.js';
 import type { ChartSpec, ScrubController } from '../chart/engine/index.js';
 
@@ -854,7 +854,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     caps: ChartCaps,
   ): Pick<ChartSpec, 'style' | 'tick' | 'measure'> {
     return {
-      style: engine.resolveStyle(this.config?.chart, chartKeysOf(this.config), caps),
+      style: engine.styleOf(this.config, caps),
       tick: (value, decimals) => engine.tickText(this.hass, value, decimals),
       measure: (text) => this.ruler.width('fc-tick', text),
     };
@@ -894,7 +894,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
    * dot), else the classic curve with its fill and its dot.
    */
   private spark(engine: ChartEngine, values: readonly number[], width: number): TemplateResult {
-    const fine = chartKeysOf(this.config);
+    const fine = engine.chartKeysOf(this.config);
     const minimal = engine.resolveStyle(this.config?.chart, fine, {}).preset === 'minimal';
     return engine.drawChart({
       frame: { width, height: 24, headroom: 4, pad: 4 },

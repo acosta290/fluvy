@@ -4,8 +4,8 @@ import { chartDefaults, type ChartPreset, type GaugePreset } from '@fluvy/core';
  * What a card says of its chart: the named style (`chart`) and the fine keys that override the style's own and the
  * house's chart settings, each a key of its own at the top level of the config, never written unless chosen. Which
  * fine keys a style acts on (the engine's `ACTS`) and which the card can draw at all (its `ChartCaps`) decide what the
- * editor offers. Every page carries this file (a card's config reads its keys): what the keys do, and the editor's
- * Chart section, are the chart chunk's.
+ * editor offers. Every page carries this file (a card's config is typed by its keys): reading them (`CHART_KEYS`,
+ * `chartKeysOf`, `styleOf`), what they do and the editor's Chart section are the chart chunk's.
  */
 
 export type { ChartPreset, GaugePreset };
@@ -42,21 +42,6 @@ export interface ChartKeys {
 
 export type FineKey = Exclude<keyof ChartKeys, 'chart'>;
 
-/** Every chart key, in the editor's order. */
-export const CHART_KEYS = [
-  'chart',
-  'curve',
-  'fill',
-  'line_width',
-  'glow',
-  'show_points',
-  'show_grid',
-  'show_axis',
-  'show_now',
-  'highlight',
-  'animate',
-] as const satisfies readonly (keyof ChartKeys)[];
-
 /** What a card (in a variant) can draw: the styles and keys it is offered follow from it. */
 export interface ChartCaps {
   /** The window runs past now (a forecast, a day): a now marker and a dashed future can be drawn. */
@@ -77,13 +62,6 @@ export interface ChartCaps {
   readonly styles?: readonly ChartPreset[];
   /** The fine keys its chart acts on where they are not every one a style acts on: a stacked chart's line, grid and scale. */
   readonly keys?: readonly FineKey[];
-}
-
-/** The chart keys of a config, as given. */
-export function chartKeysOf(config: Readonly<Record<string, unknown>> | undefined): ChartKeys {
-  const out: Record<string, unknown> = {};
-  if (config) for (const key of CHART_KEYS) if (config[key] !== undefined) out[key] = config[key];
-  return out as ChartKeys;
 }
 
 /**

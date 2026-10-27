@@ -47,7 +47,6 @@ import {
   fractionOf,
   labelRoom,
   signedGeometry,
-  ticksOf,
   valueBox,
   valueRoom,
   type ValueSize,
@@ -663,10 +662,13 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
           viewBox="0 0 ${width} ${g.height}"
           aria-hidden="true"
         >
-          ${ticksOf(g, unusable ? null : fraction).map(
-            (t) =>
-              svg`<line x1=${t.x1.toFixed(1)} y1=${t.y1.toFixed(1)} x2=${t.x2.toFixed(1)} y2=${t.y2.toFixed(1)} class="en-tick ${t.lit ? 'is-lit' : ''}"></line>`,
-          )}
+          ${// the ticks are the engine's (its rule for every dial's), there the moment it is
+          this.charts.engine
+            ?.signedTicks(g, unusable ? null : fraction)
+            .map(
+              (t) =>
+                svg`<line x1=${t.x1.toFixed(1)} y1=${t.y1.toFixed(1)} x2=${t.x2.toFixed(1)} y2=${t.y2.toFixed(1)} class="en-tick ${t.lit ? 'is-lit' : ''}"></line>`,
+            )}
         </svg>
         <span class="en-gauge__zero" data-align="center" style="top:0">0</span>
         ${

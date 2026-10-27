@@ -68,6 +68,40 @@ export function radialTicks(o: RadialTicksOptions): Tick[] {
   return out;
 }
 
+/**
+ * The signed gauge's 41 ticks over 270° with zero at the top (its ring by `gauge/signed.ts`): a major every tenth,
+ * lit from zero to `fraction` (−1 … 1) either way, the zero tick with them; none when the value is unknown.
+ */
+export function signedTicks(
+  g: {
+    readonly cx: number;
+    readonly cy: number;
+    readonly r: number;
+    readonly major: number;
+    readonly minor: number;
+  },
+  fraction: number | null,
+): Tick[] {
+  return radialTicks({
+    cx: g.cx,
+    cy: g.cy,
+    r: g.r,
+    count: 41,
+    from: -225,
+    sweep: 270,
+    length: (i) => (i % 10 === 0 ? g.major : g.minor),
+    lit: (i, place) => {
+      const f = 2 * place - 1;
+      return (
+        fraction !== null &&
+        (i === 20 ||
+          (fraction < 0 && f <= 0 && f >= fraction - 1e-9) ||
+          (fraction > 0 && f >= 0 && f <= fraction + 1e-9))
+      );
+    },
+  });
+}
+
 /** Where a knob sits on a sweep: the point at `fraction` (0 … 1) of it. */
 export const knobAt = (
   cx: number,
