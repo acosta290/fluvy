@@ -1,4 +1,5 @@
 import {
+  chartDefaults,
   fetchHistory,
   formatNumber,
   isUsable,
@@ -7,6 +8,7 @@ import {
   toggleEntity,
   valueParts,
   type FluvyCardConfig,
+  type GaugePreset,
   type LovelaceGridOptions,
   type Series,
 } from '@fluvy/core';
@@ -49,7 +51,16 @@ export interface HumidityCardConfig extends FluvyCardConfig {
   show_trend?: boolean;
   /** A humidifier, dehumidifier or plain switch shown as a row with its switch. */
   humidifier_entity?: string;
+  /**
+   * The comfort ruler's style: its ticks with the reading's marker (1.10's, `ticks`), or the ruler read, lit to the
+   * reading with Fluvy's knob on it (`ruler`); none: the house's — a dial or a ring has no room here, and reads ticks.
+   */
+  gauge?: GaugePreset;
 }
+
+/** Whether a config's ruler is read lit with Fluvy's knob: its own `gauge`, else the house's, is the ruler. */
+export const litRuler = (config: Readonly<Record<string, unknown>> | undefined): boolean =>
+  ((config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge) === 'ruler';
 
 /** The history cache in core lives five minutes; asking again sooner would only return the same window. */
 /** The band opens this far outside the ticks that bound it, so neither tick is bitten by its edge. */
@@ -306,8 +317,10 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
             };
     }
 
-    // `dark` on the ruler: its lit ticks glow in dark mode, and nothing else tells a control which mode it is in
+    // `dark` on the ruler: its lit ticks glow in dark mode, and nothing else tells a control which mode it is in; it
+    // is read with its marker (the classic ruler) or lit to the reading with Fluvy's knob
     const parts = valueParts(this.hass, view);
+    const lit = litRuler(this.config);
     // the dew point beside the humidity in the longest of its words that leaves the dew point its room ("Humidity"
     // where "Relative humidity" would wrap), else under it: measured at the widest humidity and under both of the
     // side's words, so the humidity going unknown never moves the row; alone, the longest the column holds (de's
@@ -382,7 +395,8 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
           style="left:${bandLeft}px;width:${bandRight - bandLeft}px"
         ></span>
         <fluvy-ruler
-          marker
+          ?marker=${!lit}
+          ?readonly=${lit}
           ?dark=${this.dark}
           .value=${value ?? 0}
           .min=${0}
