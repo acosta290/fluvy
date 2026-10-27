@@ -87,7 +87,7 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
 
 - **What follows.** The flow, the balance, the sankey and the score (set `period` to anything but `live`), the
   Energy devices card (the Energy dashboard's devices), the Grid card's totals (when it names no readouts), the
-  Energy card, Production and Water & gas. History bars keep their own `period` and `days`.
+  Energy card, the Energy usage card, Production and Water & gas. History bars keep their own `period` and `days`.
 - **What a follower does.** It takes the picker's range (the day, the week, the month, whatever was picked) and
   draws **Home Assistant's own figures for it** — the statistics HA fetched once for the whole view, allocated the
   way the dashboard allocates them — so a Fluvy card and HA's beside it say the same numbers and move together, and
@@ -192,6 +192,14 @@ show_compare: true              # Compare: the period before beside the span, on
   its top is the two added together (5.6 kW of sun and 4.2 kW from the battery top out at 9.8 kW). Each band keeps
   its own edge in its colour, and the legend gives each source's own value under your finger. `stack: false` draws
   every source from zero on its own instead, so their heights can be compared directly.
+- **Energy usage** — the house's energy as Home Assistant's usage graph draws it: a column an hour of a day, a day of
+  a week or a month, a month of a year, stacked from the line up by where it came from (the sun, the battery, the grid)
+  and down by what went into the battery and out to the grid, each in its source's colour, from the Energy dashboard's
+  statistics allocated hour by hour as the dashboard allocates them — so the head's total and the legend's are Home
+  Assistant's. A finger on the chart reads a slot's whole stack; `compare: true` draws the period before as ghost
+  columns behind (following a picker, its own Compare does); `sources` names, colours, orders or hides the sources,
+  `max_sources` folds the rest into "Other", `show_returns: false` leaves out what went out; `variant: compact` or
+  `mini` keep the chart alone or a strip.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term
@@ -209,6 +217,8 @@ show_compare: true              # Compare: the period before beside the span, on
 - the energy card's line `classic`, `soft`, `glow`, `minimal` or `step` (a stepped power reads on a scale from zero,
   in the card's unit, the hours under the plot after it); its stacked charts `classic`, `soft` (lighter fills, the
   house's hairlines across) or `step` (each bucket held across it);
+- the Energy usage card's columns `classic` (the chart engine's stacked columns, the house's ends to them), `soft`
+  (each part a step lighter) or `columns`;
 - the history bars `classic`, `bars` (the ink, flat, rounded as the house's bars are; `highlight` lights the highest,
   the lowest or the bar in progress and quiets the rest) or `columns`; the mini row's sparkline `classic` or `minimal`;
 - production `classic`, `soft` (one meter's day an hour a bar, the best hour in the ink and the rest quiet, the hours
@@ -255,6 +265,13 @@ session_energy: sensor.wallbox_session_energy
 status: sensor.wallbox_status
 vehicle: Model 3
 mode: select.wallbox_mode
+```
+
+```yaml
+type: custom:fluvy-energy-usage-card
+period: month                  # day (default) · week · month · year; or collection_key: a date picker's
+compare: true                  # the month before, behind this one
+sources: [solar, battery, { type: grid, name: Utility }]
 ```
 
 ```yaml
