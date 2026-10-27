@@ -10,8 +10,9 @@
  *   drawn again in the warning's and the danger's ink where it crosses their thresholds, the cheapest and the dearest
  *   two hours marked behind it in the ok and the danger tones and named in their pills; before tomorrow is published,
  *   today alone;
- * - reading: a pointer moves the cursor, the bubble says the price and when, the value row reads it too; the keys move
- *   it (Home, →), Escape lets it go;
+ * - reading: a pointer moves the cursor and its dot, the value row says the price and when, and no bubble rides over it
+ *   — the marked windows' pills stay where they were, seen; the keys move it (Home, →), Escape lets it go; without the
+ *   head the bubble says it in its 44 above the plot; two series read in the row's lines, the time a pill on the axis;
  * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines.
  */
 import { frame, settle, startSuite } from './lib/suite.mjs';
@@ -261,31 +262,45 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
 }
 
 /* ---------- reading by pointer and keys ---------- */
+/** The value row's pills: each one's box, and whether it is what the page shows at its middle (nothing over it). */
+const pillsOf = (card) =>
+  [...card.shadowRoot.querySelectorAll('.ch-side .fc-pill')].map((pill) => {
+    const r = pill.getBoundingClientRect();
+    const hit = card.shadowRoot.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { box: [r.left, r.top, r.width, r.height].map(Math.round), seen: pill.contains(hit) };
+  });
 {
   const chart = nordpool.locator('.ch-chart');
   const box = await chart.boundingBox();
+  const still = await nordpool.evaluate(pillsOf);
   await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2);
   await settle(page, 200);
-  const read = await nordpool.evaluate((card) => {
-    const bubble = card.shadowRoot.querySelector('.ch-chart > .fv-bubble');
-    return {
-      bubble: bubble?.textContent.replace(/\s+/g, ' ').trim(),
-      label: card.shadowRoot.querySelector('.ch-now .fv-readout__label')?.textContent.trim(),
-      cursor: card.shadowRoot.querySelector('.fc-cursor') !== null,
-      // the bubble rides over the value row: its top above the chart's
-      rides:
-        (bubble?.getBoundingClientRect().top ?? Infinity) <
-        card.shadowRoot.querySelector('.ch-chart').getBoundingClientRect().top,
-    };
-  });
+  const read = await nordpool.evaluate((card) => ({
+    bubbles: card.shadowRoot.querySelectorAll('.fv-bubble').length,
+    label: card.shadowRoot.querySelector('.ch-now .fv-readout__label')?.textContent.trim(),
+    value: card.shadowRoot
+      .querySelector('.ch-now .fv-readout__value')
+      ?.textContent.replace(/\s+/g, ' ')
+      .trim(),
+    cursor: card.shadowRoot.querySelector('.fc-cursor') !== null,
+    dot: card.shadowRoot.querySelector('svg.fc-chart .curve-dot') !== null,
+  }));
+  const pills = await nordpool.evaluate(pillsOf);
   check(
-    'a pointer reads the chart: the cursor, the bubble’s price and when riding over the row, the row with it',
+    'a pointer reads the chart: the cursor and its dot, the value row says the price and when — no bubble over it',
     read.cursor &&
-      read.rides &&
-      /^0\.\d{3} EUR\/kWh\s*\d\d:\d\d$/.test(read.bubble ?? '') &&
+      read.dot &&
+      read.bubbles === 0 &&
       /^\d\d:\d\d$/.test(read.label ?? '') &&
-      (read.bubble ?? '').endsWith(read.label),
+      /^0\.\d{3}\s*EUR\/kWh$/.test(read.value ?? ''),
     JSON.stringify(read),
+  );
+  check(
+    'while it is read the marked windows’ pills stay where they were, nothing over them',
+    pills.length === 2 &&
+      JSON.stringify(pills.map((p) => p.box)) === JSON.stringify(still.map((p) => p.box)) &&
+      pills.every((p) => p.seen),
+    JSON.stringify({ still, pills }),
   );
   await page.mouse.move(0, 0);
   await settle(page, 150);
@@ -310,6 +325,77 @@ const nordpool = frame(page, 'Chart · Nordpool').locator('fluvy-chart-card').fi
     'the keys read it too: Home its start, → the next slot (an hour at 360), Escape lets it go',
     home === '00:00' && next === '01:00' && after.label === 'Now' && !after.bubble,
     JSON.stringify({ home, next, after }),
+  );
+}
+
+/* ---------- without the head the bubble reads it; the legend's lines read it, the time on the axis ---------- */
+{
+  /** A frame's chart read by the pointer at a fraction of its width: what `look` finds there, then let go. */
+  const readFrame = async (title, at, look) => {
+    const card = frame(page, title).locator('fluvy-chart-card').first();
+    const chart = card.locator('.ch-chart');
+    await chart.scrollIntoViewIfNeeded();
+    const box = await chart.boundingBox();
+    await page.mouse.move(box.x + box.width * at, box.y + box.height / 2);
+    await settle(page, 200);
+    const got = await card.evaluate(look);
+    await page.mouse.move(0, 0);
+    await settle(page, 150);
+    return got;
+  };
+  const bare = await readFrame('Chart · forecast band', 0.5, (card) => {
+    const chart = card.shadowRoot.querySelector('.ch-chart').getBoundingClientRect();
+    const bubble = card.shadowRoot.querySelector('.ch-chart > .fv-bubble');
+    const grid = [...card.shadowRoot.querySelectorAll('svg.fc-chart .fc-grid')].map(
+      (g) => g.getBoundingClientRect().top,
+    );
+    return {
+      row: card.shadowRoot.querySelector('.ch-top') !== null,
+      bubble: bubble?.textContent.replace(/\s+/g, ' ').trim(),
+      // the plot keeps the bubble's 44 above it, and the bubble stands in it
+      room: Math.min(...grid) - chart.top,
+      top: bubble ? bubble.getBoundingClientRect().top - chart.top : null,
+    };
+  });
+  check(
+    'without the head (show_head: false) the bubble says the reading and when, in its 44 above the plot',
+    !bare.row &&
+      /^\d+(\.\d+)? kW\s*\d\d:\d\d$/.test(bare.bubble ?? '') &&
+      bare.room >= 44 &&
+      bare.top >= 0,
+    JSON.stringify(bare),
+  );
+  const two = await readFrame('Chart · measured and forecast', 0.3, (card) => {
+    const root = card.shadowRoot;
+    const axis = root.querySelector('.ch-axis');
+    const a = axis.getBoundingClientRect();
+    const when = root.querySelector('.ch-axis > .ch-when')?.getBoundingClientRect();
+    const svg = root.querySelector('svg.fc-chart');
+    const cursor = svg.querySelector('.fc-cursor');
+    const x = cursor
+      ? svg.getBoundingClientRect().left + Number(cursor.getAttribute('x1'))
+      : Number.NaN;
+    return {
+      bubbles: root.querySelectorAll('.fv-bubble').length,
+      when: root.querySelector('.ch-axis > .ch-when')?.textContent.trim(),
+      hours: getComputedStyle(axis.querySelector('.fv-axis')).opacity,
+      inside: when ? when.left >= a.left - 0.5 && when.right <= a.right + 0.5 : false,
+      off: when ? Math.abs(when.left + when.width / 2 - x) : null,
+      values: [...root.querySelectorAll('.ch-lines .fc-legend__value')].map((v) =>
+        v.textContent.trim(),
+      ),
+    };
+  });
+  check(
+    'two series read in the row’s lines: no bubble, when a pill on the axis under the cursor, the hours giving way',
+    two.bubbles === 0 &&
+      /^\d\d:\d\d$/.test(two.when ?? '') &&
+      two.hours === '0' &&
+      two.inside &&
+      two.off !== null &&
+      two.off < 1 &&
+      two.values.length === 2,
+    JSON.stringify(two),
   );
 }
 

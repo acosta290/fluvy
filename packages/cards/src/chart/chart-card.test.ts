@@ -368,12 +368,37 @@ describe('a price list: Nordpool today and tomorrow', () => {
     expect(texts(card, '.ch-axis .fv-axis > *')).toEqual(['Thu 00:00', 'Fri 00:00', 'Sat 00:00']);
   });
 
-  it('raises its plot under the value row, the bubble riding over the row while read', async () => {
-    const card = await draw(NORDPOOL);
-    expect(root(card).querySelector('.ch-chart.is-tight')).not.toBeNull();
-    // without the value row the bubble keeps its room above the plot
-    const bare = await draw({ ...NORDPOOL, show_head: false, highlight: 'none' });
-    expect(root(bare).querySelector('.ch-chart.is-tight')).toBeNull();
+  it('raises its plot under the value row, which reads the chart with it: no bubble over the row', async () => {
+    // the chart read at its start by the keys: where the plot's top is, what says the moment
+    const read = async (config: Record<string, unknown>) => {
+      const card = await draw(config);
+      root(card)
+        .querySelector('.ch-chart')
+        ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+      await card.updateComplete;
+      const grid = [...root(card).querySelectorAll('.fc-grid')].map((g) =>
+        Number(g.getAttribute('y1')),
+      );
+      return {
+        top: Math.min(...grid),
+        label: texts(card, '.ch-now .fv-readout__label'),
+        bubble: texts(card, '.ch-chart > .fv-bubble'),
+        when: texts(card, '.ch-axis.is-reading > .ch-when'),
+      };
+    };
+    const head = await read(NORDPOOL);
+    expect(head).toMatchObject({ label: ['00:00'], bubble: [], when: [] });
+    expect(head.top).toBeLessThan(16);
+    // the marked windows' pills alone leave the bubble its room, under them; without a row, the chart's own
+    for (const bare of [{ show_head: false }, { show_head: false, highlight: 'none' }]) {
+      const got = await read({ ...NORDPOOL, ...bare });
+      expect(got.bubble).toHaveLength(1);
+      expect(got.bubble[0]).toMatch(/00:00$/);
+      expect(got.top).toBeGreaterThanOrEqual(44);
+    }
+    // two series' lines in the row read each: when that is goes on the axis, under the cursor
+    const two = await read({ ...NORDPOOL, series: ['sensor.nordpool', 'sensor.temperature'] });
+    expect(two).toMatchObject({ bubble: [], when: ['00:00'] });
   });
 
   it('marks the cheapest and the dearest two hours of what is to come, and names them', async () => {

@@ -168,8 +168,8 @@ const CHART = 120;
 const HEADROOM = 44;
 const ROW = 80;
 /**
- * Under a value row that says the reading, the plot rises to 12 under the chart's top — the knob's room, whole — and
- * the bubble, which only shows while the chart is read, rides over the row (its top 4 under the room it would have had).
+ * Under a value row that says the reading, the plot rises to 12 under the chart's top — the knob's room, whole: the
+ * row reads the chart with it, so no bubble is drawn over the plot and none needs its room.
  */
 const TIGHT = 12;
 /** A stepped line's least slot: under it the steps of a line 2.5 wide read as beads (a phone's card reads a day by the hour). */
@@ -340,10 +340,6 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         animation: fv-fade 500ms var(--fv-ease) both;
         animation-delay: calc(var(--fv-enter-delay, 0ms) + 620ms);
       }
-      /* under a row that says the reading the plot has the bubble's room: while read, the bubble rides over the row */
-      .ch-chart.is-tight > .fv-bubble {
-        top: ${4 - (HEADROOM - TIGHT)}px;
-      }
       /* several series: each one's forecast keeps its colour, dashed, so the legend still says whose it is */
       .ch-several .fc-future {
         stroke: var(--tone-ink, var(--fluvy-accent));
@@ -351,10 +347,33 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       }
       /* the axis under the plot starts where the plot does (after a scale's column) */
       .ch-axis {
+        position: relative;
         margin-top: 8px;
       }
       .ch-axis > .fv-axis {
         margin-top: 0;
+        transition: opacity var(--fluvy-duration-fast, 120ms) ease;
+      }
+      /* while the legend's lines in the row read the chart, the axis says when: a pill in the bubble's colours under
+         the cursor, over the hours, which give way to it (the several sensors' card's) */
+      .ch-axis.is-reading > .fv-axis {
+        opacity: 0;
+      }
+      .ch-when {
+        position: absolute;
+        top: -2px;
+        z-index: 1;
+        height: 20px;
+        border-radius: 10px;
+        background: var(--fluvy-text);
+        color: var(--fluvy-page);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 20px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        pointer-events: none;
       }
       /* the value row: the reading now (and its change) at the start, the marked windows at the end */
       .ch-top {
@@ -1127,8 +1146,11 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const row = full && (showHead || marks.length > 0 || inRow);
     // the value row's room is the chart's where the row has nothing to say
     const height = CHART + (full && !row ? ROW : 0);
-    // under a row that says the reading the plot takes the bubble's room, and the bubble rides over the row while read
-    const headroom = full && row ? TIGHT : HEADROOM;
+    // a row that says the reading reads the chart with it — the value, the time its label, or the legend's lines, the
+    // time on the axis — and no bubble is drawn: the plot takes the bubble's room. A row of the marked windows' pills
+    // alone leaves the bubble its room, over the plot and under the pills.
+    const rowReads = full && (showHead || inRow);
+    const headroom = rowReads ? TIGHT : HEADROOM;
     // the scale's column folds first where it would leave the plot under its least (half a section)
     const scaled =
       loading || empty
@@ -1143,6 +1165,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       specs && fraction !== null ? this.readAt(specs, drawn, window, count, fraction) : null;
     const values = drawn.map((d, i) => (read ? (read.values[i] ?? null) : d.now));
     const left = specs ? plotOf(specs.main).left : 0;
+    // the legend's lines in the row read each series: when that is goes on the axis, under the cursor
+    const when = rowReads && inRow ? read : null;
     return html`<article class="fv-card ch-card ${off ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: fitted.icon ? (config?.icon ?? (several ? 'chart' : iconOf(view))) : null,
@@ -1163,7 +1187,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           : nothing
       }
       <div
-        class="ch-chart fv-tone--${off ? 'off' : toneOf(config, 'accent')} ${headroom === TIGHT ? 'is-tight' : ''}"
+        class="ch-chart fv-tone--${off ? 'off' : toneOf(config, 'accent')}"
         style="height:${height}px;width:${width}px"
         role="img"
         tabindex="0"
@@ -1175,15 +1199,19 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           loading
             ? html`<div class="fv-skeleton"></div>`
             : specs
-              ? this.drawCharts(specs, drawn, read, values, full && showHead && !several)
+              ? this.drawCharts(specs, drawn, read, values, rowReads)
               : html`<div class="ch-empty" data-align="center">
                   ${ico(config?.icon ?? iconOf(view), 'neutral')}
                   <p class="fv-empty">${s(this.hass, 'empty')}</p>
                 </div>`
         }
       </div>
-      <div class="ch-axis" style=${left > 0 ? `margin-inline-start:${left}px` : nothing}>
+      <div
+        class="ch-axis ${when ? 'is-reading' : ''}"
+        style=${left > 0 ? `margin-inline-start:${left}px` : nothing}
+      >
         ${axis(this.axisItems(window, width - left))}
+        ${when ? this.whenPill(when.time, when.x - left, width - left) : nothing}
       </div>
       ${
         full && legendShown && !inRow
@@ -1306,14 +1334,15 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   /**
    * The drawings and the bubble (the engine's `drawRead`, on the lines where columns lie under them): what the chart
    * reads at the cursor — the lone series' figure and when, or when alone over several (their legend says each) —
-   * else, at rest, the end of what has happened where the style labels it and the value row does not say it already.
+   * else, at rest, the end of what has happened where the style labels it. Where the value row reads the chart, the
+   * row says it and no bubble is drawn: the cursor and the marks on the lines alone.
    */
   private drawCharts(
     specs: Specs,
     drawn: readonly Drawn[],
     read: Read | null,
     values: ReadonlyArray<number | null>,
-    rowSays: boolean,
+    rowReads: boolean,
   ): TemplateResult {
     const cursor = read ? this.scrubber.value : null;
     const main = { ...specs.main, cursor };
@@ -1321,13 +1350,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const several = drawn.length > 1;
     const figure = this.figureOf(drawn[0] as Drawn, values[0] ?? null);
     const now: Said = { value: figure.value, ...(figure.unit ? { unit: figure.unit } : {}) };
-    const at: Said | null = !read
-      ? null
-      : several
-        ? { value: read.time }
-        : { ...now, time: read.time };
+    const at: Said | null =
+      !read || rowReads ? null : several ? { value: read.time } : { ...now, time: read.time };
     // at rest the bubble says the reading now where the style labels it — not where the row says it, nor a dash
-    const rest = several || rowSays || figure.value === '—' ? null : now;
+    const rest = several || rowReads || figure.value === '—' ? null : now;
     return html`${over ? drawChart(main) : nothing}${drawRead(
       over ?? main,
       at,
@@ -1433,6 +1459,22 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       }
       ${pills.length ? html`<div class="ch-side">${pills}</div>` : nothing}
     </div>`;
+  }
+
+  /**
+   * While the legend's lines in the row read the chart, when that is: a pill on the axis (the bubble's colours) under
+   * the cursor at `x`, kept inside the axis's `width`, over the hours it covers — the several sensors' card's: one
+   * bubble over the plot would say a value no series but one has.
+   */
+  private whenPill(time: string, x: number, width: number): TemplateResult {
+    const pill = this.headFit.ruler.pill('ch-when', time, 16);
+    const left = Math.min(Math.max(x - pill / 2, 0), width - pill);
+    return html`<span
+      class="ch-when"
+      data-measure="value"
+      style="left:${left.toFixed(2)}px;width:${pill}px"
+      >${time}</span
+    >`;
   }
 
   /** The legend: each series' swatch in its colour, its name, its reading where one is given. */
