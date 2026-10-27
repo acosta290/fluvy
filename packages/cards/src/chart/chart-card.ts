@@ -1249,7 +1249,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const read = readAt(specs.main, fraction);
     const plot = plotOf(specs.main);
     const f = Math.min(1, Math.max(0, (read.x - plot.left) / plot.width));
-    const slot = Math.min(count - 1, Math.floor(f * count));
+    // a key's step lands on a slot's start: a hair of rounding must not leave it in the slot before
+    const slot = Math.min(count - 1, Math.floor(f * count + 1e-6));
     // a stepped series and columns are read by their slot, which began then; a line where the cursor is
     const slotwise = specs.main.kind === 'bars' || drawn.every((d) => d.curve === 'step');
     const length = window.end - window.start;
