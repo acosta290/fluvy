@@ -19,6 +19,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   ninth battery), and a fourth reading shares its card, two by two. The Security dashboard's Openings view gives a room
   every opening, where it stopped at twelve, and the Media view leads with what plays wherever it is in the list.
   Thanks to @DennyWeinberg (#78).
+- An energy card with no tone or colour of its own wears the tone of what its line shows, where it wore the sun's
+  whatever it drew (a brownish amber under a green palette): the grid's for the Energy dashboard's grid power or meter,
+  the sun's for an array's, a battery's, a generator's or a car's for theirs, the house's for an individual device's,
+  and the accent for any other sensor. A card that names a `tone` or a `color` is as it was; the stacked charts
+  (`sources`, `overview`) are as they were.
 
 ### Added
 
@@ -26,6 +31,17 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   (`humidity: none`), or every list whole (`caps: none`); the panel's Dashboards tab offers Long lists: Shortened or
   In full. Thanks to @DennyWeinberg (#78).
 - The entities card's `more` and `more_path`: a last row, "{count} more", that opens where the rest of a list is.
+- `invert` on the energy card: a meter that reads negative while it imports reads "Right now 1.4 kW", its curve above
+  the line, where it read −1.4 kW.
+- `period: today` on an energy card's legend item: a meter that keeps counting (a lifetime total) reads its change
+  since midnight from its statistics, as the cards that read the Energy dashboard do, where it read all it ever counted
+  ("12.5 MWh" under today's curve). The editor offers it on each item, and says so under a total that reads its state.
+
+### Development
+
+- The energy card's and the energy flow card's editors are modules of their own (`energy/energy-editor.ts`,
+  `energy-flow/energy-flow-editor.ts`), fetched with the visual editor: the energy chunk is 79.6 of its 80 KB, where
+  the new keys took it half a kilobyte over. A list's helper in the rows editor is told its item and the house.
 
 ## [1.11.0] — 2026-10-28
 

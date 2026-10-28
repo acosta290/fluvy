@@ -787,7 +787,7 @@ consumers — are ink (`--fluvy-text` at 62 % over the card). Figures and words 
 in the unit slot, in the secondary ink ("0.4 kW out", "0.6 kW charging"). *In / out* is said of the grid only; a
 battery or a car is *charging / discharging* (*charged / discharged* over a period, in kWh). A meter that cannot know
 where its energy came from (a phase, a signed gauge) uses the grid's colour both ways. Head icons use the accent (the
-lilac `energy-home` tone no longer marks a head).
+lilac `energy-home` tone no longer marks a head), but the energy card's: it wears its line's tone (below).
 
 **The house.** A 44 neutral disc; its supply as 3 px arcs at r 26.5 (outer edge 28), one per origin, in the order
 sun · battery · generator · car · grid, 4 px apart; they slide to a new mix in 700 ms (the one dash animation,
@@ -947,6 +947,17 @@ one unit for the row, as the whole house's does.
   and one precision for the row; the readouts read that moment too ("12:30 · 522 W", "Battery 77 %").
 - **Gaps**: a gap stops every series, and a charge that cannot be known (two batteries without their capacity) is
   "—" with no line.
+
+**The line's tone (1.11.1).** The energy card's line and its head wear one tone: the card's own (`tone`, `color`),
+else the tone of what the line shows, read from the Energy dashboard's settings — a source's sensor (its power or its
+meter) that source's (the sun's, the grid's, a battery's, a generator's, a car's), an individual device's the house's
+(`energy-home`), any other sensor the accent, as the Chart card's lone series. Never from a reading: a curve keeps its
+colour whatever it says, and is the accent until the settings are read. Every one is a colour of the palette — on a
+lime palette a grid's power is its slate grid, never the sun's amber, the card's tone before 1.11.1 whatever it drew.
+The stacked charts keep the accent in the head: each band is its own source's colour. A meter that reads negative
+while it imports is read the other way round (`invert`, the flow's rule): its "Right now" and its curve are what comes
+in. A legend item of a meter that keeps counting reads its day with `period: today` — the statistics' change since the
+house's midnight (a followed picker's range), "7.5 kWh" where its state says "12.5 MWh" — and "—" until it is read.
 
 **Empty.** An energy card's empty panel sits 16 under its head and says what is missing in one line ("No batteries
 yet"), with how to fix it as the hint under it ("Add them here, or give the Energy dashboard its batteries").
