@@ -1721,6 +1721,8 @@
     "water": "Wasser",
     "gas": "Gas",
     "overview": "Ganzes Haus",
+    "usage": "Vom Haus verbraucht",
+    "flows": "Gemessene Flüsse",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1975,6 +1977,13 @@
     "editor_show_legend": "Legende zeigen",
     "editor_show_period": "Chips Tag · Woche · Monat · Jahr",
     "editor_compare": "Den Zeitraum davor hinter den Säulen zeigen",
+    "editor_mode": "Was die Säulen zeigen",
+    "editor_mode_usage": "Was das Haus aus jeder Quelle verbraucht hat",
+    "editor_mode_flows": "Was jeder Zähler gemessen hat: Erzeugung, Bezug, Entladung",
+    "editor_plot_height": "Diagrammhöhe (px)",
+    "flows_solar": "Solarerzeugung",
+    "flows_battery": "Batterieentladung",
+    "flows_grid": "Netzbezug",
     "editor_color_helper": "Leer: die eigene Farbe seiner Energie. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben"
   },
   "wall": {

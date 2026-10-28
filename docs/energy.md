@@ -212,6 +212,15 @@ show_compare: true              # Compare: the period before beside the span, on
   columns behind (following a picker, its own Compare does); `sources` names, colours, orders or hides the sources,
   `max_sources` folds the rest into "Other", `show_returns: false` leaves out what went out; `variant: compact` or
   `mini` keep the chart alone or a strip.
+
+  `mode: flows` draws what each meter measured instead of what the house used: above the line the sun's whole
+  production, the battery's discharge and the grid's import ("Solar production", "Battery discharge", "Grid import"),
+  below it what was charged and exported as before. A morning whose sun mostly charges the battery shows a short solar
+  column in the default `mode: usage` (the house's share of the sun) and a tall one in `flows`, and each series' total
+  then matches its meter on the Energy flow card and the Energy dashboard. The head says the sum of the series drawn
+  above the line in both modes, so a card with `sources: [solar]` says the sun's total alone. `plot_height` sets the
+  chart's own height in px (48 to 480, on the 4 grid) for the full and compact layouts: the bars, the scale and the
+  axis grow with it, where a taller card alone would only add room around them.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term

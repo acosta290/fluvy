@@ -264,6 +264,27 @@ export const sheet: SheetSpec = {
       hass: usageHome,
       cards: [usage({ variant: 'compact' }), usage({ variant: 'mini', period: 'week' })],
     },
+    // the same day as the house used it and as its meters measured it: the morning's sun mostly charges the battery,
+    // so the sun's columns are the house's share of it on the first card and all of it on the second
+    {
+      title: 'Metered flows',
+      hass: usageHome,
+      cards: [usage(), usage({ mode: 'flows' })],
+    },
+    {
+      title: 'Solar alone, flows',
+      hass: usageHome,
+      cards: [
+        usage({ mode: 'flows', sources: ['solar'] }),
+        usage({ mode: 'flows', sources: ['solar'], period: 'week', compare: true }),
+      ],
+    },
+    { title: 'A taller plot', hass: usageHome, cards: [usage({ plot_height: 240 })] },
+    {
+      title: 'A taller compact plot',
+      hass: usageHome,
+      cards: [usage({ variant: 'compact', plot_height: 160, mode: 'flows', period: 'week' })],
+    },
     {
       title: 'Styles',
       hass: usageHome,

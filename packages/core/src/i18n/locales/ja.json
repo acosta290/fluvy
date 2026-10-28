@@ -819,6 +819,8 @@
     "water": "水",
     "gas": "ガス",
     "overview": "家全体",
+    "usage": "家で使った量",
+    "flows": "メーターの計測値",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1934,6 +1936,13 @@
     "editor_show_legend": "凡例を表示",
     "editor_show_period": "日 · 週 · 月 · 年のチップ",
     "editor_compare": "前の期間を棒の後ろに表示",
+    "editor_mode": "棒が示すもの",
+    "editor_mode_usage": "家が各供給元から使った量",
+    "editor_mode_flows": "各メーターの計測値：発電、買電、放電",
+    "editor_plot_height": "グラフの高さ（px）",
+    "flows_solar": "太陽光発電",
+    "flows_battery": "バッテリー放電",
+    "flows_grid": "買電",
     "editor_color_helper": "空のときはそのエネルギー自身の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます"
   },
   "history": {

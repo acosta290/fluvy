@@ -7,13 +7,14 @@ import { readPrefs } from '../energy-model/prefs.js';
 import { presetSpan, shiftSpan } from '../energy-period/picker.js';
 import { figuresOf, writeFigure } from '../shared/units.js';
 import {
+  drawnTotal,
+  fallOf,
   foldAt,
-  returnedOf,
+  riseOf,
   slotEnergy,
   slotsOf,
   usageSeries,
   usageTicks,
-  usedOf,
   type SlotEnergy,
 } from './series.js';
 
@@ -36,6 +37,12 @@ const totals = (t: Partial<Totals>): Totals => ({
   toBattery: 0,
   ...t,
 });
+
+/** What the house used in a slot, every origin together, and what left it. */
+const usedOf = (slot: SlotEnergy | undefined): number =>
+  slot ? slot.used.solar + slot.used.battery + slot.used.grid : 0;
+const returnedOf = (slot: SlotEnergy | undefined): number =>
+  slot ? slot.charged + slot.exported : 0;
 
 const BOTH: ReadonlySet<'solar' | 'battery' | 'grid'> = new Set(['solar', 'battery', 'grid']);
 const OUTS: ReadonlySet<'battery' | 'grid'> = new Set(['battery', 'grid']);
@@ -101,6 +108,34 @@ describe('a slot’s energy is the dashboard’s arithmetic', () => {
     expect(usedOf(energy[3])).toBe(0);
   });
 
+  it('beside it, what each source’s meter measured: the sun’s production, the battery’s discharge, the grid’s import', () => {
+    // a morning whose sun mostly charges the battery: the house used little of it, its meter measured all of it
+    const morning = totals({ solar: 1.4, fromGrid: 0.3, toBattery: 1.2, toGrid: 0.05 });
+    const evening = totals({ fromGrid: 0.6, fromBattery: 0.8, toGrid: 0.1 });
+    const energy = slotEnergy(
+      [
+        { start: at(9), totals: morning },
+        { start: at(9) + HOUR / 2, totals: morning },
+        { start: at(20), totals: evening },
+      ],
+      slots,
+      TODAY.end.getTime(),
+    );
+    expect(energy[9]?.metered).toEqual({ solar: 2.8, battery: 0, grid: 0.6 });
+    expect(energy[20]?.metered).toEqual({ solar: 0, battery: 0.8, grid: 0.6 });
+    expect(energy[9]?.used.solar).toBeCloseTo(2 * allocate(morning).usedSolar, 9);
+    expect(energy[9]?.used.solar).toBeLessThan(0.5);
+    // what went out is the same in both
+    expect(energy[9]?.charged).toBeCloseTo(2.4, 9);
+    // a meter that ran back (a negative change) measured nothing
+    const [back] = slotEnergy(
+      [{ start: at(0), totals: totals({ solar: -0.2, fromGrid: 0.4 }) }],
+      slots.slice(0, 1),
+      at(1),
+    );
+    expect(back?.metered).toEqual({ solar: 0, battery: 0, grid: 0.4 });
+  });
+
   it('several buckets in one slot add their allocations, never an allocation of their sum', () => {
     // a day's night and noon in one day slot: the grid charged the battery at night, the sun ran the house at noon
     const day = slotsOf(HOUSE, presetSpan(HOUSE, 'this_week', NOW), 'day', NOW);
@@ -157,12 +192,21 @@ describe('a slot’s energy is the dashboard’s arithmetic', () => {
 });
 
 describe('the series drawn', () => {
-  const slot = (used: Partial<SlotEnergy['used']>, charged = 0, exported = 0): SlotEnergy => ({
+  const slot = (
+    used: Partial<SlotEnergy['used']>,
+    charged = 0,
+    exported = 0,
+    metered: Partial<SlotEnergy['metered']> = {},
+  ): SlotEnergy => ({
     used: { solar: 0, battery: 0, grid: 0, ...used },
+    metered: { solar: 0, battery: 0, grid: 0, ...metered },
     charged,
     exported,
   });
-  const SLOTS = [slot({ solar: 1, battery: 0.5, grid: 2 }, 0.4, 0.3), slot({ grid: 1 }, 0, 1.2)];
+  const SLOTS = [
+    slot({ solar: 1, battery: 0.5, grid: 2 }, 0.4, 0.3, { solar: 1.7, battery: 0.5, grid: 2.4 }),
+    slot({ grid: 1 }, 0, 1.2, { solar: 1.2, grid: 1 }),
+  ];
 
   it('from the sun up, then what went out below the line: the battery’s charge and the export, below zero', () => {
     const series = usageSeries(SLOTS, { ins: BOTH, outs: OUTS });
@@ -223,6 +267,76 @@ describe('the series drawn', () => {
     expect(series.map((s) => s.key)).toEqual(['solar', 'other', 'charged', 'exported']);
     expect(series[1]?.values).toEqual([2.5, 1]);
     expect(series[1]?.kind).toBeUndefined();
+  });
+});
+
+describe('the metered flows', () => {
+  const slot = (
+    used: Partial<SlotEnergy['used']>,
+    metered: Partial<SlotEnergy['metered']>,
+    charged = 0,
+    exported = 0,
+  ): SlotEnergy => ({
+    used: { solar: 0, battery: 0, grid: 0, ...used },
+    metered: { solar: 0, battery: 0, grid: 0, ...metered },
+    charged,
+    exported,
+  });
+  // the sun's 2.4 mostly into the battery (1.6) and out to the grid (0.5); the house took 0.3 of it and 0.2 of the grid's
+  const SLOTS = [
+    slot({ solar: 0.3, grid: 0.2 }, { solar: 2.4, grid: 0.2 }, 1.6, 0.5),
+    slot({ battery: 0.9, grid: 0.4 }, { battery: 1, grid: 0.4 }, 0, 0.1),
+  ];
+
+  it('above the line each source’s meter, slot by slot; below it what went out, as in usage', () => {
+    const flows = usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'flows' });
+    const usage = usageSeries(SLOTS, { ins: BOTH, outs: OUTS });
+    expect(flows.map((s) => [s.key, s.values])).toEqual([
+      ['solar', [2.4, 0]],
+      ['battery', [0, 1]],
+      ['grid', [0.2, 0.4]],
+      ['charged', [-1.6, -0]],
+      ['exported', [-0.5, -0.1]],
+    ]);
+    // usage is the house's own, unchanged
+    expect(usage.map((s) => [s.key, s.values])).toEqual([
+      ['solar', [0.3, 0]],
+      ['battery', [0, 0.9]],
+      ['grid', [0.2, 0.4]],
+      ['charged', [-1.6, -0]],
+      ['exported', [-0.5, -0.1]],
+    ]);
+    expect(usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'usage' })).toEqual(usage);
+  });
+
+  it('folds the meters past max_sources, and leaves what went out out with show_returns false', () => {
+    const folded = usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'flows', max: 2 });
+    expect(folded.map((s) => s.key)).toEqual(['solar', 'other', 'charged', 'exported']);
+    expect(folded[1]?.values[0]).toBeCloseTo(0.2, 9);
+    expect(folded[1]?.values[1]).toBeCloseTo(1.4, 9);
+    expect(
+      usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'flows', returns: false }).map(
+        (s) => s.key,
+      ),
+    ).toEqual(['solar', 'battery', 'grid']);
+  });
+
+  it('a slot reads what its columns reach; the head the series drawn above the line, a filter’s too', () => {
+    const flows = usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'flows' });
+    expect(riseOf(flows, 0)).toBeCloseTo(2.6, 9);
+    expect(fallOf(flows, 0)).toBeCloseTo(2.1, 9);
+    expect(riseOf(flows, 5)).toBe(0);
+    expect(drawnTotal(flows)).toBeCloseTo(4, 9);
+    // the sun alone: its production, not the house's use of every source
+    const sun = usageSeries(SLOTS, { ins: BOTH, outs: OUTS, mode: 'flows', sources: ['solar'] });
+    expect(sun.map((s) => s.key)).toEqual(['solar']);
+    expect(drawnTotal(sun)).toBeCloseTo(2.4, 9);
+    // every source shown in usage: what the house used, as before
+    const usage = usageSeries(SLOTS, { ins: BOTH, outs: OUTS });
+    expect(drawnTotal(usage)).toBeCloseTo(
+      SLOTS.reduce((sum, s) => sum + usedOf(s), 0),
+      9,
+    );
   });
 });
 
@@ -299,6 +413,19 @@ describe('the declared height', () => {
     );
     expect(usageHeight({ type, variant: 'compact' })).toBe(240);
     expect(usageHeight({ type, variant: 'mini' })).toBe(168);
+  });
+
+  it('flows: the legend as the meters name them; a plot of the card’s own, on the 4 grid, the mini strip’s never', () => {
+    const type = 'custom:fluvy-energy-usage-card';
+    // "Solar production", "Battery discharge" and "Grid import" take a row more than "Solar", "Battery", "Grid"
+    expect(usageHeight({ type, show_period: false, mode: 'flows' })).toBe(464);
+    expect(usageHeight({ type, show_period: false, mode: 'flows', sources: ['solar'] })).toBe(360);
+    expect(usageHeight({ type, show_period: false, plot_height: 240 })).toBe(412 + 80);
+    expect(usageHeight({ type, variant: 'compact', plot_height: 240 })).toBe(240 + 144);
+    expect(usageHeight({ type, variant: 'compact', plot_height: 241 })).toBe(240 + 144);
+    expect(usageHeight({ type, variant: 'compact', plot_height: 20 })).toBe(240 - 48);
+    expect(usageHeight({ type, variant: 'compact', plot_height: 900 })).toBe(240 + 384);
+    expect(usageHeight({ type, variant: 'mini', plot_height: 240 })).toBe(168);
   });
 
   it('never by the house: a source shown false, or listed twice, is counted as the card draws it', () => {

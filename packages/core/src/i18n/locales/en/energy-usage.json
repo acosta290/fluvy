@@ -9,6 +9,13 @@
     "editor_show_legend": "Show the legend",
     "editor_show_period": "Day · Week · Month · Year chips",
     "editor_compare": "Show the period before behind the columns",
+    "editor_mode": "What the columns show",
+    "editor_mode_usage": "Used by the house from each source",
+    "editor_mode_flows": "What each meter measured: production, import, discharge",
+    "editor_plot_height": "Chart height (px)",
+    "flows_solar": "Solar production",
+    "flows_battery": "Battery discharge",
+    "flows_grid": "Grid import",
     "editor_color_helper": "Empty: its energy’s own colour. The palette’s colours follow it; a colour name or a #hex stays as typed"
   }
 }

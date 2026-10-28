@@ -819,6 +819,8 @@
     "water": "Water",
     "gas": "Gas",
     "overview": "Whole house",
+    "usage": "Used by the house",
+    "flows": "Metered flows",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",

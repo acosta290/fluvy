@@ -8,8 +8,9 @@ import { midnightOf } from '../energy-period/picker.js';
 /**
  * The Energy usage card's figures, pure: a range in its slots (a day's hours, a week's or a month's days, a year's
  * months), each slot's energy by where the house took it from and where it went — Home Assistant's own series, from
- * the dashboard's own arithmetic (`allocate`, bucket by bucket) — and the series a card draws of them, in the order
- * and the colours it asks for, the sources past `max_sources` folded into one, on a scale that hugs them.
+ * the dashboard's own arithmetic (`allocate`, bucket by bucket) — or by what each source's meter measured, and the
+ * series a card draws of them, in the order and the colours it asks for, the sources past `max_sources` folded into
+ * one, on a scale that hugs them.
  */
 
 /** A slot's grain: the buckets the range is read in (Home Assistant's `getSuggestedPeriod`). */
@@ -21,9 +22,20 @@ export type UsageKind = Extract<SourceKind, 'solar' | 'battery' | 'grid'>;
 /** The sources from the bottom of the stack up: the sun (the house's own), the battery, the grid on top. */
 export const USAGE_KINDS: readonly UsageKind[] = ['solar', 'battery', 'grid'];
 
-/** A slot's energy (kWh): what the house used from each origin, and what went into the battery and out to the grid. */
+/**
+ * What the columns stand for above the line: what the house used from each source (`usage`, the default), or what
+ * each source's meter measured (`flows`: the sun's production, the battery's discharge, the grid's import), whatever
+ * of it the house used, stored or exported.
+ */
+export type UsageMode = 'usage' | 'flows';
+
+/**
+ * A slot's energy (kWh): what the house used from each origin, what each origin's meter measured, and what went into
+ * the battery and out to the grid.
+ */
 export interface SlotEnergy {
   readonly used: Readonly<Record<UsageKind, number>>;
+  readonly metered: Readonly<Record<UsageKind, number>>;
   readonly charged: number;
   readonly exported: number;
 }
@@ -62,8 +74,9 @@ export function slotsOf(
 /**
  * Each slot's energy from the statistics' buckets: every bucket allocated on its own (an hour's import never netted
  * against another hour's export) and added into the slot it starts in; a bucket outside the slots is not drawn.
- * Above the line, `allocate`'s use by origin; below it, what the battery's and the grid's meters took (Home
- * Assistant's `to_battery` and `to_grid`).
+ * Above the line, `allocate`'s use by origin, and beside it what the sun's, the battery's and the grid's meters gave
+ * (Home Assistant's `solar`, `from_battery` and `from_grid`); below it, what the battery's and the grid's meters took
+ * (its `to_battery` and `to_grid`).
  */
 export function slotEnergy(
   buckets: ReadonlyArray<{ readonly start: number; readonly totals: Totals }>,
@@ -72,6 +85,7 @@ export function slotEnergy(
 ): SlotEnergy[] {
   const out = slots.map(() => ({
     used: { solar: 0, battery: 0, grid: 0 },
+    metered: { solar: 0, battery: 0, grid: 0 },
     charged: 0,
     exported: 0,
   }));
@@ -85,6 +99,9 @@ export function slotEnergy(
     slot.used.solar += a.usedSolar;
     slot.used.battery += a.usedBattery;
     slot.used.grid += a.usedGrid;
+    slot.metered.solar += Math.max(0, totals.solar);
+    slot.metered.battery += Math.max(0, totals.fromBattery);
+    slot.metered.grid += Math.max(0, totals.fromGrid);
     slot.charged += Math.max(0, totals.toBattery);
     slot.exported += Math.max(0, totals.toGrid);
   }
@@ -139,13 +156,15 @@ export interface SeriesOptions {
   readonly max?: unknown;
   /** What went out, below the line: the battery's charge, the export (`show_returns`, true). */
   readonly returns?: boolean | undefined;
+  /** What the sources' columns stand for (`mode`, `usage`). */
+  readonly mode?: UsageMode | undefined;
 }
 
 /**
  * The series a card draws, bottom of the stack first: the sources it shows (its `sources` in their order, else every
- * kind the house has from the sun up), the last of them folded into "other" past `max`, then below the line the
- * battery's charge and the export, for a battery and a grid that are shown and metered that way. A kind the house has
- * no meter for draws nothing; a kind listed twice is its first entry.
+ * kind the house has from the sun up) as its mode reads them, the last of them folded into "other" past `max`, then
+ * below the line the battery's charge and the export, for a battery and a grid that are shown and metered that way. A
+ * kind the house has no meter for draws nothing; a kind listed twice is its first entry.
  */
 export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): UsageSeries[] {
   const listed = (o.sources?.length ? o.sources : USAGE_KINDS)
@@ -168,11 +187,12 @@ export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): Usa
     ...more,
   });
   const sources = shown.filter((s) => o.ins.has(s.type));
+  const side = o.mode === 'flows' ? 'metered' : 'used';
   const named = foldAt(sources.length, o.max);
   const out = sources.slice(0, named).map((s) =>
     series(
       s.type,
-      slots.map((slot) => slot.used[s.type]),
+      slots.map((slot) => slot[side][s.type]),
       { kind: s.type, name: s.name, color: s.color },
     ),
   );
@@ -181,7 +201,7 @@ export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): Usa
     out.push(
       series(
         'other',
-        slots.map((slot) => rest.reduce((sum, s) => sum + slot.used[s.type], 0)),
+        slots.map((slot) => rest.reduce((sum, s) => sum + slot[side][s.type], 0)),
       ),
     );
   if (o.returns === false) return out;
@@ -203,13 +223,21 @@ export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): Usa
   return out;
 }
 
-/** What the house used in a slot (kWh), every origin together: the ghost of a range compared, its bubble's figure. */
-export const usedOf = (slot: SlotEnergy | undefined): number =>
-  slot ? slot.used.solar + slot.used.battery + slot.used.grid : 0;
+/** What went out, below the line: into the battery and out to the grid. */
+export const isReturn = (series: UsageSeries): boolean =>
+  series.key === 'charged' || series.key === 'exported';
 
-/** What left the house in a slot (kWh): into the battery and out to the grid. */
-export const returnedOf = (slot: SlotEnergy | undefined): number =>
-  slot ? slot.charged + slot.exported : 0;
+/** What a slot's columns rise to (kWh): its parts above the line together, the bubble's figure and a ghost's. */
+export const riseOf = (series: readonly UsageSeries[], index: number): number =>
+  series.reduce((sum, s) => sum + Math.max(0, s.values[index] ?? 0), 0);
+
+/** How far a slot's columns fall (kWh): what went out of it, below the line. */
+export const fallOf = (series: readonly UsageSeries[], index: number): number =>
+  -series.reduce((sum, s) => sum + Math.min(0, s.values[index] ?? 0), 0);
+
+/** What the series above the line add up to over the range (kWh): the head's figure, what the card draws of it. */
+export const drawnTotal = (series: readonly UsageSeries[]): number =>
+  series.reduce((sum, s) => (isReturn(s) ? sum : sum + s.total), 0);
 
 /** Heckbert's nice fractions within a decade, and the decimal a step of each writes below the units. */
 const NICE: ReadonlyArray<readonly [fraction: number, decimal: 0 | 1]> = [

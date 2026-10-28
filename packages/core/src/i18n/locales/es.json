@@ -1721,6 +1721,8 @@
     "water": "Agua",
     "gas": "Gas",
     "overview": "Toda la casa",
+    "usage": "Usado por la casa",
+    "flows": "Flujos medidos",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1975,6 +1977,13 @@
     "editor_show_legend": "Mostrar la leyenda",
     "editor_show_period": "Chips Día · Semana · Mes · Año",
     "editor_compare": "Mostrar el periodo anterior detrás de las columnas",
+    "editor_mode": "Qué muestran las columnas",
+    "editor_mode_usage": "Lo que la casa usó de cada fuente",
+    "editor_mode_flows": "Lo que midió cada contador: producción, importación, descarga",
+    "editor_plot_height": "Altura del gráfico (px)",
+    "flows_solar": "Producción solar",
+    "flows_battery": "Descarga de batería",
+    "flows_grid": "Importación de red",
     "editor_color_helper": "Vacío, el color propio de su energía. Los colores de la paleta la siguen; un nombre de color o un #hex se queda como se escribió"
   },
   "wall": {

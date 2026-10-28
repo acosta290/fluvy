@@ -51,7 +51,7 @@ import {
   type SeriesColour,
   type Ticks,
 } from '../chart/engine/index.js';
-import { usageHeight } from '../energy-family.js';
+import { usageHeight, usagePlot } from '../energy-family.js';
 import {
   CollectionFollower,
   collectionKeyOf,
@@ -106,20 +106,28 @@ import {
   textField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type {
+  EditorChoices,
+  EditorDefaults,
+  FormHelper,
+  RowsListSpec,
+} from '../shared/rows-editor.js';
 import { figuresOf, writeFigure, type Figures, type NumberKeys } from '../shared/units.js';
 import {
-  returnedOf,
+  drawnTotal,
+  fallOf,
+  isReturn,
+  riseOf,
   slotEnergy,
   usageTicks,
   slotsOf,
   USAGE_KINDS,
   usageSeries,
-  usedOf,
   type Grain,
   type SeriesKey,
   type SlotEnergy,
   type UsageKind,
+  type UsageMode,
   type UsageSeries,
   type UsageSource,
 } from './series.js';
@@ -148,6 +156,7 @@ const inkOf = (paint: Paint | undefined): string =>
 export type UsageVariant = 'full' | 'compact' | 'mini';
 const VARIANTS: readonly UsageVariant[] = ['full', 'compact', 'mini'];
 const PERIODS: readonly Period[] = ['day', 'week', 'month', 'year'];
+const MODES: readonly UsageMode[] = ['usage', 'flows'];
 /**
  * The slots of the card's own span: its grain says them, on the house's clock. Home Assistant's rule (`stepFor`) reads
  * the span's edges on the browser's clock, so a year from the house's 1 January read as days where the browser's zone
@@ -176,6 +185,10 @@ export interface EnergyUsageCardConfig
   collection_key?: string;
   /** The chart with its legend (default), the chart alone, or a strip under the head. */
   variant?: UsageVariant;
+  /** What the columns stand for above the line: what the house used from each source (default), or what each meter measured. */
+  mode?: UsageMode;
+  /** The chart's plot in px, on the 4 grid (48 to 480): the full and compact layouts'; none, the layout's (160, 96). */
+  plot_height?: number;
   /** The sources drawn, bottom of the stack first, with their names and colours; none: every one the Energy dashboard has. */
   sources?: readonly (UsageSource | UsageKind)[];
   /** Sources that keep their own name before the rest fold into "Other" (default 6). */
@@ -208,8 +221,7 @@ const STRIP_CAPS: ChartCaps = { ...CAPS, axis: false, keys: ['animate'] };
 const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
   data['variant'] === 'mini' ? STRIP_CAPS : CAPS;
 
-/** The chart's plot in each layout (its frame adds 12 of headroom over it and 8 under its floor). */
-const PLOT: Readonly<Record<UsageVariant, number>> = { full: 160, compact: 96, mini: 48 };
+/** The room over the plot and under its floor (`usagePlot` says the plot's own height). */
 const HEADROOM = 12;
 const PAD = 8;
 /** The ghost of the period before: this much wider than its bar, never wider than its slot less 2. */
@@ -264,6 +276,12 @@ const SOURCE_FIELDS: HaFormSchemaItem[] = [
   fieldRow(textField('name'), seriesColourField('energy-usage.editor_color_helper')),
   boolField('show'),
 ];
+
+/** Under the mode, what the chosen one draws; under the date picker's key and the period, what they do. */
+const usageHelper: FormHelper = (schema, localize, data) =>
+  schema.name === 'mode'
+    ? u(editorLanguage(), data?.['mode'] === 'flows' ? 'editor_mode_flows' : 'editor_mode_usage')
+    : collectionHelper(schema, localize, data);
 
 /**
  * The house's energy over a day, a week, a month or a year as Home Assistant's usage graph draws it: a column a slot
@@ -422,6 +440,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     'title',
     'subtitle',
     'variant',
+    'mode',
+    'plot_height',
     'period',
     'show_period',
     'collection_key',
@@ -450,6 +470,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   ];
   static override defaults: EditorDefaults = (config) => ({
     variant: 'full',
+    mode: 'usage',
+    plot_height: usagePlot(config),
     period: 'day',
     show_period: true,
     collection_key: '',
@@ -487,6 +509,11 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         titleFields(),
         fieldRow(iconField(), selectField('variant', VARIANTS)),
         showIconField(),
+        // what the columns stand for, and the plot's height where the layout has a scale
+        fieldRow(
+          selectField('mode', MODES),
+          onlyWhen((data) => data['variant'] !== 'mini', numberField('plot_height', 48, 480, 4)),
+        ),
         period,
         // a date picker to follow; the chips and the period before while none is followed
         fieldRow(
@@ -503,6 +530,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       ...editorLabels(
         u,
         {
+          mode: 'editor_mode',
+          plot_height: 'editor_plot_height',
           max_sources: 'editor_max_sources',
           show_returns: 'editor_show_returns',
           show_legend: 'editor_show_legend',
@@ -514,7 +543,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
           ...COLLECTION_LABEL,
         },
       ),
-      computeHelper: collectionHelper,
+      computeHelper: usageHelper,
     };
   }
 
@@ -700,26 +729,33 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
 
   /* ---------- the series ---------- */
 
-  private series(drawn: Drawn): UsageSeries[] {
+  /** The series of a range's slots, as the card's sources, mode and returns ask. */
+  private series(energy: readonly SlotEnergy[]): UsageSeries[] {
     const sources = this.sources();
     const kinds = (side: 'energyIn' | 'energyOut'): Set<SourceKind> =>
       new Set(sources.filter((p) => p[side].length).map((p) => p.kind));
-    return usageSeries(drawn.energy, {
+    return usageSeries(energy, {
       ins: kinds('energyIn'),
       outs: kinds('energyOut'),
       sources: this.config?.sources,
       max: this.config?.max_sources,
       returns: this.config?.show_returns,
+      mode: this.config?.mode,
     });
   }
 
-  /** A series' name: the one it was given, its kind's, "Other", or what went out. */
+  /**
+   * A series' name: the one it was given, its kind's (by what its meter measured in the `flows` mode: "Solar
+   * production"), "Other", or what went out.
+   */
   private nameOf(series: UsageSeries): string {
     if (series.name) return series.name;
     const key: SeriesKey = series.key;
     if (key === 'other') return u(this.hass, 'other');
     if (key === 'charged' || key === 'exported') return localize(this.hass, `energy.${key}`);
-    return flow(this.hass, `kind_${key}`);
+    return this.config?.mode === 'flows'
+      ? u(this.hass, `flows_${key}`)
+      : flow(this.hass, `kind_${key}`);
   }
 
   /** How a series is painted (`Paint`). */
@@ -859,7 +895,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
 
   /** The chart's frame: its plot and the 20 of room round it. */
   private frameHeight(): number {
-    return HEADROOM + PLOT[this.variant] + PAD;
+    return HEADROOM + usagePlot(this.config ?? { type: '' }) + PAD;
   }
 
   protected renderCard(): TemplateResult {
@@ -872,8 +908,9 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const configured =
       (this.follower.data()?.prefs ?? this.prefs) === undefined || sources.length > 0;
     const drawn = configured ? this.drawn : undefined;
-    const series = drawn ? this.series(drawn) : [];
-    const used = drawn ? drawn.energy.reduce((sum, slot) => sum + usedOf(slot), 0) : 0;
+    const series = drawn ? this.series(drawn.energy) : [];
+    // what the columns above the line add up to: the sources drawn, in the card's mode
+    const used = drawnTotal(series);
     // one unit for the range's totals (the head's and the legend's), one for the slots (the scale and the bubble)
     const totals = figuresOf(
       this.hass,
@@ -1003,26 +1040,14 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const height = this.frameHeight();
     const box: PlotBox = { top: HEADROOM, bottom: height - PAD };
     const count = drawn.slots.length;
-    const returns = this.config?.show_returns !== false;
     const before = this.comparing() ? drawn.before : undefined;
-    const ghostUp = before ? drawn.slots.map((_t, i) => usedOf(before.energy[i])) : [];
-    const ghostDown =
-      before && returns ? drawn.slots.map((_t, i) => returnedOf(before.energy[i])) : [];
+    // the period before drawn as this range is: the same sources, in the same mode
+    const past = before ? this.series(before.energy) : undefined;
+    const ghostUp = past ? drawn.slots.map((_t, i) => riseOf(past, i)) : [];
+    const ghostDown = past ? drawn.slots.map((_t, i) => fallOf(past, i)) : [];
     // what the columns reach, the ghosts with them: the tallest rise and the deepest fall
-    const rise = Math.max(
-      0,
-      ...ghostUp,
-      ...drawn.slots.map((_t, i) =>
-        series.reduce((sum, s) => sum + Math.max(0, s.values[i] ?? 0), 0),
-      ),
-    );
-    const fall = Math.max(
-      0,
-      ...ghostDown,
-      ...drawn.slots.map(
-        (_t, i) => -series.reduce((sum, s) => sum + Math.min(0, s.values[i] ?? 0), 0),
-      ),
-    );
+    const rise = Math.max(0, ...ghostUp, ...drawn.slots.map((_t, i) => riseOf(series, i)));
+    const fall = Math.max(0, ...ghostDown, ...drawn.slots.map((_t, i) => fallOf(series, i)));
     // the slots' unit: the larger of the two's
     const figures = figuresOf(this.hass, this.config, 'Wh', Math.max(rise, fall) * 1000);
     const shown = (kWh: number): number => (kWh * 1000) / figures.divisor;
@@ -1070,16 +1095,16 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const slotWidth = count ? plot.width / count : plot.width;
     this.plot = { left: plot.left, slot: slotWidth, count };
     const nothingYet = series.every((s) => s.total === 0);
-    const reading = hovered === null ? null : this.bubble(drawn, series, paints, hovered, figures);
+    const reading =
+      hovered === null ? null : this.bubble(drawn, series, paints, hovered, figures, ghostUp);
     const at = (v: number): number => (ticks ? yOf(v, ticks, box) : box.bottom);
     const ghosts =
       before && ticks
         ? this.ghosts(plot.left, plot.width, count, ghostUp.map(shown), ghostDown.map(shown), at)
         : nothing;
-    const total = drawn.energy.reduce((sum, slot) => sum + usedOf(slot), 0);
     const label =
       reading?.label ??
-      `${this.config?.title ?? u(this.hass, 'title')}: ${writeFigure(this.hass, total * 1000, totals)} ${totals.unit}`;
+      `${this.config?.title ?? u(this.hass, 'title')}: ${writeFigure(this.hass, drawnTotal(series) * 1000, totals)} ${totals.unit}`;
     return html`<div
         class="eu-chart fv-tone--${toneOf(this.config, 'accent')} ${scaled ? 'is-scaled' : ''} ${chosen.preset === 'soft' ? 'is-soft' : ''} ${style.animate ? '' : 'is-still'}"
         style="height:${height}px"
@@ -1122,7 +1147,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   }
 
   /**
-   * The period before: one quiet column a slot, what the house used up and what went out down, behind the bars,
+   * The period before: one quiet column a slot, what its columns rose to up and what went out down, behind the bars,
    * rounded at its outer ends as the columns are.
    */
   private ghosts(
@@ -1150,7 +1175,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   }
 
   /**
-   * The bubble of the slot read: its time and what the house used in it, each series' part (the top of the stack
+   * The bubble of the slot read: its time and what its columns rose to, each series' part (the top of the stack
    * first, then what went out from the line down), and the same slot of the period before — beside the cursor where it
    * holds, kept inside the card. Each line holds its words and its figure side by side; in a card too narrow for that
    * the parts' figures go bare, their unit said once by the slot's total (as the scale says it beside its ticks), and a
@@ -1162,11 +1187,12 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     paints: readonly Paint[],
     index: number,
     figures: Figures,
+    earlierRise: readonly number[],
   ): { readonly template: TemplateResult; readonly label: string } {
     const bare = (kWh: number): string => writeFigure(this.hass, Math.abs(kWh) * 1000, figures);
     const value = (kWh: number): string => `${bare(kWh)} ${figures.unit}`;
     const heading = this.slotWords(drawn, drawn.grain, index);
-    const used = value(usedOf(drawn.energy[index]));
+    const used = value(riseOf(series, index));
     const parts = series.map((s, i) => [s, s.values[index] ?? 0, i] as const);
     const rows = [
       ...parts.filter(([, v]) => v > 0).reverse(),
@@ -1175,7 +1201,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       name: this.nameOf(s),
       kWh: v,
       paint: paints[i],
-      out: s.key === 'charged' || s.key === 'exported',
+      out: isReturn(s),
     }));
     const before = this.comparing() ? drawn.before : undefined;
     const earlier =
@@ -1185,7 +1211,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
               drawn.grain === 'hour'
                 ? rangeWords(this.hass, before.range, this.now())
                 : this.slotWords(before, drawn.grain, index),
-            kWh: usedOf(before.energy[index]),
+            kWh: earlierRise[index] ?? 0,
           }
         : undefined;
     // the room the card gives it: the content's width and up to 16 of its padding each side
@@ -1280,7 +1306,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       name: this.nameOf(s),
       value: writeFigure(this.hass, s.total * 1000, totals),
       unit: totals.unit,
-      ...(s.key === 'charged' || s.key === 'exported' ? { square: 'out' as const } : {}),
+      ...(isReturn(s) ? { square: 'out' as const } : {}),
     }));
   }
 

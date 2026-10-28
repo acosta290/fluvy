@@ -1721,6 +1721,8 @@
     "water": "Eau",
     "gas": "Gaz",
     "overview": "Toute la maison",
+    "usage": "Utilisé par la maison",
+    "flows": "Flux mesurés",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1975,6 +1977,13 @@
     "editor_show_legend": "Afficher la légende",
     "editor_show_period": "Puces Jour · Semaine · Mois · Année",
     "editor_compare": "Afficher la période précédente derrière les colonnes",
+    "editor_mode": "Ce que montrent les colonnes",
+    "editor_mode_usage": "Ce que la maison a utilisé de chaque source",
+    "editor_mode_flows": "Ce que chaque compteur a mesuré : production, soutirage, décharge",
+    "editor_plot_height": "Hauteur du graphique (px)",
+    "flows_solar": "Production solaire",
+    "flows_battery": "Décharge batterie",
+    "flows_grid": "Soutirage réseau",
     "editor_color_helper": "Vide, la couleur propre à son énergie. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi"
   },
   "wall": {

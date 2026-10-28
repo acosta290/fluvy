@@ -7,6 +7,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The Energy usage card draws metered flows with `mode: flows`: the sun's whole production, the battery's discharge
+  and the grid's import above the line, as their meters measured them, and its head says the sum of the series it
+  draws, so a solar-only card says the sun's total. Thanks to @v1rusnl (#81).
+- `plot_height` sets the Energy usage card's chart height (48 to 480 px) in the full and compact layouts, its bars,
+  scale and axis with it. Thanks to @v1rusnl (#81).
 - The gauge card hides its Min / Max / Average row with `show_stats: false`, or shows the figures `stats` lists, in
   their order (`stats: [max, average]`); without the row the card is 60 px shorter. Thanks to @evertwoud (#83).
 

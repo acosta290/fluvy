@@ -1721,6 +1721,8 @@
     "water": "Water",
     "gas": "Gas",
     "overview": "Hele huis",
+    "usage": "Verbruikt door het huis",
+    "flows": "Gemeten stromen",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1975,6 +1977,13 @@
     "editor_show_legend": "Legenda tonen",
     "editor_show_period": "Chips Dag · Week · Maand · Jaar",
     "editor_compare": "De periode ervoor achter de kolommen tonen",
+    "editor_mode": "Wat de kolommen tonen",
+    "editor_mode_usage": "Wat het huis uit elke bron verbruikte",
+    "editor_mode_flows": "Wat elke meter heeft gemeten: opwek, afname, ontlading",
+    "editor_plot_height": "Grafiekhoogte (px)",
+    "flows_solar": "Zonne-opwek",
+    "flows_battery": "Batterijontlading",
+    "flows_grid": "Netafname",
     "editor_color_helper": "Leeg: de eigen kleur van zijn energie. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt"
   },
   "wall": {

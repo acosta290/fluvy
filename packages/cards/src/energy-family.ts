@@ -424,29 +424,52 @@ export function periodHeight(config: LovelaceCardConfig): number {
 
 /**
  * The sources an Energy dashboard meters, as the usage card's legend names them in English: what it draws where it
- * lists none, in its order.
+ * lists none, in its order; in its `flows` mode by what their meters measured.
  */
 const USAGE_WORDS: Readonly<Record<string, string>> = {
   solar: 'Solar',
   battery: 'Battery',
   grid: 'Grid',
 };
+const FLOWS_WORDS: Readonly<Record<string, string>> = {
+  solar: 'Solar production',
+  battery: 'Battery discharge',
+  grid: 'Grid import',
+};
+
+/** The usage chart's plot in each layout (its frame adds 12 of headroom over it and 8 under its floor). */
+const USAGE_PLOT = { full: 160, compact: 96, mini: 48 } as const;
+
+/**
+ * The usage chart's plot for a config: its layout's, or in the full and compact layouts the `plot_height` written (on
+ * the 4 grid, 48 to 480).
+ */
+export function usagePlot(config: LovelaceCardConfig): number {
+  const variant =
+    config['variant'] === 'compact' || config['variant'] === 'mini' ? config['variant'] : 'full';
+  const asked = Number(config['plot_height']);
+  return variant !== 'mini' && asked > 0
+    ? Math.min(480, Math.max(48, Math.round(asked / 4) * 4))
+    : USAGE_PLOT[variant];
+}
 
 /**
  * The Energy usage card at a 360 column: the head, the period's chips, the chart (its plot and 20 of room) and its
- * hours or dates, and the legend: the sources shown (a kind listed twice is its first) and what was charged and
- * exported, in the rows their names take, 12 between them — the card keeps that room whatever the house lacks of it,
- * and folding sources into "Other" (`max_sources`) never takes a row more. Compact is the head, a 96 plot and its
- * axis; mini the head and a 48 strip.
+ * hours or dates, and the legend: the sources shown (a kind listed twice is its first) as its mode names them and
+ * what was charged and exported, in the rows their names take, 12 between them — the card keeps that room whatever
+ * the house lacks of it, and folding sources into "Other" (`max_sources`) never takes a row more. Compact is the head,
+ * its plot and its axis; mini the head and a 48 strip.
  */
 export function usageHeight(config: LovelaceCardConfig): number {
-  if (config['variant'] === 'mini') return HEAD + 68;
-  if (config['variant'] === 'compact') return HEAD + 140;
+  const plot = usagePlot(config);
+  if (config['variant'] === 'mini') return HEAD + 20 + plot;
+  if (config['variant'] === 'compact') return HEAD + 44 + plot;
+  const words = config['mode'] === 'flows' ? FLOWS_WORDS : USAGE_WORDS;
   const names = new Map<unknown, string>();
-  const listed = listLength(config, ['sources']) ? config['sources'] : Object.keys(USAGE_WORDS);
+  const listed = listLength(config, ['sources']) ? config['sources'] : Object.keys(words);
   for (const item of listed as unknown[]) {
     const s = (typeof item === 'string' ? { type: item } : (item ?? {})) as Record<string, unknown>;
-    const word = USAGE_WORDS[s['type'] as string];
+    const word = words[s['type'] as string];
     if (word && s['show'] !== false && !names.has(s['type']))
       names.set(s['type'], String(s['name'] ?? word));
   }
@@ -456,7 +479,7 @@ export function usageHeight(config: LovelaceCardConfig): number {
     if (names.has('grid')) shown.push('Exported');
   }
   const rows = config['show_legend'] === false ? 0 : legendRows(shown);
-  return HEAD + periodChips(config) + 204 + (rows && 4 + rows * 52);
+  return HEAD + periodChips(config) + 44 + plot + (rows && 4 + rows * 52);
 }
 
 export type FamilyEntry = readonly [

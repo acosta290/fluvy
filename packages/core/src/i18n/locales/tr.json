@@ -1721,6 +1721,8 @@
     "water": "Su",
     "gas": "Gaz",
     "overview": "Tüm ev",
+    "usage": "Evin kullandığı",
+    "flows": "Ölçülen akışlar",
     "16:9": "16:9",
     "4:3": "4:3",
     "3:2": "3:2",
@@ -1975,6 +1977,13 @@
     "editor_show_legend": "Açıklamayı göster",
     "editor_show_period": "Gün · Hafta · Ay · Yıl çipleri",
     "editor_compare": "Önceki dönemi sütunların arkasında göster",
+    "editor_mode": "Sütunların gösterdiği",
+    "editor_mode_usage": "Evin her kaynaktan kullandığı",
+    "editor_mode_flows": "Her sayacın ölçtüğü: üretim, alım, deşarj",
+    "editor_plot_height": "Grafik yüksekliği (px)",
+    "flows_solar": "Güneş üretimi",
+    "flows_battery": "Batarya deşarjı",
+    "flows_grid": "Şebekeden alım",
     "editor_color_helper": "Boşsa, enerjisinin kendi rengi. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır"
   },
   "wall": {

@@ -313,6 +313,63 @@ describe('the Energy usage card', () => {
     expect(await months(152, 10)).toEqual(['J', 'D']);
   });
 
+  it('flows: each meter above the line, named by what it measured; the head says what is drawn', async () => {
+    const card = await mount({ mode: 'flows' });
+    expect(legend(card).map((item) => item.name)).toEqual([
+      'Solar production',
+      'Battery discharge',
+      'Grid import',
+      'Charged',
+      'Exported',
+    ]);
+    // the meters' own: 1.2 + 2.0 of sun, 0.7 discharged, 0.5 + 0.4 imported
+    expect(badge(card)).toBe('4.8 kWh');
+    expect(root(card).querySelector('.eu-chart')?.getAttribute('aria-label')).toBe(
+      'Energy usage: 4.8 kWh',
+    );
+    // a source's own name still wins
+    const named = await mount({ mode: 'flows', sources: [{ type: 'solar', name: 'Roof' }] });
+    expect(legend(named).map((item) => item.name)).toEqual(['Roof']);
+  });
+
+  it('the head says the sum of the series drawn above the line, a card of the sun alone its own', async () => {
+    const sum = async (config: Record<string, unknown>): Promise<string> => {
+      const card = await mount(config);
+      const drawn = legend(card).filter((item) => !item.out).length;
+      const totals = [...root(card).querySelectorAll('.en-legend__item')]
+        .slice(0, drawn)
+        .map((item) => parseFloat(item.querySelector('.en-legend__value')?.textContent ?? ''));
+      expect(badge(card)).toBe(`${totals.reduce((a, b) => a + b, 0).toFixed(1)} kWh`);
+      return badge(card);
+    };
+    // the sun's production, all of it; in usage what the house took of it
+    expect(await sum({ mode: 'flows', sources: ['solar'] })).toBe('3.2 kWh');
+    expect(await sum({ sources: ['solar'] })).toBe('1.8 kWh');
+    // every source shown: what the house used, as before
+    expect(await sum({})).toBe('3.4 kWh');
+    // folded into "Other", still counted
+    expect(await sum({ mode: 'flows', max_sources: 2 })).toBe('4.8 kWh');
+  });
+
+  it('draws its plot at plot_height, and declares it; the mini strip keeps its own', async () => {
+    const svgHeight = (card: Card): number =>
+      Number(root(card).querySelector('.eu-chart > svg')?.getAttribute('height'));
+    expect(svgHeight(await mount({}))).toBe(180);
+    expect(svgHeight(await mount({ plot_height: 240 }))).toBe(260);
+    expect(svgHeight(await mount({ variant: 'compact', plot_height: 200 }))).toBe(220);
+    expect(svgHeight(await mount({ variant: 'mini', plot_height: 200 }))).toBe(68);
+    expect(usageHeight({ type: '', plot_height: 240 })).toBe(usageHeight({ type: '' }) + 80);
+    expect(usageHeight({ type: '', variant: 'mini', plot_height: 240 })).toBe(
+      usageHeight({ type: '', variant: 'mini' }),
+    );
+    // the legend keeps its room under a taller plot
+    const tall = await mount({ plot_height: 240 });
+    const room = root(tall).querySelector<HTMLElement>('.eu-legend')?.style.minHeight;
+    expect(room).toBe(
+      root(await mount({})).querySelector<HTMLElement>('.eu-legend')?.style.minHeight,
+    );
+  });
+
   it('asks for the unit and the decimals the card asks for', async () => {
     const card = await mount({ unit: 'Wh', decimals: 0 });
     expect(badge(card)).toBe('3,400 Wh');
@@ -401,6 +458,9 @@ describe('its height and its stub', () => {
       { variant: 'compact' },
       { variant: 'mini' },
       { show_legend: false },
+      { mode: 'flows' },
+      { plot_height: 240 },
+      { variant: 'compact', plot_height: 120 },
     ];
     for (const config of configs)
       expect(FluvyEnergyUsageCard.layoutHeight({ type: '', ...config })).toBe(
@@ -408,5 +468,39 @@ describe('its height and its stub', () => {
       );
     const card = await mount(FluvyEnergyUsageCard.getStubConfig() as Record<string, unknown>);
     expect(root(card).querySelector('.eu-chart')).not.toBeNull();
+  });
+
+  it('offers the mode with what each draws under it, and the plot’s height where there is a scale', () => {
+    const form = FluvyEnergyUsageCard.getConfigForm();
+    const flat = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+      schema.flatMap((item) => (item.schema ? flat(item.schema) : [item]));
+    const fields = flat(form.schema);
+    const mode = fields.find((field) => field.name === 'mode');
+    expect(
+      (mode?.selector?.['select'] as { options: { value: string; label: string }[] }).options,
+    ).toEqual([
+      { value: 'usage', label: 'Used by the house' },
+      { value: 'flows', label: 'Metered flows' },
+    ]);
+    const helper = form.computeHelper as (
+      schema: HaFormSchemaItem,
+      localize: (key: string) => string,
+      data?: Record<string, unknown>,
+    ) => string | undefined;
+    expect(helper(mode as HaFormSchemaItem, (key) => key, {})).toBe(
+      'Used by the house from each source',
+    );
+    expect(helper(mode as HaFormSchemaItem, (key) => key, { mode: 'flows' })).toBe(
+      'What each meter measured: production, import, discharge',
+    );
+    const plot = fields.find((field) => field.name === 'plot_height');
+    expect(plot?.when?.({ variant: 'compact' })).toBe(true);
+    expect(plot?.when?.({ variant: 'mini' })).toBe(false);
+    expect(
+      FluvyEnergyUsageCard.defaults?.({ type: '', variant: 'compact' }, undefined),
+    ).toMatchObject({
+      mode: 'usage',
+      plot_height: 96,
+    });
   });
 });
