@@ -2314,7 +2314,8 @@ signed range lit from zero (D), the house's tile (F); no vertical form ("too muc
 - **The line.** Full: what the player plays, else its source, else the room ("Bluetooth"; muted, "· muted" after it);
   a number's room; a fan's room. Compact and tile: the same with the figure after it ("Bluetooth · 30 %", "Living room
   · −1.0 °C", "Muted · 30 %", "Off · 65 %" for a number whose switch is off, "Off" for a fan that is off); where it
-  does not hold whole, the figure alone ("45 %" in half a phone's section).
+  does not hold whole, the figure alone ("45 %" in half a phone's section; "−1.0 °C" on a tile of 156 or 172): the
+  words before it give way, never the figure.
 - **States.** Muted: the level stays, the ruler, the circle and the figure go neutral (the figure in the secondary
   ink), the knob stays up. A number whose switch is off: the same, its knob up. A fan or a player that is off: the
   word for off where the figure stands, the ruler asleep (a fan's wakes under a drag, a player's does not; its stepper
@@ -2327,8 +2328,10 @@ signed range lit from zero (D), the house's tile (F); no vertical form ("too muc
 - **The tile** (`variant: tile`) is the house's large tile (the card is built on the tile card): the circle and the
   control, the name, the line, the ruler at its foot (knob 28). The tile card and the tiles group learn the same ruler
   for a player's volume and a number's value: awake while the player is on (a number always), neutral while muted, a
-  number's figure on its line after its room and never also in its head. A lit tile's rounds stand on it as plain
-  discs (`--fluvy-inset`), as a lit card's stepper does; the circle at rest and the knob's halo are the house's tile's.
+  number's figure on its line after its room — alone where both do not hold (`keepsFigure`), the room giving way —
+  and never also in its head; a player's line keeps its state ("Playing"), as a light's, its volume giving way. A lit
+  tile's rounds stand on it as plain discs (`--fluvy-inset`), as a lit card's stepper does; the circle at rest and the
+  knob's halo are the house's tile's.
 - **Editor** with `when`: the − and + with the full card, the circle's option off the tile, `toggle_entity` while the
   control may be a switch, `min` and `max` off a fan (it stops at its speeds); helpers under the control and the other
   entity's switch. Its words are its own part (`slider.json`); `mute` and `switch` are option words of core's, as

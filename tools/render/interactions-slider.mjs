@@ -5,7 +5,8 @@
  * where `live_update` asks; the keyboard walks a number's steps (`number.set_value`), a burst of taps on the stepper is
  * one call (`input_number.set_value`); the mute round mutes at once (`media_player.volume_mute`); the head's switch
  * flips another entity (`toggle_entity`); the tile card and a tile of the card set a player's volume and a number on
- * their foot's ruler; out of reach nothing answers; the heights are the light card's at a 360 column.
+ * their foot's ruler, and in half a section (156, 172) a number's tile says its figure, its room giving way, in en, de
+ * and ja; out of reach nothing answers; the heights are the light card's at a 360 column.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-slider.mjs
  */
@@ -230,6 +231,32 @@ const height = (of) => of.evaluate((el) => Math.round(el.getBoundingClientRect()
     `${before} → ${JSON.stringify(sent)}`,
   );
   await settle(page, 600);
+}
+
+/* ---------- half a section (156, 172): a number's large tile keeps its figure, its room gives way ---------- */
+{
+  const FIGURE = { en: '−1.0 °C', de: '−1,0 °C', ja: '−1.0 °C' };
+  /** The state lines of a frame's card (its `n`th, by its tag), its tiles' in order. */
+  const lines = (at, title, n, tag) =>
+    frame(at, title)
+      .locator(tag)
+      .nth(n)
+      .evaluate((el) =>
+        [...el.shadowRoot.querySelectorAll('.fv-tile__state')].map((p) => p.textContent.trim()),
+      );
+  for (const lang of ['en', 'de', 'ja'])
+    for (const width of [328, 360]) {
+      const at = await suite.sheet('slider-card', { width, lang });
+      const [tile] = await lines(at, 'Tile card · volume and number', 1, 'fluvy-tile-card');
+      const [own] = await lines(at, 'Offset · tiles', 0, 'fluvy-slider-card');
+      const [, pump] = await lines(at, 'Tiles group · volume and number', 0, 'fluvy-tiles-card');
+      check(
+        `${lang}, tiles of ${(width - 16) / 2}: the tile card’s number and the Slider’s say ${FIGURE[lang]}, the group’s ends in its figure`,
+        tile === FIGURE[lang] && own === FIGURE[lang] && /(^| · )65 %$/.test(pump ?? ''),
+        `${tile} | ${own} | ${pump}`,
+      );
+      await at.close();
+    }
 }
 
 /* ---------- out of reach: nothing answers ---------- */

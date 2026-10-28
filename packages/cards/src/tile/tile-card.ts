@@ -34,7 +34,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { DIMMABLE, lightLook, litColour, withMembers } from '../shared/light.js';
-import { fitLine, TextRuler } from '../shared/fit.js';
+import { fitLine, TextRuler, type Segment } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { changedAt, sinceIds } from '../shared/since.js';
@@ -343,8 +343,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * The line under the name. State is said once: when the head already shows the reading (a sensor
    * on a large tile), this line carries context — the room, or when it last moved — never the same
    * figure again. A small tile has no head figure, so there the reading IS the line. A large tile's number is set on
-   * its ruler, and its line says the room and the figure ("Living room · −1.0 °C"). `on`: the entity is on (what its
-   * switch says, whatever the tile's fill does).
+   * its ruler, and its line says the room and the figure ("Living room · −1.0 °C"; the figure alone where both do not
+   * hold, `keepsFigure`). `on`: the entity is on (what its switch says, whatever the tile's fill does).
    */
   protected tileLine(
     item: TileItem,
@@ -371,6 +371,15 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return on && level && level.value > 0 && this.showsLevel() ? `${text} · ${level.text}` : text;
   }
 
+  /**
+   * Whether a large tile's line keeps its ruler's figure where the whole line does not hold, the words before it giving
+   * way ("Living room · −1.0 °C", else "−1.0 °C"): a number's, whose figure is its state. A lit light's level and a
+   * playing player's volume are the ones to go, their state ("On", "Playing") being what their line says first.
+   */
+  protected keepsFigure(view: EntityView): boolean {
+    return NUMBERS.has(view.domain);
+  }
+
   /** Widths laid out by the browser in the tile's own classes (a mini's 12 px, a compact's 13), never guessed. */
   private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
 
@@ -391,7 +400,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * sits beside the circle (a large tile's off skin, a compact one 128 or wider, an inner one 136 or wider), the circle
    * and its gap. `under`: the line sits under the head (a live large tile: "On · 70 %" over its ruler) and has the
    * whole width. `words`: the line is the person's own (a template card's): what is left of it once its last parts
-   * are gone ends in an ellipsis, as a name does, rather than going.
+   * are gone ends in an ellipsis, as a name does, rather than going. `figure`: the figure the line ends in and keeps
+   * (`keepsFigure`): where the whole line does not hold, the words before it go and the figure stays, alone.
    */
   private fitState(
     line: string,
@@ -400,6 +410,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     inside = false,
     under = false,
     words = false,
+    figure?: string,
   ): string {
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
@@ -411,11 +422,12 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const room = width - 2 * sides - beside;
     const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
     const measure = (text: string): number => this.ruler.width(cls, text);
-    const fitted = fitLine(
-      line.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
-      room,
-      measure,
-    );
+    // a line that ends in the figure it keeps loses the words before it, whole, and never the figure
+    const keeps = figure !== undefined && line.endsWith(` · ${figure}`);
+    const segments: Segment[] = keeps
+      ? [{ text: line.slice(0, -` · ${figure}`.length), optional: true }, { text: figure }]
+      : line.split(' · ').map((text, index) => ({ text, optional: index > 0 }));
+    const fitted = fitLine(segments, room, measure);
     if (fitted && (words || measure(fitted) <= room)) return fitted;
     return dash ? '—' : '';
   }
@@ -708,6 +720,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const tapAction = item.tap_action ?? MORE_INFO;
     const tapNow = actionRuns(tapAction, view.id) ? () => this.tap(view.id, tapAction) : undefined;
     const line = this.tileLine(item, view, lit, level, valueInHead);
+    // a number's line (the Slider's tile's) gives way from its words, never its figure: where it does not hold whole,
+    // the figure alone
+    const figure = level && !words && this.keepsFigure(view) ? level.text : undefined;
     return html`<article
       class=${`${classes}${foot === nothing ? ' fv-tile--footless' : this.nameFits(name) ? '' : ' fv-tile--tight'}`}
       data-card
@@ -717,7 +732,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       <div class="fv-tile__head">${lead}${trailing}</div>
       <h3 class="fv-tile__name">${name}</h3>
       <p class="fv-tile__state" data-name=${words ? '' : nothing}>
-        ${this.fitState(line, size, !usable, inside, true, words)}
+        ${this.fitState(line, size, !usable, inside, true, words, figure)}
       </p>
       ${foot} ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
     </article>`;

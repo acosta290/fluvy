@@ -478,6 +478,11 @@ export class FluvySliderCard extends FluvyTileCard {
     return this.line(view, stance, level?.text ?? '');
   }
 
+  /** Its tile's line keeps its figure as its compact card's does: where "Muted · 30 %" does not hold, "30 %". */
+  protected override keepsFigure(): boolean {
+    return true;
+  }
+
   /* ---------- the full card and the compact one: the light card's anatomy ---------- */
 
   protected override renderCard(): TemplateResult {

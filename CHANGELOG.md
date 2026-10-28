@@ -27,7 +27,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - A large tile of a media player sets its volume on the ruler at its foot, and one of a `number` or an `input_number`
   its value, where both showed only their state; a tile of a playing player says its volume on its line as a lit
   light says its level ("Playing · 30 %"), a number's large tile its room and its figure ("Living room · −1.0 °C"),
-  where its figure stood in its head (#77).
+  or its figure alone where both do not hold (two tiles a row on a phone or a desktop: "−1.0 °C"), where its figure
+  stood in its head (#77).
 
 ### Added
 

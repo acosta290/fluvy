@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
+import { stateLineWidths } from '../shared/fixtures/widths.js';
 import { sliderHeight } from '../slider-family.js';
 import { FluvySliderCard } from './slider-card.js';
 
@@ -82,11 +83,16 @@ type CardElement = HTMLElement & {
   updateComplete: Promise<boolean>;
 };
 
-/** The card drawn for `config` in `hass`: its shadow root. */
-async function draw(config: Record<string, unknown>, hass: HomeAssistant): Promise<ShadowRoot> {
+/** The card drawn for `config` in `hass`, `width` wide where it is given: its shadow root. */
+async function draw(
+  config: Record<string, unknown>,
+  hass: HomeAssistant,
+  width?: number,
+): Promise<ShadowRoot> {
   const card = document.createElement('fluvy-slider-card') as CardElement;
   card.setConfig({ type: 'custom:fluvy-slider-card', ...config });
   card.hass = hass;
+  if (width !== undefined) (card as unknown as { width: number }).width = width;
   document.body.append(card);
   await card.updateComplete;
   return card.shadowRoot!;
@@ -209,6 +215,67 @@ describe('the Slider card (#77)', () => {
     expect(root.querySelector('.fv-tile')).not.toBeNull();
     expect(text(root, '.fv-tile__state')).toBe('−1.0 °C');
     expect(root.querySelectorAll('.fv-tile fluvy-ruler').length).toBe(1);
+  });
+
+  describe('as a tile, its line keeps its figure: the room or what plays gives way where both do not hold', () => {
+    // rooms a 172 tile's line cannot hold beside the figure (by the widths' model), and the figure each language writes
+    const ROOM = { en: 'Living room', de: 'Arbeitszimmer', ja: 'リビングルーム' } as const;
+    const FIGURE = { en: '−1.0 °C', de: '−1,0 °C', ja: '−1.0 °C' } as const;
+    const KITCHEN: Seed = [
+      'media_player.kitchen',
+      'playing',
+      {
+        friendly_name: 'Kitchen',
+        supported_features: 4 | 8,
+        volume_level: 0.45,
+        media_title: 'Get Lucky',
+      },
+    ];
+    const speaking = (language: keyof typeof ROOM): HomeAssistant =>
+      ({
+        ...house([...EVERYTHING, KITCHEN]).hass,
+        language,
+        locale: { language, number_format: 'language', time_format: '24' },
+        entities: { 'number.offset': { entity_id: 'number.offset', area_id: 'room' } },
+        areas: { room: { area_id: 'room', name: ROOM[language] } },
+      }) as unknown as HomeAssistant;
+
+    let restore: () => void;
+    beforeAll(() => {
+      restore = stateLineWidths();
+    });
+    afterAll(() => restore());
+
+    describe.each(['en', 'de', 'ja'] as const)('in %s', (language) => {
+      it.each([156, 172])('a number’s tile of %i px says its figure alone', async (width) => {
+        const tile = { entity: 'number.offset', variant: 'tile' };
+        const root = await draw(tile, speaking(language), width);
+        expect(text(root, '.fv-tile__state')).toBe(FIGURE[language]);
+      });
+
+      it('a number’s tile of 360 px holds its room and its figure', async () => {
+        const root = await draw(
+          { entity: 'number.offset', variant: 'tile' },
+          speaking(language),
+          360,
+        );
+        expect(text(root, '.fv-tile__state')).toBe(`${ROOM[language]} · ${FIGURE[language]}`);
+      });
+    });
+
+    it('a player: what plays where it holds, else the volume alone', async () => {
+      const tile = { entity: 'media_player.kitchen', variant: 'tile' };
+      expect(text(await draw(tile, speaking('en'), 172), '.fv-tile__state')).toBe(
+        'Get Lucky · 45 %',
+      );
+      const long: Seed = [
+        KITCHEN[0],
+        KITCHEN[1],
+        { ...KITCHEN[2], media_title: 'Get Lucky (Radio Edit)' },
+      ];
+      const hass = { ...speaking('en'), states: house([long]).hass.states } as HomeAssistant;
+      expect(text(await draw(tile, hass, 172), '.fv-tile__state')).toBe('45 %');
+    });
   });
 
   describe('its editor offers what acts', () => {
