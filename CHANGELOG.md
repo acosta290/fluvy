@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.1] — 2026-10-28
+
 ### Visible on upgrade
 
 - A room's page on the automatic dashboards shows everything its card counts, by the card's own rule: besides its
