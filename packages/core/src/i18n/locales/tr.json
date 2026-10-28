@@ -910,7 +910,8 @@
     "voltage": "Gerilim",
     "max_entity": "Bir varlıktan maksimum",
     "label": "Halkanın içindeki etiket",
-    "badge": "Rozet metni"
+    "badge": "Rozet metni",
+    "stats": "Gösterilen değerler"
   },
   "heading": {},
   "hello": {

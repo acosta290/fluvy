@@ -286,6 +286,42 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the window's row as the card asks it (#83): none under the ring and the bar, two of its figures in their order
+    {
+      title: 'Gauge · the row’s figures',
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.so_solar_power',
+          icon: 'sun',
+          subtitle: 'No row',
+          max_entity: 'sensor.so_solar_capacity',
+          show_stats: false,
+        },
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.so_solar_power',
+          icon: 'sun',
+          subtitle: 'Max, then average',
+          max_entity: 'sensor.so_solar_capacity',
+          stats: ['max', 'average'],
+        },
+      ],
+    },
+    {
+      title: 'Gauge · bar, no row',
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.so_solar_power',
+          icon: 'sun',
+          variant: 'bar',
+          subtitle: 'South roof · 5.4 kWp',
+          max_entity: 'sensor.so_solar_capacity',
+          show_stats: false,
+        },
+      ],
+    },
     {
       title: 'Total capacity',
       cards: [

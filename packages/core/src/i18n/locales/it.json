@@ -910,7 +910,8 @@
     "voltage": "Tensione",
     "max_entity": "Massimo da un’entità",
     "label": "Etichetta nell’anello",
-    "badge": "Testo del badge"
+    "badge": "Testo del badge",
+    "stats": "Valori mostrati"
   },
   "heading": {},
   "hello": {

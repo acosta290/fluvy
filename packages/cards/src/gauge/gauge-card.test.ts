@@ -3,9 +3,11 @@ import { ensureLanguage, type HaFormSchemaItem, type HomeAssistant } from '@fluv
 import { describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { TextRuler } from '../shared/fit.js';
+import { visibleFields } from '../shared/form.js';
 import {
   FluvyGaugeCard,
   GAUGE_VARIANTS,
+  statsOf,
   widestFigure,
   type GaugeCardConfig,
   type GaugeVariant,
@@ -295,5 +297,48 @@ describe('the window’s row and the signed ring, laid out by what the card can 
     expect(widestFigure(hass, undefined, 4, false)).toBe('8,888');
     expect(widestFigure(hass, 1, 3, true)).toBe('−888.8');
     expect(widestFigure(hass, 0, 2, false)).toBe('88');
+  });
+});
+
+describe('the window’s row as the card asks it (issue #83)', () => {
+  const labels = (card: CardElement): string[] =>
+    [...card.shadowRoot!.querySelectorAll('.so-cols .fv-readout__label')].map(
+      (label) => label.textContent?.trim() ?? '',
+    );
+
+  it('lists the figures asked, in their order, each once; none where the row is off or the list is empty', () => {
+    expect(statsOf({ type: '' })).toEqual(['min', 'max', 'average']);
+    expect(statsOf({ type: '', stats: ['average', 'max', 'average'] })).toEqual(['average', 'max']);
+    expect(statsOf({ type: '', stats: ['median' as never, 'min'] })).toEqual(['min']);
+    expect(statsOf({ type: '', stats: [] })).toEqual([]);
+    expect(statsOf({ type: '', show_stats: false, stats: ['max'] })).toEqual([]);
+  });
+
+  it('draws the figures asked, in their order, and no row at all where none is', async () => {
+    for (const variant of GAUGE_VARIANTS) {
+      expect(labels(await mount({ variant, stats: ['max', 'average'] }, house()))).toEqual([
+        'Max',
+        'Average',
+      ]);
+      const bare = await mount({ variant, show_stats: false }, house());
+      expect(bare.shadowRoot!.querySelector('.so-cols')).toBeNull();
+    }
+  });
+
+  it('declares the row’s 60 less where it draws none, and its height with any figures it draws', () => {
+    for (const variant of GAUGE_VARIANTS) {
+      const full = FluvyGaugeCard.layoutHeight({ type: '', variant });
+      expect(FluvyGaugeCard.layoutHeight({ type: '', variant, show_stats: false })).toBe(full - 60);
+      expect(FluvyGaugeCard.layoutHeight({ type: '', variant, stats: [] })).toBe(full - 60);
+      expect(FluvyGaugeCard.layoutHeight({ type: '', variant, stats: ['max'] })).toBe(full);
+    }
+  });
+
+  it('offers the figures while the row is shown', () => {
+    const offers = (data: Record<string, unknown>) =>
+      JSON.stringify(visibleFields(gaugeEditor.getConfigForm().schema, data)).includes('"stats"');
+    expect(offers({ entity: 'sensor.grid' })).toBe(true);
+    expect(offers({ entity: 'sensor.grid', show_stats: false })).toBe(false);
+    expect(gaugeEditor.keys).toEqual(expect.arrayContaining(['show_stats', 'stats']));
   });
 });

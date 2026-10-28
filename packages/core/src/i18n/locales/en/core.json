@@ -616,7 +616,8 @@
     "voltage": "Voltage",
     "max_entity": "Maximum from an entity",
     "label": "Label inside the ring",
-    "badge": "Badge text"
+    "badge": "Badge text",
+    "stats": "Figures shown"
   },
   "heading": {},
   "hello": {

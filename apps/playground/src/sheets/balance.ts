@@ -376,6 +376,35 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the signed ring with its row's average alone (#83)
+    {
+      title: 'Gauge · signed, the average alone',
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.bl_grid_net',
+          variant: 'signed',
+          icon: 'tower',
+          label: 'Net',
+          max: 5,
+          stats: ['average'],
+        },
+      ],
+    },
+    {
+      title: 'Gauge · signed, no row',
+      cards: [
+        {
+          type: 'custom:fluvy-gauge-card',
+          entity: 'sensor.bl_grid_net',
+          variant: 'signed',
+          icon: 'tower',
+          label: 'Net',
+          max: 5,
+          show_stats: false,
+        },
+      ],
+    },
     {
       title: 'Gauge · signed, importing, its scale from the day',
       cards: [

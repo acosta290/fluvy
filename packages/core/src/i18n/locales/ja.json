@@ -616,7 +616,8 @@
     "voltage": "電圧",
     "max_entity": "最大値のエンティティ",
     "label": "リング内のラベル",
-    "badge": "バッジのテキスト"
+    "badge": "バッジのテキスト",
+    "stats": "表示する値"
   },
   "heading": {},
   "hello": {

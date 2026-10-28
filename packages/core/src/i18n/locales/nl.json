@@ -910,7 +910,8 @@
     "voltage": "Spanning",
     "max_entity": "Maximum uit een entiteit",
     "label": "Label in de ring",
-    "badge": "Badgetekst"
+    "badge": "Badgetekst",
+    "stats": "Getoonde waarden"
   },
   "heading": {},
   "hello": {

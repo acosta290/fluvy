@@ -910,7 +910,8 @@
     "voltage": "Spannung",
     "max_entity": "Maximum aus einer Entität",
     "label": "Beschriftung im Ring",
-    "badge": "Badge-Text"
+    "badge": "Badge-Text",
+    "stats": "Angezeigte Werte"
   },
   "heading": {},
   "hello": {

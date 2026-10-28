@@ -910,7 +910,8 @@
     "voltage": "Tensión",
     "max_entity": "Máximo desde una entidad",
     "label": "Texto dentro del anillo",
-    "badge": "Texto de la insignia"
+    "badge": "Texto de la insignia",
+    "stats": "Valores mostrados"
   },
   "heading": {},
   "hello": {

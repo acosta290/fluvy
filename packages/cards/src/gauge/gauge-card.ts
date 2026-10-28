@@ -64,6 +64,10 @@ const ways = words('energy-flow');
 export type GaugeVariant = 'ring' | 'bar' | 'signed';
 export const GAUGE_VARIANTS: readonly GaugeVariant[] = ['ring', 'bar', 'signed'];
 
+/** A figure of the window's row. */
+export type GaugeStat = 'min' | 'max' | 'average';
+export const GAUGE_STATS: readonly GaugeStat[] = ['min', 'max', 'average'];
+
 export interface GaugeCardConfig extends FluvyCardConfig, NumberKeys {
   subtitle?: string;
   /**
@@ -82,6 +86,10 @@ export interface GaugeCardConfig extends FluvyCardConfig, NumberKeys {
   label?: string;
   /** Window the Min / Max / Average row summarises. */
   hours?: number;
+  /** The Min / Max / Average row under the gauge (default true). */
+  show_stats?: boolean;
+  /** The row's figures, in their order (default all three); none listed: no row. */
+  stats?: readonly GaugeStat[];
   /** Head badge. Defaults to "Producing" / "Idle", read from the value. */
   badge?: string;
   /**
@@ -158,6 +166,19 @@ const windowRow = (
 
 const XS = 'fv-readout fv-readout--xs > fv-readout__value';
 
+/** The row's figures a config asks for, in its order, each once: none where `show_stats` is false. */
+export const statsOf = (config: Readonly<GaugeCardConfig> | undefined): GaugeStat[] =>
+  config?.show_stats === false
+    ? []
+    : Array.isArray(config?.stats)
+      ? config.stats.filter((stat, i, all) => GAUGE_STATS.includes(stat) && all.indexOf(stat) === i)
+      : [...GAUGE_STATS];
+
+const STAT_WORD = { min: 'common.min', max: 'common.max', average: 'common.average' } as const;
+
+/** The window's row under the gauge at a 360 column, as measured: one line of readouts and the room above it. */
+const STATS_ROW = 60;
+
 /** The widest of the readings a card can write, as a readout of the row draws it. */
 const widestOf = (ruler: TextRuler, readings: readonly Reading[]): Reading =>
   readings.reduce((wide, one) =>
@@ -198,7 +219,8 @@ const PRODUCES = new Set(['power', 'energy', 'current']);
 export class FluvyGaugeCard extends Card<GaugeCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: GaugeCardConfig): number {
-    return config.variant === 'bar' ? 256 : config.variant === 'signed' ? 372 : 384;
+    const height = config.variant === 'bar' ? 256 : config.variant === 'signed' ? 372 : 384;
+    return statsOf(config).length ? height : height - STATS_ROW;
   }
 
   static override styles: CSSResultGroup = [
@@ -484,17 +506,14 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     // the dial's height, down to its range's labels: the room a style's ring keeps
     const tall = dialLabelTop(radius, TICK) + 16;
 
-    const stats = (
-      [
-        ['common.min', series?.min],
-        ['common.max', series?.max],
-        ['common.average', series?.average],
-      ] as const
-    ).map(([label, raw]) => ({
-      label: this.t(label),
-      value: raw === undefined ? '—' : shown(raw * base.value),
-      unit: raw === undefined ? '' : scale.unit,
-    }));
+    const stats = statsOf(this.config).map((stat) => {
+      const raw = series?.[stat];
+      return {
+        label: this.t(STAT_WORD[stat]),
+        value: raw === undefined ? '—' : shown(raw * base.value),
+        unit: raw === undefined ? '' : scale.unit,
+      };
+    });
     // a range below zero, or a temperature, writes its minus
     const minus = (this.config?.min ?? 0) < 0 || COLD.test(this.unitOf(view).trim());
     const row = windowRow(
@@ -596,13 +615,17 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
                 ></fluvy-dial>
               </div>`
       }
-      <div
-        class="so-cols fv-cols so-cols--center ${row.odd ? 'fv-cols--odd' : ''}"
-        style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
-        data-align="center"
-      >
-        ${stats.map((stat) => readout({ ...stat, size: row.size }))}
-      </div>
+      ${
+        stats.length
+          ? html`<div
+              class="so-cols fv-cols so-cols--center ${row.odd ? 'fv-cols--odd' : ''}"
+              style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
+              data-align="center"
+            >
+              ${stats.map((stat) => readout({ ...stat, size: row.size }))}
+            </div>`
+          : nothing
+      }
     </article>`;
   }
 
@@ -772,16 +795,13 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
           'en-gauge__unit',
           reading.unit ?? '',
         ) <= valueRoom(g, size);
-      const stats = (
-        [
-          ['common.min', series?.min],
-          ['common.max', series?.max],
-          ['common.average', series?.average],
-        ] as const
-      ).map(([name, raw]) => ({
-        label: this.t(name),
-        ...said(raw === undefined ? null : raw * base.value, ways),
-      }));
+      const stats = statsOf(this.config).map((stat) => {
+        const raw = series?.[stat];
+        return {
+          label: this.t(STAT_WORD[stat]),
+          ...said(raw === undefined ? null : raw * base.value, ways),
+        };
+      });
       // the words hold while the widest figure fits its ring, the two ends their line and a statistic the column
       const holds =
         fits(widest, 'm') &&
@@ -865,13 +885,17 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
           >${right}</span
         >
       </div>
-      <div
-        class="so-cols fv-cols so-cols--center ${row.odd ? 'fv-cols--odd' : ''}"
-        style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
-        data-align="center"
-      >
-        ${stats.map((stat) => readout({ ...stat, size: row.size }))}
-      </div>
+      ${
+        stats.length
+          ? html`<div
+              class="so-cols fv-cols so-cols--center ${row.odd ? 'fv-cols--odd' : ''}"
+              style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
+              data-align="center"
+            >
+              ${stats.map((stat) => readout({ ...stat, size: row.size }))}
+            </div>`
+          : nothing
+      }
     </article>`;
   }
 }

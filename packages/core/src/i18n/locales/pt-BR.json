@@ -910,7 +910,8 @@
     "voltage": "Tensão",
     "max_entity": "Máximo de uma entidade",
     "label": "Rótulo dentro do anel",
-    "badge": "Texto do selo"
+    "badge": "Texto do selo",
+    "stats": "Valores exibidos"
   },
   "heading": {},
   "hello": {

@@ -13,6 +13,7 @@ import {
   boolField,
   colourFields,
   editorLabels,
+  editorWord,
   entityField,
   fieldRow,
   hasLadder,
@@ -22,6 +23,7 @@ import {
   numberFields,
   onlyWhen,
   optionChoices,
+  orderedField,
   selectField,
   showIconField,
   textField,
@@ -30,7 +32,7 @@ import {
 import { configKeys } from '../shared/config.js';
 import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
 import { toBase } from '../shared/units.js';
-import { dialOf, GAUGE_VARIANTS, type GaugeCardConfig } from './gauge-card.js';
+import { dialOf, GAUGE_STATS, GAUGE_VARIANTS, type GaugeCardConfig } from './gauge-card.js';
 
 /** The gauge card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -46,6 +48,8 @@ export const keys = configKeys<GaugeCardConfig>()([
   'max_entity',
   'label',
   'hours',
+  'show_stats',
+  'stats',
   'badge',
   'unit',
   'decimals',
@@ -81,6 +85,8 @@ export const defaults: EditorDefaults = (config, hass) => ({
   variant: 'ring',
   gauge: drawn(config, hass)?.preset ?? dialOf(config),
   animate: chartDefaults().settings.animate,
+  show_stats: true,
+  stats: [...GAUGE_STATS],
   ...NUMBER_DEFAULTS,
 });
 
@@ -115,10 +121,22 @@ export function getConfigForm(): LovelaceConfigForm {
         selector: { entity: { domain: ['sensor', 'number', 'input_number'] } },
       },
       fieldRow(textField('label'), textField('badge')),
-      numberField('hours', 1, 168),
+      fieldRow(boolField('show_stats'), numberField('hours', 1, 168)),
+      // the row's figures in their order, while it is shown
+      onlyWhen(
+        (data) => data['show_stats'] !== false,
+        orderedField(
+          'stats',
+          GAUGE_STATS.map((stat) => ({ value: stat, label: editorWord(`common.${stat}`) })),
+        ),
+      ),
       numberFields({ when: hasLadder }),
       actionFields(),
     ],
-    ...editorLabels(strings, { max_entity: 'max_entity', label: 'label', badge: 'badge' }, {}),
+    ...editorLabels(
+      strings,
+      { max_entity: 'max_entity', label: 'label', badge: 'badge', stats: 'stats' },
+      { show_stats: 'sensor.editor.show_stats' },
+    ),
   };
 }

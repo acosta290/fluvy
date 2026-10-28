@@ -5,6 +5,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The gauge card hides its Min / Max / Average row with `show_stats: false`, or shows the figures `stats` lists, in
+  their order (`stats: [max, average]`); without the row the card is 60 px shorter. Thanks to @evertwoud (#83).
+
 ## [1.11.2] — 2026-10-28
 
 ### Fixed
