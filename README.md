@@ -66,6 +66,21 @@ own. Changes apply live on every device, no reload.
   <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-en.webp" width="274" alt="The dashboard on a phone in English"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;mode=dark&amp;lang=pt-PT"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-pt-PT.webp" width="274" alt="The same dashboard in European Portuguese, dark"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;lang=ja"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-ja.webp" width="274" alt="The same dashboard in Japanese"></a>
 </p>
 
+## Gauges that move
+
+A gauge can be a small scene that moves with what it reads: humidity as water, a temperature as the sky over the
+ground from snow to the desert, wind as streaks of air, a battery bubbling as it charges, power as a pulse, the sun
+turning faster the more it gives. Motion turns off in the Charts tab or on a card, and every gauge rests on its first
+frame where less motion is asked for.
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-liquid.gif" width="274" alt="A humidity gauge as water: 52 % in the bathroom, two slow waves rolling across it"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-thermo.gif" width="274" alt="A temperature gauge as the sky over the ground, from snow falling at 2.4 °C to a mild sun and a cloud at 21.5, heat haze at 29.4 and saguaros on the dunes at 38.6"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-air.gif" width="274" alt="A wind gauge as streaks of air racing across its band: 46 km/h, strong wind"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-battery.gif" width="274" alt="A battery gauge charging at 62 %: bubbles rising through the charge, the bolt glowing"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-pulse.gif" width="274" alt="A power gauge as a pulse: rings beating out from the bolt at 1.8 kW"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-sun.gif" width="274" alt="A solar gauge as the sun: long rays turning at 5.4 kW of production"></a>
+</p>
+
 ## Sixty-three cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
@@ -132,10 +147,6 @@ cheapest hours marked.
 
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-soft.webp" width="411" alt="A day of a room's temperature in the soft style"></a><a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-columns.webp" width="411" alt="A day of the house's energy in columns"></a>
-</p>
-
-<p align="center">
-  <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-liquid.webp" width="274" alt="A humidity gauge as a liquid"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-tank.webp" width="274" alt="A rain tank filling"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-battery.webp" width="274" alt="A battery charging"></a>
 </p>
 
 **Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
