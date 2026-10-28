@@ -10,6 +10,7 @@ import {
   hasSources,
   when,
 } from '../layout.js';
+import { COLUMNS } from '../context.js';
 import { TODAY } from '../home-registry.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
@@ -45,14 +46,18 @@ export function liveCards(ctx: StrategyContext): Card[] {
   ];
 }
 
-/** A day's totals as the energy dashboard allocates them: the flow of the day, where it went, the score. */
-export function todayCards(ctx: StrategyContext): Card[] {
+/**
+ * A day's totals as the energy dashboard allocates them: the flow of the day, where it went, the score. Given an
+ * Energy date picker's key, each follows its span instead (its chips gone): the Energy dashboard's Today view.
+ */
+export function todayCards(ctx: StrategyContext, collection?: string): Card[] {
   const { energy } = ctx;
+  const follows = collection ? { collection_key: collection } : {};
   return when(energy.prefsMeters, () => [
-    energyFlow(energy, ctx.style, { period: 'day', badge: 'self_powered' }),
-    full('energy-sankey'),
-    full('energy-score'),
-    energyBalance(energy, { period: 'day' }),
+    energyFlow(energy, ctx.style, { period: 'day', badge: 'self_powered', ...follows }),
+    full('energy-sankey', follows),
+    full('energy-score', follows),
+    energyBalance(energy, { period: 'day', ...follows }),
   ]);
 }
 
@@ -88,9 +93,29 @@ function nowView(ctx: StrategyContext): Section[] {
   ]);
 }
 
-/** Today in energy: the day's flow, where it went, the score and the day's balance. */
+/**
+ * Today in energy: the period strip across the view, then the day's flow, where it went, the score and the day's
+ * balance following it — the dashboard's own date picker (`energy_<its url>`), so Home Assistant's energy cards on the
+ * view would follow it too. A generated config is never stored: the key is the strip's default, said out loud here.
+ */
 function todayView(ctx: StrategyContext): Section[] {
-  return balanced(ctx, todayCards(ctx));
+  const collection = `energy_${ctx.panelUrl}`;
+  const cards = todayCards(ctx, collection);
+  return cards.length
+    ? [
+        {
+          type: 'grid',
+          column_span: COLUMNS,
+          cards: [
+            {
+              ...full('energy-period', { collection_key: collection }),
+              grid_options: { columns: 'full' },
+            },
+          ],
+        },
+        ...balanced(ctx, cards),
+      ]
+    : [];
 }
 
 /** What the sun makes: today's production, its last days as bars, the inverter's gauge and its day. */

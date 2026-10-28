@@ -105,6 +105,9 @@ export const sheet: SheetSpec = {
     ],
     // a colour bulb that cannot be read: Home Assistant keeps what it can do
     ['light.tn_gone', 'unavailable', { friendly_name: 'Hall lamp', ...BULB }],
+    // bulbs that only switch (#65): the card is their head alone, in every style
+    ['light.pantry', 'on', { friendly_name: 'Pantry', supported_color_modes: ['onoff'] }],
+    ['light.stairs', 'off', { friendly_name: 'Stairs', supported_color_modes: ['onoff'] }],
   ],
   frames: [
     { title: 'On', cards: [{ type: 'custom:fluvy-light-card', entity: 'light.ceiling' }] },
@@ -411,6 +414,23 @@ export const sheet: SheetSpec = {
           entity: 'light.tn_gone',
         },
         { type: 'custom:fluvy-light-card', entity: 'light.tn_missing' },
+      ],
+    },
+    // #65: a bulb that only switches is its head alone — the circle, the name, the state line, the switch — in
+    // every style, 84 where it took a dimmer's 256; on and off, the full style asked for and the compact one at
+    // half a section
+    {
+      title: 'On/off bulb',
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.pantry' },
+        { type: 'custom:fluvy-light-card', entity: 'light.stairs', variant: 'full' },
+      ],
+    },
+    {
+      title: 'On/off bulb · compact',
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.pantry', variant: 'compact', cols: 6 },
+        { type: 'custom:fluvy-light-card', entity: 'light.stairs', variant: 'compact', cols: 6 },
       ],
     },
     // a lit light's tile and row in its bulb's colour (`light_colors`): the orange lamp, the blue strip, a white in its

@@ -11,6 +11,7 @@ import type { EffectiveSettings } from '../settings/schema.js';
 import { inUse } from '../shell/patches.js';
 import { declarationsOf, lookKey, type Look } from './css.js';
 import { PAGE_ATTRIBUTE, PANEL_ATTRIBUTE } from './attributes.js';
+import { themedRule } from './themed.js';
 
 /** The last page rule, for the loader to apply before the app renders (the websocket answers later). */
 export const EARLY_KEY = 'fluvy:look';
@@ -48,6 +49,8 @@ interface HassElement extends Element {
  *   `:root { … !important }` — it wins over whatever theme the profile applies inline, without touching
  *   the profile; `<html fluvy-look>` tells the shell to style Home Assistant's pages;
  * - `dashboards`: the same declarations on `ha-panel-lovelace` hosts that wear the look (`panels.ts`);
+ * - in either scope, on the elements Home Assistant themed with the theme named Fluvy (a view, a section, a card's
+ *   `theme:`), over the theme file's colours it wrote on them (`themed.ts`);
  * - always: the cards' token fallback becomes this look, so a fluvy card anywhere else follows it.
  * Then, as Home Assistant does after it applies a theme, the page background, the browser's theme colour
  * and the companion app (status bar) are brought up to date — while Fluvy is in use on the page, and once more
@@ -57,6 +60,9 @@ export class LookEngine {
   private readonly targets: Target[] = [];
   /** Pushed into `ha-panel-lovelace`'s styles by the starter. */
   readonly panelSheet: CSSStyleSheet;
+  /** The look on the elements Home Assistant themed with the theme named Fluvy: made when the first is marked. */
+  private themed: CSSStyleSheet | undefined;
+  private declarations: readonly CssDeclaration[] = [];
   private applied = '';
   private fallback = '';
   private pageCss = '';
@@ -66,7 +72,7 @@ export class LookEngine {
   /** `early`: the sheet the loader applied from this browser's cache before the build arrived, taken over as is. */
   constructor(
     private readonly doc: Document,
-    createSheet: () => CSSStyleSheet,
+    private readonly createSheet: () => CSSStyleSheet,
     private readonly storage: Storage | undefined,
     early?: CSSStyleSheet,
   ) {
@@ -106,6 +112,8 @@ export class LookEngine {
     this.panelSheet.replaceSync(
       everywhere ? '' : `:host([${PANEL_ATTRIBUTE}]){${declarationsCss(declarations)}}`,
     );
+    this.declarations = declarations;
+    this.themed?.replaceSync(themedRule(declarations));
     this.applyFallback(look, statuses);
     // on a page that does not wear Fluvy, the chrome is Home Assistant's, as its theme left it; on the apply that takes
     // Fluvy off, once more: Home Assistant read it while our sheet was still on, and the page now computes its theme's
@@ -114,6 +122,15 @@ export class LookEngine {
     this.chromed = using;
     this.remember(mode);
     return true;
+  }
+
+  /** The look's sheet for the elements Home Assistant themed with the theme named Fluvy (`themed.ts`), in its mode. */
+  themedSheet(): CSSStyleSheet {
+    if (!this.themed) {
+      this.themed = this.createSheet();
+      this.themed.replaceSync(themedRule(this.declarations));
+    }
+    return this.themed;
   }
 
   /** The cards' own tokens (used where no look reaches them) become this look's. */

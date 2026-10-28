@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { outOfReachStates, type OutOfReach } from '@fluvy/demo-home/out-of-reach';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { PRINTER_HOUSE } from '../printer/fixtures.js';
+import { serveFrames } from '../web/fixtures.js';
 
 // the lazy families (the players, the cameras, the printers, the automations) are defined before a card is drawn
 await familiesDefined;
@@ -46,6 +47,23 @@ const STATES = [
   state('camera.porch', 'idle', {
     entity_picture: '/api/camera_proxy/camera.porch?token=1',
     supported_features: 2,
+  }),
+  // a FlightRadar24 sensor: the count as its state, the aircraft in `flights`
+  state('sensor.flights', '2', {
+    flights: [
+      { callsign: 'KLM1412', altitude: 0, on_ground: 1, distance: 3.2 },
+      { callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
+    ],
+  }),
+  // a Nordpool sensor: the price now as its state, the day's hours in `raw_today`
+  state('sensor.nordpool', '0.125', {
+    unit_of_measurement: 'EUR/kWh',
+    raw_today: Array.from({ length: 24 }, (_unused, h) => ({
+      start: `2026-10-17T${String(h).padStart(2, '0')}:00:00+00:00`,
+      end: `2026-10-17T${String(h + 1).padStart(2, '0')}:00:00+00:00`,
+      value: 0.1 + h / 100,
+    })),
+    raw_tomorrow: [],
   }),
   // a speaker playing a track: its seek line, the five rounds, its volume and the power round
   state('media_player.kitchen', 'playing', {
@@ -196,6 +214,61 @@ describe('cameras out of reach', () => {
     expect(root(twin).querySelector('.dv-cam.is-off')).not.toBeNull();
     expect(texts(twin, '.dv-cam__off p')).toEqual(['Entity not found']);
   });
+});
+
+describe('charts out of reach', () => {
+  it.each(KINDS)(
+    'keep their value row, the chart’s room and its axis, a %s sensor saying so under the title',
+    async (kind) => {
+      const config = {
+        type: 'custom:fluvy-chart-card',
+        series: ['sensor.nordpool'],
+        span: 'today',
+        chart: 'step',
+        highlight: 'both',
+        _now: STAMP,
+      };
+      const live = await draw(config, house());
+      const twin = await draw(config, away(['sensor.nordpool'], kind));
+      // in the off skin where it cannot be reached; unknown, it is there with nothing to say (as the sensor card)
+      expect(root(twin).querySelector('.fv-card.is-unavailable') !== null).toBe(kind !== 'unknown');
+      expect(texts(twin, '.ch-now .fv-readout__value')).toEqual(['—']);
+      expect(texts(twin, '.fv-card__sub')).toEqual([
+        kind === 'missing' ? 'Entity not found' : kind === 'unknown' ? 'Unknown' : 'Unavailable',
+      ]);
+      // its list where Home Assistant keeps it (unknown), else its history, asked of the recorder: the chart's room
+      // keeps its 120 and the window's clock stays under it
+      expect(root(twin).querySelector('.ch-top')).not.toBeNull();
+      expect(root(twin).querySelector('.ch-chart > .fv-skeleton, .ch-chart > svg')).not.toBeNull();
+      expect(root(twin).querySelector<HTMLElement>('.ch-chart')?.style.height).toBe('120px');
+      expect(root(twin).querySelector('.ch-axis .fv-axis')).not.toBeNull();
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+    },
+  );
+});
+
+describe('items out of reach', () => {
+  it.each(KINDS)(
+    'keep the rows they declare, dashes in resting rings, a %s sensor saying so under the title',
+    async (kind) => {
+      const config = { type: 'custom:fluvy-items-card', entity: 'sensor.flights', max_rows: 3 };
+      const live = await draw(config, house());
+      const twin = await draw(config, away(['sensor.flights'], kind));
+      expect(root(twin).querySelector('.fv-card--empty')).toBeNull();
+      expect(root(twin).querySelector('.fv-empty-state')).toBeNull();
+      expect(root(twin).querySelector('.fv-card.is-unavailable')).not.toBeNull();
+      expect(root(twin).querySelectorAll('.fv-row.is-unavailable .fv-ico--off')).toHaveLength(3);
+      expect(texts(twin, '.fv-row__value')).toEqual(['—', '—', '—']);
+      expect(texts(twin, '.fv-card__sub')).toEqual([
+        kind === 'missing' ? 'Entity not found' : kind === 'unknown' ? 'Unknown' : 'Unavailable',
+      ]);
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+      // the list box keeps the declared rows' height whatever it holds
+      expect(
+        root(twin).querySelector<HTMLElement>('.it-list')?.style.getPropertyValue('--it-min'),
+      ).toBe('180px');
+    },
+  );
 });
 
 describe('people out of reach', () => {
@@ -474,4 +547,43 @@ describe('rooms out of reach', () => {
     expect(labels(twin)).toEqual(labels(live));
     expect(texts(twin, '.am-area__stats .fv-readout__value').slice(0, 2)).toEqual(['—', '—']);
   });
+});
+
+describe('a web page kept back for https', () => {
+  // every frame is answered with a page of nothing, so happy-dom frames it without a word
+  serveFrames();
+  const PLAIN = { type: 'custom:fluvy-web-card', url: 'http://grafana.local:3000/d/abc' };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ['plate', 360],
+    ['plate', 172],
+    ['frame', 360],
+    ['bare', 172],
+  ])(
+    'keeps the %s plate at its size and its rounds at %i, the open one alive',
+    async (variant, width) => {
+      const config = { ...PLAIN, variant, show_reload: true };
+      const live = await draw(config, house(), width);
+      const liveBox = root(live).querySelector('[data-card]')!.getBoundingClientRect().height;
+      const liveRounds = texts(live, '.dv-cam__actions .fv-round').length;
+      document.body.replaceChildren();
+      vi.stubGlobal('location', { href: 'https://ha.example/lovelace/0', protocol: 'https:' });
+      const twin = await draw(config, house(), width);
+      expect(root(twin).querySelector('.wb-plate.is-off')).not.toBeNull();
+      expect(root(twin).querySelector('[data-card]')!.getBoundingClientRect().height).toBe(liveBox);
+      expect(root(twin).querySelector<HTMLElement>('.wb-plate')!.style.height).toBe(
+        root(live).querySelector<HTMLElement>('.wb-plate')!.style.height,
+      );
+      expect(await twin.getCardSize()).toBe(await live.getCardSize());
+      const rounds = [
+        ...root(twin).querySelectorAll<HTMLButtonElement>('.dv-cam__actions .fv-round'),
+      ];
+      expect(rounds.length).toBe(liveRounds);
+      expect(rounds.map((el) => el.disabled)).toEqual(
+        rounds.map((el) => el.getAttribute('aria-label') !== 'Open in a new tab'),
+      );
+    },
+  );
 });

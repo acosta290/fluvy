@@ -7,6 +7,7 @@ import './english.js';
 import {
   countTargets,
   dateFormat,
+  ensureFonts,
   formatTime,
   languageOf,
   navigate,
@@ -39,13 +40,13 @@ import {
   motionPreference,
   pillWidth,
   reducedMotion,
-  ScrubController,
   textWidth,
   zoomOf,
 } from '@fluvy/ui';
 import { pageStyles } from '@fluvy/ui/styles/page';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
+import { chartStyles, ScrubController } from '../chart/engine/index.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { Layers } from '../shared/layers.js';
 import { downloadCsv } from '../shared/csv.js';
@@ -84,7 +85,8 @@ const SLACK = HOUR;
 export type HistoryLayer = 'picking' | 'sourcing';
 
 export class FluvyHistory extends LitElement {
-  static override styles = [...baseStyles, pageStyles, historyStyles];
+  // the engine's sheet for a chart drawn in the house's style
+  static override styles = [...baseStyles, pageStyles, chartStyles, historyStyles];
 
   static override properties = {
     hass: { attribute: false },
@@ -273,6 +275,7 @@ export class FluvyHistory extends LitElement {
   private offWords: (() => void) | undefined;
   override connectedCallback(): void {
     super.connectedCallback();
+    ensureFonts();
     // a language's words arriving (fetched after the first paint) re-render the page in them
     this.offWords = onWords(() => this.requestUpdate());
     this.readAddress(true);

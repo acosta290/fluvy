@@ -1,6 +1,5 @@
 import {
   actionRuns,
-  areaClimate,
   areaContents,
   areaIndex,
   areasInOrder,
@@ -20,9 +19,7 @@ import {
   type AreaContents,
   type ClimateKind,
   type FluvyCardConfig,
-  type HaFormSchemaItem,
   type HomeAssistant,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Registries,
   type ValueParts,
@@ -41,31 +38,15 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { HeadFit } from '../energy/head.js';
 import { Crossfade } from '../shared/crossfade.js';
 import { counted } from '../shared/counted.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import {
-  actionField,
-  areaField,
-  boolField,
-  colourFields,
-  lightColourFields,
-  onlyWhen,
-  fieldRow,
-  formLabels,
-  nameIconFields,
-  selectField,
-  showIconField,
-  textField,
-  tintField,
-} from '../shared/form.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
+import { sinceIds } from '../shared/since.js';
 import { EMPTY, ROW, rowsOf } from '../shared/heights.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { statsRow } from '../shared/readouts.js';
-import type { BaseKey } from '../shared/base.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { CardEditor } from '../shared/base.js';
 import type { LightColours, Tint } from '../shared/colour.js';
 import { FluvyTileCard, type TileItem } from '../tile/tile-card.js';
-import { FluvyTilesCard } from '../tiles/tiles-card.js';
 
 const s = strings('room');
 
@@ -106,16 +87,6 @@ const INNER = 84;
 const HINT = 380;
 const HINT_SIDES = 32;
 const HINT_LINES = 2.8;
-
-/** Whether the room draws what its editor offers under its head or hero (its form's data): a row draws none of it. */
-const drawsControls = ({ variant }: Readonly<Record<string, unknown>>): boolean =>
-  variant !== 'row';
-/** …its tiles (`controls: tiles`), and their colour at rest with them. */
-const drawsTiles = (form: Readonly<Record<string, unknown>>): boolean =>
-  drawsControls(form) && form['controls'] === 'tiles';
-/** …its lights, in a row of their own or among its tiles. */
-const drawsLights = (form: Readonly<Record<string, unknown>>): boolean =>
-  drawsControls(form) && form['controls'] !== 'none';
 
 /**
  * The room as the card draws it: the area's contents, its readings the config's where it names them, and what is on
@@ -184,12 +155,6 @@ export function roomHeight(config: RoomCardConfig, room?: RoomHolds): number {
   return HERO + stats + (empty ? 20 + EMPTY + hint : controls) + 20;
 }
 
-/** A reading's field: a sensor of its class, or the thermostat (the humidifier) that carries it (`climateAttribute`). */
-const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
-  name: `${kind}_entity`,
-  selector: { entity: { filter: [{ domain: 'sensor', device_class: kind }, { domain }] } },
-});
-
 /**
  * A room of the house, from its area: what the registry knows of it (its picture, its climate) and what it holds
  * (its lights and controls, how many are on), in the ambient family's area anatomy.
@@ -226,88 +191,10 @@ export class FluvyRoomCard extends FluvyTileCard {
   /** The line, the readouts, the rows and the hint are fitted in the card's own classes (its ruler, again when a font lands). */
   private readonly headFit = new HeadFit(this);
 
-  static override base: readonly BaseKey[] = [
-    'name',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<RoomCardConfig>()([
-    'area',
-    'variant',
-    'picture',
-    'show_climate',
-    'show_count',
-    'controls',
-    'tiles',
-    'path',
-    'temperature_entity',
-    'humidity_entity',
-    'tint',
-    'light_colors',
-    'light_whites',
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'tiles',
-      title: 'editor.tiles',
-      keys: FluvyTilesCard.lists[0]?.keys ?? [],
-      schema: FluvyTilesCard.lists[0]?.schema ?? [],
-      when: drawsTiles,
-    },
-  ];
-  static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then — its variant, the readings it found. */
-  static override defaults: EditorDefaults = (config, hass) => {
-    const area = hass?.areas?.[String(config['area'] ?? '')];
-    const found = hass && area ? areaClimate(hass, area.area_id) : {};
-    return {
-      variant: config['picture'] || area?.picture ? 'photo' : 'tile',
-      controls: 'rows',
-      show_count: true,
-      show_climate: true,
-      tint: 'on',
-      light_colors: lightDefaults().colors,
-      light_whites: 'temperature',
-      temperature_entity: found.temperature,
-      humidity_entity: found.humidity,
-    };
-  };
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        areaField(),
-        nameIconFields(),
-        showIconField(),
-        fieldRow(
-          selectField('variant', ['photo', 'tile', 'row']),
-          onlyWhen(drawsControls, selectField('controls', ['rows', 'tiles', 'none'])),
-        ),
-        fieldRow(boolField('show_climate'), boolField('show_count')),
-        // a picture is the photo's alone (the default where the room has one)
-        fieldRow(
-          onlyWhen(({ variant }) => variant === 'photo', textField('picture')),
-          textField('path'),
-        ),
-        fieldRow(
-          readingField('temperature', 'climate'),
-          readingField('humidity', 'climate', 'humidifier'),
-        ),
-        ...colourFields(),
-        onlyWhen(drawsTiles, tintField()),
-        onlyWhen(drawsLights, lightColourFields()),
-        fieldRow(actionField('tap_action'), actionField('hold_action')),
-      ],
-      ...formLabels({
-        temperature_entity: 'editor.temperature_entity',
-        humidity_entity: 'editor.humidity_entity',
-      }),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./room-editor.js');
   }
+  static override aliases: AliasSpec = { items: { tiles: ITEM_ALIASES } };
 
   static override getStubConfig(hass: unknown, entities: readonly string[]): RoomCardConfig {
     const house = hass as Registries | undefined;
@@ -396,9 +283,10 @@ export class FluvyRoomCard extends FluvyTileCard {
   protected override watched(): readonly string[] {
     const { members, climate } = this.contents();
     // every entity the area holds, shown or not: one whose state comes late fills the room, a hidden one moves the hint;
-    // and a light group's members (its colour is theirs)
+    // a light group's members (its colour is theirs); and what a tile's last change is read from (`since`)
+    const tiles = this.tiles();
     return withMembers(
-      idsOf([...members, ...this.tiles(), climate.temperature, climate.humidity]),
+      [...idsOf([...members, ...tiles, climate.temperature, climate.humidity]), ...sinceIds(tiles)],
       this.hass,
     );
   }

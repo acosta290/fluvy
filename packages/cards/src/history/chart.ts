@@ -4,22 +4,25 @@
  */
 import { formatNumber, plural, scaleUnit } from '@fluvy/core';
 import { sampleTrack, valueAt, type Track } from '@fluvy/core/history';
+import { axis, head, readout } from '@fluvy/ui';
+import { html, nothing, svg, type TemplateResult } from 'lit';
 import {
-  areaUnder,
-  axis,
+  airScale,
+  areaPath,
   bandPath,
   chartBubble,
-  head,
-  plotScale,
-  plotY,
-  readout,
+  drawRead,
+  linePath,
+  resolveStyle,
+  roundTicks,
   scrub,
-  seriesPath,
-  seriesY,
-  type PlotOptions,
-} from '@fluvy/ui';
-import { html, nothing, svg, type TemplateResult } from 'lit';
+  yAt,
+  yOf,
+  type PlotBox,
+  type Pt,
+} from '../chart/engine/index.js';
 
+import type { ChartCaps } from '../shared/chart-config.js';
 import type { Chart } from './model.js';
 import type { FluvyHistory } from './view.js';
 
@@ -93,56 +96,22 @@ function reading(page: FluvyHistory, number: number | null, scale: Scale): Readi
 const value = (page: FluvyHistory, track: Track, at: number, scale: Scale): Reading =>
   reading(page, valueAt(track.points, at), scale);
 
-const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
-
 /**
- * What the axis says: the window's own ends first — a reader must always know where it starts and where it stops —
- * and the round marks between them (hours through a day, whole days beyond) wherever there is room for one. A mark
- * too near an end, or near the mark before it, is not drawn: two labels on top of each other read as one smudge.
+ * What the axis says: the window's own ends first and the round marks between them where there is room for one —
+ * the chart engine's labeller of a window with two fixed ends (`roundTicks`), in the page's words.
  */
 export function axisLabels(page: FluvyHistory, width: number): (readonly [number, string])[] {
-  const { start, end } = page.range;
-  const span = end - start;
-  if (!(span > 0) || !(width > 0)) return [];
-  const longWindow = span > 8 * DAY;
-  const name = (t: number): string =>
-    span <= 2 * DAY ? page.time(t) : longWindow ? page.date(t) : page.day(t);
-  // a window of whole days ends on the last of them: the axis says what the title says
-  const lastNamed = span > 2 * DAY && new Date(end).getHours() === 0 ? end - 1 : end;
-  // the ends say more of themselves when the plain name would print the same words twice (a 24 h window's two
-  // clocks, a year's two Septembers): the day through a short window, the year through a long one
-  const same = name(start) === name(lastNamed);
-  const endName = (t: number): string =>
-    !same ? name(t) : span <= 2 * DAY ? `${page.weekday(t)} ${page.time(t)}` : page.dateYear(t);
-  // a mark costs its own ink and a gap; how many read well is the width's business (one per 200 or so)
-  const need = page.labelWidth(endName(end)) + 24;
-  const want = Math.max(2, Math.min(6, Math.round(width / 200)));
-  const marks = Math.max(1, Math.min(want, Math.floor(width / need)));
-  const room = need;
-  const hours = [1, 2, 3, 4, 6, 8, 12, 24];
-  const step =
-    span <= 2 * DAY
-      ? (hours.find((h) => span / (h * HOUR) <= marks) ?? 24) * HOUR
-      : Math.max(DAY, Math.ceil(span / marks / DAY) * DAY);
-  // the marks are evenly spaced by construction; only the two nearest the window's own ends give way to them
-  const keep = room / width;
-  const labels: [number, string][] = [[0, endName(start)]];
-  const first = new Date(start);
-  if (step >= DAY) first.setHours(0, 0, 0, 0);
-  else first.setMinutes(0, 0, 0);
-  const lastLabel = span > 2 * DAY ? endName(lastNamed) : endName(end);
-  for (let t = first.getTime(); t <= end; t += step) {
-    const fraction = (t - start) / span;
-    if (fraction <= keep) continue;
-    if (fraction >= 1 - keep) break;
-    const mark = name(t);
-    // a mark that reads like one of the window's ends is that end said twice: a smudge, not a scale
-    if (mark === labels[0]?.[1] || mark === lastLabel) continue;
-    labels.push([fraction, mark]);
-  }
-  labels.push([1, lastLabel]);
-  return labels;
+  return roundTicks({
+    start: page.range.start,
+    end: page.range.end,
+    width,
+    labelWidth: (text) => page.labelWidth(text),
+    time: (t) => page.time(t),
+    weekday: (t) => page.weekday(t),
+    day: (t) => page.day(t),
+    date: (t) => page.date(t),
+    dateYear: (t) => page.dateYear(t),
+  });
 }
 
 /**
@@ -192,13 +161,15 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
         }
       : null,
   );
-  const plot: PlotOptions = {
-    w: Math.max(2, width * extent),
-    h: height,
-    padTop: HEADROOM,
-    pad: PAD,
-    ...plotScale([...series, ...bands.flatMap((band) => (band ? [band.low, band.high] : []))]),
-  };
+  // the plot: what has happened across `plotWidth`, every series on one scale between the headroom and the pad
+  const plotWidth = Math.max(2, width * extent);
+  const box: PlotBox = { top: HEADROOM, bottom: height - PAD };
+  const ends = airScale([
+    ...series,
+    ...bands.flatMap((band) => (band ? [band.low, band.high] : [])),
+  ]);
+  const pointsOf = (values: readonly number[]): Pt[] =>
+    values.map((v, i) => [(i / Math.max(1, values.length - 1)) * plotWidth, yOf(v, ends, box)]);
   const at = page.at;
   const cursorX = page.fraction(at) * width;
   const id = chart.key.replace(/\W+/g, '-');
@@ -207,7 +178,7 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
   const scale = scaleOf(chart, page.hass);
   const leadValue = lead ? value(page, lead, at, scale) : { text: '—', unit: scale.unit };
   const spoken = spokenOf(page, chart);
-  // what the card drew, high and low — the same numbers `plotScale` was built from, so a mark is always exactly
+  // what the card drew, high and low — the same numbers its scale was built from, so a mark is always exactly
   // at its value. What the house reached is the readouts' business: they are words, and cannot be read as a height
   const drawnValues = [
     ...series,
@@ -229,6 +200,10 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
           [low, true],
         ]
     : [];
+  // the house's style (the page has no setting of its own; classic from the factory): the lines, their band
+  const caps: ChartCaps = { band: bands.some(Boolean), several: !alone, axis: false };
+  const style = resolveStyle(undefined, {}, caps);
+  const classic = style.preset === 'classic';
 
   return html`<article class="fv-card hs-card">
     ${head({
@@ -264,55 +239,89 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
       <svg width=${width} height=${height} viewBox="0 0 ${width} ${height}" aria-hidden="true">
         ${
           extent < 0.999
-            ? svg`<rect class="hs-future" x=${plot.w} y="0" width=${Math.max(0, width - plot.w)} height=${height} />
-                <line class="hs-edge" x1=${plot.w} y1="0" x2=${plot.w} y2=${height} />`
+            ? svg`<rect class="hs-future" x=${plotWidth} y="0" width=${Math.max(0, width - plotWidth)} height=${height} />
+                <line class="hs-edge" x1=${plotWidth} y1="0" x2=${plotWidth} y2=${height} />`
             : nothing
         }
         ${reach.map(([v, below]) => {
           const mark = reading(page, v, scale);
-          return svg`<line class="hs-rule" x1="0" y1=${plotY(v, plot).toFixed(2)} x2=${plot.w} y2=${plotY(v, plot).toFixed(2)} />
-            <text class="hs-rule__value" x="0" y=${(plotY(v, plot) + (below ? 12 : -5)).toFixed(2)}>${`${mark.text} ${mark.unit}`.trim()}</text>`;
+          const y = yOf(v, ends, box);
+          return svg`<line class="hs-rule" x1="0" y1=${y.toFixed(2)} x2=${plotWidth} y2=${y.toFixed(2)} />
+            <text class="hs-rule__value" x="0" y=${(y + (below ? 12 : -5)).toFixed(2)}>${`${mark.text} ${mark.unit}`.trim()}</text>`;
         })}
-        ${chart.tracks.map((track, index) => {
-          const values = series[index] ?? [];
-          const path = seriesPath(values, plot);
-          const band = bands[index];
-          return svg`<g class="hs-series" style="--series:${alone ? 'var(--fluvy-accent)' : `var(--fluvy-graph-${chart.colours[index] ?? 1})`};animation-delay:${index * 60}ms">
-            ${band ? svg`<path class="hs-band" d=${bandPath(band.low, band.high, plot)} />` : nothing}
+        ${
+          classic
+            ? chart.tracks.map((track, index) => {
+                const points = pointsOf(series[index] ?? []);
+                const path = linePath(points, 'smooth');
+                const band = bands[index];
+                return svg`<g class="hs-series" style="--series:${alone ? 'var(--fluvy-accent)' : `var(--fluvy-graph-${chart.colours[index] ?? 1})`};animation-delay:${index * 60}ms">
+            ${band ? svg`<path class="hs-band" d=${bandPath(pointsOf(band.low), pointsOf(band.high))} />` : nothing}
             ${
               alone
                 ? svg`<linearGradient id=${`hs-fill-${id}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" class="hs-fill-a" />
                     <stop offset="1" class="hs-fill-b" />
                   </linearGradient>
-                  <path class="hs-area" d=${areaUnder(path, plot)} fill=${`url(#hs-fill-${id})`} />`
+                  <path class="hs-area" d=${areaPath(points, 'smooth', height)} fill=${`url(#hs-fill-${id})`} />`
                 : nothing
             }
             <path class="hs-line ${alone ? 'hs-line--alone' : ''}" d=${path} pathLength="1" />
             ${(() => {
               // the dot marks the line, so it reads the line: the same curve, solved at the cursor's x
-              const y = seriesY(values, plot, Math.min(cursorX, plot.w));
+              const y = yAt(points, 'smooth', Math.min(cursorX, plotWidth));
               return y === null || valueAt(track.points, at) === null
                 ? nothing
                 : svg`<circle class="hs-dot" cx=${cursorX.toFixed(2)} cy=${y.toFixed(2)} r="4" />`;
             })()}
           </g>`;
-        })}
-        ${svg`<line class="hs-cursor" x1=${cursorX.toFixed(2)} y1=${HEADROOM - 8} x2=${cursorX.toFixed(2)} y2=${height - PAD} />`}
+              })
+            : nothing
+        }
+        ${
+          classic
+            ? svg`<line class="hs-cursor" x1=${cursorX.toFixed(2)} y1=${HEADROOM - 8} x2=${cursorX.toFixed(2)} y2=${height - PAD} />`
+            : nothing
+        }
       </svg>
       ${
         // a bubble names one reading: with several series it would claim to be all of them, and the
         // legend already reads every one of them at the cursor's time
-        page.scrubbed && alone
-          ? chartBubble({
-              x: cursorX,
-              width,
-              value: leadValue.text,
-              unit: leadValue.unit,
-              time: page.moment(at),
-              ...(page.family ? { family: page.family } : {}),
-            })
-          : nothing
+        classic
+          ? page.scrubbed && alone
+            ? chartBubble({
+                x: cursorX,
+                width,
+                value: leadValue.text,
+                unit: leadValue.unit,
+                time: page.moment(at),
+                ...(page.family ? { family: page.family } : {}),
+              })
+            : nothing
+          : // a style's lines over the page's room and rules, on the same scale: a lone one in the accent, several
+            // each in its graph colour
+            drawRead(
+              {
+                frame: { width, height, headroom: HEADROOM, pad: PAD },
+                series: chart.tracks.map((_track, index) => ({
+                  values: series[index] ?? [],
+                  colour: alone
+                    ? 'accent'
+                    : (`var(--fluvy-graph-${chart.colours[index] ?? 1})` as const),
+                  ...(bands[index] ? { band: bands[index] } : {}),
+                })),
+                style,
+                scale: ends,
+                extent,
+                cursor: page.scrubbed ? page.fraction(at) : null,
+                id: `hs-${id}`,
+              },
+              page.scrubbed && alone
+                ? { value: leadValue.text, unit: leadValue.unit, time: page.moment(at) }
+                : null,
+              null,
+              page.family,
+            )
       }
     </div>
     ${axis(axisLabels(page, width))}

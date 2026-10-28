@@ -11,7 +11,7 @@ import {
 } from '@fluvy/core';
 import { isoWeek } from '@fluvy/ui';
 import { dateLocale, dateText } from '../clock/time.js';
-import { addDays, sameDay } from '../shared/dates.js';
+import { addDays, sameDay, shortWeekday } from '../shared/dates.js';
 
 const s = strings('calendar');
 
@@ -78,15 +78,11 @@ export class Words {
   }
 
   weekday(date: Date, style: 'long' | 'short' | 'narrow'): string {
-    const name = formatter(this.language, { weekday: style }).format(date);
-    if (style === 'long') return capitalize(name);
     // a locale whose short weekday is the long one's first word written out (Portugal's "quinta", never "qui.") is
     // cut to its first three letters, as the locales that abbreviate write it
-    const whole =
-      style === 'short' &&
-      name.length > 3 &&
-      formatter(this.language, { weekday: 'long' }).format(date).startsWith(name);
-    return bare(whole ? name.slice(0, 3) : name);
+    if (style === 'short') return bare(shortWeekday(this.language, date));
+    const name = formatter(this.language, { weekday: style }).format(date);
+    return style === 'long' ? capitalize(name) : bare(name);
   }
 
   /** "September" */
@@ -151,22 +147,29 @@ export class Words {
         : this.t('common.events', { count });
   }
 
+  /** What joins the two parts of a day's label: " · ", or the language's own mark (Japanese 「・」). */
+  private get joiner(): string {
+    return LANGUAGES[languageOf(this.hass)].joiner ?? ' · ';
+  }
+
   /**
    * "Thursday 17 · 4 events" — the label over a selected day's list, its weekday as wide as the language writes it
-   * there (「17日（木） · イベント4件」).
+   * there, joined as the language joins (「17日（木）・イベント4件」).
    */
   dayLabel(date: Date, count: number | null): string {
     const day = s(this.hass, 'day_label', {
       weekday: this.weekday(date, LANGUAGES[languageOf(this.hass)].weekday ?? 'long'),
       day: date.getDate(),
     });
-    return count === null ? day : `${day} · ${this.events(count).toLocaleLowerCase(this.language)}`;
+    return count === null
+      ? day
+      : `${day}${this.joiner}${this.events(count).toLocaleLowerCase(this.language)}`;
   }
 
   /** What a screen reader hears for a day cell: "Thursday 17 September · 4 events". */
   dayAria(date: Date, count: number | null): string {
     const day = capitalize(dateText(date, this.dates_, 'full'));
-    return count === null ? day : `${day} · ${this.events(count)}`;
+    return count === null ? day : `${day}${this.joiner}${this.events(count)}`;
   }
 
   /** How long until `start`: "In 13 min", "In 2 h 30 min" today, then the day's name, then its date. */

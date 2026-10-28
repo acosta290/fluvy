@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A dark page on the playground</title>
+    <style>
+      /* the same page on a dark ground: what a site that is dark already looks like under the card's looks */
+      html {
+        background: #1b1916;
+        color: #ece6dc;
+        font: 15px/1.5 system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 20px 24px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(16px, 9vw, 22px);
+        line-height: 1.3;
+      }
+      p {
+        margin: 0;
+        max-width: 48ch;
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .swatches span {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A dark page on the playground</h1>
+    <p>
+      A site that is dark on its own: the page's own look keeps it so, and the dark look turns it light — which is
+      why the look is the person's to choose, never guessed.
+    </p>
+    <div class="swatches" aria-hidden="true">
+      <span style="background: #d7a86e"></span>
+      <span style="background: #6e9bd7"></span>
+      <span style="background: #7fbf7a"></span>
+      <span style="background: #c76d6d"></span>
+    </div>
+  </body>
+</html>

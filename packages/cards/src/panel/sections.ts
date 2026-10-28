@@ -86,14 +86,14 @@ import {
 } from './model.js';
 
 /** One rhythm for every choice inside a card: 8 between cells on a phone, 12 on a wide panel. */
-const gap = (ctx: PanelContext): number => (ctx.wide ? 12 : 8);
+export const gap = (ctx: PanelContext): number => (ctx.wide ? 12 : 8);
 
 /**
  * A short choice (a variant, a language): one full row of chips, the chosen one on the accent fill — laid out by
  * measure, as a card's chips are: as many a row as the labels suggest (or `columns`) while every word holds its cell,
  * else fewer (three go two and one), never a word cut (pt-BR's "Quando ligado" in a phone's column).
  */
-function choice(
+export function choice(
   ctx: PanelContext,
   items: readonly { readonly key: string; readonly label: string; readonly active: boolean }[],
   onSelect: ((key: string) => void) | null,
@@ -268,7 +268,7 @@ function gallery(ctx: PanelContext): TemplateResult {
 }
 
 /** Black or white, whichever reads better on a colour (WCAG luminance): the check on a chosen dot. */
-function inkOn(color: Hex): string {
+export function inkOn(color: Hex): string {
   const n = Number.parseInt(color.slice(1), 16);
   const linear = (c: number): number => {
     const v = c / 255;
@@ -280,9 +280,46 @@ function inkOn(color: Hex): string {
 }
 
 /**
+ * A colour to pick: its key, its name, how it is drawn — a hex, or a colour of the palette's by its token — and the ink
+ * that reads on it (its check); none drawn: the dot that picks no colour.
+ */
+export interface Swatch {
+  readonly key: string;
+  readonly label: string;
+  readonly paint?: string;
+  readonly ink?: string;
+}
+
+/**
  * Colour dots, six a row on a phone and twelve on a wide panel (the highlights under the accents, column for column);
  * `six`: six a row at every width (a row of its own); `onPick` null: shown to someone who may not change them.
  */
+export function swatches(
+  items: readonly Swatch[],
+  chosen: string,
+  onPick: ((key: string) => void) | null,
+  six = false,
+): TemplateResult {
+  return html`<div class="pn-dots ${six ? 'pn-dots--six' : ''} ${onPick ? '' : 'pn-dots--static'}">
+    ${items.map((item) => {
+      const active = item.key === chosen;
+      return html`<button
+        class="pn-dot ${item.paint ? '' : 'pn-dot--none'} ${active ? 'is-active' : ''}"
+        data-target
+        style=${item.paint ? `--dot:${item.paint};--dot-ink:${item.ink}` : nothing}
+        aria-label=${item.label}
+        title=${item.label}
+        aria-pressed=${active ? 'true' : 'false'}
+        tabindex=${onPick ? nothing : '-1'}
+        @click=${() => onPick?.(item.key)}
+      >
+        ${active ? icon('check') : item.paint ? nothing : icon('ban')}
+      </button>`;
+    })}
+  </div>`;
+}
+
+/** Hexes as colour dots (`swatches`), each named by its hex; `null`: the dot that picks none. */
 function dots(
   colors: readonly (Hex | null)[],
   chosen: Hex | undefined,
@@ -290,22 +327,16 @@ function dots(
   onPick: ((color: Hex | undefined) => void) | null,
   six = false,
 ): TemplateResult {
-  return html`<div class="pn-dots ${six ? 'pn-dots--six' : ''} ${onPick ? '' : 'pn-dots--static'}">
-    ${colors.map((color) => {
-      const active = (color ?? undefined) === chosen;
-      return html`<button
-        class="pn-dot ${color ? '' : 'pn-dot--none'} ${active ? 'is-active' : ''}"
-        data-target
-        style=${color ? `--dot:${color};--dot-ink:${inkOn(color)}` : nothing}
-        aria-label=${color ?? ctx.t('custom.none')}
-        aria-pressed=${active ? 'true' : 'false'}
-        tabindex=${onPick ? nothing : '-1'}
-        @click=${() => onPick?.(color ?? undefined)}
-      >
-        ${active ? icon('check') : color ? nothing : icon('ban')}
-      </button>`;
-    })}
-  </div>`;
+  return swatches(
+    colors.map((color) =>
+      color
+        ? { key: color, label: color, paint: color, ink: inkOn(color) }
+        : { key: '', label: ctx.t('custom.none') },
+    ),
+    chosen ?? '',
+    onPick && ((key) => onPick(key || undefined)),
+    six,
+  );
 }
 
 /** "#FF4A1A", "ff4a1a" → "#ff4a1a"; anything else → undefined. */
@@ -314,11 +345,15 @@ function hexOf(text: string): Hex | undefined {
   return match ? `#${(match[1] ?? '').toLowerCase()}` : undefined;
 }
 
-/** Any colour: typed as a hex in our own field, or picked from the system's well behind its swatch (`onColor` null: read only). */
-function hexField(
+/**
+ * Any colour: typed as a hex in our own field, or picked from the system's well behind its swatch (`onColor` null: read
+ * only); `label` names it where several stand together.
+ */
+export function hexField(
   value: Hex,
   ctx: PanelContext,
   onColor: ((color: Hex) => void) | null,
+  label = ctx.t('custom.hex'),
 ): TemplateResult {
   return html`<div class="fv-field pn-hex">
     <input
@@ -327,7 +362,7 @@ function hexField(
       spellcheck="false"
       autocomplete="off"
       maxlength="7"
-      aria-label=${ctx.t('custom.hex')}
+      aria-label=${label}
       ?readonly=${!onColor}
       .value=${value}
       @change=${(event: Event) => {

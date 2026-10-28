@@ -6,7 +6,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -14,24 +13,11 @@ import { head, label, readout, round, sheetStyles, type Tone } from '@fluvy/ui';
 
 import { html, nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  nameIconFields,
-  showIconField,
-} from '../shared/form.js';
-import { configKeys } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { HeadFit } from '../energy/head.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 import { fitValueRow, valueRowClass } from '../shared/value-row.js';
 
 const s = strings('timer');
@@ -95,22 +81,8 @@ export class FluvyTimerCard extends Card<TimerCardConfig> {
     this.tick_ = 0;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<TimerCardConfig>()(['show_gauge', 'show_actions']);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ show_gauge: true, show_actions: true });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['timer']),
-        nameIconFields(),
-        showIconField(),
-        ...colourFields(),
-        fieldRow(boolField('show_gauge'), boolField('show_actions')),
-        actionFields(),
-      ],
-      ...editorLabels(s, { show_gauge: 'elapsed' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./timer-editor.js');
   }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): TimerCardConfig {

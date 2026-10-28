@@ -1,4 +1,4 @@
-import type { HomeAssistant } from '@fluvy/core';
+import { dateFormat, type HomeAssistant } from '@fluvy/core';
 
 /**
  * Local-date arithmetic. Every function reads and writes the LOCAL fields of a `Date` (year, month,
@@ -23,6 +23,21 @@ export const sameDay = (a: Date, b: Date): boolean =>
 
 export const sameMonth = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
+/**
+ * A weekday's short word as `language` writes it, cut to its first three letters where the locale writes the long
+ * one's first word out instead (Portugal's "quinta" for "quinta-feira", where the others abbreviate: "qui.", "Thu").
+ */
+export function shortWeekday(language: string, date: Date, timeZone?: string): string {
+  const zone = timeZone ? { timeZone } : {};
+  const name = dateFormat(language, { weekday: 'short', ...zone }).format(date);
+  const whole =
+    name.length > 3 &&
+    dateFormat(language, { weekday: 'long', ...zone })
+      .format(date)
+      .startsWith(name);
+  return whole ? name.slice(0, 3) : name;
+}
 
 /** 20260917 — orders like the dates do, and keys a map without formatting anything. */
 export const dayKey = (date: Date): number =>

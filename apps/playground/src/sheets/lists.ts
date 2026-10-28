@@ -17,6 +17,12 @@ export const sheet: SheetSpec = {
     ],
     ['lock.front_door', 'locked', { friendly_name: 'Front door' }],
     ['switch.ghost', 'unavailable', { friendly_name: 'Garden pump' }],
+    // #67: the helper that keeps the washer's real last change across restarts
+    [
+      'sensor.ls_washer_changed',
+      '2026-09-10T06:30:00+00:00',
+      { friendly_name: 'Washer · last change', device_class: 'timestamp' },
+    ],
     // what the templates read (`ls_`: other sheets own the plain names, with other units)
     [
       'climate.ls_living',
@@ -92,6 +98,24 @@ export const sheet: SheetSpec = {
               tap_action: { action: 'navigate', navigation_path: '/fluvy-auto/security' },
             },
             'switch.ghost',
+          ],
+        },
+      ],
+    },
+    // #67: a row's last change read from a helper that keeps it (`since`), beside a row on Home Assistant's own
+    {
+      title: 'Entities · since',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Laundry',
+          rows: [
+            {
+              entity: 'switch.washer',
+              secondary: 'last-changed',
+              since: 'sensor.ls_washer_changed',
+            },
+            { entity: 'switch.kitchen_light', secondary: 'last-changed' },
           ],
         },
       ],

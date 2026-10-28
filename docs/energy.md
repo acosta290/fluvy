@@ -72,6 +72,75 @@ by hour (a day by day over a week or a month), and allocates each hour the way t
 the house did not use went to the battery first, then the sun charged the battery, then it was exported, then the
 battery exported, then the rest ran the house — and adds the hours up. The figures are the dashboard's own.
 
+## Following Home Assistant's date picker
+
+Home Assistant's Energy dashboard has one date picker for the whole view: its `energy-date-selection` card keeps a
+*collection* on the connection under a key that starts with `energy_` (`collection_key`; without one, HA's cards use
+`energy_<the dashboard's url path>`), and every energy card on the view reads that collection's range and the figures
+HA fetched for it. Give a Fluvy energy card the same key and it follows the picker:
+
+```yaml
+type: custom:fluvy-energy-flow-card
+period: day
+collection_key: energy_casa       # the key of a date picker on this dashboard (HA's card, or Fluvy's Energy period card)
+```
+
+- **What follows.** The flow, the balance, the sankey and the score (set `period` to anything but `live`), the
+  Energy devices card (the Energy dashboard's devices), the Grid card's totals (when it names no readouts), the
+  Energy card, the Energy usage card, Production and Water & gas. History bars keep their own `period` and `days`.
+- **What a follower does.** It takes the picker's range (the day, the week, the month, whatever was picked) and
+  draws **Home Assistant's own figures for it** — the statistics HA fetched once for the whole view, allocated the
+  way the dashboard allocates them — so a Fluvy card and HA's beside it say the same numbers and move together, and
+  no follower asks the recorder again. Its Day · Week · Month chips go (`show_period` has nothing to switch), and its
+  subtitle says the range: "Today", "Yesterday", "24 Oct", "17 – 23 Sep", "September", "2026". A week is HA's
+  calendar week, not the last seven days.
+- **Each card.** The flow, the balance, the sankey, the score and the devices card total the range (the balance's
+  money too). The Grid card's three totals are the range's, and its subtitle leads with it. The Energy card draws
+  the range in place of `hours`: a day on the day's axis, a longer range on its dates, with the house's power from
+  the power sensors HA names (else the meters: five-minute changes for a day, hours beyond); "right now" and the
+  batteries' charge are shown while the range holds now. Production and Water & gas are day cards: they draw the
+  range's last day (the day so far while the range holds today), and say the date.
+- **Until the picker is there.** A date picker's card may load after Fluvy's: the follower draws its own period
+  (today by default) without chips until the collection appears, then follows it. The card's height never changes.
+- **A key of your own.** Any word starting with `energy_` is a key; a key without that prefix is refused with a
+  message, as HA's cards refuse it. Several Fluvy cards and HA's cards on one view share one picker through one key.
+  Fluvy's **Energy period** card is a picker of its own that keeps the same kind of collection, so HA's cards follow
+  it as well (below).
+
+### The Energy period card
+
+`custom:fluvy-energy-period-card` is the view's date picker as a strip: ‹ the span ›, Today (away from today) and,
+when asked for, Compare. The span's words ("Today", "17 – 23 Sep", "September") open a sheet with the presets — today and
+yesterday, this week, this month, this year — and a date grid for a span of your own, in whole days.
+
+```yaml
+type: custom:fluvy-energy-period-card
+variant: stacked                # row (the default) · compact · stacked (the row over Day · Week · Month · Year)
+periods: [day, week, month, year, custom]   # what it offers, in this order (custom: the sheet's date grid)
+show_compare: true              # Compare: the period before beside the span, on the charts that draw it
+```
+
+- **The dashboard's own picker.** Without a `collection_key` the strip drives `energy_<the dashboard's url path>`,
+  the key Home Assistant's own energy cards take without one: HA's cards on the dashboard follow it, and Fluvy's
+  follow it given that key. Any `energy_…` key of your own works as it does for a follower.
+- **Home Assistant's code, not a copy.** Where a picker already holds the key (HA's date card on the view, another
+  strip), the strip drives it. Where none does, it asks Home Assistant for its own date card and keeps it hidden
+  inside the strip: HA makes the collection and fetches its figures with its own code (the Energy preferences, the
+  hourly refresh, yesterday until today's first hour of statistics). HA's date card on the same view moves the strip,
+  and the strip moves it.
+- **What it remembers.** A preset picked on the strip (Today, a chip, a preset in the sheet) is remembered in this
+  browser, where HA remembers its own, so the dashboard reopens on it in HA and in Fluvy alike; walking with ‹ › or a span of your own
+  is not, as in HA.
+- **Narrow columns, wide bands.** Compare and Today give their words for their glyphs, the span takes its short words
+  ("24 Oct", "Sep", "2026"), then Today and Compare go and, in half a section, the arrows: the sheet behind the span's
+  words has them all. `stacked` keeps its periods on one line, which scrolls where the four do not hold it, so the
+  strip is as tall at every width. Across a wide band the capsule and the periods run 360 at most, on the strip's
+  start. `compact` is the span alone between its arrows, in a 60 strip.
+- **Only on a dashboard.** The strip needs a dashboard around it to make a picker; anywhere else it says so, at its
+  size, its buttons off.
+- **The automatic Energy dashboard.** Its Today view leads with the strip across the view, and the day's flow,
+  sankey, score and balance follow it (their chips are gone).
+
 ## The cards
 
 - **Energy flow** — where the energy comes from and where it goes. Variants `rows` (sources left, the house right),
@@ -117,12 +186,20 @@ battery exported, then the rest ran the house — and adds the hours up. The fig
   Both charts by source carry a power scale on the left (W or kW, negatives below the line) with dashed gridlines
   across, and the whole house a 0–100 % scale for the charge on the right, on the same lines. In a narrow column
   the charge's scale goes first (its readout and the "100 %" at the top still say it), then the power's.
-  `show_axis: false` and `show_grid: false` turn them off. `line_width: thin` draws every line 1 px.
+  `show_axis: false` and `show_grid: false` turn them off. `line_width: thin` draws every line 1 px, `bold` 3 px.
 
   The sources are stacked: each one sits on the one before it, so the battery's band starts where the sun's ends and
   its top is the two added together (5.6 kW of sun and 4.2 kW from the battery top out at 9.8 kW). Each band keeps
   its own edge in its colour, and the legend gives each source's own value under your finger. `stack: false` draws
   every source from zero on its own instead, so their heights can be compared directly.
+- **Energy usage** — the house's energy as Home Assistant's usage graph draws it: a column an hour of a day, a day of
+  a week or a month, a month of a year, stacked from the line up by where it came from (the sun, the battery, the grid)
+  and down by what went into the battery and out to the grid, each in its source's colour, from the Energy dashboard's
+  statistics allocated bucket by bucket (an hour, a day, a month) as the dashboard allocates them — so the head's
+  total and the legend's are Home Assistant's. A finger on the chart reads a slot's whole stack; `compare: true` draws the period before as ghost
+  columns behind (following a picker, its own Compare does); `sources` names, colours, orders or hides the sources,
+  `max_sources` folds the rest into "Other", `show_returns: false` leaves out what went out; `variant: compact` or
+  `mini` keep the chart alone or a strip.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term
@@ -133,6 +210,24 @@ battery exported, then the rest ran the house — and adds the hours up. The fig
   `never` for a lifetime meter) so a reset or a restart is never counted twice; a sensor with no state class reads
   the recorder's history; today is live and the average, highest and lowest are the finished bars'.
 - **Gauge** — `variant: signed` for a meter that can be negative: zero at the top, "1.8 kW out".
+
+`chart` draws a card's chart in a style of its own, or in the house's where it names none (fluvy's settings → Charts,
+`classic` from the factory: the charts as 1.10 drew them), each card offered only the styles it draws:
+
+- the energy card's line `classic`, `soft`, `glow`, `minimal` or `step` (a stepped power reads on a scale from zero,
+  in the card's unit, the hours under the plot after it); its stacked charts `classic`, `soft` (lighter fills, the
+  house's hairlines across) or `step` (each bucket held across it);
+- the Energy usage card's columns `classic` (one column a slot, its parts flush, only its outer ends rounded, on a
+  scale that hugs them on both sides of zero; a card that names `columns`, the same look, draws it) or `soft` (each
+  part a step lighter);
+- the history bars `classic`, `bars` (the ink, flat, rounded as the house's bars are; `highlight` lights the highest,
+  the lowest or the bar in progress and quiets the rest) or `columns`; the mini row's sparkline `classic` or `minimal`;
+- production `classic`, `soft` (one meter's day an hour a bar, the best hour in the ink and the rest quiet, the hours
+  to come the forecast's, hollow, now marked) or `columns` (the arrays stacked in the series' colours).
+
+The fine keys of [the cards](cards.md) change one thing of a style where it draws it, and `animate: false` draws the
+chart still. A gauge's `gauge` is `ticks` (its ring as before), `dial` or `ring`, or a gauge that moves with what it
+reads ([the cards](cards.md)): `pulse` or `sun` for a power, `battery` for a battery's charge, `tank` for water stored.
 
 ## A configuration each
 
@@ -171,6 +266,13 @@ session_energy: sensor.wallbox_session_energy
 status: sensor.wallbox_status
 vehicle: Model 3
 mode: select.wallbox_mode
+```
+
+```yaml
+type: custom:fluvy-energy-usage-card
+period: month                  # day (default) · week · month · year; or collection_key: a date picker's
+compare: true                  # the month before, behind this one
+sources: [solar, battery, { type: grid, name: Utility }]
 ```
 
 ```yaml
@@ -214,6 +316,30 @@ type: custom:fluvy-gauge-card
 entity: sensor.grid_power
 variant: signed
 max: 5000                      # in the sensor's unit; the scale runs from -max to max
+```
+
+## Units and decimals
+
+Every figure of the family follows one rule. A set read together — a diagram's sources, a legend, a row of readouts
+— is written in one unit, the one its largest figure asks for: 3,200 W beside 250 W reads "3.2 kW" and "0.25 kW",
+never "3.2 kW" beside "250 W". Its decimals are three significant places at most (0.25 · 3.2 · 11.2 · 142), a
+scaled figure keeping its one decimal so a live readout does not change width; a figure read alone, in the sensor's
+own unit, takes the precision set for the sensor in Home Assistant.
+
+Where you want something else, every card takes `unit` and `decimals`: `unit` is any unit of the figures' class (W,
+kW, MW for power; Wh, kWh, MWh for energy; L, m³, gal, ft³ for a water or gas meter) and is ignored where it is not —
+`unit: kW` on a card of energy totals changes nothing; `decimals` fixes the figures' decimals (0 to 3), so "2,308 W"
+reads beside "450 W" with `unit: W` and `decimals: 0`. A legend item, a readout, a device row or a meter may ask for
+its own, which wins over the card's. The editor offers both on one row, the units of the sensor's own class; a
+sensor whose unit converts to nothing shows no unit to choose. The energy card's power scale follows its `unit`,
+so its ticks and its legend agree.
+
+```yaml
+type: custom:fluvy-energy-flow-card
+unit: W                      # every power figure in watts, whatever its size
+decimals: 0
+readouts:
+  - { entity: sensor.grid_import_today, name: Imported, unit: Wh, decimals: 1 }
 ```
 
 ## Honest by design

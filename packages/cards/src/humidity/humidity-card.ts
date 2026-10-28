@@ -1,4 +1,5 @@
 import {
+  chartDefaults,
   fetchHistory,
   formatNumber,
   isUsable,
@@ -7,7 +8,7 @@ import {
   toggleEntity,
   valueParts,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
+  type GaugePreset,
   type LovelaceGridOptions,
   type Series,
 } from '@fluvy/core';
@@ -24,27 +25,15 @@ import {
 } from 'lit';
 
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
+import { ChartLoader } from '../shared/chart-load.js';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entityField,
-  fieldRow,
-  iconField,
-  numberField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { ROW } from '../shared/heights.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 import { sideStacked } from '../shared/value-row.js';
 
 const strings = words('humidity');
@@ -63,7 +52,23 @@ export interface HumidityCardConfig extends FluvyCardConfig {
   show_trend?: boolean;
   /** A humidifier, dehumidifier or plain switch shown as a row with its switch. */
   humidifier_entity?: string;
+  /**
+   * The comfort band's style: the ruler's ticks with the reading's marker (1.10's, `ticks`), the ruler read, lit to
+   * the reading with Fluvy's knob on it (`ruler`), or the liquid, its level the reading (`liquid`); none: the house's
+   * — any other has no room here, and reads ticks.
+   */
+  gauge?: GaugePreset;
+  /** Whether the liquid moves; none: the house's (still, it rests on its first frame). */
+  animate?: boolean;
 }
+
+/** The comfort band's style: its own `gauge`, else the house's, where it is the ruler or the liquid; else the ticks. */
+export const bandOf = (
+  config: Readonly<Record<string, unknown>> | undefined,
+): 'ticks' | 'ruler' | 'liquid' => {
+  const wanted = (config?.['gauge'] as GaugePreset | undefined) ?? chartDefaults().settings.gauge;
+  return wanted === 'ruler' || wanted === 'liquid' ? wanted : 'ticks';
+};
 
 /** The history cache in core lives five minutes; asking again sooner would only return the same window. */
 /** The band opens this far outside the ticks that bound it, so neither tick is bitten by its edge. */
@@ -116,57 +121,19 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
 
   private readonly history = new Refresher<Series | null>();
   private readonly head = new HeadFit(this);
+  /** The chart engine, for the liquid: the ruler is the card's own and waits for nothing. */
+  private readonly charts = new ChartLoader(this);
 
   constructor() {
     super();
     this.series_ = undefined;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<HumidityCardConfig>()([
-    'subtitle',
-    'low',
-    'high',
-    'temperature_entity',
-    'hours',
-    'show_trend',
-    'humidifier_entity',
-  ]);
+  static override editor(): Promise<CardEditor> {
+    return import('./humidity-editor.js');
+  }
   /** `trend_hours` was the window's older name; `trend_hours: 0` still hides the row. */
   static override aliases: AliasSpec = { keys: [{ from: 'trend_hours', to: 'hours' }] };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ show_trend: true });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['sensor', 'number', 'input_number']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(numberField('low', 0, 100), numberField('high', 0, 100)),
-        {
-          name: 'temperature_entity',
-          selector: { entity: { domain: ['sensor'], device_class: 'temperature' } },
-        },
-        {
-          name: 'humidifier_entity',
-          selector: { entity: { domain: ['humidifier', 'switch', 'fan', 'input_boolean'] } },
-        },
-        fieldRow(numberField('hours', 1, 48), boolField('show_trend')),
-        actionFields(),
-      ],
-      ...editorLabels(
-        strings,
-        {
-          low: 'low',
-          high: 'high',
-          temperature_entity: 'temperature_entity',
-          humidifier_entity: 'humidifier_entity',
-        },
-        {},
-      ),
-    };
-  }
 
   static getStubConfig(
     hass: { states?: Record<string, { attributes: { device_class?: string } }> } | undefined,
@@ -360,8 +327,11 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
             };
     }
 
-    // `dark` on the ruler: its lit ticks glow in dark mode, and nothing else tells a control which mode it is in
+    // `dark` on the ruler: its lit ticks glow in dark mode, and nothing else tells a control which mode it is in; it
+    // is read with its marker (the classic ruler) or lit to the reading with Fluvy's knob
     const parts = valueParts(this.hass, view);
+    const band = bandOf(this.config);
+    const engine = this.charts.engine;
     // the dew point beside the humidity in the longest of its words that leaves the dew point its room ("Humidity"
     // where "Relative humidity" would wrap), else under it: measured at the widest humidity and under both of the
     // side's words, so the humidity going unknown never moves the row; alone, the longest the column holds (de's
@@ -429,29 +399,47 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
         ${readout({ label: relative, value: parts.value, unit: value === null ? '' : parts.unit || '%', size: 'l' })}
         ${side ? html`<div class="so-top__side">${readout({ label: side.label, value: side.value, unit: side.unit, size: 's' })}</div>` : nothing}
       </div>
-      <div class="so-band">
-        <span
-          class="so-band__zone"
-          data-measure="value"
-          style="left:${bandLeft}px;width:${bandRight - bandLeft}px"
-        ></span>
-        <fluvy-ruler
-          marker
-          ?dark=${this.dark}
-          .value=${value ?? 0}
-          .min=${0}
-          .max=${100}
-          .step=${1}
-          .length=${width}
-          .knob=${36}
-          .tone=${unusable ? 'neutral' : markerTone}
-          ?inactive=${value === null}
-          unit="%"
-          .label=${`${name} · ${strings(this.hass, 'relative')}`}
-          .format=${(raw: number) => formatNumber(this.hass, raw, { digits: 0 })}
-        ></fluvy-ruler>
-      </div>
-      ${rulerLabels(labels)}
+      ${
+        band === 'liquid'
+          ? // the liquid takes the ruler's room and its labels' (64), its level the reading
+            html`<div class="so-band">
+              ${engine?.drawGauge({
+                style: engine.resolveGauge('liquid', this.config ?? {}),
+                size: width,
+                height: 64,
+                min: 0,
+                max: 100,
+                value: unusable ? null : value,
+                format: String,
+                tone: markerTone,
+                bare: true,
+              })}
+            </div>`
+          : html`<div class="so-band">
+                <span
+                  class="so-band__zone"
+                  data-measure="value"
+                  style="left:${bandLeft}px;width:${bandRight - bandLeft}px"
+                ></span>
+                <fluvy-ruler
+                  ?marker=${band === 'ticks'}
+                  ?readonly=${band === 'ruler'}
+                  ?dark=${this.dark}
+                  .value=${value ?? 0}
+                  .min=${0}
+                  .max=${100}
+                  .step=${1}
+                  .length=${width}
+                  .knob=${36}
+                  .tone=${unusable ? 'neutral' : markerTone}
+                  ?inactive=${value === null}
+                  unit="%"
+                  .label=${`${name} · ${strings(this.hass, 'relative')}`}
+                  .format=${(raw: number) => formatNumber(this.hass, raw, { digits: 0 })}
+                ></fluvy-ruler>
+              </div>
+              ${rulerLabels(labels)}`
+      }
       ${
         this.trendHours > 0 || humidifier
           ? html`<div class="so-rows">

@@ -19,17 +19,30 @@ import {
 } from 'lit';
 
 import {
+  CollectionFollower,
+  collectionKeyOf,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
+import {
   costStats,
   currencySymbol,
   fetchInfo,
   fetchMoney,
+  moneyFromStats,
   moneyOf,
   type EnergyInfo,
 } from '../energy-model/costs.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { downLine } from '../energy-model/outage.js';
-import { fetchPeriod, type PeriodEnergy } from '../energy-model/period.js';
+import { allocatePeriod, fetchPeriod, type PeriodEnergy } from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+} from '../energy/collection-field.js';
 import { net, readMeasure, type Directed } from '../energy-model/reading.js';
 import {
   bothWays,
@@ -49,7 +62,7 @@ import {
 import { HeadFit } from '../energy/head.js';
 import { legendStats } from '../energy/legend.js';
 import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
-import { costParts, scaled, scaleOf, type Scale } from '../energy/power.js';
+import { costParts, scaled, scaleOf, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles, type Stat } from '../energy/stats.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -63,24 +76,29 @@ import {
   entityField,
   fieldRow,
   iconField,
+  listed,
+  NUMBER_DEFAULTS,
+  numberFields,
+  onlyWhen,
   showIconField,
   textField,
   titleFields,
 } from '../shared/form.js';
 import { statsSize } from '../shared/readouts.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import { Ticker } from '../shared/ticker.js';
 import { connectionOf, gridWay, meanOf, type GridWay } from './grid.js';
 
 const g = strings('grid');
 const f = strings('energy-flow');
 
-export interface GridReadout {
+export interface GridReadout extends NumberKeys {
   entity: string;
   name?: string;
 }
 
-export interface GridCardConfig extends FluvyCardConfig {
+export interface GridCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The grid read the way a source is: one signed sensor (+ import) … */
@@ -98,6 +116,8 @@ export interface GridCardConfig extends FluvyCardConfig {
   price?: string;
   /** Up to three totals under it. None: today's imported, exported and net cost from the Energy dashboard. */
   readouts?: ReadonlyArray<string | GridReadout>;
+  /** An Energy date picker's key (`energy_…`): the Energy dashboard's totals over its range, with Home Assistant's own figures. */
+  collection_key?: string;
   /** The tests' clock. */
   _now?: string;
 }
@@ -182,14 +202,17 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     'voltages',
     'price',
     'readouts',
+    'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'readouts',
       title: 'editor.rows',
       domains: ['sensor'],
-      keys: ['entity', 'name'],
-      schema: [entityField(['sensor']), textField('name')],
+      keys: ['entity', 'name', 'unit', 'decimals'],
+      schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
     },
   ];
   static override aliases: AliasSpec = {
@@ -197,7 +220,15 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     items: { readouts: ITEM_ALIASES },
   };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ invert: false });
+  static override defaults: EditorDefaults = () => ({
+    invert: false,
+    collection_key: '',
+    ...NUMBER_DEFAULTS,
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -207,17 +238,31 @@ export class FluvyGridCard extends Card<GridCardConfig> {
         fieldRow(entityField(['sensor'], 'price', false), iconField()),
         showIconField(),
         entitiesField('readouts', ['sensor']),
+        // the Energy dashboard's totals (no readouts of its own) can follow a date picker
+        onlyWhen((data) => !listed(data, 'readouts').length, collectionField()),
         ...colourFields(),
+        numberFields({ units: WATT_LADDERS }),
         actionFields(),
       ],
       ...editorLabels(
         g,
         { voltages: 'editor_voltages', price: 'editor_price', readouts: 'editor_readouts' },
-        Object.fromEntries(
-          Object.entries(MEASURE_WORDS).map(([key, word]) => [key, `energy-flow.${word}` as const]),
-        ),
+        {
+          ...Object.fromEntries(
+            Object.entries(MEASURE_WORDS).map(
+              ([key, word]) => [key, `energy-flow.${word}` as const] as const,
+            ),
+          ),
+          ...COLLECTION_LABEL,
+        },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: GridCardConfig): GridCardConfig {
+    collectionKeyOf(config, 'fluvy-grid-card');
+    return config;
   }
 
   static getStubConfig(
@@ -235,12 +280,15 @@ export class FluvyGridCard extends Card<GridCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   private info: EnergyInfo | null | undefined;
   private infoAsked = false;
   private today: PeriodEnergy | null | undefined;
   private todayKey = '';
+  /** The picker's answer the totals were last read from. */
+  private followed: EnergyDataLike | undefined;
   /** The five minutes today's totals were last asked for in. */
   private asked = 0;
   private money: Map<string, number> | null | undefined;
@@ -312,6 +360,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     this.ask(this.hass);
     this.model = this.build();
   }
@@ -327,17 +376,27 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       });
     }
     if (!totals || this.prefs === undefined) return;
-    if (!this.infoAsked) {
+    if (!this.infoAsked && !this.follower.following) {
       this.infoAsked = true;
       void fetchInfo(hass).then((info) => {
         this.info = info;
         this.requestUpdate();
       });
     }
-    const now = new Date(this.now());
-    this.asked = bucketOf(now.getTime());
     const connection = this.connection();
     if (!connection) return;
+    // a picker on the view: its figures and its money, read once per answer, and nothing asked of our own
+    if (this.follower.range()) {
+      const data = this.follower.data();
+      if (data && data !== this.followed) {
+        this.followed = data;
+        this.today = allocatePeriod(data.stats, [connection]);
+        this.money = moneyFromStats(costStats([connection], data.info), data.stats);
+      }
+      return;
+    }
+    const now = new Date(this.now());
+    this.asked = bucketOf(now.getTime());
     const bucket = String(this.asked);
     const key = `${bucket}|${[...connection.energyIn, ...connection.energyOut].join(',')}`;
     if (key !== this.todayKey && (connection.energyIn.length || connection.energyOut.length)) {
@@ -393,7 +452,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       way: gridWay(reading),
       dead: !!measure && (reading.in === null || reading.out === null),
       stale: !!measure && isStale(this.newest(source), this.now()),
-      scale: scaleOf([reading.in, reading.out, value, ...(phases ?? [])], 'W'),
+      scale: scaleOf([reading.in, reading.out, value, ...(phases ?? [])], 'W', this.config),
     };
   }
 
@@ -428,7 +487,10 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       );
     const live = liveWords(this.hass, this.newest(m.source), this.now());
     if (m.stale) return live;
-    return this.meterWords(m) || live;
+    const words = this.meterWords(m) || live;
+    // the totals follow a date picker: its range leads the line (the last to go where the column cannot hold it)
+    const range = this.readouts().length ? undefined : this.follower.range();
+    return range ? `${rangeWords(this.hass, range, new Date(this.now()))} · ${words}` : words;
   }
 
   private badge(m: Model): { text: string; tone: Tone } | null {
@@ -607,7 +669,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
   private renderTotals(m: Model, w: number): TemplateResult | typeof nothing {
     const own = this.readouts();
     const stats = own.length
-      ? legendStats(this.hass, own, (id) => this.entity(id))
+      ? legendStats(this.hass, own, (id) => this.entity(id), this.config)
       : this.todayStats(m);
     return stats.length ? statsCols(this.head.ruler, w, stats) : nothing;
   }
@@ -621,7 +683,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
       data ? ids.reduce((sum, id) => sum + (data.byStat.get(id) ?? 0), 0) * 1000 : null;
     const imported = c.energyIn.length ? kwh(c.energyIn) : undefined;
     const exported = c.energyOut.length ? kwh(c.energyOut) : undefined;
-    const scale = scaleOf([imported ?? null, exported ?? null], 'Wh');
+    const scale = scaleOf([imported ?? null, exported ?? null], 'Wh', this.config);
     const energy = (label: string, v: number | null): Stat =>
       v === null
         ? { label, value: '—', unit: '' }
@@ -629,7 +691,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     const out: Stat[] = [];
     if (imported !== undefined) out.push(energy(g(this.hass, 'imported'), imported));
     if (exported !== undefined) out.push(energy(g(this.hass, 'exported'), exported));
-    const stats = costStats([c], this.info);
+    const stats = costStats([c], this.followed?.info ?? this.info);
     if (stats.cost.length || stats.compensation.length) {
       const money = this.money ? moneyOf(stats, this.money) : null;
       out.push(

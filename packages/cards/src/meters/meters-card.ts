@@ -23,11 +23,19 @@ import {
   type TemplateResult,
 } from 'lit';
 
+import { CollectionFollower, collectionKeyOf, followedMoment } from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { houseMidnight } from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
 import { isEntityId } from '../energy-model/outage.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+} from '../energy/collection-field.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { shortName } from '../energy/power.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -43,12 +51,16 @@ import {
   fieldRow,
   iconField,
   nameIconFields,
+  NUMBER_DEFAULTS,
   numberField,
+  numberFields,
   selectField,
   showIconField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { convert, convertible } from '../history-bars/units.js';
+import { decimalsOf, LADDERS, type NumberKeys } from '../shared/units.js';
 import {
   fetchToday,
   fetchWeek,
@@ -67,7 +79,7 @@ const s = strings('meters');
 export type MetersVariant = 'full' | 'rows';
 export const METERS_VARIANTS: readonly MetersVariant[] = ['full', 'rows'];
 
-export interface MeterConfig {
+export interface MeterConfig extends NumberKeys {
   /** A growing meter (`total_increasing`): m³, L, ft³, gal, CCF — or kWh for gas. */
   entity: string;
   /** What flows right now ("6 L/min"): a flow sensor, optional. */
@@ -86,7 +98,7 @@ export interface MeterRowConfig {
   icon?: string;
 }
 
-export interface MetersCardConfig extends FluvyCardConfig {
+export interface MetersCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The meters. Empty: the Energy dashboard's gas and water meters. */
@@ -95,6 +107,8 @@ export interface MetersCardConfig extends FluvyCardConfig {
   rows?: ReadonlyArray<string | MeterRowConfig>;
   /** `full`: each meter's figure beside its bar (the default). `rows`: a bar row per meter, with its icon. */
   variant?: MetersVariant;
+  /** An Energy date picker's key (`energy_…`): the meters' use over the last day of its range (the day so far while it holds today). */
+  collection_key?: string;
   /** The tests' clock: "now" for today's midnight. */
   _now?: string;
 }
@@ -123,6 +137,8 @@ interface Meter {
   readonly glyph: string;
   readonly view: EntityView;
   readonly unit: string;
+  /** The figures' decimals, where the meter or the card asks for them. */
+  readonly decimals: number | undefined;
   readonly today: number | null;
   readonly typical: number | null;
   /** The note's first words when the meter cannot give a figure: its state, or that it has no statistics. */
@@ -204,18 +220,22 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     'meters',
     'rows',
     'variant',
+    'collection_key',
+    'unit',
+    'decimals',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'meters',
       title: 'meters.editor_meters',
       domains: ['sensor'],
-      keys: ['entity', 'rate', 'typical', 'name', 'icon', 'kind'],
+      keys: ['entity', 'rate', 'typical', 'name', 'icon', 'kind', 'unit', 'decimals'],
       schema: [
         entityField(['sensor']),
         fieldRow(entityField(['sensor'], 'rate', false), numberField('typical', 0, 1_000_000, 0.1)),
         nameIconFields(),
         selectField('kind', METER_KINDS),
+        numberFields({ units: LADDERS.volume }),
       ],
       computeLabel: editorLabels(s, {
         rate: 'editor_rate',
@@ -236,18 +256,33 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   ];
   static override aliases: AliasSpec = { items: { meters: ITEM_ALIASES, rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'full' });
+  static override defaults: EditorDefaults = () => ({
+    variant: 'full',
+    collection_key: '',
+    ...NUMBER_DEFAULTS,
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
         fieldRow(iconField(), selectField('variant', METERS_VARIANTS)),
-        showIconField(),
+        fieldRow(showIconField(), collectionField()),
         ...colourFields(),
+        numberFields({ units: LADDERS.volume }),
         actionFields(),
       ],
-      ...editorLabels(s, {}),
+      ...editorLabels(s, {}, COLLECTION_LABEL),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: MetersCardConfig): MetersCardConfig {
+    collectionKeyOf(config, 'fluvy-meters-card');
+    return config;
   }
 
   static getStubConfig(
@@ -267,6 +302,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
   /** The statistics each meter's today and week came from, by the question asked (a new hour asks again). */
@@ -316,9 +352,21 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     ].filter((id): id is string => !!id);
   }
 
-  private now(): Date {
+  /** The clock (a test's, `_now`). */
+  private clock(): Date {
     const pinned = this.config?._now ? Date.parse(this.config._now) : NaN;
     return new Date(Number.isFinite(pinned) ? pinned : Date.now());
+  }
+
+  /** The moment the day is read up to: the clock, or the end of the last day a date picker holds. */
+  private now(): Date {
+    const range = this.follower.range();
+    return range ? followedMoment(range, this.clock()) : this.clock();
+  }
+
+  /** The day read is over (a picker on a past day): a meter's reading now is not part of it. */
+  private get closed(): boolean {
+    return this.now().getTime() < this.clock().getTime();
   }
 
   /* ---------- lifecycle ---------- */
@@ -341,6 +389,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     this.shownHour = Math.floor(this.now().getTime() / 3_600_000);
     if (!(this.config.meters ?? []).length && !this.prefsAsked) {
       this.prefsAsked = true;
@@ -359,7 +408,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     for (const m of this.configured()) {
       const view = this.meterView(m.entity);
       if (!this.recorded.ready(view)) continue;
-      const unit = view.unit;
+      const unit = this.unitOf(m, view);
       const hour = `${m.entity}|${unit}|${Math.floor(now.getTime() / 3_600_000)}`;
       if (this.asked.get(`day|${m.entity}`) !== hour) {
         this.asked.set(`day|${m.entity}`, hour);
@@ -409,11 +458,15 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       // yesterday's hours are no longer today's: the meter waits for its new day
       const asked = this.days.get(m.entity);
       const day = asked?.midnight === midnight ? asked : undefined;
-      const live = view.status === 'ok' ? view.number : null;
-      const today = day?.rows ? todayOf(day.rows, day.midnight, live) : null;
+      // the day in the unit the meter reads in: the statistics were asked in it, the reading and the typical day are
+      // brought to it
+      const unit = this.unitOf(m, view);
+      const live =
+        view.status === 'ok' && view.number !== null ? convert(view.number, view.unit, unit) : null;
+      const today = day?.rows ? todayOf(day.rows, day.midnight, live, this.closed) : null;
       const typical =
         typeof m.typical === 'number' && Number.isFinite(m.typical) && m.typical >= 0
-          ? m.typical
+          ? convert(m.typical, view.unit, unit)
           : (() => {
               const week = this.weeks.get(m.entity);
               return week ? typicalOf(week) : null;
@@ -440,7 +493,8 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
         label,
         glyph: m.icon ?? (kind === 'gas' ? 'flame' : 'drop'),
         view,
-        unit: view.unit,
+        unit,
+        decimals: decimalsOf(m.decimals) ?? decimalsOf(this.config?.decimals),
         today: view.status === 'ok' ? today : null,
         typical,
         trouble,
@@ -462,7 +516,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       segments.push({ text: s(this.hass, 'now', { value: m.rate ?? '—' }) });
     if (!m.trouble && m.typical !== null)
       segments.push({
-        text: s(this.hass, 'typical', { value: this.amount(m.typical, m.unit) }),
+        text: s(this.hass, 'typical', { value: this.amount(m.typical, m.unit, m.decimals) }),
         optional: segments.length > 0,
       });
     if (!segments.length) return '';
@@ -473,8 +527,16 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       : line;
   }
 
-  private amount(value: number, unit: string): string {
-    return [meterFigure(this.hass, value), unit].filter(Boolean).join(' ');
+  private amount(value: number, unit: string, decimals: number | undefined): string {
+    return [meterFigure(this.hass, value, decimals), unit].filter(Boolean).join(' ');
+  }
+
+  /** The unit a meter reads in: its own, else the card's, where the sensor's converts to it; else the sensor's. */
+  private unitOf(m: MeterConfig, view: EntityView): string {
+    const asked = [m.unit, this.config?.unit].find(
+      (unit): unit is string => typeof unit === 'string' && convertible(view.unit, unit),
+    );
+    return asked ?? view.unit;
   }
 
   /* ---------- render ---------- */
@@ -488,7 +550,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const title = this.config?.title ?? (only ? this.kindWord(only) : s(this.hass, 'title'));
     const typical = meters.some((m) => m.typical !== null);
     const first = meters[0]?.id;
-    const today = this.t('common.today');
+    const now = this.now();
+    const today = this.follower.range()
+      ? rangeWords(this.hass, { start: houseMidnight(this.hass, now), end: now }, this.clock())
+      : this.t('common.today');
     const sub =
       this.config?.subtitle ?? (typical ? `${today} · ${s(this.hass, 'vs_typical')}` : today);
     const fit = (round: boolean) =>
@@ -515,7 +580,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const keep = this.head.rowsKeepIcon(w, [
       ...(variant === 'rows' ? meters : []).map((m) => ({
         title: m.label,
-        value: m.today === null ? '—' : this.amount(m.today, m.unit),
+        value: m.today === null ? '—' : this.amount(m.today, m.unit, m.decimals),
         // what flows now is the note's figure, whole or gone with its circle
         sub: m.trouble ? '' : (m.rate ?? ''),
       })),
@@ -561,7 +626,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   /** The approved block: the figure (label over value) and, beside it, the bar against a typical day over its note. */
   private meterBlock(m: Meter, w: number): TemplateResult {
     const known = m.today !== null;
-    const value = known ? meterFigure(this.hass, m.today as number) : '—';
+    const value = known ? meterFigure(this.hass, m.today as number, m.decimals) : '—';
     const unit = known ? m.unit : '';
     const measured = this.head.ruler.width('fv-readout__value', value, 'fv-unit', unit);
     const figure = Math.max(FIGURE_MIN, Math.ceil(measured / 4) * 4);
@@ -607,7 +672,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
 
   /** The `rows` layout: a bar row per meter — its icon, its name, the note, the bar and today's figure. */
   private meterRow(m: Meter, w: number, keep: boolean): TemplateResult {
-    const value = m.today === null ? '—' : this.amount(m.today, m.unit);
+    const value = m.today === null ? '—' : this.amount(m.today, m.unit, m.decimals);
     return barRow({
       icon: keep ? m.glyph : null,
       tone: m.trouble ? 'off' : m.kind,

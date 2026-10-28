@@ -3,13 +3,19 @@ import type activity from './locales/en/activity.json';
 import type alerts from './locales/en/alerts.json';
 import type appliances from './locales/en/appliances.json';
 import type automations from './locales/en/automations.json';
+import type chart from './locales/en/chart.json';
+import type chartCard from './locales/en/chart-card.json';
 import type devices from './locales/en/devices.json';
 import type energy from './locales/en/energy.json';
+import type energyPeriod from './locales/en/energy-period.json';
+import type energyUsage from './locales/en/energy-usage.json';
 import type history from './locales/en/history.json';
+import type items from './locales/en/items.json';
 import type job from './locales/en/job.json';
 import type media from './locales/en/media.json';
 import type panel from './locales/en/panel.json';
 import type template from './locales/en/template.json';
+import type web from './locales/en/web.json';
 
 /**
  * The shape of a catalogue, taken from English (the source every other language mirrors key for key): one table
@@ -23,13 +29,19 @@ export type Catalogue = typeof core &
   typeof alerts &
   typeof appliances &
   typeof automations &
+  typeof chart &
+  typeof chartCard &
   typeof devices &
   typeof energy &
+  typeof energyPeriod &
+  typeof energyUsage &
   typeof history &
+  typeof items &
   typeof job &
   typeof media &
   typeof panel &
-  typeof template;
+  typeof template &
+  typeof web;
 
 export type Namespace = keyof Catalogue;
 

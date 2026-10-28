@@ -74,14 +74,16 @@ const DECLARED = 8;
  * Where a card's twins come from: its stub (`'stub'`, in the house of every sheet), and where the stub leaves out what
  * the card is for — a cover without a position, a player with nothing playing, a calendar without events, a list of
  * the Energy dashboard's — or misses a case worth its own twins (the owner's switch with its readouts beside a lamp's
- * ruler), a playground frame's config: [sheet, frame title, index of the card in the frame], in that sheet's house.
- * A card not named here is drawn from its stub alone.
+ * ruler), a playground frame's config: [sheet, frame title, index of the card in the frame], in that sheet's house —
+ * at half a section where the frame asks for it (`cols` 6 or fewer). A card not named here is drawn from its stub alone.
  */
 const SOURCES = {
   'fluvy-tile-card': ['stub', ['actions', 'Tile · large', 0]],
   'fluvy-tiles-card': ['stub', ['actions', 'Tiles · large · one unavailable', 0]],
   // its stub names its entity by a template; the washer has its readouts beside its words
   'fluvy-template-card': ['stub', ['template', 'Large', 0]],
+  // no entity to take out of reach: listed as such (the plate kept back for https is held by `web-card.test.ts`)
+  'fluvy-web-card': ['stub', ['web', 'Plate · 16:9', 0]],
   'fluvy-light-card': ['stub', ['slider', 'On', 0]],
   'fluvy-thermostat-card': [['climate', 'Heat', 0]],
   'fluvy-cover-card': [['devices-motion', 'Blinds', 0]],
@@ -109,6 +111,13 @@ const SOURCES = {
   'fluvy-printer-card': [['printer', 'Bambu Lab · printing', 0]],
   'fluvy-automations-card': [['automations', 'Rows', 0]],
   'fluvy-appliances-card': [['appliances', 'Appliances · rows', 0]],
+  // its stub finds no flights sensor in the house of every sheet: the issue's three aircraft
+  'fluvy-items-card': [['items', 'Items · flights', 0]],
+  // its stub reads the first price list of the house; the issue's card: Nordpool stepped, its thresholds, its windows
+  'fluvy-chart-card': ['stub', ['chart', 'Chart · Nordpool', 0]],
+  // a moving gauge in a half card, and the wind's at full width (18 km/h, its day's figures): its window's row and its
+  // signed ring laid out by what the card can write, never by what it writes now
+  'fluvy-gauge-card': ['stub', ['animated', 'Moving · tiles', 0], ['animated', 'Moving · air', 1]],
 };
 
 /**
@@ -187,11 +196,14 @@ const plan = (page, tag, source) =>
       const card = window.customElements.get(tag);
       const hass = window.fluvyMock.hass();
       let base;
+      // the columns a frame asks for its card (half a section at 6 or fewer)
+      let asked;
       try {
         if (source) {
           const [sheet, title, index] = source;
           const frame = window.fluvySheets[sheet]?.frames.find((f) => f.title === title);
           // its own columns stay its frame's: the twins are given theirs
+          asked = frame?.cards[index]?.cols;
           const config = Object.fromEntries(
             Object.entries(frame?.cards[index] ?? {}).filter(([key]) => key !== 'cols'),
           );
@@ -208,7 +220,8 @@ const plan = (page, tag, source) =>
       }
       const fields = (schema) =>
         schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
-      const form = fields(card.getConfigForm?.().schema ?? []);
+      // its editor as the base reads it: its class's, or the module a card every page carries keeps it in
+      const form = fields((await card.editor?.())?.getConfigForm().schema ?? []);
       const axis = form.find((f) => f.name === 'variant') ?? form.find((f) => f.name === 'size');
       const options = axis?.selector?.select?.options?.map((o) => o.value ?? o) ?? [];
       const variants = options.length
@@ -231,7 +244,7 @@ const plan = (page, tag, source) =>
           } catch {
             // a card that cannot say takes the section
           }
-          const half = typeof columns === 'number' && columns <= 6;
+          const half = (typeof columns === 'number' && columns <= 6) || asked <= 6;
           return { variant, config, half, widths: half ? HALF : FULL };
         }),
       };

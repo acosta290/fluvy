@@ -33,10 +33,19 @@ const BUDGETS = {
   // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
   'house-heights': 4096,
   wall: 16_384,
+  // the chart engine (1.11): the scales, paths, bars, axes, rings and gauges every chart card draws with, the styles,
+  // their sheet, the gauges that move (7 KB of it) — what the sensor's chart waits on, so the Chart card keeps a
+  // chunk of its own. Planned at 19–20 KB before the moving gauges
+  chart: 24_576,
+  // the Chart card (1.11, #68): the card, the readers of its series (history, statistics, a list, a forecast), its
+  // editor and its English
+  'chart-card': 16_384,
   // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 80 KB since
   // 1.10 (its sheet left core, 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the
   // power chart's axes); 64 before
   energy: 81_920,
+  // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it
+  'energy-period': 16_384,
   // the history bars' readings: the resets and the steps, the recorder's history, fetched by the first card needing them
   'history-bars-readings': 8192,
   // the media family: the player and the now-playing strip
@@ -67,11 +76,20 @@ const BUDGETS = {
   'alerts-sheet': 12_288,
   // the template card: its card on the tile's, the parsers of its templates' answers, its English (1.10, #59)
   template: 8192,
+  // the web page card: its card, its address and rounds rules, its English (1.11, #61)
+  web: 8192,
+  // the items family: the card, its fields and presets, its English (1.11, #66)
+  items: 12_288,
+  // the items' sheet: fetched when an item is tapped
+  'items-sheet': 8192,
   // the light card's colour controls: the quick colours' table and row, fetched by the first colour bulb
   'light-colour': 4096,
   // the weather card
   weather: 12_288,
   editor: 8192,
+  // the editors of the cards every page carries: their forms, lists and defaults, fetched with the visual editor
+  // (1.11: they left core, 6.3 KB)
+  forms: 12_288,
   'view-icons': 4096,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
@@ -80,8 +98,10 @@ const BUDGETS = {
   pages: 12_288,
   activity: 32_768,
   history: 16_384,
-  // 24 KB since 1.9 (the appliances' and the alerts' words): 20 in 1.8, 16 before
-  lang: 24_576,
+  // 28 KB since 1.11 (the date picker's, the units', a row's real last change's, the web page's and the Items card's
+  // words, the flights preset's among them: Japanese, the longest, went 320 B over 24); 24 since 1.9 (the appliances'
+  // and the alerts' words), 20 in 1.8, 16 before
+  lang: 28_672,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

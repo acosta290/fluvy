@@ -31,6 +31,9 @@ export const panelStyles = css`
     margin: 0 auto;
     padding: 12px 16px 16px;
     box-sizing: border-box;
+    /* the layout never eases: under reduced motion every property's 1 ms would hold the side column's grid at the
+       phone's 760 for a frame, and the open tab would be laid out (its drawings drawn) for a 288 column first */
+    transition-property: none;
   }
   @container pn (min-width: 648px) {
     .pn {
@@ -192,9 +195,9 @@ export const panelStyles = css`
   }
   .pn-tabs.is-wide .pn-tabs__row {
     display: grid;
-    /* five equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
+    /* six equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
        what is left: a word is never cut for the sake of equal cells */
-    grid-template-columns: repeat(5, minmax(max-content, 1fr));
+    grid-template-columns: repeat(6, minmax(max-content, 1fr));
     column-gap: 8px;
     justify-content: start;
     padding: 0;
@@ -744,7 +747,8 @@ export const panelStyles = css`
       height: 96px;
     }
   }
-  .pn-art svg {
+  /* the picture the panel draws itself fills its miniature; the engine's drawings in a tile keep their own size */
+  .pn-art > svg {
     display: block;
     width: 100%;
     height: 100%;
@@ -861,6 +865,13 @@ export const panelStyles = css`
       --n: 12;
     }
   }
+  /* three a row where six 44s cannot keep 4 between them (a 284 content, from 356: a 320 phone's 248): a dot is never
+     smaller than a finger's 44, so the row wraps */
+  @container pn (max-width: 355px) {
+    .pn-dots {
+      --n: 3;
+    }
+  }
   /* colours shown to someone who may not change them */
   .pn-dots--static .pn-dot {
     pointer-events: none;
@@ -916,6 +927,168 @@ export const panelStyles = css`
     height: 100%;
     opacity: 0;
     cursor: pointer;
+  }
+
+  /* the Charts tab's tiles (the styles, the gauges): rows of two on a phone, four on a wide panel, and a last row short
+     of them sharing the width among its own (charts.ts), so every row is full; the previews' two modes side by side */
+  .pn-tiles {
+    display: grid;
+    gap: var(--pn-gap);
+  }
+  .pn-tiles__row {
+    display: grid;
+    grid-template-columns: repeat(
+      var(--n),
+      round(down, calc((100% - (var(--n) - 1) * var(--pn-gap)) / var(--n) + 0.01px), 1px)
+    );
+    gap: var(--pn-gap);
+    justify-content: start;
+  }
+  .pn-modes {
+    display: grid;
+    grid-template-columns: repeat(2, round(down, calc((100% - var(--pn-gap)) / 2 + 0.01px), 1px));
+    gap: var(--pn-gap);
+    justify-content: start;
+  }
+  .pn-tiles--static .pn-tile,
+  .pn-sets--static .pn-set {
+    pointer-events: none;
+  }
+  /* a chart's picture: the engine's drawing on the card's surface, as a palette's is its page (the knob's halo is that
+     surface, so it cuts the line under it) */
+  .pn-art--chart {
+    --sw-page: var(--fluvy-card);
+    --sw-border: var(--fluvy-border);
+    --knob-halo: var(--fluvy-card);
+  }
+  @container pn (min-width: 648px) {
+    .pn-art--style {
+      height: 96px;
+    }
+  }
+  /* a gauge's picture is the dial's own height (96 across and its opening, 100 down) inside its 8: the dial's disc on
+     the grid, the ring and the ruler centred on it */
+  .pn-art--gauge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 116px;
+  }
+  /* what the chosen style lets the house tune, said where there is nothing to tune */
+  .pn-note {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+    color: var(--fluvy-text-secondary);
+    text-wrap: pretty;
+  }
+  /* the sets of series colours: a row each, as the custom palette's (its picture, its name, a check when worn), as wide
+     as the card: what the words need never widens it */
+  .pn-sets {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--pn-gap);
+  }
+  /* the words wrap as the custom palette's do, on two lines at most; a set's name (the house's own words) ends in its
+     ellipsis where a word is wider than its line or a third line would start */
+  .pn-set .pn-custom__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pn-set .pn-art {
+    padding: 8px 12px;
+  }
+  /* a set's six colours, on the picker's columns: each a 36 dot in its 44, the one being picked ringed in the accent
+     with the card between, each carrying its mark (the palette's where it follows the palette, a lock where fixed) */
+  .pn-slot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--dot-ink);
+    cursor: pointer;
+  }
+  .pn-slot::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid color-mix(in oklab, var(--dot) 86%, var(--fluvy-text));
+    border-radius: 50%;
+    background: var(--dot);
+  }
+  .pn-slot svg {
+    position: relative;
+    width: 16px;
+    height: 16px;
+  }
+  .pn-slot.is-active {
+    box-shadow: inset 0 0 0 2px var(--fluvy-accent);
+  }
+  /* the colour being picked: its number, and its mark in words at the end of the row */
+  .pn-slot-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 8px;
+  }
+  .pn-slot-head__title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+  .pn-mark {
+    gap: 4px;
+  }
+  .pn-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pn-check.pn-status {
+    margin-top: 0;
+  }
+  /* the two modes side by side, each a card in its own colours (the look scoped to it), its name over its drawings */
+  .pn-mode {
+    --knob-halo: var(--fluvy-card);
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: var(--fluvy-radius-control);
+    background: var(--fluvy-card);
+    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    color: var(--fluvy-text);
+  }
+  .pn-mode__name {
+    margin: 0;
+  }
+  .fc-preview {
+    display: grid;
+    gap: 12px;
+  }
+  .fc-preview__gauge {
+    display: flex;
+    justify-content: center;
+  }
+  /* the light half of a dark panel: a light card's fills, not the dark mode's six points more */
+  :host .pn-day .fc-chart {
+    --fc-boost: 0;
+  }
+  /* the bubble arrives with the dot it belongs to, once the line has drawn itself (at once, still) */
+  .fc-preview .fc-chart:not(.is-still) ~ .fv-bubble {
+    animation: fv-fade 500ms var(--fv-ease) both;
+    animation-delay: 620ms;
   }
 
   /* the preview: the cards at their real size, laid out by the width it has (under the settings, or in the side

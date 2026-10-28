@@ -9,10 +9,20 @@
  * as wide as the field; in a short viewport it opens over the field, as tall as the room there; letters find a
  * name; Tab chooses and moves on to the next control; a browser without the Popover API draws the same box; the
  * help row opens the translating guide in a new tab; under reduced motion the menu shows and hides without an
- * animation.
+ * animation. The Charts tab (1.11): it opens after Appearance with every style and gauge drawn as a tile and the
+ * preview in both modes; a style tile applies at once and a card on the page that names no style redraws in it; the
+ * fine settings show and hide with the style, the waves with a gauge that moves; motion off freezes the preview, the
+ * tiles (the moving gauges' too) and the card; a new set of series colours starts on the palette's six, followed, and
+ * is picked from the palette's colours (the picker's groups, each swatch in its token's colour, on one set of columns;
+ * a swatch follows the palette, a hex typed under Custom is fixed, each with its mark), checked (two a breath apart are
+ * said, by name), saved and worn, renamed in its place and let go; a palette chosen recolours a set that follows it
+ * and leaves a set of hexes as it was; at a 320 phone, in every language, the sets and the editor's dots stay in their
+ * cards and the page does not scroll sideways; the moving gauges' tiles say their words in the panel's language; the
+ * tab logs no console error (a drawing never comes out at a size below 0), light and dark, at 320, 360, 412 and 1400,
+ * with motion and under reduced motion, nor when the panel is hidden and shown again.
  */
 import { everyLanguage } from './lib.mjs';
-import { settle, startSuite } from './lib/suite.mjs';
+import { BASE, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -307,6 +317,507 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
     JSON.stringify(opened),
   );
   await page.close();
+}
+
+/* ---------- the Charts tab (1.11) ---------- */
+
+/** The Charts tab's parts on a page of the panel. */
+const chartsTab = (page) => ({
+  tile: (name) =>
+    page.locator('fluvy-panel .pn-tile').filter({
+      has: page.locator('.pn-swatch__label', { hasText: new RegExp(`^${name}$`) }),
+    }),
+  labels: () =>
+    page
+      .locator('fluvy-panel .pn-card .pn-label')
+      .evaluateAll((all) => all.map((label) => label.textContent.trim())),
+  row: (title) => page.locator('fluvy-panel .fv-row', { hasText: title }),
+  set: (name) => page.locator('fluvy-panel .pn-set', { hasText: name }),
+  editor: page.locator('fluvy-panel .pn-editor'),
+});
+
+{
+  // the house of the chart styles' sheet beside the panel, and a sensor's card on the page that names no style
+  const page = await suite.page('panel=charts&sheet=chart-styles&frames=none');
+  const c = chartsTab(page);
+  check(
+    'the Charts tab opens after Appearance',
+    (await page.locator('fluvy-panel [role="tab"]').nth(1).textContent()).trim() === 'Charts' &&
+      (await page.locator('fluvy-panel #pn-tab-charts').getAttribute('aria-selected')) === 'true',
+  );
+  check(
+    'eight styles and eleven gauges (four controls, seven that move) as tiles, each drawn by the engine; classic and ticks chosen',
+    (await page.locator('fluvy-panel .pn-art--style svg.fc-chart').count()) === 8 &&
+      (await page.locator('fluvy-panel .pn-art--gauge').count()) === 11 &&
+      (await page.locator('fluvy-panel .pn-art--gauge .fc-scene').count()) === 7 &&
+      (await c.tile('Classic').getAttribute('aria-pressed')) === 'true' &&
+      (await c.tile('Ticks').getAttribute('aria-pressed')) === 'true',
+  );
+  check(
+    'a chart, its bars and a gauge previewed in both modes side by side',
+    (await page.locator('fluvy-panel .pn-card--preview .pn-mode').count()) === 2 &&
+      (await page.locator('fluvy-panel .pn-mode.pn-night .fc-preview svg.fc-chart').count()) ===
+        2 &&
+      (await page.locator('fluvy-panel .pn-mode.pn-day .fc-preview svg.fc-chart').count()) === 2,
+  );
+  const sensor = await page.evaluateHandle(async () => {
+    const card = document.createElement('fluvy-sensor-card');
+    card.setConfig({
+      type: 'custom:fluvy-sensor-card',
+      entity: 'sensor.cs_temperature',
+      _now: '2026-09-17T21:47:12',
+    });
+    card.hass = window.fluvyMock.hass();
+    document.body.append(card);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return card;
+  });
+  const drawn = () =>
+    sensor.evaluate((card) => card.shadowRoot.querySelector('svg.fc-chart')?.getAttribute('class'));
+  check(
+    'a card that names no style draws the house’s: classic from the factory',
+    !/fc-chart--/.test((await drawn()) ?? 'none'),
+    await drawn(),
+  );
+  await c.tile('Soft').click();
+  await settle(page, 400);
+  check(
+    'a style tile applies at once: the card on the page redraws in it, the bar names it',
+    /fc-chart--soft/.test((await drawn()) ?? '') &&
+      (await barText(page)) === 'Charts · Style · Soft' &&
+      (await c.tile('Soft').getAttribute('aria-pressed')) === 'true',
+    await drawn(),
+  );
+  check(
+    'the preview draws the soft style in both modes, its line and its bars',
+    (await page.locator('fluvy-panel .fc-preview svg.fc-chart--soft').count()) === 4,
+  );
+  check(
+    'the soft style offers what it draws with: its soft shadow, its line’s end, now',
+    JSON.stringify(await c.labels()) ===
+      JSON.stringify([
+        'Line',
+        'Soft shadow',
+        'Shadow strength',
+        'Fill',
+        'Gridlines',
+        'Line’s end',
+        'Now',
+        'Bars’ ends',
+        'Bubble',
+      ]),
+    JSON.stringify(await c.labels()),
+  );
+  await c.tile('Bars').click();
+  await settle(page, 300);
+  check(
+    'bars hide what they do not draw with (the line, its shadow, its end, now)',
+    JSON.stringify(await c.labels()) === JSON.stringify(['Gridlines', 'Bars’ ends', 'Bubble']),
+    JSON.stringify(await c.labels()),
+  );
+  // a gauge that moves: its waves are the house's to tune; a control has none
+  await c.tile('Liquid').click();
+  await settle(page, 300);
+  const waves = await c.labels();
+  await c.tile('Ticks').click();
+  await settle(page, 300);
+  check(
+    'a gauge that moves offers its waves, under the style’s rows; a control none',
+    waves.at(-1) === 'Waves' && !(await c.labels()).includes('Waves'),
+    JSON.stringify(waves),
+  );
+  await c.tile('Classic').click();
+  await settle(page, 300);
+  check(
+    'classic offers nothing to tune but motion, and says why',
+    (await c.labels()).length === 0 &&
+      (await page.locator('fluvy-panel .pn-note').textContent()).includes('Classic is the chart') &&
+      (await barText(page)) === '' &&
+      !/fc-chart--/.test((await drawn()) ?? 'none'),
+  );
+  // motion off: the previews and the tiles draw their resting frame, nothing animates
+  await c.tile('Soft').click();
+  await settle(page, 200);
+  await c.row('Motion').locator('.fv-hit').click();
+  await settle(page, 300);
+  const moving = await page.evaluate(() => {
+    const root = document.querySelector('fluvy-panel').shadowRoot;
+    const charts = [...root.querySelectorAll('.fc-preview svg.fc-chart, .pn-art--style svg')];
+    return {
+      charts: charts.length,
+      still: charts.filter((svg) => svg.classList.contains('is-still')).length,
+      animated: [
+        ...root.querySelectorAll('.fc-preview .fc-line, .fc-preview .fc-bar, .fc-preview .fv-knob'),
+      ]
+        .map((el) => getComputedStyle(el).animationName)
+        .filter((name) => name !== 'none').length,
+      // the gauges that move, on their tiles
+      scenes: root.querySelectorAll('.pn-art--gauge .fc-scene').length,
+      running: [...root.querySelectorAll('.pn-art--gauge .fc-scene')].flatMap((scene) =>
+        scene.getAnimations({ subtree: true }),
+      ).length,
+    };
+  });
+  check(
+    'motion off freezes the preview: every drawing still, not one animation',
+    moving.charts === 12 && moving.still === 12 && moving.animated === 0,
+    JSON.stringify(moving),
+  );
+  check(
+    'and the gauges that move rest on their tiles, on their first frame',
+    moving.scenes === 7 && moving.running === 0,
+    JSON.stringify(moving),
+  );
+  check('and the card on the page with it', /is-still/.test((await drawn()) ?? ''), await drawn());
+  await page.close();
+}
+
+{
+  // the house's own series colours: picked from the palette's (they follow it) or typed (fixed), checked, kept,
+  // renamed, let go
+  const page = await suite.page('panel=charts');
+  const c = chartsTab(page);
+  await c.row('New set…').click();
+  await settle(page, 300);
+  const slots = c.editor.locator('.pn-slot');
+  const swatch = (name) => c.editor.locator(`.pn-dot[aria-label="${name}"]`);
+  const custom = c.editor.locator('.pn-hex__input');
+  const mark = async () => (await c.editor.locator('.pn-mark').textContent()).trim();
+  const slotWords = () => slots.evaluateAll((all) => all.map((s) => s.getAttribute('aria-label')));
+  check(
+    'a new set opens on the palette’s six, each following the palette, the first being picked; both modes drawn',
+    JSON.stringify(await slotWords()) ===
+      JSON.stringify(
+        [1, 2, 3, 4, 5, 6].map((n) => `Colour ${n}: Series ${n} · Follows the palette`),
+      ) &&
+      (await slots.first().getAttribute('aria-pressed')) === 'true' &&
+      (await mark()) === 'Follows the palette' &&
+      (await swatch('Series 1').getAttribute('aria-pressed')) === 'true' &&
+      (await c.editor.locator('.pn-mode svg.fc-chart').count()) === 2 &&
+      (await c.editor.locator('.fv-btn', { hasText: 'Save set' }).isDisabled()),
+    JSON.stringify(await slotWords()),
+  );
+  // the picker: the palette's twelve series colours, its accent with the statuses and the lit light, the energy states,
+  // each drawn as the panel's look has it in the mode on screen, every group on the same columns
+  const picker = await c.editor.evaluate((editor) => {
+    const rgb = (hex) =>
+      `rgb(${hex
+        .trim()
+        .slice(1)
+        .match(/../g)
+        .map((h) => parseInt(h, 16))
+        .join(', ')})`;
+    const dots = [...editor.querySelectorAll('.pn-dot')];
+    const token = (dot) => /var\((--fluvy-[\w-]+)\)/.exec(dot.getAttribute('style'))?.[1] ?? '';
+    return {
+      groups: [...editor.querySelectorAll('.pn-label')].map((label) => label.textContent.trim()),
+      count: dots.length,
+      wrong: dots
+        .filter(
+          (dot) =>
+            getComputedStyle(dot).backgroundColor !==
+            rgb(getComputedStyle(dot).getPropertyValue(token(dot))),
+        )
+        .map((dot) => dot.getAttribute('aria-label')),
+      // the columns: a slot, a series colour, a tone and an energy state in the same place
+      columns: [editor.querySelector('.pn-slot'), dots[0], dots[12], dots[18]].map((dot) =>
+        Math.round(dot.getBoundingClientRect().left + dot.offsetWidth / 2),
+      ),
+    };
+  });
+  check(
+    'the picker: twenty-four of the palette’s colours in three groups and Custom, each in its token’s colour, on one set of columns',
+    picker.groups.join() === 'Name,Colours,Series,Tones,Energy,Custom' &&
+      picker.count === 24 &&
+      picker.wrong.length === 0 &&
+      new Set(picker.columns).size === 1,
+    JSON.stringify(picker),
+  );
+  // a swatch picked names the palette's colour; two of the palette's own that sit together are said by their words
+  await slots.nth(1).click();
+  await swatch('Solar').click();
+  await settle(page, 200);
+  const solar = (await slotWords())[1];
+  await swatch('Accent').click();
+  await settle(page, 200);
+  check(
+    'a swatch picked follows the palette, by its name; two of the palette’s own that sit together are said by their words',
+    solar === 'Colour 2: Solar · Follows the palette' &&
+      (await c.editor.locator('.pn-status').textContent()).trim() ===
+        'Series 1 and Accent are too close to tell apart',
+    `${solar} | ${await c.editor.locator('.pn-status').textContent()}`,
+  );
+  // a hex typed under Custom is fixed: its mark says so, and no swatch is picked
+  const type = async (n, colour) => {
+    await slots.nth(n).click();
+    await custom.fill(colour);
+    await custom.press('Enter');
+  };
+  await type(0, '#2563eb');
+  await settle(page, 200);
+  check(
+    'a hex typed under Custom is fixed: its slot carries the lock, its mark says Fixed, no swatch is picked',
+    (await slotWords())[0] === 'Colour 1: #2563eb · Fixed' &&
+      (await mark()) === 'Fixed' &&
+      (await c.editor.locator('.pn-dot.is-active').count()) === 0,
+    `${(await slotWords())[0]} | ${await mark()}`,
+  );
+  const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
+  for (const [n, colour] of both.entries()) await type(n, colour);
+  await settle(page, 200);
+  check(
+    'six that stand apart and read on either card pass',
+    (await c.editor.locator('.pn-status').count()) === 0 &&
+      (await c.editor.locator('.pn-check').textContent()).includes('Every colour stands apart'),
+  );
+  // each mode's lines as its card wears them: the colour drawn, and its contrast on that mode's card
+  const worn = () =>
+    c.editor.evaluate((editor) => {
+      const luminance = (css) => {
+        const [r, g, b] = css.match(/\d+/g).map((v) => {
+          const c = Number(v) / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const read = (mode) => {
+        const card = luminance(
+          getComputedStyle(editor.querySelector(`.pn-mode[data-mode="${mode}"]`)).backgroundColor,
+        );
+        return [...editor.querySelectorAll(`.pn-mode[data-mode="${mode}"] .fc-line`)].map(
+          (line) => {
+            const colour = getComputedStyle(line).stroke;
+            const [hi, lo] = [luminance(colour), card].sort((a, b) => b - a);
+            return { colour, contrast: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100 };
+          },
+        );
+      };
+      return { light: read('light'), dark: read('dark') };
+    });
+  await type(3, '#1e3a8a');
+  await type(4, '#f4e9d0');
+  await settle(page, 200);
+  const fitted = await worn();
+  check(
+    'a navy is lifted to read on the dark card and a cream deepened on the light one; each drawn as typed on the other',
+    fitted.dark[3].contrast >= 3 &&
+      fitted.dark[3].colour !== 'rgb(30, 58, 138)' &&
+      fitted.light[3].colour === 'rgb(30, 58, 138)' &&
+      fitted.light[4].contrast >= 3 &&
+      fitted.light[4].colour !== 'rgb(244, 233, 208)' &&
+      fitted.dark[4].colour === 'rgb(244, 233, 208)',
+    JSON.stringify({ navy: fitted.dark[3], cream: fitted.light[4] }),
+  );
+  check(
+    'nothing is said of a colour fitting fixes; the navy lifted beside the blue is, on the dark card',
+    (await c.editor.locator('.pn-status').textContent()).trim() ===
+      '#2563eb and #1e3a8a are too close to tell apart on a dark card',
+    await c.editor.locator('.pn-status').textContent(),
+  );
+  await type(3, '#dc2626');
+  await type(4, '#9333ea');
+  await settle(page, 200);
+  await type(1, '#2463ea');
+  await settle(page, 200);
+  check(
+    'two colours a breath apart (ΔE under 8): the check says which, and why',
+    (await c.editor.locator('.pn-status').textContent()).includes(
+      '#2563eb and #2463ea are too close to tell apart',
+    ),
+  );
+  await type(1, '#d97706');
+  await c.editor.locator('.pn-text input').fill('Dusk');
+  await settle(page, 200);
+  await c.editor.locator('.fv-btn', { hasText: 'Save set' }).click();
+  await settle(page, 400);
+  check(
+    'saved: the house keeps it, the editor closes, the charts wear it from the bar',
+    (await c.editor.count()) === 0 &&
+      (await c.set('Dusk').getAttribute('aria-pressed')) === 'true' &&
+      (await barText(page)) === 'Charts · Series colours · Dusk',
+    await barText(page),
+  );
+  await c.row('Edit this set').click();
+  await settle(page, 300);
+  await c.editor.locator('.pn-text input').fill('Evening');
+  await c.editor.locator('.fv-btn', { hasText: 'Save set' }).click();
+  await settle(page, 400);
+  check(
+    'renamed in its place, still worn',
+    (await c.set('Evening').count()) === 1 &&
+      (await c.set('Dusk').count()) === 0 &&
+      (await c.set('Evening').getAttribute('aria-pressed')) === 'true',
+  );
+  await c.row('Edit this set').click();
+  await settle(page, 300);
+  await c.row('Delete this set').click();
+  await settle(page, 400);
+  check(
+    'let go: the palette’s six worn again, nothing left waiting in the bar',
+    (await c.set('Evening').count()) === 0 &&
+      (await c.set('From the palette').getAttribute('aria-pressed')) === 'true' &&
+      (await barText(page)) === '',
+    await barText(page),
+  );
+  await page.close();
+}
+
+{
+  // the house's sets as a palette is chosen: Garden names the palette's colours, Sea is hexes of its own
+  const page = await suite.page('panel=charts&state=sets');
+  /** A set's picture as drawn, and the colours its tokens are in the look the panel wears. */
+  const pictures = () =>
+    page.locator('fluvy-panel').evaluate((panel) => {
+      const rgb = (hex) =>
+        `rgb(${hex
+          .trim()
+          .slice(1)
+          .match(/../g)
+          .map((h) => parseInt(h, 16))
+          .join(', ')})`;
+      const row = (name) =>
+        [...panel.shadowRoot.querySelectorAll('.pn-set')].find(
+          (set) => set.querySelector('.pn-custom__title').textContent.trim() === name,
+        );
+      const fills = (name) =>
+        [...row(name).querySelectorAll('rect')].map((rect) => getComputedStyle(rect).fill);
+      const style = getComputedStyle(row('Garden'));
+      return {
+        garden: fills('Garden'),
+        sea: fills('Sea'),
+        tokens: [
+          '--fluvy-graph-4',
+          '--fluvy-state-energy-solar',
+          '--fluvy-graph-6',
+          '--fluvy-success',
+          '--fluvy-state-energy-water',
+          '--fluvy-graph-2',
+        ].map((token) => rgb(style.getPropertyValue(token))),
+      };
+    });
+  const linen = await pictures();
+  await page.locator('fluvy-panel #pn-tab-appearance').click();
+  await settle(page, 300);
+  await page
+    .locator('fluvy-panel .pn-swatch')
+    .filter({ has: page.locator('.pn-swatch__label', { hasText: /^Volt$/ }) })
+    .click();
+  await settle(page, 300);
+  await page.locator('fluvy-panel #pn-tab-charts').click();
+  await settle(page, 400);
+  const volt = await pictures();
+  check(
+    'a palette chosen recolours a set that follows it, in that palette’s own colours, and leaves a set of hexes as it was',
+    JSON.stringify(linen.garden) === JSON.stringify(linen.tokens) &&
+      JSON.stringify(volt.garden) === JSON.stringify(volt.tokens) &&
+      linen.garden.every((colour, n) => colour !== volt.garden[n]) &&
+      JSON.stringify(volt.sea) === JSON.stringify(linen.sea),
+    JSON.stringify({ linen, volt }),
+  );
+  await page.close();
+}
+
+{
+  // a 320 phone, in every language: the sets as wide as their card, the set editor's dots inside it (three a row where
+  // six 44s do not fit, never smaller), and the page not scrolled sideways
+  const wrong = [];
+  for (const lang of await everyLanguage()) {
+    const page = await suite.page(`panel=charts&state=sets,editor&lang=${lang}`, {
+      viewport: { width: 320, height: 1000 },
+    });
+    const fit = await page.locator('fluvy-panel').evaluate((panel) => {
+      const root = panel.shadowRoot;
+      /** Whether a box stays inside its card's padding box, edge to edge. */
+      const inside = (el) => {
+        const card = el.closest('.fv-card');
+        const c = card.getBoundingClientRect();
+        const pad = getComputedStyle(card);
+        const r = el.getBoundingClientRect();
+        return (
+          r.left >= c.left + parseFloat(pad.paddingLeft) - 0.5 &&
+          r.right <= c.right - parseFloat(pad.paddingRight) + 0.5
+        );
+      };
+      const rows = [...root.querySelectorAll('.pn-set')];
+      const dots = [...root.querySelectorAll('.pn-dots > *')];
+      return {
+        sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        rows: rows.length,
+        rowsOut: rows.filter((row) => !inside(row)).length,
+        dots: dots.length,
+        dotsOut: dots.filter((dot) => !inside(dot)).length,
+        small: dots.filter((dot) => dot.getBoundingClientRect().width < 44).length,
+      };
+    });
+    if (fit.sideways || fit.rows < 2 || fit.rowsOut || fit.dots < 30 || fit.dotsOut || fit.small)
+      wrong.push(`${lang} ${JSON.stringify(fit)}`);
+    await page.close();
+  }
+  check(
+    'at a 320 phone in every language the sets and the set editor’s dots stay in their cards, no sideways scroll',
+    wrong.length === 0,
+    wrong.join(' | '),
+  );
+}
+
+{
+  // the gauges that move say their words on their tiles in the panel's language, never English under another
+  const said = async (lang) => {
+    const page = await suite.page(`panel=charts&lang=${lang}`);
+    const words = await page
+      .locator('fluvy-panel .pn-art--gauge .fc-reading__word')
+      .evaluateAll((all) => all.map((word) => word.textContent.trim()));
+    await page.close();
+    return words;
+  };
+  const english = await said('en');
+  for (const lang of ['de', 'ja']) {
+    const words = await said(lang);
+    check(
+      `the moving gauges’ tiles speak ${lang}: ${words.join(' · ')}`,
+      english.length >= 2 &&
+        words.length >= english.length &&
+        words.every((word) => !english.includes(word)),
+      `${JSON.stringify(english)} → ${JSON.stringify(words)}`,
+    );
+  }
+}
+
+{
+  // not one console error on the Charts tab: every drawing is drawn once its column is laid out, at a width it holds —
+  // never at the side column's grid caught on the phone's for a frame (under reduced motion), nor for a hidden panel's
+  // column of no width; each page the tab's every drawing (the tiles, the preview, a set being made)
+  const wrong = [];
+  const look = async (width, mode, reducedMotion) => {
+    const page = await suite.browser.newPage({ viewport: { width, height: 1000 }, reducedMotion });
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await page.goto(`${BASE}?panel=charts&state=styled,sets,editor&mode=${mode}`);
+    await page.waitForSelector('html[data-ready="1"]');
+    await settle(page, 900);
+    const panel = page.locator('fluvy-panel');
+    await panel.evaluate((element) => (element.style.display = 'none'));
+    await settle(page, 200);
+    await panel.evaluate((element) => (element.style.display = ''));
+    await settle(page, 400);
+    if (errors.length)
+      wrong.push(`${width} ${mode} ${reducedMotion}: ${[...new Set(errors)].join(' · ')}`);
+    await page.close();
+  };
+  for (const width of [320, 360, 412, 1400])
+    await Promise.all(
+      ['light', 'dark'].flatMap((mode) =>
+        ['no-preference', 'reduce'].map((motion) => look(width, mode, motion)),
+      ),
+    );
+  check(
+    'the Charts tab logs no console error, light and dark, at 320, 360, 412 and 1400, under reduced motion, hidden and shown again',
+    wrong.length === 0,
+    wrong.join(' | ').slice(0, 600),
+  );
 }
 
 /* ---------- reduced motion ---------- */

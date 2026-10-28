@@ -1,3 +1,4 @@
+import { arcDash as ringDash } from '../chart/engine/ring.js';
 import type { Scores } from '../energy-model/allocate.js';
 
 /**
@@ -49,11 +50,8 @@ export const RING_SMALL = 64;
 export const ringRadius = (size: number): number => size / 2 - 8;
 
 /** The arc's dash on a ring of `size`: its share of the circle (a figure outside 0 … 1 draws at the nearest end). */
-export function arcDash(value: number | null, size = RING): string {
-  const circumference = 2 * Math.PI * ringRadius(size);
-  const share = value === null || !Number.isFinite(value) ? 0 : Math.min(1, Math.max(0, value));
-  return `${(share * circumference).toFixed(1)} ${circumference.toFixed(1)}`;
-}
+export const arcDash = (value: number | null, size = RING): string =>
+  ringDash(value, ringRadius(size));
 
 /** The figure in a ring: a whole percent, as Home Assistant's gauges round it. */
 export const ringPercent = (value: number | null): number | null =>
@@ -93,6 +91,22 @@ export function ringLayout(count: number, width: number, widestLabel: number): R
   const spread = count === 3 && columns === 3;
   const gap = spread ? 0 : columns * column + (columns - 1) * RING_GAP <= width ? RING_GAP : TIGHT;
   return { columns, column, spread, gap, small: column < RING };
+}
+
+/**
+ * Whether the rings say their short words (`self_powered_short`, `low_carbon_short`), given the widest label of each
+ * set: where a long word is wider than the column itself, or where the long words lay fewer rings a row than there are
+ * and the short ones lay more — a Dutch "Zelfvoorzienend" laid three rings two and one at 360, where 1.10's "Autarkie"
+ * kept them in a row. A short word that lays the rings no better leaves the long one its place.
+ */
+export function shortWords(
+  count: number,
+  width: number,
+  widest: { readonly long: number; readonly short: number },
+): boolean {
+  if (widest.long > width) return true;
+  const long = ringLayout(count, width, widest.long).columns;
+  return long < count && ringLayout(count, width, widest.short).columns > long;
 }
 
 export type TotalsLayout = 'columns' | 'fluid' | 'stacked';

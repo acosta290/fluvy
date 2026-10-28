@@ -1,5 +1,6 @@
 import type { HassEntity, HomeAssistant, UnsubscribeFunc } from '@fluvy/core';
 import { simulate } from '@fluvy/demo-home/simulate';
+import { mockCollection, presetRange, stubCardHelpers, type MockPeriod } from './collection.js';
 import { renderTemplate } from './template.js';
 import {
   ADMIN_ONLY,
@@ -200,6 +201,10 @@ export interface MockOptions {
   readonly units?: 'metric' | 'imperial';
   /** The integrations' own words by key (a repair's title, `component.<domain>.issues.<key>.title`): what `loadBackendTranslation` loads. */
   readonly translations?: Readonly<Record<string, string>>;
+  /** The Energy date pickers' collections on the connection, by key; one with `after` lands that many ms later. */
+  readonly collections?: ReadonlyArray<string | { readonly key: string; readonly after: number }>;
+  /** The range every collection starts on (today unless the page says `?period=`). */
+  readonly period?: MockPeriod;
 }
 
 const iso = (date: Date): string => date.toISOString();
@@ -487,6 +492,28 @@ export function createHass(
   };
 
   current = build();
+  // the Energy date pickers' collections, as Home Assistant keeps them on its connection (`_energy_…`): one found
+  // late lands after its delay, and the cards hear of it with the next `hass`
+  const keyed = connection as unknown as Record<string, unknown>;
+  for (const spec of options.collections ?? []) {
+    const { key, after } = typeof spec === 'string' ? { key: spec, after: 0 } : spec;
+    // as Home Assistant's `getEnergyDataCollection`, a key already held (an Energy period card made it) is kept
+    const register = (): void => {
+      keyed[`_${key}`] ??= mockCollection(
+        () => current,
+        key,
+        presetRange(current, options.period ?? 'today', options.now ?? new Date()),
+      );
+    };
+    if (after)
+      setTimeout(() => {
+        register();
+        notify();
+      }, after);
+    else register();
+  }
+  // Home Assistant's card helpers: the date card the Energy period card makes where no picker holds its key
+  stubCardHelpers(() => current, options.now ?? new Date());
   return {
     hass: () => current,
     subscribe: (l) => {

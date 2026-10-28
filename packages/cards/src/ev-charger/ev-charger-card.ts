@@ -33,9 +33,13 @@ import {
   editorLabels,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
+  NUMBER_DEFAULTS,
+  numberFields,
   showIconField,
   textField,
+  unitChoicesOf,
 } from '../shared/form.js';
 import {
   carFlow,
@@ -48,10 +52,11 @@ import {
   type Due,
 } from './charger.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 
 const s = strings('ev-charger', 'energy-flow');
 
-export interface EvChargerCardConfig extends FluvyCardConfig {
+export interface EvChargerCardConfig extends FluvyCardConfig, NumberKeys {
   /** The charger's power sensor: + charges the car, − the car feeding the house (V2H). */
   entity?: string;
   /** The sensor counts charging as negative. */
@@ -109,9 +114,13 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
     'vehicle',
     'solar_share',
     'mode',
+    'unit',
+    'decimals',
   ]);
   /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ invert: false });
+  static override defaults: EditorDefaults = () => ({ invert: false, ...NUMBER_DEFAULTS });
+  /** The units the editor offers are the charger's sensor's class's. */
+  static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -127,6 +136,7 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
         ),
         fieldRow(textField('vehicle'), entityField(['select', 'input_select'], 'mode', false)),
         ...colourFields(),
+        numberFields({ when: hasLadder }),
         actionFields(),
       ],
       ...editorLabels(s, {
@@ -266,7 +276,7 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
     const w = this.contentWidth;
     const flow = this.flow();
     const tone = toneOf(this.config, 'accent');
-    const power = flow ? scaleOf([flow.watts], 'W') : null;
+    const power = flow ? scaleOf([flow.watts], 'W', this.config) : null;
     const powerText =
       flow && power ? { value: scaled(this.hass, flow.watts, power), unit: power.unit } : null;
     const levelView = this.config.level ? this.entity(this.config.level) : undefined;
@@ -375,7 +385,10 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
     const stats: Stat[] = [];
     const energy = this.config?.session_energy;
     if (energy)
-      stats.push({ label: s(this.hass, 'added'), ...readoutParts(this.hass, this.entity(energy)) });
+      stats.push({
+        label: s(this.hass, 'added'),
+        ...readoutParts(this.hass, this.entity(energy), undefined, this.config),
+      });
     if (statusView && this.charging()) {
       const since = Date.parse(statusView.stateObj?.last_changed ?? '');
       if (Number.isFinite(since)) {

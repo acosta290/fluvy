@@ -182,6 +182,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* a value with a glyph before its figure (a trend's arrow, 16): the two centred on the value's line, 4 apart */
+.fv-row__value--glyph {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fv-row__value--glyph > svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* beside a title + sub pair the value is centred on the pair, not nudged: the nudge is for one-line rows only (a bar
    row's value sits on its title's line, and keeps it) */
 /* a value in words that is a state, not a figure (a person's zone when it is not home, a view always shown): the secondary ink */

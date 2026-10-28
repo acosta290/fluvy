@@ -1,25 +1,27 @@
+import { factorOf, registerUnits, unitClass } from '../shared/units.js';
+
 /**
- * The units Home Assistant's statistics convert between (its `EnergyConverter`, `PowerConverter`, `VolumeConverter`
- * and `DistanceConverter`), each by its factor to its class's base: what a card's own `unit` may ask of the recorder
- * (`units` in a statistics request) and what a live reading or a history state is brought into, so a rain gauge in
- * millimetres reads in inches whichever way its figures come. A unit of another class, or one no converter knows, is
- * not convertible: the card keeps the sensor's own.
+ * The units the energy family converts between, beyond the watt ladders every page knows: the rest of Home Assistant's
+ * `EnergyConverter` and `PowerConverter`, its `VolumeConverter` and its `DistanceConverter`, each unit by its factor
+ * to its class's base — what a card's own `unit` may ask of the recorder (`units` in a statistics request) and what a
+ * live reading or a history state is brought into, so a rain gauge in millimetres reads in inches whichever way its
+ * figures come. Known from the moment the family's chunk lands; a unit of another class, or one no converter knows,
+ * is not convertible: the card keeps the sensor's own.
  */
-
-export type UnitClass = 'energy' | 'power' | 'volume' | 'distance';
-
-/** Each class's units by their factor to its base: Wh, W, L and m. */
-const FACTORS: Readonly<Record<UnitClass, Readonly<Record<string, number>>>> = {
+registerUnits({
   energy: {
-    Wh: 1,
-    kWh: 1e3,
-    MWh: 1e6,
-    GWh: 1e9,
+    mWh: 1e-3,
     TWh: 1e12,
-    MJ: 1e6 / 3600,
-    GJ: 1e9 / 3600,
+    J: 1 / 3600,
+    kJ: 1 / 3.6,
+    MJ: 1e3 / 3.6,
+    GJ: 1e6 / 3.6,
+    cal: 4.184 / 3600,
+    kcal: 4.184 / 3.6,
+    Mcal: 4184 / 3.6,
+    Gcal: 4.184e6 / 3.6,
   },
-  power: { mW: 1e-3, W: 1, kW: 1e3, MW: 1e6, GW: 1e9 },
+  power: { mW: 1e-3, TW: 1e12, 'BTU/h': 0.29307107 },
   volume: {
     mL: 1e-3,
     L: 1,
@@ -39,13 +41,9 @@ const FACTORS: Readonly<Record<UnitClass, Readonly<Record<string, number>>>> = {
     yd: 0.9144,
     mi: 1609.344,
   },
-};
+});
 
-const CLASSES = Object.keys(FACTORS) as UnitClass[];
-
-/** The class a unit belongs to, or undefined for one no converter knows. */
-export const unitClass = (unit: string): UnitClass | undefined =>
-  CLASSES.find((name) => Object.hasOwn(FACTORS[name], unit.trim()));
+export { unitClass, type UnitClass } from '../shared/units.js';
 
 /** Whether a value in `from` can be read in `to`: the same unit, or two of one class. */
 export const convertible = (from: string, to: string): boolean =>
@@ -55,7 +53,7 @@ export const convertible = (from: string, to: string): boolean =>
 export function convert(value: number, from: string, to: string): number {
   const kind = unitClass(from);
   if (!kind || kind !== unitClass(to)) return value;
-  return (value * (FACTORS[kind][from.trim()] as number)) / (FACTORS[kind][to.trim()] as number);
+  return (value * (factorOf(from) as number)) / (factorOf(to) as number);
 }
 
 /** The `units` a statistics request asks for to answer in `unit`; none for a unit no converter knows. */

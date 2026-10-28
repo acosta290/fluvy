@@ -1,8 +1,10 @@
 /**
  * Inter is part of the design (the 400/600 contrast, tabular numerals, optical size). A theme cannot
  * carry `@font-face`, so the bundle registers the faces itself, from the folder it was loaded from: once
- * in the page at start (every page, not only dashboards: Settings is drawn in the theme's Inter too), and
- * in every same-origin panel frame the shell reaches (HACS), whose document has fonts of its own.
+ * in a page, when Fluvy is in use on it (the look says so — the theme on, Settings included, the look covering
+ * the app, a wall, a dashboard that wears the look — or a card, a page or the panel of ours connects; a page on
+ * another theme fetches none), and in every same-origin panel frame the shell reaches (HACS), whose document
+ * has fonts of its own.
  */
 const FACES: ReadonlyArray<readonly [file: string, style: string]> = [
   ['inter-variable.woff2', 'normal'],

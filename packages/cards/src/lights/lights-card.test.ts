@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { FluvyEntitiesCard } from '../entities/entities-card.js';
 import { FluvyLockCard } from '../lock/lock-card.js';
 import { FluvyRoomCard } from '../room/room-card.js';
+import type { CardEditor } from '../shared/base.js';
 import {
   cardForm,
   drawEditor,
@@ -181,22 +182,22 @@ describe('the room lights card’s editor (#58)', () => {
 });
 
 describe('a light’s own colour in a list: none chosen by default, its bulb’s (#58)', () => {
-  /** An item's colour field, through its rows. */
-  const colourOf = (card: { lists: readonly { schema: readonly HaFormSchemaItem[] }[] }) =>
-    card.lists[0]!.schema.flatMap((item) => item.schema ?? [item]).find(
-      (item) => item.name === 'color',
-    )!;
+  /** An item's colour field in a card's first list, through its rows. */
+  const colourOf = async (card: { editor(): Promise<CardEditor> }) =>
+    ((await card.editor()).lists ?? [])[0]!.schema
+      .flatMap((item) => item.schema ?? [item])
+      .find((item) => item.name === 'color')!;
 
-  it('says none chosen where the item wears its bulb’s, else the card’s: lights, tiles, a room’s tiles, rows', () => {
+  it('says none chosen where the item wears its bulb’s, else the card’s: lights, tiles, a room’s tiles, rows', async () => {
     for (const card of [FluvyLightsCard, FluvyTilesCard, FluvyRoomCard, FluvyEntitiesCard])
-      expect(colourOf(card).selector?.['ui_color'], card.name).toEqual({
+      expect((await colourOf(card)).selector?.['ui_color'], card.name).toEqual({
         include_none: false,
         include_state: false,
       });
-    // a lock's rows have no bulb: their colour is the palette's accent until one is chosen
-    expect(colourOf(FluvyLockCard).selector?.['ui_color']).toMatchObject({
-      default_color: 'primary',
-    });
+    // a lock's rows have no bulb: none chosen either, the row wearing the card's colour until one is
+    const lock = await colourOf(FluvyLockCard);
+    expect(lock.selector?.['ui_color']).toEqual({ include_none: false, include_state: false });
+    expect(lock.helper).toBe('editor.item_color_card_helper');
   });
 
   it('says what the light wears while none is chosen, and writes none', async () => {
@@ -207,7 +208,7 @@ describe('a light’s own colour in a list: none chosen by default, its bulb’s
     const item = editor.shadowRoot!.querySelectorAll<FormStub & { computeHelper: FormLabeler }>(
       'ha-form',
     )[1]!;
-    const field = colourOf(FluvyLightsCard);
+    const field = await colourOf(FluvyLightsCard);
     expect(item.computeHelper(field, (key: string) => key)).toBe(
       'Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s',
     );

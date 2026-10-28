@@ -48,7 +48,9 @@ const at = (day: Date, minutes: number): number => {
  * arrows walk it, turning the month), the hours of the first and the last day in our time fields (the house's clock;
  * the last day whole reads 24:00), and Show — kept back, with the reason under it, while the end is not after the
  * start. A first tap picks one day; a second tap on another day makes the band. (Week presets are left to the grid: a
- * week is two taps, and the presets stay one short row.)
+ * week is two taps, and the presets stay one short row.) The Energy period card's custom span keeps to whole days,
+ * without the hours (`whole-days`: an Energy date picker's collection is read in whole days), and to the grid, without
+ * the presets (`no-presets`: its sheet has its own over it).
  */
 export class FluvyDates extends LitElement {
   static override styles = [
@@ -133,6 +135,8 @@ export class FluvyDates extends LitElement {
     now: { type: Number },
     language: { type: String },
     t: { attribute: false },
+    wholeDays: { type: Boolean, attribute: 'whole-days' },
+    noPresets: { type: Boolean, attribute: 'no-presets' },
     month: { state: true },
     from: { state: true },
     to: { state: true },
@@ -147,6 +151,10 @@ export class FluvyDates extends LitElement {
   declare now: number;
   declare language: string;
   declare t: (key: PickerString, values?: Record<string, string | number>) => string;
+  /** Whole days only: the hours are not offered, the first day from its midnight, the last to the next one. */
+  declare wholeDays: boolean;
+  /** The grid without Today · Yesterday · Last 7 days. */
+  declare noPresets: boolean;
   /** The month on show (its first day). */
   declare month: Date;
   declare from: Date;
@@ -169,6 +177,8 @@ export class FluvyDates extends LitElement {
     this.now = Date.now();
     this.language = 'en';
     this.t = (key) => key;
+    this.wholeDays = false;
+    this.noPresets = false;
     this.month = new Date();
     this.from = new Date();
     this.to = new Date();
@@ -250,8 +260,8 @@ export class FluvyDates extends LitElement {
 
   /** The period the fields describe (its end no later than today's). */
   private chosen(): ActivityRange {
-    const start = at(this.from, this.fromTime);
-    const last = at(this.to, this.toTime >= DAY_END - 1 ? DAY_END : this.toTime);
+    const start = at(this.from, this.wholeDays ? 0 : this.fromTime);
+    const last = at(this.to, this.wholeDays || this.toTime >= DAY_END - 1 ? DAY_END : this.toTime);
     return { start, end: Math.min(last, dayRange(new Date(this.now)).end) };
   }
 
@@ -370,9 +380,8 @@ export class FluvyDates extends LitElement {
       </div>`;
   }
 
-  protected override render(): TemplateResult {
-    const range = this.chosen();
-    const valid = range.end > range.start;
+  /** The hours of the first and the last day, in our time fields (the house's clock). */
+  private renderTimes(valid: boolean): TemplateResult {
     const field = (
       which: 'from' | 'to',
       value: number,
@@ -393,17 +402,23 @@ export class FluvyDates extends LitElement {
           @fluvy-time=${(event: CustomEvent<TimeFieldDetail>) => set(event.detail.value)}
         ></fluvy-time-field>
       </div>`;
-    return html`${this.renderPresets()} ${this.renderMonth()}
-      <div class="ad-times">
-        ${field('from', this.fromTime, (value) => {
-          this.timesTouched = true;
-          this.fromTime = value;
-        })}
-        ${field('to', this.toTime, (value) => {
-          this.timesTouched = true;
-          this.toTime = value;
-        })}
-      </div>
+    return html`<div class="ad-times">
+      ${field('from', this.fromTime, (value) => {
+        this.timesTouched = true;
+        this.fromTime = value;
+      })}
+      ${field('to', this.toTime, (value) => {
+        this.timesTouched = true;
+        this.toTime = value;
+      })}
+    </div>`;
+  }
+
+  protected override render(): TemplateResult {
+    const range = this.chosen();
+    const valid = range.end > range.start;
+    return html`${this.noPresets ? nothing : this.renderPresets()} ${this.renderMonth()}
+      ${this.wholeDays ? nothing : this.renderTimes(valid)}
       <div class="ad-apply">
         <button
           class="fv-btn fv-btn--accent"

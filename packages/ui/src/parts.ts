@@ -306,6 +306,10 @@ export interface OptionItem {
   readonly active?: boolean;
   /** What it stands for cannot be read: the Unavailable surface (the dashed hairline, the off ink), no tap. */
   readonly unavailable?: boolean;
+  /** A figure's own tap (tiles with no choice to make): a button laid over its tile, named by its label and value. */
+  readonly onTap?: (() => void) | undefined;
+  /** A figure's still press of 500 ms (or the keyboard's menu key); the click that follows is swallowed. */
+  readonly onHold?: (() => void) | undefined;
 }
 
 /** Up to three tiles share a row; four make a 2 × 2; more wrap in threes — a tile never gets too narrow for its value. */
@@ -338,6 +342,7 @@ export function optionGrid(
 /**
  * Option tiles: glyph top-left, label, value; active = tone fill only. They share the column in equal cells and
  * every row is full. `compact`: the 64 tile without its glyph row — the label over the value (`height` is then 64).
+ * Without `onSelect` they are figures: still, or pressed as a tile is where one has a tap or a hold of its own.
  */
 export function options(
   items: readonly OptionItem[],
@@ -354,7 +359,13 @@ export function options(
     style="grid-template-columns:repeat(${grid.tracks}, minmax(0, 1fr));gap:${gap}px"
   >
     ${items.map((o, index) => {
-      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
+      // a figure that can be read and has a tap or a hold of its own is pressed as a tile is: a button laid over it,
+      // read as what it says ("Output · 3.2 kW")
+      const cover =
+        stat && !o.unavailable && (o.onTap ?? o.onHold)
+          ? pressCover(`${o.label} · ${o.value ?? ''}`, o.onTap, o.onHold)
+          : nothing;
+      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${cover === nothing ? '' : 'fv-tile--tap '}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
       const body = html`${compact ? nothing : html`<span class="fv-option__glyph">${icon(o.glyph)}</span>`}<span
           class="fv-option__label"
           data-name=${o.name ? '' : nothing}
@@ -365,7 +376,7 @@ export function options(
       // a minimum, not a height: a tile whose value takes two lines grows, and its row grows with it
       const style = `min-height:${height}px${grid.spans[index] === 1 ? '' : `;grid-column:span ${grid.spans[index]}`}`;
       return stat
-        ? html`<div class=${cls} data-card style=${style}>${body}</div>`
+        ? html`<div class=${cls} data-card style=${style}>${body}${cover}</div>`
         : html`<button
             class=${cls}
             data-target
@@ -507,8 +518,11 @@ export function button(
 }
 
 export interface ListRowOptions {
-  /** `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. */
-  readonly icon?: IconRef | string | null | undefined;
+  /**
+   * `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. A
+   * template: a circle of the row's own (a picture).
+   */
+  readonly icon?: IconRef | string | TemplateResult | null | undefined;
   readonly tone?: Tone;
   readonly title: string;
   /** The title is a name (a device's, a person's): it may end in an ellipsis in a narrow column, as names do. */
@@ -517,6 +531,8 @@ export interface ListRowOptions {
   readonly trailing?: 'switch' | 'chevron' | 'value' | 'button' | 'none';
   readonly on?: boolean;
   readonly value?: string;
+  /** A 16 glyph before the value (a trend's arrow). */
+  readonly valueGlyph?: IconRef | undefined;
   /** The value is a state in words, not a figure: the secondary ink (a person's zone, a view that is always shown). */
   readonly quiet?: boolean;
   /** The word on the small quiet button at the row's end (`trailing: 'button'`); the row's tap is the action. */
@@ -574,8 +590,8 @@ export function listRow(o: ListRowOptions): TemplateResult {
         )
       : trailing === 'value'
         ? html`<span
-            class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${wordsClass(o.value)}"
-            >${o.value ?? ''}</span
+            class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${o.valueGlyph ? 'fv-row__value--glyph' : ''} ${wordsClass(o.value)}"
+            >${o.valueGlyph ? icon(o.valueGlyph) : nothing}${o.value ?? ''}</span
           >`
         : trailing === 'chevron'
           ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
@@ -607,14 +623,16 @@ export function listRow(o: ListRowOptions): TemplateResult {
   </div>`;
 }
 
-/** A row's circle in its tone; none at all for `null` (the row has given its room to the name). */
+/** A row's circle in its tone; none at all for `null` (the row has given its room to the name); a template as it is. */
 const rowIcon = (
-  ref: IconRef | string | null | undefined,
+  ref: IconRef | string | TemplateResult | null | undefined,
   tone: Tone | undefined,
 ): TemplateResult | typeof nothing =>
   ref === null
     ? nothing
-    : html`<span class="fv-ico fv-ico--${tone ?? 'neutral'}" data-icon>${icon(ref)}</span>`;
+    : typeof ref === 'object'
+      ? ref
+      : html`<span class="fv-ico fv-ico--${tone ?? 'neutral'}" data-icon>${icon(ref)}</span>`;
 
 /**
  * The language's empty state: a 44 ring with a glyph over one secondary line, centred in a 120 panel — in the page's
@@ -634,8 +652,11 @@ export function emptyState(
 }
 
 export interface BarRowOptions {
-  /** `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. */
-  readonly icon?: IconRef | string | null | undefined;
+  /**
+   * `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. A
+   * template: a circle of the row's own (a picture).
+   */
+  readonly icon?: IconRef | string | TemplateResult | null | undefined;
   readonly tone?: Tone;
   readonly title: string;
   /** The title is a name (a device's, a plant's): it may end in an ellipsis in a narrow column, as names do. */
@@ -721,25 +742,6 @@ export function barRow(o: BarRowOptions): TemplateResult {
       ></span
     ></span>
   </div>`;
-}
-
-export interface StackItem {
-  readonly label: string;
-  readonly value: number;
-  readonly display: string;
-  readonly tone: Tone;
-}
-
-/** One stacked bar of segments and a legend with square swatches. */
-export function stack(items: readonly StackItem[]): TemplateResult {
-  const part = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
-  const total = items.reduce((sum, i) => sum + part(i.value), 0) || 1;
-  return html`<div class="fv-stack">
-      ${items.map((i) => html`<span class="fv-stack__seg fv-bar--${i.tone}" data-measure="value" style="width:${((part(i.value) / total) * 100).toFixed(2)}%"></span>`)}
-    </div>
-    <div class="fv-legend">
-      ${items.map((i) => html`<div class="fv-legend__row"><i class="fv-swatch fv-bar--${i.tone}"></i><span class="fv-legend__name">${i.label}</span><span class="fv-legend__value">${i.display}</span></div>`)}
-    </div>`;
 }
 
 /** Axis / ruler labels placed by value; the ends hug the edges. */

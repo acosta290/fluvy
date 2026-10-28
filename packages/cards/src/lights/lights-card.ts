@@ -9,7 +9,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Registries,
   entriesOf,
@@ -31,34 +30,14 @@ import {
 } from '@fluvy/ui';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
-import type { BaseKey } from '../shared/base.js';
+import type { CardEditor } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { onOfShort } from '../shared/counted.js';
 import { iconOf } from '../shared/domain.js';
-import {
-  accentField,
-  actionFields,
-  areaField,
-  boolField,
-  colourFields,
-  emptyFields,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  lightColourFields,
-  nameIconFields,
-  onlyWhen,
-  selectField,
-  showIconField,
-  textField,
-  tintField,
-} from '../shared/form.js';
 import { chipRows, EMPTY, entryCount, HEAD, rowsOf, type NameOf } from '../shared/heights.js';
-import { EMPTY_KEYS, hideEmpty, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { hideEmpty, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { DIMMABLE, lightLook, litColour, withMembers, type LightWhites } from '../shared/light.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { FluvyTileCard } from '../tile/tile-card.js';
 import { fittedColumns } from '../shared/chips.js';
 
@@ -199,76 +178,13 @@ export class FluvyLightsCard extends FluvyTileCard {
 
   private readonly head = new HeadFit(this);
 
-  static override base: readonly BaseKey[] = [
-    'name',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<LightsCardConfig>()([
-    'area',
-    'lights',
-    'variant',
-    'show_count',
-    'show_level',
-    'show_brightness',
-    'light_colors',
-    'light_whites',
-    'tint',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'lights',
-      title: 'lights.editor_lights',
-      domains: ['light'],
-      keys: ['entity', 'name', 'icon', 'color'],
-      schema: [
-        entityField(['light']),
-        fieldRow(textField('name'), iconField()),
-        accentField('color', { bulb: true }),
-      ],
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./lights-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'entities', to: 'lights' }],
     items: { lights: ITEM_ALIASES },
   };
-  static override defaults: EditorDefaults = () => ({
-    variant: 'row',
-    show_count: true,
-    show_level: true,
-    show_brightness: false,
-    light_colors: true,
-    light_whites: 'temperature',
-    tint: 'on',
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        areaField(),
-        nameIconFields(),
-        showIconField(),
-        fieldRow(selectField('variant', LIGHTS_VARIANTS), boolField('show_brightness')),
-        fieldRow(boolField('show_count'), boolField('show_level')),
-        lightColourFields(),
-        ...colourFields(),
-        // the tiles' colour at rest: the row and the chips have no surface to wash
-        onlyWhen(({ variant }) => variant === 'tiles', tintField()),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...formLabels({
-        show_level: 'lights.editor_show_level',
-        show_brightness: 'lights.editor_show_brightness',
-        tint: 'lights.editor_tint',
-      }),
-    };
-  }
 
   static override getStubConfig(hass: unknown, entities: readonly string[]): LightsCardConfig {
     const lights = entities.filter((id) => id.startsWith('light.')).slice(0, 3);

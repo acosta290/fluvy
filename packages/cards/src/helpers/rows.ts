@@ -11,6 +11,7 @@ import {
   type HelperRowConfig,
 } from './context.js';
 import { type TextRuler } from '../shared/fit.js';
+import { changedAt } from '../shared/since.js';
 import {
   dayText,
   dayTextShort,
@@ -93,12 +94,17 @@ const holds = (
   );
 };
 
-/** Where the entity is, else when it last changed: a row's sub is context or time, never its state again. */
+/**
+ * Where the entity is, else when it last changed (as the row's `since` says where that reads, #67): a row's sub is
+ * context or time, never its state again.
+ */
 function rowSub(host: HelperHost, view: EntityView, row: HelperRowConfig): string {
   const context = contextOf(host, view, row);
-  if (context || row.secondary !== undefined || !view.stateObj) return context;
-  const changed = new Date(view.stateObj.last_changed);
-  return Number.isNaN(changed.getTime()) ? '' : sentenceCase(relativeAgo(host.hass, changed));
+  if (context || row.secondary !== undefined) return context;
+  const changed = changedAt(host.hass, view, row.since);
+  return changed && !Number.isNaN(changed.getTime())
+    ? sentenceCase(relativeAgo(host.hass, changed))
+    : '';
 }
 
 /**

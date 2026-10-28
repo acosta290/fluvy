@@ -1,10 +1,11 @@
 /** The fluvy panel's actions beyond the look: the automatic dashboards, the settings file, the reset, the facts. */
-import { HOUSE_DEFAULTS, parseHouse, parsePersonal } from '@fluvy/core';
+import { HOUSE_DEFAULTS, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
 import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
 import type { PanelContext } from './model.js';
 import { withoutPalette, withPalette } from './palettes.js';
 import type { FluvyPanel } from './panel.js';
+import { setOf, withoutSet, withSet, type SeriesDraft } from './series.js';
 
 interface FluvyHost {
   readonly version?: string;
@@ -190,6 +191,36 @@ export function removePalette(panel: FluvyPanel, ctx: PanelContext, name: string
     () => ctx.handle.store.saveHouse({ palettes: withoutPalette(ctx.saved, name) }),
     'share.removed',
   );
+}
+
+/* ---------- the house's sets of series colours ---------- */
+
+/**
+ * The house keeps this set of series colours (an edited one in its place), an administrator's write; once kept, the
+ * editor closes and the charts wear it — an edit, saved from the bar with the rest.
+ */
+export function saveSet(panel: FluvyPanel, ctx: PanelContext, draft: SeriesDraft): void {
+  const sets = ctx.settings.chartSets;
+  const set = setOf(draft, sets);
+  if (!set) return;
+  panel.run(async () => {
+    await ctx.handle.store.saveHouse({ chartSets: withSet(sets, set) });
+    ctx.setSeriesDraft(undefined);
+    ctx.editCharts({ series: set.id });
+  }, 'charts.saved');
+}
+
+/** The house lets a set go; charts that wore it, saved or about to be, wear the palette's again. */
+export function removeSet(panel: FluvyPanel, ctx: PanelContext, id: string): void {
+  const { charts, chartSets } = ctx.settings;
+  panel.run(async () => {
+    await ctx.handle.store.saveHouse({
+      chartSets: withoutSet(chartSets, id),
+      ...(charts.series === id ? { charts: { ...charts, series: PALETTE_SERIES } } : {}),
+    });
+    ctx.setSeriesDraft(undefined);
+    if (ctx.shown.charts.series === id) ctx.editCharts({ series: PALETTE_SERIES });
+  }, 'charts.deleted');
 }
 
 /** Two taps within four seconds: the first arms it (the row says so, in the warning tone), the second resets. */

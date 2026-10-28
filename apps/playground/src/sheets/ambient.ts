@@ -412,6 +412,35 @@ export const sheet: SheetSpec = {
     ],
     ['binary_sensor.am_shed', 'unavailable', { friendly_name: 'Shed door', device_class: 'door' }],
     ['lock.am_back_door', 'locked', { friendly_name: 'Back door lock' }],
+    // #67: the real last change — a door Home Assistant says changed just now (a restart) beside the helper that
+    // kept it, a window whose own attribute holds when it opened (an epoch), a door whose helper says nothing yet
+    [
+      'binary_sensor.am_cellar_door',
+      'off',
+      { friendly_name: 'Cellar door', device_class: 'door' },
+      0,
+    ],
+    [
+      'sensor.am_cellar_door_real_last_changed',
+      at(-4 * HOUR),
+      { friendly_name: 'Cellar door · real last change', device_class: 'timestamp' },
+    ],
+    [
+      'binary_sensor.am_loft_window',
+      'on',
+      {
+        friendly_name: 'Loft window',
+        device_class: 'window',
+        opened_at: Math.round((NOW.getTime() - 3 * HOUR) / 1000),
+      },
+      0,
+    ],
+    ['binary_sensor.am_side_gate', 'off', { friendly_name: 'Side gate', device_class: 'door' }, 0],
+    [
+      'sensor.am_side_gate_real_last_changed',
+      'unknown',
+      { friendly_name: 'Side gate · real last change', device_class: 'timestamp' },
+    ],
 
     [
       'scene.am_morning',
@@ -708,6 +737,24 @@ export const sheet: SheetSpec = {
             'binary_sensor.am_kitchen_leak',
             'binary_sensor.am_garage_door',
             'binary_sensor.am_smoke',
+          ],
+        },
+      ],
+    },
+    // #67: where a row's last change is really read from — the card's pattern names a helper for every row (the
+    // cellar door's 4 h old, where Home Assistant's own says just now; the side gate's says nothing yet, so the row
+    // keeps Home Assistant's), and the loft window reads an attribute of its own (an epoch): open for 3 h
+    {
+      title: 'Since · a helper',
+      cards: [
+        {
+          type: 'custom:fluvy-openings-card',
+          _now,
+          since_pattern: 'sensor.{id}_real_last_changed',
+          rows: [
+            'binary_sensor.am_cellar_door',
+            { entity: 'binary_sensor.am_loft_window', since: 'attribute:opened_at' },
+            'binary_sensor.am_side_gate',
           ],
         },
       ],

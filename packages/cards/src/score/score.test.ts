@@ -10,6 +10,7 @@ import {
   ringPercent,
   ringRadius,
   ringsOf,
+  shortWords,
   totalsLayout,
 } from './rings.js';
 
@@ -94,6 +95,33 @@ describe('how the rings lie', () => {
   it('a column narrower than a ring takes the small ring, one a row', () => {
     expect(ringLayout(3, 84, 93)).toMatchObject({ columns: 1, column: 84, small: true });
     expect(ringLayout(3, 85, 93).column).toBe(84);
+  });
+
+  it('the short words where the long ones lose rings a row the short ones keep', () => {
+    // Dutch at 360 (a column of 320): "Zelfvoorzienend" (119) lays two a row, "Zelfstandig" three
+    expect(ringLayout(3, 320, 119).columns).toBe(2);
+    expect(shortWords(3, 320, { long: 119, short: 84 })).toBe(true);
+    // Portuguese: "Baixo carbono" (104) two a row; "Baixo CO₂" leaves "Autoconsumo" (100) the widest, three
+    expect(shortWords(3, 320, { long: 104, short: 100 })).toBe(true);
+    // at 266 (226): one a row long, two short
+    expect(shortWords(3, 226, { long: 119, short: 84 })).toBe(true);
+  });
+
+  it('the long words where the short ones lay the rings no better, or the long ones lose nothing', () => {
+    // three a row either way
+    expect(shortWords(3, 400, { long: 119, short: 84 })).toBe(false);
+    // two rings, two a row either way
+    expect(shortWords(2, 320, { long: 119, short: 84 })).toBe(false);
+    // two a row either way (a phone's 288)
+    expect(shortWords(3, 288, { long: 119, short: 84 })).toBe(false);
+    // one a row either way: the long word holds its column (a half card's 132)
+    expect(shortWords(3, 132, { long: 119, short: 84 })).toBe(false);
+  });
+
+  it('the short words where a long one is wider than the column itself, however many rings', () => {
+    // half a column's 112: "Zelfvoorzienend" would be cut
+    expect(shortWords(3, 112, { long: 119, short: 84 })).toBe(true);
+    expect(shortWords(1, 112, { long: 119, short: 84 })).toBe(true);
   });
 });
 

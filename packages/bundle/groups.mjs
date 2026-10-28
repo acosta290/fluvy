@@ -60,6 +60,33 @@ const MEDIA =
 const HISTORY_BARS_READINGS = /\/packages\/cards\/src\/history-bars\/(readings|history)\.ts/;
 
 /**
+ * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, the gauges that move and their English,
+ * and the tokens' fitting of a house's set of series colours): fetched as the bundle starts, with the families. A core
+ * card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it behind the skeleton
+ * it shows while its history loads), a card in a lazy chunk (energy, history bars, the History page, the Chart card)
+ * by a static import from its own chunk.
+ */
+const CHART =
+  /\/packages\/(cards\/src\/chart\/(engine\/|english\.ts)|tokens\/src\/build\/series\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
+
+/**
+ * The Chart card (the card, what reads its series — history, statistics, a list in an attribute, a forecast — its
+ * editor and its English, a part of its own): fetched as the bundle starts and defined as it lands, as the items card
+ * is (`chart-family.ts` stays in core: the name, the height). A chunk of its own beside the engine's: the sensor's
+ * chart waits on that one, which stays as small as it can. Named after the engine: the engine's English is its own.
+ */
+const CHART_CARD =
+  /\/packages\/(cards\/src\/(chart-cards\.ts|chart\/)|core\/src\/i18n\/locales\/en\/chart-card\.json)/;
+
+/**
+ * The Energy period card (the strip that drives an Energy date picker's collection, its picker, its sheet and its
+ * English; the period's words its followers share are the energy family's, which it imports first) and the Energy
+ * usage card (its series and its English): fetched as the bundle starts, as the energy family is, and named before it.
+ */
+const ENERGY_PERIOD =
+  /\/packages\/(cards\/src\/(energy-period-cards\.ts|energy-(period|usage)\/)|core\/src\/i18n\/locales\/en\/energy-(period|usage)\.json)/;
+
+/**
  * The energy family (its cards, the flow's drawing and motion, the model they share, every `energy/` helper but the
  * head's fitting, which the other cards use, its sheet and the family's English): fetched as the bundle starts —
  * `index.ts` announces the cards and imports this without waiting — and defined as it lands. Home Assistant builds a
@@ -119,6 +146,23 @@ const ALERTS =
 const TEMPLATE =
   /\/packages\/(cards\/src\/(template-cards\.ts|template\/)|core\/src\/i18n\/locales\/en\/template\.json)/;
 
+/**
+ * The web page card (its card, what it decides of an address and a plate's rounds, and its English): fetched as the
+ * bundle starts and defined as it lands, as the template card is (`web-family.ts` stays in core: the name, the height).
+ */
+const WEB =
+  /\/packages\/(cards\/src\/(web-cards\.ts|web\/)|core\/src\/i18n\/locales\/en\/web\.json)/;
+
+/** The items' sheet: fetched the first time an item of an Items card is tapped, never by a dashboard that only lists. */
+const ITEMS_SHEET = /\/packages\/cards\/src\/items\/sheet\//;
+
+/**
+ * The Items card (the card, its fields and presets, and its English): fetched as the bundle starts and defined as it
+ * lands, as the template card is (`items-family.ts` stays in core: the name, the height).
+ */
+const ITEMS =
+  /\/packages\/(cards\/src\/(items-cards\.ts|items\/)|core\/src\/i18n\/locales\/en\/items\.json)/;
+
 /** The light card's colour controls (the quick colours' table and row, the hue maths): fetched by the first colour bulb drawn. */
 const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/colour\.ts/;
 
@@ -132,6 +176,14 @@ const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
 /**
+ * The editors the cards every page carries keep in a module of their own (`tile/tile-editor.ts`: a card's form, its
+ * lists, what it does by default — `Card.editor()`), and the template card's, which is built on the tile's: fetched
+ * with the visual editor, the first time one of them is edited. Named before the families, so a family's folder never
+ * keeps one.
+ */
+const FORMS = /\/packages\/cards\/src\/([\w-]+)\/\1-editor\.ts$/;
+
+/**
  * @typedef {object} Group
  * @property {string | ((id: string) => string)} name the chunk's name (`chunks/<name>-<hash>.js`)
  * @property {RegExp | ((id: string) => boolean)} test whether a module (its absolute path) belongs to it
@@ -139,12 +191,13 @@ const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy and the heights it counts with the house, the wall, the weather card, the
- * media, energy (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their
- * pictures on their own), automations and alerts families (each sheet on its own), the template card, the cards'
- * editor, the view icons, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The
- * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
- * loud.
+ * page, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
+ * every page carries, the weather card, the media, the chart engine, the Chart card, the Energy period card, energy
+ * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
+ * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the items
+ * card (its sheet on its own), the cards' editor, the view icons, the icon set's other part, and everything else
+ * (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in
+ * this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -156,9 +209,13 @@ export const GROUPS = [
   { name: 'strategy', test: STRATEGY },
   { name: 'house-heights', test: HOUSE_HEIGHTS },
   { name: 'wall', test: WALL },
+  { name: 'forms', test: FORMS },
   { name: 'weather', test: WEATHER },
   { name: 'media', test: MEDIA },
   { name: 'history-bars-readings', test: HISTORY_BARS_READINGS },
+  { name: 'chart', test: CHART },
+  { name: 'chart-card', test: CHART_CARD },
+  { name: 'energy-period', test: ENERGY_PERIOD },
   { name: 'energy', test: ENERGY },
   { name: 'cameras-sheet', test: CAMERAS_SHEET },
   { name: 'devices', test: DEVICES },
@@ -169,6 +226,9 @@ export const GROUPS = [
   { name: 'alerts-sheet', test: ALERTS_SHEET },
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
+  { name: 'web', test: WEB },
+  { name: 'items-sheet', test: ITEMS_SHEET },
+  { name: 'items', test: ITEMS },
   { name: 'light-colour', test: LIGHT_COLOUR },
   { name: 'editor', test: EDITOR },
   { name: 'view-icons', test: VIEW_ICONS },

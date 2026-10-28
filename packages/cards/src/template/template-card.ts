@@ -4,36 +4,21 @@ import {
   type EntityView,
   type FluvyCardConfig,
   type LovelaceCardConfig,
-  type LovelaceConfigForm,
 } from '@fluvy/core';
 import type { TemplateResult } from 'lit';
 
 import {
   FluvyTileCard,
-  tintsAtRest,
   type TileCardConfig,
   type TileItem,
   type TileLook,
   type TileSize,
 } from '../tile/tile-card.js';
+import type { CardEditor } from '../shared/base.js';
 import type { Tint } from '../shared/colour.js';
-import { configKeys, type AliasSpec, type Secondary } from '../shared/config.js';
-import {
-  actionFields,
-  colourFields,
-  editorLabels,
-  editorLanguage,
-  editorWord,
-  entitiesField,
-  entityField,
-  fieldRow,
-  nameIconFields,
-  onlyWhen,
-  type OptionWord,
-  selectField,
-  tintField,
-} from '../shared/form.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { AliasSpec, Secondary } from '../shared/config.js';
+import type { OptionWord } from '../shared/form.js';
+import { changedAt } from '../shared/since.js';
 import { isTemplate, PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 import { templateHeight } from '../template-family.js';
 import { activeOf, colourOf, iconRefOf, type TemplateColour } from './values.js';
@@ -49,6 +34,8 @@ export interface TemplateCardConfig extends FluvyCardConfig {
    * default without one), or words of your own — a template among them.
    */
   secondary?: Secondary;
+  /** Where the entity's last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  since?: string;
   active?: Active;
   /** `always`: the card's colour shows at rest too, a wash of it and its hairline (`on`, the default: only when on). */
   tint?: Tint;
@@ -58,9 +45,14 @@ export interface TemplateCardConfig extends FluvyCardConfig {
   readouts?: readonly string[];
 }
 
-const VARIANTS: readonly TileSize[] = ['compact', 'mini', 'large'];
+export const VARIANTS: readonly TileSize[] = ['compact', 'mini', 'large'];
 /** What `secondary` takes as a keyword; any other text is the person's own words. */
-const KEYWORDS = ['state', 'area', 'last-changed', 'none'] as const satisfies readonly OptionWord[];
+export const KEYWORDS = [
+  'state',
+  'area',
+  'last-changed',
+  'none',
+] as const satisfies readonly OptionWord[];
 const keyword = (text: string): boolean => (KEYWORDS as readonly string[]).includes(text);
 
 /**
@@ -80,15 +72,6 @@ const LET_GO: readonly string[] = [
 /** The fields a template may fill: each keeps its last answer while Home Assistant works out the next. */
 type Field = 'name' | 'icon' | 'secondary' | 'active' | 'color';
 
-/** What the editor says under a field that takes a template. */
-const HELPERS: Readonly<Record<string, () => string>> = {
-  name: () => editorWord('editor.template_helper'),
-  secondary: () => editorWord('editor.secondary_helper'),
-  icon: () => s(editorLanguage(), 'editor.icon_helper'),
-  active: () => s(editorLanguage(), 'editor.active_helper'),
-  color: () => s(editorLanguage(), 'editor.color_helper'),
-};
-
 /**
  * The template card (#59): a tile whose name, line, icon, colour and fill are Home Assistant templates — or words of
  * its own, as any tile's are — with an entity, or with none. It is the tile card's tile (compact, mini or large), and
@@ -107,13 +90,9 @@ export class FluvyTemplateCard extends FluvyTileCard {
     return templateHeight(config);
   }
 
-  static override keys = configKeys<TemplateCardConfig>()([
-    'secondary',
-    'active',
-    'tint',
-    'variant',
-    'readouts',
-  ]);
+  static override editor(): Promise<CardEditor> {
+    return import('./template-editor.js');
+  }
   /**
    * Mushroom's template card, as it is pasted: its words and its colour by their names here, its layout as a variant
    * (`layout: vertical`, or its later `vertical: true`, the mini tile), and what Fluvy has no part for let go
@@ -141,36 +120,6 @@ export class FluvyTemplateCard extends FluvyTileCard {
       return next;
     },
   };
-  static override defaults: EditorDefaults = (config) => ({
-    variant: 'compact',
-    secondary: config['entity'] ? 'state' : 'none',
-    active: 'auto',
-    tint: 'on',
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(undefined, 'entity', false),
-        nameIconFields(),
-        selectField('secondary', KEYWORDS, { custom: true }),
-        fieldRow(
-          selectField('variant', VARIANTS),
-          selectField('active', ['auto', 'always', 'never'], { custom: true }),
-        ),
-        ...colourFields(),
-        // a colour at rest needs a rest and something to show then (a colour, or a tone that washes); readouts need
-        // a large tile's foot
-        onlyWhen(
-          (data, hass) => data['active'] !== 'always' && tintsAtRest(data, hass),
-          tintField(),
-        ),
-        onlyWhen((data) => data['variant'] === 'large', entitiesField('readouts', ['sensor'])),
-        actionFields(),
-      ],
-      ...editorLabels(s, { active: 'editor.active' }, { readouts: 'editor.readouts' }),
-      computeHelper: (schema) => HELPERS[schema.name]?.(),
-    };
-  }
 
   static override getStubConfig(_hass: unknown, entities: readonly string[]): TemplateCardConfig {
     const entity = entities.find((id) => /^(light|switch)\./.test(id)) ?? entities[0];
@@ -294,9 +243,8 @@ export class FluvyTemplateCard extends FluvyTileCard {
     if (entity && (secondary === 'state' || view.status !== 'ok'))
       return super.tileLine(item, view, on, level, valueInHead, small);
     if (secondary === 'state' || secondary === 'none') return '';
-    const changed = view.stateObj
-      ? relativeTime(this.hass, new Date(view.stateObj.last_changed))
-      : '';
+    const at = changedAt(this.hass, view, this.own.since);
+    const changed = at ? relativeTime(this.hass, at) : '';
     if (secondary === 'area') return view.areaName || changed;
     if (secondary === 'last-changed') return changed;
     return isTemplate(secondary)

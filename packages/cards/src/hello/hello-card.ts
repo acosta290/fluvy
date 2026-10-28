@@ -8,7 +8,6 @@ import {
   type DayParts,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type MessageKey,
 } from '@fluvy/core';
@@ -35,26 +34,13 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { dateLine } from '../helpers/datetime.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { FontsSettled } from '../shared/fonts.js';
-
-import {
-  accentField,
-  actionFields,
-  boolField,
-  editorWord,
-  entityField,
-  fieldRow,
-  formLabels,
-  textField,
-} from '../shared/form.js';
 
 import { overflows } from './fit.js';
 
 import { conditionGlyph, isCondition, isNight } from '../shared/weather.js';
-import { configKeys } from '../shared/config.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const weatherWord = strings('weather');
 const s = strings('hello');
@@ -252,38 +238,8 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     new FontsSettled(this);
   }
 
-  /** The greeting names who it greets; its avatar answers a tap and a hold; its colour is its mark's. */
-  static override base: readonly BaseKey[] = ['name', 'tap_action', 'hold_action', 'color'];
-  static override keys = configKeys<HelloCardConfig>()([
-    'person',
-    'weather',
-    'show_weather',
-    'show_date',
-    'show_avatar',
-  ]);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    show_avatar: true,
-    show_weather: true,
-    show_date: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        textField('name'),
-        fieldRow(
-          entityField(['person'], 'person', false),
-          entityField(['weather'], 'weather', false),
-        ),
-        fieldRow(boolField('show_weather'), boolField('show_date')),
-        boolField('show_avatar'),
-        accentField(),
-        actionFields(),
-      ],
-      ...formLabels({ person: 'editor.entity', weather: 'editor.weather' }),
-      computeHelper: (schema) =>
-        schema.name === 'person' ? editorWord('hello.person_helper') : undefined,
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./hello-editor.js');
   }
 
   /** A new card greets whoever looks at it: it names no person of its own. */

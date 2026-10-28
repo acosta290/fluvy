@@ -3,7 +3,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type UnsubscribeFunc,
 } from '@fluvy/core';
@@ -26,22 +25,9 @@ import { dayText, daysUntil, parseMomentText, relativeDays } from '../helpers/da
 import { textField as inputField } from '../helpers/text.js';
 
 import { HeadFit } from '../energy/head.js';
-import { Card, HEAD_BASE } from '../shared/base.js';
-
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('todo');
 
@@ -207,13 +193,9 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     this.adding_ = false;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<TodoCardConfig>()([
-    'subtitle',
-    'show_completed',
-    'show_add',
-    'show_due',
-  ]);
+  static override editor(): Promise<CardEditor> {
+    return import('./todo-editor.js');
+  }
   private readonly head = new HeadFit(this);
   /**
    * The list's name is the base's `name` (`title` was the older word for it); `hide_completed: true` was the way to
@@ -225,26 +207,6 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
       { from: 'hide_completed', to: 'show_completed', map: (value) => !value },
     ],
   };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    show_add: true,
-    show_due: true,
-    show_completed: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['todo']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(boolField('show_completed'), boolField('show_add')),
-        boolField('show_due'),
-        actionFields(),
-      ],
-      ...formLabels({}),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): TodoCardConfig {
     return {

@@ -9,12 +9,16 @@
  *   never loaded;
  * - the schedule sheet's details say "Open in Home Assistant" and "Traces", and the Activity page's chunk never
  *   loaded;
+ * - a card every page carries keeps its editor's form in the forms chunk: no dashboard fetches it, and the card's
+ *   editor brings it, worded;
  * - on a page that wears another theme, the patches leave Home Assistant's stand-in elements as Home Assistant draws
  *   them (a chart's font and colour, an icon's path, no attribute of ours, no Inter or sheet in HACS's frame, the
  *   page's chrome), and once Home Assistant applies the Fluvy theme they take Fluvy's;
  * - where the house's look covers every page, the page's background and theme colour and the frame's mark follow Home
  *   Assistant's theme as Home Assistant applies it: Fluvy's on the Fluvy theme, the other theme's (or Home Assistant's
- *   first colour) once it leaves, though Home Assistant wrote them while Fluvy's sheet was still on.
+ *   first colour) once it leaves, though Home Assistant wrote them while Fluvy's sheet was still on;
+ * - a view Home Assistant themed with the theme named Fluvy before the bundle arrived (Linen's colours written on it)
+ *   wears the house's palette, light and dark, and one in another theme keeps its own (#72).
  *
  *   node interactions-built.mjs        (`pnpm visual` runs it with the suites)
  */
@@ -149,6 +153,7 @@ for (const lang of ['en', 'de']) {
   await tab.waitForTimeout(300);
   const fetched = () =>
     tab.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name));
+  const formsAtStart = (await fetched()).some((name) => name.includes('/chunks/forms-'));
 
   // the wall's pieces, as the controller mounts them on a device that is a wall
   const wall = await tab.evaluate(
@@ -210,6 +215,27 @@ for (const lang of ['en', 'de']) {
   check(
     `${lang}: …without the Activity page's chunk`,
     !(await fetched()).some((name) => name.includes('/chunks/activity-')),
+  );
+
+  // the tile card's editor, as Home Assistant asks for it: the rows editor with the card's form, its fields worded
+  check(`${lang}: a dashboard never fetches the cards' forms`, !formsAtStart);
+  const editor = await tab.evaluate(async () => {
+    const element = await window.customElements.get('fluvy-tile-card').getConfigElement();
+    const { schema, computeLabel } = element.spec;
+    return {
+      tag: element.localName,
+      fields: schema.length,
+      size: computeLabel({ name: 'size' }, (key) => key),
+    };
+  });
+  check(
+    `${lang}: a card's editor brings its form, worded`,
+    editor.tag === 'fluvy-rows-editor' && editor.fields > 0 && editor.size === words.editor.size,
+    JSON.stringify(editor),
+  );
+  check(
+    `${lang}: …from the forms chunk`,
+    (await fetched()).some((name) => name.includes('/chunks/forms-')),
   );
   check(`${lang}: no page error`, errors.length === 0, errors.join(' | '));
   await tab.close();
@@ -357,6 +383,12 @@ function haStandIns(pencil) {
     plain.background === '' && plain.themeColor === '#03a9f4',
     `${plain.background} · ${plain.themeColor}`,
   );
+  /** The font files the page fetched (`fonts/` beside the bundle). */
+  const fonts = async () =>
+    (await tab.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name))).filter(
+      (name) => name.includes('/fonts/'),
+    );
+  check('another theme: the page fetches no font of ours', (await fonts()).length === 0);
   // Home Assistant applies the Fluvy theme: its sentinel, its font and its primary inline on <html>
   await tab.evaluate(() => {
     const style = document.documentElement.style;
@@ -366,6 +398,14 @@ function haStandIns(pencil) {
   });
   await tab.waitForTimeout(600);
   const worn = await tab.evaluate(() => window.exercise());
+  const fetchedFonts = await fonts();
+  check(
+    'the Fluvy theme: the page fetches Inter, both faces',
+    ['inter-variable.woff2', 'inter-italic-variable.woff2'].every((file) =>
+      fetchedFonts.some((name) => name.endsWith(`/fonts/${file}`)),
+    ),
+    fetchedFonts.join(', '),
+  );
   check(
     'the Fluvy theme: the chart takes the page’s font and primary',
     worn.font === 'Inter, sans-serif' && worn.series === '#856529',
@@ -485,6 +525,94 @@ function applyTheme([name, css]) {
     JSON.stringify(plain),
   );
   check('the chrome: no page error', errors.length === 0, errors.join(' | '));
+  await tab.close();
+}
+
+{
+  const tab = await browser.newPage();
+  const errors = [];
+  tab.on('pageerror', (error) => errors.push(String(error)));
+  await tab.addInitScript(standIn);
+  // the house: Volt on every page; Home Assistant's app on the Fluvy theme, and two views it themed before the bundle
+  // arrived as it themes a view (its record, then the theme's variables inline: the Fluvy file's Linen), one of them in
+  // a theme of the person's own made from the same file
+  await tab.addInitScript(() => {
+    localStorage.setItem(
+      'fluvy:settings',
+      JSON.stringify({ house: { scope: 'everywhere', palette: 'volt' }, personal: {} }),
+    );
+    document.addEventListener('readystatechange', () => {
+      const app = document.querySelector('home-assistant');
+      if (!app || app.hass) return;
+      app.hass = { ...window.standInHass('en'), themes: { theme: 'Fluvy', darkMode: false } };
+      document.documentElement.setAttribute('style', '--fluvy-theme: 1; --primary-color: #856529');
+      window.themeView = (view, name, dark) => {
+        const linen = dark ? '#cebb9c' : '#856529';
+        const vars = { '--fluvy-theme': '1', '--fluvy-palette': 'linen', '--fluvy-accent': linen };
+        view.__themes = { cacheKey: dark ? `${name}__dark` : name, keys: {} };
+        for (const [key, value] of Object.entries(vars)) view.style.setProperty(key, value);
+      };
+      for (const name of ['Fluvy', 'Sandstone']) {
+        const view = document.createElement('hui-view-container');
+        view.dataset.theme = name;
+        view.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot>';
+        view.append(document.createElement('div'));
+        window.themeView(view, name, false);
+        document.body.append(view);
+      }
+    });
+  });
+  await tab.goto(`${BASE}/lovelace/home?lang=en`);
+  await tab.waitForFunction(() => Boolean(window.__fluvy), null, { timeout: 15000 });
+  await tab.waitForTimeout(300);
+  /** What the page and the place of a card in each view read. */
+  const read = () =>
+    tab.evaluate(() => {
+      const of = (element) => {
+        const style = getComputedStyle(element);
+        return ['--fluvy-palette', '--fluvy-accent'].map((name) =>
+          style.getPropertyValue(name).trim(),
+        );
+      };
+      const view = (name) => document.querySelector(`hui-view-container[data-theme="${name}"]`);
+      return {
+        page: of(document.documentElement),
+        fluvy: of(view('Fluvy').firstElementChild),
+        marked: view('Fluvy').hasAttribute('fluvy-themed'),
+        other: of(view('Sandstone').firstElementChild),
+        otherMarked: view('Sandstone').hasAttribute('fluvy-themed'),
+      };
+    });
+  let views = await read();
+  check(
+    'a view themed Fluvy before the bundle arrived wears the house’s Volt, one in another theme keeps its Linen',
+    views.marked &&
+      views.page[0] === 'volt' &&
+      views.fluvy.join() === views.page.join() &&
+      !views.otherMarked &&
+      views.other.join() === 'linen,#856529',
+    JSON.stringify(views),
+  );
+  // Home Assistant goes dark: the page's theme again, then each view's
+  await tab.evaluate(() => {
+    const app = document.querySelector('home-assistant');
+    app.hass = { ...app.hass, themes: { theme: 'Fluvy', darkMode: true } };
+    document.documentElement.style.setProperty('--primary-color', '#cebb9c');
+    for (const view of document.querySelectorAll('hui-view-container'))
+      window.themeView(view, view.dataset.theme, true);
+  });
+  await tab.waitForTimeout(300);
+  const light = views.page[1];
+  views = await read();
+  check(
+    '…and in dark mode, the view themed Fluvy wears the house’s dark Volt, the other its dark Linen',
+    views.marked &&
+      views.page[1] !== light &&
+      views.fluvy.join() === views.page.join() &&
+      views.other.join() === 'linen,#cebb9c',
+    JSON.stringify(views),
+  );
+  check('the themed views: no page error', errors.length === 0, errors.join(' | '));
   await tab.close();
 }
 

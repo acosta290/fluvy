@@ -31,9 +31,19 @@ const SWEEP = 270;
 const STEPS = 54;
 
 /**
+ * Where a dial of radius `R` writes its range, under its ticks' end on the 4 grid: its height is 16 more (and the
+ * stepper's row where it has one) — the room a gauge drawn in a dial's place keeps.
+ */
+export function dialLabelTop(R: number, tick: number): number {
+  const half = Math.ceil((R + tick + 12) / 4) * 4; // half-size on the 4 grid so the box centres on it
+  return Math.ceil((half + (R + tick) * Math.SQRT1_2 + 8) / 4) * 4;
+}
+
+/**
  * The fluvy dial: a circular ruler. Ticks radiate outward from radius R across a 270° sweep, a soft
  * disc carries the value, and the one knob rides the ring (two knobs for a heat/cool range). With
- * `gauge` it is a read-only meter: no disc, no knob, an uppercase label over the figure.
+ * `gauge` it is a read-only meter: no disc, no knob, an uppercase label over the figure; with `readonly` it is the
+ * thermostat's dial read: its disc and its knob on the value, nothing to drag and no stepper (a chart's `dial` gauge).
  *
  * Events: `fluvy-input` while a knob moves, `fluvy-change` when a value is settled (release, key,
  * or the stepper — steps are coalesced so five quick taps make one service call).
@@ -86,6 +96,8 @@ export class FluvyDial extends LitElement {
     decreaseLabel: { type: String, attribute: 'decrease-label' },
     increaseLabel: { type: String, attribute: 'increase-label' },
     gauge: { type: Boolean },
+    readonly: { type: Boolean },
+    knob: { type: Number },
     large: { type: Boolean },
     stepper: { type: Boolean },
     disabled: { type: Boolean },
@@ -121,6 +133,9 @@ export class FluvyDial extends LitElement {
   declare decreaseLabel: string;
   declare increaseLabel: string;
   declare gauge: boolean;
+  declare readonly: boolean;
+  /** The knob's size; none: the dial's own (36, or 28 small). A read dial in a tile takes one its ring can carry. */
+  declare knob: number | undefined;
   declare large: boolean;
   declare stepper: boolean;
   declare disabled: boolean;
@@ -156,6 +171,7 @@ export class FluvyDial extends LitElement {
     this.decreaseLabel = 'Decrease';
     this.increaseLabel = 'Increase';
     this.gauge = false;
+    this.readonly = false;
     this.large = true;
     this.stepper = true;
     this.disabled = false;
@@ -438,10 +454,9 @@ export class FluvyDial extends LitElement {
     const w = half * 2;
     const cx = half;
     const cy = half;
-    const endY = cy + (R + tick) * Math.SQRT1_2;
-    const labelTop = Math.ceil((endY + 8) / 4) * 4;
+    const labelTop = dialLabelTop(R, tick);
     const stepTop = labelTop + 16 + 12;
-    const showStepper = this.stepper && !this.gauge;
+    const showStepper = this.stepper && !this.gauge && !this.readonly;
     const h = showStepper ? stepTop + 44 : labelTop + 16;
     const ang = (f: number): number => ((START + f * SWEEP) * Math.PI) / 180;
 
@@ -480,7 +495,7 @@ export class FluvyDial extends LitElement {
       marker = svg`<circle cx=${(cx + (R + tick + 6) * Math.cos(a)).toFixed(2)} cy=${(cy + (R + tick + 6) * Math.sin(a)).toFixed(2)} r="3" class="dl-current" />`;
     }
 
-    const knobSize = this.large ? 36 : 28;
+    const knobSize = this.knob ?? (this.large ? 36 : 28);
     const knobs = this.gauge || this.disabled ? [] : fractions;
     const selected = this.isRange && this.dragIndex === -1 ? this.lastTouched : -1; // the range knob the stepper drives
     const [min, max] = this.range;
@@ -540,6 +555,14 @@ export class FluvyDial extends LitElement {
         const knobName = this.isRange
           ? `${this.name ? `${this.name} · ` : ''}${i === 0 ? this.minLabel || 'min' : this.maxLabel || 'max'}`
           : this.name;
+        const place = `translate:${px(x)}px ${px(y)}px;width:${knobSize}px;height:${knobSize}px`;
+        // read, the knob only marks the value: no handle to take, no slider to name
+        if (this.readonly)
+          return html`<span
+            class="fv-knob fv-knob--${this.tone}"
+            data-measure="value"
+            style=${place}
+          ></span>`;
         return html`<span
           class="fv-knob fv-knob--${this.tone}${moving ? ' is-dragging' : ''}${selected === i ? ' is-focus' : ''}"
           data-knob=${i}
@@ -553,7 +576,7 @@ export class FluvyDial extends LitElement {
           aria-valuetext="${this.figure(value)}${this.unit ? ` ${this.unit}` : ''}"
           @keydown=${(e: KeyboardEvent) => this.onKnobKey(e, i)}
           @focus=${() => this.selectKnob(i)}
-          style="translate:${px(x)}px ${px(y)}px;width:${knobSize}px;height:${knobSize}px"
+          style=${place}
         ></span>`;
       })}
       ${this.minLabel ? html`<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;left:${Math.round(cx - (R + tick) * Math.SQRT1_2 - 8)}px">${this.minLabel}</span>` : nothing}

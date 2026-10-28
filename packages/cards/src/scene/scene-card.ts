@@ -4,7 +4,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -16,25 +15,13 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { agoShort } from '../helpers/datetime.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 import { TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
-
-import {
-  actionField,
-  boolField,
-  colourFields,
-  entityField,
-  fieldRow,
-  formLabels,
-  nameIconFields,
-  textField,
-} from '../shared/form.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 const s = strings('scene');
 
@@ -44,7 +31,7 @@ export interface SceneCardConfig extends FluvyCardConfig {
   show_subtitle?: boolean;
 }
 
-const DOMAINS = ['scene', 'script', 'button', 'input_button', 'automation'] as const;
+export const DOMAINS = ['scene', 'script', 'button', 'input_button', 'automation'] as const;
 const DONE_MS = 1200;
 /** Below this width (two tiles in a column under ~340) the tile closes its padding. */
 const TIGHT = 160;
@@ -134,32 +121,10 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     return this.ruler.width('fv-row__sub', line) <= wordsRoom(this.width, tight) ? line : '';
   }
 
-  /** A tap on the tile runs the scene: of the base it honours the entity, its name and icon, its colours and a hold. */
-  static override base: readonly BaseKey[] = [
-    'entity',
-    'name',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'hold_action',
-  ];
-  static override keys = configKeys<SceneCardConfig>()(['subtitle', 'show_subtitle']);
-  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ show_subtitle: true });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(DOMAINS),
-        nameIconFields(),
-        fieldRow(textField('subtitle'), boolField('show_subtitle')),
-        ...colourFields(),
-        actionField('hold_action'),
-      ],
-      ...formLabels({}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./scene-editor.js');
   }
+  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): SceneCardConfig {
     return {

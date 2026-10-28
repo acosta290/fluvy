@@ -8,6 +8,7 @@ import {
 import { baseStyles, fitPills, pressCover } from '@fluvy/ui';
 import { nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 import type { ShowIcon } from '../energy/head.js';
+import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
@@ -42,6 +43,17 @@ export interface HeadActions {
   readonly label?: string;
 }
 
+/** What a card's editor shows: the contract's parts (see `Card`), all but the older names, which the card reads itself. */
+export interface CardEditor {
+  readonly base: readonly BaseKey[];
+  readonly keys: readonly string[];
+  readonly lists?: readonly RowsListSpec[];
+  readonly defaults?: EditorDefaults | undefined;
+  readonly choices?: EditorChoices | undefined;
+  /** The fields of the card's visual editor; every card has one. */
+  getConfigForm(): LovelaceConfigForm;
+}
+
 /**
  * What every card in this package shares on top of the core base class: the fluvy stylesheets, the pill-fitting pass
  * (badges and chips sized from their laid-out text, on the 4 px grid), and the editors' contract.
@@ -49,9 +61,12 @@ export interface HeadActions {
  * The contract: a card declares what its editor shows — `base` (the base fields it honours), `keys` (its own, checked
  * against its config's interface by `configKeys`), `lists` (the lists edited item by item), `defaults` (what it does
  * for a key left out), `choices` (a select's options as its entity has them) and `aliases` (the older names it still
- * reads) — and the base builds the editor from its `getConfigForm()`. `editors.test.ts` holds every card to it: what the form and the lists show is exactly
- * `base ∪ keys`, and no older name is ever shown. A card's aliases are read on `setConfig` — its own first, then
- * the names every card shares (`COMMON_ALIASES`) — so the card itself only ever sees the newer names.
+ * reads) — and the base builds the editor from its `getConfigForm()`. `editors.test.ts` holds every card to it: what
+ * the form and the lists show is exactly `base ∪ keys`, and no older name is ever shown. A card's aliases are read on
+ * `setConfig` — its own first, then the names every card shares (`COMMON_ALIASES`) — so the card itself only ever
+ * sees the newer names. A card every page carries keeps the rest in a module of its own (`<name>-editor.ts`, which
+ * its `editor()` fetches with the visual editor), so a dashboard never loads its editor; a card of a family fetched
+ * on demand declares it on its class.
  */
 export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends FluvyCard<C> {
   static override styles: CSSResultGroup = [...baseStyles];
@@ -68,18 +83,28 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     return { schema: [] };
   }
 
+  /** The card's editor: its class, or the module of a card every page carries (fetched the first time it is edited). */
+  static editor(): Promise<CardEditor> {
+    return Promise.resolve(this);
+  }
+
   /**
    * The visual editor: the card's form, its lists item by item, its defaults shown, its older names read. The
    * editor is fetched the first time a card is edited (Home Assistant awaits this): a dashboard never loads it.
    */
   static async getConfigElement(): Promise<HTMLElement> {
-    const { listsEditor } = await import('./rows-editor.js');
+    // a chart card's Chart section is the chart engine's: it lands with the bundle, so this waits on nothing in practice
+    const [{ listsEditor }, editor] = await Promise.all([
+      import('./rows-editor.js'),
+      this.editor(),
+      loadChartEngine(),
+    ]);
     return listsEditor(
-      this.getConfigForm(),
-      this.lists,
-      this.defaults,
+      editor.getConfigForm(),
+      editor.lists ?? [],
+      editor.defaults,
       [...(this.aliases ? [this.aliases] : []), COMMON_ALIASES],
-      this.choices,
+      editor.choices,
     );
   }
 

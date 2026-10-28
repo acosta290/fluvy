@@ -9,6 +9,7 @@ import {
   type SettingsHass,
   TABS_DEFAULTS,
   CHROME_DEFAULTS,
+  CHART_DEFAULTS,
 } from '@fluvy/core';
 import { exportSettings, importPalette, importSettings } from './actions.js';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
@@ -848,6 +849,286 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('chooses the house’s charts like its look: a style and a gauge as tiles, what the style tunes, motion (1.11)', async () => {
+    const { panel, root, chip, row, button, handle, previews, settle } = await mount();
+    const host = panel as unknown as { content: number };
+    panel.tab = 'charts';
+    host.content = 288;
+    await settle();
+    const tile = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.pn-tile')].find(
+        (b) => b.querySelector('.pn-swatch__label')?.textContent?.trim() === name,
+      )!;
+    const labels = () =>
+      [...root.querySelectorAll('.pn-card .pn-label')].map((p) => p.textContent?.trim());
+    // eight styles and eleven gauges (Fluvy's four controls, the seven that move, each on a reading of its kind), each
+    // drawn by the engine; classic and ticks from the factory
+    expect(root.querySelectorAll('.pn-art--style svg.fc-chart').length).toBe(8);
+    expect(root.querySelectorAll('.pn-art--gauge').length).toBe(11);
+    expect(root.querySelectorAll('.pn-art--gauge .fc-scene').length).toBe(7);
+    // every row full: two a row on a phone, the eleventh gauge's row its own; four on a wide panel, the last three
+    // gauges sharing theirs
+    const rows = (kind: 'style' | 'gauge') =>
+      [...root.querySelector(`.pn-art--${kind}`)!.closest('.pn-tiles')!.children].map(
+        (line) => line.querySelectorAll('.pn-tile').length,
+      );
+    expect([rows('style'), rows('gauge')]).toEqual([
+      [2, 2, 2, 2],
+      [2, 2, 2, 2, 2, 1],
+    ]);
+    const wide = panel as unknown as { wide: boolean };
+    wide.wide = true;
+    host.content = 600;
+    await settle();
+    expect([rows('style'), rows('gauge')]).toEqual([
+      [4, 4],
+      [4, 4, 3],
+    ]);
+    wide.wide = false;
+    host.content = 288;
+    await settle();
+    expect(tile('Classic').getAttribute('aria-pressed')).toBe('true');
+    expect(tile('Ticks').getAttribute('aria-pressed')).toBe('true');
+    // classic tunes nothing but motion: it says so, and offers no row
+    expect(labels()).toEqual([]);
+    expect(root.textContent).toContain('Classic is the chart as Fluvy has always drawn it');
+    expect(row('Motion')).toBeDefined();
+    // a style: on the panel's preview and every card of the page at once, saved from the bar
+    tile('Soft').click();
+    await settle();
+    expect(previews.at(-1)).toEqual({ charts: { ...handle.settings().charts, style: 'soft' } });
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Charts · Style · Soft');
+    expect(root.querySelector('.fc-preview svg.fc-chart--soft')).not.toBeNull();
+    // the rows the soft style draws with, none it does not (the waves are a moving gauge's)
+    expect(labels()).toEqual([
+      'Line',
+      'Soft shadow',
+      'Shadow strength',
+      'Fill',
+      'Gridlines',
+      'Line’s end',
+      'Now',
+      'Bars’ ends',
+      'Bubble',
+    ]);
+    tile('Bars').click();
+    await settle();
+    expect(labels()).toEqual(['Gridlines', 'Bars’ ends', 'Bubble']);
+    tile('Soft').click();
+    await settle();
+    chip('Bold')!.click();
+    await settle();
+    chip('7 px')!.click();
+    await settle();
+    // a gauge that moves: its waves are the house's to tune
+    tile('Liquid').click();
+    await settle();
+    expect(labels().at(-1)).toBe('Waves');
+    tile('Ring').click();
+    await settle();
+    expect(labels()).not.toContain('Waves');
+    expect(handle.settings().charts.style).toBe('classic');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('4 changes');
+    // motion off: the previews draw their resting frame
+    row('Motion')!.querySelector<HTMLElement>('.fv-hit')!.click();
+    await settle();
+    expect(root.querySelectorAll('.fc-preview svg.fc-chart:not(.is-still)').length).toBe(0);
+    expect(root.querySelectorAll('.pn-art--style svg.fc-chart.is-still').length).toBe(8);
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().charts).toMatchObject({
+      style: 'soft',
+      gauge: 'ring',
+      line: 'bold',
+      glow: { offset: 7, opacity: 0.35 },
+      animate: false,
+    });
+    expect(root.querySelector('.pn-foot:not(.is-leaving) .pn-bar')).toBeNull();
+    panel.remove();
+    // someone who is not an administrator reads them, and changes nothing
+    const guest = await mount(false);
+    guest.panel.tab = 'charts';
+    await guest.settle();
+    expect(guest.root.textContent).toContain('Only an administrator can change this');
+    [...guest.root.querySelectorAll<HTMLButtonElement>('.pn-tile')]
+      .find((b) => b.textContent?.includes('Glow'))!
+      .click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(
+      expect.objectContaining({ charts: expect.anything() }),
+    );
+    expect(guest.row('New set…')).toBeUndefined();
+    guest.panel.remove();
+  });
+
+  it('makes, checks, keeps, renames and lets go of the house’s own series colours (1.11)', async () => {
+    const { panel, root, row, handle, settle } = await mount();
+    panel.tab = 'charts';
+    (panel as unknown as { content: number }).content = 288;
+    await settle();
+    const editor = () => root.querySelector<HTMLElement>('.pn-editor');
+    const slots = () => [...editor()!.querySelectorAll<HTMLButtonElement>('.pn-slot')];
+    const swatch = (name: string) =>
+      editor()!.querySelector<HTMLButtonElement>(`.pn-dot[aria-label="${name}"]`)!;
+    const custom = () => editor()!.querySelector<HTMLInputElement>('.pn-hex__input')!;
+    const mark = () => editor()!.querySelector('.pn-mark')?.textContent?.trim();
+    const set = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.pn-set')].find(
+        (b) => b.querySelector('.pn-custom__title')?.textContent?.trim() === name,
+      );
+    const saveButton = () =>
+      [...editor()!.querySelectorAll<HTMLButtonElement>('.fv-btn')].find(
+        (b) => b.textContent?.trim() === 'Save set',
+      )!;
+    // the palette's six, worn from the factory
+    expect(set('From the palette')?.getAttribute('aria-pressed')).toBe('true');
+    row('New set…')!.click();
+    await settle();
+    // the palette's own six, each following the palette, the first being picked; no name yet: nothing to save
+    expect(slots().map((slot) => slot.getAttribute('aria-label'))).toEqual(
+      [1, 2, 3, 4, 5, 6].map((n) => `Colour ${n}: Series ${n} · Follows the palette`),
+    );
+    expect(slots()[0]!.getAttribute('aria-pressed')).toBe('true');
+    expect(editor()!.querySelector('.pn-slot-head__title')?.textContent).toBe('Colour 1');
+    expect(mark()).toBe('Follows the palette');
+    expect(swatch('Series 1').getAttribute('aria-pressed')).toBe('true');
+    // the picker: the palette's twelve, its accent with the statuses and the lit light, the energy states, each by its
+    // token; Custom starts on the colour's hex here
+    expect(
+      [...editor()!.querySelectorAll('.pn-label')].map((label) => label.textContent?.trim()),
+    ).toEqual(['Name', 'Colours', 'Series', 'Tones', 'Energy', 'Custom']);
+    expect(
+      [...editor()!.querySelectorAll('.pn-dot')].map((dot) => dot.getAttribute('aria-label')),
+    ).toEqual([
+      ...Array.from({ length: 12 }, (_u, n) => `Series ${n + 1}`),
+      'Accent',
+      'Success',
+      'Warning',
+      'Danger',
+      'Notice',
+      'Light',
+      'Solar',
+      'Grid',
+      'Battery',
+      'Water',
+      'Gas',
+      'House',
+    ]);
+    expect(swatch('Solar').getAttribute('style')).toContain(
+      '--dot:var(--fluvy-state-energy-solar)',
+    );
+    expect(custom().value).toBe(paletteOf('linen').light.graph[0]);
+    expect(saveButton().disabled).toBe(true);
+    // picking a swatch names the palette's colour: the second follows the palette's solar
+    slots()[1]!.click();
+    await settle();
+    swatch('Solar').click();
+    await settle();
+    expect(slots()[1]!.getAttribute('aria-label')).toBe('Colour 2: Solar · Follows the palette');
+    // two of the palette's own that sit together are said by their words
+    swatch('Accent').click();
+    await settle();
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
+      'Series 1 and Accent are too close to tell apart',
+    );
+    // six that read on either card and stand apart pass: a hex typed under Custom is fixed
+    const type = async (n: number, colour: string) => {
+      slots()[n]!.click();
+      await settle();
+      custom().value = colour;
+      custom().dispatchEvent(new Event('change'));
+      await settle();
+    };
+    await type(0, '#2563eb');
+    expect(slots()[0]!.getAttribute('aria-label')).toBe('Colour 1: #2563eb · Fixed');
+    expect(mark()).toBe('Fixed');
+    expect(editor()!.querySelector('.pn-dot.is-active')).toBeNull();
+    const both = ['#2563eb', '#d97706', '#16a34a', '#dc2626', '#9333ea', '#0891b2'];
+    for (const [n, colour] of both.entries()) await type(n, colour);
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(editor()!.textContent).toContain('Every colour stands apart and reads on either card');
+    // the lines each mode draws: the set as that mode's card wears it
+    const inks = (mode: 'light' | 'dark') =>
+      [...editor()!.querySelectorAll(`.pn-mode[data-mode="${mode}"] g[style]`)].map((g) =>
+        g.getAttribute('style'),
+      );
+    // a colour too pale for the light card, or too deep for the dark one, is worn fitted there: nothing to say
+    await type(4, '#f4e9d0');
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(inks('dark')[4]).toBe('--tone-ink:#f4e9d0');
+    expect(inks('light')[4]).not.toBe('--tone-ink:#f4e9d0');
+    await type(4, '#3b2a1a');
+    expect(editor()!.querySelector('.pn-status')).toBeNull();
+    expect(inks('light')[4]).toBe('--tone-ink:#3b2a1a');
+    expect(inks('dark')[4]).not.toBe('--tone-ink:#3b2a1a');
+    // two colours a breath apart: it says which, and why
+    await type(1, '#2463ea');
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
+      '#2563eb and #2463ea are too close to tell apart',
+    );
+    // two pale blues deepened to read on the light card meet there: it says where
+    await type(1, '#d97706');
+    await type(0, '#93c5fd');
+    await type(5, '#60a5fa');
+    expect(editor()!.querySelector('.pn-status')?.textContent?.trim()).toBe(
+      '#93c5fd and #60a5fa are too close to tell apart on a light card',
+    );
+    // a fixed colour made the palette's again: both modes draw it by its token, as each mode's look has it
+    slots()[2]!.click();
+    await settle();
+    swatch('Series 3').click();
+    await settle();
+    expect([inks('light')[2], inks('dark')[2]]).toEqual([
+      '--tone-ink:var(--fluvy-graph-3)',
+      '--tone-ink:var(--fluvy-graph-3)',
+    ]);
+    // both modes drawn side by side, six lines each
+    expect(editor()!.querySelectorAll('.pn-mode svg.fc-chart').length).toBe(2);
+    expect([inks('light').length, inks('dark').length]).toEqual([6, 6]);
+    const name = editor()!.querySelector<HTMLInputElement>('.pn-text input')!;
+    name.value = 'Dusk';
+    name.dispatchEvent(new Event('input'));
+    await settle();
+    saveButton().click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    // kept by the house at once — its hexes as typed, the palette's colour by its name — the editor closed, the charts
+    // wearing it from the bar
+    expect(handle.store.house.chartSets).toEqual([
+      {
+        id: 'dusk',
+        name: 'Dusk',
+        colours: ['#93c5fd', '#d97706', 'graph-3', '#dc2626', '#3b2a1a', '#60a5fa'],
+      },
+    ]);
+    expect(editor()).toBeNull();
+    expect(set('Dusk')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Charts · Series colours · Dusk',
+    );
+    // renamed in its place
+    row('Edit this set')!.click();
+    await settle();
+    const rename = editor()!.querySelector<HTMLInputElement>('.pn-text input')!;
+    rename.value = 'Evening';
+    rename.dispatchEvent(new Event('input'));
+    await settle();
+    saveButton().click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.chartSets.map((s) => [s.id, s.name])).toEqual([['dusk', 'Evening']]);
+    // let go: the charts wear the palette's again, and nothing waits in the bar
+    row('Edit this set')!.click();
+    await settle();
+    row('Delete this set')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    expect(handle.store.house.chartSets).toEqual([]);
+    expect(set('From the palette')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.pn-foot:not(.is-leaving) .pn-bar')).toBeNull();
+    panel.remove();
+  });
+
   it('lays a row of choices out by measure: three while every word holds its third, else two and one', async () => {
     const { panel, chip } = await mount();
     const host = panel as unknown as {
@@ -1046,7 +1327,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     const strategy = { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] };
     const { panel, handle, settle } = await mount(true, {
@@ -1057,7 +1338,49 @@ describe('the settings panel', () => {
           : { views: [] };
       },
     });
-    await handle.store.saveHouse({ palette: 'volt', shape: 'round', pills: 'soft', frame: false });
+    // the Charts tab's choices and a set of the house's own colours travel with the rest (1.11): every one off its
+    // default, so a key lost on the way would come back as the default and be seen
+    const charts = {
+      ...CHART_DEFAULTS,
+      style: 'soft',
+      gauge: 'dial',
+      line: 'bold',
+      glow: { offset: 7, opacity: 0.45 },
+      fill: 24,
+      grid: 'dashed',
+      endpoint: 'dot',
+      caps: 'top',
+      now: 'line',
+      wave: 'high',
+      bubble: 'tone',
+      series: 'sea',
+      animate: false,
+    } as const;
+    expect(
+      Object.entries(charts).filter(
+        ([key, value]) =>
+          JSON.stringify(value) === JSON.stringify(CHART_DEFAULTS[key as keyof typeof charts]),
+      ),
+    ).toEqual([]);
+    const sea = {
+      id: 'sea',
+      name: 'Sea',
+      colours: ['#1f5fbf', '#2a9d8f', '#6a4c93', '#e76f51', '#264653', '#8ab17d'],
+    } as const;
+    // a set that follows the palette: its colours named, a hex of its own among them
+    const garden = {
+      id: 'garden',
+      name: 'Garden',
+      colours: ['graph-1', 'accent', 'ok', 'solar', '#1f5fbf', 'graph-12'],
+    } as const;
+    await handle.store.saveHouse({
+      palette: 'volt',
+      shape: 'round',
+      pills: 'soft',
+      frame: false,
+      charts,
+      chartSets: [sea, garden],
+    });
     await handle.store.savePersonal({ language: 'es', haptics: false });
     await settle();
     // the file the browser would download
@@ -1077,13 +1400,22 @@ describe('the settings panel', () => {
       shape: 'round',
       pills: 'soft',
       frame: false,
+      charts,
+      chartSets: [sea, garden],
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
     expect(exported['dashboards']).toEqual({
       'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'] },
     });
     // another house, reset; the file brings it all back
-    await handle.store.saveHouse({ palette: 'linen', shape: 'soft', pills: 'round', frame: true });
+    await handle.store.saveHouse({
+      palette: 'linen',
+      shape: 'soft',
+      pills: 'round',
+      frame: true,
+      charts: CHART_DEFAULTS,
+      chartSets: [],
+    });
     await handle.store.savePersonal({ language: 'auto', haptics: true });
     importSettings(
       panel as unknown as FluvyPanel,
@@ -1099,6 +1431,8 @@ describe('the settings panel', () => {
     });
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().language).toBe('es');
+    expect(handle.settings().charts).toEqual(charts);
+    expect(handle.store.house.chartSets).toEqual([sea, garden]);
     expect(saved.at(-1)?.config).toEqual({
       strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] },
     });

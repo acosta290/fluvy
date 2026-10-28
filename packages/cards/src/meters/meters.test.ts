@@ -7,10 +7,10 @@ import {
   fractionOf,
   kindOf,
   meterFigure,
-  statUnits,
   todayOf,
   typicalOf,
 } from './today.js';
+import { unitsFor } from '../history-bars/units.js';
 
 const HOUR = 3_600_000;
 /** Midnight in the house (Madrid, summer time) on 17 September 2026. */
@@ -81,11 +81,11 @@ describe('typicalOf and fractionOf', () => {
 
 describe('units and kinds', () => {
   it('asks the statistics in the meter’s own unit, when Home Assistant can convert it', () => {
-    expect(statUnits('L')).toEqual({ volume: 'L' });
-    expect(statUnits('m³')).toEqual({ volume: 'm³' });
-    expect(statUnits('CCF')).toEqual({ volume: 'CCF' });
-    expect(statUnits('kWh')).toEqual({ energy: 'kWh' });
-    expect(statUnits('m3')).toBeUndefined();
+    expect(unitsFor('L')).toEqual({ volume: 'L' });
+    expect(unitsFor('m³')).toEqual({ volume: 'm³' });
+    expect(unitsFor('CCF')).toEqual({ volume: 'CCF' });
+    expect(unitsFor('kWh')).toEqual({ energy: 'kWh' });
+    expect(unitsFor('m3')).toBeUndefined();
   });
 
   it('knows a meter by its device class, a gas meter in kWh by its unit, else water', () => {

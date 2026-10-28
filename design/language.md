@@ -43,7 +43,11 @@ taps, Shift+F10 or the menu key holds. The same button is a room's photo and row
 button only where it has something to run (1.10): a compact or mini tile whose tap and hold both do nothing (`none`,
 or more-info and a toggle with no entity, as the template card's tile of nothing) draws no button, as a large tile
 already did. Its switch, its circle-switch and its ruler say what the entity is; its fill what the tile shows
-(`look`): the two are one on every tile but the template card's, whose fill is `active`'s.
+(`look`): the two are one on every tile but the template card's, whose fill is `active`'s. A stat tile is one too
+(1.11, #71): its tap opens its entity's details (more-info: Home Assistant's dialog, with the history) or runs its own
+`tap_action`, its hold only where it asks for one (`hold_action`, nothing by default), read as what it says ("Output ·
+3.2 kW"); it gives under the finger and takes the hairline under the pointer as a tile does (`fv-tile--tap`). A stat
+tile that cannot be read, or whose tap and hold are both `none`, stays a still surface.
 
 **An unavailable tile keeps its size (the owner's rule, 1.9).** Unavailable, unknown or missing, a tile draws the live
 tile's own anatomy in every size — the circle (the ban glyph, the off skin), the name, the state line ("Unavailable ·
@@ -211,7 +215,7 @@ key hold.
 | Setpoint | dial: soft disc, tick ring, knob riding the ring, current-temperature dot, min/max labels, stepper below | `dial({ min, max, target | range, current })` — real units, never fractions; a range dial keeps the stepper and marks the selected knob with the focus halo (tap to select); its ring comes from the column (84 where it has 216, down to 56: twice the ring, its ticks and their 12, on the 4 grid), and its figure takes the largest size the disc holds with its unit, measured on what it says at rest (a range's two ends), so a knob under the finger never resizes it; `show_stepper: false` draws none, 56 shorter |
 | Toggle | 48 × 28 switch in a 56 × 44 hit | tile heads, rows, sheet heads |
 | Modes | option tiles (84 tall, radius 12): a 20 outline glyph top-left, 12/500 label, 16/600 value; active = tone fill + dark ink, **no ring, no dots** | row fills the column exactly: 3 × 104 + 2 × 4 = 320; sheet 3 × 112 + 2 × 12 = 360; desktop 3 × 96 + 2 × 12 = 312; every row is full — a shorter last row splits the column among its own tiles (5 modes: 3 + 2 wider, `optionGrid`) |
-| Stats | the option anatomy, read-only (`tiles()`), 2 × 156 + 8; **compact** (1.5): 64 tall (12 · label 16 · 4 · value 20 · 12), no glyph row, three a row in the mode row's rhythm (3 × 104 + 2 × 4) while the widest label and value fit a cell (`optionColumnsFor`, measured), four as two by two, else two, one a row where not even two cells hold a value — a value never wraps; `columns: auto \| 2 \| 3` | capacity, sub-values of a card |
+| Stats | the option anatomy, read (`tiles()`; the stat tiles card's take a tap, 1.11), 2 × 156 + 8; **compact** (1.5): 64 tall (12 · label 16 · 4 · value 20 · 12), no glyph row, three a row in the mode row's rhythm (3 × 104 + 2 × 4) while the widest label and value fit a cell (`optionColumnsFor`, measured), four as two by two, else two, one a row where not even two cells hold a value — a value never wraps; `columns: auto \| 2 \| 3` | capacity, sub-values of a card |
 | Gauge | the dial's tick ring without the disc; uppercase label above the value in the open centre; MIN / MAX / AVG readouts below | solar power, any read-only 0–max |
 | Bar row | 76 tall: circle on the title/sub pair, value at the right, a 4 px bar from x 76 to the content edge under the text; a `plain` row is the 60 list row; **compact** (1.5): 48 tall, the 40 circle on the row (4..44), the name and the value on one line (12..32, baselines paired as the one-line rows'), the bar at 36..40 from the text column (52) to the content edge; a plain row the 48 compact list row. **Rows squeezed under what holds a name** (the words' column beside the value under 96, or under the name itself — measured, as the head is): the rows give their circles to the names, every row of the list with them, the bar and the hairline starting the row; a name that still does not fit ends in an ellipsis, as names may, never before it has begun | strings, plants, meters |
 | Distribution | one stacked 12 px bar (2 px gaps) + legend rows 36 with 12 × 12 square swatches | what is drawing now |
@@ -338,7 +342,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   and the printing card is 528 with one row; the side clock is 208 analog and 132 digital, its forecast row 60; the
   sensor card is 164 for a word, 276 for several sensors (a line each where a name would not hold its column).
 - **Stat tiles a row**: as asked, or measured; and fewer, down to one a row, where a cell would not hold the widest
-  figure — a figure never wraps (1.9: the full variant's "21.5 °C" no longer breaks under its number at 211).
+  figure — a figure never wraps (1.9: the full variant's "21.5 °C" no longer breaks under its number at 211) — or
+  would be narrower than a finger's 44 (1.11: three single digits asked in a 172 column were 36 wide; two a row).
 - Energy: see § Energy (1.4) below — the flow, its motion and the companion cards.
 - Charts are scrubbable: a mouse over a curve or a bar strip reads the value under it (a finger while pressing; a vertical swipe still scrolls) — the dot, the dashed cursor and the bubble follow, the bubble adds the time ("3.1 kW · 10:15"), the card's big readout shows the scrubbed figure with the time as its label; on leaving, everything returns to now.
 - The colour-temperature ruler tints its ticks with a faint warm → cool gradient (amber → cool grey-blue, opacity 0.85) and the knob's dot takes the colour under it; the ring keeps the tone. `temperature_tint: false` gives the neutral ticks of the brightness ruler.
@@ -492,7 +497,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   the config names it.
 - **The chart**: one curve per sensor, each on its own scale (the units differ, so a line is read against its own
   readout), in its measure's tone. Fills are lighter (16 %) so no curve hides another. A tone that would repeat passes
-  to the next spare one.
+  to the next spare one. How the curves are drawn, in the house's style or the card's: § Charts (1.11).
 - **Two curves never share an ink (1.9):** two curves are never drawn in inks closer than the palette engine's own
   distance between graph series (ΔE2000 ≥ `GATES.graphSeparation`, 8) on the palette the card wears; a curve too close
   to an earlier one takes the first spare tone far enough (`seriesTones`), a curve with a colour of its own keeps it
@@ -822,7 +827,8 @@ heads stay). A figure animates only when its text changes.
 
 **Legends and blocks.** Distribution's idiom: a 12 px bar of segments with 2 px gaps and 6 px end radii; 12 × 12
 squares, the name 14/500 and the figure 16/600 under it, in equal centred columns — measured: when a name does not
-fit its column the row folds (four into two by two, three or fewer into one a line). A block is its LABEL (11/600
+fit its column, or two neighbours' names would stand closer than 8, the row folds (four into two by two, three or
+fewer into one a line). A block is its LABEL (11/600
 caps) and total on one 20 px line, the bar 8 under, the legend 12 under that.
 
 **Phases.** A row per phase: its name (and voltage) in 40, a bar centred on zero in the grid's colour both ways
@@ -948,6 +954,106 @@ only — the end first for a bar in the right half — so the words stand in two
 a start per bar (five columns of words where the eye reads two). A device gone from the house keeps the room of the name
 it had (the friendly name the page last read, or the registry's), so its labels keep their tiers; only a name that is
 the id's alone takes no more than its figure's room and ends in its ellipsis there.
+
+**Following a date picker (1.11, #62).** An energy card given a `collection_key` follows that picker's range and
+draws Home Assistant's own figures for it: the statistics Home Assistant fetched once for the whole view, allocated as
+the Energy dashboard allocates them, so a Fluvy card and Home Assistant's beside it say the same numbers and move
+together. Its Day · Week · Month chips are gone (the picker is the control) and its subtitle says the range in the
+house's words: "Today", "Yesterday", a date ("24 Oct"), a span ("17 – 23 Sep", "17 Sep – 3 Oct"), a whole month
+("September"), a whole year ("2026") — the year only when it is not this one; a week is Home Assistant's calendar
+week. A day card (Production, Water & gas) draws the range's last day and says its date. Until the picker's
+collection exists the card draws today without chips, at the height it declared: a follower's height is the chip-less
+one whatever `show_period` says. The Grid card, a live card, leads its subtitle with the range while its totals follow
+one (the last segment to go when the column is narrow). The Energy card over more than a day labels its axis with the
+range's first, middle and last dates (the two ends where three do not hold) and its readouts with the moment's date
+and time.
+
+## Energy period (1.11)
+
+The Energy period card (#62) is the Energy dashboard's date picker as a strip: it drives an Energy date picker's
+collection — the dashboard's own (`energy_<its url>`) unless `collection_key` names another — so Home Assistant's
+energy cards and Fluvy's that follow it move together. Where no picker holds the key it has Home Assistant make its
+own date card, hidden inside the strip, so the collection is made and fed by Home Assistant's code.
+
+- **The strip.** The Energy dashboard's date picker as one row: ‹ the span › in one capsule on the inset fill (the
+  steps 44 round its ends, the span's words 14/600 between them, centred; the capsule takes the row up to 360, on its
+  start), then the Today pill (14/600, its words and 16 a side) and, asked for, Compare (a pill, `aria-pressed`).
+  Today shows only away from today, in the tone's fill (the pages' "a day away from today"): on today the capsule says
+  it, and its room is the capsule's; Compare takes the tone's fill while on. A row of 44 in the card's 20 (84).
+  `compact`: the capsule alone, 36 tall in 12 (60), its words 13/600, its parts a finger's 44 reaching 4 past it.
+  `stacked`: the row, then 8 under it the chips of its grains, filled (Day · Week · Month · Year — custom is the
+  sheet's), the span's grain lit, no wider than the capsule (136). Where the four do not hold one line (half a
+  section) they keep it and scroll, content-sized, the tab rows' fades at a side with more behind it and the span's
+  grain brought into view: the strip is 136 at every width.
+- **What gives way** (measured, never a width threshold): Compare's words for its glyph (bars), Today's for its glyph
+  (the clock), the span's short words ("24 Oct", "Sep", "Sep 25" for another year, "2026", a span's two dates in
+  figures), Today, Compare, and last the arrows — the span's words alone, the long ones where they hold. The sheet
+  behind the words has all of them.
+- **The sheet** (the cameras' modal bottom sheet, in the card's chunk): "Energy period" over "What this view's energy
+  cards show"; ‹ the span (15/600, centred, wrapping at its words) ›, the quiet rounds, › off at today; the presets
+  of its periods as filled chips (Today · Yesterday · This week · This month · This year · Custom; the span's own
+  lit, Custom while the grid shows); for Custom the pages' date grid in whole days — no hours, no presets of its
+  own (the sheet's are over it) — and Show; Compare as a switch row where the card offers it; Close. A preset picks
+  and closes; the arrows walk and keep it open; Show picks the grid's days and closes. ‹ › walk the span by its own
+  grain (a day, a week from the house's first weekday, a month, a year), as Home Assistant's picker walks it, never
+  past today.
+- **Following the collection.** The strip draws the span the collection holds now (it moves at once, the figures
+  follow), today while the collection is being made, and "Only on a dashboard" (13/500, the secondary ink, centred
+  across the capsule, wrapping at its words) where no dashboard is there to make one, every button off, at its size.
+  Home Assistant's date card on the same view moves it, and it moves that one; a preset is remembered where Home
+  Assistant remembers its own.
+- **On the automatic Energy dashboard** the strip leads the Today view, across its columns before the first, and the
+  day's flow, sankey, score and balance follow it, their chips gone.
+- Its chunk is its own (`energy-period`, with the Energy usage card): every page carries only their names and
+  heights (`energy-family.ts`).
+
+## Energy usage (1.11)
+
+The Energy usage card (#62) is Home Assistant's energy usage graph in the house's idiom, from the Energy dashboard's
+statistics allocated bucket by bucket (an hour, a day, a month: Home Assistant's grain for the range) as the dashboard
+allocates them, so its figures are Home Assistant's.
+
+- **The chart.** A column a slot — an hour of a day, a day of a week or a month, a month of a year (Home Assistant's
+  own grain for the range) — stacked from the zero line up by where the house took it from (the sun at the foot, the
+  battery, the grid on top) and down by what went into the battery and out to the grid, each part in its source's
+  energy ink (`--fluvy-state-energy-*`; a person's `color` over it, a colour of the palette's by its token); what went
+  out is the same ink at 60 %. One column a slot, its parts flush, only its outermost end on each side of the line
+  rounded — whatever the house says of a bar's ends, which is about single bars (the chart engine's columns in every
+  style: `classic` in the inks, `soft` each part at 72 % of its ink over the card; `columns` would be classic's look
+  under a second name, so it is not offered, and a card that names it draws classic). The scale hugs the
+  columns: of the nice steps (1 · 2 · 2.5 · 5 × 10ⁿ), the one whose outermost tick on each side (the first multiple at
+  or beyond that side's extreme) spans the least, three to five ticks in all, the more where two span alike — a week
+  rising to 18 and falling to 9 reads −10 · 0 · 10 · 20; the unit rotated beside its ticks, the gridlines the
+  style's. The plot 160 (compact 96, the mini strip 48) with 12 over it for the top tick and 8 under it; the axis 8
+  under, 16 tall, starting where the plot does: a day's hours at 0 · 6 · 12 · 18 · 24 (0 · 12 · 24, or its ends,
+  where they do not stand 12 apart), else a label centred under each column — a week's days by name (their initials
+  where a name does not hold its column), a longer run of days by number, the months by name — every n-th from the
+  first where they would crowd, kept inside the plot, never fewer than two: the first and the middle (Jan · Jul) at
+  the most, else the ends (Jan · Dec; the months' initials where even those would not stand 12 apart).
+- **What it says.** The head's badge is what the house used over the range (it gives way first in a narrow head; the
+  title "Energy usage" takes its short word, "Usage", where it would be cut). The legend (the energy family's: the
+  square, the name 14/500, the figure 16/600 under it) lists the sources drawn and what went out (Charged, Exported,
+  their squares at 60 %), each with its total; it keeps the rows the card declares for its sources even where the
+  house lacks one of them. "Other" (the house's ink) folds the last sources past `max_sources`, two at least.
+- **Reading it.** A pointer, or a finger held on the chart, reads the slot under it; ← → walk the slots (Shift five),
+  Home and End its ends, Escape lets go. The bubble (the text's ink, the page's words, radius 10, 8 · 12 padding,
+  lines of 18): the slot's time ("13:00 – 14:00", "Mon, Sep 14", "September 2026") and what the house used in it,
+  13/600; then each part of the stack from its top down and what went out from the line down, 12/500, an 8 square in
+  its ink; then the same slot of the period before. Beside the cursor where it holds, else on its other side, inside
+  the card — it may rise over the head, never past the card. In a card too narrow for its lines (half a section) it
+  leans up to 16 into the card's padding (4 short of its edge, as it rises 4 short of its top), the time stands over
+  its total, the parts' figures go bare (their unit said once, by the total, as the scale says it beside its ticks),
+  and a line that still does not hold puts its figure under its words, at the end.
+- **The period before.** `compare` (or a followed picker's Compare) draws it as one quiet column a slot behind the
+  bars — what the house used up, what went out down — 1.8 × the bar's width (never wider than its slot less 2), the
+  text's ink at 9 % (14 in dark mode), the bars' ends; the scale reaches it.
+- **Nothing to draw.** A range with nothing recorded keeps the chart, its zero line and its legend of zeros, "Nothing
+  recorded for this period yet" across the plot (13/500, secondary). No Energy dashboard, or statistics that cannot be
+  read: the energy family's panel (in the mini strip its words alone, at the strip's height).
+- **Heights.** Full = 100 + the chips 60 (not while following, `show_period`) + 180 (the plot and its 20) + 24 (the
+  axis) + the legend: 16 and its rows (`legendRows` of its names in a 360 card's 320, 40 each, 12 between) — 412 for
+  the Energy dashboard's three sources and their two returns, 472 with the chips; compact 240; mini 168. Half a
+  section holds compact, mini and the full chart without its chips and legend at every width.
 
 ## History bars (1.8)
 
@@ -1076,6 +1182,206 @@ Energy dashboard's numbers; any other reset reads the counter by its readings.
   resets before the house's midnight loses that day (day bars read it by the hour); a history is kept ten days by
   default; day rows follow the server's midnights, the hourly readings do not.
 
+## Charts (1.11)
+
+**One engine.** Every chart and gauge is drawn by one set of rules (`packages/cards/src/chart/engine/`, its own chunk
+`chart`, fetched as the bundle starts): one Catmull-Rom (tension 1/6, `toFixed(2)`), one bar path, one time-axis
+labeller, one nice scale. A card names a **style** (`chart`) or takes the house's (fluvy's settings → Charts); a
+**fine key** changes one thing of the style and is offered only where the style draws it. One rule resolves them: the
+card's own key › the house's setting › the style's own default. `classic` is 1.10's chart, path for path, and takes
+nothing from the house but motion (and, on the Chart card, the house's series colours): it is the factory style, so
+nothing changes on upgrade.
+
+**The styles.**
+
+| `chart` | Line | Under it | Its end | Grid | Now · forecast | Bars |
+| --- | --- | --- | --- | --- | --- | --- |
+| `classic` | smooth, 2.5 | gradient 28 → 0 % | the dot (r 5, the card's stroke 3) | none | — · dashed where a card has one | one cap, gradient 60 → 48 % |
+| `soft` | smooth, the house's line | gradient (the house's 18 %) + the soft copy (+5 px, stroke + 4.5, the ink at 55 % over the card at 35 %) | Fluvy's knob (or the dot) | hairlines at the quarters | knob on a hairline · dashed 4·5 | the house's ends, the highest in the ink, the rest the border's grey, its dashed MAX line |
+| `glow` | smooth | the blurred copy (one feGaussianBlur 3 on the static copy only) | Fluvy's knob (or the dot) | none | knob · dashed | — |
+| `minimal` | smooth, one step thinner (≥ 1.5) | none | the dot | none | — · the line's ink at 35 % | — |
+| `step` | each reading held across its slot | flat (two thirds of the fill) | none; the lowest (ok) and highest (danger) marked | horizontal, on a nice scale | knob · dashed | — |
+| `bars` | — | — | — | horizontal, nice scale | hairline · hollow bars | the house's ends, the ink, the highlight's lit, the rest quiet |
+| `columns` | — | — | — | horizontal, nice scale | hairline · hollow | stacked by sign: with the house's ends `top` its parts flush and only the outermost rounded, with `both` (the factory's) each part a pill |
+| `band` | straight | the band of lows and highs 14 % | the dot | horizontal, nice scale | knob · dashed | — |
+
+**Geometry.** A chart 120 tall: 44 of headroom (the bubble's room) over the plot and 8 under its floor, the plot the
+68 between; the spark 24 tall, 4 in. The bars' ends are the house's (`caps`: both from the factory, or the top alone);
+classic keeps its one.
+Scales: a lone curve on its own ends, several on a shared one with a tenth of air (each sensor its own where units
+differ), a nice one (1 · 2 · 2.5 · 5, four intervals at most) wherever a horizontal grid or bars are drawn. A nice
+scale spans the readings' own range — a day at 17 … 23 °C reads on 16 · 18 · 20 · 22 · 24, on whole steps where one
+fits (never 15.0 · 17.5 · 20.0), whole ticks written whole; a band counts only where the style draws one — and holds
+zero only where bars stand on it, where the readings reach or cross it, or where the quantity starts there (a
+counter, power, energy, rain, a price, a battery); a temperature, a humidity or a pressure never forces it. A card
+may lay its own nice scale and hand it over (`ChartSpec.ticks`: the Energy usage card's, which hugs its stacks).
+**Bars** stand for what adds up (a counter, energy, power, rain, gas, water, a price — never a measurement of a
+state): a window reads in at most 24 of them (an hour each over a day), each a slot's mean, or what a counter gained
+in it. A bar is 40 % of its slot, 2–40 wide, corners min(4, w/2). A `null` reading breaks the line.
+
+**Clipping and what stands proud.** Every line, area, copy and bar is clipped to the plot (after the scale's column,
+the line's half width either side for its round caps). Only the dot, Fluvy's knob and the bubble stand proud of it,
+by their radius, inside the headroom and the card.
+
+**Marks.** The lowest and highest readings (`step`'s highlight) are marked over what has happened, never on the
+forecast: the knob at now is the only ball there, and a forecast's line ends bare.
+
+**Knobs.** No circle of the engine's own: the end of a line and now are Fluvy's knob (`.fv-knob`, the thermostat's
+ball: card fill, 2 px ring in the tone, the dot a quarter of it, the lift on a 6 px card-coloured halo that cuts the
+line), 16 across in a chart; where the end of the past is now there is one ball. The classic dot stays the classic
+dot.
+
+**Text by rule.** The axis's labels: the first flush with the plot's start, the last with its end, the others centred
+on their tick; under a scale the axis row starts where the plot does. The scale's ticks (11/500, secondary ink)
+right-aligned on one column 8 before the plot, each centred on its tick, the zero line the strong border. A bar's
+value centred over it: where the style lights some (a highlight, the MAX bar), over the lit ones alone; else over
+every bar where the slot holds 30, over none where it does not. The bubble centred on its x and kept
+inside the plot's width — its tail moves, not the pill (the classic bubble leans 16 into the card's padding, as 1.0
+drew it).
+
+**Colours.** A lone series wears its card's colour › its tone › the accent; several on the Chart and Energy usage
+cards wear the palette's six series colours (`--fluvy-graph-1…6`, ΔE2000 ≥ 8 pairwise, icon contrast on the card) or
+the house's saved set, unless the card names its own; the sensor card's several sensors keep their measures' tones
+(§ Several sensors), the History page its hashed graph colours. A saved set's colour is **one of the palette's** or **a hex of its own**. One of the palette's
+is named, not copied — its twelve series colours (`graph-1` … `graph-12`), its accent, the statuses (`ok`,
+`warning`, `danger`, `notice`), the lit light (`light`) and the energy states (`solar`, `grid`, `battery`, `water`,
+`gas`, `home`) — and worn by its token (`var(--fluvy-graph-3)`, `var(--fluvy-state-energy-solar)` …), so the set
+**follows the palette and the mode** at draw time, with no fitting and nothing per frame: choose a green palette and
+the charts wear that green. A hex is **fixed**: the person's hue as chosen, and each mode wears it **fitted** to its
+card, as the palette's own six are built and as the house's statuses are — a colour that does not hold 3:1 on that
+mode's card goes away from it (deeper in light, lighter in dark) at its hue, only the lightness moving (and the
+chroma sRGB cannot hold there), as far as the gate asks, then up to a twentieth of the scale further where that sets
+it 8 apart from the colours before it, the palette's among them; a colour that already holds both is worn as picked.
+A set is fitted once per set and palette (the look's), never per frame; a series of hexes carries both colours
+(`fc-set`: `--fc-light`, `--fc-dark`) and the engine's sheet wears the mode's (`:host([dark])`, `[data-mode='dark']`),
+its legend's square too. The check reads both modes as they are worn, so two of the palette's own that sit together
+(Linen's accent and its first series colour) are said by their words. A series of the Chart card and a source of the
+Energy usage card may name one of the palette's colours in their `color` the same way (a colour name or a hex stays
+as it is). The fills, the soft copy and the bars derive from the ink once, in the engine's sheet: fill top the
+house's % (several 16 %), the band 14 %, the copy the ink at 55 % over the card; dark mode +6 points. The new tone
+`ok` (the success role) is what is good or cheap.
+
+**Gauges are Fluvy's controls, read.** `ticks` (the gauge card's ring since 1.0, `<fluvy-dial gauge>`), `dial` (the
+thermostat's dial read — `<fluvy-dial readonly>`: its disc, its knob, no stepper; in a tile a 20 knob its ring can
+carry, touching the disc's rim, the reading whole inside), `ring` (the border's circle lit to the value, round caps,
+Fluvy's knob at its end, the reading in its middle with the unit under it), `ruler` (`<fluvy-ruler readonly>`, lit to
+the value, its knob whole). Every knob is the thermostat's ball — its dot, its lift on its halo — never the read-only
+marker. Nothing is lit, no knob, "—" when there is no reading.
+
+**The gauges that move.** Seven more gauges, each a small scene whose motion is its sensor's own variable, drawn only
+where a card's sensor is of its kind (else the card's ticks): `liquid` (a percentage, a humidity: two slow waves, 9 s
+and 14 s, a wavelength across the box, the reading in the larger of water and air), `thermo` (a temperature: no water
+— a sky over the ground tinted by the comfort's tone, cold the fifth series colour, mild the accent, warm the warning,
+extreme the danger at 16 % where the rest are 11 %; snow falling on a drift under 16 °C, a mild sun turning in 36 s
+and a fair cloud drifting across over a hill (the fourth series colour) to 24, a stronger sun (18 s) and heat haze off
+dry ground to 35, a blazing sun (9 s, its halo breathing at 2.2 s) over dunes with saguaros from 35; the reading in
+the sky's top left, the comfort's word under it — Cold, Cool, Comfortable, Warm, Hot, Extreme heat), `tank` (a volume
+or a level: quicker, shorter waves, bubbles in its right part while it fills, twice as many and as fast from a third
+of the tank an hour), `battery` (its charge as a level in the battery's tone, the warning's under 40 %, the danger's
+under 20 %; bubbles and the glowing bolt while it charges, faster as it fills faster), `pulse` (power: a disc in the
+tone with the bolt, rings that beat in 3.2 s under a kilowatt, 1.8 s under three, 0.95 s above), `air` (wind, a
+ventilation's flow: streamlines in a band of the page's colour over the reading, 4.2 s calm under 10 km/h, 2.2 s a
+breeze under 30, 0.9 s strong wind) and `sun` (what the sun gives: rays that lengthen with its share and turn in 60,
+34 or 16 s, a breathing halo). How fast a tank fills or a battery charges is read over the window's last two slots
+(its last hour over a day). Bubbles are white at 75 % in both modes; a drift and a cloud white at 60 % over the card.
+- **The reading is placed by rule**: in a box (the liquid, the tank, the sky) on the 4 grid, 16 in (12 in a tile),
+  never across the waves' reach (the line, `wave` either side of it, and 4 more) nor any sweep of the weather (a flake
+  down its fall, the cloud across its drift, the haze up its rise, the sun's rays and halo); the sun keeps the corner
+  beside the reading, else stands under it, smaller where it must. Under a mark (the battery, the pulse, the air, the
+  sun) the reading is centred. A reading is the figure (32/700, 24 in a tile, 20 at the last) with its unit and a word
+  under it (13/500, 12 in a tile): the word gives way where it does not fit, the figure never.
+- **Room.** On the gauge card a moving gauge takes the column's width and the dial's height (its range's labels'
+  too), so the card keeps its size; on the humidity card the liquid takes the ruler's room and its labels' (64), the
+  figure the readout's over it.
+- **Motion** is CSS alone, one keyframe set in the engine's sheet, on transform, opacity and the dash offset; no SVG
+  filter. Told not to move (`animate: false`, the card's, else the house's), or asked for less by the system or the
+  house, a gauge rests on its first frame — still a wave, never a flat line — and what exists only moving (bubbles,
+  rings, snow) is gone. Out of reach it keeps its room and its anatomy, grey and still, "—".
+
+**The cards that take them.** A card is offered only the styles it draws, and a style it does not draw is its classic
+(the house's soft leaves the history bars and the arrays as they were).
+- **The sensor**: classic, soft, glow, minimal and step, and `bars` and `columns` alone where its readings add up; a
+  tile's spark `minimal` where the card's style is, else classic.
+- **The energy card's line**: classic, soft, glow, minimal, step — a stepped power on a nice scale from zero in the
+  unit the card's figures take for the window's peak (kW for a house that peaks at 3 kW), the hours under the plot
+  after the scale's column; a classic line asked thin keeps 1.10's one pixel. **Its stacked charts** (by source, the
+  whole house): classic, soft (the bands' fills at 24 % over the card where classic's are 40 %, the house's hairlines
+  in place of the dashes), step (each bucket held across it); their lines thin 1, regular 2, bold 3.
+- **The history bars**: classic (1.10's gradient), bars (the ink, flat, rounded as the house's bars are, a highlight
+  lighting the highest, the lowest or the bar in progress and the rest the border's grey), columns; the mini row's
+  sparkline classic or minimal (a thin line through the bars' values, its dot at the end).
+- **Production**: classic (1.10's bars over the forecast, the arrays in the ink's ramp), soft for one meter (an hour a
+  bar, the best hour in the ink, the rest quiet, the hours to come the forecast's hollow, now marked), columns (the
+  arrays stacked in the series' colours, the legend's squares in them).
+- **The gauge card's ring**: ticks (1.10's dial), dial, ring — in the dial's room (its box wide, as tall as the dial
+  down to its range's labels: `dialLabelTop`), so the card keeps its height — or a moving gauge that reads its sensor;
+  the bar and the signed ring have one look each. **The humidity's ruler**: ticks (its marker, the classic), ruler
+  (read lit to the reading, Fluvy's knob on it) or the liquid; a dial or a ring has no room in its band.
+- **The distribution's stack and the bars card**: classic or soft (each part of the stack a pill, a bar's ink
+  deepening along it from 60 %). The score's rings are the engine's arcDash and keep their one look.
+- **The History page** draws in the house's style and has no setting of its own: classic is its 1.10 plot, any other
+  style its lines through the engine over the page's room and rules, on the page's own scale (its two rules keep their
+  figures), a lone line in the accent and several each in its entity's graph colour.
+
+**Motion.** A chart draws itself in (900 ms), its marks fade in after; once it has been read, the marks a read brings
+and takes away (the cursor, the mark on each line, now's knob back at rest) come at once in the short fade (120 ms), as
+the bubble does. `animate: false` (the card's, else the house's) or the system's reduced motion draws its resting frame
+at once. The fade owns `opacity`: a layer's own strength is its `stroke-opacity` / `fill-opacity`.
+
+**Reading.** A pointer over the plot (a finger held on it) reads it: the cursor (classic's dashes, a style's hairline),
+the mark there, the bubble saying when; ← → (Shift five) Home End read it from the keyboard, Escape lets it go.
+
+**What not to do.** No rainbows of series; no glass knobs or circles of a chart's own; no SVG filter on anything that
+moves; no mixing styles in one view (the house's one style governs; a card may differ on purpose); no fill or copy past
+the plot.
+
+## Chart (1.11)
+
+The Chart card (#68) draws any time series on one chart, from what has happened to what is to come: a sensor's
+history or its statistics, a list in its attributes (a price's day and tomorrow, a solar forecast), a weather's
+forecast. It is the engine's (§ Charts) in its house's style or its own.
+
+- **The window** (`span`) rolls to now (24 hours, any hours or days) or is the house's day, alone or with tomorrow —
+  which is today alone until tomorrow's prices are published. Its readings lie on equal slots, each what was in force
+  across it weighted by how long (an hour of four quarter prices reads their mean; a meter drawn as bars reads what it
+  gained), a line's points between the slots so its ends sit on the window's: a stepped price holds its own slot
+  beside a smooth forecast. A stepped line is one path a run, its slots never under 5 across on a round length of
+  time (a phone's card reads a day of quarters by the hour, a wide one keeps the quarters): a step narrower than its
+  line is a bead, not a step.
+- **Series**: six at most, each a line, an area, columns (under the lines, on one nice scale that reaches every
+  reading) or its band; a lone series wears the card's colour, several the palette's series colours, and a series'
+  own `color` may name one of the palette's (§ Charts → Colours); the forecast of several keeps its series' ink,
+  dashed, where a lone one's is the style's.
+- **Thresholds** colour a line from a value up to the next one: the line drawn again in each one's ink, clipped to its
+  stretch of the scale, so it changes colour exactly where it crosses — a bar takes the ink of the threshold its value
+  reaches; `ok` is the good, cheap one.
+- **Marked windows** (`highlight`, a lone series): the lowest and the highest mean of `highlight_hours` over what is to
+  come (from now's slot, where three windows' worth of readings lie ahead, else over the whole window), each a stretch
+  of the plot behind every layer in its tone's fill at 55 % (a price's cheapest the ok tone, its dearest the danger's,
+  any other series' its own) and a pill that names it — "Cheapest Fri 13:00–15:00 · 0.078 EUR/kWh" — in one of four
+  forms, longest first (without the unit, without the figure, the hours alone), every pill in the same form; where the
+  row holds none, the stretches say it alone.
+- **The value row** (full, 16 + 64): the first series' reading now at the largest readout size (l or m, whichever lets
+  the pills say the most) with its change on the period before as a neutral pill on the value's foot ("+5 %", a
+  rolling window against as long a stretch before it, a calendar day against the day before; from the recorder only),
+  the marked windows' pills at its end — or, for two or three series, the legend's lines with each reading at their
+  end; four or more name themselves under the axis in two lines of two or three columns (+44).
+- **Reading it.** Under a row that says the reading, the plot rises to 12 under the chart's top (the knob's room), and
+  while the chart is read the row reads it — the value with the time as its label, or the legend's lines each with its
+  reading and the time a pill on the axis under the cursor, the hours giving way (the several sensors' card's) — and
+  no bubble is drawn: the cursor and its mark on the line alone, the marked windows' pills where they were. Where the
+  row has nothing to say the chart takes its room (200) and keeps the bubble's 44; without the head (`show_head:
+  false`) the bubble reads the chart in its 44 above the plot, under a row of the pills alone too.
+- **Compact** is the head, the chart and its axis; **the tile** the reading over a spark of every series. The scale's
+  column folds where it would leave the plot under 120 (half a section).
+- **The axis of a calendar window** says the day of a midnight between its ends ("Thu 00:00 · Fri 00:00 · Sat
+  00:00", never a bare 00:00 that could be either day), and where the times do not stand 12 apart, the days alone
+  (Thu · Fri · Sat).
+- **Heights** by variant and series count only: 320 (364 with a legend of four or more), 240, 168; loading (the
+  skeleton), empty (the ring and "Nothing to chart in this window" on the page's fill) or out of reach, it keeps them.
+- Its chunk is its own (`chart-card`, beside the engine's `chart`): every page carries only its name and height
+  (`chart-family.ts`).
+
 ## People (1.6)
 
 - **Each their own**: a name, a colour (a 2 px ring round the avatar, 2 clear of it on the card: a picture would hide a
@@ -1117,6 +1423,16 @@ Energy dashboard's numbers; any other reset reads the counter by its readings.
 - **The head** keeps its badge (the card's alert) before the sub's last part, then gives way as every head; the
   sheet's "Openings & motion" where it keeps both its circle and its badge, else "Openings".
 - **The same sensor twice** keeps both rows (rows are by position, never by entity).
+- **The real last change (1.11, #67):** a row's time — the openings card's "2 h ago" or "14 min", a list row's *last
+  change* line (entities, lock, camera, alarm), a tile's (a tiles group's, a room's), a template's, a person's, a
+  helper row's — is Home
+  Assistant's `last_changed` unless the row says where the real one is read (`since`: an entity whose state is a
+  timestamp, ISO or an epoch in seconds or milliseconds, or `attribute:<name>` of the row's own entity), and the
+  openings card names one for every row at once (`since_pattern`: `sensor.{id}_real_last_changed`, `{id}` the row's
+  object id, `{entity}` its whole id; a row's own wins; no default pattern). Empty, unknown, unavailable, unparsable
+  or missing falls back to `last_changed`. The sensors a card reads this way are watched. The editor's `since` is a
+  select of the house's timestamp sensors (`device_class: timestamp`), any other value typed; the openings card's
+  `since_pattern` shows while its rows say their times (not compact, not with the times off).
 
 ## 3D printer (1.6)
 
@@ -1527,6 +1843,16 @@ temperature on its way, a hob's plates, a fridge's compartments, a state and its
 - **Heights** are the config's: the slot (100) when a temperature or a hue ruler may show, the row (8 + 52 a row of
   six) when the colours may; a white bulb under the same config draws less. `show_color: false` is the white bulb's
   card. The controls' table and row come in their own chunk the first colour bulb fetches.
+- **A bulb that only switches is its head alone (1.11, #65):** a light whose `supported_color_modes` is `onoff` alone
+  draws the light card as its head — the circle, the name, the state line (the area, else the state), the switch — in
+  every style, `full`, `auto` and `compact` alike: 20 + 44 + 20 = **84** (`sl-card--switch`, `min-height: 0`), where
+  1.10 left the head alone in a dimmer's 256 box (the automatic dashboards draw such a light as a tile). Its editor
+  offers only what the bulb does: the layout, the stepper and the
+  live update while the bulb dims; the temperature ruler and its tint with a white; the colours' switch and the quick
+  colours with a colour; how whites show with either; everything for an entity the house has not described. A light
+  Home Assistant has not described (gone, or unavailable since it started) still draws as a dimmer (268); one that
+  only switches and cannot be read keeps its on/off anatomy (the attributes Home Assistant keeps), its switch
+  disabled.
 
 ## Automations (1.8)
 
@@ -1811,6 +2137,129 @@ the tile card's tile of the same entity, byte for byte.
   actions; helpers under the name, the line, the icon, *Shows as on* and the colour (a colour template goes in YAML).
 - Its chunk is its own (`template`, 2.1 KB of 8): every page carries only its name and height (`template-family.ts`).
 
+## Web page (1.11)
+
+The web page card (#61) frames a page — a map, a chart, a site of the person's own — on a plate: the devices sheet's
+plate (`.dv-cam.fv-plate`) under a head with the page's host on its line (`plate`, the default), alone on the card
+(`frame`: the card's 20 above and below it) or with no card at all (`bare`: the plate alone, with a card's corners and
+a card's entrance).
+
+- **The plate** keeps the shape asked for (`aspect_ratio`, 16:9 by default; the camera's shapes, Home Assistant's
+  `56%`, or `fill` for the view's height in a panel or grid view) or the `height` written (on the 4 grid, never under a
+  plate's floor of 68), which wins. Heights are the config's alone: `plate` = HEAD + the plate across 320 (16:9 → 280),
+  `frame` = 40 + plate (220), `bare` = the plate across 360 (204). The page may be drawn smaller (`scale` 0.5–1: a
+  dense map at 0.75 shows more of itself) and asked for again every so many minutes (`refresh`), only while the tab is
+  shown and the card on screen (the shared ticker).
+- **The rounds** sit at the plate's bottom end as a camera's do (44, 8 apart, 12 in): reload, open in a new tab, full
+  screen — the open and the full-screen ones by default. A plate too narrow for them gives them up in order, the
+  reload first, then the open; the full-screen round stays, and every one is back in full screen. Full screen is the
+  plate's own (`requestFullscreen` on the plate, as the camera's); a phone that has none (iPhone) opens the tab.
+- **Loading.** A skeleton covers the plate until the frame's `load`; twenty seconds without one, counted from when the
+  plate is on screen (the frame loads lazily: a card scrolled to late has its twenty seconds), the plate says "Still
+  loading · Open in a new tab", the tab a link of 44 over the skeleton where the line holds it (the open round is the
+  way where it does not). A card taken out of the page stops its clock; put back, its frame asks for the page anew,
+  under the skeleton, and the clock starts afresh. A page that refuses to be framed loads all the same, blank: no card
+  can tell from outside (the docs say the open round is the way out). A config whose address, sandbox and
+  permissions are unchanged keeps the loaded frame (the frame is keyed by them and by its reload count); a change
+  asks for a new one.
+- **Insecure.** On an https dashboard an http page is never asked for (the browser refuses it without a word): the
+  off plate at its size — page fill, dashed hairline, the globe on the off circle over "This page needs https" — its
+  reload and full-screen rounds disabled, its open round alive. The address itself is read once, on `setConfig`: a
+  scheme no page can be framed from (`javascript:`, `data:`, `blob:`, none) is refused with a readable error; a
+  relative address resolves against the dashboard.
+- **A state's words never sit under the rounds** (`stateLayout`): they are centred in the room the plate leaves over
+  its rounds' 56, 8 at least above and below, on one line — the globe over the words in full, then over their short
+  form ("Needs https"); the slow line with its link, then without it; the words alone, in full, then short ("Loading");
+  beside the rounds at the plate's start where the plate is wide and low (a `height` of 68 across a full card); the
+  globe alone. Where nothing holds (a half card's plate of 68 or 76, a bare one of 84) the skin, the skeleton and the
+  rounds say it.
+- **The looks.** `page` (the default) is the page's own colours; `dark` inverts the frame (`invert(.92)
+  hue-rotate(180deg)` — the one thing that reaches a cross-origin page; pictures invert too, said in the docs); `auto`
+  inverts only while the card is dark.
+- **The sandbox** is Home Assistant's own set by default (`standard`: its `IFRAME_SANDBOX`), with
+  `allow_open_top_navigation` adding its token; `strict` drops `allow-same-origin`, pop-ups, modals and downloads;
+  `off` writes no sandbox. The frame sends no referrer (`referrerpolicy="no-referrer"`), loads lazily and takes
+  `allow: fullscreen` as its permissions policy.
+- **Home Assistant's iframe card pastes in** (`type: iframe`): `hide_background: true` → `variant: bare`,
+  `disable_sandbox: true` → `sandbox: off`; both let go.
+- **Editor** with `when`: the head (title, icon, its circle, subtitle) and the actions with the plate variant alone;
+  the colours on a card (never bare); the shape only while no height is written; top navigation only while there is a
+  sandbox; helpers under the look and the sandbox.
+- **Two glyphs**: `external` (an arrow leaving its box by the top end corner) and `refresh` (a circular arrow), in
+  the design lab and the set, outlined lazily with the 1.10 glyphs.
+- Its chunk is its own (`web`, 4.5 KB of 8): every page carries only its name and height (`web-family.ts`).
+
+## Items (1.11)
+
+The Items card (#66) lists the items of one sensor's list attribute — the aircraft a FlightRadar24 sensor keeps in
+`flights`, a departures board, parcels on their way — where every other list of the house draws one row per entity.
+
+- **The list.** `attribute` names it; `auto` takes the first attribute that holds a list (`flights`, `items`,
+  `entries`, `list` first, then the first list of objects). `items_template` gives it instead: one Jinja template a
+  card, one subscription, its answer read as JSON — any sensor becomes a list. An item is an object read by dot paths
+  (`altitude`, `airport.city`, `legs.0.from`).
+- **The fields.** `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`, `item_image`, `item_url`: a
+  path, or words with `{path}` in them, `{a|b}` taking b where a is empty. A number is written in the house's locale
+  (0 digits whole, 1 otherwise), an ISO date and time as a moment (its time today, its short date and time otherwise;
+  a preset's Unix times too), a truth as On/Off; a " · " segment that says nothing goes, and so does the arrow a blank
+  field leaves at its edge ("AMS →"). A name left unmapped takes `name`, `title`, `label` or `id`.
+- **Presets.** `preset: auto` (the default) draws flights where the attribute is `flights` or the items carry a
+  `callsign` or a `flight_number`, and hides the `item_*` fields in the editor (its helper says what `auto` found);
+  `none` keeps the mapping; `flights` asks for it. The flights row: the callsign (else the flight number) over
+  "AMS → BCN · Boeing 737-800", the altitude in feet with `trendUp`/`trendDown` before it (the vertical speed past
+  ±100 ft/min) or "On ground" in the quiet ink, the aircraft's small photo in its circle, the nearest first. The head
+  says "Flights nearby" and "3 aircraft" — "Flights" where even the circle's room would leave the full words cut (a
+  preset's title is the card's own words, not a name, so it takes its short form, measured, as the Dutch score's
+  word does; a title of the person's own keeps a name's ellipsis); the empty panel "No aircraft nearby". The units are the integration's (ft,
+  kt, ft/min, km), as it reports them.
+- **Variants.** `rows` (60, the default), `compact` (48: the name and the value, the 40 circle with the glyph),
+  `tiles` (76 inner compact tiles, two a row from a 288 column — a 360 phone's card — one under it).
+- **Every row is laid out alike**, by the column and the widest value the card can show — the preset's ("On ground",
+  a five-figure altitude with its arrow), else the widest the whole list holds — never by one item's words: where that
+  value would leave a name under its 96 even without the circle (211 and under, for flights), every row puts its
+  value under its name in the line's place (the name's 20, 4, the value's 20: the row keeps its 60); else the circles
+  give way together where a name needs their room, and the lines give way by their segments. The tiles share their
+  room the same way, every tile together: the circle where each name keeps 48 beside it and each value the card can
+  show holds whole — the value's arrow gives way first, then the circle, and the arrows are back once the circles
+  have gone (half a section).
+- **The value's glyph** is a `listRow` option of its own (`valueGlyph`): a 16 glyph before the figure, the two centred
+  on the value's line 4 apart (`.fv-row__value--glyph`), weighed with the value wherever a row fits its words.
+- **Heights.** `max_rows` (1–20, five) is the card's height, never the list's length: HEAD + 60 × n (five → 400),
+  HEAD + 48 × n, HEAD + rows × 76 + 8 between (`itemsList`). The list's box holds that height at every width whatever
+  it shows: fewer items, the empty panel — as tall as its words lay out across the card (120 at least: a German "Keine
+  Flugzeuge in der Nähe" takes four lines in half a section), in the box's middle rounded down to the 4 grid; in a box
+  shorter than the panel, its words alone at the box's height — and a sensor out of reach (resting dashed rings, "—"
+  names and values, as many rows as declared, the state under the title). The tiles one a row under 288 hold
+  `max_rows` rows of them there, whatever the list holds: the one width at which the card draws taller than it
+  declares at 360 (half a section, a third of one).
+- **The head** counts from the sensor's state ("3 aircraft"; the whole list's length where the state is no number;
+  `subtitle` wins, `show_count: false` drops it). Its title is the card's, else the preset's, else the sensor's name;
+  its tap is the sensor's details.
+- **Out of reach, the card keeps its anatomy** (an unavailable card keeps its size and anatomy): a sensor out of reach
+  cannot say what it lists, so under `preset: auto` the preset is the one the config names (`attribute: flights`),
+  else the one the sensor's attributes still say, else the one the list was last drawn by while it answered (kept for
+  the session, on this view or another) — "Flights nearby" with the plane in the head's circle and in every resting
+  ring, its rows laid out as the live ones are. Where nothing is known (a dashboard opened while the sensor is out of
+  reach) the card is the plain list it would be — the sensor's name, the list glyph — and stays so until the sensor
+  answers: no word is guessed to be taken back.
+- **Pictures** (`show_image`, on by default) fill a 44 circle (`object-fit: cover`); one that will not load gives way
+  to the glyph, in the row and in the sheet. Home Assistant's own paths go through `hassUrl`.
+- **The sheet** (`item_tap: sheet`, the default; `none` makes the rows still): the cameras sheet's shape — a modal
+  bottom sheet, Escape, the scrim and Close, the focus back where it came from — fetched the first time an item is
+  tapped (its own chunk). Its head: the picture or the glyph, the name over the line (its segments giving way), and a
+  `globe` round to the item's link where both hold beside it; else the link is a quiet button above Close, its word
+  shorter where the full one would not fit ("Open on Flightradar24" → "Open the link"). Then the fields, a label over
+  its line (64 a field, a line more for each that wraps, hairlines between): the flight's airline, flight number,
+  callsign, route by city, aircraft, registration, altitude, ground speed, vertical speed, heading, distance,
+  position, departure and arrival (the real time, else the estimated, else the scheduled); a plain item's every field
+  that is a line, labelled by its own name. The sheet keeps its item while the list moves under it (by the item's
+  `id`, else its name, among the whole list, not only the rows shown); an item gone from the sensor says "No longer
+  listed".
+- **No per-item tone**: the rows are what the sensor lists, live; their circles rest in the neutral, the card's
+  colours are its head's and its sheet's.
+- Its chunks are its own (`items`, 6.9 KB of 12; `items-sheet`, 2.7 KB of 8): every page carries only its name and
+  height (`items-family.ts`) and the value's glyph.
+
 ## Value row (1.9)
 
 A card's reading — its big figure — and what goes with it share one 64 row, 16 under the head: the control that sets
@@ -1947,6 +2396,13 @@ What a card does at those widths, beyond the rules above — never a word cut, n
   words, at their start, as wide as its own words (`rowStacks`, `.fv-row--stack`): de "Installieren" at 211, the sun's
   "Above horizon" under "Sets at 20:12"; the entities card's state in words likewise, where not even its longest word
   leaves the line its short form. Names and lines wrap at their words, never inside one.
+- **A value's pill is capped (1.11)** (68 % of the row less the circle's room, less the one gap once the row gave its
+  circle, on the 4 grid — `valueCap` mirrors the sheet's CSS) and holds what it shows whole: a date names its month
+  ("10 de nov.") where the cap holds it, takes its figures ("10/11" — the profile's order, the two-digit year once it
+  is not this one) where it does not, so the row keeps its line; where even the figures run over the cap the row
+  stacks, and under the name the pill has the whole row. A time ("06:45") never reaches the cap; a select's option, a
+  name, keeps its ellipsis as its last resort. The cap weighs for the circles too: a pill that would not hold within it
+  gives the circles to the names, as a squeezed name does.
 - A head's circle gives way; its tap never does (#42): the whole head is the card's button at every width. Compact
   light, fan, lock, gauge (bar) and room (row) cards hold at half a section and never less (`min_columns: 6`, as
   Home Assistant's own compact cards): in a third the switch left the name no room.
@@ -2014,6 +2470,14 @@ last entry taken out in the editor — is a card, never a configuration error (#
 - Paired readouts of different sizes are baseline-aligned (`data-baseline` group); side readouts get the padding that puts them on the big value's baseline.
 - A 16/600 value beside a 15/600 title or 14/500 legend name (list rows, bar rows, legend rows) carries `top: −1px`: Blink floors the half-leading, so in the same 20 px box the 16 px baseline lands 1 px low. One-line rows pair title and value in a `data-baseline` group; two-line rows (title + sub) centre the value on the pair instead.
 - Percent always with a thin space: `70 %`. Temperatures in compact surfaces: `21.5°`; on dials `21.5 °C`.
+- **One rule for units and decimals (1.11, #69)** (`shared/units.ts`): a set read together is written in the unit the
+  card asks for (`unit`, of the figures' class) else the one its largest figure asks for; its decimals are the card's
+  (`decimals`, fixed, so a live figure keeps its width), else the sensor's own precision where the shown unit is the
+  sensor's, else what the figure's size asks for (three significant places at most, a scaled figure keeping its one
+  decimal). A unit of another class is ignored, never written on figures it does not measure. An item of a list (a
+  legend's, a readout, a device row, a meter) may ask for its own, over the card's. Money keeps its cents: a card's
+  `decimals` is for its energy figures. The editor offers both on one row, the last before the actions, the units of
+  the sensor's class; a sensor whose unit converts to nothing shows no unit to choose.
 - Celsius or Fahrenheit: a sensor's figure in its own unit, a climate's and a water heater's in the house's (Home
   Assistant hands them in it). Nothing assumes Celsius: a range, a step or a threshold an entity does not give is Home
   Assistant's own in the house's unit (a thermostat 7–35 °C by halves or 45–95 °F by whole degrees), and a readout is
@@ -2132,11 +2596,53 @@ last entry taken out in the editor — is a card, never a configuration error (#
 - One centred column of cards (760 at most; the phone's 16 gutter). Its breakpoints are its own width (inside Home Assistant the sidebar takes part of the screen): from 648 it is laid out as on a desktop (12 gaps, the wide tabs); the preview takes the desktop card sizes when it has 672 of its own (a 760 panel); from 1184 the preview leaves the column for a 400 side column of its own, sticky (scrolling within itself when taller than the window) and on every tab — the look's preview, or the automatic dashboard's on its tab. Narrower, the preview closes the tabs that have one.
 - **The Dashboard tab's preview** draws the lights in the chosen size, the thermostat in its variant and the energy flow in its style — on the house's own meters when it has any (the automatic dashboard's detection: the energy preferences, then the words), on made-up ones (sun, grid, a charging battery) when it has none.
 - **Settings file**: Export writes everything Fluvy keeps — the house's settings, this person's, the automatic dashboard's options (not the house's own entities), the version and the date; Import restores them (the dashboard's options when the house has an automatic dashboard).
-- **Tabs**: five — Appearance, Scope, Dashboards, Wall, Preferences — a tab row (14 px face) on the card surface, the open one in the selected ink. A phone scrolls content-sized pills and keeps the open one in the middle, fading only where the row goes on; a wide panel fills the column with the five equal tabs on one line. Fluvy's own facts (the About tab until 1.4) are Preferences' last card, *Fluvy*: its version as the head's sub, the look in use and the Home Assistant pages it styles as rows, the settings file as a label over the equal Export · Import pair with its hint under, and the house's reset row (an administrator's).
+- **Backups keep everything (1.11)**: every setting of the house's or a person's lives in their settings (parsed, defaulted, versioned: `HouseSettings`, `PersonalSettings`), which Home Assistant keeps in its frontend data, so a Home Assistant backup and the settings file both carry it — the Charts tab and the house's series sets too (`panel.test.ts`, "exports every setting"). A setting of one device (*This device · Size*, a wall) says it stays on that device.
+- **Tabs**: six — Appearance, Charts, Scope, Dashboards, Wall, Preferences — a tab row (14 px face) on the card surface, the open one in the selected ink. A phone scrolls content-sized pills and keeps the open one in the middle, fading only where the row goes on; a wide panel fills the column with the six equal tabs on one line. Fluvy's own facts (the About tab until 1.4) are Preferences' last card, *Fluvy*: its version as the head's sub, the look in use and the Home Assistant pages it styles as rows, the settings file as a label over the equal Export · Import pair with its hint under, and the house's reset row (an administrator's).
 - **The panel wears the look being chosen**: a tap on a palette or a shape re-skins the page it was made on; the preview shows the real cards at their real size (desktop tiles 152 beside the thermostat's 312).
 - **Nothing saves on tap (2026-09-19)**: every tab edits, and the edit is shown before it is saved — the look on the panel itself; where it applies, the frame and the menus' icons on the whole screen (the look engine's preview); the language and motion of the cards on the page. An edit back to the saved value is no edit, and an edit clears itself when Home Assistant hands the saved value back (no flicker to the old one). The Dashboard tab previews its cards (the lights as large tiles or rows, the thermostat in its variant).
 - **Pending changes**: a bar in a dock at the foot of the column, in the flow (it never covers the last card) and sticky (at hand while scrolling), on every tab: what changes (one change in words, each part from → to: "Linen → Volt · Soft → Round", "Floating frame · Off"; several: "3 changes"), Discard, and how to save: a changed look as an equal pair, for the house or only for me (one accent "Apply for me" for someone who may not change the house's), the pair sharing the row while both words hold half of it with 8 on each side, as a chip's do, else one a row, each the whole width (French and English at 360, German and Dutch at 412); anything else one accent Save. The "Saved" notice sits in the same dock. Enter 220 ms, leave 160 ms, transform and opacity only.
 - **Gallery**: three a row at every width (108 / 216 cells), Linen first; each palette a miniature of the product (its page, an on tile in its fill with an icon circle and lit ticks, an off tile in its card, its highlight); the chosen one on the accent fill with a check. Custom is a builder row of its own under both lines.
+- **The Charts tab (1.11)**: the house's charts chosen as the look is — every change shown at once on the tab's own
+  drawings and on every card of the page that names no style (the look engine's preview sets the house's chart
+  settings), saved from the bar ("Charts · Style · Soft"). Four cards and the preview: **Style** and **Gauges** as the
+  house's Apple-like tiles (the palettes' swatch: a picture over its name, the chosen one in the accent's fill with a
+  check), two a row on a phone and four on a wide panel, a last row short of them sharing the width among its own
+  (the eleventh gauge takes a phone's row whole, the last three share a wide panel's); each picture is the engine's
+  drawing on the card's surface in the fine settings chosen — a day of temperature with its forecast after two thirds
+  (the bars styles on a day of energy, twelve slots), a control gauge on 62 % in a 116 picture that is the small dial's
+  own height (its disc on the grid; the ring and the ruler centred), each moving gauge on a reading of its kind
+  (21.5 °C, 620 of 1,000 L, 1.8 kW …), moving as it would.
+  **Details**: the fine settings the chosen style draws with, a label over a row of chips each, never one it does not
+  draw with (the engine's `HOUSE_ACTS`); classic offers none and says so in one line; the Waves of a moving gauge
+  while the house's gauge moves; **Motion** as the last row, a switch. **Series colours**: rows as the custom
+  palette's (a picture of six rounded columns in the colours, the name, a check when worn) — the palette's six first
+  (its `--fluvy-graph-1…6` as the look being chosen derives them in the mode on screen), then the house's sets; under
+  them *Edit this set* (the one worn) and *New set…*, or the line that says twelve are kept.
+- **A set of series colours**: its editor is a card of its own under them — the name (24 at most); **Colours**, the
+  set's six as dots on the picker's columns (six a row on a phone, the first six of twelve on a wide panel), each a 36
+  dot in its 44 with its **mark** — the palette's glyph where it follows the palette, a lock where it is fixed — the
+  one being picked ringed in the accent with the card between; under them the colour being picked: its number
+  (15/600) and its mark in words as a pill at the row's end (*Follows the palette* in the accent's fill, *Fixed* in
+  the neutral one, fitted, 14 px sides, its glyph 16); then the **picker**: *Series* (the palette's twelve), *Tones*
+  (the accent, Success, Warning, Danger, Notice, the lit light), *Energy* (Solar, Grid, Battery, Water, Gas, House),
+  each a label over a row of the house's colour dots (six a row on a phone, twelve on a wide panel, every group on the
+  same columns), each dot drawn by its token in the look being chosen and the mode on screen, named by its word (its
+  tooltip and its label), the chosen one with its check; and *Custom*, the hex field with the system's well (on a
+  colour of the palette's it shows that colour's hex here, to start from; a hex typed makes the colour fixed). **New
+  set…** starts on the palette's six, named, so a new set follows the palette until a colour is made fixed. Then the
+  check (two colours closer than 8 ΔE2000 as each mode wears them — "#2563eb and #2463ea …", "Series 1 and Accent are
+  too close to tell apart" — on both cards, or on the one where fitting brought them together, in a warning panel; or
+  one quiet line when every colour passes), the two modes side by side drawing six lines as each wears them, Cancel ·
+  Save set as an equal pair, and *Delete this set* for one the house keeps. A set keeps its hues and each mode wears it
+  as § Charts (1.11) → Colours says, so the check says only what fitting cannot fix. A set's row pictures it as the
+  mode on screen wears it: a palette's colour by its token, so choosing another palette recolours a set that follows
+  it at once, and leaves a set of hexes as it was. It is kept at once (as palettes are) and worn as an edit for the
+  bar.
+- **Both modes side by side** (the Charts preview, the set's check): two equal cards, each in its mode's colours (the
+  look scoped to `.pn-day` and `.pn-night`), its mode's name as a label over its drawings — a sensor's day 120 tall
+  with its bubble where the style shows one at rest, the day's energy as bars 64 tall, the house's gauge (a dial or a
+  ring at most 112) — the light half keeping a light card's fills in a dark panel. Motion off: every drawing its
+  resting frame, the bubble with it.
 - **Custom palette builder**: the accent examples are the style's own — twelve pastels (L 0.85, C 0.08) or twelve electric colours, hue for hue, so changing the style keeps a listed pick's place; any colour can still be typed or picked. The highlight says what it does under its label (you and now: the avatar, today, the open tab), and the preview carries the greeting, whose avatar wears it. A colour dot's edge is its own colour a shade deeper (a grey ring stair-steps round a saturated dot).
 - **Only on dashboards while Home Assistant wears Fluvy**: when the profile's theme (or the house's default theme) is Fluvy itself, every page wears it whatever the scope. Choosing "Only dashboards" then shows why in a note, with Home Assistant's own way back: the profile's theme picker event (`settheme`, theme `''` = the default) for the person; `frontend.set_theme` for an administrator when it is the house's default.
 - **Scope → Everywhere** offers what belongs to the whole app: the floating frame and **our icons in the menus** (the sidebar's glyphs and Settings' icon circles; off, Home Assistant draws its own). Both are the house's, apply live on every screen, and are shown read-only to someone who is not an administrator.

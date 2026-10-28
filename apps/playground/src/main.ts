@@ -6,7 +6,10 @@ import {
   fallbackCss,
   LIGHT_TINTS,
   lookRule,
+  parseChartSettings,
+  parseSavedSeries,
   resolveLanguage,
+  setChartDefaults,
   setLightDefaults,
   type HomeAssistant,
   type Look,
@@ -34,9 +37,11 @@ import { dashboardOptions, mountDashboard } from './dashboard.js';
 import { defineIconStubs } from './ha-icons.js';
 import { createHass, type MockOptions, type StateSeed } from './hass.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
+import { MOCK_PERIODS, type MockPeriod } from './collection.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
+import { mountViewTheme } from './themes.js';
 import { outOfReachView } from './out-of-reach.js';
 import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js';
 
@@ -54,11 +59,16 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  * ?accent=%23ff4a1a      a custom palette instead: &character=vivid &base=cool &fill=solid &highlight=%23e2ff3d
  * ?compare=linen,volt    the sheet once per palette, side by side (each column scoped to its palette)
  * ?template_delay=3000   how long the mock takes to answer a row's template, in ms (default 30: before the first paint)
+ * ?period=week           the range the Energy date pickers' collections start on (today | yesterday | week | month)
  * ?lights=on            the house's defaults for lights (fluvy's settings → Look): a light card's tint (off | on |
  *                        always) where it says none; &bulbs=1 a lit light in its bulb's colour on tiles, rows, rooms
+ * ?charts={"style":"soft"} the house's chart settings (fluvy's settings → Charts), as JSON: any of their fields, each
+ *                        read as the settings read it (an unknown word is its default), and `sets` the saved series
+ *                        colours (`[{"id":"warm","name":"Warm","colours":[six hexes]}]`, chosen by `series`)
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
- * ?panel=appearance      fluvy's settings panel (appearance | scope | dashboard | wall | preferences)
+ * ?panel=appearance      fluvy's settings panel (appearance | charts | scope | dashboard | wall | preferences);
+ *                        &sheet= keeps a sheet's house beside it (&frames=none: a suite mounts its own cards in it)
  * &state=pending,guest     …at a moment of its own (see `PanelState` in panel.ts)
  * &nopopover=1             …in a browser without the Popover API (the dropdown's fixed fallback)
  * ?history=1             Fluvy's History page on a made-up house (&moment=week|month|states|many|empty|loading|sources|dates)
@@ -70,6 +80,10 @@ import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } fro
  *                        (&tabs= &content= &tabtitle= &views= &icons= &edit= &subview= &scope= — see dashboard.ts)
  * ?frames=none           the house of the sheets asked for (every sheet's without `sheet`), none of their frames drawn:
  *                        a suite mounts its own cards in it (`fluvyCatalogue`, `fluvySheets`, `fluvyOutOfReach`)
+ * ?viewtheme=Fluvy       the frames in a view Home Assistant themed (a dashboard's view, else the stage, as a section):
+ *                        the look by the bundle's engine and its watch, Fluvy's theme file written on the view as Home
+ *                        Assistant writes it (#72); &viewtheme=Sandstone the same file under another name;
+ *                        &lookscope=dashboards the look on the dashboard alone (see themes.ts)
  */
 const params = new URLSearchParams(location.search);
 const dark = params.get('mode') === 'dark';
@@ -138,7 +152,9 @@ function requestedLook(): Look | null {
   };
 }
 const look = requestedLook();
-if (look) {
+const viewTheme = params.get('viewtheme');
+// a themed view's page wears the look by the bundle's engine (themes.ts)
+if (look && !viewTheme) {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(lookRule(look, dark ? 'dark' : 'light', ':root', true, statuses));
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
@@ -150,6 +166,21 @@ const houseTint = LIGHT_TINTS.find((tint) => tint === params.get('lights'));
 if (houseTint || params.has('bulbs'))
   setLightDefaults({ tint: houseTint ?? 'off', colors: params.get('bulbs') === '1' });
 
+// the house's chart settings, as fluvy's settings would hand them to every card
+if (params.has('charts')) {
+  const charts: unknown = (() => {
+    try {
+      return JSON.parse(params.get('charts') ?? '');
+    } catch {
+      return {};
+    }
+  })();
+  setChartDefaults({
+    settings: parseChartSettings(charts),
+    sets: parseSavedSeries((charts as { sets?: unknown } | null)?.sets),
+  });
+}
+
 const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';
 // the person's preference: the Activity page's timeline on a card
@@ -159,10 +190,10 @@ const at = params.get('at');
 if (at) pinClock(at);
 const panelTab = params.get('panel');
 const panelStates = (params.get('state') ?? '').split(',').filter(Boolean) as PanelState[];
-// the panel stands alone: no sheet frames beside it; a fixture sheet is asked for by name
+// the panel stands alone unless a sheet is named beside it; a fixture sheet is asked for by name
 const fixture = only && !SHEETS[only] ? await loadFixture(only) : undefined;
 const selected: Array<[string, SheetSpec]> =
-  panelTab || activity || history
+  (panelTab && !only) || activity || history
     ? []
     : fixture && only
       ? [[only, fixture]]
@@ -208,6 +239,11 @@ const mock = createHass([...states.values()], {
     >,
   },
   ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
+  // the Energy date pickers' collections, on the range `?period=` names (today otherwise)
+  collections: selected.flatMap(([, s]) => s.collections ?? []),
+  ...(MOCK_PERIODS.includes(params.get('period') as MockPeriod)
+    ? { period: params.get('period') as MockPeriod }
+    : {}),
   ...(params.has('template_delay') ? { templateDelay: Number(params.get('template_delay')) } : {}),
   // &units=imperial, or a sheet that stands alone in a house in °F and miles
   ...(params.get('units') === 'imperial' ||
@@ -350,6 +386,7 @@ for (const column of columns)
       el.dataset[frame.measure === false ? 'stress' : 'frame'] = `${name}/${frame.title}`;
       el.style.width = `${frame.width ?? width}px`;
       if (frame.gap !== undefined) el.style.gap = `${frame.gap}px`;
+      if (frame.heights) el.dataset['heights'] = frame.heights.join(',');
       if (frame.statuses) wearStatuses(el, frame.statuses, column);
       const total = frame.columns ?? 12;
       if (frame.columns) el.style.gridTemplateColumns = `repeat(${total}, minmax(0, 1fr))`;
@@ -378,6 +415,14 @@ for (const column of columns)
       column.append(el);
     }
   }
+if (viewTheme)
+  await mountViewTheme(columns[0] ?? stage, {
+    theme: viewTheme,
+    look: look ?? { palette: DEFAULT_PALETTE, shape: DEFAULT_SHAPE, pills: DEFAULT_PILL },
+    dark,
+    statuses,
+    dashboards: params.get('lookscope') === 'dashboards',
+  });
 
 // the mock and the shared text measurer, for the interaction tests; the cards, the sheets and a house with entities out
 // of reach, for a suite that mounts its own

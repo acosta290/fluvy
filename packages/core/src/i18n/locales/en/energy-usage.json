@@ -1,0 +1,14 @@
+{
+  "energy-usage": {
+    "title": "Energy usage",
+    "title_short": "Usage",
+    "other": "Other",
+    "editor_sources": "Sources (none: the Energy dashboard’s)",
+    "editor_max_sources": "Sources before the rest become “Other”",
+    "editor_show_returns": "Show what was charged and exported",
+    "editor_show_legend": "Show the legend",
+    "editor_show_period": "Day · Week · Month · Year chips",
+    "editor_compare": "Show the period before behind the columns",
+    "editor_color_helper": "Empty: its energy’s own colour. The palette’s colours follow it; a colour name or a #hex stays as typed"
+  }
+}

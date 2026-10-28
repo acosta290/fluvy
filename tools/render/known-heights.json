@@ -335,6 +335,13 @@
       "reason": "the Energy dashboard's devices (live): four are declared"
     },
     {
+      "frame": "period/Followers",
+      "tag": "fluvy-energy-devices-card",
+      "declared": 404,
+      "drawn": 556,
+      "reason": "the Energy dashboard's devices over a date picker's range (live): four are declared"
+    },
+    {
       "frame": "printer/A colour of its own · failed and paused",
       "tag": "fluvy-printer-card",
       "declared": 528,
@@ -567,6 +574,21 @@
       "declared": 352,
       "drawn": 292,
       "reason": "the house's weather answers no forecast: no row (live)"
+    },
+    {
+      "frame": "usage/No Energy dashboard",
+      "tag": "fluvy-energy-usage-card",
+      "declared": 472,
+      "drawn": 312,
+      "reason": "no Energy dashboard: the panel (live)"
+    },
+    {
+      "frame": "usage/No Energy dashboard",
+      "tag": "fluvy-energy-usage-card",
+      "n": 2,
+      "declared": 240,
+      "drawn": 252,
+      "reason": "no Energy dashboard: the panel (live)"
     }
   ]
 }

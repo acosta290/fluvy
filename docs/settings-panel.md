@@ -1,11 +1,12 @@
 # The settings panel
 
-**Fluvy** in the sidebar, at `/fluvy`. Administrators see five tabs, in one row; everyone else sees Appearance (their own
-palette) and Preferences.
+**Fluvy** in the sidebar, at `/fluvy`: six tabs, in one row. What belongs to the house is an administrator's to change;
+everyone else reads it, and changes their own (a palette of their own, their preferences, this device).
 
 | Tab | What it holds | Whose |
 | --- | --- | --- |
 | **Appearance** | palette (fifteen presets, the house's saved palettes, the community's, or a custom accent — shared as a file), shape (soft, round, crisp), button style, the dashboards' tabs (Fluvy, pills, original or hidden; names, icons or both; the dashboard's name), the sidebar and header (Home Assistant's logo, dividers, the header on the page); the lights, where a card says nothing, and the status colours (see below); a live preview on real cards (its little house answers a tap itself: nothing at home changes) | the house; a person may keep their own palette and shape |
+| **Charts** | the style every chart is drawn in and the gauge every gauge reads in, each a tile the chart engine draws; what the style lets the house tune; motion; the series colours (the palette's six, or a set of the house's own, made and checked here); a preview of a chart, its bars and a gauge in both modes side by side — see [Charts](#charts) | the house |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
@@ -62,6 +63,85 @@ its words a step deeper; where that is not enough, the panel says so under it ("
 else — a hue is never turned aside. The settings are an administrator's (read-only for everyone else), shown on the
 panel and the page at once, and saved from the bar ("Status colours · Warning · #dc630b").
 
+## Charts
+
+The house's chart settings (1.11, `charts` and `chartSets` in the house's data) decide how every chart and gauge is
+drawn where a card's config says nothing — the sensor's chart and tile, and each chart card as it takes the styles;
+the automatic dashboards and the History page write no chart key, so they follow the house too. From the factory the
+style is **Classic**, the chart every card drew before 1.11: nothing changes on upgrade.
+
+| Setting | Values (the factory's first) | What it draws |
+| --- | --- | --- |
+| **Style** | Classic · Soft · Glow · Minimal · Steps · Bars · Columns · Band | a card's `chart` where it names none; a style a card cannot draw (bars over several sensors, a band without one) is drawn Classic |
+| **Gauge** | Ticks · Dial · Ring · Ruler · Liquid · Sky · Tank · Battery · Pulse · Air · Sun | a gauge's `gauge`: the dial's ticks, the thermostat's dial read, a ring lit to the value with Fluvy's knob at its end, the ruler read — every knob the thermostat's ball — or a gauge that moves with what it reads, drawn where a card's sensor is of its kind (a percentage, a temperature, water stored, a battery, power, wind, the sun's power) and the card's ticks elsewhere; each tile on a reading of its kind |
+| **Line** | Regular · Thin · Bold | a style's line (2.5, 1.5 or 3 px); a card's `line_width` wins |
+| **Soft shadow** | 5 px · 3 · 7 under the line, 35 % · 25 · 45 | the soft copy of the line in Soft and Glow |
+| **Fill** | 18 % · 12 · 24 | the gradient under a line at its top (a flat fill two thirds of it); dark mode six points more |
+| **Gridlines** | Hairline · Dashed · None | the hairlines a style draws |
+| **Line's end** | Knob · Dot | Fluvy's knob (the thermostat's ball) or the classic dot where a style marks the end |
+| **Now** | Knob · Line | where the past meets the forecast: the knob on the line over a hairline, or the hairline alone |
+| **Bars' ends** | Both · Top | a bar rounded at both ends, or only away from its axis |
+| **Bubble** | Dark · In the series' colour | the value's bubble over a chart |
+| **Series colours** | From the palette · a saved set | the six colours of a chart's several series: the palette's (`--fluvy-graph-1…6`) or a set of six of the house's own, each colour one of the palette's (it follows the palette and the mode) or a hex of its own (fixed: its hue kept and each mode wearing it fitted to its card as the palette's are built); two still closer than ΔE 8 are said |
+| **Waves** | Medium · Low · High | how tall a moving gauge's waves stand (4, 7 or 10 px); offered once a gauge that moves is chosen |
+| **Motion** | On · Off | whether a chart draws itself in; a card's `animate` wins, and the system's reduced motion always holds |
+
+Classic takes none of these but motion. The rule is one, everywhere: a card's own key wins over the house's setting,
+which wins over the style's own default.
+
+### The Charts tab
+
+The tab chooses them as the Appearance tab chooses the look, and every change is shown at once — on the tab's own
+drawings and on every card of the page that names no style — and saved from the bar with the rest ("Charts · Style ·
+Soft"); Discard puts the saved ones back.
+
+- **Style** and **Gauges**: a tile each (two a row on a phone, four on a wide panel, a last row's few sharing its
+  width), the engine drawing the style on a day of temperature with its forecast (the bars styles on a day of energy)
+  and the gauge on 62 %, in the fine settings chosen; the chosen one in the accent's fill with its check.
+- **Details**: the fine settings the chosen style draws with, a row of chips each — no other is offered (the engine's
+  `HOUSE_ACTS`). Classic takes none, and says so; then **Motion**, which every chart has.
+
+  | Style | Line | Soft shadow | Fill | Gridlines | Line's end | Now | Bars' ends | Bubble |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | Classic | | | | | | | | |
+  | Soft | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | Glow | ✓ | ✓ | | | ✓ | ✓ | ✓ | ✓ |
+  | Minimal | ✓ | | | | | | ✓ | ✓ |
+  | Steps | ✓ | | ✓ | ✓ | | ✓ | ✓ | ✓ |
+  | Bars, Columns | | | | ✓ | | | ✓ | ✓ |
+  | Band | ✓ | | | ✓ | | ✓ | ✓ | ✓ |
+
+  A style's bars' ends count wherever a card of slots (the history bars) draws it; the bubble is every style's while a
+  chart is read.
+- **Series colours**: the palette's six (its swatches as the look being chosen derives them, in the mode on screen),
+  then the house's own sets, each pictured as the mode on screen wears it; a tap wears one. **New set…** opens on the
+  palette's six, named: a dot each, the one being picked ringed, and under them its picker — the palette's twelve
+  series colours, its accent with the statuses (Success, Warning, Danger, Notice) and the lit light, and the energy
+  states (Solar, Grid, Battery, Water, Gas, House), each drawn as the look being chosen has it in the mode on screen —
+  and **Custom**, a hex typed or picked from the system's picker (on a colour of the palette's it starts on that
+  colour's hex). Each colour of a set is one or the other, and says which:
+  - **Follows the palette** (the palette's mark on its dot): the set names the palette's colour (`graph-3`, `accent`,
+    `ok`, `solar` …), so a chart wears that palette's own in each mode — choose another palette and the set changes
+    with it, the same green in the charts as everywhere else. A new set follows the palette until a colour is made
+    fixed.
+  - **Fixed** (a lock on its dot): a hex of the house's own, its hue kept as chosen whatever the palette, and each mode
+    wearing it fitted to its card as the palette's own six are built: a colour that does not read at 3:1 there is
+    lifted (dark) or deepened (light) only as far as it takes, at its hue, and a little further where that sets it 8
+    apart (ΔE2000) from the ones before it; a colour that reads is worn as picked. So a navy is lifted on the dark
+    card and a cream deepened on the light one.
+
+  Only what fitting cannot fix is said, on the colours as each mode wears them: two closer than 8 ("#2563eb and
+  #2463ea are too close to tell apart", "Series 1 and Accent are too close to tell apart"), or brought together on one
+  card ("… on a light card"). The two cards show the six lines side by side, as each wears them. **Save set** keeps it
+  with the house at once (up to twelve, as its palettes) and wears it, an edit for the bar; **Edit this set** renames
+  or recolours the one worn in its place, and **Delete this set** lets it go — charts that wore it wear the palette's
+  again.
+- **Preview**: a sensor's day with its bubble, the day's energy as bars and the house's gauge, drawn in the settings
+  being chosen, in the light mode and the dark one side by side (under the cards, or in the side column on a wide
+  screen). With motion off, every drawing is its resting frame.
+
+Someone who is not an administrator sees the house's choices and the preview, and changes nothing.
+
 ## Where they are stored
 
 In Home Assistant's own frontend data, not in a file of Fluvy's: the house under `frontend/set_system_data`
@@ -70,6 +150,15 @@ subscribes to both, so a palette changed on the desktop recolours the phone at o
 never trusted: a value that does not make sense falls back to its default. A copy of the last applied look is kept in
 the browser (`localStorage`, `fluvy:look`) only so that the page paints in the right colours before Home Assistant
 answers.
+
+**Backups.** Because both live in Home Assistant's frontend data, a Home Assistant backup keeps every setting of
+Fluvy's and a restore brings them back: the look and the saved palettes, the statuses' colours, the lights' defaults,
+the wall, the Charts tab (the style, the gauge, every detail, motion) and the house's own series colours. The panel's
+*Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic
+dashboard — and *Import* (an administrator's) reads it back on another house; a file from an earlier version brings
+what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size*, a device's
+wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
+dashboard's configuration, which Home Assistant's backups keep as well.
 
 ## "Everywhere" and the theme
 

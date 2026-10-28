@@ -3,7 +3,6 @@ import {
   strings as words,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -14,36 +13,17 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { repeat } from 'lit/directives/repeat.js';
 
 import { HeadFit } from '../energy/head.js';
+import { softIn, type ChartKeys } from '../shared/chart-config.js';
 import type { Segment } from '../shared/fit.js';
 
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
 
-import { Card, type BaseKey } from '../shared/base.js';
-
-import {
-  accentField,
-  actionFields,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  idsOnly,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-  titleFields,
-  toneField,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { iconOf } from '../shared/domain.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const strings = words('distribution');
 
@@ -55,7 +35,9 @@ export interface DistributionEntityConfig {
 }
 
 /** `entities` holds the power sensors: ids, or `{ entity, name, tone }` objects where YAML wants a name or a tone per segment. */
-export interface DistributionCardConfig extends FluvyCardConfig, EmptyList {
+/** `chart`: the stack classic (1.10's) or soft (each part a pill, its ink deepening along it); none: the house's. */
+export interface DistributionCardConfig
+  extends FluvyCardConfig, EmptyList, Pick<ChartKeys, 'chart'> {
   title?: string;
   subtitle?: string;
   /** Rows the legend shows; when there are more, the smallest are summed into one neutral "Other". */
@@ -123,53 +105,10 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
 
   private readonly head = new HeadFit(this);
 
-  /** A share of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<DistributionCardConfig>()([
-    'title',
-    'subtitle',
-    'max_rows',
-    'variant',
-    'total',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'entities',
-      title: 'editor.entities',
-      domains: ['sensor'],
-      keys: ['entity', 'name', 'tone', 'color'],
-      schema: [entityField(['sensor']), textField('name'), fieldRow(toneField(), accentField())],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'stack' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        entitiesField('entities', ['sensor'], true),
-        fieldRow(numberField('max_rows', 2, 10), selectField('variant', ['stack', 'rows'])),
-        entityField(['sensor'], 'total', false),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...idsOnly('entities'),
-      ...editorLabels(strings, { max_rows: 'max_rows', total: 'editor_total' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./distribution-editor.js');
   }
+  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
 
   static getStubConfig(
     hass: { states?: Record<string, { attributes: { device_class?: string } }> } | undefined,
@@ -336,6 +275,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
         ? null
         : { text: dead ? stateText(this.hass, views[0] as EntityView) : text(total), tone },
     });
+    // soft: each part of the stack a pill, its ink deepening along it
+    const soft = softIn(this.config) ? 'is-soft' : '';
 
     return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
@@ -375,7 +316,7 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
                 },
               )}
             </div>`
-          : html`<div class="fv-stack ${segments.length ? '' : 'is-empty'}">
+          : html`<div class="fv-stack ${segments.length ? '' : 'is-empty'} ${soft}">
                 ${repeat(
                   segments,
                   (part) => part.key,

@@ -3,7 +3,6 @@ import { FluvyRuler } from './controls/ruler.js';
 
 export * from './glyphs.js';
 export * from './parts.js';
-export * from './chart.js';
 export * from './motion.js';
 export * from './haptics.js';
 export * from './clock.js';
@@ -18,7 +17,6 @@ export {
   precisionGain,
   preventMenu,
   saneRange,
-  scrubFraction,
   snap,
   startPress,
   startStepRepeat,
@@ -28,9 +26,8 @@ export {
 } from './controls/pointer.js';
 export { sideScroll } from './controls/side-scroll.js';
 export { localPoint, zoomOf } from './controls/zoom.js';
-export { ScrubController, scrub } from './controls/scrub.js';
 export { FluvyRuler, type RulerChangeDetail, type RulerWindowDetail } from './controls/ruler.js';
-export { FluvyDial, type DialArc, type DialChangeDetail } from './controls/dial.js';
+export { dialLabelTop, FluvyDial, type DialArc, type DialChangeDetail } from './controls/dial.js';
 
 /** Defined synchronously on import: a card template may use the controls in its first render. */
 if (!customElements.get('fluvy-ruler')) customElements.define('fluvy-ruler', FluvyRuler);

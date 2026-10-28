@@ -6,7 +6,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -26,31 +25,13 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { agoShort, durationShort } from '../helpers/datetime.js';
 
 import { HeadFit, type FittedHead } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
-import {
-  accentField,
-  actionField,
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  nameIconFields,
-  numberField,
-  selectField,
-  showIconField,
-  titleFields,
-} from '../shared/form.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { changedAt, sinceIds, sinceOf } from '../shared/since.js';
 
 const s = strings('openings');
 /** A tile's state line as the tile sets it (13 px in a compact tile, not the large tile's 14). */
@@ -64,6 +45,8 @@ export interface OpeningItem {
   readonly name?: string;
   readonly icon?: string;
   readonly color?: string;
+  /** Where its last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
+  readonly since?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
 }
@@ -86,6 +69,11 @@ export interface OpeningsCardConfig extends FluvyCardConfig, EmptyList {
   show_count?: boolean;
   /** How long it has been open, or since it last was, under each name (rows only). */
   show_time?: boolean;
+  /**
+   * Where every row's last change is read from, unless the row says (#67): a sensor id with `{id}` for the row's
+   * object id or `{entity}` for its whole id (`sensor.{id}_real_last_changed`); none by default.
+   */
+  since_pattern?: string;
   /** Test hook: an ISO date that freezes "now" (the times in the sub lines). Undocumented. */
   _now?: string;
 }
@@ -167,65 +155,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     this.expanded_ = false;
   }
 
-  /** The openings have no entity of their own: the head's icon, tone and colour are the base fields it honours. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<OpeningsCardConfig>()([
-    'title',
-    'subtitle',
-    'rows',
-    'variant',
-    'max_rows',
-    'show_count',
-    'show_time',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      domains: ['binary_sensor', 'cover', 'lock'],
-      keys: ['entity', 'name', 'icon', 'color', 'tap_action', 'hold_action'],
-      schema: [
-        entityField(['binary_sensor', 'cover', 'lock']),
-        nameIconFields(),
-        accentField(),
-        fieldRow(actionField('tap_action'), actionField('hold_action')),
-      ],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'rows',
-    max_rows: 4,
-    show_count: true,
-    show_time: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', ['binary_sensor', 'cover', 'lock'], true),
-        titleFields(),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(selectField('variant', OPENINGS_VARIANTS), numberField('max_rows', 1, 20)),
-        fieldRow(boolField('show_count'), boolField('show_time')),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...editorLabels(s, { max_rows: 'editor.max_rows' }, {}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./openings-editor.js');
   }
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): OpeningsCardConfig {
     return {
@@ -244,8 +177,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     return itemsOf(this.config?.rows ?? this.config?.entities);
   }
 
+  /** The sensors, and what their last change is read from (`since`, the card's pattern). */
   protected override watched(): readonly string[] {
-    return this.items().map((item) => item.entity);
+    const items = this.items();
+    return [...items.map((item) => item.entity), ...sinceIds(items, this.config?.since_pattern)];
   }
 
   private maxRows(): number {
@@ -328,10 +263,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         const name = item.name ?? view.name;
         const value = words(view);
         // the state stays; its time goes, whole, where the tile cannot hold both
-        const timedLine = !dead && timed ? `${value} · ${this.when(view, warn, now)}` : '';
+        const timedLine = !dead && timed ? `${value} · ${this.when(item, view, warn, now)}` : '';
         const when =
           timedLine && this.headFit.ruler.width(TILE_STATE, timedLine) <= room
-            ? this.when(view, warn, now)
+            ? this.when(item, view, warn, now)
             : '';
         const tap = (): void => this.tap(view.id, item.tap_action ?? { action: 'more-info' });
         const hold = (): void => this.hold(view.id, item.hold_action ?? { action: 'more-info' });
@@ -438,10 +373,15 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     return when && this.headFit.ruler.width('fv-row__sub', when) <= room ? when : '';
   }
 
-  /** "14 min" for something still open (a duration), "2 h ago" for something that happened (an event). */
-  private when(view: EntityView, ongoing: boolean, now: Date): string {
+  /**
+   * "14 min" for something still open (a duration), "2 h ago" for something that happened (an event) — from when it
+   * really changed, where the row or the card says where that is read (#67).
+   */
+  private when(item: OpeningItem, view: EntityView, ongoing: boolean, now: Date): string {
     const changed =
-      view.stateObj && view.status === 'ok' ? new Date(view.stateObj.last_changed) : null;
+      view.status === 'ok'
+        ? changedAt(this.hass, view, sinceOf(item, this.config?.since_pattern))
+        : null;
     if (!changed || Number.isNaN(changed.getTime())) return '';
     return ongoing ? durationShort(this.hass, changed, now) : agoShort(this.hass, changed, now);
   }
@@ -570,7 +510,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
                       ? stateText(this.hass, view)
                       : ''
                     : timed
-                      ? this.timeFitted(this.when(view, warn, now), view, compact, keep)
+                      ? this.timeFitted(this.when(item, view, warn, now), view, compact, keep)
                       : '',
                   trailing: 'value',
                   // a value never wraps: a sensor that cannot be read is a dash (its word is the row's sub, or its label)

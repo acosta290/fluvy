@@ -49,7 +49,8 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
 - **The registry**, `packages/core/src/i18n/languages.ts`: the code (as Home Assistant reports `hass.language`), the
   language's own name, its English name, when its day's parts begin (the greeting's "morning", "afternoon",
   "evening", "night"), and, for a language that writes it short beside a day's number, `weekday: 'short'` (the
-  calendar's 17日（木）).
+  calendar's 17日（木）); a language with a mark of its own between two parts of a line names it as `joiner`
+  (Japanese 「・」: 17日（木）・イベント4件, where " · " after the bracket would read doubled).
 - **The integration** has a translation of its own texts (the Repairs it raises, its setup dialog) in
   `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json` — under Home Assistant's code
   for the language where it is not ours (`pt.json` for Portugal's Portuguese).

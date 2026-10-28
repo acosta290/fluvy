@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the history bars card > draws classic as 1.10 did, bar for bar, while the house keeps its factory style 1`] = `
+{
+  "bars": [
+    "M35,38a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v102h-15z",
+    "M72,41a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v99h-15z",
+    "M109,58a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v82h-15z",
+    "M146,64a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v76h-15z",
+    "M183,53a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v87h-15z",
+    "M220,115a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v25h-15z",
+    "M257,63a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v77h-15z",
+    "M294,107a4,4 0 0 1 4,-4h7a4,4 0 0 1 4,4v33h-15z",
+  ],
+  "gradient": 1,
+  "grid": [
+    "140.5",
+    "110.5",
+    "80.5",
+    "50.5",
+    "20.5",
+  ],
+}
+`;

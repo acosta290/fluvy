@@ -19,11 +19,31 @@ import {
 } from 'lit';
 
 import { lowCarbon, scores, type Scores } from '../energy-model/allocate.js';
-import { co2SignalOf, fetchFossil } from '../energy-model/fossil.js';
+import {
+  CollectionFollower,
+  collectionKeyOf,
+  followPeriod,
+  type EnergyDataLike,
+} from '../energy-model/collection.js';
+import { co2SignalOf, fetchFossil, fetchFossilRange, fossilOf } from '../energy-model/fossil.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { isEntityId as isEntity, meterOutage } from '../energy-model/outage.js';
-import { fetchPeriod, PERIODS, type Period, type PeriodEnergy } from '../energy-model/period.js';
+import {
+  allocatePeriod,
+  fetchPeriod,
+  PERIODS,
+  type Period,
+  type PeriodEnergy,
+} from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+} from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { scaled, scaleOf } from '../energy/power.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -38,11 +58,15 @@ import {
   entityField,
   fieldRow,
   iconField,
+  NUMBER_DEFAULTS,
+  numberFields,
+  onlyWhen,
   selectField,
   showIconField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
+import type { NumberKeys } from '../shared/units.js';
 import {
   arcDash,
   hasCo2Signal,
@@ -55,6 +79,7 @@ import {
   ringPercent,
   ringRadius,
   ringsOf,
+  shortWords,
   totalsLayout,
   type Ring,
 } from './rings.js';
@@ -62,13 +87,15 @@ import {
 const s = strings('energy-score');
 const flow = strings('energy-flow');
 
-export interface EnergyScoreCardConfig extends FluvyCardConfig {
+export interface EnergyScoreCardConfig extends FluvyCardConfig, NumberKeys {
   title?: string;
   subtitle?: string;
   /** The span: today, the last 7 days, this month (default day). */
   period?: Period;
   /** Day · Week · Month chips (default true). */
   show_period?: boolean;
+  /** An Energy date picker's key (`energy_…`): the rings follow its range, with Home Assistant's own figures, and the chips go. */
+  collection_key?: string;
   /** The grid's fossil share in % (a CO₂ signal sensor). Empty: the house's, as the Energy dashboard finds it. */
   co2?: string;
   /** The tests' clock: "now" for the period. */
@@ -77,6 +104,12 @@ export interface EnergyScoreCardConfig extends FluvyCardConfig {
 
 /** Below this (kWh), a net reads "0" and has no direction. */
 const ZERO = 0.005;
+
+/** The rings' words that have a short form, the same word where a language needs none. */
+const SHORT: Partial<Record<Ring['key'], 'self_powered_short' | 'low_carbon_short'>> = {
+  self_powered: 'self_powered_short',
+  low_carbon: 'low_carbon_short',
+};
 
 /**
  * How the house did over a period, as Home Assistant's own Energy gauges say it — how much of what it used did not
@@ -151,25 +184,49 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     'subtitle',
     'period',
     'show_period',
+    'collection_key',
     'co2',
+    'unit',
+    'decimals',
   ]);
-  static override defaults: EditorDefaults = () => ({ period: 'day', show_period: true });
+  static override defaults: EditorDefaults = () => ({
+    period: 'day',
+    show_period: true,
+    collection_key: '',
+    ...NUMBER_DEFAULTS,
+  });
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
         titleFields(),
         fieldRow(iconField(), selectField('period', PERIODS)),
         showIconField(),
-        fieldRow(boolField('show_period'), entityField(['sensor'], 'co2', false)),
+        // a date picker to follow; the chips while none is followed
+        fieldRow(
+          collectionField(),
+          onlyWhen((data) => !following(data), boolField('show_period')),
+        ),
+        entityField(['sensor'], 'co2', false),
         ...colourFields(),
+        numberFields({ units: ['kWh', 'MWh'] }),
         actionFields(),
       ],
       ...editorLabels(
         s,
         { period: 'editor_period', co2: 'editor_co2' },
-        { show_period: 'energy-flow.editor_show_period' },
+        { show_period: 'energy-flow.editor_show_period', ...COLLECTION_LABEL },
       ),
+      computeHelper: collectionHelper,
     };
+  }
+
+  protected override prepare(config: EnergyScoreCardConfig): EnergyScoreCardConfig {
+    collectionKeyOf(config, 'fluvy-energy-score-card');
+    return config;
   }
 
   static getStubConfig(): EnergyScoreCardConfig {
@@ -178,6 +235,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
   }
 
   private readonly head = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
   private ticker: number | undefined;
   private prefs: EnergyPrefs | null | undefined;
   private prefsAsked = false;
@@ -185,6 +243,8 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
   private data: PeriodEnergy | null | undefined;
   private fossil: number | null | undefined;
   private dataKey = '';
+  /** The picker's answer the rings were last read from. */
+  private followed: EnergyDataLike | undefined;
 
   override getCardSize(): number {
     return Math.ceil(FluvyEnergyScoreCard.layoutHeight(this.config ?? { type: '' }) / 50);
@@ -197,7 +257,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   private period(): Period {
     const own = this.config?.period;
-    return this.chosen ?? (own && PERIODS.includes(own) ? own : 'day');
+    return followPeriod(this.follower, this.chosen ?? (own && PERIODS.includes(own) ? own : 'day'));
   }
 
   private sources(): PrefSource[] {
@@ -240,6 +300,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     if (!this.config || !this.hass) return;
+    this.follower.attach(this.hass, this.config.collection_key || undefined);
     if (!this.prefsAsked) {
       this.prefsAsked = true;
       void fetchPrefs(this.hass).then((prefs) => {
@@ -260,9 +321,27 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     if (!hass || this.prefs === undefined) return;
     const sources = this.sources();
     if (!sources.length) return;
+    const co2 = this.lowCarbonShown() ? this.co2() : undefined;
+    // a picker on the view: its figures and its fossil share, once per answer; a CO₂ signal of the card's own that is
+    // not the house's is asked over the same range
+    const range = this.follower.range();
+    if (range) {
+      const data = this.follower.data();
+      if (!data || data === this.followed) return;
+      this.followed = data;
+      this.data = allocatePeriod(data.stats, sources);
+      if (!co2) this.fossil = undefined;
+      else if (co2 === data.co2SignalEntity) this.fossil = fossilOf(data.fossilEnergyConsumption);
+      else
+        void fetchFossilRange(hass, this.meters('grid', 'energyIn'), co2, range).then((fossil) => {
+          if (this.followed !== data) return;
+          this.fossil = fossil;
+          this.requestUpdate();
+        });
+      return;
+    }
     const period = this.period();
     const now = this.now();
-    const co2 = this.lowCarbonShown() ? this.co2() : undefined;
     const key = `${period}|${Math.floor(now.getTime() / 300_000)}|${co2 ?? ''}`;
     if (key === this.dataKey) return;
     this.dataKey = key;
@@ -330,9 +409,12 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     const period = this.period();
     const configured = this.prefs === undefined || this.sources().length > 0;
     const own = this.config?.subtitle ?? this.outage();
-    const sub = own ?? flow(this.hass, `period_${period}`);
+    const range = this.follower.range();
+    const sub =
+      own ??
+      (range ? rangeWords(this.hass, range, this.now()) : flow(this.hass, `period_${period}`));
     // "Since midnight" is "Today" where a column cannot hold it (es "Desde medianoche" in half a column)
-    const shorter = own === undefined && period === 'day' ? [this.t('common.today')] : [];
+    const shorter = own === undefined && !range && period === 'day' ? [this.t('common.today')] : [];
     const fit = (title: string) => this.head.fit({ width: w, title, sub, badge: null, shorter });
     let title = this.config?.title ?? s(this.hass, 'title');
     let fitted = fit(title);
@@ -353,7 +435,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
         ...this.headActions(),
       })}
       ${
-        configured && this.config?.show_period !== false
+        configured && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">
               ${chipRow(
                 PERIODS.map((p) => ({
@@ -377,19 +459,16 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   private renderScores(w: number): TemplateResult {
     const rings = this.rings();
-    // a ring's word, the self-powered one in its short form where the long would not hold the card's width (a long
-    // Dutch "Zelfvoorzienend" in half a column)
-    const label = (key: Ring['key']): string => {
-      const long = s(this.hass, key);
-      return key === 'self_powered' && this.head.ruler.width('en-score__label', long) > w
-        ? s(this.hass, 'self_powered_short')
-        : long;
-    };
-    const widest = Math.max(
-      0,
-      ...rings.map((r) => this.head.ruler.width('en-score__label', label(r.key))),
-    );
-    const lay = ringLayout(rings.length, w, widest);
+    // the rings' words: the long ones, or their short forms where those lay the rings better (`shortWords`: a long
+    // Dutch "Zelfvoorzienend" lost a row of three, a Portuguese "Baixo carbono" too)
+    const long = (key: Ring['key']): string => s(this.hass, key);
+    const short = (key: Ring['key']): string => s(this.hass, SHORT[key] ?? key);
+    const widest = (word: (key: Ring['key']) => string): number =>
+      Math.max(0, ...rings.map((r) => this.head.ruler.width('en-score__label', word(r.key))));
+    const label = shortWords(rings.length, w, { long: widest(long), short: widest(short) })
+      ? short
+      : long;
+    const lay = ringLayout(rings.length, w, widest(label));
     const size = lay.small ? RING_SMALL : RING;
     const c = size / 2;
     const co2 = this.co2();
@@ -453,6 +532,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     const scale = scaleOf(
       [imported, exported, net].map((v) => (v === null ? null : Math.abs(v) * 1000)),
       'Wh',
+      this.config,
     );
     const way = netWay(net, ZERO);
     const figure = (v: number | null, signed = false): { value: string; unit: string } =>

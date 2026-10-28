@@ -9,7 +9,16 @@ import {
   shownNames,
   type FormStub,
 } from './fixtures/editor.js';
-import { boolField, fieldRow, holdsLight, onlyWhen, selectField, textField } from './form.js';
+import {
+  boolField,
+  fieldRow,
+  holdsLight,
+  NUMBER_DEFAULTS,
+  numberFields,
+  onlyWhen,
+  selectField,
+  textField,
+} from './form.js';
 import {
   FluvyRowsEditor,
   compact,
@@ -96,6 +105,14 @@ describe('rows editor lists', () => {
 
   it('writes an entity with nothing else back as its bare id, and drops empty fields', () => {
     expect(compact({ entity: 'sensor.a', name: '', icon: undefined }, 'entity')).toBe('sensor.a');
+    // a number's Automatic is what an absent key does: dropped as an empty field is
+    expect(compact({ entity: 'sensor.a', unit: 'auto', decimals: 'auto' }, 'entity')).toBe(
+      'sensor.a',
+    );
+    expect(compact({ entity: 'sensor.a', unit: 'auto', decimals: '1' }, 'entity')).toEqual({
+      entity: 'sensor.a',
+      decimals: '1',
+    });
     expect(compact({ entity: 'sensor.a', name: 'Sun' }, 'entity')).toEqual({
       entity: 'sensor.a',
       name: 'Sun',
@@ -238,6 +255,53 @@ describe('editor defaults', () => {
     ).toEqual({ variant: 'dial', fan_style: 'chips', show_fan: false, modes: ['off'] });
     expect(withoutUntouchedDefaults({ title: 'x' }, config, defaults)).toEqual({ title: 'x' });
   });
+
+  it('never writes a number’s Automatic, even chosen after a value the config held', () => {
+    const config = { type: 't', unit: 'kWh', decimals: 2 };
+    expect(
+      withoutUntouchedDefaults({ unit: 'auto', decimals: '2' }, config, NUMBER_DEFAULTS),
+    ).toEqual({ decimals: '2' });
+    expect(
+      withoutUntouchedDefaults({ unit: 'kWh', decimals: 'auto' }, config, NUMBER_DEFAULTS),
+    ).toEqual({ unit: 'kWh' });
+    // another key's "auto" is a word of its own
+    expect(
+      withoutUntouchedDefaults({ show_icon: 'auto' }, { type: 't', show_icon: 'never' }, {}),
+    ).toEqual({
+      show_icon: 'auto',
+    });
+  });
+
+  it('takes the key out of the card and of an item when Automatic is chosen in the editor', async () => {
+    const list: RowsListSpec = { ...rows, schema: [...rows.schema, numberFields()] };
+    const element = await drawEditor(
+      listsEditor({ schema: [numberFields()] }, [list], () => NUMBER_DEFAULTS),
+      {
+        type: 'custom:x',
+        unit: 'kWh',
+        decimals: 2,
+        rows: [{ entity: 'sensor.a', unit: 'Wh', decimals: 0 }],
+      },
+    );
+    const card = nextConfig(element);
+    cardForm(element).change('unit', 'auto');
+    expect(await card).toEqual({
+      type: 'custom:x',
+      decimals: '2',
+      rows: [{ entity: 'sensor.a', unit: 'Wh', decimals: 0 }],
+    });
+    await element.updateComplete;
+    const item = nextConfig(element);
+    const forms = element.shadowRoot!.querySelectorAll<FormStub>('ha-form');
+    (forms[1] as FormStub).change('unit', 'auto');
+    // the item's select hands its number back as its word, as the card's does
+    expect(await item).toEqual({
+      type: 'custom:x',
+      decimals: '2',
+      rows: [{ entity: 'sensor.a', decimals: '0' }],
+    });
+    element.remove();
+  });
 });
 
 describe('an editor with aliases', () => {
@@ -296,16 +360,116 @@ describe('a select’s options as the house has them', () => {
     ) as FluvyRowsEditor;
     editor.setConfig({ type: 'custom:x' });
     const formOf = (): unknown =>
-      (editor as unknown as { schema(spec: unknown, data: unknown): unknown }).schema(
-        editor.spec,
-        {},
-      );
+      (
+        editor as unknown as { schema(spec: unknown, data: unknown, choices: unknown): unknown }
+      ).schema(editor.spec, {}, editor.spec?.choices?.({ type: 'custom:x' }, undefined) ?? {});
     const first = formOf();
     expect(formOf()).toBe(first);
     expect(first).not.toEqual(editor.spec?.schema);
     // a house that says nothing of them leaves the form as the card wrote it
     house = 'none';
     expect(formOf()).toEqual(editor.spec?.schema);
+  });
+
+  it('reaches the lists’ items too (a row’s since): the same form while they say the same', async () => {
+    const since = { name: 'since', selector: { select: { custom_value: true, options: [] } } };
+    const list: RowsListSpec = { ...rows, schema: [rows.schema[0]!, since] };
+    let house = 'heat';
+    const editor = await drawEditor(
+      listsEditor({ schema: [] }, [list], undefined, undefined, () =>
+        house === 'heat' ? { since: heat } : {},
+      ),
+      { type: 'custom:x', rows: ['sensor.a', 'sensor.b'] },
+    );
+    const forms = (): readonly HaFormSchemaItem[][] =>
+      [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')].map(
+        (form) => form.schema as HaFormSchemaItem[],
+      );
+    const [a, b] = forms();
+    expect(a?.[1]?.selector).toEqual({ select: { custom_value: true, options: heat } });
+    expect(b).toBe(a);
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toBe(a);
+    house = 'none';
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toEqual(list.schema);
+    expect(forms()[0]).not.toBe(a);
+  });
+
+  it('shows a toggle a select grew out of as its word, and writes it back only when another is picked', async () => {
+    // 1.10's `show_grid: true` and `false` on a select of Automatic, None and the axes
+    const schema = [
+      selectField('show_grid', ['auto', 'none', 'x', 'y', 'both']),
+      textField('title'),
+    ];
+    for (const [held, word] of [
+      [true, 'auto'],
+      [false, 'none'],
+    ] as const) {
+      const editor = await drawEditor(listsEditor({ schema }, []), {
+        type: 'custom:x',
+        show_grid: held,
+      });
+      expect(cardForm(editor).data['show_grid']).toBe(word);
+      // another field changed: the toggle stays as the config holds it
+      let next = nextConfig(editor);
+      cardForm(editor).change('title', 'Power');
+      expect(await next).toEqual({ type: 'custom:x', show_grid: held, title: 'Power' });
+      await editor.updateComplete;
+      // a word picked is written
+      next = nextConfig(editor);
+      cardForm(editor).change('show_grid', 'y');
+      expect((await next)['show_grid']).toBe('y');
+      editor.remove();
+    }
+  });
+
+  it('shows an item’s number in its select as the select words it (a legend entry’s decimals: 2 in YAML)', async () => {
+    const decimals = {
+      name: 'decimals',
+      selector: {
+        select: { options: ['auto', '0', '1', '2', '3'].map((v) => ({ value: v, label: v })) },
+      },
+    };
+    const list: RowsListSpec = { ...rows, schema: [rows.schema[0]!, decimals] };
+    const editor = await drawEditor(listsEditor({ schema: [] }, [list]), {
+      type: 'custom:x',
+      rows: [{ entity: 'sensor.a', decimals: 2 }, { entity: 'sensor.b' }],
+    });
+    const items = [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')];
+    expect(items[0]!.data).toEqual({ entity: 'sensor.a', decimals: '2' });
+    // an item that says nothing keeps saying nothing
+    expect(items[1]!.data).toEqual({ entity: 'sensor.b' });
+  });
+
+  it('a list that asks its items offers each its own answer, never the card’s (a legend entry’s units)', async () => {
+    const unit = { name: 'unit', selector: { select: { custom_value: true, options: [] } } };
+    const watts = [{ value: 'kW', label: 'kW' }];
+    const hours = [{ value: 'kWh', label: 'kWh' }];
+    const list: RowsListSpec = {
+      ...rows,
+      schema: [rows.schema[0]!, unit],
+      choices: (item) => (item['entity'] === 'sensor.power' ? { unit: watts } : {}),
+    };
+    const editor = await drawEditor(
+      listsEditor({ schema: [] }, [list], undefined, undefined, () => ({ unit: hours })),
+      { type: 'custom:x', rows: ['sensor.power', 'sensor.rain', 'sensor.power'] },
+    );
+    const forms = (): readonly HaFormSchemaItem[][] =>
+      [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')].map(
+        (form) => form.schema as HaFormSchemaItem[],
+      );
+    const [power, rain, again] = forms();
+    expect(power?.[1]?.selector).toEqual({ select: { custom_value: true, options: watts } });
+    // nothing of its own to offer: the list's options as they are, not the card's
+    expect(rain).toEqual(list.schema);
+    expect(again).toBe(power);
+    editor.requestUpdate();
+    await editor.updateComplete;
+    expect(forms()[0]).toBe(power);
+    expect(forms()[1]).toBe(rain);
   });
 });
 
@@ -437,5 +601,23 @@ describe('what the editor says under a field', () => {
       "Your own words, or a template such as {{ states('sensor.x') }}",
     );
     expect(itemHelpers({ name: 'name', selector: { text: {} } }, key)).toBeUndefined();
+  });
+  it('says a field’s own word where it has one — an item’s colour, what it wears while none is chosen', () => {
+    expect(
+      itemHelpers(
+        { name: 'color', selector: { ui_color: {} }, helper: 'editor.item_color_card_helper' },
+        key,
+      ),
+    ).toBe('Empty: the card’s colour');
+    expect(
+      itemHelpers(
+        { name: 'color', selector: { ui_color: {} }, helper: 'editor.item_color_helper' },
+        key,
+      ),
+    ).toBe('Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s');
+    // a colour with a default of its own (a card's) says nothing: the picker names the default
+    expect(
+      itemHelpers({ name: 'color', selector: { ui_color: { default_color: 'primary' } } }, key),
+    ).toBeUndefined();
   });
 });

@@ -20,9 +20,12 @@ export const alertCss = `.issue-type { padding: 12px 16px; border-radius: var(--
 .main-content { line-height: 20px; }
 .title { font-weight: 600; }`;
 
-/** The "Create automation / script" chooser: as tall as what it lists (HA fixes it at 720). */
-export const newAutomationDialogCss =
-  'ha-adaptive-dialog, ha-wa-dialog, ha-dialog { --ha-dialog-min-height: 0px; }';
+/**
+ * The "Create automation / script" chooser: as tall as what it lists (HA fixes it at 720). Its minimum is unset,
+ * never 0: HA takes the dialog's maximum from the same variable, so a 0 drew the chooser 0 px tall (#73). Unset,
+ * the chooser sizes as every HA dialog without a minimum of its own: by its content, up to the screen's height.
+ */
+export const newAutomationDialogCss = 'ha-adaptive-dialog { --ha-dialog-min-height: initial; }';
 
 /**
  * Every dialog's footer on the body's 24 column (HA pads the footer 16 against a 24 body: buttons stuck out 8 px

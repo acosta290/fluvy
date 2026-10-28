@@ -136,6 +136,24 @@ describe('shell registry', () => {
       expect(sheet.css).not.toMatch(/undefined|\[object/);
     }
   });
+
+  it('never sets a dialog’s or a sheet’s height to zero: Home Assistant takes a dialog’s maximum from its minimum (#73)', () => {
+    const zero = /--[\w-]*(?:dialog|sheet)[\w-]*height\s*:\s*0(?![.\d])/;
+    // what 1.10.0 shipped for the Create automation chooser, which opened 0 px tall
+    expect('ha-adaptive-dialog { --ha-dialog-min-height: 0px; }').toMatch(zero);
+    for (const sheet of SHEETS) expect(sheet.css, sheet.id).not.toMatch(zero);
+  });
+
+  it('ends every keyframes it redefines opaque, so a dialog that has shown is never left see-through', () => {
+    const redefined = SHEETS.flatMap((sheet) =>
+      [...sheet.css.matchAll(/@keyframes\s+([\w-]+)\s*\{([\s\S]*?\})\s*\}/g)].map(
+        ([, name, frames]) => ({ name: `${sheet.id} ${name}`, frames: frames as string }),
+      ),
+    );
+    expect(redefined.length).toBeGreaterThan(0);
+    for (const { name, frames } of redefined.filter((k) => k.frames.includes('opacity')))
+      expect(/(?:\bto|100%)\s*\{([^}]*)\}/.exec(frames)?.[1], name).toMatch(/opacity:\s*1\s*;/);
+  });
 });
 
 describe('shell lifecycle', () => {

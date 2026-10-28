@@ -1,0 +1,26 @@
+{
+  "web": {
+    "card": "Web page",
+    "insecure": "This page needs https",
+    "slow": "Still loading",
+    "insecure_short": "Needs https",
+    "slow_short": "Loading",
+    "open": "Open in a new tab",
+    "reload": "Reload",
+    "fullscreen": "Full screen",
+    "exit_fullscreen": "Exit full screen",
+    "editor.url": "Address",
+    "editor.height": "Height (px)",
+    "editor.scale": "Scale",
+    "editor.refresh": "Reload every (minutes)",
+    "editor.look": "Look",
+    "editor.look_helper": "Dark inverts the page, pictures too. Automatic follows the card",
+    "editor.sandbox": "Sandbox",
+    "editor.sandbox_helper": "Standard is Home Assistant’s own. Strict keeps the page from its cookies, pop-ups and downloads",
+    "editor.allow_open_top_navigation": "Let a tap in the page send this tab elsewhere",
+    "editor.allow": "Permissions (allow)",
+    "editor.show_open": "Show the open button",
+    "editor.show_fullscreen": "Show the full-screen button",
+    "editor.show_reload": "Show the reload button"
+  }
+}

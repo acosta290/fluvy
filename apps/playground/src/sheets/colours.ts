@@ -57,6 +57,7 @@ export const sheet: SheetSpec = {
     ],
     ['light.co_hall', 'off', { friendly_name: 'Hall', supported_color_modes: ['brightness'] }],
     ['light.co_porch', 'off', { friendly_name: 'Porch', supported_color_modes: ['onoff'] }],
+    ['light.co_shed', 'on', { friendly_name: 'Shed', supported_color_modes: ['onoff'] }],
     ['light.co_gone', 'unavailable', { friendly_name: 'Attic' }],
     ['switch.co_kettle', 'off', { friendly_name: 'Kettle' }],
     ['scene.co_evening', '2026-09-17T19:40:00+00:00', { friendly_name: 'Evening' }],
@@ -317,6 +318,15 @@ export const sheet: SheetSpec = {
       title: 'Red light',
       measure: false,
       cards: [{ type: 'custom:fluvy-light-card', entity: 'light.co_lamp', color: 'red' }],
+    },
+    // #65: a bulb that only switches, in a colour of its own and lit in it, and at rest on a card colour: its
+    // head alone either way
+    {
+      title: 'On/off light · colour',
+      cards: [
+        { type: 'custom:fluvy-light-card', entity: 'light.co_shed', color: 'red', tint: 'on' },
+        { type: 'custom:fluvy-light-card', entity: 'light.co_porch', card_color: 'teal' },
+      ],
     },
     {
       title: 'Cyan humidity',

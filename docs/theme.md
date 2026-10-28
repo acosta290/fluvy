@@ -9,7 +9,9 @@ see in a card and in a Home Assistant dialog comes from the same numbers.
 `themes/fluvy/fluvy.yaml`, installed by the integration, holds one theme, **Fluvy**, with a light and a dark mode;
 Home Assistant decides which mode from your profile (light, dark, or the system's). The file carries the default
 look, Linen; every other palette and shape is applied on top of it by the panel, live, without a reload — the theme
-file is what paints the first frame and what Home Assistant's own dialogs and pages follow.
+file is what paints the first frame and what Home Assistant's own dialogs and pages follow. Wherever Home Assistant
+applies the theme named Fluvy, the look goes over it: your profile's theme, a view's or a section's *Theme*, a card's
+`theme:` all wear the palette and mode you chose, never the file's Linen.
 
 ## Palettes
 

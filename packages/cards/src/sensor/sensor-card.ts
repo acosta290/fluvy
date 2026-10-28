@@ -1,43 +1,32 @@
 import {
   digitsOf,
   fetchHistory,
-  formatNumber,
   formatDate,
+  formatNumber,
   formatTime,
   isUsable,
   scaleUnit,
   stateText,
   strings,
-  valueParts,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
+  type ValueParts,
 } from '@fluvy/core';
 
 import {
-  areaUnder,
   axis,
-  chartBubble,
   clickPress,
-  curve,
   firstFit,
   glyph,
   head,
   ico,
-  plotScale,
   preventMenu,
   readout,
   round,
-  sampleAt,
-  scrub,
-  ScrubController,
-  seriesPath,
-  seriesY,
   sheetStyles,
   startPress,
-  type PlotOptions,
   type Tone,
 } from '@fluvy/ui';
 import { deltaE, GATES } from '@fluvy/tokens/runtime';
@@ -46,39 +35,25 @@ import {
   css,
   html,
   nothing,
-  svg,
   type CSSResultGroup,
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
-import { Card } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
+import { ChartLoader, type ChartEngine } from '../shared/chart-load.js';
+import type { ChartSpec, ScrubController } from '../chart/engine/index.js';
 
 import { toneOf } from '../shared/colour.js';
 import { TextRuler } from '../shared/fit.js';
 import { statsRow } from '../shared/readouts.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { iconOf, stateWord } from '../shared/domain.js';
-import {
-  accentField,
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  editorWord,
-  entityField,
-  fieldRow,
-  iconField,
-  numberField,
-  selectField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import type { BaseKey } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { askedParts, scaleNamed, type NumberKeys } from '../shared/units.js';
 import { axisHolds } from '../shared/axis.js';
 import { labelOf, normaliseExtras, seriesTones, type SensorItem } from './series.js';
 
@@ -86,8 +61,11 @@ const s = strings('sensor');
 
 export type SensorVariant = 'chart' | 'tile';
 
-/** A sensor drawn beside the card's own (`entities`): its id, and the name, icon and colour it is shown with. */
-export interface SensorCardConfig extends FluvyCardConfig {
+/**
+ * A sensor drawn beside the card's own (`entities`): its id, and the name, icon and colour it is shown with. The chart
+ * keys (`chart` and the fine keys, `shared/chart-config.ts`) choose how its chart is drawn; none: the house's style.
+ */
+export interface SensorCardConfig extends FluvyCardConfig, NumberKeys, Omit<ChartKeys, 'show_now'> {
   /** Context in the sub line, before the window ("Temperature · last 24 h"). Defaults to the device class, as Home Assistant names it. */
   subtitle?: string;
   /**
@@ -114,6 +92,11 @@ const SEVERAL_CHART = 88;
 const CHART_HEIGHT = 120;
 const HEADROOM = 44; // the bubble's room above the curve (design/language.md)
 const HOUR_MS = 3_600_000;
+
+/** The bars a window is read in: an hour each over a day, never more than 24. */
+const MAX_BARS = 24;
+/** The tile's spark: classic, or minimal where the card's style is (a thin line ending in its dot). */
+const SPARK_CAPS: ChartCaps = { styles: ['classic', 'minimal'] };
 
 const down4 = (n: number): number => Math.max(4, Math.floor(n / 4) * 4);
 const capitalise = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
@@ -360,8 +343,9 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       .am-pair .fv-readout__value {
         white-space: nowrap;
       }
-      /* two or three curves share the plot: lighter fills, so neither hides the other */
-      .am-multi .curve-fill-a {
+      /* two or three curves share the plot: lighter fills, so neither hides the other (over the engine's sheet, which
+         a core card adopts after its own) */
+      .fv-curve.am-multi .curve-fill-a {
         stop-opacity: 0.16;
       }
       /* the axis row carries the time while the chart is read: a pill in the bubble's colours over the hours under the cursor */
@@ -412,68 +396,22 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
 
   /** `undefined` while the recorder has not answered; `null` when it has nothing for this window. */
   declare series_: Series | null | undefined;
-  /** Where the chart is being read (a fraction of its width); null: it shows now. */
-  private readonly scrubber = new ScrubController(this);
+  /** Where the chart is being read (a fraction of its width; null: it shows now): the engine's, made as it lands. */
+  private scrubber: ScrubController | undefined;
+  /** The chart engine (its own chunk, fetched at start): the skeleton stands until it and the history are here. */
+  private readonly charts = new ChartLoader(
+    this,
+    (engine) => (this.scrubber = new engine.ScrubController(this)),
+  );
 
   private readonly history = new Refresher<Series | null>();
   /** The window (hours) the series on screen was asked for: the curve and its axis stay one picture while a newer one loads. */
   private drawn: number | null = null;
 
-  /** The card's own sensor and, in `entities`, up to two more drawn beside it. */
-  static override base: readonly BaseKey[] = [
-    'entity',
-    'entities',
-    'name',
-    'icon',
-    'tap_action',
-    'hold_action',
-    'tone',
-    'color',
-    'card_color',
-    'show_icon',
-  ];
-  static override keys = configKeys<SensorCardConfig>()([
-    'subtitle',
-    'label',
-    'hours',
-    'show_stats',
-    'variant',
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'entities',
-      title: 'editor.also_sensors',
-      domains: ['sensor', 'number', 'input_number', 'counter'],
-      keys: ['entity', 'name', 'icon', 'color'],
-      schema: [
-        entityField(['sensor', 'number', 'input_number', 'counter']),
-        fieldRow(textField('name'), iconField()),
-        accentField(),
-      ],
-      computeHelper: (schema) =>
-        schema.name === 'name' ? editorWord('editor.extra_name_helper') : undefined,
-    },
-  ];
-  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'chart', show_stats: true });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['sensor', 'number', 'input_number', 'counter']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        fieldRow(selectField('variant', ['chart', 'tile']), numberField('hours', 1, 168)),
-        boolField('show_stats'),
-        textField('label'),
-        actionFields(),
-      ],
-      ...editorLabels(s, { show_stats: 'editor.show_stats' }, { label: 'editor.chart_label' }),
-      computeHelper: (schema) =>
-        schema.name === 'label' ? editorWord('editor.chart_label_helper') : undefined,
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./sensor-editor.js');
   }
+  static override aliases: AliasSpec = { items: { entities: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): SensorCardConfig {
     return {
@@ -595,7 +533,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   }
 
   /** A statistic as the row says it: its number in the entity's precision (a scaled unit's own), and its unit. */
-  private statText(value: number | null, view: EntityView): { value: string; unit: string } {
+  private statText(value: number | null, view: EntityView): ValueParts {
     if (value === null) return { value: '—', unit: '' };
     const scaled = scaleUnit(value, view.unit);
     const magnitude = Math.abs(scaled.value);
@@ -607,10 +545,30 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           : magnitude >= 10
             ? 1
             : 2;
-    return {
-      value: formatNumber(this.hass, scaled.value, { digits, minDigits: digits }),
-      unit: scaled.unit,
-    };
+    return this.parts(view, value, digits);
+  }
+
+  /**
+   * A figure of a sensor on the card as the config asks it (`unit`, `decimals`); `digits` where the config asks for
+   * no decimals and no unit of the sensor's class — the decimals its reading is written with, so a statistic or a
+   * moment under the finger keeps the reading's width.
+   */
+  /** What the sensor's readings are divided by to read in the unit the card asks (1 where it asks none of their class). */
+  private divisor(view: EntityView): number {
+    const asked = this.config?.unit;
+    return (typeof asked === 'string' ? scaleNamed(asked, view.unit)?.divisor : undefined) ?? 1;
+  }
+
+  private parts(view: EntityView, value: number | null, digits?: number): ValueParts {
+    const asked = this.config;
+    const named =
+      typeof asked?.unit === 'string' && scaleNamed(asked.unit, view.unit) !== undefined;
+    return askedParts(
+      this.hass,
+      view,
+      named || digits === undefined ? asked : { ...asked, decimals: asked?.decimals ?? digits },
+      value,
+    );
   }
 
   /** The three statistics in as many equal columns as hold them, at the readout size they fit (`statsRow`). */
@@ -678,44 +636,26 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   }
 
   /**
-   * The window is labelled with the clock times at its quarters, ending in "Now" — as many as keep 12 apart (a 12 h
-   * clock or a long "Now" may leave three, or the ends); days once it is two or more.
+   * The window's clock across `width` (the plot's), the engine's one labeller: the times at its quarters ending in
+   * "Now", as many as keep 12 apart, days back from two days on. Nothing until the engine is here: the row keeps its
+   * height, and its words come with the curve.
    */
-  private axisItems(hours: number): ReadonlyArray<readonly [number, string]> {
-    const now = this.now();
-    if (hours >= 48) {
-      const back = (h: number): string =>
-        s(this.hass, 'days_ago', { count: formatNumber(this.hass, h / 24, { digits: 1 }) });
-      const days: Array<readonly [number, string]> = [
-        [0, back(hours)],
-        [0.5, back(hours / 2)],
-        [1, this.t('common.now')],
-      ];
-      // as the hours: three where they keep 12 apart, else the two ends
-      return this.axisHolds(days) ? days : [days[0]!, days[2]!];
-    }
-    const at = (fraction: number): string =>
-      formatTime(this.hass, new Date(now.getTime() - (1 - fraction) * hours * HOUR_MS));
-    const five: Array<readonly [number, string]> = [
-      [0, at(0)],
-      [0.25, at(0.25)],
-      [0.5, at(0.5)],
-      [0.75, at(0.75)],
-      [1, this.t('common.now')],
-    ];
-    // as many as keep 12 between every two, measured as the axis sets them (a language's long "Now" takes the room
-    // of a quarter): five, else three, else the two ends
-    return [five, [five[0]!, five[2]!, five[4]!], [five[0]!, five[4]!]].find((items) =>
-      this.axisHolds(items),
-    )!;
-  }
-
-  /**
-   * Whether an axis's labels keep 12 between every two at the content width: the first sits on the start, the last
-   * ends on the end, the others are centred on their fraction (`.fv-axis`).
-   */
-  private axisHolds(items: ReadonlyArray<readonly [number, string]>): boolean {
-    return axisHolds(this.headFit.ruler, this.contentWidth, items);
+  private axisItems(
+    engine: ChartEngine | undefined,
+    hours: number,
+    width: number,
+  ): ReadonlyArray<readonly [number, string]> {
+    if (!engine) return [];
+    return engine.quarterTicks({
+      hours,
+      now: this.now().getTime(),
+      time: (t) => formatTime(this.hass, new Date(t)),
+      daysAgo: (days) =>
+        s(this.hass, 'days_ago', { count: formatNumber(this.hass, days, { digits: 1 }) }),
+      nowWord: this.t('common.now'),
+      // the first sits on the start, the last ends on the end, the others are centred on their fraction (`.fv-axis`)
+      holds: (items) => axisHolds(this.headFit.ruler, width, items),
+    });
   }
 
   /* ---------- variants ---------- */
@@ -730,13 +670,14 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     };
     const name = this.config?.name ?? view.name;
     const tone = this.toneOf(view);
-    const parts = valueParts(this.hass, view);
+    const parts = this.parts(view, view.number);
     const numeric = charted(view);
     const series = this.live(view);
     // a trend says where the reading is going: a reading gone has none
     const trend = view.number !== null ? this.trend(series) : null;
     const inner = this.width - 32;
     const values = series?.values ?? [];
+    const engine = this.charts.engine;
     // unavailable keeps the tile's own anatomy (the 76 "off" tile cannot hold a name in a half column): dashed outline,
     // page fill, dashed ring, "—", and its spark, which is history
     return html`<article
@@ -770,7 +711,11 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         !numeric || series === null
           ? nothing
           : html`<div class="am-spark fv-tone--${tone}">
-              ${values.length > 1 ? curve(values, { w: down4(inner - 8), h: 24, pad: 4 }) : html`<div class="fv-skeleton"></div>`}
+              ${
+                engine && values.length > 1
+                  ? this.spark(engine, values, down4(inner - 8))
+                  : html`<div class="fv-skeleton"></div>`
+              }
             </div>`
       }
     </article>`;
@@ -833,7 +778,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const hours = this.drawn ?? this.hours;
     const width = down4(this.contentWidth);
     const family = getComputedStyle(this).fontFamily;
-    const parts = valueParts(this.hass, view);
+    const parts = this.parts(view, view.number);
     const stats = this.config?.show_stats ?? true;
 
     if (series !== undefined && values.length < 2) {
@@ -853,43 +798,117 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       </article>`;
     }
 
-    const fraction = this.scrubber.value;
-    const point = series && fraction !== null ? sampleAt(values, fraction) : null;
+    const engine = this.charts.engine;
+    const fraction = this.scrubber?.value ?? null;
+    // the skeleton stands until the engine and the history are both here: one transition, no flash
+    const spec = engine && series ? this.chartSpec(engine, view, values, width, hours) : null;
+    // read where the finger is: a bar's own figure (the slot's), else the line's there
+    const read = engine && spec && fraction !== null ? engine.readAt(spec, fraction) : null;
+    const bars = spec?.series[0]?.values ?? [];
+    const slotted = spec !== null && engine !== undefined && engine.isBars(spec.style.preset);
+    // a bar is drawn in the unit the card asks: its reading is brought back to the sensor's own, as every figure is
+    const bar = read ? bars[read.index] : undefined;
+    const point =
+      !engine || !read
+        ? null
+        : slotted
+          ? bar === undefined || bar === null
+            ? null
+            : bar * this.divisor(view)
+          : engine.sampleAt(values, fraction as number);
     const at =
-      point === null
+      point === null || read === null
         ? null
         : {
             cursor: fraction as number,
-            ...valueParts(
-              this.hass,
-              { ...view, number: point },
-              { digits: digitsOf(this.hass, view, point) },
-            ),
-            time: this.momentAt(fraction as number, hours),
+            ...this.parts(view, point, digitsOf(this.hass, view, point)),
+            // a bar says when its slot began
+            time: this.momentAt(slotted ? read.index / bars.length : (fraction as number), hours),
           };
+    const left = engine && spec ? engine.plotOf(spec).left : 0;
     // out of reach the curve is the window it had, in the off skin, its bubble at "now" saying "—"
     return html`<article class="fv-card am-card ${usable ? '' : 'is-off'}" data-card>
       ${header}
-      <div class="am-chart fv-tone--${tone}" style="width:${width}px" ${scrub(this.scrubber)}>
+      <div class="am-chart fv-tone--${tone}" style="width:${width}px" ${this.scrubs(engine)}>
         ${
-          series
-            ? html`${curve(values, { w: width, h: CHART_HEIGHT, padTop: HEADROOM, cursor: at?.cursor })}${chartBubble(
-                at
-                  ? {
-                      x: at.cursor * width,
-                      width,
-                      value: at.value,
-                      unit: at.unit,
-                      time: at.time,
-                      family,
-                    }
-                  : { x: width, width, value: parts.value, unit: parts.unit, family },
-              )}`
+          engine && spec
+            ? // at now (where the style labels it), or where it is read with when, on the line there
+              engine.drawRead(
+                { ...spec, cursor: at?.cursor },
+                at,
+                { value: parts.value, unit: parts.unit },
+                family,
+              )
             : html`<div class="fv-skeleton"></div>`
         }
       </div>
-      ${axis(this.axisItems(hours))} ${stats ? this.renderStats(series, view) : nothing}
+      ${this.axisRow(hours, width, left)} ${stats ? this.renderStats(series, view) : nothing}
     </article>`;
+  }
+
+  /** The chart as a surface to read by pointing at it, once the engine (and its scrub controller) is here. */
+  private scrubs(engine: ChartEngine | undefined): unknown {
+    return engine && this.scrubber ? engine.scrub(this.scrubber) : nothing;
+  }
+
+  /** What every chart of the card shares: its keys' style for what it can draw, the scale's words and their ruler. */
+  private chartBase(
+    engine: ChartEngine,
+    caps: ChartCaps,
+  ): Pick<ChartSpec, 'style' | 'tick' | 'measure'> {
+    return {
+      style: engine.styleOf(this.config, caps),
+      tick: (value, decimals) => engine.tickText(this.hass, value, decimals),
+      measure: (text) => this.ruler.width('fc-tick', text),
+    };
+  }
+
+  /**
+   * One sensor's chart: its style for what it can draw (bars where its readings add up), its scale holding zero where
+   * the quantity starts there. As bars, the window is read in at most 24 slots (an hour each over a day): a
+   * measure's mean there, or what a counter gained.
+   */
+  private chartSpec(
+    engine: ChartEngine,
+    view: EntityView,
+    values: readonly number[],
+    width: number,
+    hours: number,
+  ): ChartSpec {
+    const readings = engine.readingsOf(view.deviceClass, view.attr('state_class'), view.unit);
+    const base = this.chartBase(engine, { axis: true, bars: readings.bars });
+    // in the unit the card asks (its scale reads kW where its figures do), the curve's shape the same
+    const divisor = this.divisor(view);
+    const shown = divisor === 1 ? values : values.map((v) => v / divisor);
+    const drawn = engine.isBars(base.style.preset)
+      ? engine.bucket(shown, Math.min(MAX_BARS, Math.max(1, Math.round(hours))), readings.rule)
+      : shown;
+    return {
+      ...base,
+      frame: { width, height: CHART_HEIGHT, headroom: HEADROOM },
+      series: [{ values: drawn }],
+      zero: readings.zero,
+      id: 'fv',
+    };
+  }
+
+  /**
+   * The tile's spark, 24 tall with 4 around it: `minimal` where the card's style is minimal (a thin line ending in its
+   * dot), else the classic curve with its fill and its dot.
+   */
+  private spark(engine: ChartEngine, values: readonly number[], width: number): TemplateResult {
+    return engine.drawChart({
+      frame: { width, height: 24, headroom: 4, pad: 4 },
+      series: [{ values }],
+      style: engine.styleOf(this.config, SPARK_CAPS),
+      id: 'fv',
+    });
+  }
+
+  /** The window's clock under the plot, from where the plot starts (after a scale's column). */
+  private axisRow(hours: number, width: number, left: number): TemplateResult {
+    const items = axis(this.axisItems(this.charts.engine, hours, width - left));
+    return left > 0 ? html`<div style="margin-inline-start:${left}px">${items}</div>` : items;
   }
 
   /**
@@ -998,8 +1017,9 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const width = down4(this.contentWidth);
     // no bubble over the plot (the time goes on the axis row), so no headroom: the curves keep the single chart's band
     const H = SEVERAL_CHART;
-    const fraction = this.scrubber.value;
+    const fraction = this.scrubber?.value ?? null;
     const loaded = rows.every((row) => row.series !== undefined || !charted(row.sensor));
+    const engine = this.charts.engine;
     const texts = rows.map(({ item, sensor, series }) => {
       const label = labelOf(item, sensor, title, this.measureWord(sensor), measures);
       if (sensor.number === null)
@@ -1009,32 +1029,31 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           unit: '',
         };
       if (fraction !== null) {
-        const point = series ? sampleAt(series.values, fraction) : null;
+        const point = series && engine ? engine.sampleAt(series.values, fraction) : null;
         // the moment read is written as the reading now is (its precision): the figure never grows under the finger
         return point === null
           ? { label, value: '—', unit: '' }
-          : {
-              label,
-              ...valueParts(
-                this.hass,
-                { ...sensor, number: point },
-                { digits: digitsOf(this.hass, sensor, point) },
-              ),
-            };
+          : { label, ...this.parts(sensor, point, digitsOf(this.hass, sensor, point)) };
       }
-      return { label, ...valueParts(this.hass, sensor) };
+      return { label, ...this.parts(sensor, sensor.number) };
     });
     const fit = this.pairFit(texts);
-    const plots = rows.map(({ series }) => {
-      const values = series?.values ?? [];
-      const scale = plotScale([values]);
-      const o: PlotOptions = { w: width, h: H, padTop: 12, min: scale.min, max: scale.max };
-      return { values, o };
-    });
-    const at = fraction === null ? width : fraction * width;
-    // each curve's dot at the cursor; the cursor hangs from the highest of them, under them
-    const dots = plots.map(({ values, o }) => seriesY(values, o, at));
-    const top = Math.min(H, ...dots.filter((y): y is number => y !== null));
+    // one chart, each curve on its own scale (units differ), the cursor across them; it reads where the finger is
+    const spec: ChartSpec | null = engine
+      ? {
+          ...this.chartBase(engine, { axis: true, several: true }),
+          frame: { width, height: H, headroom: 12 },
+          series: rows.map(({ tone, accent, series }) => ({
+            values: series?.values ?? [],
+            colour: tone,
+            ...(accent ? { accent } : {}),
+          })),
+          scale: 'own',
+          id: 'am',
+          className: 'am-multi',
+        }
+      : null;
+    const at = engine && spec ? engine.readAt(spec, fraction).x : width;
     const time = fraction !== null ? this.momentAt(fraction, hours) : null;
     // the head is the set's (the room, a chart's glyph): each sensor's own glyph and tone are on its readout, and a
     // sensor out of reach says so there, in the off skin, its curve the window it had
@@ -1079,45 +1098,15 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
           </div>`;
         })}
       </div>
-      <div class="am-chart am-chart--several" style="width:${width}px" ${scrub(this.scrubber)}>
+      <div class="am-chart am-chart--several" style="width:${width}px" ${this.scrubs(engine)}>
         ${
-          loaded
-            ? html`<svg
-                class="fv-curve am-multi"
-                width=${width}
-                height=${H}
-                viewBox="0 0 ${width} ${H}"
-                aria-hidden="true"
-              >
-                <line
-                  class="curve-cursor"
-                  x1=${at.toFixed(2)}
-                  y1=${top.toFixed(2)}
-                  x2=${at.toFixed(2)}
-                  y2=${H}
-                />
-                ${rows.map(({ tone, accent }, index) => {
-                  const { values, o } = plots[index] as {
-                    values: readonly number[];
-                    o: PlotOptions;
-                  };
-                  const line = seriesPath(values, o);
-                  if (!line) return nothing;
-                  const dot = dots[index] ?? null;
-                  const id = `am-fill-${index}`;
-                  return svg`<g class="fv-tone--${tone}" data-accent=${accent ?? nothing}>
-                      <defs><linearGradient id=${id} x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="curve-fill-a" /><stop offset="1" class="curve-fill-b" /></linearGradient></defs>
-                      <path class="curve-area" d=${areaUnder(line, o)} fill="url(#${id})" stroke="none" />
-                      <path class="curve-line" d=${line} pathLength="1" />
-                      ${dot === null ? nothing : svg`<circle class="curve-dot" cx=${at.toFixed(2)} cy=${dot.toFixed(2)} r="5" />`}
-                    </g>`;
-                })}
-              </svg>`
+          loaded && engine && spec
+            ? engine.drawChart({ ...spec, cursor: fraction })
             : html`<div class="fv-skeleton" style="height:${H}px"></div>`
         }
       </div>
       <div class="am-axis ${time ? 'is-reading' : ''}">
-        ${axis(this.axisItems(hours))} ${time ? this.whenPill(time, at) : nothing}
+        ${axis(this.axisItems(engine, hours, width))} ${time ? this.whenPill(time, at) : nothing}
       </div>
     </article>`;
   }

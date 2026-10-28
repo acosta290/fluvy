@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import type { HaFormSchemaItem, LovelaceCardConfig } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
-import { catalogue } from '../index.js';
-import type { Card } from './base.js';
+import { CATALOGUE, catalogue } from '../index.js';
+import type { Card, CardEditor } from './base.js';
 import { COMMON_ALIASES } from './config.js';
-import { editorDefaults, itemLabels, type FluvyRowsEditor } from './rows-editor.js';
+import { editorDefaults, itemHelpers, itemLabels, type FluvyRowsEditor } from './rows-editor.js';
 
 /**
  * The editors' contract (see `Card` in base.ts), held for every card of the catalogue: the editor is the base's,
@@ -12,6 +12,8 @@ import { editorDefaults, itemLabels, type FluvyRowsEditor } from './rows-editor.
  * is for a field the editor shows; and, for a card under contract, what the form and the lists show is exactly
  * `base ∪ keys`, and every field it shows has a word. A card not yet under contract would be named here, so a
  * card cannot lose its keys unnoticed and the list can only shrink: every card is under it, and the set is empty.
+ * Each card's editor is read as the base reads it (`editor()`): its class's, or the module of a card every page
+ * carries.
  */
 const PENDING = new Set<string>();
 
@@ -53,10 +55,16 @@ const isWord = (label: string | undefined, name: string): boolean =>
   label !== name &&
   !/^[a-z_-]+(\.[a-z_-]+)+$/.test(label);
 
-const cards = (await catalogue()).map(([tag, element]) => ({
-  tag,
-  card: element as unknown as CardClass,
-}));
+const cards = await Promise.all(
+  (await catalogue()).map(async ([tag, element]) => {
+    const card = element as unknown as CardClass;
+    const editor: CardEditor = await card.editor();
+    return { tag, card, editor, lists: editor.lists ?? [] };
+  }),
+);
+
+/** The parts of an editor a class may declare: none on a card that keeps its editor in a module. */
+const PARTS = ['base', 'keys', 'lists', 'defaults', 'choices', 'getConfigForm'] as const;
 
 describe('the editors’ contract', () => {
   it('names each card of the catalogue once, and pending ones that exist', () => {
@@ -68,19 +76,39 @@ describe('the editors’ contract', () => {
       ).toBe(true);
   });
 
+  it('keeps the editor of a card every page carries out of its class, in a module of its own', () => {
+    for (const [tag, element] of CATALOGUE) {
+      const card = element as unknown as CardClass;
+      expect(Object.hasOwn(card, 'editor'), `${tag}: no editor() of its own`).toBe(true);
+      for (const part of PARTS) expect(Object.hasOwn(card, part), `${tag}.${part}`).toBe(false);
+    }
+  });
+
+  it.each(cards)(
+    '$tag: says its editor itself, never one of the card it is built on',
+    ({ card }) => {
+      // the class's own, or its own module's: a card built on another (the template card on the tile's) says which
+      expect(Object.hasOwn(card, 'editor') || Object.hasOwn(card, 'getConfigForm')).toBe(true);
+      if (Object.hasOwn(card, 'editor'))
+        for (const part of PARTS) expect(Object.hasOwn(card, part), part).toBe(false);
+    },
+  );
+
   it.each(cards)(
     '$tag: the editor is the base’s, from the form, the lists and the defaults',
-    async ({ card }) => {
+    async ({ card, editor, lists }) => {
       const element = (await card.getConfigElement()) as FluvyRowsEditor;
       expect(element.tagName.toLowerCase()).toBe('fluvy-rows-editor');
       const spec = element.spec!;
-      expect(spec.lists).toBe(card.lists);
+      // the card's own lists, or none
+      if (editor.lists) expect(spec.lists).toBe(editor.lists);
+      else expect(spec.lists).toEqual([]);
       const listKeys = new Set(
-        card.lists.flatMap((list) => [list.key, ...(list.alias ? [list.alias] : [])]),
+        lists.flatMap((list) => [list.key, ...(list.alias ? [list.alias] : [])]),
       );
       // a list is edited item by item: its picker leaves the form
       for (const name of names(spec.schema)) expect(listKeys.has(name), name).toBe(false);
-      for (const list of card.lists) {
+      for (const list of lists) {
         expect(names(list.schema)[0], `${list.key}: the id field comes first`).toBe(
           list.idKey ?? 'entity',
         );
@@ -93,9 +121,10 @@ describe('the editors’ contract', () => {
 
   it.each(cards)(
     '$tag: a field that may hide is never a required one, and keeps its word and what the card does without it',
-    ({ card }) => {
-      const form = card.getConfigForm();
-      const defaults = editorDefaults(form, card.defaults)?.({ type: 'custom:x' }, undefined) ?? {};
+    ({ editor }) => {
+      const form = editor.getConfigForm();
+      const defaults =
+        editorDefaults(form, editor.defaults)?.({ type: 'custom:x' }, undefined) ?? {};
       const key = (name: string): string => name;
       for (const field of hideable(form.schema)) {
         expect(field.required, `${field.name} is required`).not.toBe(true);
@@ -108,22 +137,26 @@ describe('the editors’ contract', () => {
 
   it.each(cards)(
     '$tag: every switch and every choice shows what the card does when the config says nothing',
-    ({ card }) => {
+    ({ editor }) => {
       const defaults =
-        editorDefaults(card.getConfigForm(), card.defaults)?.({ type: 'custom:x' }, undefined) ??
-        {};
-      for (const field of fields(card.getConfigForm().schema))
+        editorDefaults(editor.getConfigForm(), editor.defaults)?.(
+          { type: 'custom:x' },
+          undefined,
+        ) ?? {};
+      for (const field of fields(editor.getConfigForm().schema))
         if (showsDefault(field)) expect(field.name in defaults, field.name).toBe(true);
     },
   );
 
   it.each(cards)(
     '$tag: a default is for a field the editor shows, never an older name',
-    ({ card }) => {
-      const shown = new Set(names(card.getConfigForm().schema));
+    ({ card, editor }) => {
+      const shown = new Set(names(editor.getConfigForm().schema));
       const defaults =
-        editorDefaults(card.getConfigForm(), card.defaults)?.({ type: 'custom:x' }, undefined) ??
-        {};
+        editorDefaults(editor.getConfigForm(), editor.defaults)?.(
+          { type: 'custom:x' },
+          undefined,
+        ) ?? {};
       for (const key of Object.keys(defaults)) expect(shown.has(key), key).toBe(true);
       // a conditional move (`forecast: none` → `show_forecast: false`) keeps its key: `forecast` is still a field
       for (const move of card.aliases?.keys ?? [])
@@ -134,12 +167,12 @@ describe('the editors’ contract', () => {
     },
   );
 
-  it.each(cards)('$tag: every field the editor shows has a word', ({ card }) => {
-    const form = card.getConfigForm();
+  it.each(cards)('$tag: every field the editor shows has a word', ({ editor, lists }) => {
+    const form = editor.getConfigForm();
     const key = (name: string): string => name;
     for (const item of fields(form.schema))
       expect(isWord(form.computeLabel?.(item, key), item.name), item.name).toBe(true);
-    for (const list of card.lists)
+    for (const list of lists)
       for (const item of fields(list.schema)) {
         const label =
           list.computeLabel?.(item, key) ?? form.computeLabel?.(item, key) ?? itemLabels(item, key);
@@ -150,16 +183,49 @@ describe('the editors’ contract', () => {
       }
   });
 
-  it.each(cards)('$tag: what the form and the lists show is base ∪ keys', ({ tag, card }) => {
-    if (!card.keys.length) {
-      expect(PENDING.has(tag), `${tag} declares no keys and is not named as pending`).toBe(true);
-      return;
-    }
-    expect(PENDING.has(tag), `${tag} declares its keys: drop it from PENDING`).toBe(false);
-    const shown = new Set([
-      ...names(card.getConfigForm().schema),
-      ...card.lists.flatMap((list) => [list.key, ...(list.alias ? [list.alias] : [])]),
-    ]);
-    expect([...shown].sort()).toEqual([...new Set([...card.base, ...card.keys])].sort());
-  });
+  /**
+   * An item's colour never says "Primary" for a default that is the card's: none chosen, nothing written, and the
+   * word under it says what the item wears then — its bulb's on a card that shows bulbs' colours, else the card's.
+   */
+  const CARDS_COLOUR = 'Empty: the card’s colour';
+  const BULBS_COLOUR =
+    'Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s';
+  it.each([
+    ['fluvy-lock-card', 'rows', CARDS_COLOUR],
+    ['fluvy-camera-card', 'rows', CARDS_COLOUR],
+    ['fluvy-alarm-card', 'rows', CARDS_COLOUR],
+    ['fluvy-scenes-card', 'scenes', CARDS_COLOUR],
+    ['fluvy-chips-card', 'chips', CARDS_COLOUR],
+    ['fluvy-lights-card', 'lights', BULBS_COLOUR],
+    ['fluvy-tiles-card', 'tiles', BULBS_COLOUR],
+    ['fluvy-entities-card', 'rows', BULBS_COLOUR],
+  ])(
+    '%s: an item’s colour shows none chosen, and says what the item wears then',
+    (tag, key, helper) => {
+      const list = cards.find((c) => c.tag === tag)?.lists.find((l) => l.key === key);
+      const colour = fields(list?.schema ?? []).find((item) => item.name === 'color');
+      expect(colour, `${tag}: ${key}.color`).toBeDefined();
+      const picker = (colour?.selector as { ui_color?: { default_color?: string } })?.ui_color;
+      expect(picker, `${tag}: a colour picker`).toBeDefined();
+      expect(picker?.default_color).toBeUndefined();
+      expect(colour?.default).toBeUndefined();
+      expect(itemHelpers(colour!, (k) => k)).toBe(helper);
+    },
+  );
+
+  it.each(cards)(
+    '$tag: what the form and the lists show is base ∪ keys',
+    ({ tag, editor, lists }) => {
+      if (!editor.keys.length) {
+        expect(PENDING.has(tag), `${tag} declares no keys and is not named as pending`).toBe(true);
+        return;
+      }
+      expect(PENDING.has(tag), `${tag} declares its keys: drop it from PENDING`).toBe(false);
+      const shown = new Set([
+        ...names(editor.getConfigForm().schema),
+        ...lists.flatMap((list) => [list.key, ...(list.alias ? [list.alias] : [])]),
+      ]);
+      expect([...shown].sort()).toEqual([...new Set([...editor.base, ...editor.keys])].sort());
+    },
+  );
 });

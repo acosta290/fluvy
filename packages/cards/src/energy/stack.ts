@@ -30,20 +30,22 @@ export interface StackPoint {
 export type Bucket = { readonly start: number; readonly totals: Totals };
 
 /**
- * Buckets into average power by origin, placed on the day by their middle. `kWh`: energy over the bucket (the meters'
- * change), turned into its average power; `kW`: the bucket is already a power (the power sensors' means).
+ * Buckets into average power by origin, placed on the day (or the followed range, `span` ms long) by their middle.
+ * `kWh`: energy over the bucket (the meters' change), turned into its average power; `kW`: the bucket is already a
+ * power (the power sensors' means).
  */
 export function stackOf(
   buckets: readonly Bucket[],
   dayStart: number,
   minutes = 5,
   unit: 'kWh' | 'kW' = 'kWh',
+  span = 86_400_000,
 ): StackPoint[] {
   const factor = unit === 'kW' ? 1 : 60 / minutes;
   return buckets.map((b) => {
     const a = allocate(b.totals);
     return {
-      at: (b.start + (minutes * 60_000) / 2 - dayStart) / 86_400_000,
+      at: (b.start + (minutes * 60_000) / 2 - dayStart) / span,
       used: {
         solar: a.usedSolar * factor,
         battery: a.usedBattery * factor,
@@ -151,11 +153,13 @@ export const BELOW_ROOM = 28;
 
 /**
  * The points split where the data stops: two points further apart than one and a half buckets are not joined (a
- * recorder that was down is not a quiet house). A lone point is drawn across its own bucket.
+ * recorder that was down is not a quiet house). A lone point is drawn across its own bucket; `held` (the step style)
+ * draws every point so, its reading held across its bucket.
  */
 export function runsOf<P extends { readonly at: number }>(
   points: readonly P[],
   step: number,
+  held = false,
 ): P[][] {
   const runs: P[][] = [];
   for (const p of points) {
@@ -164,14 +168,11 @@ export function runsOf<P extends { readonly at: number }>(
     if (run && last && p.at - last.at <= step * 1.5) run.push(p);
     else runs.push([p]);
   }
-  return runs.map((run) =>
-    run.length > 1
-      ? run
-      : [
-          { ...(run[0] as P), at: (run[0] as P).at - step / 2 },
-          { ...(run[0] as P), at: (run[0] as P).at + step / 2 },
-        ],
-  );
+  const across = (p: P): P[] => [
+    { ...p, at: p.at - step / 2 },
+    { ...p, at: p.at + step / 2 },
+  ];
+  return runs.map((run) => (held || run.length < 2 ? run.flatMap(across) : run));
 }
 
 /** One band per run, between `low` and `high` (kW, signed), as an area and its edge line. */
@@ -202,6 +203,8 @@ export interface Plot {
   readonly left?: number;
   readonly range?: readonly [low: number, high: number] | undefined;
   readonly stacked?: boolean;
+  /** Every bucket's reading held across it (the step style), not joined to the next by a straight line. */
+  readonly held?: boolean;
 }
 
 /** One kW scale for above and below zero: what `stackShape` and `flowShape` share. */
@@ -264,7 +267,7 @@ export function stackShape(
   const stacked = plot.stacked !== false;
   const { up, down } = stackExtent(points, stacked);
   const { zero, x, y } = signedScale(up, down, width, height, top, plot);
-  const runs = runsOf(points, step);
+  const runs = runsOf(points, step, plot.held);
   const band = (
     low: (p: StackPoint) => number,
     high: (p: StackPoint) => number,
@@ -312,16 +315,17 @@ export interface FlowPoint {
   readonly house: number;
 }
 
-/** Buckets into the sources' flows, placed on the day by their middle (`unit` as in `stackOf`). */
+/** Buckets into the sources' flows, placed on the day (or the range) by their middle (`unit`, `span` as in `stackOf`). */
 export function flowsOf(
   buckets: readonly Bucket[],
   dayStart: number,
   minutes = 5,
   unit: 'kWh' | 'kW' = 'kWh',
+  span = 86_400_000,
 ): FlowPoint[] {
   const factor = unit === 'kW' ? 1 : 60 / minutes;
   return buckets.map(({ start, totals: t }) => ({
-    at: (start + (minutes * 60_000) / 2 - dayStart) / 86_400_000,
+    at: (start + (minutes * 60_000) / 2 - dayStart) / span,
     into: {
       solar: t.solar * factor,
       battery: t.fromBattery * factor,
@@ -406,7 +410,7 @@ export function flowShape(
     stacked ? keys.reduce((total, k) => total + r[k], 0) : 0;
   const { up, down } = flowExtent(points, stacked);
   const { zero, x, y } = signedScale(up, down, width, height, top, plot);
-  const runs = runsOf(points, step);
+  const runs = runsOf(points, step, plot.held);
   const above = LAYERS.filter((key) => points.some((p) => p.into[key] > 0)).map((key) => {
     const under = (p: FlowPoint): number => sum(p.into, LAYERS.slice(0, LAYERS.indexOf(key)));
     return { key, ...bandOf(runs, x, y, under, (p) => under(p) + p.into[key]) };

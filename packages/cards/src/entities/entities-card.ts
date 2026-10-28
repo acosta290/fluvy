@@ -8,7 +8,6 @@ import {
   valueParts,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -16,34 +15,18 @@ import { head, listRow } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
-
-import {
-  boolField,
-  colourFields,
-  emptyFields,
-  entitiesField,
-  fieldRow,
-  formLabels,
-  holdsLight,
-  iconField,
-  lightColourFields,
-  onlyWhen,
-  selectField,
-  showIconField,
-  titleFields,
-} from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { DETAILS, ROW_KEYS, rowSchema, type RowConfig } from '../lock/rows.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { DETAILS, type RowConfig } from '../lock/rows.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
 import { secondaryText } from '../shared/secondary.js';
+import { sinceIds } from '../shared/since.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
 import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 
 /** A row of the card: the rows every list shares (`RowConfig`). */
@@ -117,62 +100,14 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     `,
   ];
 
-  /** A card of rows has no entity of its own: its icon, tone and colour are the head's and the rows' default. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'show_icon',
-  ];
-  static override keys = configKeys<EntitiesCardConfig>()([
-    'title',
-    'subtitle',
-    'rows',
-    'show_count',
-    'variant',
-    'light_colors',
-    'light_whites',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      keys: ROW_KEYS,
-      schema: rowSchema(undefined, true),
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./entities-editor.js');
+  }
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   private readonly texts = new TemplateTexts(this);
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    variant: 'rows',
-    show_count: false,
-    light_colors: lightDefaults().colors,
-    light_whites: 'temperature',
-  });
   /** Fits the head to its column (measured in the card's own classes, again when a font lands). */
   private readonly head = new HeadFit(this);
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), selectField('variant', ['rows', 'compact'])),
-        showIconField(),
-        ...colourFields(),
-        entitiesField('entities', undefined, true),
-        boolField('show_count'),
-        // a light's colours where the rows hold a light
-        onlyWhen(holdsLight('rows', 'entities'), lightColourFields()),
-        emptyFields(),
-      ],
-      ...formLabels({}),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): EntitiesCardConfig {
     return { type: 'custom:fluvy-entities-card', title: 'Devices', entities: entities.slice(0, 4) };
@@ -187,11 +122,16 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     return config;
   }
 
+  /** The rows' entities (a light group's members too), and what the rows' last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return withMembers(
-      this.rows().map((r) => r.entity),
-      this.hass,
-    );
+    const rows = this.rows();
+    return [
+      ...withMembers(
+        rows.map((r) => r.entity),
+        this.hass,
+      ),
+      ...sinceIds(rows),
+    ];
   }
 
   override getCardSize(): number {
@@ -278,7 +218,15 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           : '';
       const end = trailing === 'switch' ? SWITCH_SLOT : trailing === 'chevron' ? 44 : undefined;
       const sub = (short = false): string =>
-        secondaryText(this.hass, view, rows[i]?.secondary, trailing === 'value', this.texts, short);
+        secondaryText(
+          this.hass,
+          view,
+          rows[i]?.secondary,
+          trailing === 'value',
+          this.texts,
+          short,
+          rows[i]?.since,
+        );
       return { view, usable, trailing, value, end, sub };
     });
     const keep = this.head.rowsKeepIcon(

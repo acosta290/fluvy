@@ -165,6 +165,27 @@ export const sheet: SheetSpec = {
       ],
     },
     // the head, the chart and its axis: half a section
+    // the one rule for units and decimals: the frame above as the house asks it — watts whatever the size, no
+    // decimals, one legend item in watt-hours of its own
+    {
+      title: 'Units and decimals · W, no decimals',
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          entity: 'sensor.ef_house_power',
+          title: 'Energy',
+          unit: 'W',
+          decimals: 0,
+          cost_entity: 'sensor.ef_cost_now',
+          _now: SHEET_NOW,
+          legend: [
+            { entity: 'sensor.ef_grid_today', label: 'Grid' },
+            { entity: 'sensor.ef_solar_today', label: 'Solar', unit: 'Wh' },
+            { entity: 'sensor.ef_peak_today', label: 'Peak' },
+          ],
+        },
+      ],
+    },
     {
       title: 'Energy · compact',
       width: 392,

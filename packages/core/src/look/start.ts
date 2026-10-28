@@ -1,6 +1,13 @@
 import { setMotionPreference } from '@fluvy/ui';
 import { setHaptics } from '../actions.js';
-import { PREFERENCES_EVENT, refreshCards, resyncCardThemes, setLightDefaults } from '../card.js';
+import {
+  PREFERENCES_EVENT,
+  refreshCards,
+  resyncCardThemes,
+  setChartDefaults,
+  setLightDefaults,
+} from '../card.js';
+import { ensureFonts } from '../fonts.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { setLanguageOverride } from '../i18n/index.js';
 import { cachedSettings, SettingsStore } from '../settings/store.js';
@@ -16,6 +23,7 @@ import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import {
   attachToElementClass,
   browserEnv,
+  inUse,
   onPanelFrame,
   setWorn,
   themed,
@@ -25,6 +33,7 @@ import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
 import { chromeOf, tabsOf } from './css.js';
 import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
+import { watchThemes } from './themed.js';
 import {
   FLAT_ATTRIBUTE,
   markRoots,
@@ -55,6 +64,8 @@ export type LookPreview = Partial<
     | 'lightTint'
     | 'lightColors'
     | 'statuses'
+    | 'charts'
+    | 'chartSets'
   >
 >;
 
@@ -99,8 +110,9 @@ let handle: LookHandle | undefined;
 /**
  * Starts the look once for the page: the last settings this browser saw are applied at once (no flash
  * of another palette), then the house's and this person's settings are subscribed to and every change is
- * applied live — the look, where it applies, and the person's preferences (language, motion, haptics).
- * Dark mode is Home Assistant's: the look follows it whenever Home Assistant re-applies its theme.
+ * applied live — the look, where it applies, the person's preferences (language, motion, haptics), and Inter
+ * once Fluvy is in use on the page. Dark mode is Home Assistant's: the look follows it whenever Home Assistant
+ * re-applies its theme.
  */
 export function startLook(): LookHandle | undefined {
   if (handle) return handle;
@@ -144,6 +156,9 @@ export function startLook(): LookHandle | undefined {
     );
     if (changed) resyncCardThemes();
     frame();
+    // Inter, once Fluvy is in use on the page (the theme on, the look covering the app, a wall, a dashboard that
+    // wears the look): a page on another theme fetches no font of ours
+    if (inUse(env.document)) ensureFonts();
   };
   const wears = (urlPath: string | undefined): boolean =>
     current().scope === 'dashboards' && wearsLook(current(), urlPath);
@@ -172,8 +187,9 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
-    // the lights' defaults: every card that leaves them to the house draws again
+    // the lights' and the charts' defaults: every card that leaves them to the house draws again
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });
+    setChartDefaults({ settings: now.charts, sets: now.chartSets });
     // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);
@@ -193,6 +209,9 @@ export function startLook(): LookHandle | undefined {
   void patchEditDialog(env.customElements, wears, resyncCardThemes);
   // the view tabs as the house chose them, in every dashboard's header (re-marked on each of its updates)
   void patchViewRoots(env.customElements, tabsFor);
+  // a view, a section or a card Home Assistant themed with the theme named Fluvy wears the look over the theme file's
+  // colours it wrote on it (the cards inside look again when one is marked)
+  const offThemes = watchThemes(env.document, () => engine.themedSheet(), resyncCardThemes);
   const offFrames = onPanelFrame((frame) =>
     engine.addDocument(frame.document, frame.createSheet()),
   );
@@ -246,6 +265,7 @@ export function startLook(): LookHandle | undefined {
     stop: () => {
       observer.disconnect();
       offFrames();
+      offThemes();
       store.stop();
       handle = undefined;
     },

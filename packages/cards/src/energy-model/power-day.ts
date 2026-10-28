@@ -1,6 +1,6 @@
-import type { EntityView, HomeAssistant } from '@fluvy/core';
+import type { EntityView, HomeAssistant, Series } from '@fluvy/core';
 import type { Totals } from './allocate.js';
-import { houseMidnight } from './period.js';
+import { fullDays, houseMidnight, type Range } from './period.js';
 import { measureIds, type PowerMeasure, type PrefSource } from './prefs.js';
 import { readMeasure } from './reading.js';
 
@@ -171,6 +171,68 @@ export function fetchPowerDay(
     .then((result) => result ?? {})
     .catch(() => null);
   cache.set(key, { at: Date.now(), promise });
+  return promise;
+}
+
+/** The rows' bucket in minutes (five when they do not say): the recorder's `end` less its `start`. */
+export function bucketMinutes(rows: PowerRows): number {
+  for (const list of Object.values(rows)) {
+    const row = list[0];
+    if (row?.end) return Math.max(1, Math.round((row.end - row.start) / 60_000));
+  }
+  return 5;
+}
+
+const series = new Map<string, { at: number; promise: Promise<Series | null> }>();
+
+/**
+ * A sensor's means over a range as a curve, the shape the recorder's history is read in (`fetchHistory`): five-minute
+ * means over up to two days, hourly beyond, resampled to `count` points, kept five minutes. `null` when unreadable.
+ */
+export function fetchMeanSeries(
+  hass: HomeAssistant,
+  id: string,
+  range: Range,
+  count: number,
+): Promise<Series | null> {
+  const end = range.end ?? new Date();
+  const key = `${id}|${range.start.toISOString()}|${range.end?.toISOString() ?? ''}|${count}`;
+  const hit = series.get(key);
+  if (hit && Date.now() - hit.at < TTL) return hit.promise;
+  const promise = hass
+    .callWS<Record<string, MeanRow[]>>({
+      type: 'recorder/statistics_during_period',
+      start_time: range.start.toISOString(),
+      end_time: end.toISOString(),
+      statistic_ids: [id],
+      period: fullDays(range.start, end) < 2 ? '5minute' : 'hour',
+      types: ['mean'],
+    })
+    .then((result) => {
+      const rows = (result?.[id] ?? []).filter(
+        (row) => row.mean !== null && row.mean !== undefined && Number.isFinite(Number(row.mean)),
+      );
+      if (!rows.length) return null;
+      // `count` points over the range, each the last mean known at its moment (as the history's curve is sampled)
+      const from = range.start.getTime();
+      const step = (end.getTime() - from) / count;
+      const values: number[] = [];
+      let index = 0;
+      let last = Number(rows[0]?.mean);
+      for (let i = 1; i <= count; i++) {
+        while (
+          index < rows.length &&
+          (rows[index]?.end ?? rows[index]?.start ?? 0) <= from + i * step
+        )
+          last = Number(rows[index++]?.mean);
+        values.push(last);
+      }
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      return { values, min, max, average: values.reduce((sum, v) => sum + v, 0) / count };
+    })
+    .catch(() => null);
+  series.set(key, { at: Date.now(), promise });
   return promise;
 }
 

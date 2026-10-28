@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  fractionOf,
-  labelRoom,
-  signedGeometry,
-  ticksOf,
-  TICKS,
-  valueBox,
-  valueRoom,
-} from './signed.js';
+import { signedTicks } from '../chart/engine/ring.js';
+import { fractionOf, labelRoom, signedGeometry, valueBox, valueRoom } from './signed.js';
 
 describe('the signed gauge', () => {
   it('is the approved drawing at 320: R 104 about (160, 124), the ends beside its feet, 220 tall', () => {
@@ -43,17 +36,17 @@ describe('the signed gauge', () => {
 
   it('lights the ticks from zero to the value, the zero tick with them; none when unknown', () => {
     const g = signedGeometry(320, 46);
-    const ticks = ticksOf(g, -0.36);
-    expect(ticks).toHaveLength(TICKS + 1);
+    const ticks = signedTicks(g, -0.36);
+    expect(ticks).toHaveLength(41);
     const lit = ticks.flatMap((t, i) => (t.lit ? [i] : []));
     expect(lit).toEqual([13, 14, 15, 16, 17, 18, 19, 20]);
     // the zero tick stands straight up at the top
-    const zero = ticks[TICKS / 2]!;
+    const zero = ticks[20]!;
     expect(zero.x1).toBeCloseTo(160, 6);
     expect(zero.y1).toBeCloseTo(20, 6);
     expect(zero.y2).toBeCloseTo(36, 6);
-    expect(ticksOf(g, 0.5).filter((t) => t.lit)).toHaveLength(11);
-    expect(ticksOf(g, null).some((t) => t.lit)).toBe(false);
+    expect(signedTicks(g, 0.5).filter((t) => t.lit)).toHaveLength(11);
+    expect(signedTicks(g, null).some((t) => t.lit)).toBe(false);
   });
 
   it('measures the room inside the ring for the value and its label', () => {

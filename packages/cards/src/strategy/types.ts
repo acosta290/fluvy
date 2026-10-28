@@ -127,6 +127,11 @@ export interface StrategyContext {
   readonly t: (key: MessageKey) => string;
   /** The dashboard's url path (`/fluvy-home`): the tabs and "see all" links navigate inside it. */
   readonly base: string;
+  /**
+   * The panel the dashboard is generated in (`hass.panelUrl`, else the base's): an Energy date picker's key on it is
+   * `energy_<panelUrl>`, the one Home Assistant's energy cards take without a key of their own.
+   */
+  readonly panelUrl: string;
   readonly weather: string | undefined;
   readonly energy: EnergyRoles;
   readonly style: CardStyle;

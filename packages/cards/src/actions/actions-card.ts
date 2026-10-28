@@ -5,7 +5,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { glyph, head, icon, sheetStyles } from '@fluvy/ui';
@@ -13,28 +12,12 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { keyed } from 'lit/directives/keyed.js';
 import { relativeAgo } from '../helpers/datetime.js';
 import { HeadFit } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { iconOf } from '../shared/domain.js';
-import {
-  actionFields,
-  colourFields,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  formLabels,
-  iconField,
-  nameIconFields,
-  numberField,
-  showIconField,
-  textField,
-  titleFields,
-} from '../shared/form.js';
-import type { RowsListSpec } from '../shared/rows-editor.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { EMPTY, entryCount, HEAD, rowsOf } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
 
 const s = strings('actions');
@@ -175,49 +158,10 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     this.done_ = new Set();
   }
 
-  /** A card of many actions has no entity of its own: its head's icon, tone and colour, its tap ("…") and its hold. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'tone',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<ActionsCardConfig>()([
-    'title',
-    'subtitle',
-    'rows',
-    'columns',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'rows',
-      alias: 'entities',
-      title: 'editor.rows',
-      domains: ACTION_DOMAINS,
-      keys: ['entity', 'name', 'icon', 'secondary'],
-      schema: [entityField(ACTION_DOMAINS), nameIconFields(), textField('secondary')],
-    },
-  ];
-  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        titleFields(),
-        fieldRow(iconField(), numberField('columns', 1, 3)),
-        showIconField(),
-        ...colourFields(),
-        entitiesField('entities', ACTION_DOMAINS, true),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...formLabels({}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./actions-editor.js');
   }
+  static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): ActionsCardConfig {
     const actions = entities.filter((id) => ACTION_DOMAINS.includes(id.slice(0, id.indexOf('.'))));

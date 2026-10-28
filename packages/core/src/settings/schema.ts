@@ -25,6 +25,13 @@ import {
   type ViewTabs,
 } from '../look/tabs.js';
 import { isCardLanguage, type CardLanguage } from '../i18n/languages.js';
+import {
+  CHART_DEFAULTS,
+  parseChartSettings,
+  parseSavedSeries,
+  type ChartSettings,
+  type SavedSeries,
+} from './charts.js';
 
 /**
  * fluvy's settings, kept where Home Assistant keeps its own frontend settings: the house's in its system
@@ -40,11 +47,13 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
- * 2 since 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own
- * (it parses field by field and ignores the rest) but a save from it drops what it does not know; from 2 on a
- * save keeps every field it does not know (`SettingsStore.saveHouse`).
+ * 3 since 1.11: the house keeps its chart settings and its saved sets of series colours (a 2 is read field by
+ * field, each missing field its factory default — `classic` everywhere, so nothing on a dashboard changes). 2 since
+ * 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own (it parses field
+ * by field and ignores the rest) but a save from it drops what it does not know; from 2 on a save keeps every field
+ * it does not know (`SettingsStore.saveHouse`).
  */
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -119,6 +128,10 @@ export interface HouseSettings {
   readonly lightColors: boolean;
   /** The statuses in colours of the house's own, over every palette (1.9); one left out is the palette's (Auto). */
   readonly statuses: StatusColours;
+  /** How every chart and gauge is drawn where a card says nothing of its own (1.11). */
+  readonly charts: ChartSettings;
+  /** The house's own sets of six series colours, chosen in `charts.series` like a palette (1.11). */
+  readonly chartSets: readonly SavedSeries[];
 }
 
 /** What each person may choose for themselves. */
@@ -158,6 +171,8 @@ export interface EffectiveSettings {
   readonly lightColors: boolean;
   /** The house's status colours, worn over this person's palette too. */
   readonly statuses: StatusColours;
+  readonly charts: ChartSettings;
+  readonly chartSets: readonly SavedSeries[];
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -193,6 +208,9 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   lightColors: false,
   // every status the palette's own, as before 1.9
   statuses: {},
+  // every chart as 1.10 drew it (`classic`), until the house chooses a style
+  charts: CHART_DEFAULTS,
+  chartSets: [],
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -280,6 +298,8 @@ export function parseHouse(raw: unknown): HouseSettings {
     lightTint: oneOf(value['lightTint'], LIGHT_TINTS) ? value['lightTint'] : d.lightTint,
     lightColors: typeof value['lightColors'] === 'boolean' ? value['lightColors'] : d.lightColors,
     statuses: parseStatuses(value['statuses']),
+    charts: parseChartSettings(value['charts']),
+    chartSets: parseSavedSeries(value['chartSets']),
   };
 }
 
@@ -333,6 +353,8 @@ export function resolveSettings(
     lightTint: house.lightTint,
     lightColors: house.lightColors,
     statuses: house.statuses,
+    charts: house.charts,
+    chartSets: house.chartSets,
   };
 }
 

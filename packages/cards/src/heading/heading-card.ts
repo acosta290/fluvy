@@ -1,9 +1,4 @@
-import {
-  type ActionConfig,
-  type FluvyCardConfig,
-  type LovelaceConfigForm,
-  type LovelaceGridOptions,
-} from '@fluvy/core';
+import type { ActionConfig, FluvyCardConfig, LovelaceGridOptions } from '@fluvy/core';
 import { glyph, icon, sheetStyles } from '@fluvy/ui';
 import {
   css,
@@ -14,20 +9,10 @@ import {
   type TemplateResult,
 } from 'lit';
 import { HeadFit } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
-import {
-  actionField,
-  entitiesField,
-  fieldRow,
-  formLabels,
-  iconField,
-  selectField,
-  textField,
-} from '../shared/form.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import type { AliasSpec } from '../shared/config.js';
 import { counted } from '../shared/counted.js';
 import { idsOf, type EntityEntry } from '../shared/lists.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
 
 export interface HeadingCardConfig extends FluvyCardConfig {
   title?: string;
@@ -167,33 +152,10 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
     `,
   ];
 
-  /** A heading has no entity: its icon, the entities it counts and the tap its meta answers are the base fields it honours. */
-  static override base: readonly BaseKey[] = ['icon', 'entities', 'tap_action'];
-  static override keys = configKeys<HeadingCardConfig>()([
-    'title',
-    'subtitle',
-    'path',
-    'variant',
-    'heading_style',
-  ]);
-  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({ variant: 'bar', heading_style: 'subtitle' });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        fieldRow(textField('title'), iconField()),
-        fieldRow(
-          selectField('heading_style', ['title', 'subtitle']),
-          selectField('variant', ['bar', 'plain']),
-        ),
-        fieldRow(textField('subtitle'), textField('path')),
-        entitiesField('entities'),
-        actionField(),
-      ],
-      ...formLabels({}),
-    };
+  static override editor(): Promise<CardEditor> {
+    return import('./heading-editor.js');
   }
+  static override aliases: AliasSpec = { keys: [{ from: 'meta', to: 'subtitle' }] };
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): HeadingCardConfig {
     return {

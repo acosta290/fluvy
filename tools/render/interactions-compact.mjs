@@ -12,10 +12,12 @@
  * giving way before a name or the condition would; a row squeezed under what holds its name gives its circle to the
  * name (every row of the list with it, the bar and the hairline starting the row); a dead compact row says its state
  * as its value ("Unavailable", "Unknown", "Not found" — the dash where the word would not leave the name its room), a
- * missing entity draws the `ban` glyph, and a dead stat tile wears the dashed hairline in both variants; and every
- * card's declared `layoutHeight` is the height it measures at a 360 column.
+ * missing entity draws the `ban` glyph, and a dead stat tile wears the dashed hairline in both variants; a stat tile's
+ * tap (a finger, Enter, Space) opens its entity's details and a hold runs where one is asked, while a tile whose tap is
+ * `none` and a dead one are no buttons; and every card's declared `layoutHeight` is the height it measures at a 360
+ * column.
  */
-import { frame, HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
+import { frame, HOUSE_HEIGHTS, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -381,6 +383,48 @@ const BAN = await (async () => {
     `${Math.round(halfDeadTitle.w)}${halfDeadTitle.cut ? '…' : ''} ${await text(halfDead.locator('.fv-row__value'))}`,
   );
 
+  // a finger on a tile (#71): where it lands, the button laid over the tile opens its details; a hold where asked
+  const tapping = frame(page, 'Tiles · a tap on each tile').locator('fluvy-stat-tiles-card');
+  const onTile = async (index, hold = 0) => {
+    const box = await tapping.locator('.fv-option').nth(index).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(hold);
+    await page.mouse.up();
+    await settle(page, 200);
+  };
+  await tapping.scrollIntoViewIfNeeded();
+  await reset(page);
+  await onTile(0);
+  const tapped = await moreInfo(page);
+  await reset(page);
+  await onTile(1, 700);
+  const held = await moreInfo(page);
+  await reset(page);
+  await onTile(2);
+  await onTile(3);
+  check(
+    'tiles: a tap on a tile opens its entity’s details (hass-more-info), a hold its own action, none and a dead tile nothing',
+    tapped.join() === 'sensor.so_solar_power' &&
+      held.join() === 'sensor.so_battery_level' &&
+      (await moreInfo(page)).length === 0 &&
+      new URL(page.url()).pathname === '/' &&
+      (await tapping.locator('.fv-option > .fv-tile__tap').count()) === 2,
+    `${tapped.join()} · ${held.join()} · ${new URL(page.url()).pathname}`,
+  );
+  await reset(page);
+  await tapping.locator('.fv-tile__tap').first().focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Space');
+  await settle(page, 200);
+  check(
+    'tiles: a tile answers the keyboard — Enter and Space on its button open its details',
+    (await moreInfo(page)).join() === 'sensor.so_solar_power,sensor.so_solar_power' &&
+      (await tapping.locator('.fv-tile__tap').first().getAttribute('aria-label')) ===
+        'Output · 3.2 kW',
+    (await moreInfo(page)).join(),
+  );
+
   for (const [title, index] of [
     ['Tiles · compact', 0],
     ['Total capacity', 0],
@@ -391,6 +435,7 @@ const BAN = await (async () => {
     ['Tiles · compact · columns asked for', 0],
     ['Tiles · compact · columns asked for', 1],
     ['Tiles · compact · columns asked for', 2],
+    ['Tiles · a tap on each tile', 0],
   ])
     await sameHeight(
       `${title} [${index}]`,

@@ -21,6 +21,12 @@ export interface FrameSpec {
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   /**
+   * Card widths at which its half cards (`cols: 6`) draw what they declare too — half a section (152, 172) or a narrow
+   * column's (211, 266, half a wider one): `heights.mjs` draws the frame again at each, in every language, and holds
+   * every card to its height there.
+   */
+  readonly heights?: readonly number[];
+  /**
    * The cards, each with the columns it is given (`cols`, of 12: Home Assistant's `grid_options.columns`). As Home
    * Assistant does, a card is held to its own `getGridOptions()` minimum and maximum: a 4 asked of a card whose
    * minimum is 6 draws at 6.
@@ -62,6 +68,11 @@ export interface SheetSpec {
   readonly units?: 'imperial';
   /** The integrations' own words by key (a repair's title); merged with every other sheet's. */
   readonly translations?: MockOptions['translations'];
+  /**
+   * The Energy date pickers' collections on the mock's connection (`energy_…`), for the cards that follow one; one
+   * with `after` lands that many ms later, as a picker's card loaded after ours would.
+   */
+  readonly collections?: MockOptions['collections'];
 }
 
 export { NOW } from './now.js';

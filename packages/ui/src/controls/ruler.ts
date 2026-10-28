@@ -76,6 +76,7 @@ export class FluvyRuler extends LitElement {
     major: { type: Number },
     vertical: { type: Boolean },
     marker: { type: Boolean },
+    readonly: { type: Boolean },
     inactive: { type: Boolean },
     wake: { type: Boolean },
     disabled: { type: Boolean },
@@ -109,6 +110,8 @@ export class FluvyRuler extends LitElement {
   declare vertical: boolean;
   /** Read-only gauge: a ring marker, no lift, no interaction. */
   declare marker: boolean;
+  /** Read-only, its knob whole (the thermostat's ball, lifted on its halo): a chart's ruler gauge. */
+  declare readonly: boolean;
   /** No knob and no lit ticks (the device is off). */
   declare inactive: boolean;
   /** An inactive ruler that still answers: dragging or tapping it wakes the device at that value. */
@@ -152,6 +155,7 @@ export class FluvyRuler extends LitElement {
     this.major = 0.25;
     this.vertical = false;
     this.marker = false;
+    this.readonly = false;
     this.inactive = false;
     this.wake = false;
     this.disabled = false;
@@ -185,7 +189,7 @@ export class FluvyRuler extends LitElement {
   }
 
   private get interactive(): boolean {
-    return !this.marker && !this.disabled && (!this.inactive || this.wake);
+    return !this.marker && !this.readonly && !this.disabled && (!this.inactive || this.wake);
   }
 
   /** The colour under the knob at `f` (0..1) of a tinted ruler: the hue there, or the warm → cool mix there. */
@@ -508,7 +512,7 @@ export class FluvyRuler extends LitElement {
     const classes = `fv-ruler fv-ruler--${this.tone}${this.vertical ? ' fv-ruler--vertical' : ''}${this.dragging ? ' is-dragging' : ''}`;
     const valueText = `${this.text(current)}${this.unit ? ` ${this.unit}` : ''}`;
     const [min, max] = this.range;
-    // A read-only ruler (marker, disabled, inactive without wake) is an image whose name carries the value.
+    // A read-only ruler (marker, readonly, disabled, inactive without wake) is an image whose name carries the value.
     return html`<div
       class=${classes}
       style="width:${w}px;height:${h}px"

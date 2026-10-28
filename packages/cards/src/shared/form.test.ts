@@ -65,11 +65,21 @@ describe('a select that takes a value of its own', () => {
 describe('a colour field', () => {
   const picker = (item: HaFormSchemaItem): Record<string, unknown> =>
     (item.selector as { ui_color: Record<string, unknown> }).ui_color;
-  it('says the palette’s accent for a card’s or an item’s colour, none for a surface until one is chosen (#40)', () => {
+  it('says the palette’s accent for a card’s colour, none for a surface until one is chosen (#40)', () => {
     expect(picker(accentField())).toMatchObject({ default_color: 'primary', include_none: false });
     const surface = colourFields()[1]!;
     expect(surface.name).toBe('card_color');
     expect(picker(surface)).toMatchObject({ default_color: 'none', include_none: true });
+  });
+  it('shows none chosen for an item’s colour, and says under it what the item wears then', () => {
+    // the picker would call the card's colour "Primary": no default of its own, the word under the field instead
+    const bulb = accentField('color', { bulb: true });
+    expect(picker(bulb)['default_color']).toBeUndefined();
+    expect(bulb.helper).toBe('editor.item_color_helper');
+    const item = accentField('color', { item: true });
+    expect(picker(item)['default_color']).toBeUndefined();
+    expect(item.helper).toBe('editor.item_color_card_helper');
+    expect(accentField().helper).toBeUndefined();
   });
 });
 

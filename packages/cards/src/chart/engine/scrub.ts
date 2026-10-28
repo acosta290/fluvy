@@ -1,12 +1,27 @@
 import { noChange, type ReactiveController, type ReactiveControllerHost } from 'lit';
 import { Directive, directive, PartType, type ElementPart, type PartInfo } from 'lit/directive.js';
-import { scrubFraction } from './pointer.js';
+
+/**
+ * Where the pointer is along the element that received the event, 0..1 — a mouse scrubs by hovering,
+ * a finger only while pressing (a resting finger is about to scroll). `null` = not scrubbing.
+ */
+export function scrubFraction(event: PointerEvent): number | null {
+  if (event.pointerType !== 'mouse' && event.buttons === 0 && event.type !== 'pointerdown')
+    return null;
+  const target = event.currentTarget as HTMLElement;
+  if (event.type === 'pointerdown' && event.pointerType !== 'mouse')
+    target.setPointerCapture?.(event.pointerId);
+  const rect = target.getBoundingClientRect();
+  if (!(rect.width > 0)) return null;
+  return Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+}
 
 /**
  * Reading a chart by pointing at it: a mouse over it, or a finger held on it, reads the value under it; the reading
  * ends when the pointer leaves (a finger lifts; a mouse keeps hovering after a click). One owner for every chart that
- * scrubs (energy, sensor, production, the history page): the host keeps a controller, the chart element takes
- * `scrub(controller)`, and the render reads `controller.value`.
+ * scrubs (energy, sensor, production, the history page), in the chart engine's chunk: the host keeps a controller,
+ * the chart element takes `scrub(controller)`, and the render reads `controller.value` (a core card makes its
+ * controller as the engine lands, `ChartLoader`'s `landed`).
  *
  *   private readonly scrubber = new ScrubController(this);
  *   html`<div class="chart" ${scrub(this.scrubber)}>…${this.scrubber.value ?? 'now'}</div>`
@@ -111,6 +126,9 @@ class ScrubDirective extends Directive {
       for (const type of ['pointerup', 'pointercancel', 'pointerleave'])
         part.element.addEventListener(type, end);
     }
+    // a surface once read says so: from then on the marks a read brings and takes away come in the short fade, not
+    // the first paint's wait after the line (the engine's sheet)
+    if (controller.value !== null) part.element.setAttribute('data-read', '');
     return noChange;
   }
 }

@@ -2,6 +2,7 @@ import {
   english,
   idsOf,
   localize,
+  resolveEntity,
   type HaFormSchemaItem,
   type HomeAssistant,
   type KeyOf,
@@ -10,6 +11,8 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
+import type { EditorChoices, SelectOption } from './rows-editor.js';
+import { LADDERS, ladderOf, unitClass } from './units.js';
 
 /** The words every card's editor shares, by field name: a card maps only its own fields (or another word). */
 export const SHARED_LABELS: Readonly<Record<string, MessageKey>> = {
@@ -144,13 +147,59 @@ export const selectField = (
     select: {
       mode: 'dropdown',
       ...(custom ? { custom_value: true } : {}),
-      options: options.map((value) => ({
-        value,
-        label: localize(editorLanguage(), `option.${words[value] ?? value}`),
-      })),
+      options: optionChoices(options, words),
     },
   },
 });
+
+/** A select's choices: each value with its words (`option.*`, or another value's where `words` says so). */
+export const optionChoices = (
+  options: readonly OptionWord[],
+  words: Partial<Record<OptionWord, OptionWord>> = {},
+): SelectOption[] =>
+  options.map((value) => ({
+    value,
+    label: localize(editorLanguage(), `option.${words[value] ?? value}`),
+  }));
+/**
+ * Where a row's last change is read from (`since`, #67): one of the house's timestamp sensors (`sinceChoices`), or
+ * `attribute:<name>` of the row's own entity, typed.
+ */
+export const sinceField = (): HaFormSchemaItem => ({
+  ...selectField('since', [], { custom: true }),
+  helper: 'editor.since_help',
+});
+
+/** The house's timestamp sensors, by name, as a `since` select's choices: what a real last change is read from. */
+export const sinceChoices: EditorChoices = (_config, hass) => ({
+  since: Object.values(hass?.states ?? {})
+    .filter(
+      (state) =>
+        state.entity_id.startsWith('sensor.') && state.attributes.device_class === 'timestamp',
+    )
+    .map((state) => ({
+      value: state.entity_id,
+      label: state.attributes.friendly_name ?? state.entity_id,
+    })),
+});
+
+/**
+ * A choice among values, each named by a word of the catalogue — a family's own words among them, where `selectField`
+ * takes the core's option words alone.
+ */
+export const choiceField = (
+  name: string,
+  options: ReadonlyArray<readonly [value: string, word: MessageKey]>,
+): HaFormSchemaItem => ({
+  name,
+  selector: {
+    select: {
+      mode: 'dropdown',
+      options: options.map(([value, word]) => ({ value, label: editorWord(word) })),
+    },
+  },
+});
+
 /**
  * An ordered subset of named choices (a compact row's `controls`): Home Assistant's select as chips that are
  * dragged into order, with a box to add the rest. The dropdown mode is asked for: with fewer than six choices the
@@ -195,6 +244,18 @@ export const toneSelector = (language: Pick<HomeAssistant, 'language'> = editorL
 export const fieldRow = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
   type: 'grid',
   name: '',
+  flatten: true,
+  schema,
+});
+
+/** A group of fields under a title of its own, folded until opened (Home Assistant's expandable section). */
+export const sectionField = (
+  title: MessageKey,
+  schema: readonly HaFormSchemaItem[],
+): HaFormSchemaItem => ({
+  type: 'expandable',
+  name: '',
+  title: editorWord(title),
   flatten: true,
   schema,
 });
@@ -271,22 +332,32 @@ export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: tone
  * colours where the look reaches the editor, or any colour typed — with the palette's accent as its default. A colour
  * that may be none (`card_color`) is none until one is chosen: the picker then says what the card draws, and offers
  * to clear it. One that follows its entity (`state`: a light card's, its bulb's) says so as Home Assistant's own
- * tile does, State by default. An item's that defaults to its bulb's, else the card's (`bulb`: an item of a card of
- * lights, tiles or rows), shows none chosen, and its helper says what it draws then.
+ * tile does, State by default. An item's has no default of its own — the picker would call the card's colour
+ * "Primary" — and shows none chosen, its helper saying what it wears then: its bulb's where the card shows bulbs'
+ * colours, else the card's (`bulb`: an item of a card of lights, tiles or rows), or the card's alone (`item`: a
+ * scene, a chip, a row of a lock, a camera or an alarm).
  */
 export const accentField = (
   name = 'color',
-  { none = false, state = false, bulb = false } = {},
-): HaFormSchemaItem => ({
-  name,
-  selector: {
-    ui_color: {
-      ...(bulb ? {} : { default_color: none ? 'none' : state ? 'state' : 'primary' }),
-      include_none: none,
-      include_state: state,
+  { none = false, state = false, bulb = false, item = false } = {},
+): HaFormSchemaItem => {
+  const helper = bulb
+    ? 'editor.item_color_helper'
+    : item
+      ? 'editor.item_color_card_helper'
+      : undefined;
+  return {
+    name,
+    selector: {
+      ui_color: {
+        ...(helper ? {} : { default_color: none ? 'none' : state ? 'state' : 'primary' }),
+        include_none: none,
+        include_state: state,
+      },
     },
-  },
-});
+    ...(helper ? { helper } : {}),
+  };
+};
 
 /** A tone and a colour on one row, then the card's own surface colour (`card_color`, none by default). */
 export const colourFields = ({ state = false } = {}): HaFormSchemaItem[] => [
@@ -345,3 +416,65 @@ export const entitiesField = (
   ...(required ? { required } : {}),
   selector: { entity: { multiple: true, ...(domains ? { domain: [...domains] } : {}) } },
 });
+
+/** The choices of a unit select: the automatic one, then each unit by its symbol. */
+export const unitChoices = (units: readonly string[]): SelectOption[] => [
+  { value: 'auto', label: editorWord('option.auto') },
+  ...units.map((value) => ({ value, label: value })),
+];
+
+/** Every unit a card's figures may be asked in: the ladders of power, energy, volume and distance. */
+const EVERY_LADDER: readonly string[] = Object.values(LADDERS).flat();
+const DECIMALS: readonly OptionWord[] = ['auto', '0', '1', '2', '3'];
+
+/**
+ * The unit a card's figures read in and their decimals, on one row — the last before the actions. `unit` offers the
+ * ladders given (every one by default, narrowed to the entity's class at render where the card says so, through
+ * `unitChoicesOf`), or a unit typed; `decimals` is fixed, or automatic (the sensor's own precision, else the figure's
+ * size). Neither default is written (`NUMBER_DEFAULTS`). `when` says while the unit can act: an entity whose unit
+ * has no ladder gives it nothing to do (`hasLadder`).
+ */
+export const numberFields = ({
+  units = EVERY_LADDER,
+  when,
+  decimals = DECIMALS,
+}: {
+  units?: readonly string[];
+  when?: HaFormSchemaItem['when'];
+  decimals?: readonly OptionWord[];
+} = {}): HaFormSchemaItem => {
+  const unit: HaFormSchemaItem = {
+    name: 'unit',
+    selector: {
+      select: { mode: 'dropdown', custom_value: true, options: unitChoices(units) },
+    },
+  };
+  return fieldRow(when ? onlyWhen(when, unit) : unit, selectField('decimals', decimals));
+};
+
+/** What the row shows where the config says nothing: automatic, both. */
+export const NUMBER_DEFAULTS = { unit: 'auto', decimals: 'auto' } as const;
+
+/** The unit of the card's entity as the editor's `when` and `choices` read it: none where the house does not hold it. */
+const unitOf = (
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): string | undefined => {
+  const id = data['entity'];
+  return typeof id === 'string' && hass?.states[id] ? resolveEntity(hass, id).unit : undefined;
+};
+
+/** Whether the card's entity's figures can be asked in another unit: its unit converts (one not there: shown). */
+export const hasLadder = (
+  data: Readonly<Record<string, unknown>>,
+  hass?: HomeAssistant,
+): boolean => {
+  const unit = unitOf(data, hass);
+  return unit === undefined || unitClass(unit) !== undefined;
+};
+
+/** The units the editor offers a card's entity: its class's ladder (a class without one: typed), as its `choices`. */
+export const unitChoicesOf: EditorChoices = (config, hass) => {
+  const unit = unitOf(config, hass);
+  return unit !== undefined && unitClass(unit) ? { unit: unitChoices(ladderOf(unit)) } : {};
+};

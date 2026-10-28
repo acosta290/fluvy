@@ -758,8 +758,7 @@ const pulses = (flow) =>
   check(
     'issue #49: read at 11:57, the house’s 9.8 kW is the sun’s 5.6 and the battery’s 4.2, each source its own value in the legend',
     /^11:5\d 9\.8 ?kW$/.test(noon.reading) &&
-      noon.legend.join(' | ') ===
-        'Solar5.6kW | Battery4.2kW | Grid0.0kW | Charged0.0kW | Exported0.0kW',
+      noon.legend.join(' | ') === 'Solar5.6kW | Battery4.2kW | Grid0kW | Charged0kW | Exported0kW',
     JSON.stringify([noon.reading, noon.legend]),
   );
   const solarDot = noon.dots.find((d) => d.ink === 'en-ink--solar');

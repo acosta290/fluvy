@@ -46,6 +46,10 @@ const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
     return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
   });
 
+/** The chips a period card carries by default: 16 under the head, a 44 row; none while a date picker is followed. */
+const periodChips = (config: LovelaceCardConfig): number =>
+  config['show_period'] === false || config['collection_key'] ? 0 : 60;
+
 /** The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals. */
 export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const sources = Array.isArray(config['sources']) ? config['sources'].length : 0;
@@ -59,7 +63,7 @@ export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number 
   return (
     HEAD +
     stage +
-    (period && config['show_period'] !== false ? 60 : 0) +
+    (period ? periodChips(config) : 0) +
     (consumers ? 16 + ROW_BAR * (consumers + 1) : 0) +
     statsBlock(statsRows(readoutLabels(config, nameOf)))
   );
@@ -92,7 +96,7 @@ export function balanceHeight(config: LovelaceCardConfig): number {
   const phases = period || config['show_phases'] === false ? 0 : Math.max(0, ...grid.map(phasesOf));
   return (
     64 +
-    (period && config['show_period'] !== false ? 60 : 0) +
+    (period ? periodChips(config) : 0) +
     2 * BALANCE_BLOCK +
     (phases ? 20 + 28 + phases * PHASE_PITCH - 8 + 20 : 0) +
     (period && config['show_cost'] !== false ? 60 : 0) +
@@ -147,18 +151,35 @@ export function devicesHeight(config: LovelaceCardConfig): number {
 const LEGEND_LEAD = 20;
 /** A legend row (40) and the 8 between rows. */
 const LEGEND_ROW = 40;
+/** The least room between two neighbours' names in a legend's row: the house's smallest step. */
+const LEGEND_APART = 8;
 
 /**
- * The rows a legend of `names` takes at a 360 column (`legendColumns`): as many columns as names (three at most
- * in one row of more), two of four, else one, the widest name deciding.
+ * The columns a legend takes in `width`, its items `widths` wide (a square and its name): as many as there are items
+ * (three at most in a row of more), two of four, else one — the first in which every item holds its column, two
+ * neighbours' names, centred in theirs, stand 8 apart and the widest figure (`figure`) holds a column; `gap` is the
+ * room between columns. Two pixels over a column (its rounding, the ruler's own pixel) is not a reason to fold: the
+ * name is centred and overhangs it, where its neighbours leave it the room.
  */
-export function legendRows(names: readonly string[], width = COLUMN): number {
-  const count = names.length;
-  if (!count) return 0;
-  const widest = Math.max(0, ...names.map((name) => LEGEND_LEAD + textWidth(name, 'legend')));
+export function legendFold(widths: readonly number[], width: number, figure = 0, gap = 0): number {
+  const count = widths.length;
   const candidates = count <= 3 ? [count, 1] : count === 4 ? [4, 2, 1] : [count, 3, 2, 1];
-  const columns = candidates.find((n) => width / n + 2 >= widest) ?? 1;
-  return rowsOf(count, columns);
+  const holds = (n: number): boolean => {
+    const column = (width - gap * (n - 1)) / n;
+    const apart = (i: number): boolean =>
+      (i + 1) % n === 0 ||
+      i + 1 === count ||
+      column + gap - ((widths[i] ?? 0) + (widths[i + 1] ?? 0)) / 2 >= LEGEND_APART;
+    return column >= figure && widths.every((item, i) => item <= column + 2 && apart(i));
+  };
+  return candidates.find(holds) ?? 1;
+}
+
+/** The rows a legend of `names` takes at a 360 column (`legendFold`), its names measured as the legend writes them. */
+export function legendRows(names: readonly string[], width = COLUMN): number {
+  if (!names.length) return 0;
+  const widths = names.map((name) => LEGEND_LEAD + textWidth(name, 'legend'));
+  return rowsOf(names.length, legendFold(widths, width));
 }
 
 /**
@@ -373,10 +394,6 @@ export const chargerHeight = (config: LovelaceCardConfig, options?: readonly str
   (config['session_energy'] || config['solar_share'] ? COLS : 0) +
   (config['mode'] ? optionBlock(optionRows(modeOptions(options))) : 0);
 
-/** The chips a period card carries by default: 16 under the head, a 44 row. */
-const periodChips = (config: LovelaceCardConfig): number =>
-  config['show_period'] === false ? 0 : 60;
-
 /**
  * The sankey's body at a 360 column for a house with the sun, a battery and a few devices: a tier of source words,
  * the sources' ribbons, two tiers of targets, the house's ribbons, two tiers of devices (the approved figure).
@@ -389,6 +406,58 @@ export const sankeyHeight = (config: LovelaceCardConfig): number =>
 /** The score: three rings (88 and their label, 20 under what is above) and a row of three readouts. */
 export const scoreHeight = (config: LovelaceCardConfig): number =>
   HEAD + periodChips(config) + 4 + 112 + 60;
+
+/** The Energy period card's chips row, under its row: the day, week, month and year (custom stays in its sheet). */
+const GRAINS = ['day', 'week', 'month', 'year'];
+
+/**
+ * The Energy period strip: a 44 row in the card's 20 (84); compact, a 36 pill row in 12 (60); stacked, the row and,
+ * 8 under it, the chips of its periods — four short words, one row at a 360 column (136).
+ */
+export function periodHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'compact') return 60;
+  const periods: unknown[] = Array.isArray(config['periods']) ? config['periods'] : GRAINS;
+  return config['variant'] === 'stacked' && GRAINS.some((grain) => periods.includes(grain))
+    ? 136
+    : 84;
+}
+
+/**
+ * The sources an Energy dashboard meters, as the usage card's legend names them in English: what it draws where it
+ * lists none, in its order.
+ */
+const USAGE_WORDS: Readonly<Record<string, string>> = {
+  solar: 'Solar',
+  battery: 'Battery',
+  grid: 'Grid',
+};
+
+/**
+ * The Energy usage card at a 360 column: the head, the period's chips, the chart (its plot and 20 of room) and its
+ * hours or dates, and the legend: the sources shown (a kind listed twice is its first) and what was charged and
+ * exported, in the rows their names take, 12 between them — the card keeps that room whatever the house lacks of it,
+ * and folding sources into "Other" (`max_sources`) never takes a row more. Compact is the head, a 96 plot and its
+ * axis; mini the head and a 48 strip.
+ */
+export function usageHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'mini') return HEAD + 68;
+  if (config['variant'] === 'compact') return HEAD + 140;
+  const names = new Map<unknown, string>();
+  const listed = listLength(config, ['sources']) ? config['sources'] : Object.keys(USAGE_WORDS);
+  for (const item of listed as unknown[]) {
+    const s = (typeof item === 'string' ? { type: item } : (item ?? {})) as Record<string, unknown>;
+    const word = USAGE_WORDS[s['type'] as string];
+    if (word && s['show'] !== false && !names.has(s['type']))
+      names.set(s['type'], String(s['name'] ?? word));
+  }
+  const shown = [...names.values()];
+  if (config['show_returns'] !== false) {
+    if (names.has('battery')) shown.push('Charged');
+    if (names.has('grid')) shown.push('Exported');
+  }
+  const rows = config['show_legend'] === false ? 0 : legendRows(shown);
+  return HEAD + periodChips(config) + 204 + (rows && 4 + rows * 52);
+}
 
 export type FamilyEntry = readonly [
   tag: string,
@@ -469,5 +538,24 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
     'Fluvy · Energy score',
     'Self-powered, sun used and low-carbon as rings, the Energy dashboard’s own gauges, over imported, exported and net.',
     scoreHeight,
+  ],
+];
+
+/**
+ * The Energy period and Energy usage cards: their own chunk (`energy-period-cards.ts`), fetched at start as the energy
+ * family's is.
+ */
+export const ENERGY_PERIOD_FAMILY: readonly FamilyEntry[] = [
+  [
+    'fluvy-energy-period-card',
+    'Fluvy · Energy period',
+    'The view’s date picker as a strip: ‹ the day, week, month or year › and back to today, Home Assistant’s own, so its energy cards follow it as Fluvy’s do.',
+    periodHeight,
+  ],
+  [
+    'fluvy-energy-usage-card',
+    'Fluvy · Energy usage',
+    'Energy used by the hour, the day or the month, stacked by source.',
+    usageHeight,
   ],
 ];

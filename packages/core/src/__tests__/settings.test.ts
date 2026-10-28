@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHART_DEFAULTS,
   HOUSE_DEFAULTS,
+  isPaletteRef,
+  MAX_SAVED_SERIES,
   MAX_SAVED_PALETTES,
   parseHouse,
   parsePalette,
@@ -64,7 +67,7 @@ describe('parsing stored settings', () => {
         extra: true,
       }),
     ).toEqual({
-      version: 2,
+      version: 3,
       palette: 'volt',
       shape: 'round',
       pills: 'crisp',
@@ -81,6 +84,8 @@ describe('parsing stored settings', () => {
       lightTint: 'always',
       lightColors: true,
       statuses: { warning: '#dc630b' },
+      charts: CHART_DEFAULTS,
+      chartSets: [],
     });
   });
 
@@ -111,6 +116,120 @@ describe('parsing stored settings', () => {
     expect(resolveSettings(parseHouse({ lightTint: 'on' }), PERSONAL_DEFAULTS).lightTint).toBe(
       'on',
     );
+  });
+
+  it('reads the house’s chart settings: a 1.10 house (version 2, none stored) draws every chart classic, as before', () => {
+    // the migration is the parse: a field a 2 never stored is its factory value
+    const upgraded = parseHouse({ version: 2, palette: 'volt', statuses: { warning: '#dc630b' } });
+    expect(upgraded.charts).toEqual(CHART_DEFAULTS);
+    expect(upgraded.chartSets).toEqual([]);
+    expect(upgraded.version).toBe(3);
+    expect(CHART_DEFAULTS).toMatchObject({
+      style: 'classic',
+      gauge: 'ticks',
+      line: 'regular',
+      glow: { offset: 5, opacity: 0.35 },
+      fill: 18,
+      grid: 'hairline',
+      endpoint: 'knob',
+      caps: 'both',
+      now: 'knob',
+      wave: 'mid',
+      bubble: 'dark',
+      series: 'palette',
+      animate: true,
+    });
+    expect(resolveSettings(upgraded, PERSONAL_DEFAULTS).charts).toEqual(CHART_DEFAULTS);
+  });
+
+  it('reads the chart settings field by field, each unknown word as its default', () => {
+    const charts = parseHouse({
+      charts: {
+        style: 'soft',
+        gauge: 'arc',
+        line: 'heavy',
+        glow: { offset: 7, opacity: 0.3 },
+        fill: 24,
+        grid: 'dotted',
+        endpoint: 'ring-label',
+        caps: 'top',
+        now: 'line',
+        wave: 'high',
+        knob: 'flat',
+        bubble: 'tone',
+        series: 'my set',
+        animate: 'no',
+      },
+    }).charts;
+    expect(charts).toEqual({
+      ...CHART_DEFAULTS,
+      style: 'soft',
+      glow: { offset: 7, opacity: 0.35 },
+      fill: 24,
+      caps: 'top',
+      now: 'line',
+      wave: 'high',
+      bubble: 'tone',
+    });
+    expect(parseHouse({ charts: 'soft' }).charts).toEqual(CHART_DEFAULTS);
+    expect(parseHouse({ charts: { gauge: 'ruler', series: 'set-1' } }).charts).toMatchObject({
+      gauge: 'ruler',
+      series: 'set-1',
+    });
+  });
+
+  it('keeps the well-formed saved series sets: six colours each, the first of each id, twelve at most', () => {
+    const six = ['#1D4ED8', '#b45309', '#15803d', '#b91c1c', '#7e22ce', '#0f766e'];
+    const sets = parseHouse({
+      chartSets: [
+        { id: 'warm', name: ' Warm ', colours: six },
+        { id: 'warm', name: 'Again', colours: six },
+        { id: 'five', name: 'Five', colours: six.slice(0, 5) },
+        { id: 'named', name: '', colours: six },
+        ...Array.from({ length: 20 }, (_u, i) => ({ id: `s${i}`, name: `S${i}`, colours: six })),
+      ],
+    }).chartSets;
+    expect(sets[0]).toEqual({ id: 'warm', name: 'Warm', colours: six.map((c) => c.toLowerCase()) });
+    expect(sets.map((set) => set.id).slice(0, 3)).toEqual(['warm', 's0', 's1']);
+    expect(sets.length).toBe(MAX_SAVED_SERIES);
+    expect(parseHouse({ chartSets: 'none' }).chartSets).toEqual([]);
+  });
+
+  it('reads a set’s colours as the palette’s by name or hexes of its own, anything else the palette’s in its place (1.11)', () => {
+    const [set] = parseHouse({
+      chartSets: [
+        {
+          id: 'mixed',
+          name: 'Mixed',
+          colours: ['graph-12', 'accent', '#B45309', 'red', 'graph-13', null],
+        },
+      ],
+    }).chartSets;
+    // a palette's colour by its name follows the palette; Home Assistant's red, a series past twelve and nothing are
+    // the palette's own series colour in that place
+    expect(set?.colours).toEqual([
+      'graph-12',
+      'accent',
+      '#b45309',
+      'graph-4',
+      'graph-5',
+      'graph-6',
+    ]);
+    for (const ref of [
+      'accent',
+      'graph-1',
+      'graph-12',
+      'ok',
+      'warning',
+      'danger',
+      'notice',
+      'light',
+    ])
+      expect(isPaletteRef(ref), ref).toBe(true);
+    for (const ref of ['solar', 'grid', 'battery', 'water', 'gas', 'home'])
+      expect(isPaletteRef(ref), ref).toBe(true);
+    for (const word of ['graph-0', 'graph-13', 'house', 'Accent', 'primary', 'red', '#b45309'])
+      expect(isPaletteRef(word), word).toBe(false);
   });
 
   it('reads the wall settings field by field, each broken one as its default', () => {

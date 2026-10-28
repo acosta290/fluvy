@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE_MODES, PALETTE_NAMES } from '../config.js';
-import { fromHex, hueDistance, isHex, minPairwiseDeltaE } from '../color/index.js';
+import { contrastRatio, fromHex, hueDistance, isHex, minPairwiseDeltaE } from '../color/index.js';
 import { derivePalette, GATES, STATE_HUES } from '../build/derive.js';
 import { derivePalettes } from '../build/palettes.js';
 import { brandColour, checkContrast, checkStructure, collectHexValues } from '../emit/contrast.js';
@@ -157,6 +157,23 @@ describe('graph harmony', () => {
         }
       }
     }
+  });
+
+  it('gives a chart its six series: the first six, each at the icon’s contrast on the card, apart by the ΔE gate', () => {
+    // the chart engine draws several series in --fluvy-graph-1 … 6 (1.11): the contract it is built on
+    eachMode((name, mode) => {
+      const colors = palettes.find((palette) => palette.name === name)![mode];
+      const six = colors.graph.slice(0, 6);
+      expect(six, `${name}/${mode}`).toHaveLength(6);
+      for (const [index, hex] of six.entries())
+        expect(
+          contrastRatio(hex, colors.surface.card),
+          `${name}/${mode} series ${index + 1}`,
+        ).toBeGreaterThanOrEqual(GATES.icon);
+      expect(minPairwiseDeltaE(six), `${name}/${mode}`).toBeGreaterThanOrEqual(
+        GATES.graphSeparation,
+      );
+    });
   });
 
   it('keeps every series apart by at least the ΔE gate', () => {

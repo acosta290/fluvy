@@ -1,5 +1,5 @@
 import type { HomeAssistant } from '@fluvy/core';
-import { periodStart, type Period } from './period.js';
+import { rangeOf, stepFor, type Period, type Range, type StatRow, type Step } from './period.js';
 import type { PrefSource } from './prefs.js';
 
 /**
@@ -70,32 +70,27 @@ export function moneyOf(stats: CostStats, change: ReadonlyMap<string, number>): 
   return { cost, feedIn, net: cost - feedIn };
 }
 
-interface Row {
-  readonly start: number;
-  readonly change?: number | null;
-}
-
 const moneyCache = new Map<string, { at: number; promise: Promise<Map<string, number> | null> }>();
 
-/** The change of each money statistic over a period (signed), cached five minutes; null when unreadable. */
-export function fetchMoney(
+/** The change of each money statistic over a range (signed), cached five minutes; null when unreadable. */
+export function fetchMoneyRange(
   hass: HomeAssistant,
   stats: CostStats,
-  period: Period,
-  now: Date,
+  range: Range,
+  step: Step = stepFor(range),
 ): Promise<Map<string, number> | null> {
   const ids = unique([...stats.cost, ...stats.compensation]);
   if (!ids.length) return Promise.resolve(null);
-  const start = periodStart(hass, now, period);
-  const key = `${period}|${start.toISOString().slice(0, 13)}|${ids.join(',')}`;
+  const key = `${range.start.toISOString()}|${range.end?.toISOString() ?? ''}|${step}|${ids.join(',')}`;
   const hit = moneyCache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.promise;
   const promise = hass
-    .callWS<Record<string, Row[]>>({
+    .callWS<Record<string, StatRow[]>>({
       type: 'recorder/statistics_during_period',
-      start_time: start.toISOString(),
+      start_time: range.start.toISOString(),
+      ...(range.end ? { end_time: range.end.toISOString() } : {}),
       statistic_ids: ids,
-      period: period === 'day' ? 'hour' : 'day',
+      period: step,
       types: ['change'],
     })
     .then((rows) => changeOf(rows ?? {}, ids))
@@ -104,9 +99,24 @@ export function fetchMoney(
   return promise;
 }
 
+/** A period's money up to now: `fetchMoneyRange` in an hour's buckets for a day and a day's otherwise. */
+export const fetchMoney = (
+  hass: HomeAssistant,
+  stats: CostStats,
+  period: Period,
+  now: Date,
+): Promise<Map<string, number> | null> =>
+  fetchMoneyRange(hass, stats, rangeOf(hass, now, period), period === 'day' ? 'hour' : 'day');
+
+/** The money as a followed collection's statistics carry it (they hold every cost sensor the dashboard knows). */
+export const moneyFromStats = (
+  stats: CostStats,
+  rows: Readonly<Record<string, readonly StatRow[]>>,
+): Map<string, number> => changeOf(rows, unique([...stats.cost, ...stats.compensation]));
+
 /** Each statistic's change summed over its rows, as recorded (exported for the tests). */
 export function changeOf(
-  rows: Readonly<Record<string, readonly Row[]>>,
+  rows: Readonly<Record<string, readonly StatRow[]>>,
   ids: readonly string[],
 ): Map<string, number> {
   const out = new Map<string, number>();

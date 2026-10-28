@@ -162,6 +162,23 @@ const STATES = [
   }),
   state('sensor.phone_battery', '64', { unit_of_measurement: '%', device_class: 'battery' }),
   state('sun.sun', 'above_horizon', { next_rising: STAMP, next_setting: STAMP }),
+  // a FlightRadar24 sensor: the count as its state, the aircraft in `flights` (the Items card's stub)
+  state('sensor.flightradar24_current_in_area', '2', {
+    flights: [
+      { id: 'a1', callsign: 'KLM1412', altitude: 0, on_ground: 1, distance: 3.2 },
+      { id: 'b2', callsign: 'VLG8012', altitude: 4200, vertical_speed: -1100, distance: 8.7 },
+    ],
+  }),
+  // a Nordpool sensor: the price now as its state, the day's hours in `raw_today` (the Chart card's stub)
+  state('sensor.nordpool_kwh_es', '0.125', {
+    unit_of_measurement: 'EUR/kWh',
+    raw_today: Array.from({ length: 24 }, (_unused, h) => ({
+      start: `2026-10-17T${String(h).padStart(2, '0')}:00:00+00:00`,
+      end: `2026-10-17T${String(h + 1).padStart(2, '0')}:00:00+00:00`,
+      value: 0.1 + h / 100,
+    })),
+    raw_tomorrow: [],
+  }),
 ];
 
 const hass = {
@@ -200,7 +217,7 @@ const hass = {
 
 type CardClass = CustomElementConstructor & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;
-  getConfigForm?(): { schema: readonly FormItem[] };
+  editor(): Promise<{ getConfigForm(): { schema: readonly FormItem[] } }>;
 };
 type FormItem = {
   name: string;
@@ -265,6 +282,14 @@ const fields = (schema: readonly FormItem[]): FormItem[] =>
   schema.flatMap((item) => (item.schema ? fields(item.schema) : item.name ? [item] : []));
 
 /** Each card's variants from its stub: its editor's `variant` (or a tile's `size`), each written over the stub. */
+const forms = new Map(
+  await Promise.all(
+    (await catalogue()).map(
+      async ([tag, element]) =>
+        [tag, (await (element as unknown as CardClass).editor()).getConfigForm()] as const,
+    ),
+  ),
+);
 const variants = (await catalogue()).flatMap(([tag, element]) => {
   const card = element as unknown as CardClass;
   let stub: LovelaceCardConfig;
@@ -273,7 +298,7 @@ const variants = (await catalogue()).flatMap(([tag, element]) => {
   } catch {
     return [];
   }
-  const form = fields(card.getConfigForm?.().schema ?? []);
+  const form = fields(forms.get(tag)?.schema ?? []);
   const axis = form.find((f) => f.name === 'variant') ?? form.find((f) => f.name === 'size');
   const options = (axis?.selector?.select?.options ?? []).map((o) =>
     typeof o === 'string' ? o : o.value,

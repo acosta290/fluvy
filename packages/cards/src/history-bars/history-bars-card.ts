@@ -14,16 +14,7 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 
-import {
-  head,
-  ico,
-  icon,
-  readout,
-  scrub,
-  ScrubController,
-  type IconRef,
-  type Tone,
-} from '@fluvy/ui';
+import { head, ico, icon, readout, type IconRef, type Tone } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
@@ -38,17 +29,32 @@ import {
 
 import {
   AXIS_GAP,
-  axesStyles,
+  barGeometry,
+  barPath,
+  chartDefaultsFor,
+  chartSection,
+  chartStyles,
+  drawChart,
+  gridClass,
   gridLines,
+  labelled,
+  labelsApart,
+  niceTicks,
+  styleOf,
+  scrub,
+  ScrubController,
+  thinStep,
   tickLabels,
   UNIT_COLUMN,
   unitLabel,
-} from '../energy/axes.js';
+  type Placed,
+  type ResolvedStyle,
+} from '../chart/engine/index.js';
 import { HeadFit } from '../energy/head.js';
+import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
-import { scaleFor, toBase, type Scale } from '../gauge/units.js';
 import { Card, HEAD_BASE } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
@@ -62,17 +68,22 @@ import {
   editorWord,
   entityField,
   fieldRow,
+  hasLadder,
   iconField,
   numberField,
+  numberFields,
   selectField,
   showIconField,
   textField,
+  unitChoicesOf,
   type FormLabeler,
 } from '../shared/form.js';
 import { TextRuler } from '../shared/fit.js';
 import { statsColumns, statsSize, type StatText } from '../shared/readouts.js';
 import type { EditorDefaults, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
 import { TemplateTexts } from '../shared/templates.js';
+import { scaleFor, toBase, type Scale } from '../shared/units.js';
+import { convert, convertible } from './units.js';
 import { Ticker } from '../shared/ticker.js';
 import {
   additive,
@@ -116,24 +127,19 @@ import {
 } from './facts.js';
 import { countedKey, fetchCounted, withLive, type Counted, type Reading } from './live.js';
 import { Reads } from './reads.js';
-import {
-  barGeometry,
-  barPath,
-  labelled,
-  labelsApart,
-  niceTicks,
-  thinStep,
-  typical,
-  type Placed,
-} from './scale.js';
-import { convert, convertible } from './units.js';
+import { typical } from './scale.js';
 
 const strings = words('history-bars');
 
 export type DateStyle = 'date' | 'weekday' | 'short';
 export type BarsVariant = 'full' | 'compact' | 'mini';
 
-export interface HistoryBarsCardConfig extends FluvyCardConfig {
+/**
+ * The chart keys (`shared/chart-config.ts`): the bars' style — classic, bars or columns; the mini row's sparkline classic
+ * or minimal —, the bars a highlight lights, and motion. The scale, the gridlines and the values are the card's own.
+ */
+export interface HistoryBarsCardConfig
+  extends FluvyCardConfig, Pick<ChartKeys, 'chart' | 'highlight' | 'animate'> {
   /** Under the name; empty, "Last 7 days". */
   subtitle?: string;
   /** How many bars (days, weeks or months by `period`): 1–92, 7 by default. */
@@ -218,6 +224,20 @@ const STILL = 8;
 /** A press held longer than this is a reading of the chart, not a tap on it. */
 const TAP = 500;
 
+/**
+ * What the bars are drawn in: classic (1.10's soft gradient), bars (the ink, the highlight's lit and the rest quiet) or
+ * columns, rounded as the house's bars are; the mini row's sparkline classic or a minimal line. The scale, the
+ * gridlines and the values are the card's own keys.
+ */
+const BARS_CAPS: ChartCaps = {
+  bars: true,
+  styles: ['classic', 'bars', 'columns'],
+  keys: ['highlight', 'animate'],
+};
+const MINI_CAPS: ChartCaps = { styles: ['classic', 'minimal'], keys: ['animate'] };
+const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
+  data['variant'] === 'mini' ? MINI_CAPS : BARS_CAPS;
+
 /** A fact as the card says it: its words and figure, its circle, what a tap does. */
 interface FactCell extends StatText {
   readonly item: FactItem;
@@ -257,8 +277,8 @@ let gradients = 0;
 /** The words of a fact's own fields; the shared item words name the rest. */
 const OWN_LABELS: Readonly<Record<string, MessageKey>> = {
   kind: 'history-bars.editor_kind',
-  unit: 'history-bars.editor_unit',
-  decimals: 'history-bars.editor_decimals',
+  unit: 'editor.unit',
+  decimals: 'editor.decimals',
   factor: 'history-bars.editor_factor',
   of: 'history-bars.editor_of',
   template: 'history-bars.editor_template',
@@ -365,7 +385,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     energyStyles,
-    axesStyles,
+    chartStyles,
     css`
       /* the readouts: beside the title (right-aligned, a divider between them), or on their own row under the head */
       .hb-readouts {
@@ -620,6 +640,15 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       .hb-spark .fv-vbar.is-current {
         fill-opacity: 0.5;
       }
+      /* the minimal line's dot stands proud of the row by its radius at the end */
+      .hb-spark .fv-curve {
+        overflow: visible;
+      }
+      /* still: the bars stand without growing in */
+      .is-still .hb-bar,
+      .is-still .fv-vbar {
+        animation: none;
+      }
       .fv-card.is-off .hb-chart,
       .fv-card.is-off .hb-spark {
         --ink: var(--fluvy-text-disabled);
@@ -645,8 +674,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   /** The sensors a share is of, by id: their bars (the same; undefined while they load) and their count. */
   declare shares_: Readonly<Record<string, ShareBars>>;
 
-  /** The bar under the pointer (its index); null: the whole period. */
-  private readonly scrubber = new ScrubController(this, (fraction) => this.barAt(fraction));
+  /** Where the chart is read, on the middle of the bar there (a fraction of its width); null: the whole period. */
+  private readonly scrubber = new ScrubController(this, (fraction) => this.barMiddle(fraction));
   /** The card's sensor's reads, and those of each sensor a share is of. */
   private readonly own: Sensor = { bars: new Reads(), counting: new Reads() };
   /** The card's sensor while it is missing from the house: as the recorder describes it. */
@@ -699,6 +728,9 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     'facts',
     'co2_factor',
     'price',
+    'chart',
+    'highlight',
+    'animate',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
@@ -745,7 +777,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       reset: 'auto',
       source: 'auto',
       include_today: false,
-      decimals: 1,
+      decimals: '1',
+      unit: 'auto',
       date_format: 'date',
       show_head: true,
       show_values: true,
@@ -756,8 +789,11 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       co2_factor: FACTORS.co2,
       head: defaultHead(shown, additive(shown, resets, period)),
       facts: [...DEFAULT_FACTS],
+      ...chartDefaultsFor(config, capsIn(config)),
     };
   };
+  /** The units the editor offers are the sensor's class's. */
+  static override choices = unitChoicesOf;
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -772,7 +808,6 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           wordsField('source', SOURCES, SOURCE_WORDS),
           selectField('date_format', ['date', 'weekday', 'short']),
         ),
-        fieldRow(numberField('decimals', 0, 3), textField('unit')),
         fieldRow(accentField('negative_color'), accentField('current_color')),
         fieldRow(boolField('include_today'), boolField('show_head')),
         fieldRow(boolField('show_values'), boolField('show_axis')),
@@ -782,6 +817,10 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         { name: 'head', selector: { object: {} } },
         { name: 'facts', selector: { object: {} } },
         fieldRow(numberField('co2_factor', 0, 2, 0.01), numberField('price', 0, 100, 0.001)),
+        // the bars' style, or the mini row's sparkline's
+        chartSection([BARS_CAPS, MINI_CAPS], capsIn),
+        // the figures' unit and decimals: one decimal by default, so a column of bars reads evenly
+        numberFields({ when: hasLadder, decimals: ['0', '1', '2', '3'] }),
         actionFields(),
       ],
       ...editorLabels(
@@ -797,8 +836,6 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           negative_color: 'editor_negative_color',
           current_color: 'editor_current_color',
           include_today: 'editor_include_today',
-          decimals: 'editor_decimals',
-          unit: 'editor_unit',
           show_head: 'editor_show_head',
           show_values: 'editor_show_values',
           show_axis: 'editor_show_axis',
@@ -848,6 +885,11 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   private get variant(): BarsVariant {
     const v = this.config?.variant;
     return v === 'compact' || v === 'mini' ? v : 'full';
+  }
+
+  /** The chart's style: the card's own, else the house's — of those its variant draws, else classic. */
+  private get chartStyle(): ResolvedStyle {
+    return styleOf(this.config, this.variant === 'mini' ? MINI_CAPS : BARS_CAPS);
   }
   private get period(): Period {
     const p = this.config?.period;
@@ -1309,7 +1351,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
 
     // the readout under the pointer: the bar's day (the one in progress by its word, "Today") and its value, in
     // place of the row
-    const hovered = record && buckets.length ? this.scrubber.value : null;
+    const read = this.scrubber.value;
+    const hovered = record && buckets.length && read !== null ? this.barAt(read) : null;
     const hoveredBucket = hovered === null ? undefined : buckets[hovered];
     const hoveredValue = hovered === null ? null : (values[hovered] ?? null);
     const shownReadouts: StatText[] = hoveredBucket
@@ -1564,7 +1607,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           ? loading
             ? html`<div class="fv-skeleton hb-spark"></div>`
             : html`<div
-                class="hb-spark fv-tone--${tone} ${tap ? 'hb-spark--tap' : ''}"
+                class="hb-spark fv-tone--${tone} ${tap ? 'hb-spark--tap' : ''} ${this.chartStyle.animate ? '' : 'is-still'}"
                 @click=${tap ?? nothing}
               >
                 ${this.renderSpark(values, running, Math.floor(sparkWidth / 4) * 4)}
@@ -1584,6 +1627,15 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     width: number,
   ): TemplateResult {
     const h = 48;
+    const style = this.chartStyle;
+    // minimal: a thin line through the bars' values ending in its dot, a gap where one is missing
+    if (style.preset === 'minimal')
+      return drawChart({
+        frame: { width, height: h, headroom: 4, pad: 4 },
+        series: [{ values }],
+        style,
+        id: `${this.gradient}-spark`,
+      });
     const gap = 4;
     const count = Math.max(1, values.length);
     const bar = Math.max(2, Math.floor((width - gap * (count - 1)) / count));
@@ -1613,6 +1665,13 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     return Math.max(0, Math.min(count - 1, Math.floor(x / slot)));
   }
 
+  /** The middle of the bar at `fraction` of the chart's width, as a fraction of it: where a reading snaps to. */
+  private barMiddle(fraction: number): number {
+    const { inset, slot, count } = this.plot;
+    const width = this.contentWidth;
+    return count && width > 0 ? (inset + (this.barAt(fraction) + 0.5) * slot) / width : fraction;
+  }
+
   /** A press on the chart begins: where and when, for telling a tap from a reading. */
   private readonly onPress = (event: PointerEvent): void => {
     this.press = { x: event.clientX, y: event.clientY, at: event.timeStamp, moved: false };
@@ -1636,44 +1695,14 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   };
 
   /**
-   * The keys that read the chart without a pointer: ← → a bar, Home and End its ends, Escape lets go; Enter and Space
-   * tap a chart that is the card's button (no head).
+   * The keys that read the chart without a pointer, the engine's (← → a bar, Shift five, Home and End its ends,
+   * Escape lets go); Enter and Space tap a chart that is the card's button (no head).
    */
   private readonly onKey = (event: KeyboardEvent): void => {
     if ((event.key === 'Enter' || event.key === ' ') && !this.shows('show_head')) {
       event.preventDefault();
       this.tap();
-      return;
-    }
-    const count = this.plot.count;
-    if (!count) return;
-    const from = this.scrubber.value ?? count;
-    let next: number | null;
-    switch (event.key) {
-      case 'ArrowLeft':
-        next = Math.max(0, from - 1);
-        break;
-      case 'ArrowRight':
-        next = Math.min(count - 1, from + 1);
-        break;
-      case 'Home':
-        next = 0;
-        break;
-      case 'End':
-        next = count - 1;
-        break;
-      case 'Escape':
-        if (this.scrubber.value === null) return;
-        next = null;
-        break;
-      default:
-        return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    if (next === this.scrubber.value) return;
-    this.scrubber.value = next;
-    this.requestUpdate();
+    } else if (this.plot.count) this.scrubber.key(event, this.plot.slot / this.contentWidth);
   };
 
   /**
@@ -1743,13 +1772,31 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     while (dateStep < count && !labelsApart(placedDates())) dated = labelled(count, ++dateStep);
     const dateY = top + plotHeight + 8 + 12;
 
-    // the colours of their own: the bars below zero, the one in progress (each its gradient, as the bars' is)
+    // the colours of their own: the bars below zero, the one in progress (each its gradient, as the bars' is, in
+    // classic; their colour, flat, in a style)
+    const style = this.chartStyle;
+    const classic = style.preset === 'classic';
     const negative = this.accents.item(this.config?.negative_color);
     const current = this.accents.item(this.config?.current_color);
     const own = (accent: string | undefined, id: string) =>
       accent
         ? svg`<linearGradient id=${id} x1="0" y1="0" x2="0" y2="1" data-accent=${accent} style="--ink:var(--fluvy-accent)">${this.stops()}</linearGradient>`
         : nothing;
+    // the bars a highlight lights (the bars style's): the highest, the lowest, both, or the one in progress; the
+    // rest go quiet
+    const pick = style.highlight;
+    const at = (sign: 1 | -1): number =>
+      values.reduce<number>(
+        (best, v, i) =>
+          v !== null && (best < 0 || sign * v > sign * (values[best] as number)) ? i : best,
+        -1,
+      );
+    const [highest, lowest] = [at(1), at(-1)];
+    const lit = (i: number): boolean =>
+      pick === 'none' ||
+      ((pick === 'max' || pick === 'both') && i === highest) ||
+      ((pick === 'min' || pick === 'both') && i === lowest) ||
+      (pick === 'current' && i === running);
 
     const drawn = buckets.map((_bucket, i) => {
       const v = values[i] ?? null;
@@ -1761,14 +1808,17 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       const now = running === i ? 'is-current' : '';
       const accent = now ? current : below ? negative : undefined;
       const fill = accent
-        ? `;--hb-fill:url(#${this.gradient}-${now ? 'current' : 'negative'});--hb-edge:var(--fluvy-accent)`
-        : '';
-      // a bar is at least 2 px tall, rounded at its far end and flat on the zero line; a bucket with nothing in it
-      // is a quiet 2 px stub on the line
+        ? `;--hb-fill:${classic ? `url(#${this.gradient}-${now ? 'current' : 'negative'})` : 'var(--fluvy-accent)'};--hb-edge:var(--fluvy-accent)`
+        : lit(i)
+          ? ''
+          : ';--hb-fill:var(--fluvy-border)';
+      // a bar is at least 2 px tall, rounded at its far end and flat on the zero line (a style's at both ends, as the
+      // house's bars are); a bucket with nothing in it is a quiet 2 px stub on the line
       const tall = empty ? 0 : Math.max(2, Math.round(Math.abs(y(v) - zero)));
+      const rounded = !classic && style.caps === 'both' ? 'both' : below ? 'bottom' : 'top';
       const rect = empty
         ? svg`<rect class="hb-bar is-empty ${hover} ${now}" x=${x} y=${(zero - 2).toFixed(1)} width=${bar} height="2" rx=${Math.min(1, radius)}></rect>`
-        : svg`<path class="hb-bar ${below ? 'is-negative' : ''} ${hover} ${now}" data-accent=${accent ?? nothing} d=${barPath(cx - bar / 2, below ? zero : zero - tall, bar, tall, radius, below ? 'bottom' : 'top')} style="--bar-delay:${i * 18}ms${fill}"></path>`;
+        : svg`<path class="hb-bar ${below ? 'is-negative' : ''} ${hover} ${now}" data-accent=${accent ?? nothing} d=${barPath(cx - bar / 2, below ? zero : zero - tall, bar, tall, radius, rounded)} style="--bar-delay:${i * 18}ms${fill}"></path>`;
       const label =
         valuesHold && !empty
           ? svg`<text class="hb-value" x=${this.clampedX(cx, this.ruler.width('hb-value', valueTexts[i] ?? ''), inset, width)} y=${below ? zero + tall + 13 : zero - tall - 4} text-anchor="middle">${valueTexts[i]}</text>`
@@ -1780,7 +1830,11 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       return svg`${rect}${label}${date}`;
     });
 
-    const grid = showGrid ? gridLines(ticks.ticks.map(y), inset, width) : nothing;
+    // classic's dashes, a style's hairlines (none where the house draws none)
+    const grid =
+      showGrid && (classic || style.grid.axes !== 'none')
+        ? gridLines(ticks.ticks.map(y), inset, width, gridClass(style))
+        : nothing;
     const axis = showAxis
       ? svg`${tickLabels(
           ticks.ticks.map((t, i) => [y(t), tickTexts[i] ?? ''] as const),
@@ -1795,7 +1849,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // without a head the chart is the card's button: a still tap on it runs the card's tap
     const tap = !this.shows('show_head');
     return html`<div
-      class="hb-chart fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''} ${tap ? 'hb-chart--tap' : ''}"
+      class="hb-chart fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''} ${tap ? 'hb-chart--tap' : ''} ${style.animate ? '' : 'is-still'}"
       role=${tap ? 'button' : 'img'}
       aria-label=${reading}
       tabindex="0"
@@ -1806,13 +1860,17 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       ${scrub(this.scrubber)}
     >
       <svg width=${width} height=${height} viewBox="0 0 ${width} ${height}" data-measure="drawn">
-        <defs>
-          <linearGradient id=${this.gradient} x1="0" y1="0" x2="0" y2="1">
-            ${this.stops()}
-          </linearGradient>
-          ${own(negative, `${this.gradient}-negative`)} ${own(current, `${this.gradient}-current`)}
-        </defs>
-        <g style="--hb-fill:url(#${this.gradient})">${grid}${axis}${drawn}</g>
+        ${
+          classic
+            ? svg`<defs>
+                <linearGradient id=${this.gradient} x1="0" y1="0" x2="0" y2="1">${this.stops()}</linearGradient>
+                ${own(negative, `${this.gradient}-negative`)} ${own(current, `${this.gradient}-current`)}
+              </defs>`
+            : nothing
+        }
+        <g style="--hb-fill:${classic ? `url(#${this.gradient})` : 'var(--ink)'}">
+          ${grid}${axis}${drawn}
+        </g>
       </svg>
     </div>`;
   }

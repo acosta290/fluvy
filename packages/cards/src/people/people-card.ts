@@ -7,7 +7,6 @@ import {
   type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import {
@@ -23,27 +22,13 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { agoShort } from '../helpers/datetime.js';
 import { HeadFit } from '../energy/head.js';
 import { mapHead, mapRow } from '../shared/map-head.js';
-import { Card, type BaseKey } from '../shared/base.js';
-import {
-  accentField,
-  actionFields,
-  boolField,
-  editorLabels,
-  emptyFields,
-  entitiesField,
-  entityField,
-  fieldRow,
-  iconField,
-  selectField,
-  showIconField,
-  textField,
-} from '../shared/form.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { Card, type CardEditor } from '../shared/base.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { changedAt, sinceIds } from '../shared/since.js';
 import { renderAvatar } from '../shared/avatar.js';
 import { charging, personBattery, type BatterySource } from '../shared/battery.js';
 import { EMPTY, entryCount, HEAD, rowsOf, ROW } from '../shared/heights.js';
-import { EMPTY_KEYS, emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('people');
 
@@ -56,6 +41,8 @@ export interface PersonItem {
   /** The battery sensor of their phone (shown whatever `show_battery` says); else found from their tracker. */
   readonly battery?: string;
   readonly color?: string;
+  /** Where their last change is read from (#67): a timestamp sensor, or `attribute:<name>` of their own; else Home Assistant's. */
+  readonly since?: string;
   /** What a tap on them does (default: their details); a page of their own is `navigate`. */
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
@@ -192,69 +179,13 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     this.broken_ = new Set();
   }
 
-  /** The people have no entity of their own: the head's icon and the card's colour are the base fields it honours. */
-  static override base: readonly BaseKey[] = [
-    'entities',
-    'icon',
-    'color',
-    'card_color',
-    'tap_action',
-    'hold_action',
-    'show_icon',
-  ];
-  static override keys = configKeys<PeopleCardConfig>()([
-    'title',
-    'people',
-    'variant',
-    'map_path',
-    'show_zone',
-    'show_time',
-    'show_battery',
-    ...EMPTY_KEYS,
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'people',
-      alias: 'entities',
-      title: 'editor.people',
-      domains: ['person', 'device_tracker'],
-      keys: ['entity', 'name', 'battery', 'color', 'tap_action', 'hold_action'],
-      schema: [
-        entityField(['person', 'device_tracker']),
-        fieldRow(textField('name'), entityField(['sensor'], 'battery', false)),
-        accentField(),
-        actionFields(),
-      ],
-    },
-  ];
+  static override editor(): Promise<CardEditor> {
+    return import('./people-editor.js');
+  }
   static override aliases: AliasSpec = {
     keys: [{ from: 'layout', to: 'variant' }],
     items: { people: ITEM_ALIASES },
   };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = () => ({
-    show_battery: false,
-    variant: 'grid',
-    show_zone: true,
-    show_time: true,
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entitiesField('entities', ['person', 'device_tracker'], true),
-        fieldRow(textField('title'), iconField()),
-        showIconField(),
-        fieldRow(selectField('variant', ['grid', 'rows']), textField('map_path')),
-        fieldRow(boolField('show_zone'), boolField('show_time')),
-        boolField('show_battery'),
-        accentField(),
-        accentField('card_color', { none: true }),
-        emptyFields(),
-        actionFields(),
-      ],
-      ...editorLabels(s, { map_path: 'editor.map_path' }, {}),
-    };
-  }
 
   static getStubConfig(_hass: unknown, entities: readonly string[]): PeopleCardConfig {
     return {
@@ -283,11 +214,16 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
   }
 
   /** Watched: the people and the batteries shown beside them. */
+  /** The people, their phones' batteries, and what their last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return this.items().flatMap((item) => {
-      const battery = this.batteryOf(item);
-      return battery ? [item.entity, battery.entity] : [item.entity];
-    });
+    const items = this.items();
+    return [
+      ...items.flatMap((item) => {
+        const battery = this.batteryOf(item);
+        return battery ? [item.entity, battery.entity] : [item.entity];
+      }),
+      ...sinceIds(items),
+    ];
   }
 
   override getCardSize(): number {
@@ -316,7 +252,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
           ? charge.attr<number | null>(source.attribute)
           : charge.number;
     const presence: Presence = !usable ? 'off' : view.state === 'home' ? 'home' : 'away';
-    const changed = view.stateObj ? new Date(view.stateObj.last_changed) : null;
+    const changed = changedAt(this.hass, view, item.since);
     const picture = usable ? (view.attr<string | null>('entity_picture') ?? '') : '';
     return {
       item,

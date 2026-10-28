@@ -9,7 +9,13 @@ import {
 } from '@fluvy/core';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
 import { normaliseConfig, type AliasSpec } from './config.js';
-import { editorWord, type FormLabeler, formLabels, visibleFields } from './form.js';
+import {
+  editorWord,
+  type FormLabeler,
+  formLabels,
+  NUMBER_DEFAULTS,
+  visibleFields,
+} from './form.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
 export interface RowsListSpec {
@@ -51,6 +57,11 @@ export interface RowsListSpec {
    * out of the editor while it cannot, its entries kept in the config.
    */
   readonly when?: HaFormSchemaItem['when'];
+  /**
+   * The options of an item's selects, asked of the item as a card's are of its config (a legend entry's units, of its
+   * own sensor's class): a list that says none offers the card's.
+   */
+  readonly choices?: EditorChoices;
 }
 
 type Labeler = FormLabeler;
@@ -86,6 +97,7 @@ export type EditorChoices = (
   config: LovelaceCardConfig,
   hass: HomeAssistant | undefined,
 ) => Readonly<Record<string, readonly SelectOption[]>>;
+type Choices = ReturnType<EditorChoices>;
 
 /** A schema with the options of the selects `choices` names swapped in, through its grids; the rest is untouched. */
 export function withChoices(
@@ -133,23 +145,19 @@ export const itemLabels: Labeler = formLabels({
   presets: 'editor.presets',
 }).computeLabel;
 
-/** A colour picker with no default of its own (`accentField`'s `bulb`): none chosen, the item wears what it would. */
-const unchosen = (schema: HaFormSchemaItem): boolean => {
-  const picker = schema.selector?.['ui_color'] as { default_color?: string } | undefined;
-  return picker !== undefined && picker.default_color === undefined;
-};
+/** What a field says under itself where it has a word of its own (`helper`: an item's colour, what it wears while none is chosen). */
+const ownHelper = (schema: HaFormSchemaItem): string | undefined =>
+  schema.helper ? editorWord(schema.helper) : undefined;
 
 /**
- * What the editor says under an item's field: a row's second line takes a keyword or a template (its select), or
- * words of the person's own or a template (a text field); a colour none is chosen for by default, what the item wears
- * while none is.
+ * What the editor says under an item's field: its own word where it has one; a row's second line takes a keyword or
+ * a template (its select), or words of the person's own or a template (a text field).
  */
 export const itemHelpers: Labeler = (schema) =>
-  schema.name === 'secondary'
+  ownHelper(schema) ??
+  (schema.name === 'secondary'
     ? editorWord(schema.selector?.['select'] ? 'editor.secondary_helper' : 'editor.template_helper')
-    : unchosen(schema)
-      ? editorWord('editor.item_color_helper')
-      : undefined;
+    : undefined);
 
 /**
  * `ha-form` and `ha-sortable` belong to Home Assistant's editors; when a card's editor opens before
@@ -195,10 +203,21 @@ export const toItem = (raw: unknown, idKey: string, also: readonly string[] = []
   return null;
 };
 
-/** An item back to its config entry: empty fields dropped, an entity with nothing else goes back to its bare id — the config stays as small as the user wrote it. */
+/**
+ * A number's "Automatic" (`unit`, `decimals`: `NUMBER_DEFAULTS`): what the card does where its config says nothing,
+ * so it is dropped as an empty field is, never written.
+ */
+const automatic = (key: string, value: unknown): boolean =>
+  value === 'auto' && key in NUMBER_DEFAULTS;
+
+/** An item back to its config entry: empty fields (and a number's Automatic) dropped, an entity with nothing else goes back to its bare id — the config stays as small as the user wrote it. */
 export const compact = (item: Item, idKey: string): Entry => {
   const keys = Object.keys(item).filter(
-    (key) => item[key] !== undefined && item[key] !== '' && item[key] !== null,
+    (key) =>
+      item[key] !== undefined &&
+      item[key] !== '' &&
+      item[key] !== null &&
+      !automatic(key, item[key]),
   );
   return keys.length === 1 && keys[0] === idKey && idKey === 'entity'
     ? (item[idKey] as string)
@@ -245,10 +264,63 @@ export const withList = (
 const namesOf = (schema: readonly HaFormSchemaItem[]): string[] =>
   schema.flatMap((item) => (item.schema ? namesOf(item.schema) : [item.name]));
 
+/** The fields of a schema whose selector is a select, through its rows, each with the values it offers: words. */
+const selectsOf = (schema: readonly HaFormSchemaItem[]): Map<string, readonly unknown[]> =>
+  new Map(
+    schema.flatMap((item): Array<[string, readonly unknown[]]> => {
+      if (item.schema) return [...selectsOf(item.schema)];
+      const select = item.selector?.['select'] as { options?: readonly unknown[] } | undefined;
+      return select
+        ? [[item.name, (select.options ?? []).map((o) => (o as { value?: unknown })?.value ?? o)]]
+        : [];
+    }),
+  );
+
+/**
+ * A value as a select that offers `offered` words it: a number the YAML holds (`decimals: 2`, `columns: 2`) as "2",
+ * and a toggle the select grew out of (1.10's `show_grid: true`) as what it meant — on its Automatic, off its None.
+ */
+const wordOf = (value: unknown, offered: readonly unknown[] | undefined): unknown => {
+  if (offered && typeof value === 'number') return String(value);
+  if (offered?.includes('auto') && offered.includes('none') && typeof value === 'boolean')
+    return value ? 'auto' : 'none';
+  return value;
+};
+
+/** A form's values as its selects word them (`wordOf`). */
+const worded = (
+  entries: Readonly<Record<string, unknown>>,
+  selects: ReadonlyMap<string, readonly unknown[]>,
+): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(
+    Object.entries(entries).map(([key, value]) => [key, wordOf(value, selects.get(key))]),
+  );
+
+/**
+ * The form's value with a toggle's words (`wordOf`) back as the toggle the config holds: nothing is rewritten that the
+ * person did not pick.
+ */
+const unworded = (
+  value: Readonly<Record<string, unknown>>,
+  held: Readonly<Record<string, unknown>>,
+  selects: ReadonlyMap<string, readonly unknown[]>,
+): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      key,
+      typeof held[key] === 'boolean' && entry === wordOf(held[key], selects.get(key))
+        ? held[key]
+        : entry,
+    ]),
+  );
+
 const sameValue = (a: unknown, b: unknown): boolean =>
   a === b || JSON.stringify(a) === JSON.stringify(b);
 
-/** The form's value as config: a default the user left as it was stays out of the config (it was only shown). */
+/**
+ * The form's value as config: a default the user left as it was stays out of the config (it was only shown), and a
+ * number's Automatic chosen after a value takes the key out, as a cleared field does.
+ */
 export const withoutUntouchedDefaults = (
   value: Readonly<Record<string, unknown>>,
   config: LovelaceCardConfig,
@@ -256,7 +328,9 @@ export const withoutUntouchedDefaults = (
 ): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(value).filter(
-      ([key, entry]) => key in config || !(key in defaults) || !sameValue(entry, defaults[key]),
+      ([key, entry]) =>
+        !automatic(key, entry) &&
+        (key in config || !(key in defaults) || !sameValue(entry, defaults[key])),
     ),
   );
 
@@ -361,6 +435,11 @@ export class FluvyRowsEditor extends LitElement {
   /** The card's form as it stands (the fields that can act, the house's options), kept while it is the same, likewise. */
   private chosen:
     { readonly key: string; readonly schema: readonly HaFormSchemaItem[] } | undefined;
+  /** Each list's item forms with the house's options in them, by the form the list says an item shows, then by the options. */
+  private readonly itemForms = new WeakMap<
+    readonly HaFormSchemaItem[],
+    Map<string, readonly HaFormSchemaItem[]>
+  >();
 
   constructor() {
     super();
@@ -416,12 +495,35 @@ export class FluvyRowsEditor extends LitElement {
   private schema(
     spec: RowsEditorSpec,
     asked: Readonly<Record<string, unknown>>,
+    choices: Choices,
   ): readonly HaFormSchemaItem[] {
-    const choices = (this.config && spec.choices?.(this.config, this.hass)) || {};
     const shown = visibleFields(spec.schema, asked, this.hass);
     const key = JSON.stringify([choices, namesOf(shown)]);
     if (this.chosen?.key !== key) this.chosen = { key, schema: withChoices(shown, choices) };
     return this.chosen.schema;
+  }
+
+  /**
+   * An item's form: what its list says the item shows, its selects offering what the house has where the card says
+   * so (`choices`: a row's `since` from the house's timestamp sensors), or where the list asks the item (a legend
+   * entry's units) — the same array for the same answer, whichever item asks.
+   */
+  private itemSchema(
+    list: RowsListSpec,
+    item: Item,
+    choices: Choices,
+    key: string,
+  ): readonly HaFormSchemaItem[] {
+    const own = list.schemaOf?.(item) ?? list.schema;
+    const asked = list.choices?.(item as LovelaceCardConfig, this.hass);
+    const answer = asked ? JSON.stringify(asked) : key;
+    const forms = this.itemForms.get(own) ?? new Map<string, readonly HaFormSchemaItem[]>();
+    this.itemForms.set(own, forms);
+    const kept = forms.get(answer);
+    if (kept) return kept;
+    const schema = withChoices(own, asked ?? choices);
+    forms.set(answer, schema);
+    return schema;
   }
 
   /** The card's form edits everything but the lists: its value is the whole of that part (a cleared field is absent from it). */
@@ -435,7 +537,11 @@ export class FluvyRowsEditor extends LitElement {
         .filter((key): key is string => Boolean(key) && config[key as string] !== undefined)
         .map((key) => [key, config[key]]),
     );
-    const own = withoutUntouchedDefaults(event.detail.value, config, this.defaults());
+    const own = withoutUntouchedDefaults(
+      unworded(event.detail.value, config, selectsOf(this.spec?.schema ?? [])),
+      config,
+      this.defaults(),
+    );
     this.commit({ ...own, ...lists, type: config.type } as LovelaceCardConfig);
   }
 
@@ -539,7 +645,7 @@ export class FluvyRowsEditor extends LitElement {
     return helper;
   }
 
-  private renderList(list: RowsListSpec): TemplateResult {
+  private renderList(list: RowsListSpec, choices: Choices, key: string): TemplateResult {
     const items = this.items(list);
     return html`<div class="list">
       <p class="list__title">${this.t(list.title)}</p>
@@ -548,27 +654,28 @@ export class FluvyRowsEditor extends LitElement {
         @item-moved=${(event: CustomEvent<{ oldIndex: number; newIndex: number }>) => this.onMove(list, event)}
       >
         <div class="items">
-          ${items.map(
-            (item, index) =>
-              html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
-                <div class="handle" aria-hidden="true">
-                  <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
-                </div>
-                <ha-form
-                  .hass=${this.hass}
-                  .data=${item}
-                  .schema=${list.schemaOf?.(item) ?? list.schema}
-                  .computeLabel=${this.labeler(list)}
-                  .computeHelper=${this.helper(list)}
-                  @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
-                ></ha-form>
-                <ha-icon-button
-                  .label=${this.t('editor.remove')}
-                  @click=${() => this.removeItem(list, index)}
-                  ><ha-icon icon="mdi:close"></ha-icon
-                ></ha-icon-button>
-              </div>`,
-          )}
+          ${items.map((item, index) => {
+            const schema = this.itemSchema(list, item, choices, key);
+            // an item's selects read a number its YAML holds as their word, as the card's form does (`decimals: 2`)
+            return html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
+              <div class="handle" aria-hidden="true">
+                <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
+              </div>
+              <ha-form
+                .hass=${this.hass}
+                .data=${worded(item, selectsOf(schema))}
+                .schema=${schema}
+                .computeLabel=${this.labeler(list)}
+                .computeHelper=${this.helper(list)}
+                @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
+              ></ha-form>
+              <ha-icon-button
+                .label=${this.t('editor.remove')}
+                @click=${() => this.removeItem(list, index)}
+                ><ha-icon icon="mdi:close"></ha-icon
+              ></ha-icon-button>
+            </div>`;
+          })}
         </div>
       </ha-sortable>
       <div class="add">
@@ -597,28 +704,31 @@ export class FluvyRowsEditor extends LitElement {
         ),
       );
     const defaults = this.defaults();
-    const data = { ...withoutLists(defaults), ...withoutLists(this.config) };
+    const data = worded(
+      { ...withoutLists(defaults), ...withoutLists(this.config) },
+      selectsOf(spec.schema),
+    );
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };
-    // the card's helpers are told what the form shows and the house (one that reads the sensor picked)
+    // the house's options for the selects, asked once for the card's form and for its lists' items
+    const choices = spec.choices?.(this.config, this.hass) ?? {};
+    const key = JSON.stringify(choices);
+    // the card's helpers are told what the form shows and the house (one that reads the sensor picked); a field with
+    // a word of its own says it where the card says nothing
     const own = spec.computeHelper;
     return html`
       <ha-form
         .hass=${this.hass}
         .data=${data}
-        .schema=${this.schema(spec, asked)}
+        .schema=${this.schema(spec, asked, choices)}
         .computeLabel=${spec.computeLabel}
-        .computeHelper=${
-          own
-            ? (schema: HaFormSchemaItem, localize: (key: string) => string) =>
-                own(schema, localize, data, this.hass)
-            : undefined
-        }
+        .computeHelper=${(schema: HaFormSchemaItem, localize: (key: string) => string) =>
+          own?.(schema, localize, data, this.hass) ?? ownHelper(schema)}
         @value-changed=${this.onCard}
       ></ha-form>
       ${spec.lists
         .filter((list) => list.when?.(asked, this.hass) ?? true)
-        .map((list) => this.renderList(list))}
+        .map((list) => this.renderList(list, choices, key))}
     `;
   }
 }

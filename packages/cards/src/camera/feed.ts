@@ -201,7 +201,8 @@ export class CameraFeed implements ReactiveController {
     this.inFlight = 0;
     if (this.stamp && !this.stale) {
       this.stale = true;
-      this.host.requestUpdate();
+      // a host that left the page draws nothing: the mark waits for its return
+      if (this.host.isConnected) this.host.requestUpdate();
     }
   }
 

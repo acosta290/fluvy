@@ -15,7 +15,7 @@ import { catalogue } from '../index.js';
 const CATALOGUE = await catalogue();
 
 type CardClass = CustomElementConstructor & {
-  base?: readonly string[];
+  editor(): Promise<{ readonly base: readonly string[] }>;
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;
 };
 type CardElement = HTMLElement & {
@@ -203,8 +203,15 @@ function click(el: HTMLElement): void {
   );
 }
 
-const offers = (card: CardClass, key: string): boolean => card.base?.includes(key) ?? false;
-const cards = CATALOGUE.map(([tag, element]) => ({ tag, card: element as unknown as CardClass }));
+const cards = await Promise.all(
+  CATALOGUE.map(async ([tag, element]) => {
+    const card = element as unknown as CardClass;
+    return { tag, card, base: (await card.editor()).base };
+  }),
+);
+/** Whether a card's editor offers an action: one of the base fields it honours. */
+const offers = (key: string) => (entry: { readonly base: readonly string[] }) =>
+  entry.base.includes(key);
 
 describe('every action a card offers has somewhere to be reached (#42)', () => {
   afterEach(() => {
@@ -213,7 +220,7 @@ describe('every action a card offers has somewhere to be reached (#42)', () => {
     vi.useRealTimers();
   });
 
-  it.each(cards.filter(({ card }) => offers(card, 'tap_action')))(
+  it.each(cards.filter(offers('tap_action')))(
     '$tag: a named surface takes the tap',
     async ({ tag, card }) => {
       const root = await drawn(tag, card, { tap_action: TAP, hold_action: HOLD });
@@ -231,7 +238,7 @@ describe('every action a card offers has somewhere to be reached (#42)', () => {
     },
   );
 
-  it.each(cards.filter(({ card }) => offers(card, 'hold_action')))(
+  it.each(cards.filter(offers('hold_action')))(
     '$tag: a surface takes the hold',
     async ({ tag, card }) => {
       const root = await drawn(tag, card, { tap_action: TAP, hold_action: HOLD });
