@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.2] — 2026-10-28
+
 ### Fixed
 
 - The integration loads on Home Assistant 2026.11, where it stopped with an `ImportError`: it took the themes
