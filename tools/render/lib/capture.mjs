@@ -65,7 +65,8 @@ const pngWidth = (png) => png.readUInt32BE(16);
 /**
  * Encodes the frames: an H.264 mp4 (every frame, at the captured size) and a GIF (`gifFps`, `gifWidth` pixels wide,
  * a palette computed from what changes). `crop` is `{ x, y, width, height }` in frame pixels; the last frame is
- * held `tailMs`. Throws when the GIF is over `maxGifKb`.
+ * held `tailMs`. `hairline` (a colour, `0xRRGGBB`) draws a screen's one-pixel edge round the GIF, inside its width.
+ * Throws when the GIF is over `maxGifKb`.
  */
 export async function encode({
   frames,
@@ -76,8 +77,9 @@ export async function encode({
   fps = 30,
   gifFps = 20,
   gifWidth,
-  maxGifKb = 4096,
+  maxGifKb = 600,
   tailMs = 600,
+  hairline,
 }) {
   if (frames.length < 2) throw new Error(`only ${frames.length} frame(s) were captured`);
   const dir = join(frames[0], '..');
@@ -121,7 +123,9 @@ export async function encode({
     outputs.push(mp4);
   }
   if (gif) {
-    const width = even(gifWidth ?? crop.width);
+    const edge = hairline ? 1 : 0;
+    const width = even(gifWidth ?? crop.width) - 2 * edge;
+    const frame = hairline ? `,pad=iw+2:ih+2:1:1:color=${hairline}` : '';
     await run('ffmpeg', [
       '-y',
       '-loglevel',
@@ -133,7 +137,7 @@ export async function encode({
       '-i',
       concat,
       '-filter_complex',
-      `fps=${gifFps},${box},scale=${width}:-2:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+      `fps=${gifFps},${box},scale=${width}:-2:flags=lanczos${frame},split[a][b];[a]palettegen=max_colors=256:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
       '-loop',
       '0',
       gif,

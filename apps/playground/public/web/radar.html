@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lightning</title>
+    <style>
+      /* a map site as the card frames one: its own ground, its own type, no theme of ours (drawn, never fetched) */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #c9dbe6;
+        font: 600 12px/1 system-ui, sans-serif;
+        color: #26323a;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .count,
+      .legend {
+        position: fixed;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: rgb(255 255 255 / 0.88);
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+      }
+      .count {
+        top: 10px;
+        left: 10px;
+      }
+      .legend {
+        left: 10px;
+        bottom: 10px;
+        font-weight: 500;
+      }
+      .legend i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <svg viewBox="120 52 448 252" preserveAspectRatio="xMidYMid slice" aria-label="A map of lightning strikes">
+      <defs>
+        <radialGradient id="cell">
+          <stop offset="0" stop-color="#f6c64a" stop-opacity="0.45" />
+          <stop offset="1" stop-color="#f6c64a" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <!-- land, borders and rivers: a coast of its own, no real country -->
+      <path
+        fill="#f2eee6"
+        stroke="#b9c9d2"
+        stroke-width="1.5"
+        d="M0 40 C60 30 110 60 150 48 C200 34 230 70 280 66 C330 62 350 30 400 34 C450 38 480 70 530 62 C580 54 610 70 640 64 L640 360 L470 360 C460 330 430 320 420 296 C410 270 440 250 430 226 C418 200 380 214 360 236 C340 258 350 300 320 316 C292 330 270 300 250 310 C226 322 236 352 220 360 L0 360 Z"
+      />
+      <path
+        fill="#f2eee6"
+        stroke="#b9c9d2"
+        stroke-width="1.5"
+        d="M520 300 C540 284 572 290 584 306 C596 322 576 342 552 340 C528 338 506 318 520 300 Z"
+      />
+      <g fill="none" stroke="#d9cfbf" stroke-width="1" stroke-dasharray="3 3">
+        <path d="M150 48 C160 110 120 160 140 220 C150 260 120 310 130 360" />
+        <path d="M280 66 C290 120 330 150 320 200 C312 236 340 250 360 236" />
+        <path d="M400 34 C396 90 440 120 430 170 C424 200 432 214 430 226" />
+        <path d="M140 220 C200 210 250 240 320 200" />
+        <path d="M430 170 C480 180 540 150 640 170" />
+      </g>
+      <g fill="none" stroke="#a9c6d6" stroke-width="1.2">
+        <path d="M60 360 C80 300 70 250 110 200 C140 160 130 120 170 90" />
+        <path d="M520 360 C500 320 520 260 500 230 C480 200 500 160 470 120" />
+      </g>
+      <!-- the storm cells and their strikes: the newest yellow, older orange, then red -->
+      <circle cx="236" cy="170" r="70" fill="url(#cell)" />
+      <circle cx="470" cy="110" r="56" fill="url(#cell)" />
+      <g fill="#c8322a">
+        <circle cx="178" cy="196" r="2.6" />
+        <circle cx="190" cy="210" r="2.6" />
+        <circle cx="168" cy="182" r="2.6" />
+        <circle cx="200" cy="190" r="2.6" />
+        <circle cx="430" cy="140" r="2.6" />
+        <circle cx="444" cy="150" r="2.6" />
+        <circle cx="420" cy="128" r="2.6" />
+      </g>
+      <g fill="#ee7d22">
+        <circle cx="214" cy="178" r="3" />
+        <circle cx="226" cy="190" r="3" />
+        <circle cx="206" cy="160" r="3" />
+        <circle cx="222" cy="166" r="3" />
+        <circle cx="236" cy="200" r="3" />
+        <circle cx="452" cy="122" r="3" />
+        <circle cx="462" cy="134" r="3" />
+        <circle cx="448" cy="106" r="3" />
+      </g>
+      <g fill="#f6c64a" stroke="#8a5a00" stroke-width="0.8">
+        <circle cx="246" cy="164" r="3.4" />
+        <circle cx="258" cy="176" r="3.4" />
+        <circle cx="240" cy="150" r="3.4" />
+        <circle cx="264" cy="156" r="3.4" />
+        <circle cx="252" cy="190" r="3.4" />
+        <circle cx="482" cy="104" r="3.4" />
+        <circle cx="490" cy="118" r="3.4" />
+        <circle cx="476" cy="92" r="3.4" />
+      </g>
+      <g stroke="#26323a" stroke-width="2" stroke-linecap="round">
+        <path d="M262 150 l-6 10 h6 l-6 10" fill="none" />
+        <path d="M492 98 l-6 10 h6 l-6 10" fill="none" />
+      </g>
+    </svg>
+    <div class="count">⚡ 1,284 strikes · last hour</div>
+    <div class="legend"><i style="background: #f6c64a"></i>10 min <i style="background: #ee7d22"></i>30 min <i style="background: #c8322a"></i>60 min</div>
+  </body>
+</html>

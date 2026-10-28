@@ -510,6 +510,11 @@ export const sheet: SheetSpec = {
     frame({ title: 'Home Connect · fridge freezer, a door open', cards: [card('hc-fridge')] }),
     // Miele
     frame({ title: 'Miele · washer rinsing', cards: [card('miele-washer')] }),
+    // a name of its own over the device's (the README's picture)
+    frame({
+      title: 'Miele · washer rinsing, named',
+      cards: [card('miele-washer', { name: 'Washer' })],
+    }),
     frame({ title: 'Miele · fridge freezer, super cooling', cards: [card('miele-fridge')] }),
     frame({ title: 'Miele · hob, two plates on', cards: [card('miele-hob')] }),
     frame({ title: 'Miele · coffee system at rest', cards: [card('miele-coffee')] }),

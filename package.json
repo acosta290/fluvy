@@ -33,6 +33,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @fluvy/i18n check && pnpm --filter @fluvy/docs check && node tools/release/check.mjs",
     "visual": "node tools/render/visual.mjs",
     "clips": "node tools/render/clip.mjs",
+    "readme:images": "node tools/render/readme.mjs",
     "i18n": "pnpm --filter @fluvy/i18n check",
     "render": "pnpm --filter @fluvy/render render",
     "contact-sheet": "pnpm --filter @fluvy/render contact-sheet",

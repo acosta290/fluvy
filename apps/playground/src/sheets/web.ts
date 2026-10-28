@@ -8,6 +8,8 @@ const WEB = 'custom:fluvy-web-card';
 /** Two pages of the playground's own origin: their `load` reaches the card, so the plate draws. */
 const PAGE = '/web/page.html';
 const DARK = '/web/page-dark.html';
+/** A map site, drawn on the playground's origin: what a plate looks like holding one (the README's picture). */
+const MAP = '/web/radar.html';
 /** An http page, kept back on a dashboard read as served over https (`_https`: the playground is not). */
 const PLAIN = { type: WEB, url: 'http://grafana.local:3000/d/house', _https: true };
 /** A page that never answers (`_slow`): the plate says it is still loading at once, not after twenty seconds. */
@@ -24,6 +26,10 @@ export const sheet: SheetSpec = {
     {
       title: 'Plate · 16:9',
       cards: [{ type: WEB, url: PAGE, title: 'Lightning', subtitle: 'Europe' }],
+    },
+    {
+      title: 'Plate · a map',
+      cards: [{ type: WEB, url: MAP, title: 'Lightning', subtitle: 'Live strikes' }],
     },
     { title: 'Frame', cards: [{ type: WEB, url: PAGE, variant: 'frame' }] },
     { title: 'Bare', cards: [{ type: WEB, url: PAGE, variant: 'bare' }] },

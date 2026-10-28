@@ -334,8 +334,32 @@ node tools/render/clip.mjs --clip dimmer --keep-frames 1
 `tools/render/clip.mjs` plays the gestures the interaction suites prove (`tools/render/lib/gestures.mjs` is one
 module for both) on the playground with a drawn touch indicator, records every paint through Chromium's screencast
 as lossless PNG frames with their timestamps, and encodes them with the system's ffmpeg: an H.264 mp4 and a GIF
-whose palette is computed from what changes. Frames are the screencast's, at CSS pixels; a GIF over 4 MB fails the
-run. Re-record after a change to what a clip shows, and commit the media.
+whose palette is computed from what changes. Frames are the screencast's, at CSS pixels; a GIF over 600 KB fails
+the run. The clips are the README's: the dimmer and the flow are recorded on one plate (412 × 496, a 360 card on the
+page's colour) so they sit side by side at one height, History at the Activity still's 600 × 750, and the screens
+(the palette, History) wear the stills' hairline. Re-record after a change to what a clip shows, and commit the
+media.
+
+## README images
+
+```sh
+pnpm readme:images                                # every README still → docs/images/readme/*.webp (the playground on :5183, ffmpeg on the PATH)
+node tools/render/readme.mjs --only hero,app-desktop
+```
+
+`tools/render/readme.mjs` draws every still the README shows from the playground, never a real home: a frame alone
+on its palette's page colour, a sheet's frames in one row (the hero), or a screen (the `showcase` sheet as a
+dashboard on a desktop, a tablet and a phone, the settings panel, a page). The README lays them in rows of one, two
+or three on one edge of 822 px, GitHub's README column: each row is one `<p align="center">` whose images are
+joined without a space, each image linked to the demo sheet it shows. A picture is 822 over its row's count wide,
+saved at twice that as WebP (libwebp, quality 90) and padded at the bottom in its page's colour to its row's
+tallest, so a row has one height; on a phone a row stacks. A frame is drawn at the picture's width less 25.5 px a
+side, so a pair's cards are the design's 360 and nothing is resampled; a screen wears a hairline, so a white header
+still ends where GitHub's page begins; a screen's `whole` cards are never cut by its bottom edge. A picture over its
+budget (150 KB alone in a row, 70 KB in a pair, 50 KB in three) fails the run. The pictures live in
+`docs/images/readme/` without a version (the README follows `main`; a release's notes keep theirs in
+`docs/images/<version>/`). Re-draw them when a card they show changes, check the README as GitHub renders it at a
+desktop's and a phone's width, and commit them.
 
 ## The integration
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * The README's hero: the playground's `hero` sheet (tiles, a compact thermostat, the energy chart, the player) in
- * one row on the palette's own page colour, without the playground's frame boxes — the same picture in any
- * palette, light or dark.
+ * The hero in any palette: the playground's `hero` sheet (tiles, a compact thermostat, the energy chart, the player)
+ * in one row on the palette's own page colour, without the playground's frame boxes, light or dark. The README's own,
+ * in Linen at the README's width, is `readme.mjs`'s.
  *   node hero.mjs --palette blaze --out ../../docs/images/hero-blaze.png     (the playground at $PLAYGROUND, else :5183)
  *   --mode dark  --width 420  --gap 32  --url http://127.0.0.1:5183/
  */
