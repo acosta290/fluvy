@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { allocate } from '../energy-model/allocate.js';
 import { normaliseConfig } from '../shared/config.js';
 import { FluvyEnergyFlowCard } from './energy-flow-card.js';
+import { lists } from './energy-flow-editor.js';
 import {
   arcLengths,
   arcs,
@@ -327,7 +328,7 @@ describe('1.3’s YAML', () => {
 });
 
 describe('the sources editor', () => {
-  const sources = FluvyEnergyFlowCard.lists.find((list) => list.key === 'sources');
+  const sources = lists.find((list) => list.key === 'sources');
   const names = (schema: readonly HaFormSchemaItem[]): string[] =>
     schema.flatMap((item) => (item.schema ? names(item.schema) : [item.name]));
   const shown = (item: Record<string, unknown>): string[] =>
