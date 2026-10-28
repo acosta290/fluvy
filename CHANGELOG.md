@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] — 2026-10-28
+
 ### Visible on upgrade
 
 - A Home Assistant in `pt` (Portugal's code) reads Portugal's catalogue, where it read Brazil's. The language menu
