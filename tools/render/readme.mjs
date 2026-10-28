@@ -16,10 +16,13 @@
  *   page   a screen of the app (a dashboard, the settings panel, a page) at its viewport, scaled to the picture's
  *          width; `whole` names the cards the screen's bottom edge must not cut: they are left out, and the picture
  *          is held to the cards kept
- * The motion pictures are `clip.mjs`'s GIFs; a still that sits beside one is drawn at the clip's aspect.
+ * The motion pictures are `clip.mjs`'s GIFs; a still that sits beside one is drawn at the clip's aspect. One picture
+ * is not drawn here: `app-floating.webp`, the design's mockup of the whole app (1.0), kept as a file of its own and
+ * never written by this tool; it is named in its row, as the clips are.
  *
- * A screen wears a hairline round its edge. WebP through the system's ffmpeg (libwebp, quality 90). Exit code 1 when
- * a page throws, a frame is not on its sheet, or a picture is over its budget.
+ * A screen wears a hairline round its edge, but for an app in its floating frame (`edge`): the page around the frame
+ * is its edge. WebP through the system's ffmpeg (libwebp, quality 90). Exit code 1 when a page throws, a frame is not
+ * on its sheet, or a picture is over its budget.
  */
 import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
@@ -57,13 +60,15 @@ const SOFT = { style: 'soft' };
 /**
  * Every still, by file name: `frame` is `sheet/title` (as `[data-frame]` names it; `nth` one of its cards), `stage` a
  * sheet, `page` the playground's query. `mode` (light), `lang` (en), `charts` (the house's chart settings, the
- * factory's when absent).
+ * factory's when absent); `edge: false`, a screen without the hairline (the app in its floating frame).
  */
 const SHOTS = {
   hero: { stage: 'hero', width: 420, gap: 32, charts: SOFT },
+  // the whole app in Fluvy's floating frame, the corner as Fluvy's own pictures draw it, three full sections level
   'app-desktop': {
-    page: 'dashboard=showcase&frame=1&width=341',
-    viewport: [1440, 756],
+    page: 'dashboard=showcase-desktop&frame=1&floating=1&logo=1&flat=1&header=page&actions=menu&names=Overview,Rooms,Climate,Security&width=384',
+    viewport: [1600, 1124],
+    edge: false,
     charts: SOFT,
   },
   'app-tablet-light': { page: 'dashboard=showcase&width=456', viewport: [1024, 756], charts: SOFT },
@@ -111,9 +116,13 @@ const SHOTS = {
   },
 };
 
-/** The README's rows, in its order; a still beside a clip is a row of its own here (`activity`: history-scrub.gif). */
+/**
+ * The README's rows, in its order; a still beside a clip is a row of its own here (`activity`: history-scrub.gif), and
+ * the mockup is a row the tool leaves as it is (`app-floating.webp`).
+ */
 const ROWS = [
   ['hero'],
+  ['app-floating.webp'],
   ['app-desktop'],
   ['app-tablet-light', 'app-tablet-dark'],
   ['control-cover', 'control-vacuum'],
@@ -286,7 +295,7 @@ for (const row of ROWS) {
     for (const name of stills) {
       const { png, colour } = await capture(browser, name, SHOTS[name], width, dir);
       const { width: w, height: h } = await size(png);
-      const screen = Boolean(SHOTS[name].page);
+      const screen = Boolean(SHOTS[name].page) && SHOTS[name].edge !== false;
       const inner = screen ? pixels - 2 * HAIRLINE_PX : pixels;
       const drawn = Math.round((h * inner) / w);
       shots.push({ name, png, colour, screen, inner, drawn, height: drawn + pixels - inner });

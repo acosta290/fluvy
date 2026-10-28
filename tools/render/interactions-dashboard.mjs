@@ -272,6 +272,94 @@ const shown = (h) => h.tabs.filter((t) => !t.hidden);
   );
 }
 
+/* ---------- the sidebar as Home Assistant draws it, and the app in Fluvy's floating frame ---------- */
+{
+  const app = (page) =>
+    page.evaluate(() => {
+      const box = (el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, right: r.right, bottom: r.bottom };
+      };
+      const words = (el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return box(range);
+      };
+      const sidebar = document.querySelector('ha-sidebar');
+      const sr = sidebar.shadowRoot;
+      const main = document.querySelector('home-assistant').shadowRoot.firstElementChild;
+      const layer = getComputedStyle(main, '::after');
+      const root = document.querySelector('hui-root').shadowRoot;
+      return {
+        sidebar: box(sidebar),
+        glyph: box(sr.querySelector('.menu ha-icon')),
+        title: words(sr.querySelector('.title')),
+        rows: [...sr.querySelectorAll('ha-list-item-button')].map((row) => ({
+          name: row.querySelector('.item-text').textContent.trim(),
+          icon: box(row.querySelector('[slot="start"]')),
+          words: words(row.querySelector('.item-text')),
+          bottom: box(row).bottom,
+        })),
+        layer: { content: layer.content, inset: layer.inset, radius: layer.borderRadius },
+        toolbar: box(root.querySelector('.toolbar')),
+        actions: box(root.querySelector('.action-items')),
+        frame: box(document.querySelector('.pg-frame')),
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+    });
+  /** The rows on the head's columns, `edge` in from the window: the icons under the glyph, the words 16 after them. */
+  const columns = (a, edge) => {
+    const person = a.rows.at(-1);
+    return (
+      Math.abs(a.glyph.x - (edge + 16)) < 0.5 &&
+      Math.abs(a.title.x - (edge + 55)) < 0.5 &&
+      a.rows
+        .slice(0, -1)
+        .every(
+          (row) =>
+            Math.abs(row.icon.x - (edge + 16)) < 0.5 && Math.abs(row.words.x - (edge + 56)) < 0.5,
+        ) &&
+      person.icon.w === 40 &&
+      Math.abs(person.icon.x + 20 - (edge + 28)) < 0.5
+    );
+  };
+  const plain = await app(await open('frame=1&logo=1'));
+  check(
+    'the sidebar as Home Assistant draws it: the dashboard open, its panels, then Settings, the notifications and the person',
+    plain.rows.map((row) => row.name).join() ===
+      'Home,Energy,Map,Activity,History,Media,To-do lists,Settings,Notifications,Marta',
+    plain.rows.map((row) => row.name).join(),
+  );
+  check(
+    'every icon under the menu button’s glyph (16 in), every name 16 after it (56), the person’s badge centred on the icons; the foot 12 above the bottom',
+    plain.sidebar.w === 256 &&
+      columns(plain, 0) &&
+      Math.abs(plain.rows.at(-1).bottom - (plain.height - 12)) < 0.5,
+    JSON.stringify({ glyph: plain.glyph.x, title: plain.title.x, rows: plain.rows }),
+  );
+  const floating = await app(await open('frame=1&logo=1&floating=1'));
+  check(
+    'the floating frame: the page painted round a 24 opening 16 inside the window, the sidebar, the header and the view stepping in by its insets',
+    floating.layer.content === '""' &&
+      floating.layer.inset === '16px' &&
+      floating.layer.radius === '24px' &&
+      floating.sidebar.w === 272 &&
+      columns(floating, 16) &&
+      Math.abs(floating.rows.at(-1).bottom - (floating.height - 28)) < 0.5 &&
+      floating.toolbar.y === 16 &&
+      Math.abs(floating.actions.right - (floating.width - 28)) < 0.5 &&
+      floating.frame.y === 16 + 56 + 16,
+    JSON.stringify({ ...floating, rows: undefined }),
+  );
+  const under = await app(await open('frame=1&logo=1&floating=1', 1000));
+  check(
+    'under 1024 the app keeps the whole window, as the shell’s frame does',
+    under.layer.content === 'none' && under.sidebar.w === 256 && columns(under, 0),
+    JSON.stringify({ layer: under.layer, sidebar: under.sidebar.w }),
+  );
+}
+
 /* ---------- what each tab shows ---------- */
 {
   const icons = await header(await open('tabs=fluvy&content=icons'));

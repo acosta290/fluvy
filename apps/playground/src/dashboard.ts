@@ -1,5 +1,7 @@
 import { css, html, LitElement, unsafeCSS, type PropertyValues } from 'lit';
+import type { HomeAssistant } from '../../../packages/core/src/ha/types.js';
 import { ICON_PATHS } from '../../../packages/core/src/icons/generated.js';
+import { mdiPath } from './ha-icons.js';
 import {
   FLAT_ATTRIBUTE,
   patchViewRoots,
@@ -9,8 +11,11 @@ import {
   type ViewTabs,
 } from '../../../packages/core/src/look/tabs.js';
 import {
+  frameCss,
+  NO_FRAME,
   sidebarCss,
   sidebarFlatCss,
+  sidebarIconsCss,
   sidebarLogoCss,
 } from '../../../packages/core/src/shell/css/chrome.js';
 import { startZoom } from '../../../packages/core/src/look/zoom.js';
@@ -40,9 +45,11 @@ import {
  *   &views=8      how many views (1: Home Assistant shows the title, no tabs)
  *   &icons=0      views without icons (Home Assistant then writes their names) · &icons=mixed every other one
  *   &edit=1       the edit mode · &subview=1 a subview open · &scope=other a dashboard that does not wear the look
- *   &title=Home   the dashboard's name in the sidebar · &long=1 long view names
+ *   &title=Home   the dashboard's name in the sidebar · &long=1 long view names · &names=Overview,Rooms the views
+ *                 named (in place of &views)
  *   &frame=1      Home Assistant's sidebar beside the dashboard (wide) · the corner: &logo=1 Home Assistant's logo,
- *                 &flat=1 no hairlines, &header=page the header on the page's colour, &actions=menu one menu
+ *                 &flat=1 no hairlines, &header=page the header on the page's colour, &actions=menu one menu ·
+ *                 &floating=1 the app in Fluvy's floating frame (the shell's `frame` sheet, 1024 wide or more)
  *   &zoom=125     this device's size, as the bundle reads it (`look/zoom.ts`: remembered, dropped from the address,
  *                 the view zoomed by the shell's `device-zoom` sheet; `&zoom=off` back to 100)
  *   &wall=1       the page a wall (main.ts mounts the real controller): the shell's wall sheets for `hui-root` fill as
@@ -82,6 +89,8 @@ export interface DashboardOptions {
   readonly chrome: Chrome;
   /** The app's frame: Home Assistant's sidebar beside the dashboard (a wide screen only). */
   readonly frame: boolean;
+  /** The app in Fluvy's floating frame (the house's choice; drawn on a screen 1024 wide or more). */
+  readonly floating: boolean;
   readonly views: readonly View[];
   readonly edit: boolean;
   readonly subview: boolean;
@@ -90,9 +99,15 @@ export interface DashboardOptions {
 
 /** The dashboard a page asks for. */
 export function dashboardOptions(params: URLSearchParams): DashboardOptions {
-  const count = Math.max(1, Math.min(10, Number(params.get('views') ?? 6)));
+  // views named by the page take the set's icon where it has their name
+  const named = params
+    .get('names')
+    ?.split(',')
+    .filter(Boolean)
+    .map((title) => [title, NAMES.find(([name]) => name === title)?.[1] ?? 'home'] as const);
+  const count = named?.length ?? Math.max(1, Math.min(10, Number(params.get('views') ?? 6)));
   const icons = params.get('icons') ?? '1';
-  const names = params.get('long') === '1' ? LONG : NAMES;
+  const names = named ?? (params.get('long') === '1' ? LONG : NAMES);
   const views = Array.from({ length: count }, (_, i) => {
     const [title, glyph] = names[i % names.length] as readonly [string, string];
     const withIcon = icons === '1' || (icons === 'mixed' && i % 2 === 0);
@@ -123,6 +138,7 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
     tabs,
     chrome,
     frame: params.get('frame') === '1',
+    floating: params.get('floating') === '1',
     views,
     edit: params.get('edit') === '1',
     subview: params.get('subview') === '1',
@@ -132,7 +148,10 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
 
 /* ---------- Home Assistant's elements, as far as the header needs them ---------- */
 
-/** `<ha-icon>` drawing the fluvy set (`fluvy:home`); any other icon is a neutral disc. */
+/**
+ * `<ha-icon>` drawing the fluvy set (`fluvy:home`) and the mdi icons the sheets name (`ha-icons.ts`: a room's area
+ * icon); any other icon is a neutral disc.
+ */
 class MockIcon extends LitElement {
   static override properties = { icon: {} };
   declare icon: string | undefined;
@@ -151,8 +170,9 @@ class MockIcon extends LitElement {
     }
   `;
   override render() {
-    const name = this.icon?.startsWith('fluvy:') ? this.icon.slice(6) : '';
-    const path = ICON_PATHS[name];
+    const path = this.icon?.startsWith('fluvy:')
+      ? ICON_PATHS[this.icon.slice(6)]
+      : mdiPath(this.icon);
     return path
       ? html`<svg viewBox="0 0 24 24"><path d=${path}></path></svg>`
       : html`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle></svg>`;
@@ -378,13 +398,13 @@ class MockRoot extends LitElement {
         --ha-font-size-xl: 20px;
       }
       /* as hui-root lays it: the header fixed over the page at the app bar's width (beside the sidebar when there is
-         one), the view padded by its height */
+         one), the view padded by its height; both inside the app's safe area (the floating frame's 16 a side) */
       .header {
         position: fixed;
         top: 0;
         width: var(--ha-top-app-bar-width, 100%);
         z-index: 4;
-        padding-top: env(safe-area-inset-top);
+        padding-top: var(--safe-area-inset-top, 0px);
         background-color: var(--app-header-background-color);
         color: var(--app-header-text-color, white);
       }
@@ -397,7 +417,7 @@ class MockRoot extends LitElement {
         align-items: center;
         box-sizing: border-box;
         height: var(--header-height);
-        padding: 0 12px;
+        padding: 0 calc(12px + var(--safe-area-inset-right, 0px)) 0 12px;
         border-bottom: var(--app-header-border-bottom, none);
         font-size: var(--ha-font-size-xl);
         font-weight: 400;
@@ -499,12 +519,13 @@ class MockRoot extends LitElement {
         display: flex;
         box-sizing: border-box;
         min-height: 100vh;
-        padding-top: calc(var(--header-height) + env(safe-area-inset-top));
+        padding: calc(var(--header-height) + var(--safe-area-inset-top, 0px))
+          var(--safe-area-inset-right, 0px) var(--safe-area-inset-bottom, 0px) 0;
       }
       /* the edit mode's tab row under the toolbar: Home Assistant pads by both, less the 2 they share */
       .edit-mode #view {
         padding-top: calc(
-          var(--header-height) + var(--tab-bar-height, 56px) - 2px + env(safe-area-inset-top)
+          var(--header-height) + var(--tab-bar-height, 56px) - 2px + var(--safe-area-inset-top, 0px)
         );
       }
       hui-view {
@@ -609,29 +630,101 @@ class MockRoot extends LitElement {
 }
 
 /**
- * `ha-sidebar`, as far as its head goes (with a few of its rows under it): the menu button and the title in `.menu`,
- * with Home Assistant 2026.9's rules for them (read from a live instance) and the shell's sheets for the sidebar —
- * Fluvy's own, then the corner's as the shell fills them on the house's choices.
+ * `ha-list-item-button`: a row of Home Assistant's lists, its icon in the start slot and its words in the headline,
+ * spaced by the `--ha-row-item-*` properties (the sidebar's: 12 in, the words 16 after a 24 icon, 40 tall).
+ */
+class MockListItem extends LitElement {
+  static override styles = css`
+    :host {
+      display: block;
+    }
+    .base {
+      display: flex;
+      align-items: center;
+      box-sizing: border-box;
+      height: 100%;
+      min-height: var(--ha-row-item-min-height, 40px);
+      gap: var(--ha-row-item-gap, 16px);
+      padding-inline: var(--ha-row-item-padding-inline, 12px);
+    }
+    .start {
+      display: flex;
+      flex: none;
+    }
+    .content {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  `;
+  override render() {
+    return html`<div part="base" class="base">
+      <div part="start" class="start"><slot name="start"></slot></div>
+      <div part="content" class="content"><slot name="headline"></slot></div>
+    </div>`;
+  }
+}
+
+/** Home Assistant's own panels in the sidebar, by their ids (`#sidebar-panel-<id>`), as it names them. */
+const PANELS: ReadonlyArray<readonly [id: string, name: string]> = [
+  ['energy', 'Energy'],
+  ['map', 'Map'],
+  ['logbook', 'Activity'],
+  ['history', 'History'],
+  ['media-browser', 'Media'],
+  ['todo', 'To-do lists'],
+];
+
+/** The person signed in, as `ha-user-badge` draws them: the picture of the person they are, else their initials. */
+export interface SidebarUser {
+  readonly name: string;
+  readonly picture?: string;
+}
+
+/** A person's initials as Home Assistant writes them on their badge: the first letter of their first words. */
+const initials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 3)
+    .map((word) => word[0] ?? '')
+    .join('');
+
+/**
+ * `ha-sidebar` as Home Assistant 2026.9 draws it (its markup and rules read from a live instance): the menu button and
+ * the title in `.menu`; the dashboard (open) and Home Assistant's panels in the list; Settings, the notifications and
+ * the person signed in at its foot. The icons stand under the menu button's glyph, 16 from the edge (the person's
+ * badge centred on them), the words 56. The sidebar steps inside the app's safe area as Home Assistant's does (the
+ * floating frame's 16), then wears the shell's sheets for it: Fluvy's own and its icons, and the corner's as the shell
+ * fills them on the house's choices.
  */
 class MockSidebar extends LitElement {
   chrome!: Chrome;
+  /** The dashboard shown: its name and its address. */
+  dashboard!: { title: string; path: string };
+  user!: SidebarUser;
   static override styles = [
     css`
       :host {
+        position: sticky;
+        top: 0;
         display: flex;
         flex-direction: column;
-        flex: 0 0 256px;
-        min-height: 100vh;
+        flex: 0 0 calc(256px + var(--safe-area-inset-left, 0px));
+        box-sizing: border-box;
+        height: 100vh;
+        padding-bottom: var(--safe-area-inset-bottom, 0px);
         background: var(--sidebar-background-color, var(--fluvy-card));
         color: var(--sidebar-text-color, var(--fluvy-text));
         --header-height: 56px;
       }
       .menu {
         display: flex;
+        flex: none;
         align-items: center;
         box-sizing: border-box;
-        height: var(--header-height);
-        padding-inline-start: 4px;
+        height: calc(var(--header-height) + var(--safe-area-inset-top, 0px));
+        padding-top: var(--safe-area-inset-top, 0px);
+        padding-inline-start: calc(4px + var(--safe-area-inset-left, 0px));
         white-space: nowrap;
         font-size: 20px;
         font-weight: 400;
@@ -652,28 +745,80 @@ class MockSidebar extends LitElement {
         min-width: 0;
         margin-inline-start: 3px;
       }
-      /* Home Assistant's rows put their icons on the head's column (28 from the edge) */
-      .rows {
-        display: grid;
-        gap: 4px;
-        padding: 12px 4px;
-      }
-      .row {
+      /* the panels fill the height; Settings, the notifications and the person keep to its foot */
+      .panels-list {
         display: flex;
-        align-items: center;
-        gap: 12px;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .wrapper {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+      ha-list-nav {
+        display: block;
+        margin: 8px 0 8px var(--safe-area-inset-left, 0px);
+      }
+      ha-list-item-button {
+        position: relative;
+        isolation: isolate;
         height: 40px;
-        padding-inline: 12px;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: 500;
+        margin: 0 4px 4px;
+        border-radius: var(--ha-border-radius-sm, 4px);
         --mdc-icon-size: 24px;
       }
-      .row.selected {
-        background: var(--fluvy-accent-fill);
+      ha-list-item-button::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        opacity: 0;
+      }
+      ha-list-item-button.selected::before {
+        background-color: var(--sidebar-selected-icon-color);
+        opacity: 0.12;
+      }
+      ha-list-item-button .item-text {
+        display: block;
+        overflow: hidden;
+        font-size: 14px;
+        line-height: 20px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--sidebar-text-color);
+      }
+      ha-list-item-button.selected .item-text {
+        color: var(--sidebar-selected-text-color);
+      }
+      ha-list-item-button > [slot='start'] {
+        display: block;
+        width: 24px;
+        height: 24px;
+        color: var(--sidebar-icon-color);
+      }
+      ha-list-item-button.selected > [slot='start'] {
+        color: var(--sidebar-selected-icon-color);
+      }
+      /* the person's badge (40) on the icons' column: their row starts 4 in */
+      .user {
+        --ha-row-item-padding-inline: 4px 12px;
+      }
+      .user > ha-user-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--light-primary-color) center / cover no-repeat;
+        color: var(--text-light-primary-color, var(--primary-text-color));
+        font-size: 14px;
+        line-height: 40px;
+        text-align: center;
       }
     `,
     unsafeCSS(sidebarCss),
+    unsafeCSS(sidebarIconsCss),
   ];
   override connectedCallback(): void {
     super.connectedCallback();
@@ -689,15 +834,69 @@ class MockSidebar extends LitElement {
     }
   }
   override render() {
+    const { name, picture } = this.user;
+    // a panel of Home Assistant's: its icon is the shell's (`sidebarIconsCss`) on Home Assistant's empty one
+    const panel = (id: string, words: string) =>
+      html`<ha-list-item-button id=${id}
+        ><ha-svg-icon slot="start"></ha-svg-icon
+        ><span class="item-text" slot="headline">${words}</span></ha-list-item-button
+      >`;
     return html`<div class="menu">
         <ha-icon-button><ha-icon .icon=${'fluvy:menu'}></ha-icon></ha-icon-button>
         <div class="title">Home Assistant</div>
       </div>
-      <div class="rows">
-        <div class="row selected"><ha-icon .icon=${'fluvy:home'}></ha-icon>Home</div>
-        <div class="row"><ha-icon .icon=${'fluvy:bolt'}></ha-icon>Energy</div>
-        <div class="row"><ha-icon .icon=${'fluvy:map'}></ha-icon>Map</div>
+      <div class="panels-list">
+        <div class="wrapper">
+          <ha-list-nav>
+            <ha-list-item-button id=${`sidebar-panel-${this.dashboard.path}`} class="selected"
+              ><ha-icon slot="start" .icon=${'fluvy:home'}></ha-icon
+              ><span class="item-text" slot="headline"
+                >${this.dashboard.title}</span
+              ></ha-list-item-button
+            >
+            ${PANELS.map(([id, words]) => panel(`sidebar-panel-${id}`, words))}
+          </ha-list-nav>
+        </div>
+        <ha-list-nav>
+          ${panel('sidebar-config', 'Settings')} ${panel('sidebar-notifications', 'Notifications')}
+          <ha-list-item-button id="sidebar-profile" class="user"
+            ><ha-user-badge
+              slot="start"
+              style=${picture ? `background-image: url("${picture}")` : ''}
+              >${picture ? '' : initials(name)}</ha-user-badge
+            ><span class="item-text" slot="headline">${name}</span></ha-list-item-button
+          >
+        </ha-list-nav>
       </div>`;
+  }
+}
+
+/**
+ * `home-assistant`, the app's root, around `home-assistant-main` (the sidebar and the dashboard), with the shell's
+ * `frame` sheet as the shell adopts it and the house's choice on the root (`fluvy-no-frame` when the frame is off).
+ * On a screen 1024 wide or more the app then floats 16 inside the window: its insets tell the sidebar and the
+ * dashboard where to stand, and the page is painted around a rounded opening.
+ */
+class MockApp extends LitElement {
+  static override styles = [
+    css`
+      :host {
+        display: block;
+      }
+      home-assistant-main {
+        display: flex;
+        /* the app bar beside the drawer, as home-assistant-main sets it */
+        --ha-top-app-bar-width: calc(100% - (256px + var(--safe-area-inset-left, 0px)));
+      }
+      ::slotted(hui-root) {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+    `,
+    unsafeCSS(frameCss),
+  ];
+  override render() {
+    return html`<home-assistant-main><slot></slot></home-assistant-main>`;
   }
 }
 
@@ -705,9 +904,14 @@ const NARROW = 870;
 
 /**
  * Mounts the dashboard in `stage` and returns where the frames go. The marks are the bundle's own: `patchViewRoots`
- * wraps the root's update with the tabs the page asked for.
+ * wraps the root's update with the tabs the page asked for. The house (`hass`) says who is signed in, for the
+ * sidebar's foot.
  */
-export function mountDashboard(stage: HTMLElement, options: DashboardOptions): HTMLElement {
+export function mountDashboard(
+  stage: HTMLElement,
+  options: DashboardOptions,
+  hass: HomeAssistant,
+): HTMLElement {
   for (const [tag, element] of [
     ['ha-icon', MockIcon],
     ['ha-tab-group', MockTabGroup],
@@ -762,14 +966,33 @@ export function mountDashboard(stage: HTMLElement, options: DashboardOptions): H
   addEventListener('resize', narrow);
   stage.classList.add('pg-dashboard');
   if (options.frame && innerWidth > NARROW) {
-    if (!customElements.get('ha-sidebar')) customElements.define('ha-sidebar', MockSidebar);
+    for (const [tag, element] of [
+      ['home-assistant', MockApp],
+      ['ha-sidebar', MockSidebar],
+      ['ha-list-item-button', MockListItem],
+    ] as const)
+      if (!customElements.get(tag)) customElements.define(tag, element);
+    const app = document.createElement('home-assistant');
+    app.toggleAttribute(NO_FRAME, !options.floating);
     const sidebar = document.createElement('ha-sidebar') as MockSidebar;
     sidebar.chrome = options.chrome;
-    stage.classList.add('pg-dashboard--framed');
-    stage.append(sidebar);
-  }
-  stage.append(root);
+    sidebar.dashboard = { title: options.title, path: root.hass.panelUrl };
+    sidebar.user = signedIn(hass);
+    app.append(sidebar, root);
+    stage.append(app);
+  } else stage.append(root);
   return root;
+}
+
+/** The person signed in to the house, with the picture of the person they are (as `ha-user-badge` finds it). */
+function signedIn(hass: HomeAssistant): SidebarUser {
+  const user = hass.user;
+  if (!user) return { name: '' };
+  const person = Object.values(hass.states).find(
+    (state) => state.entity_id.startsWith('person.') && state.attributes['user_id'] === user.id,
+  );
+  const picture = person?.attributes['entity_picture'];
+  return { name: user.name, ...(typeof picture === 'string' ? { picture } : {}) };
 }
 
 /** For the suites: the root's own update again (another choice of tabs, the edit mode). */

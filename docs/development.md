@@ -355,18 +355,20 @@ node tools/render/readme.mjs --only hero,app-desktop
 ```
 
 `tools/render/readme.mjs` draws every still the README shows from the playground, never a real home: a frame alone
-on its palette's page colour, a sheet's frames in one row (the hero), or a screen (the `showcase` sheet as a
-dashboard on a desktop, a tablet and a phone, the settings panel, a page). The README lays them in rows of one, two
-or three on one edge of 822 px, GitHub's README column: each row is one `<p align="center">` whose images are
-joined without a space, each image linked to the demo sheet it shows. A picture is 822 over its row's count wide,
-saved at twice that as WebP (libwebp, quality 90) and padded at the bottom in its page's colour to its row's
-tallest, so a row has one height; on a phone a row stacks. A frame is drawn at the picture's width less 25.5 px a
-side, so a pair's cards are the design's 360 and nothing is resampled; a screen wears a hairline, so a white header
-still ends where GitHub's page begins; a screen's `whole` cards are never cut by its bottom edge. A picture over its
-budget (150 KB alone in a row, 70 KB in a pair, 50 KB in three) fails the run. The pictures live in
-`docs/images/readme/` without a version (the README follows `main`; a release's notes keep theirs in
-`docs/images/<version>/`). Re-draw them when a card they show changes, check the README as GitHub renders it at a
-desktop's and a phone's width, and commit them.
+on its palette's page colour, a sheet's frames in one row (the hero), or a screen (the `showcase-desktop` sheet as
+the whole app on a desktop, in Fluvy's floating frame beside Home Assistant's sidebar; the `showcase` sheet as a
+dashboard on a tablet and a phone; the settings panel, a page). One picture is not drawn: `app-floating.webp`, the
+design's mockup of the whole app, is kept as it is. The README lays them in rows of one, two or three on one edge
+of 822 px, GitHub's README column: each row is one `<p align="center">` whose images are joined without a space,
+each image linked to the demo sheet it shows. A picture is 822 over its row's count wide, saved at twice that as
+WebP (libwebp, quality 90) and padded at the bottom in its page's colour to its row's tallest, so a row has one
+height; on a phone a row stacks. A frame is drawn at the picture's width less 25.5 px a side, so a pair's cards are
+the design's 360 and nothing is resampled; a screen wears a hairline, so a white header still ends where GitHub's
+page begins (the app in its floating frame has the page round it instead); a screen's `whole` cards are never cut
+by its bottom edge. A picture over its budget (150 KB alone in a row, 70 KB in a pair, 50 KB in three) fails the
+run. The pictures live in `docs/images/readme/` without a version (the README follows `main`; a release's notes keep
+theirs in `docs/images/<version>/`). Re-draw them when a card they show changes, check the README as GitHub renders
+it at a desktop's and a phone's width, and commit them.
 
 ## The integration
 
