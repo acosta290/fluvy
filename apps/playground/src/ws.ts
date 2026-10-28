@@ -1,12 +1,14 @@
 import type { HomeAssistant } from '@fluvy/core';
+import type { MockHouse } from './hass.js';
 
 /**
  * The mock's WebSocket: one table of answers by message type. Home Assistant's own reads have answers drawn from the
  * house (`houseWs`): history, statistics, what an item relates to, the repairs, a person's and the house's stored data.
  * A sheet adds its own (`SheetSpec.ws`); joined with `mergeWs`, the sheets' answers come first and an answer of
- * `undefined` passes the message on to the next table.
+ * `undefined` passes the message on to the next table. Each is handed the house it answers for (a sheet asking
+ * another sheet's table itself may hand none).
  */
-export type Answer = (message: Record<string, unknown>) => unknown;
+export type Answer = (message: Record<string, unknown>, house?: MockHouse) => unknown;
 export type WsTable = Readonly<Record<string, Answer>>;
 
 type Rows = Record<string, unknown[]>;
@@ -47,8 +49,8 @@ export function mergeWs(tables: ReadonlyArray<WsTable | undefined>): Record<stri
     [...types].map((type) => {
       const handlers = tables.flatMap((table) => (table?.[type] ? [table[type]] : []));
       if (handlers.length === 1) return [type, handlers[0] as Answer];
-      const merged: Answer = async (message) => {
-        const replies = await Promise.all(handlers.map((handler) => handler(message)));
+      const merged: Answer = async (message, house) => {
+        const replies = await Promise.all(handlers.map((handler) => handler(message, house)));
         const join = JOIN[type];
         return join
           ? join(replies)

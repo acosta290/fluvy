@@ -193,8 +193,11 @@ export interface MockOptions {
   readonly data?: Partial<Record<Layer, Record<string, unknown>>>;
   /** The sheet's own answers by message type, asked before the house's (see `mergeWs`). */
   readonly ws?: WsTable;
-  /** REST answers: (method, path, body) → the answer, or a throw as Home Assistant's frontend throws (`{ error, status_code, body }`). */
-  readonly api?: (method: string, path: string, body?: unknown) => unknown;
+  /**
+   * REST answers: (method, path, body, the house asked) → the answer, or a throw as Home Assistant's frontend throws
+   * (`{ error, status_code, body }`).
+   */
+  readonly api?: (method: string, path: string, body?: unknown, house?: MockHouse) => unknown;
   /** How long Home Assistant takes to answer a template, in ms (30: before the first paint; a real socket 50–200). */
   readonly templateDelay?: number;
   /** The house's units: metric (°C, km), or imperial (°F, mi) as a house in the US keeps them. */
@@ -209,10 +212,11 @@ export interface MockOptions {
 
 const iso = (date: Date): string => date.toISOString();
 
-export function createHass(
-  seeds: readonly StateSeed[],
-  options: MockOptions = {},
-): {
+/**
+ * The stand-in house: its `hass` as it is now, what the cards asked of it, and the moves a sheet or a suite makes on
+ * it. A sheet's answers are handed the house that asks (a page may hold several: the demo stands each sheet in its own).
+ */
+export interface MockHouse {
   hass: () => HomeAssistant;
   subscribe: (l: Listener) => () => void;
   calls: Array<{ domain: string; service: string; data: unknown; target: unknown }>;
@@ -232,7 +236,9 @@ export function createHass(
   wsCalls: Array<{ type: string; message: Record<string, unknown> }>;
   /** How many `render_template` subscriptions are open: what the cards hold, and must let go of. */
   templates: () => number;
-} {
+}
+
+export function createHass(seeds: readonly StateSeed[], options: MockOptions = {}): MockHouse {
   const now = options.now ?? new Date();
   const states: Record<string, HassEntity> = {};
   /** An entity as seeded: reported `ago` seconds before the house's moment, changed two hours before when unsaid. */
@@ -314,7 +320,7 @@ export function createHass(
       }
       // anything else the table answers once, as a socket would a moment later
       const handler = answers[message.type];
-      if (handler) setTimeout(async () => send(await handler(message)), 30);
+      if (handler) setTimeout(async () => send(await handler(message, house)), 30);
       return () => undefined;
     },
     subscribeEvents: async <T>(callback: (event: T) => void, eventType?: string) =>
@@ -435,12 +441,12 @@ export function createHass(
         if (ADMIN_ONLY.has(message.type) && !(this ?? current).user?.is_admin)
           throw { code: 'unauthorized', message: 'Unauthorized' };
         const handler = answers[message.type];
-        if (handler) return (await handler(message)) as T;
+        if (handler) return (await handler(message, house)) as T;
         throw new Error(`mock hass: unhandled WS message ${message.type}`);
       },
       callApi: async <T>(method: string, path: string, body?: unknown): Promise<T> => {
         apiCalls.push(body === undefined ? { method, path } : { method, path, body });
-        return options.api ? (options.api(method, path, body) as T) : ([] as unknown as T);
+        return options.api ? (options.api(method, path, body, house) as T) : ([] as unknown as T);
       },
       hassUrl: (path = '') => path,
       localize: (key, values = {}) => {
@@ -514,7 +520,7 @@ export function createHass(
   }
   // Home Assistant's card helpers: the date card the Energy period card makes where no picker holds its key
   stubCardHelpers(() => current, options.now ?? new Date());
-  return {
+  const house: MockHouse = {
     hass: () => current,
     subscribe: (l) => {
       listeners.add(l);
@@ -539,4 +545,5 @@ export function createHass(
     wsCalls,
     templates: () => watches.size,
   };
+  return house;
 }

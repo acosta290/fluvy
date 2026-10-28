@@ -13,8 +13,6 @@ import {
   setLightDefaults,
   type HomeAssistant,
   type Look,
-  type LovelaceCard,
-  type LovelaceGridOptions,
 } from '@fluvy/core';
 import {
   DEFAULT_PALETTE,
@@ -35,15 +33,15 @@ import { setFallbackTokens, textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
 import { dashboardOptions, mountDashboard } from './dashboard.js';
 import { defineIconStubs } from './ha-icons.js';
-import { createHass, type MockOptions, type StateSeed } from './hass.js';
+import { createHouse, mountFrame, type MountedCard } from './house.js';
 import { mountActivity, type ActivityMoment } from './activity.js';
-import { MOCK_PERIODS, type MockPeriod } from './collection.js';
+import { MOCK_PERIODS } from './collection.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
 import { mountWall, wallSettingsFor, type WallMoment } from './wall.js';
 import { mountViewTheme } from './themes.js';
 import { outOfReachView } from './out-of-reach.js';
-import { loadFixture, mergeWs, NOW, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js';
+import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js';
 
 /**
  * ?sheet=home            which design sheet to mount (default: all; `measurer` the measurer's fixtures)
@@ -198,68 +196,22 @@ const selected: Array<[string, SheetSpec]> =
     : fixture && only
       ? [[only, fixture]]
       : Object.entries(SHEETS).filter(([name]) => !only || only === name);
-const states = new Map<string, StateSeed>();
-for (const [, sheet] of selected) for (const seed of sheet.states) states.set(seed[0], seed);
-
-const registry = selected.reduce<NonNullable<MockOptions['registry']>>(
-  (all, [, sheet]) => ({
-    entities: { ...all.entities, ...sheet.registry?.entities },
-    devices: { ...all.devices, ...sheet.registry?.devices },
-    areas: { ...all.areas, ...sheet.registry?.areas },
-    floors: { ...all.floors, ...sheet.registry?.floors },
-  }),
-  { entities: {}, devices: {}, areas: {}, floors: {} },
+const mock = createHouse(
+  selected.map(([, sheet]) => sheet),
+  {
+    dark,
+    language,
+    clock,
+    // the Energy date pickers' collections, on the range `?period=` names (today otherwise)
+    period: MOCK_PERIODS.find((period) => period === params.get('period')),
+    // &units=imperial (a sheet that stands alone in a house in °F and miles says so itself)
+    units: params.get('units') === 'imperial' ? 'imperial' : undefined,
+    templateDelay: params.has('template_delay') ? Number(params.get('template_delay')) : undefined,
+    ws: panelTab ? PANEL_WS : undefined,
+  },
 );
-const mock = createHass([...states.values()], {
-  dark,
-  language,
-  ...(clock ? { clock } : {}),
-  now: NOW,
-  registry,
-  history: Object.assign({}, ...selected.map(([, s]) => s.history ?? {})) as Record<
-    string,
-    readonly number[]
-  >,
-  statistics: Object.assign({}, ...selected.map(([, s]) => s.statistics ?? {})) as NonNullable<
-    MockOptions['statistics']
-  >,
-  issues: selected.flatMap(([, s]) => s.issues ?? []),
-  translations: Object.assign({}, ...selected.map(([, s]) => s.translations ?? {})) as Record<
-    string,
-    string
-  >,
-  data: {
-    user: Object.assign({}, ...selected.map(([, s]) => s.data?.user ?? {})) as Record<
-      string,
-      unknown
-    >,
-    system: Object.assign({}, ...selected.map(([, s]) => s.data?.system ?? {})) as Record<
-      string,
-      unknown
-    >,
-  },
-  ws: mergeWs([...selected.map(([, s]) => s.ws), panelTab ? PANEL_WS : undefined]),
-  // the Energy date pickers' collections, on the range `?period=` names (today otherwise)
-  collections: selected.flatMap(([, s]) => s.collections ?? []),
-  ...(MOCK_PERIODS.includes(params.get('period') as MockPeriod)
-    ? { period: params.get('period') as MockPeriod }
-    : {}),
-  ...(params.has('template_delay') ? { templateDelay: Number(params.get('template_delay')) } : {}),
-  // &units=imperial, or a sheet that stands alone in a house in °F and miles
-  ...(params.get('units') === 'imperial' ||
-  (selected.length === 1 && selected[0]?.[1].units === 'imperial')
-    ? { units: 'imperial' as const }
-    : {}),
-  api: (method, path, body) => {
-    for (const [, s] of selected) {
-      const answer = s.api?.(method, path, body);
-      if (answer !== undefined) return answer;
-    }
-    return [];
-  },
-});
-/** Every card mounted, with the house its frame shows it (a frame may answer some questions its own way). */
-const cards: { card: LovelaceCard; view: (hass: HomeAssistant) => HomeAssistant }[] = [];
+/** Every card mounted, with the house its frame shows it. */
+const cards: MountedCard[] = [];
 mock.subscribe((hass: HomeAssistant) => {
   for (const { card, view } of cards) card.hass = view(hass);
 });
@@ -361,60 +313,17 @@ function wearStatuses(
   statusRules.add(rule);
   framesInStatuses.replaceSync([...statusRules].join(''));
 }
-/**
- * The columns Home Assistant gives a card asked for `cols`: held to its own grid options' minimum and maximum. In a
- * frame of columns of its own (a grid card's), only its maximum holds it, and none past the frame's.
- */
-const columnsOf = (card: LovelaceCard, cols: number | undefined, total = 12): number => {
-  if (!cols) return total;
-  let grid: LovelaceGridOptions | undefined;
-  try {
-    grid = card.getGridOptions?.();
-  } catch {
-    grid = undefined; // a card that cannot say (an error in its place) takes what it was given
-  }
-  if (total !== 12) return Math.min(cols, total);
-  return Math.min(Math.max(cols, grid?.min_columns ?? 1), grid?.max_columns ?? 12);
-};
-
 const framed = params.get('frames') !== 'none';
 for (const column of columns)
-  for (const [name, sheet] of selected) {
+  for (const [name, sheet] of selected)
     for (const frame of framed ? sheet.frames : []) {
-      const el = document.createElement('section');
-      el.className = 'pg-frame';
-      el.dataset[frame.measure === false ? 'stress' : 'frame'] = `${name}/${frame.title}`;
-      el.style.width = `${frame.width ?? width}px`;
-      if (frame.gap !== undefined) el.style.gap = `${frame.gap}px`;
-      if (frame.heights) el.dataset['heights'] = frame.heights.join(',');
-      if (frame.statuses) wearStatuses(el, frame.statuses, column);
-      const total = frame.columns ?? 12;
-      if (frame.columns) el.style.gridTemplateColumns = `repeat(${total}, minmax(0, 1fr))`;
-      // the narrowest card's columns: what the measurer's card probes pick frames by (a half section is 6)
-      let span = 12;
-      for (const { cols, ...config } of frame.cards) {
-        const tag = String(config.type).replace(/^custom:/, '');
-        const card = document.createElement(tag) as LovelaceCard;
-        try {
-          card.setConfig(config);
-        } catch (error) {
-          card.textContent = String(error);
-        }
-        const view = frame.hass ?? ((hass: HomeAssistant) => hass);
-        card.hass = view(mock.hass());
-        const given = columnsOf(card, cols, total);
-        if (given < 12) {
-          card.dataset['cols'] = String(given);
-          card.style.gridColumn = `span ${given}`;
-        } else if (total !== 12) card.style.gridColumn = `span ${given}`;
-        span = Math.min(span, given);
-        cards.push({ card, view });
-        el.append(card);
-      }
-      el.dataset['span'] = String(span);
-      column.append(el);
+      const mounted = mountFrame(name, frame, mock.hass(), {
+        width,
+        wearStatuses: (el, own) => wearStatuses(el, own, column),
+      });
+      cards.push(...mounted.cards);
+      column.append(mounted.el);
     }
-  }
 if (viewTheme)
   await mountViewTheme(columns[0] ?? stage, {
     theme: viewTheme,

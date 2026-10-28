@@ -1,6 +1,6 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import type { StatusColours } from '@fluvy/tokens/runtime';
-import type { MockOptions, StateSeed } from './hass.js';
+import type { MockHouse, MockOptions, StateSeed } from './hass.js';
 import type { WsTable } from './ws.js';
 
 /**
@@ -62,8 +62,11 @@ export interface SheetSpec {
    * `undefined` leaves the message to it (see `mergeWs`).
    */
   readonly ws?: WsTable;
-  /** REST answers, e.g. calendar events or a config written: (method, path, body) → an answer, or undefined to pass. */
-  readonly api?: (method: string, path: string, body?: unknown) => unknown;
+  /**
+   * REST answers, e.g. calendar events or a config written: (method, path, body, the house asked) → an answer, or
+   * undefined to pass.
+   */
+  readonly api?: (method: string, path: string, body?: unknown, house?: MockHouse) => unknown;
   /** The house's units when this sheet stands alone (`?sheet=…`): imperial for a house in °F and miles. */
   readonly units?: 'imperial';
   /** The integrations' own words by key (a repair's title); merged with every other sheet's. */

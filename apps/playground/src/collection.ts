@@ -212,7 +212,11 @@ class MockDateSelection extends HTMLElement {
   hass: HomeAssistant | undefined;
   private key = '';
   readonly updateComplete = Promise.resolve(true);
-  /** The house and the moment the collection is made for (`stubCardHelpers`). */
+  /**
+   * The house the collection is made for, by its connection (a page may hold several), else the last one stubbed (a
+   * frame's own house, on a connection of its own); the moment, from `stubCardHelpers`.
+   */
+  static readonly houses = new WeakMap<object, () => HomeAssistant>();
   static house: (() => HomeAssistant) | undefined;
   static now = new Date();
 
@@ -221,8 +225,9 @@ class MockDateSelection extends HTMLElement {
   }
 
   connectedCallback(): void {
-    const house = MockDateSelection.house;
     const connection = this.hass?.connection as unknown as Record<string, unknown> | undefined;
+    const house =
+      (connection && MockDateSelection.houses.get(connection)) ?? MockDateSelection.house;
     if (!house || !connection || !this.key || connection[`_${this.key}`]) return;
     // as Home Assistant does, on the preset the dashboard last picked (today by default)
     let word: Preset = 'today';
@@ -244,6 +249,7 @@ class MockDateSelection extends HTMLElement {
  * yet. Any other card is not made here (the map's zones and a camera's still stand in, as without the helpers).
  */
 export function stubCardHelpers(house: () => HomeAssistant, now: Date): void {
+  MockDateSelection.houses.set(house().connection, house);
   MockDateSelection.house = house;
   MockDateSelection.now = now;
   if (!customElements.get('hui-energy-date-selection-card'))

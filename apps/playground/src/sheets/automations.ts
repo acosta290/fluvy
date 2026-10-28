@@ -16,7 +16,7 @@ import {
   type ScheduleRequest,
 } from '../../../../packages/cards/src/automations/sheet/schedule-sheet.js';
 import { Card } from '../../../../packages/cards/src/shared/base.js';
-import type { StateSeed } from '../hass.js';
+import type { MockHouse } from '../hass.js';
 import { NOW } from '../now.js';
 import type { SheetSpec } from '../scenes.js';
 import type { WsTable } from '../ws.js';
@@ -100,19 +100,9 @@ const PLAIN_TARGETS: Readonly<Record<string, readonly string[]>> = {
   'automation.vacation_lights': ['light.kitchen', 'light.hall'],
 };
 
-/** The page's mock, once it is made (`main.ts` puts it on the window before any card asks). */
-interface Mock {
-  hass(): HomeAssistant;
-  set(id: string, state?: string, attributes?: Record<string, unknown>): void;
-  add(seed: StateSeed): void;
-  remove(id: string): void;
-  fire(eventType: string, data?: Record<string, unknown>): void;
-}
-const mock = (): Mock | undefined => (window as unknown as { fluvyMock?: Mock }).fluvyMock;
-
 /** The automation entity whose config has that id, in the house as it is now. */
-const entityOf = (id: string): string | undefined =>
-  Object.values(mock()?.hass().states ?? {}).find(
+const entityOf = (house: MockHouse | undefined, id: string): string | undefined =>
+  Object.values(house?.hass().states ?? {}).find(
     (entity) => entity.entity_id.startsWith('automation.') && entity.attributes['id'] === id,
   )?.entity_id;
 
@@ -129,12 +119,12 @@ const PATH = /^config\/automation\/config\/(.+)$/;
  * one), as their entities, and the plain ones that do.
  */
 const ws: WsTable = {
-  'search/related': (message) => {
+  'search/related': (message, house) => {
     if (message['item_type'] !== 'entity') return undefined;
     const id = String(message['item_id']);
     const named = [...configs]
       .filter(([, config]) => JSON.stringify(config).includes(`"${id}"`))
-      .flatMap(([configId]) => entityOf(configId) ?? []);
+      .flatMap(([configId]) => entityOf(house, configId) ?? []);
     const plain = Object.keys(PLAIN_TARGETS).filter((automation) =>
       PLAIN_TARGETS[automation]?.includes(id),
     );
@@ -142,8 +132,8 @@ const ws: WsTable = {
   },
 };
 
-/** Home Assistant's config API for automations, in memory. */
-function api(method: string, path: string, body?: unknown): unknown {
+/** Home Assistant's config API for automations, in memory: the house asked follows what is written. */
+function api(method: string, path: string, body?: unknown, house?: MockHouse): unknown {
   const id = PATH.exec(path)?.[1];
   if (!id) return undefined;
   if (method === 'GET') {
@@ -158,9 +148,8 @@ function api(method: string, path: string, body?: unknown): unknown {
     configs.set(id, structuredClone(config));
     // the entity follows a beat later, as Home Assistant reloads the one automation it wrote
     setTimeout(() => {
-      const house = mock();
       if (!house) return;
-      const existing = entityOf(id);
+      const existing = entityOf(house, id);
       if (existing) house.set(existing, undefined, { friendly_name: alias, id });
       else
         house.add([
@@ -176,8 +165,7 @@ function api(method: string, path: string, body?: unknown): unknown {
     if (!configs.has(id)) return refusal(400, 'Resource not found');
     configs.delete(id);
     setTimeout(() => {
-      const house = mock();
-      const existing = entityOf(id);
+      const existing = entityOf(house, id);
       if (house && existing) house.remove(existing);
       house?.fire('automation_reloaded');
     }, LATENCY);
@@ -291,14 +279,15 @@ const AUTOMATIONS = [
   'automation.weekend_heating',
 ];
 
-/** The guest's house: the same connection copied once, so the guest's card keeps a store of its own. */
-let guestConnection: HomeAssistant['connection'] | undefined;
+/** The guest's house: the house's connection copied once, so the guest's card keeps a store of its own. */
+const guestConnections = new WeakMap<object, HomeAssistant['connection']>();
 const guest = (hass: HomeAssistant): HomeAssistant => {
-  guestConnection ??= { ...hass.connection };
+  let connection = guestConnections.get(hass.connection);
+  if (!connection) guestConnections.set(hass.connection, (connection = { ...hass.connection }));
   return {
     ...hass,
     user: { ...hass.user, is_admin: false },
-    connection: guestConnection,
+    connection,
     // a guest never reads a config: a call here is a bug, and the suite looks for it
     callApi: async (method: string, path: string) => {
       const window_ = window as unknown as { __guestApi?: string[] };

@@ -185,9 +185,9 @@ export const sheet: SheetSpec = {
     system: Object.assign({}, ...SOURCES.map((s) => s.data?.system)) as Record<string, unknown>,
   },
   ws: mergeWs(SOURCES.map((s) => s.ws)),
-  api: (method, path, body) => {
+  api: (method, path, body, house) => {
     for (const source of SOURCES) {
-      const answer = source.api?.(method, path, body);
+      const answer = source.api?.(method, path, body, house);
       if (answer !== undefined) return answer;
     }
     return undefined;

@@ -3,6 +3,7 @@ import { FluvyHelpersCard } from '../../../../packages/cards/src/helpers/helpers
 import { FluvyTimerCard } from '../../../../packages/cards/src/timer/timer-card.js';
 import { FluvyTodoCard } from '../../../../packages/cards/src/todo/todo-card.js';
 import { FluvyUpdatesCard } from '../../../../packages/cards/src/updates/updates-card.js';
+import type { MockHouse } from '../hass.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-helpers-card'))
@@ -78,13 +79,12 @@ interface MockCall {
 }
 
 /**
- * The list a to-do entity would report right now: the seeded items with every `todo.*` call the page
- * has made replayed over them, so adding and ticking in the playground behave like the real service does.
+ * The list a to-do entity would report right now: the seeded items with every `todo.*` call the house
+ * has been asked replayed over them, so adding and ticking in the playground behave like the real service does.
  */
-const itemsFor = (entityId: string): TodoItem[] => {
+const itemsFor = (entityId: string, calls: readonly MockCall[]): TodoItem[] => {
   const items: TodoItem[] = (LISTS[entityId] ?? []).map((item) => ({ ...item }));
-  const mock = (globalThis as { fluvyMock?: { calls: readonly MockCall[] } }).fluvyMock;
-  for (const call of mock?.calls ?? []) {
+  for (const call of calls) {
     if (call.domain !== 'todo') continue;
     const ids = ([] as string[]).concat(call.target?.entity_id ?? []);
     if (!ids.includes(entityId)) continue;
@@ -104,8 +104,8 @@ const itemsFor = (entityId: string): TodoItem[] => {
   return items;
 };
 
-const list = (message: Record<string, unknown>): { items: TodoItem[] } => ({
-  items: itemsFor(String(message['entity_id'] ?? '')),
+const list = (message: Record<string, unknown>, house?: MockHouse): { items: TodoItem[] } => ({
+  items: itemsFor(String(message['entity_id'] ?? ''), (house?.calls ?? []) as readonly MockCall[]),
 });
 
 const HELPERS_PAGE = { action: 'navigate', navigation_path: '/config/helpers' } as const;

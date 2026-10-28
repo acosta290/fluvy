@@ -258,8 +258,8 @@ export const sheet: SheetSpec = {
         { stat_consumption: 'sensor.sk_oven_energy', included_in_stat: 'sensor.sk_kitchen_energy' },
       ],
     }),
-    'recorder/statistics_during_period': (message) => {
-      const flowRows = flowStatistics(message) as Record<string, Rows>;
+    'recorder/statistics_during_period': (message, house) => {
+      const flowRows = flowStatistics(message, house) as Record<string, Rows>;
       const own = statistics(DEVICES)(message) as Record<string, Rows>;
       return Object.fromEntries(
         Object.keys({ ...flowRows, ...own }).map((id) => [
