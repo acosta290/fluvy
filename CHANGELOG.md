@@ -46,6 +46,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   were. In a half column (152, 172) the row stands one a line, so a tile is 420 tall where a live one with
   short figures stood 352 to 360, and a signed meter there writes its direction with a sign ("−1.8 kW", the scale
   "−5 kW · 5 kW") where its short figures left room for the words ("1.8 kW out").
+- The automatic dashboards hand every opening to their Sensors card (the Home dashboard's Security and Sensors views,
+  the Security dashboard's overview): from the ninth on, a leak, smoke, window or motion sensor was in no list there;
+  it is now under "All sensors". Thanks to @DennyWeinberg (#74).
+- A weather entity is never "on": a room card in an area with the weather counts one device fewer on ("1 of 8" all
+  day, whatever the weather), and a tile of the weather keeps its resting surface. Thanks to @DennyWeinberg (#75).
 - The history bars read the keyboard with the chart engine: Shift with ← → moves five bars (it moved one).
 - The settings panel has a sixth tab, Charts, between Appearance and Scope (a link to `/fluvy/scope` still opens
   Scope). Nothing drawn changes: the house's charts stay `classic`, 1.10's charts path for path, until it chooses
