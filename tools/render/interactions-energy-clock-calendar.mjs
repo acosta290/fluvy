@@ -286,6 +286,8 @@ async function moreInfos(page, run) {
   const bars = production.locator('.so-bars');
   const readoutLabel = production.locator('.so-top .fv-readout__label').first();
   const rest = (await readoutLabel.textContent()).trim();
+  // the pointer only reaches what the window shows: the sheet's frames above may push the card below it
+  await bars.scrollIntoViewIfNeeded();
   const bb = await bars.boundingBox();
   await page.mouse.move(bb.x + bb.width * (10.5 / 24), bb.y + bb.height * 0.6);
   await page.waitForTimeout(120);
