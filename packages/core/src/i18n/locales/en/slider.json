@@ -1,0 +1,12 @@
+{
+  "slider": {
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "muted": "Muted",
+    "muted_after": "muted",
+    "editor.control": "Control in the head",
+    "editor.control_helper": "Automatic: a player’s mute, a fan’s switch, or the switch of the entity below",
+    "editor.toggle_entity": "Switch of another entity",
+    "editor.toggle_entity_helper": "Its switch in the head: a soundbar’s power beside its volume"
+  }
+}

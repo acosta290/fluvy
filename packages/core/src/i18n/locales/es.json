@@ -1681,6 +1681,8 @@
     "hourly": "Por horas",
     "both": "Diaria y por horas",
     "none": "Nada",
+    "mute": "Silenciar",
+    "switch": "Interruptor",
     "area": "Área",
     "last-changed": "Último cambio",
     "state": "Estado",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Horas que destacar",
     "editor.show_legend": "Mostrar la leyenda",
     "editor.show_head": "Mostrar el valor actual"
+  },
+  "slider": {
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "muted": "Silenciado",
+    "muted_after": "silenciado",
+    "editor.control": "Control de la cabecera",
+    "editor.control_helper": "Automático: silenciar en un reproductor, el interruptor en un ventilador o el de la entidad de abajo",
+    "editor.toggle_entity": "Interruptor de otra entidad",
+    "editor.toggle_entity_helper": "Su interruptor en la cabecera: el encendido de una barra de sonido junto a su volumen"
   }
 }

@@ -41,6 +41,7 @@ import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
 import { ITEMS_FAMILY } from './items-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
+import { SLIDER_FAMILY } from './slider-family.js';
 import { TEMPLATE_FAMILY } from './template-family.js';
 import { loadChartEngine } from './shared/chart-load.js';
 import { WEB_FAMILY } from './web-family.js';
@@ -258,7 +259,7 @@ type Family = readonly [
 ];
 
 /**
- * The weather, template, web page, items and chart cards, the Energy period and Energy usage cards, and the media,
+ * The weather, template, web page, Slider, items and chart cards, the Energy period and Energy usage cards, and the media,
  * energy, devices, automations, appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
@@ -272,6 +273,7 @@ const FAMILIES: readonly Family[] = [
   [ALERTS_FAMILY, () => import('./alerts-cards.js')],
   [TEMPLATE_FAMILY, () => import('./template-cards.js')],
   [WEB_FAMILY, () => import('./web-cards.js')],
+  [SLIDER_FAMILY, () => import('./slider-cards.js')],
   [ITEMS_FAMILY, () => import('./items-cards.js')],
   [CHART_FAMILY, () => import('./chart-cards.js')],
 ];

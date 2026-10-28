@@ -1681,6 +1681,8 @@
     "hourly": "Saatlik",
     "both": "Günlük ve saatlik",
     "none": "Yok",
+    "mute": "Sessize al",
+    "switch": "Anahtar",
     "area": "Alan",
     "last-changed": "Son değişiklik",
     "state": "Durum",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Vurgulanacak saatler",
     "editor.show_legend": "Göstergeyi göster",
     "editor.show_head": "Şimdiki değeri göster"
+  },
+  "slider": {
+    "mute": "Sessize al",
+    "unmute": "Sesi aç",
+    "muted": "Sessiz",
+    "muted_after": "sessiz",
+    "editor.control": "Başlıktaki denetim",
+    "editor.control_helper": "Otomatik: oynatıcıda sessize alma, vantilatörde anahtar ya da aşağıdaki varlığın anahtarı",
+    "editor.toggle_entity": "Başka bir varlığın anahtarı",
+    "editor.toggle_entity_helper": "Anahtarı başlıkta: bir ses çubuğunun gücü, sesinin yanında"
   }
 }

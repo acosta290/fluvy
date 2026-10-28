@@ -1681,6 +1681,8 @@
     "hourly": "Oraria",
     "both": "Giornaliera e oraria",
     "none": "Nessuno",
+    "mute": "Silenzia",
+    "switch": "Interruttore",
     "area": "Area",
     "last-changed": "Ultima modifica",
     "state": "Stato",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Ore da evidenziare",
     "editor.show_legend": "Mostra la legenda",
     "editor.show_head": "Mostra il valore attuale"
+  },
+  "slider": {
+    "mute": "Silenzia",
+    "unmute": "Riattiva audio",
+    "muted": "Silenziato",
+    "muted_after": "silenziato",
+    "editor.control": "Controllo nell’intestazione",
+    "editor.control_helper": "Automatico: il silenziamento di un lettore, l’interruttore di un ventilatore o quello dell’entità qui sotto",
+    "editor.toggle_entity": "Interruttore di un’altra entità",
+    "editor.toggle_entity_helper": "Il suo interruttore nell’intestazione: l’accensione di una soundbar accanto al suo volume"
   }
 }

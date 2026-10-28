@@ -1681,6 +1681,8 @@
     "hourly": "Per uur",
     "both": "Dagelijks en per uur",
     "none": "Geen",
+    "mute": "Dempen",
+    "switch": "Schakelaar",
     "area": "Ruimte",
     "last-changed": "Laatst gewijzigd",
     "state": "Status",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Uren om uit te lichten",
     "editor.show_legend": "Legenda tonen",
     "editor.show_head": "Huidige waarde tonen"
+  },
+  "slider": {
+    "mute": "Dempen",
+    "unmute": "Geluid aan",
+    "muted": "Gedempt",
+    "muted_after": "gedempt",
+    "editor.control": "Bediening in de kop",
+    "editor.control_helper": "Automatisch: dempen bij een speler, de schakelaar van een ventilator of die van de entiteit hieronder",
+    "editor.toggle_entity": "Schakelaar van een andere entiteit",
+    "editor.toggle_entity_helper": "Haar schakelaar in de kop: de stroom van een soundbar naast het volume"
   }
 }

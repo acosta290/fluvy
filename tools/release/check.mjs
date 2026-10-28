@@ -78,6 +78,8 @@ const BUDGETS = {
   template: 8192,
   // the web page card: its card, its address and rounds rules, its English (1.11, #61)
   web: 8192,
+  // the Slider card: its card on the tile's and its English, its editor with the forms (1.11.1, #77)
+  slider: 8192,
   // the items family: the card, its fields and presets, its English (1.11, #66)
   items: 12_288,
   // the items' sheet: fetched when an item is tapped

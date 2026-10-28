@@ -153,6 +153,14 @@ const TEMPLATE =
 const WEB =
   /\/packages\/(cards\/src\/(web-cards\.ts|web\/)|core\/src\/i18n\/locales\/en\/web\.json)/;
 
+/**
+ * The Slider card (its card on the tile's and its English; its editor goes with the forms; the ruler, the head, the
+ * value row and the scales it reads with are core's, the light card's and the tile's): fetched as the bundle starts and
+ * defined as it lands, as the web page card is (`slider-family.ts` stays in core: the name, the height).
+ */
+const SLIDER =
+  /\/packages\/(cards\/src\/(slider-cards\.ts|slider\/)|core\/src\/i18n\/locales\/en\/slider\.json)/;
+
 /** The items' sheet: fetched the first time an item of an Items card is tapped, never by a dashboard that only lists. */
 const ITEMS_SHEET = /\/packages\/cards\/src\/items\/sheet\//;
 
@@ -194,9 +202,9 @@ const FORMS = /\/packages\/cards\/src\/([\w-]+)\/\1-editor\.ts$/;
  * page, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
  * every page carries, the weather card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
- * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the items
- * card (its sheet on its own), the cards' editor, the view icons, the icon set's other part, and everything else
- * (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in
+ * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
+ * card, the items card (its sheet on its own), the cards' editor, the view icons, the icon set's other part, and
+ * everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in
  * this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
@@ -227,6 +235,7 @@ export const GROUPS = [
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
+  { name: 'slider', test: SLIDER },
   { name: 'items-sheet', test: ITEMS_SHEET },
   { name: 'items', test: ITEMS },
   { name: 'light-colour', test: LIGHT_COLOUR },

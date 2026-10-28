@@ -1681,6 +1681,8 @@
     "hourly": "Horaire",
     "both": "Quotidienne et horaire",
     "none": "Aucun",
+    "mute": "Sourdine",
+    "switch": "Interrupteur",
     "area": "Zone",
     "last-changed": "Dernier changement",
     "state": "État",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Heures à mettre en avant",
     "editor.show_legend": "Afficher la légende",
     "editor.show_head": "Afficher la valeur actuelle"
+  },
+  "slider": {
+    "mute": "Muet",
+    "unmute": "Son",
+    "muted": "Muet",
+    "muted_after": "muet",
+    "editor.control": "Commande de l’en-tête",
+    "editor.control_helper": "Automatique : la sourdine d’un lecteur, l’interrupteur d’un ventilateur ou celui de l’entité ci-dessous",
+    "editor.toggle_entity": "Interrupteur d’une autre entité",
+    "editor.toggle_entity_helper": "Son interrupteur dans l’en-tête : l’alimentation d’une barre de son à côté de son volume"
   }
 }

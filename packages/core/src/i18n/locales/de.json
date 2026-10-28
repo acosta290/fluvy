@@ -1681,6 +1681,8 @@
     "hourly": "Stündlich",
     "both": "Täglich und stündlich",
     "none": "Keine",
+    "mute": "Stummschalten",
+    "switch": "Schalter",
     "area": "Bereich",
     "last-changed": "Zuletzt geändert",
     "state": "Zustand",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "Hervorgehobene Stunden",
     "editor.show_legend": "Legende anzeigen",
     "editor.show_head": "Aktuellen Wert anzeigen"
+  },
+  "slider": {
+    "mute": "Stumm",
+    "unmute": "Ton an",
+    "muted": "Stumm",
+    "muted_after": "stumm",
+    "editor.control": "Bedienelement im Kopf",
+    "editor.control_helper": "Automatisch: die Stummschaltung eines Players, der Schalter eines Ventilators oder der der Entität darunter",
+    "editor.toggle_entity": "Schalter einer anderen Entität",
+    "editor.toggle_entity_helper": "Ihr Schalter im Kopf: der Strom einer Soundbar neben ihrer Lautstärke"
   }
 }

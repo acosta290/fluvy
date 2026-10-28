@@ -779,6 +779,8 @@
     "hourly": "時間別",
     "both": "日別と時間別",
     "none": "なし",
+    "mute": "ミュート",
+    "switch": "スイッチ",
     "area": "エリア",
     "last-changed": "最終変更",
     "state": "状態",
@@ -2547,5 +2549,15 @@
     "editor.highlight_hours": "ハイライトする時間",
     "editor.show_legend": "凡例を表示",
     "editor.show_head": "現在の値を表示"
+  },
+  "slider": {
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
+    "muted": "ミュート中",
+    "muted_after": "ミュート中",
+    "editor.control": "見出しの操作",
+    "editor.control_helper": "自動：プレーヤーはミュート、ファンはスイッチ、または下のエンティティのスイッチ",
+    "editor.toggle_entity": "別のエンティティのスイッチ",
+    "editor.toggle_entity_helper": "そのスイッチを見出しに表示：サウンドバーの電源を音量の隣に"
   }
 }
