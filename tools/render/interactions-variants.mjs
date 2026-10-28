@@ -346,9 +346,10 @@ const heightOf = async (card) =>
     grid.columns === 6 && grid.min_columns === 6,
     JSON.stringify(grid),
   );
+  // the house's power, which the sheet's Energy dashboard does not name: the accent
   check(
-    "the chart wears the card's tone",
-    (await compact.locator('.ef-chart.fv-tone--solar').count()) === 1,
+    "the chart wears the card's tone: what its line shows",
+    (await compact.locator('.ef-chart.fv-tone--accent').count()) === 1,
   );
   await page.close();
 }

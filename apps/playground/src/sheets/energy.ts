@@ -64,6 +64,18 @@ const dense = (points: readonly number[], scale: number, per = 8): number[] =>
   });
 
 /**
+ * The grid meter's readings at the ends of the day's hours so far, 00:00 to 21:00 (kWh): all it ever counted, 12.5
+ * MWh, and 7.5 kWh of it today — what an energy card's legend reads with `period: today`.
+ */
+const GRID_METER = [
+  12526.7, 12526.8, 12527.0, 12527.3, 12527.8, 12528.3, 12528.6, 12528.8, 12528.9, 12529.0, 12529.1,
+  12529.3, 12529.6, 12530.0, 12530.5, 12531.2, 12531.9, 12532.6, 12533.2, 12533.8, 12534.2,
+];
+
+/** The grid's import through the day (kW): the night's trickle, the cooking, the evening. */
+const GRID_DAY = [0.3, 0.2, 0.2, 0.3, 0.9, 1.2, 0.4, 0.1, 0.1, 0.6, 1.4, 1.8, 1.4];
+
+/**
  * Marta’s flat as the energy sheet draws it: solar 3.2 kW, the grid importing 0.4 kW, the battery
  * charging at 1.1 kW, the house on 2.5 kW. Every id carries `ef_`: other sheets have a house too.
  */
@@ -88,6 +100,10 @@ export const sheet: SheetSpec = {
     ['sensor.ef_self_use', '88', { friendly_name: 'Self-use', unit_of_measurement: '%' }],
     ['sensor.ef_exported_today', '1.3', energy('Exported')],
     ['sensor.ef_imported_today', '4.1', energy('Imported')],
+
+    /* the grid's lifetime meter, and a second connection's meter that reads negative while it imports */
+    ['sensor.ef_grid_meter', String(GRID_METER[GRID_METER.length - 1]), energy('Grid meter')],
+    ['sensor.ef_garage_power', '-1400', power('Garage meter')],
 
     /* a flat without solar; a house that exports through a meter that signs export as positive */
     ['sensor.ef_flat_grid_power', '1.4', power('Grid power', 'kW')],
@@ -144,6 +160,42 @@ export const sheet: SheetSpec = {
     ),
     'sensor.ef_flat_house_power': dense([0.9, 0.7, 1.8, 1.1, 0.9, 1.5, 2.2, 1.6, 1.4], 1000),
     'sensor.ef_dead_power': [900, 850, 800, 780, 1100, 1400],
+    // the evening's import easing to the 0.4 kW it reads now
+    'sensor.ef_grid_power': dense([...GRID_DAY.slice(0, -2), 1.1, 0.4], 1000),
+    'sensor.ef_heat_pump_power': dense(
+      [0.2, 0.2, 0.9, 1.1, 0.6, 0.3, 0.2, 0.4, 1.0, 1.2, 0.9],
+      1000,
+    ),
+    // the garage's meter signs what it imports negative: its curve is the grid's, upside down
+    'sensor.ef_garage_power': dense(GRID_DAY, -1000),
+  },
+
+  statistics: { 'sensor.ef_grid_meter': { kind: 'counter', hourly: GRID_METER } },
+
+  /**
+   * The flat's Energy dashboard: its grid (the power and the lifetime meter), a second connection whose meter reads
+   * negative while it imports, the sun, and the heat pump among the individual devices — what an energy card's line
+   * reads as the grid's, the sun's or the house's.
+   */
+  ws: {
+    'energy/get_prefs': () => ({
+      energy_sources: [
+        {
+          type: 'grid',
+          stat_energy_from: 'sensor.ef_grid_meter',
+          stat_rate: 'sensor.ef_grid_power',
+        },
+        { type: 'grid', power_config: { stat_rate_inverted: 'sensor.ef_garage_power' } },
+        {
+          type: 'solar',
+          stat_energy_from: 'sensor.ef_solar_today',
+          stat_rate: 'sensor.ef_solar_power',
+        },
+      ],
+      device_consumption: [
+        { stat_consumption: 'sensor.ef_heat_pump_energy', stat_rate: 'sensor.ef_heat_pump_power' },
+      ],
+    }),
   },
 
   frames: [
@@ -402,6 +454,30 @@ export const sheet: SheetSpec = {
           ],
         },
         { type: 'custom:fluvy-energy-card', entity: 'sensor.ef_not_there' },
+      ],
+    },
+    // the line wears what it shows (1.11.1): the grid's power, a device the Energy dashboard counts in the house
+    {
+      title: 'What the line shows · the grid, a device',
+      cards: [
+        { type: 'custom:fluvy-energy-card', entity: 'sensor.ef_grid_power', _now: SHEET_NOW },
+        { type: 'custom:fluvy-energy-card', entity: 'sensor.ef_heat_pump_power', _now: SHEET_NOW },
+      ],
+    },
+    // a meter that reads negative while it imports, read the other way round; a lifetime meter's day in the legend
+    {
+      title: 'Read the other way round · the day of a lifetime meter',
+      cards: [
+        {
+          type: 'custom:fluvy-energy-card',
+          entity: 'sensor.ef_garage_power',
+          invert: true,
+          _now: SHEET_NOW,
+          legend: [
+            { entity: 'sensor.ef_grid_meter', name: 'Imported', period: 'today' },
+            { entity: 'sensor.ef_solar_today', name: 'Solar' },
+          ],
+        },
       ],
     },
     // the compact chart at its own size: half a section
