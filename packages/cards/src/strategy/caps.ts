@@ -37,6 +37,7 @@ export const CAPS: Readonly<Record<CapKey, number>> = {
   consumption: 8,
   today: 4,
   meters: 9,
+  devices: 8,
 };
 
 /**
@@ -58,6 +59,7 @@ const ROWS: ReadonlySet<CapKey> = new Set<CapKey>([
   'helpers',
   'updates',
   'consumption',
+  'devices',
 ]);
 
 const isCapKey = (key: string): key is CapKey => Object.hasOwn(CAPS, key);

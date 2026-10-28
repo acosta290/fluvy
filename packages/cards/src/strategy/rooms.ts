@@ -6,10 +6,11 @@ import {
   type AreaRegistryEntry,
 } from '@fluvy/core';
 import { applianceSections } from './appliances.js';
-import { capped, moreAfter } from './caps.js';
+import { byArea, capped, each, moreAfter, moreKeys } from './caps.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
   applianceTile,
+  entityRow,
   flowed,
   full,
   headed,
@@ -26,8 +27,8 @@ import type { Card, Section, StrategyContext, View } from './types.js';
 
 /*
  * The rooms: a view of every room of the house (its card, grouped by floor when there are floors), and a subview
- * per room with what it holds — its thermostat, lights, covers, media, plugs, readings and camera, and its appliances
- * across under them.
+ * per room with everything its card counts — its thermostats, lights, covers, gates, fans, media, plugs, readings,
+ * openings and cameras, the rest of it as rows, and its appliances across under them.
  */
 
 /** The areas a dashboard shows: those with something to show, by the room card's own rule, floor by floor. */
@@ -87,8 +88,69 @@ export interface RoomBack {
 }
 
 /**
- * One room: what it holds, in the home view's reading order, under a way back to where it was opened from; each list at
- * the house's cap, with its "N more" row.
+ * What a room holds, each entity its card counts (`areaContents`: the room card's own rule) in one part of its page
+ * (#76): the card's count and what the page reaches are the same entities.
+ */
+export interface RoomParts {
+  readonly thermostats: readonly string[];
+  readonly lights: readonly string[];
+  /** Blinds, curtains, awnings. */
+  readonly covers: readonly string[];
+  /** Garage doors and gates. */
+  readonly gates: readonly string[];
+  readonly fans: readonly string[];
+  readonly players: readonly string[];
+  /** The plugs' tiles. */
+  readonly appliances: readonly string[];
+  /** Its temperatures and humidities. */
+  readonly readings: readonly string[];
+  /** Doors, windows, motion, leaks, smoke and gas. */
+  readonly openings: readonly string[];
+  readonly cameras: readonly string[];
+  /** The appliances drawn whole across the page (their devices). */
+  readonly devices: readonly string[];
+  /** Everything else, as rows. */
+  readonly rest: readonly string[];
+  /** What the parts' cards show of the room besides: an appliance's own entities, a plug's power and energy. */
+  readonly within: readonly string[];
+}
+
+/** A room's parts, each in the house's order. */
+export function roomParts(home: HomeRegistry, areaId: string): RoomParts {
+  const counted = areaContents(home.registries, areaId).entities;
+  const has = new Set(counted);
+  const of = (ids: readonly string[]): string[] => ids.filter((id) => has.has(id));
+  const devices = home.applianceDevices.filter((device) => home.deviceArea(device) === areaId);
+  const appliances = of(home.applianceTiles);
+  const parts = {
+    thermostats: of(home.climate),
+    lights: of(home.lights),
+    covers: of(home.covers),
+    gates: of(home.gateways),
+    fans: of(home.fans),
+    players: of(home.players),
+    appliances,
+    readings: of([...home.temperatures, ...home.humidities]),
+    openings: of(home.openings),
+    cameras: of(home.cameras),
+  };
+  const drawn = new Set(Object.values(parts).flat());
+  const whole = new Set(devices);
+  const within = new Set([
+    ...counted.filter((id) => whole.has(home.deviceOf(id) ?? '')),
+    ...appliances.flatMap((id) => home.readoutsOf(id)),
+  ]);
+  return {
+    ...parts,
+    devices,
+    rest: counted.filter((id) => !drawn.has(id) && !within.has(id)),
+    within: [...within].filter((id) => has.has(id) && !drawn.has(id)),
+  };
+}
+
+/**
+ * One room: everything it holds, in the home view's reading order, under a way back to where it was opened from; each
+ * list at the house's cap, with its "N more" row.
  */
 export function roomSections(
   ctx: StrategyContext,
@@ -97,57 +159,97 @@ export function roomSections(
   columns = 3,
 ): Section[] {
   const { home, t } = ctx;
-  const inRoom = (ids: readonly string[]): string[] =>
-    ids.filter((id) => home.areaOf(id) === area.area_id);
-  const climate = inRoom(home.climate);
-  const players = inRoom(home.players);
-  const cameras = inRoom(home.cameras);
+  const parts = roomParts(home, area.area_id);
   const found = areaClimate(home.registries, area.area_id);
   // the room's own readings, else the sensors its area names (a thermostat's or an appliance's reading is its card's)
   const named = (['temperature', 'humidity'] as const).flatMap((kind) => {
     const id = found[kind];
     return id && !climateAttribute(id, kind) && !home.ofAppliance(id) ? [id] : [];
   });
-  const sensed = inRoom([...home.temperatures, ...home.humidities]);
+  const gate = (id: string): Card => full('cover', { entity: id, ...home.named(id) });
+  const fan = (id: string): Card => full('fan', { entity: id, ...home.named(id) });
+  const player = (id: string): Card => full('media', { entity: id, ...home.named(id) });
+  const camera = (id: string): Card => full('camera', { entity: id });
   const coverTiles = (ids: readonly string[]): Card =>
     full('tiles', {
       size: 'compact',
       columns: 2,
       tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
     });
+  const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
+    full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
+  const thermostats = capped(
+    ctx,
+    { key: 'thermostats', title: 'strategy.thermostats', icon: 'fluvy:thermo' },
+    parts.thermostats,
+    each((id) => thermostat(id, ctx.style)),
+  );
   const lights = capped(
     ctx,
     { key: 'lights', title: 'strategy.lights', icon: 'fluvy:bulb' },
-    inRoom(home.lights),
+    parts.lights,
     (ids) => lightGroups(ctx, ids),
   );
   const covers = capped(
     ctx,
     { key: 'covers', title: 'strategy.covers', icon: 'fluvy:blinds' },
-    inRoom(home.covers),
+    parts.covers,
     (ids) => [[coverTiles(ids)]],
+  );
+  const gates = capped(
+    ctx,
+    { key: 'gates', title: 'strategy.gates', icon: 'fluvy:door' },
+    parts.gates,
+    each(gate),
+  );
+  const fans = capped(
+    ctx,
+    { key: 'fans', title: 'strategy.fans', icon: 'fluvy:fan' },
+    parts.fans,
+    each(fan),
+  );
+  const players = capped(
+    ctx,
+    { key: 'media', title: 'strategy.media', icon: 'fluvy:speaker' },
+    parts.players,
+    each(player),
   );
   const plugs = capped(
     ctx,
     { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
-    inRoom(home.applianceTiles),
+    parts.appliances,
     (ids) => tileRows(ids.map((id) => applianceTile(home, id))),
   );
   const readings = capped(
     ctx,
     { key: 'readings', title: 'strategy.readings', icon: 'fluvy:thermo' },
-    sensed.length ? sensed : named,
+    parts.readings.length ? parts.readings : named,
     (ids) => readoutsCards(home, ids).map((card) => [card]),
+  );
+  const cameras = capped(
+    ctx,
+    { key: 'cameras', title: 'strategy.cameras', icon: 'fluvy:camera' },
+    parts.cameras,
+    each(camera),
+  );
+  const rest = capped(
+    ctx,
+    { key: 'devices', title: 'strategy.devices', icon: 'fluvy:devices' },
+    parts.rest,
+    (ids) => byArea(ctx, ids, t('strategy.devices'), (title, own) => [rows(title, own)]),
   );
   const sections = flowed(
     ctx,
     [
       [heading(back.title, 'fluvy:home', [], back.path)],
-      ...(climate[0] ? [[thermostat(climate[0], ctx.style)]] : []),
+      ...moreAfter(
+        thermostats.shown.map((id) => [thermostat(id, ctx.style)]),
+        thermostats,
+      ),
       ...when(lights.shown.length, () =>
         moreAfter(
           headed(
-            heading(t('strategy.lights'), 'fluvy:bulb', inRoom(home.lights)),
+            heading(t('strategy.lights'), 'fluvy:bulb', parts.lights),
             tileRows(lights.shown.map((id) => sizedTile(id, home.named(id), ctx.style))),
           ),
           lights,
@@ -155,22 +257,27 @@ export function roomSections(
       ),
       ...when(covers.shown.length, () =>
         moreAfter(
-          [
-            [
-              heading(t('strategy.covers'), 'fluvy:blinds', inRoom(home.covers)),
-              coverTiles(covers.shown),
-            ],
-          ],
+          [[heading(t('strategy.covers'), 'fluvy:blinds', parts.covers), coverTiles(covers.shown)]],
           covers,
         ),
       ),
-      ...(players.length
-        ? [[full('media', { entity: players[0], ...home.named(players[0] ?? '') })]]
-        : []),
+      // a garage door or a gate as a cover, as the security view draws it
+      ...moreAfter(
+        gates.shown.map((id) => [gate(id)]),
+        gates,
+      ),
+      ...moreAfter(
+        fans.shown.map((id) => [fan(id)]),
+        fans,
+      ),
+      ...moreAfter(
+        players.shown.map((id) => [player(id)]),
+        players,
+      ),
       ...when(plugs.shown.length, () =>
         moreAfter(
           headed(
-            heading(t('strategy.appliances'), 'fluvy:plug', inRoom(home.applianceTiles)),
+            heading(t('strategy.appliances'), 'fluvy:plug', parts.appliances),
             tileRows(plugs.shown.map((id) => applianceTile(home, id))),
           ),
           plugs,
@@ -180,17 +287,22 @@ export function roomSections(
         readoutsCards(home, readings.shown).map((card) => [card]),
         readings,
       ),
-      ...(cameras.length ? [[full('camera', { entity: cameras[0] })]] : []),
+      // the openings and the safety sensors on one card scoped to the room, which folds them itself
+      ...when(parts.openings.length, () => [
+        [full('openings', { title: t('strategy.sensors'), entities: [...parts.openings] })],
+      ]),
+      ...moreAfter(
+        cameras.shown.map((id) => [camera(id)]),
+        cameras,
+      ),
+      ...when(rest.shown.length, () => [[rows(t('strategy.devices'), rest.shown, moreKeys(rest))]]),
     ],
     [],
     columns,
   );
-  const devices = home.applianceDevices.filter(
-    (device) => home.deviceArea(device) === area.area_id,
-  );
   return [
     ...(sections.length ? sections : [section(heading(back.title, 'fluvy:home', [], back.path))]),
-    ...applianceSections(ctx, devices, columns),
+    ...applianceSections(ctx, parts.devices, columns),
   ];
 }
 

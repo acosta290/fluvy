@@ -7,6 +7,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Visible on upgrade
 
+- A room's page on the automatic dashboards shows everything its card counts, by the card's own rule: besides its
+  thermostat, lights, blinds, media, plugs, readings and camera, its garage doors and gates as covers, its fans, every
+  thermostat, player and camera it holds, its doors, windows, motion, leak, smoke and gas sensors on one Openings card,
+  and the rest of it as rows under Devices. A garage with a temperature and humidity sensor, a smoke detector, a leak
+  sensor and a garage door counted five devices and drew two readings; its page now holds all five. Thanks to
+  @DennyWeinberg (#76).
 - A list the automatic dashboards cap ends with a "N more" row where it goes past its cap (Climate's humidity and
   temperatures, Home's lights, the batteries…), which opens a page of every one, back to its view; a room's page does
   the same for its own lists. A list of rows or tiles one past its cap shows that one instead (a seventh light, a

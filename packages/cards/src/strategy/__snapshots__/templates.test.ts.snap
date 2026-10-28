@@ -1,5 +1,75 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`the dashboard templates > draw the reporter’s garage whole on its page: readings, the Openings card, the door as a cover (golden file, #76) 1`] = `
+{
+  "back_path": "/fluvy-home/rooms",
+  "icon": "mdi:garage",
+  "max_columns": 3,
+  "path": "room-garage",
+  "sections": [
+    {
+      "cards": [
+        {
+          "type": "custom:fluvy-hello-card",
+          "weather": "weather.home",
+        },
+        {
+          "icon": "fluvy:home",
+          "path": "/fluvy-home/rooms",
+          "title": "All rooms",
+          "type": "custom:fluvy-heading-card",
+        },
+      ],
+      "type": "grid",
+    },
+    {
+      "cards": [
+        {
+          "entity": "cover.garage_main_door",
+          "grid_options": {
+            "columns": 12,
+          },
+          "type": "custom:fluvy-cover-card",
+        },
+        {
+          "rows": [
+            {
+              "entity": "sensor.garage_temperature",
+              "name": "Garage",
+            },
+            {
+              "entity": "sensor.garage_humidity",
+              "name": "Garage",
+            },
+          ],
+          "type": "custom:fluvy-readouts-card",
+        },
+      ],
+      "type": "grid",
+    },
+    {
+      "cards": [
+        {
+          "entities": [
+            "binary_sensor.garage_leak",
+            "binary_sensor.garage_smoke",
+          ],
+          "grid_options": {
+            "columns": 12,
+          },
+          "title": "Sensors",
+          "type": "custom:fluvy-openings-card",
+        },
+      ],
+      "type": "grid",
+    },
+  ],
+  "subview": true,
+  "title": "Garage",
+  "type": "sections",
+}
+`;
+
 exports[`the dashboard templates > end a capped list with "N more" and open every one on a subview (golden file, #78) 1`] = `
 [
   {

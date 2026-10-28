@@ -7,6 +7,7 @@ import { findEnergyRoles } from './energy-roles.js';
 import { generate } from './generate.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { HomeRegistry } from './home-registry.js';
+import { roomParts } from './rooms.js';
 import type { View } from './types.js';
 import {
   hcCoffee,
@@ -20,7 +21,7 @@ import {
   plugWasher,
   tuyaKettle,
 } from '../appliance/fixtures/index.js';
-import type { HomeAssistant } from '@fluvy/core';
+import { areaContents, type HomeAssistant } from '@fluvy/core';
 
 import {
   DEMO_ENERGY_SOURCES,
@@ -1008,6 +1009,194 @@ function namedIn(
     for (const inner of Object.values(value)) namedIn(inner, hass, out);
   return out;
 }
+
+/**
+ * What a room's page reaches: the entities its cards name, those of the appliances it draws whole, and the same on
+ * the subviews its "N more" rows open.
+ */
+function reachedFrom(
+  views: readonly View[],
+  path: string,
+  hass: { states: Record<string, unknown>; entities: Record<string, { device_id?: string }> },
+): Set<string> {
+  const page = views.find((view) => view.path === path)!;
+  const lists = views.filter((view) => view.subview && view.back_path?.endsWith(`/${path}`));
+  const cards = cardsIn([page, ...lists]);
+  const reached = namedIn(cards, hass);
+  const devices = new Set(
+    cards.flatMap((card) =>
+      ((card['appliances'] as { device: string }[] | undefined) ?? []).map(({ device }) => device),
+    ),
+  );
+  for (const [id, entry] of Object.entries(hass.entities))
+    if (entry.device_id && devices.has(entry.device_id)) reached.add(id);
+  return reached;
+}
+
+describe('custom:fluvy-home strategy — a room’s page shows everything its card counts (#76)', () => {
+  /** The reporter's garage: a temperature and humidity sensor, a smoke detector, a leak sensor and a garage door. */
+  const garage = (more: readonly DemoEntity[] = []) => {
+    const hass = house([
+      entity(
+        'sensor.garage_climate_temperature',
+        '12.5',
+        { device_class: 'temperature', unit_of_measurement: '°C' },
+        { device_id: 'd-garage-climate' },
+      ),
+      entity(
+        'sensor.garage_climate_humidity',
+        '71',
+        { device_class: 'humidity', unit_of_measurement: '%' },
+        { device_id: 'd-garage-climate' },
+      ),
+      entity(
+        'binary_sensor.garage_smoke',
+        'off',
+        { device_class: 'smoke', friendly_name: 'Smoke detector' },
+        { area_id: 'garage' },
+      ),
+      entity(
+        'binary_sensor.garage_leak',
+        'off',
+        { device_class: 'moisture', friendly_name: 'Leak sensor' },
+        { area_id: 'garage' },
+      ),
+      entity(
+        'cover.garage_main_door',
+        'closed',
+        { device_class: 'garage', friendly_name: 'Garage door', supported_features: 3 },
+        { area_id: 'garage' },
+      ),
+      ...more,
+    ]) as unknown as HomeAssistant;
+    hass.areas['garage'] = { area_id: 'garage', name: 'Garage', icon: 'mdi:garage' } as never;
+    hass.devices['d-garage-climate'] = {
+      id: 'd-garage-climate',
+      area_id: 'garage',
+      name: 'Garage climate',
+    } as never;
+    return hass;
+  };
+
+  it('draws the reporter’s garage whole: its readings, the smoke and the leak on its Openings card, the door as a cover', async () => {
+    const hass = garage();
+    // the card's count: five devices
+    expect(areaContents(hass, 'garage').entities).toHaveLength(5);
+    const { views } = await generate({ type: 'custom:fluvy-rooms' }, hass as never);
+    const cards = cardsIn(views.filter((view) => view.path === 'room-garage'));
+    expect(cards.find((card) => card.type === 'custom:fluvy-readouts-card')?.['rows']).toEqual([
+      { entity: 'sensor.garage_climate_temperature', name: 'Garage' },
+      { entity: 'sensor.garage_climate_humidity', name: 'Garage' },
+    ]);
+    expect(cards.find((card) => card.type === 'custom:fluvy-openings-card')).toMatchObject({
+      title: 'Sensors',
+      entities: ['binary_sensor.garage_leak', 'binary_sensor.garage_smoke'],
+    });
+    expect(cards.find((card) => card.type === 'custom:fluvy-cover-card')).toMatchObject({
+      entity: 'cover.garage_main_door',
+    });
+  });
+
+  it('reaches every entity the room card counts, by one rule for both, on Home’s rooms and the rooms dashboard', async () => {
+    // the garage besides: lights past their cap, a fan, a vacuum, a lock, a battery, a plug's USB outlet, a button
+    const hass = garage([
+      ...Array.from({ length: 9 }, (_, i) =>
+        entity(
+          `light.garage_${i + 1}`,
+          'off',
+          { supported_color_modes: ['onoff'] },
+          { area_id: 'garage' },
+        ),
+      ),
+      entity('fan.garage', 'off', {}, { area_id: 'garage' }),
+      entity('vacuum.garage', 'docked', {}, { area_id: 'garage' }),
+      entity('lock.garage_side', 'locked', {}, { area_id: 'garage' }),
+      entity(
+        'sensor.garage_smoke_battery',
+        '90',
+        { device_class: 'battery', unit_of_measurement: '%' },
+        { area_id: 'garage' },
+      ),
+      entity(
+        'switch.garage_plug',
+        'on',
+        { device_class: 'outlet' },
+        { device_id: 'd-garage-plug' },
+      ),
+      entity(
+        'switch.garage_plug_usb',
+        'on',
+        { friendly_name: 'Garage plug USB' },
+        { device_id: 'd-garage-plug' },
+      ),
+      entity(
+        'sensor.garage_plug_power',
+        '12',
+        { device_class: 'power', unit_of_measurement: 'W' },
+        { device_id: 'd-garage-plug' },
+      ),
+      entity('button.garage_door_identify', 'unknown', {}, { area_id: 'garage' }),
+    ]);
+    hass.devices['d-garage-plug'] = {
+      id: 'd-garage-plug',
+      area_id: 'garage',
+      name: 'Garage plug',
+    } as never;
+    const counted = areaContents(hass, 'garage').entities;
+    // the one rule: each counted entity in exactly one part of the page, or shown by a part's card
+    const parts = roomParts(new HomeRegistry(hass), 'garage');
+    const placed = [
+      ...parts.thermostats,
+      ...parts.lights,
+      ...parts.covers,
+      ...parts.gates,
+      ...parts.fans,
+      ...parts.players,
+      ...parts.appliances,
+      ...parts.readings,
+      ...parts.openings,
+      ...parts.cameras,
+      ...parts.rest,
+      ...parts.within,
+    ];
+    expect([...placed].sort()).toEqual([...counted].sort());
+    expect(parts.rest).toEqual(
+      expect.arrayContaining([
+        'button.garage_door_identify',
+        'lock.garage_side',
+        'sensor.garage_smoke_battery',
+        'switch.garage_plug_usb',
+        'vacuum.garage',
+      ]),
+    );
+    // the plug's power is its tile's readout
+    expect(parts.within).toEqual(['sensor.garage_plug_power']);
+    for (const type of ['custom:fluvy-home', 'custom:fluvy-rooms'] as const) {
+      const { views } = await generate({ type }, hass as never);
+      const reached = reachedFrom(views, 'room-garage', hass as never);
+      expect(
+        counted.filter((id) => !reached.has(id)),
+        type,
+      ).toEqual([]);
+      // the lights past their cap are a "N more" row away, on a subview back to the room
+      const page = cardsIn(views.filter((view) => view.path === 'room-garage'));
+      expect(page.filter((card) => card.type === 'custom:fluvy-tile-card').length).toBeGreaterThan(
+        0,
+      );
+      expect(page.find((card) => card['more_path'] !== undefined)).toMatchObject({
+        type: 'custom:fluvy-entities-card',
+        more: 3,
+        more_path: '/fluvy-home/room-garage-lights',
+      });
+      const lights = views.find((view) => view.path === 'room-garage-lights')!;
+      expect(lights).toMatchObject({
+        subview: true,
+        back_path: '/fluvy-home/room-garage',
+        title: 'Lights',
+      });
+    }
+  });
+});
 
 describe('custom:fluvy-home strategy — capped lists (#78)', () => {
   /** A house of twelve rooms, each with its temperature, its humidity and its light. */

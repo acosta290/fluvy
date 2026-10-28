@@ -408,6 +408,27 @@ describe('the dashboard templates', () => {
     }
   });
 
+  it('draw the reporter’s garage whole on its page: readings, the Openings card, the door as a cover (golden file, #76)', async () => {
+    const hass = house([
+      entity('sensor.garage_temperature', '12.5', {
+        device_class: 'temperature',
+        unit_of_measurement: '°C',
+      }),
+      entity('sensor.garage_humidity', '71', {
+        device_class: 'humidity',
+        unit_of_measurement: '%',
+      }),
+      entity('binary_sensor.garage_smoke', 'off', { device_class: 'smoke' }),
+      entity('binary_sensor.garage_leak', 'off', { device_class: 'moisture' }),
+      entity('cover.garage_main_door', 'closed', { device_class: 'garage', supported_features: 3 }),
+    ]) as unknown as HomeAssistant;
+    for (const id of Object.keys(hass.entities).filter((id) => id.includes('.garage_')))
+      hass.entities[id] = { ...hass.entities[id]!, area_id: 'garage' };
+    hass.areas['garage'] = { area_id: 'garage', name: 'Garage', icon: 'mdi:garage' } as never;
+    const { views } = await generate({ type: 'custom:fluvy-rooms' }, hass as never);
+    expect(views.find((view) => view.path === 'room-garage')).toMatchSnapshot();
+  });
+
   it('end a capped list with "N more" and open every one on a subview (golden file, #78)', async () => {
     const hass = house(
       Array.from({ length: 12 }, (_, i) =>
