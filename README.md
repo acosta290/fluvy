@@ -19,7 +19,7 @@
 <p align="center"><b>Try it: <a href="https://acosta290.github.io/fluvy/">acosta290.github.io/fluvy</a></b> — the real cards, pages and settings panel on a simulated home, in your browser.</p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/hero-light.png" width="960" alt="Four Fluvy cards: tiles, a thermostat, energy and a media player">
+  <a href="https://acosta290.github.io/fluvy/?palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/hero.webp" width="822" alt="Fluvy on the Linen palette: light and plug tiles, a thermostat, the day's energy in the soft style and a media player"></a>
 </p>
 
 Fluvy brings one design to the whole of Home Assistant: a theme, sixty-two cards, five automatic dashboards, a
@@ -35,11 +35,11 @@ radii and hairlines. A dashboard's view tabs are yours to style: the views as wo
 one (as here), as pills, as icons, Home Assistant's own, or none at all.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-desktop.png" width="960" alt="Home Assistant with Fluvy: the sidebar, the tabs and a dashboard in one design">
+  <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=desktop"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-desktop.webp" width="822" alt="Home Assistant with Fluvy on a desktop: the sidebar, the header with its view tabs and a dashboard of three sections, in one design"></a>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/app-tablet.png" width="640" alt="The same dashboard on a wall tablet">
+  <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-light.webp" width="411" alt="The same dashboard on a tablet, light"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-dark.webp" width="411" alt="The same dashboard on a tablet, dark"></a>
 </p>
 
 ## Sixty-two cards
@@ -49,9 +49,7 @@ Every card has an editor form and a live preview in the card picker; every optio
 hold for the 1 % scale.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/dimmer.gif" width="45%" alt="The precision dimmer: a relative drag, finer away from the ruler, and the 1 % scale on hold">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/energy-flow.gif" width="45%" alt="The energy flow on a three-phase house: importing on two phases while the third exports, then all sun, then the battery at night — every lane in its origin's colour">
-  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/dimmer.mp4">dimmer.mp4</a> · <a href="https://github.com/acosta290/fluvy/blob/main/docs/media/energy-flow.mp4">energy-flow.mp4</a></sub>
+  <a href="https://acosta290.github.io/fluvy/?sheet=slider&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/dimmer.gif" width="411" alt="The precision dimmer: a relative drag, finer away from the ruler, and the 1 % scale on hold"></a><a href="https://acosta290.github.io/fluvy/?sheet=flow&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/energy-flow.gif" width="411" alt="The energy flow of a three-phase house changing pace: importing while a phase exports, then all sun, then the battery at night, every lane in its source's colour"></a>
 </p>
 
 **Control** — lights with brightness and colour temperature, a room's lights on one card (one tap for the whole
@@ -62,10 +60,11 @@ filament unit's trays, the camera, pause and stop), tiles and lists — and a ti
 and colour are Home Assistant templates (the Template card; a Mushroom template card pastes in).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-control.png" width="960" alt="Control cards: lights, thermostats, covers, fans, vacuums, media players, tiles and lists">
+  <a href="https://acosta290.github.io/fluvy/?sheet=devices-motion&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-cover.webp" width="411" alt="The cover card: blinds with their position and tilt"></a><a href="https://acosta290.github.io/fluvy/?sheet=devices-motion&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-vacuum.webp" width="411" alt="The vacuum card: cleaning the kitchen, its battery, its controls and its suction"></a>
 </p>
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-lights.png" width="960" alt="Room lights: a room on one line with a round a light, six lights on their own line, chips with one brightness for the room, and tiles">
+  <a href="https://acosta290.github.io/fluvy/?sheet=printer&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-printer.webp" width="411" alt="A 3D printer card: a Bambu Lab printer at work, its camera, the progress and time left, the heaters, the filament trays, pause and stop"></a><a href="https://acosta290.github.io/fluvy/?sheet=lights&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-whites.webp" width="411" alt="A room's lights, each in the warmth of its bulb, as tiles and as chips"></a>
 </p>
 
 **Energy** — the energy flow, read the way your meters are: one sensor, import and export apart, or each phase — so
@@ -81,7 +80,11 @@ usage card draws them as its usage graph, a column an hour, a day or a month. Ev
 decimals you ask for. [How they read a house](docs/energy.md).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-energy.png" width="960" alt="The energy cards: the flow of a three-phase house and the flow as a cross, the balance, the grid by phase, two batteries, a car charger, where the day's energy went and the energy score">
+  <a href="https://acosta290.github.io/fluvy/?sheet=usage&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/energy-period.webp" width="822" alt="The Energy period strip and the Energy usage card following it: a day of solar, battery and grid, a column an hour"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=flow&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/energy-flow.webp" width="411" alt="The energy flow of a house with two roofs and two batteries"></a><a href="https://acosta290.github.io/fluvy/?sheet=sankey&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/energy-sankey.webp" width="411" alt="Where the day's energy went: from the grid, the battery and the sun to the house and its devices"></a>
 </p>
 
 **Security and sensors** — locks, alarms, cameras (live, in their own shape, or several at a glance on the Cameras
@@ -89,7 +92,7 @@ card, each with what it sees), openings and motion, humidity, plants, gauges, se
 one chart.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-sensors.png" width="960" alt="Security and sensor cards: a lock, an alarm, a camera, openings and motion, humidity, plants, a solar gauge and sensor tiles">
+  <a href="https://acosta290.github.io/fluvy/?sheet=cameras&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/cameras-light.webp" width="411" alt="The Cameras card: the cameras outside at a glance, two of them live, each with what it sees, light"></a><a href="https://acosta290.github.io/fluvy/?sheet=cameras&amp;palette=linen&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/cameras-dark.webp" width="411" alt="The same Cameras card, dark"></a>
 </p>
 
 **Charts** — every chart and gauge drawn by one engine, in a style the house chooses once (`classic`, the chart
@@ -99,6 +102,18 @@ tank, a battery, a pulse, the air, the sun. The Chart card draws any time series
 come — a sensor's history, tomorrow's electricity prices, a solar forecast — with thresholds in their colours and the
 cheapest hours marked.
 
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=chart&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-light.webp" width="411" alt="The Chart card: today's and tomorrow's electricity prices, stepped, the cheapest and dearest hours marked, light"></a><a href="https://acosta290.github.io/fluvy/?sheet=chart&amp;palette=linen&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-dark.webp" width="411" alt="The same Chart card, dark"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-soft.webp" width="411" alt="A day of a room's temperature in the soft style"></a><a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-columns.webp" width="411" alt="A day of the house's energy in columns"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-liquid.webp" width="274" alt="A humidity gauge as a liquid"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-tank.webp" width="274" alt="A rain tank filling"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/gauge-battery.webp" width="274" alt="A battery charging"></a>
+</p>
+
 **Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
 timeline, upcoming), clocks (analog, digital, world), readouts and trends, safety, helpers, updates, timers, to-do
 lists, and the house's automations: every one as a row with its switch and last run, and schedules written in a
@@ -107,7 +122,7 @@ a plate (a map, a site of your own), and the items of a sensor's list as rows �
 board — each with a sheet of its details.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/cards-home.png" width="960" alt="Home, time and helper cards">
+  <a href="https://acosta290.github.io/fluvy/?sheet=web&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/web.webp" width="411" alt="The Web page card: a map of lightning strikes on a plate under its head, with open and full screen"></a><a href="https://acosta290.github.io/fluvy/?sheet=items&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/items.webp" width="411" alt="The Items card: the flights overhead as tiles"></a>
 </p>
 
 **Appliances and alerts** — a washer, a dryer, a dishwasher, an oven, a hob, a fridge, a coffee machine or a kettle
@@ -118,6 +133,10 @@ drew for us (#47) — and the house's appliances in one list or as whole cards s
 what needs a look — low batteries, devices gone, doors left open, leaks and smoke, updates, repairs — each alert one
 line, as tiles, chips, rows or a banner, hidden while all is clear, with a snooze that follows you to every device.
 
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=appliances&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/appliance.webp" width="411" alt="An appliance card: a washer rinsing, the time left over a bar, its programme, energy and a reminder"></a><a href="https://acosta290.github.io/fluvy/?sheet=alerts&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/alerts.webp" width="411" alt="The alerts card as rows: hazards, lights unavailable, sensors offline, low batteries, doors left open, errors and updates"></a>
+</p>
+
 ## Activity and History
 
 Two of Home Assistant's pages, drawn in the same idiom: the logbook as a timeline with who did what, and the
@@ -125,13 +144,7 @@ history as charts with a scrub cursor, grouped by room or device. They stand in 
 the house wants them; a switch gives Home Assistant's pages back.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/activity-light.png" width="49%" alt="The Activity page">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/history-light.png" width="49%" alt="The History page">
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/history-scrub.gif" width="720" alt="History: one cursor scrubbed across a chart reads every chart at the same moment">
-  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/history-scrub.mp4">history-scrub.mp4</a></sub>
+  <a href="https://acosta290.github.io/fluvy/?activity=1&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/activity.webp" width="411" alt="The Activity page: the day's logbook as a timeline, who did what, with the hours beside it"></a><a href="https://acosta290.github.io/fluvy/?history=1&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/history-scrub.gif" width="411" alt="The History page: one cursor scrubbed across a chart reads every chart at the same moment"></a>
 </p>
 
 ## The settings panel
@@ -142,17 +155,15 @@ applies; the automatic dashboard; and each person's own preferences — language
 own. Changes apply live on every device, no reload.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="720" alt="The Appearance tab: two presets tried, a custom accent picked, the look applied to the house">
-  <br><sub><a href="https://github.com/acosta290/fluvy/blob/main/docs/media/palette.mp4">palette.mp4</a></sub>
+  <a href="https://acosta290.github.io/fluvy/?panel=appearance&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="822" alt="The Appearance tab: two palettes tried, a custom accent picked, the look applied to the house"></a>
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-light.png" width="49%" alt="The Appearance tab">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-scope.png" width="49%" alt="The Scope tab">
+  <a href="https://acosta290.github.io/fluvy/?panel=charts&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/panel-charts.webp" width="822" alt="The Charts tab: the style every chart is drawn in, and a preview of it in light and dark"></a>
 </p>
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-dashboard.png" width="49%" alt="The Dashboards tab">
-  <img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/panel-preferences.png" width="49%" alt="The Preferences tab">
+  <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-en.webp" width="274" alt="The dashboard on a phone in English"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;mode=dark&amp;lang=pt-PT"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-pt-PT.webp" width="274" alt="The same dashboard in European Portuguese, dark"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;lang=ja"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-ja.webp" width="274" alt="The same dashboard in Japanese"></a>
 </p>
 
 ## The automatic dashboards
@@ -240,7 +251,7 @@ options.
 
 ## Documentation
 
-| | |
+| Guide | What it covers |
 | --- | --- |
 | [Installation](docs/installation.md) | HACS or the release zip, updating, uninstalling, what the integration registers, the Repairs it can raise |
 | [Getting started](docs/getting-started.md) | the first ten minutes |
