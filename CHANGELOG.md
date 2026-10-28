@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.3] — 2026-10-28
+
 ### Added
 
 - The Energy usage card draws metered flows with `mode: flows`: the sun's whole production, the battery's discharge
