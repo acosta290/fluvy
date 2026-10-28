@@ -4,9 +4,11 @@
   height: 256px;
 }
 
+/* the 40 over the ruler its bubble rises into: a drag's, never a tap's target */
 .sl-bubble-row {
   position: relative;
   height: 40px;
+  pointer-events: none;
 }
 
 .sl-hint {
@@ -20,6 +22,11 @@
 
 .sl-band--fine .tk-on {
   filter: drop-shadow(0 0 2px var(--fluvy-state-light-active-fill));
+}
+
+/* a level kept while it does not sound (a muted player's volume, a number whose switch is off): the secondary ink */
+.sl-value.is-quiet .fv-readout__value {
+  color: var(--fluvy-text-secondary);
 }
 
 .sl-card.is-off .fv-readout__value {

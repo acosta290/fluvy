@@ -1,11 +1,13 @@
 import {
   formatNumber,
   isUsable,
+  localize,
   numberAttr,
   stateText,
   strings,
   type EntityView,
   type FluvyCardConfig,
+  type HomeAssistant,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -41,9 +43,9 @@ import {
 import type { RowStyle, WhenOff } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
-import { axisHolds } from '../shared/axis.js';
-import { firstFit } from '../shared/fit.js';
+import { heldLabels, type Labels } from '../shared/axis.js';
 import { chipBlock, chipRows, COMPACT, drawnAs, ROW } from '../shared/heights.js';
+import { fanPercentage } from '../shared/scale.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 
 const fanStrings = strings('fan');
@@ -73,7 +75,6 @@ const PRESET_MODE = 8;
 /** What a fan draws where the house is not there to say (`layoutHeight`; one never read): its speed and both rows. */
 const USUAL = SET_SPEED | OSCILLATE | DIRECTION;
 
-type Labels = ReadonlyArray<readonly [number, string]>;
 type Direction = 'forward' | 'reverse';
 
 /**
@@ -101,9 +102,55 @@ export function fanHeight(
 }
 
 /** How many speeds the fan has: `percentage_step` is 100 / speed_count, and 1 on a continuous fan. */
-function speedCount(view: EntityView): number {
+export function speedCount(view: EntityView): number {
   const step = numberAttr(view, 'percentage_step');
   return step !== null && step > 0 && step <= 100 ? Math.max(1, Math.round(100 / step)) : 100;
+}
+
+/**
+ * A fan's ticks and words for its ruler, in its own speeds: two and three speeds are named stops (Low · Mid · High under
+ * the ruler, its majors on them); anything finer is a plain 0–100 scale. The Slider card draws a fan's speed with it.
+ */
+export function speedScale(
+  hass: HomeAssistant | undefined,
+  count: number,
+): { minor: number; major: number; labels: Labels } {
+  const off = localize(hass, 'common.off');
+  const low = fanStrings(hass, 'low');
+  const mid = fanStrings(hass, 'mid');
+  const high = fanStrings(hass, 'high');
+  if (count === 2)
+    return {
+      minor: 0.05,
+      major: 0.5,
+      labels: [
+        [0, off],
+        [0.5, low],
+        [1, high],
+      ],
+    };
+  if (count === 3)
+    return {
+      minor: 1 / 18,
+      major: 1 / 3,
+      labels: [
+        [0, off],
+        [1 / 3, low],
+        [2 / 3, mid],
+        [1, high],
+      ],
+    };
+  return {
+    minor: 0.05,
+    major: 0.25,
+    labels: [
+      [0, off],
+      [0.25, low],
+      [0.5, mid],
+      [0.75, high],
+      [1, localize(hass, 'common.max')],
+    ],
+  };
 }
 
 /**
@@ -259,12 +306,9 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     );
   }
 
-  /**
-   * Home Assistant truncates the percentage to an integer and maps it UP onto a speed, so the value
-   * for a stop is its floor: 66 is speed 2 of 3 where 67 would already be speed 3.
-   */
+  /** The speed set, held until the fan reports it; a stepper's taps coalesce into one call (`fanPercentage`). */
   private setSpeed(view: EntityView, value: number, coalesce: boolean): void {
-    const percentage = Math.floor(clamp(value, 0, 100) + 1e-6);
+    const percentage = fanPercentage(value);
     this.dragged = null;
     this.speedHold.set(percentage);
     this.expect(view.id, percentage > 0 ? 'on' : 'off');
@@ -291,61 +335,6 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     this.speedHold.clear();
     this.expect(view.id, next ? 'on' : 'off');
     this.call('fan', next ? 'turn_on' : 'turn_off');
-  }
-
-  /** Ticks and words for the ruler. Two and three speeds are named stops; anything finer is a plain 0–100 scale. */
-  private scale(count: number): { minor: number; major: number; labels: Labels } {
-    const off = this.t('common.off');
-    const low = fanStrings(this.hass, 'low');
-    const mid = fanStrings(this.hass, 'mid');
-    const high = fanStrings(this.hass, 'high');
-    if (count === 2)
-      return {
-        minor: 0.05,
-        major: 0.5,
-        labels: [
-          [0, off],
-          [0.5, low],
-          [1, high],
-        ],
-      };
-    if (count === 3)
-      return {
-        minor: 1 / 18,
-        major: 1 / 3,
-        labels: [
-          [0, off],
-          [1 / 3, low],
-          [2 / 3, mid],
-          [1, high],
-        ],
-      };
-    return {
-      minor: 0.05,
-      major: 0.25,
-      labels: [
-        [0, off],
-        [0.25, low],
-        [0.5, mid],
-        [0.75, high],
-        [1, this.t('common.max')],
-      ],
-    };
-  }
-
-  /**
-   * The ruler's words that stand 12 apart in the column, measured: all of them, else the ends and the middle, else the
-   * ends ("Apagado" would run into "Baja" at 211).
-   */
-  private held(labels: Labels): Labels {
-    const first = labels[0]!;
-    const last = labels[labels.length - 1]!;
-    const middle = labels.length % 2 ? [labels[(labels.length - 1) / 2]!] : [];
-    return (
-      firstFit([labels, [first, ...middle, last], [first, last]], (set) =>
-        axisHolds(this.head.ruler, this.contentWidth, set),
-      ) ?? labels
-    );
   }
 
   /**
@@ -491,8 +480,10 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     const turn = `--dv-fan-slow:${level === 1 || level === 3 ? 'running' : 'paused'};--dv-fan-fast:${level >= 2 ? 'running' : 'paused'}`;
 
     const fine = this.fine;
-    const scale = this.scale(count);
-    const labels = this.held(
+    const scale = speedScale(this.hass, count);
+    const labels = heldLabels(
+      this.head.ruler,
+      this.contentWidth,
       fine
         ? [0, 0.2, 0.4, 0.6, 0.8, 1].map(
             (f) =>
