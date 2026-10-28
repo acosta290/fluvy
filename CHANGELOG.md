@@ -52,6 +52,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   since midnight from its statistics, as the cards that read the Energy dashboard do, where it read all it ever counted
   ("12.5 MWh" under today's curve). The editor offers it on each item, and says so under a total that reads its state.
 
+### Fixed
+
+- The alerts card's `updates` preset shows the updates waiting to be installed: Home Assistant files every update as a
+  configuration entity (one it can install) or a diagnostic one, and the preset left the configuration ones out — every
+  update with an Install. A clause of your own on the update domain (`domain: update`, `entity_id: update.*`) keeps
+  both as well, and Home's card of what needs a look on the automatic dashboards shows them to an administrator (#79).
+  Thanks to @sriramsv.
+
 ### Development
 
 - The energy card's and the energy flow card's editors are modules of their own (`energy/energy-editor.ts`,

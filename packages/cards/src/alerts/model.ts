@@ -49,7 +49,10 @@ export interface MatchConfig {
   readonly device?: OneOrMany<string>;
   /** Never these: ids, patterns, or clauses. */
   readonly exclude?: OneOrMany<string | MatchConfig>;
-  /** Hidden entities too (skipped otherwise). A config entity is always skipped; one named by its id never is. */
+  /**
+   * Hidden entities too (skipped otherwise). A config entity is always skipped; one named by its id never is. An
+   * update, which Home Assistant files as config or diagnostic, is kept by a clause that asks for the update domain.
+   */
   readonly hidden?: boolean;
   /** Diagnostic entities too (kept unless false: a battery is often one). */
   readonly diagnostic?: boolean;
@@ -509,7 +512,10 @@ export function definitionsOf(config: LovelaceCardConfig, key = 'alerts'): Alert
   });
 }
 
-/** The ids a clause names exactly (`entity`, `entities`): a config entity is matched only when named so. */
+/**
+ * The ids a clause names exactly (`entity`, `entities`): a config entity is matched only when named so, but an update
+ * where the clause asks for the update domain.
+ */
 export const namedIds = (clause: MatchConfig): string[] => [
   ...many(clause.entity),
   ...idsOf(clause.entities),

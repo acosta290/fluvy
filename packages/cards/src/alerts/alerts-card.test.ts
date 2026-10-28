@@ -33,7 +33,7 @@ const SEEDS: Record<string, Seed> = {
     attributes: { device_class: 'moisture' },
     changed: NOW - 3 * MINUTE,
   },
-  'update.core': { state: 'on', attributes: { supported_features: 1 } },
+  'update.core': { state: 'on', attributes: { supported_features: 1 }, category: 'config' },
   'lock.shed': { state: 'unlocked', changed: NOW - 60 * MINUTE },
   'lock.gate': { state: 'unlocked', changed: NOW - 30 * MINUTE },
 };

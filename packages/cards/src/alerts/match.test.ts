@@ -68,7 +68,8 @@ const HOUSE = house(
       attributes: { hvac_action: 'heating', current_temperature: 18 },
     },
     'climate.attic': { state: 'off', attributes: { hvac_action: null } },
-    'update.core': { state: 'on', attributes: { in_progress: false } },
+    'update.core': { state: 'on', attributes: { in_progress: false }, category: 'config' },
+    'update.zigbee': { state: 'on', attributes: { in_progress: true }, category: 'diagnostic' },
   },
   {
     devices: {
@@ -234,6 +235,18 @@ describe('the matcher', () => {
       matched({ entity: ['light.hidden', 'sensor.kitchen_battery'], diagnostic: false }, HOUSE),
     ).toEqual(['light.hidden', 'sensor.kitchen_battery']);
     expect(matched({ device: 'thermo', diagnostic: false }, HOUSE)).toEqual(['sensor.temperature']);
+  });
+
+  // Home Assistant files every update as a config entity (one it can install) or a diagnostic one (#79)
+  it('keeps the config and diagnostic updates of a clause that asks for the update domain', () => {
+    const updates = ['update.core', 'update.zigbee'];
+    expect(matched({ domain: 'update', state: 'on' }, HOUSE)).toEqual(updates);
+    expect(matched({ entity_id: 'update.*', diagnostic: false }, HOUSE)).toEqual(updates);
+    expect(matched({ domain: ['switch', 'update'], state: 'on' }, HOUSE)).toEqual(updates);
+    // a clause that does not ask for updates reads their category as any other entity's
+    expect(matched({ attribute: 'in_progress', state: 'false' }, HOUSE)).toEqual([]);
+    expect(matched({ attribute: 'in_progress' }, HOUSE)).toEqual(['update.zigbee']);
+    expect(matched({ attribute: 'in_progress', diagnostic: false }, HOUSE)).toEqual([]);
   });
 
   it('says which domains it can match: the index it is tested against', () => {

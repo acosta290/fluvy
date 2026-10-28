@@ -369,6 +369,8 @@ export const sheet: SheetSpec = {
             entity_id: id,
             ...(place ? { device_id: place[0], area_id: place[1] } : {}),
             ...(id === 'sensor.al_phone_battery' ? { platform: 'mobile_app' } : {}),
+            // as Home Assistant files an update it can install (#79)
+            ...(id.startsWith('update.') ? { entity_category: 'config' as const } : {}),
           },
         ];
       }),
