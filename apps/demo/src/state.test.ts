@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { AT, columns, deviceFor, frameWidth, parseState, serialize } from './state.js';
+import { CHART_DEFAULTS } from '@fluvy/core';
+import { TABS } from '@fluvy/cards/panel/model';
+import {
+  AT,
+  columns,
+  DEFAULT_CHARTS,
+  deviceFor,
+  frameWidth,
+  parseState,
+  serialize,
+} from './state.js';
 
 const parse = (query: string) => parseState(new URLSearchParams(query));
 
@@ -11,6 +21,7 @@ describe('the demo state', () => {
       device: 'phone',
       language: 'en',
       look: { palette: 'blaze', shape: 'soft', pills: 'round' },
+      charts: DEFAULT_CHARTS,
       at: AT,
     });
     expect(parse('mode=dark').mode).toBe('dark');
@@ -39,6 +50,39 @@ describe('the demo state', () => {
       'mode=light&device=phone&accent=%23ff4a1a&character=vivid&base=cool&fill=solid&highlight=%23e2ff3d',
     ])
       expect(serialize(parse(query)).toString()).toBe(query);
+  });
+
+  it('opens every tab of the settings panel, as the panel has them', () => {
+    for (const tab of TABS) expect(parse(`panel=${tab}`).view).toEqual({ kind: 'panel', tab });
+    expect(TABS).toContain('charts');
+    expect(TABS).toContain('wall');
+    expect(serialize(parse('panel=charts&mode=dark&device=phone')).toString()).toBe(
+      'panel=charts&mode=dark&device=phone',
+    );
+  });
+
+  it('reads the house’s chart settings as the playground does, and links only what is not the factory’s', () => {
+    const soft = parse(`charts=${encodeURIComponent('{"style":"soft","gauge":"liquid"}')}`);
+    expect(soft.charts.settings).toEqual({ ...CHART_DEFAULTS, style: 'soft', gauge: 'liquid' });
+    expect(serialize(soft).get('charts')).toBe('{"style":"soft","gauge":"liquid"}');
+    // an unknown word is its default; the factory's settings put nothing in the link
+    expect(parse('charts={"style":"neon","line":"bold"}').charts.settings).toEqual({
+      ...CHART_DEFAULTS,
+      line: 'bold',
+    });
+    expect(serialize(parse('charts={"style":"classic"}')).has('charts')).toBe(false);
+    expect(parse('charts=nonsense').charts).toEqual(DEFAULT_CHARTS);
+    // the house's sets of series colours, one of them worn
+    const sea = {
+      id: 'sea',
+      name: 'Sea',
+      colours: ['#1d4ed8', '#0f766e', '#7c3aed', '#0e7490', '#be185d', '#4d7c0f'],
+    };
+    const worn = parse(
+      `charts=${encodeURIComponent(JSON.stringify({ series: 'sea', sets: [sea] }))}`,
+    );
+    expect(worn.charts).toEqual({ settings: { ...CHART_DEFAULTS, series: 'sea' }, sets: [sea] });
+    expect(parse(serialize(worn).toString()).charts).toEqual(worn.charts);
   });
 
   it('keeps the playground’s width as one column at that width', () => {

@@ -10,7 +10,14 @@ import mark from '../../../custom_components/fluvy/brand/icon.png';
 import { installBridges } from './bridges.js';
 import { FluvyDemoShell, type PaletteDot } from './shell.js';
 import { createStage } from './stage.js';
-import { parseState, sameView, serialize, type DemoLanguage, type DemoState } from './state.js';
+import {
+  chartsParam,
+  parseState,
+  serialize,
+  type DemoCharts,
+  type DemoLanguage,
+  type DemoState,
+} from './state.js';
 import { t } from './strings.js';
 
 /**
@@ -32,8 +39,14 @@ document.head.append(favicon);
 
 const look = createMemoryLook(document, state.mode === 'dark');
 const { store } = look.handle;
-// the house wears the look everywhere (the whole page, as Home Assistant would), in the visitor's language
-void store.saveHouse({ scope: 'everywhere', ...state.look });
+// the house wears the look everywhere (the whole page, as Home Assistant would) and draws its charts as the link
+// says, in the visitor's language
+void store.saveHouse({
+  scope: 'everywhere',
+  ...state.look,
+  charts: state.charts.settings,
+  chartSets: state.charts.sets,
+});
 void store.savePersonal({ language: state.language });
 
 const shell = new FluvyDemoShell();
@@ -57,12 +70,14 @@ const syncUrl = (): void => {
 /** A change from the chrome (or the panel): the settings machinery applies the look, the stage the rest. */
 function apply(patch: Partial<DemoState>): void {
   const next: DemoState = { ...state, ...patch };
-  const viewChanged = !sameView(next.view, state.view);
   const lookChanged = lookKey(next.look) !== lookKey(state.look);
+  const chartsChanged = chartsParam(next.charts) !== chartsParam(state.charts);
   const modeChanged = next.mode !== state.mode;
   const languageChanged = next.language !== state.language;
   state = next;
   if (lookChanged) void store.saveHouse({ ...state.look });
+  if (chartsChanged)
+    void store.saveHouse({ charts: state.charts.settings, chartSets: state.charts.sets });
   if (modeChanged) {
     look.setDark(state.mode === 'dark');
     shell.palettes = shell.palettes.map((dot) => ({
@@ -74,8 +89,7 @@ function apply(patch: Partial<DemoState>): void {
     document.documentElement.lang = state.language;
     void store.savePersonal({ language: state.language });
   }
-  if (viewChanged) stage.show(state);
-  else stage.update(state);
+  stage.update(state);
   shell.state = state;
   syncUrl();
 }
@@ -86,8 +100,10 @@ shell.addEventListener('demo-change', (event) => {
 
 // the settings panel changes the same settings: the chrome follows
 look.handle.onChange((settings: EffectiveSettings) => {
-  const patch: { look?: Look; language?: DemoLanguage } = {};
+  const patch: { look?: Look; charts?: DemoCharts; language?: DemoLanguage } = {};
   if (lookKey(settings.look) !== lookKey(state.look)) patch.look = settings.look;
+  const charts: DemoCharts = { settings: settings.charts, sets: settings.chartSets };
+  if (chartsParam(charts) !== chartsParam(state.charts)) patch.charts = charts;
   if (settings.language !== 'auto' && settings.language !== state.language)
     patch.language = settings.language;
   if (Object.keys(patch).length) apply(patch);

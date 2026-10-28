@@ -8,7 +8,7 @@ export interface Family {
 }
 
 export const FAMILIES: readonly Family[] = [
-  { key: 'home', label: 'family.home', sheets: ['home', 'home-extras', 'ambient'] },
+  { key: 'home', label: 'family.home', sheets: ['home', 'home-extras', 'ambient', 'rooms'] },
   {
     key: 'devices',
     label: 'family.devices',
@@ -23,13 +23,30 @@ export const FAMILIES: readonly Family[] = [
     ],
   },
   { key: 'climate', label: 'family.climate', sheets: ['climate'] },
-  { key: 'energy', label: 'family.energy', sheets: ['flow', 'energy', 'solar', 'history-bars'] },
+  {
+    key: 'energy',
+    label: 'family.energy',
+    sheets: [
+      'period',
+      'usage',
+      'flow',
+      'energy',
+      'balance',
+      'storage',
+      'meters',
+      'sankey',
+      'solar',
+      'arrays',
+      'history-bars',
+    ],
+  },
+  { key: 'charts', label: 'family.charts', sheets: ['chart-styles', 'animated', 'chart'] },
   { key: 'media', label: 'family.media', sheets: ['media'] },
   { key: 'time', label: 'family.time', sheets: ['clocks', 'calendar'] },
   {
     key: 'helpers',
     label: 'family.helpers',
-    sheets: ['inputs', 'lists', 'template', 'automations', 'alerts'],
+    sheets: ['inputs', 'lists', 'items', 'template', 'automations', 'alerts', 'web'],
   },
 ];
 

@@ -27,6 +27,7 @@
     "./activity": "./src/activity/view.ts",
     "./history": "./src/history/view.ts",
     "./panel": "./src/panel/define.ts",
+    "./panel/model": "./src/panel/model.ts",
     "./wall": "./src/wall/index.ts"
   },
   "scripts": {

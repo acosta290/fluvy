@@ -204,12 +204,18 @@ DEMO=http://127.0.0.1:4173/fluvy/ node tools/render/demo-smoke.mjs     # what vi
 ```
 
 `apps/demo` is the playground as a visitor sees it: its sheets grouped into families, its pages, and the settings
-panel, behind a landing page drawn with the design system's own parts. The look runs on Fluvy's own settings
-machinery kept in memory (`@fluvy/playground/look-memory`): a palette dot on the landing and the Appearance tab
-change the same settings, live. The URL takes the playground's parameters (`sheet`, `panel`, `history`, `activity`,
-`mode`, `width`, `lang`, `palette`, `accent`…) and `device=phone|phone-l|tablet|desktop`; what a card cannot do here
-(a more-info dialog, a page of Home Assistant) becomes a notice. `pages.yml` builds it on every push to `main`,
-smoke-tests the built site and deploys it to https://acosta290.github.io/fluvy/.
+panel, behind a landing page drawn with the design system's own parts. Its cards draw as the playground's: each sheet
+stands in a house of its own and each frame is mounted by the playground's own module (`@fluvy/playground/house`:
+`createHouse`, `mountFrame`), so a family's sheets never meet on an entity id and a frame keeps its width (up to the
+lane's), its columns, its status colours and its own view of the house. The look runs on Fluvy's own settings
+machinery kept in memory (`@fluvy/playground/look-memory`): a palette dot on the landing, the Appearance tab and the
+Charts tab change the same settings, live. The URL takes the playground's parameters (`sheet`, `panel` with every tab
+of the panel, `history`, `activity`, `mode`, `width`, `lang`, `palette`, `accent`, `charts`…) and
+`device=phone|phone-l|tablet|desktop`; what a card cannot do here (a more-info dialog, a page of Home Assistant)
+becomes a notice. The Web page card's pages (`apps/playground/public/web`) are served beside the demo's own files.
+`pages.yml` builds it on every push to `main`, smoke-tests the built site (every family at a desktop's and a phone's
+width, every card of the catalogue, a sentinel for each thing the stand-in holds, the panel's tabs and `charts=`, the
+languages) and deploys it to https://acosta290.github.io/fluvy/.
 
 ## The tools
 

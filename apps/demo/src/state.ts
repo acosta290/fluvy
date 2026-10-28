@@ -1,10 +1,22 @@
-import { isLanguageCode, parsePalette, type LanguageCode, type Look } from '@fluvy/core';
+import {
+  CHART_DEFAULTS,
+  isLanguageCode,
+  parseChartSettings,
+  parsePalette,
+  parseSavedSeries,
+  type ChartSettings,
+  type LanguageCode,
+  type Look,
+  type SavedSeries,
+} from '@fluvy/core';
+import { TABS, type Tab } from '@fluvy/cards/panel/model';
 import { isPaletteName, isPillName, isShapeName, type PaletteMode } from '@fluvy/tokens/runtime';
 
 /**
  * What the demo shows, and the URL that says it. The parameters are the playground's (`sheet`, `mode`, `width`,
- * `lang`, `palette`, `shape`, `pills`, `accent` with `character`, `base`, `fill`, `highlight`, `panel`, `history`,
- * `activity`, `moment`, `at`), so every playground link opens here as it does there; `device` is the demo's own.
+ * `lang`, `palette`, `shape`, `pills`, `accent` with `character`, `base`, `fill`, `highlight`, `charts`, `panel`,
+ * `history`, `activity`, `moment`, `at`), so every playground link opens here as it does there; `device` is the
+ * demo's own.
  */
 
 export type DeviceName = 'phone' | 'phone-l' | 'tablet' | 'desktop';
@@ -24,14 +36,20 @@ export const DEVICES: Readonly<Record<DeviceName, Device>> = {
 };
 export const DEVICE_NAMES = Object.keys(DEVICES) as readonly DeviceName[];
 
-export const PANEL_TABS = ['appearance', 'scope', 'dashboard', 'preferences'] as const;
-export type PanelTab = (typeof PANEL_TABS)[number];
+/**
+ * The house's chart settings (the panel's Charts tab): how every chart and gauge is drawn where a card says nothing,
+ * and the sets of series colours the house keeps.
+ */
+export interface DemoCharts {
+  readonly settings: ChartSettings;
+  readonly sets: readonly SavedSeries[];
+}
 
 export type DemoLanguage = LanguageCode;
 
 export type DemoView =
   | { readonly kind: 'sheet'; readonly name: string }
-  | { readonly kind: 'panel'; readonly tab: PanelTab }
+  | { readonly kind: 'panel'; readonly tab: Tab }
   | { readonly kind: 'history'; readonly moment?: string }
   | { readonly kind: 'activity'; readonly moment?: string };
 
@@ -43,6 +61,7 @@ export interface DemoState {
   readonly frameWidth?: number | undefined;
   readonly language: DemoLanguage;
   readonly look: Look;
+  readonly charts: DemoCharts;
   /** The moment the page's clock starts at. */
   readonly at: string;
   /** A Home Assistant path the page was opened on (Pages' 404 hands it over): said once, as a notice. */
@@ -53,13 +72,16 @@ export interface DemoState {
 export const AT = '2026-09-17T21:47:12';
 /** What the demo opens on: the light mode and Blaze, the electric line's warm palette. */
 export const DEFAULT_LOOK: Look = { palette: 'blaze', shape: 'soft', pills: 'round' };
+/** The factory's: `classic` everywhere, no sets of the house's own. */
+export const DEFAULT_CHARTS: DemoCharts = { settings: CHART_DEFAULTS, sets: [] };
 export const DEFAULT_SHEET = 'home';
 export const DEFAULT_VIEW: DemoView = { kind: 'sheet', name: DEFAULT_SHEET };
 
-const isDevice = (value: unknown): value is DeviceName =>
+export const isDevice = (value: unknown): value is DeviceName =>
   typeof value === 'string' && Object.hasOwn(DEVICES, value);
-const isTab = (value: unknown): value is PanelTab =>
-  typeof value === 'string' && (PANEL_TABS as readonly string[]).includes(value);
+/** One of the settings panel's tabs, as the panel has them: each opens inside the demo. */
+export const isTab = (value: unknown): value is Tab =>
+  typeof value === 'string' && (TABS as readonly string[]).includes(value);
 
 function lookOf(params: URLSearchParams): Look {
   const accent = params.get('accent');
@@ -81,6 +103,37 @@ function lookOf(params: URLSearchParams): Look {
     shape: isShapeName(shape) ? shape : DEFAULT_LOOK.shape,
     pills: isPillName(pills) ? pills : DEFAULT_LOOK.pills,
   };
+}
+
+/**
+ * `charts=`, as the playground reads it: JSON with any of the settings' fields, each read as the settings read it (an
+ * unknown word is its default), and `sets`, the saved series colours (`series` chooses one by its id).
+ */
+function chartsOf(params: URLSearchParams): DemoCharts {
+  const raw = params.get('charts');
+  if (!raw) return DEFAULT_CHARTS;
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return DEFAULT_CHARTS;
+  }
+  return {
+    settings: parseChartSettings(value),
+    sets: parseSavedSeries((value as { sets?: unknown } | null)?.sets),
+  };
+}
+
+/** The chart settings a link carries: the fields that are not the factory's, and the sets; nothing when all are. */
+export function chartsParam(charts: DemoCharts): string | undefined {
+  const changed = Object.fromEntries(
+    Object.entries(charts.settings).filter(
+      ([key, value]) =>
+        JSON.stringify(value) !== JSON.stringify(CHART_DEFAULTS[key as keyof ChartSettings]),
+    ),
+  );
+  const out = charts.sets.length ? { ...changed, sets: charts.sets } : changed;
+  return Object.keys(out).length ? JSON.stringify(out) : undefined;
 }
 
 function viewOf(params: URLSearchParams): DemoView {
@@ -113,6 +166,7 @@ export function parseState(params: URLSearchParams, viewportWidth = 0): DemoStat
     ...(Number.isInteger(width) && width >= 280 && width <= 1200 ? { frameWidth: width } : {}),
     language: isLanguageCode(params.get('lang')) ? (params.get('lang') as LanguageCode) : 'en',
     look: lookOf(params),
+    charts: chartsOf(params),
     at: at && Number.isFinite(Date.parse(at)) ? at : AT,
     ...(path ? { path } : {}),
   };
@@ -145,6 +199,8 @@ export function serialize(state: DemoState): URLSearchParams {
   }
   if (shape !== DEFAULT_LOOK.shape) params.set('shape', shape);
   if (pills !== DEFAULT_LOOK.pills) params.set('pills', pills);
+  const charts = chartsParam(state.charts);
+  if (charts) params.set('charts', charts);
   if (state.at !== AT) params.set('at', state.at);
   return params;
 }

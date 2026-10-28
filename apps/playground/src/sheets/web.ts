@@ -5,11 +5,14 @@ import type { SheetSpec } from '../scenes.js';
 if (!customElements.get('fluvy-web-card')) customElements.define('fluvy-web-card', FluvyWebCard);
 
 const WEB = 'custom:fluvy-web-card';
-/** Two pages of the playground's own origin: their `load` reaches the card, so the plate draws. */
-const PAGE = '/web/page.html';
-const DARK = '/web/page-dark.html';
-/** A map site, drawn on the playground's origin: what a plate looks like holding one (the README's picture). */
-const MAP = '/web/radar.html';
+/**
+ * Two pages served beside the page (the playground's, the demo's under its base): their `load` reaches the card, so
+ * the plate draws.
+ */
+const PAGE = `${import.meta.env.BASE_URL}web/page.html`;
+const DARK = `${import.meta.env.BASE_URL}web/page-dark.html`;
+/** A map site, served beside them: what a plate looks like holding one (the README's picture). */
+const MAP = `${import.meta.env.BASE_URL}web/radar.html`;
 /** An http page, kept back on a dashboard read as served over https (`_https`: the playground is not). */
 const PLAIN = { type: WEB, url: 'http://grafana.local:3000/d/house', _https: true };
 /** A page that never answers (`_slow`): the plate says it is still loading at once, not after twenty seconds. */

@@ -44,6 +44,9 @@ body {
 .demo-lane > .pg-frame {
   width: auto;
 }
+.demo-lane > .demo-frame--own {
+  align-self: center;
+}
 /* a page (the settings panel, Activity, History) takes the whole width, as Home Assistant gives it */
 .demo-stage.pg-panel {
   display: block;

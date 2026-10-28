@@ -1,4 +1,5 @@
-import { PANEL_TABS, type PanelTab } from './state.js';
+import type { Tab } from '@fluvy/cards/panel/model';
+import { isTab } from './state.js';
 
 /**
  * What Home Assistant would do and the demo cannot: a card asking for an entity's more-info dialog, a tab or a
@@ -7,7 +8,7 @@ import { PANEL_TABS, type PanelTab } from './state.js';
  */
 export interface BridgeHooks {
   moreInfo(entityId: string): void;
-  panelTab(tab: PanelTab): void;
+  panelTab(tab: Tab): void;
   navigate(path: string): void;
   /** Puts the demo's own URL back after a `history.pushState` a card made. */
   restoreUrl(): void;
@@ -21,8 +22,7 @@ export function installBridges(hooks: BridgeHooks): () => void {
   const onLocation = (): void => {
     const segments = location.pathname.split('/').filter(Boolean);
     const last = segments[segments.length - 1] ?? '';
-    const tab = (PANEL_TABS as readonly string[]).includes(last) ? (last as PanelTab) : undefined;
-    if (segments[segments.length - 2] === 'fluvy' && tab) hooks.panelTab(tab);
+    if (segments[segments.length - 2] === 'fluvy' && isTab(last)) hooks.panelTab(last);
     else hooks.navigate(`/${segments.join('/')}`);
     hooks.restoreUrl();
   };
