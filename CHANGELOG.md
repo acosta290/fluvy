@@ -24,9 +24,24 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   the sun's for an array's, a battery's, a generator's or a car's for theirs, the house's for an individual device's,
   and the accent for any other sensor. A card that names a `tone` or a `color` is as it was; the stacked charts
   (`sources`, `overview`) are as they were.
+- A large tile of a media player sets its volume on the ruler at its foot, and one of a `number` or an `input_number`
+  its value, where both showed only their state; a tile of a playing player says its volume on its line as a lit
+  light says its level ("Playing · 30 %"), a number's large tile its room and its figure ("Living room · −1.0 °C"),
+  where its figure stood in its head (#77).
 
 ### Added
 
+- A **Slider** card (`custom:fluvy-slider-card`, #77): any value on the light card's anatomy — its head, its figure
+  with the − and +, Fluvy's ruler with its relative drag, its fine scale on a hold and its keys — for a media player's
+  volume (its mute in the head; the line says what plays, else its source), a `number` or an `input_number` in its
+  own range, step and unit (`min` and `max` narrow it, `label` names it), and a fan's speed in its own speeds. A tick
+  a step where it has twenty or fewer, a range across zero lit from zero, its figures with a true minus and a plus.
+  `toggle_entity` puts another entity's switch in the head (a soundbar whose volume is a `number` and whose power is a
+  switch), `control` asks for the mute, a switch or nothing, and `live_update` sends the value while dragging. Full,
+  compact (the figure on its line, two on a line in half a section) or the house's large tile; `tone`, `color` and
+  `tint` as the light card's. Asked for in discussion #77.
+- The tile card and the tiles group learn the same ruler: a player's volume and a number's value at a large tile's
+  foot (#77).
 - `caps`, an option of every automatic dashboard: a list's own cap (`caps: { lights: 12 }`), a list whole
   (`humidity: none`), or every list whole (`caps: none`); the panel's Dashboards tab offers Long lists: Shortened or
   In full. Thanks to @DennyWeinberg (#78).
@@ -42,6 +57,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The energy card's and the energy flow card's editors are modules of their own (`energy/energy-editor.ts`,
   `energy-flow/energy-flow-editor.ts`), fetched with the visual editor: the energy chunk is 79.6 of its 80 KB, where
   the new keys took it half a kilobyte over. A list's helper in the rows editor is told its item and the house.
+- The light card's level (its hold until the lamp reports it, its stepper's burst, its live drag, its fine scale's
+  words) and its value row are shared modules (`shared/level.ts`, `levelRow`), and so are the fan card's speeds and its
+  words' fitting (`speedScale`, `heldLabels`), which the Slider card draws with; a value set on a ruler is read in one
+  place (`shared/scale.ts`). The ruler takes an `origin` its lit ticks start from. The Slider card is a chunk of its own
+  (`slider`, 8 KB; its editor goes with the forms), its name and height in core; the playground has a `slider-card`
+  sheet and `interactions-slider.mjs` drives it.
 
 ## [1.11.0] — 2026-10-28
 

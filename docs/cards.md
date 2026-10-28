@@ -1,6 +1,6 @@
 # The cards
 
-Sixty-two cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Sixty-three cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
 options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
@@ -618,16 +618,52 @@ collection_key: energy_casa # the key of a date picker on this dashboard
 variant: compact
 ```
 
+## Slider
+
+The slider card sets any value on the light card's anatomy (#77): its head, its figure with the − and + (`show_stepper`),
+and Fluvy's ruler under them — a relative drag, slower as the finger slides away, the fine scale on a hold, the arrow
+keys, Page Up and Down, Home and End. It sets a media player's volume (the head's round mutes it; the line says what
+plays, else its source), a `number` or an `input_number` in its own range, step and unit, and a fan's speed in its own
+speeds, named under the ruler. `min` and `max` narrow the ruler within the entity's range (a soundbar kept under 60 %),
+and `label` names the figure (Volume, Speed or Value by default). The ruler draws a tick a step where its steps are no
+more than twenty — every value it can stop at — and its 5 % and 25 % ticks otherwise; a range that crosses zero (an
+offset of −2 to +2) is lit from zero to the knob, its figures signed. The head ends in what the entity is set with:
+`control: auto` mutes a player, switches a fan, or switches `toggle_entity` — another entity's switch, as a soundbar
+whose volume is a `number` and whose power is a switch — and `mute`, `switch` or `none` ask for one. `live_update`
+sends the value while the finger drags (heard at once on a volume), else once on release; a stepper's taps are one call
+once they stop. `variant: compact` keeps the head, with the figure on its line, and the ruler (188 at a 360 column, two
+on a line in half a section); `tile` is the house's large tile with the ruler at its foot, as the tile card draws a
+player's volume or a number. `tone`, `color` and `tint` are the light card's: the colour shows on the surface while what
+it sets is on (`on`; a tile's default), at rest too (`always`), or never (`off`; the full and compact card's default).
+
+```yaml
+type: custom:fluvy-slider-card
+entity: number.soundbar_volume # the volume, a number of its integration
+toggle_entity: switch.soundbar_power # its power, a switch of its own
+name: Soundbar
+variant: compact
+live_update: true
+```
+
+A player's volume, kept under 60 %:
+
+```yaml
+type: custom:fluvy-slider-card
+entity: media_player.living_room
+max: 60
+```
+
 <!-- generated:cards -->
 
 ## Everyday
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
+| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
 | **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `tap_action`, `hold_action`) | `entities` → `tiles` |
 | **Template** | `custom:fluvy-template-card` | A tile whose name, line, icon, colour and fill are templates, with or without an entity; a Mushroom template card pastes in. | `secondary` (`state`, `area`, `last-changed`, `none`), `since`, `variant` (`compact`, `mini`, `large`), `active` (`auto`, `always`, `never`), `tint` (`on`, `always`), `readouts` | `primary` → `name`, `icon_color` → `color`, `layout` → `variant`, `vertical` → `variant` |
 | **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `variant` (`auto`, `full`, `compact`), `show_stepper`, `show_temperature`, `show_color`, `temperature_tint`, `live_update`, `tint` (`off`, `on`, `always`), `tint_strength` (`soft`, `brightness`, `full`), `light_whites` (`palette`, `temperature`), `colors` (a list: `color`, `name`, `rgb`) | — |
+| **Slider** | `custom:fluvy-slider-card` | Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head. | `variant` (`full`, `compact`, `tile`), `show_stepper`, `control` (`auto`, `mute`, `switch`, `none`), `toggle_entity`, `min`, `max`, `label`, `live_update`, `tint` (`off`, `on`, `always`) | — |
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
 | **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `more`, `more_path`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `tone`, `color`, `tap_action`) | `entities` → `rows` |

@@ -42,15 +42,15 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,items,items-sheet,light-colour,editor,forms,view-icons,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,items,items-sheet,light-colour,editor,forms,view-icons,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
 period, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
-card import it from their own chunks), the weather, template, Energy period and usage, web page, items and chart cards
-and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts: their cards
-are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
+card import it from their own chunks), the weather, template, Energy period and usage, web page, Slider, items and
+chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
+their cards are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
 history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
 draws one), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the
@@ -87,12 +87,13 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `alerts-sheet` | 12 KB | the alerts' sheet |
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
+| `slider` | 8 KB | the Slider card on the tile's, its English |
 | `items` | 12 KB | the Items card, its fields and presets, its English |
 | `items-sheet` | 8 KB | an item's sheet |
 | `light-colour` | 4 KB | the light card's quick colours and hue ruler |
 | `weather` | 12 KB | the weather card |
 | `editor` | 8 KB | the cards' visual editor |
-| `forms` | 12 KB | the editors of the cards every page carries: their forms, lists and defaults |
+| `forms` | 12 KB | the editors of the cards every page carries and of the template and Slider cards: their forms, lists and defaults |
 | `view-icons` | 4 KB | a view's icon from its name |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the layers, the CSV, their chrome's sheet |
@@ -317,7 +318,7 @@ language, and there no drift is known.
 
 ### The facts guard
 
-`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "sixty-two cards", "fifteen
+`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "sixty-three cards", "fifteen
 palettes", "five automatic dashboards", "ten languages", "six tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;

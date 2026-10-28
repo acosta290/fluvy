@@ -2280,6 +2280,62 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
 - Its chunks are its own (`items`, 6.9 KB of 12; `items-sheet`, 2.7 KB of 8): every page carries only its name and
   height (`items-family.ts`) and the value's glyph.
 
+## Slider (1.11.1)
+
+The Slider card (#77) is the light card's anatomy for any value: a soundbar's volume, a calibration offset, a pump's
+speed, a fan's. Its design page (owner's OK, 2026-10-28) is the spec; its decisions: the mute in the head (A), the
+figure big with − + in the full card and on the line in the compact one (B), a tick a step up to twenty steps (C), a
+signed range lit from zero (D), the house's tile (F); no vertical form ("too much empty space on the right").
+
+- **The anatomy is the light card's**, piece for piece and in shared code: the head (`HeadFit`; the circle, the name
+  16/600, the line 13/500, the control), the value row (`levelRow`: the label 11/600 and the l figure with its unit,
+  the 96 × 44 stepper; the ladder in a narrow column — beside at l, beside at m, stacked, the halves at 44), the 40 the
+  bubble rises into, the ruler (44, knob 36: relative drag, slower away from the axis, the fine scale on a hold, the
+  keys) and its words 11/500 under it. The level is held until the entity reports it, a stepper's taps are one call
+  once they stop, a drag is sent on release or as it moves (`live_update`): the light card's `Level`. Heights by the
+  config alone: full 268, compact 188 (the head, the 40, the ruler and its words), tile 168.
+- **What it sets.** A media player's volume (0–100 %, `volume_set`), a `number` or an `input_number` (its range, step
+  and unit; `set_value`), a fan's speed (its speeds as stops, the fan card's words under them; `set_percentage` on the
+  speed's floor). `min` and `max` narrow the range within the entity's; ends that make no range are let go. `label`
+  names the figure: Volume, Speed or Value by default.
+- **Ticks.** One a step where the steps are no more than the ruler's own ticks (twenty on a card, twelve on a tile) —
+  every tick a value the knob stops at — the majors on the quarters, else the halves, else the ends; else the ruler's
+  5 % and 25 % (a tile's 1/12 and 1/4). A fan's are the fan card's: its speeds the majors. The words under the ruler
+  are the majors' figures, written briefly ("−2", "0", "+2"); a compact card or a column under 260 keeps the ends and
+  the middle, and the measure keeps what stands 12 apart (`heldLabels`).
+- **A signed range** (one that crosses zero) is lit from zero to the knob, either side (the ruler's `origin`), and its
+  figures are signed: the typographic minus (−1.0; Intl's hyphen is loose in Inter) and a plus (+0.5), zero plain.
+  Every figure the card writes takes the true minus; the value row is laid out for its widest figure, the ends of its
+  range (and the word for off for a fan or a player).
+- **The head's control** (`control: auto`): a player's mute as the 44 round (`volume` / `volumeOff`, "Mute" /
+  "Unmute", held until the player says so), a fan's switch, or `toggle_entity`'s switch — another entity's power beside
+  the value (the discussion's soundbar: a `number` for its volume, a switch for its power). `mute`, `switch` and `none`
+  ask for one. The control never gives way; the line steps aside, then the circle (`HeadFit`).
+- **The line.** Full: what the player plays, else its source, else the room ("Bluetooth"; muted, "· muted" after it);
+  a number's room; a fan's room. Compact and tile: the same with the figure after it ("Bluetooth · 30 %", "Living room
+  · −1.0 °C", "Muted · 30 %", "Off · 65 %" for a number whose switch is off, "Off" for a fan that is off); where it
+  does not hold whole, the figure alone ("45 %" in half a phone's section).
+- **States.** Muted: the level stays, the ruler, the circle and the figure go neutral (the figure in the secondary
+  ink), the knob stays up. A number whose switch is off: the same, its knob up. A fan or a player that is off: the
+  word for off where the figure stands, the ruler asleep (a fan's wakes under a drag, a player's does not; its stepper
+  and its round are still). Out of reach: the same size and anatomy — the ban on the dashed circle, "Unavailable · 2 h
+  ago", the figure "—", the stepper, the round and the switch still, the ruler at rest.
+- **Colour.** The tone of what it sets: `media` for a player, `fan` for a fan, the accent for a number; `tone` and
+  `color` as the light card's. `tint` as the light card's: the colour on the surface while something is on (a player
+  sounding, a fan running, a number's switch on) — `on`, the tile's default — at rest too (`always`), or never (`off`,
+  the full and compact card's default).
+- **The tile** (`variant: tile`) is the house's large tile (the card is built on the tile card): the circle and the
+  control, the name, the line, the ruler at its foot (knob 28). The tile card and the tiles group learn the same ruler
+  for a player's volume and a number's value: awake while the player is on (a number always), neutral while muted, a
+  number's figure on its line after its room and never also in its head. A lit tile's rounds stand on it as plain
+  discs (`--fluvy-inset`), as a lit card's stepper does; the circle at rest and the knob's halo are the house's tile's.
+- **Editor** with `when`: the − and + with the full card, the circle's option off the tile, `toggle_entity` while the
+  control may be a switch, `min` and `max` off a fan (it stops at its speeds); helpers under the control and the other
+  entity's switch. Its words are its own part (`slider.json`); `mute` and `switch` are option words of core's, as
+  `common.volume` (the tile's).
+- Its chunk is its own (`slider`, 3.8 KB of 8, its editor with the forms): every page carries only its name and height
+  (`slider-family.ts`).
+
 ## Value row (1.9)
 
 A card's reading — its big figure — and what goes with it share one 64 row, 16 under the head: the control that sets

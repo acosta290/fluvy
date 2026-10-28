@@ -22,7 +22,7 @@
   <a href="https://acosta290.github.io/fluvy/?palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/hero.webp" width="822" alt="Fluvy on the Linen palette: light and plug tiles, a thermostat, the day's energy in the soft style and a media player"></a>
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, sixty-two cards, five automatic dashboards, a
+Fluvy brings one design to the whole of Home Assistant: a theme, sixty-three cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in ten languages.
@@ -42,7 +42,7 @@ one (as here), as pills, as icons, Home Assistant's own, or none at all.
   <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-light.webp" width="411" alt="The same dashboard on a tablet, light"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-dark.webp" width="411" alt="The same dashboard on a tablet, dark"></a>
 </p>
 
-## Sixty-two cards
+## Sixty-three cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
@@ -181,7 +181,7 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 ## What you get
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with.
-- **Sixty-two cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Sixty-three cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
   a Chart card for any time series, from a sensor's history to tomorrow's prices.
