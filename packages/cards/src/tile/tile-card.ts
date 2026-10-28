@@ -1,6 +1,5 @@
 import {
   actionRuns,
-  formatNumber,
   isActive,
   isUsable,
   lightDefaults,
@@ -39,6 +38,19 @@ import { fitLine, TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { changedAt, sinceIds } from '../shared/since.js';
+import {
+  NUMBERS,
+  numberScale,
+  PERCENT,
+  playerOff,
+  readingOf,
+  scaleText,
+  setCall,
+  ticksOf,
+  VOLUME_SET,
+  type Scale,
+  type Ticks,
+} from '../shared/scale.js';
 
 export type TileSize = 'large' | 'compact' | 'mini';
 export const TILE_SIZES: readonly TileSize[] = ['large', 'compact', 'mini'];
@@ -93,12 +105,40 @@ const TWO_READOUTS = 120;
 /** Three readouts (power, today, cost) share a foot from this inner width: a tile on its own row. */
 const THREE_READOUTS = 292;
 
-/** Whether a large tile's foot is its ruler, never its readouts: a light that dims, a cover set to a position, a fan to a speed. */
+/**
+ * Whether a large tile's foot is its ruler, never its readouts: a light that dims, a cover set to a position, a fan to
+ * a speed, a player's volume, a number or a helper with a range (#77).
+ */
 export const ruled = (view: EntityView): boolean =>
   view.domain === 'light'
     ? (view.attr<string[]>('supported_color_modes') ?? []).some((m) => DIMMABLE.has(m))
     : (view.domain === 'cover' && view.supports(COVER_SET_POSITION)) ||
-      (view.domain === 'fan' && view.supports(FAN_SET_SPEED));
+      (view.domain === 'fan' && view.supports(FAN_SET_SPEED)) ||
+      (view.domain === 'media_player' && view.supports(VOLUME_SET)) ||
+      (NUMBERS.has(view.domain) && numberScale(view) !== null);
+
+/** A tile's ruler is short: its ticks are 1/12 and 1/4, or one a step up to twelve steps (`ticksOf`). */
+const TILE_TICKS = 12;
+
+/** What a large tile's foot ruler sets (`level`): where the entity stands on its scale, and the call that sets it. */
+export interface TileLevel {
+  readonly value: number;
+  readonly scale: Scale;
+  readonly ticks: Ticks;
+  /** What a reader hears it named ("Brightness"). */
+  readonly label: string;
+  /** Its figure as the line says it ("70 %", "−1.0 °C"). */
+  readonly text: string;
+  /** Its knob shows: while the entity is on — a number always, a player's volume while the player is on. */
+  readonly awake: boolean;
+  /** Drawn neutral while awake: a muted player's volume. */
+  readonly quiet: boolean;
+  /** A drag on it asleep wakes the entity at that value (a light, a fan); a player that is off is not woken by it. */
+  readonly wakes: boolean;
+  readonly commit: (value: number) => void;
+  /** The value under the finger as it moves, for a card that sends it then (the Slider card's `live_update`). */
+  readonly input?: ((value: number) => void) | undefined;
+}
 
 /**
  * Whether a card of one tile shows something at rest when asked (`tint: always`, its editor's form): a colour, or a
@@ -233,29 +273,64 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     );
   }
 
-  /** What the foot ruler controls for this entity, if anything (`ruled`). */
-  private level(
-    view: EntityView,
-  ): { value: number; commit: (value: number) => void; label: string } | null {
+  /**
+   * What the foot ruler sets for this entity, if anything (`ruled`): a light's brightness, a cover's position, a fan's
+   * speed — each awake while the entity is on (`lit`) — a player's volume while the player is on, and a number's
+   * value always, lit from its zero where its range is signed.
+   */
+  protected level(view: EntityView, lit: boolean): TileLevel | null {
     if (!ruled(view)) return null;
-    if (view.domain === 'light') {
-      const brightness = view.attr<number>('brightness');
-      return {
-        value: brightness ? Math.round((brightness / 255) * 100) : 0,
-        commit: (v) => this.call('light', 'turn_on', { brightness_pct: v }, view.id),
-        label: this.t('light.brightness'),
-      };
+    const percent = (value: number, label: string, commit: (value: number) => void): TileLevel => ({
+      value,
+      scale: PERCENT,
+      ticks: ticksOf(PERCENT, TILE_TICKS),
+      label,
+      text: `${scaleText(this.hass, PERCENT, value)} %`,
+      awake: lit,
+      quiet: false,
+      wakes: true,
+      commit,
+    });
+    const set = (value: number): void => {
+      const [domain, service, data] = setCall(view, value);
+      this.call(domain, service, data, view.id);
+    };
+    switch (view.domain) {
+      case 'light': {
+        const brightness = view.attr<number>('brightness');
+        return percent(
+          brightness ? Math.round((brightness / 255) * 100) : 0,
+          this.t('light.brightness'),
+          (v) => this.call('light', 'turn_on', { brightness_pct: v }, view.id),
+        );
+      }
+      case 'cover':
+        return percent(view.attr<number>('current_position') ?? 0, this.t('cover.position'), (v) =>
+          this.call('cover', 'set_cover_position', { position: v }, view.id),
+        );
+      case 'fan':
+        return percent(readingOf(view) ?? 0, this.t('fan.speed'), set);
+      case 'media_player':
+        return {
+          ...percent(readingOf(view) ?? 0, this.t('common.volume'), set),
+          awake: !playerOff(this.stateOf(view)),
+          quiet: view.attr<boolean>('is_volume_muted') === true,
+          wakes: false,
+        };
     }
-    if (view.domain === 'cover')
-      return {
-        value: view.attr<number>('current_position') ?? 0,
-        commit: (v) => this.call('cover', 'set_cover_position', { position: v }, view.id),
-        label: this.t('cover.position'),
-      };
+    // a number or a helper: `ruled` found its range
+    const scale = numberScale(view) as Scale;
+    const value = view.number ?? scale.min;
     return {
-      value: view.attr<number>('percentage') ?? 0,
-      commit: (v) => this.call('fan', 'set_percentage', { percentage: v }, view.id),
-      label: this.t('fan.speed'),
+      value,
+      scale,
+      ticks: ticksOf(scale, TILE_TICKS),
+      label: this.t('helpers.value'),
+      text: [scaleText(this.hass, scale, value), scale.unit].filter(Boolean).join(' '),
+      awake: true,
+      quiet: false,
+      wakes: false,
+      commit: set,
     };
   }
 
@@ -267,14 +342,15 @@ export class FluvyTileCard extends Card<TileCardConfig> {
   /**
    * The line under the name. State is said once: when the head already shows the reading (a sensor
    * on a large tile), this line carries context — the room, or when it last moved — never the same
-   * figure again. A small tile has no head figure, so there the reading IS the line. `on`: the entity is on (what its
+   * figure again. A small tile has no head figure, so there the reading IS the line. A large tile's number is set on
+   * its ruler, and its line says the room and the figure ("Living room · −1.0 °C"). `on`: the entity is on (what its
    * switch says, whatever the tile's fill does).
    */
   protected tileLine(
     item: TileItem,
     view: EntityView,
     on: boolean,
-    level: number | null,
+    level: TileLevel | null,
     valueInHead: boolean,
     small = false,
   ): string {
@@ -289,10 +365,10 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       if (view.areaName) return view.areaName;
       return changed ? relativeTime(this.hass, changed) : '';
     }
+    if (level && !small && NUMBERS.has(view.domain))
+      return [view.areaName, level.text].filter(Boolean).join(' · ');
     const text = stateText(this.hass, view);
-    return on && level !== null && level > 0 && this.showsLevel()
-      ? `${text} · ${formatNumber(this.hass, level, { digits: 0 })} %`
-      : text;
+    return on && level && level.value > 0 && this.showsLevel() ? `${text} · ${level.text}` : text;
   }
 
   /** Widths laid out by the browser in the tile's own classes (a mini's 12 px, a compact's 13), never guessed. */
@@ -422,6 +498,18 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       : undefined;
   }
 
+  /**
+   * What ends a large tile's head beside its circle where a card built on the tile says so (the Slider card's control:
+   * a player's mute, another entity's switch, none); without it, the tile's own — its switch, else its reading.
+   */
+  protected headControl?(
+    view: EntityView,
+    lit: boolean,
+    tone: Tone,
+    label: string,
+    usable: boolean,
+  ): TemplateResult | typeof nothing;
+
   /** The width one tile gets: the card's own (a tiles group divides its width). */
   protected tileWidth(): number {
     return this.width;
@@ -468,7 +556,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         : ([item.color, kindTone] as const);
     // its colour sits on its article, where the card's own (written by the base) is not already it
     const accent = this.accents.item(colour === this.config?.color ? undefined : colour);
-    const level = this.level(view);
+    const level = this.level(view, lit);
     const canToggle = TOGGLE_DOMAINS.has(view.domain);
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
     const iconTone =
@@ -494,7 +582,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       // what does not), hold opens the details
       const tapAction = item.tap_action ?? (usable && canToggle ? TOGGLE : MORE_INFO);
       const tapNow = actionRuns(tapAction, view.id) ? () => run(tapAction) : undefined;
-      let line = this.tileLine(item, view, lit, level ? level.value : null, false, true);
+      let line = this.tileLine(item, view, lit, level, false, true);
       const reading = usable ? this.readoutText(item) : '';
       if (reading) line = `${line} · ${reading}`;
       line = this.fitState(line, size, !usable, inside, false, words);
@@ -517,49 +605,59 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // folds its switch into the icon circle, gives its value to the state line, keeps one readout
     const inner = Math.floor(this.tileWidth()) - 32;
     const family = getComputedStyle(this).fontFamily;
-    // a tile of nothing (a template card without an entity) has no reading
-    const parts = sensorLike && item.entity ? valueParts(this.hass, view) : null;
+    // a tile of nothing (a template card without an entity) has no reading, and one whose foot sets it (a number) says
+    // it on its line
+    const parts = sensorLike && item.entity && !level ? valueParts(this.hass, view) : null;
     const valueInHead =
       parts !== null &&
       44 + 8 + textWidth(`${parts.value} ${parts.unit}`.trim(), `600 16px ${family}`) <= inner;
-    const switchApart = canToggle && inner >= HEAD_ROOM;
+    // a card built on the tile may end its head otherwise (the Slider card's control); else the tile's switch
+    const control = this.headControl?.(view, lit, tone, label, usable);
+    const switchApart = control === undefined && canToggle && inner >= HEAD_ROOM;
     const flip = (event: Event): void => {
       event.stopPropagation();
       this.flip(view, !lit);
     };
     const lead = !usable
       ? ico('ban', 'off')
-      : canToggle && !switchApart
+      : control === undefined && canToggle && !switchApart
         ? ico(icon, iconTone, { onTap: flip, label, checked: lit })
         : ico(icon, iconTone);
-    const trailing = switchApart
-      ? toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
-      : parts && valueInHead
-        ? html`<span class="fv-tile__value"
-            >${parts.value}${parts.unit ? html` <span class="fv-unit">${parts.unit}</span>` : nothing}</span
-          >`
-        : nothing;
+    const trailing =
+      control !== undefined
+        ? control
+        : switchApart
+          ? toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
+          : parts && valueInHead
+            ? html`<span class="fv-tile__value"
+                >${parts.value}${parts.unit ? html` <span class="fv-unit">${parts.unit}</span>` : nothing}</span
+              >`
+            : nothing;
 
     let foot: TemplateResult | typeof nothing = nothing;
     if (level) {
+      // a number's knob is always up, a player's while it is on; a muted player's volume stands in neutral
+      const { scale, ticks, awake } = level;
       foot = html`<fluvy-ruler
-        class=${lit ? '' : 'fv-ruler--off'}
+        class=${awake ? '' : 'fv-ruler--off'}
         ?on-fill=${on}
-        .value=${lit ? level.value : 0}
-        .min=${0}
-        .max=${100}
-        .step=${1}
+        .value=${awake ? level.value : scale.min}
+        .min=${scale.min}
+        .max=${scale.max}
+        .step=${scale.step}
+        .origin=${scale.origin}
         .length=${Math.max(24, inner)}
         .knob=${28}
-        .minor=${1 / 12}
-        .major=${1 / 4}
-        .tone=${lit ? tone : 'neutral'}
-        ?inactive=${!lit}
-        ?wake=${usable}
+        .minor=${ticks.minor}
+        .major=${ticks.major}
+        .tone=${awake && !level.quiet ? tone : 'neutral'}
+        ?inactive=${!awake}
+        ?wake=${usable && level.wakes}
         ?inert=${!usable}
-        unit="%"
+        unit=${scale.unit}
         .label=${`${label} · ${level.label}`}
-        .format=${(v: number) => formatNumber(this.hass, v, { digits: 0 })}
+        .format=${(v: number) => scaleText(this.hass, scale, v)}
+        @fluvy-input=${(e: CustomEvent<RulerChangeDetail>) => level.input?.(e.detail.value)}
         @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => level.commit(e.detail.value)}
       ></fluvy-ruler>`;
     } else if (item.readouts?.length) {
@@ -609,7 +707,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // the tap action, a still press the hold action — never a switch inside a button
     const tapAction = item.tap_action ?? MORE_INFO;
     const tapNow = actionRuns(tapAction, view.id) ? () => this.tap(view.id, tapAction) : undefined;
-    const line = this.tileLine(item, view, lit, level ? level.value : null, valueInHead);
+    const line = this.tileLine(item, view, lit, level, valueInHead);
     return html`<article
       class=${`${classes}${foot === nothing ? ' fv-tile--footless' : this.nameFits(name) ? '' : ' fv-tile--tight'}`}
       data-card

@@ -65,7 +65,7 @@ const CATALOGUE: readonly CatalogueEntry[] = [
     'fluvy-tile-card',
     FluvyTileCard,
     'Fluvy · Tile',
-    'A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini.',
+    'A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini.',
   ],
   [
     'fluvy-tiles-card',

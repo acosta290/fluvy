@@ -11,6 +11,7 @@ import {
   FluvyTileCard,
   type TileCardConfig,
   type TileItem,
+  type TileLevel,
   type TileLook,
   type TileSize,
 } from '../tile/tile-card.js';
@@ -234,7 +235,7 @@ export class FluvyTemplateCard extends FluvyTileCard {
     item: TileItem,
     view: EntityView,
     on: boolean,
-    level: number | null,
+    level: TileLevel | null,
     valueInHead: boolean,
     small = false,
   ): string {
