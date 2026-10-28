@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from homeassistant.util.hass_dict import HassKey
 
@@ -23,6 +24,10 @@ PANEL_ICON = "fluvy:palette"
 THEME_NAME = "Fluvy"
 THEME_DIR = "fluvy"
 THEME_FILE = "fluvy.yaml"
+
+# The frontend's themes, read by their key: the constant moved inside the frontend package in
+# 2026.11, so importing it would tie Fluvy to one layout of a module that is not public API.
+FRONTEND_THEMES: HassKey[dict[str, Any]] = HassKey("frontend_themes")
 
 # Where a manual install of the pre-integration era put the module.
 LEGACY_LOCAL_PREFIX = "/local/fluvy/"

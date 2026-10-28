@@ -5,6 +5,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The integration loads on Home Assistant 2026.11, where it stopped with an `ImportError`: it took the themes
+  event and the themes' key from the frontend's package, which no longer carries them. It now takes the event from
+  Home Assistant's own constants and reads the themes by their key, the same from 2026.9 on. A daily check imports
+  the integration on Home Assistant's stable and beta releases, so the next such change shows before it ships. Thanks
+  to @epenet and @evertwoud (#82).
+
 ## [1.11.1] — 2026-10-28
 
 ### Visible on upgrade

@@ -16,3 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: home-assistant/actions/hassfest@master
+
+  # every module of the integration imports on Home Assistant's stable and beta images, daily too:
+  # a name taken from another integration's package can vanish in a release (#82)
+  imports:
+    name: Imports on Home Assistant ${{ matrix.channel }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta]
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          docker run --rm -v "$PWD/custom_components:/config/custom_components:ro" -w /config \
+            ghcr.io/home-assistant/home-assistant:${{ matrix.channel }} python3 -c "
+          import importlib, pathlib
+          from homeassistant.const import __version__
+          for path in sorted(pathlib.Path('custom_components/fluvy').glob('*.py')):
+              importlib.import_module('custom_components.fluvy.' + path.stem if path.stem != '__init__' else 'custom_components.fluvy')
+          print('Fluvy imports on Home Assistant', __version__)
+          "

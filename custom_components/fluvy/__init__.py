@@ -13,8 +13,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from homeassistant.components.frontend import EVENT_THEMES_UPDATED
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_THEMES_UPDATED
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import config_validation as cv

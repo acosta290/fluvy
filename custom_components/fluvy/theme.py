@@ -8,13 +8,11 @@ import contextlib
 import logging
 from pathlib import Path
 
-from homeassistant.components import frontend
-from homeassistant.components.frontend import DATA_THEMES
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.file import write_utf8_file_atomic
 
-from .const import THEME_DIR, THEME_FILE, THEME_NAME, FluvyRuntime
+from .const import FRONTEND_THEMES, THEME_DIR, THEME_FILE, THEME_NAME, FluvyRuntime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,13 +48,13 @@ def remove_theme_file(target: Path) -> None:
 @callback
 def theme_loaded(hass: HomeAssistant) -> bool:
     """Return whether Home Assistant lists the Fluvy theme (`frontend: themes:` must include it)."""
-    return THEME_NAME in hass.data.get(DATA_THEMES, {})
+    return THEME_NAME in hass.data.get(FRONTEND_THEMES, {})
 
 
 async def async_reload_themes(hass: HomeAssistant) -> bool:
     """Ask the frontend to read the themes again; False when the configuration could not be read."""
     try:
-        await hass.services.async_call(frontend.DOMAIN, "reload_themes", blocking=True)
+        await hass.services.async_call("frontend", "reload_themes", blocking=True)
     except HomeAssistantError as err:
         _LOGGER.warning("Themes could not be reloaded: %s", err)
         return False
