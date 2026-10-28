@@ -43,8 +43,27 @@ pills, as icons, Home Assistant's own, or none at all.
   <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=desktop"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-desktop.webp" width="822" alt="Home Assistant with Fluvy on a desktop, in its floating frame: the whole sidebar, the header with its view tabs and a dashboard of three full sections — the greeting, the house's readouts, the living room and who is home; the thermostat, the day's energy and a light out of reach; the music, the alarm, the openings and the scenes"></a>
 </p>
 
+## The settings panel
+
+**Fluvy** in the sidebar: fifteen palettes in a pastel and an electric line, or your own accent with every
+contrast checked; three shapes; how every chart and gauge is drawn, with the series' colours; where the look
+applies; the automatic dashboard; and each person's own preferences — language, motion, haptics, a palette of their
+own. Changes apply live on every device, no reload.
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?panel=appearance&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="822" alt="The Appearance tab: two palettes tried, a custom accent picked, the look applied to the house"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?panel=charts&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/panel-charts.webp" width="822" alt="The Charts tab: the style every chart is drawn in, and a preview of it in light and dark"></a>
+</p>
+
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-light.webp" width="411" alt="A dashboard on a tablet, light"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=tablet&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/app-tablet-dark.webp" width="411" alt="The same dashboard on a tablet, dark"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-en.webp" width="274" alt="The dashboard on a phone in English"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;mode=dark&amp;lang=pt-PT"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-pt-PT.webp" width="274" alt="The same dashboard in European Portuguese, dark"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;lang=ja"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-ja.webp" width="274" alt="The same dashboard in Japanese"></a>
 </p>
 
 ## Sixty-two cards
@@ -150,25 +169,6 @@ the house wants them; a switch gives Home Assistant's pages back.
 
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?activity=1&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/activity.webp" width="411" alt="The Activity page: the day's logbook as a timeline, who did what, with the hours beside it"></a><a href="https://acosta290.github.io/fluvy/?history=1&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/history-scrub.gif" width="411" alt="The History page: one cursor scrubbed across a chart reads every chart at the same moment"></a>
-</p>
-
-## The settings panel
-
-**Fluvy** in the sidebar: fifteen palettes in a pastel and an electric line, or your own accent with every
-contrast checked; three shapes; how every chart and gauge is drawn, with the series' colours; where the look
-applies; the automatic dashboard; and each person's own preferences — language, motion, haptics, a palette of their
-own. Changes apply live on every device, no reload.
-
-<p align="center">
-  <a href="https://acosta290.github.io/fluvy/?panel=appearance&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/palette.gif" width="822" alt="The Appearance tab: two palettes tried, a custom accent picked, the look applied to the house"></a>
-</p>
-
-<p align="center">
-  <a href="https://acosta290.github.io/fluvy/?panel=charts&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/panel-charts.webp" width="822" alt="The Charts tab: the style every chart is drawn in, and a preview of it in light and dark"></a>
-</p>
-
-<p align="center">
-  <a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-en.webp" width="274" alt="The dashboard on a phone in English"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;mode=dark&amp;lang=pt-PT"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-pt-PT.webp" width="274" alt="The same dashboard in European Portuguese, dark"></a><a href="https://acosta290.github.io/fluvy/?palette=linen&amp;device=phone-l&amp;lang=ja"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/lang-ja.webp" width="274" alt="The same dashboard in Japanese"></a>
 </p>
 
 ## The automatic dashboards
