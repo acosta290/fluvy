@@ -15,6 +15,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The gauge card hides its Min / Max / Average row with `show_stats: false`, or shows the figures `stats` lists, in
   their order (`stats: [max, average]`); without the row the card is 60 px shorter. Thanks to @evertwoud (#83).
 
+### Changed
+
+- The Energy usage card's head says the sum of the sources it draws: a card with a `sources` subset, or a source
+  with `show: false`, says that subset's total where it said the whole house's.
+
 ## [1.11.2] — 2026-10-28
 
 ### Fixed
