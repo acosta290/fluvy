@@ -404,6 +404,48 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('offers a dashboard’s long lists shortened or in full, its own caps kept until in full is chosen (#78)', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    const { panel, root, chip, button, settle } = await mount(true, {
+      panels: {
+        'fluvy-auto': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-auto',
+          title: 'Fluvy auto',
+          icon: 'fluvy:sun',
+        },
+      },
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type === 'lovelace/config' && message.url_path === 'fluvy-auto')
+          return { strategy: { type: 'custom:fluvy-home', caps: { lights: 12 } } };
+        return { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    // a list's own cap reads as shortened, and a tap on it changes nothing
+    expect(chip('Shortened')?.classList.contains('is-active')).toBe(true);
+    chip('Shortened')!.click();
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent ?? '').not.toContain('1 change');
+    chip('In full')!.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)).toEqual({
+      type: 'lovelace/config/save',
+      url_path: 'fluvy-auto',
+      config: { strategy: { type: 'custom:fluvy-home', caps: 'none' } },
+    });
+    panel.remove();
+  });
+
   it('edits the wall whole and this device apart: the screensaver minutes saved with the house, the device on Save', async () => {
     localStorage.removeItem('fluvy:device');
     const { panel, root, row, chip, button, handle, settle } = await mount();
@@ -1329,7 +1371,14 @@ describe('the settings panel', () => {
 
   it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
-    const strategy = { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] };
+    // the long lists' caps travel too, list by list (#78)
+    const caps = { lights: 12, humidity: 'none' };
+    const strategy = {
+      type: 'custom:fluvy-home',
+      thermostat_variant: 'ruler',
+      hide: ['media'],
+      caps,
+    };
     const { panel, handle, settle } = await mount(true, {
       callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
         if (message.type === 'lovelace/config/save') saved.push(message as never);
@@ -1405,7 +1454,7 @@ describe('the settings panel', () => {
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
     expect(exported['dashboards']).toEqual({
-      'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'] },
+      'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'], caps },
     });
     // another house, reset; the file brings it all back
     await handle.store.saveHouse({
@@ -1434,7 +1483,7 @@ describe('the settings panel', () => {
     expect(handle.settings().charts).toEqual(charts);
     expect(handle.store.house.chartSets).toEqual([sea, garden]);
     expect(saved.at(-1)?.config).toEqual({
-      strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'] },
+      strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'], caps },
     });
     // a 1.2 file names only the home dashboard's options: they land on it too
     importSettings(

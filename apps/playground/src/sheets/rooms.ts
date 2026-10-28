@@ -343,5 +343,24 @@ export const sheet: SheetSpec = {
         room({ area: 'rm_den', variant: 'tile', light_colors: true }),
       ],
     },
+    // #78: a list past its cap ends with the house's fold row, "N more", to a subview of every one — on a card of its
+    // own under a list of whole cards, as the last row of a list of rows
+    {
+      title: 'Room page · a list past its cap (#78)',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          more: 9,
+          more_path: '/fluvy-auto/climate-humidity',
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Devices',
+          rows: ['switch.rm_tv_plug', 'sensor.rm_living_humidity'],
+          more: 12,
+          more_path: '/fluvy-auto/room-rm_living-devices',
+        },
+      ],
+    },
   ],
 };

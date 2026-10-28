@@ -1,5 +1,6 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { appliancesView } from './appliances.js';
+import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
 import { roomView } from './rooms.js';
 import { HOME_TEMPLATE, templateOf, viewsOf, type Template } from './templates.js';
@@ -14,9 +15,9 @@ export async function generate(
 }
 
 /**
- * A template's dashboard: its views built from the house (the first always, the others when the house has what
- * they show and the configuration keeps them), each framed; then a subview per room the template opens, and the one
- * of every appliance its Home leads to.
+ * A template's dashboard: its views built from the house (the first always, the others when the house has what they
+ * show and the configuration keeps them), each framed; then a subview per room the template opens, the one of every
+ * appliance its Home leads to, and the ones the views' capped lists open (#78), each under the view it leads back to.
  */
 export async function generateWith(
   template: Template,
@@ -28,21 +29,25 @@ export async function generateWith(
   // a template without the greeting opens its columns with nothing
   const ctx = template.header === 'hello' ? built : { ...built, header: 0 };
   const hidden = new Set(config.hide ?? []);
-  const views = viewsOf(template, ctx)
+  const kept = viewsOf(template, ctx)
     .filter((spec, index) => index === 0 || !hidden.has(spec.key))
-    .map((spec) => ({ spec, sections: withCards(spec.build(ctx)) }))
+    .map((spec) => {
+      const title = spec.name ?? ctx.t(spec.title);
+      const more = moreHost(spec.key, title, spec.icon, template.columns);
+      return { spec, title, more, sections: withCards(spec.build({ ...ctx, more })) };
+    })
     .filter(
       ({ spec, sections }, index) =>
         index === 0 || (spec.when ? spec.when(ctx) : sections.length > 0),
-    )
-    .map(({ spec, sections }): View => ({
-      title: spec.name ?? ctx.t(spec.title),
-      icon: spec.icon,
-      path: spec.key,
-      type: 'sections',
-      max_columns: template.columns,
-      sections,
-    }));
+    );
+  const views = kept.map(({ spec, title, sections }): View => ({
+    title,
+    icon: spec.icon,
+    path: spec.key,
+    type: 'sections',
+    max_columns: template.columns,
+    sections,
+  }));
   const framedViews = views.map((view) => framed(view, ctx, views, template));
   // a subview per room: reached from a room's card (never a tab), with the same frame
   const rooms = (
@@ -50,12 +55,26 @@ export async function generateWith(
       ctx,
       views.map((view) => view.path),
     ) ?? []
-  ).map(({ area, back }) =>
-    framed(roomView(ctx, area, template.columns, back), ctx, views, template),
-  );
+  ).map(({ area, back }) => {
+    const more = moreHost(
+      `room-${area.area_id}`,
+      area.name,
+      area.icon ?? 'fluvy:home',
+      template.columns,
+    );
+    return { view: roomView({ ...ctx, more }, area, template.columns, back), more };
+  });
   const appliances =
     template.appliances && ctx.home.applianceDevices.length
       ? [framed(appliancesView(ctx, template.columns), ctx, views, template)]
       : [];
-  return { views: [...framedViews, ...rooms, ...appliances] };
+  const lists = [...kept, ...rooms].flatMap(({ more }) => more.views);
+  return {
+    views: [
+      ...framedViews,
+      ...rooms.map(({ view }) => framed(view, ctx, views, template)),
+      ...appliances,
+      ...lists.map((view) => framed(view, ctx, views, template)),
+    ],
+  };
 }

@@ -1,5 +1,6 @@
 import type { AreaRegistryEntry } from '@fluvy/core';
-import { entityRow, full, helloCard, section, thermostat } from '../layout.js';
+import { byArea, capped, moreCard, moreKeys } from '../caps.js';
+import { entityRow, full, helloCard, readoutsCards, section, thermostat } from '../layout.js';
 import { roomCard, roomsOf } from '../rooms.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
@@ -23,20 +24,26 @@ export function wallRooms(ctx: StrategyContext): AreaRegistryEntry[] {
 function wallView(ctx: StrategyContext): Section[] {
   const { home, t, weather, style } = ctx;
   const scenes = home.scenes.slice(0, style.scenes ?? 6);
-  const readings = home.temperatures.slice(0, 3);
-  const secured = [...home.alarms, ...home.locks, ...home.gateways, ...home.openings].slice(0, 6);
+  const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
+    full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
+  const readings = capped(
+    ctx,
+    { key: 'readings', title: 'strategy.readings', icon: 'fluvy:thermo' },
+    home.temperatures,
+    (ids) => readoutsCards(home, ids, { variant: 'row' }).map((card) => [card]),
+  );
+  // the wall's six rows of what secures the house
+  const secured = capped(
+    ctx,
+    { key: 'security', title: 'strategy.security', icon: 'fluvy:shield', cap: 6 },
+    [...home.alarms, ...home.locks, ...home.gateways, ...home.openings],
+    (ids) => byArea(ctx, ids, t('strategy.security'), (title, own) => [rows(title, own)]),
+  );
   const left: Card[] = [
     helloCard(weather),
     full('clock', { variant: 'side', ...(weather ? { weather } : {}) }),
-    ...(readings.length
-      ? [
-          {
-            type: 'custom:fluvy-readouts-card',
-            variant: 'row',
-            rows: readings.map((id) => ({ entity: id, name: home.placeName(id) })),
-          } as Card,
-        ]
-      : []),
+    ...readoutsCards(home, readings.shown, { variant: 'row' }),
+    ...moreCard(readings),
     ...(scenes.length
       ? [
           {
@@ -57,13 +64,8 @@ function wallView(ctx: StrategyContext): Section[] {
   ];
   const right: Card[] = [
     ...(home.climate[0] ? [thermostat(home.climate[0], style)] : []),
-    ...(secured.length
-      ? [
-          full('entities', {
-            title: t('strategy.security'),
-            rows: secured.map((id) => entityRow(home, id)),
-          }),
-        ]
+    ...(secured.shown.length
+      ? [rows(t('strategy.security'), secured.shown, moreKeys(secured))]
       : []),
     ...(home.people.length
       ? [full('people', { title: t('strategy.people'), entities: [...home.people] })]

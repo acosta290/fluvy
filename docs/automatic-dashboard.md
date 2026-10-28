@@ -16,7 +16,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | **Home** (`custom:fluvy-home`) | the whole house: Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors, each when the house has what it shows, and an Appliances page behind Home's appliance bands |
 | **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page |
 | **Energy** (`custom:fluvy-energy`) | Now (the flow, the balance, the house by source, the grid, the batteries, the car charger), Today (the Energy period strip across the view, and the day's flow, where it went, the score and the balance following it), Production, Devices, Water & gas, Meters |
-| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first four cameras on one Cameras card), Cameras (every camera, up to twelve, on one Cameras card across the view), Openings room by room |
+| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first four cameras on one Cameras card), Cameras (twelve cameras on one Cameras card across the view, the rest a "N more" row away), Openings room by room, every one |
 | **Wall** (`custom:fluvy-wall`) | two columns for a tablet on the wall, read from a metre away: the greeting, the clock, the readings, the scenes and the rooms; the thermostat, the security rows and who is home |
 
 ## What the home dashboard builds
@@ -36,6 +36,36 @@ time it opens, from the registries, so a new device shows up by itself.
 Views a house has nothing for are left out. Every view keeps the same three columns (two on the wall), so the header
 never moves between tabs, and blocks are cut into the columns so that they end on one line. A room's page is a
 subview: it opens from its card, never from the tabs, and its heading leads back.
+
+## Capped lists
+
+A view shows the first of a long list, so a big house still reads. Where a list goes past its cap, it ends with a
+"N more" row, which opens a page of every one (a subview, back to the view it came from): the whole cards of a list of
+cards (thermostats, cameras), a card a room for a list of rows (batteries, the security rows). One past the cap of a
+list of rows or tiles is shown instead: it takes the room a "1 more" row would.
+
+| List (`caps` key) | Where | Shows |
+| --- | --- | --- |
+| `lights` | Home, a room | 6 |
+| `appliances` | the plug tiles of Home and a room | 4 |
+| `covers` | Home, a room | 6 |
+| `gates` | Security | 2 |
+| `thermostats` | Climate | 4 |
+| `fans` | Climate | 2 |
+| `humidity`, `temperatures` | Climate | 3, 4 |
+| `readings` | the temperatures of Home and the wall, a room's readings | 3 |
+| `security` | Home's security rows (the wall's: 6) | 5 |
+| `alarms`, `locks`, `cameras` | Security (the Security dashboard's Cameras view: 12) | 2, 4, 4 |
+| `media` | Media | 6 |
+| `calendars`, `lists`, `timers`, `actions` | Agenda | 3, 3, 3, 6 |
+| `scenes` | Lights (scenes and light automations) | 6 |
+| `batteries`, `phones`, `plants`, `helpers`, `updates` | Sensors | 8, 8, 4, 6, 8 |
+| `consumption` | the energy dashboard's devices (Energy; the Energy dashboard's Devices view: 12) | 8 |
+| `today` | the day's energy readings as stat tiles | 4 |
+| `meters` | the Energy dashboard's power meters | 9 |
+
+The openings are never capped: their card folds them itself. Home's appliance bands keep their own two rows (eight
+large, five small) and lead to every appliance.
 
 ## How it reads a home
 
@@ -81,6 +111,7 @@ there; *Recreate* takes them all back to their defaults):
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were) |
+| `caps` | a list's own number or `none` by its key (`caps: { lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default) or *In full* |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
 | `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja` | all | the dashboard's words in that language, whoever opens it |
 

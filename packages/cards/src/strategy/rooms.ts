@@ -6,6 +6,7 @@ import {
   type AreaRegistryEntry,
 } from '@fluvy/core';
 import { applianceSections } from './appliances.js';
+import { capped, moreAfter } from './caps.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
   applianceTile,
@@ -13,10 +14,13 @@ import {
   full,
   headed,
   heading,
+  lightGroups,
+  readoutsCards,
   section,
   sizedTile,
   thermostat,
   tileRows,
+  when,
 } from './layout.js';
 import type { Card, Section, StrategyContext, View } from './types.js';
 
@@ -82,7 +86,10 @@ export interface RoomBack {
   readonly title: string;
 }
 
-/** One room: what it holds, in the home view's reading order, under a way back to where it was opened from. */
+/**
+ * One room: what it holds, in the home view's reading order, under a way back to where it was opened from; each list at
+ * the house's cap, with its "N more" row.
+ */
 export function roomSections(
   ctx: StrategyContext,
   area: AreaRegistryEntry,
@@ -92,11 +99,8 @@ export function roomSections(
   const { home, t } = ctx;
   const inRoom = (ids: readonly string[]): string[] =>
     ids.filter((id) => home.areaOf(id) === area.area_id);
-  const lights = inRoom(home.lights);
   const climate = inRoom(home.climate);
-  const covers = inRoom(home.covers);
   const players = inRoom(home.players);
-  const appliances = inRoom(home.applianceTiles);
   const cameras = inRoom(home.cameras);
   const found = areaClimate(home.registries, area.area_id);
   // the room's own readings, else the sensors its area names (a thermostat's or an appliance's reading is its card's)
@@ -104,50 +108,78 @@ export function roomSections(
     const id = found[kind];
     return id && !climateAttribute(id, kind) && !home.ofAppliance(id) ? [id] : [];
   });
-  const shown = inRoom([...home.temperatures, ...home.humidities]).slice(0, 3);
-  const readings = shown.length ? shown : named;
+  const sensed = inRoom([...home.temperatures, ...home.humidities]);
+  const coverTiles = (ids: readonly string[]): Card =>
+    full('tiles', {
+      size: 'compact',
+      columns: 2,
+      tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
+    });
+  const lights = capped(
+    ctx,
+    { key: 'lights', title: 'strategy.lights', icon: 'fluvy:bulb' },
+    inRoom(home.lights),
+    (ids) => lightGroups(ctx, ids),
+  );
+  const covers = capped(
+    ctx,
+    { key: 'covers', title: 'strategy.covers', icon: 'fluvy:blinds' },
+    inRoom(home.covers),
+    (ids) => [[coverTiles(ids)]],
+  );
+  const plugs = capped(
+    ctx,
+    { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
+    inRoom(home.applianceTiles),
+    (ids) => tileRows(ids.map((id) => applianceTile(home, id))),
+  );
+  const readings = capped(
+    ctx,
+    { key: 'readings', title: 'strategy.readings', icon: 'fluvy:thermo' },
+    sensed.length ? sensed : named,
+    (ids) => readoutsCards(home, ids).map((card) => [card]),
+  );
   const sections = flowed(
     ctx,
     [
       [heading(back.title, 'fluvy:home', [], back.path)],
       ...(climate[0] ? [[thermostat(climate[0], ctx.style)]] : []),
-      ...(lights.length
-        ? headed(
-            heading(t('strategy.lights'), 'fluvy:bulb', lights),
-            tileRows(lights.slice(0, 6).map((id) => sizedTile(id, home.named(id), ctx.style))),
-          )
-        : []),
-      ...(covers.length
-        ? [
+      ...when(lights.shown.length, () =>
+        moreAfter(
+          headed(
+            heading(t('strategy.lights'), 'fluvy:bulb', inRoom(home.lights)),
+            tileRows(lights.shown.map((id) => sizedTile(id, home.named(id), ctx.style))),
+          ),
+          lights,
+        ),
+      ),
+      ...when(covers.shown.length, () =>
+        moreAfter(
+          [
             [
-              heading(t('strategy.covers'), 'fluvy:blinds', covers),
-              full('tiles', {
-                size: 'compact',
-                columns: 2,
-                tiles: covers.slice(0, 6).map((id) => ({ entity: id, ...home.named(id) })),
-              }),
+              heading(t('strategy.covers'), 'fluvy:blinds', inRoom(home.covers)),
+              coverTiles(covers.shown),
             ],
-          ]
-        : []),
+          ],
+          covers,
+        ),
+      ),
       ...(players.length
         ? [[full('media', { entity: players[0], ...home.named(players[0] ?? '') })]]
         : []),
-      ...(appliances.length
-        ? headed(
-            heading(t('strategy.appliances'), 'fluvy:plug', appliances),
-            tileRows(appliances.slice(0, 4).map((id) => applianceTile(home, id))),
-          )
-        : []),
-      ...(readings.length
-        ? [
-            [
-              {
-                type: 'custom:fluvy-readouts-card',
-                rows: readings.map((id) => ({ entity: id, name: home.placeName(id) })),
-              } as Card,
-            ],
-          ]
-        : []),
+      ...when(plugs.shown.length, () =>
+        moreAfter(
+          headed(
+            heading(t('strategy.appliances'), 'fluvy:plug', inRoom(home.applianceTiles)),
+            tileRows(plugs.shown.map((id) => applianceTile(home, id))),
+          ),
+          plugs,
+        ),
+      ),
+      ...moreAfter(
+        readoutsCards(home, readings.shown).map((card) => [card]),
+        readings,
+      ),
       ...(cameras.length ? [[full('camera', { entity: cameras[0] })]] : []),
     ],
     [],

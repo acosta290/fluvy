@@ -19,6 +19,41 @@ export type CameraRefresh = 5 | 10 | 30;
 /** How many scenes a wall shows as chips. */
 export type ScenesMax = 4 | 6 | 8;
 
+/** The lists the automatic dashboards cap (#78), each by the name `caps` gives it (`caps.ts` holds their caps). */
+export type CapKey =
+  | 'lights'
+  | 'appliances'
+  | 'covers'
+  | 'gates'
+  | 'thermostats'
+  | 'fans'
+  | 'humidity'
+  | 'temperatures'
+  | 'readings'
+  | 'security'
+  | 'alarms'
+  | 'locks'
+  | 'cameras'
+  | 'media'
+  | 'calendars'
+  | 'lists'
+  | 'timers'
+  | 'actions'
+  | 'scenes'
+  | 'batteries'
+  | 'phones'
+  | 'plants'
+  | 'helpers'
+  | 'updates'
+  | 'consumption'
+  | 'today'
+  | 'meters';
+/**
+ * How many of each list a view shows before its "N more" row: `none`, every list whole; else a list's own number (or
+ * `none`, that list whole), the others at the house's caps.
+ */
+export type Caps = 'none' | Readonly<Partial<Record<CapKey, number | 'none'>>>;
+
 /** What any of the automatic dashboards reads from its raw configuration; each template honours its own keys. */
 export interface FluvyStrategyConfig {
   type: StrategyType;
@@ -47,6 +82,8 @@ export interface FluvyStrategyConfig {
    * header's tabs wear the look: 1.5).
    */
   greeting_tabs?: 'show' | 'hide';
+  /** How many of a long list a view shows (default: the house's caps, each with its "N more" row). */
+  caps?: Caps;
 }
 
 /** The home dashboard's config: the same keys, its views by name. */
@@ -143,6 +180,26 @@ export interface StrategyContext {
   readonly hass: HomeAssistant;
   /** What opens the first column of every view, in px at a 360 column (the greeting, the chips): the layout counts it. */
   readonly header: number;
+  /** How many of a long list a view shows (`caps`). */
+  readonly caps: Caps;
+  /** The view being built: where its capped lists gather the subviews their "N more" rows open. */
+  readonly more: MoreHost;
+}
+
+/**
+ * A view as its capped lists see it (#78): the subviews their "N more" rows open are gathered on it, each one's path
+ * after the view's (`climate-humidity`, `room-kitchen-lights`) and its way back leading to it.
+ */
+export interface MoreHost {
+  /** The view's path inside its dashboard. */
+  readonly path: string;
+  /** What its way back says and shows: the view's title and icon. */
+  readonly title: string;
+  readonly icon: string;
+  /** The template's columns: the subviews keep them. */
+  readonly columns: number;
+  /** The subviews gathered while the view is built. */
+  readonly views: View[];
 }
 
 export interface ViewSpec {

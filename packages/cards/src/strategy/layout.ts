@@ -1,4 +1,4 @@
-import type { HomeRegistry } from './home-registry.js';
+import { OUTDOOR, type HomeRegistry } from './home-registry.js';
 import type { Card, CardStyle, EnergyRoles, Section, StrategyContext, View } from './types.js';
 // the house's reading is a chunk of its own, fetched with this one: the columns are cut with what the house draws
 import { houseHeightOf } from '../house-heights.js';
@@ -140,6 +140,27 @@ export const batteriesCard = (e: EnergyRoles): Card =>
 /** Whether the house has a battery the batteries card can read (the energy dashboard's gives its power too). */
 export const hasBattery = (e: EnergyRoles): boolean => Boolean(e.batteryPower);
 
+/** Items in runs of `size` (the readings' three, the stat tiles' four), in their order. */
+export const runsOf = <T>(items: readonly T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
+    items.slice(i * size, i * size + size),
+  );
+
+/**
+ * Readings side by side, each named by its place: four on one card (two by two), else a card a run of three — a
+ * readouts card draws four at most.
+ */
+export const readoutsCards = (
+  home: HomeRegistry,
+  ids: readonly string[],
+  extra: Record<string, unknown> = {},
+): Card[] =>
+  (ids.length > 4 ? runsOf(ids, 3) : ids.length ? [ids] : []).map((run) => ({
+    type: 'custom:fluvy-readouts-card',
+    ...extra,
+    rows: run.map((id) => ({ entity: id, name: home.placeName(id) })),
+  }));
+
 /** A thermostat in the dashboard's variant. */
 export const thermostat = (id: string, style: CardStyle): Card =>
   full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });
@@ -208,16 +229,19 @@ function* cutsOf(count: number, parts: number, from = 1): Generator<number[]> {
     for (const rest of cutsOf(count, parts - 1, cut + 1)) yield [cut, ...rest];
 }
 
+/** A card placed where the columns are shortest, or cards kept together there (a list's last and its "N more" row). */
+export type Loose = Card | readonly Card[];
+
 /**
  * A view's columns, level at the foot. The blocks are laid down column after column in reading order (a
- * block — a heading with its first row, a pair of tiles — never splits); then each loose card goes to the foot
- * of the column that is shortest by then. Of every way to cut the blocks into the columns, the one whose
- * columns end closest to one line once the loose cards are in (the first column carries the header).
+ * block — a heading with its first row, a pair of tiles — never splits); then each loose card (or run of cards kept
+ * together) goes to the foot of the column that is shortest by then. Of every way to cut the blocks into the columns,
+ * the one whose columns end closest to one line once the loose cards are in (the first column carries the header).
  */
 export function flowed(
   ctx: LayoutContext,
   blocks: readonly (readonly Card[])[],
-  loose: readonly Card[] = [],
+  loose: readonly Loose[] = [],
   columns = 3,
 ): Section[] {
   const runs = blocks.filter((block) => block.length > 0);
@@ -228,10 +252,11 @@ export function flowed(
       const cards = runs.slice(bounds[i] ?? runs.length, bounds[i + 1] ?? runs.length).flat();
       return { cards, height: (i === 0 ? ctx.header : 0) + heightOfAll(cards, ctx) };
     });
-    for (const card of loose) {
+    for (const item of loose) {
+      const cards: readonly Card[] = Array.isArray(item) ? item : [item as Card];
       const shortest = laid.reduce((low, next) => (next.height < low.height ? next : low));
-      shortest.cards.push(card);
-      shortest.height += heightOf(card, ctx) + GAP;
+      shortest.cards.push(...cards);
+      shortest.height += heightOfAll(cards, ctx);
     }
     const heights = laid.map((column) => column.height);
     const spread = Math.max(...heights) - Math.min(...heights);
@@ -241,9 +266,9 @@ export function flowed(
   return (best?.columns ?? []).map((cards) => section(...cards));
 }
 
-/** Cards shared out over the columns: the lead card under the header, every other one where the columns are shortest. */
-export const balanced = (ctx: LayoutContext, [lead, ...rest]: readonly Card[]): Section[] =>
-  flowed(ctx, lead ? [[lead]] : [], rest);
+/** Cards shared out over the columns: the lead under the header, every other one where the columns are shortest. */
+export const balanced = (ctx: LayoutContext, [lead, ...rest]: readonly Loose[]): Section[] =>
+  flowed(ctx, lead ? [Array.isArray(lead) ? lead : [lead as Card]] : [], rest);
 
 /** Tiles two a row; an odd one out closes the run as a compact tile across the column, so no row is half empty. */
 export function tileRows(tiles: readonly Card[]): Card[][] {
@@ -260,4 +285,38 @@ export function tileRows(tiles: readonly Card[]): Card[][] {
 export function headed(head: Card, rows: readonly Card[][]): Card[][] {
   const [first = [], ...rest] = rows;
   return [[head, ...first], ...rest];
+}
+
+/**
+ * Lights by area (indoor and outdoor where they have none), the biggest group first: a room of two lights or more
+ * starts with all of them on one card (the room in one tap, a round a light); a dimmable light is a full card (a row of
+ * its own); the switches after it are tiles, two a row.
+ */
+export function lightGroups(
+  ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
+  ids: readonly string[],
+): Card[][] {
+  const { home, t } = ctx;
+  const groups = new Map<string, string[]>();
+  for (const id of ids) {
+    const key =
+      home.areaName(home.areaOf(id)) ??
+      (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor'));
+    groups.set(key, [...(groups.get(key) ?? []), id]);
+  }
+  return [...groups.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .flatMap(([name, group]) =>
+      headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', group), [
+        ...(group.length > 1 ? [[full('lights', { lights: group })]] : []),
+        ...group
+          .filter((id) => home.dimmable(id))
+          .map((id) => [full('light', { entity: id, ...home.named(id) })]),
+        ...tileRows(
+          group
+            .filter((id) => !home.dimmable(id))
+            .map((id) => sizedTile(id, home.named(id), ctx.style)),
+        ),
+      ]),
+    );
 }

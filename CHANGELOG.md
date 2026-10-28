@@ -5,6 +5,22 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- A list the automatic dashboards cap ends with a "N more" row where it goes past its cap (Climate's humidity and
+  temperatures, Home's lights, the batteries…), which opens a page of every one, back to its view; a room's page does
+  the same for its own lists. A list of rows or tiles one past its cap shows that one instead (a seventh light, a
+  ninth battery), and a fourth reading shares its card, two by two. The Security dashboard's Openings view gives a room
+  every opening, where it stopped at twelve, and the Media view leads with what plays wherever it is in the list.
+  Thanks to @DennyWeinberg (#78).
+
+### Added
+
+- `caps`, an option of every automatic dashboard: a list's own cap (`caps: { lights: 12 }`), a list whole
+  (`humidity: none`), or every list whole (`caps: none`); the panel's Dashboards tab offers Long lists: Shortened or
+  In full. Thanks to @DennyWeinberg (#78).
+- The entities card's `more` and `more_path`: a last row, "{count} more", that opens where the rest of a list is.
+
 ## [1.11.0] — 2026-10-28
 
 ### Visible on upgrade

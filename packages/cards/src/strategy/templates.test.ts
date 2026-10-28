@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { catalogue } from '../index.js';
 
 const CATALOGUE = await catalogue();
+import { CAPS } from './caps.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { generate, generateWith } from './generate.js';
 import {
@@ -34,6 +35,12 @@ import {
 
 const house = (more: readonly DemoEntity[] = [], consumption?: readonly string[]) =>
   demoHass({ more, ...(consumption ? { consumption } : {}) }) as never;
+const entity = (
+  id: string,
+  state: string,
+  attributes: Record<string, unknown> = {},
+  registry: Record<string, unknown> = {},
+): DemoEntity => ({ id, state, attributes, registry });
 /** The moment the appliances' fixtures are read at. */
 const APPLIANCES_AT = Date.parse('2026-09-17T19:47:00Z');
 /** The demo home with one of everything the library has a card for, appliances large and small among them (#47). */
@@ -223,14 +230,19 @@ describe('the dashboard templates', () => {
   });
 
   it('keep the subviews out of the tabs and give each a way back', async () => {
+    // a list past its cap opens a subview after its view's path, back to it (#78)
+    const list = new RegExp(`^(.+)-(${Object.keys(CAPS).join('|')})$`);
     for (const template of TEMPLATES) {
       const { views } = await generate({ type: template.type }, everything());
       const tabs = views.filter((v) => !v.subview).map((v) => v.path);
       const rooms = views.filter((v) => v.subview);
       for (const room of rooms) {
-        // a room, or every appliance (Home's)
-        expect(room.path.startsWith('room-') || room.path === 'appliances').toBe(true);
+        // a room, every appliance (Home's), or every one of a capped list
+        const of = list.exec(room.path)?.[1];
+        expect(room.path.startsWith('room-') || room.path === 'appliances' || of).toBeTruthy();
         expect(room.back_path).toBeDefined();
+        if (of && !room.path.startsWith('room-'))
+          expect(room.back_path?.endsWith(`/${of}`)).toBe(true);
         const chips = cardsOf(views).filter(
           (c) => c.type === 'custom:fluvy-chips-card',
         ) as unknown as {
@@ -383,5 +395,35 @@ describe('the dashboard templates', () => {
       ),
     ).toEqual({ areas: ['kitchen'] });
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
+    // the caps: every list whole, or a list's own number or `none`, the lists every template knows
+    for (const template of TEMPLATES) {
+      expect(strategyOptions({ caps: 'none' }, template)).toEqual({ caps: 'none' });
+      expect(
+        strategyOptions(
+          { caps: { lights: 12, humidity: 'none', fridges: 2, covers: 0 } },
+          template,
+        ),
+      ).toEqual({ caps: { lights: 12, humidity: 'none' } });
+      expect(strategyOptions({ caps: 'some' }, template)).toEqual({});
+    }
+  });
+
+  it('end a capped list with "N more" and open every one on a subview (golden file, #78)', async () => {
+    const hass = house(
+      Array.from({ length: 12 }, (_, i) =>
+        entity(
+          `sensor.room_${i + 1}_humidity`,
+          String(40 + i),
+          { device_class: 'humidity', unit_of_measurement: '%' },
+          { area_id: `room_${i + 1}` },
+        ),
+      ),
+    ) as unknown as HomeAssistant;
+    for (let i = 1; i <= 12; i++)
+      hass.areas[`room_${i}`] = { area_id: `room_${i}`, name: `Room ${i}` } as never;
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    expect(
+      views.filter((view) => view.path === 'climate' || view.path === 'climate-humidity'),
+    ).toMatchSnapshot();
   });
 });

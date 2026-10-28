@@ -2,9 +2,12 @@
 import { describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
 import '../index.js';
+import { CAPS } from './caps.js';
 import { findEnergyRoles } from './energy-roles.js';
+import { generate } from './generate.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { HomeRegistry } from './home-registry.js';
+import type { View } from './types.js';
 import {
   hcCoffee,
   hcDishwasher,
@@ -985,5 +988,160 @@ describe('custom:fluvy-home strategy — the appliances, as the reporter of #47 
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
     expect(views.some((view) => view.sections.some((section) => section.column_span))).toBe(false);
     expect(views.some((view) => view.path === 'appliances')).toBe(false);
+  });
+});
+
+/** The views' cards. */
+const cardsIn = (views: readonly View[]) =>
+  views.flatMap((view) => view.sections.flatMap((section) => section.cards));
+
+/** Every entity a card names, however deep (an `entity`, a list of ids, a row's), as the house knows it. */
+function namedIn(
+  value: unknown,
+  hass: { states: Record<string, unknown> },
+  out = new Set<string>(),
+) {
+  if (typeof value === 'string') {
+    if (value in hass.states) out.add(value);
+  } else if (Array.isArray(value)) for (const item of value) namedIn(item, hass, out);
+  else if (value && typeof value === 'object')
+    for (const inner of Object.values(value)) namedIn(inner, hass, out);
+  return out;
+}
+
+describe('custom:fluvy-home strategy — capped lists (#78)', () => {
+  /** A house of twelve rooms, each with its temperature, its humidity and its light. */
+  const twelveRooms = () => {
+    const more: DemoEntity[] = [];
+    const hass = house(
+      Array.from({ length: 12 }, (_, i) => {
+        const area = `room_${i + 1}`;
+        more.push(
+          entity(
+            `sensor.${area}_humidity`,
+            String(40 + i),
+            { device_class: 'humidity', unit_of_measurement: '%' },
+            { area_id: area },
+          ),
+          entity(`light.${area}`, 'off', { supported_color_modes: ['onoff'] }, { area_id: area }),
+        );
+        return entity(
+          `sensor.${area}_temperature`,
+          String(20 + i / 10),
+          { device_class: 'temperature', unit_of_measurement: '°C' },
+          { area_id: area },
+        );
+      }).concat(more),
+    ) as unknown as HomeAssistant;
+    for (let i = 1; i <= 12; i++)
+      hass.areas[`room_${i}`] = { area_id: `room_${i}`, name: `Room ${i}` } as never;
+    return hass;
+  };
+  const moreRows = (cards: readonly Record<string, unknown>[]) =>
+    cards.filter((card) => card['more_path'] !== undefined);
+
+  it('ends a capped list with "N more", which opens a subview of every one, back to the view', async () => {
+    const hass = twelveRooms();
+    const home = new HomeRegistry(hass);
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    const climate = cardsIn(views.filter((view) => view.path === 'climate'));
+    const humidity = climate.filter((card) => card.type === 'custom:fluvy-humidity-card');
+    expect(humidity).toHaveLength(3);
+    expect(moreRows(climate)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'custom:fluvy-entities-card',
+          more: home.humidities.length - 3,
+          more_path: '/fluvy-home/climate-humidity',
+        }),
+        expect.objectContaining({
+          more: home.temperatures.length - 4,
+          more_path: '/fluvy-home/climate-temperatures',
+        }),
+      ]),
+    );
+    const every = views.find((view) => view.path === 'climate-humidity')!;
+    expect(every).toMatchObject({
+      subview: true,
+      back_path: '/fluvy-home/climate',
+      title: 'Humidity',
+    });
+    expect(
+      cardsIn([every])
+        .filter((card) => card.type === 'custom:fluvy-humidity-card')
+        .map((card) => card['entity']),
+    ).toEqual(home.humidities);
+    // its way back first, after the greeting
+    expect(every.sections[0]!.cards[1]).toMatchObject({
+      type: 'custom:fluvy-heading-card',
+      title: 'Climate',
+      path: '/fluvy-home/climate',
+    });
+    // Home's lights: six tiles, the rest on a subview of every light by room; never a tab
+    const homeCards = cardsIn(views.filter((view) => view.path === 'home'));
+    expect(moreRows(homeCards).map((card) => card['more_path'])).toContain(
+      '/fluvy-home/home-lights',
+    );
+    const lights = namedIn(
+      cardsIn(views.filter((view) => view.path === 'home-lights')),
+      hass as never,
+    );
+    expect(home.lights.filter((id) => !lights.has(id))).toEqual([]);
+    const tabs = views.filter((view) => !view.subview).map((view) => view.path);
+    expect(tabs).not.toContain('climate-humidity');
+    expect(tabs).not.toContain('home-lights');
+  });
+
+  it('raises a list’s cap, lifts it, or lifts them all (`caps`)', async () => {
+    const hass = twelveRooms();
+    const home = new HomeRegistry(hass);
+    const raised = await generate(
+      { type: 'custom:fluvy-home', caps: { humidity: 20, temperatures: 'none' } },
+      hass as never,
+    );
+    const climate = cardsIn(raised.views.filter((view) => view.path === 'climate'));
+    expect(climate.filter((card) => card.type === 'custom:fluvy-humidity-card')).toHaveLength(
+      home.humidities.length,
+    );
+    expect(climate.filter((card) => card.type === 'custom:fluvy-sensor-card')).toHaveLength(
+      home.temperatures.length,
+    );
+    expect(moreRows(climate)).toEqual([]);
+    expect(raised.views.some((view) => view.path.startsWith('climate-'))).toBe(false);
+    // the others keep the house's
+    expect(raised.views.some((view) => view.path === 'home-lights')).toBe(true);
+    const whole = await generate({ type: 'custom:fluvy-home', caps: 'none' }, hass as never);
+    expect(moreRows(cardsIn(whole.views))).toEqual([]);
+    expect(
+      whole.views.filter((view) => view.subview).every((view) => view.path.startsWith('room-')),
+    ).toBe(true);
+    // a cap that is no number is the house's
+    const nonsense = await generate(
+      { type: 'custom:fluvy-home', caps: { humidity: 0, fridges: 3 } as never },
+      hass as never,
+    );
+    expect(
+      cardsIn(nonsense.views.filter((view) => view.path === 'climate')).filter(
+        (card) => card.type === 'custom:fluvy-humidity-card',
+      ),
+    ).toHaveLength(CAPS.humidity);
+  });
+
+  it('shows one past the cap of a list of rows or tiles, never a "1 more" row', async () => {
+    // seven lights in all: Home's six and the one past them
+    const lights = (count: number) =>
+      Array.from({ length: count - new HomeRegistry(house()).lights.length }, (_, i) =>
+        entity(`light.l${i}`, 'off', { supported_color_modes: ['onoff'] }),
+      );
+    const lightsMore = async (count: number) =>
+      moreRows(
+        cardsIn(
+          (
+            await generate({ type: 'custom:fluvy-home' }, house(lights(count)) as never)
+          ).views.filter((view) => view.path === 'home'),
+        ),
+      ).filter((card) => card['more_path'] === '/fluvy-home/home-lights');
+    expect(await lightsMore(CAPS.lights + 1)).toEqual([]);
+    expect((await lightsMore(CAPS.lights + 2)).map((card) => card['more'])).toEqual([2]);
   });
 });

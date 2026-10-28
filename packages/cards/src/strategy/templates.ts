@@ -1,4 +1,5 @@
 import type { AreaRegistryEntry, KeyOf } from '@fluvy/core';
+import { capsOf } from './caps.js';
 import { roomsOf } from './rooms.js';
 import type {
   FluvyStrategyConfig,
@@ -33,9 +34,11 @@ export type TemplateOption =
   | { readonly key: 'hide'; readonly kind: 'views'; readonly label: KeyOf<'panel'> }
   /** Which rooms the dashboard shows (`areas`). */
   | { readonly key: 'areas'; readonly kind: 'areas'; readonly label: KeyOf<'panel'> }
+  /** How many of a long list a view shows (`caps`): the house's caps, or every list whole (`none`). */
+  | { readonly key: 'caps'; readonly kind: 'caps'; readonly label: KeyOf<'panel'> }
   /** One of a few values; the first is the default and is never written. */
   | {
-      readonly key: Exclude<OptionKey, 'hide' | 'areas'>;
+      readonly key: Exclude<OptionKey, 'hide' | 'areas' | 'caps'>;
       readonly kind: 'choice';
       readonly label: KeyOf<'panel'>;
       readonly values: readonly OptionValue[];
@@ -69,7 +72,7 @@ export interface Template {
 }
 
 const choice = (
-  key: Exclude<OptionKey, 'hide' | 'areas'>,
+  key: Exclude<OptionKey, 'hide' | 'areas' | 'caps'>,
   label: KeyOf<'panel'>,
   values: readonly OptionValue[],
 ): TemplateOption => ({ key, kind: 'choice', label, values });
@@ -90,6 +93,8 @@ const TILES = choice('tile_size', 'dashboard.tiles', [
 ]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
+/** The long lists: at the house's caps, each with its "N more" row, or whole. */
+const CAPS: TemplateOption = { key: 'caps', kind: 'caps', label: 'dashboard.caps' };
 /** The views as chips under the greeting, besides the header's tabs. */
 const GREETING_TABS = choice('greeting_tabs', 'dashboard.greeting_tabs', [
   { value: 'hide', label: 'dashboard.header_only' },
@@ -117,7 +122,7 @@ export const TEMPLATES: readonly Template[] = [
     // the rooms open from the Rooms view: none without it
     rooms: (ctx, paths) => (paths.includes('rooms') ? everyRoom(ctx, () => 'rooms') : []),
     appliances: true,
-    options: [HIDE, THERMOSTAT, TILES, FLOW, ROOM, GREETING_TABS],
+    options: [HIDE, THERMOSTAT, TILES, FLOW, ROOM, GREETING_TABS, CAPS],
   },
   {
     id: 'rooms',
@@ -130,7 +135,7 @@ export const TEMPLATES: readonly Template[] = [
     header: 'hello',
     views: roomsViews,
     rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
-    options: [ROOM, THERMOSTAT, TILES, GREETING_TABS],
+    options: [ROOM, THERMOSTAT, TILES, GREETING_TABS, CAPS],
   },
   {
     id: 'energy',
@@ -142,7 +147,7 @@ export const TEMPLATES: readonly Template[] = [
     columns: 3,
     header: 'hello',
     views: ENERGY_VIEWS,
-    options: [HIDE, FLOW, GREETING_TABS],
+    options: [HIDE, FLOW, GREETING_TABS, CAPS],
   },
   {
     id: 'security',
@@ -158,6 +163,7 @@ export const TEMPLATES: readonly Template[] = [
       HIDE,
       choice('camera_refresh', 'dashboard.refresh', counts([5, 10, 30], 'dashboard.seconds')),
       GREETING_TABS,
+      CAPS,
     ],
   },
   {
@@ -179,6 +185,7 @@ export const TEMPLATES: readonly Template[] = [
       { key: 'areas', kind: 'areas', label: 'dashboard.areas' },
       THERMOSTAT,
       choice('scenes_max', 'dashboard.scenes', counts([4, 6, 8], 'dashboard.count')),
+      CAPS,
     ],
   },
 ];
@@ -214,6 +221,9 @@ export function strategyOptions(raw: unknown, template: Template): Record<string
     const value = raw[option.key];
     if (option.kind === 'choice') {
       if (option.values.some((known) => known.value === value)) options[option.key] = value;
+    } else if (option.kind === 'caps') {
+      const caps = capsOf(value);
+      if (caps === 'none' || Object.keys(caps).length) options[option.key] = caps;
     } else if (Array.isArray(value)) {
       const known =
         option.kind === 'views' ? optionalViews(template).map((view) => view.key) : undefined;

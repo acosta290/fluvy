@@ -9,23 +9,45 @@ import {
   hasSources,
   headed,
   heading,
+  lightGroups,
+  readoutsCards,
+  runsOf,
   sizedTile,
   thermostat,
   tileRows,
   when,
+  type Loose,
 } from '../layout.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
-import { LIGHT_WORDS, OUTDOOR, TODAY, type HomeRegistry } from '../home-registry.js';
+import { LIGHT_WORDS, type HomeRegistry } from '../home-registry.js';
 import { roomsOf, roomsView } from '../rooms.js';
 import { APPLIANCES_PATH, applianceSections } from '../appliances.js';
+import { byArea, capped, each, looseAfter, moreAfter, moreCard, moreKeys } from '../caps.js';
 import { COLUMNS } from '../context.js';
-import { liveCards, metersCards, todayCards } from './energy.js';
+import { consumptionRows, liveCards, metersCards, todayCards, todayTiles } from './energy.js';
 
 /*
  * The views of the home dashboard (`custom:fluvy-home`), in the layout of the approved `/fluvy-home`: each one is
  * a small builder from the house (`HomeRegistry`) to sections of fluvy cards. Every list is capped so a big house
- * still reads. The other templates borrow these builders.
+ * still reads, and ends in a "N more" row to a subview of every one (`caps.ts`). The other templates borrow these
+ * builders.
  */
+
+/** A row of compact tiles, two a row: blinds, curtains, awnings. */
+const coverTiles = (home: HomeRegistry, ids: readonly string[]): Card =>
+  full('tiles', {
+    size: 'compact',
+    columns: 2,
+    tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
+  });
+
+/** Rows of entities under a title (a room's, where a subview lays them a card a room). */
+const rowsCard = (
+  home: HomeRegistry,
+  title: string,
+  ids: readonly string[],
+  extra: Record<string, unknown> = {},
+): Card => full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
 
 /**
  * What needs a look, first on Home and hidden while all is clear: leaks and smoke, what is left open (five minutes, the
@@ -49,8 +71,41 @@ const attention = (ctx: StrategyContext): Card =>
 
 export function homeView(ctx: StrategyContext): Section[] {
   const { home, t, base, weather, energy } = ctx;
-  const { lights, applianceTiles: appliances, climate, temperatures } = home;
-  const secured = [...home.domain('lock'), ...home.openings];
+  const { climate } = home;
+  const lights = capped(
+    ctx,
+    { key: 'lights', title: 'strategy.lights', icon: 'fluvy:bulb' },
+    home.lights,
+    (ids) => lightGroups(ctx, ids),
+  );
+  const appliances = capped(
+    ctx,
+    { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
+    home.applianceTiles,
+    (ids) => tileRows(ids.map((id) => applianceTile(home, id))),
+  );
+  const covers = capped(
+    ctx,
+    { key: 'covers', title: 'strategy.covers', icon: 'fluvy:blinds' },
+    home.covers,
+    (ids) =>
+      byArea(ctx, ids, t('strategy.covers'), (title, own) => [
+        heading(title, 'fluvy:blinds', own),
+        coverTiles(home, own),
+      ]),
+  );
+  const readings = capped(
+    ctx,
+    { key: 'readings', title: 'strategy.readings', icon: 'fluvy:thermo' },
+    home.temperatures,
+    (ids) => readoutsCards(home, ids).map((card) => [card]),
+  );
+  const secured = capped(
+    ctx,
+    { key: 'security', title: 'strategy.security', icon: 'fluvy:shield' },
+    [...home.domain('lock'), ...home.openings],
+    (ids) => byArea(ctx, ids, t('strategy.security'), (title, own) => [rowsCard(home, title, own)]),
+  );
   // what needs a look, then the controls, the climate and the day, the energy and the house's state, in reading
   // order; the single-purpose cards fill the columns' feet; the appliances as the reporter of #47 drew them, across
   // under them
@@ -58,33 +113,40 @@ export function homeView(ctx: StrategyContext): Section[] {
     ctx,
     [
       [attention(ctx)],
-      ...when(lights.length, () =>
-        headed(
-          heading(t('strategy.lights'), 'fluvy:bulb', lights, `${base}/lights`),
-          tileRows(lights.slice(0, 6).map((id) => sizedTile(id, home.named(id), ctx.style))),
+      ...when(lights.shown.length, () =>
+        moreAfter(
+          headed(
+            heading(t('strategy.lights'), 'fluvy:bulb', home.lights, `${base}/lights`),
+            tileRows(lights.shown.map((id) => sizedTile(id, home.named(id), ctx.style))),
+          ),
+          lights,
         ),
       ),
-      ...when(appliances.length, () =>
-        headed(
-          heading(t('strategy.appliances'), 'fluvy:plug', appliances),
-          tileRows(appliances.slice(0, 4).map((id) => applianceTile(home, id))),
+      ...when(appliances.shown.length, () =>
+        moreAfter(
+          headed(
+            heading(t('strategy.appliances'), 'fluvy:plug', home.applianceTiles),
+            tileRows(appliances.shown.map((id) => applianceTile(home, id))),
+          ),
+          appliances,
         ),
       ),
-      when(home.covers.length, () => [
-        heading(t('strategy.covers'), 'fluvy:blinds', home.covers),
-        full('tiles', {
-          size: 'compact',
-          columns: 2,
-          tiles: home.covers.slice(0, 6).map((id) => ({ entity: id, ...home.named(id) })),
-        }),
-      ]),
+      ...when(covers.shown.length, () =>
+        moreAfter(
+          [
+            [
+              heading(t('strategy.covers'), 'fluvy:blinds', home.covers),
+              coverTiles(home, covers.shown),
+            ],
+          ],
+          covers,
+        ),
+      ),
       when(climate[0], (id) => [thermostat(id, ctx.style)]),
-      when(temperatures.length, () => [
-        {
-          type: 'custom:fluvy-readouts-card',
-          rows: temperatures.slice(0, 3).map((id) => ({ entity: id, name: home.placeName(id) })),
-        },
-      ]),
+      ...moreAfter(
+        readoutsCards(home, readings.shown).map((card) => [card]),
+        readings,
+      ),
       ...(weather
         ? [[full('weather', { entity: weather })], [full('clock', { variant: 'digital', weather })]]
         : [[full('clock', { variant: 'digital' })]]),
@@ -94,11 +156,8 @@ export function homeView(ctx: StrategyContext): Section[] {
         : energy.homePower
           ? [full('energy', { entity: energy.homePower })]
           : [],
-      when(secured.length, () => [
-        full('entities', {
-          title: t('strategy.security'),
-          rows: secured.slice(0, 5).map((id) => entityRow(home, id)),
-        }),
+      when(secured.shown.length, () => [
+        rowsCard(home, t('strategy.security'), secured.shown, moreKeys(secured)),
       ]),
     ],
     [
@@ -125,56 +184,65 @@ export function homeView(ctx: StrategyContext): Section[] {
 /** By area when areas are assigned, else indoor / outdoor; the biggest group first; light automations as scenes last. */
 export function lightsView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
-  const groups = new Map<string, string[]>();
-  for (const id of home.lights) {
-    const key =
-      home.areaName(home.areaOf(id)) ??
-      (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor'));
-    groups.set(key, [...(groups.get(key) ?? []), id]);
-  }
-  // a room of two lights or more starts with all of them on one card (the room in one tap, a round a light); a
-  // dimmable light is a full card (a row of its own); the switches after it are tiles, two a row
-  const blocks = [...groups.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .flatMap(([name, ids]) =>
-      headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', ids), [
-        ...(ids.length > 1 ? [[full('lights', { lights: ids })]] : []),
-        ...ids
-          .filter((id) => home.dimmable(id))
-          .map((id) => [full('light', { entity: id, ...home.named(id) })]),
-        ...tileRows(
-          ids
-            .filter((id) => !home.dimmable(id))
-            .map((id) => sizedTile(id, home.named(id), ctx.style)),
-        ),
-      ]),
-    );
-  const scenes = [...home.scenes, ...home.automations.filter((id) => LIGHT_WORDS.test(id))].slice(
-    0,
-    6,
+  const blocks = lightGroups(ctx, home.lights);
+  const scenesCard = (ids: readonly string[]): Card =>
+    full('scenes', { title: t('strategy.automations'), scenes: [...ids] });
+  const scenes = capped(
+    ctx,
+    { key: 'scenes', title: 'strategy.automations', icon: 'fluvy:sparkle' },
+    [...home.scenes, ...home.automations.filter((id) => LIGHT_WORDS.test(id))],
+    (ids) => [[scenesCard(ids)]],
   );
-  if (scenes.length) blocks.push([full('scenes', { title: t('strategy.automations'), scenes })]);
+  if (scenes.shown.length) blocks.push(...moreAfter([[scenesCard(scenes.shown)]], scenes));
   return flowed(ctx, blocks);
 }
 
 /** Thermostats first, then the forecast, humidity and temperatures, shared out so the three columns end level. */
 export function climateView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
+  const fan = (id: string): Card => full('fan', { entity: id, ...home.named(id) });
+  const humidity = (id: string): Card => {
+    const temperature = home.temperatureBeside(id);
+    return full('humidity', {
+      entity: id,
+      name: home.placeName(id),
+      ...(temperature ? { temperature_entity: temperature } : {}),
+    });
+  };
+  const sensor = (id: string): Card => full('sensor', { entity: id, name: home.placeName(id) });
+  const thermostats = capped(
+    ctx,
+    { key: 'thermostats', title: 'strategy.thermostats', icon: 'fluvy:thermo' },
+    home.climate,
+    each((id) => thermostat(id, ctx.style)),
+  );
+  const fans = capped(
+    ctx,
+    { key: 'fans', title: 'strategy.fans', icon: 'fluvy:fan' },
+    home.fans,
+    each(fan),
+  );
+  const humidities = capped(
+    ctx,
+    { key: 'humidity', title: 'strategy.humidity', icon: 'fluvy:humid' },
+    home.humidities,
+    each(humidity),
+  );
+  const temperatures = capped(
+    ctx,
+    { key: 'temperatures', title: 'strategy.temperatures', icon: 'fluvy:thermo' },
+    home.temperatures,
+    each(sensor),
+  );
   return balanced(ctx, [
-    ...home.climate.slice(0, 4).map((id) => thermostat(id, ctx.style)),
-    ...home.fans.slice(0, 2).map((id) => full('fan', { entity: id, ...home.named(id) })),
+    ...looseAfter(
+      thermostats.shown.map((id) => thermostat(id, ctx.style)),
+      thermostats,
+    ),
+    ...looseAfter(fans.shown.map(fan), fans),
     ...home.weather.slice(0, 1).map((id) => full('weather', { entity: id })),
-    ...home.humidities.slice(0, 3).map((id) => {
-      const temperature = home.temperatureBeside(id);
-      return full('humidity', {
-        entity: id,
-        name: home.placeName(id),
-        ...(temperature ? { temperature_entity: temperature } : {}),
-      });
-    }),
-    ...home.temperatures
-      .slice(0, 4)
-      .map((id) => full('sensor', { entity: id, name: home.placeName(id) })),
+    ...looseAfter(humidities.shown.map(humidity), humidities),
+    ...looseAfter(temperatures.shown.map(sensor), temperatures),
   ]);
 }
 
@@ -184,8 +252,8 @@ export function climateView(ctx: StrategyContext): Section[] {
  * and water and gas.
  */
 export function energyView(ctx: StrategyContext): Section[] {
-  const { home, t, energy } = ctx;
-  const { solarPower, gridPower, solarToday, consumption, consumptionPowers } = energy;
+  const { t, energy } = ctx;
+  const { solarPower, gridPower, solarToday, consumptionPowers } = energy;
   return balanced(ctx, [
     ...liveCards(ctx),
     ...(energy.prefsMeters
@@ -196,13 +264,7 @@ export function energyView(ctx: StrategyContext): Section[] {
           ? [full('energy', { entity: gridPower, title: t('energy.grid') })]
           : []),
     ...todayCards(ctx),
-    ...when(
-      home.energies.filter((id) => TODAY.test(home.label(id))),
-      (todays) =>
-        todays.length >= 2
-          ? [full('stat-tiles', { title: t('strategy.today'), tiles: todays.slice(0, 4) })]
-          : [],
-    ),
+    ...todayTiles(ctx),
     ...when(solarPower, (id) => [full('gauge', { entity: id })]),
     ...when(solarToday, (id) => [full('production', { entity: id })]),
     ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
@@ -213,12 +275,7 @@ export function energyView(ctx: StrategyContext): Section[] {
         ...(energy.homePower ? { total: energy.homePower } : {}),
       }),
     ]),
-    ...when(consumption.length, () => [
-      full('energy-devices', {
-        title: t('strategy.appliances'),
-        rows: consumption.slice(0, 8).map((id) => deviceRow(home, id)),
-      }),
-    ]),
+    ...consumptionRows(ctx),
     ...metersCards(ctx),
   ]);
 }
@@ -229,66 +286,151 @@ export const secured = (home: HomeRegistry): boolean =>
 
 /** The alarm first, then what opens (locks, garage doors and gates), what is open, and the first four cameras. */
 export function securityView(ctx: StrategyContext): Section[] {
+  return balanced(ctx, securityCards(ctx));
+}
+
+/**
+ * The security overview's cards, each list at its cap: the alarms, the locks, the garage doors and gates, every
+ * opening (the card folds them itself), the cameras on one Cameras card (`cameras` gives the dashboard's refresh).
+ */
+export function securityCards(
+  ctx: StrategyContext,
+  camerasCard: (ids: readonly string[]) => Card = (ids) => full('cameras', { cameras: [...ids] }),
+): Loose[] {
   const { home, t } = ctx;
-  return balanced(ctx, [
-    ...home.alarms.slice(0, 2).map((id) => full('alarm', { entity: id, ...home.named(id) })),
-    ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
-    ...home.gateways.slice(0, 2).map((id) => full('cover', { entity: id, ...home.named(id) })),
+  const alarm = (id: string): Card => full('alarm', { entity: id, ...home.named(id) });
+  const lock = (id: string): Card => full('lock', { entity: id, ...home.named(id) });
+  const gate = (id: string): Card => full('cover', { entity: id, ...home.named(id) });
+  const alarms = capped(
+    ctx,
+    { key: 'alarms', title: 'strategy.alarms', icon: 'fluvy:shield' },
+    home.alarms,
+    each(alarm),
+  );
+  const locks = capped(
+    ctx,
+    { key: 'locks', title: 'strategy.locks', icon: 'fluvy:lock' },
+    home.locks,
+    each(lock),
+  );
+  const gates = capped(
+    ctx,
+    { key: 'gates', title: 'strategy.gates', icon: 'fluvy:door' },
+    home.gateways,
+    each(gate),
+  );
+  const cameras = capped(
+    ctx,
+    { key: 'cameras', title: 'strategy.cameras', icon: 'fluvy:camera' },
+    home.cameras,
+    (ids) => runsOf(ids, 4).map((run) => [camerasCard(run)]),
+  );
+  return [
+    ...looseAfter(alarms.shown.map(alarm), alarms),
+    ...looseAfter(locks.shown.map(lock), locks),
+    ...looseAfter(gates.shown.map(gate), gates),
     ...when(home.openings.length, () => [
       full('openings', { title: t('strategy.sensors'), entities: [...home.openings] }),
     ]),
-    ...when(home.cameras.length, () => [full('cameras', { cameras: home.cameras.slice(0, 4) })]),
-  ]);
+    ...when(cameras.shown.length, () => looseAfter([camerasCard(cameras.shown)], cameras)),
+  ];
 }
 
 /** What plays now (only while something does), then every other player of the house. */
 export function mediaView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
-  const players = home.players.slice(0, 6);
   const playing =
-    players.find((id) => home.state(id) === 'playing') ??
-    players.find((id) => home.state(id) === 'paused');
-  return balanced(ctx, [
-    ...when(playing, (id) => [full('now-playing', { entity: id, ...home.named(id) })]),
-    ...players
-      .filter((id) => id !== playing)
-      .map((id) => full('media', { entity: id, ...home.named(id) })),
-  ]);
+    home.players.find((id) => home.state(id) === 'playing') ??
+    home.players.find((id) => home.state(id) === 'paused');
+  const player = (id: string): Card => full('media', { entity: id, ...home.named(id) });
+  // what plays first, wherever it is in the list
+  const players = capped(
+    ctx,
+    { key: 'media', title: 'strategy.media', icon: 'fluvy:speaker' },
+    playing ? [playing, ...home.players.filter((id) => id !== playing)] : home.players,
+    each(player),
+  );
+  return balanced(
+    ctx,
+    looseAfter(
+      players.shown.map((id) =>
+        id === playing ? full('now-playing', { entity: id, ...home.named(id) }) : player(id),
+      ),
+      players,
+    ),
+  );
 }
 
 /** The calendars, the lists, the timers and what a person runs by hand. */
 export function agendaView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
+  const calendar = (ids: readonly string[]): Card =>
+    full('calendar', { entities: [...ids], view: 'month-day' });
+  const list = (id: string): Card => full('todo', { entity: id });
+  const timer = (id: string): Card => full('timer', { entity: id, ...home.named(id) });
+  const actionsCard = (title: string, ids: readonly string[]): Card =>
+    full('actions', { title, entities: [...ids] });
+  const calendars = capped(
+    ctx,
+    { key: 'calendars', title: 'strategy.calendars', icon: 'fluvy:calendar' },
+    home.calendars,
+    (ids) => runsOf(ids, 3).map((run) => [calendar(run)]),
+  );
+  const lists = capped(
+    ctx,
+    { key: 'lists', title: 'strategy.lists', icon: 'fluvy:list' },
+    home.lists,
+    each(list),
+  );
+  const timers = capped(
+    ctx,
+    { key: 'timers', title: 'strategy.timers', icon: 'fluvy:timer' },
+    home.timers,
+    each(timer),
+  );
+  const runnables = capped(
+    ctx,
+    { key: 'actions', title: 'strategy.actions', icon: 'fluvy:script' },
+    home.runnables,
+    (ids) => byArea(ctx, ids, t('strategy.actions'), (title, own) => [actionsCard(title, own)]),
+  );
   return balanced(ctx, [
-    ...when(home.calendars.length, () => [
-      full('calendar', { entities: home.calendars.slice(0, 3), view: 'month-day' }),
-    ]),
-    ...home.lists.slice(0, 3).map((id) => full('todo', { entity: id })),
-    ...home.timers.slice(0, 3).map((id) => full('timer', { entity: id, ...home.named(id) })),
-    ...when(home.runnables.length, () => [
-      full('actions', { title: t('strategy.actions'), entities: home.runnables.slice(0, 6) }),
-    ]),
+    ...when(calendars.shown.length, () => looseAfter([calendar(calendars.shown)], calendars)),
+    ...looseAfter(lists.shown.map(list), lists),
+    ...looseAfter(timers.shown.map(timer), timers),
+    ...when(runnables.shown.length, () =>
+      looseAfter([actionsCard(t('strategy.actions'), runnables.shown)], runnables),
+    ),
   ]);
 }
 
 export function sensorsView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   const zones = home.zones.filter((id) => id !== 'zone.home');
-  const { batteries, phones, openings, plants, helpers, people, updates } = home;
+  const { openings, people } = home;
+  const bars = (title: string, rows: readonly unknown[]): Card => full('bars', { title, rows });
+  const devices = (ids: readonly string[]): unknown[] => ids.map((id) => deviceRow(home, id));
+  const helpersCard = (title: string, ids: readonly string[]): Card =>
+    full('helpers', { title, entities: [...ids] });
+  const updatesCard = (title: string, ids: readonly string[]): Card =>
+    full('updates', { title, entities: [...ids] });
+  /** A list of the view, at its cap, its subview a card a room. */
+  const list = (
+    key: 'batteries' | 'phones' | 'plants' | 'helpers' | 'updates',
+    icon: string,
+    ids: readonly string[],
+    card: (title: string, ids: readonly string[]) => Card,
+  ) => {
+    const title = t(`strategy.${key}`);
+    const items = capped(ctx, { key, title: `strategy.${key}`, icon }, ids, (all) =>
+      byArea(ctx, all, title, (name, own) => [card(name, own)]),
+    );
+    return when(items.shown.length, () => [card(title, items.shown), ...moreCard(items)]);
+  };
   // what runs on batteries, who is home, what is open, then the helpers and the updates
   return flowed(ctx, [
-    when(batteries.length, () => [
-      full('bars', {
-        title: t('strategy.batteries'),
-        rows: batteries.slice(0, 8).map((id) => deviceRow(home, id)),
-      }),
-    ]),
-    when(phones.length, () => [
-      full('bars', {
-        title: t('strategy.phones'),
-        rows: phones.slice(0, 8).map((id) => deviceRow(home, id)),
-      }),
-    ]),
+    list('batteries', 'fluvy:battery', home.batteries, (title, ids) => bars(title, devices(ids))),
+    list('phones', 'fluvy:battery', home.phones, (title, ids) => bars(title, devices(ids))),
     when(people.length, () => [
       full('people', { title: t('strategy.people'), entities: [...people] }),
       ...(zones.length && home.people.length
@@ -306,15 +448,9 @@ export function sensorsView(ctx: StrategyContext): Section[] {
     when(!secured(home) && openings.length, () => [
       full('openings', { title: t('strategy.sensors'), entities: [...openings] }),
     ]),
-    when(plants.length, () => [
-      full('bars', { title: t('strategy.plants'), rows: plants.slice(0, 4) }),
-    ]),
-    when(helpers.length, () => [
-      full('helpers', { title: t('strategy.helpers'), entities: helpers.slice(0, 6) }),
-    ]),
-    when(updates.length, () => [
-      full('updates', { title: t('strategy.updates'), entities: updates.slice(0, 8) }),
-    ]),
+    list('plants', 'fluvy:leaf', home.plants, (title, ids) => bars(title, [...ids])),
+    list('helpers', 'fluvy:sliders', home.helpers, helpersCard),
+    list('updates', 'fluvy:update', home.updates, updatesCard),
     when(home.first('camera'), (id) => [full('camera', { entity: id })]),
   ]);
 }

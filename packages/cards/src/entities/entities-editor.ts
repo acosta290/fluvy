@@ -10,10 +10,12 @@ import {
   holdsLight,
   iconField,
   lightColourFields,
+  numberField,
   onlyWhen,
   selectField,
   showIconField,
   sinceChoices,
+  textField,
   titleFields,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
@@ -42,6 +44,8 @@ export const keys = configKeys<EntitiesCardConfig>()([
   'variant',
   'light_colors',
   'light_whites',
+  'more',
+  'more_path',
   ...EMPTY_KEYS,
 ]);
 
@@ -77,6 +81,8 @@ export function getConfigForm(): LovelaceConfigForm {
       boolField('show_count'),
       // a light's colours where the rows hold a light
       onlyWhen(holdsLight('rows', 'entities'), lightColourFields()),
+      // a last row to where the rest of the list is
+      fieldRow(numberField('more', 1, 999), textField('more_path')),
       emptyFields(),
     ],
     ...formLabels({}),
