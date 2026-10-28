@@ -347,6 +347,14 @@ page's colour) so they sit side by side at one height, History at the Activity s
 (the palette, History) wear the stills' hairline. Re-record after a change to what a clip shows, and commit the
 media.
 
+The gauges that move are loops, not gestures (`gauge-liquid`, `-thermo`, `-air`, `-battery`, `-pulse`, `-sun`): a
+gauge card of the `animated` sheet alone on the page's colour, at a row of three's width (274 shown, shot at 2×), each
+frame shot on the animations' own clock (`lib/capture.mjs` `loop`: every animation held and set to that moment) and
+read back as the sequence it is. An animation that runs for ever is retimed by the least that brings it round in the
+loop (the run prints the most, 5 % at most for these), so the GIF comes round with no jump; the thermo goes through
+its four weathers on the frame's four sensors and is not retimed, the loop cutting from the dunes to the snow as each
+scene cuts to the next.
+
 ## README images
 
 ```sh

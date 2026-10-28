@@ -2,15 +2,16 @@
 /**
  * The README's motion clips, recorded on the playground (the real cards, the simulated hass, the clock pinned) with
  * the gestures the interaction suites prove: the precision dimmer, the energy flow changing pace, a palette applied
- * in the settings panel, a scrub across the History charts. Each clip becomes a GIF (what GitHub and HACS show) and
- * an mp4 beside it, in `docs/media/`.
+ * in the settings panel, a scrub across the History charts; and the gauges that move, each a loop. Each clip becomes a
+ * GIF (what GitHub and HACS show) and an mp4 beside it, in `docs/media/`.
  *
  *   node tools/render/clip.mjs                                 every clip (the playground at $PLAYGROUND, else :5183)
  *   node tools/render/clip.mjs --clip dimmer,palette --out docs/media
  *   --url http://127.0.0.1:5183/  --fps 30  --gif-fps 20  --max-gif-kb 600  --keep-frames 1
  *
- * Frames are the screencast's, at CSS pixels (Chromium delivers no more, whatever the device scale factor): the
- * GIF is shown at that size and stays crisp; the mp4 is the same picture.
+ * A gesture's frames are the screencast's, at CSS pixels (Chromium delivers no more, whatever the device scale factor):
+ * the GIF is shown at that size and stays crisp; the mp4 is the same picture. A loop is shot frame by frame on the
+ * animations' own clock (`lib/capture.mjs` `loop`), at 2× as the README's stills are; its GIF is shown at half that.
  *
  * Exit code 1 when a page throws, a clip cannot find its target, or a GIF is over budget.
  */
@@ -19,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { parseArgs, launchOptions, PLAYGROUND } from './lib.mjs';
-import { encode, ffmpegVersion, record } from './lib/capture.mjs';
+import { encode, ffmpegVersion, loop, record } from './lib/capture.mjs';
 import {
   driftDrag,
   holdForFine,
@@ -47,6 +48,53 @@ const AT = '2026-09-17T21:47:12';
 const PLATE = { width: 412, height: 496 };
 /** A screen's edge, as `readme.mjs` draws it round the README's screens: GitHub's own hairline. */
 const HAIRLINE = '0xd1d9e0';
+/** A row of three in the README (274 of its 822), and the page's colour `readme.mjs` keeps a side of a card. */
+const THIRD = 822 / 3;
+const MARGIN = (822 / 2 - 360) / 2;
+/** The sun's rays: twelve, every other one shorter, the same again a sixth of a turn on. */
+const TURNS = { 'fc-spin': 6 };
+
+/** The thermo's scenes, snow, a mild sun, haze and dunes: when each begins in its loop, and its sensor of the frame. */
+const THERMO = [
+  [0, 'low'],
+  [3.2, 'mid'],
+  [7.6, 'high'],
+  [11, 'extreme'],
+];
+
+/**
+ * A gauge clip's card on another of its sheet's sensors (`sensor.am_<gauge>_<level>`), drawn: its reading and its
+ * window's row are that sensor's.
+ */
+const reading = (page, clip, level) =>
+  page.evaluate(
+    async ([selector, level]) => {
+      const card = document.querySelector(selector);
+      card.setConfig({
+        ...card.config,
+        entity: card.config.entity.replace(/_[a-z]+$/, `_${level}`),
+      });
+      await card.updateComplete;
+      await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+    },
+    [`${clip.target} > :nth-child(${clip.nth})`, level],
+  );
+
+/**
+ * A moving gauge of the `animated` sheet in a row of three: the frame's `nth` card alone on the page's colour, at the
+ * row's width less the margin a side, shot at 2× as a loop of `seconds`, `fps` frames a second (a pace GIF delays keep:
+ * 10, 12.5, 20 or 25).
+ */
+const gauge = (title, nth, seconds, fps, more = {}) => ({
+  query: `sheet=animated&width=${THIRD - 2 * MARGIN}&palette=linen&lang=en&at=${AT}`,
+  viewport: { width: 600, height: 900 },
+  target: `[data-frame="animated/Moving · ${title}"]`,
+  only: true,
+  nth,
+  pad: 0,
+  loop: { seconds, fps },
+  ...more,
+});
 
 /**
  * A tap through the pointer: the ring travels there, presses and lets go. A target that is not well clear of the
@@ -189,6 +237,29 @@ const CLIPS = {
       await pointer.wait(900);
     },
   },
+  // the gauges that move, each on the design page's value and in a loop that retimes none of its animations by more
+  // than 4 %: the waves' 9 s three times and their 14 s twice
+  'gauge-liquid': gauge('liquid', 2, 27.2, 12.5),
+  // the sky through its four weathers, a sensor each (its window's row its own), the mild one long enough for its cloud
+  // to come in: the loop cuts from the dunes to the snow as each scene cuts to the next, so none is retimed
+  'gauge-thermo': gauge('thermo', 1, 14.4, 10, {
+    retime: false,
+    async ready(page) {
+      await reading(page, this, 'extreme');
+    },
+    async at(page, t) {
+      const scene = THERMO.find(([from]) => Math.abs(from - t) < 0.01);
+      if (scene) await reading(page, this, scene[1]);
+    },
+  }),
+  // a strong wind (46 km/h), its streaks quick enough to want 25 frames a second
+  'gauge-air': gauge('air', 3, 5.92, 25),
+  // charging at 62 %: the bubbles as fast as it fills, the bolt glowing
+  'gauge-battery': gauge('battery', 2, 19.44, 12.5),
+  // 1.8 kW: one beat of its rings
+  'gauge-pulse': gauge('pulse', 2, 1.8, 20),
+  // 5.4 kW: the long rays a third of a turn on, the halo breathing once
+  'gauge-sun': gauge('sun', 3, 5.2, 12.5),
 };
 
 const wanted = args.clip ? args.clip.split(',') : Object.keys(CLIPS);
@@ -206,7 +277,7 @@ for (const name of wanted) {
   const clip = CLIPS[name];
   const page = await browser.newPage({
     viewport: clip.viewport,
-    deviceScaleFactor: 1,
+    deviceScaleFactor: clip.loop ? 2 : 1,
     colorScheme: 'light',
     reducedMotion: 'no-preference',
   });
@@ -235,6 +306,13 @@ for (const name of wanted) {
 ${clip.target} { padding: ${(clip.plate.width - cards) / 2}px; background: none; box-shadow: none; border-radius: 0; }`,
       });
     }
+    // a gauge: the frame's one card on the page's colour, the README's margin a side
+    if (clip.nth)
+      await page.addStyleTag({
+        content: `body { background: var(--fluvy-page); }
+${clip.target} { padding: ${MARGIN}px; background: none; box-shadow: none; border-radius: 0; }
+${clip.target} > :not(:nth-child(${clip.nth})) { display: none; }`,
+      });
     await target.scrollIntoViewIfNeeded();
     await page.waitForTimeout(700);
     const found = await target.boundingBox();
@@ -250,32 +328,63 @@ ${clip.target} { padding: ${(clip.plate.width - cards) / 2}px; background: none;
   const y1 = clip.plate
     ? y0 + clip.plate.height
     : Math.min(clip.viewport.height, box.y + box.height + clip.pad);
-  const pointer = await touchPointer(page);
   const dir = await mkdtemp(join(tmpdir(), `fluvy-clip-${name}-`));
-  const {
-    frames,
-    times,
-    scale: captured,
-  } = await record(page, { dir }, () => clip.run(page, pointer));
-  const crop = {
-    x: x0 * captured,
-    y: y0 * captured,
-    width: (x1 - x0) * captured,
-    height: (y1 - y0) * captured,
-  };
-  const seconds = times.length > 1 ? times[times.length - 1] - times[0] : 0;
-  try {
-    const outputs = await encode({
+  // a loop: the target shot at 2×, each frame of the loop at its moment, every frame shown as long; a gesture: the
+  // screencast, cropped
+  let shot;
+  if (clip.loop) {
+    const { frames, times, retimed } = await loop(page, {
+      dir,
+      ...clip.loop,
+      clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 },
+      turns: TURNS,
+      retime: clip.retime ?? true,
+      before: clip.at && ((t) => clip.at(page, t)),
+    });
+    shot = {
       frames,
       times,
-      crop,
-      mp4: join(out, `${name}.mp4`),
-      gif: join(out, `${name}.gif`),
+      crop: { x: 0, y: 0, width: 2 * (x1 - x0), height: 2 * (y1 - y0) },
+      rate: clip.loop.fps,
+      gifWidth: 2 * (x1 - x0),
+      said: `a loop of ${frames.length} frames, ${(frames.length / clip.loop.fps).toFixed(2)} s at ${clip.loop.fps} fps, retimed by ${(retimed * 100).toFixed(1)} % at most`,
+    };
+  } else {
+    const pointer = await touchPointer(page);
+    const {
+      frames,
+      times,
+      scale: captured,
+    } = await record(page, { dir }, () => clip.run(page, pointer));
+    const seconds = times.length > 1 ? times[times.length - 1] - times[0] : 0;
+    shot = {
+      frames,
+      times,
+      crop: {
+        x: x0 * captured,
+        y: y0 * captured,
+        width: (x1 - x0) * captured,
+        height: (y1 - y0) * captured,
+      },
       fps: Number(args.fps),
       gifFps: clip.gifFps ?? Number(args['gif-fps']),
       // a screen's hairline goes round its crop, not into it
       gifWidth: clip.gifWidth ?? Math.round(x1 - x0) + (clip.screen ? 2 : 0),
+      said: `${frames.length} frames over ${seconds.toFixed(1)} s (${(frames.length / Math.max(seconds, 0.001)).toFixed(0)} fps)`,
+    };
+  }
+  try {
+    const outputs = await encode({
+      frames: shot.frames,
+      times: shot.times,
+      crop: shot.crop,
+      mp4: join(out, `${name}.mp4`),
+      gif: join(out, `${name}.gif`),
+      fps: shot.fps,
+      gifFps: shot.gifFps,
+      gifWidth: shot.gifWidth,
       maxGifKb: Number(args['max-gif-kb']),
+      rate: shot.rate,
       hairline: clip.screen ? HAIRLINE : undefined,
     });
     const sizes = await Promise.all(
@@ -284,9 +393,7 @@ ${clip.target} { padding: ${(clip.plate.width - cards) / 2}px; background: none;
           `${file.split('/').pop()} ${((await stat(file)).size / 1024).toFixed(0)} KB`,
       ),
     );
-    console.log(
-      `✓ ${name}: ${frames.length} frames over ${seconds.toFixed(1)} s (${(frames.length / Math.max(seconds, 0.001)).toFixed(0)} fps) → ${sizes.join(' · ')}`,
-    );
+    console.log(`✓ ${name}: ${shot.said} → ${sizes.join(' · ')}`);
   } catch (error) {
     failed = true;
     console.error(`✗ ${name}: ${error.message}`);
