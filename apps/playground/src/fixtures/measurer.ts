@@ -219,7 +219,7 @@ export const sheet: SheetSpec = {
       cards: [
         card(
           `<p class="fx-cut" data-name title="Wohnzimmerdeckenleuchte">Wohnzimmerdeckenleuchte</p>
-           <p class="fx-cut" title="Esszimmer Stehlampe">Esszimmer Stehlampe</p>
+           <p class="fx-cut" data-name title="Esszimmer Stehlampe">Esszimmer Stehlampe</p>
            <p class="fx-cut fx-house">Fixture</p>
            <p class="fx-clamp">Call the plumber about the kitchen tap that keeps dripping all night long, again</p>
            <p class="fx-prose">Noch nichts in diesem Raum, 2 ausgeblendete oder Diagnose-Entitäten</p>
