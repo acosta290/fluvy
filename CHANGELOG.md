@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A room's page shows everything its room card counts (#76): its garage doors, gates and locks (as the Security
+  view draws them), its openings and alarms — smoke, leak, windows, motion — on a Sensors card, and every other
+  entity of the area as rows under "More". The card said "5 devices" where the page drew two readings.
+
 ## [1.11.0] — 2026-10-28
 
 ### Visible on upgrade

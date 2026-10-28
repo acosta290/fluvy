@@ -17,7 +17,7 @@ import {
   plugWasher,
   tuyaKettle,
 } from '../appliance/fixtures/index.js';
-import type { HomeAssistant } from '@fluvy/core';
+import { areaContents, type HomeAssistant } from '@fluvy/core';
 
 import {
   DEMO_ENERGY_SOURCES,
@@ -531,6 +531,60 @@ describe('custom:fluvy-home strategy', () => {
           card.type === 'custom:fluvy-tile-card' && card['entity'] === 'light.living_room_lamp',
       ),
     ).toBe(true);
+  });
+
+  it('puts everything the room card counts on the room page: alarms, a garage door, a lock and the rest (#76)', async () => {
+    const hass = house([
+      ...DEMO_ROOMS,
+      entity(
+        'binary_sensor.kitchen_smoke',
+        'off',
+        { device_class: 'smoke' },
+        { area_id: 'kitchen' },
+      ),
+      entity(
+        'binary_sensor.kitchen_leak_sink',
+        'off',
+        { device_class: 'moisture' },
+        { area_id: 'kitchen' },
+      ),
+      entity(
+        'cover.kitchen_garage_door',
+        'closed',
+        { device_class: 'garage' },
+        { area_id: 'kitchen' },
+      ),
+      entity('lock.kitchen_back_door', 'locked', {}, { area_id: 'kitchen' }),
+      entity(
+        'sensor.kitchen_cistern_level',
+        '70',
+        { unit_of_measurement: '%' },
+        { area_id: 'kitchen' },
+      ),
+    ]);
+    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass);
+    const kitchen = views
+      .find((view) => view.path === 'room-kitchen')!
+      .sections.flatMap((section) => section.cards);
+    const card = (type: string) => kitchen.find((c) => c.type === `custom:fluvy-${type}-card`);
+    expect(card('openings')?.['entities']).toEqual([
+      'binary_sensor.kitchen_leak_sink',
+      'binary_sensor.kitchen_smoke',
+    ]);
+    expect(card('cover')?.['entity']).toBe('cover.kitchen_garage_door');
+    expect(card('lock')?.['entity']).toBe('lock.kitchen_back_door');
+    const rest = card('entities') as unknown as { rows: { entity: string }[] };
+    expect(rest.rows.map((row) => row.entity)).toContain('sensor.kitchen_cistern_level');
+    // every entity the card counts is somewhere on the page
+    const onPage = new Set<string>();
+    const collect = (value: unknown): void => {
+      if (typeof value === 'string' && value.includes('.')) onPage.add(value);
+      else if (Array.isArray(value)) value.forEach(collect);
+      else if (value && typeof value === 'object') Object.values(value).forEach(collect);
+    };
+    collect(kitchen);
+    const counted = areaContents(hass, 'kitchen').entities;
+    expect(counted.filter((id) => !onPage.has(id))).toEqual([]);
   });
 
   it('makes a room of what the room card draws: an area that names its hidden sensors, and the reading it names alone (#39)', async () => {

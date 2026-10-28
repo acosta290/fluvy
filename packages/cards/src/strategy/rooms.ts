@@ -9,6 +9,7 @@ import { applianceSections } from './appliances.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
   applianceTile,
+  entityRow,
   flowed,
   full,
   headed,
@@ -22,8 +23,8 @@ import type { Card, Section, StrategyContext, View } from './types.js';
 
 /*
  * The rooms: a view of every room of the house (its card, grouped by floor when there are floors), and a subview
- * per room with what it holds — its thermostat, lights, covers, media, plugs, readings and camera, and its appliances
- * across under them.
+ * per room with what it holds — its thermostat, lights, covers, media, plugs, readings, garage doors and locks,
+ * openings and alarms, the rest of what its card counts, and camera, and its appliances across under them.
  */
 
 /** The areas a dashboard shows: those with something to show, by the room card's own rule, floor by floor. */
@@ -106,6 +107,24 @@ export function roomSections(
   });
   const shown = inRoom([...home.temperatures, ...home.humidities]).slice(0, 3);
   const readings = shown.length ? shown : named;
+  // everything the room card counts has its place on the page: garage doors, gates and locks as the Security view
+  // draws them, the openings and alarms (smoke, leak, windows, motion) on one Sensors card, and the rest as rows
+  const gateways = inRoom([...home.gateways, ...home.locks]);
+  const openings = inRoom(home.openings);
+  const drawn = new Set([
+    ...lights,
+    ...climate,
+    ...covers,
+    ...players,
+    ...appliances,
+    ...cameras,
+    ...readings,
+    ...gateways,
+    ...openings,
+  ]);
+  const rest = areaContents(home.registries, area.area_id).entities.filter(
+    (id) => !drawn.has(id) && !home.ofAppliance(id),
+  );
   const sections = flowed(
     ctx,
     [
@@ -145,6 +164,22 @@ export function roomSections(
                 type: 'custom:fluvy-readouts-card',
                 rows: readings.map((id) => ({ entity: id, name: home.placeName(id) })),
               } as Card,
+            ],
+          ]
+        : []),
+      ...gateways.map((id) => [
+        full(id.startsWith('lock.') ? 'lock' : 'cover', { entity: id, ...home.named(id) }),
+      ]),
+      ...(openings.length
+        ? [[full('openings', { title: t('strategy.sensors'), entities: [...openings] })]]
+        : []),
+      ...(rest.length
+        ? [
+            [
+              full('entities', {
+                title: t('common.more'),
+                rows: rest.map((id) => entityRow(home, id)),
+              }),
             ],
           ]
         : []),
