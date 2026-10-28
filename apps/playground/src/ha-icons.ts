@@ -80,6 +80,10 @@ const MDI: Readonly<Record<string, string>> = {
   'mdi:weather-night': mdiWeatherNight,
 };
 
+/** The path of an mdi icon the sheets name (`mdi:sofa`); undefined for any other. */
+export const mdiPath = (name: string | undefined): string | undefined =>
+  name ? MDI[name] : undefined;
+
 /** Home Assistant's icon for a state by `domain.device_class` (its icon translations): off, and on where it differs. */
 const BY_CLASS: Readonly<Record<string, readonly [off: string, on?: string]>> = {
   'sensor.atmospheric_pressure': [mdiThermometerLines],

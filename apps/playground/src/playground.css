@@ -47,20 +47,6 @@ html[data-mode='dark'] body {
   box-shadow: none;
   border: 0;
 }
-/* &frame=1: Home Assistant's sidebar beside the dashboard */
-.pg-stage.pg-dashboard--framed {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: 0;
-  /* the app bar beside the drawer, as home-assistant-main sets it */
-  --ha-top-app-bar-width: calc(100% - 256px);
-}
-.pg-dashboard--framed hui-root {
-  flex: 1 1 auto;
-  min-width: 0;
-}
 /* ?compare: one column per palette, its name above it */
 .pg-look {
   display: flex;
