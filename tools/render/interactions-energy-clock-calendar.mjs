@@ -65,6 +65,47 @@ async function moreInfos(page, run) {
   await page.close();
 }
 
+/* ---------- what the line shows: its tone, a meter read the other way round, a lifetime meter's day ---------- */
+{
+  const page = await open('energy');
+  const shows = frame(page, 'What the line shows · the grid, a device').locator(
+    'fluvy-energy-card',
+  );
+  const tone = async (card) =>
+    /fv-tone--(\w+)/.exec((await card.locator('.ef-chart').getAttribute('class')) ?? '')?.[1];
+  check(
+    'energy: the Energy dashboard’s grid power draws in the grid’s tone',
+    (await tone(shows.nth(0))) === 'grid',
+  );
+  check('energy: …a device it counts in the house’s', (await tone(shows.nth(1))) === 'house');
+  check(
+    'energy: …and a sensor it does not name in the accent',
+    (await tone(frame(page, 'Energy').locator('fluvy-energy-card').first())) === 'accent',
+  );
+  const garage = frame(page, 'Read the other way round · the day of a lifetime meter').locator(
+    'fluvy-energy-card',
+  );
+  // a figure and its unit, as read: "1.4kW"
+  const now = (await garage.locator('.ef-top .fv-readout__value').first().textContent()).replace(
+    /\s+/g,
+    '',
+  );
+  check(
+    'energy: a meter negative while importing, inverted, reads what comes in now',
+    now === '1.4kW',
+    now,
+  );
+  const legend = (await garage.locator('.ef-cols .fv-readout__value').allTextContents()).map((t) =>
+    t.replace(/\s+/g, ''),
+  );
+  check(
+    'energy: …and its lifetime meter’s legend item reads the day, not all it ever counted',
+    legend[0] === '7.5kWh',
+    legend.join(' · '),
+  );
+  await page.close();
+}
+
 /* ---------- scrubbing: a pointer over a chart reads the value under it, everything returns to now ---------- */
 {
   const page = await open('energy');

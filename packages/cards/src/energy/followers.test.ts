@@ -7,6 +7,7 @@ import { allocatePeriod, houseMidnight } from '../energy-model/period.js';
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
 import { familiesDefined } from '../index.js';
 import { clearMeterCache } from '../meters/today.js';
+import type { CardEditor } from '../shared/base.js';
 import type { EditorChoices } from '../shared/rows-editor.js';
 
 // the energy family lands with the index: the cards' tags are defined before a page needs them
@@ -290,11 +291,13 @@ describe('a follower’s figures in the unit and decimals asked', () => {
     expect(text(card)).not.toMatch(/0\.50\s?kW/);
   });
 
-  it('the energy and production cards offer the pickers and the sensor’s own units in one choice', () => {
+  it('the energy and production cards offer the pickers and the sensor’s own units in one choice', async () => {
     const hass = hassWith(picker());
     for (const tag of ['fluvy-energy-card', 'fluvy-production-card']) {
-      const card = customElements.get(tag) as unknown as { choices: EditorChoices };
-      const choices = card.choices({ type: `custom:${tag}`, entity: 'sensor.sun' }, hass);
+      // each card's editor: its class's, or the module it fetches with the visual editor
+      const card = customElements.get(tag) as unknown as { editor(): Promise<CardEditor> };
+      const offer = (await card.editor()).choices as EditorChoices;
+      const choices = offer({ type: `custom:${tag}`, entity: 'sensor.sun' }, hass);
       expect(
         choices['collection_key']?.map((o) => o.value),
         tag,

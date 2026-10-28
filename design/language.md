@@ -247,7 +247,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - **A dashboard in edit mode:** the edit bar keeps its accent fill, everything on it in the bar's ink; Done is the primary action (36, the tappable radius, never shrunk); the open view is a tile on the card fill holding its arrows and pencil (no underline); frames of what can be edited are a fine dashed hairline; what adds (a title, a badge, a card, a section) is a fine dashed accent outline filling with the accent's wash; what edits is a quiet control on the card fill with a hairline.
 - **All of Home Assistant under the theme (exploration of 2026-09-18):** the theme maps HA's whole colour system, not only the accent — the named palette (`--amber-color`… 21 names, which every per-domain state colour, timeline, logbook dot and 2026 summary resolves through), the success / warning / danger scales (`--ha-color-green|orange|red-05…95` from our status inks), off as the quiet strong hairline, weather glyphs, outlines, the edit-mode header (the accent fill), the code editor's syntax (keys accent, values ink, figures info, punctuation disabled). Type: HA's "bold" is our 600, font sizes keep `--ha-font-size-scale`, the old Material components get Inter without tracking (`--mdc-typography-*` from the shell's page sheet, not the theme: 2026.10 retires those names), HA tiles take the compact tile's 15/600 over 13/500. The shell registry then gives every HA component class its idiom: data tables (14/20 cells, 13/600 secondary headers, 36 toolbar controls), search boxes (card-white 12-radius field), menus, tabs on whole pixels, dialog titles 600 with an ellipsis, alerts as status panels (role fill, radius 12), option boxes as tiles, button toggle groups as a segmented track, section and card titles 20/600, card actions on the content column, empty states, Leaflet controls, logbooks that open instead of scrolling inside a scrolling surface, the automation editor (headings, rows, side panel, targets), and the charts' canvas font (the one wrapped builder). a shell health check (see `docs/shell.md`) lists which sheets HA still draws after an update.
 - **All of Home Assistant, second round (2026-09-18, night):** Inter is registered at start on every page (not when the first card appears) and inside every same-origin panel frame (HACS), which gets a shell of its own while the page wears Fluvy. HA's charts draw the canvas in the body font and a series HA paints in its own default primary in the page's primary (where Fluvy is in use). The empty-state idiom reaches HA through one shell helper (tables, "No activity found", the area page's lists, the To-do panel, the notifications drawer). A card head that carries icon buttons (the Activity card, the log cards) keeps the standard head line (12 · 34 · 16) and hangs the 48 buttons over it. Option choices in HA become our option tiles with their glyph (the profile's Auto · Light · Dark), view switches our segmented track (Daily / Hourly), paired footer actions one width (112). A required field without a hint keeps no empty row; HA's 10 px step is the 11 px floor. Page titles are 600 everywhere, inactive tabs take the secondary ink, and a tab strip keeps a fixed trailing slot so it never moves between sibling pages.
-- **Automatic dashboard:** `strategy: { type: custom:fluvy-home }` builds Home, Lights, Climate, Energy and Sensors from the registries and the energy preferences with the approved `/fluvy-home` layout: lights = `light.*` plus switches whose words say light, appliances = the other switches (one per device, twin outlets dropped) with their power and energy readings, climate = thermostats + weather + temperature/humidity sensors that are not the weather service's, energy = solar/grid/battery power by words + the energy dashboard's devices, sensors = device batteries, phones (mobile_app), people, openings, plants, updates. Names: the entity's own words, the device's name when the own words only say the kind, the area or the device for a reading's place. Capped lists, empty sections and views left out, titles in the dashboard's language, `hide: [energy]` to drop a view.
+- **Automatic dashboard:** `strategy: { type: custom:fluvy-home }` builds Home, Lights, Climate, Energy and Sensors from the registries and the energy preferences with the approved `/fluvy-home` layout: lights = `light.*` plus switches whose words say light, appliances = the other switches (one per device, twin outlets dropped) with their power and energy readings, climate = thermostats + weather + temperature/humidity sensors that are not the weather service's, energy = solar/grid/battery power by words + the energy dashboard's devices, sensors = device batteries, phones (mobile_app), people, openings, plants, updates. Names: the entity's own words, the device's name when the own words only say the kind, the area or the device for a reading's place. Capped lists (each with its "N more" row, below), empty sections and views left out, titles in the dashboard's language, `hide: [energy]` to drop a view.
+- **Capped lists (1.11.1, #78):** a view shows the first of a long list — lights 6, plug tiles 4, blinds 6, garage doors and gates 2, thermostats 4, fans 2, humidity 3, temperatures 4 (Climate's sensor cards) and 3 (the readouts of Home, the wall and a room), Home's security rows 5 (the wall's 6), alarms 2, locks 4, cameras 4 (the Security dashboard's Cameras view 12), players 6, calendars 3, to-do lists 3, timers 3, things to run 6, scenes 6, batteries 8, phones 8, plants 4, helpers 6, updates 8, the energy dashboard's devices 8 (its Devices view 12), the day's stat tiles 4, power meters 9, a room's other devices 8 (`caps.ts`) — and nothing past the cap is out of reach: the list ends with the house's fold row, "N more" (the `list` glyph in its neutral circle, "{count} more", the chevron; "+N" where the words would not hold beside the chevron), which opens a subview of every one, after the view's path (`climate-humidity`, `room-kitchen-lights`) and back to it, its heading the way back as a room's is. The row is the last row of a list of rows (the entities card's `more` and `more_path`) and a card of its own under a list of cards, kept under the list's last card (a block never splits; a loose card takes its row with it). The subview lays the whole cards of a list of cards over its columns, a list of rows a card a room (the biggest first, as the Security dashboard's Openings view), a run of readings three a card (four share one, two by two). One past the cap of a list of rows or tiles is shown instead, as every fold of the house: it takes the room the "1 more" row would. The openings are never capped (their card folds them itself), nor a chart's series (the distribution's eight are the palette's), nor the picks of an overview (Home's running thermostat, its first player, vacuum, list and scene). The dashboard's `caps` raises a list's cap (`caps: { lights: 12 }`), lifts it (`humidity: none`) or lifts them all (`caps: none`: every list whole, no row); the panel's Dashboards tab offers Long lists: Shortened (the default, writing nothing) · In full, and a raw configuration's own numbers read as Shortened and stay until In full is chosen.
 - **Loading:** a Lovelace resource runs only once a dashboard has rendered; the shell reaches every page (Settings opened cold, History, Map) because the integration also loads the module at start on every page (`add_extra_js_url`, the loader beside the build under `/fluvy-frontend/<version>-<build>/`), and registers the settings panel with that same loader; a build's URL never changes, so no cache serves a stale one.
 - **When Fluvy steps aside (1.10, after the HACS review):** what no sheet can reach (the charts' canvas, an icon's
   path, HACS's frame, the settings lists' glyphs, the more-info title's fade, a dashboard's header marks, the
@@ -438,6 +439,14 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   the moment it does. A room counts what is on once: its "Devices on" readout, its line ("1 of 1 on · 20.5°") and its
   "All devices" row count the same devices — what the card shows — by the same rule (a heating thermostat and a playing
   speaker are on, a sensor never is), so a room with only a thermostat never reads "0 of 1" above "1 of 1 on".
+- **A room's page shows everything its card counts (1.11.1, #76).** The page the card opens (`custom:fluvy-home`'s and
+  `custom:fluvy-rooms`'s room subview) starts from the card's own count (`areaContents`) and puts each entity in one
+  part (`roomParts`): its thermostats, lights, blinds, garage doors and gates (each a cover card, as the security view
+  draws them), fans, players, plug tiles (their power and energy beside them), readings, openings and safety sensors
+  — doors, windows, motion, leaks, smoke, gas — on one Openings card titled Sensors for the room (it folds after its
+  rows), cameras, and the rest as rows under Devices; an appliance's own entities are its whole card's, across under
+  the page. Every list keeps the house's order and its cap with its "N more" row, so "5 devices" on the card is five
+  things on the page or a row away from it — never fewer.
 - **A room's readings**, as Home Assistant's own area card finds them: the sensor the area's settings name, while it
   has a state, hidden or diagnostic too (the area's settings offer those); else a sensor of that class it shows, the
   first that reads a number (a dead one never hides a working one), else the first, its readout a dash; else its
@@ -778,7 +787,7 @@ consumers — are ink (`--fluvy-text` at 62 % over the card). Figures and words 
 in the unit slot, in the secondary ink ("0.4 kW out", "0.6 kW charging"). *In / out* is said of the grid only; a
 battery or a car is *charging / discharging* (*charged / discharged* over a period, in kWh). A meter that cannot know
 where its energy came from (a phase, a signed gauge) uses the grid's colour both ways. Head icons use the accent (the
-lilac `energy-home` tone no longer marks a head).
+lilac `energy-home` tone no longer marks a head), but the energy card's: it wears its line's tone (below).
 
 **The house.** A 44 neutral disc; its supply as 3 px arcs at r 26.5 (outer edge 28), one per origin, in the order
 sun · battery · generator · car · grid, 4 px apart; they slide to a new mix in 700 ms (the one dash animation,
@@ -938,6 +947,17 @@ one unit for the row, as the whole house's does.
   and one precision for the row; the readouts read that moment too ("12:30 · 522 W", "Battery 77 %").
 - **Gaps**: a gap stops every series, and a charge that cannot be known (two batteries without their capacity) is
   "—" with no line.
+
+**The line's tone (1.11.1).** The energy card's line and its head wear one tone: the card's own (`tone`, `color`),
+else the tone of what the line shows, read from the Energy dashboard's settings — a source's sensor (its power or its
+meter) that source's (the sun's, the grid's, a battery's, a generator's, a car's), an individual device's the house's
+(`energy-home`), any other sensor the accent, as the Chart card's lone series. Never from a reading: a curve keeps its
+colour whatever it says, and is the accent until the settings are read. Every one is a colour of the palette — on a
+lime palette a grid's power is its slate grid, never the sun's amber, the card's tone before 1.11.1 whatever it drew.
+The stacked charts keep the accent in the head: each band is its own source's colour. A meter that reads negative
+while it imports is read the other way round (`invert`, the flow's rule): its "Right now" and its curve are what comes
+in. A legend item of a meter that keeps counting reads its day with `period: today` — the statistics' change since the
+house's midnight (a followed picker's range), "7.5 kWh" where its state says "12.5 MWh" — and "—" until it is read.
 
 **Empty.** An energy card's empty panel sits 16 under its head and says what is missing in one line ("No batteries
 yet"), with how to fix it as the hint under it ("Add them here, or give the Energy dashboard its batteries").
@@ -2259,6 +2279,65 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
   colours are its head's and its sheet's.
 - Its chunks are its own (`items`, 6.9 KB of 12; `items-sheet`, 2.7 KB of 8): every page carries only its name and
   height (`items-family.ts`) and the value's glyph.
+
+## Slider (1.11.1)
+
+The Slider card (#77) is the light card's anatomy for any value: a soundbar's volume, a calibration offset, a pump's
+speed, a fan's. Its design page (owner's OK, 2026-10-28) is the spec; its decisions: the mute in the head (A), the
+figure big with − + in the full card and on the line in the compact one (B), a tick a step up to twenty steps (C), a
+signed range lit from zero (D), the house's tile (F); no vertical form ("too much empty space on the right").
+
+- **The anatomy is the light card's**, piece for piece and in shared code: the head (`HeadFit`; the circle, the name
+  16/600, the line 13/500, the control), the value row (`levelRow`: the label 11/600 and the l figure with its unit,
+  the 96 × 44 stepper; the ladder in a narrow column — beside at l, beside at m, stacked, the halves at 44), the 40 the
+  bubble rises into, the ruler (44, knob 36: relative drag, slower away from the axis, the fine scale on a hold, the
+  keys) and its words 11/500 under it. The level is held until the entity reports it, a stepper's taps are one call
+  once they stop, a drag is sent on release or as it moves (`live_update`): the light card's `Level`. Heights by the
+  config alone: full 268, compact 188 (the head, the 40, the ruler and its words), tile 168.
+- **What it sets.** A media player's volume (0–100 %, `volume_set`), a `number` or an `input_number` (its range, step
+  and unit; `set_value`), a fan's speed (its speeds as stops, the fan card's words under them; `set_percentage` on the
+  speed's floor). `min` and `max` narrow the range within the entity's; ends that make no range are let go. `label`
+  names the figure: Volume, Speed or Value by default.
+- **Ticks.** One a step where the steps are no more than the ruler's own ticks (twenty on a card, twelve on a tile) —
+  every tick a value the knob stops at — the majors on the quarters, else the halves, else the ends; else the ruler's
+  5 % and 25 % (a tile's 1/12 and 1/4). A fan's are the fan card's: its speeds the majors. The words under the ruler
+  are the majors' figures, written briefly ("−2", "0", "+2"); a compact card or a column under 260 keeps the ends and
+  the middle, and the measure keeps what stands 12 apart (`heldLabels`).
+- **A signed range** (one that crosses zero) is lit from zero to the knob, either side (the ruler's `origin`), and its
+  figures are signed: the typographic minus (−1.0; Intl's hyphen is loose in Inter) and a plus (+0.5), zero plain.
+  Every figure the card writes takes the true minus; the value row is laid out for its widest figure, the ends of its
+  range (and the word for off for a fan or a player).
+- **The head's control** (`control: auto`): a player's mute as the 44 round (`volume` / `volumeOff`, "Mute" /
+  "Unmute", held until the player says so), a fan's switch, or `toggle_entity`'s switch — another entity's power beside
+  the value (the discussion's soundbar: a `number` for its volume, a switch for its power). `mute`, `switch` and `none`
+  ask for one. The control never gives way; the line steps aside, then the circle (`HeadFit`).
+- **The line.** Full: what the player plays, else its source, else the room ("Bluetooth"; muted, "· muted" after it);
+  a number's room; a fan's room. Compact and tile: the same with the figure after it ("Bluetooth · 30 %", "Living room
+  · −1.0 °C", "Muted · 30 %", "Off · 65 %" for a number whose switch is off, "Off" for a fan that is off); where it
+  does not hold whole, the figure alone ("45 %" in half a phone's section; "−1.0 °C" on a tile of 156 or 172): the
+  words before it give way, never the figure.
+- **States.** Muted: the level stays, the ruler, the circle and the figure go neutral (the figure in the secondary
+  ink), the knob stays up. A number whose switch is off: the same, its knob up. A fan or a player that is off: the
+  word for off where the figure stands, the ruler asleep (a fan's wakes under a drag, a player's does not; its stepper
+  and its round are still). Out of reach: the same size and anatomy — the ban on the dashed circle, "Unavailable · 2 h
+  ago", the figure "—", the stepper, the round and the switch still, the ruler at rest.
+- **Colour.** The tone of what it sets: `media` for a player, `fan` for a fan, the accent for a number; `tone` and
+  `color` as the light card's. `tint` as the light card's: the colour on the surface while something is on (a player
+  sounding, a fan running, a number's switch on) — `on`, the tile's default — at rest too (`always`), or never (`off`,
+  the full and compact card's default).
+- **The tile** (`variant: tile`) is the house's large tile (the card is built on the tile card): the circle and the
+  control, the name, the line, the ruler at its foot (knob 28). The tile card and the tiles group learn the same ruler
+  for a player's volume and a number's value: awake while the player is on (a number always), neutral while muted, a
+  number's figure on its line after its room — alone where both do not hold (`keepsFigure`), the room giving way —
+  and never also in its head; a player's line keeps its state ("Playing"), as a light's, its volume giving way. A lit
+  tile's rounds stand on it as plain discs (`--fluvy-inset`), as a lit card's stepper does; the circle at rest and the
+  knob's halo are the house's tile's.
+- **Editor** with `when`: the − and + with the full card, the circle's option off the tile, `toggle_entity` while the
+  control may be a switch, `min` and `max` off a fan (it stops at its speeds); helpers under the control and the other
+  entity's switch. Its words are its own part (`slider.json`); `mute` and `switch` are option words of core's, as
+  `common.volume` (the tile's).
+- Its chunk is its own (`slider`, 3.8 KB of 8, its editor with the forms): every page carries only its name and height
+  (`slider-family.ts`).
 
 ## Value row (1.9)
 

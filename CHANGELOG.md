@@ -5,6 +5,74 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- A room's page on the automatic dashboards shows everything its card counts, by the card's own rule: besides its
+  thermostat, lights, blinds, media, plugs, readings and camera, its garage doors and gates as covers, its fans, every
+  thermostat, player and camera it holds, its doors, windows, motion, leak, smoke and gas sensors on one Openings card,
+  and the rest of it as rows under Devices. A garage with a temperature and humidity sensor, a smoke detector, a leak
+  sensor and a garage door counted five devices and drew two readings; its page now holds all five. Thanks to
+  @DennyWeinberg (#76).
+- A list the automatic dashboards cap ends with a "N more" row where it goes past its cap (Climate's humidity and
+  temperatures, Home's lights, the batteries…), which opens a page of every one, back to its view; a room's page does
+  the same for its own lists. A list of rows or tiles one past its cap shows that one instead (a seventh light, a
+  ninth battery), and a fourth reading shares its card, two by two. The Security dashboard's Openings view gives a room
+  every opening, where it stopped at twelve, and the Media view leads with what plays wherever it is in the list.
+  Thanks to @DennyWeinberg (#78).
+- An energy card with no tone or colour of its own wears the tone of what its line shows, where it wore the sun's
+  whatever it drew (a brownish amber under a green palette): the grid's for the Energy dashboard's grid power or meter,
+  the sun's for an array's, a battery's, a generator's or a car's for theirs, the house's for an individual device's,
+  and the accent for any other sensor. A card that names a `tone` or a `color` is as it was; the stacked charts
+  (`sources`, `overview`) are as they were.
+- A large tile of a media player sets its volume on the ruler at its foot, and one of a `number` or an `input_number`
+  its value, where both showed only their state; a tile of a playing player says its volume on its line as a lit
+  light says its level ("Playing · 30 %"), a number's large tile its room and its figure ("Living room · −1.0 °C"),
+  or its figure alone where both do not hold (two tiles a row on a phone or a desktop: "−1.0 °C"), where its figure
+  stood in its head (#77).
+
+### Added
+
+- A **Slider** card (`custom:fluvy-slider-card`, #77): any value on the light card's anatomy — its head, its figure
+  with the − and +, Fluvy's ruler with its relative drag, its fine scale on a hold and its keys — for a media player's
+  volume (its mute in the head; the line says what plays, else its source), a `number` or an `input_number` in its
+  own range, step and unit (`min` and `max` narrow it, `label` names it), and a fan's speed in its own speeds. A tick
+  a step where it has twenty or fewer, a range across zero lit from zero, its figures with a true minus and a plus.
+  `toggle_entity` puts another entity's switch in the head (a soundbar whose volume is a `number` and whose power is a
+  switch), `control` asks for the mute, a switch or nothing, and `live_update` sends the value while dragging. Full,
+  compact (the figure on its line, two on a line in half a section) or the house's large tile; `tone`, `color` and
+  `tint` as the light card's. Asked for in discussion #77.
+- The tile card and the tiles group learn the same ruler: a player's volume and a number's value at a large tile's
+  foot (#77).
+- `caps`, an option of every automatic dashboard: a list's own cap (`caps: { lights: 12 }`), a list whole
+  (`humidity: none`), or every list whole (`caps: none`); the panel's Dashboards tab offers Long lists: Shortened or
+  In full. Thanks to @DennyWeinberg (#78).
+- The entities card's `more` and `more_path`: a last row, "{count} more", that opens where the rest of a list is.
+- `invert` on the energy card: a meter that reads negative while it imports reads "Right now 1.4 kW", its curve above
+  the line, where it read −1.4 kW.
+- `period: today` on an energy card's legend item: a meter that keeps counting (a lifetime total) reads its change
+  since midnight from its statistics, as the cards that read the Energy dashboard do, where it read all it ever counted
+  ("12.5 MWh" under today's curve). The editor offers it on each item, and says so under a total that reads its state.
+
+### Fixed
+
+- The alerts card's `updates` preset shows the updates waiting to be installed: Home Assistant files every update as a
+  configuration entity (one it can install) or a diagnostic one, and the preset left the configuration ones out — every
+  update with an Install. A clause of your own on the update domain (`domain: update`, `entity_id: update.*`) keeps
+  both as well, and Home's card of what needs a look on the automatic dashboards shows them to an administrator (#79).
+  Thanks to @sriramsv.
+
+### Development
+
+- The energy card's and the energy flow card's editors are modules of their own (`energy/energy-editor.ts`,
+  `energy-flow/energy-flow-editor.ts`), fetched with the visual editor: the energy chunk is 79.6 of its 80 KB, where
+  the new keys took it half a kilobyte over. A list's helper in the rows editor is told its item and the house.
+- The light card's level (its hold until the lamp reports it, its stepper's burst, its live drag, its fine scale's
+  words) and its value row are shared modules (`shared/level.ts`, `levelRow`), and so are the fan card's speeds and its
+  words' fitting (`speedScale`, `heldLabels`), which the Slider card draws with; a value set on a ruler is read in one
+  place (`shared/scale.ts`). The ruler takes an `origin` its lit ticks start from. The Slider card is a chunk of its own
+  (`slider`, 8 KB; its editor goes with the forms), its name and height in core; the playground has a `slider-card`
+  sheet and `interactions-slider.mjs` drives it.
+
 ## [1.11.0] — 2026-10-28
 
 ### Visible on upgrade

@@ -1160,6 +1160,28 @@ function areasChoice(ctx: PanelContext, urlPath: string, current: unknown): Temp
   );
 }
 
+/**
+ * How long lists are drawn: shortened (the house's caps, each with its "N more" row: the default, which writes nothing)
+ * or in full (`caps: none`). A dashboard whose raw configuration raises a list's cap reads as shortened, and keeps its
+ * numbers until it asks for every list in full.
+ */
+function capsChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
+  const whole = current === 'none';
+  return choice(
+    ctx,
+    [
+      { key: 'shortened', label: ctx.t('dashboard.shortened'), active: !whole },
+      { key: 'none', label: ctx.t('dashboard.in_full'), active: whole },
+    ],
+    ctx.admin
+      ? (key) => {
+          if ((key === 'none') !== whole)
+            ctx.editStrategy(urlPath, { caps: key === 'none' ? 'none' : undefined });
+        }
+      : null,
+  );
+}
+
 export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
@@ -1226,7 +1248,9 @@ function dashboardOptions(
         ${
           option.kind === 'areas'
             ? areasChoice(ctx, dashboard.urlPath, strategy['areas'])
-            : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
+            : option.kind === 'caps'
+              ? capsChoice(ctx, dashboard.urlPath, strategy['caps'])
+              : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
         }`;
     })}
     ${

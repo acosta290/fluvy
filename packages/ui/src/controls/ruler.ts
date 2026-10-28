@@ -67,6 +67,7 @@ export class FluvyRuler extends LitElement {
     min: { type: Number },
     max: { type: Number },
     step: { type: Number },
+    origin: { type: Number },
     tone: { type: String },
     tint: { type: String },
     length: { type: Number },
@@ -93,6 +94,11 @@ export class FluvyRuler extends LitElement {
   declare min: number;
   declare max: number;
   declare step: number;
+  /**
+   * The value the lit ticks start from: a signed range's zero (an offset of −2…+2 lit from 0 to the knob, either way);
+   * NaN, the default, lights from the range's start (left, or bottom), as every ruler does.
+   */
+  declare origin: number;
   declare tone: string;
   /**
    * The ticks take a gradient along the axis instead of lighting up to the knob, and the knob's dot the colour under
@@ -146,6 +152,7 @@ export class FluvyRuler extends LitElement {
     this.min = 0;
     this.max = 100;
     this.step = 1;
+    this.origin = Number.NaN;
     this.tone = 'accent';
     this.tint = '';
     this.length = 320;
@@ -483,12 +490,15 @@ export class FluvyRuler extends LitElement {
         marks.push([f, Math.abs(f / major - Math.round(f / major)) < 1e-6]);
       }
     }
+    // lit from the origin to the knob, whichever side of it the knob stands (a signed range's zero), else from the start
+    const from = Number.isFinite(this.origin) ? this.fraction(this.origin) * len : 0;
+    const [litLo, litHi] = [Math.min(from, pos), Math.max(from, pos)];
     for (const [f, isMajor] of marks) {
       const p = Math.round(f * len);
       if (active && Math.abs(p - centre) < haloR) continue; // whole or absent, never bitten by the halo (measured from where the knob is drawn)
       let tick = isMajor ? 20 : 10;
       if (this.lift > 0.001) tick += 10 * this.lift * Math.exp(-((p - pos) ** 2) / (2 * 22 * 22));
-      const on = active && p <= pos + 0.5; // lit from the origin (left / bottom) up to the knob
+      const on = active && p >= litLo - 0.5 && p <= litHi + 0.5;
       if (this.vertical) {
         const y = len - p;
         const x1 = w / 2 - tick / 2;

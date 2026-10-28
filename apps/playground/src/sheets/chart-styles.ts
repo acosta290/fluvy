@@ -334,7 +334,8 @@ const fine = (
  * (its states, its history and statistics, its Energy dashboard): what the measurer reads in every language. The
  * chart suite reads the sheets themselves under the house's soft.
  */
-const HOUSES = [energy, flow, solar, arrays, historyBars] as const;
+// the flow's house first: its Energy dashboard is the one the stacked charts read (the first answer is the house's)
+const HOUSES = [flow, energy, solar, arrays, historyBars] as const;
 const from = (house: SheetSpec, title: string, style: Record<string, unknown>) =>
   (house.frames.find((frame) => frame.title === title)?.cards ?? []).map((card) => ({
     ...card,

@@ -47,6 +47,7 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
       'fluvy-tiles-card',
       'fluvy-template-card',
       'fluvy-light-card',
+      'fluvy-slider-card',
       'fluvy-lights-card',
       'fluvy-thermostat-card',
       'fluvy-entities-card',

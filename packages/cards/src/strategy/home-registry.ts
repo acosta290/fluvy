@@ -153,7 +153,8 @@ export class HomeRegistry {
   private platform(id: string): string {
     return this.reg(id)?.platform ?? '';
   }
-  private deviceOf(id: string): string | undefined {
+  /** The device an entity is of. */
+  deviceOf(id: string): string | undefined {
     return this.reg(id)?.device_id;
   }
   deviceClass(id: string): string {

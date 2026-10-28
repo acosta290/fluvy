@@ -1,6 +1,6 @@
 # The cards
 
-Sixty-two cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Sixty-three cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
 options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
@@ -618,19 +618,55 @@ collection_key: energy_casa # the key of a date picker on this dashboard
 variant: compact
 ```
 
+## Slider
+
+The slider card sets any value on the light card's anatomy (#77): its head, its figure with the − and + (`show_stepper`),
+and Fluvy's ruler under them — a relative drag, slower as the finger slides away, the fine scale on a hold, the arrow
+keys, Page Up and Down, Home and End. It sets a media player's volume (the head's round mutes it; the line says what
+plays, else its source), a `number` or an `input_number` in its own range, step and unit, and a fan's speed in its own
+speeds, named under the ruler. `min` and `max` narrow the ruler within the entity's range (a soundbar kept under 60 %),
+and `label` names the figure (Volume, Speed or Value by default). The ruler draws a tick a step where its steps are no
+more than twenty — every value it can stop at — and its 5 % and 25 % ticks otherwise; a range that crosses zero (an
+offset of −2 to +2) is lit from zero to the knob, its figures signed. The head ends in what the entity is set with:
+`control: auto` mutes a player, switches a fan, or switches `toggle_entity` — another entity's switch, as a soundbar
+whose volume is a `number` and whose power is a switch — and `mute`, `switch` or `none` ask for one. `live_update`
+sends the value while the finger drags (heard at once on a volume), else once on release; a stepper's taps are one call
+once they stop. `variant: compact` keeps the head, with the figure on its line, and the ruler (188 at a 360 column, two
+on a line in half a section); `tile` is the house's large tile with the ruler at its foot, as the tile card draws a
+player's volume or a number. `tone`, `color` and `tint` are the light card's: the colour shows on the surface while what
+it sets is on (`on`; a tile's default), at rest too (`always`), or never (`off`; the full and compact card's default).
+
+```yaml
+type: custom:fluvy-slider-card
+entity: number.soundbar_volume # the volume, a number of its integration
+toggle_entity: switch.soundbar_power # its power, a switch of its own
+name: Soundbar
+variant: compact
+live_update: true
+```
+
+A player's volume, kept under 60 %:
+
+```yaml
+type: custom:fluvy-slider-card
+entity: media_player.living_room
+max: 60
+```
+
 <!-- generated:cards -->
 
 ## Everyday
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
+| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
 | **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `tap_action`, `hold_action`) | `entities` → `tiles` |
 | **Template** | `custom:fluvy-template-card` | A tile whose name, line, icon, colour and fill are templates, with or without an entity; a Mushroom template card pastes in. | `secondary` (`state`, `area`, `last-changed`, `none`), `since`, `variant` (`compact`, `mini`, `large`), `active` (`auto`, `always`, `never`), `tint` (`on`, `always`), `readouts` | `primary` → `name`, `icon_color` → `color`, `layout` → `variant`, `vertical` → `variant` |
 | **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `variant` (`auto`, `full`, `compact`), `show_stepper`, `show_temperature`, `show_color`, `temperature_tint`, `live_update`, `tint` (`off`, `on`, `always`), `tint_strength` (`soft`, `brightness`, `full`), `light_whites` (`palette`, `temperature`), `colors` (a list: `color`, `name`, `rgb`) | — |
+| **Slider** | `custom:fluvy-slider-card` | Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head. | `variant` (`full`, `compact`, `tile`), `show_stepper`, `control` (`auto`, `mute`, `switch`, `none`), `toggle_entity`, `min`, `max`, `label`, `live_update`, `tint` (`off`, `on`, `always`) | — |
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
-| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
+| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `more`, `more_path`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
 | **Items** | `custom:fluvy-items-card` | The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24. | `title`, `subtitle`, `attribute` (`auto`), `preset` (`auto`, `none`, `flights`), `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`, `item_image`, `item_url`, `items_template`, `sort`, `sort_order` (`ascending`, `descending`), `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_image`, `item_tap` (`sheet`, `none`), `empty_text`, `hide_empty` | — |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
@@ -686,7 +722,7 @@ variant: compact
 | --- | --- | --- | --- | --- |
 | **Energy period** | `custom:fluvy-energy-period-card` | The view’s date picker as a strip: ‹ the day, week, month or year › and back to today, Home Assistant’s own, so its energy cards follow it as Fluvy’s do. | `variant` (`row`, `compact`, `stacked`), `collection_key`, `periods` (`day`, `week`, `month`, `year`, `custom`), `show_today`, `show_compare` | — |
 | **Energy usage** | `custom:fluvy-energy-usage-card` | Energy used by the hour, the day or the month, stacked by source. | `title`, `subtitle`, `variant` (`full`, `compact`, `mini`), `period` (`day`, `week`, `month`, `year`), `collection_key`, `show_period`, `show_returns`, `show_legend`, `compare`, `max_sources`, `chart` (`classic`, `soft`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `animate`, `unit` (`auto`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `name`, `color`, `show`) | — |
-| **Energy** | `custom:fluvy-energy-card` | Power right now, the day curve and the energy legend. | `subtitle`, `variant` (`full`, `compact`, `sources`, `overview`), `hours`, `collection_key`, `show_soc`, `show_house`, `stack`, `cost_entity`, `show_cost`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `legend` (a list: `entity`, `name`, `unit`, `decimals`) | `title` → `name` |
+| **Energy** | `custom:fluvy-energy-card` | Power right now, the day curve and the energy legend. | `invert`, `subtitle`, `variant` (`full`, `compact`, `sources`, `overview`), `hours`, `collection_key`, `show_soc`, `show_house`, `stack`, `cost_entity`, `show_cost`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `legend` (a list: `entity`, `name`, `period`, `unit`, `decimals`) | `title` → `name` |
 | **Energy flow** | `custom:fluvy-energy-flow-card` | Where the house’s energy comes from and where it goes, live or over a period: import and export at once, every source, lanes in their origin’s colour. | `title`, `subtitle`, `home`, `variant` (`rows`, `cross`, `list`), `flow_style` (`stream`, `legs`, `rail`), `motion` (`full`, `calm`, `off`), `max_power`, `badge` (`solar`, `self_powered`, `grid`, `none`), `period` (`live`, `day`, `week`, `month`), `collection_key`, `show_period`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `power`, `phases`, `import`, `export`, `invert`, `level`, `capacity`, `name`, `icon`, `color`, `threshold`, `arrows`, `show`), `consumers` (a list: `entity`, `name`, `icon`, `color`), `readouts` (a list: `entity`, `name`, `unit`, `decimals`) | `home_power` → `home`, `solar_power` (folded in), `grid_power` (folded in), `grid_invert` (folded in), `battery_power` (folded in), `battery_invert` (folded in), `battery_level` (folded in) |
 | **Energy balance** | `custom:fluvy-energy-balance-card` | What comes in against what goes out, live or over a period: the house is the remainder, so the totals agree; each phase of the grid, and the money. | `title`, `subtitle`, `period` (`live`, `day`, `week`, `month`), `collection_key`, `show_period`, `show_phases`, `show_cost`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `power`, `phases`, `import`, `export`, `invert`, `name`, `color`, `threshold`) | — |
 | **Grid** | `custom:fluvy-grid-card` | The grid right now: the net import or export, in and out at once, each phase with its voltage, the price and today’s totals. | `title`, `subtitle`, `power`, `phases`, `import`, `export`, `invert`, `voltages`, `price`, `collection_key`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `readouts` (a list: `entity`, `name`, `unit`, `decimals`) | `power` → `phases` |

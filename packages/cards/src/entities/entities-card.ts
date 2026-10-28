@@ -2,6 +2,7 @@ import {
   isActive,
   isUsable,
   lightDefaults,
+  navigate,
   stateText,
   TOGGLE_DOMAINS,
   toggleEntity,
@@ -40,7 +41,20 @@ export interface EntitiesCardConfig extends FluvyCardConfig, EmptyList, LightCol
   show_count?: boolean;
   /** `rows` (default): 60 px rows with a second line. `compact`: 48 px rows, the name alone. */
   variant?: 'rows' | 'compact';
+  /**
+   * How many more the list has elsewhere: a last row, "{count} more", that opens `more_path` (the automatic
+   * dashboards end a capped list with it, #78). Both or none.
+   */
+  more?: number;
+  more_path?: string;
 }
+
+/** The "N more" row a card ends with: how many, and where they are; none without both. */
+const moreOf = (config: EntitiesCardConfig | undefined): { count: number; path: string } | null => {
+  const count = Math.floor(Number(config?.more));
+  const path = config?.more_path;
+  return count >= 1 && typeof path === 'string' && path ? { count, path } : null;
+};
 
 /**
  * A card of 60 px rows: icon circle, title / sub, and ONE trailing element chosen by the entity —
@@ -50,10 +64,11 @@ export interface EntitiesCardConfig extends FluvyCardConfig, EmptyList, LightCol
 export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: EntitiesCardConfig): number {
-    const n = entryCount(config, ['rows', 'entities']);
+    const n = entryCount(config, ['rows', 'entities']) + (moreOf(config) ? 1 : 0);
     // nothing to list: the panel under the head, or alone in the card (20 + 120 + 20)
     if (!n) return (config.title ? HEAD : 40) + EMPTY;
-    return 92 + (config.variant === 'compact' ? ROW_COMPACT : ROW) * n;
+    // the head and 8 over the rows (20 + 44 + 8 + … + 20), else the rows alone, 8 into the padding at each end
+    return (config.title ? 92 : 24) + (config.variant === 'compact' ? ROW_COMPACT : ROW) * n;
   }
 
   static override styles: CSSResultGroup = [
@@ -135,7 +150,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   }
 
   override getCardSize(): number {
-    return 1 + this.rows().length;
+    return 1 + this.rows().length + (moreOf(this.config) ? 1 : 0);
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
@@ -150,7 +165,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const title = this.config?.title;
     // a lit light's row may wear its bulb's colour (`light_colors`, the house's where the card says none)
     const glows = this.config?.light_colors ?? lightDefaults().colors;
-    const panel = emptyPanel(this, !rows.length, 'grid', 'common.no_entities');
+    const more = moreOf(this.config);
+    const panel = emptyPanel(this, !rows.length && !more, 'grid', 'common.no_entities');
     // the count gives way to the title, then the circle does, as every head's do (`HeadFit`); an empty list's panel
     // says what a count of nothing would
     const fitted = title
@@ -229,15 +245,26 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         );
       return { view, usable, trailing, value, end, sub };
     });
+    // the "N more" row says it in words where they hold beside its chevron, else as "+N"
+    const moreWords = more ? this.t('common.more_count', { count: more.count }) : '';
+    const moreTitle =
+      more &&
+      this.head.rowRoom(this.contentWidth, '', { icon: false, end: 44 }) <
+        this.head.ruler.width('fv-row__title', moreWords)
+        ? `+${more.count}`
+        : moreWords;
     const keep = this.head.rowsKeepIcon(
       this.contentWidth,
-      laid.map(({ view, value, end, sub }, i) => ({
-        title: rows[i]?.name ?? view.name,
-        value,
-        // the least the line says (a time's short form), so a passing minute never moves the circles
-        sub: compact ? '' : sub(true),
-        ...(end === undefined ? {} : { end }),
-      })),
+      [
+        ...laid.map(({ view, value, end, sub }, i) => ({
+          title: rows[i]?.name ?? view.name,
+          value,
+          // the least the line says (a time's short form), so a passing minute never moves the circles
+          sub: compact ? '' : sub(true),
+          ...(end === undefined ? {} : { end }),
+        })),
+        ...(more ? [{ title: moreTitle, value: '', end: 44 }] : []),
+      ],
       compact,
     );
     // a line too long for its row even so takes its short form ("32 d geleden", "Not found"); where not even that
@@ -319,6 +346,20 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             },
           });
         })}
+        ${
+          more
+            ? // the house's fold row: the list's glyph, how many more, the chevron to where they are
+              listRow({
+                icon: keep ? 'list' : null,
+                tone: 'neutral',
+                title: moreTitle,
+                trailing: 'chevron',
+                compact,
+                label: moreWords,
+                onTap: () => navigate(more.path),
+              })
+            : nothing
+        }
       </div>
     </article>`;
   }

@@ -221,19 +221,31 @@ describe('open, unlocked, hazards, errors, lights on', () => {
 });
 
 describe('updates', () => {
+  // Home Assistant files an update as a config entity where it can install it, else as a diagnostic one (#79)
   const HOUSE = house({
-    'update.core': { state: 'on', attributes: { supported_features: 1 } },
-    'update.addon': { state: 'on', attributes: { supported_features: 1, in_progress: true } },
-    'update.firmware': { state: 'on', attributes: { supported_features: 0 } },
-    'update.done': { state: 'off', attributes: { supported_features: 1 } },
+    'update.core': { state: 'on', attributes: { supported_features: 1 }, category: 'config' },
+    'update.addon': {
+      state: 'on',
+      attributes: { supported_features: 1, in_progress: true },
+      category: 'config',
+    },
+    'update.firmware': {
+      state: 'on',
+      attributes: { supported_features: 0 },
+      category: 'diagnostic',
+    },
+    'update.done': { state: 'off', attributes: { supported_features: 1 }, category: 'config' },
+    'update.hidden': { state: 'on', attributes: { supported_features: 1 }, hidden: true },
   });
 
-  it('lists the ones waiting; an administrator installs one that can be installed from here', () => {
+  it('lists the ones waiting, config and diagnostic alike; an administrator installs one from here', () => {
     expect(rows({ preset: 'updates' }, HOUSE).sort()).toEqual([
       'update.addon',
       'update.core',
       'update.firmware',
     ]);
+    // the category only says whether Home Assistant can install it: `diagnostic: false` leaves none of them out
+    expect(rows({ preset: 'updates', diagnostic: false }, HOUSE)).toHaveLength(3);
     expect(
       ['update.core', 'update.addon', 'update.firmware'].map((id) => installable(HOUSE, id)),
     ).toEqual([true, false, false]);

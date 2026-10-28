@@ -163,7 +163,19 @@ show_compare: true              # Compare: the period before beside the span, on
 - **Energy score** — self-powered, the sun used and low-carbon, as the Energy dashboard's own gauges compute them.
 - **Water & gas** — each meter's use today against a typical day, what flows right now, and a leak sensor or a valve
   beside them.
-- **Energy** — `variant: sources` draws the house's power today by where it came from, stacked, with what went into
+- **Energy** — a sensor's power now and its curve today, with up to three totals under it. Where the card names no
+  `tone` or `color`, its line and its head wear the colour of what the line shows: the Energy dashboard's sensor of a
+  source (its power or its meter) the source's colour — the sun's, the grid's, a battery's, a generator's, a car's —,
+  an individual device's the house's, and any other sensor the accent, as the Chart card's lone curve. The card reads
+  it from the Energy dashboard's settings, never from a reading, so a curve keeps its colour whatever it says; every
+  one is a colour of your palette. It draws one curve: several on one card are the Chart card's, in the house's
+  series colours (fluvy's settings → Charts).
+  A meter that reads negative while it imports takes `invert: true`: "Right now" reads 1.4 kW, not −1.4 kW, and the
+  curve stands above the line. A total under the chart shows its sensor's state, and a meter that keeps counting (a
+  lifetime meter, `total_increasing`) has counted everything since it was fitted: "12.5 MWh" under a day's curve.
+  `period: today` on that item reads its change since midnight instead, from its statistics, as the cards that read the
+  Energy dashboard do (the range's, while the card follows a date picker); the editor says so under such a sensor.
+  `variant: sources` draws the house's power today by where it came from, stacked, with what went into
   the battery and out to the grid below the line. When the Energy dashboard names a power sensor for every source, the
   curve is their five-minute means — what Home Assistant's own "Power sources" graph draws — and "right now" is the
   house's own use; otherwise the meters, in blocks of 15 minutes, or 30 or 60 when a meter counts in coarse steps
@@ -266,6 +278,15 @@ session_energy: sensor.wallbox_session_energy
 status: sensor.wallbox_status
 vehicle: Model 3
 mode: select.wallbox_mode
+```
+
+```yaml
+type: custom:fluvy-energy-card
+entity: sensor.grid_meter_power   # negative while it imports
+invert: true                      # "Right now" reads 1.4 kW, the curve above the line
+legend:
+  - { entity: sensor.grid_import_total, name: Imported, period: today }   # a lifetime meter: today's part
+  - sensor.solar_energy_today
 ```
 
 ```yaml

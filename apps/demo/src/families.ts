@@ -19,6 +19,7 @@ export const FAMILIES: readonly Family[] = [
       'printer',
       'appliances',
       'slider',
+      'slider-card',
       'lights',
     ],
   },

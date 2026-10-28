@@ -1,6 +1,8 @@
+import { byArea, capped, moreCard } from '../caps.js';
 import { COLUMNS } from '../context.js';
-import { balanced, flowed, full, when } from '../layout.js';
+import { balanced, flowed, full, runsOf } from '../layout.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
+import { securityCards } from './home.js';
 
 /*
  * The security dashboard (`custom:fluvy-security`): the overview (the alarm, what locks, what opens, the cameras),
@@ -16,44 +18,36 @@ const cameras = (ids: readonly string[], ctx: StrategyContext): Card =>
 
 /** The alarm first, then what opens (locks, garage doors and gates), what is open, and the first four cameras. */
 function overviewView(ctx: StrategyContext): Section[] {
-  const { home, t } = ctx;
-  return balanced(ctx, [
-    ...home.alarms.slice(0, 2).map((id) => full('alarm', { entity: id, ...home.named(id) })),
-    ...home.locks.slice(0, 4).map((id) => full('lock', { entity: id, ...home.named(id) })),
-    ...home.gateways.slice(0, 2).map((id) => full('cover', { entity: id, ...home.named(id) })),
-    ...when(home.openings.length, () => [
-      full('openings', { title: t('strategy.sensors'), entities: [...home.openings] }),
-    ]),
-    ...when(home.cameras.length, () => [cameras(home.cameras.slice(0, 4), ctx)]),
-  ]);
+  return balanced(
+    ctx,
+    securityCards(ctx, (ids) => cameras(ids, ctx)),
+  );
 }
 
-/** Every camera (twelve at most) on one Cameras card across the view's columns, at the dashboard's refresh. */
+/** Every camera (twelve, then a "N more" row) on one Cameras card across the view's columns, at the dashboard's refresh. */
 function camerasView(ctx: StrategyContext): Section[] {
+  const all = capped(
+    ctx,
+    { key: 'cameras', title: 'strategy.cameras', icon: 'fluvy:camera', cap: 12 },
+    ctx.home.cameras,
+    (ids) => runsOf(ids, 4).map((run) => [cameras(run, ctx)]),
+  );
   return [
     {
       type: 'grid',
       column_span: COLUMNS,
-      cards: [
-        { ...cameras(ctx.home.cameras.slice(0, 12), ctx), grid_options: { columns: 'full' } },
-      ],
+      cards: [{ ...cameras(all.shown, ctx), grid_options: { columns: 'full' } }, ...moreCard(all)],
     },
   ];
 }
 
-/** The openings by room (a card a room when the house has areas, else one), every one of them. */
+/** The openings by room (a card a room when the house has areas, else one), every one of them: each card folds its own. */
 function openingsView(ctx: StrategyContext): Section[] {
-  const { home, t } = ctx;
-  const groups = new Map<string, string[]>();
-  for (const id of home.openings) {
-    const key = home.areaName(home.areaOf(id)) ?? t('strategy.sensors');
-    groups.set(key, [...(groups.get(key) ?? []), id]);
-  }
   return flowed(
     ctx,
-    [...groups.entries()]
-      .sort((a, b) => b[1].length - a[1].length)
-      .map(([title, ids]) => [full('openings', { title, entities: ids.slice(0, 12) })]),
+    byArea(ctx, ctx.home.openings, ctx.t('strategy.sensors'), (title, ids) => [
+      full('openings', { title, entities: [...ids] }),
+    ]),
   );
 }
 

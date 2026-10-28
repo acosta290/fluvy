@@ -1,4 +1,5 @@
 import { wordsIn, type HomeAssistant } from '@fluvy/core';
+import { capsOf, moreHost } from './caps.js';
 import { gridExportPositive } from './energy-sign.js';
 import { HomeRegistry } from './home-registry.js';
 import { findEnergyRoles } from './energy-roles.js';
@@ -107,6 +108,9 @@ export async function buildContext(
     greetingTabs: config.greeting_tabs === 'show',
     hass,
     header: HELLO_HEIGHT + (config.greeting_tabs === 'show' ? TABS_HEIGHT : 0),
+    caps: capsOf(config.caps),
+    // each view gathers its own (`generateWith`); the first's until then
+    more: moreHost('home', home.t('strategy.home'), 'fluvy:home', COLUMNS),
   };
   return ctx;
 }

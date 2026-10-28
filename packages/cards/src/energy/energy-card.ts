@@ -13,18 +13,16 @@ import {
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
-  type LovelaceConfigForm,
   type LovelaceGridOptions,
   type Series,
+  type ValueParts,
 } from '@fluvy/core';
 
 import { axis, emptyState, head, readout, round, type Tone } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   AXIS_GAP,
-  chartDefaultsFor,
   chartKeysOf,
-  chartSection,
   chartStyles,
   drawRead,
   gridClass,
@@ -56,36 +54,9 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, type CardEditor } from '../shared/base.js';
 import { stateWord } from '../shared/domain.js';
 
-import {
-  actionFields,
-  boolField,
-  colourFields,
-  editorLabels,
-  entitiesField,
-  entityField,
-  fieldRow,
-  hasLadder,
-  iconField,
-  NUMBER_DEFAULTS,
-  numberField,
-  numberFields,
-  onlyWhen,
-  selectField,
-  showIconField,
-  textField,
-  unitChoicesOf,
-} from '../shared/form.js';
-
-import {
-  COLLECTION_LABEL,
-  collectionChoices,
-  collectionField,
-  collectionHelper,
-  following,
-} from './collection-field.js';
 import { HeadFit } from './head.js';
 import { axisHolds } from '../shared/axis.js';
 import { powerScale, type PowerScale } from './axes.js';
@@ -93,7 +64,7 @@ import { powerScale, type PowerScale } from './axes.js';
 import { legendStats } from './legend.js';
 import { statsCols, statsStyles } from './stats.js';
 
-import { costParts, readoutParts, scaled, scaleOf, WATT_LADDERS, type Scale } from './power.js';
+import { costParts, family, readoutParts, scaled, scaleOf, type Scale } from './power.js';
 import {
   CollectionFollower,
   collectionKeyOf,
@@ -120,6 +91,7 @@ import {
   powered,
 } from '../energy-model/power-day.js';
 import { measureIds, readPrefs, type EnergyPrefs, type PrefSource } from '../energy-model/prefs.js';
+import { KIND } from '../energy-model/sources.js';
 import { rangeWords } from '../energy-model/range-words.js';
 import {
   chargedBatteries,
@@ -152,17 +124,22 @@ import {
   type StackPoint,
 } from './stack.js';
 import { energyLegend, type LegendEntry } from './legend-row.js';
-import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { figuresOf, toBase, type NumberKeys } from '../shared/units.js';
 import { sideStacked } from '../shared/value-row.js';
-import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 
 const s = strings('energy');
+const flow = strings('energy-flow');
 
 export interface EnergyLegendItem extends NumberKeys {
   entity: string;
   name?: string;
+  /**
+   * `today`: the sensor's change since the house's midnight (over the range of a date picker the card follows), from
+   * its statistics — a lifetime meter's day, where its state is all it ever counted. Without it, its state.
+   */
+  period?: 'today';
 }
 
 /**
@@ -173,6 +150,8 @@ export interface EnergyCardConfig extends FluvyCardConfig, NumberKeys, Omit<Char
   subtitle?: string;
   /** Window of the curve. 24 (the default) draws today on a 00:00 … 24:00 axis; anything else rolls. */
   hours?: number;
+  /** The sensor read the other way round: a grid meter that reads negative while it imports reads "1.4 kW" now. */
+  invert?: boolean;
   /** A price or running-cost sensor shown beside the big value (€/h, €/kWh, …). */
   cost_entity?: string;
   show_cost?: boolean;
@@ -220,16 +199,15 @@ const DAY = 86_400_000;
  * style draws one, its window ending at now; a stacked chart (`sources`, `overview`) classic, soft or stepped, its
  * stacks the house's own geometry (`stack.ts`), its line's width, gridlines and scale the keys that act on it.
  */
-const LINE_CAPS: ChartCaps = { axis: true, styles: ['classic', 'soft', 'glow', 'minimal', 'step'] };
-const STACK_CAPS: ChartCaps = {
+export const LINE_CAPS: ChartCaps = {
+  axis: true,
+  styles: ['classic', 'soft', 'glow', 'minimal', 'step'],
+};
+export const STACK_CAPS: ChartCaps = {
   axis: true,
   styles: ['classic', 'soft', 'step'],
   keys: ['line_width', 'show_grid', 'show_axis'],
 };
-const stackedIn = (data: Readonly<Record<string, unknown>>): boolean =>
-  data['variant'] === 'sources' || data['variant'] === 'overview';
-const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
-  stackedIn(data) ? STACK_CAPS : LINE_CAPS;
 
 /** Whether a stacked chart draws its gridlines: on, unless asked away (or asked down the chart only, which it draws none of). */
 const gridOn = (choice: GridChoice | undefined): boolean =>
@@ -470,6 +448,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     loaded_: { state: true },
     day_: { state: true },
     charge_: { state: true },
+    counted_: { state: true },
   };
 
   declare series_: Series | null;
@@ -482,6 +461,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   declare day_: SourcesDay | null;
   /** `overview`: the batteries' state of charge through today (null: none stated, or not readable). */
   declare charge_: ChargePoint[] | null;
+  /** The legend's `period: today` meters: each one's change over the card's day, in kWh for energy (null: not read yet). */
+  declare counted_: ReadonlyMap<string, number> | null;
   /** Each day's shapes, made once per day fetched. */
   private readonly shaped = new WeakMap<
     SourcesDay,
@@ -489,7 +470,11 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   >();
   /** The charge request already made. */
   private askedCharge = '';
+  /** The legend's day request already made. */
+  private askedCount = '';
   private prefs: EnergyPrefs | null | undefined;
+  /** The preferences asked (the line's tone reads them). */
+  private prefsAsked = false;
   /** The plot's left edge and width under a stacked chart's scales; null: the chart is its whole width. */
   private plotSpan: readonly [left: number, width: number] | null = null;
   /**
@@ -516,97 +501,17 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     this.loaded_ = false;
     this.day_ = null;
     this.charge_ = null;
+    this.counted_ = null;
   }
 
-  static override base = HEAD_BASE;
-  static override keys = configKeys<EnergyCardConfig>()([
-    'subtitle',
-    'hours',
-    'cost_entity',
-    'show_cost',
-    'legend',
-    'variant',
-    'show_soc',
-    'show_house',
-    'show_axis',
-    'show_grid',
-    'line_width',
-    'stack',
-    'collection_key',
-    'unit',
-    'decimals',
-    'chart',
-    'curve',
-    'fill',
-    'glow',
-    'show_points',
-    'highlight',
-    'animate',
-  ]);
-  static override lists: readonly RowsListSpec[] = [
-    {
-      key: 'legend',
-      title: 'editor.rows',
-      domains: ['sensor'],
-      keys: ['entity', 'name', 'unit', 'decimals'],
-      schema: [entityField(['sensor']), textField('name'), numberFields({ units: WATT_LADDERS })],
-      // an entry's units are its own sensor's class, never the card's sensor's
-      choices: unitChoicesOf,
-    },
-  ];
   /** The card's head is its sensor's name (`title` was the older word for it); a legend item's `label` is its name. */
   static override aliases: AliasSpec = {
     keys: [{ from: 'title', to: 'name' }],
     items: { legend: ITEM_ALIASES },
   };
-  /** What the editor shows where the config says nothing: what the card does then. */
-  static override defaults: EditorDefaults = (config) => ({
-    variant: 'full',
-    show_cost: true,
-    show_soc: true,
-    show_house: true,
-    stack: true,
-    collection_key: '',
-    ...NUMBER_DEFAULTS,
-    ...chartDefaultsFor(config, capsIn(config)),
-  });
-  /**
-   * The date pickers on the dashboard, for the key; the units the editor offers are the sensor's class's (a chart of
-   * the house's meters alone: every ladder).
-   */
-  static override choices: EditorChoices = (config, hass) => ({
-    collection_key: collectionChoices(hass),
-    ...unitChoicesOf(config, hass),
-  });
-  static override getConfigForm(): LovelaceConfigForm {
-    return {
-      schema: [
-        entityField(['sensor']),
-        fieldRow(textField('name'), textField('subtitle')),
-        fieldRow(iconField(), showIconField()),
-        ...colourFields(),
-        // a date picker's range stands in for the window
-        fieldRow(
-          selectField('variant', ['full', 'compact', 'sources', 'overview']),
-          onlyWhen((data) => !following(data), numberField('hours', 1, 168)),
-        ),
-        collectionField(),
-        fieldRow(boolField('show_soc'), boolField('show_house')),
-        boolField('stack'),
-        fieldRow(entityField(['sensor'], 'cost_entity', false), boolField('show_cost')),
-        entitiesField('legend', ['sensor']),
-        // the line's styles, or a stacked chart's: what each variant draws
-        chartSection([LINE_CAPS, STACK_CAPS], capsIn),
-        numberFields({ when: hasLadder }),
-        actionFields(),
-      ],
-      ...editorLabels(
-        s,
-        { cost_entity: 'cost', legend: 'editor_legend', stack: 'editor_stack' },
-        COLLECTION_LABEL,
-      ),
-      computeHelper: collectionHelper,
-    };
+  /** The card's editor: fetched the first time the card is edited, never by a dashboard. */
+  static override editor(): Promise<CardEditor> {
+    return import('./energy-editor.js');
   }
 
   static getStubConfig(
@@ -671,10 +576,53 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     return this.prefs ? readPrefs(this.prefs).sources : [];
   }
 
+  /**
+   * The tone of what the line shows, where the card names none: what the Energy dashboard says its sensor is — a
+   * source's power or meter that source's (the sun's, the grid's, a battery's …), an individual device's the house's
+   * — else the accent. Read from the house's settings, never from a reading, so it holds whatever the sensor says.
+   */
+  private lineTone(id: string): Tone {
+    const house = readPrefs(this.prefs);
+    const source = house.sources.find((p) =>
+      [...measureIds(p.measure), ...p.energyIn, ...p.energyOut].includes(id),
+    );
+    if (source) return KIND[source.kind].tone;
+    return house.devices.some((d) => d.stat === id || d.power === id) ? 'house' : 'accent';
+  }
+
   private legend(): EnergyLegendItem[] {
     return (this.config?.legend ?? [])
       .slice(0, 3)
       .map((item) => (typeof item === 'string' ? { entity: item } : item));
+  }
+
+  /**
+   * A legend entry's reading: its sensor's, or — `period: today` — its change over the card's day as a reading of
+   * its own, in kWh for energy ("—" until it is read).
+   */
+  private legendView(id: string, item: EnergyLegendItem): EntityView {
+    const view = this.entity(id);
+    if (item.period !== 'today' || view.status === 'missing') return view;
+    const change = this.counted_?.get(id);
+    return change === undefined
+      ? { ...view, status: 'unknown', number: null }
+      : {
+          ...view,
+          status: 'ok',
+          number: change,
+          ...(family(view) === 'energy' ? { unit: 'kWh' } : {}),
+        };
+  }
+
+  /** The sensor's number as the card reads it: its own, or the other way round (`invert`). */
+  private signed(view: EntityView): number | null {
+    return view.number !== null && this.config?.invert ? -view.number : view.number;
+  }
+
+  /** What the readouts print of the sensor now, read as the card reads it. */
+  private reading(view: EntityView): ValueParts {
+    const signed = this.config?.invert ? this.signed(view) : null;
+    return readoutParts(this.hass, view, signed ?? undefined, this.config);
   }
 
   /* ---------- history ---------- */
@@ -720,6 +668,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       previous &&
       (previous.entity !== this.config?.entity ||
         previous.hours !== this.config?.hours ||
+        previous.invert !== this.config?.invert ||
         previous.collection_key !== this.config?.collection_key)
     ) {
       this.series_ = null; // another sensor or window: its curve is loading, the old one is not shown in its place
@@ -738,7 +687,17 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     if (this.fromSources) return this.loadSources();
     const id = this.config?.entity;
     const hass = this.hass;
-    if (!id || !hass?.states[id]) return;
+    if (!hass) return;
+    // what the Energy dashboard says the sensor is, for the line's tone: asked once (the connection keeps it)
+    if (!this.prefsAsked) {
+      this.prefsAsked = true;
+      void fetchPrefs(hass).then((prefs) => {
+        this.prefs = prefs;
+        this.requestUpdate();
+      });
+    }
+    void this.loadCounted(hass);
+    if (!id || !hass.states[id]) return;
     const { hours, points, range } = this.chartWindow();
     // a picker's range: the sensor's means over it, from the recorder's statistics
     const key = range
@@ -750,8 +709,34 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       ? fetchMeanSeries(hass, id, range, points)
       : fetchHistory(hass, id, hours, points));
     if (key !== this.asked) return; // a newer request owns the chart
-    this.series_ = series;
+    // read the other way round, the curve is too: its least is its greatest
+    this.series_ =
+      series && this.config?.invert
+        ? {
+            values: series.values.map((v) => -v),
+            min: -series.max,
+            max: -series.min,
+            average: -series.average,
+          }
+        : series;
     this.loaded_ = true;
+  }
+
+  /**
+   * The legend's `period: today` meters over the card's day: their statistics' change since the house's midnight, or
+   * over the range of the date picker the card follows — the Energy dashboard's arithmetic, asked every five minutes.
+   */
+  private async loadCounted(hass: HomeAssistant): Promise<void> {
+    const ids = this.legend()
+      .filter((item) => item.period === 'today')
+      .map((item) => item.entity);
+    const now = this.now();
+    const range = this.follower.range() ?? { start: houseMidnight(hass, now) };
+    const key = `${ids.join()}|${range.start.getTime()}|${range.end?.getTime() ?? ''}|${Math.floor(now.getTime() / REFRESH)}`;
+    if (!ids.length || key === this.askedCount) return;
+    this.askedCount = key;
+    const counted = await fetchRange(hass, [], range, ids);
+    if (key === this.askedCount) this.counted_ = counted?.byStat ?? new Map();
   }
 
   /**
@@ -1391,16 +1376,17 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // one does: only the colours and the line under the title say so
     const off = !isUsable(view);
     const compact = this.compact;
-    const tone: Tone = off ? 'off' : toneOf(this.config, 'solar');
+    // the line wears the tone of what it shows (the card's own, else what the Energy dashboard says its sensor is)
+    const tone: Tone = off ? 'off' : toneOf(this.config, this.lineTone(view.id));
     const window = this.chartWindow();
     const { day, hours, extent, range } = window;
     // a picker on a past range: the reading now is not the range's, and the readout says the range's last value
-    const live = view.status === 'ok' && this.live() ? view.number : null;
+    const live = view.status === 'ok' && this.live() ? this.signed(view) : null;
     const last = this.series_?.values[this.series_.values.length - 1];
     const parts =
       live === null && range && last !== undefined
         ? readoutParts(this.hass, view, last, this.config)
-        : readoutParts(this.hass, view, undefined, this.config);
+        : this.reading(view);
     const sub = missing
       ? stateText(this.hass, view)
       : (this.config?.subtitle ??
@@ -1498,7 +1484,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
           ? statsCols(
               this.head.ruler,
               this.contentWidth,
-              legendStats(this.hass, legend, (id) => this.entity(id), this.config),
+              legendStats(this.hass, legend, (id, item) => this.legendView(id, item), this.config),
             )
           : nothing
       }
@@ -1508,7 +1494,6 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
   /* ---------- by source ---------- */
 
   private layerName(key: Layer): string {
-    const flow = strings('energy-flow');
     return key === 'gas'
       ? flow(this.hass, 'kind_generator')
       : key === 'vehicle'
@@ -1542,10 +1527,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // the last bucket whose meters have closed, and reads it at rest
     const live = this.live();
     const house = live ? this.houseNow() : null;
-    const liveW =
-      live && view && view.status === 'ok'
-        ? readoutParts(this.hass, view, undefined, this.config)
-        : null;
+    const liveW = live && view && view.status === 'ok' ? this.reading(view) : null;
     const metersOnly = house === null && !liveW;
     const all = sourcesDay ? this.stackPoints(sourcesDay) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -1710,8 +1692,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                   this.day_ === null
                     ? this.head.empty(
                         'bolt',
-                        strings('energy-flow')(this.hass, 'no_period'),
-                        strings('energy-flow')(this.hass, 'no_period_hint'),
+                        flow(this.hass, 'no_period'),
+                        flow(this.hass, 'no_period_hint'),
                         this.contentWidth,
                       )
                     : this.noHistory()
@@ -1813,10 +1795,7 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // low, so the chart ends on the last one that has, and that is the moment the top row and the cursor read at rest
     const live = this.live();
     const house = live ? this.houseNow() : null;
-    const liveW =
-      live && view && view.status === 'ok'
-        ? readoutParts(this.hass, view, undefined, this.config)
-        : null;
+    const liveW = live && view && view.status === 'ok' ? this.reading(view) : null;
     const metersOnly = house === null && !liveW;
     const all = day ? this.flowPoints(day) : [];
     // a point sits at its bucket's middle: the bucket has closed half a step after it
@@ -2048,8 +2027,8 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
                   this.day_ === null
                     ? this.head.empty(
                         'bolt',
-                        strings('energy-flow')(this.hass, 'no_period'),
-                        strings('energy-flow')(this.hass, 'no_period_hint'),
+                        flow(this.hass, 'no_period'),
+                        flow(this.hass, 'no_period_hint'),
                         this.contentWidth,
                       )
                     : this.noHistory()

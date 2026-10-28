@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { catalogue } from '../index.js';
 
 const CATALOGUE = await catalogue();
+import { CAPS } from './caps.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { generate, generateWith } from './generate.js';
 import {
@@ -34,6 +35,12 @@ import {
 
 const house = (more: readonly DemoEntity[] = [], consumption?: readonly string[]) =>
   demoHass({ more, ...(consumption ? { consumption } : {}) }) as never;
+const entity = (
+  id: string,
+  state: string,
+  attributes: Record<string, unknown> = {},
+  registry: Record<string, unknown> = {},
+): DemoEntity => ({ id, state, attributes, registry });
 /** The moment the appliances' fixtures are read at. */
 const APPLIANCES_AT = Date.parse('2026-09-17T19:47:00Z');
 /** The demo home with one of everything the library has a card for, appliances large and small among them (#47). */
@@ -157,7 +164,8 @@ describe('the dashboard templates', () => {
     // templates say, and only the person writes those (#59), as only the person knows a web page's address (#61); an
     // items card lists what a sensor's attribute holds, and only the person says what its items are (#66); a chart card
     // draws the series the person names, in a list or a forecast only they know of (#68); the Energy usage card (#62)
-    // is the person's to place, the Energy dashboard's views keep the cards they had
+    // is the person's to place, the Energy dashboard's views keep the cards they had; so is the Slider card (#77), the
+    // dashboards setting a player's volume, a number and a fan on their own cards
     const byHand = new Set([
       'custom:fluvy-automations-card',
       'custom:fluvy-appliance-card',
@@ -166,6 +174,7 @@ describe('the dashboard templates', () => {
       'custom:fluvy-items-card',
       'custom:fluvy-chart-card',
       'custom:fluvy-energy-usage-card',
+      'custom:fluvy-slider-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(
@@ -223,14 +232,19 @@ describe('the dashboard templates', () => {
   });
 
   it('keep the subviews out of the tabs and give each a way back', async () => {
+    // a list past its cap opens a subview after its view's path, back to it (#78)
+    const list = new RegExp(`^(.+)-(${Object.keys(CAPS).join('|')})$`);
     for (const template of TEMPLATES) {
       const { views } = await generate({ type: template.type }, everything());
       const tabs = views.filter((v) => !v.subview).map((v) => v.path);
       const rooms = views.filter((v) => v.subview);
       for (const room of rooms) {
-        // a room, or every appliance (Home's)
-        expect(room.path.startsWith('room-') || room.path === 'appliances').toBe(true);
+        // a room, every appliance (Home's), or every one of a capped list
+        const of = list.exec(room.path)?.[1];
+        expect(room.path.startsWith('room-') || room.path === 'appliances' || of).toBeTruthy();
         expect(room.back_path).toBeDefined();
+        if (of && !room.path.startsWith('room-'))
+          expect(room.back_path?.endsWith(`/${of}`)).toBe(true);
         const chips = cardsOf(views).filter(
           (c) => c.type === 'custom:fluvy-chips-card',
         ) as unknown as {
@@ -383,5 +397,56 @@ describe('the dashboard templates', () => {
       ),
     ).toEqual({ areas: ['kitchen'] });
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
+    // the caps: every list whole, or a list's own number or `none`, the lists every template knows
+    for (const template of TEMPLATES) {
+      expect(strategyOptions({ caps: 'none' }, template)).toEqual({ caps: 'none' });
+      expect(
+        strategyOptions(
+          { caps: { lights: 12, humidity: 'none', fridges: 2, covers: 0 } },
+          template,
+        ),
+      ).toEqual({ caps: { lights: 12, humidity: 'none' } });
+      expect(strategyOptions({ caps: 'some' }, template)).toEqual({});
+    }
+  });
+
+  it('draw the reporter’s garage whole on its page: readings, the Openings card, the door as a cover (golden file, #76)', async () => {
+    const hass = house([
+      entity('sensor.garage_temperature', '12.5', {
+        device_class: 'temperature',
+        unit_of_measurement: '°C',
+      }),
+      entity('sensor.garage_humidity', '71', {
+        device_class: 'humidity',
+        unit_of_measurement: '%',
+      }),
+      entity('binary_sensor.garage_smoke', 'off', { device_class: 'smoke' }),
+      entity('binary_sensor.garage_leak', 'off', { device_class: 'moisture' }),
+      entity('cover.garage_main_door', 'closed', { device_class: 'garage', supported_features: 3 }),
+    ]) as unknown as HomeAssistant;
+    for (const id of Object.keys(hass.entities).filter((id) => id.includes('.garage_')))
+      hass.entities[id] = { ...hass.entities[id]!, area_id: 'garage' };
+    hass.areas['garage'] = { area_id: 'garage', name: 'Garage', icon: 'mdi:garage' } as never;
+    const { views } = await generate({ type: 'custom:fluvy-rooms' }, hass as never);
+    expect(views.find((view) => view.path === 'room-garage')).toMatchSnapshot();
+  });
+
+  it('end a capped list with "N more" and open every one on a subview (golden file, #78)', async () => {
+    const hass = house(
+      Array.from({ length: 12 }, (_, i) =>
+        entity(
+          `sensor.room_${i + 1}_humidity`,
+          String(40 + i),
+          { device_class: 'humidity', unit_of_measurement: '%' },
+          { area_id: `room_${i + 1}` },
+        ),
+      ),
+    ) as unknown as HomeAssistant;
+    for (let i = 1; i <= 12; i++)
+      hass.areas[`room_${i}`] = { area_id: `room_${i}`, name: `Room ${i}` } as never;
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    expect(
+      views.filter((view) => view.path === 'climate' || view.path === 'climate-humidity'),
+    ).toMatchSnapshot();
   });
 });

@@ -1,4 +1,4 @@
-import { readout } from '@fluvy/ui';
+import { readout, stepper } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import type { TextRuler } from './fit.js';
 
@@ -114,6 +114,51 @@ export const valueRowClass = (layout: RowLayout): string =>
     : layout === 'halves'
       ? 'fv-value-row fv-value-row--stack fv-value-row--halves'
       : 'fv-value-row';
+
+/** A level row: what it says, and how it is set and tapped. */
+export interface LevelRowSpec {
+  /** The content column the row fills. */
+  readonly width: number;
+  readonly label: string;
+  /** Every figure the row can show (`ValueRowSpec.figures`): the row is laid out for the widest. */
+  readonly figures: readonly Reading[];
+  readonly value: string;
+  readonly unit: string;
+  /** The − and + beside it (the card's `show_stepper`). */
+  readonly stepper: boolean;
+  /** The stepper stays, still: the device cannot be reached. */
+  readonly disabled: boolean;
+  /** Its figure in the secondary ink: a level kept while it does not sound (a muted player's volume). */
+  readonly quiet?: boolean;
+  readonly decrease: string;
+  readonly increase: string;
+  readonly onStep: (direction: 1 | -1) => void;
+  /** The readout as the card's tap where it stands alone (`Card.readoutTap`). */
+  readonly tap: () => TemplateResult | typeof nothing;
+}
+
+/**
+ * A card's level and its stepper on one row — the light card's brightness, the Slider card's value — laid out for the
+ * column from every figure it can show, never from the state (`fitValueRow`): beside, else the stepper centred under
+ * the level; the stepper stays, still, while the device cannot be reached. Without it the readout is the card's tap.
+ */
+export function levelRow(ruler: TextRuler, o: LevelRowSpec): TemplateResult {
+  const fit = fitValueRow(ruler, {
+    width: o.width,
+    control: o.stepper ? STEPPER : 0,
+    narrow: STEPPER_HALVES,
+    labels: [o.label],
+    figures: o.figures,
+  });
+  return html`<div class="sl-value ${valueRowClass(fit.layout)} ${o.quiet ? 'is-quiet' : ''}">
+    ${readout({ label: o.label, value: o.value, unit: o.unit, size: fit.size })}
+    ${
+      fit.layout !== 'alone'
+        ? stepper(o.onStep, { disabled: o.disabled, decrease: o.decrease, increase: o.increase })
+        : o.tap()
+    }
+  </div>`;
+}
 
 /** A side readout keeps 16 from the reading. */
 const SIDE_GAP = 16;

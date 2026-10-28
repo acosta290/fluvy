@@ -8,8 +8,10 @@ import {
   gridCard,
   hasBattery,
   hasSources,
+  runsOf,
   when,
 } from '../layout.js';
+import { capped, each, looseAfter, moreCard } from '../caps.js';
 import { COLUMNS } from '../context.js';
 import { TODAY } from '../home-registry.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
@@ -61,9 +63,47 @@ export function todayCards(ctx: StrategyContext, collection?: string): Card[] {
   ]);
 }
 
+/** The energy dashboard's devices as rows, at the cap (`consumption`: eight here, `cap` on a view of their own). */
+export function consumptionRows(ctx: StrategyContext, cap?: number): Card[] {
+  const { home, t } = ctx;
+  const card = (ids: readonly string[]): Card =>
+    full('energy-devices', {
+      title: t('strategy.appliances'),
+      rows: ids.map((id) => deviceRow(home, id)),
+    });
+  const devices = capped(
+    ctx,
+    {
+      key: 'consumption',
+      title: 'strategy.consumption',
+      icon: 'fluvy:plug',
+      ...(cap ? { cap } : {}),
+    },
+    ctx.energy.consumption,
+    (ids) => [[card(ids)]],
+  );
+  return devices.shown.length ? [card(devices.shown), ...moreCard(devices)] : [];
+}
+
+/** The day's energy readings as stat tiles, four a card, when there are two or more. */
+export function todayTiles(ctx: StrategyContext): Card[] {
+  const { home, t } = ctx;
+  const todays = home.energies.filter((id) => TODAY.test(home.label(id)));
+  if (todays.length < 2) return [];
+  const card = (ids: readonly string[]): Card =>
+    full('stat-tiles', { title: t('strategy.today'), tiles: [...ids] });
+  const today = capped(
+    ctx,
+    { key: 'today', title: 'strategy.today', icon: 'fluvy:calendar' },
+    todays,
+    (ids) => runsOf(ids, 4).map((run) => [card(run)]),
+  );
+  return [...runsOf(today.shown, 4).map(card), ...moreCard(today)];
+}
+
 /** The flow and the day by source first, then each part of the system, and the day's curve. */
 function nowView(ctx: StrategyContext): Section[] {
-  const { home, t, energy } = ctx;
+  const { t, energy } = ctx;
   const { solarPower, gridPower, homePower, consumptionPowers } = energy;
   return balanced(ctx, [
     ...liveCards(ctx),
@@ -83,13 +123,7 @@ function nowView(ctx: StrategyContext): Section[] {
         ...(energy.homePower ? { total: energy.homePower } : {}),
       }),
     ]),
-    ...when(
-      home.energies.filter((id) => TODAY.test(home.label(id))),
-      (todays) =>
-        todays.length >= 2
-          ? [full('stat-tiles', { title: t('strategy.today'), tiles: todays.slice(0, 4) })]
-          : [],
-    ),
+    ...todayTiles(ctx),
   ]);
 }
 
@@ -132,15 +166,11 @@ function productionView(ctx: StrategyContext): Section[] {
 
 /** The energy dashboard's devices, nested as it nests them, and how they share what the house draws. */
 function devicesView(ctx: StrategyContext): Section[] {
-  const { home, t, energy } = ctx;
-  const { consumption, consumptionPowers } = energy;
+  const { t, energy } = ctx;
+  const { consumptionPowers } = energy;
   return balanced(ctx, [
-    ...when(consumption.length, () => [
-      full('energy-devices', {
-        title: t('strategy.appliances'),
-        rows: consumption.slice(0, 12).map((id) => deviceRow(home, id)),
-      }),
-    ]),
+    // the devices' own view lists twelve before its "N more" row
+    ...consumptionRows(ctx, 12),
     ...when(consumptionPowers.length >= 2, () => [
       full('distribution', {
         title: t('strategy.consumption'),
@@ -161,10 +191,14 @@ function metersCards({ energy }: StrategyContext): Card[] {
 /** A day's curve for every power meter of the house. */
 function metersView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
-  return balanced(
+  const curve = (id: string): Card => full('energy', { entity: id, name: home.placeName(id) });
+  const meters = capped(
     ctx,
-    home.powers.slice(0, 9).map((id) => full('energy', { entity: id, name: home.placeName(id) })),
+    { key: 'meters', title: 'strategy.meters', icon: 'fluvy:chart' },
+    home.powers,
+    each(curve),
   );
+  return balanced(ctx, looseAfter(meters.shown.map(curve), meters));
 }
 
 export const ENERGY_VIEWS: readonly ViewSpec[] = [

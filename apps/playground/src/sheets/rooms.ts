@@ -1,7 +1,12 @@
+import { resolveLanguage, wordsIn, type HomeAssistant, type LovelaceCardConfig } from '@fluvy/core';
 import { FluvyMapCard } from '../../../../packages/cards/src/map/map-card.js';
 import { FluvyRoomCard } from '../../../../packages/cards/src/room/room-card.js';
+import { moreHost } from '../../../../packages/cards/src/strategy/caps.js';
+import { HomeRegistry } from '../../../../packages/cards/src/strategy/home-registry.js';
+import { roomSections } from '../../../../packages/cards/src/strategy/rooms.js';
+import type { StrategyContext } from '../../../../packages/cards/src/strategy/types.js';
 import type { StateSeed } from '../hass.js';
-import type { SheetSpec } from '../scenes.js';
+import type { FrameSpec, SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-room-card')) customElements.define('fluvy-room-card', FluvyRoomCard);
 if (!customElements.get('fluvy-map-card')) customElements.define('fluvy-map-card', FluvyMapCard);
@@ -42,6 +47,100 @@ const READINGS: readonly StateSeed[] = [
 ];
 const entry = (entity_id: string, area_id: string, more: Record<string, unknown> = {}) =>
   [entity_id, { entity_id, area_id, ...more }] as const;
+/*
+ * #76's garage, as the reporter described it: a temperature and humidity sensor (one device), a smoke detector, a leak
+ * sensor and a garage door — the room card counts five devices, and the room's page reaches every one.
+ */
+const GARAGE: readonly StateSeed[] = [
+  reading('sensor.rm_garage_temperature', '12.5', 'temperature'),
+  reading('sensor.rm_garage_humidity', '71', 'humidity'),
+  [
+    'binary_sensor.rm_garage_smoke',
+    'off',
+    { friendly_name: 'Smoke detector', device_class: 'smoke' },
+  ],
+  [
+    'binary_sensor.rm_garage_leak',
+    'off',
+    { friendly_name: 'Leak sensor', device_class: 'moisture' },
+  ],
+  [
+    'cover.rm_garage_door',
+    'closed',
+    {
+      friendly_name: 'Garage door',
+      device_class: 'garage',
+      current_position: 0,
+      supported_features: 3,
+    },
+  ],
+];
+const GARAGE_ENTITIES = {
+  'sensor.rm_garage_temperature': {
+    entity_id: 'sensor.rm_garage_temperature',
+    device_id: 'rm-garage-climate',
+  },
+  'sensor.rm_garage_humidity': {
+    entity_id: 'sensor.rm_garage_humidity',
+    device_id: 'rm-garage-climate',
+  },
+  'binary_sensor.rm_garage_smoke': {
+    entity_id: 'binary_sensor.rm_garage_smoke',
+    area_id: 'rm_garage',
+  },
+  'binary_sensor.rm_garage_leak': {
+    entity_id: 'binary_sensor.rm_garage_leak',
+    area_id: 'rm_garage',
+  },
+  'cover.rm_garage_door': { entity_id: 'cover.rm_garage_door', area_id: 'rm_garage' },
+};
+const GARAGE_DEVICE = {
+  id: 'rm-garage-climate',
+  name: 'Garage climate',
+  name_by_user: null,
+  area_id: 'rm_garage',
+  model: null,
+  manufacturer: null,
+  via_device_id: null,
+};
+const GARAGE_AREA = { area_id: 'rm_garage', name: 'Garage', icon: 'mdi:garage' };
+
+/**
+ * The garage's page as the automatic dashboard lays it out (#76), in the page's language: the way back, the door as a
+ * cover, its readings, the smoke and the leak on its Openings card — in a column, in reading order. Read when the
+ * frame is drawn, once the page's words have landed.
+ */
+const garagePage = (): LovelaceCardConfig[] => {
+  const t = wordsIn(resolveLanguage(new URLSearchParams(location.search).get('lang') ?? 'en'));
+  const house = {
+    states: Object.fromEntries(
+      GARAGE.map(([entity_id, state, attributes = {}]) => [
+        entity_id,
+        { entity_id, state, attributes, last_changed: '', last_updated: '' },
+      ]),
+    ),
+    entities: GARAGE_ENTITIES,
+    devices: { [GARAGE_DEVICE.id]: GARAGE_DEVICE },
+    areas: { rm_garage: GARAGE_AREA },
+    language: 'en',
+    user: { id: 'u1', name: 'Marta', is_admin: true },
+  } as unknown as HomeAssistant;
+  const ctx = {
+    home: new HomeRegistry(house),
+    t,
+    base: '/fluvy-auto',
+    style: {},
+    hass: house,
+    header: 0,
+    caps: {},
+    more: moreHost('room-rm_garage', GARAGE_AREA.name, 'fluvy:home', 3),
+  } as unknown as StrategyContext;
+  return roomSections(ctx, GARAGE_AREA, {
+    path: '/fluvy-auto/rooms',
+    title: t('strategy.all_rooms'),
+  }).flatMap((section) => section.cards);
+};
+
 /** The reporter's card, each room at half a section. */
 const reporter = (area: string) =>
   room({
@@ -122,6 +221,7 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Bedroom fan', percentage: 40, supported_features: 1 },
     ],
     ...READINGS,
+    ...GARAGE,
     [
       'climate.rm_study',
       'heat',
@@ -214,7 +314,9 @@ export const sheet: SheetSpec = {
         entry('sensor.rm_store_temperature', 'rm_store'),
         entry('sensor.rm_store_humidity', 'rm_store', { hidden: true }),
       ]),
+      ...GARAGE_ENTITIES,
     },
+    devices: { [GARAGE_DEVICE.id]: GARAGE_DEVICE },
     areas: {
       rm_living: {
         area_id: 'rm_living',
@@ -251,6 +353,7 @@ export const sheet: SheetSpec = {
       rm_hall: { area_id: 'rm_hall', name: 'Hall', icon: 'mdi:door' },
       rm_store: { area_id: 'rm_store', name: 'Storeroom', icon: 'mdi:archive' },
       rm_den: { area_id: 'rm_den', name: 'Den', icon: 'mdi:sofa' },
+      rm_garage: GARAGE_AREA,
     },
     floors: {
       rm_ground: { floor_id: 'rm_ground', name: 'Ground floor', level: 0 },
@@ -343,5 +446,36 @@ export const sheet: SheetSpec = {
         room({ area: 'rm_den', variant: 'tile', light_colors: true }),
       ],
     },
+    // #78: a list past its cap ends with the house's fold row, "N more", to a subview of every one — on a card of its
+    // own under a list of whole cards, as the last row of a list of rows
+    {
+      title: 'Room page · a list past its cap (#78)',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          more: 9,
+          more_path: '/fluvy-auto/climate-humidity',
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Devices',
+          rows: ['switch.rm_tv_plug', 'sensor.rm_living_humidity'],
+          more: 12,
+          more_path: '/fluvy-auto/room-rm_living-devices',
+        },
+      ],
+    },
+    // #76: the reporter's garage counts five devices…
+    {
+      title: 'Room · the reporter’s garage (#76)',
+      cards: [room({ area: 'rm_garage', path: '/fluvy-auto/room-rm_garage' })],
+    },
+    // …and its page reaches every one: the door as a cover, the readings, the smoke and the leak on its Openings card
+    {
+      title: 'Room page · the reporter’s garage (#76)',
+      get cards() {
+        return garagePage();
+      },
+    } satisfies FrameSpec,
   ],
 };

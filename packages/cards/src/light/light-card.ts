@@ -13,10 +13,8 @@ import { LIT_FLOOR } from '@fluvy/tokens/runtime';
 import {
   head,
   label,
-  readout,
   rulerLabels,
   sheetStyles,
-  stepper,
   toggle,
   type RulerChangeDetail,
   type RulerWindowDetail,
@@ -38,7 +36,8 @@ import {
   withMembers,
   type LightWhites,
 } from '../shared/light.js';
-import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
+import { Level } from '../shared/level.js';
+import { levelRow } from '../shared/value-row.js';
 import type { HeldColour } from './colour.js';
 import type { SwatchEntry } from './swatches.js';
 
@@ -142,9 +141,6 @@ export class FluvyLightCard extends Card<LightCardConfig> {
         height: auto;
         min-height: 256px;
       } /* the sheet fixes 256 so its five states line up; a colour-temperature ruler makes the card taller */
-      .sl-bubble-row {
-        pointer-events: none;
-      }
       /* the compact card, and the head alone of a bulb that only switches (#65), are as tall as they draw */
       .sl-card--compact,
       .sl-card--switch {
@@ -153,35 +149,14 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     `,
   ];
 
-  static override properties = {
-    ...Card.properties,
-    preview_: { state: true },
-    window_: { state: true },
-  };
-
-  /** Value under the finger while a drag is in flight. */
-  declare preview_: number | null;
-  declare window_: RulerWindowDetail | null;
-
-  private lastSend = 0;
-  /** The level the user chose, shown until the lamp reports it (slow lamps take seconds) or 5 s pass. */
-  private held: { value: number; expires: number } | null = null;
-  private heldTimer = 0;
-  private sendTimer = 0;
-  /** The level on screen right now; the stepper counts from here, never from a value captured at render time. */
-  private level = 0;
+  /** The brightness the finger sets: held until the lamp reports it, a stepper's taps sent as one call. */
+  private readonly level = new Level(this, (value) => this.send(value));
   /** The colour the finger chose, shown (the check, the ruler, the accent) until the bulb reports it or 5 s pass. */
   private heldColour: { choice: HeldColour; expires: number } | null = null;
   private colourTimer = 0;
   /** The colour controls, once their module has landed; asked for on the first render of a colour bulb. */
   private colour: ColourModule | undefined;
   private colourAsked = false;
-
-  constructor() {
-    super();
-    this.preview_ = null;
-    this.window_ = null;
-  }
 
   static override editor(): Promise<CardEditor> {
     return import('./light-editor.js');
@@ -226,35 +201,9 @@ export class FluvyLightCard extends Card<LightCardConfig> {
       : { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
-  /** Shows `value` for five seconds — what the finger set — while Home Assistant catches up. */
-  private pin(value: number): void {
-    this.held = { value, expires: Date.now() + 5000 };
-    clearTimeout(this.heldTimer);
-    this.heldTimer = window.setTimeout(() => {
-      this.held = null;
-      this.requestUpdate();
-    }, 5000);
-    this.requestUpdate();
-  }
-
   private send(value: number): void {
     if (value <= 0) this.call('light', 'turn_off');
     else this.call('light', 'turn_on', { brightness_pct: value });
-  }
-
-  /** From the ruler: the choice is final, send it now. */
-  private setBrightness(value: number): void {
-    this.pin(value);
-    clearTimeout(this.sendTimer);
-    this.send(value);
-  }
-
-  /** From the stepper: every tap counts from what is on screen, and a burst of taps is one call. */
-  private stepBrightness(direction: 1 | -1): void {
-    const next = Math.min(100, Math.max(0, this.level + direction));
-    this.pin(next);
-    clearTimeout(this.sendTimer);
-    this.sendTimer = window.setTimeout(() => this.send(next), 650); // longer than the 530 ms before a held button starts repeating
   }
 
   /** A swatch or the hue ruler: the colour is held for five seconds, as a level is, and the bulb wakes to it. */
@@ -282,19 +231,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    clearTimeout(this.heldTimer);
-    clearTimeout(this.sendTimer);
     clearTimeout(this.colourTimer);
-  }
-
-  private onInput(value: number): void {
-    this.preview_ = value;
-    if (!this.config?.live_update) return;
-    const now = performance.now();
-    if (now - this.lastSend > 200) {
-      this.lastSend = now;
-      this.setBrightness(value);
-    }
   }
 
   /** The colour-temperature ruler under its label, warm to cool, inactive while the lamp is off. */
@@ -336,9 +273,8 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   }
 
   /**
-   * The full card's level and its stepper, laid out for the column from every figure it can show (100 %, the word for
-   * off), never from the state (`fitValueRow`): beside, else the stepper centred under the level; the stepper stays,
-   * still, while the lamp cannot be reached. Without it the readout is the card's tap.
+   * The full card's level and its stepper (`levelRow`), laid out from every figure it can show (100 %, the word for
+   * off); the stepper stays, still, while the lamp cannot be reached.
    */
   private renderLevel(
     entityId: string,
@@ -349,28 +285,22 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   ): TemplateResult {
     const label = this.t('light.brightness');
     const off = this.t('common.off');
-    const fit = fitValueRow(this.head.ruler, {
-      width: this.contentWidth,
-      control: this.config?.show_stepper === false ? 0 : STEPPER,
-      narrow: STEPPER_HALVES,
-      labels: [label],
-      figures: [{ value: formatNumber(this.hass, 100, { digits: 0 }), unit: '%' }, { value: off }],
-    });
-    const lit = on || this.preview_ !== null;
+    const lit = on || this.level.preview !== null;
     const value = unusable ? '—' : lit ? formatNumber(this.hass, level, { digits: 0 }) : off;
     const unit = unusable || !lit ? '' : '%';
-    return html`<div class="sl-value ${valueRowClass(fit.layout)}">
-      ${readout({ label, value, unit, size: fit.size })}
-      ${
-        fit.layout !== 'alone'
-          ? stepper((d) => this.stepBrightness(d), {
-              disabled: unusable,
-              decrease: this.t('common.decrease'),
-              increase: this.t('common.increase'),
-            })
-          : this.readoutTap(entityId, `${name} · ${label} ${value} ${unit}`)
-      }
-    </div>`;
+    return levelRow(this.head.ruler, {
+      width: this.contentWidth,
+      label,
+      figures: [{ value: formatNumber(this.hass, 100, { digits: 0 }), unit: '%' }, { value: off }],
+      value,
+      unit,
+      stepper: this.config?.show_stepper !== false,
+      disabled: unusable,
+      decrease: this.t('common.decrease'),
+      increase: this.t('common.increase'),
+      onStep: (d) => this.level.step(Math.min(100, Math.max(0, this.level.current + d))),
+      tap: () => this.readoutTap(entityId, `${name} · ${label} ${value} ${unit}`),
+    });
   }
 
   protected renderCard(): TemplateResult {
@@ -378,31 +308,24 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     const name = this.config?.name ?? view.name;
     // a light that cannot be read keeps the card's whole anatomy, still: its switch, its level ("—"), its rulers
     const unusable = !isUsable(view);
-    const on = !unusable && (this.stateOf(view) === 'on' || (this.held?.value ?? 0) > 0);
+    const on = !unusable && (this.stateOf(view) === 'on' || (this.level.chosen ?? 0) > 0);
     const modes = view.attr<string[]>('supported_color_modes') ?? [];
     // a light Home Assistant has not described (gone, or unavailable since it started) draws as a dimmer; one that
     // only switches, described as such (its attributes kept while it cannot be read), is its head alone (#65)
     const dimmable = dims(modes);
     const raw = view.attr<number | null>('brightness');
     const reported = on && typeof raw === 'number' ? Math.max(1, Math.round((raw / 255) * 100)) : 0;
-    // released only by an exact match or by time: a ±1 tolerance would swallow every single-step change
-    if (this.held && (this.held.value === reported || Date.now() > this.held.expires))
-      this.held = null;
-    const level = this.held ? this.held.value : reported;
-    this.level = level;
-    const shownLevel = this.preview_ ?? level;
+    const level = this.level.read(reported);
+    const shownLevel = this.level.preview ?? level;
     const w = this.contentWidth;
     const variant = this.config?.variant ?? 'auto';
     // the compact layout is the dimmer's: a bulb that only switches has one anatomy, its head
     const compact =
       dimmable && (variant === 'compact' || (variant === 'auto' && w < COMPACT_BELOW));
-    const win = this.window_?.fine ? this.window_ : null;
     // on the fine scale the labels are the major ticks themselves (whole values); the ones too close to an end are left out
-    const ticks: [number, string][] = win
-      ? win.marks
-          .filter(([f]) => f > 0.06 && f < 0.94)
-          .map(([f, v]) => [f, formatNumber(this.hass, v, { digits: 0 })])
-      : compact || w < COMPACT_BELOW
+    const ticks =
+      this.level.fineLabels((v) => formatNumber(this.hass, v, { digits: 0 })) ??
+      (compact || w < COMPACT_BELOW
         ? [
             [0, '0'],
             [0.5, '50'],
@@ -414,7 +337,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
             [0.5, '50'],
             [0.75, '75'],
             [1, '100'],
-          ];
+          ]);
     // the compact head says the level where the full card has its big value ("On · 70 %")
     const state = stateText(this.hass, view);
     const figure = `${formatNumber(this.hass, shownLevel, { digits: 0 })} %`;
@@ -547,14 +470,10 @@ export class FluvyLightCard extends Card<LightCardConfig> {
                 unit="%"
                 .label=${`${name} · ${this.t('light.brightness')}`}
                 .format=${(v: number) => formatNumber(this.hass, v, { digits: 0 })}
-                @fluvy-input=${(e: CustomEvent<RulerChangeDetail>) => this.onInput(e.detail.value)}
-                @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => {
-                  this.preview_ = null;
-                  this.setBrightness(e.detail.value);
-                }}
-                @fluvy-window=${(e: CustomEvent<RulerWindowDetail>) => {
-                  this.window_ = e.detail;
-                }}
+                @fluvy-input=${(e: CustomEvent<RulerChangeDetail>) =>
+                  this.level.input(e.detail.value, this.config?.live_update === true)}
+                @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => this.level.set(e.detail.value)}
+                @fluvy-window=${(e: CustomEvent<RulerWindowDetail>) => this.level.zoom(e.detail)}
               ></fluvy-ruler>
               ${rulerLabels(ticks)}`
           : nothing

@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
+import { stateLineWidths } from '../shared/fixtures/widths.js';
 import { FluvyTilesCard } from '../tiles/tiles-card.js';
 import { FluvyTileCard } from './tile-card.js';
 
@@ -93,10 +94,15 @@ type CardElement = HTMLElement & {
   updateComplete: Promise<boolean>;
 };
 
-async function drawn(config: LovelaceCardConfig, states: Record<string, unknown>, width = 360) {
+async function drawn(
+  config: LovelaceCardConfig,
+  states: Record<string, unknown>,
+  width = 360,
+  hass = house(states),
+) {
   const card = document.createElement(String(config.type).replace('custom:', '')) as CardElement;
   card.setConfig(config);
-  card.hass = house(states);
+  card.hass = hass;
   (card as unknown as { width: number }).width = width;
   document.body.append(card);
   await card.updateComplete;
@@ -244,6 +250,98 @@ describe('an unavailable tile keeps the live one’s anatomy and size (A7)', () 
     expect(typeof tap.fvHold).toBe('function');
     expect(tap.querySelector('.fv-hit, button')).toBeNull();
     expect(tile!.hasAttribute('role')).toBe(false);
+  });
+});
+
+describe('a number’s large tile keeps its figure: the room gives way where both do not hold (#77)', () => {
+  const NUMBER = {
+    'number.offset': state('number.offset', '-1', {
+      friendly_name: 'Offset',
+      min: -2,
+      max: 2,
+      step: 0.5,
+      unit_of_measurement: '°C',
+    }),
+    'input_number.pump': state('input_number.pump', '65', {
+      friendly_name: 'Pool pump',
+      min: 0,
+      max: 100,
+      step: 5,
+      unit_of_measurement: '%',
+    }),
+    'light.desk': LIVE['light.desk'],
+  };
+  // rooms a 172 tile's line cannot hold beside the figure (by the widths' model), and the figure each language writes
+  const ROOM = { en: 'Living room', de: 'Arbeitszimmer', ja: 'リビングルーム' } as const;
+  const FIGURE = { en: '−1.0 °C', de: '−1,0 °C', ja: '−1.0 °C' } as const;
+  const speaking = (language: keyof typeof ROOM): HomeAssistant =>
+    ({
+      ...house(NUMBER),
+      language,
+      locale: { language, number_format: 'language', time_format: '24' },
+      entities: Object.fromEntries(
+        Object.keys(NUMBER).map((id) => [id, { entity_id: id, area_id: 'room', device_id: null }]),
+      ),
+      areas: { room: { area_id: 'room', name: ROOM[language], picture: null } },
+    }) as unknown as HomeAssistant;
+  const lines = (tiles: readonly HTMLElement[]): string[] =>
+    tiles.map((tile) => tile.querySelector('.fv-tile__state')!.textContent!.trim());
+
+  let restore: () => void;
+  beforeAll(() => {
+    restore = stateLineWidths();
+  });
+  afterAll(() => restore());
+  afterEach(() => document.body.replaceChildren());
+
+  describe.each(['en', 'de', 'ja'] as const)('in %s', (language) => {
+    it.each([156, 172])('a tile card of %i px says the figure alone', async (width) => {
+      const tiles = await drawn(
+        { type: 'custom:fluvy-tile-card', entity: 'number.offset' },
+        NUMBER,
+        width,
+        speaking(language),
+      );
+      expect(lines(tiles)).toEqual([FIGURE[language]]);
+    });
+
+    it.each([156, 172])('a group’s tiles of %i px each keep their figure', async (width) => {
+      const tiles = await drawn(
+        {
+          type: 'custom:fluvy-tiles-card',
+          size: 'large',
+          columns: 2,
+          tiles: ['number.offset', 'input_number.pump'],
+        },
+        NUMBER,
+        2 * width + 16,
+        speaking(language),
+      );
+      const [offset, pump] = lines(tiles);
+      expect(offset).toBe(FIGURE[language]);
+      // the pump's shorter line holds whole where its room and figure fit, else its figure alone
+      expect(pump).toMatch(new RegExp(`^(${ROOM[language]} · )?65 %$`));
+    });
+
+    it('a tile of 360 px holds the room and the figure', async () => {
+      const tiles = await drawn(
+        { type: 'custom:fluvy-tile-card', entity: 'number.offset' },
+        NUMBER,
+        360,
+        speaking(language),
+      );
+      expect(lines(tiles)).toEqual([`${ROOM[language]} · ${FIGURE[language]}`]);
+    });
+  });
+
+  it('a lit light’s line is as it was: its state first, its level after where it holds', async () => {
+    const tiles = await drawn(
+      { type: 'custom:fluvy-tile-card', entity: 'light.desk' },
+      NUMBER,
+      156,
+      speaking('en'),
+    );
+    expect(lines(tiles)).toEqual(['On · 50 %']);
   });
 });
 

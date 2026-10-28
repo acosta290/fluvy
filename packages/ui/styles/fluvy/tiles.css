@@ -93,7 +93,9 @@
   color: var(--tone-on);
 }
 
-/* what sits inside a lit card where the page's fill would (the stepper) stands on it as the card does: a plain disc */
+/* what sits inside a lit card or a lit tile where the page's fill would (the stepper, a player's mute round) stands
+   on it as the card does: a plain disc */
+.fv-tile.is-on,
 .fv-card.is-lit {
   --fluvy-inset: var(--fluvy-card);
 }

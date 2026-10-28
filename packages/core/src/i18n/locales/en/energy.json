@@ -70,6 +70,7 @@
     "editor_badge": "Badge",
     "editor_motion": "Motion",
     "editor_period": "What it shows",
+    "editor_period_total": "A meter that keeps counting: Since midnight shows only today’s part",
     "editor_show_period": "Day · Week · Month chips",
     "selling": "Selling",
     "on_the_car": "From the car",

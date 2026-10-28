@@ -85,6 +85,12 @@ const SOURCES = {
   // no entity to take out of reach: listed as such (the plate kept back for https is held by `web-card.test.ts`)
   'fluvy-web-card': ['stub', ['web', 'Plate · 16:9', 0]],
   'fluvy-light-card': ['stub', ['slider', 'On', 0]],
+  // a player's volume with its mute, and a helper with another entity's switch in its head
+  'fluvy-slider-card': [
+    'stub',
+    ['slider-card', 'Volume · full', 0],
+    ['slider-card', 'Pool pump · full', 0],
+  ],
   'fluvy-thermostat-card': [['climate', 'Heat', 0]],
   'fluvy-cover-card': [['devices-motion', 'Blinds', 0]],
   'fluvy-fan-card': [['devices-motion', 'Ceiling fan', 0]],

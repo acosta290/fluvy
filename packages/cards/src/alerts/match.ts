@@ -14,7 +14,8 @@ import {
  * registries say (the integration, the device, the area and floor, the labels, hidden, config and diagnostic
  * entities), then the clause's exclusions. What a test asks of a registry by name (an area called "Kitchen") is
  * resolved to ids once per registry object. Unavailable and unknown never match unless the clause names them in
- * `state` or says `include_unavailable`.
+ * `state` or says `include_unavailable`. Home Assistant files every update as a config entity (one it can install)
+ * or a diagnostic one: a clause that asks for the update domain keeps them whatever their category.
  */
 
 /** One test of an entity: its id, its state, the house. */
@@ -294,6 +295,7 @@ function compileClause(spec: ClauseSpec): CompiledClause {
     spec.parts.some((part) => many(part.state).some((s) => UNAVAILABLE.has(s)));
   const onAttribute = spec.parts.some((part) => part.attribute !== undefined);
   const domains = within(parts.flatMap((part) => (part.domains ? [part.domains] : [])));
+  const updates = domains?.has('update') ?? false;
   return {
     test: (id, state, hass) => {
       if (!asked && UNAVAILABLE.has(state.state)) return false;
@@ -301,8 +303,10 @@ function compileClause(spec: ClauseSpec): CompiledClause {
       // an entity named by its id is always wanted
       const entry = named.has(id) ? undefined : hass.entities?.[id];
       if (entry?.hidden && !spec.hidden) return false;
-      if (entry?.entity_category === 'config') return false;
-      if (entry?.entity_category === 'diagnostic' && !spec.diagnostic) return false;
+      // every update is config or diagnostic (whether Home Assistant installs it): a clause on updates reads neither
+      const category = updates && domainOf(id) === 'update' ? undefined : entry?.entity_category;
+      if (category === 'config') return false;
+      if (category === 'diagnostic' && !spec.diagnostic) return false;
       return true;
     },
     seed: (state) => instant(onAttribute ? state.last_updated : state.last_changed),

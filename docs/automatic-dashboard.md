@@ -14,9 +14,9 @@ time it opens, from the registries, so a new device shows up by itself.
 | Template | What it is for |
 | --- | --- |
 | **Home** (`custom:fluvy-home`) | the whole house: Home, Rooms, Lights, Climate, Energy, Security, Media, Agenda and Sensors, each when the house has what it shows, and an Appliances page behind Home's appliance bands |
-| **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page |
+| **Rooms** (`custom:fluvy-rooms`) | a card a room, a tab a floor when the house has two or more; each room opens as its own page, with everything its card counts |
 | **Energy** (`custom:fluvy-energy`) | Now (the flow, the balance, the house by source, the grid, the batteries, the car charger), Today (the Energy period strip across the view, and the day's flow, where it went, the score and the balance following it), Production, Devices, Water & gas, Meters |
-| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first four cameras on one Cameras card), Cameras (every camera, up to twelve, on one Cameras card across the view), Openings room by room |
+| **Security** (`custom:fluvy-security`) | Security (the alarm, what locks, what opens, the first four cameras on one Cameras card), Cameras (twelve cameras on one Cameras card across the view, the rest a "N more" row away), Openings room by room, every one |
 | **Wall** (`custom:fluvy-wall`) | two columns for a tablet on the wall, read from a metre away: the greeting, the clock, the readings, the scenes and the rooms; the thermostat, the security rows and who is home |
 
 ## What the home dashboard builds
@@ -24,7 +24,7 @@ time it opens, from the registries, so a new device shows up by itself.
 | View | What goes in it |
 | --- | --- |
 | **Home** | "Needs attention" first (leaks and smoke, open, unlocked, errors, low batteries; for an administrator also updates and repairs — hidden while all is clear), the greeting (your person, the date, the weather), the tabs, the lights under one heading, the covers, the running thermostat, the temperatures, the weather and the clock, the energy flow and the solar or home energy curve, the locks and openings, at the columns' feet the first media player, the vacuum, a to-do list and the first scene, and under the columns the house's appliances: the large ones as whole cards side by side (four across a desktop, as many as fit on a tablet or a phone), the small ones as rows, each band leading to the Appliances page |
-| **Rooms** | a card a room (its photo where the area has one), headed by floor when the house has more than one; each room opens its own page with its thermostat, lights, covers, media, readings and camera, and its appliances across the page as on Home — when the house has two rooms with something in them |
+| **Rooms** | a card a room (its photo where the area has one), headed by floor when the house has more than one; each room opens its own page with everything its card counts (see [A room's page](#a-rooms-page)) — when the house has two rooms with something in them |
 | **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the light automations as scenes last |
 | **Climate** | thermostats, water heaters and humidifiers, the weather, the temperature and humidity sensors that are not the weather service's — humidity paired with its temperature |
 | **Energy** | the energy flow and the balance, the house's power by source, the grid (by phase when its meters are named so), the batteries, a car charger, the day's flow, where it went and the score (when the Energy dashboard meters its sources), production, the energy dashboard's devices, their distribution, water and gas |
@@ -36,6 +36,46 @@ time it opens, from the registries, so a new device shows up by itself.
 Views a house has nothing for are left out. Every view keeps the same three columns (two on the wall), so the header
 never moves between tabs, and blocks are cut into the columns so that they end on one line. A room's page is a
 subview: it opens from its card, never from the tabs, and its heading leads back.
+
+## A room's page
+
+A room's card counts every entity of its area that a dashboard shows (not hidden, not a configuration or diagnostic
+entity), and its page reaches every one of them, by the same rule: in reading order, its thermostats, its lights, its
+blinds, its garage doors and gates (each a cover card), its fans, its media players, its plugs (with their power and
+energy beside them), its temperatures and humidities, its doors, windows, motion, leak, smoke and gas sensors on one
+Openings card for the room (which folds them after its rows), its cameras, and everything else it holds as rows under
+*Devices*; its appliances across the page as on Home. Each list keeps the house's cap (below), with its "N more" row.
+
+## Capped lists
+
+A view shows the first of a long list, so a big house still reads. Where a list goes past its cap, it ends with a
+"N more" row, which opens a page of every one (a subview, back to the view it came from): the whole cards of a list of
+cards (thermostats, cameras), a card a room for a list of rows (batteries, the security rows). One past the cap of a
+list of rows or tiles is shown instead: it takes the room a "1 more" row would.
+
+| List (`caps` key) | Where | Shows |
+| --- | --- | --- |
+| `lights` | Home, a room | 6 |
+| `appliances` | the plug tiles of Home and a room | 4 |
+| `covers` | Home, a room | 6 |
+| `gates` | Security, a room | 2 |
+| `thermostats` | Climate, a room | 4 |
+| `fans` | Climate, a room | 2 |
+| `humidity`, `temperatures` | Climate | 3, 4 |
+| `readings` | the temperatures of Home and the wall, a room's readings | 3 |
+| `security` | Home's security rows (the wall's: 6) | 5 |
+| `alarms`, `locks`, `cameras` | Security (the Security dashboard's Cameras view: 12), a room's cameras | 2, 4, 4 |
+| `media` | Media, a room | 6 |
+| `calendars`, `lists`, `timers`, `actions` | Agenda | 3, 3, 3, 6 |
+| `scenes` | Lights (scenes and light automations) | 6 |
+| `batteries`, `phones`, `plants`, `helpers`, `updates` | Sensors | 8, 8, 4, 6, 8 |
+| `consumption` | the energy dashboard's devices (Energy; the Energy dashboard's Devices view: 12) | 8 |
+| `today` | the day's energy readings as stat tiles | 4 |
+| `meters` | the Energy dashboard's power meters | 9 |
+| `devices` | the rest of a room, as rows | 8 |
+
+The openings are never capped: their card folds them itself. Home's appliance bands keep their own two rows (eight
+large, five small) and lead to every appliance.
 
 ## How it reads a home
 
@@ -81,6 +121,7 @@ there; *Recreate* takes them all back to their defaults):
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were) |
+| `caps` | a list's own number or `none` by its key (`caps: { lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default) or *In full* |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
 | `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja` | all | the dashboard's words in that language, whoever opens it |
 
