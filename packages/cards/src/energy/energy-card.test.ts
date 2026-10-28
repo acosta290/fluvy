@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import { clearHistoryCache, type HaFormSchemaItem, type HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import fixtures from '../chart/engine/__fixtures__/classic-1.10.json' with { type: 'json' };
 import { familiesDefined } from '../index.js';
 import { FluvyEnergyCard, type EnergyCardConfig } from './energy-card.js';
+import { getConfigForm, lists } from './energy-editor.js';
 
 // the family is defined as its chunk lands
 await familiesDefined;
@@ -12,8 +13,25 @@ const { TEMP } = fixtures.inputs;
 /** A house's power over the window (W): the fixtures' day, a thousand times over, ending on its reading. */
 const POWER = TEMP.map((v) => Math.round(v * 100));
 
-/** A house whose recorder answers every window with the power, one reading in the middle of each of its 48 slots. */
-const house = (values: readonly number[] = POWER): HomeAssistant =>
+/** A lifetime meter: all it ever counted (12.5 MWh), and what its statistics say it counted each hour today. */
+const METER = {
+  entity_id: 'sensor.meter',
+  state: '12500',
+  attributes: {
+    friendly_name: 'Grid meter',
+    unit_of_measurement: 'kWh',
+    device_class: 'energy',
+    state_class: 'total_increasing',
+  },
+  last_changed: '',
+  last_updated: '',
+};
+
+/**
+ * A house whose recorder answers every window with the power, one reading in the middle of each of its 48 slots, and
+ * the lifetime meter's day as 2.1 + 1.4 kWh; its Energy dashboard's preferences are `prefs` (none: never set up).
+ */
+const house = (values: readonly number[] = POWER, prefs: unknown = null): HomeAssistant =>
   ({
     language: 'en',
     locale: { language: 'en', number_format: 'language', time_format: '24' },
@@ -32,12 +50,24 @@ const house = (values: readonly number[] = POWER): HomeAssistant =>
         last_changed: '',
         last_updated: '',
       },
+      'sensor.meter': METER,
     },
     entities: {},
     devices: {},
     areas: {},
     localize: (key: string) => key,
     callWS: async (message: Record<string, unknown>) => {
+      if (message['type'] === 'energy/get_prefs') {
+        if (!prefs) throw new Error('not set up');
+        return prefs;
+      }
+      if (message['type'] === 'recorder/statistics_during_period')
+        return {
+          'sensor.meter': [
+            { start: Date.parse(String(message['start_time'])), change: 2.1 },
+            { start: Date.parse(String(message['start_time'])) + 3_600_000, change: 1.4 },
+          ],
+        };
       const start = Date.parse(String(message['start_time']));
       const end = Date.parse(String(message['end_time']));
       return {
@@ -58,14 +88,27 @@ const settle = async (card: FluvyEnergyCard): Promise<void> => {
 };
 
 /** A card over a rolling window (six hours: the series spans the card), so its chart is the fixtures' frame. */
-async function mount(config: Partial<EnergyCardConfig>): Promise<FluvyEnergyCard> {
+async function mount(
+  config: Partial<EnergyCardConfig>,
+  hass: HomeAssistant = house(),
+): Promise<FluvyEnergyCard> {
   const card = document.createElement('fluvy-energy-card') as FluvyEnergyCard;
   card.setConfig({ type: 'custom:fluvy-energy-card', entity: 'sensor.power', hours: 6, ...config });
-  card.hass = house();
+  card.hass = hass;
   document.body.append(card);
   await settle(card);
   return card;
 }
+
+/** The tone the card's chart (and its head) wears. */
+const toneOf = (card: FluvyEnergyCard): string | undefined =>
+  /fv-tone--(\w+)/.exec(card.shadowRoot!.querySelector('.ef-chart')?.className ?? '')?.[1];
+
+/** Each readout's words: its value, then its unit. */
+const readouts = (card: FluvyEnergyCard, selector: string): string[] =>
+  [...card.shadowRoot!.querySelectorAll(`${selector} .fv-readout__value`)].map((el) =>
+    [...el.children].map((part) => part.textContent?.trim()).join(' '),
+  );
 
 const ds = (card: FluvyEnergyCard, selector: string): string[] =>
   [...card.shadowRoot!.querySelectorAll(selector)].map((el) => el.getAttribute('d') ?? '');
@@ -116,8 +159,69 @@ describe('the energy card’s line, drawn by the engine', () => {
   });
 });
 
+describe('the energy card’s tone: what its line shows', () => {
+  /** The Energy dashboard's preferences: the sensor as a grid connection's power, an array's, or a device's. */
+  const grid = { energy_sources: [{ type: 'grid', stat_rate: 'sensor.power' }] };
+  const solar = { energy_sources: [{ type: 'solar', stat_rate: 'sensor.power' }] };
+  const device = {
+    energy_sources: [],
+    device_consumption: [
+      { stat_consumption: 'sensor.heat_pump_energy', stat_rate: 'sensor.power' },
+    ],
+  };
+
+  it('is the grid’s for the Energy dashboard’s grid power, the sun’s for its array’s', async () => {
+    expect(toneOf(await mount({}, house(POWER, grid)))).toBe('grid');
+    expect(toneOf(await mount({}, house(POWER, solar)))).toBe('solar');
+  });
+
+  it('is the house’s for an individual device’s power, the accent for a sensor the dashboard does not name', async () => {
+    expect(toneOf(await mount({}, house(POWER, device)))).toBe('house');
+    expect(toneOf(await mount({}))).toBe('accent');
+  });
+
+  it('is the card’s own where it names one: a tone, or a colour (the accent it redefines)', async () => {
+    expect(toneOf(await mount({ tone: 'water' }, house(POWER, grid)))).toBe('water');
+    expect(toneOf(await mount({ color: '#00aa88' }, house(POWER, solar)))).toBe('accent');
+  });
+});
+
+describe('the energy card read the other way round (`invert`)', () => {
+  it('reads a grid meter that is negative while importing as what comes in, its curve above the line', async () => {
+    const negative = POWER.map((v) => -v);
+    const plain = await mount({}, house(POWER));
+    clearHistoryCache(); // the same sensor and window: its history is asked again of the other house
+    const card = await mount({ invert: true }, house(negative));
+    expect(readouts(card, '.ef-top')).toEqual(readouts(plain, '.ef-top'));
+    expect(readouts(card, '.ef-top')[0]).not.toContain('−');
+    expect(ds(card, '.ef-chart .curve-line')).toEqual(ds(plain, '.ef-chart .curve-line'));
+  });
+});
+
+describe('the energy card’s legend over the day (`period: today`)', () => {
+  it('reads a lifetime meter’s change since midnight, not all it ever counted', async () => {
+    const state = await mount({ legend: [{ entity: 'sensor.meter', name: 'Grid' }] });
+    const today = await mount({
+      legend: [{ entity: 'sensor.meter', name: 'Grid', period: 'today' }],
+    });
+    expect(readouts(state, '.ef-cols')).toEqual(['12.5 MWh']);
+    expect(readouts(today, '.ef-cols')).toEqual(['3.5 kWh']);
+  });
+
+  it('says under a total’s period, while it reads its state, that “Since midnight” reads its day', () => {
+    const legend = lists.find((list) => list.key === 'legend')!;
+    const field = { name: 'period' } as HaFormSchemaItem;
+    const hass = house();
+    const helper = (item: Record<string, unknown>): string | undefined =>
+      legend.computeHelper?.(field, (key) => key, item, hass);
+    expect(helper({ entity: 'sensor.meter' })).toMatch(/keeps counting/);
+    expect(helper({ entity: 'sensor.meter', period: 'today' })).toBeUndefined();
+    expect(helper({ entity: 'sensor.power' })).toBeUndefined();
+  });
+});
+
 describe('the energy card’s editor', () => {
-  const section = (FluvyEnergyCard.getConfigForm().schema as HaFormSchemaItem[]).find(
+  const section = (getConfigForm().schema as HaFormSchemaItem[]).find(
     (item) => item.type === 'expandable' && item.schema?.some((field) => field.name === 'chart'),
   ) as HaFormSchemaItem;
   const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>

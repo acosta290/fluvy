@@ -891,6 +891,7 @@
     "editor_badge": "Insignia",
     "editor_motion": "Movimiento",
     "editor_period": "Qué muestra",
+    "editor_period_total": "Un contador que sigue sumando: Desde medianoche muestra solo lo de hoy",
     "editor_show_period": "Chips Día · Semana · Mes",
     "selling": "Vendiendo",
     "on_the_car": "Desde el coche",

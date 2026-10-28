@@ -891,6 +891,7 @@
     "editor_badge": "Badge",
     "editor_motion": "Bewegung",
     "editor_period": "Was es zeigt",
+    "editor_period_total": "Ein Zähler, der immer weiterzählt: Seit Mitternacht zeigt nur den heutigen Teil",
     "editor_show_period": "Chips Tag · Woche · Monat",
     "selling": "Verkauft",
     "on_the_car": "Vom Auto",

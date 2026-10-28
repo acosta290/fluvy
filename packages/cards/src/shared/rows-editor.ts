@@ -42,8 +42,11 @@ export interface RowsListSpec {
   readonly keys?: readonly string[];
   /** Words for the item's own fields; the card's, then the shared item words, name the rest. */
   readonly computeLabel?: FormLabeler;
-  /** What is said under an item's field; the card's, then the shared item helpers, say the rest. */
-  readonly computeHelper?: FormLabeler;
+  /**
+   * What is said under an item's field, told the item and the house (a legend entry's sensor that keeps counting); the
+   * card's, then the shared item helpers, say the rest.
+   */
+  readonly computeHelper?: FormHelper;
   /**
    * A config entry as the editor's item, when the list's grammar is wider than ids and `{ id, … }` objects (a
    * light's quick colours: words, hexes, triplets, named objects); null drops the entry. Without it, a bare id
@@ -431,7 +434,6 @@ export class FluvyRowsEditor extends LitElement {
   private readonly pickers = new WeakMap<RowsListSpec, HaFormSchemaItem[]>();
   /** The words of each list's item forms, and the helpers under them: built once per list, for the same reason. */
   private readonly labelers = new WeakMap<RowsListSpec, Labeler>();
-  private readonly helpers = new WeakMap<RowsListSpec, Labeler>();
   /** The card's form as it stands (the fields that can act, the house's options), kept while it is the same, likewise. */
   private chosen:
     { readonly key: string; readonly schema: readonly HaFormSchemaItem[] } | undefined;
@@ -631,18 +633,16 @@ export class FluvyRowsEditor extends LitElement {
     return labeler;
   }
 
-  /** What is said under an item's field: by its list, else by the card, else by the shared item helpers. */
-  private helper(list: RowsListSpec): Labeler {
-    let helper = this.helpers.get(list);
-    if (!helper) {
-      const own = this.spec?.computeHelper;
-      helper = (schema, localize) =>
-        list.computeHelper?.(schema, localize) ??
-        own?.(schema, localize) ??
-        itemHelpers(schema, localize);
-      this.helpers.set(list, helper);
-    }
-    return helper;
+  /**
+   * What is said under an item's field: by its list (told the item and the house), else by the card, else by the
+   * shared item helpers.
+   */
+  private helper(list: RowsListSpec, item: Item): Labeler {
+    const own = this.spec?.computeHelper;
+    return (schema, localize) =>
+      list.computeHelper?.(schema, localize, item, this.hass) ??
+      own?.(schema, localize) ??
+      itemHelpers(schema, localize);
   }
 
   private renderList(list: RowsListSpec, choices: Choices, key: string): TemplateResult {
@@ -666,7 +666,7 @@ export class FluvyRowsEditor extends LitElement {
                 .data=${worded(item, selectsOf(schema))}
                 .schema=${schema}
                 .computeLabel=${this.labeler(list)}
-                .computeHelper=${this.helper(list)}
+                .computeHelper=${this.helper(list, item)}
                 @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
               ></ha-form>
               <ha-icon-button
