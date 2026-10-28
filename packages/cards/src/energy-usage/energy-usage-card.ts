@@ -148,6 +148,18 @@ const inkOf = (paint: Paint | undefined): string =>
 export type UsageVariant = 'full' | 'compact' | 'mini';
 const VARIANTS: readonly UsageVariant[] = ['full', 'compact', 'mini'];
 const PERIODS: readonly Period[] = ['day', 'week', 'month', 'year'];
+/**
+ * The slots of the card's own span: its grain says them, on the house's clock. Home Assistant's rule (`stepFor`) reads
+ * the span's edges on the browser's clock, so a year from the house's 1 January read as days where the browser's zone
+ * is not the house's (it starts on 31 December there); it stays for a span a date picker hands over, as Home
+ * Assistant reads that one.
+ */
+const STEP: Readonly<Record<Period, 'hour' | 'day' | 'month'>> = {
+  day: 'hour',
+  week: 'day',
+  month: 'day',
+  year: 'month',
+};
 
 export interface EnergyUsageCardConfig
   extends
@@ -609,9 +621,10 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     range: Range,
     buckets: Parameters<typeof slotEnergy>[0],
     before?: { readonly range: Range; readonly buckets: Parameters<typeof slotEnergy>[0] },
+    step?: 'hour' | 'day' | 'month',
   ): Drawn {
     const now = this.now();
-    const grain = stepFor(range, now);
+    const grain = step ?? stepFor(range, now);
     const slots = slotsOf(this.hass, range, grain, now);
     const end = (range.end ?? now).getTime();
     const beforeSlots = before ? slotsOf(this.hass, before.range, grain, now) : [];
@@ -669,8 +682,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     if (key === this.dataKey) return;
     this.dataKey = key;
     void Promise.all([
-      fetchRange(hass, sources, span, [], stepFor(span, now)),
-      before ? fetchRange(hass, sources, before, [], stepFor(span, now)) : undefined,
+      fetchRange(hass, sources, span, [], STEP[this.period()]),
+      before ? fetchRange(hass, sources, before, [], STEP[this.period()]) : undefined,
     ]).then(([data, earlier]) => {
       if (this.dataKey !== key) return;
       this.drawn = data
@@ -678,6 +691,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
             span,
             data.buckets,
             before && earlier ? { range: before, buckets: earlier.buckets } : undefined,
+            STEP[this.period()],
           )
         : null;
       this.requestUpdate();
