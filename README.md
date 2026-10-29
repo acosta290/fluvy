@@ -222,6 +222,8 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 
 [![Open your Home Assistant instance and open a repository inside HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=acosta290&repository=fluvy&category=integration)
 
+[![Sponsor Fluvy on GitHub: keep the robot fed](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/sponsor.svg)](https://github.com/sponsors/acosta290)
+
 Fluvy needs Home Assistant 2026.9 or newer, HACS, and one line most installations already have in
 `configuration.yaml` — the theme is a file in your `themes` folder, and this is how Home Assistant reads it:
 
