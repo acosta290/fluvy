@@ -14,6 +14,7 @@
   <a href="https://github.com/acosta290/fluvy/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/acosta290/fluvy/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml"><img alt="hassfest" src="https://github.com/acosta290/fluvy/actions/workflows/hassfest.yml/badge.svg"></a>
   <a href="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml"><img alt="HACS validation" src="https://github.com/acosta290/fluvy/actions/workflows/hacs.yml/badge.svg"></a>
+  <a href="https://github.com/sponsors/acosta290"><img alt="Sponsor Fluvy" src="https://img.shields.io/badge/sponsor-keep%20the%20robot%20fed-db61a2.svg?logo=githubsponsors&logoColor=white"></a>
 </p>
 
 <p align="center"><b>Try it: <a href="https://acosta290.github.io/fluvy/">acosta290.github.io/fluvy</a></b> — the real cards, pages and settings panel on a simulated home, in your browser.</p>
@@ -293,6 +294,13 @@ is no other runtime dependency, and Fluvy makes no network requests of its own.
 
 Issues and pull requests are welcome. `CONTRIBUTING.md` has the development setup, the conventions, and the
 licensing terms a contribution accepts; `CODE_OF_CONDUCT.md` applies to every space of the project.
+
+## Keep the robot fed
+
+Fluvy is free and stays free: every card, every page, no paid tier. It is made by one person and a very
+hard-working AI that sends a bill every month. If Fluvy saved you an evening of fighting CSS, you can
+[sponsor it](https://github.com/sponsors/acosta290) and chip in for the robot's subscription. It accepts coffee
+too, but it prefers tokens.
 
 ## Licence
 
