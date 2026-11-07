@@ -21,7 +21,7 @@
     "restarts_one": "{n} 次重启",
     "restarts": "{n} 次重启",
     "restart": "Home Assistant 已重启",
-    "burst_other": "{m} 分钟内 {n} 项变更",
+    "burst_other": "{n} 项变更 · {m} 分钟",
     "burst_short_other": "不到一分钟内 {n} 项变更",
     "show_all": "显示全部 {n}",
     "new_one": "新增 {n}",
@@ -553,7 +553,7 @@
     "all": "全部自动化",
     "more": "还有 {count} 条",
     "less": "收起",
-    "on_of": "{count} 个中 {on} 个开启",
+    "on_of": "{on} 台已开启（共 {count} 台）",
     "on_of_short": "{on}/{count} 开启",
     "empty": "无自动化",
     "empty_hint": "点 + 添加日程",
@@ -708,7 +708,7 @@
     "events_one": "1 个事件",
     "no_events": "无事件",
     "left": "还剩 {count} 个",
-    "on_of": "{count} 个中 {on} 个开",
+    "on_of": "{on} 台已开启（共 {count} 台）",
     "on_of_short": "{on}/{count} 已开",
     "devices_one": "1 台设备",
     "devices": "{count} 台设备",
@@ -933,7 +933,7 @@
   "person": {
     "home": "在家",
     "away": "离家",
-    "count": "{total} 人中 {home} 人在家"
+    "count": "{home} 人在家（共 {total} 人）"
   },
   "clock": {
     "week": "第 {week} 周",
@@ -1005,7 +1005,7 @@
     "cancel": "取消"
   },
   "todo": {
-    "left": "{total} 项中剩 {left} 项",
+    "left": "{left} 项待办（共 {total} 项）",
     "add": "添加项目",
     "empty": "没有待办",
     "all_done": "全部完成",
@@ -1757,7 +1757,7 @@
     "not_measured": "未计量",
     "measured": "已计量 {percent} %",
     "share": "{percent} %",
-    "share_of": "占 {name} 的 {percent} %",
+    "share_of": "{percent}% · {name}",
     "rest_of_house": "{percent} % · 住宅其他用电",
     "editor_total": "住宅自己的电表（可选：显示未计量的部分）",
     "editor_parent": "属于（另一行的传感器）",
@@ -2672,8 +2672,8 @@
     "plugged": "已插枪",
     "full_at": "{time} 充满",
     "full_on": "{day} {time} 充满",
-    "limit_at": "{time} 达 {percent} %",
-    "limit_on": "{day} {time} 达 {percent} %",
+    "limit_at": "{percent}% · {time}",
+    "limit_on": "{percent}% · {day} {time}",
     "left": "还剩 {time}",
     "charging_to": "充电至 {percent} %",
     "per_hour": "+{rate}",
