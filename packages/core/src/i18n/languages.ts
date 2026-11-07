@@ -17,6 +17,7 @@ export const LANGUAGE_CODES = [
   'ja',
   'hu',
   'sk',
+  'zh-Hans',
 ] as const;
 
 /** A code as Home Assistant reports `hass.language` for it (`pt-BR`, not `pt_BR`). */
@@ -143,6 +144,13 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     // "dobré ráno" until 9:00 (the early morning only), "dobrý deň" through the day, "dobrý večer" from 18:00 until
     // the morning: "dobrú noc" is a farewell (@elgonnt, #116), so the night says the evening's greeting
     dayParts: { morning: 5, afternoon: 9, night: 18 },
+  },
+  'zh-Hans': {
+    code: 'zh-Hans',
+    name: '简体中文',
+    english: 'Chinese (Simplified)',
+    // "早上好" until noon, "下午好" through the afternoon, "晚上好" from 18:00, "晚安" from 23:00
+    dayParts: { morning: 5, afternoon: 12, evening: 18, night: 23 },
   },
 };
 
