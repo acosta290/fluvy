@@ -5,6 +5,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Polish (`pl`) translation for the Fluvy interface, panel and cards, appliance and dashboard naming words, the demo
+  and Home Assistant integration messages.
+
 ## [1.16.0] — 2026-11-06
 
 ### Visible on upgrade
