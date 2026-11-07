@@ -48,6 +48,7 @@ const LOADERS: Record<Exclude<LanguageCode, 'en'>, () => Promise<{ default: Load
   ja: () => import('./locales/ja.json'),
   hu: () => import('./locales/hu.json'),
   sk: () => import('./locales/sk.json'),
+  'zh-Hans': () => import('./locales/zh-Hans.json'),
 };
 
 /**
@@ -117,7 +118,9 @@ export function ensureLanguage(code: LanguageCode): Promise<void> {
   if (pending) return pending;
   const promise = LOADERS[code]()
     .then((module) => {
-      catalogues[code] = module.default;
+      // A language's chunk ships its catalogue as the module's own tables; a plain JSON import wraps it in
+      // `default`. Read either shape, so the words arrive however the bundler leaves them.
+      catalogues[code] = (module as { default?: Loaded }).default ?? (module as unknown as Loaded);
       for (const listener of listeners) listener();
     })
     .catch((error: unknown) => {
