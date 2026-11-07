@@ -5,6 +5,16 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Simplified Chinese (`zh-Hans`): the whole catalogue (2633 words), the word stems the generated dashboards read,
+  and the integration's own strings; Fluvy offers it in its settings and follows Home Assistant's `zh-Hans`.
+
+### Fixed
+
+- Every language but English loaded as nothing: `ensureLanguage` read `module.default`, but a language's chunk
+  ships its catalogue as the module's own tables, so a page fell back to English however the language was picked.
+
 ## [1.16.0] — 2026-11-06
 
 ### Visible on upgrade
