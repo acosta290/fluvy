@@ -18,6 +18,7 @@ catalogue per language, and a person may choose theirs in the panel's *Preferenc
 | `ja` | Japanese | `packages/core/src/i18n/locales/ja.json` | [@vinjex](https://github.com/vinjex) |
 | `hu` | Hungarian | `packages/core/src/i18n/locales/hu.json` | [@wickdj](https://github.com/wickdj) |
 | `sk` | Slovak | `packages/core/src/i18n/locales/sk.json` | — |
+| `zh-Hans` | Chinese (Simplified) | `packages/core/src/i18n/locales/zh-Hans.json` | [@waphbs](https://github.com/waphbs) |
 
 ## How a language works
 
