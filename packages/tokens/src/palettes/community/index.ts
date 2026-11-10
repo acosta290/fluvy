@@ -19,6 +19,19 @@ export const COMMUNITY_PALETTES: readonly PaletteFile[] = [
   },
   {
     fluvy_palette: 1,
+    name: 'e-ink',
+    title: 'E-ink',
+    author: 'maxhayim',
+    description:
+      'Black ink on paper grey, no colour in the accent: for e-paper panels and walls that should read like a page.',
+    palette: {
+      character: 'soft',
+      base: 'neutral',
+      accent: '#1f1f1f',
+    },
+  },
+  {
+    fluvy_palette: 1,
     name: 'moss',
     title: 'Moss',
     author: 'Fluvy',
