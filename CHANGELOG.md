@@ -5,6 +5,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- E-ink, a community palette: black ink on paper grey with no colour in the accent, for e-paper panels and walls
+  that should read like a page (settings › Appearance › Community).
+
 ## [1.18.0] — 2026-11-09
 
 ### Visible on upgrade
