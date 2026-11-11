@@ -131,8 +131,14 @@ export type RootElement = HTMLElement & {
     editMode?: boolean;
     config?: {
       title?: string;
-      views?: ReadonlyArray<{ subview?: boolean; back_path?: string; title?: string } | undefined>;
+      /** The dashboard's own background, in Home Assistant's key (a view's own is under it). */
+      background?: unknown;
+      views?: ReadonlyArray<
+        { subview?: boolean; back_path?: string; title?: string; background?: unknown } | undefined
+      >;
     };
+    /** The configuration as saved: a strategy's own options (`strategy`) where a strategy builds the dashboard. */
+    rawConfig?: { strategy?: unknown };
   };
   /** The view shown (its index in the configuration), Home Assistant's own state. */
   _curView?: number | string;
@@ -340,11 +346,13 @@ function lendNarrow(root: NarrowRoot): boolean {
  * other (Home Assistant keeps the root from dashboard to dashboard) —; its actions' render is wrapped too, for the one
  * menu. Home Assistant's update runs first and always, ours caught (`patches.ts`); its actions' render always runs,
  * once, lent `narrow` before it only on our mark (`lendNarrow`, caught too). False if Home Assistant reshaped the
- * element: its header then stays its own (the sheet only styles marked roots).
+ * element: its header then stays its own (the sheet only styles marked roots). `paint` puts the page's background on
+ * the root as its view or its dashboard changes (`background.ts`).
  */
 export async function patchViewRoots(
   registry: CustomElementRegistry,
   tabsFor: TabsFor,
+  paint?: (root: RootElement) => void,
 ): Promise<boolean> {
   await registry.whenDefined('hui-root');
   const proto = registry.get('hui-root')?.prototype as RootPrototype | undefined;
@@ -354,6 +362,7 @@ export async function patchViewRoots(
     'viewRoots',
     (root: RootElement) => {
       markRoot(root, marksFor(root, tabsFor));
+      paint?.(root);
       // whether it shows a subview, wherever Fluvy is in use: a wall draws its way back from it
       if (inUse(root.ownerDocument)) markView(root);
       else root.removeAttribute(SUBVIEW_ATTRIBUTE);
@@ -377,10 +386,15 @@ export async function patchViewRoots(
   return done;
 }
 
-/** Re-marks every dashboard header on the page now (the settings or the preview changed). */
-export function markRoots(doc: Document, tabsFor: TabsFor): void {
+/** Re-marks every dashboard header on the page now (the settings or the preview changed), and its background. */
+export function markRoots(
+  doc: Document,
+  tabsFor: TabsFor,
+  paint?: (root: RootElement) => void,
+): void {
   walkShadow(doc, (element) => {
-    if (element.localName === 'hui-root')
-      markRoot(element as RootElement, marksFor(element as RootElement, tabsFor));
+    if (element.localName !== 'hui-root') return;
+    markRoot(element as RootElement, marksFor(element as RootElement, tabsFor));
+    paint?.(element as RootElement);
   });
 }

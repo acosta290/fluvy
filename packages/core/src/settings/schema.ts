@@ -33,6 +33,7 @@ import {
   type SavedSeries,
 } from './charts.js';
 import { parseSliderSettings, SLIDER_DEFAULTS, type SliderSettings } from './sliders.js';
+import { BACKGROUND_DEFAULTS, parseBackground, type PageBackground } from './background.js';
 
 /**
  * fluvy's settings, kept where Home Assistant keeps its own frontend settings: the house's in its system
@@ -51,8 +52,8 @@ export const SETTINGS_KEY = 'fluvy';
  * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
  * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
  * The same release's other fields each read as before where a 3 stored none: whether every card draws its border
- * (`cards.border`, #171), and whether a person's sliders wait for a hold on a touch screen (`holdToSlide`, #166: off,
- * as every slider was).
+ * (`cards.border`, #171), the page's background behind the dashboards (`background`, #155: plain, as every page was),
+ * and whether a person's sliders wait for a hold on a touch screen (`holdToSlide`, #166: off, as every slider was).
  * 3 since 1.11: the house keeps its chart settings and its saved sets of series colours (a 2 is read field by
  * field, each missing field its factory default — `classic` everywhere, so nothing on a dashboard changes). 2 since
  * 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own (it parses field
@@ -74,6 +75,12 @@ export type WallTheme = 'dark' | 'follow' | 'sun' | 'hours';
 export type WallExit = 'button' | 'hold';
 /** The way back from a subview on a wall: a floating button with the view's title, or Home Assistant's header. */
 export type WallSubview = 'button' | 'header';
+/**
+ * What lies behind a wall's cards: the page's colour alone, the wall mesh, or the dashboard's own background (1.19,
+ * #155: the house's, or the wall dashboard's) — the wall's choice wins on a wall, so a wall stays plain until asked.
+ */
+export const WALL_BACKGROUNDS = ['plain', 'wall', 'dashboard'] as const;
+export type WallBackground = (typeof WALL_BACKGROUNDS)[number];
 export const WALL_AFTER = [0, 2, 5, 10, 30] as const;
 export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
 
@@ -128,8 +135,8 @@ export interface WallSettings {
   readonly to: string;
   /** How much the wall darkens at night, in percent of black over it. */
   readonly nightDim: (typeof WALL_NIGHT_DIM)[number];
-  /** The page colour alone, or the wall mesh. */
-  readonly background: 'plain' | 'wall';
+  /** The page colour alone, the wall mesh, or the dashboard's background (the house's or its own, 1.19). */
+  readonly background: WallBackground;
   /** How a person leaves the wall on the device. */
   readonly exit: WallExit;
   /** How a person comes back from a subview (Home Assistant's header is gone on a wall). */
@@ -174,6 +181,8 @@ export interface HouseSettings {
   readonly cards: CardSurface;
   /** How every slider is drawn where a card says nothing of its own (1.18, #144). */
   readonly sliders: SliderSettings;
+  /** What lies behind the cards of every dashboard that wears the look, where it says none of its own (1.19, #155). */
+  readonly background: PageBackground;
 }
 
 /** What each person may choose for themselves. */
@@ -220,6 +229,7 @@ export interface EffectiveSettings {
   readonly chartSets: readonly SavedSeries[];
   readonly cards: CardSurface;
   readonly sliders: SliderSettings;
+  readonly background: PageBackground;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -263,6 +273,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
   // every slider the ruler, as before 1.18, until the house chooses a style
   sliders: SLIDER_DEFAULTS,
+  // every page plain behind its cards, as before 1.19
+  background: BACKGROUND_DEFAULTS,
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -320,9 +332,7 @@ export function parseWall(raw: unknown): WallSettings {
       typeof value['from'] === 'string' && CLOCK_TIME.test(value['from']) ? value['from'] : d.from,
     to: typeof value['to'] === 'string' && CLOCK_TIME.test(value['to']) ? value['to'] : d.to,
     nightDim: oneOfNumbers(value['nightDim'], WALL_NIGHT_DIM) ? value['nightDim'] : d.nightDim,
-    background: oneOf(value['background'], ['plain', 'wall'] as const)
-      ? value['background']
-      : d.background,
+    background: oneOf(value['background'], WALL_BACKGROUNDS) ? value['background'] : d.background,
     exit: oneOf(value['exit'], ['button', 'hold'] as const) ? value['exit'] : d.exit,
     subview: oneOf(value['subview'], ['button', 'header'] as const) ? value['subview'] : d.subview,
   };
@@ -384,6 +394,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     chartSets: parseSavedSeries(value['chartSets']),
     cards: parseCards(value['cards']),
     sliders: parseSliderSettings(value['sliders']),
+    background: parseBackground(value['background']),
   };
 }
 
@@ -443,6 +454,7 @@ export function resolveSettings(
     chartSets: house.chartSets,
     cards: house.cards,
     sliders: house.sliders,
+    background: house.background,
   };
 }
 

@@ -135,6 +135,8 @@ const BUDGETS = {
   quiet: 4096,
   // the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet
   'slider-styles': 4096,
+  // the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet
+  background: 4096,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
   // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,

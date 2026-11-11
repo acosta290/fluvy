@@ -517,6 +517,17 @@ describe('the dashboard templates', () => {
       // what a dashboard leaves out is the house's own, as its weather is: every template offers it, no file carries it
       expect(template.options.some((option) => option.key === 'exclude')).toBe(true);
       expect(strategyOptions({ exclude: ['climate.water_heater'] }, template)).toEqual({});
+      // what lies behind its cards (#155): every template offers its own, parsed whole; anything else is the house's
+      expect(template.options.some((option) => option.key === 'background')).toBe(true);
+      expect(
+        strategyOptions(
+          { background: { type: 'image', image: '/local/a b.jpg', dim: 30, blur: true } },
+          template,
+        ),
+      ).toEqual({
+        background: { type: 'image', colors: ['#dbe5d8'], image: '', dim: 30, blur: true },
+      });
+      expect(strategyOptions({ background: 'gradient' }, template)).toEqual({});
     }
   });
 

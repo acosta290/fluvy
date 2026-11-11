@@ -9,7 +9,7 @@ import {
   type TemplateResult,
 } from 'lit';
 import { HeadFit } from '../energy/head.js';
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, onPageStyles, type CardEditor } from '../shared/base.js';
 import type { AliasSpec } from '../shared/config.js';
 import { counted } from '../shared/counted.js';
 import { idsOf, type EntityEntry } from '../shared/lists.js';
@@ -61,6 +61,7 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,
+    onPageStyles,
     css`
       .hm-section {
         margin-top: 0;

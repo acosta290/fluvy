@@ -35,7 +35,7 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { dateLine } from '../helpers/datetime.js';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, onPageStyles, type CardEditor } from '../shared/base.js';
 
 import { FontsSettled } from '../shared/fonts.js';
 
@@ -115,6 +115,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.home,
+    onPageStyles,
     css`
       /* the sheet stacks the block under a status bar; on a dashboard the view's own gap does the spacing */
       .hm-hello {

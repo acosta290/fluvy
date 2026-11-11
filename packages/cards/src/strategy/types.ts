@@ -3,6 +3,7 @@ import type {
   LanguageCode,
   LovelaceCardConfig,
   MessageKey,
+  PageBackground,
   RoomTuning,
 } from '@fluvy/core';
 import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
@@ -123,6 +124,13 @@ export interface FluvyStrategyConfig {
    * (`sensor.debug_*`), device ids or domains, as a room's `exclude` takes them.
    */
   exclude?: readonly string[];
+  /**
+   * What lies behind this dashboard's cards in place of the house's (1.19, #155): its `type` (`plain`, `gradient`,
+   * `color`, `image`) and that type's own keys — `colors` (one hex, or two from the top to the bottom), `image` (a path
+   * of Home Assistant's or a web address), `dim` (0 to 80, default 40) and `blur` (default off). Default: the house's
+   * (Appearance › Background). The page draws it (`core/look/background.ts`); the views carry nothing of it.
+   */
+  background?: Partial<PageBackground>;
 }
 
 /** The home dashboard's config: the same keys, its views by name. */

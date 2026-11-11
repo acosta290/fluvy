@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BACKGROUND_DEFAULTS,
   CHART_DEFAULTS,
   HOUSE_DEFAULTS,
   isPaletteRef,
@@ -16,6 +17,7 @@ import {
   PERSONAL_DEFAULTS,
   resolveSettings,
   SettingsStore,
+  SETTINGS_VERSION,
   SLIDER_DEFAULTS,
   pageScope,
   WALL_DEFAULTS,
@@ -79,7 +81,7 @@ describe('parsing stored settings', () => {
         extra: true,
       }),
     ).toEqual({
-      version: 4,
+      version: SETTINGS_VERSION,
       palette: 'volt',
       shape: 'round',
       pills: 'crisp',
@@ -106,6 +108,7 @@ describe('parsing stored settings', () => {
       chartSets: [],
       cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
       sliders: SLIDER_DEFAULTS,
+      background: BACKGROUND_DEFAULTS,
     });
   });
 
@@ -114,7 +117,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 3, palette: 'volt' });
     expect(upgraded.sliders).toEqual({ style: 'ruler', words: 'ends' });
     expect(HOUSE_DEFAULTS.sliders).toEqual(SLIDER_DEFAULTS);
-    expect(upgraded.version).toBe(4);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(parseSliderSettings({ style: 'bar', words: 'none' })).toEqual({
       style: 'bar',
       words: 'none',
@@ -187,7 +190,7 @@ describe('parsing stored settings', () => {
       unavailable: 'dashed',
       border: true,
     });
-    expect(upgraded.version).toBe(4);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(parseCards({ opacity: 80, blur: false })).toEqual({
       opacity: 80,
       blur: false,
@@ -212,7 +215,7 @@ describe('parsing stored settings', () => {
     // a 1.15 house stored its surface without it: dashed, as before, read in this version
     const upgraded = parseHouse({ version: 3, cards: { opacity: 80, blur: true } });
     expect(upgraded.cards.unavailable).toBe('dashed');
-    expect(upgraded.version).toBe(4);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(parseCards({ unavailable: 'quiet' }).unavailable).toBe('quiet');
     expect(parseCards({ unavailable: 'dashed' }).unavailable).toBe('dashed');
     // a word it does not know, another case, or not a word: dashed
@@ -276,7 +279,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 2, palette: 'volt', statuses: { warning: '#dc630b' } });
     expect(upgraded.charts).toEqual(CHART_DEFAULTS);
     expect(upgraded.chartSets).toEqual([]);
-    expect(upgraded.version).toBe(4);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(CHART_DEFAULTS).toMatchObject({
       style: 'classic',
       gauge: 'ticks',
@@ -443,6 +446,9 @@ describe('parsing stored settings', () => {
     ).toEqual(WALL_DEFAULTS);
     // a wall saved before the way out could be chosen has the button
     expect(parseWall({ after: 5 }).exit).toBe('button');
+    // the dashboard's background let through (1.19, #155); plain until asked, as before
+    expect(parseWall({ background: 'dashboard' }).background).toBe('dashboard');
+    expect(parseWall({ after: 5 }).background).toBe('plain');
   });
 
   it('keeps the well-formed saved palettes, the first of each name, twelve at most', () => {

@@ -10,7 +10,7 @@ import {
   type LovelaceConfigForm,
 } from '@fluvy/core';
 import { baseStyles, fitPills, pressCover } from '@fluvy/ui';
-import { nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
+import { css, nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 import type { ShowIcon } from '../energy/head.js';
 import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
@@ -26,6 +26,22 @@ export interface HeadConfig {
 
 /** The base card's fields every editor may show; a card names the ones it honours. */
 export type BaseKey = KnownKeys<FluvyCardConfig & HeadConfig>;
+
+/**
+ * What a card that draws no surface wears (a greeting, a heading): its words stand on the page, so they take the ink
+ * the page's background asks for (1.19, #155: the light ink on a deep colour, `--fluvy-page-ink`), else the look's.
+ */
+export const onPageStyles = css`
+  :host {
+    --fv-page-text: var(--fluvy-text);
+    --fv-page-text-secondary: var(--fluvy-text-secondary);
+  }
+  :host > * {
+    --fluvy-text: var(--fluvy-page-ink, var(--fv-page-text));
+    --fluvy-text-secondary: var(--fluvy-page-ink-2, var(--fv-page-text-secondary));
+    color: var(--fluvy-text);
+  }
+`;
 
 /** What a card of one entity honours of the base: the entity, its name and icon, both actions, its tone and colour. */
 export const ENTITY_BASE: readonly BaseKey[] = [

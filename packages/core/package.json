@@ -27,6 +27,7 @@
     "./activity": "./src/activity/index.ts",
     "./history": "./src/history/index.ts",
     "./sources": "./src/sources.ts",
+    "./background": "./src/look/background-layer.ts",
     "./locales/en/*.json": "./src/i18n/locales/en/*.json"
   },
   "scripts": {

@@ -1,6 +1,7 @@
 import {
   parseCards,
   startWall,
+  WALL_BACKGROUNDS,
   WALL_DEFAULTS,
   writeDevice,
   type CardSurface,
@@ -54,7 +55,7 @@ export const cardsFor = (params: URLSearchParams): CardSurface =>
     border: params.get('border') !== '0',
   });
 
-/** The wall's settings a page asks for: `after=` minutes, `bg=wall`, and what the moment needs. */
+/** The wall's settings a page asks for: `after=` minutes, `bg=wall` (or `bg=dashboard`, the page's let through), and what the moment needs. */
 export function wallSettingsFor(
   params: URLSearchParams,
   moment: WallMoment,
@@ -62,7 +63,7 @@ export function wallSettingsFor(
   const after = Number(params.get('after') ?? 10) as WallSettings['after'];
   return {
     after,
-    background: params.get('bg') === 'wall' ? 'wall' : 'plain',
+    background: WALL_BACKGROUNDS.find((kind) => kind === params.get('bg')) ?? 'plain',
     // a pause and a hold in progress are the hold's moments
     exit:
       params.get('exit') === 'hold' || moment === 'corner' || moment === 'paused'

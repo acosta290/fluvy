@@ -15,6 +15,17 @@
   grid-column: span 12;
   min-width: 0;
 }
+/* a frame on a page background (1.19, #155): the layer's rules are the frame's own (main.ts), its picture and dim under
+   its cards, the blur measured by the window as a page's is */
+.pg-frame[fluvy-bg] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.pg-frame[fluvy-bg]::before,
+.pg-frame[fluvy-bg]::after {
+  z-index: -1;
+}
 .pg-frame > [data-cols='6'] {
   grid-column: span 6;
 }

@@ -1,4 +1,4 @@
-import type { HomeAssistant, LovelaceCard, LovelaceGridOptions } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCard, LovelaceGridOptions, PageBackground } from '@fluvy/core';
 import type { PaletteChoice, StatusColours } from '@fluvy/tokens/runtime';
 import type { MockPeriod } from './collection.js';
 import { createHass, type MockHouse, type MockOptions, type StateSeed } from './hass.js';
@@ -92,6 +92,8 @@ export interface FrameOptions {
   readonly wearStatuses?: ((frame: HTMLElement, own: StatusColours) => void) | undefined;
   /** Puts the frame in a palette of its own (`FrameSpec.palette`), in the look the page wears. */
   readonly wearPalette?: ((frame: HTMLElement, own: PaletteChoice) => void) | undefined;
+  /** Stands the frame's cards on a page background (`FrameSpec.background`), in the look and mode the page wears. */
+  readonly wearBackground?: ((frame: HTMLElement, background: PageBackground) => void) | undefined;
 }
 
 /**
@@ -134,6 +136,7 @@ export function mountFrame(
   if (frame.heights) el.dataset['heights'] = frame.heights.join(',');
   if (frame.palette) options.wearPalette?.(el, frame.palette);
   if (frame.statuses) options.wearStatuses?.(el, frame.statuses);
+  if (frame.background) options.wearBackground?.(el, frame.background);
   const total = frame.columns ?? 12;
   if (frame.columns) el.style.gridTemplateColumns = `repeat(${total}, minmax(0, 1fr))`;
   const cards: MountedCard[] = [];

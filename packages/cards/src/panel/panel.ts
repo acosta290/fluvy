@@ -2,6 +2,9 @@
 import './english.js';
 import {
   applyZoom,
+  drawsNothing,
+  type PageBackground,
+  parseBackground,
   type DevicePatch,
   type DeviceSettings,
   type EffectiveSettings,
@@ -27,6 +30,7 @@ import {
   strings,
   writeDevice,
 } from '@fluvy/core';
+import { backgroundStyle, styleText } from '@fluvy/core/background';
 import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { statusesKey } from '@fluvy/tokens/runtime';
 
@@ -76,7 +80,7 @@ import {
   scope,
 } from './sections.js';
 
-import { panelStyles } from './styles.js';
+import { backgroundStyles, panelStyles } from './styles.js';
 import { charts, chartsPreview } from './charts.js';
 import type { SeriesDraft } from './series.js';
 
@@ -157,7 +161,7 @@ export class FluvyPanel extends LitElement {
   };
 
   // the Charts tab's tiles and previews are the chart engine's drawings (its chunk is fetched as the bundle starts)
-  static override styles = [...baseStyles, chartStyles, panelStyles];
+  static override styles = [...baseStyles, chartStyles, panelStyles, ...backgroundStyles];
 
   declare hass?: HomeAssistant;
   declare narrow: boolean;
@@ -696,6 +700,12 @@ export class FluvyPanel extends LitElement {
         const next = { ...(this.houseEdit.charts ?? this.settings.charts), ...patch };
         this.houseEdit = unsaved({ ...this.houseEdit, charts: next }, this.settings);
       },
+      editBackground: (patch) => {
+        if (!this.settings) return;
+        const latest = this.houseEdit.background ?? this.settings.background;
+        const background = parseBackground({ ...latest, ...patch });
+        this.houseEdit = unsaved({ ...this.houseEdit, background }, this.settings);
+      },
       seriesDraft: this.seriesDraft,
       setSeriesDraft: (draft) => {
         this.seriesDraft = draft;
@@ -922,18 +932,20 @@ export class FluvyPanel extends LitElement {
       const previewed = this.previewed();
       if (!previewed) return undefined;
       void this.loadMeters();
+      const strategy = ctx.strategyOf(previewed.urlPath) ?? {};
       return dashboardPreview(
         ctx,
         this.templatePreview(
           previewed.template ?? HOME_TEMPLATE,
-          ctx.strategyOf(previewed.urlPath) ?? {},
+          strategy,
+          this.pageBackground(ctx, strategy),
         ),
         previewed.title,
       );
     }
     if (this.tab === 'wall') {
-      // the wall as it would be now: its background, its night (the dark tokens scoped to the preview, the
-      // cards told the mode) and the veil the night darkens it with
+      // the wall as it would be now: its background (the wall dashboard's where the wall lets it through), its night
+      // (the dark tokens scoped to the preview, the cards told the mode) and the veil the night darkens it with
       const wall = ctx.shown.wall;
       const night = this.wallNight(wall);
       house.setDark(night);
@@ -942,13 +954,21 @@ export class FluvyPanel extends LitElement {
         wall.background === 'wall' ? 'fv-bg--wall' : '',
         night ? 'pn-night' : '',
       ].join(' ');
+      const walls = this.dashboards.find((d) => d.template?.id === 'wall');
+      const page =
+        wall.background === 'dashboard'
+          ? this.pageBackground(ctx, walls ? ctx.strategyOf(walls.urlPath) : undefined)
+          : undefined;
       return wallPreview(
         ctx,
-        html`<div class=${classes}>
-          ${house.clock()}
-          <div class="pn-preview__tiles">${house.tile('living')}${house.tile('kitchen')}</div>
-          ${night && wall.nightDim > 0 ? html`<div class="pn-preview__veil" style="opacity:${wall.nightDim / 100}"></div>` : nothing}
-        </div>`,
+        this.page(
+          classes,
+          page,
+          night,
+          html`${house.clock()}
+            <div class="pn-preview__tiles">${house.tile('living')}${house.tile('kitchen')}</div>
+            ${night && wall.nightDim > 0 ? html`<div class="pn-preview__veil" style="opacity:${wall.nightDim / 100}"></div>` : nothing}`,
+        ),
       );
     }
     house.setDark(undefined);
@@ -956,20 +976,57 @@ export class FluvyPanel extends LitElement {
     if (this.tab === 'charts')
       return chartsPreview(ctx, this.side ? SIDE_COLUMN - CARD_SIDES : this.content || undefined);
     if (this.tab !== 'appearance' && !this.side) return undefined;
-    // see-through cards are judged on what shows through them: a picture stands in for a view's background
-    const glass = ctx.shown.cards.opacity < 100;
+    // see-through cards are judged on what shows through them: the house's background, else a picture stands in for
+    // a view's
+    const background = ctx.shown.background;
+    const glass = ctx.shown.cards.opacity < 100 && drawsNothing(background);
     return appearancePreview(
       ctx,
-      html`<div class="pn-preview ${glass ? 'pn-preview--glass' : ''}">
-        <div class="pn-preview__hello">${house.hello()}</div>
-        <div class="pn-preview__tiles">
-          ${house.tile('living')}${house.tile('kitchen')}
-          <div class="pn-preview__extra">${house.tile('blinds')}</div>
-          <div class="pn-preview__extra">${house.tile('temperature')}</div>
-        </div>
-        ${house.thermostat('compact')}
-      </div>`,
+      this.page(
+        `pn-preview ${glass ? 'pn-preview--glass' : ''}`,
+        background,
+        this.dark,
+        html`<div class="pn-preview__hello">${house.hello()}</div>
+          <div class="pn-preview__tiles">
+            ${house.tile('living')}${house.tile('kitchen')}
+            <div class="pn-preview__extra">${house.tile('blinds')}</div>
+            <div class="pn-preview__extra">${house.tile('temperature')}</div>
+          </div>
+          ${house.thermostat('compact')}`,
+      ),
     );
+  }
+
+  /** What lies behind a dashboard's cards as the tabs show it (#155): its own (edits on top), else the house's. */
+  private pageBackground(
+    ctx: PanelContext,
+    strategy: Readonly<Record<string, unknown>> | undefined,
+  ): PageBackground {
+    const own = strategy?.['background'];
+    return typeof own === 'object' && own !== null ? parseBackground(own) : ctx.shown.background;
+  }
+
+  /**
+   * A preview's page: its cards on the background it wears (#155), as a dashboard's view draws it — its marks and
+   * values on the page, the layer under the cards — in the look being chosen and the mode shown; none drawn, the page
+   * as it was.
+   */
+  private page(
+    classes: string,
+    background: PageBackground | undefined,
+    dark: boolean,
+    content: TemplateResult | HTMLElement,
+  ): TemplateResult {
+    const style =
+      background && this.draft ? backgroundStyle(background, this.draft, dark) : undefined;
+    return html`<div
+      class=${classes}
+      fluvy-bg=${style?.type ?? nothing}
+      ?fluvy-bg-blur=${style?.blur ?? false}
+      style=${style ? styleText(style) : nothing}
+    >
+      ${style ? html`<div class="pn-preview__bg"></div>` : nothing}${content}
+    </div>`;
   }
 
   /** Whether the wall would be dark now, by the settings shown: its own rule, else the app's mode. */
@@ -1016,10 +1073,11 @@ export class FluvyPanel extends LitElement {
     });
   }
 
-  /** A template's cards as its dashboard will draw them, in the options chosen. */
+  /** A template's cards as its dashboard will draw them, in the options chosen, on its background. */
   private templatePreview(
     template: Template,
     strategy: Readonly<Record<string, unknown>>,
+    background: PageBackground,
   ): TemplateResult {
     const house = this.previewHouse();
     const word = (key: string, fallback: string): string =>
@@ -1031,38 +1089,45 @@ export class FluvyPanel extends LitElement {
     const room = word('room_variant', 'tile');
     // what the dashboard asks of its rooms' photos: where the name stands, the readouts' row and labels
     const look = roomLook(strategy, 'room_');
+    const dash = (content: TemplateResult): TemplateResult =>
+      this.page('pn-preview pn-preview--dash', background, this.dark, content);
     switch (template.id) {
       case 'rooms':
-        return html`<div class="pn-preview pn-preview--dash">
-          <div class="pn-preview__tiles">
-            ${house.room('living', room, look)}${house.room('kitchen', room, look)}
-          </div>
-          <div class="pn-preview__side">${house.thermostat(variant)}</div>
-          ${house.tile('living', size, switches)}
-        </div>`;
+        return dash(
+          html`<div class="pn-preview__tiles">
+              ${house.room('living', room, look)}${house.room('kitchen', room, look)}
+            </div>
+            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            ${house.tile('living', size, switches)}`,
+        );
       case 'energy':
-        return html`<div class="pn-preview">${house.energy(flow, this.meters ?? null)}</div>`;
+        return this.page(
+          'pn-preview',
+          background,
+          this.dark,
+          house.energy(flow, this.meters ?? null),
+        );
       case 'security':
-        return html`<div class="pn-preview pn-preview--dash">
-          <div class="pn-preview__tiles">${house.tile('blinds')}${house.lock()}</div>
-          <div class="pn-preview__side">${house.alarm()}</div>
-        </div>`;
+        return dash(
+          html`<div class="pn-preview__tiles">${house.tile('blinds')}${house.lock()}</div>
+            <div class="pn-preview__side">${house.alarm()}</div>`,
+        );
       case 'wall':
-        return html`<div class="pn-preview pn-preview--dash">
-          <div class="pn-preview__tiles">
-            ${house.room('living', 'tile')}${house.room('kitchen', 'tile')}
-          </div>
-          <div class="pn-preview__side">${house.thermostat(variant)}</div>
-          ${house.clock()}
-        </div>`;
+        return dash(
+          html`<div class="pn-preview__tiles">
+              ${house.room('living', 'tile')}${house.room('kitchen', 'tile')}
+            </div>
+            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            ${house.clock()}`,
+        );
       default:
-        return html`<div class="pn-preview pn-preview--dash">
-          <div class="pn-preview__tiles">
-            ${house.tile('living', size, switches)}${house.tile('kitchen', size, switches)}
-          </div>
-          <div class="pn-preview__side">${house.thermostat(variant)}</div>
-          ${house.energy(flow, this.meters ?? null)}
-        </div>`;
+        return dash(
+          html`<div class="pn-preview__tiles">
+              ${house.tile('living', size, switches)}${house.tile('kitchen', size, switches)}
+            </div>
+            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            ${house.energy(flow, this.meters ?? null)}`,
+        );
     }
   }
 

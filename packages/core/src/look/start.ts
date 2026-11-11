@@ -35,6 +35,7 @@ import {
 } from '../shell/index.js';
 import { LookEngine } from './engine.js';
 import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
+import { paintRoot, wallKeepsOwn } from './background.js';
 import { chromeOf, tabsOf } from './css.js';
 import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
 import { watchThemes } from './themed.js';
@@ -44,6 +45,7 @@ import {
   patchViewRoots,
   SIDEBAR_LOGO_ATTRIBUTE,
   SIDEBAR_SEPARATORS_ATTRIBUTE,
+  type RootElement,
   type TabsFor,
 } from './tabs.js';
 import { safeStorage } from '../storage.js';
@@ -166,11 +168,10 @@ export function startLook(): LookHandle | undefined {
       .querySelector('home-assistant')
       ?.toggleAttribute(NO_FRAME, off && themed(env.document));
   };
+  /** The mode the page is in: the wall's, else Home Assistant's, else the system's. */
+  const dark = (): boolean => wall.dark ?? appHass()?.themes?.darkMode ?? prefersDark();
   const apply = (): void => {
-    const changed = engine.apply(
-      current(),
-      wall.dark ?? appHass()?.themes?.darkMode ?? prefersDark(),
-    );
+    const changed = engine.apply(current(), dark());
     if (changed) resyncCardThemes();
     frame();
     // Inter, once Fluvy is in use on the page (the theme on, the look covering the app, a wall, a dashboard that
@@ -188,10 +189,22 @@ export function startLook(): LookHandle | undefined {
       ? { tabs: tabsOf(now.look), chrome: chromeOf(now.look) }
       : null;
   };
-  /** Every mark of the dashboards again: the panels (the cards look again when one moved) and their headers' tabs. */
+  /**
+   * The page's background a dashboard's root wears (`background.ts`): the house's where its dashboard wears the look,
+   * the dashboard's own over it — on a wall the wall's own choice wins (its mesh, plain, or the dashboard's).
+   */
+  const paint = (root: RootElement): void => {
+    const now = current();
+    const worn = !wallKeepsOwn(env.document, now.wall.background) && tabsFor(root.hass?.panelUrl);
+    paintRoot(root, worn ? now.background : undefined, now.look, dark());
+  };
+  /**
+   * Every mark of the dashboards again: the panels (the cards look again when one moved), their headers' tabs and their
+   * backgrounds.
+   */
   const remark = (): void => {
     if (markPanels(env.document, wears)) resyncCardThemes();
-    markRoots(env.document, tabsFor);
+    markRoots(env.document, tabsFor, paint);
   };
   const preferences = (): void => {
     const now = current();
@@ -234,8 +247,9 @@ export function startLook(): LookHandle | undefined {
   // its preview looks again when that mark moves)
   void attachToElementClass('hui-dialog-edit-card', engine.panelSheet, env);
   void patchEditDialog(env.customElements, wears, resyncCardThemes);
-  // the view tabs as the house chose them, in every dashboard's header (re-marked on each of its updates)
-  void patchViewRoots(env.customElements, tabsFor);
+  // the view tabs as the house chose them, in every dashboard's header, and the page's background under its view
+  // (re-marked on each of its updates)
+  void patchViewRoots(env.customElements, tabsFor, paint);
   // a view, a section or a card Home Assistant themed with the theme named Fluvy wears the look over the theme file's
   // colours it wrote on it (the cards inside look again when one is marked)
   const offThemes = watchThemes(env.document, () => engine.themedSheet(), resyncCardThemes);
@@ -303,6 +317,8 @@ export function startLook(): LookHandle | undefined {
       wall = state;
       preferences();
       apply();
+      // a wall draws its own background, or lets the dashboard's through, in the mode it forces
+      remark();
     },
     wearDevice,
     stop: () => {

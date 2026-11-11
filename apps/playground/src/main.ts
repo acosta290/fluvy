@@ -19,7 +19,9 @@ import {
   wornLite,
   type HomeAssistant,
   type Look,
+  type PageBackground,
 } from '@fluvy/core';
+import { backgroundStyle, layerCss, styleText } from '@fluvy/core/background';
 import {
   DEFAULT_PALETTE,
   DEFAULT_PILL,
@@ -394,6 +396,21 @@ function wearPalette(frame: HTMLElement, palette: PaletteChoice): void {
     ),
   );
 }
+/**
+ * A frame on a page background of its own (`FrameSpec.background`, 1.19, #155): the layer's rules on the frame itself,
+ * its marks and values as a dashboard's root carries them, in the look the page wears and its mode.
+ */
+const framesOnBackgrounds = new CSSStyleSheet();
+framesOnBackgrounds.replaceSync(layerCss((mark) => `.pg-frame${mark}`));
+document.adoptedStyleSheets = [...document.adoptedStyleSheets, framesOnBackgrounds];
+function wearBackground(frame: HTMLElement, background: PageBackground): void {
+  const base = look ?? { palette: DEFAULT_PALETTE, shape: DEFAULT_SHAPE, pills: DEFAULT_PILL };
+  const style = backgroundStyle(background, base, dark);
+  if (!style) return;
+  frame.setAttribute('fluvy-bg', style.type);
+  frame.toggleAttribute('fluvy-bg-blur', style.blur);
+  frame.style.cssText += `;${styleText(style)}`;
+}
 const framed = params.get('frames') !== 'none' && !automatic;
 for (const column of columns)
   for (const [name, sheet] of selected)
@@ -402,6 +419,7 @@ for (const column of columns)
         width,
         wearStatuses: (el, own) => wearStatuses(el, own, column),
         wearPalette,
+        wearBackground,
       });
       cards.push(...mounted.cards);
       column.append(mounted.el);

@@ -1,6 +1,12 @@
 import {
   type CardLanguage,
   areaOf,
+  BACKGROUND_DIM_MAX,
+  BACKGROUND_TYPES,
+  type BackgroundType,
+  imageAddress,
+  type PageBackground,
+  parseBackground,
   clock12,
   dayPeriods,
   DEVICE_PERFORMANCES,
@@ -90,6 +96,7 @@ import {
 import {
   ACCENTS,
   accentFor,
+  backgroundWord,
   closeStatuses,
   DEFAULT_CUSTOM,
   HIGHLIGHTS,
@@ -767,6 +774,163 @@ function cornerCard(ctx: PanelContext): TemplateResult {
   </section>`;
 }
 
+/** A background's glyph, on its tile and on its card's head. */
+const BACKGROUND_GLYPH: Readonly<Record<BackgroundType, string>> = {
+  plain: 'shapeSoft',
+  gradient: 'gradient',
+  color: 'palette',
+  image: 'image',
+};
+
+/** Where a gradient of two colours starts its second (a deeper sage under the first's): the person picks their own. */
+const SECOND_COLOR: Hex = '#a9c2a4';
+
+/** The dim's figures under its ruler. */
+const DIM_MARKS = [0, 20, 40, 60, 80] as const;
+
+/**
+ * A background to choose (1.19, #155): its four kinds as tiles, as the sliders' are — plain, the palette's gradient, a
+ * colour, a picture — and under them only the chosen kind's own rows: the colour's field, the switch to a second one
+ * (a gradient from the first, at the top) and its field; the picture's address (its words turn to the warning while it
+ * is not one Fluvy draws, and nothing is kept), its dim on a ruler (0 to 80 %) and its blur. `edit` lays a change
+ * on the latest background (two before a render never lose the first), parsed as the settings are; null: shown to
+ * someone who may not change it.
+ */
+function backgroundChoice(
+  ctx: PanelContext,
+  background: PageBackground,
+  edit: ((patch: Partial<PageBackground>) => void) | null,
+): TemplateResult {
+  const width = ctx.fit?.width ?? 0;
+  // a parsed background holds one colour at least
+  const [first, second] = background.colors as readonly [Hex, Hex?];
+  const dim = (event: CustomEvent<RulerChangeDetail>): void => edit?.({ dim: event.detail.value });
+  const rows =
+    background.type === 'color'
+      ? html`<p class="fv-label pn-label">${ctx.t('background.color')}</p>
+          ${hexField(
+            first,
+            ctx,
+            edit && ((color) => edit({ colors: second ? [color, second] : [color] })),
+            ctx.t('background.color'),
+          )}
+          <div class="pn-rows">
+            ${listRow({
+              icon: 'gradient',
+              title: ctx.t('background.two'),
+              sub: ctx.t('background.two_sub'),
+              trailing: 'switch',
+              on: second !== undefined,
+              readonly: !edit,
+              onToggle: (on) => edit?.({ colors: on ? [first, SECOND_COLOR] : [first] }),
+            })}
+          </div>
+          ${
+            second
+              ? html`<p class="fv-label pn-label">${ctx.t('background.second')}</p>
+                  ${hexField(
+                    second,
+                    ctx,
+                    edit && ((color) => edit({ colors: [first, color] })),
+                    ctx.t('background.second'),
+                  )}`
+              : nothing
+          }`
+      : background.type === 'image'
+        ? html`<p class="fv-label pn-label">${ctx.t('background.picture')}</p>
+            <label class="fv-field pn-picture"
+              ><input
+                class="fv-field__input"
+                type="text"
+                inputmode="url"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="/local/backgrounds/garden.jpg"
+                aria-label=${ctx.t('background.picture')}
+                ?readonly=${!edit}
+                .value=${background.image}
+                @input=${(event: Event) => {
+                  const input = event.target as HTMLInputElement;
+                  input.setCustomValidity(
+                    input.value.trim() && !imageAddress(input.value)
+                      ? ctx.t('background.refused')
+                      : '',
+                  );
+                }}
+                @change=${(event: Event) => {
+                  const text = (event.target as HTMLInputElement).value;
+                  const address = imageAddress(text);
+                  if (address !== undefined || !text.trim()) edit?.({ image: address ?? '' });
+                }}
+            /></label>
+            <div class="pn-rows">
+              ${listRow({
+                icon: 'sun',
+                title: ctx.t('background.dim'),
+                sub: ctx.t('background.dim_sub'),
+                trailing: 'value',
+                value: ctx.t('wall.percent', { count: background.dim }),
+              })}
+            </div>
+            ${
+              width
+                ? html`<fluvy-ruler
+                      class="pn-ruler"
+                      .value=${background.dim}
+                      .min=${0}
+                      .max=${BACKGROUND_DIM_MAX}
+                      .step=${5}
+                      .length=${width}
+                      tone="accent"
+                      .minor=${5 / BACKGROUND_DIM_MAX}
+                      .major=${20 / BACKGROUND_DIM_MAX}
+                      unit="%"
+                      .label=${ctx.t('background.dim')}
+                      ?readonly=${!edit}
+                      @fluvy-input=${dim}
+                      @fluvy-change=${dim}
+                    ></fluvy-ruler>
+                    ${rulerLabels(DIM_MARKS.map((mark) => [mark / BACKGROUND_DIM_MAX, String(mark)]))}`
+                : nothing
+            }
+            <div class="pn-rows">
+              ${listRow({
+                icon: 'eye',
+                title: ctx.t('background.blur'),
+                sub: ctx.t('background.blur_sub'),
+                trailing: 'switch',
+                on: background.blur,
+                readonly: !edit,
+                onToggle: (on) => edit?.({ blur: on }),
+              })}
+            </div>`
+        : nothing;
+  return html`${options(
+    BACKGROUND_TYPES.map((type) => ({
+      key: type,
+      glyph: BACKGROUND_GLYPH[type],
+      label: ctx.t('wall.background'),
+      value: backgroundWord(ctx, type),
+      active: background.type === type,
+    })),
+    edit && ((key) => edit({ type: key as BackgroundType })),
+    gap(ctx),
+  )}
+  ${rows}`;
+}
+
+/**
+ * The page behind the cards of every dashboard that wears the look (1.19, #155), where a dashboard says none of its
+ * own: plain, as before, until chosen. The house's, an administrator's to set; shown on the preview while it is chosen.
+ */
+function backgroundCard(ctx: PanelContext): TemplateResult {
+  const { shown, admin } = ctx;
+  return html`<section class="fv-card pn-card">
+    ${head({ icon: BACKGROUND_GLYPH[shown.background.type], title: ctx.t('wall.background'), sub: ctx.t(admin ? 'background.sub' : 'scope.admin_only') })}
+    ${backgroundChoice(ctx, shown.background, admin ? ctx.editBackground : null)}
+  </section>`;
+}
+
 /** The opacity ruler's figures under it, as a light's brightness has them. */
 const OPACITY_MARKS = [0, 25, 50, 75, 100] as const;
 
@@ -1145,8 +1309,8 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
         gap(ctx),
       )}
     </section>
-    ${tabsCard(ctx)} ${cornerCard(ctx)} ${separatorsCard(ctx)} ${cardsCard(ctx)} ${slidersCard(ctx)}
-    ${lightsCard(ctx)} ${statusesCard(ctx)}
+    ${tabsCard(ctx)} ${cornerCard(ctx)} ${separatorsCard(ctx)} ${backgroundCard(ctx)}
+    ${cardsCard(ctx)} ${slidersCard(ctx)} ${lightsCard(ctx)} ${statusesCard(ctx)}
     ${
       settings.personalLook
         ? html`<section class="fv-card pn-card pn-rows">
@@ -1454,6 +1618,31 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
     ></ha-selector>`;
 }
 
+/**
+ * What lies behind a dashboard's cards (`background`, #155): the house's (the default, which writes nothing) or its
+ * own — the same four kinds and their rows, starting from the house's, each change on its latest.
+ */
+function backgroundOwn(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
+  const own = typeof current === 'object' && current !== null && !Array.isArray(current);
+  const set = (background: PageBackground | undefined): void =>
+    ctx.editStrategy(urlPath, { background });
+  const edit = (patch: Partial<PageBackground>): void =>
+    set(parseBackground({ ...parseBackground(ctx.strategyOf(urlPath)?.['background']), ...patch }));
+  return html`${choice(
+    ctx,
+    [
+      { key: 'house', label: ctx.t('dashboard.background_house'), active: !own },
+      { key: 'own', label: ctx.t('dashboard.background_own'), active: own },
+    ],
+    ctx.admin
+      ? (key) => {
+          if ((key === 'own') !== own) set(key === 'own' ? ctx.shown.background : undefined);
+        }
+      : null,
+  )}
+  ${own ? backgroundChoice(ctx, parseBackground(current), ctx.admin ? edit : null) : nothing}`;
+}
+
 export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
@@ -1526,7 +1715,9 @@ function dashboardOptions(
               ? capsChoice(ctx, dashboard.urlPath, strategy['caps'])
               : option.kind === 'entities'
                 ? entitiesChoice(ctx, dashboard.urlPath, strategy['exclude'])
-                : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
+                : option.kind === 'background'
+                  ? backgroundOwn(ctx, dashboard.urlPath, strategy['background'])
+                  : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
         }`;
     })}
     ${
@@ -1859,6 +2050,7 @@ export function wall(ctx: PanelContext): TemplateResult {
         [
           chip(ctx.t('wall.plain'), 'plain', settings.background === 'plain'),
           chip(ctx.t('wall.mesh'), 'wall', settings.background === 'wall'),
+          chip(ctx.t('wall.as_dashboard'), 'dashboard', settings.background === 'dashboard'),
         ],
         admin ? (key) => edit({ background: key as WallSettings['background'] }) : null,
       )}

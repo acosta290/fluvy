@@ -5,11 +5,11 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 
 | Tab | What it holds | Whose |
 | --- | --- | --- |
-| **Appearance** | palette (fifteen presets, the house's saved palettes, the community's, or a custom accent — shared as a file), shape (soft, round, crisp), button style, the dashboards' tabs (Fluvy, pills, original or hidden; names, icons or both; the dashboard's name), the sidebar and header (Home Assistant's logo, dividers, the header on the page), lines in the sidebar after the items chosen; the cards (how opaque, and the blur behind a see-through one), the sliders (the style every slider is drawn in), the lights, where a card says nothing, and the status colours (see below); a live preview on real cards (its little house answers a tap itself: nothing at home changes) | the house; a person may keep their own palette and shape |
+| **Appearance** | palette (fifteen presets, the house's saved palettes, the community's, or a custom accent — shared as a file), shape (soft, round, crisp), button style, the dashboards' tabs (Fluvy, pills, original or hidden; names, icons or both; the dashboard's name), the sidebar and header (Home Assistant's logo, dividers, the header on the page), lines in the sidebar after the items chosen; the page behind the cards (plain, the palette's gradient, a colour or two, a picture — see [Background](#background)); the cards (how opaque, and the blur behind a see-through one), the sliders (the style every slider is drawn in), the lights, where a card says nothing, and the status colours (see below); a live preview on real cards (its little house answers a tap itself: nothing at home changes) | the house; a person may keep their own palette and shape |
 | **Charts** | the style every chart is drawn in and the gauge every gauge reads in, each a tile the chart engine draws; what the style lets the house tune; motion; how much of the past every chart shows and how far apart a line's points stand; the series colours (the palette's six, or a set of the house's own, made and checked here); a preview of a chart, its bars and a gauge in both modes side by side — see [Charts](#charts) | the house |
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page | the house |
-| **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
-| **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
+| **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options (its background among them: the house's, or its own), its sidebar entry, recreate it | the house |
+| **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background (plain, the wall mesh, or the dashboard's own: the house's page background or the wall dashboard's); the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
 | **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
 
 ## House and person
@@ -19,6 +19,36 @@ on every device they sign in on: a palette, a shape and tabs of their own, or th
 slide; haptics. The look a person sees is the house's, with their own choices on top. A **device setting** belongs to
 one browser alone — whether it is a wall panel, the size it reads at, and how hard it works (Lite) — and never follows
 a person.
+
+## Background
+
+What lies behind the cards of every dashboard that wears the look (1.19, Discussion #155; `background` in the house's
+data). From the factory it is **Plain**, the page's own colour, as every page was: nothing changes on upgrade. Four
+tiles choose the kind, and under them only that kind's rows:
+
+| Kind | Rows | What the page draws |
+| --- | --- | --- |
+| **Plain** | — | the page's colour, as before |
+| **Gradient** | — | the palette's own gradient: three soft stains in the page's hue over its colour (the wall mesh's family), in either mode |
+| **Colour** | *Colour* (a hex, or the system's picker); *Two colours* on: *Second colour* | the colour, or a gradient from the first at the top to the second; in dark mode a pale colour is taken to the dark page's lightness (its hue kept), a deep one stays as it is |
+| **Image** | *Picture*: a path of Home Assistant's (`/local/backgrounds/garden.jpg`, a file in `config/www/backgrounds/`) or a web address; *Dim*, 0 to 80 % in 5 % steps (40 by default), on a ruler; *Blur* (off by default) | the picture covering the view, held still while the page scrolls, taken towards the page's colour by its dim (towards light in light mode, towards dark in dark mode) so the words on the page read, and out of focus where asked |
+
+The words that stand on the page — the greeting, a section's heading, the header when it is on the page's colour — take
+the light ink on a deep colour, as a filled tile's do; the cards keep their own. A picture's address is checked before it
+reaches the page: a path that starts with one `/`, or an `http` or `https` address, with no spaces, quotes, parentheses,
+backslashes, semicolons, braces or angle brackets (a file name with a space is written `%20`); `data:` and every other
+scheme are refused. One it cannot draw turns the field's words to the warning, and nothing is kept.
+
+The header on the page's colour (Appearance › Corner) lets the background through, frosted (a colour's header is the
+colour itself); a header as a bar stays a bar. The background holds under the tabs, beside the sidebar and inside the
+floating frame, in a subview and in the edit mode, and it never moves while the page scrolls: it is one layer of its
+own, painted once. A view or a dashboard with a background of its own in Home Assistant's settings keeps it. On a wall
+the wall's own choice wins (Wall › Background): plain or the mesh, unless it is *As the dashboard*. Fluvy's own pages
+(Activity, History, this panel) and Home Assistant's own pages stay plain.
+
+An automatic dashboard may have its own (Dashboards › its card › *Background*: *As the house*, or *Its own* with the same
+four kinds), saved in its strategy as `background` ([the dashboard's options](automatic-dashboard.md)). The house's and
+each dashboard's travel in the settings file, and in Home Assistant's backups with the rest of the house's settings.
 
 ## Cards
 
@@ -51,8 +81,9 @@ its dashes, the only line that draws its shape on the page's fill; the quiet loo
 without a border.
 
 What shows through is the view's background: Home Assistant's *Background* in a view's settings (a picture, its size,
-alignment and opacity), else the theme's `lovelace-background`, else the page's colour. Fluvy never paints over it; on a
-wall the view's own background shows, and the wall's (the mesh, or the plain page) where the view has none.
+alignment and opacity), else the page's background chosen above (the dashboard's own, else the house's), else the
+theme's `lovelace-background`, else the page's colour. Fluvy never paints over a view's own; on a wall the view's own
+background shows, and the wall's (the mesh, the plain page, or the dashboard's) where the view has none.
 
 Blur costs a tablet's graphics: on an older wall panel that scrolls slowly, turn it off (the cards stay see-through),
 or set that tablet alone to [Lite](#lite).

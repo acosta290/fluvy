@@ -145,6 +145,7 @@ there; *Recreate* takes them all back to their defaults):
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were) |
+| `background` | `type`: `plain`, `gradient`, `color` or `image`, and that type's own keys: `colors` (one hex, or two from the top to the bottom), `image` (a path of Home Assistant's such as `/local/backgrounds/garden.jpg`, or a web address), `dim` (0 to 80 in steps of 5, default 40), `blur` (default `false`) | all | what lies behind this dashboard's cards in place of the house's (default: the house's, the panel's *Appearance › Background*; below); `type: plain` keeps this dashboard plain whatever the house chooses |
 | `caps` | a list's own number or `none` by its key (`caps: { lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default) or *In full* |
 | `rooms` | by area id, a room's `include` and `exclude`, as the room card takes them: entity ids, patterns of ids, device ids or domains (`rooms: { kitchen: { exclude: [switch.dishwasher_*] } }`); and that room's own `name_position`, `readout_style` and `readout_labels`, over the dashboard's (`rooms: { kitchen: { name_position: top } }`) | home, rooms, wall | what that room's card counts and fills by, whether the room is shown, and what its page holds, and how its photo is drawn; in the raw configuration only (the settings file never carries a house's entities) |
 | `exclude` | a list of entity ids, patterns of ids, device ids or domains, as a room's `exclude` takes them (`exclude: [climate.water_heater, sensor.inverter_mppt_*]`) | all | what no view shows nor counts, as if the house had none of it (below); the panel offers it in Home Assistant's entity picker, and the settings file never carries it |
@@ -155,6 +156,26 @@ Without `language`, the dashboard's words follow the language of whoever opens i
 chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or
 *cocina* is a light's room in any of them. The settings file *Preferences* exports (its last card, *Fluvy*) carries every dashboard's options
 under `dashboards`, by url path; a file from Fluvy 1.2 (one `dashboard` key) still lands on the home dashboard.
+
+## A background of its own
+
+The house chooses what lies behind the cards of every dashboard in the panel's *Appearance › Background* (plain until
+chosen; [the settings panel](settings-panel.md#background)). A dashboard may have its own instead: its card in the
+*Dashboards* tab offers *As the house* or *Its own*, with the same four kinds, and saves it in its strategy:
+
+```yaml
+strategy:
+  type: custom:fluvy-home
+  background:
+    type: image
+    image: /local/backgrounds/dunes.jpg   # a file in config/www/backgrounds/
+    dim: 40                               # how far towards the page's colour, so the greeting reads
+    blur: false
+```
+
+`type: color` takes `colors: ['#1d4ed8', '#60a5fa']` (one, or two from the top to the bottom), `type: gradient` the
+palette's own; an address the check refuses (white space, a quote, a parenthesis, a scheme other than `http` or
+`https`) draws nothing. A view with a background of its own in Home Assistant's settings keeps it.
 
 ## Leaving entities out
 

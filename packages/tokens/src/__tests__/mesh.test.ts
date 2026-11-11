@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { derivePalettes } from '../build/palettes.js';
-import { meshOf } from '../build/mesh.js';
+import { meshOf, onDarkPage } from '../build/mesh.js';
 import { deltaE, fromHex, isHex } from '../color/index.js';
 
 /** The approved Linen renders (design-lab/backgrounds): Paper, Charcoal and Wall. */
@@ -39,5 +39,14 @@ describe('the mesh', () => {
   it('keeps a grey page grey', () => {
     const { mesh, wall } = meshOf('#f2f2f2', 'light');
     for (const hex of [...mesh, ...wall]) expect(fromHex(hex).c).toBeLessThan(0.002);
+  });
+
+  it('takes a pale colour of a person’s own to the dark mesh’s lightness, its hue kept (the design’s sage, #155)', () => {
+    const page = linen.dark.surface.page;
+    expect(deltaE(onDarkPage('#dbe5d8', page), '#151c16')).toBeLessThan(2);
+    const sky = fromHex(onDarkPage('#60a5fa', page));
+    expect(sky.l).toBeCloseTo(fromHex(meshOf(page, 'dark').mesh[1]).l, 2);
+    expect(Math.abs(sky.h - fromHex('#60a5fa').h)).toBeLessThan(2);
+    expect(isHex(onDarkPage('#ffffff', page))).toBe(true);
   });
 });

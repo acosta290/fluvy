@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import {
+  BACKGROUND_DEFAULTS,
   paletteOf,
   readDevice,
   SettingsStore,
@@ -1147,6 +1148,146 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house choose the page behind every dashboard’s cards: plain until chosen, the chosen kind’s rows alone (1.19, #155)', async () => {
+    const { panel, root, row, button, handle, settle } = await mount();
+    (panel as unknown as { content: number }).content = 400;
+    await settle();
+    const card = () =>
+      [...root.querySelectorAll<HTMLElement>('.pn-card')].find(
+        (c) => c.querySelector('.fv-card__title')?.textContent?.trim() === 'Background',
+      )!;
+    const tile = (value: string) =>
+      [...card().querySelectorAll<HTMLElement>('.fv-option')].find(
+        (t) => t.querySelector('.fv-option__value')?.textContent?.trim() === value,
+      );
+    const typed = async (input: HTMLInputElement, text: string) => {
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+      await settle();
+    };
+    // plain, by default: nothing changes on upgrade; the card stands just above the cards' surface
+    expect(['Plain', 'Gradient', 'Colour', 'Image'].map((v) => !!tile(v))).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(tile('Plain')?.classList.contains('is-active')).toBe(true);
+    const titles = [...root.querySelectorAll('.pn-card .fv-card__title')].map((t) =>
+      t.textContent?.trim(),
+    );
+    expect(titles.indexOf('Background')).toBe(titles.indexOf('Cards') - 1);
+    expect(card().querySelector('fluvy-ruler, .fv-field')).toBeNull();
+    expect(root.querySelector('.pn-preview[fluvy-bg]')).toBeNull();
+    // a picture: its address, its dim on a ruler at 40 %, its blur off; no address yet, the preview stays plain
+    tile('Image')!.click();
+    await settle();
+    const field = card().querySelector<HTMLInputElement>('.pn-picture input')!;
+    expect(row('Dim')?.querySelector('.fv-row__value')?.textContent?.trim()).toBe('40 %');
+    expect(row('Blur')?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('false');
+    expect(root.querySelector('.pn-preview[fluvy-bg]')).toBeNull();
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Background · Image');
+    // an address it cannot draw: the field says so while it is typed, and nothing is kept
+    await typed(field, '/local/a (copy).jpg');
+    expect(field.validationMessage).not.toBe('');
+    expect(root.querySelector('.pn-preview[fluvy-bg]')).toBeNull();
+    // one it draws: the preview's page wears it
+    await typed(field, ' /local/backgrounds/dunes.jpg ');
+    expect(field.validationMessage).toBe('');
+    const preview = () => root.querySelector<HTMLElement>('.pn-preview[fluvy-bg]')!;
+    expect(preview().getAttribute('fluvy-bg')).toBe('image');
+    expect(preview().style.getPropertyValue('--fluvy-bg-image')).toBe(
+      'url("/local/backgrounds/dunes.jpg")',
+    );
+    expect(preview().querySelector('.pn-preview__bg')).not.toBeNull();
+    card()
+      .querySelector('fluvy-ruler')!
+      .dispatchEvent(new CustomEvent('fluvy-change', { detail: { value: 60 } }));
+    row('Blur')?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(preview().hasAttribute('fluvy-bg-blur')).toBe(true);
+    expect(preview().style.getPropertyValue('--fluvy-bg-dim')).toBe('60%');
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().background).toEqual({
+      type: 'image',
+      colors: ['#dbe5d8'],
+      image: '/local/backgrounds/dunes.jpg',
+      dim: 60,
+      blur: true,
+    });
+    // a colour, then two: the second's field only once asked for; a deep one gives the greeting the light ink
+    tile('Colour')!.click();
+    await settle();
+    expect(card().querySelectorAll('.pn-hex').length).toBe(1);
+    expect(card().querySelector('.pn-picture')).toBeNull();
+    row('Two colours')?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(card().querySelectorAll('.pn-hex').length).toBe(2);
+    await typed(card().querySelector<HTMLInputElement>('.pn-hex__input')!, '#1D4ED8');
+    expect(preview().getAttribute('fluvy-bg')).toBe('color');
+    expect(preview().style.getPropertyValue('--fluvy-bg-1')).toBe('#1d4ed8');
+    expect(preview().style.getPropertyValue('--fluvy-bg-2')).toBe('#a9c2a4');
+    expect(preview().style.getPropertyValue('--fluvy-page-ink')).toBe('#ffffff');
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    const theirs = [...guest.root.querySelectorAll<HTMLElement>('.pn-card')].find(
+      (c) => c.querySelector('.fv-card__title')?.textContent?.trim() === 'Background',
+    )!;
+    expect(theirs.querySelector('button.fv-option')).toBeNull();
+    guest.panel.remove();
+  });
+
+  it('gives each automatic dashboard the house’s background or its own, saved in its strategy (1.19, #155)', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    const { panel, root, chip, button, settle } = await mount(true, {
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? { strategy: { type: 'custom:fluvy-home' } }
+          : { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    (panel as unknown as { content: number }).content = 400;
+    await settle();
+    const tile = (value: string) =>
+      [...root.querySelectorAll<HTMLElement>('.fv-option')].find(
+        (t) => t.querySelector('.fv-option__value')?.textContent?.trim() === value,
+      );
+    // as the house, by default: its strategy says nothing of it, and no tile is offered
+    expect(chip('As the house')?.classList.contains('is-active')).toBe(true);
+    expect(tile('Gradient')).toBeUndefined();
+    chip('Its own')!.click();
+    await settle();
+    tile('Gradient')!.click();
+    await settle();
+    expect(root.querySelector('.pn-preview[fluvy-bg="gradient"]')).not.toBeNull();
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Fluvy auto · Background',
+    );
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)).toEqual({
+      type: 'lovelace/config/save',
+      url_path: 'fluvy-auto',
+      config: {
+        strategy: {
+          type: 'custom:fluvy-home',
+          background: { type: 'gradient', colors: ['#dbe5d8'], image: '', dim: 40, blur: false },
+        },
+      },
+    });
+    panel.remove();
+  });
+
   it('lets the house draw a card out of reach as when off, dashed until chosen (#126)', async () => {
     const { panel, root, button, handle, previews, settle } = await mount();
     const card = [...root.querySelectorAll<HTMLElement>('.pn-card')].find(
@@ -1909,10 +2050,12 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border and a person’s hold to slide (1.19)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
+    // a dashboard's own background (#155), every field off its default
+    const own = { type: 'color', colors: ['#1d4ed8', '#60a5fa'], image: '', dim: 40, blur: false };
     // and the tiles' switches, hidden (#160)
     const strategy = {
       type: 'custom:fluvy-home',
@@ -1920,7 +2063,16 @@ describe('the settings panel', () => {
       tile_switch: 'hide',
       hide: ['media'],
       caps,
+      background: own,
     };
+    // the house's: a picture, dimmed and blurred off their defaults
+    const background = {
+      type: 'image',
+      colors: ['#dbe5d8'],
+      image: 'https://example.com/garden.jpg',
+      dim: 65,
+      blur: true,
+    } as const;
     const { panel, handle, settle } = await mount(true, {
       callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
         if (message.type === 'lovelace/config/save') saved.push(message as never);
@@ -1980,6 +2132,7 @@ describe('the settings panel', () => {
       // cards' border (1.19)
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
+      background,
     });
     // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
     await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
@@ -2006,6 +2159,7 @@ describe('the settings panel', () => {
       chartSets: [sea, garden],
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
+      background,
     });
     expect(exported['personal']).toMatchObject({
       version: 4,
@@ -2014,7 +2168,13 @@ describe('the settings panel', () => {
       holdToSlide: true,
     });
     expect(exported['dashboards']).toEqual({
-      'fluvy-auto': { thermostat_variant: 'ruler', tile_switch: 'hide', hide: ['media'], caps },
+      'fluvy-auto': {
+        thermostat_variant: 'ruler',
+        tile_switch: 'hide',
+        hide: ['media'],
+        caps,
+        background: own,
+      },
     });
     // another house, reset; the file brings it all back
     await handle.store.saveHouse({
@@ -2027,6 +2187,7 @@ describe('the settings panel', () => {
       chartSets: [],
       cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
       sliders: { style: 'ruler', words: 'ends' },
+      background: BACKGROUND_DEFAULTS,
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
@@ -2054,6 +2215,7 @@ describe('the settings panel', () => {
       border: false,
     });
     expect(handle.settings().sliders).toEqual({ style: 'bar', words: 'none' });
+    expect(handle.settings().background).toEqual(background);
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',
@@ -2061,6 +2223,7 @@ describe('the settings panel', () => {
         tile_switch: 'hide',
         hide: ['media'],
         caps,
+        background: own,
       },
     });
     // a 1.18 file says our icons with one switch: both places take it

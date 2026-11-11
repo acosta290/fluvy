@@ -1,4 +1,4 @@
-import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCardConfig, PageBackground } from '@fluvy/core';
 import type { PaletteChoice, StatusColours } from '@fluvy/tokens/runtime';
 import type { MockHouse, MockOptions, StateSeed } from './hass.js';
 import type { WsTable } from './ws.js';
@@ -23,6 +23,11 @@ export interface FrameSpec {
    * it (a CSS background: a gradient, a picture).
    */
   readonly backdrop?: string;
+  /**
+   * The page's background its cards stand on (1.19, #155): drawn by the layer's own rules (`@fluvy/core/background`), as
+   * a dashboard's view draws it, in the page's look and mode.
+   */
+  readonly background?: PageBackground;
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   /**

@@ -34,6 +34,18 @@ import {
   WALL_BACK_ATTRIBUTE,
   WALL_HEADER_ATTRIBUTE,
 } from '../../../packages/core/src/look/attributes.js';
+import { paintRoot, wallKeepsOwn } from '../../../packages/core/src/look/background.js';
+import type { Look } from '../../../packages/core/src/look/css.js';
+import type { RootElement } from '../../../packages/core/src/look/tabs.js';
+import {
+  parseBackground,
+  type PageBackground,
+} from '../../../packages/core/src/settings/background.js';
+import {
+  WALL_BACKGROUNDS,
+  type WallBackground,
+} from '../../../packages/core/src/settings/schema.js';
+import { isPaletteName, type PaletteName } from '@fluvy/tokens/runtime';
 
 /*
  * A dashboard's frame outside Home Assistant, `?dashboard=<sheet>`: `hui-root` with its header and view tabs as Home
@@ -60,6 +72,11 @@ import {
  *                 (the floating way back is the default); the root's `_goBack` closes the subview (`__wentBack`)
  *   &background=  the view's own background, as a view's `background:` names it (a CSS background: a colour, a
  *                 gradient, a picture), drawn by `hui-view-background` under the view as Home Assistant draws it
+ *   &page=        the house's page background (1.19, #155), drawn by the bundle's layer on the root as the look puts
+ *                 it on (`look/background.ts`): gradient | color (&pagecolors=1d4ed8,60a5fa) | image
+ *                 (&pageimage=/backgrounds/dunes.svg, the design's picture by default; &pagedim=40 &pageblur=1);
+ *                 &own={"type":"color","colors":["#1d4ed8"]} the dashboard's own in its strategy; on a wall
+ *                 (&wall=1) the wall's own wins unless &bg=dashboard lets the dashboard's through
  */
 
 interface View {
@@ -106,7 +123,24 @@ export interface DashboardOptions {
   readonly title: string;
   /** The view's own background (`background:` as a string), none unsaid: the theme's, else the page's. */
   readonly background: string | undefined;
+  /** The house's page background (#155), and the dashboard's own in its strategy (as written, parsed by the look). */
+  readonly page: PageBackground;
+  readonly own: unknown;
+  /** What the wall lets behind its cards, where the page is one (`&bg=`). */
+  readonly wallBackground: WallBackground;
+  /** The look the page wears and its mode: what the background's colours are drawn in. */
+  readonly look: Look;
+  readonly dark: boolean;
 }
+
+/** A JSON parameter, nothing where it is not one. */
+const json = (text: string | null): unknown => {
+  try {
+    return text === null ? undefined : (JSON.parse(text) as unknown);
+  } catch {
+    return undefined;
+  }
+};
 
 /** The dashboard a page asks for. */
 export function dashboardOptions(params: URLSearchParams): DashboardOptions {
@@ -159,6 +193,23 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
     subview: params.get('subview') === '1',
     title: params.get('title') ?? 'Home',
     background: params.get('background') ?? undefined,
+    page: parseBackground({
+      type: params.get('page'),
+      colors: (params.get('pagecolors') ?? '').split(',').map((hex) => `#${hex}`),
+      image: params.get('pageimage') ?? '/backgrounds/dunes.svg',
+      dim: params.has('pagedim') ? Number(params.get('pagedim')) : undefined,
+      blur: params.get('pageblur') === '1',
+    }),
+    own: json(params.get('own')),
+    wallBackground: WALL_BACKGROUNDS.find((kind) => kind === params.get('bg')) ?? 'plain',
+    look: {
+      palette: isPaletteName(params.get('palette'))
+        ? (params.get('palette') as PaletteName)
+        : 'linen',
+      shape: 'soft',
+      pills: 'round',
+    },
+    dark: params.get('mode') === 'dark',
   };
 }
 
@@ -412,6 +463,7 @@ class MockRoot extends LitElement {
   lovelace!: {
     editMode: boolean;
     config: { title?: string; views?: ReadonlyArray<{ title: string; subview?: boolean }> };
+    rawConfig?: { strategy?: unknown };
   };
 
   /** The view shown, as Home Assistant's root keeps it (its index in the configuration). */
@@ -991,10 +1043,11 @@ class MockApp extends LitElement {
       }
       home-assistant-main {
         display: flex;
-        /* the app bar beside the drawer, as home-assistant-main sets it */
-        --ha-top-app-bar-width: calc(
-          100% - (var(--mock-sidebar-width, 256px) + var(--safe-area-inset-left, 0px))
+        /* the sidebar's width and the app bar beside the drawer, as home-assistant-main sets them */
+        --ha-sidebar-width: calc(
+          var(--mock-sidebar-width, 256px) + var(--safe-area-inset-left, 0px)
         );
+        --ha-top-app-bar-width: calc(100% - var(--ha-sidebar-width));
       }
       ::slotted(hui-root) {
         flex: 1 1 auto;
@@ -1034,7 +1087,12 @@ export function mountDashboard(
   // the house's choices on <html>, as the look puts them (the shell's sidebar sheets fill on them)
   document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, options.chrome.logo);
   document.documentElement.toggleAttribute(FLAT_ATTRIBUTE, !options.chrome.dividers);
-  void patchViewRoots(customElements, tabsFor);
+  /** The page's background as the look puts it on a root (`look/start.ts`): the house's where it wears the look. */
+  const paint = (element: RootElement): void => {
+    const worn = !wallKeepsOwn(document, options.wallBackground) && tabsFor(undefined);
+    paintRoot(element, worn ? options.page : undefined, options.look, options.dark);
+  };
+  void patchViewRoots(customElements, tabsFor, paint);
   // the device's size, as the bundle starts it (the shell's sheet is in the root's styles above)
   startZoom();
   const root = document.createElement('hui-root') as MockRoot;
@@ -1047,6 +1105,13 @@ export function mountDashboard(
   root.lovelace = {
     editMode: options.edit,
     config: { views: options.views.map((v) => ({ title: v.title, subview: v.subview === true })) },
+    // the strategy as the dashboard saved it: its own background, where the page names one
+    rawConfig: {
+      strategy: {
+        type: 'custom:fluvy-home',
+        ...(options.own === undefined ? {} : { background: options.own }),
+      },
+    },
   };
   // a wall's sheets for `hui-root`, filled as the shell fills them on <html>'s marks
   const wallSheet = new CSSStyleSheet();
@@ -1062,7 +1127,11 @@ export function mountDashboard(
         : '',
     );
   };
-  new MutationObserver(syncWall).observe(document.documentElement, { attributes: true });
+  // the wall coming or going: its sheets, and the background the wall keeps or lets through
+  new MutationObserver(() => {
+    syncWall();
+    paint(root as unknown as RootElement);
+  }).observe(document.documentElement, { attributes: true });
   void root.updateComplete.then(() => {
     const shadow = root.shadowRoot as ShadowRoot;
     shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, wallSheet];

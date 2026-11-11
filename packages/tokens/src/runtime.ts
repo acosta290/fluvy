@@ -74,7 +74,7 @@ export {
   parsePaletteFile,
   type PaletteFile,
 } from './palettes/file.js';
-export { meshOf, type Mesh } from './build/mesh.js';
+export { meshOf, onDarkPage, type Mesh } from './build/mesh.js';
 export { contrastRatio } from './color/contrast.js';
 export { deltaE } from './color/delta-e.js';
 export { GATES } from './build/derive/limits.js';

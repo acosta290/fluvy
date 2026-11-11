@@ -1,5 +1,7 @@
 import {
   ICON_PLACES,
+  type BackgroundType,
+  type PageBackground,
   LANGUAGES,
   localize,
   lookKey,
@@ -73,13 +75,28 @@ export const SLIDER_WORD: Readonly<Record<SliderStyle, MessageKey>> = {
   fill: 'option.tile_fill',
 };
 
-/** The house's settings the tabs edit (an administrator's to save); `wall`, `charts`, `cards` and `sliders` always whole. */
+/** A page background's word (#155): plain as the wall says it, the gradient as a chart's fill does. */
+export const backgroundWord = (
+  ctx: Pick<PanelContext, 't' | 'hass'>,
+  type: BackgroundType,
+): string =>
+  type === 'plain'
+    ? ctx.t('wall.plain')
+    : type === 'gradient'
+      ? localize(ctx.hass, 'option.gradient')
+      : ctx.t(`background.${type}`);
+
+/**
+ * The house's settings the tabs edit (an administrator's to save); `wall`, `charts`, `cards`, `sliders` and
+ * `background` always whole.
+ */
 export type HouseEdit = Partial<
   Pick<
     EffectiveSettings,
     | 'cards'
     | 'charts'
     | 'sliders'
+    | 'background'
     | 'scope'
     | 'dashboards'
     | 'frame'
@@ -155,6 +172,8 @@ export interface PanelContext {
   editWall(patch: Partial<WallSettings>): void;
   /** A chart setting, on the latest of the house's chart settings, as the wall's are edited. */
   editCharts(patch: Partial<ChartSettings>): void;
+  /** The house's page background (#155), on the latest of it, parsed as the settings are. */
+  editBackground(patch: Partial<PageBackground>): void;
   /** The set of series colours being made or changed (the Charts tab's editor), when one is open. */
   readonly seriesDraft: SeriesDraft | undefined;
   setSeriesDraft(draft: SeriesDraft | undefined): void;
@@ -466,6 +485,18 @@ export function changeLines(ctx: PanelContext): string[] {
       lines.push(
         `${t('sliders.title')} · ${t('sliders.words')} · ${localize(ctx.hass, `option.${words}`)}`,
       );
+  }
+  if (house.background) {
+    const before = ctx.settings.background;
+    const { type, colors, image, dim, blur } = house.background;
+    const title = t('wall.background');
+    if (type !== before.type) lines.push(`${title} · ${backgroundWord(ctx, type)}`);
+    if (colors.join() !== before.colors.join())
+      lines.push(`${title} · ${t('background.color')} · ${colors.join(' → ')}`);
+    if (image !== before.image) lines.push(`${title} · ${t('background.picture')}`);
+    if (dim !== before.dim)
+      lines.push(`${title} · ${t('background.dim')} · ${t('wall.percent', { count: dim })}`);
+    if (blur !== before.blur) lines.push(`${title} · ${t('background.blur')} · ${onOff(blur)}`);
   }
   if (house.lightTint)
     lines.push(

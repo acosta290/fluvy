@@ -65,3 +65,14 @@ export function meshOf(page: Hex, mode: PaletteMode): Mesh {
     ? { mesh: stops(DARK), wall: stops(WALL_DARK) }
     : { mesh: stops(LIGHT), wall: stops(WALL_LIGHT) };
 }
+
+/**
+ * A pale colour of a person's own as a dark page wears it (1.19, #155): as light as the dark mesh's middle stop (the
+ * page a step lighter), its hue and as much of its chroma as that lightness holds — the sage the design drew,
+ * `#dbe5d8`, is `#151c16` on Linen's dark page. A deep colour needs none of it: it reads in either mode as it is.
+ */
+export function onDarkPage(colour: Hex, page: Hex): Hex {
+  const { c, h } = fromHex(colour);
+  const l = clamp(fromHex(page).l + (DARK[1] as Offset)[0], 0, 1);
+  return toHex({ l, c: Math.min(c, maxChroma(l, h)), h });
+}

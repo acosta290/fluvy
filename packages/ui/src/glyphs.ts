@@ -171,6 +171,12 @@ const GLYPHS = {
   shapeSoft: '<rect x="4" y="4" width="16" height="16" rx="4.5"/>',
   shapeRound: '<rect x="4" y="4" width="16" height="16" rx="6"/>',
   shapeCrisp: '<rect x="4" y="4" width="16" height="16" rx="1.5"/>',
+  /** the page's background as a gradient: the soft square crossed by three bands (1.19, #155) */
+  gradient:
+    '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M4.6 12.4 12.4 4.6"/><path d="M6.4 18.9 18.9 6.4"/><path d="M12.9 19.4l6.5-6.5"/>',
+  /** the page's background as a picture: its frame, the sun and the hills (1.19, #155) */
+  image:
+    '<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="8.6" cy="10" r="1.6"/><path d="m4 16.5 4.6-4 3.4 3 3-2.6 5 4.4"/>',
   pillRound: '<rect x="3" y="7" width="18" height="10" rx="5"/>',
   pillSoft: '<rect x="3" y="7" width="18" height="10" rx="3"/>',
   pillCrisp: '<rect x="3" y="7" width="18" height="10" rx="1.5"/>',

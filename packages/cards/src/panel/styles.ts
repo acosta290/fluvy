@@ -1,4 +1,5 @@
-import { css } from 'lit';
+import { layerCss } from '@fluvy/core/background';
+import { css, unsafeCSS } from 'lit';
 
 /**
  * The panel's layout on top of the cards' language (`baseStyles`): one centred column of cards (760 at most,
@@ -1302,3 +1303,25 @@ export const panelStyles = css`
     }
   }
 `;
+
+/**
+ * A preview's page on the background chosen (1.19, #155): the layer under its cards (out of the grid, under every
+ * card), drawn by the rules a dashboard's view is drawn by (`@fluvy/core/background`); the marks are the preview's own.
+ */
+export const backgroundStyles = [
+  css`
+    .pn-preview[fluvy-bg] {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    .pn-preview__bg {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      border-radius: inherit;
+    }
+  `,
+  unsafeCSS(layerCss((mark) => `.pn-preview${mark} > .pn-preview__bg`)),
+];
