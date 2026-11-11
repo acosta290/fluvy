@@ -78,6 +78,8 @@
     "editor.app": "Platform",
     "editor.source": "Source of the player",
     "editor.key": "Key",
+    "editor.activity": "Android TV link",
+    "editor.activity_helper": "What Android TV Remote opens the app by: a deep link such as netflix:// (the reliable way) or an application ID",
     "editor.commands": "Commands of this device",
     "editor.commands_helper": "A key and the command the device takes for it, over the table’s (back: KEY_RETURN)"
   }

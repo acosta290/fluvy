@@ -71,7 +71,8 @@ const entry = (entity: string, platform: string, area = 'rm_living') =>
  * that reports no level, as the stepper, with the receiver off and out of reach; the apps as circles from the
  * player's sources, in their colours, as chips, as the person's own list; the groups reordered, the channel and the
  * custom keys; the television off (every key alive, then power alone) and out of reach; an Apple TV, a Roku and an LG
- * webOS television, each with its integration's keys.
+ * webOS television, each with its integration's keys; a remote of Android TV Remote's alone, its running app read by
+ * its package and its apps opened by their deep links.
  */
 export const sheet: SheetSpec = {
   states: [
@@ -161,6 +162,12 @@ export const sheet: SheetSpec = {
       },
     ],
     ['remote.rm_roku', 'on', { friendly_name: 'Roku' }],
+    // an Android TV Remote's remote as the integration draws it: the app running by its package, no activity listed
+    [
+      'remote.rm_study',
+      'on',
+      { friendly_name: 'Study TV', current_activity: 'com.disney.disneyplus', activity_list: [] },
+    ],
     // an LG webOS television: no remote entity, its buttons on the player itself
     [
       'media_player.rm_lg',
@@ -191,6 +198,7 @@ export const sheet: SheetSpec = {
       entry('remote.rm_appletv', 'apple_tv'),
       entry('media_player.rm_roku', 'roku'),
       entry('remote.rm_roku', 'roku'),
+      entry('remote.rm_study', 'androidtv_remote', 'rm_bedroom'),
       entry('media_player.rm_lg', 'webostv'),
     ]),
   },
@@ -390,6 +398,25 @@ export const sheet: SheetSpec = {
             { app: 'disneyplus', image: OWN_PICTURE },
             // a picture that will not load, with no request for the demo to count: the platform's own mark again
             { app: 'primevideo', image: 'data:image/png;base64,AAAA' },
+          ],
+        },
+      ],
+    },
+    // the apps a player does not list, opened on Android TV Remote by their deep links (1.18.1)
+    {
+      title: 'Apps · Android TV Remote',
+      cards: [
+        {
+          type: REMOTE,
+          remote: 'remote.rm_study',
+          groups: ['apps'],
+          apps: [
+            { app: 'netflix' },
+            { app: 'youtube' },
+            { app: 'disneyplus' },
+            { app: 'primevideo' },
+            { app: 'appletv' },
+            { app: 'dazn' },
           ],
         },
       ],

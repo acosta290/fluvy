@@ -5,8 +5,10 @@
  * the remote as its integration takes it (`remote.send_command` DPAD_CENTER on an Android TV, `webostv.button` ENTER
  * on an LG), the power round to the player's own service (`media_player.turn_on` on a television that is off), the
  * mute to the receiver the volume is routed to (`media_player.volume_mute`), an app to the player's source
- * (`media_player.select_source`); a grid's OK is its middle cell; out of reach nothing answers; the apps' logos land
- * from their chunk. Real cards on the playground's simulated hass. Exit code 1 on any failure.
+ * (`media_player.select_source`), one the player does not list to an Android TV Remote's remote by its deep link
+ * (`remote.turn_on`), the app running read by its package; a grid's OK is its middle cell; out of reach nothing
+ * answers; the apps' logos land from their chunk. Real cards on the playground's simulated hass. Exit code 1 on any
+ * failure.
  *   PLAYGROUND=http://127.0.0.1:5193/ node interactions-remote.mjs
  */
 import { calls, frame, reset, settle, startSuite } from './lib/suite.mjs';
@@ -98,6 +100,25 @@ const services = async () =>
     'an app of the row opens its source on the player',
     c.length === 1 && c[0].s === 'media_player.select_source' && typeof c[0].d.source === 'string',
     JSON.stringify(c),
+  );
+  await reset(page);
+  const study = card('Apps · Android TV Remote');
+  await study.locator('.rm-app__circle').first().click();
+  await settle(page, 300);
+  c = await calls(page);
+  check(
+    'an app no player lists opens on Android TV Remote by its deep link',
+    c.length === 1 &&
+      c[0].s === 'remote.turn_on' &&
+      c[0].d.activity === 'netflix://' &&
+      c[0].t?.entity_id === 'remote.rm_study',
+    JSON.stringify(c),
+  );
+  const running = await study.locator('.rm-app.is-active .rm-app__name').allTextContents();
+  check(
+    'the app the remote runs is read by its package',
+    running.join() === 'Disney+',
+    running.join(),
   );
   await reset(page);
   await card('Full · grid').locator('.rm-okcell').click();

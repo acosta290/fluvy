@@ -2907,6 +2907,8 @@
     "editor.app": "平台",
     "editor.source": "播放器的输入源",
     "editor.key": "按键",
+    "editor.activity": "Android TV 链接",
+    "editor.activity_helper": "Android TV Remote 打开该应用的方式:netflix:// 这样的深层链接（可靠的方式）或应用 ID",
     "editor.commands": "此设备的命令",
     "editor.commands_helper": "按键及设备为其接受的命令，优先于表格（back: KEY_RETURN）"
   }

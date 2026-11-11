@@ -2963,6 +2963,8 @@
     "editor.app": "Platforma",
     "editor.source": "Zdroj prehrávača",
     "editor.key": "Tlačidlo",
+    "editor.activity": "Odkaz Android TV",
+    "editor.activity_helper": "Čím Android TV Remote otvorí aplikáciu: priamy odkaz ako netflix:// (spoľahlivý spôsob) alebo ID aplikácie",
     "editor.commands": "Príkazy tohto zariadenia",
     "editor.commands_helper": "Tlačidlo a príkaz, ktorý zaň zariadenie prijíma, nad tabuľkou (back: KEY_RETURN)"
   }

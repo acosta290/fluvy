@@ -32,7 +32,14 @@ import { iconOf } from '../shared/domain.js';
 import { drawnAs } from '../shared/heights.js';
 import { changedAt } from '../shared/since.js';
 import { buttonService, commandFor, isKey, KEY_GLYPHS, type Key } from './keys.js';
-import { appPlatform, appTitle, platformOf, shortTitle, type Platform } from './platforms.js';
+import {
+  appActivity,
+  appPlatform,
+  appTitle,
+  platformOf,
+  shortTitle,
+  type Platform,
+} from './platforms.js';
 
 const s = strings('remote');
 
@@ -63,6 +70,11 @@ export interface RemoteApp {
   color?: string;
   source?: string;
   key?: string;
+  /**
+   * What Android TV Remote opens the app by (`remote.turn_on`'s `activity`), over its platform's: a deep link
+   * (`netflix://`) or an application id.
+   */
+  activity?: string;
   tap_action?: ActionConfig;
 }
 
@@ -1196,9 +1208,15 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
   private appItems(p: EntityView): readonly AppItem[] {
     const sources = this.sources(p, false);
     const current = this.usable() ? textAttr(p, 'app_name') || textAttr(p, 'source') : '';
-    const currentPlatform = platformOf(current);
-    const integration = this.integration();
     const r = this.remoteView();
+    // the platform running: by the package the device reports (Android TV Remote's `app_id` on its player,
+    // `current_activity` on its remote), else by the app's name or the source
+    const currentPlatform = this.usable()
+      ? [textAttr(p, 'app_id'), r ? textAttr(r, 'current_activity') : '', current]
+          .map(platformOf)
+          .find(Boolean)
+      : undefined;
+    const integration = this.integration();
     const item = (
       id: string,
       name: string,
@@ -1207,14 +1225,17 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     ): AppItem => {
       const source = own.source ?? sources.find((candidate) => pf && platformOf(candidate) === pf);
       const key = isKey(own.key) ? own.key : undefined;
+      // an app the player does not list opens on Android TV Remote by its deep link where it has one: a package goes
+      // through the Play Store, which no longer opens many apps
+      const activity = appActivity(own, pf);
       const run = own.tap_action
         ? () => this.tap(p.id, own.tap_action)
         : key
           ? () => this.press(key)
           : source
             ? () => this.call('media_player', 'select_source', { source }, p.id)
-            : pf?.android && r && (integration === 'androidtv_remote' || integration === undefined)
-              ? () => this.call('remote', 'turn_on', { activity: pf.android }, r.id)
+            : activity && r && (integration === 'androidtv_remote' || integration === undefined)
+              ? () => this.call('remote', 'turn_on', { activity }, r.id)
               : undefined;
       return {
         id,

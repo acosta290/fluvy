@@ -3,8 +3,8 @@ import type { GlyphName } from '@fluvy/ui';
 /**
  * The remote's keys (1.18, #143) and what each integration takes for them, read from Home Assistant core's sources
  * (`homeassistant/components/<integration>/remote.py`, dev, 2026-11) and the libraries they call (androidtvremote2,
- * pyatv, rokuecp, aiowebostv, samsungtvws, python-androidtv), none tried on a device: Fluvy has no television to try
- * them on, and the table is the reader's to correct (`commands` in the config overrides a key).
+ * pyatv, rokuecp, aiowebostv, samsungtvws, python-androidtv); Android TV Remote's arrows and OK since tried on a
+ * television, the rest on none: the table is the reader's to correct (`commands` in the config overrides a key).
  */
 export const KEYS = [
   'power',
@@ -92,7 +92,7 @@ type Commands = Readonly<Partial<Record<Key, string>>>;
 
 /**
  * Android TV Remote: `remote.send_command` with an Android key code's name without its `KEYCODE_` (androidtvremote2);
- * an app is launched with `remote.turn_on` and its package as the `activity`.
+ * an app is launched with `remote.turn_on` and its deep link, else its package, as the `activity` (`appActivity`).
  */
 const ANDROID_TV_REMOTE: Commands = {
   power: 'POWER',

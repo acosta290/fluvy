@@ -2907,6 +2907,8 @@
     "editor.app": "プラットフォーム",
     "editor.source": "プレーヤーの入力",
     "editor.key": "キー",
+    "editor.activity": "Android TV リンク",
+    "editor.activity_helper": "Android TV Remote がアプリを開く手段:netflix:// のようなディープリンク（確実な方法）またはアプリ ID",
     "editor.commands": "このデバイスのコマンド",
     "editor.commands_helper": "キーと、そのキーでデバイスが受け付けるコマンド。表より優先（back: KEY_RETURN）"
   }

@@ -2907,6 +2907,8 @@
     "editor.app": "Platform",
     "editor.source": "Bron van de speler",
     "editor.key": "Toets",
+    "editor.activity": "Android TV-link",
+    "editor.activity_helper": "Waarmee Android TV Remote de app opent: een deeplink zoals netflix:// (de betrouwbare manier) of een app-ID",
     "editor.commands": "Commando’s van dit apparaat",
     "editor.commands_helper": "Een toets en het commando dat het apparaat ervoor neemt, boven de tabel (back: KEY_RETURN)"
   }

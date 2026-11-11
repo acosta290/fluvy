@@ -2907,6 +2907,8 @@
     "editor.app": "Plateforme",
     "editor.source": "Source du lecteur",
     "editor.key": "Touche",
+    "editor.activity": "Lien Android TV",
+    "editor.activity_helper": "Ce par quoi Android TV Remote ouvre l’app : un lien profond comme netflix:// (la voie fiable) ou un ID d’application",
     "editor.commands": "Commandes de cet appareil",
     "editor.commands_helper": "Une touche et la commande que l’appareil accepte pour elle, par-dessus la table (back: KEY_RETURN)"
   }

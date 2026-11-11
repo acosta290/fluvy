@@ -77,6 +77,18 @@ const platformField = (): HaFormSchemaItem => ({
 /** The logos' chunk, so the apps' rows draw their marks. */
 const logos = (): Promise<unknown> => import('../app-logos/paths.js');
 
+/** An app's fields; its `activity` goes to the card's remote, and is asked for only where the card names one. */
+const APP_FIELDS: readonly HaFormSchemaItem[] = [
+  platformField(),
+  fieldRow(textField('name'), iconField()),
+  textField('image'),
+  accentField('color', { item: 'own' }),
+  fieldRow(textField('source'), choiceField('key', keyChoices())),
+  textField('activity'),
+  actionField('tap_action'),
+];
+const APP_FIELDS_NO_REMOTE = APP_FIELDS.filter((field) => field.name !== 'activity');
+
 export const base = HEAD_BASE;
 
 export const keys = configKeys<RemoteCardConfig>()([
@@ -124,15 +136,9 @@ export const lists: readonly RowsListSpec[] = [
     helper: 'remote.editor.apps_helper',
     idKey: 'app',
     picker: platformField(),
-    schema: [
-      platformField(),
-      fieldRow(textField('name'), iconField()),
-      textField('image'),
-      accentField('color', { item: 'own' }),
-      fieldRow(textField('source'), choiceField('key', keyChoices())),
-      actionField('tap_action'),
-    ],
-    keys: ['app', 'name', 'icon', 'image', 'color', 'source', 'key', 'tap_action'],
+    schema: APP_FIELDS,
+    schemaOf: (_item, card) => (card?.['remote'] ? APP_FIELDS : APP_FIELDS_NO_REMOTE),
+    keys: ['app', 'name', 'icon', 'image', 'color', 'source', 'key', 'activity', 'tap_action'],
     when: draws('apps'),
     rowIcon: (item) => {
       const own = item['icon'];
@@ -258,6 +264,7 @@ export function getConfigForm(): LovelaceConfigForm {
       image: 'editor.image',
       source: 'editor.source',
       key: 'editor.key',
+      activity: 'editor.activity',
     }),
     computeHelper: (schema) => {
       const helpers: Partial<Record<string, Parameters<typeof s>[1]>> = {
@@ -268,6 +275,7 @@ export function getConfigForm(): LovelaceConfigForm {
         volume: 'editor.volume_helper',
         commands: 'editor.commands_helper',
         image: 'editor.image_helper',
+        activity: 'editor.activity_helper',
       };
       const key = helpers[schema.name];
       return key ? s(editorLanguage(), key) : undefined;

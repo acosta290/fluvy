@@ -2907,6 +2907,8 @@
     "editor.app": "Platform",
     "editor.source": "A lejátszó forrása",
     "editor.key": "Gomb",
+    "editor.activity": "Android TV-hivatkozás",
+    "editor.activity_helper": "Amivel az Android TV Remote megnyitja az alkalmazást: mélyhivatkozás, például netflix:// (a megbízható mód), vagy alkalmazásazonosító",
     "editor.commands": "Az eszköz parancsai",
     "editor.commands_helper": "Egy gomb és a parancs, amit az eszköz érte elfogad, a táblázat felett (back: KEY_RETURN)"
   }

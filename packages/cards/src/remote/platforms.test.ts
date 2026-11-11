@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MONOGRAMS, normalise, platform, PLATFORMS, platformOf } from './platforms.js';
+import { appActivity, MONOGRAMS, normalise, platform, PLATFORMS, platformOf } from './platforms.js';
 
 describe('the platforms the remote knows by name (#143)', () => {
   it('matches a player’s source whatever its case and spacing', () => {
@@ -41,5 +41,39 @@ describe('the platforms the remote knows by name (#143)', () => {
       expect(platform(id), id).toBeDefined();
       expect(platform(id)?.hex, id).toBe('');
     }
+  });
+
+  it('opens on Android TV by the deep links Home Assistant’s page gives, where the Play Store no longer opens a package', () => {
+    const links = Object.fromEntries(PLATFORMS.filter((p) => p.link).map((p) => [p.id, p.link]));
+    expect(links).toMatchObject({
+      youtube: 'https://www.youtube.com',
+      netflix: 'netflix://',
+      primevideo: 'https://app.primevideo.com',
+      disneyplus: 'https://www.disneyplus.com',
+      plex: 'plex://',
+      twitch: 'twitch://home',
+    });
+    for (const p of PLATFORMS) {
+      // a link carries a scheme, as androidtvremote2 reads one (else it is sent as market://launch?id=…), and is one
+      // word; a package carries none, and is matched to what the TV says is running
+      if (p.link) expect(p.link, p.id).toMatch(/^[a-z][a-z0-9+.-]*:\/\/\S*$/);
+      if (p.link)
+        expect(p.android, `${p.id}: a link beside the package the TV reports`).toBeDefined();
+      if (p.android) expect(p.android, p.id).toMatch(/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i);
+    }
+  });
+
+  it('an app opens by the person’s own activity, else its platform’s link, else its package', () => {
+    expect(appActivity({}, platform('netflix'))).toBe('netflix://');
+    expect(appActivity({}, platform('kodi'))).toBe('org.xbmc.kodi');
+    expect(appActivity({ activity: 'netflix://title/80057281' }, platform('netflix'))).toBe(
+      'netflix://title/80057281',
+    );
+    expect(appActivity({ activity: 'com.example.app' }, undefined)).toBe('com.example.app');
+    // a word with a space, or anything but a word, is no activity
+    expect(appActivity({ activity: 'plex:// home' }, platform('plex'))).toBe('plex://');
+    expect(appActivity({ activity: 42 }, platform('plex'))).toBe('plex://');
+    expect(appActivity({ activity: '' }, undefined)).toBeUndefined();
+    expect(appActivity({}, platform('filmin'))).toBeUndefined();
   });
 });

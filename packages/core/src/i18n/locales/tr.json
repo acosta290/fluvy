@@ -2907,6 +2907,8 @@
     "editor.app": "Platform",
     "editor.source": "Oynatıcının kaynağı",
     "editor.key": "Tuş",
+    "editor.activity": "Android TV bağlantısı",
+    "editor.activity_helper": "Android TV Remote’un uygulamayı neyle açtığı: netflix:// gibi bir derin bağlantı (güvenilir yol) ya da bir uygulama kimliği",
     "editor.commands": "Bu cihazın komutları",
     "editor.commands_helper": "Bir tuş ve cihazın onun için kabul ettiği komut, tablonun üstünde (back: KEY_RETURN)"
   }

@@ -4,7 +4,13 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { familiesDefined } from '../index.js';
 import { appsBlock, appsLayout, remoteHeight } from '../remote-family.js';
-import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
+import {
+  cardForm,
+  drawEditor,
+  type FormStub,
+  listTitles,
+  shownNames,
+} from '../shared/fixtures/editor.js';
 import { FluvyRemoteCard } from './remote-card.js';
 
 // the index fetches the lazy families, this card's among them: they land before this file's page goes
@@ -111,6 +117,47 @@ const ANDROID = {
   'media_player.tv': 'androidtv_remote',
   'remote.tv': 'androidtv_remote',
   'media_player.lg': 'webostv',
+};
+
+/* media_player supported_features of Android TV Remote's player: no sources, an app launched by `play_media` */
+const ATV = 1 | 8 | 16 | 32 | 128 | 256 | 512 | 1024 | 4096 | 16384 | 131072;
+/**
+ * A television on Android TV Remote as the integration draws it: its player lists no source and says the app running
+ * by its package (`app_id`, and `app_name` where the integration's own list names none), its remote the same
+ * (`current_activity`); and an Apple TV, whose remote takes no `activity`.
+ */
+const SET_TOP: readonly Seed[] = [
+  [
+    'media_player.atv',
+    'on',
+    {
+      friendly_name: 'Living room TV',
+      device_class: 'tv',
+      app_id: 'com.disney.disneyplus',
+      app_name: 'com.disney.disneyplus',
+      volume_level: 0.2,
+      is_volume_muted: false,
+      supported_features: ATV,
+    },
+  ],
+  [
+    'remote.atv',
+    'on',
+    {
+      friendly_name: 'Living room TV',
+      current_activity: 'com.disney.disneyplus',
+      activity_list: [],
+    },
+  ],
+  ['media_player.box', 'on', { friendly_name: 'Apple TV', supported_features: 1 | 128 | 256 }],
+  ['remote.box', 'on', { friendly_name: 'Apple TV' }],
+];
+const SET_TOPS = {
+  ...ANDROID,
+  'media_player.atv': 'androidtv_remote',
+  'remote.atv': 'androidtv_remote',
+  'media_player.box': 'apple_tv',
+  'remote.box': 'apple_tv',
 };
 
 /** The card drawn in the page: its shadow root. */
@@ -419,5 +466,131 @@ describe('the TV remote card (#143)', () => {
         appsLayout(names(6), 300, () => 20),
       ),
     ).toBe(appsBlock(6, { perRow: 5, names: true }));
+  });
+
+  describe('the apps on Android TV Remote', () => {
+    /** Every app of the row tapped in turn: what each sent, as `service activity → target`. */
+    const tapAll = async (root: ShadowRoot, calls: readonly Call[]): Promise<string[]> => {
+      for (const circle of root.querySelectorAll<HTMLButtonElement>('.rm-app__circle'))
+        circle.click();
+      await new Promise((resolve) => setTimeout(resolve));
+      return calls.map(
+        (c) =>
+          `${c.service} ${String(c.data['activity'] ?? c.data['source'])} → ${c.target?.entity_id}`,
+      );
+    };
+
+    it('opens an app by its platform’s deep link, else by its package; a person’s own activity wins over both', async () => {
+      const { hass, calls } = house(SET_TOP, SET_TOPS);
+      const root = await draw(
+        {
+          entity: 'media_player.atv',
+          remote: 'remote.atv',
+          groups: ['apps'],
+          apps: [
+            { app: 'netflix' },
+            { app: 'youtube' },
+            { app: 'disneyplus' },
+            { app: 'primevideo' },
+            { app: 'appletv' },
+            { app: 'dazn' },
+            // no source confirms a deep link for Kodi: its package, as Home Assistant's page gives it
+            { app: 'kodi' },
+            {
+              app: 'netflix',
+              name: 'Wednesday',
+              activity: 'https://www.netflix.com/title/81231974?source=30',
+            },
+            { app: 'jellyfin', activity: 'org.jellyfin.androidtv' },
+            // an activity with a space in it is no activity: the platform's own goes
+            { app: 'plex', activity: 'plex:// home' },
+          ],
+        },
+        hass,
+      );
+      expect(await tapAll(root, calls)).toEqual([
+        'remote.turn_on netflix:// → remote.atv',
+        'remote.turn_on https://www.youtube.com → remote.atv',
+        'remote.turn_on https://www.disneyplus.com → remote.atv',
+        'remote.turn_on https://app.primevideo.com → remote.atv',
+        'remote.turn_on https://tv.apple.com → remote.atv',
+        'remote.turn_on https://open.dazn.com/ → remote.atv',
+        'remote.turn_on org.xbmc.kodi → remote.atv',
+        'remote.turn_on https://www.netflix.com/title/81231974?source=30 → remote.atv',
+        'remote.turn_on org.jellyfin.androidtv → remote.atv',
+        'remote.turn_on plex:// → remote.atv',
+      ]);
+      // the app running is read by its package, never by its link
+      expect(root.querySelector('.rm-app.is-active .rm-app__name')?.textContent).toBe('Disney+');
+    });
+
+    it('a source the player lists still wins; the platform’s link where it lists none', async () => {
+      const { hass, calls } = house(LIVING, ANDROID);
+      const root = await draw(
+        {
+          entity: 'media_player.tv',
+          remote: 'remote.tv',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }, { app: 'dazn' }],
+        },
+        hass,
+      );
+      expect(await tapAll(root, calls)).toEqual([
+        'media_player.select_source Netflix → media_player.tv',
+        'remote.turn_on https://open.dazn.com/ → remote.tv',
+      ]);
+    });
+
+    it('a remote alone: its current activity lights the app it runs, a tap opens another by its link', async () => {
+      const { hass, calls } = house(SET_TOP, SET_TOPS);
+      const root = await draw(
+        {
+          remote: 'remote.atv',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }, { app: 'disneyplus' }],
+        },
+        hass,
+      );
+      expect(root.querySelector('.rm-app.is-active .rm-app__name')?.textContent).toBe('Disney+');
+      root.querySelector<HTMLButtonElement>('.rm-app__circle')!.click();
+      expect(calls.at(-1)).toMatchObject({
+        service: 'remote.turn_on',
+        data: { activity: 'netflix://' },
+        target: { entity_id: 'remote.atv' },
+      });
+    });
+
+    it('no other integration is sent an activity: on an Apple TV an app with no source rests', async () => {
+      const { hass, calls } = house(SET_TOP, SET_TOPS);
+      const root = await draw(
+        {
+          entity: 'media_player.box',
+          remote: 'remote.box',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }, { app: 'dazn', activity: 'https://open.dazn.com/' }],
+        },
+        hass,
+      );
+      const circles = [...root.querySelectorAll<HTMLButtonElement>('.rm-app__circle')];
+      expect(circles.map((circle) => circle.disabled)).toEqual([true, true]);
+      expect(await tapAll(root, calls)).toEqual([]);
+    });
+
+    it('the editor asks for an app’s activity only where the card names a remote to send it to', async () => {
+      const itemFields = async (config: Record<string, unknown>): Promise<string[]> => {
+        const drawn = await drawEditor(await FluvyRemoteCard.getConfigElement(), {
+          ...config,
+          type: 'custom:fluvy-remote-card',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }],
+        } as LovelaceCardConfig);
+        const form = drawn.shadowRoot!.querySelector<FormStub>('.item ha-form')!;
+        return shownNames(form.schema);
+      };
+      expect(await itemFields({ entity: 'media_player.atv', remote: 'remote.atv' })).toContain(
+        'activity',
+      );
+      expect(await itemFields({ entity: 'media_player.atv' })).not.toContain('activity');
+    });
   });
 });

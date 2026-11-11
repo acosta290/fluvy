@@ -1,8 +1,9 @@
 /**
  * The streaming platforms the remote knows by name (1.18, #143): each with the colour its mark wears, the names a
- * player may list it under, and the Android package a TV launches it by. Their logos are in the `app-logos` chunk
- * (`app:<id>`), fetched the first time a card draws one; this table stays with the card so a source can be matched
- * before the logos land. A platform without a mark of its own in an open set wears Fluvy's monogram (`mono`).
+ * player may list it under, the Android package a TV says is running, and the deep link an Android TV opens it by.
+ * Their logos are in the `app-logos` chunk (`app:<id>`), fetched the first time a card draws one; this table stays with
+ * the card so a source can be matched before the logos land. A platform without a mark of its own in an open set wears
+ * Fluvy's monogram (`mono`).
  */
 export interface Platform {
   readonly id: string;
@@ -11,8 +12,13 @@ export interface Platform {
   readonly hex: string;
   /** Other names a player lists it under, normalised (`normalise`). */
   readonly names?: readonly string[];
-  /** The Android TV package (an Android TV Remote `activity`); known for the platforms that publish one. */
+  /** The Android TV package: what the TV says is running, and what it launches where the platform has no `link`. */
   readonly android?: string;
+  /**
+   * The deep link an Android TV opens the app by (an Android TV Remote `activity`), where a source reports one
+   * working: a package is launched through the Play Store, which no longer opens many apps (2026-08).
+   */
+  readonly link?: string;
   /** A short name for a narrow cell ("Prime"), said where the title would not hold under its circle. */
   readonly short?: string;
 }
@@ -24,14 +30,27 @@ export const normalise = (name: string): string =>
     .replace(/\+/g, 'plus')
     .replace(/[^a-z0-9]/g, '');
 
+/*
+ * The links: Home Assistant's Android TV Remote page (YouTube, Netflix, Prime Video, Disney+, Plex, Twitch), else a
+ * report of the link opening the app in its community's deep-linking guide (community.home-assistant.io/t/567921) or
+ * an issue of a remote card's; a web address only where the service's `/.well-known/assetlinks.json` names the TV
+ * package, so that Android opens the app, not a browser. A platform no source confirms launches by its package.
+ */
 export const PLATFORMS: readonly Platform[] = [
-  { id: 'netflix', title: 'Netflix', hex: '#E50914', android: 'com.netflix.ninja' },
+  {
+    id: 'netflix',
+    title: 'Netflix',
+    hex: '#E50914',
+    android: 'com.netflix.ninja',
+    link: 'netflix://',
+  },
   {
     id: 'disneyplus',
     title: 'Disney+',
     hex: '',
     names: ['disney'],
     android: 'com.disney.disneyplus',
+    link: 'https://www.disneyplus.com',
   },
   {
     id: 'movistarplus',
@@ -46,6 +65,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '',
     names: ['amazonprimevideo', 'amazonprime', 'prime', 'amazonvideo'],
     android: 'com.amazon.amazonvideo.livingroom',
+    link: 'https://app.primevideo.com',
     short: 'Prime',
   },
   {
@@ -54,16 +74,23 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#000000',
     names: ['appletvplus', 'appletvapp'],
     android: 'com.apple.atve.androidtv.appletv',
+    link: 'https://tv.apple.com',
   },
   {
     id: 'rakutentv',
     title: 'Rakuten TV',
     hex: '#BF0000',
     names: ['rakuten', 'wuaki'],
-    android: 'tv.rakuten.app',
+    android: 'tv.wuaki.apptv',
     short: 'Rakuten',
   },
-  { id: 'youtube', title: 'YouTube', hex: '#FF0000', android: 'com.google.android.youtube.tv' },
+  {
+    id: 'youtube',
+    title: 'YouTube',
+    hex: '#FF0000',
+    android: 'com.google.android.youtube.tv',
+    link: 'https://www.youtube.com',
+  },
   {
     id: 'youtubemusic',
     title: 'YouTube Music',
@@ -92,6 +119,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#000000',
     names: ['hbo', 'hbogo', 'hbonow'],
     android: 'com.wbd.stream',
+    link: 'https://play.max.com',
   },
   { id: 'max', title: 'Max', hex: '#525252' },
   { id: 'hulu', title: 'Hulu', hex: '', android: 'com.hulu.livingroomplus' },
@@ -110,7 +138,13 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['peacocktv'],
     android: 'com.peacocktv.peacockandroid',
   },
-  { id: 'dazn', title: 'DAZN', hex: '#F8F8F5', android: 'com.dazn' },
+  {
+    id: 'dazn',
+    title: 'DAZN',
+    hex: '#F8F8F5',
+    android: 'com.dazn',
+    link: 'https://open.dazn.com/',
+  },
   { id: 'filmin', title: 'Filmin', hex: '' },
   { id: 'skyshowtime', title: 'SkyShowtime', hex: '', short: 'Sky' },
   {
@@ -118,15 +152,48 @@ export const PLATFORMS: readonly Platform[] = [
     title: 'Crunchyroll',
     hex: '#FF5E00',
     android: 'com.crunchyroll.crunchyroid',
+    link: 'crunchyroll://',
   },
-  { id: 'plutotv', title: 'Pluto TV', hex: '', names: ['pluto'], android: 'tv.pluto.android' },
-  { id: 'tubi', title: 'Tubi', hex: '#7408FF', names: ['tubitv'], android: 'com.tubitv' },
-  { id: 'twitch', title: 'Twitch', hex: '#9146FF', android: 'tv.twitch.android.app' },
-  { id: 'plex', title: 'Plex', hex: '#EBAF00', android: 'com.plexapp.android' },
+  {
+    id: 'plutotv',
+    title: 'Pluto TV',
+    hex: '',
+    names: ['pluto'],
+    android: 'tv.pluto.android',
+    link: 'https://pluto.tv/en/live-tv',
+  },
+  {
+    id: 'tubi',
+    title: 'Tubi',
+    hex: '#7408FF',
+    names: ['tubitv'],
+    android: 'com.tubitv',
+    link: 'tubitv://open',
+  },
+  {
+    id: 'twitch',
+    title: 'Twitch',
+    hex: '#9146FF',
+    android: 'tv.twitch.android.app',
+    link: 'twitch://home',
+  },
+  { id: 'plex', title: 'Plex', hex: '#EBAF00', android: 'com.plexapp.android', link: 'plex://' },
   { id: 'jellyfin', title: 'Jellyfin', hex: '#00A4DC', android: 'org.jellyfin.androidtv' },
-  { id: 'emby', title: 'Emby', hex: '#52B54B', android: 'tv.emby.embyatv' },
+  {
+    id: 'emby',
+    title: 'Emby',
+    hex: '#52B54B',
+    android: 'tv.emby.embyatv',
+    link: 'embyatv://tv.emby.embyatv/startapp',
+  },
   { id: 'kodi', title: 'Kodi', hex: '#17B2E7', android: 'org.xbmc.kodi' },
-  { id: 'spotify', title: 'Spotify', hex: '#1ED760', android: 'com.spotify.tv.android' },
+  {
+    id: 'spotify',
+    title: 'Spotify',
+    hex: '#1ED760',
+    android: 'com.spotify.tv.android',
+    link: 'spotify://',
+  },
   {
     id: 'applemusic',
     title: 'Apple Music',
@@ -139,7 +206,7 @@ export const PLATFORMS: readonly Platform[] = [
     id: 'amazonmusic',
     title: 'Amazon Music',
     hex: '',
-    android: 'com.amazon.bueller.music',
+    android: 'com.amazon.music.tv',
     short: 'Amazon',
   },
   { id: 'deezer', title: 'Deezer', hex: '#A238FF', android: 'deezer.android.tv' },
@@ -231,6 +298,19 @@ export type AppSaid = Readonly<{ app?: string; name?: string; source?: string }>
 /** The platform an app of the row stands for: by its id, else by what it is called. */
 export const appPlatform = (app: AppSaid): Platform | undefined =>
   platform(app.app) ?? platformOf(app.app) ?? platformOf(app.source) ?? platformOf(app.name);
+
+/** A person's own `activity`: one word with no space in it (a deep link or a package), sent as it is; else none. */
+const ownActivity = (raw: unknown): string | undefined =>
+  typeof raw === 'string' && /^\S+$/.test(raw) ? raw : undefined;
+
+/**
+ * What an Android TV opens an app of the row by (Android TV Remote's `activity`): the person's own, else its
+ * platform's deep link, else its platform's package.
+ */
+export const appActivity = (
+  app: Readonly<{ activity?: unknown }>,
+  pf: Platform | undefined,
+): string | undefined => ownActivity(app.activity) ?? pf?.link ?? pf?.android;
 
 /** What an app is called in full: the person's name, else its platform's title, else its source. */
 export const appTitle = (app: AppSaid, pf = appPlatform(app)): string =>

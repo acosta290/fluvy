@@ -3026,6 +3026,8 @@
     "editor.app": "Platforma",
     "editor.source": "Źródło odtwarzacza",
     "editor.key": "Przycisk",
+    "editor.activity": "Link Android TV",
+    "editor.activity_helper": "Czym Android TV Remote otwiera aplikację: precyzyjny link, np. netflix:// (niezawodny sposób), lub identyfikator aplikacji",
     "editor.commands": "Polecenia tego urządzenia",
     "editor.commands_helper": "Przycisk i polecenie, które urządzenie przyjmuje za niego, ponad tabelą (back: KEY_RETURN)"
   }

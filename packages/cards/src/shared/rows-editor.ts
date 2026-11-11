@@ -29,10 +29,14 @@ export interface RowsListSpec {
   /** The item's fields; the id field (`entity`, or `idKey`) is the first and required. */
   readonly schema: readonly HaFormSchemaItem[];
   /**
-   * The fields one item shows, when they depend on the item (a grid source has no state of charge): a part of
+   * The fields one item shows, when they depend on the item (a grid source has no state of charge) or on what the
+   * card's form holds (a remote's app opens by its own deep link only where the card names a remote): a part of
    * `schema`, the same array for the same answer so its form is not rebuilt on every render.
    */
-  readonly schemaOf?: (item: Readonly<Record<string, unknown>>) => readonly HaFormSchemaItem[];
+  readonly schemaOf?: (
+    item: Readonly<Record<string, unknown>>,
+    card?: Readonly<Record<string, unknown>>,
+  ) => readonly HaFormSchemaItem[];
   /** Domains the add-picker offers; default: those of the schema's entity field. */
   readonly domains?: readonly string[];
   /** The field that identifies an item: `entity` (an entity picker adds items) or a text field such as a chip's `name`. */
@@ -646,18 +650,19 @@ export class FluvyRowsEditor extends LitElement {
   }
 
   /**
-   * An item's form: what its list says the item shows, its selects offering what the house has where the card says
-   * so (`choices`: a row's `since` from the house's timestamp sensors), or where the list asks the item (a legend
-   * entry's units) — the same array for the same answer, whichever item asks.
+   * An item's form: what its list says the item shows (asked of the item and the card's form), its selects offering
+   * what the house has where the card says so (`choices`: a row's `since` from the house's timestamp sensors), or
+   * where the list asks the item (a legend entry's units) — the same array for the same answer, whichever item asks.
    */
   private itemSchema(
     list: RowsListSpec,
     item: Item,
+    card: Readonly<Record<string, unknown>>,
     choices: Choices,
     key: string,
     scope: readonly string[] | undefined,
   ): readonly HaFormSchemaItem[] {
-    const own = list.schemaOf?.(item) ?? list.schema;
+    const own = list.schemaOf?.(item, card) ?? list.schema;
     const asked = list.choices?.(item as LovelaceCardConfig, this.hass);
     const answer = `${asked ? JSON.stringify(asked) : key}${scope ? JSON.stringify(scope) : ''}`;
     const forms = this.itemForms.get(own) ?? new Map<string, readonly HaFormSchemaItem[]>();
@@ -884,7 +889,7 @@ export class FluvyRowsEditor extends LitElement {
       >
         <div class="items">
           ${items.map((item, index) => {
-            const schema = this.itemSchema(list, item, choices, key, scope);
+            const schema = this.itemSchema(list, item, card.asked, choices, key, scope);
             // an item's selects read a number its YAML holds as their word, as the card's form does (`decimals: 2`)
             return html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
               <div class="handle" aria-hidden="true">
