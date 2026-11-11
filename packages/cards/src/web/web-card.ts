@@ -310,6 +310,7 @@ export class FluvyWebCard extends Card<WebCardConfig> {
     'color',
     'card_color',
     'card_opacity',
+    'card_border',
     'tap_action',
     'hold_action',
   ];

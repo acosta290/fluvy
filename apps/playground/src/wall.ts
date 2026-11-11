@@ -43,14 +43,15 @@ const until = (test: () => boolean, ms = 4000): Promise<void> =>
   });
 
 /**
- * The house's cards' surface a page asks for: `opacity=` (in 5 % steps), `blur=0` what shows through unblurred, and
- * `unavailable=quiet` a card out of reach as it rests.
+ * The house's cards' surface a page asks for: `opacity=` (in 5 % steps), `blur=0` what shows through unblurred,
+ * `unavailable=quiet` a card out of reach as it rests, and `border=0` every card without its border.
  */
 export const cardsFor = (params: URLSearchParams): CardSurface =>
   parseCards({
     opacity: Number(params.get('opacity') ?? 100),
     blur: params.get('blur') !== '0',
     unavailable: params.get('unavailable'),
+    border: params.get('border') !== '0',
   });
 
 /** The wall's settings a page asks for: `after=` minutes, `bg=wall`, and what the moment needs. */

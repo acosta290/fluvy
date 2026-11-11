@@ -4,7 +4,7 @@ import {
   accentField,
   actionField,
   boolField,
-  cardOpacityField,
+  cardSurfaceFields,
   onlyWhen,
   unavailableField,
   entityField,
@@ -42,6 +42,7 @@ export const base: readonly BaseKey[] = [
   'color',
   'card_color',
   'card_opacity',
+  'card_border',
   'unavailable',
 ];
 
@@ -92,7 +93,7 @@ export function getConfigForm(): LovelaceConfigForm {
       textField('time_zone'),
       accentField(),
       accentField('card_color', { none: true }),
-      cardOpacityField(),
+      ...cardSurfaceFields(),
       // what is out of reach on a clock is its weather
       onlyWhen(({ weather }) => Boolean(weather), unavailableField()),
       actionField(),

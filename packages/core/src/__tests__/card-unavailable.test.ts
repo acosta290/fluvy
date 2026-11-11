@@ -35,7 +35,7 @@ class GroupCard extends QuietCard {
 }
 customElements.define('fluvy-card-unavailable-test-group', GroupCard);
 
-const DASHED = { opacity: 100, blur: true, unavailable: 'dashed' } as const;
+const DASHED = { opacity: 100, blur: true, unavailable: 'dashed', border: true } as const;
 
 async function mounted(
   config: Omit<FluvyCardConfig, 'type'> & { items?: { unavailable?: unknown }[] } = {},
@@ -89,7 +89,7 @@ describe('a card’s look out of reach', () => {
   });
 
   it('leaves the card’s opacity to it: a change of look keeps the surface', () => {
-    setCardDefaults({ opacity: 80, blur: true, unavailable: 'quiet' });
+    setCardDefaults({ opacity: 80, blur: true, unavailable: 'quiet', border: true });
     expect(cardOpacity({ type: 'x' })).toBe(80);
   });
 });

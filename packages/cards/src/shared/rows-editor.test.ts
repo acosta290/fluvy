@@ -265,9 +265,9 @@ describe('editor defaults', () => {
     const form = { schema: colourFields() };
     const shown = editorDefaults(form)!;
     expect(shown({ type: 't' }, undefined)).toMatchObject({ card_opacity: 100 });
-    setCardDefaults({ opacity: 80, blur: true, unavailable: 'dashed' });
+    setCardDefaults({ opacity: 80, blur: true, unavailable: 'dashed', border: true });
     expect(shown({ type: 't' }, undefined)).toMatchObject({ card_opacity: 80 });
-    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed' });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: true });
     // untouched, nothing written; moved, its own
     expect(
       withoutUntouchedDefaults({ card_opacity: 100 }, { type: 't' }, { card_opacity: 100 }),
@@ -281,12 +281,29 @@ describe('editor defaults', () => {
     expect(editorDefaults({ schema: [textField('title')] })).toBeUndefined();
   });
 
+  it('shows the house’s border on a card with a surface, as the house says it when asked, and never writes it (1.19, #171)', () => {
+    const shown = editorDefaults({ schema: colourFields() })!;
+    expect(shown({ type: 't' }, undefined)).toMatchObject({ card_border: true });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: false });
+    expect(shown({ type: 't' }, undefined)).toMatchObject({ card_border: false });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: true });
+    // untouched, nothing written; switched, its own
+    expect(
+      withoutUntouchedDefaults({ card_border: true }, { type: 't' }, { card_border: true }),
+    ).toEqual({});
+    expect(
+      withoutUntouchedDefaults({ card_border: false }, { type: 't' }, { card_border: true }),
+    ).toEqual({ card_border: false });
+    // a card without a surface shows none
+    expect(editorDefaults({ schema: [textField('title')] })).toBeUndefined();
+  });
+
   it('shows the house’s look out of reach on a card that offers it, as the house says it when asked, and never writes it (#126)', () => {
     const shown = editorDefaults({ schema: colourFields() })!;
     expect(shown({ type: 't' }, undefined)).toMatchObject({ unavailable: 'dashed' });
-    setCardDefaults({ opacity: 100, blur: true, unavailable: 'quiet' });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'quiet', border: true });
     expect(shown({ type: 't' }, undefined)).toMatchObject({ unavailable: 'quiet' });
-    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed' });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: true });
     // untouched, nothing written; chosen, its own
     expect(
       withoutUntouchedDefaults({ unavailable: 'dashed' }, { type: 't' }, { unavailable: 'dashed' }),

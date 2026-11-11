@@ -50,6 +50,8 @@ export const SETTINGS_KEY = 'fluvy';
 /**
  * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
  * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
+ * The same release's other fields each read as before where a 3 stored none: whether every card draws its border
+ * (`cards.border`, #171).
  * 3 since 1.11: the house keeps its chart settings and its saved sets of series colours (a 2 is read field by
  * field, each missing field its factory default — `classic` everywhere, so nothing on a dashboard changes). 2 since
  * 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own (it parses field
@@ -96,13 +98,15 @@ export type UnavailableLook = (typeof UNAVAILABLE_LOOKS)[number];
 
 /**
  * The cards' surface, the house's for every card that says none of its own (1.15, #121): how opaque it is, in percent
- * (0 to 100 in steps of 5; 100 solid, as before), whether what shows through a see-through card is blurred, and how a
- * card out of reach looks (1.16, #126; dashed, as before).
+ * (0 to 100 in steps of 5; 100 solid, as before), whether what shows through a see-through card is blurred, how a
+ * card out of reach looks (1.16, #126; dashed, as before), and whether it draws its border, the hairline round it
+ * (1.19, #171; drawn, as before).
  */
 export interface CardSurface {
   readonly opacity: number;
   readonly blur: boolean;
   readonly unavailable: UnavailableLook;
+  readonly border: boolean;
 }
 
 /** How the house's wall panels behave (a device says it is one: `DeviceSettings`). */
@@ -250,8 +254,9 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   // every chart as 1.10 drew it (`classic`), until the house chooses a style
   charts: CHART_DEFAULTS,
   chartSets: [],
-  // every card solid, as before 1.15; a see-through one blurs what shows through; one out of reach dashed, as before 1.16
-  cards: { opacity: 100, blur: true, unavailable: 'dashed' },
+  // every card solid, as before 1.15; a see-through one blurs what shows through; one out of reach dashed, as before
+  // 1.16; its border drawn, as before 1.19
+  cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
   // every slider the ruler, as before 1.18, until the house chooses a style
   sliders: SLIDER_DEFAULTS,
 };
@@ -332,6 +337,7 @@ export function parseCards(raw: unknown): CardSurface {
     unavailable: oneOf(value['unavailable'], UNAVAILABLE_LOOKS)
       ? value['unavailable']
       : d.unavailable,
+    border: typeof value['border'] === 'boolean' ? value['border'] : d.border,
   };
 }
 

@@ -949,11 +949,16 @@ describe('the settings panel', () => {
     await settle();
     // shown on every card at once, saved only from the bar
     expect(previews.at(-1)).toEqual({
-      cards: { opacity: 80, blur: false, unavailable: 'dashed' },
+      cards: { opacity: 80, blur: false, unavailable: 'dashed', border: true },
     });
     button('Save')!.click();
     await settle();
-    expect(handle.settings().cards).toEqual({ opacity: 80, blur: false, unavailable: 'dashed' });
+    expect(handle.settings().cards).toEqual({
+      opacity: 80,
+      blur: false,
+      unavailable: 'dashed',
+      border: true,
+    });
     panel.remove();
     // someone who is not an administrator reads them, and changes nothing
     const guest = await mount(false);
@@ -1033,7 +1038,9 @@ describe('the settings panel', () => {
       'Cards · When unavailable · As when off',
     );
     // shown on every card at once, saved only from the bar
-    expect(previews.at(-1)).toEqual({ cards: { opacity: 100, blur: true, unavailable: 'quiet' } });
+    expect(previews.at(-1)).toEqual({
+      cards: { opacity: 100, blur: true, unavailable: 'quiet', border: true },
+    });
     button('Save')!.click();
     await settle();
     expect(handle.settings().cards.unavailable).toBe('quiet');
@@ -1045,6 +1052,34 @@ describe('the settings panel', () => {
     )!;
     expect(theirs.querySelector('.pn-chips--static')).not.toBeNull();
     [...theirs.querySelectorAll<HTMLElement>('.fv-chip')].at(-1)?.click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(
+      expect.objectContaining({ cards: expect.anything() }),
+    );
+    guest.panel.remove();
+  });
+
+  it('lets the house draw every card without its border, drawn until chosen (1.19, #171)', async () => {
+    const { panel, root, row, button, handle, previews, settle } = await mount();
+    // drawn, by default: nothing changes on upgrade
+    const border = () => row('Border')?.querySelector('.fv-switch');
+    expect(row('Border')?.textContent).toContain('The hairline round every card and tile');
+    expect(border()?.getAttribute('aria-checked')).toBe('true');
+    row('Border')?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(border()?.getAttribute('aria-checked')).toBe('false');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Cards · Border · Off');
+    // shown on every card at once, saved only from the bar
+    expect(previews.at(-1)).toEqual({
+      cards: { opacity: 100, blur: true, unavailable: 'dashed', border: false },
+    });
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().cards.border).toBe(false);
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    guest.row('Border')?.querySelector<HTMLElement>('.fv-hit')?.click();
     await guest.settle();
     expect(guest.previews.at(-1)).not.toEqual(
       expect.objectContaining({ cards: expect.anything() }),
@@ -1678,7 +1713,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15) and their look out of reach (1.16)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16) and their border (1.19)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -1745,8 +1780,9 @@ describe('the settings panel', () => {
       icons: { sidebar: false, settings: true },
       charts,
       chartSets: [sea, garden],
-      // the cards' surface travels too (1.15), how one out of reach looks (1.16), and the sliders' style (1.18)
-      cards: { opacity: 75, blur: false, unavailable: 'quiet' },
+      // the cards' surface travels too (1.15), how one out of reach looks (1.16), and the sliders' style (1.18); the
+      // cards' border (1.19)
+      cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
     });
     await handle.store.savePersonal({ language: 'es', haptics: false });
@@ -1771,7 +1807,7 @@ describe('the settings panel', () => {
       icons: { sidebar: false, settings: true },
       charts,
       chartSets: [sea, garden],
-      cards: { opacity: 75, blur: false, unavailable: 'quiet' },
+      cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
@@ -1787,7 +1823,7 @@ describe('the settings panel', () => {
       icons: { sidebar: true, settings: true },
       charts: CHART_DEFAULTS,
       chartSets: [],
-      cards: { opacity: 100, blur: true, unavailable: 'dashed' },
+      cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
       sliders: { style: 'ruler', words: 'ends' },
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true });
@@ -1808,7 +1844,12 @@ describe('the settings panel', () => {
     expect(handle.settings().language).toBe('es');
     expect(handle.settings().charts).toEqual(charts);
     expect(handle.store.house.chartSets).toEqual([sea, garden]);
-    expect(handle.settings().cards).toEqual({ opacity: 75, blur: false, unavailable: 'quiet' });
+    expect(handle.settings().cards).toEqual({
+      opacity: 75,
+      blur: false,
+      unavailable: 'quiet',
+      border: false,
+    });
     expect(handle.settings().sliders).toEqual({ style: 'bar', words: 'none' });
     expect(saved.at(-1)?.config).toEqual({
       strategy: {

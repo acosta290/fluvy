@@ -90,7 +90,8 @@ It is independent of `color`, so a warm card can still hold a teal item. The was
 allow (they keep their full contrast), what is on inside keeps its own fill, and a card that is off or unavailable
 goes back to the neutral surface: a state is never covered. What sits inside it on the page's fill — a round, the − and
 +, an option, a chip, a resting circle — takes the wash's own deeper step instead (1.9). On a tiles group the colour is
-each tile's surface, as the group has none of its own. In the editor it reads None until you choose one.
+each tile's surface, as the group has none of its own. In the editor it reads None until you choose one. With
+`card_border: false` (1.19) the card keeps its wash and loses its edge, the dividers inside it still in the colour.
 
 ```yaml
 type: custom:fluvy-lights-card

@@ -184,7 +184,9 @@ export function mountPanel(
     });
   // every card see-through at 80 %, what shows through blurred (the appearance preview on its picture)
   if (has('glass'))
-    void store.saveHouse({ cards: { opacity: 80, blur: true, unavailable: 'dashed' } });
+    void store.saveHouse({
+      cards: { opacity: 80, blur: true, unavailable: 'dashed', border: true },
+    });
   // the wall at night: always dark, veiled at 40 %, on the mesh (the tab's preview shows it so)
   if (has('night'))
     void store.saveHouse({

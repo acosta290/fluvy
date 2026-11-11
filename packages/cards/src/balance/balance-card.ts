@@ -217,6 +217,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
     'color',
     'card_color',
     'card_opacity',
+    'card_border',
     'unavailable',
     'tap_action',
     'hold_action',

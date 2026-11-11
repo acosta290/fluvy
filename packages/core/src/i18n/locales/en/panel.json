@@ -311,6 +311,8 @@
     "cards.opacity_sub": "Under 100 %, the background shows through",
     "cards.blur": "Blur what shows through",
     "cards.blur_sub": "On every see-through card, the house’s or its own",
+    "cards.border": "Border",
+    "cards.border_sub": "The hairline round every card and tile",
     "cards.unavailable": "When unavailable",
     "sliders.title": "Sliders",
     "sliders.style": "Style",

@@ -5,6 +5,7 @@ import {
   accentField,
   boolField,
   byName,
+  cardSurfaceFields,
   colourFields,
   editorLabels,
   fieldRow,
@@ -85,8 +86,22 @@ describe('a colour field', () => {
     expect(label(formLabels(), 'card_opacity')).toBe('Card opacity');
   });
 
+  it('offers the card’s border under its opacity, a switch, the house’s until chosen (1.19, #171)', () => {
+    const [, , opacity, border] = colourFields();
+    expect(opacity!.name).toBe('card_opacity');
+    expect(border).toEqual({
+      name: 'card_border',
+      selector: { boolean: {} },
+      helper: 'editor.card_border_helper',
+    });
+    document.documentElement.lang = 'en';
+    expect(label(formLabels(), 'card_border')).toBe('Card border');
+    // the opacity and the border always together, wherever a card offers its surface
+    expect(cardSurfaceFields().map((field) => field.name)).toEqual(['card_opacity', 'card_border']);
+  });
+
   it('offers how the card looks out of reach after its opacity, dashed or as when off, the house’s until chosen (#126)', () => {
-    const [, , , look] = colourFields();
+    const [, , , , look] = colourFields();
     expect(look).toMatchObject({
       name: 'unavailable',
       helper: 'editor.unavailable_helper',

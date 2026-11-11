@@ -3,7 +3,7 @@ import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionField,
-  cardOpacityField,
+  cardSurfaceFields,
   unavailableField,
   emptyFields,
   entitiesField,
@@ -30,6 +30,7 @@ export const base: readonly BaseKey[] = [
   'color',
   'card_color',
   'card_opacity',
+  'card_border',
   'unavailable',
   'hold_action',
 ];
@@ -72,7 +73,7 @@ export function getConfigForm(): LovelaceConfigForm {
         accentField('card_color', { none: true }),
         actionField('hold_action'),
       ),
-      cardOpacityField(),
+      ...cardSurfaceFields(),
       unavailableField(),
       tintField(),
       emptyFields(),

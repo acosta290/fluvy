@@ -76,7 +76,7 @@ import {
   actionField,
   actionFields,
   boolField,
-  cardOpacityField,
+  cardSurfaceFields,
   unavailableField,
   editorLabels,
   editorLanguage,
@@ -1697,7 +1697,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         ]),
         fieldRow(toneField(), accentField()),
         accentField('card_color', { none: true }),
-        cardOpacityField(),
+        ...cardSurfaceFields(),
         unavailableField(),
         actionFields(),
         // drawn in the roles' section; `device: none` has no device to search

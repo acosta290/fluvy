@@ -10,9 +10,11 @@ accepts (read, never written back). Every entity card also takes
 `entity`, `name`, `icon`, `tap_action`, `hold_action`, `tone`, `color`, `card_color` (a quiet wash of a colour as
 the card's own surface, its edge and dividers in it — see [the theme guide](theme.md#a-colour-per-card-and-per-item))
 `card_opacity` (how solid its surface is, 0 to 100: under 100 the view's background shows through; left out, the
-house's — see [the settings panel](settings-panel.md#cards)) and `unavailable` (how it looks while its device is out
-of reach: `dashed`, the default, on the page's fill in a dashed hairline; `quiet`, as it is while off, still saying
-"Unavailable"; left out, the house's — a tile of the tiles card may say its own);
+house's — see [the settings panel](settings-panel.md#cards)), `card_border` (`false` draws no border, the hairline
+round the card or round each of its tiles where it is a tile or a group of them; left out, the house's) and
+`unavailable` (how it looks while its device is out of reach: `dashed`, the default, on the page's fill in a dashed
+hairline; `quiet`, as it is while off, still saying "Unavailable"; left out, the house's — a tile of the tiles card
+may say its own);
 a list card takes `title`. A card with a slider (the light, slider, tile, tiles, lights, media, fan, cover and helpers
 cards) also takes `slider_style` (the style its sliders are drawn in: `ruler`, `bar`, `liquid` or, on a tile, `fill`;
 left out or `house`, the house's — see [the settings panel](settings-panel.md#sliders)) and `slider_words` (the

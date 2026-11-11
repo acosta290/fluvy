@@ -25,7 +25,7 @@ import { sheet as slider } from './slider.js';
 const BLUE = 'linear-gradient(160deg, #0b2a6f 0%, #1d4ed8 48%, #60a5fa 100%)';
 
 /** A busy picture: bright blots of colour over a striped ground, so what shows through, and its blur, can be judged. */
-const PICTURE = [
+export const PICTURE = [
   'radial-gradient(28% 18% at 18% 12%, #ff7a59 0%, transparent 70%)',
   'radial-gradient(26% 16% at 82% 26%, #ffd166 0%, transparent 70%)',
   'radial-gradient(30% 18% at 28% 52%, #06d6a0 0%, transparent 70%)',

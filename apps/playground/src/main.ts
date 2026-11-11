@@ -68,7 +68,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  *                        read as the settings read it (an unknown word is its default), and `sets` the saved series
  *                        colours (`[{"id":"warm","name":"Warm","colours":[six hexes]}]`, chosen by `series`)
  * ?opacity=80           the house's cards' surface (fluvy's settings → Appearance → Cards): how opaque every card is
- *                        that says none of its own, in 5 % steps; &blur=0 what shows through it unblurred
+ *                        that says none of its own, in 5 % steps; &blur=0 what shows through it unblurred; &border=0
+ *                        every card without its border
  * ?sliders={"style":"bar"} the house's slider settings (fluvy's settings → Appearance → Sliders), as JSON: the
  *                        style every slider is drawn in where a card says none (ruler | bar | liquid | fill) and the
  *                        words under a bar or a liquid (`"words":"none"`), each read as the settings read it
@@ -194,7 +195,7 @@ if (params.has('charts')) {
 }
 
 // the house's cards' surface, as fluvy's settings would hand it to every card
-if (params.has('opacity') || params.has('blur') || params.has('unavailable'))
+if (['opacity', 'blur', 'unavailable', 'border'].some((name) => params.has(name)))
   setCardDefaults(cardsFor(params));
 
 // the house's slider settings, as fluvy's settings would hand them to every card

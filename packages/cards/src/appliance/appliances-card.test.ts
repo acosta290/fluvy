@@ -264,6 +264,10 @@ describe('the house’s appliances', () => {
     expect(wholes()[2]!.config['roles']).toEqual([{ role: 'remote', entity: 'none' }]);
     // what its whole cards ask before (#120): the list's, where an appliance names nothing of its own
     expect(wholes()[2]!.config['confirm']).toEqual([]);
+    // the list's own surface is its cards' (they are its surfaces): its border too (1.19, #171), none said none passed
+    expect(wholes()[0]!.config).not.toHaveProperty('card_border');
+    const bare = await mount({ variant: 'cards', card_border: false, appliances: ['hc-oven'] });
+    expect(root(bare).querySelector<Whole>('.al-cards > *')?.config['card_border']).toBe(false);
     // a whole card holds in 300 at least (four across a desktop's band), rows alone in 240
     const grid = root(card).querySelector<HTMLElement>('.al-cards');
     expect(grid?.style.getPropertyValue('--al-least')).toBe('300px');

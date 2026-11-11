@@ -38,6 +38,7 @@ export const ENTITY_BASE: readonly BaseKey[] = [
   'color',
   'card_color',
   'card_opacity',
+  'card_border',
   'unavailable',
 ];
 

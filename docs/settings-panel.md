@@ -21,18 +21,19 @@ alone — whether it is a wall panel, and the size it reads at — and never fol
 
 ## Cards
 
-How solid every card is, and how one looks while a device is unavailable, where a card says nothing of its own
-(1.15, 1.16). Solid and dashed until chosen, so a dashboard looks as it did:
+How solid every card is, whether it draws its border, and how one looks while a device is unavailable, where a card
+says nothing of its own (1.15, 1.19, 1.16). Solid, bordered and dashed until chosen, so a dashboard looks as it did:
 
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
 | **Opacity** | 0 to 100 %, in 5 % steps, on a ruler with its figure beside it (100: solid) | `card_opacity`: under 100 the view's background shows through the card |
 | **Blur what shows through** | on · off (on by default) | what shows through a see-through card is blurred, so its words read over a busy picture; it covers every see-through card, the house's and one that sets its own `card_opacity` |
+| **Border** | on · off (on by default) | `card_border`: off, a card draws no border, the hairline round it — round each tile where the card is a tile or a group of them — so it stands on its fill alone, or on its content alone where it is see-through at 0 % |
 | **When unavailable** | Dashed · As when off (Dashed by default) | `unavailable`: `dashed` draws a card or a tile out of reach on the page's fill in a dashed hairline, its words faded and the ⊘ glyph in its circle; `quiet` (As when off) draws it as it is while off — its own surface, its own glyph, its words and controls at full strength — still saying "Unavailable", every value it cannot know a dash, every control still |
 
 A change shows on every card of the page at once, before it is saved, and the preview stands its cards on a picture
-while they are see-through; a card that sets `card_opacity` keeps its own (its editor shows the house's until a value is
-chosen, and never writes it). It applies to every Fluvy card on a dashboard, a wall included, and to its preview in
+while they are see-through; a card that sets `card_opacity` or `card_border` keeps its own (its editor shows the
+house's until a value is chosen, and never writes it). It applies to every Fluvy card on a dashboard, a wall included, and to its preview in
 the card editor and the card picker; not to Fluvy's own pages (Activity, History, this panel), nor to what opens from a
 card (a sheet, a menu, a dialog), which stay solid. Home Assistant's own cards follow the theme's `ha-card-background`,
 not this setting. A card that draws no surface (a heading, the greeting, the chips card's tabs, the web page card
@@ -42,6 +43,11 @@ whole, a switch's thumb and a knob keep their colour solid (a light's colour is 
 line under a name, a ruler's figures) darken in light mode and lighten in dark mode as the card goes see-through, and
 from 50 % down they are written like its names, so they read on the background. Below about 35 % the background
 decides what reads: in light mode pick a light picture, in dark mode a dark one.
+Without its border a card loses only the hairline round its own surface, in whatever colour it wears (a `card_color`,
+a lit tile): the tiles and wells inside it keep theirs, the ring of the keyboard's focus and a press stay, a tile under
+the pointer still firms a hairline, and what opens from it is unchanged. A card out of reach in the dashed look keeps
+its dashes, the only line that draws its shape on the page's fill; the quiet look draws it as it is while off,
+without a border.
 
 What shows through is the view's background: Home Assistant's *Background* in a view's settings (a picture, its size,
 alignment and opacity), else the theme's `lovelace-background`, else the page's colour. Fluvy never paints over it; on a

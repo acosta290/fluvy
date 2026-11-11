@@ -31,7 +31,7 @@ import {
   actionField,
   actionFields,
   boolField,
-  cardOpacityField,
+  cardSurfaceFields,
   unavailableField,
   editorLabels,
   editorWord,
@@ -382,6 +382,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     'color',
     'card_color',
     'card_opacity',
+    'card_border',
     'unavailable',
     'tap_action',
     'hold_action',
@@ -480,7 +481,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
         textField('empty_text'),
         onlyWhen(headed, fieldRow(toneField(), accentField())),
         onlyWhen(headed, accentField('card_color', { none: true })),
-        cardOpacityField(),
+        ...cardSurfaceFields(),
         unavailableField(),
         onlyWhen(headed, actionFields()),
       ],
@@ -997,10 +998,11 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
       ...(this.config?.picture ? { picture: this.config.picture } : {}),
       ...(this.config?.picture_min ? { picture_min: this.config.picture_min } : {}),
       ...(this.config?.confirm ? { confirm: this.config.confirm } : {}),
-      // the list's own opacity and look out of reach are its cards' (they are its surfaces)
+      // the list's own opacity, border and look out of reach are its cards' (they are its surfaces)
       ...(this.config?.card_opacity !== undefined
         ? { card_opacity: this.config.card_opacity }
         : {}),
+      ...(this.config?.card_border !== undefined ? { card_border: this.config.card_border } : {}),
       ...(this.config?.unavailable ? { unavailable: this.config.unavailable } : {}),
       ...(this.config?._now ? { _now: this.config._now } : {}),
       ...line.item,

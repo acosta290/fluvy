@@ -2,7 +2,7 @@ import { strings, type LovelaceConfigForm } from '@fluvy/core';
 import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
-  cardOpacityField,
+  cardSurfaceFields,
   unavailableField,
   editorLabels,
   entitiesField,
@@ -42,6 +42,7 @@ export const base: readonly BaseKey[] = [
   'color',
   'card_color',
   'card_opacity',
+  'card_border',
   'unavailable',
   'show_icon',
 ];
@@ -119,7 +120,7 @@ export function getConfigForm(): LovelaceConfigForm {
         fieldRow(numberField('start_hour', 0, 23), numberField('end_hour', 1, 24)),
       ),
       fieldRow(accentField(), accentField('card_color', { none: true })),
-      cardOpacityField(),
+      ...cardSurfaceFields(),
       unavailableField(),
     ],
     ...editorLabels(s, EDITOR_LABELS, { days: 'editor.days' }),

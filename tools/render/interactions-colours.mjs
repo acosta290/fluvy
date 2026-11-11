@@ -7,7 +7,11 @@
  * card's lit light turns red (the accent's twin) while its fan keeps its tone and its off light stays quiet; the
  * colours are derived again in dark mode and on another palette; a page without the theme derives on Linen, as
  * the theme would; a warning of the house's own (fluvy's settings → Status colours) is the warning on a reminder's
- * words and an alert's glyph, legible, the other statuses the palette's.
+ * words and an alert's glyph, legible, the other statuses the palette's. A card without its border (#171) draws no
+ * hairline round its own surface in either mode — a card, a tile, each tile of a group, lit, in its own colour, quiet
+ * out of reach, see-through — while what is inside it keeps its own, its colour's dividers stay, a card dashed out of
+ * reach keeps its dashes, a tile under the pointer still firms a hairline and focus still rings it; the house's border
+ * reaches every card but the one that says its own.
  */
 import { contrastRatio, toHex } from './lib/colour.mjs';
 import { frame, startSuite } from './lib/suite.mjs';
@@ -812,6 +816,191 @@ for (const mode of ['light', 'dark']) {
     `${own.text} on ${own.card}: ${contrastRatio(own.text, own.card).toFixed(2)}`,
   );
   check(`${mode}: the danger is the palette’s still`, own.danger === auto.danger, own.danger);
+  await page.close();
+}
+
+/* ---------- a card without its border (Discussion #171) ---------- */
+for (const mode of ['light', 'dark']) {
+  const page = await suite.sheet('border', { width: 392, extra: `&mode=${mode}` });
+  /** The computed edge of a card's own surface, and of what is inside it. */
+  const shadow = (locator) => styleOf(locator, 'boxShadow');
+  const edged = (value) => /inset/.test(value);
+  const pair = (title, tag) => {
+    const cards = frame(page, title).locator(tag);
+    return [cards.nth(0), cards.nth(1)];
+  };
+  {
+    const [drawn, none] = pair('Printer · with and without its border', 'fluvy-printer-card');
+    const [a, b] = [
+      await shadow(drawn.locator('.fv-card').first()),
+      await shadow(none.locator('.fv-card').first()),
+    ];
+    check(
+      `${mode}: the printer draws its hairline, and none with card_border: false`,
+      edged(a) && b === 'none' && (await none.getAttribute('borderless')) === '',
+      `${a} | ${b}`,
+    );
+  }
+  {
+    const box = frame(page, 'A tile, and a group of tiles with a lit one');
+    const tiles = box.locator('fluvy-tile-card');
+    const groups = box.locator('fluvy-tiles-card');
+    const [tile, bare] = [
+      await shadow(tiles.nth(0).locator('.fv-tile').first()),
+      await shadow(tiles.nth(1).locator('.fv-tile').first()),
+    ];
+    const group = async (card) =>
+      card
+        .locator('.fv-tile')
+        .evaluateAll((all) => all.map((el) => getComputedStyle(el).boxShadow));
+    const [drawn, none] = [await group(groups.nth(0)), await group(groups.nth(1))];
+    const lit = await groups.nth(1).locator('.fv-tile.is-on').count();
+    check(
+      `${mode}: a tile, and each tile of a group, lit ones too, draw no hairline without their border`,
+      edged(tile) &&
+        bare === 'none' &&
+        drawn.every(edged) &&
+        none.every((v) => v === 'none') &&
+        lit > 0,
+      `${tile} | ${bare} | ${none.join(' / ')}`,
+    );
+    // under the pointer a tile still firms a hairline, and the keyboard's focus still rings it
+    const hovered = groups.nth(1).locator('.fv-tile').nth(1);
+    await hovered.hover();
+    await page.waitForTimeout(300);
+    const hover = await shadow(hovered);
+    await page.mouse.move(0, 0);
+    check(
+      `${mode}: a borderless tile under the pointer firms its hairline all the same`,
+      edged(hover),
+      hover,
+    );
+    await page.keyboard.press('Tab');
+    const tap = hovered.locator('.fv-tile__tap');
+    await tap.focus();
+    const ring = await tap.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return `${cs.outlineStyle} ${cs.outlineWidth}`;
+    });
+    check(`${mode}: and the keyboard's focus rings it`, ring === 'solid 2px', ring);
+    await tap.blur();
+  }
+  {
+    const box = frame(page, 'A colour of its own');
+    const lists = box.locator('fluvy-entities-card');
+    const read = (card) =>
+      card
+        .locator('.fv-card')
+        .first()
+        .evaluate((el) => {
+          const row = el.querySelector('.fv-row + .fv-row');
+          return {
+            edge: getComputedStyle(el).boxShadow,
+            fill: getComputedStyle(el).backgroundColor,
+            divider: row ? getComputedStyle(row, '::before').backgroundColor : '',
+          };
+        });
+    const [drawn, none] = [await read(lists.nth(0)), await read(lists.nth(1))];
+    check(
+      `${mode}: a card of its own colour keeps its wash and its dividers in the colour, its edge alone gone`,
+      edged(drawn.edge) &&
+        none.edge === 'none' &&
+        none.fill === drawn.fill &&
+        none.divider !== '' &&
+        none.divider === drawn.divider &&
+        drawn.edge.includes(drawn.divider),
+      JSON.stringify({ drawn, none }),
+    );
+  }
+  {
+    const [drawn, none] = pair('Lit whole', 'fluvy-light-card');
+    const [a, b] = [
+      await shadow(drawn.locator('.fv-card.is-lit')),
+      await shadow(none.locator('.fv-card.is-lit')),
+    ];
+    check(
+      `${mode}: a light card lit whole loses its hairline in the light's colour`,
+      edged(a) && b === 'none',
+      `${a} | ${b}`,
+    );
+  }
+  {
+    const box = frame(page, 'A room’s tiles and a thermostat’s wells');
+    const thermostats = box.locator('fluvy-thermostat-card');
+    const rooms = box.locator('fluvy-room-card');
+    const chip = await shadow(
+      thermostats.nth(1).locator('.fv-chip.is-active .fv-chip__pill').first(),
+    );
+    const stepper = await shadow(thermostats.nth(1).locator('.fv-stepper').first());
+    const own = await shadow(thermostats.nth(1).locator('.fv-card').first());
+    const room = await shadow(rooms.nth(1).locator('.fv-card').first());
+    check(
+      `${mode}: the card's own edge only: a borderless thermostat's chosen chip and its − and + keep theirs`,
+      own === 'none' && room === 'none' && edged(chip) && edged(stepper),
+      `${own} | ${room} | ${chip} | ${stepper}`,
+    );
+  }
+  {
+    const box = frame(page, 'Out of reach · dashed, then as when off');
+    const cards = box.locator('fluvy-light-card');
+    const read = (card) =>
+      card
+        .locator('.fv-card')
+        .first()
+        .evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return `${cs.boxShadow} | ${cs.outlineStyle}`;
+        });
+    // dashed and as when off, drawn, then the two bare
+    const [dashed, quiet, dashedBare, quietBare] = await Promise.all(
+      [0, 1, 2, 3].map((i) => read(cards.nth(i))),
+    );
+    const glyph = await cards.nth(2).locator('.fv-ico--off').count();
+    check(
+      `${mode}: dashed out of reach, its dashes stay without its border (the only line of its shape); as when off, no border`,
+      dashed === 'none | dashed' &&
+        dashedBare === 'none | dashed' &&
+        edged(quiet) &&
+        quietBare === 'none | none' &&
+        glyph > 0,
+      `${dashed} / ${dashedBare} / ${quiet} / ${quietBare}`,
+    );
+  }
+  for (const level of ['50', '0']) {
+    const box = frame(page, `See-through · ${level}`);
+    const printers = box.locator('fluvy-printer-card');
+    const read = (card) =>
+      card
+        .locator('.fv-card')
+        .first()
+        .evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return { edge: cs.boxShadow, blur: cs.backdropFilter };
+        });
+    const [drawn, none] = [await read(printers.nth(0)), await read(printers.nth(1))];
+    check(
+      `${mode}: see-through at ${level} %, its hairline gone and what shows through still blurred`,
+      edged(drawn.edge) &&
+        none.edge === 'none' &&
+        none.blur === drawn.blur &&
+        /blur/.test(none.blur),
+      JSON.stringify({ drawn, none }),
+    );
+  }
+  await page.close();
+}
+/* the house's border: every card without it, but the one that says its own */
+{
+  const page = await suite.sheet('border', { width: 392, extra: '&border=0' });
+  const edgeOf = (title, tag, n = 0) =>
+    styleOf(frame(page, title).locator(tag).nth(n).locator('.fv-card').first(), 'boxShadow');
+  const plain = await edgeOf('Printer · with and without its border', 'fluvy-printer-card');
+  const own = await edgeOf('Its own border', 'fluvy-printer-card');
+  check(
+    'a house without borders: every card draws none, but the one that keeps its own (card_border: true)',
+    plain === 'none' && /inset/.test(own),
+    `${plain} | ${own}`,
+  );
   await page.close();
 }
 

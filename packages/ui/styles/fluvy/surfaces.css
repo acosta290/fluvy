@@ -8,6 +8,19 @@
   box-shadow: inset 0 0 0 1px var(--fluvy-border);
 }
 
+/* a card without its border (`card_border: false`, 1.19, #171; core marks it `borderless`): no hairline round its own
+   surfaces — the card, or each tile, scene or pill it stands on the page as — whatever colour the hairline wears (its
+   `card_color`, a lit or tinted tile, a card quiet out of reach); the tiles and wells inside a card keep theirs, as
+   does what opens from it (a sheet, a dialog), and so do its states: a tile's firmer hairline under the pointer
+   (`--fv-hover-edge`, interaction.css), the keyboard's focus and the dashes of a card out of reach (outlines), a press
+   (a scale) */
+:host([borderless])
+  :is(.fv-card, .fv-tile, .fv-scene, .fv-chip__pill):not(
+    :is(.fv-card, .fv-tile, .fv-sheet, dialog) *
+  ) {
+  box-shadow: var(--fv-hover-edge, none);
+}
+
 /* cards stacked inside a frame; a frame that is itself a card never inherits this */
 .fv-frame .fv-card + .fv-card {
   margin-top: 16px;

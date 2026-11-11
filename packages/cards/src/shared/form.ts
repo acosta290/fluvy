@@ -442,15 +442,19 @@ export const accentField = (
 };
 
 /**
- * How opaque the card's surface is (`card_opacity`, 1.15), beside its colour: a percentage on Home Assistant's slider in
- * 5 % steps, its figure in the box beside it — the house's, shown and never written, until one is chosen
- * (`editorDefaults`), the word under it saying so.
+ * The card's surface beside its colour: how opaque it is (`card_opacity`, 1.15), a percentage on Home Assistant's
+ * slider in 5 % steps, its figure in the box beside it, and under it whether it draws its border (`card_border`, 1.19,
+ * #171) — each the house's, shown and never written, until one is chosen (`editorDefaults`), the word under it saying
+ * so.
  */
-export const cardOpacityField = (): HaFormSchemaItem => ({
-  name: 'card_opacity',
-  selector: { number: { min: 0, max: 100, step: 5, mode: 'slider', unit_of_measurement: '%' } },
-  helper: 'editor.card_opacity_helper',
-});
+export const cardSurfaceFields = (): HaFormSchemaItem[] => [
+  {
+    name: 'card_opacity',
+    selector: { number: { min: 0, max: 100, step: 5, mode: 'slider', unit_of_measurement: '%' } },
+    helper: 'editor.card_opacity_helper',
+  },
+  { ...boolField('card_border'), helper: 'editor.card_border_helper' },
+];
 
 /**
  * How the card looks out of reach (`unavailable`, 1.16, #126): dashed, or as when off, its words saying so — the
@@ -524,13 +528,14 @@ export const sliderFields = (
 };
 
 /**
- * A tone and a colour on one row, then the card's own surface: its colour (`card_color`, none by default), its opacity
- * and how it looks out of reach (`unavailable: false`: a card that shows no entity has nothing out of reach).
+ * A tone and a colour on one row, then the card's own surface: its colour (`card_color`, none by default), its opacity,
+ * its border and how it looks out of reach (`unavailable: false`: a card that shows no entity has nothing out of
+ * reach).
  */
 export const colourFields = ({ state = false, unavailable = true } = {}): HaFormSchemaItem[] => [
   fieldRow(toneField(), accentField('color', { state })),
   accentField('card_color', { none: true }),
-  cardOpacityField(),
+  ...cardSurfaceFields(),
   ...(unavailable ? [unavailableField()] : []),
 ];
 

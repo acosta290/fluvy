@@ -80,6 +80,8 @@
     "card_color": "Card colour",
     "card_opacity": "Card opacity",
     "card_opacity_helper": "Untouched: every card’s, from Fluvy’s settings",
+    "card_border": "Card border",
+    "card_border_helper": "Untouched: every card’s, from Fluvy’s settings",
     "unavailable": "When unavailable",
     "unavailable_helper": "Untouched: every card’s, from Fluvy’s settings",
     "show_color": "Show colour",

@@ -125,7 +125,7 @@ describe('a tile out of reach', () => {
   const printer = (all: HTMLElement[]): HTMLElement => all.at(-1)!;
 
   afterEach(() => {
-    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed' });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: true });
     document.body.replaceChildren();
   });
 
@@ -167,7 +167,7 @@ describe('a tile out of reach', () => {
     });
     expect(own.map((tile) => tile.getAttribute('data-unavailable'))).toEqual(['quiet', null]);
     expect(printer(own).querySelector(BAN)).not.toBeNull();
-    setCardDefaults({ opacity: 100, blur: true, unavailable: 'quiet' });
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'quiet', border: true });
     const house = await tiles({
       tiles: ['switch.kitchen', { entity: 'switch.printer', unavailable: 'dashed' }],
     });
