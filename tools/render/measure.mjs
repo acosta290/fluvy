@@ -307,7 +307,9 @@ function audit(opts) {
     for (let node = el; node && node !== frame; node = up(node)) {
       if (continuesLine(node, node.getBoundingClientRect())) return true;
     }
-    if (/flex/.test(cs.display) && /^(center|flex-end|end)$/.test(cs.justifyContent)) return true;
+    // Chromium 158 computes `flex-end` as `flow-end` (and `flex-start` as `flow-start`): both are read
+    if (/flex/.test(cs.display) && /^(center|flex-end|flow-end|end)$/.test(cs.justifyContent))
+      return true;
     for (let node = el; node && node !== frame; node = up(node)) {
       const align = node.getAttribute('data-align');
       if (align === 'center' || align === 'end' || align === 'optical') return true; // optical: ink pulled onto the column on purpose
@@ -315,7 +317,7 @@ function audit(opts) {
       if (!parent || parent === frame) break;
       const pcs = globalThis.getComputedStyle(parent);
       if (/flex|grid/.test(pcs.display)) {
-        if (/^(center|flex-end|end|right)$/.test(pcs.justifyContent)) return true;
+        if (/^(center|flex-end|flow-end|end|right)$/.test(pcs.justifyContent)) return true;
         if (/^space-/.test(pcs.justifyContent) && parent.firstElementChild !== node) return true;
       }
     }
