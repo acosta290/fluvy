@@ -442,7 +442,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         object-fit: contain;
       }
       .vh-picture.is-empty {
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         color: var(--fluvy-text-secondary);
       }
       .vh-picture.is-empty svg {
@@ -465,7 +465,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         object-fit: contain;
       }
       .vh-face.is-empty {
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       .vh-face svg {
         width: 20px;
@@ -526,7 +526,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         flex: 1 1 auto;
         height: 12px;
         border-radius: 6px;
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         overflow: hidden;
       }
       .vh-bar__fill {

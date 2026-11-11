@@ -174,7 +174,7 @@ export class FluvyTimeRail extends LitElement {
         cursor: grabbing;
         box-shadow:
           0 0 0 2px var(--tone-ink),
-          0 8px 18px -4px rgb(0 0 0 / 0.32),
+          0 8px 18px -4px rgb(0 0 0 / calc(0.32 * var(--fluvy-shade, 1))),
           0 0 0 6px var(--knob-halo);
       }
       :host(:focus-visible) .fv-knob {

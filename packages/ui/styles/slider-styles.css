@@ -33,7 +33,7 @@
   position: absolute;
   border-radius: 2px;
   background: var(--fv-solid-card, var(--fluvy-card));
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  box-shadow: 0 1px 2px rgb(0 0 0 / calc(0.12 * var(--fluvy-shade, 1)));
 }
 
 /* a tinted bar is the gradient itself, as Home Assistant's colour temperature is: the handle alone, no fill; the

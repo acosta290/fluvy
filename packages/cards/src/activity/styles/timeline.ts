@@ -299,7 +299,7 @@ export const timelineStyles = css`
   .fv-ico--neutral.av-circle {
     background: var(--fluvy-card);
     box-shadow:
-      inset 0 0 0 1px var(--fluvy-border),
+      inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
       0 0 0 4px var(--av-row);
   }
   .av-body {

@@ -151,7 +151,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   box-shadow: 0 0 0 2px var(--fluvy-card);
   font-size: 13px;
   font-weight: 600;

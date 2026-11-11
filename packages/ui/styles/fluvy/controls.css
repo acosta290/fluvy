@@ -18,9 +18,11 @@
   border-radius: 50%;
   /* what a finger holds is solid on a see-through card too (surfaces.css) */
   background: var(--fv-solid-card, var(--fluvy-card));
+  /* a shadow a card draws itself is taken at the palette's share of it (`--fluvy-shade`: none on a surface read by its
+     edges, 1.19) */
   box-shadow:
     0 0 0 2px var(--tone-ink),
-    0 4px 10px -2px rgb(0 0 0 / 0.25),
+    0 4px 10px -2px rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1))),
     0 0 0 6px var(--knob-halo); /* the lift falls on the halo */
 }
 
@@ -49,7 +51,7 @@
 .fv-knob.is-focus {
   box-shadow:
     0 0 0 2px var(--tone-ink),
-    0 4px 10px -2px rgb(0 0 0 / 0.25),
+    0 4px 10px -2px rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1))),
     0 0 0 6px color-mix(in srgb, var(--tone-ink) 28%, var(--knob-halo));
 }
 
@@ -57,11 +59,13 @@
 /* What dark mode changes in the ruler and the dial: custom properties, which reach inside the control's own shadow
    root, where a rule of the mode cannot (there `:host` is the control, never the dark card) */
 [data-mode='dark'] {
-  --fv-tick-glow: 3px;
+  --fv-tick-glow: calc(3px * var(--fluvy-shade, 1));
   --fv-tint-warm: #d9ad5c;
   --fv-tint-cool: #7f96ad;
   --fv-disc: var(--fluvy-card-elevated);
-  --fv-disc-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.8), inset 0 0 0 1px var(--fluvy-border);
+  --fv-disc-shadow:
+    0 16px 40px -16px rgb(0 0 0 / calc(0.8 * var(--fluvy-shade, 1))),
+    inset 0 0 0 1px var(--fluvy-border);
 }
 
 .fv-ruler {
@@ -177,8 +181,8 @@
   background: var(--fv-disc, var(--fluvy-card));
   box-shadow: var(
     --fv-disc-shadow,
-    0 16px 40px -16px rgb(0 0 0 / 0.35),
-    0 2px 6px -2px rgb(0 0 0 / 0.12),
+    0 16px 40px -16px rgb(0 0 0 / calc(0.35 * var(--fluvy-shade, 1))),
+    0 2px 6px -2px rgb(0 0 0 / calc(0.12 * var(--fluvy-shade, 1))),
     inset 0 0 0 1px var(--fluvy-border)
   );
 }
@@ -695,7 +699,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--fluvy-card);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
+  box-shadow: 0 1px 2px rgb(0 0 0 / calc(0.18 * var(--fluvy-shade, 1)));
 }
 
 .fv-switch.is-on {

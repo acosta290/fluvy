@@ -15,8 +15,8 @@ const kept = new Map<string, string>();
 
 /**
  * A palette's own surfaces, for a see-through card to take at its opacity: the card's, the lifted card's, the page's
- * and the sunken page's colours, the ground a resting circle washes into, and the plain card a lit wash keeps for its
- * circle (slider.css). Then its quiet inks — the secondary and the disabled words (a line under a name, a ruler's or a
+ * and the sunken page's colours, its inset where it has one of its own (a surface read by its edges), the ground a
+ * resting circle washes into, and the plain card a lit wash keeps for its circle (slider.css). Then its quiet inks — the secondary and the disabled words (a line under a name, a ruler's or a
  * dial's figures) and the unavailable ink — towards its main ink as far as the card lets the background through
  * (`--fv-quiet`, ui/styles/glass.css), their solid colours kept beside them as the fills' are; and the main ink and the
  * strong hairline for a ruler's and a dial's resting ticks to take the same way.
@@ -33,6 +33,7 @@ function surfacesCss(paletteKey: string, mode: PaletteMode): string {
       ['--fluvy-card-elevated', cardElevated],
       ['--fluvy-page', page],
       ['--fluvy-page-alt', pageAlt],
+      ...(colors.line ? ([['--fluvy-inset', colors.line.inset]] as const) : []),
       ['--fluvy-wash-base', colors.washBase],
       ['--fv-card-plain', card],
       ['--fv-glass-ink', primary],

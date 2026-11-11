@@ -67,6 +67,7 @@ export function renderContrastReport(palettes: readonly Palette[]): string {
     `| icons, large text, domain-state inks | ${GATES.icon}:1 |`,
     `| card against page (light) | ${GATES.cardVsPage}:1 |`,
     `| card against page (dark) | ${GATES.darkCardLift.min * 100}–${GATES.darkCardLift.max * 100} lightness points |`,
+    `| a card's edge against the page (a surface read by its edges, in place of the two above) | ${GATES.edgeVsPage}:1 |`,
     `| hairline against its surface | ${GATES.borderVsCard}:1 |`,
     `| ink on a filled surface | ${GATES.onFill}:1 |`,
     `| graph series separation | ΔE2000 >= ${GATES.graphSeparation} |`,

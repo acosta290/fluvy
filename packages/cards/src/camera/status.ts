@@ -160,7 +160,7 @@ export const cameraRowStyles = css`
     height: 44px;
     border-radius: 12px;
     overflow: hidden;
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
   .cm-thumb.is-off {
     display: grid;

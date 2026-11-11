@@ -58,7 +58,7 @@ ha-input:first-child::part(wa-base) { padding-inline-start: 4px; }
 label { display: block; padding-inline-start: 0; font-size: 13px; line-height: 16px; font-weight: 500; letter-spacing: 0; color: var(--secondary-text-color); margin-bottom: 4px; }`;
 
 /** The code editor (YAML, templates): a field with a hairline gutter; focus is the accent ring, not a line. */
-export const codeEditorCss = `:host { --code-editor-background-color: var(--fluvy-page); --code-editor-gutter-color: var(--fluvy-page); }
+export const codeEditorCss = `:host { --code-editor-background-color: var(--fluvy-inset, var(--fluvy-page)); --code-editor-gutter-color: var(--fluvy-inset, var(--fluvy-page)); }
 .cm-editor { border-radius: var(--fluvy-radius-control); border: 1px solid var(--fluvy-border); overflow: hidden; transition: border-color 180ms ease-in-out, box-shadow 180ms ease-in-out; }
 .cm-editor.cm-focused { border-color: var(--fluvy-accent); box-shadow: 0 0 0 1px var(--fluvy-accent); }
 .cm-editor .cm-gutters, .cm-editor.cm-focused .cm-gutters { border-right: 1px solid var(--fluvy-border); padding-right: 1px; }

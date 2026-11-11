@@ -75,6 +75,8 @@ import {
   type ShapeName,
   STATUS_NAMES,
   type StatusName,
+  SURFACE_STYLES,
+  type SurfaceStyle,
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { defaultColumns, fittedColumns } from '../shared/chips.js';
@@ -408,7 +410,10 @@ export function hexField(
 }
 
 function customEditor(custom: CustomPalette, ctx: PanelContext): TemplateResult {
-  const set = (patch: Partial<CustomPalette>): void => {
+  // a surface of `fill` is the default, which a palette leaves unsaid (`parsePalette` drops it)
+  const set = (
+    patch: Partial<Omit<CustomPalette, 'surface'>> & { readonly surface?: SurfaceStyle },
+  ): void => {
     const next = parsePalette({ ...custom, ...patch });
     if (next) ctx.setDraft({ palette: next });
   };
@@ -437,6 +442,17 @@ function customEditor(custom: CustomPalette, ctx: PanelContext): TemplateResult 
         active: custom.base === base,
       })),
       (key) => set({ base: key as CustomPalette['base'] }),
+    )}
+    <p class="fv-label pn-label">${ctx.t('custom.surface')}</p>
+    <p class="pn-hint">${ctx.t('custom.surface_sub')}</p>
+    ${choice(
+      ctx,
+      SURFACE_STYLES.map((surface) => ({
+        key: surface,
+        label: ctx.t(`custom.surface_${surface}` as StringKey),
+        active: (custom.surface ?? 'fill') === surface,
+      })),
+      (key) => set({ surface: key as SurfaceStyle }),
     )}
     ${
       vivid
@@ -470,6 +486,7 @@ function customEditor(custom: CustomPalette, ctx: PanelContext): TemplateResult 
                 accent: custom.accent,
                 ...(custom.fill ? { fill: custom.fill } : {}),
                 ...(highlight ? { highlight } : {}),
+                ...(custom.surface ? { surface: custom.surface } : {}),
               };
               ctx.setDraft({ palette: next });
             })}`

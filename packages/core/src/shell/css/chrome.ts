@@ -49,17 +49,19 @@ ${SIDES.map(
     z-index: 100;
     pointer-events: none;
     border-radius: var(--fluvy-radius-xl);
-    box-shadow: 0 0 0 1px var(--fluvy-border), 0 0 0 100vmax var(--fluvy-page-alt);
+    box-shadow: 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)), 0 0 0 100vmax var(--fluvy-page-alt);
   }
 }`;
 
 /**
- * The drawer: no hairline between the white sidebar and the linen content. A modal drawer (notifications) opens
- * inside the floating frame, in its shape: 16 from the window, the frame's corners on its side, its hairline.
+ * The drawer: no hairline between the white sidebar and the linen content; on a surface read by its edges the two are
+ * one colour, and the edge stands between them (1 px there alone: the palette's share of shadow is its switch, 0 on
+ * such a surface). A modal drawer (notifications) opens inside the floating frame, in its shape: 16 from the window,
+ * the frame's corners on its side, its hairline.
  */
-export const drawerCss = `.sidebar-shell { border-inline-end: 0; }
+export const drawerCss = `.sidebar-shell { border-inline-end: calc(1px - 1px * var(--fluvy-shade, 1)) solid var(--fluvy-edge, transparent); }
 wa-drawer::part(dialog) { top: var(--fluvy-frame, 0px); bottom: var(--fluvy-frame, 0px); inset-inline-start: var(--fluvy-frame, 0px); height: calc(100% - 2 * var(--fluvy-frame, 0px)); max-height: none; border-start-start-radius: var(--fluvy-frame-radius, 0px); border-end-start-radius: var(--fluvy-frame-radius, 0px); overflow: hidden; }
-:host([type="modal"]) wa-drawer::part(dialog) { box-shadow: 0 0 0 1px var(--fluvy-border), var(--fluvy-shadow-lift); }`;
+:host([type="modal"]) wa-drawer::part(dialog) { box-shadow: 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)), var(--fluvy-shadow-lift); }`;
 
 /** Built-in panels (their sidebar ids) and the glyph each takes; a dashboard keeps the icon its owner chose. */
 const PANEL_GLYPHS: Readonly<Record<string, string>> = {

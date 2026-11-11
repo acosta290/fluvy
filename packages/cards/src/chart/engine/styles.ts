@@ -592,7 +592,7 @@ export const chartStyles = css`
     box-sizing: border-box;
     width: 100%;
     border: 2.5px solid var(--fluvy-border-strong);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
   .fc-battery__well {
     position: absolute;
@@ -626,7 +626,7 @@ export const chartStyles = css`
   .fc-air__band {
     overflow: hidden;
     border-radius: var(--fluvy-radius-lg, 16px);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
   .fc-air__line {
     fill: none;

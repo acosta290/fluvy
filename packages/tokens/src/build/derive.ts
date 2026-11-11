@@ -16,6 +16,8 @@ import {
   type SemanticRole,
   STATE_KEYS,
   type StateKey,
+  type SurfaceColors,
+  type SurfaceStyle,
 } from '../types.js';
 import { deriveAccent, legibleUnder } from './derive/accent.js';
 import { fitComposited, inkOn, type PaletteIdentity, readIdentity } from './derive/identity.js';
@@ -38,6 +40,7 @@ function deriveMode(
   p: ModeProfile,
   anchor: PaletteSeed | undefined,
   fillStyle: FillStyle,
+  surfaceStyle: SurfaceStyle,
 ): Omit<PaletteModeColors, 'notice'> {
   // Direction an ink has to move to gain contrast: darker on light grounds, lighter on dark.
   const inkDirection: FitDirection = mode === 'light' ? 'darker' : 'lighter';
@@ -265,17 +268,46 @@ function deriveMode(
         : washShareFor([accentRole, ...Object.values(semantic), ...Object.values(state)], washBase)
       : 1;
 
+  // --- A surface read by its edges ------------------------------------------
+  // The page and the card are one colour, the one of the two a card rests on (the card's white in light, the page's
+  // charcoal in dark), and nothing is lifted over it. The other step stays inside the cards, as what the page's fill
+  // drew there (`inset`): every ink, hairline and fill above was fitted on these two steps, so each still sits on a
+  // ground it reads on. What closes a card is its edge: the strong hairline taken as deep as its gate asks, or the
+  // text's ink.
+  const line = ((): LineSurface | undefined => {
+    if (surfaceStyle === 'fill') return undefined;
+    const ground = mode === 'light' ? card : page;
+    return {
+      ground,
+      inset: mode === 'light' ? page : card,
+      edge:
+        surfaceStyle === 'ink'
+          ? textPrimary
+          : toHex(ensureContrast(fromHex(borderStrong), ground, GATES.edgeVsPage, inkDirection)),
+    };
+  })();
+  const surface: SurfaceColors = line
+    ? {
+        page: line.ground,
+        pageAlt,
+        card: line.ground,
+        cardElevated: line.ground,
+        border,
+        borderStrong,
+      }
+    : { page, pageAlt, card, cardElevated, border, borderStrong };
+
   // --- Unavailable ----------------------------------------------------------
   // Deliberately neutral: an unreachable device is not an error, so it never goes red.
-  // The dashed hairline in the lab carries the "something is missing" signal instead.
+  // The dashed hairline in the lab carries the "something is missing" signal instead (a line surface's edge, dashed).
   const unavailable = {
     ink: textDisabled,
-    border: composite(borderStrong, card, UNAVAILABLE_ALPHA),
+    border: line?.edge ?? composite(borderStrong, card, UNAVAILABLE_ALPHA),
   };
 
   return {
     mode,
-    surface: { page, pageAlt, card, cardElevated, border, borderStrong },
+    surface,
     text: {
       primary: textPrimary,
       secondary: textSecondary,
@@ -294,13 +326,13 @@ function deriveMode(
     highlight,
     selected: identity.highlight
       ? { fill: highlight.fill, on: highlight.onFill }
-      : { fill: textPrimary, on: page },
+      : { fill: textPrimary, on: surface.page },
     primary: family.primary,
     ...(identity.highlight ? { mark: { fill: highlight.fill, on: highlight.onFill } } : {}),
     buttons: (() => {
       // Home Assistant's own ramp steps (95 / 90 in light, 10 / 20 in dark), or the next pair when a palette's ramp
       // is too grey for them to stand off the dialog and answer the pointer
-      const dialog = mode === 'light' ? card : cardElevated;
+      const dialog = mode === 'light' ? surface.card : surface.cardElevated;
       const pairs: readonly (readonly [RampStep, RampStep])[] =
         mode === 'light'
           ? [
@@ -361,7 +393,15 @@ function deriveMode(
     state,
     unavailable,
     graph,
+    ...(line ? { line: { edge: line.edge, inset: line.inset } } : {}),
   };
+}
+
+/** A line surface's colours while a mode is derived: its edge and inset, and the one colour of its page and cards. */
+interface LineSurface {
+  readonly ground: Hex;
+  readonly inset: Hex;
+  readonly edge: Hex;
 }
 
 /** Hue anchors of the domain states, exposed so the report can gate their spacing. */
@@ -403,6 +443,7 @@ export function derivePalette(seed: PaletteSeed): Palette {
       profileOf(seed, mode),
       seed.baseMode === mode ? seed : undefined,
       seed.fill ?? 'tint',
+      seed.surface ?? 'fill',
     ),
   ) as [ModeColors, ModeColors];
   // information is the accent only where it can never be read as a warning or a danger, in either mode

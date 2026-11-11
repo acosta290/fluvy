@@ -24,13 +24,13 @@ import {
   isPaletteName,
   isPillName,
   isShapeName,
+  paletteKey,
+  parseCustomPalette,
   parseStatuses,
   STATUS_NAMES,
   statusesKey,
-  type CustomBase,
-  type FillStyle,
+  type PaletteChoice,
   type PillName,
-  type PaletteCharacter,
 } from '@fluvy/tokens/runtime';
 import { setFallbackTokens, textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
@@ -59,6 +59,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?palette=volt          a preset, applied by the live palette engine (the one the bundle runs)
  * ?shape=round           soft | round | crisp
  * ?accent=%23ff4a1a      a custom palette instead: &character=vivid &base=cool &fill=solid &highlight=%23e2ff3d
+ *                        &surface=line (its page and cards one colour, each card closed by its edge; ink: the edge
+ *                        in the text's ink)
  * ?compare=linen,volt    the sheet once per palette, side by side (each column scoped to its palette)
  * ?template_delay=3000   how long the mock takes to answer a row's template, in ms (default 30: before the first paint)
  * ?period=week           the range the Energy date pickers' collections start on (today | yesterday | week | month)
@@ -150,13 +152,14 @@ function requestedLook(): Look | null {
   const accent = params.get('accent');
   if (!palette && !shape && !pills && !accent && !tinted) return null;
   const custom = accent
-    ? {
-        character: (params.get('character') ?? 'vivid') as PaletteCharacter,
-        base: (params.get('base') ?? 'neutral') as CustomBase,
+    ? parseCustomPalette({
+        character: params.get('character') ?? 'vivid',
+        base: params.get('base') ?? 'neutral',
         accent,
-        fill: (params.get('fill') ?? 'tint') as FillStyle,
-        ...(params.get('highlight') ? { highlight: params.get('highlight') as string } : {}),
-      }
+        fill: params.get('fill') ?? 'tint',
+        highlight: params.get('highlight'),
+        surface: params.get('surface'),
+      })
     : null;
   return {
     palette: custom ?? (isPaletteName(palette) ? palette : 'linen'),
@@ -324,6 +327,12 @@ if (compare.length) {
 const framesInStatuses = new CSSStyleSheet();
 document.adoptedStyleSheets = [...document.adoptedStyleSheets, framesInStatuses];
 const statusRules = new Set<string>();
+/** A rule of a frame's own look, written once. */
+function wearRule(rule: string): void {
+  if (statusRules.has(rule)) return;
+  statusRules.add(rule);
+  framesInStatuses.replaceSync([...statusRules].join(''));
+}
 function wearStatuses(
   frame: HTMLElement,
   own: NonNullable<FrameSpec['statuses']>,
@@ -335,16 +344,33 @@ function wearStatuses(
   const palette = column.dataset['look'];
   const base = look ?? { palette: DEFAULT_PALETTE, shape: DEFAULT_SHAPE, pills: DEFAULT_PILL };
   const scope = palette ? `[data-look="${palette}"] ` : '';
-  const rule = lookRule(
-    isPaletteName(palette) ? { ...base, palette } : base,
-    dark ? 'dark' : 'light',
-    `${scope}[data-statuses="${key}"]`,
-    false,
-    worn,
+  wearRule(
+    lookRule(
+      isPaletteName(palette) ? { ...base, palette } : base,
+      dark ? 'dark' : 'light',
+      `${scope}[data-statuses="${key}"]`,
+      false,
+      worn,
+    ),
   );
-  if (statusRules.has(rule)) return;
-  statusRules.add(rule);
-  framesInStatuses.replaceSync([...statusRules].join(''));
+}
+/**
+ * A frame in a palette of its own (`FrameSpec.palette`): the page's look in it — its shape, its mode, the house's
+ * status colours — on the frame alone, whatever palette the page or its column wears.
+ */
+function wearPalette(frame: HTMLElement, palette: PaletteChoice): void {
+  const key = paletteKey(palette);
+  frame.dataset['wears'] = key;
+  const base = look ?? { palette: DEFAULT_PALETTE, shape: DEFAULT_SHAPE, pills: DEFAULT_PILL };
+  wearRule(
+    lookRule(
+      { ...base, palette },
+      dark ? 'dark' : 'light',
+      `.pg-frame[data-wears="${key}"]`,
+      false,
+      statuses,
+    ),
+  );
 }
 const framed = params.get('frames') !== 'none' && !automatic;
 for (const column of columns)
@@ -353,6 +379,7 @@ for (const column of columns)
       const mounted = mountFrame(name, frame, mock.hass(), {
         width,
         wearStatuses: (el, own) => wearStatuses(el, own, column),
+        wearPalette,
       });
       cards.push(...mounted.cards);
       column.append(mounted.el);

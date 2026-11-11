@@ -91,7 +91,7 @@
   height: 60px;
   padding: 0;
   border-radius: var(--fluvy-radius-control);
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   text-align: left;
 }
 

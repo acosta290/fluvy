@@ -296,7 +296,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
         background: var(--fv-solid-card, var(--fluvy-card));
         box-shadow:
           inset 0 0 0 1px var(--fluvy-border),
-          0 1px 2px rgb(0 0 0 / 0.06);
+          0 1px 2px rgb(0 0 0 / calc(0.06 * var(--fluvy-shade, 1)));
         font-size: 13px;
         font-weight: 600;
         letter-spacing: 0.02em;

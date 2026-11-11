@@ -4,11 +4,11 @@ import { css } from 'lit';
 export const cardStyles = css`
   :host([card]) .av-main {
     --av-ground: var(--fluvy-card);
-    --av-hover: var(--fluvy-page);
+    --av-hover: var(--fluvy-inset, var(--fluvy-page));
     padding: 24px 24px var(--av-inset);
     border-radius: var(--fluvy-radius-card);
     background: var(--av-ground);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   }
   :host([card]) {
     --av-inset: 24px;
@@ -29,12 +29,12 @@ export const cardStyles = css`
   :host([card]) .av-filters .fv-chip:not(.is-active) .fv-chip__pill,
   :host([card]) .av-detail__inner,
   :host([card]) .fv-ico--neutral.av-circle {
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     box-shadow: none;
   }
   /* on a card the search is the language's field in a card: the page's fill */
   :host([card]) .fv-field--on-page {
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
   :host([card]) .av-detail__inner .fv-btn--quiet {
     background: var(--fluvy-card);

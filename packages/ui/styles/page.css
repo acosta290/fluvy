@@ -61,7 +61,7 @@
   border-radius: var(--fluvy-radius-lg);
   background: var(--fluvy-card);
   box-shadow:
-    0 0 0 1px var(--fluvy-border),
+    0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
     var(--fluvy-shadow-lift);
   outline: none;
   transform-origin: top right;
@@ -81,7 +81,7 @@
   border-radius: 0 var(--fluvy-frame-radius, 0px) var(--fluvy-frame-radius, 0px) 0;
   background: var(--fluvy-card);
   box-shadow:
-    -1px 0 0 var(--fluvy-border),
+    -1px 0 0 var(--fluvy-edge, var(--fluvy-border)),
     var(--fluvy-shadow-lift);
   overflow: hidden;
   animation: fv-layer-side 320ms var(--fv-ease-out, ease-out) both;

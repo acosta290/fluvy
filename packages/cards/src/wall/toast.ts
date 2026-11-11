@@ -44,8 +44,8 @@ export class FluvyWallToast extends LitElement {
         background: var(--fluvy-card);
         color: var(--fluvy-text);
         box-shadow:
-          0 0 0 1px var(--fluvy-border),
-          0 16px 32px -16px rgb(0 0 0 / 0.35);
+          0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
+          0 16px 32px -16px rgb(0 0 0 / calc(0.35 * var(--fluvy-shade, 1)));
         font-size: 14px;
         font-weight: 600;
         white-space: nowrap;

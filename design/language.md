@@ -2851,6 +2851,28 @@ last entry taken out in the editor — is a card, never a configuration error (#
   rest their accent. One choice for the palette, the same in light and dark; a status, so a card's own colour leaves it
   be. Gated in the build (`roles/notice-separation`, its ink as text, its on-fill) and over every preset, the
   community's palettes and custom ones of each character, base and fill, warm accents among them.
+- **A surface read by its edges (1.19, #154).** A palette says how a card stands off the page: `surface: fill` (the
+  default, every preset's: the card a step lighter than the page), `line` or `ink`. On a line surface the page and the
+  cards are one colour, the ground a card rests on (the card's white in light, the page's charcoal in dark; a dialog,
+  a menu and a sheet too), and what sets a card off is its **edge** (`--fluvy-edge`): the strong hairline taken as
+  deep as its gate asks, 3:1 against the page in both modes (WCAG's bar for what is not text; the strong hairline is
+  1.9), or with `ink` the text's ink, as on a printed sheet. The edge closes what stands on the page's ground (a card,
+  a tile on or off, a scene, a chip, a button or a field there, the dashboards' pills) and what lifts off it (a menu,
+  a sheet, a drawer, a toast, the wall's corner and its way back); out of reach, the same edge dashed (a quiet card,
+  the edge whole). **Nothing casts a shadow**: `--fluvy-shadow-lift` is that edge as a ring, the knob's drop is none,
+  and every shadow or glow a card draws itself is taken at the palette's share of it (`--fluvy-shade`, 0 there:
+  `rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1)))`); the mesh is flat (every stop the page). **Inside a card nothing
+  moves**: the two steps the page and the card stood apart by are both still on screen, the second as the **inset**
+  (`--fluvy-inset`: the page's grey in light, the card's in dark), which is what the page's fill drew inside a card (a
+  chip, an option, the stepper, a field, a track, a resting neutral circle, a room's inner tiles) — so every ink,
+  hairline, fill and status is the one the same palette has filled, each on a ground it was fitted to. Every rule that
+  filled a control with the page reads `var(--fluvy-inset, var(--fluvy-page))` (the name a washed card already gave
+  its inner fills, 1.9), a closing hairline `var(--fluvy-edge, var(--fluvy-border))`; a filled palette declares
+  neither, nor the shade, so it draws as before to the value. Gated in the build: `surface/edge-on-page` in place of
+  `surface/card-on-page`, every `-on-page` ink again `-on-inset`, the dark lift read off the inset. Home Assistant's
+  names follow (its cards' border and its bottom sheet's the edge, its fields and resting switch the inset, a line
+  under the header, the edge between the sidebar and the page). The community's **E-ink** is the first: `#ffffff`
+  with `#95958e` (3.01), `#0f0f0c` with `#60605d` (3.04).
 - **The house's status colours (1.9).** Warning, danger, success and notice are each **Auto** — the palette's own,
   exactly as before, the default — or a colour the house picks (§ Settings panel, Status colours), over every palette, a
   person's own too. A pick is the status's whole family on the palette it sits on, in each mode, derived as the

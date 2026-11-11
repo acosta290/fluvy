@@ -281,7 +281,8 @@ export function swatchColors(choice: PaletteChoice, mode: PaletteMode) {
   return {
     page: colors.surface.page,
     card: colors.surface.card,
-    border: colors.surface.border,
+    // what closes its card: the hairline, or on a surface read by its edges the edge
+    border: colors.line?.edge ?? colors.surface.border,
     accent: colors.accent.ink,
     fill: colors.accent.fill,
     tick: solid ? colors.accent.onFill : colors.accent.ink,

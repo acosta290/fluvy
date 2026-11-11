@@ -15,6 +15,7 @@ import {
   type RoleColors,
   type SemanticRole,
   type StateKey,
+  type SurfaceStyle,
 } from '../types.js';
 
 /** The ground a custom palette sits on. */
@@ -31,6 +32,8 @@ export interface CustomPalette {
   readonly fill?: FillStyle;
   /** Vivid only: a second brand colour (the greeting, today). */
   readonly highlight?: Hex;
+  /** How a card stands off the page; `fill`, the default, is left unsaid. */
+  readonly surface?: Exclude<SurfaceStyle, 'fill'>;
 }
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -42,7 +45,7 @@ const oneOf = <T extends string>(value: unknown, options: readonly T[]): value i
 /** A well-formed custom palette out of anything (stored settings, a shared file); anything else is undefined. */
 export function parseCustomPalette(value: unknown): CustomPalette | undefined {
   if (!isRecord(value)) return undefined;
-  const { character, base, accent, fill, highlight } = value;
+  const { character, base, accent, fill, highlight, surface } = value;
   if (!oneOf(character, ['soft', 'vivid'] as const)) return undefined;
   if (!oneOf(base, CUSTOM_BASES) || typeof accent !== 'string' || !HEX.test(accent))
     return undefined;
@@ -54,6 +57,7 @@ export function parseCustomPalette(value: unknown): CustomPalette | undefined {
     ...(character === 'vivid' && typeof highlight === 'string' && HEX.test(highlight)
       ? { highlight: highlight.toLowerCase() as Hex }
       : {}),
+    ...(oneOf(surface, ['line', 'ink'] as const) ? { surface } : {}),
   };
 }
 
@@ -132,6 +136,7 @@ function plainSeed(custom: CustomPalette): PaletteSeed {
     character: custom.character,
     ...(vivid ? { fill: custom.fill ?? 'tint' } : {}),
     ...(vivid && custom.highlight ? { highlight: custom.highlight } : {}),
+    ...(custom.surface ? { surface: custom.surface } : {}),
     page: PAGES[custom.character][custom.base],
     card: '#ffffff',
     accentInk: toHex(anchors.ink),

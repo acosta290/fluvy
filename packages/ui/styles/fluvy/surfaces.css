@@ -1,11 +1,14 @@
 /* fluvy · surfaces: Surfaces, the icon circle, the badge and the values (readouts, units). Part of fluvy.css (its @imports keep this order). */
 
 /* ---------- surfaces ---------- */
+/* What stands on the page's ground (a card, a tile, a scene, a chip or a button there) is closed by its hairline; on
+   a surface read by its edges (`--fluvy-edge`, 1.19: the page and the cards one colour) by the edge, which is then all
+   that sets it off. What a card holds keeps the hairline. */
 .fv-card {
   padding: 20px;
   border-radius: var(--fluvy-radius-card);
   background: var(--fluvy-card);
-  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
 }
 
 /* a card without its border (`card_border: false`, 1.19, #171; core marks it `borderless`): no hairline round its own
@@ -235,7 +238,7 @@
 }
 
 .fv-art--idle {
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   box-shadow: inset 0 0 0 1px var(--fluvy-border);
   color: var(--fluvy-text-secondary);
 }

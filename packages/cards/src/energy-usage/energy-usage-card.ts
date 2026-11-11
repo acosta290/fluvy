@@ -388,7 +388,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         line-height: ${LINE}px;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
-        box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.35);
+        box-shadow: 0 6px 16px -6px rgb(0 0 0 / calc(0.35 * var(--fluvy-shade, 1)));
         pointer-events: none;
       }
       .eu-bubble__line {

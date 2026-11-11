@@ -23,11 +23,12 @@ export const COMMUNITY_PALETTES: readonly PaletteFile[] = [
     title: 'E-ink',
     author: 'maxhayim',
     description:
-      'Black ink on paper grey, no colour in the accent: for e-paper panels and walls that should read like a page.',
+      'Black ink on white paper, each card closed by its edge and no shadow: for e-paper panels and walls that should read like a page.',
     palette: {
       character: 'soft',
       base: 'neutral',
       accent: '#1f1f1f',
+      surface: 'line',
     },
   },
   {

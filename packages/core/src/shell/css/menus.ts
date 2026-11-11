@@ -6,11 +6,11 @@ import { LIFT } from './shared.js';
  * chosen row (accent fill, dark ink); they scroll without a visible bar.
  */
 
-export const dropdownCss = `#menu { min-width: 192px; border-radius: var(--fluvy-radius-lg); padding: 6px; border-color: var(--fluvy-border); box-shadow: ${LIFT}; scrollbar-width: none; }`;
+export const dropdownCss = `#menu { min-width: 192px; border-radius: var(--fluvy-radius-lg); padding: 6px; border-color: var(--fluvy-edge, var(--fluvy-border)); box-shadow: ${LIFT}; scrollbar-width: none; }`;
 
 export const dropdownItemCss = `:host, :host([checkbox-adjacent]) { min-height: 44px; padding: 10px; border-radius: 10px; }
 #check { --mdc-icon-size: 20px; margin-inline: 0 12px; } #icon ::slotted(*) { margin-inline-end: 12px !important; }
-:host(:not([selected]):not([disabled]):is(:hover, :focus, :focus-visible)) { background-color: var(--fluvy-page); color: var(--fluvy-text); }
+:host(:not([selected]):not([disabled]):is(:hover, :focus, :focus-visible)) { background-color: var(--fluvy-inset, var(--fluvy-page)); color: var(--fluvy-text); }
 :host([selected]) { color: var(--fluvy-accent-on-fill); background-color: var(--fluvy-accent-fill); --icon-primary-color: var(--fluvy-accent-on-fill); }
 :host([selected]:hover) { background-color: var(--fluvy-accent-fill); }
 #icon ::slotted(*) { color: var(--fluvy-text-secondary); }
@@ -26,12 +26,12 @@ export const dropdownItemCss = `:host, :host([checkbox-adjacent]) { min-height: 
 export const pickerListCss = `lit-virtualizer, .sections { scrollbar-width: none; }
 .sections ha-filter-chip { --md-filter-chip-selected-container-color: var(--fluvy-accent-fill); color: var(--fluvy-accent-on-fill); }
 .sections .separator { display: none; }
-.sections ha-filter-chip { --md-filter-chip-outline-width: 0px; border-radius: var(--fluvy-radius-pill, 9999px); background-color: var(--fluvy-page); }
+.sections ha-filter-chip { --md-filter-chip-outline-width: 0px; border-radius: var(--fluvy-radius-pill, 9999px); background-color: var(--fluvy-inset, var(--fluvy-page)); }
 @media (min-width: 601px) { :host([mode="dialog"]) .sections:has(> ha-filter-chip:nth-of-type(5):last-of-type) { display: grid; grid-auto-flow: column; grid-auto-columns: round(down, calc((100% - 32px) / 5 + 0.01px), 1px); } }
 .title, .section-title { min-height: 32px; padding: 12px 16px 4px; background-color: var(--card-background-color); font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--secondary-text-color); }
 .section-title { width: 100%; top: 0; }
 ha-combo-box-item { --md-list-item-two-line-container-height: 60px; --md-list-item-top-space: 10px; --md-list-item-bottom-space: 10px; }
-ha-combo-box-item.selected, .combo-box-row.selected { background-color: var(--fluvy-page); }
+ha-combo-box-item.selected, .combo-box-row.selected { background-color: var(--fluvy-inset, var(--fluvy-page)); }
 ha-combo-box-item > [slot="headline"] { font-size: 14px; line-height: 20px; font-weight: 500; }
 ha-combo-box-item > [slot="supporting-text"] { font-size: 13px; line-height: 16px; font-weight: 500; }
 ha-combo-box-item > :is(div, ha-icon, ha-svg-icon)[slot="start"] { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 40px; height: 40px; margin: 0 !important; padding: 0 !important; border-radius: 50%; background-color: var(--fluvy-accent-fill) !important; color: var(--fluvy-accent); --mdc-icon-size: 20px; }

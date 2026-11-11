@@ -25,7 +25,7 @@
   margin-top: 16px;
   padding-top: 8px;
   border-radius: var(--fluvy-radius-control);
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
 }
 
 .am-hour {
@@ -194,7 +194,7 @@
 /* no picture: initials in the icon circle's own terms — accent fill at home, neutral away (a picture dims instead, as the sheet does) */
 .am-avatar.is-initials {
   opacity: 1;
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   color: var(--fluvy-text-secondary);
 }
 .am-avatar.is-initials.is-home {
@@ -351,8 +351,8 @@
   border-radius: var(--fluvy-radius-lg);
   background: var(--fluvy-card);
   box-shadow:
-    0 0 0 1px var(--fluvy-border),
-    0 16px 32px -16px rgb(0 0 0 / 0.35);
+    0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
+    0 16px 32px -16px rgb(0 0 0 / calc(0.35 * var(--fluvy-shade, 1)));
 }
 
 .am-toast + .am-toast {

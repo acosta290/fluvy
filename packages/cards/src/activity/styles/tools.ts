@@ -40,7 +40,7 @@ export const toolStyles = css`
   }
   .av-filters .fv-chip__pill {
     background: var(--fluvy-card);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   }
   .av-filters .fv-chip.is-active .fv-chip__pill {
     background: var(--fluvy-accent-fill);

@@ -73,7 +73,7 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
       }
       /* out of reach, the scene's own tile wears the off tile's skin: the page fill and the dashed hairline */
       .fv-scene.fv-tile--off {
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         box-shadow: none;
       }
       /* two-up in a narrow column the tile is ~148 wide: it gives its padding to the words (10 sides, 8 gap — "Unavailable"

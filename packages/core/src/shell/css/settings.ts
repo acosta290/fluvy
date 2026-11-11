@@ -233,7 +233,7 @@ export const storageSectionCss = `ha-card { margin-bottom: 24px; }
 .no-mounts p { margin: 0; color: var(--secondary-text-color); font: 500 14px/20px var(--ha-font-family-body); }`;
 
 /** Option boxes (unit system, box-mode selects): option tiles — radius 12, the chosen one on the accent fill, no radio ring. */
-export const selectBoxCss = `.option { padding: 11px 15px; border-radius: var(--fluvy-radius-control); border-color: transparent; background: var(--fluvy-page); }
+export const selectBoxCss = `.option { padding: 11px 15px; border-radius: var(--fluvy-radius-control); border-color: transparent; background: var(--fluvy-inset, var(--fluvy-page)); }
 .option .content .text .label { line-height: 20px; } .option .content .text .description { line-height: 16px; }
 .option.selected { background: var(--fluvy-accent-fill); border-color: var(--fluvy-accent-fill-border); }
 .option.selected:before { opacity: 0; }
@@ -254,7 +254,7 @@ const MODE_GLYPHS: Readonly<Record<string, string>> = { auto: 'auto', light: 'su
 export const themeSettingsCss = `.inputs { margin: 4px 16px 8px; row-gap: 8px; } .color-pickers { gap: 8px; } ha-input { margin: 0; }
 ha-radio-group { flex: 1 1 100%; margin-inline-end: 0; }
 ha-radio-group::part(form-control-input) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-ha-radio-option { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; padding: 12px 12px 8px; border-radius: var(--fluvy-radius-control); background: var(--fluvy-page); color: var(--secondary-text-color); cursor: pointer; transition: background-color var(--fluvy-duration-fast) var(--fluvy-ease-standard); }
+ha-radio-option { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; padding: 12px 12px 8px; border-radius: var(--fluvy-radius-control); background: var(--fluvy-inset, var(--fluvy-page)); color: var(--secondary-text-color); cursor: pointer; transition: background-color var(--fluvy-duration-fast) var(--fluvy-ease-standard); }
 ha-radio-option::part(control) { display: none; }
 ha-radio-option::part(label) { font-size: 12px; font-weight: 500; line-height: 16px; }
 ha-radio-option::before { content: ''; width: 20px; height: 20px; background-color: currentColor; }
@@ -298,7 +298,7 @@ export const formExpandableCss = `ha-expansion-panel { --ha-card-border-radius: 
 .content { padding: 8px 16px 16px; }`;
 
 /** Maps: Leaflet's zoom and attribution in the theme — a 12-radius control of 44 rounds with a hairline, the body font. */
-export const mapCss = `.leaflet-bar, .leaflet-touch .leaflet-bar { border: 0; border-radius: var(--fluvy-radius-control); overflow: hidden; box-shadow: 0 0 0 1px var(--fluvy-border), 0 2px 6px -2px #0000001f; }
+export const mapCss = `.leaflet-bar, .leaflet-touch .leaflet-bar { border: 0; border-radius: var(--fluvy-radius-control); overflow: hidden; box-shadow: 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)), 0 2px 6px -2px rgb(0 0 0 / calc(0.12 * var(--fluvy-shade, 1))); }
 .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; font: 500 20px/44px var(--ha-font-family-body); color: var(--primary-text-color); background: var(--card-background-color); border-bottom-color: var(--divider-color); }
 .leaflet-control-attribution { font: 500 11px var(--ha-font-family-body); }
 .leaflet-control-attribution a { color: var(--secondary-text-color); }`;

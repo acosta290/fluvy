@@ -15,7 +15,7 @@
 .fv-tile.is-off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *),
 .fv-scene.fv-tile--off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *) {
   background: var(--fluvy-card);
-  box-shadow: inset 0 0 0 1px var(--fluvy-border);
+  box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   outline: none;
   color: inherit;
 }
@@ -71,7 +71,7 @@
 .fv-knob--off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *),
 .fv-switch--off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *) {
   --tone-ink: var(--fluvy-text-secondary);
-  --tone-fill: var(--fluvy-page);
+  --tone-fill: var(--fluvy-inset, var(--fluvy-page));
   --tone-border: var(--fluvy-border);
   --tone-on: var(--fluvy-text-secondary);
 }
@@ -127,7 +127,7 @@
 /* a person's face out of reach, a camera's thumb and plate, a printer's plate: no dashed ring, their words in the
    secondary ink (a person somewhere nobody knows, `.am-avatar.is-unknown`, is in reach: their ring stays) */
 .am-avatar.is-off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *) {
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   outline: none;
   color: var(--fluvy-text-secondary);
 }

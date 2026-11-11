@@ -692,6 +692,67 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('a custom palette says how its cards stand off the page: filled, outlined or in ink (#154)', async () => {
+    const { panel, root, chip, swatch, settle } = await mount();
+    const own = { character: 'soft', base: 'warm', accent: '#716345' } as const;
+    const drafted = () => (panel as unknown as { draft: { palette?: unknown } }).draft.palette;
+    (panel as unknown as { draft: unknown }).draft = {
+      palette: own,
+      shape: 'soft',
+      pills: 'round',
+    };
+    await settle();
+    expect(root.textContent).toContain('Outlined puts the cards on a page of their own colour');
+    expect(chip('Filled')?.classList.contains('is-active')).toBe(true);
+    chip('Outlined')!.click();
+    await settle();
+    expect(drafted()).toEqual({ ...own, surface: 'line' });
+    expect(chip('Outlined')?.classList.contains('is-active')).toBe(true);
+    chip('Ink')!.click();
+    await settle();
+    expect(drafted()).toEqual({ ...own, surface: 'ink' });
+    // filled is what a palette is when it says nothing: the draft carries no surface
+    chip('Filled')!.click();
+    await settle();
+    expect(drafted()).toEqual(own);
+    // an electric palette keeps its surface when its highlight is picked or dropped
+    (panel as unknown as { draft: unknown }).draft = {
+      palette: {
+        character: 'vivid',
+        base: 'cool',
+        accent: '#2f5bff',
+        fill: 'tint',
+        surface: 'line',
+      },
+      shape: 'soft',
+      pills: 'round',
+    };
+    await settle();
+    const dots = [...root.querySelectorAll<HTMLButtonElement>('.pn-dot')];
+    dots.at(-1)!.click();
+    await settle();
+    expect(drafted()).toMatchObject({ surface: 'line', highlight: expect.any(String) });
+    root.querySelector<HTMLButtonElement>('.pn-dot--none')!.click();
+    await settle();
+    expect(drafted()).toEqual({
+      character: 'vivid',
+      base: 'cool',
+      accent: '#2f5bff',
+      fill: 'tint',
+      surface: 'line',
+    });
+    // the community's E-ink is outlined: its miniature's page and card are one colour, its card closed by the edge
+    const eink = COMMUNITY_PALETTES.find((file) => file.name === 'e-ink')!;
+    expect(eink.palette.surface).toBe('line');
+    swatch('E-ink').click();
+    await settle();
+    expect(chip('Outlined')?.classList.contains('is-active')).toBe(true);
+    const art = swatch('E-ink').querySelector<HTMLElement>('[style*="--sw-page"]')!;
+    expect(art.style.getPropertyValue('--sw-page')).toBe(art.style.getPropertyValue('--sw-card'));
+    expect(art.style.getPropertyValue('--sw-border')).toBe('#95958e');
+    panel.remove();
+  });
+
   it('shares a custom palette as a file named after its title, and reads one back', async () => {
     const { panel, root, settle } = await mount();
     (panel as unknown as { draft: unknown }).draft = {

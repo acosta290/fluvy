@@ -7,7 +7,7 @@
 
 const ADD = `border: 1px dashed color-mix(in srgb, var(--fluvy-accent) 60%, transparent); color: var(--fluvy-accent); font-weight: 500;`;
 const QUIET =
-  'background: var(--fluvy-card); box-shadow: inset 0 0 0 1px var(--fluvy-border); color: var(--fluvy-text-secondary);';
+  'background: var(--fluvy-card); box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)); color: var(--fluvy-text-secondary);';
 
 /**
  * The edit bar (`hui-root`): its icons in the bar's ink (not the accent on the accent fill), Done as the primary

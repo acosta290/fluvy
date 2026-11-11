@@ -113,7 +113,19 @@ export interface AccentColors extends RoleColors {
 export interface UnavailableColors {
   /** Neutral ink composited at 70%. Never red. */
   readonly ink: Hex;
+  /** The dashed hairline; on a surface read by its edges, the edge itself (its dashes are what say it). */
   readonly border: Hex;
+}
+
+/** What a surface read by its edges adds to a mode's colours (`SurfaceStyle`). */
+export interface LineColors {
+  /** The line that closes a card, a tile and whatever lifts off the page (>= 3:1 against `page`). */
+  readonly edge: Hex;
+  /**
+   * What sits inside a card where the page's fill would (a chip, an option, the stepper, a track): the step the page
+   * and the card stood apart by, kept inside the card.
+   */
+  readonly inset: Hex;
 }
 
 export interface PaletteModeColors {
@@ -164,7 +176,16 @@ export interface PaletteModeColors {
   readonly state: Readonly<Record<StateKey, RoleColors>>;
   readonly unavailable: UnavailableColors;
   readonly graph: readonly Hex[];
+  /** A surface read by its edges (`surface: line | ink`, 1.19); absent, a card lifts off the page by its fill. */
+  readonly line?: LineColors;
 }
+
+/**
+ * What sits inside a card where the page's fill would (a chip, an option, the stepper, a track): the page's colour,
+ * or on a surface read by its edges its inset.
+ */
+export const insetOf = (colors: PaletteModeColors): Hex =>
+  colors.line?.inset ?? colors.surface.page;
 
 /**
  * How loud a palette is. `soft`: pastel — chroma capped at about a third of what sRGB holds, warm or cool greys,
@@ -176,6 +197,14 @@ export type PaletteCharacter = 'soft' | 'vivid';
 
 /** How an "on" surface is filled: a pale tint of its colour with a deep ink, or the colour itself, solid, with black or white on it. */
 export type FillStyle = 'tint' | 'solid';
+
+/**
+ * How a card stands off the page (1.19, #154). `fill`: by its fill, a step lighter than the page. `line`: the page
+ * and the cards are one colour and each card is closed by its edge, a line that clears `GATES.edgeVsPage` on the page,
+ * and nothing casts a shadow (an e-paper panel, a printed sheet). `ink`: the same, its edge in the text's ink.
+ */
+export type SurfaceStyle = 'fill' | 'line' | 'ink';
+export const SURFACE_STYLES: readonly SurfaceStyle[] = ['fill', 'line', 'ink'];
 
 export interface Palette {
   readonly name: string;
@@ -215,6 +244,8 @@ export interface PaletteSeed {
   readonly character?: PaletteCharacter;
   /** Default `tint`. Only a vivid palette fills solid. */
   readonly fill?: FillStyle;
+  /** Default `fill`. */
+  readonly surface?: SurfaceStyle;
   /** A second brand colour, given as its fill (a lime greeting); the same hex in both modes. Default: the accent. */
   readonly highlight?: Hex;
   /** A domain state that is the brand colour itself (Mint's "home", Iris's house): it takes the accent's colours. */

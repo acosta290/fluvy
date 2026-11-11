@@ -53,7 +53,9 @@ export type {
   PaletteModeColors,
   PaletteSeed,
   RoleColors,
+  SurfaceStyle,
 } from './types.js';
+export { insetOf, SURFACE_STYLES } from './types.js';
 export { derivePalette };
 export {
   CUSTOM_BASES,

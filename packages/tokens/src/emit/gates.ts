@@ -76,6 +76,12 @@ export function collectHexValues(colors: PaletteModeColors): readonly (readonly 
     ['selected.on', colors.selected.on],
     ['unavailable.ink', colors.unavailable.ink],
     ['unavailable.border', colors.unavailable.border],
+    ...(colors.line
+      ? ([
+          ['line.edge', colors.line.edge],
+          ['line.inset', colors.line.inset],
+        ] as const)
+      : []),
   ];
   for (const step of RAMP_STEPS) {
     entries.push([`neutralRamp.${step}`, colors.neutralRamp[step]]);
@@ -117,13 +123,21 @@ export function contrastGates(colors: PaletteModeColors): readonly ContrastGate[
   const dialog = isLight ? surface.card : surface.cardElevated;
 
   const gates: ContrastGate[] = [
-    {
-      id: 'surface/card-on-page',
-      foreground: card,
-      background: page,
-      min: isLight ? GATES.cardVsPage : 1,
-      note: isLight ? undefined : 'dark mode separates by the 4–6pp lift below, not by ratio',
-    },
+    // a card lifts off the page on its own: by its fill, or on a surface read by its edges by its edge
+    colors.line
+      ? {
+          id: 'surface/edge-on-page',
+          foreground: colors.line.edge,
+          background: page,
+          min: GATES.edgeVsPage,
+        }
+      : {
+          id: 'surface/card-on-page',
+          foreground: card,
+          background: page,
+          min: isLight ? GATES.cardVsPage : 1,
+          note: isLight ? undefined : 'dark mode separates by the 4–6pp lift below, not by ratio',
+        },
     {
       id: 'surface/border-on-card',
       foreground: surface.border,
@@ -316,6 +330,20 @@ export function contrastGates(colors: PaletteModeColors): readonly ContrastGate[
     });
   });
 
+  // a surface read by its edges keeps the page's old step inside its cards (a chip, an option, the stepper):
+  // whatever is read on the page is read on it too
+  const inset = colors.line?.inset;
+  if (inset !== undefined)
+    gates.push(
+      ...gates
+        .filter((gate) => gate.id.endsWith('-on-page') && !gate.id.startsWith('surface/'))
+        .map((gate) => ({
+          ...gate,
+          id: gate.id.replace(/-on-page$/, '-on-inset'),
+          background: inset,
+        })),
+    );
+
   return gates;
 }
 
@@ -446,7 +474,9 @@ export function checkStructure(palette: Palette, mode: PaletteMode): readonly St
   ];
 
   if (mode === 'dark') {
-    const lift = fromHex(colors.surface.card).l - fromHex(colors.surface.page).l;
+    // on a surface read by its edges the lift is its inset's: the step the card stood over the page by, kept inside
+    const lift =
+      fromHex(colors.line?.inset ?? colors.surface.card).l - fromHex(colors.surface.page).l;
     results.push({
       id: 'dark/card-lift',
       detail: `${(lift * 100).toFixed(1)}pp (${GATES.darkCardLift.min * 100}–${GATES.darkCardLift.max * 100})`,

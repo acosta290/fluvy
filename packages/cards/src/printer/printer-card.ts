@@ -307,7 +307,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
       }
       /* the job's preview is a render of the part: the whole of it, on the page's fill */
       .pr-plate.is-preview {
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       /* the picture out of reach: its plate in its shape, the camera's glyph and why, on the page's fill (1.9) */
       .pr-plate.is-off {

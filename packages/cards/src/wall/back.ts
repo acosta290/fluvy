@@ -49,7 +49,7 @@ export class FluvyWallBack extends LitElement {
       background: color-mix(in srgb, var(--fluvy-card) 88%, transparent);
       /* it floats over whatever the dashboard has under it: the knob's drop says so, as the corner's disc */
       box-shadow:
-        inset 0 0 0 1px var(--fluvy-border),
+        inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
         var(--fluvy-shadow-knob);
       color: var(--fluvy-text);
       transition: transform 120ms ease;
@@ -79,7 +79,7 @@ export class FluvyWallBack extends LitElement {
     }
     button:focus-visible .pill {
       box-shadow:
-        inset 0 0 0 1px var(--fluvy-border),
+        inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
         0 0 0 2px var(--fluvy-accent),
         var(--fluvy-shadow-knob);
     }

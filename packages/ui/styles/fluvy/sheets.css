@@ -7,8 +7,8 @@
   border-radius: var(--fluvy-radius-xl) var(--fluvy-radius-xl) 0 0;
   background: var(--fluvy-card);
   box-shadow:
-    0 0 0 1px var(--fluvy-border),
-    0 -24px 48px -24px rgb(0 0 0 / 0.25);
+    0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
+    0 -24px 48px -24px rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1)));
 }
 
 .fv-sheet__grabber {
@@ -78,7 +78,7 @@
   font-weight: 500;
   line-height: 32px;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.35);
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / calc(0.35 * var(--fluvy-shade, 1)));
 }
 
 .fv-bubble b {

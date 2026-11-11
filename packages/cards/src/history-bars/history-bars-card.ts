@@ -552,7 +552,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         margin-top: 24px;
         padding: 16px;
         border-radius: var(--fluvy-radius-lg);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       .hb-fact {
         position: relative;

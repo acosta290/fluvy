@@ -178,7 +178,7 @@ export const panelStyles = css`
   }
   .pn-tabs .fv-chip__pill {
     background: var(--fluvy-card);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
     color: var(--fluvy-text-secondary);
     font-size: 14px;
   }
@@ -396,7 +396,7 @@ export const panelStyles = css`
     min-height: 44px;
     padding: 12px 16px;
     border-radius: var(--fluvy-radius-control);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     box-shadow: inset 0 0 0 1px var(--fluvy-border);
     font-size: 14px;
     font-weight: 500;
@@ -534,7 +534,7 @@ export const panelStyles = css`
     padding-inline: 16px;
     border-radius: var(--fluvy-radius-pill, 9999px);
     background: var(--fluvy-card);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   }
   .pn-tabsmock--pills .pn-tabsmock__tab.is-active {
     background: var(--fluvy-selected, var(--fluvy-text));
@@ -703,7 +703,7 @@ export const panelStyles = css`
     padding: 8px 8px 12px;
     border: 0;
     border-radius: var(--fluvy-radius-control);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     color: var(--fluvy-text);
     font: inherit;
     text-align: left;
@@ -798,7 +798,7 @@ export const panelStyles = css`
     padding: 8px 12px 8px 8px;
     border: 0;
     border-radius: var(--fluvy-radius-control);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     color: var(--fluvy-text);
     font: inherit;
     text-align: left;
@@ -888,9 +888,10 @@ export const panelStyles = css`
     padding: 0;
     /* its edge is its own colour a shade deeper (a grey ring stair-stepped round a saturated dot); a pale dot
        still stands off the card by it */
-    border: 1px solid color-mix(in oklab, var(--dot, var(--fluvy-page)) 86%, var(--fluvy-text));
+    border: 1px solid
+      color-mix(in oklab, var(--dot, var(--fluvy-inset, var(--fluvy-page))) 86%, var(--fluvy-text));
     border-radius: 50%;
-    background: var(--dot, var(--fluvy-page));
+    background: var(--dot, var(--fluvy-inset, var(--fluvy-page)));
     color: var(--dot-ink, var(--fluvy-text-secondary));
     cursor: pointer;
   }
@@ -1070,7 +1071,7 @@ export const panelStyles = css`
     padding: 12px;
     border-radius: var(--fluvy-radius-control);
     background: var(--fluvy-card);
-    box-shadow: inset 0 0 0 1px var(--fluvy-border);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
     color: var(--fluvy-text);
   }
   .pn-mode__name {
@@ -1254,7 +1255,7 @@ export const panelStyles = css`
     background: var(--fluvy-card-elevated);
     box-shadow:
       var(--fluvy-shadow-lift),
-      inset 0 0 0 1px var(--fluvy-border);
+      inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   }
   .pn-bar--trial {
     grid-template-areas: 'text discard';

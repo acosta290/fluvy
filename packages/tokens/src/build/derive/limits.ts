@@ -15,6 +15,11 @@ export const GATES = {
   cardVsPage: 1.18,
   /** The hairline that closes a card edge, measured against the card it sits on. */
   borderVsCard: 1.35,
+  /**
+   * A surface read by its edges (`surface: line | ink`): the edge is all that sets a card off the page, so it is
+   * seen on its own, at what WCAG asks of anything that is not text, measured against the page.
+   */
+  edgeVsPage: 3,
   /** Ink on a filled "on/active" surface. */
   onFill: 4.5,
   /** Smallest acceptable CIEDE2000 distance between any two graph series. */

@@ -22,7 +22,7 @@ import { sheet as slider } from './slider.js';
  */
 
 /** The reporter's favourite: a deep blue to a sky one. */
-const BLUE = 'linear-gradient(160deg, #0b2a6f 0%, #1d4ed8 48%, #60a5fa 100%)';
+export const BLUE = 'linear-gradient(160deg, #0b2a6f 0%, #1d4ed8 48%, #60a5fa 100%)';
 
 /** A busy picture: bright blots of colour over a striped ground, so what shows through, and its blur, can be judged. */
 export const PICTURE = [
@@ -65,10 +65,10 @@ const DOZEN: readonly LovelaceCardConfig[] = [
   { type: 'custom:fluvy-light-card', entity: 'light.co_gone' },
 ];
 
-/** The dozen at an opacity of their own, on a backdrop. */
-const dozen = (title: string, backdrop: string, opacity: number): FrameSpec => ({
+/** The dozen at an opacity of their own, on a backdrop (none: the page). */
+export const dozen = (title: string, backdrop: string, opacity: number): FrameSpec => ({
   title,
-  backdrop,
+  ...(backdrop ? { backdrop } : {}),
   ...(washer?.hass ? { hass: washer.hass } : {}),
   cards: DOZEN.map((card) => ({ ...card, card_opacity: opacity })),
 });

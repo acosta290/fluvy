@@ -65,7 +65,7 @@
   border-radius: var(--fluvy-radius-lg);
   background: var(--fluvy-card);
   box-shadow:
-    0 0 0 1px var(--fluvy-border),
+    0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
     var(--fluvy-shadow-lift);
   color: var(--fluvy-text);
   overflow-y: auto;
@@ -134,7 +134,7 @@
 }
 
 .fv-menu__item.is-active {
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
 }
 
 .fv-menu__item[aria-selected='true'] {

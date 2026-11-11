@@ -14,9 +14,9 @@ export const editorPageCss = `manual-automation-editor, manual-script-editor { p
 
 /** The row side panel: a hairline and the lift of a sheet, not a 2 px accent frame (the selected row keeps its accent outline). */
 export const sidebarCardCss =
-  'ha-card { border-width: 1px; border-color: var(--fluvy-border); box-shadow: var(--fluvy-shadow-lift); } .card-content { padding-top: 8px; }';
+  'ha-card { border-width: 1px; border-color: var(--fluvy-edge, var(--fluvy-border)); box-shadow: var(--fluvy-shadow-lift); } .card-content { padding-top: 8px; }';
 export const sidebarCss =
-  ':host { --ha-bottom-sheet-border-width: 1px; --ha-bottom-sheet-border-color: var(--fluvy-border); }';
+  ':host { --ha-bottom-sheet-border-width: 1px; --ha-bottom-sheet-border-color: var(--fluvy-edge, var(--fluvy-border)); }';
 
 /** A trigger / condition / action row: controls centred on multi-line rows, 56 tall with the border, titles 15/500; the leading glyph a 24 box, not an inline icon on a text line (24.17 px, rows on sub-pixels). */
 export const automationRowCss = `.row { align-items: center; min-height: 54px; }
@@ -58,7 +58,7 @@ ha-list-item-button.selected { background-color: var(--fluvy-accent-fill); --md-
 ha-list-item-button.selected::part(headline), ha-list-item-button.selected ha-icon, ha-list-item-button.selected ha-svg-icon { color: var(--fluvy-accent-on-fill); }`;
 
 /** A row's targets: our page-fill chip (radius 12, no border) with the integration logos in grey. */
-export const rowTargetsCss = `.target { border-radius: var(--fluvy-radius-control); border: 0; background: var(--fluvy-page); }
+export const rowTargetsCss = `.target { border-radius: var(--fluvy-radius-control); border: 0; background: var(--fluvy-inset, var(--fluvy-page)); }
 .target ha-domain-icon { filter: grayscale(1); opacity: 0.85; }`;
 
 /** Action forms: the spacer beside a required field is as wide as the checkbox beside an optional one. */

@@ -21,7 +21,7 @@
 }
 
 .sl-band--fine .tk-on {
-  filter: drop-shadow(0 0 2px var(--fluvy-state-light-active-fill));
+  filter: drop-shadow(0 0 calc(2px * var(--fluvy-shade, 1)) var(--fluvy-state-light-active-fill));
 }
 
 /* a level kept while it does not sound (a muted player's volume, a number whose switch is off): the secondary ink */

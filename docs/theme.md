@@ -20,10 +20,35 @@ Fifteen presets in two lines, each with a light and a dark mode that are derived
 - **pastel** — Linen (the default), Sand, Sage, Mist, Clay, Slate, Harbour, Dusk, Ember (designed dark first);
 - **electric** — Blaze, Flamingo, Iris, Volt, Mint, Noir (dark first).
 
-Or a **custom** accent: a base (warm, neutral or cool), an accent colour, an optional highlight and a fill (tint or
-solid). Every palette — preset or custom — goes through the same generator and the same contrast gates: text at
-4.5:1 at least, icons and large text at 3:1, cards separated from the page and from their borders. An accent that
-cannot carry text at 4.5:1 gets a darker ink for text and keeps its full colour for icons and charts.
+Or a **custom** accent: a base (warm, neutral or cool), an accent colour, an optional highlight, a fill (tint or
+solid) and a surface (filled, outlined or ink: [below](#a-page-read-by-its-edges)). Every palette — preset or
+custom — goes through the same generator and the same contrast gates: text at 4.5:1 at least, icons and large text
+at 3:1, cards separated from the page and from their borders. An accent that cannot carry text at 4.5:1 gets a
+darker ink for text and keeps its full colour for icons and charts.
+
+### A page read by its edges
+
+A palette says how a card stands off the page, with `surface` (1.19):
+
+| `surface` | In the panel | The page and the cards | What closes a card |
+| --------- | ------------ | ---------------------- | ------------------ |
+| `fill` (the default, left unsaid) | Filled | the card a step lighter than the page | its hairline (1.35:1 on the card) |
+| `line` | Outlined | one colour: white in light, the page's charcoal in dark | its edge, a line that clears 3:1 on the page |
+| `ink` | Ink | the same | its edge in the text's ink, as on a printed sheet |
+
+`line` and `ink` are made for e-paper panels and for walls that should read like a page: nothing casts a shadow (a
+menu, a sheet and whatever else lifts off the page is closed by the edge instead; a knob keeps its own ring), and a
+card out of reach dashes that same edge. Inside a card nothing changes: the hairlines between rows, the fills of
+what is on, the inks and the status colours are the palette's as ever, and what the page's grey drew there (a chip,
+an option, the stepper, a slider's track, a room's tiles) keeps that grey, so it still reads on a white card. Home
+Assistant's own cards, dialogs, fields, header and sidebar follow: its cards take the edge, its fields the grey, and
+a line runs under the header and beside the sidebar, which are the page's colour too.
+
+The gates follow the surface. Where a palette is filled, its card must lift off the page by itself (1.18:1 in
+light, 4 to 6 points of lightness in dark); where it is outlined, its edge must, at 3:1 against the page in both
+modes, and every ink that is gated on the page is gated on the grey inside the cards too. The community's **E-ink**
+palette is outlined: in light its page and cards are `#ffffff` and its edge `#95958e` (3.01:1), in dark `#0f0f0c`
+and `#60605d` (3.04:1).
 
 ## Status colours
 
@@ -163,6 +188,9 @@ type and radii. The cards, the shell and the pages need the integration; the the
 Every colour, radius and spacing Fluvy uses is a custom property, `--fluvy-*`, set on the page while the look is
 applied (and on Fluvy's dashboards when the scope is "only dashboards"). A card of your own that reads
 `var(--fluvy-accent)`, `var(--fluvy-card)` or `var(--fluvy-warning)` follows the palette and the house's status colours; the full list is what `packages/tokens` emits
-(`pnpm build` writes it to `packages/tokens/dist/`). Home Assistant's own variables (`--primary-color`,
+(`pnpm build` writes it to `packages/tokens/dist/`). Three names exist only on a palette read by its edges, so read
+them with what a filled palette has behind them: the line that closes a card, `var(--fluvy-edge, var(--fluvy-border))`;
+what fills a control inside a card, `var(--fluvy-inset, var(--fluvy-page))`; and the share of a shadow of your own
+the palette casts, `rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1)))`, which is none there. Home Assistant's own variables (`--primary-color`,
 `--card-background-color`, the `--ha-color-*` scales, the state colours, the chart colours) are all set by the theme
 file, so anything themed the Home Assistant way follows too.

@@ -1,5 +1,5 @@
 import type { HomeAssistant, LovelaceCard, LovelaceGridOptions } from '@fluvy/core';
-import type { StatusColours } from '@fluvy/tokens/runtime';
+import type { PaletteChoice, StatusColours } from '@fluvy/tokens/runtime';
 import type { MockPeriod } from './collection.js';
 import { createHass, type MockHouse, type MockOptions, type StateSeed } from './hass.js';
 import { mergeWs, NOW, type FrameSpec, type SheetSpec } from './scenes.js';
@@ -10,7 +10,7 @@ import type { WsTable } from './ws.js';
  * draw with, so a card looks the same on either. The house holds everything the sheets bring — their states (the last
  * sheet's seed of an id wins), registries, history, statistics, repairs and the integrations' words, stored data, their
  * WebSocket and REST answers, the Energy date pickers' collections — and a frame keeps its own width, gap, columns,
- * status colours and view of the house.
+ * palette, status colours and view of the house.
  */
 
 export type { MockHouse };
@@ -90,6 +90,8 @@ export interface FrameOptions {
   readonly fit?: boolean | undefined;
   /** Puts the frame in status colours of its own (`FrameSpec.statuses`), in the look the page wears. */
   readonly wearStatuses?: ((frame: HTMLElement, own: StatusColours) => void) | undefined;
+  /** Puts the frame in a palette of its own (`FrameSpec.palette`), in the look the page wears. */
+  readonly wearPalette?: ((frame: HTMLElement, own: PaletteChoice) => void) | undefined;
 }
 
 /**
@@ -130,6 +132,7 @@ export function mountFrame(
   if (frame.gap !== undefined) el.style.gap = `${frame.gap}px`;
   if (frame.backdrop) el.style.setProperty('--pg-backdrop', frame.backdrop);
   if (frame.heights) el.dataset['heights'] = frame.heights.join(',');
+  if (frame.palette) options.wearPalette?.(el, frame.palette);
   if (frame.statuses) options.wearStatuses?.(el, frame.statuses);
   const total = frame.columns ?? 12;
   if (frame.columns) el.style.gridTemplateColumns = `repeat(${total}, minmax(0, 1fr))`;

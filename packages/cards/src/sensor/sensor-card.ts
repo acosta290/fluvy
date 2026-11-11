@@ -254,7 +254,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
         height: ${CHART_HEIGHT}px;
         margin-top: 16px;
         border-radius: var(--fluvy-radius-control);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       .am-empty .fv-ico {
         background: var(--fluvy-card);

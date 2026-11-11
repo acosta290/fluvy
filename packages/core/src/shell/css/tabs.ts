@@ -51,7 +51,7 @@ ${ICONS} ${TAB}[fluvy-icon]::part(base) { display: none; }
 ${FLUVY} ${TAB}[active] { background: linear-gradient(var(--fluvy-accent, var(--primary-color)) 0 0) 50% 100% / calc(100% - 24px) 2px no-repeat; }
 ${PILLS} ha-tab-group::part(tabs) { height: var(--ha-tab-group-tab-height, 56px); align-items: center; gap: 8px; }
 ${PILLS} ha-tab-group::part(nav) { padding-inline: 4px; }
-${PILLS} ${TAB} { height: 36px; padding-inline: 16px; border-radius: var(--fluvy-radius-pill, 9999px); background-color: var(--fluvy-card, var(--card-background-color)); box-shadow: inset 0 0 0 1px var(--fluvy-border, var(--divider-color)); }
+${PILLS} ${TAB} { height: 36px; padding-inline: 16px; border-radius: var(--fluvy-radius-pill, 9999px); background-color: var(--fluvy-card, var(--card-background-color)); box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border, var(--divider-color))); }
 ${PILLS} ${TAB}[active] { background-color: var(--fluvy-selected, var(--fluvy-text)); color: var(--fluvy-on-selected, var(--fluvy-page)); box-shadow: none; }
 ${PILLS} ${TAB}:focus-visible { outline-offset: 2px; border-radius: var(--fluvy-radius-pill, 9999px); }
 ${ROOT} .narrow ha-tab-group::part(scroll-button) { display: none; }

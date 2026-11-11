@@ -1162,7 +1162,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         height: 84px;
         padding: 0 12px;
         border-radius: var(--fluvy-radius-control);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         cursor: pointer;
       }
       .ap-tile .fv-ico {
@@ -1227,7 +1227,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         gap: 8px var(--ap-gap, 8px);
         padding: 12px 12px 8px;
         border-radius: var(--fluvy-radius-lg);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       .ap-plate {
         display: flex;
@@ -1285,7 +1285,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         height: 84px;
         padding: 0 8px;
         border-radius: var(--fluvy-radius-control);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         color: var(--fluvy-text-secondary);
       }
       .ap-drink svg {

@@ -8,7 +8,7 @@ import {
   type WallFacade,
   type WallSettings,
 } from '@fluvy/core';
-import { isPaletteName } from '@fluvy/tokens/runtime';
+import { isPaletteName, parseCustomPalette } from '@fluvy/tokens/runtime';
 import { createMemoryLook } from './look-memory.js';
 
 /*
@@ -92,14 +92,26 @@ export async function mountWall(
   // background does (a dashboard's mock draws that one itself: `hui-view-background`)
   if (!params.has('dashboard'))
     doc.body.style.background = 'var(--fluvy-wall-bg, var(--fluvy-page))';
-  // `?palette=` and `?opacity=` as the rest of the playground reads them: the wall wears the house's look and cards,
-  // so the house wears them
-  const palette = params.get('palette');
+  // `?palette=` (or a custom one's `?accent=` and the rest) and `?opacity=` as the rest of the playground reads them:
+  // the wall wears the house's look and cards, so the house wears them
+  const preset = params.get('palette');
+  const palette = params.has('accent')
+    ? parseCustomPalette({
+        character: params.get('character') ?? 'vivid',
+        base: params.get('base') ?? 'neutral',
+        accent: params.get('accent'),
+        fill: params.get('fill') ?? 'tint',
+        highlight: params.get('highlight'),
+        surface: params.get('surface'),
+      })
+    : isPaletteName(preset)
+      ? preset
+      : undefined;
   await look.handle.store.saveHouse({
     scope: 'everywhere',
     wall: { ...WALL_DEFAULTS, ...wall },
     cards: cardsFor(params),
-    ...(isPaletteName(palette) ? { palette } : {}),
+    ...(palette ? { palette } : {}),
   });
   const facade = startWall({
     look: look.handle,

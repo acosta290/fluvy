@@ -78,7 +78,7 @@ export class FluvyDates extends LitElement {
         min-width: 0;
       }
       .ad-row .fv-chip__pill {
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
       }
       .ad-month {
         display: flex;

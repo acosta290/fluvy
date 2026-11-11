@@ -274,7 +274,7 @@ export const historyStyles = css`
 
   /* past the end of the record: the room a window keeps for what has not happened, marked as exactly that */
   .hs-future {
-    fill: var(--fluvy-page);
+    fill: var(--fluvy-inset, var(--fluvy-page));
     opacity: 0.55;
   }
 
@@ -406,7 +406,7 @@ export const historyStyles = css`
     display: flex;
     height: 100%;
     border-radius: var(--fluvy-radius-md, 8px);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     overflow: hidden;
   }
 
@@ -458,7 +458,7 @@ export const historyStyles = css`
     right: 0;
     bottom: 0;
     border-left: 1px dashed var(--fluvy-border-strong);
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
     opacity: 0.55;
   }
 

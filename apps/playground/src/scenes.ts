@@ -1,5 +1,5 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import type { StatusColours } from '@fluvy/tokens/runtime';
+import type { PaletteChoice, StatusColours } from '@fluvy/tokens/runtime';
 import type { MockHouse, MockOptions, StateSeed } from './hass.js';
 import type { WsTable } from './ws.js';
 
@@ -47,6 +47,11 @@ export interface FrameSpec {
    * them, scoped to the frame, over the page's own (`&warning=` …).
    */
   readonly statuses?: StatusColours;
+  /**
+   * The palette this frame wears where it is not the page's (a surface read by its edges beside one that is not): the
+   * page's look in it, scoped to the frame.
+   */
+  readonly palette?: PaletteChoice;
 }
 
 export interface SheetSpec {

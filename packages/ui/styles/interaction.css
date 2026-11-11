@@ -221,7 +221,7 @@
   /* a day takes the page's fill on its plate (in a period, the plate of a period's end) */
   .fv-day:not(.is-selected, .is-in, .is-today, [disabled]):hover::before,
   .fv-days--range .fv-day.is-today:not(.is-in):hover::before {
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
 
   .fv-days--range .fv-day:not(.is-in):hover::before {
@@ -432,7 +432,7 @@
   transform: scale(1.12);
   box-shadow:
     0 0 0 2px var(--tone-ink),
-    0 8px 18px -4px rgb(0 0 0 / 0.32),
+    0 8px 18px -4px rgb(0 0 0 / calc(0.32 * var(--fluvy-shade, 1))),
     0 0 0 6px var(--knob-halo);
   will-change: transform;
 }
@@ -547,7 +547,7 @@
 
 .fv-skeleton {
   border-radius: 8px;
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   animation: fv-shimmer 900ms ease-in-out infinite;
 }
 

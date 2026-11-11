@@ -11,7 +11,7 @@
   padding: 16px;
   box-sizing: border-box;
   border-radius: var(--fluvy-radius-lg);
-  background: var(--fluvy-page);
+  background: var(--fluvy-inset, var(--fluvy-page));
   text-align: center;
 }
 

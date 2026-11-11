@@ -1,7 +1,13 @@
 import { NAMED_COLORS, statusRamp, THEME_COLOR_NAMES } from './named.js';
 import { cssVar, THEME_SENTINEL } from '../config.js';
 import { fontFamily, fontSize, fontWeight, lineHeight, type RadiusName } from '../scales/index.js';
-import { RAMP_STEPS, STATE_KEYS, type PaletteModeColors, type StateKey } from '../types.js';
+import {
+  insetOf,
+  RAMP_STEPS,
+  STATE_KEYS,
+  type PaletteModeColors,
+  type StateKey,
+} from '../types.js';
 import type { CssDeclaration, VarGroup } from '../emit/vars.js';
 
 /**
@@ -139,7 +145,8 @@ export const HA_GROUPS: readonly HaGroup[] = [
     ],
     perMode: (c) => [
       ['--ha-card-background', c.surface.card],
-      ['--ha-card-border-color', c.surface.border],
+      // on a surface read by its edges, the edge closes Home Assistant's cards too
+      ['--ha-card-border-color', c.line?.edge ?? c.surface.border],
     ],
   },
   {
@@ -160,7 +167,7 @@ export const HA_GROUPS: readonly HaGroup[] = [
         ['--ha-dialog-surface-background', surface],
         ['--ha-bottom-sheet-surface-background', surface],
         ['--ha-bottom-sheet-handle-color', c.surface.borderStrong],
-        ['--ha-bottom-sheet-border-color', c.surface.border],
+        ['--ha-bottom-sheet-border-color', c.line?.edge ?? c.surface.border],
         ['--ha-dialog-header-title-color', c.text.primary],
         ['--ha-dialog-header-subtitle-color', c.text.secondary],
       ];
@@ -196,11 +203,11 @@ export const HA_GROUPS: readonly HaGroup[] = [
       ['--ha-bar-border-radius', '6px'],
     ],
     perMode: (c) => [
-      ['--ha-switch-background-color', dark(c) ? c.surface.borderStrong : c.surface.page],
+      ['--ha-switch-background-color', dark(c) ? c.surface.borderStrong : insetOf(c)],
       ['--ha-switch-border-color', c.surface.borderStrong],
       ['--ha-switch-thumb-background-color', dark(c) ? c.text.secondary : c.surface.card],
       ['--ha-switch-thumb-border-color', dark(c) ? c.text.secondary : c.surface.card],
-      ['--ha-switch-thumb-box-shadow', dark(c) ? 'none' : '0 1px 2px #0000002e'], // black at 18 %, as #rrggbbaa like every shadow the theme writes
+      ['--ha-switch-thumb-box-shadow', dark(c) || c.line ? 'none' : '0 1px 2px #0000002e'], // black at 18 %, as #rrggbbaa like every shadow the theme writes
       ['--ha-switch-checked-background-color', c.accent.ink],
       ['--ha-switch-checked-border-color', c.accent.ink],
       ['--ha-switch-checked-background-color-hover', c.accent.hover],
@@ -215,11 +222,11 @@ export const HA_GROUPS: readonly HaGroup[] = [
       ['--ha-radio-option-active-color', c.accent.ink],
       ['--ha-slider-track-color', dark(c) ? c.surface.borderStrong : c.surface.pageAlt],
       // form fields and disabled controls: the page fill, and the disabled ink instead of HA's white-on-grey
-      ['--ha-color-form-background', c.surface.page],
+      ['--ha-color-form-background', insetOf(c)],
       ['--ha-color-form-background-hover', c.surface.pageAlt],
       ['--ha-color-form-background-disabled', c.surface.pageAlt],
       // the field palette the older inputs read (floating labels, dropdown arrows, table headers); HA's defaults are neutral greys
-      ['--input-fill-color', c.surface.page],
+      ['--input-fill-color', insetOf(c)],
       ['--input-disabled-fill-color', c.surface.pageAlt],
       ['--input-ink-color', c.text.primary],
       ['--input-label-ink-color', c.text.secondary],
@@ -319,7 +326,7 @@ export const HA_GROUPS: readonly HaGroup[] = [
       ['--ha-color-text-disabled', c.text.disabled],
       ['--ha-color-text-link', c.accent.text],
       ['--ha-color-surface-default', c.surface.card],
-      ['--ha-color-surface-low', c.surface.page],
+      ['--ha-color-surface-low', insetOf(c)],
       // HA's third surface is `lower` (sunken below the page), not `high`: the page-alt fill
       ['--ha-color-surface-lower', c.surface.pageAlt],
       ['--ha-color-border-neutral-quiet', c.surface.border],
@@ -361,8 +368,8 @@ export const HA_GROUPS: readonly HaGroup[] = [
       ['--ha-color-on-warning-quiet', c.semantic.warning.onFill],
       ['--ha-color-on-danger-quiet', c.semantic.danger.onFill],
       ['--ha-color-focus', c.accent.ink],
-      ['--ha-color-fill-disabled-quiet-resting', c.surface.page],
-      ['--ha-color-fill-disabled-normal-resting', c.surface.page],
+      ['--ha-color-fill-disabled-quiet-resting', insetOf(c)],
+      ['--ha-color-fill-disabled-normal-resting', insetOf(c)],
       ['--ha-color-fill-disabled-loud-resting', c.surface.pageAlt],
       ['--ha-color-on-disabled-quiet', c.text.disabled],
       ['--ha-color-on-disabled-normal', c.text.disabled],
@@ -417,6 +424,8 @@ export const HA_GROUPS: readonly HaGroup[] = [
       ['--app-header-edit-background-color', c.accent.fill],
       ['--app-header-edit-text-color', c.character === 'vivid' ? c.accent.onFill : c.text.primary],
       ['--app-theme-color', c.surface.card],
+      // on a surface read by its edges the header is the page's colour: the edge runs under it
+      ...(c.line ? ([['--app-header-border-bottom', `1px solid ${c.line.edge}`]] as const) : []),
       ['--sidebar-background-color', c.surface.card],
       ['--sidebar-text-color', c.text.primary],
       ['--sidebar-icon-color', c.text.secondary],

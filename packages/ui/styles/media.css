@@ -7,7 +7,7 @@
 .md-art--l {
   border-radius: var(--fluvy-radius-card);
   box-shadow:
-    0 24px 48px -20px rgb(0 0 0 / 0.45),
+    0 24px 48px -20px rgb(0 0 0 / calc(0.45 * var(--fluvy-shade, 1))),
     inset 0 0 0 1px rgb(0 0 0 / 0.08);
 }
 

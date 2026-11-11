@@ -502,7 +502,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         height: 100%;
         padding: 0 16px;
         border-radius: var(--fluvy-radius-control);
-        background: var(--fluvy-page);
+        background: var(--fluvy-inset, var(--fluvy-page));
         text-align: center;
       }
       .ch-empty .fv-ico {

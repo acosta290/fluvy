@@ -1,6 +1,6 @@
 import { LIMITS } from '../build/derive/limits.js';
 import { SECONDARY_ON_FILL } from '../build/derive/profiles.js';
-import { meshOf } from '../build/mesh.js';
+import { meshOf, type Mesh } from '../build/mesh.js';
 import { composite, contrastRatio } from '../color/contrast.js';
 import { ensureContrast } from '../color/fit.js';
 import { fromHex, toHex } from '../color/oklch.js';
@@ -29,6 +29,7 @@ import {
 } from '../scales/index.js';
 import { haModeVars } from '../ha/groups.js';
 import {
+  insetOf,
   RAMP_STEPS,
   SEMANTIC_ROLES,
   STATE_KEYS,
@@ -48,6 +49,9 @@ export const OPTIONAL_BRAND_VARS: readonly string[] = [
   cssVar('mark'),
   cssVar('on-mark'),
   cssVar('mark-edge'),
+  cssVar('edge'),
+  cssVar('inset'),
+  cssVar('shade'),
 ];
 
 export type CssDeclaration = readonly [name: string, value: string];
@@ -183,7 +187,8 @@ export function surfaceWash(family: AccentFamily, colors: PaletteModeColors): He
  * the share over a ground lifted from the page toward the card, as far as the words need (at the most, flush).
  */
 function insetWash(fill: Hex, step: number, colors: PaletteModeColors): Hex {
-  const { page, card } = colors.surface;
+  const { card } = colors.surface;
+  const page = insetOf(colors);
   const reads = (wash: Hex): boolean => wordsRead(colors, wash);
   const kept = washStep(fill, page, step, reads);
   if (kept * 2 >= step || (kept > 0 && fromHex(fill).c < COLOUR))
@@ -363,7 +368,7 @@ export function accentFamilyVars(
     [cssVar('accent-fill-border'), family.fillBorder],
     [cssVar('accent-wash'), wash],
     [cssVar('accent-rest'), restWash(family.fill, colors.surface.card, colors)],
-    [cssVar('accent-rest-inner'), restWash(family.fill, colors.surface.page, colors)],
+    [cssVar('accent-rest-inner'), restWash(family.fill, insetOf(colors), colors)],
     [cssVar('accent-on-fill'), family.onFill],
     [cssVar('primary'), family.primary.fill],
     [cssVar('primary-hover'), family.primary.hover],
@@ -392,7 +397,11 @@ export function accentFamilyVars(
 
 /** The brand layer: every colour the product owns, complete for one palette × mode. */
 export function brandColorVars(colors: PaletteModeColors): readonly VarGroup[] {
-  const mesh = meshOf(colors.surface.page, colors.mode);
+  const { page } = colors.surface;
+  // a surface read by its edges is flat: no stop of its mesh moves off its page (a view's, a wall's, the screensaver's)
+  const mesh: Mesh = colors.line
+    ? { mesh: [page, page, page], wall: [page, page, page] }
+    : meshOf(page, colors.mode);
   return [
     {
       title: 'Surfaces',
@@ -403,6 +412,14 @@ export function brandColorVars(colors: PaletteModeColors): readonly VarGroup[] {
         [cssVar('card-elevated'), colors.surface.cardElevated],
         [cssVar('border'), colors.surface.border],
         [cssVar('border-strong'), colors.surface.borderStrong],
+        // a surface read by its edges: the line that closes a card on a page of its own colour, and what the page's
+        // fill drew inside one (the cards read both with today's hairline and page behind them)
+        ...(colors.line
+          ? ([
+              [cssVar('edge'), colors.line.edge],
+              [cssVar('inset'), colors.line.inset],
+            ] as const)
+          : []),
       ],
     },
     {
@@ -416,19 +433,27 @@ export function brandColorVars(colors: PaletteModeColors): readonly VarGroup[] {
     {
       // what lifts off the page (menus, popovers, the dial's disc) and the knob's own drop; dark needs a deeper shadow to read at all
       title: 'Elevation',
-      declarations: [
-        // black at an alpha, written as #rrggbbaa: the one colour notation every reader of the theme parses
-        [
-          cssVar('shadow-lift'),
-          colors.mode === 'dark'
-            ? '0 16px 40px -16px #000000cc, 0 2px 6px -2px #00000066'
-            : '0 16px 40px -16px #00000059, 0 2px 6px -2px #0000001f',
-        ],
-        [
-          cssVar('shadow-knob'),
-          colors.mode === 'dark' ? '0 4px 10px -2px #00000099' : '0 4px 10px -2px #00000040',
-        ],
-      ],
+      declarations: colors.line
+        ? [
+            // a surface read by its edges casts no shadow: what lifts off the page is closed by the edge, the knob by
+            // its own ring, and the shadows a card draws itself are taken at none of their strength (`--fluvy-shade`)
+            [cssVar('shadow-lift'), `0 0 0 1px ${colors.line.edge}`],
+            [cssVar('shadow-knob'), '0 0 0 0 #00000000'],
+            [cssVar('shade'), '0'],
+          ]
+        : [
+            // black at an alpha, written as #rrggbbaa: the one colour notation every reader of the theme parses
+            [
+              cssVar('shadow-lift'),
+              colors.mode === 'dark'
+                ? '0 16px 40px -16px #000000cc, 0 2px 6px -2px #00000066'
+                : '0 16px 40px -16px #00000059, 0 2px 6px -2px #0000001f',
+            ],
+            [
+              cssVar('shadow-knob'),
+              colors.mode === 'dark' ? '0 4px 10px -2px #00000099' : '0 4px 10px -2px #00000040',
+            ],
+          ],
     },
     {
       title: 'Text',

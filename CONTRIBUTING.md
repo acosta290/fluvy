@@ -63,10 +63,27 @@ the shell no longer matches (`docs/shell.md` says how to look).
 A palette is a file: `packages/tokens/src/palettes/community/<name>.fluvy-palette.json`, the same file the panel's
 *Share this palette* writes (make one there: choose a custom accent, give it a title and your name, share it).
 The file names its palette (`name`, lower case, dashes), a `title`, an `author`, an optional `description` and the
-`palette` itself (a base, an accent, a fill, an optional highlight). `pnpm build` in `packages/tokens` checks it —
-the file is named after its `name`, no other palette has that name, and both modes pass the contrast gates every
-preset passes (an accent that cannot carry text at 4.5:1 gets a darker ink, as a preset's would) — and regenerates
-`index.ts`, which the pull request includes. The panel lists it under *Community* with your name beside it.
+`palette` itself (a base, an accent, a fill, an optional highlight, an optional surface). `pnpm build` in
+`packages/tokens` checks it — the file is named after its `name`, no other palette has that name, and both modes
+pass the contrast gates every preset passes (an accent that cannot carry text at 4.5:1 gets a darker ink, as a
+preset's would) — and regenerates `index.ts`, which the pull request includes. The panel lists it under *Community*
+with your name beside it.
+
+A palette whose page and cards are one colour, each card closed by its edge, says so in its `palette`
+(`"surface": "line"`, or `"ink"` for an edge in the text's ink; the panel's *Cards → Outlined* or *Ink* writes it).
+It is then gated by that edge, 3:1 against the page in both modes, in place of the card against the page:
+[what the surface changes](docs/theme.md#a-page-read-by-its-edges). An older Fluvy reads such a file as a filled
+palette.
+
+```json
+{
+  "fluvy_palette": 1,
+  "name": "e-ink",
+  "title": "E-ink",
+  "author": "maxhayim",
+  "palette": { "character": "soft", "base": "neutral", "accent": "#1f1f1f", "surface": "line" }
+}
+```
 
 ## Trying it in Home Assistant
 

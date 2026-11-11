@@ -127,7 +127,7 @@ export const calendarStyles = css`
   }
 
   .cd-sk--bar {
-    background: var(--fluvy-page);
+    background: var(--fluvy-inset, var(--fluvy-page));
   }
 
   .cd-sk--title {
