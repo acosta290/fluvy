@@ -238,9 +238,10 @@ const frames: FrameSpec[] = [
       { ...BATTERY, subtitle: 'sensor.am_home_battery_runtime', badge: 'Discharging', cols: 6 },
     ],
   },
-  // the line's entity out of reach: its dash, the card its size
+  // the line's entity out of reach: its dash, the card its size (the gauge itself reads and moves: the title keeps
+  // clear of the words the chart suite takes for a gauge that must rest)
   {
-    title: 'Moving · its line out of reach',
+    title: 'Moving · its line’s entity away',
     cards: [{ ...BATTERY, subtitle: 'sensor.am_home_battery_energy_away' }],
   },
 ];
