@@ -637,6 +637,25 @@ describe('a calendar day of history (#158)', () => {
     }
   });
 
+  it('is read by the keys from where it rests: ← a step back from now, not from tonight', async () => {
+    const press = async (card: Inner, key: string) => {
+      root(card).querySelector('.ch-chart')?.dispatchEvent(new KeyboardEvent('keydown', { key }));
+      await card.updateComplete;
+      return texts(card, '.ch-now .fv-readout__label')[0];
+    };
+    // a line of today at noon, read in half hours
+    const line = await draw(
+      { series: ['sensor.living'], span: 'today', chart: 'soft', _now: NOON },
+      rooms(),
+    );
+    expect(await press(line, 'ArrowLeft')).toBe('11:30');
+    expect(await press(line, 'ArrowLeft')).toBe('11:00');
+    // Nordpool's hours at the sheets' 21:47: the hour of now rests in its middle, ← reads the one before it
+    const prices = await draw(NORDPOOL);
+    expect(await press(prices, 'ArrowLeft')).toBe('20:00');
+    expect(await press(prices, 'ArrowRight')).toBe('21:00');
+  });
+
   it('keeps a price that runs past now dashed from now on, beside a history that ends there', async () => {
     const card = await draw(
       {

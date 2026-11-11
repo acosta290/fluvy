@@ -251,6 +251,19 @@ describe('the Energy usage card', () => {
     expect(root(card).querySelector('.eu-bubble')).toBeNull();
   });
 
+  it('is read by the keys from now: ← the hour before now’s, not the day’s last', async () => {
+    const card = await mount({});
+    const chart = root(card).querySelector<HTMLElement>('.eu-chart') as HTMLElement;
+    const press = async (key: string) => {
+      chart.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      await card.updateComplete;
+      return root(card).querySelector('.eu-bubble__line')?.firstElementChild?.textContent?.trim();
+    };
+    // the day's hours run to midnight; at 21:47 the hour of now is 21:00
+    expect(await press('ArrowLeft')).toBe('20:00 – 21:00');
+    expect(await press('ArrowRight')).toBe('21:00 – 22:00');
+  });
+
   it('keeps its bubble inside a card of half a section: the time over its total, the parts’ figures bare', async () => {
     const card = await mount({ compare: true });
     // seven pixels a character, whatever the face: the layout is what is read here, not the font

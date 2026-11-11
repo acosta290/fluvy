@@ -242,6 +242,8 @@ const FIGURE_GAP = 16;
 interface Drawn {
   readonly grain: Grain;
   readonly slots: readonly number[];
+  /** Where the range ends: its own end (today's midnight, past now), else now's (a range open to now). */
+  readonly end: number;
   readonly energy: readonly SlotEnergy[];
   readonly before?: {
     readonly range: Range;
@@ -250,11 +252,16 @@ interface Drawn {
   };
 }
 
-/** Where the plot lies in the chart's width, for the pointer and the keys: its start, a slot's width, the slots. */
+/**
+ * Where the plot lies in the chart's width, for the pointer and the keys: its start, a slot's width, the slots, and
+ * where the keys start reading (a fraction of the width): the middle of the slot that holds now where the range runs
+ * past it, else the chart's end.
+ */
 interface Plot {
   readonly left: number;
   readonly slot: number;
   readonly count: number;
+  readonly rest: number;
 }
 
 /** A source's kind, among the three an Energy dashboard meters, in the flow's words: the list's add picker. */
@@ -573,7 +580,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   private dataKey = '';
   /** The picker's answer the chart was last drawn from. */
   private followed: EnergyDataLike | undefined;
-  private plot: Plot = { left: 0, slot: 1, count: 0 };
+  private plot: Plot = { left: 0, slot: 1, count: 0, rest: 1 };
 
   override getCardSize(): number {
     return Math.ceil(usageHeight(this.config ?? { type: '' }) / 50);
@@ -663,6 +670,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     return {
       grain,
       slots,
+      end,
       energy: slotEnergy(buckets, slots, end),
       ...(before
         ? {
@@ -891,7 +899,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   }
 
   private readonly onKey = (event: KeyboardEvent): void => {
-    if (this.plot.count) this.scrubber.key(event, this.plot.slot / Math.max(1, this.contentWidth));
+    if (this.plot.count)
+      this.scrubber.key(event, this.plot.slot / Math.max(1, this.contentWidth), this.plot.rest);
   };
 
   /* ---------- render ---------- */
@@ -1096,7 +1105,14 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const plot = plotOf(spec);
     const ticks = plot.ticks as Ticks | null;
     const slotWidth = count ? plot.width / count : plot.width;
-    this.plot = { left: plot.left, slot: slotWidth, count };
+    const now = this.now().getTime();
+    const current = Math.max(0, drawn.slots.filter((t) => t <= now).length - 1);
+    this.plot = {
+      left: plot.left,
+      slot: slotWidth,
+      count,
+      rest: drawn.end > now ? (plot.left + (current + 0.5) * slotWidth) / Math.max(1, w) : 1,
+    };
     const nothingYet = series.every((s) => s.total === 0);
     const reading =
       hovered === null ? null : this.bubble(drawn, series, paints, hovered, figures, ghostUp);

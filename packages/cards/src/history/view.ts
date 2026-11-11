@@ -147,6 +147,9 @@ export class FluvyHistory extends LitElement {
   readonly layers = new Layers<HistoryLayer>(this);
   /** Pointing at any chart reads every one of them at that instant. */
   readonly scrubber = new ScrubController(this);
+  /** The keys read the charts from where the page rests: now, or the window's end once it has passed. */
+  readonly readKey = (event: KeyboardEvent): boolean =>
+    this.scrubber.key(event, undefined, this.fraction(this.drawnEnd));
   stop: (() => void) | undefined;
   subscribed = '';
   statsKey = '';

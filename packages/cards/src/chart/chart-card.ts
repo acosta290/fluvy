@@ -1384,7 +1384,14 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const read =
       specs && fraction !== null ? this.readAt(specs, drawn, window, grid, fraction) : null;
     const values = drawn.map((d, i) => (read ? (read.values[i] ?? null) : d.now));
-    const left = specs ? plotOf(specs.main).left : 0;
+    const plot = specs ? plotOf(specs.main) : null;
+    const left = plot?.left ?? 0;
+    // the keys read from where the chart rests: the end of what has happened where the window runs past now, else
+    // the window's end
+    const rest =
+      specs && plot && nowFraction(window) !== null
+        ? (readAt(specs.main, null).x - plot.left) / plot.width
+        : 1;
     // the legend's lines in the row read each series: when that is goes on the axis, under the cursor
     const when = rowReads && inRow ? read : null;
     return html`<article class="fv-card ch-card ${off ? 'is-unavailable is-off' : ''}" data-card>
@@ -1412,7 +1419,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         role="img"
         tabindex="0"
         aria-label=${this.spoken(drawn, values, read?.time ?? null)}
-        @keydown=${(event: KeyboardEvent) => this.scrubber.key(event, 1 / count)}
+        @keydown=${(event: KeyboardEvent) => this.scrubber.key(event, 1 / count, rest)}
         ${scrub(this.scrubber)}
       >
         ${

@@ -15,8 +15,9 @@
  *   head the bubble says it in its 44 above the plot; two series read in the row's lines, the time a pill on the axis;
  * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines;
  * - what has happened is whole (#158): three rooms' lines of today at noon end on noon, none dashed; a room beside the
- *   price of both days, and the measured beside the weather's forecast, end on now's hairline, nothing dashed before it;
- *   a line over columns marks now once, on the line's end, the columns to come hollow;
+ *   price of both days, and the measured beside the weather's forecast, end on now's hairline, nothing dashed before
+ *   it; a line over columns marks now once, on the line's end, the columns to come hollow; the keys read a window past
+ *   now from where it rests, ← a step back from now;
  * - four rooms: their legend under the axis in two columns at 360, the value row's lines at 266 and 211 (where the
  *   columns would cut the names), every name legible, the card at the height it declares;
  * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
@@ -548,6 +549,30 @@ const marksOf = (card) =>
       over.columns.some(([, hollow]) => hollow) &&
       over.columns.every(([x, hollow]) => (hollow ? x > over.now[0] : x < over.now[0])),
     JSON.stringify(over),
+  );
+  // the keys read a window past now from where it rests: ← a step back from now, not from the window's end
+  const keyed = frame(page, 'Chart · today and tomorrow at noon')
+    .locator('fluvy-chart-card')
+    .first();
+  await keyed.locator('.ch-chart').focus();
+  await page.keyboard.press('ArrowLeft');
+  await settle(page, 100);
+  const stepped = await keyed.evaluate((card) => {
+    const svg = card.shadowRoot.querySelector('svg.fc-chart');
+    return {
+      when: card.shadowRoot.querySelector('.ch-axis > .ch-when')?.textContent.trim(),
+      cursor: Number(svg.querySelector('.fc-cursor')?.getAttribute('x1')),
+      now: Number(svg.querySelector('.fc-now')?.getAttribute('x1')),
+    };
+  });
+  await page.keyboard.press('Escape');
+  await settle(page, 100);
+  check(
+    'the keys read a window past now from where it rests: ← a step back from noon, not from its end',
+    /^11:\d\d$/.test(stepped.when ?? '') &&
+      stepped.cursor < stepped.now &&
+      stepped.now - stepped.cursor <= 12,
+    JSON.stringify(stepped),
   );
 }
 await page.close();

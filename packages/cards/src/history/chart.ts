@@ -231,7 +231,7 @@ export function renderChart(page: FluvyHistory, chart: Chart): TemplateResult {
       tabindex="0"
       aria-label=${page.t('chart_read', { measure: chart.title })}
       aria-describedby=${`hs-read-${id}`}
-      @keydown=${(event: KeyboardEvent) => page.scrubber.key(event)}
+      @keydown=${page.readKey}
       @focusin=${() => page.reads(chart.key)}
       @pointerdown=${() => page.reads(chart.key)}
       ${scrub(page.scrubber)}

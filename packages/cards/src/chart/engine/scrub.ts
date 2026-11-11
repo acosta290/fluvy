@@ -53,11 +53,12 @@ export class ScrubController implements ReactiveController {
   }
 
   /**
-   * The keys that read a chart without a pointer: ← → a step (Shift, five), Home and End its ends, Escape lets go.
-   * Returns whether the key was taken, so a host can leave the rest alone.
+   * The keys that read a chart without a pointer: ← → a step (Shift, five) from where it is read, else from where the
+   * chart rests (`rest`: the end of what has happened, the chart's end where it ends at now), Home and End its ends,
+   * Escape lets go. Returns whether the key was taken, so a host can leave the rest alone.
    */
-  readonly key = (event: KeyboardEvent, step = 0.02): boolean => {
-    const from = this.value ?? 1;
+  readonly key = (event: KeyboardEvent, step = 0.02, rest = 1): boolean => {
+    const from = this.value ?? rest;
     const far = event.shiftKey ? step * 5 : step;
     switch (event.key) {
       case 'ArrowLeft':

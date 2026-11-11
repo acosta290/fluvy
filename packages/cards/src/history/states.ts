@@ -76,7 +76,7 @@ export function renderStates(
       class="hs-lines"
       tabindex="0"
       aria-label=${page.t('chart_read', { measure: page.t('states') })}
-      @keydown=${(event: KeyboardEvent) => page.scrubber.key(event)}
+      @keydown=${page.readKey}
       @focusin=${() => page.reads('states')}
       @pointerdown=${() => page.reads('states')}
       ${scrub(page.scrubber)}
