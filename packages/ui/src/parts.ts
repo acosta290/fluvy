@@ -626,8 +626,11 @@ export interface ListRowOptions {
   readonly subName?: boolean;
 }
 
-/** A value that reads as words, not a figure: it may take two lines instead of one. */
-const words = (value: string | undefined): boolean => /[a-zà-ÿ]{3}/i.test(value ?? '');
+/**
+ * A value that reads as words, not a figure, in Latin letters or Cyrillic ("Não detectado", "Не обнаружено"): it
+ * may take two lines instead of one.
+ */
+const words = (value: string | undefined): boolean => /[a-zà-ÿа-яё]{3}/i.test(value ?? '');
 const wordy = (value: string | undefined): boolean => (value ?? '').length > 14 && words(value);
 /**
  * A value in words: prose (`--text`, a smaller two-line style) or a short state of several words (`--words`, which a
