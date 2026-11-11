@@ -1162,7 +1162,7 @@
     "scope.icons_sub": "De zijbalk en Instellingen; uit houdt die van Home Assistant",
     "scope.activity": "Onze activiteitsweergave",
     "scope.activity_sub": "Een dag in één oogopslag, met een tijdlijn; uit houdt die van Home Assistant",
-    "scope.history": "Onze geschiedenisweergave",
+    "scope.history": "Onze Geschiedenis",
     "scope.history_sub": "Curves die je zelf kunt aflezen, met de statussen eronder; uit houdt die van Home Assistant",
     "scope.admin_only": "Alleen een beheerder kan dit wijzigen",
     "scope.theme_profile": "Je profiel gebruikt het Fluvy-thema",
