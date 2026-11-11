@@ -1720,6 +1720,7 @@
     "since_pattern": "Источник последнего изменения для всех строк",
     "since_pattern_help": "Идентификатор датчика для строк без своего: {id} — object id строки, {entity} — её полный идентификатор, например sensor.{id}_real_last_changed",
     "template_helper": "Свой текст или шаблон, например {{ states('sensor.x') }}",
+    "own_text_helper": "Свой текст, объект (его состояние) или шаблон, например {{ states('sensor.x') }}",
     "sub_entity": "Объекты во второй строке",
     "plain": "Без полосы",
     "sub": "Контекст",
@@ -2335,8 +2336,7 @@
     "repeat_single": "Повторять один",
     "artwork": "Обложка альбома",
     "editor_image_mode": "Показ своего изображения",
-    "o_fallback": "Если нет обложки",
-    "editor_secondary_helper": "Свой текст, шаблон или объект, например sensor.tv_status"
+    "o_fallback": "Если нет обложки"
   },
   "now-playing": {
     "progress": "{position} из {duration}",
