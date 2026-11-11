@@ -196,7 +196,7 @@ export function startLook(): LookHandle | undefined {
   const paint = (root: RootElement): void => {
     const now = current();
     const worn = !wallKeepsOwn(env.document, now.wall.background) && tabsFor(root.hass?.panelUrl);
-    paintRoot(root, worn ? now.background : undefined, now.look, dark());
+    paintRoot(root, worn ? now.background : undefined, now.look, dark(), lite);
   };
   /**
    * Every mark of the dashboards again: the panels (the cards look again when one moved), their headers' tabs and their
@@ -264,12 +264,16 @@ export function startLook(): LookHandle | undefined {
   });
   observer.observe(env.document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
-  /** This device draws Lite, or Full, again: the cards move (or stop) and blur as it says. */
+  /**
+   * This device draws Lite, or Full, again: the cards move (or stop) and blur as it says, and a page's background is
+   * in focus or blurred again under its header.
+   */
   const wearDevice = (): void => {
     const before = current();
     lite = isLite();
     preferences();
     apply();
+    remark();
     if (current().motion !== before.motion) refreshCards();
   };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');

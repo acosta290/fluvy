@@ -26,6 +26,8 @@ import type { RootElement } from './tabs.js';
 
 /** On `hui-root`: the picture is out of focus. */
 const BLUR_ATTRIBUTE = 'fluvy-bg-blur';
+/** On `hui-root`: the device draws Lite (#165), so nothing over the background is blurred: its header stands solid. */
+const STILL_ATTRIBUTE = 'fluvy-bg-still';
 /** On `hui-root`: the words on the page take the light ink. */
 const INK_ATTRIBUTE = 'fluvy-bg-ink';
 /** What a root carries of its background, every value checked before it is written. */
@@ -160,6 +162,7 @@ ${at(`[${BLUR_ATTRIBUTE}]`)}::before{inset:-6cqmin;filter:blur(3cqmin)}`;
 const rootCss = `:host([${BACKGROUND_ATTRIBUTE}]) hui-view-background{position:fixed;inset:0;inset-inline-start:var(--ha-sidebar-width,0px);width:auto;height:auto;overflow:hidden;will-change:transform}
 ${layerCss((mark) => `:host(${mark}) hui-view-background`)}
 :host([${BACKGROUND_ATTRIBUTE}][fluvy-header-page]){--app-header-background-color:color-mix(in srgb,var(--fluvy-page) 72%,transparent);--app-header-backdrop-filter:blur(20px)}
+:host([${BACKGROUND_ATTRIBUTE}][${STILL_ATTRIBUTE}][fluvy-header-page]){--app-header-background-color:var(--fluvy-page);--app-header-backdrop-filter:none}
 :host([${BACKGROUND_ATTRIBUTE}="color"][fluvy-header-page]){--app-header-background-color:var(--fluvy-bg-1);--app-header-backdrop-filter:none}
 :host([${INK_ATTRIBUTE}][fluvy-header-page]) .header{--app-header-text-color:var(--fluvy-page-ink)}
 :host([${INK_ATTRIBUTE}][fluvy-header-page]:not([fluvy-tabs="pills"])) .header{--fluvy-text:var(--fluvy-page-ink);--fluvy-text-secondary:var(--fluvy-page-ink-2)}`;
@@ -181,24 +184,27 @@ const worn = new WeakMap<Element, string>();
 
 /**
  * Puts the background a root wears on it (its marks and its values), given the house's where its dashboard wears the
- * look (`backgroundOf`), or takes the one it wears off.
+ * look (`backgroundOf`), or takes the one it wears off. On a device that draws Lite (`still`, #165) nothing is blurred:
+ * the picture stands in focus and the header over it solid, the house's choice and a dashboard's own alike.
  */
 export function paint(
   root: RootElement,
   house: PageBackground | undefined,
   look: Look,
   dark: boolean,
+  still = false,
 ): void {
   const background = backgroundOf(root, house);
   const style = background && backgroundStyle(background, look, dark);
-  const key = style ? JSON.stringify(style) : '';
+  const key = style ? `${JSON.stringify(style)}${still ? ' still' : ''}` : '';
   if ((worn.get(root) ?? '') === key) return;
   worn.set(root, key);
   if (style) {
     attach();
     root.setAttribute(BACKGROUND_ATTRIBUTE, style.type);
   } else root.removeAttribute(BACKGROUND_ATTRIBUTE);
-  root.toggleAttribute(BLUR_ATTRIBUTE, style?.blur ?? false);
+  root.toggleAttribute(BLUR_ATTRIBUTE, !still && (style?.blur ?? false));
+  root.toggleAttribute(STILL_ATTRIBUTE, still && style !== undefined);
   root.toggleAttribute(INK_ATTRIBUTE, style?.ink ?? false);
   for (const name of VARS) {
     const value = style?.vars[name];

@@ -329,6 +329,22 @@ describe('a root wearing its background', () => {
     expect(element.getAttribute('style') ?? '').toBe('');
   });
 
+  it('blurs nothing on a device that draws Lite (#165): the picture in focus, its header told to stand solid', () => {
+    const element = root();
+    const picture = bg({ type: 'image', image: '/local/dunes.jpg', blur: true, dim: 20 });
+    paint(element, picture, LOOK, false, true);
+    expect(element.getAttribute(BACKGROUND_ATTRIBUTE)).toBe('image');
+    expect(element.hasAttribute('fluvy-bg-blur')).toBe(false);
+    expect(element.hasAttribute('fluvy-bg-still')).toBe(true);
+    // Full again: the blur the house chose comes back
+    paint(element, picture, LOOK, false);
+    expect(element.hasAttribute('fluvy-bg-blur')).toBe(true);
+    expect(element.hasAttribute('fluvy-bg-still')).toBe(false);
+    // a page that wears none carries no mark of it
+    paint(element, undefined, LOOK, false, true);
+    expect(element.hasAttribute('fluvy-bg-still')).toBe(false);
+  });
+
   it('is put on through the lazy layer, and a plain root that never wore one is left as it is', async () => {
     const plain = root();
     paintRoot(plain, undefined, LOOK, false);

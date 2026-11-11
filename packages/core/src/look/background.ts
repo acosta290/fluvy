@@ -34,10 +34,11 @@ export function paintRoot(
   house: PageBackground | undefined,
   look: Look,
   dark: boolean,
+  still = false,
 ): void {
   const strategy = root.lovelace?.rawConfig?.strategy;
   const own = typeof strategy === 'object' && strategy !== null && 'background' in strategy;
   if (!(house && (own || !drawsNothing(house))) && !root.hasAttribute(BACKGROUND_ATTRIBUTE)) return;
   layer ??= import('./background-layer.js').catch(() => undefined);
-  void layer.then((module) => module?.paint(root, house, look, dark));
+  void layer.then((module) => module?.paint(root, house, look, dark, still));
 }

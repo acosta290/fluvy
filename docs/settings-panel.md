@@ -136,8 +136,9 @@ solid or dashed a moment before.
 
 *Preferences › This device › Performance* (1.19, #165): **Auto** (the factory's), **Full** or **Lite**, remembered by
 the screen alone, so an old tablet can draw Lite while the phones do not. Lite turns down what exists, for that screen:
-nothing is blurred behind a see-through card (it stays see-through), no card enters as a view opens, every chart and
-gauge rests (a liquid on its first frame), and motion is reduced as with *Reduce motion*, whatever the person chose.
+nothing is blurred behind a see-through card (it stays see-through) nor over a page's background (its picture stands
+in focus and the header over it solid), no card enters as a view opens, every chart and gauge rests (a liquid on its
+first frame), and motion is reduced as with *Reduce motion*, whatever the person chose.
 Colours, sizes and what every card can do stay as they are, and the house's and the person's own settings are kept:
 Full wears them again. **Auto** is Lite where the system asks for reduced motion, or where the browser says the device
 has 2 GB of memory or less (Chromium's `navigator.deviceMemory`, which rounds 3 GB down to 2; Safari does not say, so
