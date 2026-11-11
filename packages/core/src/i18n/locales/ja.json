@@ -2370,6 +2370,8 @@
     "pref.auto": "自動",
     "pref.reduce": "動きを減らす",
     "pref.reduce_sub": "デバイスの設定に従います",
+    "pref.hold": "長押しでスライド",
+    "pref.hold_sub": "タッチ画面では、スライダーは少し押さえてから動きます",
     "pref.haptics": "触覚フィードバック",
     "pref.haptics_sub": "タップ時の振動",
     "pref.activity_card": "アクティビティをカードで",

@@ -1238,6 +1238,8 @@
     "pref.auto": "Automático",
     "pref.reduce": "Reduzir animações",
     "pref.reduce_sub": "Independentemente do dispositivo",
+    "pref.hold": "Manter para deslizar",
+    "pref.hold_sub": "Num ecrã tátil, um cursor só se move depois de o manter premido",
     "pref.haptics": "Vibração",
     "pref.haptics_sub": "Um toque que se sente",
     "pref.activity_card": "Atividade num cartão",

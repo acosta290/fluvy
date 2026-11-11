@@ -243,6 +243,8 @@ const GLYPHS = {
   /** a phone that buzzes: haptic feedback */
   haptic:
     '<rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M11 17.5h2"/><path d="M4.5 9v6"/><path d="M19.5 9v6"/>',
+  /** a fingertip held still, its ring closing from the top clockwise as the slider's cue does: hold to slide */
+  hold: '<circle cx="12" cy="12" r="3.25"/><path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>',
   /** a window floating inside the page: the shell's frame */
   frame:
     '<rect x="3" y="4" width="18" height="16" rx="3"/><rect x="7" y="8" width="10" height="8" rx="1.5"/>',

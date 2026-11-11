@@ -2417,6 +2417,8 @@
     "pref.auto": "自动",
     "pref.reduce": "减弱动态效果",
     "pref.reduce_sub": "跟随设备设置",
+    "pref.hold": "按住再滑动",
+    "pref.hold_sub": "在触摸屏上，滑块需按住片刻才会移动",
     "pref.haptics": "触感反馈",
     "pref.haptics_sub": "可感知的轻触",
     "pref.activity_card": "卡片上的活动",

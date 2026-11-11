@@ -165,6 +165,8 @@
     "pref.auto": "Automatic",
     "pref.reduce": "Reduce motion",
     "pref.reduce_sub": "Whatever the device asks",
+    "pref.hold": "Hold to slide",
+    "pref.hold_sub": "On a touch screen, a slider waits for a short hold",
     "pref.haptics": "Haptics",
     "pref.haptics_sub": "A tap you can feel",
     "pref.activity_card": "Activity on a card",

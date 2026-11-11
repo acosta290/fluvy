@@ -1,4 +1,4 @@
-import { setMotionPreference } from '@fluvy/ui';
+import { setHoldToSlide, setMotionPreference } from '@fluvy/ui';
 import { setHaptics } from '../actions.js';
 import {
   PREFERENCES_EVENT,
@@ -50,7 +50,7 @@ import { safeStorage } from '../storage.js';
 /**
  * What the panel can show on its page before it is saved: the look and the house's status colours, where it applies
  * (scope, dashboards, the frame, the menus' icons, our Activity page), the lights', the charts' and the cards' defaults
- * and a person's preferences (language, motion, haptics).
+ * and a person's preferences (language, motion, haptics, hold to slide).
  */
 export type LookPreview = Partial<
   Pick<
@@ -64,6 +64,7 @@ export type LookPreview = Partial<
     | 'language'
     | 'motion'
     | 'haptics'
+    | 'holdToSlide'
     | 'activityCard'
     | 'lightTint'
     | 'lightColors'
@@ -187,6 +188,7 @@ export function startLook(): LookHandle | undefined {
     const now = current();
     setMotionPreference(now.motion);
     setHaptics(now.haptics);
+    setHoldToSlide(now.holdToSlide);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
     // Home Assistant's own icons in its menus where the house keeps them, place by place, said on the page and its
     // panel frames (each one's shell empties those sheets)

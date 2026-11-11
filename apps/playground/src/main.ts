@@ -32,7 +32,7 @@ import {
   type PaletteChoice,
   type PillName,
 } from '@fluvy/tokens/runtime';
-import { setFallbackTokens, textWidth } from '@fluvy/ui';
+import { setFallbackTokens, setHoldToSlide, textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
 import { automaticFrames, automaticViews } from './automatic.js';
 import { dashboardOptions, mountDashboard } from './dashboard.js';
@@ -75,6 +75,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?sliders={"style":"bar"} the house's slider settings (fluvy's settings → Appearance → Sliders), as JSON: the
  *                        style every slider is drawn in where a card says none (ruler | bar | liquid | fill) and the
  *                        words under a bar or a liquid (`"words":"none"`), each read as the settings read it
+ * ?hold=1               a person's hold to slide (fluvy's settings → Preferences, #166): on a touch screen (a phone, or
+ *                        the browser's touch emulation) a slider moves only after a still press of 200 ms
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
  * ?panel=appearance      fluvy's settings panel (appearance | charts | scope | dashboard | wall | preferences);
@@ -214,6 +216,9 @@ if (params.has('sliders'))
       })(),
     ),
   );
+
+// the person's hold to slide, as fluvy's settings would hand it to every slider
+if (params.get('hold') === '1') setHoldToSlide(true);
 
 const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';

@@ -1919,6 +1919,14 @@ export function preferences(ctx: PanelContext): TemplateResult {
           onToggle: (on) => ctx.editPersonal({ motion: on ? 'reduced' : 'system' }),
         })}
         ${listRow({
+          icon: 'hold',
+          title: ctx.t('pref.hold'),
+          sub: ctx.t('pref.hold_sub'),
+          trailing: 'switch',
+          on: shown.holdToSlide,
+          onToggle: (on) => ctx.editPersonal({ holdToSlide: on }),
+        })}
+        ${listRow({
           icon: 'haptic',
           title: ctx.t('pref.haptics'),
           sub: ctx.t('pref.haptics_sub'),

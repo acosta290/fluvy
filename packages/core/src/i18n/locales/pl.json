@@ -2232,6 +2232,8 @@
     "pref.auto": "Automatycznie",
     "pref.reduce": "Ogranicz animacje",
     "pref.reduce_sub": "Zgodnie z ustawieniem urządzenia",
+    "pref.hold": "Przytrzymaj, aby przesunąć",
+    "pref.hold_sub": "Na ekranie dotykowym suwak rusza dopiero po krótkim przytrzymaniu",
     "pref.haptics": "Wibracje",
     "pref.haptics_sub": "Wyczuwalne dotknięcie",
     "pref.activity_card": "Aktywność na karcie",

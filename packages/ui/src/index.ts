@@ -18,6 +18,7 @@ export {
   precisionGain,
   preventMenu,
   saneRange,
+  setHoldToSlide,
   snap,
   startPress,
   startStepRepeat,

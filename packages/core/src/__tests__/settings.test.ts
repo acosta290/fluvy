@@ -130,6 +130,19 @@ describe('parsing stored settings', () => {
     ).toEqual({ style: 'liquid', words: 'ends' });
   });
 
+  it('reads whether a person’s sliders wait for a hold: off until they say so (1.19, #166: nothing changes on upgrade)', () => {
+    // a 1.18 person stored none: every slider moves at the press, as before; what is read is version 4
+    const upgraded = parsePersonal({ version: 3, language: 'es', haptics: false });
+    expect(upgraded).toMatchObject({ version: 4, language: 'es', holdToSlide: false });
+    expect(PERSONAL_DEFAULTS.holdToSlide).toBe(false);
+    expect(parsePersonal({ holdToSlide: true }).holdToSlide).toBe(true);
+    for (const broken of ['yes', 1, null])
+      expect(parsePersonal({ holdToSlide: broken }).holdToSlide).toBe(false);
+    expect(resolveSettings(HOUSE_DEFAULTS, parsePersonal({ holdToSlide: true })).holdToSlide).toBe(
+      true,
+    );
+  });
+
   it('reads the house’s status colours, each broken one as the palette’s (1.9: nothing changes on upgrade)', () => {
     expect(parseHouse({}).statuses).toEqual({});
     expect(HOUSE_DEFAULTS.statuses).toEqual({});

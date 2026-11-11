@@ -3,6 +3,7 @@ import { keyed } from 'lit/directives/keyed.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { haptic } from '../haptics.js';
 import { MotionMark, spring, type SpringHandle } from '../motion.js';
+import { holdRing } from '../parts.js';
 import { baseStyles } from '../styles/index.js';
 import { clamp, trackDrag } from './pointer.js';
 import { localPoint } from './zoom.js';
@@ -158,7 +159,8 @@ export class FluvyTimeRail extends LitElement {
         width: ${KNOB}px;
         height: ${KNOB}px;
         --tone-ink: var(--fluvy-accent);
-        touch-action: none;
+        /* the knob keeps the page's scroll off, but with hold to slide (pointer.ts) */
+        touch-action: var(--fv-pan, none);
         cursor: grab;
         will-change: transform;
         transition: box-shadow 180ms var(--fv-ease, ease);
@@ -284,6 +286,7 @@ export class FluvyTimeRail extends LitElement {
     formatBubble: { attribute: false },
     height: { state: true },
     scrubbing: { type: Boolean, reflect: true },
+    waiting: { state: true },
     old: { state: true },
   };
 
@@ -306,6 +309,8 @@ export class FluvyTimeRail extends LitElement {
   declare formatBubble: (time: number) => string;
   declare height: number;
   declare scrubbing: boolean;
+  /** Hold to slide: how long a finger standing still on the knob waits to be armed (its ring drawn); 0 otherwise. */
+  declare waiting: number;
   /** The histogram on its way out (a new one is coming in over it). */
   declare old: { readonly key: string; readonly density: readonly number[] } | undefined;
 
@@ -341,6 +346,7 @@ export class FluvyTimeRail extends LitElement {
     this.formatBubble = (time) => new Date(time).toLocaleTimeString();
     this.height = 0;
     this.scrubbing = false;
+    this.waiting = 0;
     this.old = undefined;
   }
 
@@ -360,20 +366,33 @@ export class FluvyTimeRail extends LitElement {
         this.pressType = sample.event.pointerType;
         // a mouse scrubs from anywhere (a click in the track jumps, as in any scrollbar); a finger only from the knob
         if (sample.event.pointerType !== 'mouse' && !this.nearKnob(sample.event)) return false;
-        this.scrubbing = true;
         this.tick = Number.NaN;
         this.atEnd = false;
-        haptic(this, 'light');
-        this.scrub(sample.event, false);
         return true;
+      },
+      // hold to slide: the knob's ring closes while the finger stands still on it
+      wait: (ms) => {
+        this.waiting = ms;
+      },
+      arm: (sample) => {
+        // the knob is the finger's: a tick felt (the tracker's own, for a finger that waited)
+        if (!this.waiting) haptic(this, 'light');
+        this.waiting = 0;
+        this.scrubbing = true;
+        this.scrub(sample.event, false);
       },
       move: (sample) => this.scrub(sample.event, false),
       end: (sample) => {
+        this.waiting = 0;
+        // a finger lifted before its press was armed picks no moment
+        if (!this.scrubbing) return;
         this.scrubbing = false;
         this.scrub(sample.event, true);
       },
       // taken away (the page's scroll beside the knob, the system): no moment is settled on
       cancel: () => {
+        this.waiting = 0;
+        if (!this.scrubbing) return;
         this.scrubbing = false;
         this.dispatchEvent(new CustomEvent('fluvy-cancel', { bubbles: true, composed: true }));
       },
@@ -774,7 +793,9 @@ export class FluvyTimeRail extends LitElement {
         ${this.drawDensity(this.density, this.densityKey, false)}
       </svg>
       ${this.drawHours(times)}
-      <span class="fv-knob" data-measure="value"></span>
+      <span class="fv-knob" data-measure="value"
+        >${this.waiting ? holdRing(KNOB, this.waiting) : nothing}</span
+      >
       <span class="fv-bubble" style="--axis:${axis}px" data-measure="value"
         >${this.formatBubble(this.value)}</span
       >`;

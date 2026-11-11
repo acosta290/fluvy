@@ -1238,6 +1238,8 @@
     "pref.auto": "Automatique",
     "pref.reduce": "Réduire les animations",
     "pref.reduce_sub": "Quoi que demande l’appareil",
+    "pref.hold": "Maintenir pour glisser",
+    "pref.hold_sub": "Sur un écran tactile, un curseur attend un bref appui maintenu",
     "pref.haptics": "Retour haptique",
     "pref.haptics_sub": "Une vibration au toucher",
     "pref.activity_card": "Activité sur une carte",

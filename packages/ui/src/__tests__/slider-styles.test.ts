@@ -21,6 +21,8 @@ const drawing = (more: Partial<StyleDrawing> = {}): StyleDrawing => ({
   inactive: false,
   disabled: false,
   dragging: false,
+  wait: 0,
+  held: false,
   ...more,
 });
 

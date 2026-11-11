@@ -15,6 +15,8 @@ sliderStylesSheet.replaceSync(sliderStylesCss);
 
 /** A bar's handle along the band's thickness, whatever the band: the same pill on a tile as on a card. */
 const HANDLE = 20;
+/** The handle under a finger standing still on it (hold to slide, #166). */
+const HANDLE_HELD = 28;
 
 /** What a style is drawn from: the band, the level as the ruler shows it, and the state the ruler is in. */
 export interface StyleDrawing {
@@ -32,23 +34,43 @@ export interface StyleDrawing {
   readonly inactive: boolean;
   readonly disabled: boolean;
   readonly dragging: boolean;
+  /** Hold to slide (#166): how long a finger standing still waits to arm the slider (its cue drawn); 0: none. */
+  readonly wait: number;
+  /** The press waited: from its wait to its release (a liquid shows the bar's handle all that while). */
+  readonly held: boolean;
 }
 
 const state = (o: StyleDrawing): string =>
   `${o.vertical ? ' sb-bar--vertical' : ''}${o.disabled ? ' is-disabled' : ''}`;
 
 /**
+ * A bar's handle: a 4-wide pill of the card's colour, `size` across the band, 8 inside the level's end and never
+ * nearer the ends than 8 (`onLevel`: at the level itself, as on a tinted bar's gradient). It follows the level, so the
+ * measurer reads it as a value.
+ */
+function handle(o: StyleDrawing, size: number, onLevel: boolean): TemplateResult {
+  const x = Math.round(o.fraction * o.len);
+  const along = Math.min(Math.max(onLevel ? x - 2 : x - 8 - 4, 8), o.len - 8 - 4);
+  const across = (o.band - size) / 2;
+  return html`<span
+    class="sb-bar__handle"
+    data-measure="value"
+    style=${
+      o.vertical
+        ? `left:${across}px;top:${o.len - 4 - along}px;width:${size}px;height:4px`
+        : `left:${along}px;top:${across}px;width:4px;height:${size}px`
+    }
+  ></span>`;
+}
+
+/**
  * The bar: the track the inset ground, the fill the tone's ink to the level, the handle a 4 × 20 pill of the card's
- * colour 8 inside the fill's end (on a tinted bar, at the level itself, on the gradient). Vertical, lit from the foot.
- * Asleep, the track alone. The fill and the handle follow the level, so the measurer reads them as values.
+ * colour 8 inside the fill's end (on a tinted bar, at the level itself, on the gradient), grown to 28 under a finger
+ * standing still on it (hold to slide). Vertical, lit from the foot. Asleep, the track alone. The fill follows the
+ * level, so the measurer reads it as a value.
  */
 export function drawBar(o: StyleDrawing): TemplateResult {
   const x = Math.round(o.fraction * o.len);
-  // from the origin: 8 inside the fill's end, never nearer the ends than 8
-  const along = o.tint
-    ? Math.min(Math.max(x - 2, 8), o.len - 8 - 4)
-    : Math.min(Math.max(x - 8 - 4, 8), o.len - 8 - 4);
-  const across = (o.band - HANDLE) / 2;
   const fill =
     o.tint || o.inactive
       ? nothing
@@ -57,21 +79,10 @@ export function drawBar(o: StyleDrawing): TemplateResult {
           data-measure="value"
           style=${o.vertical ? `height:${x}px` : `width:${x}px`}
         ></span>`;
-  const handle = o.inactive
-    ? nothing
-    : html`<span
-        class="sb-bar__handle"
-        data-measure="value"
-        style=${
-          o.vertical
-            ? `left:${across}px;top:${o.len - 4 - along}px;width:${HANDLE}px;height:4px`
-            : `left:${along}px;top:${across}px;width:4px;height:${HANDLE}px`
-        }
-      ></span>`;
   return html`<span
     class="sb-bar${o.tint ? ` sb-bar--${o.tint}` : ''}${state(o)}"
     style="height:${o.vertical ? o.len : o.band}px"
-    >${fill}${handle}</span
+    >${fill}${o.inactive ? nothing : handle(o, o.wait ? HANDLE_HELD : HANDLE, !!o.tint)}</span
   >`;
 }
 
@@ -90,7 +101,8 @@ function edge(o: StyleDrawing, amplitude: number, wavelength: number, phase: num
  * The liquid: the bar's slot, the fill water — two waves at its edge (amplitudes 3 and 2.5, wavelengths 26 and 20),
  * translucent over the ground, each travelling one wavelength along the edge and repeating (the sheet's 9 s and 14 s;
  * at rest on its first frame without motion). A tinted liquid's water takes the colour under its edge. Asleep, the
- * ground alone. The level is the group's; the path inside it travels.
+ * ground alone. The level is the group's; the path inside it travels. Under a finger that stood still on it (hold to
+ * slide), the bar's handle surfaces at the level and stays till the finger lifts.
  */
 export function drawLiquid(o: StyleDrawing): TemplateResult {
   const w = o.vertical ? o.band : o.len;
@@ -107,16 +119,23 @@ export function drawLiquid(o: StyleDrawing): TemplateResult {
     <svg width=${w} height=${h} viewBox="0 0 ${w} ${h}" aria-hidden="true">
       ${o.inactive ? nothing : [layer(3, 26, 0, 'lq-b'), layer(2.5, 20, 7, 'lq-a')]}
     </svg>
+    ${o.held && !o.inactive ? handle(o, HANDLE, false) : nothing}
   </span>`;
 }
 
 /**
  * A tile's fill: the lit wash from the tile's start to the level, stopping on a 2 px edge of the fill's hairline (the
- * tone's ink under a finger); the tile's words stand over it (tiles.css). Asleep, nothing: the tile is its plain self.
+ * tone's ink under a finger); the tile's words stand over it (tiles.css). Under a finger standing still on it (hold to
+ * slide), the edge takes the ink from its middle out to its ends over the wait. Asleep, nothing: the tile is its plain
+ * self.
  */
 export function drawFill(o: StyleDrawing): TemplateResult | typeof nothing {
   if (o.inactive) return nothing;
   const x = Math.round(o.fraction * o.len);
   return html`<span class="sb-fill" data-measure="value" style="width:${x}px"></span
-    ><span class="sb-fill__edge" data-measure="value" style="translate:${x - 1}px 0"></span>`;
+    ><span
+      class="sb-fill__edge${o.wait ? ' is-waiting' : ''}"
+      data-measure="value"
+      style="translate:${x - 1}px 0${o.wait ? `;--fv-wait:${o.wait}ms` : ''}"
+    ></span>`;
 }

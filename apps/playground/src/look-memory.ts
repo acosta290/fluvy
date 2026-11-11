@@ -10,7 +10,7 @@ import {
   type LookHandle,
   type SettingsHass,
 } from '@fluvy/core';
-import { setMotionPreference } from '@fluvy/ui';
+import { setHoldToSlide, setMotionPreference } from '@fluvy/ui';
 
 /**
  * Fluvy's settings and look outside Home Assistant: the settings live in memory behind the same websocket messages
@@ -57,12 +57,14 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
   let previewed: Parameters<LookHandle['preview']>[0] = null;
   let mode = dark;
   let wallDark: boolean | undefined;
-  // as at home: the look on the page, and the language, motion, charts, surface and sliders the cards use
+  // as at home: the look on the page, and the language, motion, hold to slide, charts, surface and sliders the cards
+  // use
   const apply = (): void => {
     const now = previewed ? { ...store.effective, ...previewed } : store.effective;
     engine.apply(now, wallDark ?? mode);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
     setMotionPreference(now.motion);
+    setHoldToSlide(now.holdToSlide);
     setChartDefaults({ settings: now.charts, sets: now.chartSets });
     setCardDefaults(now.cards);
     setSliderDefaults(now.sliders);

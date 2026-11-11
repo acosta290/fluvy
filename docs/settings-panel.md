@@ -10,14 +10,14 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
-| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
+| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
 
 ## House and person
 
 The **house settings** are what an administrator sets: everyone sees them. The **personal settings** are each person's,
-on every device they sign in on: a palette, a shape and tabs of their own, or the house's; language; motion; haptics.
-The look a person sees is the house's, with their own choices on top. A **device setting** belongs to one browser
-alone — whether it is a wall panel, and the size it reads at — and never follows a person.
+on every device they sign in on: a palette, a shape and tabs of their own, or the house's; language; motion; hold to
+slide; haptics. The look a person sees is the house's, with their own choices on top. A **device setting** belongs to
+one browser alone — whether it is a wall panel, and the size it reads at — and never follows a person.
 
 ## Cards
 
@@ -77,6 +77,17 @@ a fill) scrolls the page and leaves the slider where it was, a drag the browser 
 nothing, and the − and + of a stepper take their step as the finger lifts, so a scroll that starts on one steps nothing.
 A change shows on every card of the page at once, before it is saved; a card that sets `slider_style` keeps its own (its
 editor shows the house's until a value is chosen, and never writes it).
+
+**Hold to slide** (*Preferences › Just for you*, 1.19, #166) is each person's, off from the factory, and acts on a touch
+screen alone: a slider moves only after the finger has stood still on it for 200 ms. Meanwhile a ring of the slider's
+ink closes round the knob (a bar's handle grows to 28, a liquid's handle surfaces at its level, a tile's fill takes the
+ink along its edge from the middle); a finger that moves more than 10 px first is the page's scroll, and one lifted
+before is a tap, which never moves a value (a tile's fill keeps its tap and its hold of 500 ms). Armed, the slider buzzes
+and takes its drag look, and the finger is its whichever way it goes: the page stays still under it. On the Ruler the
+fine scale comes 450 ms after the slider is armed, 650 ms after the press. It holds for every slider: the four styles,
+the cover's position, the thermostat's dial, the room's hue wheel and the History page's time rail; with it on, the
+dial's knob and the hue wheel let the page scroll from them too. A mouse and the keys never wait, and the steppers' −
+and + stay taps.
 
 **When unavailable** covers every card that shows a device: a tile, the tiles of a group (each may say its own: a
 tile's `unavailable` in `tiles`), the light card, rows, rounds, chips, a room's tiles, an appliance's and a printer's

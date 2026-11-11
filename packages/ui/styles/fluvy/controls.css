@@ -55,6 +55,35 @@
     0 0 0 6px color-mix(in srgb, var(--tone-ink) 28%, var(--knob-halo));
 }
 
+/* hold to slide (#166): while a finger stands still on its slider, a ring of the tone's ink closes round the knob, 2
+   wide and 5 outside its edge (the halo's room), from the top and clockwise over the wait (`holdRing`) */
+.fv-hold {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.fv-hold circle {
+  fill: none;
+  stroke: var(--tone-ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  animation: fv-hold var(--fv-wait) linear both;
+}
+
+@keyframes fv-hold {
+  from {
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* ---------- ruler ---------- */
 /* What dark mode changes in the ruler and the dial: custom properties, which reach inside the control's own shadow
    root, where a rule of the mode cannot (there `:host` is the control, never the dark card) */

@@ -2473,6 +2473,8 @@
     "pref.auto": "Automaticky",
     "pref.reduce": "Obmedziť pohyb",
     "pref.reduce_sub": "Podľa nastavení zariadenia",
+    "pref.hold": "Podržať na posun",
+    "pref.hold_sub": "Na dotykovej obrazovke sa posuvník pohne až po krátkom podržaní",
     "pref.haptics": "Haptická odozva",
     "pref.haptics_sub": "Dotyk, ktorý ucítite",
     "pref.activity_card": "Aktivita na karte",

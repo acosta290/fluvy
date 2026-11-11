@@ -1238,6 +1238,8 @@
     "pref.auto": "Automático",
     "pref.reduce": "Reducir movimiento",
     "pref.reduce_sub": "Pida lo que pida el dispositivo",
+    "pref.hold": "Mantener para deslizar",
+    "pref.hold_sub": "En una pantalla táctil, un deslizador espera a que lo mantenga un momento",
     "pref.haptics": "Vibración",
     "pref.haptics_sub": "Un toque que se siente",
     "pref.activity_card": "Actividad en una tarjeta",

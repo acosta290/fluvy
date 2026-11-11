@@ -12,6 +12,7 @@ import {
 } from './pointer.js';
 import { MotionMark, Pending, spring, type SpringHandle } from '../motion.js';
 import { haptic } from '../haptics.js';
+import { holdRing } from '../parts.js';
 
 export interface RulerChangeDetail {
   readonly value: number;
@@ -75,6 +76,12 @@ const HUE_STOPS = [0, 1, 2, 3, 4, 5, 6].map(
  * Holding still for 450 ms raises the FINE scale: the ruler zooms to a tenth of its range around the
  * value (1 % ticks on a 0–100 scale), so 97 is as easy to hit as 50. Releasing returns to the full scale.
  *
+ * With hold to slide on (#166), a finger's press waits 200 ms first, a ring closing round the knob (a bar's handle
+ * growing to 28, a liquid's surfacing at its level, a fill's edge taking the ink from its middle); armed, the ruler
+ * takes its drag look, and the fine scale's 450 ms count from there — one still press, the slider armed at 200 ms and
+ * its fine scale up at 650. A press lifted before it is armed never jumps the value; on a tile's fill it is the tile's
+ * tap, and a still press of 500 ms its hold, as without the setting.
+ *
  * Drawn in another style (`look`, 1.18: a bar, a liquid, a tile's fill), the same band keeps every gesture but the
  * fine scale; a tile's fill covers its tile, so a still press on it is the tile's tap (`fluvy-tap`) or hold
  * (`fluvy-hold`), never a jump to the value.
@@ -135,6 +142,7 @@ export class FluvyRuler extends LitElement {
     look: { type: String, reflect: true },
     still: { type: Boolean, reflect: true },
     dragging: { state: true },
+    waiting: { state: true },
     shown: { state: true },
     lift: { state: true },
     fine: { state: true },
@@ -183,6 +191,8 @@ export class FluvyRuler extends LitElement {
   /** A liquid rests on its first frame: the house's motion is off (the charts' `animate`). */
   declare still: boolean;
   declare dragging: boolean;
+  /** Hold to slide: how long a finger standing still on the ruler waits before it is armed (its cue drawn); 0 otherwise. */
+  declare waiting: number;
   /** The fraction currently drawn; follows `value` on a spring, follows the finger while dragging. */
   declare shown: number;
   /** 0..1: how far the ticks around the knob have risen. */
@@ -230,6 +240,7 @@ export class FluvyRuler extends LitElement {
     this.look = 'ruler';
     this.still = false;
     this.dragging = false;
+    this.waiting = 0;
     this.shown = 0;
     this.lift = 0;
     this.fine = null;
@@ -314,6 +325,8 @@ export class FluvyRuler extends LitElement {
     clearTimeout(this.holdTimer);
     this.follow = this.rise = this.release = undefined;
     this.dragging = false;
+    this.waiting = 0;
+    this.waited = false;
     this.lift = 0;
     if (this.fine) this.dropFine();
   }
@@ -334,6 +347,8 @@ export class FluvyRuler extends LitElement {
 
   /** Whether a still press was the tile's hold: its release is then nothing, never the tap as well. */
   private held = false;
+  /** Whether this press waited (hold to slide): lifted still it jumps nothing; a liquid shows its handle till it lifts. */
+  private waited = false;
 
   private bind(): void {
     this.release?.();
@@ -350,15 +365,30 @@ export class FluvyRuler extends LitElement {
         this.cursor = this.shown;
         this.lastAlong = 0;
         this.held = false;
+        this.waited = false;
         this.follow?.stop();
-        // The fine scale is a deliberate press-and-hold BEFORE moving. It never arms mid-drag:
-        // a pause while sliding must not change the scale under the finger. Only the ruler has one; a still press
-        // on a tile's fill is the tile's hold.
+        // a still press on a tile's fill is the tile's hold, 500 ms from the press, whether it waited or not
         clearTimeout(this.holdTimer);
         if (this.fill) this.holdTimer = window.setTimeout(() => this.holdTile(), FILL_HOLD_MS);
-        else if (this.look === 'ruler')
-          this.holdTimer = window.setTimeout(() => this.raiseFine(), HOLD_MS);
         return true;
+      },
+      // hold to slide: the cue while the finger stands still (none where nothing would move)
+      wait: (ms) => {
+        if (!this.interactive) return;
+        this.waited = true;
+        this.waiting = ms;
+      },
+      arm: () => {
+        // The fine scale is a deliberate press-and-hold BEFORE moving, counted from the moment the press may move
+        // the ruler. It never arms mid-drag: a pause while sliding must not change the scale under the finger. Only
+        // the ruler has one; a still press on a tile's fill is the tile's hold.
+        if (this.look === 'ruler')
+          this.holdTimer = window.setTimeout(() => this.raiseFine(), HOLD_MS);
+        if (!this.waiting) return;
+        // a press that waited takes the drag look at once: the ticks rise round the knob and the bubble comes
+        this.waiting = 0;
+        this.dragging = true;
+        this.rise?.set(1);
       },
       move: (s) => {
         clearTimeout(this.holdTimer);
@@ -383,6 +413,9 @@ export class FluvyRuler extends LitElement {
       },
       end: (s, moved) => {
         clearTimeout(this.holdTimer);
+        const waited = this.waited;
+        this.waited = false;
+        this.waiting = 0;
         const wasFine = this.fine !== null;
         if (moved || wasFine) {
           if (!this.interactive) return;
@@ -393,12 +426,18 @@ export class FluvyRuler extends LitElement {
           this.commit(value);
           return;
         }
+        // a press armed after its wait and lifted still: its drag look goes, nothing was moved
+        if (this.dragging) {
+          this.dragging = false;
+          this.rise?.set(0);
+        }
         // a still press on a tile's fill is the tile's: its tap, unless its hold already ran
         if (this.fill) {
           if (!this.held) this.say('fluvy-tap');
           return;
         }
-        // a tap on the scale: go there, on the spring
+        // a tap on the scale goes there, on the spring; with hold to slide a tap never moves a slider
+        if (waited) return;
         const rect = el.getBoundingClientRect();
         const extent = this.vertical ? rect.height : rect.width;
         if (!(extent > 0)) return;
@@ -411,13 +450,15 @@ export class FluvyRuler extends LitElement {
 
   /**
    * The gesture was taken away before its release (the page's scroll, the system), or a finger set off across the
-   * axis: nothing was chosen, a still press tapped nothing. The fine scale goes down, the knob glides back to the value
-   * the person had settled on, and a card that drew the preview hears it is over.
+   * axis or strayed while it waited: nothing was chosen, a still press tapped nothing. The cue and the fine scale go,
+   * the knob glides back to the value the person had settled on, and a card that drew the preview hears it is over.
    */
   private cancelDrag(): void {
     clearTimeout(this.holdTimer);
     const previewed = !Number.isNaN(this.lastPreview);
     this.lastPreview = Number.NaN;
+    this.waited = false;
+    this.waiting = 0;
     if (this.fine) this.dropFine();
     this.dragging = false;
     this.rise?.set(0);
@@ -621,6 +662,8 @@ export class FluvyRuler extends LitElement {
       inactive: !active,
       disabled: this.disabled,
       dragging: this.dragging,
+      wait: this.waiting,
+      held: this.waited,
     };
     const draw = styles!;
     return look === 'bar'
@@ -636,7 +679,8 @@ export class FluvyRuler extends LitElement {
     const size = Number.isFinite(this.knob) && this.knob > 0 ? this.knob : 36;
     const w = this.vertical ? band : len;
     const h = this.vertical ? len : band;
-    const active = !this.inactive || this.dragging; // a sleeping ruler shows its knob once the finger moves it
+    // a sleeping ruler shows its knob once the finger moves it, or stands still on it to (hold to slide)
+    const active = !this.inactive || this.dragging || this.waiting > 0;
     const pos = (Number.isFinite(this.shown) ? clamp(this.shown, 0, 1) : 0) * len;
     const drawn = this.drawn;
     // At the ends the knob would hang half its width outside the content column. It stops with a 4 px
@@ -718,7 +762,7 @@ export class FluvyRuler extends LitElement {
           : html`<svg width=${w} height=${h} viewBox="0 0 ${w} ${h}" aria-hidden="true">
                 ${this.tint ? svg`<defs><linearGradient id="fv-tint" gradientUnits="userSpaceOnUse" x1="0" y1=${this.vertical ? len : 0} x2=${this.vertical ? 0 : len} y2="0">${this.tint === 'hue' ? HUE_STOPS : svg`<stop offset="0" class="tint-a" /><stop offset="1" class="tint-b" />`}</linearGradient></defs>` : nothing}${lines}
               </svg>
-              ${active ? html`<span class="fv-knob fv-knob--${this.tone}${this.marker ? ' fv-knob--marker' : ''}${this.tint ? ' fv-knob--tinted' : ''}" data-measure="value" style="translate:${settle(kx)}px ${settle(ky)}px;width:${size}px;height:${size}px${this.tint ? `;--knob-dot:${this.dotAt(pos / Math.max(1, len))}` : ''}"></span>` : nothing}`
+              ${active ? html`<span class="fv-knob fv-knob--${this.tone}${this.marker ? ' fv-knob--marker' : ''}${this.tint ? ' fv-knob--tinted' : ''}" data-measure="value" style="translate:${settle(kx)}px ${settle(ky)}px;width:${size}px;height:${size}px${this.tint ? `;--knob-dot:${this.dotAt(pos / Math.max(1, len))}` : ''}">${this.waiting ? holdRing(size, this.waiting) : nothing}</span>` : nothing}`
       }
       ${this.interactive && !this.vertical && drawn !== 'fill' ? html`<span class="fv-bubble" data-measure="value" style="left:${bubbleLeft.toFixed(1)}px;width:${bubbleW}px;--tail:${Math.round(pos - bubbleLeft - 6)}px"><b>${this.text(current)}</b>${this.unit}</span>` : nothing}
     </div>`;

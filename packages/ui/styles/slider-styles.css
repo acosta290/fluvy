@@ -28,12 +28,22 @@
   right: 0;
 }
 
-/* the handle: a 4 × 20 pill of the card's colour (solid on a see-through card too), 8 inside the fill's end */
+/* the handle: a 4 × 20 pill of the card's colour (solid on a see-through card too), 8 inside the fill's end; under a
+   finger standing still on it (hold to slide, #166) it grows to 28 across the band, never along it */
 .sb-bar__handle {
   position: absolute;
   border-radius: 2px;
   background: var(--fv-solid-card, var(--fluvy-card));
   box-shadow: 0 1px 2px rgb(0 0 0 / calc(0.12 * var(--fluvy-shade, 1)));
+  transition:
+    height var(--fv-fast) var(--fv-ease),
+    top var(--fv-fast) var(--fv-ease);
+}
+
+.sb-bar--vertical .sb-bar__handle {
+  transition:
+    width var(--fv-fast) var(--fv-ease),
+    left var(--fv-fast) var(--fv-ease);
 }
 
 /* a tinted bar is the gradient itself, as Home Assistant's colour temperature is: the handle alone, no fill; the
@@ -184,4 +194,20 @@
 
 .is-dragging .sb-fill__edge {
   background: var(--tone-ink);
+}
+
+/* hold to slide (#166): under a finger standing still, the edge takes the ink from its middle out to its ends over the
+   wait; armed, the whole edge is in ink, its drag look */
+.sb-fill__edge.is-waiting::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--tone-ink);
+  animation: sb-wait var(--fv-wait) linear both;
+}
+
+@keyframes sb-wait {
+  from {
+    scale: 1 0;
+  }
 }

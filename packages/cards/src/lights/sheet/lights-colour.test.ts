@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { resolveEntity, type HomeAssistant } from '@fluvy/core';
+import { setHoldToSlide } from '@fluvy/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { hueAt } from './hue-ring.js';
+import { hueAt, type FluvyHueRing } from './hue-ring.js';
 import {
   FluvyLightsColourSheet,
   roomBulb,
@@ -117,6 +118,42 @@ describe('the hue wheel', () => {
     expect(hueAt(108, 200)).toBe(90);
     expect(hueAt(16, 108)).toBe(180);
     expect(hueAt(108, 16)).toBe(270);
+  });
+
+  it('holds to slide (#166): its knob ringed while a finger waits, a tap turning nothing, a held finger turning it', async () => {
+    vi.useFakeTimers();
+    setHoldToSlide(true);
+    const ring = document.createElement('fluvy-hue-ring') as FluvyHueRing;
+    ring.value = 30;
+    document.body.append(ring);
+    await ring.updateComplete;
+    await ring.updateComplete; // tracked from its first frame on
+    const surface = ring.shadowRoot!.querySelector<HTMLElement>('.hr')!;
+    const turns: string[] = [];
+    for (const type of ['fluvy-input', 'fluvy-change'])
+      ring.addEventListener(type, (e) => turns.push(`${type} ${(e as CustomEvent).detail.value}`));
+    const finger = (type: string, x: number, y: number) =>
+      surface.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          pointerId: 1,
+          pointerType: 'touch',
+          clientX: x,
+          clientY: y,
+        }),
+      );
+    finger('pointerdown', 108, 200); // the ring's foot: 90°
+    await ring.updateComplete;
+    expect(ring.shadowRoot!.querySelector('.fv-knob .fv-hold')).not.toBeNull();
+    finger('pointerup', 108, 200);
+    await ring.updateComplete;
+    expect(turns).toEqual([]);
+    expect(ring.shadowRoot!.querySelector('.fv-hold')).toBeNull();
+    finger('pointerdown', 108, 200);
+    vi.advanceTimersByTime(200);
+    finger('pointerup', 108, 200);
+    expect(turns).toEqual(['fluvy-input 90', 'fluvy-change 90']);
+    setHoldToSlide(false);
   });
 });
 

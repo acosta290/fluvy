@@ -14,6 +14,7 @@ import {
   trackDrag,
 } from './pointer.js';
 import { haptic as buzz } from '../haptics.js';
+import { holdRing } from '../parts.js';
 import { textWidth } from '../text.js';
 
 export interface DialChangeDetail {
@@ -56,10 +57,11 @@ export class FluvyDial extends LitElement {
       :host {
         display: block;
       }
+      /* the knob keeps the page's scroll off, but with hold to slide (pointer.ts) */
       .fv-knob {
         left: 0;
         top: 0;
-        touch-action: none;
+        touch-action: var(--fv-pan, none);
       }
       .fv-dial {
         touch-action: pan-y;
@@ -105,6 +107,7 @@ export class FluvyDial extends LitElement {
     format: { attribute: false },
     shown: { state: true },
     dragIndex: { state: true },
+    waiting: { state: true },
   };
 
   declare value: number | undefined;
@@ -144,6 +147,8 @@ export class FluvyDial extends LitElement {
   /** Drawn values [target] or [low, high]; follow the props on springs, follow the finger in a drag. */
   declare shown: readonly number[];
   declare dragIndex: number;
+  /** Hold to slide: how long a finger standing still on a knob waits to be armed (its ring drawn); 0 otherwise. */
+  declare waiting: number;
 
   private springs: SpringHandle[] = [];
   private gaugeSpring: SpringHandle | undefined;
@@ -180,6 +185,7 @@ export class FluvyDial extends LitElement {
     this.disabled = false;
     this.shown = [];
     this.dragIndex = -1;
+    this.waiting = 0;
   }
 
   /* The range the card asked for, made safe: NaN falls back, a reversed pair is swapped. */
@@ -234,6 +240,7 @@ export class FluvyDial extends LitElement {
     this.stepTimer = 0;
     stopStepRepeat();
     this.dragIndex = -1;
+    this.waiting = 0;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -308,11 +315,19 @@ export class FluvyDial extends LitElement {
           this.settle();
         }
         this.lastTouched = index;
-        const pointer = this.fractionAt(root, s.x, s.y);
-        this.grabOffset = this.norm(this.shown[index] ?? 0) - pointer; // grabbing never jumps
         this.springs[index]?.stop();
         this.dragIndex = index;
         return true;
+      },
+      // hold to slide: the knob's ring closes while the finger stands still on it
+      wait: (ms) => {
+        this.waiting = ms;
+      },
+      arm: (s) => {
+        this.waiting = 0;
+        // grabbing never jumps: the knob keeps its distance from the finger, from where the finger is now
+        this.grabOffset =
+          this.norm(this.shown[this.dragIndex] ?? 0) - this.fractionAt(root, s.x, s.y);
       },
       move: (s) => {
         const index = this.dragIndex;
@@ -325,16 +340,18 @@ export class FluvyDial extends LitElement {
         const index = this.dragIndex;
         if (index === -1) return;
         this.dragIndex = -1;
+        this.waiting = 0;
         // a tap only selects the knob (range dials): nothing changed, nothing is sent
         if (moved) this.settle();
         else this.springs[index]?.jump(this.shown[index] as number);
       },
-      // taken away before its release (the system: the knob keeps the page's scroll off): nothing is sent, the knob
-      // glides back to what was set
+      // taken away before its release (the page's scroll with hold to slide, else the system: the knob keeps the
+      // page's scroll off): nothing is sent, the knob glides back to what was set
       cancel: () => {
         const index = this.dragIndex;
         if (index === -1) return;
         this.dragIndex = -1;
+        this.waiting = 0;
         this.springs[index]?.jump(this.shown[index] as number);
         this.sync();
       },
@@ -540,7 +557,7 @@ export class FluvyDial extends LitElement {
     const size = holds(own) ? own : ([24, 20, 16].find(holds) ?? 16);
 
     return html`<div
-      class="fv-dial fv-dial--${this.tone} ${this.large ? 'fv-dial--l' : 'fv-dial--s'}${this.disabled ? ' is-off' : ''}${this.gauge ? ' fv-dial--gauge' : ''}${this.dragIndex !== -1 ? ' is-dragging' : ''}"
+      class="fv-dial fv-dial--${this.tone} ${this.large ? 'fv-dial--l' : 'fv-dial--s'}${this.disabled ? ' is-off' : ''}${this.gauge ? ' fv-dial--gauge' : ''}${this.dragIndex !== -1 && !this.waiting ? ' is-dragging' : ''}"
       style="width:${w}px;height:${h}px"
     >
       <svg width=${w} height=${h} viewBox="0 0 ${w} ${h}" aria-hidden="true">${lines}${marker}</svg>
@@ -561,7 +578,8 @@ export class FluvyDial extends LitElement {
         const a = ang(f);
         const x = cx + R * Math.cos(a) - knobSize / 2;
         const y = cy + R * Math.sin(a) - knobSize / 2;
-        const moving = this.dragIndex === i;
+        const held = this.dragIndex === i;
+        const moving = held && !this.waiting;
         const px = (n: number): number => (moving ? n : Math.round(n * 2) / 2); // half pixels: crisp at 2×/3×, never 0.56 px off the ring
         const value = this.shown[i] as number;
         const knobName = this.isRange
@@ -589,7 +607,9 @@ export class FluvyDial extends LitElement {
           @keydown=${(e: KeyboardEvent) => this.onKnobKey(e, i)}
           @focus=${() => this.selectKnob(i)}
           style=${place}
-        ></span>`;
+        >
+          ${held && this.waiting ? holdRing(knobSize, this.waiting) : nothing}
+        </span>`;
       })}
       ${this.minLabel ? html`<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;left:${Math.round(cx - (R + tick) * Math.SQRT1_2 - 8)}px">${this.minLabel}</span>` : nothing}
       ${this.maxLabel ? html`<span class="fv-dial__label fv-dial__label--max" style="top:${labelTop}px;left:${Math.round(cx + (R + tick) * Math.SQRT1_2 - 32)}px">${this.maxLabel}</span>` : nothing}

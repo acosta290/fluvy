@@ -1709,6 +1709,35 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('holds sliders for this person from Just for you, shown on the page before it is saved (#166)', async () => {
+    const { panel, root, row, button, handle, previews, settle } = await mount(false);
+    panel.tab = 'preferences';
+    await settle();
+    const titles = [...root.querySelectorAll('.pn-card')][0]!.querySelectorAll('.fv-row__title');
+    expect([...titles].map((title) => title.textContent?.trim())).toEqual([
+      'Reduce motion',
+      'Hold to slide',
+      'Haptics',
+      'Activity on a card',
+      'Translations',
+    ]);
+    const hold = row('Hold to slide')!;
+    expect(hold.querySelector('.fv-row__sub')?.textContent?.trim()).toBe(
+      'On a touch screen, a slider waits for a short hold',
+    );
+    const toggle = hold.querySelector<HTMLElement>('[role="switch"]')!;
+    expect(toggle.getAttribute('aria-checked')).toBe('false'); // off from the factory
+    toggle.click();
+    await settle();
+    expect(previews.at(-1)).toEqual({ holdToSlide: true });
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Hold to slide · On');
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().holdToSlide).toBe(true);
+    expect(handle.store.personal.holdToSlide).toBe(true);
+    panel.remove();
+  });
+
   it('sizes this device from Preferences: the chips, the bar’s line, saved to the device and shown at once', async () => {
     localStorage.removeItem('fluvy:device');
     document.documentElement.style.removeProperty('--fluvy-zoom');
@@ -1838,7 +1867,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16) and their border (1.19)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border and a person’s hold to slide (1.19)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -1910,7 +1939,8 @@ describe('the settings panel', () => {
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
     });
-    await handle.store.savePersonal({ language: 'es', haptics: false });
+    // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
+    await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
     await settle();
     // the file the browser would download
     let file: Blob | undefined;
@@ -1935,7 +1965,12 @@ describe('the settings panel', () => {
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
     });
-    expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
+    expect(exported['personal']).toMatchObject({
+      version: 4,
+      language: 'es',
+      haptics: false,
+      holdToSlide: true,
+    });
     expect(exported['dashboards']).toEqual({
       'fluvy-auto': { thermostat_variant: 'ruler', tile_switch: 'hide', hide: ['media'], caps },
     });
@@ -1951,7 +1986,7 @@ describe('the settings panel', () => {
       cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
       sliders: { style: 'ruler', words: 'ends' },
     });
-    await handle.store.savePersonal({ language: 'auto', haptics: true });
+    await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
       panel as unknown as FluvyPanel,
       new File([JSON.stringify(exported)], 'fluvy-settings.json'),
@@ -1967,6 +2002,7 @@ describe('the settings panel', () => {
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().icons).toEqual({ sidebar: false, settings: true });
     expect(handle.settings().language).toBe('es');
+    expect(handle.settings().holdToSlide).toBe(true);
     expect(handle.settings().charts).toEqual(charts);
     expect(handle.store.house.chartSets).toEqual([sea, garden]);
     expect(handle.settings().cards).toEqual({

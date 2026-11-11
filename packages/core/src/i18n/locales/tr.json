@@ -1238,6 +1238,8 @@
     "pref.auto": "Otomatik",
     "pref.reduce": "Hareketi azalt",
     "pref.reduce_sub": "Cihaz ne isterse istesin",
+    "pref.hold": "Kaydırmak için basılı tut",
+    "pref.hold_sub": "Dokunmatik ekranda kaydırıcı kısa bir basılı tutmadan sonra hareket eder",
     "pref.haptics": "Dokunsal geri bildirim",
     "pref.haptics_sub": "Hissedilen bir dokunuş",
     "pref.activity_card": "Etkinlik bir kartta",

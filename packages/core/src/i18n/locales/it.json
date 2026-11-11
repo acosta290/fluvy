@@ -1238,6 +1238,8 @@
     "pref.auto": "Automatica",
     "pref.reduce": "Riduci le animazioni",
     "pref.reduce_sub": "A prescindere dal dispositivo",
+    "pref.hold": "Tieni premuto per scorrere",
+    "pref.hold_sub": "Su uno schermo touch, un cursore si muove solo dopo una breve pressione",
     "pref.haptics": "Feedback aptico",
     "pref.haptics_sub": "Un tocco che si sente",
     "pref.activity_card": "Attività in una scheda",

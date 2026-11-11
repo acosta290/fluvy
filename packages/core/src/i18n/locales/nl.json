@@ -1238,6 +1238,8 @@
     "pref.auto": "Automatisch",
     "pref.reduce": "Minder beweging",
     "pref.reduce_sub": "Wat het apparaat ook vraagt",
+    "pref.hold": "Vasthouden om te schuiven",
+    "pref.hold_sub": "Op een touchscreen beweegt een schuifregelaar pas na kort vasthouden",
     "pref.haptics": "Haptiek",
     "pref.haptics_sub": "Een tik die je voelt",
     "pref.activity_card": "Activiteit op een kaart",

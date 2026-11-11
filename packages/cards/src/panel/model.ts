@@ -94,7 +94,7 @@ export type HouseEdit = Partial<
 >;
 /** A person's preferences, their own to save. */
 export type PersonalEdit = Partial<
-  Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'activityCard'>
+  Pick<EffectiveSettings, 'language' | 'motion' | 'haptics' | 'holdToSlide' | 'activityCard'>
 >;
 /** The words a shared palette carries: what the Share card's fields hold. */
 export interface ShareDraft {
@@ -509,6 +509,8 @@ export function changeLines(ctx: PanelContext): string[] {
       `${t('pref.language')} · ${personal.language === 'auto' ? t('pref.auto') : LANGUAGES[personal.language].name}`,
     );
   if (personal.motion) lines.push(`${t('pref.reduce')} · ${onOff(personal.motion === 'reduced')}`);
+  if (personal.holdToSlide !== undefined)
+    lines.push(`${t('pref.hold')} · ${onOff(personal.holdToSlide)}`);
   if (personal.haptics !== undefined)
     lines.push(`${t('pref.haptics')} · ${onOff(personal.haptics)}`);
   if (personal.activityCard !== undefined)

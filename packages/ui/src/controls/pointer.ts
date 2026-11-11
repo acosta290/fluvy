@@ -1,3 +1,4 @@
+import { haptic } from '../haptics.js';
 import { zoomOf } from './zoom.js';
 
 /**
@@ -7,12 +8,21 @@ import { zoomOf } from './zoom.js';
  * own axis more than across it; one that sets off across it is the page's scroll, and the control lets go of it. A
  * gesture the browser takes for itself (`pointercancel`), or whose capture goes without a release, is cancelled, never
  * released: the control puts back what it showed and sends nothing.
+ *
+ * Hold to slide (#166, a person's setting, off by default): on a touch screen a slider moves only once its press has
+ * stood still for `HOLD_TO_SLIDE` ms. A finger that strays more than 10 px first is the page's scroll, and the slider
+ * lets it go; one lifted before is the control's tap, which never moves a value; one that waited is armed (a buzz, the
+ * control's drag look) and claims the drag whichever way it then goes, the page kept still under it. A mouse and the
+ * keys never wait.
  */
 export interface DragSample {
   /** Where the pointer is, in viewport pixels (what a `getBoundingClientRect()` compares with). */
   readonly x: number;
   readonly y: number;
-  /** How far it has travelled since the press, in the target's OWN pixels: a zoomed control moves by its own length. */
+  /**
+   * How far it has travelled since the press (since its arming, for a press that waited), in the target's OWN pixels:
+   * a zoomed control moves by its own length.
+   */
   readonly dx: number;
   readonly dy: number;
   readonly event: PointerEvent;
@@ -29,26 +39,72 @@ export interface DragCallbacks {
   axis?(): DragAxis;
   /** Return false to ignore the gesture (disabled, wrong button…). */
   start(sample: DragSample): boolean;
+  /**
+   * A control that slides a value has it: with hold to slide on, a finger's or a pen's press then stands still for `ms`
+   * before the control may move, and the control shows how long meanwhile (a ring closing round its knob). A control
+   * without it (the lock's slide, which opens only at its end) never waits.
+   */
+  wait?(ms: number): void;
+  /**
+   * The press may move the control: at once, or once a press that waited has stood still long enough (the control then
+   * takes its drag look). `sample` is where the pointer is then, and the drag counts from there.
+   */
+  arm?(sample: DragSample): void;
   move(sample: DragSample): void;
-  /** The release. `moved` is false for a tap: the pointer never travelled past the intent threshold. */
+  /**
+   * The release. `moved` is false for a tap: the pointer never travelled past the intent threshold, or the press was
+   * lifted before it was armed.
+   */
   end(sample: DragSample, moved: boolean): void;
   /**
    * The gesture was taken away before its release: the browser took it for a scroll (`pointercancel`), its capture went
-   * without one, or a finger set off across the axis. Nothing was chosen: the control goes back to its settled value,
-   * sends nothing and taps nothing.
+   * without one, or a finger set off across the axis (or strayed while it waited). Nothing was chosen: the control goes
+   * back to its settled value, sends nothing and taps nothing.
    */
   cancel(): void;
 }
 
 const INTENT = 4;
+/** Hold to slide: how long a finger stands still before a slider is its (the cue's length). */
+export const HOLD_TO_SLIDE = 200;
+/** How far a finger waiting on a slider may stray before it is the page's scroll, in the control's own pixels. */
+const WAIT_SLOP = 10;
+
+let holdToSlide = false;
+/** Every slider on the page (a control that can `wait`), with the listener that keeps the page still under it. */
+const sliders = new Map<HTMLElement, (event: TouchEvent) => void>();
+
+/**
+ * A slider listens to its finger's moves while hold to slide is on, so a press that waited can keep the page still: a
+ * browser waits on a touch listener before it scrolls only where there is one, and a page whose person never asked for
+ * the setting waits on none.
+ */
+function listen(target: HTMLElement, still: (event: TouchEvent) => void): void {
+  if (holdToSlide) target.addEventListener('touchmove', still, { passive: false });
+  else target.removeEventListener('touchmove', still);
+}
+
+/**
+ * Hold to slide, as the person's settings say (Fluvy's preferences). On, the knobs and the ring that keep the page's
+ * scroll off (`touch-action: var(--fv-pan, none)`) let it pan up and down, as every other slider does, until a press
+ * on them has waited.
+ */
+export function setHoldToSlide(on: boolean): void {
+  if (on === holdToSlide) return;
+  holdToSlide = on;
+  if (on) document.documentElement.style.setProperty('--fv-pan', 'pan-y');
+  else document.documentElement.style.removeProperty('--fv-pan');
+  for (const [target, still] of sliders) listen(target, still);
+}
 
 /**
  * Whether a press that has travelled past the intent threshold claims the gesture as a drag: a mouse's always does, as
- * does any pointer on a control with no axis; a finger's or a pen's only once it has moved along the axis more than
- * across it — one that sets off across it is the page's scroll. Where a drag is claimed is decided here alone.
+ * does any pointer on a control with no axis, and a press that waited (hold to slide: the person chose to slide); a
+ * finger's or a pen's only once it has moved along the axis more than across it — one that sets off across it is the
+ * page's scroll. Where a drag is claimed is decided here alone.
  */
-function claims(s: DragSample, axis: DragAxis | undefined): boolean {
-  if (!axis || s.event.pointerType === 'mouse') return true;
+function claims(s: DragSample, axis: DragAxis | undefined, armed: boolean): boolean {
+  if (!axis || armed || s.event.pointerType === 'mouse') return true;
   const along = Math.abs(axis === 'x' ? s.dx : s.dy);
   const across = Math.abs(axis === 'x' ? s.dy : s.dx);
   return along > across;
@@ -61,6 +117,11 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
   let zoom = 1;
   let moved = false;
   let axis: DragAxis | undefined;
+  /** A press waiting to be armed (hold to slide): its timer, and the pointer's last event, where its drag starts. */
+  let waiting = 0;
+  let last: PointerEvent | undefined;
+  /** The press waited and was armed: it claims the drag whichever way it goes, and keeps the page still. */
+  let armed = false;
 
   const sample = (event: PointerEvent): DragSample => ({
     x: event.clientX,
@@ -73,11 +134,21 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
   /** Nothing more of this gesture reaches the control. */
   const free = (pointerId: number): void => {
     id = -1;
+    clearTimeout(waiting);
+    waiting = 0;
+    armed = false;
     try {
       target.releasePointerCapture(pointerId);
     } catch {
       /* already released */
     }
+  };
+
+  /** The press may move the control, from where the pointer is now. */
+  const arm = (event: PointerEvent): void => {
+    ox = event.clientX;
+    oy = event.clientY;
+    callbacks.arm?.(sample(event));
   };
 
   const down = (event: PointerEvent): void => {
@@ -94,6 +165,19 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
     } catch {
       /* the pointer is already gone */
     }
+    // hold to slide: a finger's or a pen's press on a slider stands still before it may move it
+    if (!holdToSlide || !callbacks.wait || event.pointerType === 'mouse') {
+      arm(event);
+      return;
+    }
+    last = event;
+    callbacks.wait(HOLD_TO_SLIDE);
+    waiting = window.setTimeout(() => {
+      waiting = 0;
+      armed = true;
+      haptic(target, 'light');
+      arm(last ?? event);
+    }, HOLD_TO_SLIDE);
   };
   // The browser took the gesture (a scroll), or the capture went without a release (the element is moved in the DOM,
   // another script releases it, the OS takes the pointer): the gesture is cancelled instead of sticking.
@@ -105,10 +189,16 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
   const move = (event: PointerEvent): void => {
     if (event.pointerId !== id) return;
     const s = sample(event);
+    if (waiting) {
+      // a finger that strays before its slider is armed is the page's scroll: the control lets go, untouched
+      if (Math.hypot(s.dx, s.dy) > WAIT_SLOP) cancel(event);
+      else last = event;
+      return;
+    }
     if (!moved) {
       if (Math.hypot(s.dx, s.dy) < INTENT) return;
       // a finger setting off across the axis is the page's scroll: the control lets go, untouched
-      if (!claims(s, axis)) {
+      if (!claims(s, axis, armed)) {
         cancel(event);
         return;
       }
@@ -121,21 +211,32 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
     free(event.pointerId);
     callbacks.end(sample(event), moved);
   };
+  // an armed press keeps the page still, whichever way it goes (the browser would take one across the axis)
+  const still = (event: TouchEvent): void => {
+    if (armed && event.cancelable) event.preventDefault();
+  };
 
   target.addEventListener('pointerdown', down);
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', up);
   target.addEventListener('pointercancel', cancel);
   target.addEventListener('lostpointercapture', cancel);
+  if (callbacks.wait) {
+    sliders.set(target, still);
+    listen(target, still);
+  }
   return () => {
     target.removeEventListener('pointerdown', down);
     target.removeEventListener('pointermove', move);
     target.removeEventListener('pointerup', up);
     target.removeEventListener('pointercancel', cancel);
     target.removeEventListener('lostpointercapture', cancel);
-    if (id !== -1) {
-      id = -1;
-    }
+    target.removeEventListener('touchmove', still);
+    sliders.delete(target);
+    clearTimeout(waiting);
+    waiting = 0;
+    armed = false;
+    id = -1;
   };
 }
 

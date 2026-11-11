@@ -51,7 +51,8 @@ export const SETTINGS_KEY = 'fluvy';
  * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
  * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
  * The same release's other fields each read as before where a 3 stored none: whether every card draws its border
- * (`cards.border`, #171).
+ * (`cards.border`, #171), and whether a person's sliders wait for a hold on a touch screen (`holdToSlide`, #166: off,
+ * as every slider was).
  * 3 since 1.11: the house keeps its chart settings and its saved sets of series colours (a 2 is read field by
  * field, each missing field its factory default — `classic` everywhere, so nothing on a dashboard changes). 2 since
  * 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own (it parses field
@@ -189,6 +190,8 @@ export interface PersonalSettings {
   readonly haptics: boolean;
   /** The Activity page's timeline on a card (like a dashboard's); false: on the page itself. */
   readonly activityCard: boolean;
+  /** On a touch screen, a slider moves only after a still press (1.19, #166); the person's on every device. */
+  readonly holdToSlide: boolean;
 }
 
 /** The two layers resolved: what this person sees. */
@@ -206,6 +209,7 @@ export interface EffectiveSettings {
   readonly motion: Motion;
   readonly haptics: boolean;
   readonly activityCard: boolean;
+  readonly holdToSlide: boolean;
   /** How the house's walls behave (the device says whether this page is one). */
   readonly wall: WallSettings;
   readonly lightTint: LightTint;
@@ -268,6 +272,7 @@ export const PERSONAL_DEFAULTS: PersonalSettings = {
   motion: 'system',
   haptics: true,
   activityCard: false,
+  holdToSlide: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -400,6 +405,7 @@ export function parsePersonal(raw: unknown): PersonalSettings {
     haptics: typeof value['haptics'] === 'boolean' ? value['haptics'] : d.haptics,
     activityCard:
       typeof value['activityCard'] === 'boolean' ? value['activityCard'] : d.activityCard,
+    holdToSlide: typeof value['holdToSlide'] === 'boolean' ? value['holdToSlide'] : d.holdToSlide,
   };
 }
 
@@ -428,6 +434,7 @@ export function resolveSettings(
     motion: personal.motion,
     haptics: personal.haptics,
     activityCard: personal.activityCard,
+    holdToSlide: personal.holdToSlide,
     wall: house.wall,
     lightTint: house.lightTint,
     lightColors: house.lightColors,

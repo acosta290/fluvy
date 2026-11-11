@@ -1,4 +1,4 @@
-import { baseStyles, glyph, keyValue, localPoint, trackDrag } from '@fluvy/ui';
+import { baseStyles, glyph, holdRing, keyValue, localPoint, trackDrag } from '@fluvy/ui';
 import { LitElement, css, html, nothing, svg, type TemplateResult } from 'lit';
 
 /** The ring's box where the column holds it (the dial's: its ticks on R 84), and the least it draws at. */
@@ -51,10 +51,11 @@ export class FluvyHueRing extends LitElement {
       :host {
         display: block;
       }
+      /* the ring keeps the sheet's scroll off, but with hold to slide (@fluvy/ui's pointer) */
       .hr {
         position: relative;
         margin: 0 auto;
-        touch-action: none;
+        touch-action: var(--fv-pan, none);
       }
       .hr svg {
         display: block;
@@ -93,6 +94,7 @@ export class FluvyHueRing extends LitElement {
     inactive: { type: Boolean },
     format: { attribute: false },
     dragging: { state: true },
+    waiting: { state: true },
   };
 
   /** The hue, 0–360. */
@@ -109,6 +111,8 @@ export class FluvyHueRing extends LitElement {
   declare inactive: boolean;
   declare format: ((value: number) => string) | undefined;
   declare dragging: boolean;
+  /** Hold to slide: how long a finger standing still on the ring waits to be armed (a ring round the knob); 0 otherwise. */
+  declare waiting: number;
 
   private untrack: (() => void) | undefined;
 
@@ -122,6 +126,7 @@ export class FluvyHueRing extends LitElement {
     this.disabled = false;
     this.inactive = false;
     this.dragging = false;
+    this.waiting = 0;
   }
 
   override connectedCallback(): void {
@@ -135,7 +140,10 @@ export class FluvyHueRing extends LitElement {
     this.untrack = undefined;
   }
 
-  /** The knob follows the finger round the ring from the press on: a tap is a step, a drag a turn. */
+  /**
+   * The knob follows the finger round the ring from the press on: a tap is a step, a drag a turn. With hold to slide,
+   * from the moment a finger that stood still is armed; one lifted before turns nothing.
+   */
   private track(): void {
     const ring = this.renderRoot.querySelector<HTMLElement>('.hr');
     if (!ring || this.untrack) return;
@@ -146,20 +154,30 @@ export class FluvyHueRing extends LitElement {
     // the hue before the press: a turn taken away goes back to it
     let from = 0;
     this.untrack = trackDrag(ring, {
-      start: (s) => {
+      start: () => {
         if (this.disabled) return false;
         from = this.value;
+        return true;
+      },
+      wait: (ms) => {
+        this.waiting = ms;
+      },
+      arm: (s) => {
+        this.waiting = 0;
         this.dragging = true;
         this.turn(hueOf(s.event), 'fluvy-input');
-        return true;
       },
       move: (s) => this.turn(hueOf(s.event), 'fluvy-input'),
       end: (s) => {
+        this.waiting = 0;
+        if (!this.dragging) return;
         this.dragging = false;
         this.turn(hueOf(s.event), 'fluvy-change');
       },
-      // taken away before its release (the system: the ring keeps the page's scroll off): nothing is sent
+      // taken away before its release (the page's scroll with hold to slide, else the system: the ring keeps the
+      // page's scroll off): nothing is sent
       cancel: () => {
+        this.waiting = 0;
         this.dragging = false;
         this.value = from;
       },
@@ -189,7 +207,7 @@ export class FluvyHueRing extends LitElement {
   protected override render(): TemplateResult {
     const size = this.size;
     const R = ringRadius(size);
-    const active = !this.inactive || this.dragging;
+    const active = !this.inactive || this.dragging || this.waiting > 0;
     const [kx, ky] = at(size, this.value, R);
     const ticks: TemplateResult[] = [];
     for (let deg = 0; deg < 360; deg += STEP) {
@@ -233,7 +251,9 @@ export class FluvyHueRing extends LitElement {
               aria-disabled=${this.disabled ? 'true' : nothing}
               style="translate:${Math.round(kx - KNOB / 2)}px ${Math.round(ky - KNOB / 2)}px;width:${KNOB}px;height:${KNOB}px;--knob-dot:hsl(${this.value} 100% 50%)"
               @keydown=${this.onKey}
-            ></span>`
+            >
+              ${this.waiting ? holdRing(KNOB, this.waiting) : nothing}
+            </span>`
           : nothing
       }
     </div>`;

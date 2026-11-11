@@ -1238,6 +1238,8 @@
     "pref.auto": "Automático",
     "pref.reduce": "Reduzir animações",
     "pref.reduce_sub": "Independente do aparelho",
+    "pref.hold": "Segurar para deslizar",
+    "pref.hold_sub": "Em uma tela sensível ao toque, o controle deslizante espera um toque mantido",
     "pref.haptics": "Vibração",
     "pref.haptics_sub": "Um toque que se sente",
     "pref.activity_card": "Atividade em um cartão",

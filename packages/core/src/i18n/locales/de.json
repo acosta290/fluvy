@@ -1238,6 +1238,8 @@
     "pref.auto": "Automatisch",
     "pref.reduce": "Bewegung reduzieren",
     "pref.reduce_sub": "Egal, was das Gerät will",
+    "pref.hold": "Halten zum Schieben",
+    "pref.hold_sub": "Auf einem Touchscreen bewegt sich ein Regler erst nach kurzem Halten",
     "pref.haptics": "Haptik",
     "pref.haptics_sub": "Ein Tippen, das man spürt",
     "pref.activity_card": "Aktivität auf einer Karte",

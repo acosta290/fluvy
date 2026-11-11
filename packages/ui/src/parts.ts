@@ -336,6 +336,26 @@ export function stepper(
   </div>`;
 }
 
+/**
+ * The cue while a finger stands still on a slider (hold to slide, #166): a ring of the tone's ink, 2 wide and 5 outside
+ * the edge of a knob of `size` (the room of its halo), closing from the top, clockwise, over the `ms` the press waits.
+ * The knob carries it as a child, so it rides wherever the knob is drawn; it goes as the slider is armed.
+ */
+export function holdRing(size: number, ms: number): TemplateResult {
+  const box = size + 14;
+  const c = box / 2;
+  return html`<svg
+    class="fv-hold"
+    width=${box}
+    height=${box}
+    viewBox="0 0 ${box} ${box}"
+    style="--fv-wait:${ms}ms"
+    aria-hidden="true"
+  >
+    <circle cx=${c} cy=${c} r=${size / 2 + 5} pathLength="100" transform="rotate(-90 ${c} ${c})" />
+  </svg>`;
+}
+
 export interface OptionItem {
   readonly key: string;
   readonly label: string;
