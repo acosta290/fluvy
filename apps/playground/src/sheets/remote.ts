@@ -36,6 +36,8 @@ const TV =
   PLAY;
 /** A television that steps its volume but reports no level (an Android TV Remote's player). */
 const TV_NO_LEVEL = PAUSE | VOLUME_STEP | VOLUME_MUTE | TURN_ON | TURN_OFF | SELECT_SOURCE | PLAY;
+/** Android TV Remote's player: no sources, an app launched by `play_media`, the volume stepped. */
+const ATV = PAUSE | VOLUME_MUTE | PREVIOUS | NEXT | TURN_ON | TURN_OFF | VOLUME_STEP | STOP | PLAY;
 /** A receiver: its volume, its mute, its power, its inputs. */
 const RECEIVER = VOLUME_SET | VOLUME_MUTE | TURN_ON | TURN_OFF | SELECT_SOURCE;
 
@@ -71,8 +73,8 @@ const entry = (entity: string, platform: string, area = 'rm_living') =>
  * that reports no level, as the stepper, with the receiver off and out of reach; the apps as circles from the
  * player's sources, in their colours, as chips, as the person's own list; the groups reordered, the channel and the
  * custom keys; the television off (every key alive, then power alone) and out of reach; an Apple TV, a Roku and an LG
- * webOS television, each with its integration's keys; a remote of Android TV Remote's alone, its running app read by
- * its package and its apps opened by their deep links.
+ * webOS television, each with its integration's keys; an Android TV as Android TV Remote reports it, its running app
+ * named by its package and said by its platform's name, its apps opened by their deep links.
  */
 export const sheet: SheetSpec = {
   states: [
@@ -162,11 +164,29 @@ export const sheet: SheetSpec = {
       },
     ],
     ['remote.rm_roku', 'on', { friendly_name: 'Roku' }],
-    // an Android TV Remote's remote as the integration draws it: the app running by its package, no activity listed
+    // an Android TV as Android TV Remote reports it where its own list names no app: the package is the app's name,
+    // the player lists no source, the remote no activity
+    [
+      'media_player.rm_study',
+      'on',
+      {
+        friendly_name: 'Study TV',
+        device_class: 'tv',
+        app_id: 'com.amazon.amazonvideo.livingroom',
+        app_name: 'com.amazon.amazonvideo.livingroom',
+        volume_level: 0.12,
+        is_volume_muted: false,
+        supported_features: ATV,
+      },
+    ],
     [
       'remote.rm_study',
       'on',
-      { friendly_name: 'Study TV', current_activity: 'com.disney.disneyplus', activity_list: [] },
+      {
+        friendly_name: 'Study TV',
+        current_activity: 'com.amazon.amazonvideo.livingroom',
+        activity_list: [],
+      },
     ],
     // an LG webOS television: no remote entity, its buttons on the player itself
     [
@@ -198,6 +218,7 @@ export const sheet: SheetSpec = {
       entry('remote.rm_appletv', 'apple_tv'),
       entry('media_player.rm_roku', 'roku'),
       entry('remote.rm_roku', 'roku'),
+      entry('media_player.rm_study', 'androidtv_remote', 'rm_bedroom'),
       entry('remote.rm_study', 'androidtv_remote', 'rm_bedroom'),
       entry('media_player.rm_lg', 'webostv'),
     ]),
@@ -402,12 +423,14 @@ export const sheet: SheetSpec = {
         },
       ],
     },
-    // the apps a player does not list, opened on Android TV Remote by their deep links (1.18.1)
+    // the apps a player does not list, opened on Android TV Remote by their deep links, the one running said by its
+    // platform's name where the television names it by its package (1.18.1)
     {
       title: 'Apps · Android TV Remote',
       cards: [
         {
           type: REMOTE,
+          entity: 'media_player.rm_study',
           remote: 'remote.rm_study',
           groups: ['apps'],
           apps: [

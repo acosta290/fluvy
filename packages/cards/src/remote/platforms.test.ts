@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { appActivity, MONOGRAMS, normalise, platform, PLATFORMS, platformOf } from './platforms.js';
+import {
+  appActivity,
+  isPackage,
+  MONOGRAMS,
+  normalise,
+  platform,
+  PLATFORMS,
+  platformOf,
+  saidName,
+  sourceChips,
+} from './platforms.js';
 
 describe('the platforms the remote knows by name (#143)', () => {
   it('matches a player’s source whatever its case and spacing', () => {
@@ -75,5 +85,58 @@ describe('the platforms the remote knows by name (#143)', () => {
     expect(appActivity({ activity: 42 }, platform('plex'))).toBe('plex://');
     expect(appActivity({ activity: '' }, undefined)).toBeUndefined();
     expect(appActivity({}, platform('filmin'))).toBeUndefined();
+  });
+
+  it('a package is an Android application id: dotted parts, each a letter then letters, figures or underscores, the first in lower case', () => {
+    for (const id of [
+      'com.amazon.amazonvideo.livingroom',
+      'com.dazn',
+      'tv.twitch.android.app',
+      'org.xbmc.kodi',
+      'dk.tv2.tv2playtv',
+      'com.netflix.NGP.Pandora',
+      'com.example.my_app',
+    ])
+      expect(isPackage(id), id).toBe(true);
+    for (const name of [
+      'Prime Video',
+      'Netflix',
+      'Apple TV+',
+      'HDMI 1',
+      'Plex.tv',
+      'Dr. Who',
+      'netflix://',
+      'https://app.primevideo.com',
+      'com',
+      'com.',
+      '.com.dazn',
+      'com..dazn',
+      'com.1dazn',
+      'com.dazn-tv',
+      ' com.dazn',
+      '',
+    ])
+      expect(isPackage(name), name).toBe(false);
+    for (const p of PLATFORMS) if (p.android) expect(isPackage(p.android), p.id).toBe(true);
+  });
+
+  it('says an app or a source, never a package: its platform’s title, or nothing; a name as it is', () => {
+    expect(saidName('com.amazon.amazonvideo.livingroom')).toBe('Prime Video');
+    expect(saidName('com.netflix.ninja')).toBe('Netflix');
+    expect(saidName('com.example.launcher')).toBe('');
+    expect(saidName('Prime Video')).toBe('Prime Video');
+    expect(saidName('My Netflix')).toBe('My Netflix');
+    expect(saidName('HDMI 1')).toBe('HDMI 1');
+    expect(saidName('')).toBe('');
+  });
+
+  it('the sources as chips: a package by its platform’s name, an unknown one left out, the platforms left to the apps row where it draws them', () => {
+    const sources = ['HDMI 1', 'com.netflix.ninja', 'com.example.box', 'Disney+'];
+    expect(sourceChips(sources, false)).toEqual([
+      ['HDMI 1', 'HDMI 1'],
+      ['com.netflix.ninja', 'Netflix'],
+      ['Disney+', 'Disney+'],
+    ]);
+    expect(sourceChips(sources, true)).toEqual([['HDMI 1', 'HDMI 1']]);
   });
 });

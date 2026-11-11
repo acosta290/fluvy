@@ -312,6 +312,38 @@ export const appActivity = (
   pf: Platform | undefined,
 ): string | undefined => ownActivity(app.activity) ?? pf?.link ?? pf?.android;
 
+/**
+ * An Android application id, as Android writes one (`applicationId`): two parts or more joined by dots, each a letter
+ * then letters, figures or underscores, the first in lower case as a reversed domain is ("com.dazn",
+ * "tv.twitch.android.app"). A name with a space, a capital first or a scheme is a name ("Prime Video", "Plex.tv").
+ */
+const PACKAGE = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/;
+export const isPackage = (name: string): boolean => PACKAGE.test(name);
+
+/**
+ * An app or a source as the card says it, never as a package (Android TV Remote names an app by its package where its
+ * own list names none): a package a platform answers to as the platform's title ("Prime Video"), any other package
+ * as nothing, a name as it is.
+ */
+export const saidName = (name: string): string =>
+  isPackage(name) ? (platformOf(name)?.title ?? '') : name;
+
+/** A source as a chip of the remote: the source it selects, and what it says. */
+export type SourceChip = readonly [source: string, label: string];
+
+/**
+ * The player's sources as the remote's chips say them, each with its source: the platforms among them left to the
+ * apps row where that row draws them, a package no platform answers to left out.
+ */
+export const sourceChips = (
+  sources: readonly string[],
+  withoutApps: boolean,
+): readonly SourceChip[] =>
+  sources.flatMap((source) => {
+    const label = withoutApps && platformOf(source) ? '' : saidName(source);
+    return label ? [[source, label] as const] : [];
+  });
+
 /** What an app is called in full: the person's name, else its platform's title, else its source. */
 export const appTitle = (app: AppSaid, pf = appPlatform(app)): string =>
   app.name ?? pf?.title ?? app.source ?? '';

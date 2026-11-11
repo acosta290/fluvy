@@ -37,8 +37,11 @@ import {
   appPlatform,
   appTitle,
   platformOf,
+  saidName,
   shortTitle,
+  sourceChips,
   type Platform,
+  type SourceChip,
 } from './platforms.js';
 
 const s = strings('remote');
@@ -884,8 +887,11 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
         .filter(Boolean)
         .join(' · ');
     }
-    // an app is often its own source too: said once
-    const said = [textAttr(p, 'app_name') || textAttr(p, 'media_title'), textAttr(p, 'source')];
+    // an app is often its own source too: said once; a package as its platform's name, or not at all
+    const said = [
+      saidName(textAttr(p, 'app_name')) || textAttr(p, 'media_title'),
+      saidName(textAttr(p, 'source')),
+    ];
     return [...new Set(said.filter(Boolean))].join(' · ') || stateText(this.hass, p);
   }
 
@@ -909,27 +915,27 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
 
   /* ---------- the groups ---------- */
 
-  /** The player's sources, where it takes one; the platforms among them go to the apps row where that row is theirs. */
-  private sources(p: EntityView, withoutApps: boolean): readonly string[] {
+  /** The player's sources, where it takes one. */
+  private sources(p: EntityView): readonly string[] {
     if (p.domain !== 'media_player' || !p.supports(MEDIA.SELECT_SOURCE)) return [];
     const list = p.attr<unknown>('source_list');
-    const sources = Array.isArray(list) ? list.map(String) : [];
-    return withoutApps ? sources.filter((source) => !platformOf(source)) : sources;
+    return Array.isArray(list) ? list.map(String) : [];
   }
 
+  /** The sources as chips (`sourceChips`): the platforms among them go to the apps row where that row is theirs. */
   private renderSources(
     p: EntityView,
     width: number,
-    sources: readonly string[],
+    chips: readonly SourceChip[],
   ): TemplateResult | typeof nothing {
-    if (!sources.length) return nothing;
+    if (!chips.length) return nothing;
     const current = textAttr(p, 'source');
     const still = !this.usable() || !this.alive('input');
     return html`<div class="rm-gap"></div>
       ${chipRow(
-        sources.map((source) => ({
+        chips.map(([source, label]) => ({
           key: source,
-          label: source,
+          label,
           name: true,
           active: this.usable() && source === current,
           unavailable: !this.usable(),
@@ -1206,7 +1212,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
 
   /** The apps as the row draws them: the person's list, else the player's sources that name a platform. */
   private appItems(p: EntityView): readonly AppItem[] {
-    const sources = this.sources(p, false);
+    const sources = this.sources(p);
     const current = this.usable() ? textAttr(p, 'app_name') || textAttr(p, 'source') : '';
     const r = this.remoteView();
     // the platform running: by the package the device reports (Android TV Remote's `app_id` on its player,
@@ -1426,7 +1432,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       for (const group of groups)
         switch (group) {
           case 'source':
-            parts.push(this.renderSources(p, width, this.sources(p, appsDrawn)));
+            parts.push(this.renderSources(p, width, sourceChips(this.sources(p), appsDrawn)));
             break;
           case 'dpad':
             if (keyed) parts.push(this.renderPad(width));

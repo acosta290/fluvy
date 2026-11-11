@@ -2,6 +2,7 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { houseHeightOf } from '../house-heights.js';
 import { familiesDefined } from '../index.js';
 import { appsBlock, appsLayout, remoteHeight } from '../remote-family.js';
 import {
@@ -591,6 +592,128 @@ describe('the TV remote card (#143)', () => {
         'activity',
       );
       expect(await itemFields({ entity: 'media_player.atv' })).not.toContain('activity');
+    });
+
+    /** Every word the card shows or speaks: its text, and its labels and titles. */
+    const words = (root: ShadowRoot): string =>
+      [
+        root.textContent ?? '',
+        ...[...root.querySelectorAll('[aria-label], [title]')].flatMap((el) => [
+          el.getAttribute('aria-label') ?? '',
+          el.getAttribute('title') ?? '',
+        ]),
+      ].join(' ');
+
+    /** The owner's television as Android TV Remote reports it, its integration naming no app: the package is the name. */
+    const owners = (app: string): Seed[] => [
+      [
+        'media_player.owner',
+        'on',
+        {
+          friendly_name: 'Salón TV',
+          device_class: 'tv',
+          app_id: app,
+          app_name: app,
+          volume_level: 0.12,
+          is_volume_muted: false,
+          supported_features: ATV,
+        },
+      ],
+      [
+        'remote.owner',
+        'on',
+        { friendly_name: 'Salón TV', current_activity: app, activity_list: [] },
+      ],
+    ];
+    const OWNERS = { 'media_player.owner': 'androidtv_remote', 'remote.owner': 'androidtv_remote' };
+    const APPS = ['netflix', 'youtube', 'disneyplus', 'primevideo', 'appletv', 'dazn'].map(
+      (app) => ({ app }),
+    );
+
+    it('says the app a television runs by its platform’s name, never its package, in every shape', async () => {
+      const { hass } = house(owners('com.amazon.amazonvideo.livingroom'), OWNERS);
+      for (const variant of ['full', 'compact', 'row'] as const) {
+        const root = await draw(
+          { entity: 'media_player.owner', remote: 'remote.owner', variant, apps: APPS },
+          hass,
+        );
+        expect(root.querySelector('.fv-card__sub')?.textContent?.trim(), variant).toBe(
+          'Prime Video',
+        );
+        expect(words(root), variant).not.toContain('com.');
+        if (variant === 'full')
+          expect(
+            root.querySelector('.rm-app.is-active .rm-app__circle')?.getAttribute('aria-label'),
+          ).toBe('Open Prime Video');
+        document.body.replaceChildren();
+      }
+    });
+
+    it('a package no platform knows is not said: the line says the state, as with no app', async () => {
+      const { hass } = house(owners('com.example.launcher'), OWNERS);
+      const root = await draw(
+        { entity: 'media_player.owner', remote: 'remote.owner', apps: APPS },
+        hass,
+      );
+      expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('On');
+      expect(words(root)).not.toContain('com.');
+      expect(root.querySelector('.rm-app.is-active')).toBeNull();
+    });
+
+    it('a name the integration gives stays as it is', async () => {
+      const seeds = owners('com.amazon.amazonvideo.livingroom');
+      const named: Seed[] = [
+        [seeds[0]![0], seeds[0]![1], { ...seeds[0]![2], app_name: 'Amazon Prime' }],
+        seeds[1]!,
+      ];
+      const { hass } = house(named, OWNERS);
+      const root = await draw({ entity: 'media_player.owner', remote: 'remote.owner' }, hass);
+      expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('Amazon Prime');
+    });
+
+    it('the sources a player lists by package: a chip by its platform’s name, an unknown one left out, the house counting the same', async () => {
+      const box = (sources: readonly string[]): Seed[] => [
+        [
+          'media_player.box',
+          'on',
+          {
+            friendly_name: 'Fire TV',
+            app_id: 'com.example.box',
+            app_name: 'com.example.box',
+            source: 'com.example.box',
+            source_list: sources,
+            supported_features: 2048 | 128 | 256,
+          },
+        ],
+      ];
+      const packages = ['HDMI 1', 'com.netflix.ninja', 'com.example.box'];
+      const { hass, calls } = house(box(packages), { 'media_player.box': 'androidtv' });
+      const root = await draw({ entity: 'media_player.box', groups: ['source'] }, hass);
+      const chips = [...root.querySelectorAll('.fv-chip__pill')].map((c) => c.textContent?.trim());
+      expect(chips).toEqual(['HDMI 1', 'Netflix']);
+      expect(words(root)).not.toContain('com.');
+      root.querySelectorAll<HTMLElement>('.fv-chip')[1]!.click();
+      expect(calls.at(-1)).toMatchObject({
+        service: 'media_player.select_source',
+        data: { source: 'com.netflix.ninja' },
+      });
+      document.body.replaceChildren();
+      // with the apps row drawn, Netflix is its circle and the chips keep the input alone
+      const both = await draw({ entity: 'media_player.box', groups: ['source', 'apps'] }, hass);
+      expect(
+        [...both.querySelectorAll('.fv-chip__pill')].map((c) => c.textContent?.trim()),
+      ).toEqual(['HDMI 1']);
+      expect([...both.querySelectorAll('.rm-app__name')].map((n) => n.textContent)).toEqual([
+        'Netflix',
+      ]);
+      // the automatic dashboard plans the chips the card draws: the same height as a player listing their words
+      const config = {
+        type: 'custom:fluvy-remote-card',
+        entity: 'media_player.box',
+        groups: ['source'],
+      };
+      const said = house(box(['HDMI 1', 'Netflix']), { 'media_player.box': 'androidtv' });
+      expect(houseHeightOf(config, -1, hass)).toBe(houseHeightOf(config, -1, said.hass));
     });
   });
 });

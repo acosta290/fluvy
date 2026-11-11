@@ -6,8 +6,8 @@
  * on an LG), the power round to the player's own service (`media_player.turn_on` on a television that is off), the
  * mute to the receiver the volume is routed to (`media_player.volume_mute`), an app to the player's source
  * (`media_player.select_source`), one the player does not list to an Android TV Remote's remote by its deep link
- * (`remote.turn_on`), the app running read by its package; a grid's OK is its middle cell; out of reach nothing
- * answers; the apps' logos land from their chunk. Real cards on the playground's simulated hass. Exit code 1 on any
+ * (`remote.turn_on`), the app running read by its package and said by its platform's name, never the package; a
+ * grid's OK is its middle cell; out of reach nothing answers; the apps' logos land from their chunk. Real cards on the playground's simulated hass. Exit code 1 on any
  * failure.
  *   PLAYGROUND=http://127.0.0.1:5193/ node interactions-remote.mjs
  */
@@ -114,11 +114,23 @@ const services = async () =>
       c[0].t?.entity_id === 'remote.rm_study',
     JSON.stringify(c),
   );
-  const running = await study.locator('.rm-app.is-active .rm-app__name').allTextContents();
+  const running = await study
+    .locator('.rm-app.is-active .rm-app__circle')
+    .getAttribute('aria-label');
+  const line = (await study.locator('.fv-card__sub').textContent())?.trim();
+  const words = await study.evaluate((el) =>
+    [
+      el.shadowRoot.textContent,
+      ...[...el.shadowRoot.querySelectorAll('[aria-label], [title]')].flatMap((node) => [
+        node.getAttribute('aria-label') ?? '',
+        node.getAttribute('title') ?? '',
+      ]),
+    ].join(' '),
+  );
   check(
-    'the app the remote runs is read by its package',
-    running.join() === 'Disney+',
-    running.join(),
+    'the app the television runs is read by its package and said by its platform’s name, never the package',
+    running === 'Open Prime Video' && line === 'Prime Video' && !words.includes('com.'),
+    `${running} · ${line}`,
   );
   await reset(page);
   await card('Full · grid').locator('.rm-okcell').click();

@@ -28,7 +28,7 @@ import { lightsHeight, type LightsCardConfig } from './lights/lights-card.js';
 import { mediaHeight } from './media-family.js';
 import { remoteGroups, remoteHeight } from './remote-family.js';
 import { buttonService } from './remote/keys.js';
-import { appSaid, platformOf, type AppSaid } from './remote/platforms.js';
+import { appSaid, platformOf, sourceChips, type AppSaid } from './remote/platforms.js';
 import { roomHeight, type RoomCardConfig } from './room/room-card.js';
 import { isWord, sensorHeight, type SensorCardConfig } from './sensor/sensor-card.js';
 import { normaliseExtras } from './sensor/series.js';
@@ -272,9 +272,10 @@ const media = (config: LovelaceCardConfig, hass: HomeAssistant): number =>
   mediaHeight(config, sourcesOf(hass, config['entity']));
 
 /**
- * What the remote draws of the house: the sources as chips (the inputs, where the apps row draws the platforms among
- * them), the apps by the names the row says under them (the person's list, else the platforms among the sources), and
- * whether anything takes the D-pad's and the channel's keys (a remote, or a webOS television's own buttons).
+ * What the remote draws of the house: the sources as chips, as they say them (the inputs, where the apps row draws the
+ * platforms among them; a package by its platform's name, or not at all), the apps by the names the row says under
+ * them (the person's list, else the platforms among the sources), and whether anything takes the D-pad's and the
+ * channel's keys (a remote, or a webOS television's own buttons).
  */
 const remote = (config: LovelaceCardConfig, hass: HomeAssistant): number => {
   const sources = sourcesOf(hass, config['entity']);
@@ -282,7 +283,7 @@ const remote = (config: LovelaceCardConfig, hass: HomeAssistant): number => {
   const appsDrawn = remoteGroups(config['groups']).includes('apps') && !own.length;
   const entity = typeof config['entity'] === 'string' ? config['entity'] : '';
   return remoteHeight(config, {
-    sources: appsDrawn ? sources.filter((source) => !platformOf(source)) : sources,
+    sources: sourceChips(sources, appsDrawn).map(([, label]) => label),
     apps: own.length
       ? own.map(appSaid)
       : sources.flatMap((source) => {
