@@ -17,6 +17,7 @@ import {
   showIconField,
   textField,
   titleFields,
+  whenField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys } from '../shared/config.js';
@@ -48,15 +49,20 @@ export const keys = configKeys<EntitiesCardConfig>()([
   'light_whites',
   'more',
   'more_path',
+  'show_rows_when',
   ...EMPTY_KEYS,
 ]);
 
+/** The rows, with a section's label or a divider between them, each shown always or on a condition of its own. */
 export const lists: readonly RowsListSpec[] = [
   {
     key: 'rows',
     alias: 'entities',
     title: 'editor.rows',
-    ...rowItems(true),
+    sections: true,
+    // the condition every row keeps to stands over the rows
+    fields: ['show_rows_when'],
+    ...rowItems(true, true),
   },
 ];
 
@@ -76,6 +82,7 @@ export function getConfigForm(): LovelaceConfigForm {
       showIconField(),
       ...colourFields(),
       entitiesField('entities', undefined, true),
+      whenField('show_rows_when'),
       boolField('show_count'),
       // a light's colours where the rows hold a light
       onlyWhen(holdsLight('rows', 'entities'), lightColourFields()),

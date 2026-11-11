@@ -114,6 +114,56 @@
   left: 0;
 }
 
+/* ---------- a section among a list's rows (#157) ----------
+   its label is the house's (`.fv-label`), 8 under what precedes it and where a row's hairline would be: the rows
+   under it start without one. The list's first is its label alone, on the list's own 16 under the head; a list of 60
+   rows sits 8 under it (`.fv-rows`), so there the first keeps its 8 (its box's, which no margin of the list's folds
+   away). A hairline from side to side over it where asked, never over the list's first; the hairline alone is a
+   band of 16 */
+.fv-section {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 28px;
+}
+
+.fv-section:first-child {
+  height: 20px;
+}
+
+.fv-rows > .fv-section:first-child {
+  height: 28px;
+}
+
+/* the person's own words: one line, which may end in its ellipsis */
+.fv-section > .fv-label {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fv-divider {
+  position: relative;
+  height: 16px;
+}
+
+.fv-section--line:not(:first-child)::before,
+.fv-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--fluvy-border);
+}
+
+.fv-divider::before {
+  top: 8px;
+}
+
 .fv-row__text {
   flex: 1 1 auto;
   display: flex;

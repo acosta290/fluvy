@@ -1,9 +1,10 @@
-import { strings as words, type HaFormSchemaItem, type LovelaceConfigForm } from '@fluvy/core';
+import { strings as words, type LovelaceConfigForm } from '@fluvy/core';
 import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionField,
   actionFields,
+  anyNumberField,
   boolField,
   colourFields,
   editorLabels,
@@ -15,11 +16,13 @@ import {
   iconField,
   idsOnly,
   nameIconFields,
+  rowWhenField,
   selectField,
   showIconField,
   textField,
   titleFields,
   toneField,
+  whenField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { softIn } from '../shared/chart-config.js';
@@ -32,11 +35,6 @@ import type { BarsCardConfig, BarsVariant } from './bars-card.js';
 const strings = words('bars');
 
 const VARIANTS: readonly BarsVariant[] = ['full', 'compact'];
-
-const anyNumber = (name: string): HaFormSchemaItem => ({
-  name,
-  selector: { number: { mode: 'box', step: 'any' } },
-});
 
 /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
 export const base: readonly BaseKey[] = [
@@ -60,13 +58,18 @@ export const keys = configKeys<BarsCardConfig>()([
   'badge_ok',
   'badge_warn',
   'chart',
+  'show_rows_when',
   ...EMPTY_KEYS,
 ]);
 
+/** The rows, with a section's label or a divider between them, each shown always or on a condition of its own. */
 export const lists: readonly RowsListSpec[] = [
   {
     key: 'rows',
     title: 'editor.rows',
+    sections: true,
+    // the condition every row keeps to stands over the rows
+    fields: ['show_rows_when'],
     keys: [
       'entity',
       'name',
@@ -81,6 +84,7 @@ export const lists: readonly RowsListSpec[] = [
       'color',
       'plain',
       'tap_action',
+      'show_when',
     ],
     schema: [
       entityField(),
@@ -88,9 +92,10 @@ export const lists: readonly RowsListSpec[] = [
       textField('secondary'),
       entitiesField('sub_entity'),
       fieldRow(toneField(), accentField('color', { item: 'own' })),
-      fieldRow(anyNumber('min'), anyNumber('max')),
-      fieldRow(anyNumber('low'), anyNumber('high')),
+      fieldRow(anyNumberField('min'), anyNumberField('max')),
+      fieldRow(anyNumberField('low'), anyNumberField('high')),
       fieldRow(boolField('plain'), actionField()),
+      rowWhenField(),
     ],
     computeLabel: formLabels({ sub_entity: 'editor.sub_entity' }).computeLabel,
   },
@@ -109,6 +114,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(showIconField(), selectField('chart', ['classic', 'soft'])),
       ...colourFields(),
       entitiesField('rows', undefined, true),
+      whenField('show_rows_when'),
       fieldRow(textField('badge_ok'), textField('badge_warn')),
       emptyFields(),
       actionFields(),

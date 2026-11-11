@@ -13,12 +13,20 @@ import { icon, type IconRef } from '@fluvy/ui';
 import { LitElement, css, html, nothing, type TemplateResult } from 'lit';
 import { normaliseConfig, type AliasSpec } from './config.js';
 import {
+  conditionsOf,
   editorWord,
+  foldConditions,
   type FormLabeler,
   formLabels,
   NUMBER_DEFAULTS,
+  SECTION_FORM,
+  sectionLabels,
+  standsOf,
+  unfoldConditions,
   visibleFields,
+  withConditions,
 } from './form.js';
+import { sectionOf } from './lists.js';
 
 /** One list of the config (`rows`, `tiles`, `entities`): ids or `{ entity, … }` items edited one form each. */
 export interface RowsListSpec {
@@ -88,6 +96,11 @@ export interface RowsListSpec {
   readonly rowIcon?: (item: Readonly<Record<string, unknown>>) => IconRef | string | undefined;
   /** What the marks wait on (the chunk that holds them): the list is drawn again as it lands. */
   readonly ready?: () => Promise<unknown>;
+  /**
+   * Whether the card draws sections among the list's rows (`SectionEntry`, #157): a section's label and a divider are
+   * then items of their own kind, added under the picker and dragged into place with the rows.
+   */
+  readonly sections?: boolean;
 }
 
 /** The entities a list offers while its card names whose they are, and its switch's word. */
@@ -305,13 +318,45 @@ export const compact = (item: Item, idKey: string): Entry => {
     : Object.fromEntries(keys.map((key) => [key, item[key]]));
 };
 
-/** A config entry as the list's item: the list's own reading, else the id rule. */
-export const itemOf = (raw: unknown, list: RowsListSpec): Item | null =>
-  list.read ? list.read(raw) : toItem(raw, idKeyOf(list), list.also);
+/**
+ * A section or a divider among a list's entries as the editor's item, in the words Home Assistant's entities card
+ * writes them (`type`): a section with its label and whether a hairline stands over it — one without a label yet is
+ * kept, to be given one — and a divider, which has nothing to say.
+ */
+const sectionItem = (raw: unknown): Item | null => {
+  const section = sectionOf(raw);
+  if (!section) return null;
+  return (raw as Item)['type'] === 'divider'
+    ? { type: 'divider' }
+    : { type: 'section', label: section.label, line: section.line };
+};
 
-/** An item back as the list's config entry: the list's own writing, else `compact`. */
+/** Whether an item of a list that takes sections is one: a section or a divider, which names no entity. */
+export const isSection = (item: Item, list: RowsListSpec): boolean =>
+  list.sections === true &&
+  typeof item[idKeyOf(list)] !== 'string' &&
+  (item['type'] === 'section' || item['type'] === 'divider');
+
+/** A config entry as the list's item: the list's own reading, else the id rule, else a section where it takes them. */
+export const itemOf = (raw: unknown, list: RowsListSpec): Item | null =>
+  list.read
+    ? list.read(raw)
+    : (toItem(raw, idKeyOf(list), list.also) ?? (list.sections ? sectionItem(raw) : null));
+
+/**
+ * An item back as the list's config entry: the list's own writing, else `compact`; a section keeps its kind, its
+ * label and its hairline where it has them.
+ */
 export const entryOf = (item: Item, list: RowsListSpec): Entry | null =>
-  list.write ? list.write(item) : compact(item, idKeyOf(list));
+  list.write
+    ? list.write(item)
+    : isSection(item, list)
+      ? {
+          type: item['type'],
+          ...(item['label'] ? { label: item['label'] } : {}),
+          ...(item['line'] === true ? { line: true } : {}),
+        }
+      : compact(item, idKeyOf(list));
 
 /**
  * The items of a list as the editor shows them: under `key`, else under the alias; and, when the config names
@@ -527,6 +572,41 @@ export class FluvyRowsEditor extends LitElement {
     .add {
       margin-top: 8px;
     }
+    /* a divider has nothing to edit: its word, and the hairline it draws, between the handle and the cross */
+    .item__divider {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 56px;
+      font-size: 14px;
+      color: var(--secondary-text-color);
+    }
+    .item__divider::after {
+      content: '';
+      flex: 1 1 auto;
+      height: 1px;
+      background: var(--divider-color);
+    }
+    /* what the list takes besides its rows: quiet buttons under the picker */
+    .more {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .more button {
+      height: 36px;
+      padding: 0 16px;
+      border: 1px solid var(--divider-color);
+      border-radius: 18px;
+      background: none;
+      color: var(--primary-color);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
     .wait {
       height: 44px;
       border-radius: var(--fluvy-radius-control);
@@ -627,9 +707,11 @@ export class FluvyRowsEditor extends LitElement {
     choices: Choices,
   ): readonly HaFormSchemaItem[] {
     const shown = visibleFields(spec.schema, asked, this.hass);
+    const stands = standsOf(shown, asked, this.hass);
     // the fields whole, not their names: two fields of one name take turns (a week's first day and a month's)
-    const key = JSON.stringify([choices, shown]);
-    if (this.chosen?.key !== key) this.chosen = { key, schema: withChoices(shown, choices) };
+    const key = JSON.stringify([choices, shown, stands]);
+    if (this.chosen?.key !== key)
+      this.chosen = { key, schema: withConditions(withChoices(shown, choices), stands) };
     return this.chosen.schema;
   }
 
@@ -642,17 +724,20 @@ export class FluvyRowsEditor extends LitElement {
     asked: Readonly<Record<string, unknown>>,
   ): readonly HaFormSchemaItem[] {
     const shown = visibleFields(this.spec?.heads?.[list.key] ?? [], asked, this.hass);
-    const key = JSON.stringify(shown);
+    const stands = standsOf(shown, asked, this.hass);
+    const key = JSON.stringify([shown, stands]);
     const kept = this.drawn.get(list);
     if (kept?.key === key) return kept.schema;
-    this.drawn.set(list, { key, schema: shown });
-    return shown;
+    const schema = withConditions(shown, stands);
+    this.drawn.set(list, { key, schema });
+    return schema;
   }
 
   /**
    * An item's form: what its list says the item shows (asked of the item and the card's form), its selects offering
    * what the house has where the card says so (`choices`: a row's `since` from the house's timestamp sensors), or
-   * where the list asks the item (a legend entry's units) — the same array for the same answer, whichever item asks.
+   * where the list asks the item (a legend entry's units), its condition as it stands (a row's `show_when`) — the
+   * same array for the same answer, whichever item asks.
    */
   private itemSchema(
     list: RowsListSpec,
@@ -664,12 +749,13 @@ export class FluvyRowsEditor extends LitElement {
   ): readonly HaFormSchemaItem[] {
     const own = list.schemaOf?.(item, card) ?? list.schema;
     const asked = list.choices?.(item as LovelaceCardConfig, this.hass);
-    const answer = `${asked ? JSON.stringify(asked) : key}${scope ? JSON.stringify(scope) : ''}`;
+    const stands = standsOf(own, item, this.hass, card);
+    const answer = `${asked ? JSON.stringify(asked) : key}${scope ? JSON.stringify(scope) : ''}${JSON.stringify(stands)}`;
     const forms = this.itemForms.get(own) ?? new Map<string, readonly HaFormSchemaItem[]>();
     this.itemForms.set(own, forms);
     const kept = forms.get(answer);
     if (kept) return kept;
-    const schema = withEntities(withChoices(own, asked ?? choices), scope);
+    const schema = withEntities(withConditions(withChoices(own, asked ?? choices), stands), scope);
     forms.set(answer, schema);
     return schema;
   }
@@ -705,8 +791,13 @@ export class FluvyRowsEditor extends LitElement {
         .filter((key): key is string => Boolean(key) && config[key as string] !== undefined)
         .map((key) => [key, config[key]]),
     );
+    const fields = cardFields(this.spec);
     const own = withoutUntouchedDefaults(
-      unworded(event.detail.value, config, selectsOf(cardFields(this.spec))),
+      unworded(
+        foldConditions(event.detail.value, config, conditionsOf(fields)),
+        config,
+        selectsOf(fields),
+      ),
       config,
       this.defaults(),
     );
@@ -717,9 +808,17 @@ export class FluvyRowsEditor extends LitElement {
     event.stopPropagation();
     if (!this.config) return;
     const entries = this.written(list);
-    // a toggle among an item's select's own choices goes back as the toggle, as the card's form writes its own
-    const held = itemOf(entries[index], list) ?? {};
-    const entry = entryOf(unworded(event.detail.value, held, selectsOf(list.schema)), list);
+    // a toggle among an item's select's own choices goes back as the toggle, as the card's form writes its own, and a
+    // row's condition as its config holds it; a section has none
+    const held = this.items(list)[index] ?? {};
+    const entry = entryOf(
+      foldConditions(
+        unworded(event.detail.value, held, selectsOf(list.schema)),
+        held,
+        isSection(held, list) ? [] : conditionsOf(list.schema),
+      ),
+      list,
+    );
     // an item that says nothing any more (its id cleared) leaves the list
     if (entry === null) entries.splice(index, 1);
     else entries[index] = entry;
@@ -812,6 +911,12 @@ export class FluvyRowsEditor extends LitElement {
 
   private readonly addLabel: Labeler = () => this.t('editor.add');
 
+  /** A section or a divider joins the list's end, to be dragged where it belongs. */
+  private addSection(list: RowsListSpec, type: 'section' | 'divider'): void {
+    if (!this.config) return;
+    this.commit(withList(this.config, list, [...this.written(list), { type }]));
+  }
+
   /** An item's field is named by its list, else by the card, else by the shared item words. */
   private labeler(list: RowsListSpec): Labeler {
     let labeler = this.labelers.get(list);
@@ -891,21 +996,30 @@ export class FluvyRowsEditor extends LitElement {
       >
         <div class="items">
           ${items.map((item, index) => {
-            const schema = this.itemSchema(list, item, card.asked, choices, key, scope);
+            // a section is its label and its hairline, a divider its word alone: neither a row's form
+            const section = isSection(item, list);
+            const divider = section && item['type'] === 'divider';
+            const schema = section
+              ? SECTION_FORM
+              : this.itemSchema(list, item, card.asked, choices, key, scope);
             // an item's selects read a number its YAML holds as their word, as the card's form does (`decimals: 2`)
-            return html`<div class="item ${pickedFirst(list) ? 'item--entity' : ''}">
+            return html`<div class="item ${pickedFirst(list) && !section ? 'item--entity' : ''}">
               <div class="handle" aria-hidden="true">
                 <ha-svg-icon .path=${DRAG_HANDLE}></ha-svg-icon>
               </div>
-              ${list.rowIcon ? html`<span class="item__icon" aria-hidden="true">${icon(list.rowIcon(item), 'grid')}</span>` : nothing}
-              <ha-form
-                .hass=${this.hass}
-                .data=${worded(item, selectsOf(schema))}
-                .schema=${schema}
-                .computeLabel=${this.labeler(list)}
-                .computeHelper=${this.helper(list, item)}
-                @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
-              ></ha-form>
+              ${list.rowIcon && !section ? html`<span class="item__icon" aria-hidden="true">${icon(list.rowIcon(item), 'grid')}</span>` : nothing}
+              ${
+                divider
+                  ? html`<span class="item__divider">${this.t('editor.divider')}</span>`
+                  : html`<ha-form
+                      .hass=${this.hass}
+                      .data=${worded(unfoldConditions(item, section ? [] : conditionsOf(list.schema)), selectsOf(schema))}
+                      .schema=${schema}
+                      .computeLabel=${section ? sectionLabels.computeLabel : this.labeler(list)}
+                      .computeHelper=${this.helper(list, item)}
+                      @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onItem(list, index, event)}
+                    ></ha-form>`
+              }
               <ha-icon-button
                 .label=${this.t('editor.remove')}
                 @click=${() => this.removeItem(list, index)}
@@ -924,6 +1038,18 @@ export class FluvyRowsEditor extends LitElement {
           @value-changed=${(event: CustomEvent<{ value: Item }>) => this.onAdd(list, event)}
         ></ha-form>
       </div>
+      ${
+        list.sections
+          ? html`<div class="more">
+              <button type="button" @click=${() => this.addSection(list, 'section')}>
+                ${this.t('editor.add_section')}
+              </button>
+              <button type="button" @click=${() => this.addSection(list, 'divider')}>
+                ${this.t('editor.add_divider')}
+              </button>
+            </div>`
+          : nothing
+      }
     </div>`;
   }
 
@@ -941,9 +1067,10 @@ export class FluvyRowsEditor extends LitElement {
         ),
       );
     const defaults = this.defaults();
-    const data = worded(
-      { ...withoutLists(defaults), ...withoutLists(this.config) },
-      selectsOf(cardFields(spec)),
+    const fields = cardFields(spec);
+    const data = unfoldConditions(
+      worded({ ...withoutLists(defaults), ...withoutLists(this.config) }, selectsOf(fields)),
+      conditionsOf(fields),
     );
     // what can act is asked of the whole card, its lists too (a camera of the list asked live)
     const asked = { ...defaults, ...this.config };

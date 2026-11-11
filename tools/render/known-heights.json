@@ -562,6 +562,55 @@
       "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
     },
     {
+      "frame": "sections/Bars · a condition on another entity",
+      "tag": "fluvy-bars-card",
+      "declared": 328,
+      "drawn": 252,
+      "reason": "rows on a condition: the card draws the rows whose condition holds now, and declares every row of its config (live)"
+    },
+    {
+      "frame": "sections/Bars · a row’s own condition",
+      "tag": "fluvy-bars-card",
+      "declared": 604,
+      "drawn": 452,
+      "reason": "rows on a condition: the card draws the rows whose condition holds now, and declares every row of its config (live)"
+    },
+    {
+      "frame": "sections/Bars · no row shows",
+      "tag": "fluvy-bars-card",
+      "declared": 604,
+      "drawn": 220,
+      "reason": "rows on a condition, none holding: the panel in place of the rows (live)"
+    },
+    {
+      "frame": "sections/Bars · rows on a condition",
+      "tag": "fluvy-bars-card",
+      "declared": 604,
+      "drawn": 300,
+      "reason": "rows on a condition: the card draws the rows whose condition holds now, and declares every row of its config (live)"
+    },
+    {
+      "frame": "sections/Entities · a section with no row showing",
+      "tag": "fluvy-entities-card",
+      "declared": 448,
+      "drawn": 300,
+      "reason": "rows on a condition: the card draws the rows whose condition holds now, and declares every row of its config (live)"
+    },
+    {
+      "frame": "sections/Entities · no row shows",
+      "tag": "fluvy-entities-card",
+      "declared": 596,
+      "drawn": 220,
+      "reason": "rows on a condition, none holding: the panel in place of the rows (live)"
+    },
+    {
+      "frame": "sections/Entities · rows on a condition",
+      "tag": "fluvy-entities-card",
+      "declared": 596,
+      "drawn": 416,
+      "reason": "rows on a condition: the card draws the rows whose condition holds now, and declares every row of its config (live)"
+    },
+    {
       "frame": "slider/Brightness · when on",
       "tag": "fluvy-light-card",
       "declared": 84,

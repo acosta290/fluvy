@@ -184,6 +184,15 @@ the tile's). Whoever reads a card's editor asks `await Card.editor()`.
   the whole config over the defaults and answers every change with all of it, so a value set before the field went
   away is still there when it comes back. `visibleFields(schema, data, hass)` is the form the editor draws; a row
   that loses one field keeps the other on its own line.
+- **Sections** (`RowsListSpec.sections`, 1.19): a list its card draws in parts takes a section's label and a divider
+  as items of their own kind (`type: section`, `type: divider`), added under the picker and dragged into place with
+  the rows. The card reads its list with `drawnOf(hass, list, config.show_rows_when)` (`shared/lists.ts`: the rows
+  that show and the sections over them), draws it with `withSections(drawn, row)`, counts `sectionsHeight(list)` in
+  its `layoutHeight` and watches `conditionIds(rows, config.show_rows_when)`.
+- **A condition** (`whenField(name)`, a row's `rowWhenField()`): one field of the schema by its config key, which
+  holds a `ShowWhen`. The editor draws it as how it is asked (always, above, below, between, a state that is or is
+  not) and only the fields that choice asks for, and writes the condition they say; one the form did not touch stays
+  as the config wrote it. A form holds one condition.
 
 `packages/cards/src/shared/editors.test.ts` holds every card to the contract, walking the whole form whatever its
 `when`: what the form and the lists show is exactly the card's `base` and `keys`, every field has a word, every switch

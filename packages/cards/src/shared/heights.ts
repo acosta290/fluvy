@@ -1,5 +1,6 @@
 import { capabilitiesOf, entriesOf, type EntityView, type LovelaceCardConfig } from '@fluvy/core';
 import { optionColumns } from '@fluvy/ui';
+import { isRow, listedOf, shownOf } from './lists.js';
 
 /*
  * What every card's `layoutHeight` counts with: the card's padding (20 above and below) and head (44, with 16
@@ -44,6 +45,18 @@ export const listLength = (config: LovelaceCardConfig, keys: readonly string[]):
 /** How many entities it lists there: a section's title or a divider among them is no row. */
 export const entryCount = (config: LovelaceCardConfig, keys: readonly string[]): number =>
   entriesOf(firstList(config, keys)).length;
+
+/**
+ * What a list's sections add to its rows as its config lays it out, every row showing (`shownOf`): a label 28 (its
+ * 20 line 8 under what precedes it) — `first` where it starts the list: 20, the line alone under the head's 16 — and
+ * a hairline alone 16.
+ */
+export const sectionsHeight = (list: unknown, first = 20): number =>
+  shownOf(listedOf(list), () => true).reduce<number>(
+    (height, entry, index) =>
+      isRow(entry) ? height : height + (entry.label ? (index ? 28 : first) : 16),
+    0,
+  );
 
 /** Rows a set of `count` things takes, `perRow` a row. */
 export const rowsOf = (count: number, perRow: number): number => Math.ceil(count / perRow);

@@ -678,6 +678,17 @@ export function emptyState(
   </div>`;
 }
 
+/**
+ * A section among a list's rows: its label — the person's own words, text as it is, which may end in an ellipsis — a
+ * hairline from side to side over it where asked (`line`); with no label, the hairline alone.
+ */
+export const listSection = (label: string, line = false): TemplateResult =>
+  label
+    ? html`<div class="fv-section ${line ? 'fv-section--line' : ''}">
+        <span class="fv-label" data-name>${label}</span>
+      </div>`
+    : html`<div class="fv-divider" role="separator"></div>`;
+
 export interface BarRowOptions {
   /**
    * `null`: no circle — a row squeezed so far that its name would be cut short gives the circle's room to the name. A

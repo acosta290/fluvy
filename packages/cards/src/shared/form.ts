@@ -19,6 +19,7 @@ import {
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
 import type { EditorChoices, RowsListSpec, SelectOption } from './rows-editor.js';
+import { statesOf } from './lists.js';
 import { LADDERS, ladderOf, unitClass } from './units.js';
 import words from '@fluvy/core/locales/en/editor.json';
 
@@ -151,6 +152,11 @@ export const numberField = (
 ): HaFormSchemaItem => ({
   name,
   selector: { number: { min, ...(max === undefined ? {} : { max }), step, mode: 'box' } },
+});
+/** A number of any size and sign typed in a box (a bar's range, a condition's bound). */
+export const anyNumberField = (name: string): HaFormSchemaItem => ({
+  name,
+  selector: { number: { mode: 'box', step: 'any' } },
 });
 /**
  * A choice among values the catalogue names (a value without a word does not compile), in the editor's language;
@@ -634,10 +640,14 @@ const ROW_KEYS = [
 
 /**
  * A row's form: the entity, its name and icon, what it says, a select's (`select`: what its dropdown offers, its
- * words), its colours, its tap. Its colour has none chosen by default: a light wears its bulb's on a card that shows
- * them (`bulb`), the row the card's otherwise.
+ * words), its colours, its tap, and when it shows on a card whose rows show on a condition (`shows`). Its colour has
+ * none chosen by default: a light wears its bulb's on a card that shows them (`bulb`), the row the card's otherwise.
  */
-const rowSchema = (bulb: boolean, select: readonly HaFormSchemaItem[] = []): HaFormSchemaItem[] => [
+const rowSchema = (
+  bulb: boolean,
+  shows: boolean,
+  select: readonly HaFormSchemaItem[] = [],
+): HaFormSchemaItem[] => [
   entityField(),
   nameIconFields(),
   selectField('secondary', ['area', 'last-changed', 'state', 'none'], { custom: true }),
@@ -645,6 +655,7 @@ const rowSchema = (bulb: boolean, select: readonly HaFormSchemaItem[] = []): HaF
   ...select,
   fieldRow(toneField(), accentField('color', { item: bulb ? 'bulb' : 'card' })),
   actionField(),
+  ...(shows ? [rowWhenField()] : []),
 ];
 
 /**
@@ -654,17 +665,249 @@ const rowSchema = (bulb: boolean, select: readonly HaFormSchemaItem[] = []): HaF
  */
 export function rowItems(
   bulb = false,
+  shows = false,
 ): Pick<RowsListSpec, 'keys' | 'schema' | 'schemaOf' | 'choices'> {
   const [options, labels] = selectRowFields();
-  const plain = rowSchema(bulb);
-  const select = rowSchema(bulb, [options, labels]);
-  const worded = rowSchema(bulb, [labels]);
+  const plain = rowSchema(bulb, shows);
+  const select = rowSchema(bulb, shows, [options, labels]);
+  const worded = rowSchema(bulb, shows, [labels]);
   return {
-    keys: ROW_KEYS,
+    keys: shows ? [...ROW_KEYS, 'show_when'] : ROW_KEYS,
     schema: select,
     schemaOf: (item) => (!isSelectRow(item) ? plain : item['tap_action'] ? worded : select),
     choices: selectRowChoices,
   };
+}
+
+/* ---------- a list in parts, and rows on a condition (#157) ---------- */
+
+/**
+ * A section among a list's rows as its editor shows it: its label, and whether a hairline stands over it, each in
+ * the editor's own word for it (a row's `label` is another thing).
+ */
+export const SECTION_FORM: readonly HaFormSchemaItem[] = [
+  fieldRow(textField('label'), boolField('line')),
+];
+export const sectionLabels = formLabels({ label: 'editor.section', line: 'editor.line' });
+
+/** How a condition is asked: not at all, a number above one, below one or between two, a state that is a word or is not. */
+const WHEN_MODES = ['always', 'above', 'below', 'between', 'state', 'state_not'] as const;
+type WhenMode = (typeof WHEN_MODES)[number];
+
+const MODE_WORDS: Readonly<Record<WhenMode, MessageKey>> = {
+  always: 'editor.when_always',
+  above: 'editor.when_above',
+  below: 'editor.when_below',
+  between: 'editor.when_between',
+  state: 'editor.when_state_is',
+  state_not: 'editor.when_state_not',
+};
+
+/** What a condition's choice asks for, each a field beside it: named so that one condition stands in a form. */
+const WHEN_PARTS = ['when_above', 'when_below', 'when_state', 'when_entity'] as const;
+
+/**
+ * A condition among a form's fields, by its key (`show_when`: a `ShowWhen`). One field, which Fluvy's editor draws as
+ * how it is asked and what that asks for (`withConditions`), writing the condition they say (`foldConditions`): the
+ * fields that cannot act are never shown. A row's keeps to the card's while it names none (`follows`: the card's
+ * key), and its first choice then says so.
+ */
+export const whenField = (name: string, follows?: string): HaFormSchemaItem => ({
+  name,
+  selector: { object: {} },
+  condition: follows ? { follows } : {},
+});
+
+/** When a row shows (`show_when`), on a card with a condition for every row (`show_rows_when`). */
+export const rowWhenField = (): HaFormSchemaItem => whenField('show_when', 'show_rows_when');
+
+/** A schema's condition fields, through its rows. */
+export const conditionsOf = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+  schema.flatMap((item) =>
+    item.schema ? conditionsOf(item.schema) : item.condition ? [item] : [],
+  );
+
+type Bag = Readonly<Record<string, unknown>>;
+
+const bagOf = (value: unknown): Bag =>
+  typeof value === 'object' && value !== null ? (value as Bag) : {};
+
+/** How a condition is asked, by the parts it holds: one it holds without a value yet is asked all the same. */
+const modeOf = (when: unknown): WhenMode => {
+  const has = (key: string): boolean => key in bagOf(when);
+  return has('above')
+    ? has('below')
+      ? 'between'
+      : 'above'
+    : has('below')
+      ? 'below'
+      : has('state')
+        ? 'state'
+        : has('state_not')
+          ? 'state_not'
+          : 'always';
+};
+
+/** How a form's condition stands: how it is asked, the states its entity offers, whether it keeps to the card's. */
+export interface ConditionStand {
+  readonly mode: WhenMode;
+  readonly states: readonly SelectOption[];
+  readonly follows: boolean;
+}
+
+/**
+ * How the conditions of a form stand in what it holds (`data`), by their names: a state's choices are what the entity
+ * read lists and says now, and out of reach, in Home Assistant's words, with those already chosen; `card` is the
+ * card's form, which a row's condition may follow.
+ */
+export function standsOf(
+  schema: readonly HaFormSchemaItem[],
+  data: Bag,
+  hass: HomeAssistant | undefined,
+  card?: Bag,
+): Readonly<Record<string, ConditionStand>> {
+  return Object.fromEntries(
+    conditionsOf(schema).map((field) => {
+      const when = bagOf(data[field.name]);
+      const mode = modeOf(when);
+      const state = hass?.states[String(when['entity'] ?? data['entity'])];
+      const listed: unknown = state?.attributes['options'];
+      const values =
+        mode === 'state' || mode === 'state_not'
+          ? [
+              ...(Array.isArray(listed) ? listed.map(String) : []),
+              ...(state ? [state.state, 'unavailable'] : []),
+              ...statesOf(when[mode]),
+            ]
+          : [];
+      const stand: ConditionStand = {
+        mode,
+        states: [...new Set(values)].map((value) => ({
+          value,
+          label: (state && hass?.formatEntityState?.(state, value)) || value,
+        })),
+        follows: mode === 'always' && modeOf(card?.[field.condition?.follows ?? '']) !== 'always',
+      };
+      return [field.name, stand];
+    }),
+  );
+}
+
+/** A condition's fields as it stands: how it is asked, what that asks for beside it, and the entity it reads. */
+function conditionFields(
+  name: string,
+  { mode, states, follows }: ConditionStand,
+): HaFormSchemaItem[] {
+  const asked = choiceField(
+    name,
+    WHEN_MODES.map(
+      (value) =>
+        [value, value === 'always' && follows ? 'editor.when_follows' : MODE_WORDS[value]] as const,
+    ),
+  );
+  if (mode === 'always') return [asked];
+  const asks: HaFormSchemaItem[] =
+    mode === 'state' || mode === 'state_not'
+      ? [
+          {
+            name: 'when_state',
+            selector: {
+              select: {
+                multiple: true,
+                custom_value: true,
+                mode: 'dropdown',
+                options: [...states],
+              },
+            },
+          },
+        ]
+      : [
+          ...(mode === 'below' ? [] : [anyNumberField('when_above')]),
+          ...(mode === 'above' ? [] : [anyNumberField('when_below')]),
+        ];
+  return [
+    fieldRow(asked, ...asks),
+    { ...entityField(undefined, 'when_entity', false), helper: 'editor.when_entity_helper' },
+  ];
+}
+
+/** A schema with each condition field as it stands (`stands`, by its name), through its rows: itself where it has none. */
+export const withConditions = (
+  schema: readonly HaFormSchemaItem[],
+  stands: Readonly<Record<string, ConditionStand>>,
+): readonly HaFormSchemaItem[] =>
+  Object.keys(stands).length
+    ? schema.flatMap((item) => {
+        const stand = item.condition && stands[item.name];
+        return item.schema
+          ? [{ ...item, schema: withConditions(item.schema, stands) }]
+          : stand
+            ? conditionFields(item.name, stand)
+            : [item];
+      })
+    : schema;
+
+/**
+ * A form's data with its conditions (`fields`) as their fields hold them: how each is asked under its own name, its
+ * parts beside it.
+ */
+export function unfoldConditions(data: Bag, fields: readonly HaFormSchemaItem[]): Bag {
+  if (!fields.length) return data;
+  const next: Record<string, unknown> = { ...data };
+  for (const { name } of fields) {
+    const when = bagOf(data[name]);
+    const mode = modeOf(when);
+    next[name] = mode;
+    next['when_above'] = when['above'] ?? undefined;
+    next['when_below'] = when['below'] ?? undefined;
+    next['when_state'] = statesOf(when[mode === 'state_not' ? mode : 'state']);
+    next['when_entity'] = when['entity'];
+  }
+  return next;
+}
+
+/**
+ * A form's value with its conditions (`fields`) back as the config holds them (`ShowWhen`): the parts the choice asks
+ * for (a bound not typed yet keeps its place), none at all for "always"; one whose fields stand as they were handed
+ * (`held`) stays as the config wrote it.
+ */
+export function foldConditions(
+  value: Bag,
+  held: Bag,
+  fields: readonly HaFormSchemaItem[],
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...value };
+  for (const field of fields) {
+    const { name } = field;
+    const before = unfoldConditions(held, [field]);
+    const touched = [name, ...WHEN_PARTS].some(
+      (key) => JSON.stringify(next[key]) !== JSON.stringify(before[key]),
+    );
+    const mode = next[name];
+    const [above, below, states, entity] = WHEN_PARTS.map((key) => next[key]);
+    for (const key of WHEN_PARTS) delete next[key];
+    if (!touched) {
+      if (held[name] === undefined) delete next[name];
+      else next[name] = held[name];
+    } else if (mode === 'always' || !WHEN_MODES.includes(mode as WhenMode)) delete next[name];
+    else {
+      const words = statesOf(states);
+      next[name] = {
+        ...(typeof entity === 'string' && entity ? { entity } : {}),
+        // a bound follows its figure from above to below and back
+        ...(mode === 'above' || mode === 'between'
+          ? { above: above ?? (mode === 'above' ? below : undefined) ?? null }
+          : {}),
+        ...(mode === 'below' || mode === 'between'
+          ? { below: below ?? (mode === 'below' ? above : undefined) ?? null }
+          : {}),
+        ...(mode === 'state' || mode === 'state_not'
+          ? { [mode]: words.length === 1 ? words[0] : words }
+          : {}),
+      };
+    }
+  }
+  return next;
 }
 
 /** The choices of a unit select: the automatic one, then each unit by its symbol. */

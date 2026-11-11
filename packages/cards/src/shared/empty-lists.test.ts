@@ -14,7 +14,8 @@ afterAll(() => familiesDefined);
 /*
  * #48: a card of a list is never a configuration error for being empty. A filter that matches nothing yet hands it
  * `[]` (auto-entities), then the matches on the same element; a list may hold objects with options of their own, a
- * section's title or a divider among them. Held here for each of the fifteen cards of a list.
+ * section's title or a divider among them: no row of it, and drawn only by the cards whose list may stand in parts
+ * (#157). Held here for each of the fifteen cards of a list.
  */
 
 /** Every entity is called so, and so is every item: what a card shows of its list is found by this word. */
@@ -68,13 +69,15 @@ interface ListCase {
   readonly item: Record<string, unknown>;
   /** What else the config needs to show its items' names. */
   readonly extra?: Record<string, unknown>;
+  /** What a section's label that starts the list adds, on a card that draws its list in parts (#157). */
+  readonly section?: number;
 }
 
 const named = (id: string): Record<string, unknown> => ({ entity: id, name: MARKER });
 
 const CASES: readonly ListCase[] = [
-  { tag: 'fluvy-bars-card', key: 'entities', item: named('sensor.level') },
-  { tag: 'fluvy-entities-card', key: 'entities', item: named('light.desk') },
+  { tag: 'fluvy-bars-card', key: 'entities', item: named('sensor.level'), section: 20 },
+  { tag: 'fluvy-entities-card', key: 'entities', item: named('light.desk'), section: 28 },
   { tag: 'fluvy-tiles-card', key: 'entities', item: named('light.desk') },
   { tag: 'fluvy-updates-card', key: 'entities', item: { entity: 'update.core' } },
   { tag: 'fluvy-stat-tiles-card', key: 'entities', item: named('sensor.level') },
@@ -169,18 +172,24 @@ describe('a card of a list with nothing in it (#48)', () => {
     expect(text(card)).toContain('All closed');
   });
 
-  it.each(CASES)('$tag: reads a list of objects, skipping a section and a divider', async (c) => {
-    const card = await mount(c, [SECTION, c.item, DIVIDER]);
-    expect(panelOf(card)).toBeFalsy();
-    expect(text(card)).toContain(MARKER);
-    const watched = card.watched();
-    expect(watched.every((id) => typeof id === 'string')).toBe(true);
-    if (typeof c.item['entity'] === 'string') expect(watched).toContain(c.item['entity']);
-    // a section's title or a divider is no row: the card is as tall as with the item alone
-    expect(heightOf(c.tag, configOf(c, [SECTION, c.item, DIVIDER]))).toBe(
-      heightOf(c.tag, configOf(c, [c.item])),
-    );
-  });
+  it.each(CASES)(
+    '$tag: reads a list of objects, a section and a divider no row of it',
+    async (c) => {
+      const card = await mount(c, [SECTION, c.item, DIVIDER]);
+      expect(panelOf(card)).toBeFalsy();
+      expect(text(card)).toContain(MARKER);
+      const watched = card.watched();
+      expect(watched.every((id) => typeof id === 'string')).toBe(true);
+      if (typeof c.item['entity'] === 'string') expect(watched).toContain(c.item['entity']);
+      // a section's title or a divider is no row: a card whose list stands in parts draws the label over its row and
+      // is taller by it, any other is as tall as with the item alone; a divider no row follows is drawn by none
+      expect(text(card).includes('Upstairs')).toBe(c.section !== undefined);
+      expect(card.shadowRoot?.querySelector('.fv-divider')).toBeNull();
+      expect(heightOf(c.tag, configOf(c, [SECTION, c.item, DIVIDER]))).toBe(
+        heightOf(c.tag, configOf(c, [c.item])) + (c.section ?? 0),
+      );
+    },
+  );
 
   it.each(CASES)('$tag: rows, then none, then rows again on one element', async (c) => {
     const card = await mount(c, [c.item]);

@@ -25,8 +25,20 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { iconOf, stateWord } from '../shared/domain.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { EMPTY, HEAD, ROW, ROW_BAR, ROW_COMPACT } from '../shared/heights.js';
-import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { EMPTY, HEAD, ROW, ROW_BAR, ROW_COMPACT, sectionsHeight } from '../shared/heights.js';
+import {
+  conditionIds,
+  drawnOf,
+  emptyPanel,
+  isRow,
+  itemsOf,
+  listOf,
+  withSections,
+  type ConditionalRows,
+  type EmptyList,
+  type SectionEntry,
+  type ShowWhen,
+} from '../shared/lists.js';
 import { PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 
 const strings = words('bars');
@@ -57,14 +69,21 @@ export interface BarRowConfig {
   plain?: boolean;
   /** The row's own colour: its circle and its bar, in the palette's family. */
   color?: string;
+  /** Shown while it holds (a battery only below a number, #157); the card's `show_rows_when` where it names none. */
+  show_when?: ShowWhen;
   tap_action?: ActionConfig;
 }
 
-/** `chart`: the bars classic (1.10's) or soft (their ink deepening along them); none: the house's. */
-export interface BarsCardConfig extends FluvyCardConfig, EmptyList, Pick<ChartKeys, 'chart'> {
+/**
+ * `chart`: the bars classic (1.10's) or soft (their ink deepening along them); none: the house's. `show_rows_when`:
+ * one condition for every row that names none.
+ */
+export interface BarsCardConfig
+  extends FluvyCardConfig, EmptyList, ConditionalRows, Pick<ChartKeys, 'chart'> {
   title?: string;
   subtitle?: string;
-  rows?: ReadonlyArray<string | BarRowConfig>;
+  /** The entities, with a section's label or a hairline between them where the list is in parts (`SectionEntry`). */
+  rows?: ReadonlyArray<string | BarRowConfig | SectionEntry>;
   /**
    * `full` (default): 76 px rows with the context under the name (60 for a plain one). `compact`: 48 px rows, the
    * name and the value on one line and the bar under them.
@@ -115,16 +134,23 @@ const rowHeight = (row: BarRowConfig, compact: boolean): number =>
  * The bar-row list: one 76 px row per entity — icon circle, name and context, the value at the right
  * and a 4 px bar under the text — or, compact, 48 px rows with the name and the value on one line over
  * the bar. Rows outside their band turn warning and are counted in the head badge ("1 shaded",
- * "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card.
+ * "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card. A list in parts carries a
+ * section's label or a hairline between its rows, and a row may show only while a condition holds (#157): the badge
+ * counts the rows that show, and with none showing the card is its empty panel.
  */
 export class FluvyBarsCard extends Card<BarsCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: BarsCardConfig): number {
     const compact = config.variant === 'compact';
     // auto-entities hands its rows over as `entities` (read as `rows` once the card has them)
-    const rows = itemsOf<BarRowConfig>(config.rows ?? config.entities);
+    const list = config.rows ?? config.entities;
+    const rows = itemsOf<BarRowConfig>(list);
     if (!rows.length) return HEAD + EMPTY;
-    return rows.reduce((height, row) => height + rowHeight(row, compact), HEAD);
+    // every row counted, whatever its condition says now, and the sections between them
+    return rows.reduce(
+      (height, row) => height + rowHeight(row, compact),
+      HEAD + sectionsHeight(list),
+    );
   }
 
   static override styles: CSSResultGroup = [
@@ -179,21 +205,14 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
+  /** The rows' entities, their companions', and what their conditions read. */
   protected override watched(): readonly string[] {
-    return this.rows().flatMap((row) => [row.entity, ...subEntities(row)]);
+    const rows = this.rows();
+    return [
+      ...rows.flatMap((row) => [row.entity, ...subEntities(row)]),
+      ...conditionIds(rows, this.config?.show_rows_when),
+    ];
   }
-
-  /** `barRow` is a focusable button without a key handler of its own: Enter or Space on a focused row opens it. */
-  private onRowsKey = (event: KeyboardEvent): void => {
-    if (event.defaultPrevented || (event.key !== 'Enter' && event.key !== ' ')) return; // a plain row has already answered
-    const target = event.target;
-    if (!(target instanceof HTMLElement) || !target.classList.contains('fv-row')) return;
-    const index = [...(event.currentTarget as HTMLElement).children].indexOf(target);
-    const row = this.rows()[index];
-    if (!row) return;
-    event.preventDefault();
-    this.tap(row.entity, row.tap_action);
-  };
 
   /**
    * The secondary line: the row's own context, then what its companion entities say, then why there
@@ -232,7 +251,9 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
-    const rows = this.rows();
+    // the rows whose condition holds, and the sections over them: what is measured, counted and drawn
+    const drawn = drawnOf<BarRowConfig>(this.hass, this.config?.rows, this.config?.show_rows_when);
+    const rows = drawn.filter(isRow<BarRowConfig>);
     const views = rows.map((row) => this.entity(row.entity));
     const tone: Tone = toneOf(this.config, 'accent');
 
@@ -301,7 +322,8 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
       })),
       compact,
     );
-    const body = items.map(({ row, view, usable, quantity, min, max, warn, title, value }) => {
+    const body = withSections(drawn, (row, index) => {
+      const { view, usable, quantity, min, max, warn, title, value } = items[index]!;
       // a row's own tone, or its colour as the accent; without either the circle stays neutral and the bar takes the measure's tone
       const own: Tone | undefined = row.tone ?? (row.color ? 'accent' : undefined);
       const iconTone: Tone = !usable ? 'off' : warn ? 'warning' : (own ?? 'neutral');
@@ -366,7 +388,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         cut: fitted.cut,
         ...this.headActions(),
       })}
-      <div class=${list} @keydown=${this.onRowsKey}>${panel ?? body}</div>
+      <div class=${list}>${panel ?? body}</div>
     </article>`;
   }
 }

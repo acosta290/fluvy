@@ -231,6 +231,12 @@ export interface HaFormSchemaItem {
    * chosen), as a catalogue key. Read by Fluvy's editors; `ha-form` passes it by.
    */
   helper?: MessageKey;
+  /**
+   * The field holds a condition (a row's `show_when`): Fluvy's editor draws it as how it is asked and what that asks
+   * for, and writes the condition they say. A row's keeps to the card's while it names none (`follows`: the card's
+   * key). Never handed to `ha-form`.
+   */
+  condition?: { readonly follows?: string };
 }
 
 export interface LovelaceConfigForm {

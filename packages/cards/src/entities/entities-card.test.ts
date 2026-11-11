@@ -259,3 +259,139 @@ describe('a select’s row', () => {
     ]);
   });
 });
+
+describe('a list in parts, and rows on a condition (#157)', () => {
+  const state = (entity_id: string, value: string, name: string, attributes = {}) => ({
+    [entity_id]: {
+      entity_id,
+      state: value,
+      attributes: { friendly_name: name, ...attributes },
+      last_changed: '',
+      last_updated: '',
+    },
+  });
+  const kitchen = (washer = 'off'): HomeAssistant =>
+    ({
+      ...hass,
+      states: {
+        ...hass.states,
+        ...state('switch.light', 'on', 'Kitchen light'),
+        ...state('switch.washer', washer, 'Washing machine'),
+        ...state('switch.pump', 'unavailable', 'Garden pump'),
+        ...state('binary_sensor.motion', 'off', 'Hall motion', { device_class: 'motion' }),
+      },
+    }) as HomeAssistant;
+  /** What the list draws, in its order: a label as its words, a hairline alone as `-`, a row as its name. */
+  const drawn = (root: ShadowRoot): string[] =>
+    [...root.querySelectorAll('.fv-rows > *')].map((node) =>
+      node.classList.contains('fv-divider')
+        ? '-'
+        : (node
+            .querySelector('.fv-label, .fv-row__title, .fv-empty-state__text')
+            ?.textContent?.trim() ?? ''),
+    );
+  const badge = (root: ShadowRoot): string =>
+    root.querySelector('.fv-badge')?.textContent?.trim() ?? '';
+  const height = (config: Omit<EntitiesCardConfig, 'type'>): number =>
+    FluvyEntitiesCard.layoutHeight({ type: 'custom:fluvy-entities-card', ...config });
+  const ROWS = [
+    { type: 'section', label: 'Switches' },
+    'switch.light',
+    { entity: 'switch.washer', show_when: { state: 'on' } },
+    { entity: 'switch.pump', show_when: { state_not: 'unavailable' } },
+    { type: 'section', label: 'Sensors', line: true },
+    { entity: 'binary_sensor.motion', show_when: { state: 'on' } },
+    { type: 'divider' },
+    'lock.front_door',
+  ] as const;
+
+  it('draws what Home Assistant’s entities card writes: a section’s label and a divider among the rows', async () => {
+    const root = await mount(
+      {
+        title: 'Kitchen',
+        entities: [
+          { type: 'section', label: 'Switches' },
+          'switch.light',
+          'switch.washer',
+          { type: 'divider' },
+          'lock.front_door',
+        ],
+      },
+      kitchen(),
+    );
+    expect(drawn(root)).toEqual([
+      'Switches',
+      'Kitchen light',
+      'Washing machine',
+      '-',
+      'Front door',
+    ]);
+    expect(root.querySelector('.fv-divider')?.getAttribute('role')).toBe('separator');
+  });
+
+  it('shows a row only while its condition holds, a section only with a row under it, a divider only between rows', async () => {
+    const root = await mount({ title: 'Kitchen', show_count: true, rows: ROWS }, kitchen());
+    // the washer is off, the pump out of reach, nothing moves: the light under its label, then the door; the
+    // Sensors label has no row to stand over, and the divider no label to stand under
+    expect(drawn(root)).toEqual(['Switches', 'Kitchen light', '-', 'Front door']);
+    // the head counts the rows that show
+    expect(badge(root)).toBe('1 on');
+    const card = root.host as FluvyEntitiesCard;
+    card.hass = kitchen('on');
+    await card.updateComplete;
+    expect(drawn(root)).toEqual([
+      'Switches',
+      'Kitchen light',
+      'Washing machine',
+      '-',
+      'Front door',
+    ]);
+    expect(badge(root)).toBe('2 on');
+  });
+
+  it('is its empty panel with no row showing, in its own words, and steps aside where asked', async () => {
+    const config = {
+      title: 'Kitchen',
+      show_count: true,
+      rows: ['switch.light', 'switch.washer'],
+      show_rows_when: { state: 'unavailable' },
+    };
+    const root = await mount({ ...config, empty_text: 'All answering' }, kitchen());
+    expect(drawn(root)).toEqual(['All answering']);
+    expect(badge(root)).toBe('');
+    const hidden = await mount({ ...config, hide_empty: true }, kitchen());
+    expect((hidden.host as FluvyEntitiesCard).hidden).toBe(true);
+  });
+
+  it('declares every row and the sections between them, the first label taking the rows’ 8 too', () => {
+    const rows = ['switch.light', 'switch.washer'];
+    const plain = height({ title: 'Kitchen', rows });
+    expect(height({ title: 'Kitchen', rows: [{ section: 'A' }, ...rows] })).toBe(plain + 28);
+    expect(
+      height({ title: 'Kitchen', rows: ['switch.light', { section: 'B' }, 'switch.washer'] }),
+    ).toBe(plain + 28);
+    expect(
+      height({ title: 'Kitchen', rows: ['switch.light', { type: 'divider' }, 'switch.washer'] }),
+    ).toBe(plain + 16);
+    // with no head, and under auto-entities' key
+    expect(height({ entities: [{ section: 'A' }, ...rows] })).toBe(height({ entities: rows }) + 28);
+    // whatever a condition says now
+    expect(height({ title: 'Kitchen', rows, show_rows_when: { state: 'never' } })).toBe(plain);
+  });
+
+  it('watches what its conditions read', async () => {
+    const root = await mount(
+      {
+        rows: [
+          { entity: 'switch.light', show_when: { entity: 'input_boolean.guests', state: 'on' } },
+        ],
+        show_rows_when: { entity: 'sensor.sun', above: 0 },
+      },
+      kitchen(),
+    );
+    const watched = (root.host as unknown as { watched(): readonly string[] }).watched();
+    expect(watched).toEqual(
+      expect.arrayContaining(['switch.light', 'input_boolean.guests', 'sensor.sun']),
+    );
+  });
+});

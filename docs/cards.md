@@ -10,11 +10,9 @@ accepts (read, never written back). Every entity card also takes
 `entity`, `name`, `icon`, `tap_action`, `hold_action`, `tone`, `color`, `card_color` (a quiet wash of a colour as
 the card's own surface, its edge and dividers in it — see [the theme guide](theme.md#a-colour-per-card-and-per-item))
 `card_opacity` (how solid its surface is, 0 to 100: under 100 the view's background shows through; left out, the
-house's — see [the settings panel](settings-panel.md#cards)), `card_border` (`false` draws no border, the hairline
-round the card or round each of its tiles where it is a tile or a group of them; left out, the house's) and
-`unavailable` (how it looks while its device is out of reach: `dashed`, the default, on the page's fill in a dashed
-hairline; `quiet`, as it is while off, still saying "Unavailable"; left out, the house's — a tile of the tiles card
-may say its own);
+house's — see [the settings panel](settings-panel.md#cards)) and `unavailable` (how it looks while its device is out
+of reach: `dashed`, the default, on the page's fill in a dashed hairline; `quiet`, as it is while off, still saying
+"Unavailable"; left out, the house's — a tile of the tiles card may say its own);
 a list card takes `title`. A card with a slider (the light, slider, tile, tiles, lights, media, fan, cover and helpers
 cards) also takes `slider_style` (the style its sliders are drawn in: `ruler`, `bar`, `liquid` or, on a tile, `fill`;
 left out or `house`, the house's — see [the settings panel](settings-panel.md#sliders)) and `slider_words` (the
@@ -81,25 +79,6 @@ A compact or mini tile keeps its name to one line, ending a long one in an ellip
 second line where one would cut it — on the tile and tiles cards, the template card, the room lights' tiles and the
 room card's tiles and row. The tile is then a line taller whatever its name says (a compact one 88 instead of 76, 96
 inside a card, a mini 124 instead of 108), so a row of tiles stays level.
-
-A large tile draws its switch beside its icon circle. `show_switch: false` leaves the switch out and makes the circle
-the switch, as on a compact or a mini tile, which draw none: a tap on the circle turns the entity on and off, a tap
-anywhere else on the tile still opens its details (`tap_action: toggle` makes the whole tile switch), and the tile
-keeps its size. `show_switch: value` puts the level's figure where the switch stood ("70 %", the line under the name
-then saying "On"), while there is one to say: a light's brightness, a cover's position, a fan's speed, a player's
-volume. It is the tile card's, the template card's large tile's and the tiles card's, where the group says it for its
-tiles and a tile may answer otherwise; the automatic dashboards take the same choice for every tile they draw
-(`tile_switch`). A sensor never had a switch, and the Slider card's tile keeps its own `control`.
-
-```yaml
-type: custom:fluvy-tiles-card
-size: large
-show_switch: false
-tiles:
-  - light.sofa_lamp
-  - entity: light.reading_lamp
-    show_switch: true
-```
 
 A sensor card's readouts are named by their measure when nothing is set ("Temperature", "Humidity"); `label` names
 the card's own sensor, an entry's `name` names that entry, and each entry may take its own `color`:
@@ -364,25 +343,42 @@ rows:
     since: attribute:last_opened
 ```
 
-## A card's own line and badge
+## Sections and rows on a condition
 
-A card's `subtitle` — the gauge's, the humidity's, the sensor's, the thermostat's, the cover's, the fan's, the
-vacuum's, the lock's, the alarm's, the camera's and the to-do list's — and the gauge's `badge` take your words, an
-entity or a template, as the media card's `secondary` does. An entity the house has is said as Home Assistant says its
-state, with its unit ("7.4 kWh"), a moment as its date and time, a dash while it cannot be read; it is a value, so a
-column too narrow for it gets its shorter form ("in 3 h"), then nothing, never a cut. A template (`{{ … }}` or `{% …
-%}`) is rendered by Home Assistant and kept live, the card's entity `entity` in it; a line holds its place until it
-answers and a badge waits, never showing the template itself. A word that only looks like an entity's id stays as you
-wrote it, and your words that do not fit lose their last ` · ` parts, then end in an ellipsis. A badge of your own
-that does not fit beside the name steps down into the line as its last part ("7.4 kWh · 3 h 20 min left"), the first
-to go there; the card's own ("Idle", "Producing") gives way, as the body says it too.
+The lists of the Bars and the Entities cards may stand in parts (1.19). A section among the rows is its label, in the
+card's small capitals where a row's hairline would be: `type: section` with a `label`, as Home Assistant's own
+entities card writes one, or `section: Upstairs` in a line. `line: true` draws a hairline from side to side over the
+label, and `type: divider` is that hairline alone. The editor adds both under the rows' picker, and they are dragged
+into place with the rows.
+
+A row shows only while its `show_when` holds: its state a number `above` one, `below` one or between both, a `state`
+that is a word (or one of a list), or a `state_not`; `entity` reads another entity in the row's place. Every part
+given must hold, the bounds are strict, and a state that is no number (unavailable, unknown) is neither above nor
+below one. `show_rows_when` on the card is the same condition for every row that names none, which is how a list
+filled by auto-entities takes one. It is plain data compared with the state, never a template.
+
+A label with no row showing under it is not drawn, nor is a hairline with no row showing on either side. The count in
+the head ("2 low", "3 on") reads the rows that show, and with none showing the card is its empty panel in its
+`empty_text`, or steps aside with `hide_empty: true`. The height the card declares to the grid and to the automatic
+dashboards counts every row and section of its config; on a dashboard it is as tall as what it shows.
 
 ```yaml
-type: custom:fluvy-gauge-card
-entity: sensor.battery_soc
-gauge: liquid
-subtitle: sensor.battery_energy # an entity: "7.4 kWh"
-badge: "{{ states('sensor.battery_runtime') }} left" # a template, kept live
+type: custom:fluvy-bars-card
+title: Batteries
+show_rows_when: { below: 30 }     # every row
+empty_text: Nothing under 30 %
+rows:
+  - type: section
+    label: Downstairs
+  - sensor.front_door_battery
+  - entity: sensor.kitchen_window_battery
+    show_when: { below: 50 }      # or a row its own
+  - type: divider
+  - section: Upstairs
+    line: true
+  - sensor.leak_sensor_battery
+  - entity: sensor.guest_room_battery
+    show_when: { entity: input_boolean.guests, state: 'on' }
 ```
 
 ## Pictures of your own
@@ -898,22 +894,19 @@ usual ones, else its history), `attribute` (the list; one that says today reads 
 for statistics (a meter's change and a measurement's mean by default; an hour a reading through a week, a day beyond),
 `name`, `tone` or `color`, `unit` and `decimals` (a unit its sensor's converts to scales its figures; any other names
 the unit its list is written in — Solcast's kW under a kWh sensor), `curve`, `fill` and `kind`: `line`, `area`,
-`columns` (drawn under the lines, on their scale where they share a unit) or `band` (its lows and highs). Series of
-different units each stand on a scale of their own, every one taking the chart's height — a price's columns under a
-temperature, a power beside a humidity: the scale's ticks are the columns' where some are drawn, else the first
-series', and every value is read in its own unit in the value row, the legend and the bubble. The lists read are
-Nordpool's (24 hours or 96 quarters a day, and its plain `today` and `tomorrow`), Tibber's map of hours to prices,
-ENTSO-E's and Frank Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band), and any list of
-entries with a moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative
-price stays negative. `span` is the window: the house's (fluvy's settings → Charts: the last 12 hours from the factory,
-24 before 1.18) where it names none, or any `<N>h` or `<N>d` rolling to now (`4h`, `12h`, `24h`, `48h`, `7d`, `30d`
-offered), `today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. A series of the
-recorder's drawn as a line or an area runs through time as the sensor card's does, on `points` (an hour's statistics
-never finer than the hour). Bars, columns, a band and a stepped line stand on whole round periods of the house's clock
-(12:00, 13:00 …, as many as the card's width holds calmly), each reading what Home Assistant says of its period: a bar
-at 12:00 is its 12:00 hour — a statistic's mean, its changes added up, its lowest or its highest as its `stat` says —
-the band its lows and highs of each period, the axis on the same round times. The slot still running reads so far,
-paler, and says Now.
+`columns` (drawn under the lines, on one scale) or `band` (its lows and highs). The lists read are Nordpool's (24 hours
+or 96 quarters a day, and its plain `today` and `tomorrow`), Tibber's map of hours to prices, ENTSO-E's and Frank
+Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band), and any list of entries with a
+moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative price stays
+negative. `span` is the window: the house's (fluvy's settings → Charts: the last 12 hours from the factory, 24 before
+1.18) where it names none, or any `<N>h` or `<N>d` rolling to now (`4h`, `12h`, `24h`, `48h`, `7d`, `30d` offered),
+`today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. A series of the recorder's
+drawn as a line or an area runs through time as the sensor card's does, on `points` (an hour's statistics never finer
+than the hour). Bars, columns, a band and a stepped line stand on whole round periods of the house's clock (12:00,
+13:00 …, as many as the card's width holds calmly), each reading what Home Assistant says of its period: a bar at 12:00
+is its 12:00 hour — a statistic's mean, its changes added up, its lowest or its highest as its `stat` says — the band
+its lows and highs of each period, the axis on the same round times. The slot still running reads so far, paler, and
+says Now.
 
 A series wears the card's colour alone, and the palette's series colours (or the house's set, fluvy's settings →
 Charts) beside others; its own `color` wins over both. It may name a colour of the palette's, which follows the
@@ -922,8 +915,7 @@ palette and the mode as the rest of the house does — `graph-1` … `graph-12` 
 `home` — the editor offers them by name; a Home Assistant colour's name or a `#rrggbb` stays as it is.
 
 `thresholds` colour the line from a value up to the next threshold, each in a tone — `ok` is the good, cheap one: the
-line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. Their values are
-in the first series' unit, and they colour the series of that unit alone. `highlight`
+line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. `highlight`
 marks the cheapest and the dearest window of what is to come (`min`, `max` or `both`; a price's in the ok and the
 danger tones, any other series' in its own) as a stretch of the plot behind the line and a pill that names it —
 "Cheapest 13:00–15:00 · 0.078 EUR/kWh", shorter where the row is narrow — over `highlight_hours` (one by default);
@@ -1253,7 +1245,7 @@ roles:
 | **Slider** | `custom:fluvy-slider-card` | Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head. | `variant` (`full`, `compact`, `tile`), `show_stepper`, `control` (`auto`, `mute`, `switch`, `none`), `toggle_entity`, `min`, `max`, `label`, `live_update`, `tint` (`off`, `on`, `always`) | — |
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `show_color`, `color_action` (`sheet`, `more-info`), `color_control` (`ruler`, `wheel`), `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `name_lines` (`1`, `2`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`), `colors` (a list: `color`, `name`, `rgb`) | `entities` → `lights` |
 | **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `image`, `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
-| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `more`, `more_path`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`) | `entities` → `rows` |
+| **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_rows_when`, `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `more`, `more_path`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`, `show_when`; between them `type: section`, `type: divider`) | `entities` → `rows` |
 | **Items** | `custom:fluvy-items-card` | The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24. | `title`, `subtitle`, `attribute` (`auto`), `preset` (`auto`, `none`, `flights`), `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`, `item_image`, `item_url`, `items_template`, `sort`, `sort_order` (`ascending`, `descending`), `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_image`, `item_tap` (`sheet`, `none`), `empty_text`, `hide_empty` | — |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `secondary`, `image`, `image_mode` (`fallback`, `always`), `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
 | **Now playing** | `custom:fluvy-now-playing-card` | The compact player of the home screen: artwork, thin progress, transport and volume. | `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
@@ -1326,7 +1318,7 @@ roles:
 | **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
 | **History bars** | `custom:fluvy-history-bars-card` | A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money. | `subtitle`, `variant` (`full`, `compact`, `mini`), `days`, `period` (`day`, `week`, `month`), `stat` (`change`, `state`, `mean`, `max`, `min`), `reset` (`auto`, `never`, `day`, `week`, `month`, `year`), `source` (`auto`, `history`), `date_format` (`date`, `weekday`, `short`), `negative_color`, `current_color`, `include_today`, `show_head`, `show_values`, `show_axis`, `show_grid`, `show_dates`, `show_facts`, `co2_factor`, `price`, `chart` (`classic`, `bars`, `columns`, `minimal`), `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`0`, `1`, `2`, `3`), `head` (a list: `kind`, `name`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`), `facts` (a list: `kind`, `name`, `icon`, `color`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`) | `title` → `name` |
 | **Chart** | `custom:fluvy-chart-card` | Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found. | `title`, `subtitle`, `span` (`4h`, `12h`, `24h`, `today`, `today+tomorrow`, `48h`, `7d`, `30d`), `variant` (`full`, `compact`, `tile`), `show_head`, `show_legend`, `highlight` (`none`, `min`, `max`, `both`), `highlight_hours`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`), `points` (`auto`, `5m`, `15m`, `30m`, `1h`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `show_now`, `animate`, `series` (a list: `entity`, `name`, `source`, `attribute`, `time_key`, `value_key`, `stat`, `period`, `kind`, `curve`, `fill`, `tone`, `color`, `unit`, `decimals`), `thresholds` (a list: `tone`, `value`) | — |
-| **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`) | `entities` → `rows` |
+| **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `show_rows_when`, `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`, `show_when`; between them `type: section`, `type: divider`) | `entities` → `rows` |
 | **Distribution** | `custom:fluvy-distribution-card` | One stacked bar and a legend: who draws what. | `title`, `subtitle`, `max_rows`, `variant` (`stack`, `rows`), `chart` (`classic`, `soft`), `total`, `empty_text`, `hide_empty`, `entities` (a list: `entity`, `name`, `tone`, `color`) | — |
 | **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `gauge` (`ticks`, `ruler`, `liquid`), `animate`, `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |
 

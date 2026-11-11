@@ -28,17 +28,32 @@ import { buttonWidth, rowEndStyles, rowsKeepIcon, rowStacks } from '../shared/ro
 import { secondaryText } from '../shared/secondary.js';
 import { sinceIds } from '../shared/since.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
-import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW } from '../shared/heights.js';
-import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW, sectionsHeight } from '../shared/heights.js';
+import {
+  conditionIds,
+  drawnOf,
+  emptyPanel,
+  isRow,
+  itemsOf,
+  listOf,
+  withSections,
+  type ConditionalRow,
+  type ConditionalRows,
+  type EmptyList,
+  type SectionEntry,
+} from '../shared/lists.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 
-/** A row of the card: the rows every list shares (`RowConfig`). */
-export type EntityRowConfig = RowConfig;
+/** A row of the card: the rows every list shares (`RowConfig`), shown while its condition holds (`show_when`, #157). */
+export type EntityRowConfig = RowConfig & ConditionalRow;
 
-export interface EntitiesCardConfig extends FluvyCardConfig, EmptyList, LightColours {
+/** `show_rows_when`: one condition for every row that names none. */
+export interface EntitiesCardConfig
+  extends FluvyCardConfig, EmptyList, ConditionalRows, LightColours {
   title?: string;
   subtitle?: string;
-  rows?: ReadonlyArray<string | EntityRowConfig>;
+  /** The entities, with a section's label or a hairline between them where the list is in parts (`SectionEntry`). */
+  rows?: ReadonlyArray<string | EntityRowConfig | SectionEntry>;
   /** Show "3 on" / "All off" in the head. */
   show_count?: boolean;
   /** `rows` (default): 60 px rows with a second line. `compact`: 48 px rows, the name alone. */
@@ -62,6 +77,8 @@ const moreOf = (config: EntitiesCardConfig | undefined): { count: number; path: 
  * A card of 60 px rows: icon circle, title / sub, and ONE trailing element chosen by the entity —
  * a switch for what can be toggled, the value for what is measured, a chevron for the rest.
  * State is said once: the trailing element carries it, the sub line carries context (area or time).
+ * A list in parts carries a section's label or a hairline between its rows, and a row may show only while a
+ * condition holds (#157): the head counts the rows that show, and with none showing the card is its empty panel.
  */
 export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -69,8 +86,14 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const n = entryCount(config, ['rows', 'entities']) + (moreOf(config) ? 1 : 0);
     // nothing to list: the panel under the head, or alone in the card (20 + 120 + 20)
     if (!n) return (config.title ? HEAD : 40) + EMPTY;
-    // the head and 8 over the rows (20 + 44 + 8 + … + 20), else the rows alone, 8 into the padding at each end
-    return (config.title ? 92 : 24) + (config.variant === 'compact' ? ROW_COMPACT : ROW) * n;
+    // the head and 8 over the rows (20 + 44 + 8 + … + 20), else the rows alone, 8 into the padding at each end;
+    // every row counted, whatever its condition says now, and the sections between them (a first one's label takes
+    // the rows' 8 too)
+    return (
+      (config.title ? 92 : 24) +
+      (config.variant === 'compact' ? ROW_COMPACT : ROW) * n +
+      sectionsHeight(config.rows ?? config.entities, 28)
+    );
   }
 
   static override styles: CSSResultGroup = [
@@ -140,7 +163,10 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     return config;
   }
 
-  /** The rows' entities (a light group's members too), and what the rows' last change is read from (`since`). */
+  /**
+   * The rows' entities (a light group's members too), what the rows' last change is read from (`since`), and what
+   * their conditions read.
+   */
   protected override watched(): readonly string[] {
     const rows = this.rows();
     return [
@@ -149,6 +175,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         this.hass,
       ),
       ...sinceIds(rows),
+      ...conditionIds(rows, this.config?.show_rows_when),
     ];
   }
 
@@ -160,7 +187,13 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
-    const rows = this.rows();
+    // the rows whose condition holds, and the sections over them: what is counted, fitted and drawn
+    const drawn = drawnOf<EntityRowConfig>(
+      this.hass,
+      this.config?.rows ?? this.config?.entities,
+      this.config?.show_rows_when,
+    );
+    const rows = drawn.filter(isRow<EntityRowConfig>);
     const views = rows.map((row) => this.entity(row.entity));
     const active = views.filter((v) => isActive(v)).length;
     const tone = toneOf(this.config, 'accent');
@@ -336,7 +369,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       ${header}
       <div class="fv-rows ${this.config?.title ? '' : 'fv-rows--bare'}">
         ${panel}
-        ${rows.map((row, i) => {
+        ${withSections(drawn, (row, i) => {
           const { view, usable, trailing, title, value } = laid[i]!;
           const state = this.stateOf(view);
           const on =

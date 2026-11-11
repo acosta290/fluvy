@@ -1,8 +1,9 @@
 /**
  * The cards' tables in `docs/cards.md`, generated from the code so the docs cannot drift: for every card of the
  * catalogue its name, type, description and the options its editor shows (the card's own keys with a select's
- * values, its lists with their item keys) and the older names it still reads. The prose around the tables is
- * written by hand and kept; the tables live between `<!-- generated:cards -->` and `<!-- /generated:cards -->`.
+ * values, its lists with their item keys, and the sections a list takes between its items) and the older names it
+ * still reads. The prose around the tables is written by hand and kept; the tables live between
+ * `<!-- generated:cards -->` and `<!-- /generated:cards -->`.
  *
  *   pnpm docs:cards            writes docs/cards.md
  *   pnpm --filter @fluvy/docs check   fails when the file is not what the code says (what `pnpm check` runs)
@@ -25,7 +26,7 @@ type Schema = readonly {
 /** What a card's editor shows (its class's, or the module a card every page carries keeps it in). */
 interface Editor {
   keys: readonly string[];
-  lists?: readonly { key: string; alias?: string; schema: Schema }[];
+  lists?: readonly { key: string; alias?: string; schema: Schema; sections?: boolean }[];
   getConfigForm(): { schema: Schema };
 }
 interface Contract {
@@ -160,7 +161,9 @@ function row(
     .map((field) => option(field, fields));
   const lists = cardLists.map((list) => {
     const keys = flatten(list.schema).map((f) => `\`${f.name}\``);
-    return `\`${list.key}\` (a list: ${keys.join(', ')})`;
+    // a list in parts: what stands between its items
+    const between = list.sections ? '; between them `type: section`, `type: divider`' : '';
+    return `\`${list.key}\` (a list: ${keys.join(', ')}${between})`;
   });
   const options = [...own, ...lists];
   const reads = [
