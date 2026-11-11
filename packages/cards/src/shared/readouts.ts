@@ -93,9 +93,18 @@ export interface StatFigure {
   readonly tight?: boolean;
 }
 
-/** A statistic that can give way to keep its row: its figure as a compact surface writes it ("21.4°", "3/10"). */
-export interface GivingStat extends StatText {
+/** A figure that can give way to keep its row: as a compact surface writes it ("21.4°", "3/10"), where it has such a form. */
+export interface GivingFigure extends StatFigure {
   readonly short?: StatFigure | undefined;
+}
+
+/**
+ * A statistic that can give way (`GivingFigure`), with the figure its kind usually writes (`usual`): the room it keeps
+ * whatever it reads now — a dash out of reach, a single digit — so a row is laid out by what it shows, never by what
+ * its sensors say this minute. A figure wider than usual is held too: the wider of the two is measured.
+ */
+export interface GivingStat extends StatText, GivingFigure {
+  readonly usual?: GivingFigure | undefined;
 }
 
 /** What a card asks of its readouts' row. */
@@ -119,13 +128,31 @@ const FIGURES = [
   { size: 'xs', short: true },
 ] as const;
 
+/** A figure's width at a readout's size, in its short form where that is asked and it has one. */
+function figureWidth(
+  ruler: TextRuler,
+  figure: GivingFigure,
+  size: StatSize,
+  short: boolean,
+): number {
+  const { value, unit = '', tight = false }: StatFigure = (short && figure.short) || figure;
+  return ruler.width(
+    `fv-readout fv-readout--${size} > fv-readout__value`,
+    value,
+    tight ? 'fv-unit fv-unit--tight' : 'fv-unit',
+    unit,
+  );
+}
+
 /**
  * A row of readouts that stays one row, measured, never by a threshold: every readout keeps its column (equal, 16
  * apart) and what does not hold gives way in order — the labels' words to their icons, the figures' size (s → xs),
  * then their units ("21.4 °C" → "21.4°", "3 of 10" → "3/10") — the labels and the figures each on their own line, so
  * words that hold stay over a figure that had to shrink. Only where the shortest figures still would not hold do the
  * columns give way, a shorter last row taking the whole row: no label, figure or unit is ever cut. Asked to wrap, the
- * words stay and the columns give way first, as `statsRow` lays every other card's row out.
+ * words stay and the columns give way first, as `statsRow` lays every other card's row out. A readout that says what
+ * its kind usually writes (`usual`) is measured as the wider of that and what it reads: the row is the same whatever
+ * its sensors say, a dash or a single digit.
  */
 export function readoutsRow(
   ruler: TextRuler,
@@ -147,16 +174,12 @@ export function readoutsRow(
         written !== 'words' || holds(({ label }) => ruler.width('fv-readout__label', label)),
     );
     const figure = figures.find(({ size, short }) =>
-      holds((item) => {
-        const written: StatFigure = (short && item.short) || item;
-        const { value, unit = '', tight = false } = written;
-        return ruler.width(
-          `fv-readout fv-readout--${size} > fv-readout__value`,
-          value,
-          tight ? 'fv-unit fv-unit--tight' : 'fv-unit',
-          unit,
-        );
-      }),
+      holds((item) =>
+        Math.max(
+          figureWidth(ruler, item, size, short),
+          item.usual ? figureWidth(ruler, item.usual, size, short) : 0,
+        ),
+      ),
     );
     if ((form && figure) || columns === 1) {
       const { size, short } = figure ?? FIGURES[figures.length - 1]!;

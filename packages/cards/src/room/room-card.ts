@@ -49,6 +49,7 @@ import { EMPTY, NAME_LINE, ROW, rowsOf, statsRows, twoLines } from '../shared/he
 import { fitLine, type Segment } from '../shared/fit.js';
 import {
   readoutsRow,
+  type GivingFigure,
   type GivingStat,
   type ReadoutsAsk,
   type StatLabels,
@@ -124,11 +125,20 @@ export const loadQuickActions = (): Promise<QuickModule> =>
 const NO_ROUNDS: QuickRounds = { taken: 0, template: nothing };
 
 const HERO = 160;
-/** A row of small readouts: the label's 16, 4 and the figure's 24; asked for without its labels, the figure alone. */
+/**
+ * A row of readouts: the label's 16, 4 and the figure's 24; asked for without its labels, the figure alone. One figure
+ * whatever size its figures take: the smaller one (20) stands on the larger one's line, 4 lower.
+ */
 const READOUT = 44;
 const READOUT_BARE = 24;
-/** What a reading out of reach is laid out as: a figure of two digits and a tenth, as most readings are. */
-const STAND_IN = 88.8;
+/** What a reading usually writes: two digits and a tenth of a degree, two of a percent. Its readout keeps that room. */
+const USUAL = 88.8;
+
+/** A reading as it can give way: degrees without their scale ("21.4°"), the degree attached. */
+const giving = (parts: ValueParts): GivingFigure => ({
+  ...parts,
+  ...(parts.unit.startsWith('°') ? { short: { value: parts.value, unit: '°', tight: true } } : {}),
+});
 const TILES = 4;
 /** An inner tile (a compact tile inside a card) is 84 tall. */
 const INNER = 84;
@@ -265,6 +275,15 @@ export class FluvyRoomCard extends FluvyTileCard {
          hold in a third */
       .am-area__stats {
         grid-template-columns: repeat(var(--am-stats, 3), minmax(0, 1fr));
+      }
+      /* the row is as tall whatever size its figures take (its height is its config's, never its sensors'): the
+         smaller figure's 20 line stands where the larger one's 24 ends, 8 under its label, as a readouts card's
+         does — or 4 under the row's top where it has no label */
+      .am-area__stats .fv-readout--xs .fv-readout__value {
+        margin-top: 8px;
+      }
+      .am-area__stats .fv-readout--xs > .fv-sr + .fv-readout__value {
+        margin-top: 4px;
       }
       /* a row's title is a word, not a name ("Todos los dispositivos"): it takes a second line rather than lose its end */
       .am-rows .fv-row__title {
@@ -535,33 +554,38 @@ export class FluvyRoomCard extends FluvyTileCard {
     const { devices: ids, on, climate: readings } = this.contents();
     const climate = this.room?.show_climate !== false;
     const count = this.room?.show_count !== false;
-    // each with the icon that stands for its label and, where it has one, its figure as a compact surface writes it
-    const stats: (GivingStat & { readonly glyph: string; readonly dead?: boolean })[] = [];
+    // each with the icon that stands for its label, its figure as a compact surface writes it where it has such a
+    // form, and the figure its kind usually writes, whose room it keeps whatever it reads (a dash out of reach, a
+    // single digit): the row is laid out by what the room shows, never by what its sensors say this minute
+    const stats: (GivingStat & { readonly glyph: string })[] = [];
     for (const kind of ['temperature', 'humidity'] as const) {
       const id = readings[kind];
       if (!climate || !id) continue;
-      const read = this.reading(id, kind);
-      // out of reach, a dash laid out as the figure it would write: the row keeps its columns and its size
-      const parts = read ?? this.written(kind, STAND_IN);
+      const parts = this.reading(id, kind) ?? { value: '—', unit: '' };
+      const usual = this.written(kind, USUAL);
       stats.push({
         label: s(this.hass, kind),
         glyph: kind === 'temperature' ? 'thermo' : 'drop',
-        ...parts,
-        // degrees without their scale: "21.4°"
-        ...(parts.unit.startsWith('°')
-          ? { short: { value: parts.value, unit: '°', tight: true } }
-          : {}),
-        ...(read ? {} : { dead: true }),
+        ...giving(parts),
+        // in the reading's own unit, where it says one
+        usual: giving({ ...usual, unit: parts.unit || usual.unit }),
       });
     }
     if (count && ids.length) {
-      const value = formatNumber(this.hass, on, { digits: 0 });
+      // "3 of 7", "3/7" short; its room is the room's with every device on
+      const tally = (lit: number): GivingFigure => {
+        const value = formatNumber(this.hass, lit, { digits: 0 });
+        return {
+          value,
+          unit: s(this.hass, 'of', { count: ids.length }),
+          short: { value: `${value}/${ids.length}` },
+        };
+      };
       stats.push({
         label: s(this.hass, 'devices_on'),
         glyph: 'power',
-        value,
-        unit: s(this.hass, 'of', { count: ids.length }),
-        short: { value: `${value}/${ids.length}` },
+        ...tally(on),
+        usual: tally(ids.length),
       });
     }
     if (!stats.length) return nothing;
@@ -574,14 +598,21 @@ export class FluvyRoomCard extends FluvyTileCard {
       data-align="center"
       style="--am-stats:${row.columns}"
     >
-      ${stats.map(({ label, glyph, short, dead, ...figure }) =>
-        readout({
-          label,
-          ...(dead ? { value: '—' } : (row.short && short) || figure),
+      ${stats.map((stat) => {
+        const { value, unit = '', tight } = (row.short && stat.short) || stat;
+        return readout({
+          label: stat.label,
+          value,
+          unit,
+          tight,
           size: row.size,
-          ...(row.labels === 'icons' ? { glyph } : row.labels === 'none' ? { glyph: null } : {}),
-        }),
-      )}
+          ...(row.labels === 'icons'
+            ? { glyph: stat.glyph }
+            : row.labels === 'none'
+              ? { glyph: null }
+              : {}),
+        });
+      })}
     </div>`;
   }
 

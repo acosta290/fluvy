@@ -1398,13 +1398,50 @@ describe('a room’s name at the top and its readouts on one row (#159)', () => 
     });
   });
 
-  it('keeps the row of a reading out of reach as it was: a dash where its figure would be, the same columns and size', async () => {
-    const dead = salon([temperature('sensor.salon_t', 'unavailable')]);
-    for (const width of [328, 211, 172, 152]) {
+  it('lays its row out by what the room shows, never by what its sensors say: a dash, a single digit, nothing on', async () => {
+    /** The row less its figures: its columns, its size and its labels. */
+    const shape = ({ columns, odd, size, labels }: ReturnType<typeof row>) => ({
+      columns,
+      odd,
+      size,
+      labels,
+    });
+    const OFF: readonly Seed[] = [
+      ['light.salon_ceiling', 'off', { supported_color_modes: ['onoff'] }],
+      ['cover.salon_blinds', 'closed', { current_position: 0, supported_features: 15 }],
+      ['switch.salon_plug', 'off', { device_class: 'outlet' }],
+    ];
+    // a sensor Home Assistant cannot reach, every reading unknown with nothing on, and a cold room of one digit
+    const unavailable = salon([temperature('sensor.salon_t', 'unavailable')]);
+    const unknown = salon([
+      temperature('sensor.salon_t', 'unknown'),
+      humidity('sensor.salon_h', 'unknown'),
+      ...OFF,
+    ]);
+    const cold = salon([temperature('sensor.salon_t', '9.5'), humidity('sensor.salon_h', '8')]);
+    for (const width of [360, 328, 266, 211, 172, 152]) {
       const live = row(await drawn({}, width));
-      const out = row(await drawn({}, width, dead));
-      expect(out, `${width}`).toEqual({ ...live, figures: ['—', ...live.figures.slice(1)] });
+      // short where the live row is short, at the size the live row takes
+      const short = live.figures[0] === '17.4°';
+      expect(row(await drawn({}, width, unavailable)), `${width}`).toEqual({
+        ...live,
+        figures: ['—', ...live.figures.slice(1)],
+      });
+      expect(row(await drawn({}, width, unknown)), `${width}`).toEqual({
+        ...shape(live),
+        figures: ['—', '—', short ? '0/6' : '0of 6'],
+      });
+      expect(row(await drawn({}, width, cold)), `${width}`).toEqual({
+        ...shape(live),
+        figures: [short ? '9.5°' : '9.5°C', '8%', live.figures[2]],
+      });
     }
+    // a figure wider than its kind usually writes is still held, never cut: 211's thirds of 46 do not hold a frost of
+    // five characters and its degree (54), so the columns give way for it
+    const frost = row(await drawn({}, 211, salon([temperature('sensor.salon_t', '-12.5')])));
+    expect(frost).toMatchObject({ columns: 2, odd: true });
+    expect(frost.figures[0]).toMatch(/^.12\.5°C$/);
+    expect(frost.figures.slice(1)).toEqual(['51%', '3of 6']);
   });
 
   it('declares the row it draws: 20 shorter without its labels, the rows its words take where they must stay', async () => {

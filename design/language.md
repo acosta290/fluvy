@@ -538,12 +538,17 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   at half a section). Only where the shortest figures still hold no equal column (three in half a section: thirds of
   26 and 33) do the columns give way, as many as hold, a shorter last row taking the whole row; no label, figure or
   unit is ever cut. In a 360 column the words hold in English; a phone's 328 draws icons in English and Dutch alike,
-  211 the short units. A reading out of reach is a dash laid out as the figure it would write, so the row keeps its
-  columns and its size. `readout_style: wrap` keeps the words and lets the columns give way first, as every other
-  card's row does (`statsRow`) and as the room's did before 1.19; `readout_labels` writes the labels one way —
-  `words` (the row wraps where they would not hold), `icons`, `none` (the figures alone on the row's top: 20 shorter)
-  — where `auto` is words while they hold. The declared height counts one row (64, or 44 without labels); where the
-  words must stay (wrapped, or asked for as words) it counts the rows they take in the reader's language.
+  211 the short units. **The row's height is its config's, never its sensors':** a readout is 44 tall whatever size
+  its figures take (its label's 16, 4, the figure's 24), the smaller figure's 20 line standing where the larger one's
+  ends, 8 under its label as a readouts card's does, and 24 without its label; and the row is laid out for the figure
+  each kind usually writes (two digits and a tenth of a degree, two of a percent, every device on), or for what it
+  reads where that is wider — so a dash out of reach, a single digit or nothing on never moves a column, a size or a
+  unit, and a figure wider than usual is still never cut. `readout_style: wrap` keeps the words and lets the columns
+  give way first, as every other card's row does (`statsRow`) and as the room's did before 1.19; `readout_labels`
+  writes the labels one way — `words` (the row wraps where they would not hold), `icons`, `none` (the figures alone on
+  the row's top: 20 shorter) — where `auto` is words while they hold. The declared height counts one row (20 and its
+  44, or 24 without labels); where the words must stay (wrapped, or asked for as words) it counts the rows they take in
+  the reader's language.
 - **The category rows** give their circles to their words where a word would not hold beside its chevron (fr
   "Lumières" at 211), every row with them, as every list does (`rowsKeepIcon`); so do the fan's Oscillate and
   Direction rows beside their switch and chevron. "All devices" is a row only where the room has a device: a room of

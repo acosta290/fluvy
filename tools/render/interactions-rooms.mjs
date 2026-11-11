@@ -17,7 +17,8 @@
  * rounds — four on the reporter's 328, two in half a section — each keeping its own tap, the name the room's; its
  * readouts stand on one row there in Dutch, their icons over whole figures, 60 shorter than wrapped as before, two and
  * one in half a section and one row at 211 in every language, nothing past its column, a reading out of reach keeping
- * the row of the card that reads;
+ * the row of the card that reads, and every row as tall as its config says whatever size its figures took (a readout
+ * 44, 24 without its label);
  * the map's zones hold the right faces, a person nobody can place stands in Unknown, the rows say
  * the distance only for someone away with a fix, and Home Assistant's map, which the playground cannot make,
  * gives way to the zones silently.
@@ -442,6 +443,17 @@ const photoRooms = (page) =>
         ),
         cells: cells.length,
         rows: new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().top))).size,
+        // the row's height, its figures' size, and where each figure's line ends under its readout's top
+        tall: cells.length
+          ? Math.round(root.querySelector('.am-area__stats').getBoundingClientRect().height)
+          : 0,
+        size: cells[0]?.className.match(/fv-readout--(\w+)/)?.[1],
+        feet: cells.map((cell) =>
+          Math.round(
+            cell.querySelector('.fv-readout__value').getBoundingClientRect().bottom -
+              cell.getBoundingClientRect().top,
+          ),
+        ),
         labels: cells.map((cell) =>
           cell.querySelector('.fv-readout__label--icon')
             ? 'icon'
@@ -461,6 +473,18 @@ const photoRooms = (page) =>
     }),
   );
 const of = (rooms, title) => rooms.filter((room) => room.frame === title);
+/**
+ * Whether a room's row is as tall as its config says, whatever size its figures took: a readout 44 with its label (or
+ * its icon), 24 without, its rows 16 apart, every figure's line ending where the larger one's does.
+ */
+const rowAsDeclared = (room) => {
+  const line = room.labels[0] === 'none' ? 24 : 44;
+  return (
+    !room.cells ||
+    (room.tall === room.rows * line + (room.rows - 1) * 16 &&
+      room.feet.every((foot) => foot === line))
+  );
+};
 
 {
   // the reporter's phone, in his language: a 328 card in Dutch
@@ -483,6 +507,7 @@ const of = (rooms, title) => rooms.filter((room) => room.frame === title);
       top.labels.join() === 'icon,icon,icon' &&
       top.figures.join() === '17,4°C,51%,5van7' &&
       top.over === 0 &&
+      top.tall === 44 &&
       top.height === 244,
     JSON.stringify(top),
   );
@@ -544,6 +569,15 @@ const of = (rooms, title) => rooms.filter((room) => room.frame === title);
       none.labels.join() === 'none,none,none',
     JSON.stringify([icons, none]),
   );
+  // the smaller figures stand on the larger ones' line: two rows of 44 and the 16 between them, as two of the larger
+  const off = rooms.filter((room) => !rowAsDeclared(room));
+  check(
+    'there every row is as tall as its config says, whatever size its figures took: a readout 44, 24 without its label',
+    off.length === 0 && three.size === 'xs' && three.tall === 104,
+    JSON.stringify(
+      off.length ? off.map(({ frame, tall, feet }) => ({ frame, tall, feet })) : three,
+    ),
+  );
   await page.close();
 }
 
@@ -586,9 +620,12 @@ const of = (rooms, title) => rooms.filter((room) => room.frame === title);
         if (!found.some((card) => card.name === name && !card.cut && !card.circle))
           heads.push(`${lang} "${name}" not whole without its circle`);
     // #159, the cards that span the 211: three readouts on one row whatever the language's words, nothing past its
-    // column, and with the name at the top three rounds at the foot
+    // column, the row as tall as at 328 though its figures are the smaller ones, and with the name at the top three
+    // rounds at the foot
     for (const room of (await photoRooms(page)).filter((each) => each.width === 211)) {
       if (room.over) rows.push(`${lang} "${room.frame}" ${room.over} past their column`);
+      if (!rowAsDeclared(room))
+        rows.push(`${lang} "${room.frame}" a row of ${room.tall} (${room.size}: ${room.feet})`);
       if (room.frame === 'Room · readouts on one row (#159)' && room.rows !== 1)
         rows.push(`${lang} ${room.cells} readouts on ${room.rows} rows`);
       if (room.frame === 'Room · the name at the top (#159)' && room.cells === 3 && room.clash)
@@ -597,7 +634,7 @@ const of = (rooms, title) => rooms.filter((room) => room.frame === title);
     await page.close();
   }
   check(
-    `at 211 a photo’s readouts stand on one row, none past its column, in ${languages.length} languages`,
+    `at 211 a photo’s readouts stand on one row as tall as on a phone (44), none past its column, in ${languages.length} languages`,
     rows.length === 0,
     rows.slice(0, 6).join(' · '),
   );

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { TextRuler } from './fit.js';
-import { readoutsRow, statsRow, type GivingStat, type StatText } from './readouts.js';
+import {
+  readoutsRow,
+  statsRow,
+  type GivingFigure,
+  type GivingStat,
+  type StatText,
+} from './readouts.js';
 
 /** A stand-in for the card's ruler: a label's letters at 7, a figure's (and its unit's) at 11 at s and 9 at xs. */
 const ruler = {
@@ -174,6 +180,47 @@ describe('readoutsRow', () => {
       size: 's',
       odd: true,
       labels: 'icons',
+      short: false,
+    });
+  });
+
+  it('keeps a readout the room of what its kind usually writes, whatever it reads: a dash, a digit, nothing on', () => {
+    const degrees = (value: string): GivingFigure => ({
+      value,
+      unit: '°C',
+      short: { value, unit: '°', tight: true },
+    });
+    const tally = (on: string): GivingFigure => ({
+      value: on,
+      unit: 'van 9',
+      short: { value: `${on}/9` },
+    });
+    /** The room's three reading `figures`, each keeping the room of the figure the room above reads. */
+    const reading = (...figures: readonly GivingFigure[]): GivingStat[] =>
+      ROOM.map(({ label, ...usual }, index) => ({ label, ...figures[index]!, usual }));
+    const out = reading({ value: '—' }, { value: '—' }, tally('0'));
+    const cold = reading(degrees('9,5'), { value: '8', unit: '%' }, tally('1'));
+    for (const width of [320, 260, 224, 180, 150, 120])
+      for (const asked of [{}, { wrap: true }, { labels: 'none' }] as const) {
+        const live = readoutsRow(ruler, width, ROOM, asked);
+        expect(readoutsRow(ruler, width, out, asked), `${width}`).toEqual(live);
+        expect(readoutsRow(ruler, width, cold, asked), `${width}`).toEqual(live);
+      }
+    // without it, a dash holds where a figure would not: one row of three at 150, where the room that reads has two
+    const bare: GivingStat[] = [
+      { label: 'Temperatuur', value: '—' },
+      { label: 'Vochtigheid', value: '—' },
+      { label: 'Aan', ...tally('0') },
+    ];
+    expect(readoutsRow(ruler, 150, bare).columns).toBe(3);
+    expect(readoutsRow(ruler, 150, ROOM).columns).toBe(2);
+    // a figure wider than usual is measured as itself, never cut: 180's thirds of 49 do not hold "100,4°" (54)
+    const hot = reading(degrees('100,4'), { value: '51', unit: '%' }, tally('3'));
+    expect(readoutsRow(ruler, 180, hot)).toEqual({
+      columns: 2,
+      size: 's',
+      odd: true,
+      labels: 'words',
       short: false,
     });
   });
