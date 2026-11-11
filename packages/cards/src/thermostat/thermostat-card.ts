@@ -144,8 +144,12 @@ const DEFAULT_MODES = ['off', 'heat', 'cool'];
 /** A climate's `supported_features` bit for a low and a high end. */
 const TARGET_RANGE = 2;
 
-/** The fan speeds Fluvy names in every language (the core catalogue's `fan` words), by the words integrations send. */
+/**
+ * The fan speeds Fluvy names in every language (the core catalogue's `fan` words, and a mode's for auto), by the words
+ * integrations send.
+ */
 const SPEEDS = new Map<string, MessageKey>([
+  ['auto', 'climate.mode.auto'],
   ['low', 'fan.low'],
   ['mid', 'fan.mid'],
   ['medium', 'fan.mid'],
@@ -905,12 +909,16 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       ${
         m.fans.length && !essentials && this.config?.show_fan !== false
           ? html`${label(this.t('climate.fan'))}${chipRow(
-              m.fans.map((f) => ({
-                key: f,
-                label: modeWord(this.rawHass, view, 'fan_mode', f, SPEEDS.get(f.toLowerCase())),
-                active: f === m.fan,
-                unavailable: unusable,
-              })),
+              m.fans.map((f) => {
+                const speed = SPEEDS.get(f.toLowerCase());
+                return {
+                  key: f,
+                  label: modeWord(this.rawHass, view, 'fan_mode', f, speed),
+                  ...(speed ? { own: localize(this.hass, speed) } : {}),
+                  active: f === m.fan,
+                  unavailable: unusable,
+                };
+              }),
               (key) => this.call('climate', 'set_fan_mode', { fan_mode: key }),
               this.config?.fan_style,
               { ruler: this.head.ruler, width: this.contentWidth },

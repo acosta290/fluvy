@@ -841,7 +841,11 @@ export function fitPills(root: ParentNode, force = false): void {
     const natural = Math.ceil(
       range.getBoundingClientRect().width / zoom || local || el.offsetWidth,
     );
-    const width = up4(natural + pad);
+    // a chip rounded up past its row takes the row where its words and sides still fit in it: the grid gives way by
+    // the pixel the rounding added (a 211 card's 171 row and Home Assistant's Russian "Естественный ветер")
+    const row = el.classList.contains('fv-chip') ? (el.parentElement?.clientWidth ?? 0) : 0;
+    const width =
+      row && natural + pad <= row ? Math.min(up4(natural + pad), row) : up4(natural + pad);
     const next = `${width}px`;
     el.style.width = next === previous ? previous : next;
     // content starts on a whole pixel (an icon on a half pixel blurs at 1×); the fractional remainder is air on the right.

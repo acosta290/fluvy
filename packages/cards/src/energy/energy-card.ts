@@ -252,6 +252,9 @@ interface ChartTag {
   readonly figure: boolean;
 }
 
+/** The least air between two tags on one line. */
+const TAG_GAP = 8;
+
 /** A tag's classes: its side, and a figure's untracked set. */
 const tagClass = (end: boolean, figure: boolean): string =>
   `en-chart__tag${end ? ' en-chart__tag--end' : ''}${figure ? ' en-chart__tag--figure' : ''}`;
@@ -2051,8 +2054,12 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
     // crosses both, the legend names the areas alone
     const tags: ChartTag[] = [];
     if (shape) {
-      tags.push(this.chartTag(s(this.hass, 'sources_tag'), 0, false, w));
-      if (soc && !frame.charge) tags.push(this.chartTag(this.percent(100), 0, true, w, true));
+      const sources = this.chartTag(s(this.hass, 'sources_tag'), 0, false, w);
+      const top = soc && !frame.charge ? this.chartTag(this.percent(100), 0, true, w, true) : null;
+      // the sources' word gives way to the charge's 100 % where the two would meet (a narrow chart, a long word):
+      // the legend names the areas
+      if (!top || sources.w + TAG_GAP <= top.x) tags.push(sources);
+      if (top) tags.push(top);
       if (shape.below.length && !frame.scale) {
         const y = Math.round(shape.zero + 12);
         const free = (tag: ChartTag): boolean =>

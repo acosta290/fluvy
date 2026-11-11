@@ -65,26 +65,55 @@ export function fittedColumns(
 export const defaultColumns = (count: number): number[] =>
   count < 3 ? [count] : count === 3 ? [3, 2] : count === 4 ? [4, 2] : [count, 3, 2];
 
+/** A choice in a row: its label (Home Assistant's word, where it has one), and Fluvy's own word for it, if any. */
+export interface Choice extends ChipItem {
+  readonly own?: string;
+}
+
 /** A chip's words without its glyph. */
-const wordsOnly = (item: ChipItem): ChipItem => {
+const wordsOnly = (item: Choice): Choice => {
   const { glyph, ...words } = item;
   return glyph ? words : item;
 };
+
+/** A content-sized chip's pill: 14 each side of its label (`data-fit`). */
+const OWN_SIDES = 28;
+
+/**
+ * Each choice whose word no chip of a whole row holds, filled or content-sized, beside its glyph: Fluvy's own word
+ * for it where it has one (Home Assistant's Russian "Автоматический" for a fan's auto is "Авто"), else as it is.
+ */
+function ownWhereLong(
+  items: readonly Choice[],
+  { ruler, width }: ChipFit,
+  fill: boolean,
+): Choice[] {
+  const pill = fill
+    ? 'fv-chips fv-chips--fill > fv-chip > fv-chip__pill'
+    : 'fv-chips > fv-chip > fv-chip__pill';
+  const long = (item: Choice): boolean =>
+    ruler.width(pill, item.label) + (fill ? SIDES : OWN_SIDES) + (item.glyph ? GLYPH : 0) > width;
+  return items.map((item) => (item.own && long(item) ? { ...item, label: item.own } : item));
+}
 
 /**
  * A card's row of short choices (modes, presets, sources), in the style its config asks: `full` (the default) —
  * equal chips that fill the row, laid out so no label is cut where the card can measure (where not even a chip of its
  * own line holds the widest word beside its glyph, as a dehumidifier's mode in Portuguese in half a section, the row's
- * glyphs give way to the words) — or `chips`, content-sized ones. One call, so every card reads `<x>_style` alike.
+ * glyphs give way to the words, and a word that still holds none to Fluvy's own) — or `chips`, content-sized ones, a
+ * word no row holds Fluvy's own too. One call, so every card reads `<x>_style` alike.
  */
 export function chipRow(
-  items: readonly ChipItem[],
+  items: readonly Choice[],
   onSelect: (key: string) => void,
   style: RowStyle = 'full',
   fit?: ChipFit,
 ): TemplateResult {
-  if (style !== 'full') return chips(items, onSelect);
+  if (style !== 'full') return chips(fit ? ownWhereLong(items, fit, false) : items, onSelect);
   if (!fit) return chips(items, onSelect, '', true);
-  const shown = fitsIn(1, widestOf(items, fit.ruler), fit.width) ? items : items.map(wordsOnly);
+  const holds = (row: readonly ChipItem[]): boolean =>
+    fitsIn(1, widestOf(row, fit.ruler), fit.width);
+  const words = holds(items) ? items : items.map(wordsOnly);
+  const shown = holds(words) ? words : ownWhereLong(words, fit, true);
   return chips(shown, onSelect, '', true, fittedColumns(shown, fit));
 }

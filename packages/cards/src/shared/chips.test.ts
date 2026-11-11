@@ -57,3 +57,28 @@ describe('a row of three chips', () => {
     expect(glyphs(112)).toBe(0);
   });
 });
+
+describe('a word of Home Assistant’s no chip of a whole row holds', () => {
+  /** A fan's speeds in Home Assistant's Russian, with Fluvy's own word for the two it names. */
+  const speeds = [
+    { key: 'auto', label: 'Автоматический', own: 'Авто' },
+    { key: 'low', label: 'Низкий', own: 'Низкая' },
+    { key: 'natural', label: 'Естественный ветер' },
+  ];
+  const said = (style: 'full' | 'chips', width: number): string[] => {
+    const host = document.createElement('div');
+    render(
+      chipRow(speeds, () => undefined, style, { ruler, width }),
+      host,
+    );
+    return [...host.querySelectorAll('.fv-chip')].map((chip) => chip.textContent?.trim() ?? '');
+  };
+
+  it('says Fluvy’s own where it has one, filled or content-sized, and Home Assistant’s wherever it holds', () => {
+    // "Автоматический" is 98 + 16 filled, 98 + 28 content-sized; "Естественный ветер" has no word of Fluvy's
+    expect(said('full', 113)).toEqual(['Авто', 'Низкий', 'Естественный ветер']);
+    expect(said('chips', 125)).toEqual(['Авто', 'Низкий', 'Естественный ветер']);
+    expect(said('full', 126)).toEqual(['Автоматический', 'Низкий', 'Естественный ветер']);
+    expect(said('chips', 126)).toEqual(['Автоматический', 'Низкий', 'Естественный ветер']);
+  });
+});
