@@ -73,7 +73,8 @@ const BUDGETS = {
   // finishes and asks before it is switched off, the compact line's shorter forms); 51 since the reporter's LG house
   // (#47: LG's older integration read by its device sensor's attributes, both LG integrations known by their
   // signatures, LG's states and cycles worded in eight languages); 48 before
-  appliances: 67_584,
+  // 68 KB since 2026-11-11 (1.19: Russian's appliance stems, #167, about 900 B; measured at 66.8 KB)
+  appliances: 69_632,
   // the appliances' pictures: one product drawing a kind, fetched by the first card that draws one
   'appliance-art': 32_768,
   // the automations family: the card, the schedule model and its store. 20 KB since 1.9 (the family's English, the
@@ -126,7 +127,8 @@ const BUDGETS = {
   // (1.11: they left core, 6.3 KB). 14 KB since 1.18 (the TV remote's editor, #143, and the room's colour round, #137,
   // with the sliders' style on every editor that draws one): measured at 12.7 KB; 12 before
   forms: 14_336,
-  'view-icons': 4096,
+  // 5 KB since 2026-11-11 (1.19: Russian's words for a view's icon, #167, about 800 B; measured at 4.6 KB); 4 before
+  'view-icons': 5120,
   // what a see-through card wears (1.15): its sheet and what writes its fills at its opacity
   glass: 4096,
   // what a card quiet out of reach wears (1.16): its sheet
@@ -140,14 +142,15 @@ const BUDGETS = {
   pages: 12_288,
   activity: 32_768,
   history: 16_384,
-  // 32 KB since 2026-11-06 (1.16: a card's look when unavailable and its brightness while on, #126 #124, the names'
+  // 40 KB since 2026-11-11 (1.19: Russian, #167, whose Cyrillic is two bytes a letter: its catalogue measured 35.9 KB,
+  // where no Latin one passes 32); 32 KB since 2026-11-06 (1.16: a card's look when unavailable and its brightness while on, #126 #124, the names'
   // and roles' editor words, #125 #127, which commands ask first, unknown names said: Hungarian and Slovak, the longest,
   // went 64 B over 30); 30 KB since 2026-11-04 (the pet devices' words, #112, and the Vehicle card's, #84: its states, its line, its
   // controls and rows, its editor and the parts a car's entities play, 1.2 KB a language; Hungarian, the longest, went
   // over 28); 28 since 1.11 (the date picker's, the units', a row's real last change's, the web page's and the Items
   // card's words, the flights preset's among them: Japanese, the longest, went 320 B over 24); 24 since 1.9 (the
   // appliances' and the alerts' words), 20 in 1.8, 16 before
-  lang: 32_768,
+  lang: 40_960,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

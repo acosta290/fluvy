@@ -82,7 +82,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times |
 | `cameras-sheet` | 8 KB | the Cameras card's sheet |
-| `appliances` | 66 KB | the appliances family and its English |
+| `appliances` | 68 KB | the appliances family and its English |
 | `appliance-art` | 32 KB | the appliances' product drawings |
 | `automations` | 20 KB | the automations card, the schedule model and its store |
 | `automations-sheet` | 16 KB | the schedule sheet |
@@ -104,7 +104,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 8 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
 | `forms` | 14 KB | the editors of the cards every page carries and of the template, Slider and remote cards: their forms, lists and defaults |
-| `view-icons` | 4 KB | a view's icon from its name |
+| `view-icons` | 5 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
 | `slider-styles` | 4 KB | the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet; fetched by the first ruler asked for one, or as the house asks |
@@ -112,7 +112,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
-| `lang` | 32 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
+| `lang` | 40 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |
 
