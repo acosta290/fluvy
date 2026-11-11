@@ -404,6 +404,70 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('offers what is a room’s photo’s alone — its name’s place, its readouts’ row and labels — while the rooms may be photos (#159)', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    const { panel, chip, button, settle } = await mount(true, {
+      panels: {
+        'fluvy-rooms': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-rooms',
+          title: 'Fluvy · Rooms',
+          icon: 'fluvy:rooms',
+        },
+      },
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') saved.push(message as never);
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-rooms'
+          ? { strategy: { type: 'custom:fluvy-rooms' } }
+          : message.type === 'lovelace/dashboards/list'
+            ? []
+            : { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    // the defaults chosen, and written nowhere: the name at the bottom, one row, labels that give way by themselves
+    for (const label of ['Bottom', 'One row', 'Auto'])
+      expect(chip(label)?.classList.contains('is-active'), label).toBe(true);
+    chip('Top')!.click();
+    chip('Several rows')!.click();
+    chip('Icons')!.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({
+      strategy: {
+        type: 'custom:fluvy-rooms',
+        room_name_position: 'top',
+        room_readout_style: 'wrap',
+        room_readout_labels: 'icons',
+      },
+    });
+    // back to a default: its key goes
+    chip('Bottom')!.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({
+      strategy: {
+        type: 'custom:fluvy-rooms',
+        room_readout_style: 'wrap',
+        room_readout_labels: 'icons',
+      },
+    });
+    // the rooms as tiles or rows draw no photo: none of the three is offered, what was chosen is kept
+    chip('Tile')!.click();
+    await settle();
+    for (const label of ['Top', 'Several rows', 'Icons'])
+      expect(chip(label), label).toBeUndefined();
+    chip('Photo')!.click();
+    await settle();
+    expect(chip('Several rows')?.classList.contains('is-active')).toBe(true);
+    panel.remove();
+  });
+
   it('offers a dashboard’s long lists shortened or in full, its own caps kept until in full is chosen (#78)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     const { panel, root, chip, button, settle } = await mount(true, {

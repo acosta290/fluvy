@@ -1,6 +1,7 @@
 import { remember, type HassEntity, type HomeAssistant, type LovelaceCard } from '@fluvy/core';
 import { simulate } from '@fluvy/demo-home/simulate';
 import { tileSwitch } from '../strategy/layout.js';
+import type { RoomLook } from '../strategy/types.js';
 
 /**
  * The preview's own little house: a few real cards on made-up entities, so the look is judged on the
@@ -294,12 +295,16 @@ export class PreviewHouse {
     return this.card({ type: 'custom:fluvy-hello-card' });
   }
 
-  /** One of the preview's rooms, in the rooms dashboard's variant (a dashboard's six columns). */
-  room(area: RoomArea, variant: string): LovelaceCard {
+  /**
+   * One of the preview's rooms, in the rooms dashboard's variant and with what it asks of a photo (a dashboard's six
+   * columns).
+   */
+  room(area: RoomArea, variant: string, look: RoomLook = {}): LovelaceCard {
     return this.card({
       type: 'custom:fluvy-room-card',
       area: `fluvy_preview_${area}`,
       variant,
+      ...look,
       grid_options: { columns: 6 },
     });
   }

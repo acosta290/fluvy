@@ -229,6 +229,13 @@ export interface ReadoutOptions {
   readonly trend?: 'up' | 'down' | undefined;
   /** The label is a name (a sensor's, a device's): it may end in an ellipsis in a narrow column, as names do. */
   readonly name?: boolean;
+  /**
+   * The label as an icon (16, in the label's own line) where its words give way, or not drawn at all (`null`): its
+   * words are still read out.
+   */
+  readonly glyph?: string | null | undefined;
+  /** The unit attaches to its figure whatever it is written in (a degree sign alone: "21.4°"). */
+  readonly tight?: boolean | undefined;
 }
 
 /** A unit written in kana or kanji (時間, 分, 本): Japanese attaches a counter to its figure, where English keeps a space. */
@@ -237,16 +244,28 @@ const CJK_UNIT = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/
 /** Whether a unit attaches to its figure with no gap ("5.2時間", "12本"), as a kana or kanji word does. */
 export const attachedUnit = (unit: string): boolean => CJK_UNIT.test(unit);
 
-/** A readout's unit in its slot: 4 px from its figure, or attached when it is a kana or kanji word. */
-export const unitSpan = (unit: string): TemplateResult =>
-  html`<span class="fv-unit${attachedUnit(unit) ? ' fv-unit--tight' : ''}">${unit}</span>`;
+/** A readout's unit in its slot: 4 px from its figure, or attached (`tight`) as a kana or kanji word is. */
+export const unitSpan = (unit: string, tight = attachedUnit(unit)): TemplateResult =>
+  html`<span class="fv-unit${tight ? ' fv-unit--tight' : ''}">${unit}</span>`;
+
+/** A label's words read out, not shown: where an icon stands for them, or nothing does. */
+const said = (label: string | TemplateResult): TemplateResult =>
+  html`<span class="fv-sr" data-measure="skip">${label}</span>`;
 
 export function readout(o: ReadoutOptions): TemplateResult {
+  const label =
+    o.glyph === undefined
+      ? html`<p class="fv-readout__label" data-name=${o.name ? '' : nothing}>${o.label}</p>`
+      : o.glyph === null
+        ? said(o.label)
+        : html`<p class="fv-readout__label fv-readout__label--icon">
+            ${icon(o.glyph)}${said(o.label)}
+          </p>`;
   return html`<div class="fv-readout fv-readout--${o.size ?? 'm'}">
-    <p class="fv-readout__label" data-name=${o.name ? '' : nothing}>${o.label}</p>
+    ${label}
     <p class="fv-readout__value">
       <span>${o.value}</span
-      >${o.unit ? unitSpan(o.unit) : nothing}${o.trend ? html`<span class="fv-trend ${o.trend === 'down' ? 'fv-trend--down' : ''}">${glyph(o.trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
+      >${o.unit ? unitSpan(o.unit, o.tight) : nothing}${o.trend ? html`<span class="fv-trend ${o.trend === 'down' ? 'fv-trend--down' : ''}">${glyph(o.trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
     </p>
   </div>`;
 }

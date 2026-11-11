@@ -13,7 +13,11 @@
  * first in one question for the blinds and the roof alike, both moving at its yes, a hold on
  * a set of several opens the room and on an entity its details, one that cannot be read or act takes no tap, and half
  * a section holds as many as the name leaves room for; its picture's pill fits its glyph and its name whole as the card's
- * width moves, its glyph coming and going with the room;
+ * width moves, its glyph coming and going with the room; its name at the photo's top (#159) leaves the foot to the
+ * rounds — four on the reporter's 328, two in half a section — each keeping its own tap, the name the room's; its
+ * readouts stand on one row there in Dutch, their icons over whole figures, 60 shorter than wrapped as before, two and
+ * one in half a section and one row at 211 in every language, nothing past its column, a reading out of reach keeping
+ * the row of the card that reads;
  * the map's zones hold the right faces, a person nobody can place stands in Unknown, the rows say
  * the distance only for someone away with a fix, and Home Assistant's map, which the playground cannot make,
  * gives way to the zones silently.
@@ -392,11 +396,163 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
   await page.close();
 }
 
-/* ---------- the room at 211, every language: its tile head and its hint ---------- */
+/* ---------- #159: the name at the photo's top, the readouts on one row ---------- */
+
+/**
+ * The photo rooms of the #159 frames as a page draws them: where the pill and the rounds stand on the photo, and the
+ * readouts' row — its rows, how its labels are written, its figures, and how many lines run past their column.
+ */
+const photoRooms = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('[data-frame$="(#159)"] fluvy-room-card')].map((card) => {
+      const root = card.shadowRoot;
+      const hero = root.querySelector('.rm-hero').getBoundingClientRect();
+      const pill = root.querySelector('.am-area__badge').getBoundingClientRect();
+      const rounds = [...root.querySelectorAll('.rm-hero .rm-quick .lt-bulb')].map((round) =>
+        round.getBoundingClientRect(),
+      );
+      const last = rounds.at(-1);
+      const cells = [...(root.querySelector('.am-area__stats')?.children ?? [])];
+      /** What a line draws, from its first part to its last (a label's words, a figure and its unit). */
+      const ink = (line) => {
+        const parts = [...line.children].filter((part) => !part.classList.contains('fv-sr'));
+        if (parts.length)
+          return parts.at(-1).getBoundingClientRect().right - parts[0].getBoundingClientRect().left;
+        const range = document.createRange();
+        range.selectNodeContents(line);
+        return range.getBoundingClientRect().width;
+      };
+      return {
+        frame: card.closest('[data-frame]').dataset.frame.split('/')[1],
+        width: Math.round(card.getBoundingClientRect().width),
+        height: Math.round(card.getBoundingClientRect().height),
+        // the pill from the photo's start, its top and its foot
+        pill: [pill.left - hero.left, pill.top - hero.top, hero.bottom - pill.bottom].map(
+          Math.round,
+        ),
+        rounds: rounds.length,
+        // the last round from the photo's end and its foot
+        foot: last ? [hero.right - last.right, hero.bottom - last.bottom].map(Math.round) : [],
+        clash: rounds.some(
+          (round) =>
+            round.left < pill.right &&
+            round.right > pill.left &&
+            round.top < pill.bottom &&
+            round.bottom > pill.top,
+        ),
+        cells: cells.length,
+        rows: new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().top))).size,
+        labels: cells.map((cell) =>
+          cell.querySelector('.fv-readout__label--icon')
+            ? 'icon'
+            : cell.querySelector('.fv-readout__label')
+              ? 'word'
+              : 'none',
+        ),
+        figures: cells.map((cell) =>
+          cell.querySelector('.fv-readout__value').textContent.replace(/\s+/g, ''),
+        ),
+        over: cells.filter((cell) =>
+          [...cell.querySelectorAll('.fv-readout__label, .fv-readout__value')].some(
+            (line) => ink(line) > cell.getBoundingClientRect().width + 0.5,
+          ),
+        ).length,
+      };
+    }),
+  );
+const of = (rooms, title) => rooms.filter((room) => room.frame === title);
+
+{
+  // the reporter's phone, in his language: a 328 card in Dutch
+  const page = await suite.sheet('rooms', { width: 328, lang: 'nl' });
+  await watchNavigation(page);
+  const title = 'Room · the reporter’s card at 328 (#159)';
+  const [top, before] = of(await photoRooms(page), title);
+  check(
+    'the name at the top: its pill 20 / 16 from the photo’s corner, four rounds at the foot’s end, none under it',
+    top.pill[0] === 20 &&
+      top.pill[1] === 16 &&
+      top.rounds === 4 &&
+      top.foot.join() === '20,12' &&
+      !top.clash,
+    JSON.stringify(top),
+  );
+  check(
+    'the reporter’s three readouts stand on one row in Dutch at 328, their icons over figures as whole as before',
+    top.rows === 1 &&
+      top.labels.join() === 'icon,icon,icon' &&
+      top.figures.join() === '17,4°C,51%,5van7' &&
+      top.over === 0 &&
+      top.height === 244,
+    JSON.stringify(top),
+  );
+  check(
+    'wrapped, the card is as it was: the name at the foot beside two rounds, the words whole, two and one, 60 taller',
+    before.pill[2] === 16 &&
+      before.rounds === 2 &&
+      before.rows === 2 &&
+      before.labels.join() === 'word,word,word' &&
+      before.over === 0 &&
+      before.height === 304,
+    JSON.stringify(before),
+  );
+  const card = frame(page, title).locator('fluvy-room-card').first();
+  await reset(page);
+  await card.locator('.rm-hero .rm-quick .lt-bulb').nth(3).click();
+  await settle(page, 200);
+  const plug = await calls(page);
+  check(
+    'a round at the foot takes its own tap: the plug goes off, and the room does not open',
+    plug.length === 1 && plug[0].s === 'switch.turn_off' && (await navigations(page)).length === 0,
+    JSON.stringify(plug),
+  );
+  await card.locator('.rm-hero').click({ position: { x: 60, y: 34 } });
+  await settle(page, 200);
+  const went = await navigations(page);
+  check(
+    'a tap on the name at the top opens the room, as the photo does',
+    went.join() === '/fluvy-auto/room-rm_living',
+    went.join(' '),
+  );
+  await page.close();
+}
+{
+  // half a phone's section (152): the foot holds two rounds the name left no room for; three readouts are two and one
+  const page = await suite.sheet('rooms', { width: 320 });
+  const rooms = await photoRooms(page);
+  const [named, long, beside] = of(rooms, 'Room · the name at the top in half a section (#159)');
+  check(
+    'in half a section the name at the top gives the foot two rounds, where beside the name it holds none',
+    named.rounds === 2 && !named.clash && long.rounds === 2 && !long.clash && beside.rounds === 0,
+    `${named.rounds} ${long.rounds} ${beside.rounds}`,
+  );
+  const [three, two] = of(rooms, 'Room · readouts on one row in half a section (#159)');
+  check(
+    'there three readouts stand two and one with their icons and short units, two keep their row, nothing past its column',
+    three.rows === 2 &&
+      three.figures.join() === '17.4°,51%,5/7' &&
+      two.rows === 1 &&
+      rooms.every((room) => room.over === 0),
+    JSON.stringify([three, two]),
+  );
+  const [, icons, none] = of(rooms, 'Room · a reading out of reach on the row (#159)');
+  check(
+    'a reading out of reach keeps its row: a dash, the same rows and the same height as the card that reads',
+    icons.figures[0] === '—' &&
+      icons.rows === three.rows &&
+      icons.height === three.height &&
+      none.labels.join() === 'none,none,none',
+    JSON.stringify([icons, none]),
+  );
+  await page.close();
+}
+
+/* ---------- the room at 211, every language: its tile head, its hint and its readouts' row ---------- */
 {
   const languages = await everyLanguage();
   const heads = [];
   const hints = [];
+  const rows = [];
   for (const lang of languages) {
     const page = await suite.sheet('rooms', { width: 211, lang });
     const found = await page.evaluate(() =>
@@ -429,8 +585,22 @@ const navigations = (page) => page.evaluate(() => window.__navigations.splice(0)
       for (const name of ['Living room', 'Wohnzimmer', 'Storeroom'])
         if (!found.some((card) => card.name === name && !card.cut && !card.circle))
           heads.push(`${lang} "${name}" not whole without its circle`);
+    // #159, the cards that span the 211: three readouts on one row whatever the language's words, nothing past its
+    // column, and with the name at the top three rounds at the foot
+    for (const room of (await photoRooms(page)).filter((each) => each.width === 211)) {
+      if (room.over) rows.push(`${lang} "${room.frame}" ${room.over} past their column`);
+      if (room.frame === 'Room · readouts on one row (#159)' && room.rows !== 1)
+        rows.push(`${lang} ${room.cells} readouts on ${room.rows} rows`);
+      if (room.frame === 'Room · the name at the top (#159)' && room.cells === 3 && room.clash)
+        rows.push(`${lang} a round under the pill`);
+    }
     await page.close();
   }
+  check(
+    `at 211 a photo’s readouts stand on one row, none past its column, in ${languages.length} languages`,
+    rows.length === 0,
+    rows.slice(0, 6).join(' · '),
+  );
   check(
     'at 211 a tile head gives its circle to a name that would be cut: "Living room", "Wohnzimmer", "Storeroom" whole',
     heads.length === 0,

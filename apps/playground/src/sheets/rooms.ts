@@ -301,6 +301,27 @@ const reporter = (area: string) =>
     cols: 6,
   });
 
+/*
+ * #159's living room, as the reporter's phone drew it: "Woonkamer" over its photo, 17.4 °C and 51 %, its lights and
+ * its blinds beside the name. In Dutch with `?lang=nl`, where "Temperatuur" would not hold a third of a 328 card.
+ */
+const WOONKAMER: readonly StateSeed[] = [
+  reading('sensor.rm_woonkamer_temperature', '17.4', 'temperature'),
+  reading('sensor.rm_woonkamer_humidity', '51', 'humidity'),
+];
+const woonkamer = (config: Record<string, unknown> = {}) =>
+  room({
+    area: 'rm_living',
+    name: 'Woonkamer',
+    temperature_entity: 'sensor.rm_woonkamer_temperature',
+    humidity_entity: 'sensor.rm_woonkamer_humidity',
+    controls: 'none',
+    path: '/fluvy-auto/room-rm_living',
+    ...config,
+  });
+/** Four quick actions: the room's lights, blinds and television, and its plug. */
+const FOUR_ACTIONS = ['lights', 'covers', 'media', 'switch.rm_tv_plug'];
+
 export const sheet: SheetSpec = {
   states: [
     [
@@ -370,6 +391,7 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Bedroom fan', percentage: 40, supported_features: 1 },
     ],
     ...READINGS,
+    ...WOONKAMER,
     ...GARAGE,
     ...GALLEY,
     ...UTILITY,
@@ -803,6 +825,83 @@ export const sheet: SheetSpec = {
       cards: [
         room({ area: 'rm_living', variant: 'tile', controls: 'tiles', tiles: [] }),
         room({ area: 'rm_kitchen', controls: 'tiles', tiles: [] }),
+      ],
+    },
+    // #159 as reported, a phone's 328: the name at the photo's top leaves its foot to four quick actions and the
+    // readouts stand on one row, their labels as icons where a word would not hold its third; under it, the card as it
+    // was (the name at the foot beside two actions, the readouts wrapped: two and one in Dutch)
+    {
+      title: 'Room · the reporter’s card at 328 (#159)',
+      width: 328,
+      cards: [
+        woonkamer({ name_position: 'top', quick_actions: FOUR_ACTIONS }),
+        woonkamer({ readout_style: 'wrap' }),
+      ],
+    },
+    // the name at the top: over a photo and over the accent's gradient, with one action, with four, with none
+    {
+      title: 'Room · the name at the top (#159)',
+      cards: [
+        woonkamer({ name_position: 'top', quick_actions: FOUR_ACTIONS }),
+        room({ area: 'rm_kitchen', variant: 'photo', name_position: 'top', controls: 'none' }),
+        woonkamer({ name_position: 'top', show_quick_actions: false, controls: 'rows' }),
+      ],
+    },
+    // …in half a section, where the foot holds two rounds the name left no room for; a long name ends in its ellipsis
+    // and an empty room keeps its panel
+    {
+      title: 'Room · the name at the top in half a section (#159)',
+      cards: [
+        woonkamer({ name_position: 'top', cols: 6 }),
+        woonkamer({ name: 'Conservatory and winter garden', name_position: 'top', cols: 6 }),
+        room({ area: 'rm_den', variant: 'photo', controls: 'none', cols: 6 }),
+        room({ area: 'rm_empty', variant: 'photo', name_position: 'top', cols: 6 }),
+      ],
+    },
+    // the readouts on one row: the words where every one holds its third, else their icons, then the smaller figure,
+    // then the short units; two readouts, and one, keep their own columns
+    {
+      title: 'Room · readouts on one row (#159)',
+      cards: [woonkamer(), woonkamer({ show_count: false }), woonkamer({ show_climate: false })],
+    },
+    // …in half a section: three hold a row no more, and stand two and one with their icons before one a line
+    {
+      title: 'Room · readouts on one row in half a section (#159)',
+      cards: [woonkamer({ cols: 6 }), woonkamer({ show_count: false, cols: 6 })],
+    },
+    // the labels asked for one way: always words (the row wraps where they would not hold), always icons, none
+    {
+      title: 'Room · readout labels as words, icons, none (#159)',
+      cards: [
+        woonkamer({ readout_labels: 'words' }),
+        woonkamer({ readout_labels: 'icons' }),
+        woonkamer({ readout_labels: 'none' }),
+      ],
+    },
+    // wrapped, as before 1.19: fewer columns before a word gives way; with icons, by the figures alone
+    {
+      title: 'Room · readouts wrapped (#159)',
+      cards: [
+        woonkamer({ readout_style: 'wrap' }),
+        woonkamer({ readout_style: 'wrap', cols: 6 }),
+        woonkamer({ readout_style: 'wrap', readout_labels: 'icons', cols: 6 }),
+      ],
+    },
+    // a reading out of reach keeps its readout, its icon and its row: a dash where its figure would be
+    {
+      title: 'Room · a reading out of reach on the row (#159)',
+      cards: [
+        woonkamer({ temperature_entity: 'sensor.rm_hall_a_temperature', name_position: 'top' }),
+        woonkamer({
+          temperature_entity: 'sensor.rm_hall_a_temperature',
+          readout_labels: 'icons',
+          cols: 6,
+        }),
+        woonkamer({
+          temperature_entity: 'sensor.rm_hall_a_temperature',
+          readout_labels: 'none',
+          cols: 6,
+        }),
       ],
     },
   ],

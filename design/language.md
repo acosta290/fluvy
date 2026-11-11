@@ -470,7 +470,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   cross-faded in once decoded, under a scrim `rgb(0 0 0 / 0.28) → transparent 55 %` from the foot; without a photo,
   the accent's gradient 90 → 70 → 60), the **name pill** at 20 / 16 from the hero's corner (36 tall, card fill, 15/600,
   a 20 glyph in the accent, 12 before the glyph and 16 after the text, sized to its words on the 4 grid), then **three
-  readouts** 20 under the hero in equal columns (m → s → xs by measure), then the room's controls: **category rows**
+  readouts** 20 under the hero in equal columns on one row (what does not hold gives way by measure: below), then the
+  room's controls: **category rows**
   (Lights, Climate, Media, All devices — 60, chevron, the hairline from the text's left edge) or **inner tiles** two a
   row. The hero and the rows open the room's page (`path`), or the area's settings for an administrator; nowhere to
   go, no chevron.
@@ -522,6 +523,27 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
 - **The name pill** gives way as a head does: the glyph first, where the name and the glyph do not both hold the hero
   less its 20 sides (half a section), then the name to its ellipsis in a pill as wide as the hero allows (a name may;
   a content-sized pill never cuts what it holds).
+- **The name at the top (1.19, #159).** `name_position: top` stands the same pill 20 / 16 from the hero's top corner:
+  it has the hero's whole width (its glyph back where the quick actions had taken its room), and the foot is the quick
+  actions' alone, as many as the hero's width holds with nothing before them (five at a phone's 328, three at 211, two
+  in half a section, which holds none beside the name). The scrim then falls from both ends: `0.28 → transparent 50 %`
+  from the top for the pill, `0.24 → transparent 45 %` from the foot for the rounds. `bottom` is the default: nothing
+  moves until it is asked for. The photo's alone (the tile's head and the row have no picture to carry it).
+- **The readouts on one row (1.19, #159).** Every readout keeps its equal column, 16 apart, and what does not hold
+  there gives way in order, each step measured in the readout's own classes, never by a width (`readoutsRow`): **the
+  labels' words to their icons** (16 in the label's own 16 line and ink, centred over the figure: the thermometer, the
+  drop, the power sign; the words stay in the readout for a screen reader), **the figures from 20 to 16** (s → xs),
+  then **their units to the short form a compact surface writes** ("21.4°" with its degree attached, "3/10"). The
+  labels and the figures are decided each on their own line: words that hold stay over figures that shrank (Japanese
+  at half a section). Only where the shortest figures still hold no equal column (three in half a section: thirds of
+  26 and 33) do the columns give way, as many as hold, a shorter last row taking the whole row; no label, figure or
+  unit is ever cut. In a 360 column the words hold in English; a phone's 328 draws icons in English and Dutch alike,
+  211 the short units. A reading out of reach is a dash laid out as the figure it would write, so the row keeps its
+  columns and its size. `readout_style: wrap` keeps the words and lets the columns give way first, as every other
+  card's row does (`statsRow`) and as the room's did before 1.19; `readout_labels` writes the labels one way —
+  `words` (the row wraps where they would not hold), `icons`, `none` (the figures alone on the row's top: 20 shorter)
+  — where `auto` is words while they hold. The declared height counts one row (64, or 44 without labels); where the
+  words must stay (wrapped, or asked for as words) it counts the rows they take in the reader's language.
 - **The category rows** give their circles to their words where a word would not hold beside its chevron (fr
   "Lumières" at 211), every row with them, as every list does (`rowsKeepIcon`); so do the fan's Oscillate and
   Direction rows beside their switch and chevron. "All devices" is a row only where the room has a device: a room of

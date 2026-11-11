@@ -45,9 +45,14 @@ import { counted } from '../shared/counted.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
 import { sinceIds } from '../shared/since.js';
-import { EMPTY, NAME_LINE, ROW, rowsOf, twoLines } from '../shared/heights.js';
+import { EMPTY, NAME_LINE, ROW, rowsOf, statsRows, twoLines } from '../shared/heights.js';
 import { fitLine, type Segment } from '../shared/fit.js';
-import { statsRow } from '../shared/readouts.js';
+import {
+  readoutsRow,
+  type GivingStat,
+  type ReadoutsAsk,
+  type StatLabels,
+} from '../shared/readouts.js';
 import type { CardEditor } from '../shared/base.js';
 import type { LightColours, Tint } from '../shared/colour.js';
 import { FluvyTileCard, type NameLines, type TileItem } from '../tile/tile-card.js';
@@ -57,6 +62,9 @@ const s = strings('room');
 
 export type RoomVariant = 'photo' | 'tile' | 'row';
 export type RoomControls = 'rows' | 'tiles' | 'none';
+export type NamePosition = 'bottom' | 'top';
+export type ReadoutStyle = 'row' | 'wrap';
+export type ReadoutLabels = 'auto' | StatLabels;
 
 export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTuning {
   /** The area (its id). */
@@ -65,10 +73,22 @@ export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTunin
   variant?: RoomVariant;
   /** A picture of the room instead of the area's own. */
   picture?: string;
+  /**
+   * Where the photo carries the room's name: at its foot, beside the quick actions (`bottom`, default), or at its top
+   * (`top`), its foot then the quick actions' alone (#159).
+   */
+  name_position?: NamePosition;
   /** The temperature and humidity readouts (default). */
   show_climate?: boolean;
   /** The "devices on" readout and the count in the state line (default). */
   show_count?: boolean;
+  /**
+   * The photo's readouts on one row (`row`, default), what does not hold its column giving way — the labels to their
+   * icons, the figures' size, then their units — or in as many rows as their words need (`wrap`, as before 1.19).
+   */
+  readout_style?: ReadoutStyle;
+  /** Their labels: words while they hold and icons where they would not (`auto`, default), `words`, `icons` or `none`. */
+  readout_labels?: ReadoutLabels;
   /** Under the readouts: category rows (`rows`, default), the room's controls as compact tiles (`tiles`), or nothing. */
   controls?: RoomControls;
   /** The tiles to draw (default: the room's lights, then its switches, covers and fans, four at most). */
@@ -104,7 +124,11 @@ export const loadQuickActions = (): Promise<QuickModule> =>
 const NO_ROUNDS: QuickRounds = { taken: 0, template: nothing };
 
 const HERO = 160;
-const STATS = 64; // 20 above a row of three small readouts (44)
+/** A row of small readouts: the label's 16, 4 and the figure's 24; asked for without its labels, the figure alone. */
+const READOUT = 44;
+const READOUT_BARE = 24;
+/** What a reading out of reach is laid out as: a figure of two digits and a tenth, as most readings are. */
+const STAND_IN = 88.8;
 const TILES = 4;
 /** An inner tile (a compact tile inside a card) is 84 tall. */
 const INNER = 84;
@@ -139,23 +163,38 @@ const NOTHING: RoomContents = {
 const askedTiles = (config: RoomCardConfig | undefined): readonly TileItem[] | undefined =>
   Array.isArray(config?.tiles) && config.tiles.length ? config.tiles : undefined;
 
+/** The labels a room's readouts may be asked for besides `auto`, which anything else is read as. */
+const LABELS: readonly ReadoutLabels[] = ['words', 'icons', 'none'];
+
 /**
- * A room as the house describes it: what it holds (`areaContents`), whether it has a picture, and whether the person
- * reading is an administrator.
+ * How a room's config asks for its readouts (`readout_style`, `readout_labels`): wrapped or on one row, and their
+ * labels (what it declares and what it draws read them alike).
+ */
+const readoutsAsk = (config: RoomCardConfig | undefined): Required<ReadoutsAsk> => ({
+  wrap: config?.readout_style === 'wrap',
+  labels: LABELS.find((known) => known === config?.readout_labels) ?? 'auto',
+});
+
+/**
+ * A room as the house describes it: what it holds (`areaContents`), whether it has a picture, whether the person
+ * reading is an administrator, and who reads it (its readouts' words are said in their language).
  */
 export interface RoomHolds {
   readonly found: AreaContents;
   readonly picture: boolean;
   readonly admin: boolean;
+  readonly reader?: Pick<HomeAssistant, 'language'>;
 }
 
 /**
  * The card's height at a 360 column, for the automatic dashboard's columns. The house says what the room holds
  * (`house-heights.ts`): its rows (the lights, the climate, the media, then every device where it has one: four where
  * the house is not there to say), its tiles (its controls, four at most), its readouts (the climate it reads and its
- * count), its picture (the photo card where the area has one, else the tile); a room with nothing to show is the
- * panel (an administrator reads why under it) where the rest would be. Its quick actions stand beside its name: they
- * never make it taller.
+ * count: one row, 20 shorter without its labels, or the rows their words take where the words must stay — wrapped, or
+ * asked for as words — in the language of who reads them), its picture (the photo card where the area has one, else
+ * the tile); a room with nothing to show is the panel (an administrator reads why under it) where the rest would be.
+ * Its quick actions stand beside its name, or at the photo's foot where its name stands at the top: they never make
+ * it taller.
  */
 export function roomHeight(config: RoomCardConfig, room?: RoomHolds): number {
   const lines = twoLines(config) ? NAME_LINE.compact : 0;
@@ -186,10 +225,21 @@ export function roomHeight(config: RoomCardConfig, room?: RoomHolds): number {
   const variant = config.variant ?? (config.picture || !found || room?.picture ? 'photo' : 'tile');
   if (variant === 'tile') return 20 + 44 + controls + 20;
   // the readouts 20 under the hero: the climate the room reads, its count of devices on
-  const readings =
-    (config.show_climate !== false && (climate.temperature || climate.humidity) ? 1 : 0) +
-    (config.show_count !== false && (found?.devices.length ?? 1) ? 1 : 0);
-  const stats = !empty && readings ? STATS : 0;
+  const kinds = [
+    ...(['temperature', 'humidity'] as const).filter((kind) => climate[kind]),
+    ...(config.show_count !== false && (found?.devices.length ?? 1)
+      ? (['devices_on'] as const)
+      : []),
+  ];
+  const { wrap, labels } = readoutsAsk(config);
+  const reader = room?.reader;
+  // one row, where the words may give way; where they must stay, the rows they take as their reader reads them
+  const taken =
+    reader && (labels === 'words' || (wrap && labels === 'auto'))
+      ? statsRows(kinds.map((kind) => s(reader, kind)))
+      : 1;
+  const tall = labels === 'none' ? READOUT_BARE : READOUT;
+  const stats = !empty && kinds.length ? 20 + taken * tall + (taken - 1) * 16 : 0;
   return HERO + stats + (empty ? 20 + EMPTY + hint : controls) + 20;
 }
 
@@ -364,14 +414,16 @@ export class FluvyRoomCard extends FluvyTileCard {
     const attribute = climateAttribute(id, kind);
     if (!attribute) return valueParts(this.hass, view);
     const value = numberAttr(view, attribute);
+    return value === null ? undefined : this.written(kind, value);
+  }
+
+  /** A reading as the thermostat writes its own: a tenth of a degree in the house's unit, a whole percent. */
+  private written(kind: ClimateKind, value: number): ValueParts {
     const degrees = kind === 'temperature';
-    // as the thermostat writes its own: a tenth of a degree in the house's unit, a whole percent
-    return value === null
-      ? undefined
-      : {
-          value: formatNumber(this.hass, value, { digits: degrees ? 1 : 0 }),
-          unit: degrees ? (this.hass?.config.unit_system.temperature ?? '°C') : '%',
-        };
+    return {
+      value: formatNumber(this.hass, value, { digits: degrees ? 1 : 0 }),
+      unit: degrees ? (this.hass?.config.unit_system.temperature ?? '°C') : '%',
+    };
   }
 
   override getCardSize(): number {
@@ -414,10 +466,11 @@ export class FluvyRoomCard extends FluvyTileCard {
 
   /**
    * The quick actions in `room` less what the name keeps beside them — 96, or its own width in `cls` where it is
-   * shorter (a row's rule): as many rounds as that holds (`quick-actions.ts`), none where the card hides them; none
-   * either until their chunk has landed (the bundle fetches it as it starts), when the card is drawn again.
+   * shorter (a row's rule), nothing where it stands elsewhere (no `cls`: the photo's, at its top): as many rounds as
+   * that holds (`quick-actions.ts`), none where the card hides them; none either until their chunk has landed (the
+   * bundle fetches it as it starts), when the card is drawn again.
    */
-  private rounds(room: number, cls: string, name: string): QuickRounds {
+  private rounds(room: number, cls?: string, name = ''): QuickRounds {
     if (this.room?.show_quick_actions === false) return NO_ROUNDS;
     if (!quick) {
       void loadQuickActions().then(() => this.requestUpdate());
@@ -435,7 +488,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         accent: (colour) => this.accents.item(colour),
         destination: this.destination(),
       },
-      room - Math.min(ROW_NAME_MIN, this.headFit.ruler.width(cls, name)),
+      room - (cls ? Math.min(ROW_NAME_MIN, this.headFit.ruler.width(cls, name)) : 0),
     );
   }
 
@@ -482,29 +535,53 @@ export class FluvyRoomCard extends FluvyTileCard {
     const { devices: ids, on, climate: readings } = this.contents();
     const climate = this.room?.show_climate !== false;
     const count = this.room?.show_count !== false;
-    const stats: { label: string; value: string; unit: string }[] = [];
+    // each with the icon that stands for its label and, where it has one, its figure as a compact surface writes it
+    const stats: (GivingStat & { readonly glyph: string; readonly dead?: boolean })[] = [];
     for (const kind of ['temperature', 'humidity'] as const) {
       const id = readings[kind];
       if (!climate || !id) continue;
-      const parts = this.reading(id, kind) ?? { value: '—', unit: '' };
-      stats.push({ label: s(this.hass, kind), value: parts.value, unit: parts.unit });
+      const read = this.reading(id, kind);
+      // out of reach, a dash laid out as the figure it would write: the row keeps its columns and its size
+      const parts = read ?? this.written(kind, STAND_IN);
+      stats.push({
+        label: s(this.hass, kind),
+        glyph: kind === 'temperature' ? 'thermo' : 'drop',
+        ...parts,
+        // degrees without their scale: "21.4°"
+        ...(parts.unit.startsWith('°')
+          ? { short: { value: parts.value, unit: '°', tight: true } }
+          : {}),
+        ...(read ? {} : { dead: true }),
+      });
     }
-    if (count && ids.length)
+    if (count && ids.length) {
+      const value = formatNumber(this.hass, on, { digits: 0 });
       stats.push({
         label: s(this.hass, 'devices_on'),
-        value: formatNumber(this.hass, on, { digits: 0 }),
+        glyph: 'power',
+        value,
         unit: s(this.hass, 'of', { count: ids.length }),
+        short: { value: `${value}/${ids.length}` },
       });
+    }
     if (!stats.length) return nothing;
-    // three readouts in the column while every label and figure holds in its third, else fewer columns (a shorter last
-    // row takes the whole row); the size the widest figure still fits (s → xs)
-    const { columns, size, odd } = statsRow(this.headFit.ruler, this.contentWidth, stats);
+    // one row while every readout holds its column: the labels give way to their icons, the figures to the smaller
+    // size and then to their short form, and only then the columns (a shorter last row takes the whole row); asked to
+    // wrap, the columns first (`readoutsRow`)
+    const row = readoutsRow(this.headFit.ruler, this.contentWidth, stats, readoutsAsk(this.room));
     return html`<div
-      class="am-area__stats ${odd ? 'fv-cols--odd' : ''}"
+      class="am-area__stats ${row.odd ? 'fv-cols--odd' : ''}"
       data-align="center"
-      style="--am-stats:${columns}"
+      style="--am-stats:${row.columns}"
     >
-      ${stats.map((stat) => readout({ ...stat, size }))}
+      ${stats.map(({ label, glyph, short, dead, ...figure }) =>
+        readout({
+          label,
+          ...(dead ? { value: '—' } : (row.short && short) || figure),
+          size: row.size,
+          ...(row.labels === 'icons' ? { glyph } : row.labels === 'none' ? { glyph: null } : {}),
+        }),
+      )}
     </div>`;
   }
 
@@ -619,7 +696,8 @@ export class FluvyRoomCard extends FluvyTileCard {
 
   /**
    * The room's picture on the hero, cross-faded in once decoded; without one, the accent's gradient. Its quick actions
-   * stand at its foot's end, centred on the name's pill, where the pill keeps its glyph and what its name needs.
+   * stand at its foot's end, centred on the name's pill, where the pill keeps its glyph and what its name needs; with
+   * the name at its top (`name_position: top`, #159) the foot is theirs alone and the pill has the hero's width.
    */
   private renderHero(name: string, glyph: string): TemplateResult {
     const picture = this.pictureUrl();
@@ -627,13 +705,17 @@ export class FluvyRoomCard extends FluvyTileCard {
       this.shownPicture = picture;
       if (picture) this.photo.show(picture);
     }
-    // what the pill keeps: its 28 and its glyph's 28 beside the name's room
-    const quick = this.rounds(this.contentWidth - 56, 'am-area__badge', name);
-    return html`<div class="rm-hero">
+    const top = this.room?.name_position === 'top';
+    const quick = top
+      ? // nothing stands before them: the 12 that would is theirs
+        this.rounds(this.contentWidth + 12)
+      : // what the pill keeps: its 28 and its glyph's 28 beside the name's room
+        this.rounds(this.contentWidth - 56, 'am-area__badge', name);
+    return html`<div class="rm-hero ${top ? 'rm-hero--top' : ''}">
       ${picture ? this.photo.render() : nothing}
       ${picture ? html`<span class="rm-hero__scrim" data-measure="skip"></span>` : nothing}
-      ${this.renderBadge(name, glyph, this.contentWidth - quick.taken)} ${this.roomCover(name)}
-      ${quick.template}
+      ${this.renderBadge(name, glyph, this.contentWidth - (top ? 0 : quick.taken))}
+      ${this.roomCover(name)} ${quick.template}
     </div>`;
   }
 

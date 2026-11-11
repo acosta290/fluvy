@@ -435,6 +435,37 @@ describe('the dashboard templates', () => {
     expect(chips.chips.length).toBeLessThanOrEqual(4);
   });
 
+  it('offer what is a room’s photo’s alone on the dashboards of rooms, while their rooms may be photos (#159)', () => {
+    const own = ['room_name_position', 'room_readout_style', 'room_readout_labels'];
+    for (const template of TEMPLATES) {
+      const offered = template.options.filter((option) => own.includes(option.key));
+      const draws = template.id === 'home' || template.id === 'rooms';
+      expect(
+        offered.map((option) => option.key),
+        template.id,
+      ).toEqual(draws ? own : []);
+      for (const option of offered) {
+        if (option.kind !== 'choice') throw new Error(`${option.key} is no choice`);
+        // the default where an area has a picture, and the photo asked for: offered; tiles and rows draw none
+        expect(option.when?.({})).toBe(true);
+        expect(option.when?.({ room_variant: 'photo' })).toBe(true);
+        expect(option.when?.({ room_variant: 'tile' })).toBe(false);
+        expect(option.when?.({ room_variant: 'row' })).toBe(false);
+      }
+    }
+    // a settings file carries them, each well formed: a word the card does not know is dropped
+    expect(
+      strategyOptions(
+        { room_name_position: 'top', room_readout_style: 'wrap', room_readout_labels: 'glyphs' },
+        templateById('rooms'),
+      ),
+    ).toEqual({ room_name_position: 'top', room_readout_style: 'wrap' });
+    expect(strategyOptions({ room_readout_labels: 'none' }, HOME_TEMPLATE)).toEqual({
+      room_readout_labels: 'none',
+    });
+    expect(strategyOptions({ room_name_position: 'top' }, templateById('wall'))).toEqual({});
+  });
+
   it('keep only the options a template knows, each well formed', () => {
     expect(
       strategyOptions(

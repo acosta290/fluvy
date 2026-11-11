@@ -1,5 +1,10 @@
 // @vitest-environment happy-dom
-import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import {
+  preloadLanguages,
+  type HassEntity,
+  type HomeAssistant,
+  type LovelaceCardConfig,
+} from '@fluvy/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { printerHeight } from '../devices-family.js';
 import { devicesHeight, legendFold, legendRows } from '../energy-family.js';
@@ -433,6 +438,40 @@ describe('rooms, helpers, updates, tiles and readouts', () => {
     expect(room({ area: 'empty' }, hass)).toBe(64 + 16 + 120 + 20);
     expect(room({ area: 'empty', variant: 'photo' }, hass)).toBe(160 + 20 + 120 + 20);
     expect(room({ area: 'living' })).toBe(160 + 64 + 16 + 240 + 20);
+  });
+
+  it('room: its readouts’ row as its config asks, the rows its words take in the reader’s language (#159)', async () => {
+    await preloadLanguages();
+    // the living room with a humidity too: three readouts
+    const reads = (language: string): HomeAssistant =>
+      ({
+        ...hass,
+        language,
+        states: {
+          ...hass.states,
+          'sensor.h': entity('sensor.h', '51', {
+            device_class: 'humidity',
+            unit_of_measurement: '%',
+          }),
+        },
+        entities: { ...hass.entities, 'sensor.h': { entity_id: 'sensor.h', area_id: 'living' } },
+      }) as unknown as HomeAssistant;
+    const photo = { area: 'living', controls: 'none' };
+    // one row whatever the language (64), and 20 shorter without its labels
+    for (const language of ['en', 'de']) {
+      expect(room(photo, reads(language)), language).toBe(160 + 64 + 20);
+      expect(room({ ...photo, readout_labels: 'none' }, reads(language))).toBe(160 + 44 + 20);
+      expect(
+        room({ ...photo, readout_labels: 'icons', readout_style: 'wrap' }, reads(language)),
+      ).toBe(160 + 64 + 20);
+    }
+    // wrapped, or as words: one row in English, two and one in German ("Eingeschaltet" holds no third of a 360 column)
+    for (const asked of [{ readout_style: 'wrap' }, { readout_labels: 'words' }]) {
+      expect(room({ ...photo, ...asked }, reads('en'))).toBe(160 + 64 + 20);
+      expect(onGrid(room({ ...photo, ...asked }, reads('de')))).toBe(160 + 64 + 16 + 44 + 20);
+    }
+    // the name's place moves nothing
+    expect(room({ ...photo, name_position: 'top' }, reads('en'))).toBe(160 + 64 + 20);
   });
 
   it('helpers: blocks by kind and groups of rows, a time’s presets under its row', () => {

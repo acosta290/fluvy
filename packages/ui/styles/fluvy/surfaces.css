@@ -321,6 +321,18 @@
   color: var(--fluvy-text-secondary);
 }
 
+/* a label as an icon where its words give way (a room's readouts on one row): 16 in the label's own line and ink,
+   over its figure as the words were (centred where the row centres its readouts), its words read out and not shown */
+.fv-readout__label--icon {
+  display: flex;
+  align-items: center;
+}
+
+.fv-readout__label--icon > svg {
+  width: 16px;
+  height: 16px;
+}
+
 .fv-readout__value {
   display: flex;
   align-items: baseline;
@@ -331,6 +343,11 @@
   line-height: 28px;
   letter-spacing: -0.015em;
   font-variant-numeric: tabular-nums;
+}
+
+/* a readout asked for without its label: the figure alone, on the readout's own top */
+.fv-readout > .fv-sr + .fv-readout__value {
+  margin-top: 0;
 }
 
 .fv-readout--l .fv-readout__value {
@@ -389,7 +406,8 @@
 .fv-cols .fv-readout__value,
 .hm-legend .fv-readout__value,
 .hm-stats .fv-readout__value,
-.am-area__stats .fv-readout__value {
+.am-area__stats .fv-readout__value,
+:is(.fv-cols, .hm-legend, .hm-stats, .am-area__stats) .fv-readout__label--icon {
   justify-content: center;
 }
 

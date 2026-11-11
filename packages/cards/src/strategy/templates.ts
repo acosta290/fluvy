@@ -44,6 +44,8 @@ export type TemplateOption =
       readonly kind: 'choice';
       readonly label: KeyOf<'panel'>;
       readonly values: readonly OptionValue[];
+      /** Where it can act, by the dashboard's other options (a photo's own while the rooms may be photos): offered there alone. */
+      readonly when?: (strategy: Readonly<Record<string, unknown>>) => boolean;
     };
 
 /** A room a dashboard opens as a subview, and where its way back leads. */
@@ -77,7 +79,8 @@ const choice = (
   key: Exclude<OptionKey, 'hide' | 'areas' | 'caps' | 'exclude'>,
   label: KeyOf<'panel'>,
   values: readonly OptionValue[],
-): TemplateOption => ({ key, kind: 'choice', label, values });
+  when?: (strategy: Readonly<Record<string, unknown>>) => boolean,
+): TemplateOption => ({ key, kind: 'choice', label, values, ...(when ? { when } : {}) });
 const words = (values: readonly string[], prefix = 'dashboard'): OptionValue[] =>
   values.map((value) => ({ value, label: `${prefix}.${value}` as KeyOf<'panel'> }));
 const counts = (values: readonly number[], label: KeyOf<'panel'>): OptionValue[] =>
@@ -101,6 +104,29 @@ const SWITCHES = choice('tile_switch', 'dashboard.tile_switch', [
 ]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
+/** What is a room's photo's alone acts while the rooms may be photos (the default where an area has a picture). */
+const photos = (strategy: Readonly<Record<string, unknown>>): boolean =>
+  strategy['room_variant'] !== 'tile' && strategy['room_variant'] !== 'row';
+/** The rooms' cards: their style, then the photo's own (#159) — where its name stands, its readouts' row and labels. */
+const ROOMS: readonly TemplateOption[] = [
+  ROOM,
+  choice('room_name_position', 'dashboard.room_name', words(['bottom', 'top']), photos),
+  choice(
+    'room_readout_style',
+    'dashboard.room_readouts',
+    [
+      { value: 'row', label: 'dashboard.one_row' },
+      { value: 'wrap', label: 'dashboard.several_rows' },
+    ],
+    photos,
+  ),
+  choice(
+    'room_readout_labels',
+    'dashboard.room_labels',
+    words(['auto', 'words', 'icons', 'none']),
+    photos,
+  ),
+];
 /** The long lists: at the house's caps, each with its "N more" row, or whole. */
 const CAPS: TemplateOption = { key: 'caps', kind: 'caps', label: 'dashboard.caps' };
 /** What every view leaves out, as if the house had none of it. */
@@ -132,7 +158,7 @@ export const TEMPLATES: readonly Template[] = [
     // the rooms open from the Rooms view: none without it
     rooms: (ctx, paths) => (paths.includes('rooms') ? everyRoom(ctx, () => 'rooms') : []),
     appliances: true,
-    options: [HIDE, THERMOSTAT, TILES, SWITCHES, FLOW, ROOM, GREETING_TABS, CAPS, EXCLUDE],
+    options: [HIDE, THERMOSTAT, TILES, SWITCHES, FLOW, ...ROOMS, GREETING_TABS, CAPS, EXCLUDE],
   },
   {
     id: 'rooms',
@@ -145,7 +171,7 @@ export const TEMPLATES: readonly Template[] = [
     header: 'hello',
     views: roomsViews,
     rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
-    options: [ROOM, THERMOSTAT, TILES, SWITCHES, GREETING_TABS, CAPS, EXCLUDE],
+    options: [...ROOMS, THERMOSTAT, TILES, SWITCHES, GREETING_TABS, CAPS, EXCLUDE],
   },
   {
     id: 'energy',

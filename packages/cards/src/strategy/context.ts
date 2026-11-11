@@ -1,7 +1,7 @@
 import { wordsIn, type HomeAssistant } from '@fluvy/core';
 import { capsOf, moreHost } from './caps.js';
 import { gridExportPositive } from './energy-sign.js';
-import { HomeRegistry } from './home-registry.js';
+import { HomeRegistry, roomLook } from './home-registry.js';
 import { findEnergyRoles } from './energy-roles.js';
 import { HELLO_HEIGHT, helloCard, TABS_HEIGHT, tabsCard } from './layout.js';
 import type { Template } from './templates.js';
@@ -107,6 +107,7 @@ export async function buildContext(
       ...(config.tile_switch ? { switches: config.tile_switch } : {}),
       ...(config.flow_style ? { flow: config.flow_style } : {}),
       ...(config.room_variant ? { room: config.room_variant } : {}),
+      roomLook: roomLook(config, 'room_'),
       ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),
       ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
     },

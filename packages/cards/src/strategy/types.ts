@@ -8,7 +8,7 @@ import type {
 import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
 import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
 import type { HomeRegistry } from './home-registry.js';
-import { type RoomVariant } from '../room/room-card.js';
+import { type RoomCardConfig, type RoomVariant } from '../room/room-card.js';
 
 /*
  * What the automatic dashboards are made of: their configs, the cards and sections they lay out, the house's
@@ -65,6 +65,12 @@ export type CapKey =
  */
 export type Caps = 'none' | Readonly<Partial<Record<CapKey, number | 'none'>>>;
 
+/**
+ * What is a room's photo's alone (#159), as its card takes it: where its name stands, its readouts on one row or
+ * wrapped, and their labels.
+ */
+export type RoomLook = Pick<RoomCardConfig, 'name_position' | 'readout_style' | 'readout_labels'>;
+
 /** What any of the automatic dashboards reads from its raw configuration; each template honours its own keys. */
 export interface FluvyStrategyConfig {
   type: StrategyType;
@@ -85,6 +91,12 @@ export interface FluvyStrategyConfig {
   flow_style?: FlowStyle;
   /** The rooms' cards (default: a photo where the area has one, else a tile). */
   room_variant?: RoomVariant;
+  /** Where the rooms' photos carry their names (default: `bottom`, beside the quick actions). */
+  room_name_position?: RoomLook['name_position'];
+  /** The rooms' readouts on one row (`row`, the default) or wrapped where a word would not hold (`wrap`). */
+  room_readout_style?: RoomLook['readout_style'];
+  /** Their labels (default `auto`: words while they hold, icons where they would not). */
+  room_readout_labels?: RoomLook['readout_labels'];
   /** The rooms a wall shows, in that order, an empty one kept (default: every room with something in it). */
   areas?: readonly string[];
   /** Seconds between the cameras' stills (default 10). */
@@ -102,9 +114,10 @@ export interface FluvyStrategyConfig {
   caps?: Caps;
   /**
    * A room's own `include` and `exclude` by its area's id (#95), as its card takes them: what its card counts and fills
-   * by, whether the dashboard shows it, and what its page holds.
+   * by, whether the dashboard shows it, and what its page holds; and what is its photo's alone (`name_position`,
+   * `readout_style`, `readout_labels`), for that room over the dashboard's.
    */
-  rooms?: Readonly<Record<string, RoomTuning>>;
+  rooms?: Readonly<Record<string, RoomTuning & RoomLook>>;
   /**
    * What no view shows nor counts, as if the house had none of it (#141): entity ids, patterns of ids
    * (`sensor.debug_*`), device ids or domains, as a room's `exclude` takes them.
@@ -192,6 +205,8 @@ export interface CardStyle {
   readonly switches?: TileSwitch;
   readonly flow?: FlowStyle;
   readonly room?: RoomVariant;
+  /** What every room's photo is asked for (`room_name_position` …); a room's own comes over it. */
+  readonly roomLook?: RoomLook;
   readonly refresh?: CameraRefresh;
   readonly scenes?: ScenesMax;
 }

@@ -6,6 +6,16 @@
     "group": "Acts on",
     "include": "Also count",
     "exclude": "Leave out",
-    "entries_help": "Entities, devices or domains, or a pattern of ids such as switch.dishwasher_*"
+    "entries_help": "Entities, devices or domains, or a pattern of ids such as switch.dishwasher_*",
+    "name_position": "Name on the photo",
+    "bottom": "At the bottom",
+    "top": "At the top",
+    "readout_style": "Readouts as",
+    "one_row": "One row",
+    "several_rows": "Several rows",
+    "readout_style_help": "On one row, a label that would not fit gives way to its icon. On several, the words stay and the readouts wrap.",
+    "readout_labels": "Readout labels",
+    "words": "Words",
+    "icons": "Icons"
   }
 }

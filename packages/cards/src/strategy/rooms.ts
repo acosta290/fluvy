@@ -33,12 +33,17 @@ export function roomsOf(home: HomeRegistry): AreaRegistryEntry[] {
 
 const roomPath = (base: string, area: AreaRegistryEntry): string => `${base}/room-${area.area_id}`;
 
-/** A room's card: its page as its path, the dashboard's style, and what the dashboard tunes it to hold (`rooms`). */
+/**
+ * A room's card: its page as its path, the dashboard's style — its photo's own (#159) as the dashboard asks of every
+ * room, then of this one — and what the dashboard tunes it to hold (`rooms`).
+ */
 export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card => ({
   type: 'custom:fluvy-room-card',
   area: area.area_id,
   path: roomPath(ctx.base, area),
   ...(ctx.style.room ? { variant: ctx.style.room } : {}),
+  ...ctx.style.roomLook,
+  ...ctx.home.look(area.area_id),
   ...ctx.home.tuning(area.area_id),
   grid_options: { columns: 12 },
 });

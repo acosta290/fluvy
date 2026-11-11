@@ -1162,15 +1162,41 @@ quick_actions:
     color: '#e2725b'
 ```
 
+On the **photo**, `name_position: top` stands the room's name at the picture's top, so its foot is the quick actions'
+alone: five hold on a phone where two or three stood beside the name, and half a section holds two where it held none.
+The default, `bottom`, keeps the name at the foot beside them.
+
+Its **readouts** (the temperature, the humidity, how many devices are on) stand on one row. Each keeps its equal
+column, and what does not hold there gives way in this order, by measure: the labels' words to their icons (a
+thermometer, a drop, a power sign; a screen reader still reads the words), the figures to their smaller size, then
+their units to the short form a tile writes ("21.4°", "3/10"). Words that hold stay, whatever the figures did. Only
+where the shortest figures would not hold a third (half a section) do they stand two and one; nothing is ever cut.
+`readout_style: wrap` keeps the words instead and lets the readouts take as many rows as the words need, as they did
+before 1.19. `readout_labels` writes the labels one way: `words` (the row wraps where they would not hold), `icons`,
+or `none` (the figures alone, the card 20 px shorter); `auto`, the default, is words while they hold and icons where
+they would not.
+
+```yaml
+type: custom:fluvy-room-card
+area: living_room
+name_position: top
+readout_labels: icons
+quick_actions: [lights, covers, fans, media]
+```
+
 The automatic dashboards take the same say per room: `rooms` in the dashboard's raw configuration, by area id, tunes
-that room's card, its count and its page.
+that room's card, its count and its page, and takes that room's own `name_position`, `readout_style` and
+`readout_labels` over the dashboard's (`room_name_position`, `room_readout_style`, `room_readout_labels`, which the
+settings panel's Dashboards tab offers while the rooms may be photos).
 
 ```yaml
 strategy:
   type: custom:fluvy-home
+  room_name_position: top
   rooms:
     kitchen:
       exclude: [switch.dishwasher_*]
+      name_position: bottom
 ```
 
 ## Vehicle
@@ -1272,7 +1298,7 @@ roles:
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `show_climate`, `show_count`, `show_quick_actions`, `show_arrow`, `picture`, `path`, `temperature_entity`, `humidity_entity`, `include`, `exclude`, `tint` (`on`, `always`), `name_lines` (`1`, `2`), `light_colors`, `light_whites` (`palette`, `temperature`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `tap_action`, `hold_action`), `quick_actions` (a list: `group`, `entity`, `name`, `icon`, `tone`, `color`, `tap_action`, `hold_action`) | — |
+| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `name_position` (`bottom`, `top`), `show_climate`, `show_count`, `readout_style` (`row`, `wrap`), `readout_labels` (`auto`, `words`, `icons`, `none`), `show_quick_actions`, `show_arrow`, `picture`, `path`, `temperature_entity`, `humidity_entity`, `include`, `exclude`, `tint` (`on`, `always`), `name_lines` (`1`, `2`), `light_colors`, `light_whites` (`palette`, `temperature`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `tap_action`, `hold_action`), `quick_actions` (a list: `group`, `entity`, `name`, `icon`, `tone`, `color`, `tap_action`, `hold_action`) | — |
 | **Map** | `custom:fluvy-map-card` | Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate. | `title`, `variant` (`zones`, `map`, `rows`), `map_shape` (`wide`, `square`), `hours_to_show`, `default_zoom`, `fit_zones`, `show_empty`, `show_distance`, `map_path`, `empty_text`, `hide_empty`, `zones` (a list: `entity`, `name`, `icon`) | — |
 
 ## Structure and navigation

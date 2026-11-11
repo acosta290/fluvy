@@ -1183,3 +1183,291 @@ describe('a room’s own include and exclude (#95)', () => {
     }
   });
 });
+
+/*
+ * #159: on a phone the name's pill took the quick actions' room at the photo's foot, and three readouts fell to two
+ * rows. The reporter's room: a temperature and a humidity sensor, two lights (one on), blinds (open), a fan, a
+ * speaker and a plug (on): "3 of 6".
+ */
+describe('a room’s name at the top and its readouts on one row (#159)', () => {
+  beforeAll(() => loadQuickActions());
+  afterEach(() => document.body.replaceChildren());
+
+  const SALON: readonly Seed[] = [
+    temperature('sensor.salon_t', '17.4'),
+    humidity('sensor.salon_h', '51'),
+    ['light.salon_ceiling', 'on', { supported_color_modes: ['onoff'] }],
+    ['light.salon_lamp', 'off', { supported_color_modes: ['onoff'] }],
+    ['cover.salon_blinds', 'open', { current_position: 40, supported_features: 15 }],
+    ['fan.salon', 'off', { percentage: 0, supported_features: 1 }],
+    ['media_player.salon', 'off', { supported_features: 1 | 4 | 128 | 256 | 4096 | 16384 }],
+    ['switch.salon_plug', 'on', { device_class: 'outlet' }],
+  ];
+  const salon = (more: readonly Seed[] = [], language = 'en'): HomeAssistant => {
+    const hass = house([...SEEDS, ...SALON, ...more]);
+    return {
+      ...hass,
+      language,
+      locale: { language, number_format: 'language', time_format: '24' },
+      entities: {
+        ...hass.entities,
+        ...Object.fromEntries(
+          SALON.map(([entity_id]) => [entity_id, { entity_id, area_id: 'salon' }]),
+        ),
+      },
+      areas: { ...hass.areas, salon: area('salon', 'Salon') },
+    } as unknown as HomeAssistant;
+  };
+  /**
+   * A ruler of 8 px a letter; a figure with its unit 11 a character at s and 9 at xs. In English "Temperature" is 88,
+   * "17.4 °C" 66 at s and 54 at xs, "17.4°" 45, "3 of 6" 55 and 45, "3/6" 27.
+   */
+  const ruler = {
+    width: (cls: string, text: string, _unitCls?: string, unit = '') =>
+      cls.includes('fv-readout__value')
+        ? (text.length + unit.length) * (cls.includes('--xs') ? 9 : 11)
+        : text.length * 8,
+  };
+  const PHOTO = { area: 'salon', variant: 'photo', controls: 'none' } as const;
+  const drawn = (config: Partial<RoomCardConfig>, width: number, hass = salon()) =>
+    roomAt({ ...PHOTO, ...config }, width, ruler, hass);
+  /** The readouts' row as drawn: its columns, a shorter last row, the figures' size, and how each label is written. */
+  const row = (card: RoomElement) => {
+    const stats = root(card).querySelector('.am-area__stats')!;
+    const cells = [...stats.querySelectorAll('.fv-readout')];
+    return {
+      columns: Number(stats.getAttribute('style')?.match(/--am-stats:(\d)/)?.[1]),
+      odd: stats.classList.contains('fv-cols--odd'),
+      size: cells[0]?.className.match(/fv-readout--(\w+)/)?.[1],
+      labels: cells.map((cell) =>
+        cell.querySelector('.fv-readout__label--icon')
+          ? 'icon'
+          : cell.querySelector('.fv-readout__label')
+            ? 'word'
+            : 'none',
+      ),
+      figures: readouts(card),
+    };
+  };
+  const rounds = (card: RoomElement): number =>
+    root(card).querySelectorAll('.rm-hero .rm-quick .lt-bulb').length;
+  const SIX = ['lights', 'covers', 'fans', 'media', 'switch.salon_plug', 'light.salon_lamp'];
+  const WORDS = ['word', 'word', 'word'];
+  const ICONS = ['icon', 'icon', 'icon'];
+  const WHOLE = ['17.4°C', '51%', '3of 6'];
+  const SHORT = ['17.4°', '51%', '3/6'];
+
+  it('stands the name at the photo’s top where asked, its foot then the quick actions’ alone', async () => {
+    const bottom = await drawn({ quick_actions: SIX }, 328);
+    expect(root(bottom).querySelector('.rm-hero--top')).toBeNull();
+    // beside "Salon" (40) and its glyph: 288 − 56 − 40 = 192 holds three rounds
+    expect(rounds(bottom)).toBe(3);
+    const top = await drawn({ quick_actions: SIX, name_position: 'top' }, 328);
+    expect(root(top).querySelector('.rm-hero.rm-hero--top .am-area__badge')).not.toBeNull();
+    // the whole foot: five rounds in 288 (5 × 44 + 4 × 8 = 252), never a sixth cut
+    expect(rounds(top)).toBe(5);
+    // 211 held one beside the name and holds three under it; half a section held none and holds two
+    expect(rounds(await drawn({ quick_actions: SIX }, 211))).toBe(1);
+    expect(rounds(await drawn({ quick_actions: SIX, name_position: 'top' }, 211))).toBe(3);
+    expect(rounds(await drawn({ quick_actions: SIX }, 152))).toBe(0);
+    expect(rounds(await drawn({ quick_actions: SIX, name_position: 'top' }, 152))).toBe(2);
+    // a word it does not know is the default; the tile and the row have no photo to carry it
+    const unknown = await drawn({ name_position: 'middle' as never }, 328);
+    expect(root(unknown).querySelector('.rm-hero--top')).toBeNull();
+    const tile = await drawn({ variant: 'tile', name_position: 'top' }, 328);
+    expect(root(tile).querySelector('.rm-hero')).toBeNull();
+  });
+
+  it('gives the pill the photo’s whole width at the top: its glyph back, its name to its ellipsis only there', async () => {
+    // "Arbeitszimmer oben" (144) beside two rounds has 288 − 108 = 180: its name whole (172), its glyph gone (200)
+    const name = 'Arbeitszimmer oben';
+    const beside = root(await drawn({ name }, 328)).querySelector('.am-area__badge')!;
+    expect(beside.querySelector('svg')).toBeNull();
+    expect(beside.classList.contains('is-cut')).toBe(false);
+    const over = root(await drawn({ name, name_position: 'top' }, 328));
+    expect(over.querySelector('.am-area__badge svg')).not.toBeNull();
+    // half a section's 132 holds neither: the name ends in its ellipsis in a pill as wide as the photo allows
+    const half = root(await drawn({ name, name_position: 'top' }, 172)).querySelector<HTMLElement>(
+      '.am-area__badge',
+    )!;
+    expect(half.classList.contains('is-cut')).toBe(true);
+    expect(half.style.width).toBe('132px');
+    // an empty room keeps its photo and its name where it was asked for
+    const empty = await roomAt(
+      { area: 'leer', variant: 'photo', name_position: 'top' },
+      328,
+      ruler,
+    );
+    expect(root(empty).querySelector('.rm-hero--top .am-area__badge')).not.toBeNull();
+    expect(root(empty).querySelector('.fv-empty-state')).not.toBeNull();
+  });
+
+  it('keeps its readouts on one row as the card narrows: the words, the size, then the units give way', async () => {
+    // 360: thirds of 96 hold "Temperature" (88) and every figure at s
+    expect(row(await drawn({}, 360))).toEqual({
+      columns: 3,
+      odd: false,
+      size: 's',
+      labels: WORDS,
+      figures: WHOLE,
+    });
+    // the reporter's 328: thirds of 85 do not hold the word — icons, the figures as they were (two and one before)
+    const phone = await drawn({}, 328);
+    expect(row(phone)).toEqual({
+      columns: 3,
+      odd: false,
+      size: 's',
+      labels: ICONS,
+      figures: WHOLE,
+    });
+    // the words are still said
+    expect(
+      [...root(phone).querySelectorAll('.fv-readout__label .fv-sr')].map((el) => el.textContent),
+    ).toEqual(['Temperature', 'Humidity', 'Devices on']);
+    // 266: thirds of 64 do not hold "17.4 °C" at s (66)
+    expect(row(await drawn({}, 266))).toMatchObject({ columns: 3, size: 'xs', figures: WHOLE });
+    // 211: thirds of 46 hold it short, its degree attached
+    const narrow = await drawn({}, 211);
+    expect(row(narrow)).toEqual({
+      columns: 3,
+      odd: false,
+      size: 'xs',
+      labels: ICONS,
+      figures: SHORT,
+    });
+    expect(root(narrow).querySelector('.fv-unit')?.className).toBe('fv-unit fv-unit--tight');
+  });
+
+  it('lets the columns give way in half a section, where the shortest figures hold no third: two and one, nothing cut', async () => {
+    // 172: halves of 58 hold the figures at xs with their units
+    expect(row(await drawn({}, 172))).toEqual({
+      columns: 2,
+      odd: true,
+      size: 'xs',
+      labels: ICONS,
+      figures: WHOLE,
+    });
+    // 152: halves of 48 hold them short
+    expect(row(await drawn({}, 152))).toEqual({
+      columns: 2,
+      odd: true,
+      size: 'xs',
+      labels: ICONS,
+      figures: SHORT,
+    });
+    // two readouts keep one row there: before, one a line
+    expect(row(await drawn({ show_count: false }, 152))).toMatchObject({ columns: 2, odd: false });
+  });
+
+  it('wraps where asked, as before: the words stay, two and one at the reporter’s 328', async () => {
+    const wrapped = { columns: 2, odd: true, size: 's', labels: WORDS, figures: WHOLE };
+    expect(row(await drawn({ readout_style: 'wrap' }, 328))).toEqual(wrapped);
+    // and one a line at 211, never an icon nor a short unit
+    expect(row(await drawn({ readout_style: 'wrap' }, 211))).toEqual({
+      ...wrapped,
+      columns: 1,
+      odd: false,
+    });
+  });
+
+  it('writes the labels one way where asked: words (the row wraps for them), icons, or none, the words still said', async () => {
+    expect(row(await drawn({ readout_labels: 'words' }, 328))).toMatchObject({
+      columns: 2,
+      odd: true,
+      labels: WORDS,
+    });
+    expect(row(await drawn({ readout_labels: 'icons' }, 360))).toMatchObject({
+      columns: 3,
+      labels: ICONS,
+    });
+    const bare = await drawn({ readout_labels: 'none' }, 328);
+    expect(row(bare)).toMatchObject({
+      columns: 3,
+      labels: ['none', 'none', 'none'],
+      figures: WHOLE,
+    });
+    expect(
+      [...root(bare).querySelectorAll('.fv-readout > .fv-sr')].map((el) => el.textContent),
+    ).toEqual(['Temperature', 'Humidity', 'Devices on']);
+    // a word it does not know is the default: words while they hold
+    expect(row(await drawn({ readout_labels: 'glyphs' as never }, 360))).toMatchObject({
+      labels: WORDS,
+    });
+    expect(row(await drawn({ readout_labels: 'glyphs' as never }, 328))).toMatchObject({
+      labels: ICONS,
+    });
+  });
+
+  it('keeps the row of a reading out of reach as it was: a dash where its figure would be, the same columns and size', async () => {
+    const dead = salon([temperature('sensor.salon_t', 'unavailable')]);
+    for (const width of [328, 211, 172, 152]) {
+      const live = row(await drawn({}, width));
+      const out = row(await drawn({}, width, dead));
+      expect(out, `${width}`).toEqual({ ...live, figures: ['—', ...live.figures.slice(1)] });
+    }
+  });
+
+  it('declares the row it draws: 20 shorter without its labels, the rows its words take where they must stay', async () => {
+    await preloadLanguages();
+    const config: RoomCardConfig = { type: 'custom:fluvy-room-card', ...PHOTO };
+    const holds = (language: string) => ({
+      found: areaContents(salon(), 'salon'),
+      picture: false,
+      admin: true,
+      reader: { language },
+    });
+    // the photo, 20, a row of readouts, 20
+    expect(roomHeight(config, holds('en'))).toBe(160 + 20 + 44 + 20);
+    expect(roomHeight({ ...config, readout_labels: 'none' }, holds('en'))).toBe(160 + 20 + 24 + 20);
+    expect(roomHeight({ ...config, readout_labels: 'icons' }, holds('de'))).toBe(244);
+    // one row whatever the language, where the words may give way
+    expect(roomHeight(config, holds('de'))).toBe(244);
+    // wrapped, or asked for as words: English holds its thirds at 360, German's "Eingeschaltet" does not — two and one
+    for (const asked of [{ readout_style: 'wrap' }, { readout_labels: 'words' }] as const) {
+      expect(roomHeight({ ...config, ...asked }, holds('en')), 'en').toBe(244);
+      expect(roomHeight({ ...config, ...asked }, holds('de')), 'de').toBe(244 + 16 + 44);
+      // its two readings hold their halves
+      expect(roomHeight({ ...config, ...asked, show_count: false }, holds('de'))).toBe(244);
+    }
+    // wrapped with icons, by the figures alone: one row
+    expect(
+      roomHeight({ ...config, readout_style: 'wrap', readout_labels: 'icons' }, holds('de')),
+    ).toBe(244);
+    // from its config alone, where no house says who reads it: one row
+    const bare = FluvyRoomCard.layoutHeight({ ...config, readout_labels: 'none' });
+    expect(FluvyRoomCard.layoutHeight(config) - bare).toBe(20);
+    expect(FluvyRoomCard.layoutHeight({ ...config, readout_style: 'wrap' })).toBe(
+      FluvyRoomCard.layoutHeight(config),
+    );
+  });
+
+  it('offers the name’s place with the photo alone, and the readouts’ row and labels while it shows a readout', async () => {
+    const shown = async (config: Record<string, unknown>): Promise<string[]> => {
+      const element = await FluvyRoomCard.getConfigElement();
+      (element as HTMLElement & { hass: HomeAssistant }).hass = salon();
+      const editor = await drawEditor(element, {
+        type: 'custom:fluvy-room-card',
+        area: 'salon',
+        ...config,
+      });
+      return shownNames(cardForm(editor).schema);
+    };
+    const own = ['name_position', 'readout_style', 'readout_labels'];
+    expect(await shown({ variant: 'photo' })).toEqual(expect.arrayContaining(own));
+    for (const variant of ['tile', 'row'])
+      for (const name of own) expect(await shown({ variant }), variant).not.toContain(name);
+    // no readout shown: their row and labels have nothing to act on, the name's place still does
+    const bare = await shown({ variant: 'photo', show_climate: false, show_count: false });
+    expect(bare).toContain('name_position');
+    expect(bare).not.toContain('readout_style');
+    expect(bare).not.toContain('readout_labels');
+    // what the editor shows where the config says nothing is what the card does
+    const config = { type: 'custom:fluvy-room-card', area: 'salon' };
+    expect(roomEditor.defaults(config, salon())).toMatchObject({
+      name_position: 'bottom',
+      readout_style: 'row',
+      readout_labels: 'auto',
+    });
+    for (const name of own) expect(roomEditor.keys).toContain(name);
+  });
+});

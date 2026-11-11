@@ -41,6 +41,19 @@
   padding: 0 14px;
 }
 
+/* the name at the hero's head (`name_position: top`, #159): the pill 16 from its top, the foot the quick actions'
+   alone; the scrim then falls from both ends, the pill's and the rounds' */
+.rm-hero--top .am-area__badge {
+  top: 16px;
+  bottom: auto;
+}
+
+.rm-hero--top .rm-hero__scrim {
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0.28), transparent 50%),
+    linear-gradient(to top, rgb(0 0 0 / 0.24), transparent 45%);
+}
+
 /* the hero as a button: laid over the whole picture, its scrim and its pill, its ring drawn inside (the hero clips) */
 .rm-hero > .fv-tile__tap {
   z-index: 3;

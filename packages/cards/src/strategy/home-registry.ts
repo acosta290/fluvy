@@ -43,6 +43,7 @@ import {
   SOLAR,
   TODAY,
 } from './words.generated.js';
+import type { RoomLook } from './types.js';
 
 /*
  * What a house looks like to the automatic dashboard: the entity, device and area registries read
@@ -199,6 +200,24 @@ const without = <T>(
   left: (id: string) => boolean,
 ): Record<string, T> => Object.fromEntries(Object.entries(table).filter(([id]) => !left(id)));
 
+/** The keys that are a room's photo's alone (`RoomLook`). */
+const LOOK = ['name_position', 'readout_style', 'readout_labels'] as const;
+
+/**
+ * What a raw configuration says of a room's photo, as its card takes it (#159): the dashboard's for every room
+ * (`room_name_position` …: `prefix`), or one room's own (`rooms.<area>`). Words alone are read; one the card does not
+ * know it draws as its default.
+ */
+export function roomLook(raw: unknown, prefix = ''): RoomLook {
+  const said: Readonly<Record<string, unknown>> = Object(raw);
+  return Object.fromEntries(
+    LOOK.flatMap((key) => {
+      const value = said[`${prefix}${key}`];
+      return typeof value === 'string' ? [[key, value]] : [];
+    }),
+  ) as RoomLook;
+}
+
 export class HomeRegistry {
   /** The house as the dashboard reads it: without what its `exclude` leaves out, as if the house had none of it. */
   private readonly hass: Registry;
@@ -279,6 +298,12 @@ export class HomeRegistry {
       ...(Array.isArray(own?.include) ? { include: own.include } : {}),
       ...(Array.isArray(own?.exclude) || left.length ? { exclude } : {}),
     };
+  }
+
+  /** What the dashboard asks of that room's photo alone (`rooms.<area>`: `roomLook`), over what it asks of every room's. */
+  look(areaId: string): RoomLook {
+    const rooms: Readonly<Record<string, unknown>> = Object(this.rooms);
+    return roomLook(Object.hasOwn(rooms, areaId) ? rooms[areaId] : undefined);
   }
 
   /** What a room holds (`areaContents`, the room card's own rule, of the house as its card reads it), as tuned. */

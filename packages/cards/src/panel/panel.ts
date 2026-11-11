@@ -38,6 +38,7 @@ import { html, LitElement, nothing, type PropertyValues, type TemplateResult } f
 import { keyed } from 'lit/directives/keyed.js';
 
 import { houseEnergy } from '../strategy/home-strategy.js';
+import { roomLook } from '../strategy/home-registry.js';
 import { energySources, hasSources } from '../strategy/layout.js';
 
 import { TextRuler } from '../shared/fit.js';
@@ -1027,11 +1028,13 @@ export class FluvyPanel extends LitElement {
     const variant = word('thermostat_variant', 'dial');
     const flow = word('flow_style', 'stream');
     const room = word('room_variant', 'tile');
+    // what the dashboard asks of its rooms' photos: where the name stands, the readouts' row and labels
+    const look = roomLook(strategy, 'room_');
     switch (template.id) {
       case 'rooms':
         return html`<div class="pn-preview pn-preview--dash">
           <div class="pn-preview__tiles">
-            ${house.room('living', room)}${house.room('kitchen', room)}
+            ${house.room('living', room, look)}${house.room('kitchen', room, look)}
           </div>
           <div class="pn-preview__side">${house.thermostat(variant)}</div>
           ${house.tile('living', size, switches)}

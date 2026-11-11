@@ -1927,6 +1927,47 @@ describe('custom:fluvy-home strategy — a room counts its devices, never an app
     expect(new HomeRegistry(hass, null as never).tuning('galley')).toEqual({});
     expect(new HomeRegistry(hass, { galley: null } as never).tuning('galley')).toEqual({});
   });
+
+  it('asks of every room’s photo what the dashboard says, and of one room what `rooms` says of it (#159)', async () => {
+    const hass = kitchen();
+    const own = ['name_position', 'readout_style', 'readout_labels'];
+    const rooms = async (config: Record<string, unknown>) =>
+      (await generate({ type: 'custom:fluvy-rooms', ...config } as never, hass as never)).views
+        .flatMap((view) => view.sections.flatMap((section) => section.cards))
+        .filter((card) => card.type === 'custom:fluvy-room-card');
+    // nothing said: the card's own defaults, and no key written
+    const plain = await rooms({});
+    expect(plain.length).toBeGreaterThan(0);
+    for (const card of plain) for (const key of own) expect(card).not.toHaveProperty(key);
+    const asked = await rooms({
+      room_name_position: 'top',
+      room_readout_style: 'wrap',
+      room_readout_labels: 'icons',
+    });
+    for (const card of asked)
+      expect(card).toMatchObject({
+        name_position: 'top',
+        readout_style: 'wrap',
+        readout_labels: 'icons',
+      });
+    // one room's own comes over the dashboard's, beside its include and exclude; what is no word is not read
+    const tuned = await rooms({
+      room_name_position: 'top',
+      room_readout_labels: 'none',
+      rooms: {
+        galley: { name_position: 'bottom', readout_labels: 7, exclude: ['light.galley_counter'] },
+      },
+    });
+    const galley = tuned.find((card) => card['area'] === 'galley');
+    expect(galley).toMatchObject({
+      name_position: 'bottom',
+      readout_labels: 'none',
+      exclude: ['light.galley_counter'],
+    });
+    expect(galley).not.toHaveProperty('readout_style');
+    expect(new HomeRegistry(hass, { galley: 'all' } as never).look('galley')).toEqual({});
+    expect(new HomeRegistry(hass, null as never).look('galley')).toEqual({});
+  });
 });
 
 describe('custom:fluvy-home strategy — capped lists (#78)', () => {

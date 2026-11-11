@@ -66,6 +66,13 @@ const drawsArrows = ({ variant, controls }: Readonly<Record<string, unknown>>): 
 const drawsQuick = ({ show_quick_actions: shown }: Readonly<Record<string, unknown>>): boolean =>
   shown !== false;
 
+/** The photo alone carries the name's pill, a picture and the readouts. */
+const isPhoto = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant === 'photo';
+
+/** …its readouts, while it shows the climate or the count: how they are laid out and labelled. */
+const drawsReadouts = (form: Readonly<Record<string, unknown>>): boolean =>
+  isPhoto(form) && (form['show_climate'] !== false || form['show_count'] !== false);
+
 /** A reading's field: a sensor of its class, or the thermostat (the humidifier) that carries it (`climateAttribute`). */
 const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
   name: `${kind}_entity`,
@@ -90,8 +97,11 @@ export const keys = configKeys<RoomCardConfig>()([
   'area',
   'variant',
   'picture',
+  'name_position',
   'show_climate',
   'show_count',
+  'readout_style',
+  'readout_labels',
   'show_quick_actions',
   'show_arrow',
   'controls',
@@ -216,9 +226,12 @@ export const defaults: EditorDefaults = (config, hass) => {
   return {
     variant: config['picture'] || area?.picture ? 'photo' : 'tile',
     controls: 'rows',
+    name_position: 'bottom',
     name_lines: '1',
     show_count: true,
     show_climate: true,
+    readout_style: 'row',
+    readout_labels: 'auto',
     show_quick_actions: true,
     show_arrow: true,
     quick_actions: defaultGroups(hass, found?.devices ?? []),
@@ -240,15 +253,39 @@ export function getConfigForm(): LovelaceConfigForm {
         selectField('variant', ['photo', 'tile', 'row']),
         onlyWhen(drawsControls, selectField('controls', ['rows', 'tiles', 'none'])),
       ),
+      // where the photo carries the name (#159): at its foot beside the quick actions, or at its top
+      onlyWhen(
+        isPhoto,
+        choiceField('name_position', [
+          ['bottom', 'room-editor.bottom'],
+          ['top', 'room-editor.top'],
+        ]),
+      ),
       fieldRow(boolField('show_climate'), boolField('show_count')),
+      // the photo's readouts: on one row or wrapped, and what stands over their figures
+      fieldRow(
+        onlyWhen(
+          drawsReadouts,
+          choiceField('readout_style', [
+            ['row', 'room-editor.one_row'],
+            ['wrap', 'room-editor.several_rows'],
+          ]),
+        ),
+        onlyWhen(
+          drawsReadouts,
+          choiceField('readout_labels', [
+            ['auto', 'option.auto'],
+            ['words', 'room-editor.words'],
+            ['icons', 'room-editor.icons'],
+            ['none', 'option.none'],
+          ]),
+        ),
+      ),
       fieldRow(boolField('show_quick_actions'), onlyWhen(drawsArrows, boolField('show_arrow'))),
       // the list is edited item by item (the rows editor takes the field out of the form)
       { name: 'quick_actions', selector: { object: {} } },
       // a picture is the photo's alone (the default where the room has one)
-      fieldRow(
-        onlyWhen(({ variant }) => variant === 'photo', textField('picture')),
-        textField('path'),
-      ),
+      fieldRow(onlyWhen(isPhoto, textField('picture')), textField('path')),
       fieldRow(
         readingField('temperature', 'climate'),
         readingField('humidity', 'climate', 'humidifier'),
@@ -269,6 +306,9 @@ export function getConfigForm(): LovelaceConfigForm {
       humidity_entity: 'editor.humidity_entity',
       show_quick_actions: 'room-editor.show_quick_actions',
       show_arrow: 'room-editor.show_arrow',
+      name_position: 'room-editor.name_position',
+      readout_style: 'room-editor.readout_style',
+      readout_labels: 'room-editor.readout_labels',
       quick_actions: 'room-editor.quick_actions',
       include: 'room-editor.include',
       exclude: 'room-editor.exclude',

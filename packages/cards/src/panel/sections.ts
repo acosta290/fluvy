@@ -1485,6 +1485,8 @@ function dashboardOptions(
     ${template.options.map((option) => {
       // a house without areas has no rooms to choose from
       if (option.kind === 'areas' && !Object.keys(ctx.hass.areas ?? {}).length) return nothing;
+      // a choice that cannot act as the dashboard stands (a photo's own, the rooms as tiles) is not offered
+      if (option.kind === 'choice' && option.when?.(strategy) === false) return nothing;
       if (option.kind === 'views')
         return html`<p class="fv-label pn-label">${ctx.t(option.label)}</p>
           <div class="pn-rows">

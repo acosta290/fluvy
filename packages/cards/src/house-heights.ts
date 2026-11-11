@@ -183,7 +183,10 @@ function sensor(config: SensorCardConfig, hass: HomeAssistant): number {
 const clock = (config: ClockCardConfig, hass: HomeAssistant): number =>
   clockHeight(config, !config.weather || offersDaily(hass.states[config.weather]));
 
-/** What the room holds, its picture, and who reads the empty panel's hint; a room the registry does not know, none. */
+/**
+ * What the room holds, its picture, who reads the empty panel's hint and in whose language its readouts' words are
+ * said (the rows they take where they must stay); a room the registry does not know, none.
+ */
 function room(config: RoomCardConfig, hass: HomeAssistant): number {
   const areaId = typeof config.area === 'string' ? config.area : '';
   const area = areaId && hass.states ? hass.areas?.[areaId] : undefined;
@@ -194,6 +197,7 @@ function room(config: RoomCardConfig, hass: HomeAssistant): number {
           found: areaContents(hass, areaId, config),
           picture: Boolean(area.picture),
           admin: Boolean(hass.user?.is_admin),
+          reader: hass,
         }
       : undefined,
   );
