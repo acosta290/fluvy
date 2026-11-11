@@ -2816,6 +2816,8 @@
     "editor.app": "Платформа",
     "editor.source": "Источник медиаплеера",
     "editor.key": "Кнопка",
+    "editor.activity": "Ссылка Android TV",
+    "editor.activity_helper": "Чем Android TV Remote открывает приложение: прямая ссылка, например netflix:// (надёжный способ), или идентификатор приложения",
     "editor.commands": "Команды этого устройства",
     "editor.commands_helper": "Кнопка и команда, которую устройство принимает для неё, вместо команды из встроенной таблицы (back: KEY_RETURN)"
   },
