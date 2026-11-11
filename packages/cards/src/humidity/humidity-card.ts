@@ -378,7 +378,7 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     const fitted = this.head.fit({
       width,
       title: name,
-      sub: this.config?.subtitle ?? view.areaName,
+      ...this.subtitle(view.areaName),
       badge: { text: badgeText, tone },
     });
 

@@ -115,23 +115,59 @@ const card = (g: Gauge, level: string, more: Record<string, unknown> = {}): Love
   ...more,
 });
 
-const states: StateSeed[] = GAUGES.flatMap((g) => [
-  ...g.values.map(([value], i): StateSeed => [
-    id(g, LEVELS[i] as string),
-    String(value),
-    { friendly_name: g.name, ...g.reads, ...MEASURE },
-  ]),
-  [id(g, 'away'), 'unavailable', { friendly_name: g.name, ...g.reads, ...MEASURE }],
-]);
+/**
+ * The home battery of Discussion #156, as the design page's section 7 draws it: its charge on the liquid, the energy it
+ * holds as the card's line (an entity) and what it has left at the house's load as its badge (a template reading a
+ * template sensor's words).
+ */
+const BATTERY: LovelaceCardConfig = {
+  type: 'custom:fluvy-gauge-card',
+  entity: 'sensor.am_home_battery',
+  name: 'Home battery',
+  gauge: 'liquid',
+  subtitle: 'sensor.am_home_battery_energy',
+  badge: "{{ states('sensor.am_home_battery_runtime') }} left",
+};
 
-const history = Object.fromEntries(
-  GAUGES.flatMap((g) =>
-    g.values.map(([value, rise], i) => [
+const states: StateSeed[] = [
+  ...GAUGES.flatMap((g): StateSeed[] => [
+    ...g.values.map(([value], i): StateSeed => [
       id(g, LEVELS[i] as string),
-      day(value, rise, rise ? 0 : value * 0.04),
+      String(value),
+      { friendly_name: g.name, ...g.reads, ...MEASURE },
     ]),
+    [id(g, 'away'), 'unavailable', { friendly_name: g.name, ...g.reads, ...MEASURE }],
+  ]),
+  [
+    'sensor.am_home_battery',
+    '52',
+    {
+      friendly_name: 'Home battery',
+      unit_of_measurement: '%',
+      device_class: 'battery',
+      ...MEASURE,
+    },
+  ],
+  [
+    'sensor.am_home_battery_energy',
+    '7.4',
+    { friendly_name: 'Battery energy', unit_of_measurement: 'kWh', device_class: 'energy_storage' },
+  ],
+  ['sensor.am_home_battery_runtime', '3 h 20 min', { friendly_name: 'Battery runtime' }],
+  ['sensor.am_home_battery_energy_away', 'unavailable', { friendly_name: 'Battery energy' }],
+];
+
+const history = {
+  ...Object.fromEntries(
+    GAUGES.flatMap((g) =>
+      g.values.map(([value, rise], i) => [
+        id(g, LEVELS[i] as string),
+        day(value, rise, rise ? 0 : value * 0.04),
+      ]),
+    ),
   ),
-);
+  'sensor.am_home_battery': day(52, 0, 2),
+};
 
 const frames: FrameSpec[] = [
   // each gauge at the design page's values, a card each
@@ -186,6 +222,26 @@ const frames: FrameSpec[] = [
         cols: 6,
       },
     ],
+  },
+  // the battery's line and badge (Discussion #156): the badge beside the name where it fits, else stepped down into the
+  // line as its last part, which gives way first; the line a value, never cut. 152 is half a 320 section
+  ...[360, 266].map((width) => ({
+    title: `Moving · its line and badge · ${width}`,
+    width,
+    cards: [BATTERY],
+  })),
+  {
+    title: 'Moving · its line and badge · 152',
+    width: 320,
+    cards: [
+      { ...BATTERY, cols: 6 },
+      { ...BATTERY, subtitle: 'sensor.am_home_battery_runtime', badge: 'Discharging', cols: 6 },
+    ],
+  },
+  // the line's entity out of reach: its dash, the card its size
+  {
+    title: 'Moving · its line out of reach',
+    cards: [{ ...BATTERY, subtitle: 'sensor.am_home_battery_energy_away' }],
   },
 ];
 

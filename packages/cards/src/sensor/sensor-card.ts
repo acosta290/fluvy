@@ -623,14 +623,17 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     return named && named !== key ? named : '';
   }
 
-  /** "Temperature · last 24 h": the context (config, else the device class in Home Assistant's words) and the window. */
+  /**
+   * "Temperature · last 24 h": the context (config — words, an entity's state or a template's answer, nothing while it
+   * has none — else the device class in Home Assistant's words) and the window.
+   */
   private subLine(view: EntityView, title: string): string {
     const days = this.hours > 24 && this.hours % 24 === 0;
     const count = days ? this.hours / 24 : this.hours;
     const window = plural(this.hass, days ? 'sensor.window_days' : 'sensor.window_hours', count, {
       count,
     });
-    let context = this.config?.subtitle ?? '';
+    let context = this.ownText(this.config?.subtitle, false)?.text ?? '';
     if (this.config?.subtitle === undefined) {
       const named = this.measureWord(view);
       if (named && !title.toLocaleLowerCase().includes(named.toLocaleLowerCase())) context = named;
@@ -734,21 +737,21 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
     const tone = this.toneOf(view);
     const title = this.nameFor(view, this.config?.name);
     const usable = isUsable(view);
-    // "Unavailable" is said once, here; a sensor that is a word has no window to speak of
-    const sub =
-      view.status !== 'ok'
-        ? stateText(this.hass, view)
-        : view.number === null
-          ? (this.config?.subtitle ?? view.areaName)
-          : this.subLine(view, title);
-    // what gives way has the head's order: the sub's last parts, then the circle, before the name is cut; a state is
-    // never cut ("Entity not found" is "Not found" in a narrow column)
+    // "Unavailable" is said once, here; a sensor that is a word has no window to speak of, and its line is the card's
+    // own. What gives way has the head's order: the sub's last parts, then the circle, before the name is cut; a state
+    // is never cut ("Entity not found" is "Not found" in a narrow column), nor a value
     const fitted = this.headFit.fit({
       width: this.contentWidth,
       title,
-      sub,
+      ...(view.status !== 'ok'
+        ? {
+            sub: stateText(this.hass, view),
+            shorter: view.status === 'missing' ? [stateWord(this.hass, view)] : [],
+          }
+        : view.number === null
+          ? this.subtitle(view.areaName)
+          : { sub: this.subLine(view, title) }),
       trailing: 44,
-      shorter: view.status === 'missing' ? [stateWord(this.hass, view)] : [],
     });
     const header = head({
       icon: fitted.icon ? iconOf(view, this.config?.icon) : null,

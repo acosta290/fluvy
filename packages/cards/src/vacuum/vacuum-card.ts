@@ -356,17 +356,18 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
             time: formatTime(this.hass, new Date(view.stateObj.last_changed)),
           })
         : '';
-    const sub =
-      this.config?.subtitle ??
-      (view.areaName && started
+    const { sub, shorter } = this.subtitle(
+      view.areaName && started
         ? `${view.areaName} · ${started}`
-        : view.areaName || started.charAt(0).toUpperCase() + started.slice(1));
+        : view.areaName || started.charAt(0).toUpperCase() + started.slice(1),
+    );
     const batteryText = `${this.t('vacuum.battery')} · ${battery === null ? '—' : `${formatNumber(this.hass, battery, { digits: 0 })} %`}`;
     // the head fitted to its column: the badge steps aside before the name is cut, then the sub, then the icon
     const fitted = this.head.fit({
       width: w,
       title: name,
       sub: headSub(sub, w),
+      shorter,
       badge: { text: shownStateText(this.hass, view, shown), tone },
     });
     // the commands in equal cells, two rows where one would leave a cell under a finger's 44

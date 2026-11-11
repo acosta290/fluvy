@@ -511,17 +511,18 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
         : nothing;
 
     const classLabel = coverClassLabel(this.hass, view.domain, view.deviceClass);
-    const sub =
-      this.config?.subtitle ??
-      (view.areaName
+    const { sub, shorter } = this.subtitle(
+      view.areaName
         ? [view.areaName, classLabel].filter(Boolean).join(' · ')
-        : classLabel.charAt(0).toUpperCase() + classLabel.slice(1));
+        : classLabel.charAt(0).toUpperCase() + classLabel.slice(1),
+    );
 
     // the head fitted to its column: the badge steps aside before the name is cut, then the sub, then the icon
     const fitted = this.head.fit({
       width: this.contentWidth,
       title: name,
       sub: headSub(sub, this.contentWidth),
+      shorter,
       badge: { text: shownStateText(this.hass, view, shown), tone },
     });
     // the commands in equal cells, two rows where one would leave a cell under a finger's 44

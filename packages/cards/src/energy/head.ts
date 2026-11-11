@@ -34,8 +34,13 @@ export interface HeadFitOptions {
    * lets the line go, as a lesser element does before a word is cut.
    */
   readonly shorter?: readonly string[];
-  /** The badge that trails the titles, if any. */
-  readonly badge?: { readonly text: string; readonly tone: Tone } | null | undefined;
+  /**
+   * The badge that trails the titles, if any. `own`: the person's own (a card's `badge`), said nowhere else on the
+   * card — where it gives way it steps down into the sub as its last segment (Discussion #156), and the sub's rule
+   * fits it from there; the card's own badge says what its body says too, and gives way.
+   */
+  readonly badge?:
+    { readonly text: string; readonly tone: Tone; readonly own?: boolean } | null | undefined;
   /** Width of a fixed trailing element instead (a 44 round, a 96 nav pair). */
   readonly trailing?: number;
   /**
@@ -125,6 +130,16 @@ export class HeadFit implements ReactiveController {
         keepBadge = false;
         trailing = 0;
       }
+    }
+    // the person's own badge that gave way steps down into the sub as its last segment, which goes first and whole, as a
+    // badge does; alone there (no sub, or a held blank line it takes the place of) it is whole or none
+    if (!keepBadge && o.badge?.own) {
+      const line = o.sub?.trim();
+      return this.fit({
+        ...o,
+        badge: null,
+        ...(line ? { sub: `${line} · ${o.badge.text}` } : { sub: o.badge.text, shorter: [''] }),
+      });
     }
     let sub = o.sub ? this.fitSub(o.sub, room()) : '';
 

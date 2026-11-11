@@ -158,8 +158,7 @@
     "repeat_single": "Eén herhalen",
     "artwork": "Albumhoes",
     "editor_image_mode": "Eigen afbeelding tonen",
-    "o_fallback": "Zonder hoes",
-    "editor_secondary_helper": "Je eigen woorden, een sjabloon of een entiteit zoals sensor.tv_status"
+    "o_fallback": "Zonder hoes"
   },
   "energy": {
     "solar": "Zon",
@@ -459,6 +458,7 @@
     "since_pattern": "Laatste wijziging uit, voor elke rij",
     "since_pattern_help": "Een sensor-id voor de rijen die er geen noemen: {id} is de object-id van de rij, {entity} zijn hele id — sensor.{id}_real_last_changed",
     "template_helper": "Je eigen woorden, of een sjabloon zoals {{ states('sensor.x') }}",
+    "own_text_helper": "Je eigen woorden, een entiteit (de status ervan) of een sjabloon zoals {{ states('sensor.x') }}",
     "sub_entity": "Entiteiten op de tweede regel",
     "plain": "Geen balk",
     "sub": "Context",

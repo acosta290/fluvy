@@ -1061,6 +1061,7 @@
     "since_pattern": "Ostatnia zmiana z, dla każdego wiersza",
     "since_pattern_help": "Identyfikator czujnika dla wierszy, które go nie podają: {id} to object id wiersza, {entity} jego pełny identyfikator — sensor.{id}_real_last_changed",
     "template_helper": "Własny tekst lub szablon, np. {{ states('sensor.x') }}",
+    "own_text_helper": "Własny tekst, encja (jej stan) lub szablon, np. {{ states('sensor.x') }}",
     "sub_entity": "Encje w drugim wierszu",
     "plain": "Bez paska",
     "sub": "Kontekst",
@@ -1777,8 +1778,7 @@
     "repeat_single": "Powtarzaj utwór",
     "artwork": "Okładka albumu",
     "editor_image_mode": "Wyświetlany własny obraz",
-    "o_fallback": "Bez okładki",
-    "editor_secondary_helper": "Własny tekst, szablon albo encja, np. sensor.tv_status"
+    "o_fallback": "Bez okładki"
   },
   "meters": {
     "title": "Woda i gaz",

@@ -1,6 +1,5 @@
 import {
   actionRuns,
-  formatNumber,
   isActive,
   isUsable,
   lightDefaults,
@@ -43,6 +42,7 @@ import { fitLine, TextRuler, type Segment } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { NAME_LINE, twoLines } from '../shared/heights.js';
+import { shorterForms } from '../shared/secondary.js';
 import { changedAt, sinceIds } from '../shared/since.js';
 import {
   NUMBERS,
@@ -147,35 +147,6 @@ export const ruled = (view: EntityView): boolean =>
 
 /** A tile's ruler is short: its ticks are 1/12 and 1/4, or one a step up to twelve steps (`ticksOf`). */
 const TILE_TICKS = 12;
-
-/** From five figures a whole count has short words for its size ("10K"): under them they save nothing. */
-const SHORT_FROM = 10_000;
-
-/**
- * A reading's shorter forms, longest first, for a line too narrow for it whole (#93): a large whole count in the
- * house's short words for its size, with its unit and then without ("5.1M queries", "5.1M"), else the figure without
- * its unit ("12,345.67"); a moment as long ago as it was ("12 days ago", "12 d ago"). `text` is the reading as Home
- * Assistant writes it. A figure keeps the decimals the person asked for (its display precision): never in short words.
- */
-function shorterForms(hass: HomeAssistant | undefined, view: EntityView, text: string): string[] {
-  if (view.status !== 'ok') return [];
-  if (view.deviceClass === 'timestamp') {
-    const at = new Date(view.state);
-    if (!Number.isFinite(at.getTime())) return [];
-    return [...new Set([relativeTime(hass, at), relativeTime(hass, at, new Date(), true)])];
-  }
-  const n = view.number;
-  if (n === null) return [];
-  const unit = view.unit;
-  // the figure as it is written, and what stands between it and its unit (a space, or none before "%")
-  const bare = unit && text.endsWith(unit) ? text.slice(0, -unit.length).trimEnd() : '';
-  const gap = bare ? text.slice(bare.length, -unit.length) : ' ';
-  const precision = hass?.entities?.[view.id]?.display_precision;
-  const whole = typeof precision === 'number' ? precision === 0 : Number.isInteger(n);
-  if (!whole || Math.abs(n) < SHORT_FROM) return bare ? [bare] : [];
-  const short = formatNumber(hass, n, { compact: true });
-  return unit ? [`${short}${gap}${unit}`, short] : [short];
-}
 
 /** What a large tile's foot ruler sets (`level`): where the entity stands on its scale, and the call that sets it. */
 export interface TileLevel {

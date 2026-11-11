@@ -47,10 +47,10 @@ import {
   formLabels,
   nameIconFields,
   onlyWhen,
+  ownTextField,
   rowItems,
   selectField,
   showIconField,
-  textField,
 } from '../shared/form.js';
 
 import { changedLine, changedShort, RowsCard, type RowsCardConfig } from './rows.js';
@@ -216,7 +216,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         entityField(['lock']),
         nameIconFields(),
         showIconField(),
-        fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
+        fieldRow(ownTextField('subtitle'), selectField('variant', ['full', 'compact'])),
         onlyWhen(drawsRows, boolField('show_rows')),
         entitiesField('rows'),
         ...colourFields(),
@@ -561,8 +561,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     const fitted = this.headFit.fit({
       width: this.contentWidth,
       title: name,
-      sub: this.config?.subtitle ?? changedLine(this.hass, view),
-      shorter: this.config?.subtitle === undefined ? changedShort(this.hass, view) : [],
+      ...this.subtitle(changedLine(this.hass, view), changedShort(this.hass, view)),
       badge: { text: shown, tone },
     });
     return html`<article

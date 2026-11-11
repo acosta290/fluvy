@@ -408,6 +408,7 @@
     "since_pattern": "各行の最終変更の取得元",
     "since_pattern_help": "取得元を指定していない行のセンサーID：{id}は行のオブジェクトID、{entity}は完全なID（sensor.{id}_real_last_changed）",
     "template_helper": "任意の文、または {{ states('sensor.x') }} のようなテンプレート",
+    "own_text_helper": "任意の文、エンティティ（その状態）、または {{ states('sensor.x') }} のようなテンプレート",
     "sub_entity": "2行目のエンティティ",
     "plain": "バーなし",
     "sub": "補足",
@@ -2162,8 +2163,7 @@
     "repeat_single": "1曲リピート",
     "artwork": "アルバムアート",
     "editor_image_mode": "独自の画像を表示",
-    "o_fallback": "アートワークがないとき",
-    "editor_secondary_helper": "任意の文、テンプレート、または sensor.tv_status のようなエンティティ"
+    "o_fallback": "アートワークがないとき"
   },
   "now-playing": {
     "progress": "{position} / {duration}",

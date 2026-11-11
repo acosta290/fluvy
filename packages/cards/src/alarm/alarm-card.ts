@@ -42,10 +42,10 @@ import {
   formLabels,
   nameIconFields,
   orderedField,
+  ownTextField,
   rowItems,
   selectField,
   showIconField,
-  textField,
 } from '../shared/form.js';
 
 import './keypad.js';
@@ -281,7 +281,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
         entityField(['alarm_control_panel']),
         nameIconFields(),
         showIconField(),
-        fieldRow(textField('subtitle'), selectField('variant', ['tiles', 'compact'])),
+        fieldRow(ownTextField('subtitle'), selectField('variant', ['tiles', 'compact'])),
         // every mode until the panel is known, then its own (`choices`), dragged into the order they show in
         orderedField(
           'modes',
@@ -547,8 +547,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     const fitted = this.headFit.fit({
       width: this.contentWidth,
       title: name,
-      sub: this.config?.subtitle ?? changedLine(this.hass, view),
-      shorter: this.config?.subtitle === undefined ? changedShort(this.hass, view) : [],
+      ...this.subtitle(changedLine(this.hass, view), changedShort(this.hass, view)),
       badge: {
         text: state.startsWith('armed_') ? s(this.hass, 'armed') : stateText(this.hass, view),
         tone,

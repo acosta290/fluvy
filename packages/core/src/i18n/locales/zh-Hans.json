@@ -1627,6 +1627,7 @@
     "since_pattern": "所有行的最近变化来源",
     "since_pattern_help": "未指定来源的行所用的传感器 ID：{id} 为行对象 id，{entity} 为其完整 id — sensor.{id}_real_last_changed",
     "template_helper": "自定义文字，或模板，如 {{ states('sensor.x') }}",
+    "own_text_helper": "自定义文字、实体（其状态），或模板，如 {{ states('sensor.x') }}",
     "sub_entity": "第二行上的实体",
     "plain": "无进度条",
     "sub": "上下文",
@@ -2219,8 +2220,7 @@
     "repeat_single": "单曲循环",
     "artwork": "专辑封面",
     "editor_image_mode": "显示自有图片",
-    "o_fallback": "无封面时",
-    "editor_secondary_helper": "自定义文字、模板，或 sensor.tv_status 这类实体"
+    "o_fallback": "无封面时"
   },
   "now-playing": {
     "progress": "{position}，共 {duration}",

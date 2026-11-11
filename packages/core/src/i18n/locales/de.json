@@ -158,8 +158,7 @@
     "repeat_single": "Titel wiederholen",
     "artwork": "Albumcover",
     "editor_image_mode": "Eigenes Bild zeigen",
-    "o_fallback": "Ohne Cover",
-    "editor_secondary_helper": "Eigene Worte, ein Template oder eine Entität wie sensor.tv_status"
+    "o_fallback": "Ohne Cover"
   },
   "energy": {
     "solar": "Solar",
@@ -459,6 +458,7 @@
     "since_pattern": "Letzte Änderung aus, für jede Zeile",
     "since_pattern_help": "Eine Sensor-ID für die Zeilen ohne eigene: {id} ist die Objekt-ID der Zeile, {entity} ihre ganze ID — sensor.{id}_real_last_changed",
     "template_helper": "Eigene Worte oder ein Template wie {{ states('sensor.x') }}",
+    "own_text_helper": "Eigene Worte, eine Entität (ihr Zustand) oder ein Template wie {{ states('sensor.x') }}",
     "sub_entity": "Entitäten in der zweiten Zeile",
     "plain": "Ohne Balken",
     "sub": "Kontext",

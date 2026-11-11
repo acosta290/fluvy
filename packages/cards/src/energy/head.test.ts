@@ -242,3 +242,61 @@ describe('a line that is not cut (1.9): its shorter forms, a row’s words, an e
     expect(fit.emptyText('Nog geen geschiedenis', 112)).toBe('Nog geen geschiedenis');
   });
 });
+
+describe('a badge of the person’s own (Discussion #156)', () => {
+  /** The ruler nearer the head's faces: a title's glyph 8 px, a sub's 6, a badge's 7 and its sides. */
+  function faces(): HeadFit {
+    const fit = fitter();
+    Object.assign(fit as unknown as { ruler: unknown }, {
+      ruler: {
+        width: (cls: string, text: string) => text.length * (cls === 'fv-card__sub' ? 6 : 8),
+        pill: (_class: string, text: string, sides: number) => text.length * 7 + sides,
+        clear() {},
+      },
+    });
+    return fit;
+  }
+  // the reporter's battery: its stored energy the sub, its runtime the badge (the design page's section 7)
+  const head = {
+    title: 'Home battery',
+    sub: '7.4 kWh',
+    badge: { text: '3 h 20 min left', tone: 'accent' as const, own: true },
+  };
+
+  it('stays beside the name at 360', () => {
+    // 320 − 56 − (133 + 12) leaves 119 for the 96 of the name
+    const fitted = faces().fit({ ...head, width: 320 });
+    expect(fitted.badge).not.toBe(nothing);
+    expect(fitted.sub).toBe('7.4 kWh');
+    expect(fitted.icon).toBe(true);
+  });
+
+  it('steps down into the sub as its last segment at 266, where it would leave the name no room', () => {
+    // 226 − 56 − 145 leaves 25: the badge goes, and the sub (150) holds it in its 170
+    const fitted = faces().fit({ ...head, width: 226 });
+    expect(fitted.badge).toBe(nothing);
+    expect(fitted.sub).toBe('7.4 kWh · 3 h 20 min left');
+    expect(fitted.icon).toBe(true);
+  });
+
+  it('gives way from the sub first at 152, as the sub’s last segment does; the circle gives the name its room', () => {
+    const fitted = faces().fit({ ...head, width: 112 });
+    expect(fitted.badge).toBe(nothing);
+    expect(fitted.sub).toBe('7.4 kWh');
+    expect(fitted.icon).toBe(false);
+  });
+
+  it('takes a held blank line’s place, and is the sub where the card has none: whole, or none', () => {
+    expect(faces().fit({ ...head, sub: ' ', width: 226 }).sub).toBe('3 h 20 min left');
+    expect(faces().fit({ ...head, sub: undefined, width: 226 }).sub).toBe('3 h 20 min left');
+    // 204 in the 112 of half a section: a badge is never cut
+    const long = { ...head.badge, text: 'About 3 h 20 min left at this load' };
+    expect(faces().fit({ ...head, sub: undefined, badge: long, width: 112 }).sub).toBe('');
+  });
+
+  it('leaves the card’s own badge to give way as before: it says what the body says', () => {
+    const fitted = faces().fit({ ...head, badge: { ...head.badge, own: false }, width: 226 });
+    expect(fitted.badge).toBe(nothing);
+    expect(fitted.sub).toBe('7.4 kWh');
+  });
+});

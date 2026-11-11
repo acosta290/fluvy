@@ -158,8 +158,7 @@
     "repeat_single": "Repetir faixa",
     "artwork": "Capa do álbum",
     "editor_image_mode": "Mostrar a imagem personalizada",
-    "o_fallback": "Sem capa",
-    "editor_secondary_helper": "As suas próprias palavras, um modelo ou uma entidade, como sensor.tv_status"
+    "o_fallback": "Sem capa"
   },
   "energy": {
     "solar": "Solar",
@@ -459,6 +458,7 @@
     "since_pattern": "Última alteração de, para cada linha",
     "since_pattern_help": "Um ID de sensor para as linhas que não indicam nenhum: {id} é o ID de objeto da linha, {entity} o seu ID completo — sensor.{id}_real_last_changed",
     "template_helper": "As suas próprias palavras ou um modelo, como {{ states('sensor.x') }}",
+    "own_text_helper": "As suas próprias palavras, uma entidade (o seu estado) ou um modelo, como {{ states('sensor.x') }}",
     "sub_entity": "Entidades na segunda linha",
     "plain": "Sem barra",
     "sub": "Contexto",

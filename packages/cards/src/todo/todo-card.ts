@@ -459,9 +459,8 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
       this.config?.show_add !== false;
     // "3 of 5 left", or "3 left" where not even the circle's room holds it beside the "+": a count is never cut
     const left = this.t('todo.left', { left: open.length, total: items.length });
-    const sub =
-      this.config?.subtitle ??
-      (unusable
+    const line = this.subtitle(
+      unusable
         ? stateText(this.hass, view)
         : this.items_ === null || !items.length
           ? view.areaName
@@ -469,13 +468,14 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
             ? this.head.ruler.width('fv-card__sub', left) <= this.contentWidth - (adds ? 56 : 0)
               ? left
               : this.t('common.left', { count: open.length })
-            : s(this.hass, 'all_done'));
+            : s(this.hass, 'all_done'),
+    );
     const adding = this.adding_ && canCreate && adds;
     // the circle gives way where that makes the list's name whole, never the "+" (a control never gives way)
     const fitted = this.head.fit({
       width: this.contentWidth,
       title: name,
-      sub: sub ?? '',
+      ...line,
       ...(adds ? { trailing: 44 } : {}),
     });
 

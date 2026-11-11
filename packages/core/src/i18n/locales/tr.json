@@ -158,8 +158,7 @@
     "repeat_single": "Birini yinele",
     "artwork": "Albüm kapağı",
     "editor_image_mode": "Kendi resmini göster",
-    "o_fallback": "Kapak yokken",
-    "editor_secondary_helper": "Kendi sözcükleriniz, bir şablon veya sensor.tv_status gibi bir varlık"
+    "o_fallback": "Kapak yokken"
   },
   "energy": {
     "solar": "Güneş",
@@ -459,6 +458,7 @@
     "since_pattern": "Her satır için son değişiklik kaynağı",
     "since_pattern_help": "Kendi kaynağını belirtmeyen satırlar için bir sensör kimliği: {id} satırın nesne kimliği, {entity} tam kimliği — sensor.{id}_real_last_changed",
     "template_helper": "Kendi sözcükleriniz veya {{ states('sensor.x') }} gibi bir şablon",
+    "own_text_helper": "Kendi sözcükleriniz, bir varlık (durumu) veya {{ states('sensor.x') }} gibi bir şablon",
     "sub_entity": "İkinci satırdaki varlıklar",
     "plain": "Çubuksuz",
     "sub": "Bağlam",

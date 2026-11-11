@@ -28,10 +28,10 @@ import {
   fieldRow,
   nameIconFields,
   numberField,
+  ownTextField,
   rowItems,
   selectField,
   showIconField,
-  textField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
@@ -135,7 +135,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
         entityField(['camera']),
         nameIconFields(),
         showIconField(),
-        textField('subtitle'),
+        ownTextField('subtitle'),
         fieldRow(
           selectField('camera_view', ['auto', 'live']),
           numberField('refresh', 0.5, 300, 0.5),
@@ -245,11 +245,13 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     const offText = unusable ? stateText(this.hass, view) : s(this.hass, 'offline');
     const offLines =
       this.headFit.ruler.width('dv-cam__off p', offText) > this.contentWidth - 32 ? 2 : 1;
-    const sub =
-      this.config?.subtitle ??
-      [view.areaName, stateText(this.hass, view)].filter(Boolean).join(' · ');
     // the head gives way in its order (the sub's last parts, then the circle) before the name is cut
-    const fitted = this.headFit.fit({ width: this.contentWidth, title: name, sub, trailing: 44 });
+    const fitted = this.headFit.fit({
+      width: this.contentWidth,
+      title: name,
+      ...this.subtitle([view.areaName, stateText(this.hass, view)].filter(Boolean).join(' · ')),
+      trailing: 44,
+    });
     // a live card whose stream could not play says so in the pill's place ("Stream unavailable"), the stills showing
     // meanwhile and the stream asked for again after its wait
     const liveText = s(this.hass, this.feed.unplayable ? 'stream_failed' : 'live');

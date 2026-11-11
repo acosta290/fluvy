@@ -343,6 +343,27 @@ rows:
     since: attribute:last_opened
 ```
 
+## A card's own line and badge
+
+A card's `subtitle` — the gauge's, the humidity's, the sensor's, the thermostat's, the cover's, the fan's, the
+vacuum's, the lock's, the alarm's, the camera's and the to-do list's — and the gauge's `badge` take your words, an
+entity or a template, as the media card's `secondary` does. An entity the house has is said as Home Assistant says its
+state, with its unit ("7.4 kWh"), a moment as its date and time, a dash while it cannot be read; it is a value, so a
+column too narrow for it gets its shorter form ("in 3 h"), then nothing, never a cut. A template (`{{ … }}` or `{% …
+%}`) is rendered by Home Assistant and kept live, the card's entity `entity` in it; a line holds its place until it
+answers and a badge waits, never showing the template itself. A word that only looks like an entity's id stays as you
+wrote it, and your words that do not fit lose their last ` · ` parts, then end in an ellipsis. A badge of your own
+that does not fit beside the name steps down into the line as its last part ("7.4 kWh · 3 h 20 min left"), the first
+to go there; the card's own ("Idle", "Producing") gives way, as the body says it too.
+
+```yaml
+type: custom:fluvy-gauge-card
+entity: sensor.battery_soc
+gauge: liquid
+subtitle: sensor.battery_energy # an entity: "7.4 kWh"
+badge: "{{ states('sensor.battery_runtime') }} left" # a template, kept live
+```
+
 ## Pictures of your own
 
 The thermostat, the media and the appliance cards take a picture of your own, `image`: an address (`/local/tv.png` for

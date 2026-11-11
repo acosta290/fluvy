@@ -105,8 +105,12 @@ export class TemplateTexts implements ReactiveController {
     return this.feeds.get(key);
   }
 
+  /**
+   * Back on the page: the render asks again, and `hostUpdated` subscribes — where it had asked for any. One made during
+   * a render, by the first template a card asks for (`Card.ownText`), has nothing to ask again: that render asks.
+   */
   hostConnected(): void {
-    this.host.requestUpdate(); // back on the page: the render asks again, and `hostUpdated` subscribes
+    if (this.asked.size || this.feeds.size) this.host.requestUpdate();
   }
 
   hostDisconnected(): void {

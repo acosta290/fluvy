@@ -158,8 +158,7 @@
     "repeat_single": "Ripeti brano",
     "artwork": "Copertina",
     "editor_image_mode": "Mostra l’immagine propria",
-    "o_fallback": "Senza copertina",
-    "editor_secondary_helper": "Parole tue, un template o un’entità come sensor.tv_status"
+    "o_fallback": "Senza copertina"
   },
   "energy": {
     "solar": "Solare",
@@ -459,6 +458,7 @@
     "since_pattern": "Ultima modifica da, per ogni riga",
     "since_pattern_help": "Un ID di sensore per le righe che non ne indicano uno: {id} è l’ID oggetto della riga, {entity} il suo ID intero — sensor.{id}_real_last_changed",
     "template_helper": "Parole tue, o un template come {{ states('sensor.x') }}",
+    "own_text_helper": "Parole tue, un’entità (il suo stato) o un template come {{ states('sensor.x') }}",
     "sub_entity": "Entità sulla seconda riga",
     "plain": "Senza barra",
     "sub": "Contesto",

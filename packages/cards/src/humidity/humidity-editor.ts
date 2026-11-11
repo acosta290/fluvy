@@ -11,9 +11,9 @@ import {
   nameField,
   numberField,
   onlyWhen,
+  ownTextField,
   selectField,
   showIconField,
-  textField,
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
@@ -48,7 +48,7 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       entityField(['sensor', 'number', 'input_number']),
-      fieldRow(nameField(), textField('subtitle')),
+      fieldRow(nameField(), ownTextField('subtitle')),
       fieldRow(iconField(), showIconField()),
       ...colourFields(),
       fieldRow(numberField('low', 0, 100), numberField('high', 0, 100)),

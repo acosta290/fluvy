@@ -10,6 +10,7 @@ import {
   formLabels,
   nameIconFields,
   orderedField,
+  ownTextField,
   selectField,
   showIconField,
   textField,
@@ -82,7 +83,7 @@ export function getConfigForm(): LovelaceConfigForm {
       nameIconFields(),
       // the person's own picture in the circle's place: an address, or an entity whose picture it is
       textField('image'),
-      fieldRow(textField('subtitle'), showIconField()),
+      fieldRow(ownTextField('subtitle'), showIconField()),
       fieldRow(selectField('variant', ['dial', 'compact', 'ruler']), boolField('show_stepper')),
       fieldRow(boolField('show_modes'), selectField('modes_style', ['tiles', 'chips', 'full'])),
       // a climate's seven until the entity is known: then its own (`choices`), dragged into the order they show in

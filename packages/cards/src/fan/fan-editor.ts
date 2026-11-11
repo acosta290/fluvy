@@ -8,10 +8,10 @@ import {
   fieldRow,
   formLabels,
   nameIconFields,
+  ownTextField,
   selectField,
   showIconField,
   sliderFields,
-  textField,
   whenOffField,
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
@@ -50,7 +50,7 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(['fan']),
       nameIconFields(),
       showIconField(),
-      fieldRow(textField('subtitle'), selectField('variant', ['full', 'compact'])),
+      fieldRow(ownTextField('subtitle'), selectField('variant', ['full', 'compact'])),
       boolField('show_stepper'),
       fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
       fieldRow(boolField('show_oscillation'), boolField('show_direction')),

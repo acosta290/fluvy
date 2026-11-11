@@ -124,6 +124,14 @@ export const entityField = (
 });
 
 export const textField = (name: string): HaFormSchemaItem => ({ name, selector: { text: {} } });
+/**
+ * A text of the card's own that may be live (`Card.ownText`, Discussion #156): words, an entity's id or a template,
+ * typed, as its helper says (a template is no entity, so Home Assistant's entity picker cannot take one).
+ */
+export const ownTextField = (name: string): HaFormSchemaItem => ({
+  ...textField(name),
+  helper: 'editor.own_text_helper',
+});
 export const iconField = (name = 'icon'): HaFormSchemaItem => ({ name, selector: { icon: {} } });
 /** An area of the house, from Home Assistant's own picker. */
 export const areaField = (name = 'area'): HaFormSchemaItem => ({

@@ -817,8 +817,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const tone: Tone = unusable ? 'off' : m.tone;
     const humidity = view.attr<number | null>('current_humidity');
     // the area where it says more than the name ("Garderobe / Garderobe" said it twice), and the room's humidity
-    const sub =
-      this.config?.subtitle ??
+    const line = this.subtitle(
       [
         view.areaName === name ? '' : view.areaName,
         m.kind === 'climate' && typeof humidity === 'number'
@@ -826,7 +825,8 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
           : '',
       ]
         .filter(Boolean)
-        .join(' · ');
+        .join(' · '),
+    );
     const isPct = m.unit === '%';
     const figure = (v: number): string =>
       formatNumber(this.hass, v, { digits: m.step < 1 ? 1 : 0, minDigits: m.step < 1 ? 1 : 0 });
@@ -846,7 +846,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const fitted = this.head.fit({
       width: this.contentWidth,
       title: name,
-      sub,
+      ...line,
       badge: { text: unusable ? stateText(this.hass, view) : m.badgeText, tone },
     });
     // out of reach, a mode, a preset and a fan speed keep their place at rest: the dashed tile or chip takes no tap

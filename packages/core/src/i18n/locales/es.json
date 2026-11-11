@@ -158,8 +158,7 @@
     "repeat_single": "Repetir una",
     "artwork": "Carátula",
     "editor_image_mode": "Mostrar la imagen propia",
-    "o_fallback": "Sin carátula",
-    "editor_secondary_helper": "Tus propias palabras, una plantilla o una entidad como sensor.tv_status"
+    "o_fallback": "Sin carátula"
   },
   "energy": {
     "solar": "Solar",
@@ -459,6 +458,7 @@
     "since_pattern": "Último cambio desde, para cada fila",
     "since_pattern_help": "Un ID de sensor para las filas que no indican ninguno: {id} es el ID de objeto de la fila, {entity} su ID completo — sensor.{id}_real_last_changed",
     "template_helper": "Tus propias palabras, o una plantilla como {{ states('sensor.x') }}",
+    "own_text_helper": "Tus propias palabras, una entidad (su estado) o una plantilla como {{ states('sensor.x') }}",
     "sub_entity": "Entidades en la segunda línea",
     "plain": "Sin barra",
     "sub": "Contexto",

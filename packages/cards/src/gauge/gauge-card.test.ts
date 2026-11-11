@@ -385,3 +385,135 @@ describe('the window’s row as the card asks it (issue #83)', () => {
     expect(gaugeEditor.keys).toEqual(expect.arrayContaining(['show_stats', 'stats']));
   });
 });
+
+describe('its line and its badge: words, an entity or a template (Discussion #156)', () => {
+  /** One `render_template` subscription: the template, where to answer, whether the card let it go. */
+  interface Open {
+    readonly message: Record<string, unknown>;
+    readonly answer: (event: unknown) => void;
+    released: boolean;
+  }
+  /** The house with the reporter's stored energy, written with its unit, and a socket that answers when told to. */
+  function battery(): { hass: HomeAssistant; open: Open[] } {
+    const open: Open[] = [];
+    const base = house();
+    const hass = {
+      ...base,
+      states: {
+        ...base.states,
+        'sensor.battery_energy': {
+          entity_id: 'sensor.battery_energy',
+          state: '7.4',
+          attributes: { unit_of_measurement: 'kWh', device_class: 'energy_storage' },
+          last_changed: '',
+          last_updated: '',
+        },
+      },
+      formatEntityState: (s: { state: string; attributes: Record<string, unknown> }) =>
+        `${s.state} ${String(s.attributes['unit_of_measurement'] ?? '')}`.trim(),
+      user: { id: 'u1', name: 'Marta', is_admin: false },
+      connection: {
+        subscribeMessage: (
+          callback: (event: unknown) => void,
+          message: Record<string, unknown>,
+        ) => {
+          const entry: Open = { message, answer: callback, released: false };
+          open.push(entry);
+          return Promise.resolve(() => {
+            entry.released = true;
+          });
+        },
+      },
+    } as unknown as HomeAssistant;
+    return { hass, open };
+  }
+  const sub = (card: CardElement): string | undefined =>
+    card.shadowRoot!.querySelector('.fv-card__sub')?.textContent ?? undefined;
+  const badge = (card: CardElement): string | undefined =>
+    card.shadowRoot!.querySelector('.fv-badge')?.textContent ?? undefined;
+  const settled = async (card: CardElement): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await card.updateComplete;
+  };
+
+  it('keeps words as they are written, a word that only looks like an entity’s id among them', async () => {
+    const { hass } = battery();
+    const card = await mount({ subtitle: 'South roof · 5.4 kWp', badge: 'Charging' }, hass);
+    expect([sub(card), badge(card)]).toEqual(['South roof · 5.4 kWp', 'Charging']);
+    const named = await mount({ subtitle: 'sensor.nowhere', badge: 'sensor.nowhere' }, hass);
+    expect([sub(named), badge(named)]).toEqual(['sensor.nowhere', 'sensor.nowhere']);
+    card.remove();
+    named.remove();
+  });
+
+  it('says an entity’s state with its unit, and says it again when it changes', async () => {
+    const { hass } = battery();
+    const card = await mount({ subtitle: 'sensor.battery_energy' }, hass);
+    expect(sub(card)).toBe('7.4 kWh');
+    // only the named entity moved: the card draws again for it, as for a watched one
+    const energy = hass.states['sensor.battery_energy']!;
+    card.hass = {
+      ...hass,
+      states: { ...hass.states, 'sensor.battery_energy': { ...energy, state: '7.6' } },
+    };
+    await card.updateComplete;
+    expect(sub(card)).toBe('7.6 kWh');
+    card.remove();
+  });
+
+  it('renders a template live for the card’s entity: blank before its first answer, never the template', async () => {
+    const { hass, open } = battery();
+    const card = await mount(
+      {
+        subtitle: "{{ states('sensor.battery_energy') }} kWh",
+        badge: "{{ states('sensor.battery_runtime') }} left",
+      },
+      hass,
+    );
+    // the line holds its place, the badge waits
+    expect([sub(card), badge(card)]).toEqual([' ', undefined]);
+    await settled(card);
+    expect(open.map((entry) => entry.message['variables'])).toEqual([
+      { entity: 'sensor.grid', user: 'Marta' },
+      { entity: 'sensor.grid', user: 'Marta' },
+    ]);
+    const asked = (word: string) =>
+      open.find((entry) => String(entry.message['template']).includes(word))!;
+    asked('energy').answer({ result: '7.4 kWh' });
+    asked('runtime').answer({ result: '3 h 20 min left' });
+    await card.updateComplete;
+    expect([sub(card), badge(card)]).toEqual(['7.4 kWh', '3 h 20 min left']);
+    asked('runtime').answer({ result: '3 h 5 min left' });
+    await card.updateComplete;
+    expect(badge(card)).toBe('3 h 5 min left');
+    // one subscription a template, kept while it is on the page, let go when it leaves
+    expect(open).toHaveLength(2);
+    card.remove();
+    expect(open.every((entry) => entry.released)).toBe(true);
+  });
+
+  it('says in the editor that either field takes an entity or a template', () => {
+    const fields = JSON.stringify(gaugeEditor.getConfigForm().schema);
+    for (const name of ['subtitle', 'badge'])
+      expect(fields).toContain(
+        `{"name":"${name}","selector":{"text":{}},"helper":"editor.own_text_helper"}`,
+      );
+  });
+
+  it('lets go of a template the config no longer asks for', async () => {
+    const { hass, open } = battery();
+    const card = await mount({ badge: "{{ states('sensor.battery_runtime') }} left" }, hass);
+    await settled(card);
+    card.setConfig({
+      type: 'custom:fluvy-gauge-card',
+      entity: 'sensor.grid',
+      variant: 'bar',
+      max: 5000,
+      badge: 'Charging',
+    });
+    await settled(card);
+    expect(badge(card)).toBe('Charging');
+    expect(open.map((entry) => entry.released)).toEqual([true]);
+    card.remove();
+  });
+});

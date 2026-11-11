@@ -1124,6 +1124,7 @@
     "since_pattern": "Posledná zmena z, pre každý riadok",
     "since_pattern_help": "Identifikátor snímača pre riadky bez vlastného: {id} je ID objektu riadku, {entity} je celé ID — sensor.{id}_real_last_changed",
     "template_helper": "Vlastný text alebo šablóna, napr. {{ states('sensor.x') }}",
+    "own_text_helper": "Vlastný text, entita (jej stav) alebo šablóna, napr. {{ states('sensor.x') }}",
     "sub_entity": "Entity v druhom riadku",
     "plain": "Bez pruhu",
     "sub": "Kontext",
@@ -2274,8 +2275,7 @@
     "repeat_single": "Opakovať jednu skladbu",
     "artwork": "Obal albumu",
     "editor_image_mode": "Zobrazenie vlastného obrázka",
-    "o_fallback": "Bez obalu",
-    "editor_secondary_helper": "Vlastný text, šablóna alebo entita, napr. sensor.tv_status"
+    "o_fallback": "Bez obalu"
   },
   "now-playing": {
     "progress": "{position} z {duration}",

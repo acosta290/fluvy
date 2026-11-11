@@ -506,18 +506,16 @@ export class FluvyFanCard extends Card<FanCardConfig> {
     // where the state's words would not hold beside the switch (es "Encendido" in half a section), the compact line
     // says the speed, else keeps its place, empty — never a word cut
     const short =
-      compact && this.config?.subtitle === undefined && (stated || !view.areaName)
-        ? [...(stated ? [percent] : []), '\u00a0']
-        : [];
+      compact && (stated || !view.areaName) ? [...(stated ? [percent] : []), '\u00a0'] : [];
     const fitted = this.head.fit({
       width: this.contentWidth,
       title: name,
-      sub:
-        this.config?.subtitle ??
-        (stated
+      ...this.subtitle(
+        stated
           ? `${stateText(this.hass, view)} · ${percent}`
-          : view.areaName || (unusable ? '' : stateText(this.hass, view))),
-      shorter: short,
+          : view.areaName || (unusable ? '' : stateText(this.hass, view)),
+        short,
+      ),
       ...(unusable
         ? { badge: { text: stateText(this.hass, view), tone: 'off' as const } }
         : { trailing: SWITCH_SLOT }),

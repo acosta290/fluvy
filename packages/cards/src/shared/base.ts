@@ -2,8 +2,10 @@ import {
   actionRuns,
   failedToLoad,
   FluvyCard,
+  isEntityId,
   type EntityView,
   type FluvyCardConfig,
+  type HomeAssistant,
   type LovelaceCardConfig,
   type LovelaceConfigForm,
 } from '@fluvy/core';
@@ -14,6 +16,8 @@ import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
+import { ownLine, type OwnLine } from './secondary.js';
+import { isTemplate, TemplateTexts } from './templates.js';
 
 /** What a card with a head honours of its circle (`HeadFit` reads it through `Card.showIcon`). */
 export interface HeadConfig {
@@ -160,6 +164,46 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
     fitPills(this.renderRoot);
+  }
+
+  /** The templates among the card's own texts (`ownText`), rendered by Home Assistant: made by the first one asked. */
+  private ownTexts: TemplateTexts | undefined;
+  /** The entities the card's own texts named in its last render: a change of one draws it again, as a watched one's. */
+  private readonly ownNamed = new Set<string>();
+
+  protected override shouldUpdate(changed: PropertyValues): boolean {
+    if (super.shouldUpdate(changed)) return true;
+    const before = (changed.get('hass') as HomeAssistant | undefined)?.states;
+    return [...this.ownNamed].some((id) => before?.[id] !== this.hass?.states[id]);
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    super.willUpdate(changed);
+    this.ownNamed.clear(); // the render names them again
+  }
+
+  /**
+   * A text of the card's own that may be live (Discussion #156): words, an entity's state or a template, as `ownLine`
+   * reads them, a template with the card's entity as `entity` — held as a blank line until Home Assistant answers, or
+   * nothing where `held` is false (a badge); an entity it names is watched while it does. Undefined where the config
+   * says none.
+   */
+  protected ownText(own: unknown, held = true): OwnLine | undefined {
+    if (isTemplate(own)) this.ownTexts ??= new TemplateTexts(this);
+    if (isEntityId(own)) this.ownNamed.add(own);
+    return ownLine(this.hass, own, this.ownTexts, this.config?.entity, held);
+  }
+
+  /**
+   * The head's line as `HeadFit.fit` takes it: the card's own `subtitle` (`ownText`), else `line` and its `shorter`
+   * forms.
+   */
+  protected subtitle(
+    line: string,
+    shorter: readonly string[] = [],
+  ): { readonly sub: string; readonly shorter: readonly string[] } {
+    const own = this.ownText((this.config as { subtitle?: unknown } | undefined)?.subtitle);
+    return own ? { sub: own.text, shorter: own.shorter } : { sub: line, shorter };
   }
 
   /** Whether the head's circle shows (`show_icon`); a value it does not know is `auto`, as none is. */

@@ -18,6 +18,7 @@ import {
   NUMBER_DEFAULTS,
   numberField,
   numberFields,
+  ownTextField,
   selectField,
   showIconField,
   textField,
@@ -126,7 +127,7 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       entityField(['sensor', 'number', 'input_number', 'counter']),
-      fieldRow(nameField(), textField('subtitle')),
+      fieldRow(nameField(), ownTextField('subtitle')),
       fieldRow(iconField(), showIconField()),
       ...colourFields(),
       fieldRow(selectField('variant', ['chart', 'tile']), numberField('hours', 1, 168)),

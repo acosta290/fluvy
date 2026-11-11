@@ -10,6 +10,7 @@ import {
   nameIconFields,
   numberField,
   onlyWhen,
+  ownTextField,
   selectField,
   showIconField,
   sliderFields,
@@ -62,7 +63,7 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(['cover', 'valve']),
       nameIconFields(),
       showIconField(),
-      fieldRow(textField('subtitle'), numberField('tilt_angle', 0, 360)),
+      fieldRow(ownTextField('subtitle'), numberField('tilt_angle', 0, 360)),
       fieldRow(
         selectField('variant', ['full', 'compact']),
         selectField('favorites_style', ['full', 'chips']),

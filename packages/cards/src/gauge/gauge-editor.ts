@@ -25,6 +25,7 @@ import {
   onlyWhen,
   optionChoices,
   orderedField,
+  ownTextField,
   selectField,
   showIconField,
   textField,
@@ -101,7 +102,7 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       entityField(['sensor', 'number', 'input_number', 'counter']),
-      fieldRow(nameField(), textField('subtitle')),
+      fieldRow(nameField(), ownTextField('subtitle')),
       fieldRow(iconField(), selectField('variant', GAUGE_VARIANTS)),
       // the ring's style: a bar and a signed ring have one look each; of the moving ones, those that read the sensor
       // (`choices`)
@@ -121,7 +122,7 @@ export function getConfigForm(): LovelaceConfigForm {
         name: 'max_entity',
         selector: { entity: { domain: ['sensor', 'number', 'input_number'] } },
       },
-      fieldRow(textField('label'), textField('badge')),
+      fieldRow(textField('label'), ownTextField('badge')),
       fieldRow(boolField('show_stats'), numberField('hours', 1, 168)),
       // the row's figures in their order, while it is shown
       onlyWhen(

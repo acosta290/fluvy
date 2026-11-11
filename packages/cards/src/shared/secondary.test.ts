@@ -1,7 +1,7 @@
 import { resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { stateSkin } from './domain.js';
-import { secondaryText } from './secondary.js';
+import { ownLine, secondaryText } from './secondary.js';
 import type { TemplateTexts } from './templates.js';
 
 const now = new Date(); // relativeTime reads the clock
@@ -132,5 +132,91 @@ describe('stateSkin', () => {
     const off = { usable: false, tone: 'off', value: '—', className: 'is-unavailable is-off' };
     expect(stateSkin(view('sensor.gone'))).toEqual(off);
     expect(stateSkin(view('sensor.missing'))).toEqual(off);
+  });
+});
+
+describe('a card’s own text (ownLine, Discussion #156)', () => {
+  const reading = (entity_id: string, state: string, attributes: Record<string, unknown> = {}) => ({
+    entity_id,
+    state,
+    attributes,
+    last_changed: now.toISOString(),
+  });
+  /** A house that writes a state as Home Assistant does: its figure and its unit, a moment as its date and time. */
+  const house = {
+    language: 'en',
+    locale: { language: 'en', number_format: 'language', time_format: '24' },
+    states: {
+      'sensor.battery_energy': reading('sensor.battery_energy', '7.4', {
+        unit_of_measurement: 'kWh',
+      }),
+      'sensor.queries': reading('sensor.queries', '51234', { unit_of_measurement: 'queries' }),
+      'sensor.next_alarm': reading(
+        'sensor.next_alarm',
+        new Date(now.getTime() + 3 * 3600_000).toISOString(),
+        { device_class: 'timestamp' },
+      ),
+      'sensor.runtime': reading('sensor.runtime', 'unavailable', { unit_of_measurement: 'min' }),
+    },
+    entities: {},
+    devices: {},
+    areas: {},
+    formatEntityState: (s: { state: string; attributes: Record<string, unknown> }) =>
+      s.attributes['device_class'] === 'timestamp'
+        ? 'November 11, 2026 at 18:20'
+        : `${s.state} ${String(s.attributes['unit_of_measurement'] ?? '')}`.trim(),
+  } as unknown as HomeAssistant;
+  /** The card's feed: what a template rendered to, or the blank line it holds until Home Assistant answers. */
+  const feed = {
+    line: (template: string, entityId?: string) => `${entityId}: ${template}`,
+    text: () => '',
+  } as unknown as TemplateTexts;
+
+  it('is nothing where the config says none, and words as written, a figure among them', () => {
+    expect(ownLine(house, undefined, feed)).toBeUndefined();
+    expect(ownLine(house, null, feed)).toBeUndefined();
+    expect(ownLine(house, 'South roof · 5.4 kWp', feed)).toEqual({
+      text: 'South roof · 5.4 kWp',
+      shorter: [],
+    });
+    expect(ownLine(house, '', feed)).toEqual({ text: '', shorter: [] });
+    expect(ownLine(house, 7, feed)).toEqual({ text: '7', shorter: [] });
+  });
+
+  it('says an entity of the house as Home Assistant says its state, its unit with it, and never cuts it', () => {
+    // a value too long for its column says itself shorter, then goes
+    expect(ownLine(house, 'sensor.battery_energy', feed)).toEqual({
+      text: '7.4 kWh',
+      shorter: ['7.4', ''],
+    });
+    expect(ownLine(house, 'sensor.queries', feed)).toEqual({
+      text: '51234 queries',
+      shorter: ['51K queries', '51K', ''],
+    });
+    // a moment as its date and time, then as long from now as it is
+    const alarm = ownLine(house, 'sensor.next_alarm', feed);
+    expect(alarm?.text).toBe('November 11, 2026 at 18:20');
+    expect(alarm?.shorter.at(0)).toBe('in 3 h');
+    expect(alarm?.shorter.at(-1)).toBe('');
+    // out of reach, a value's dash
+    expect(ownLine(house, 'sensor.runtime', feed)).toEqual({ text: '—', shorter: [] });
+  });
+
+  it('keeps a word that only looks like an entity’s id as written', () => {
+    expect(ownLine(house, 'sensor.nowhere', feed)).toEqual({ text: 'sensor.nowhere', shorter: [] });
+    expect(ownLine(house, 'e.g', feed)).toEqual({ text: 'e.g', shorter: [] });
+  });
+
+  it('hands a template to the card’s feed for its entity: a held line, or nothing yet for a badge, never the template', () => {
+    const template = "{{ states('sensor.runtime') }} left";
+    expect(ownLine(house, template, feed, 'sensor.battery')).toEqual({
+      text: `sensor.battery: ${template}`,
+      shorter: [],
+    });
+    expect(ownLine(house, template, feed, 'sensor.battery', false)).toEqual({
+      text: '',
+      shorter: [],
+    });
+    expect(ownLine(house, template, undefined)?.text).toBe('');
   });
 });

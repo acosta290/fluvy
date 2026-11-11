@@ -158,8 +158,7 @@
     "repeat_single": "Répéter le titre",
     "artwork": "Pochette",
     "editor_image_mode": "Afficher l’image personnelle",
-    "o_fallback": "Sans pochette",
-    "editor_secondary_helper": "Vos propres mots, un modèle ou une entité comme sensor.tv_status"
+    "o_fallback": "Sans pochette"
   },
   "energy": {
     "solar": "Solaire",
@@ -459,6 +458,7 @@
     "since_pattern": "Dernier changement depuis, pour chaque ligne",
     "since_pattern_help": "Un identifiant de capteur pour les lignes qui n’en indiquent aucun : {id} est l’identifiant d’objet de la ligne, {entity} son identifiant entier — sensor.{id}_real_last_changed",
     "template_helper": "Vos propres mots, ou un modèle comme {{ states('sensor.x') }}",
+    "own_text_helper": "Vos propres mots, une entité (son état) ou un modèle comme {{ states('sensor.x') }}",
     "sub_entity": "Entités sur la deuxième ligne",
     "plain": "Sans barre",
     "sub": "Contexte",

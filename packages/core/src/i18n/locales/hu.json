@@ -408,6 +408,7 @@
     "since_pattern": "Utolsó változás ideje, minden sorra",
     "since_pattern_help": "Egy érzékelőazonosító azokhoz a sorokhoz, amelyek nem adnak meg ilyet: az {id} a sor objektumazonosítója, az {entity} a teljes azonosítója — sensor.{id}_real_last_changed",
     "template_helper": "Saját szöveg, vagy egy sablon, például {{ states('sensor.x') }}",
+    "own_text_helper": "Saját szöveg, egy entitás (az állapota) vagy egy sablon, például {{ states('sensor.x') }}",
     "sub_entity": "Entitások a második sorban",
     "plain": "Nincs sáv",
     "sub": "Környezet",
@@ -2274,8 +2275,7 @@
     "repeat_single": "Egy szám ismétlése",
     "artwork": "Albumborító",
     "editor_image_mode": "Saját kép mutatása",
-    "o_fallback": "Borító nélkül",
-    "editor_secondary_helper": "Saját szöveg, sablon vagy entitás, például sensor.tv_status"
+    "o_fallback": "Borító nélkül"
   },
   "now-playing": {
     "progress": "{position} / {duration}",

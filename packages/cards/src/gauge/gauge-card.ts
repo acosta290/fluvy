@@ -25,7 +25,7 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { HeadFit } from '../energy/head.js';
+import { HeadFit, type HeadFitOptions } from '../energy/head.js';
 import { ChartLoader } from '../shared/chart-load.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
@@ -438,6 +438,18 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     });
   }
 
+  /**
+   * The head's badge: the state's word where the gauge cannot read (`word` null); else the person's own (`badge`: words,
+   * an entity's state, a template's answer), which steps down into the sub where it does not fit beside the name, or
+   * the card's `word`, which gives way. None where it says nothing: a template not answered yet, a signed temperature.
+   */
+  private badgeOf(view: EntityView, word: string | null, tone: Tone): HeadFitOptions['badge'] {
+    // asked whatever the gauge reads, so a template stays live while its sensor is away
+    const own = this.ownText(this.config?.badge, false)?.text;
+    const text = word === null ? stateWord(this.hass, view) : (own ?? word);
+    return text ? { text, tone, own: word !== null && own !== undefined } : null;
+  }
+
   private innerLabel(view: EntityView): string {
     const configured = this.config?.label;
     if (configured !== undefined) return configured;
@@ -502,15 +514,17 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
         : engine?.resolveGauge(dial, this.config ?? {}, undefined, reads);
     const tone: Tone = toneOf(this.config, style?.tone ?? 'solar');
     const headTone: Tone = unusable ? 'off' : active ? tone : 'neutral';
-    const badgeText =
+    const badge = this.badgeOf(
+      view,
       unusable || value === null
-        ? stateWord(this.hass, view)
-        : (this.config?.badge ??
-          (!active
-            ? this.t('energy.idle')
-            : PRODUCES.has(view.deviceClass)
-              ? this.t('energy.producing')
-              : strings(this.hass, 'active')));
+        ? null
+        : !active
+          ? this.t('energy.idle')
+          : PRODUCES.has(view.deviceClass)
+            ? this.t('energy.producing')
+            : strings(this.hass, 'active'),
+      headTone,
+    );
 
     const width = this.contentWidth;
     const radius = Math.min(RADIUS, Math.max(48, Math.floor((width / 2 - TICK - 12) / 4) * 4));
@@ -540,8 +554,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const fitted = this.head.fit({
       width,
       title: name,
-      sub: this.config?.subtitle ?? view.areaName,
-      badge: { text: badgeText, tone: headTone },
+      ...this.subtitle(view.areaName),
+      badge,
     });
 
     return html`<article
@@ -762,17 +776,19 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const headTone: Tone = unusable ? 'off' : active ? tone : 'neutral';
     // "Importing" / "Exporting" say a power's way; any other signed value (a temperature) has no state to name:
     // only a badge the card is given shows
-    const badgeText =
+    const badge = this.badgeOf(
+      view,
       unusable || value === null
-        ? stateWord(this.hass, view)
-        : (this.config?.badge ??
-          (!power
-            ? ''
-            : !active
-              ? this.t('energy.idle')
-              : value > 0
-                ? this.t('energy.importing')
-                : this.t('energy.exporting')));
+        ? null
+        : !power
+          ? ''
+          : !active
+            ? this.t('energy.idle')
+            : value > 0
+              ? this.t('energy.importing')
+              : this.t('energy.exporting'),
+      headTone,
+    );
 
     const width = this.contentWidth;
     const r = this.head.ruler;
@@ -840,8 +856,8 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const fitted = this.head.fit({
       width,
       title: name,
-      sub: this.config?.subtitle ?? view.areaName,
-      badge: badgeText ? { text: badgeText, tone: headTone } : null,
+      ...this.subtitle(view.areaName),
+      badge,
     });
 
     return html`<article

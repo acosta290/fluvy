@@ -9,8 +9,8 @@ import {
   formLabels,
   iconField,
   nameField,
+  ownTextField,
   showIconField,
-  textField,
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
@@ -38,7 +38,7 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       entityField(['todo']),
-      fieldRow(nameField(), textField('subtitle')),
+      fieldRow(nameField(), ownTextField('subtitle')),
       fieldRow(iconField(), showIconField()),
       ...colourFields(),
       fieldRow(boolField('show_completed'), boolField('show_add')),
