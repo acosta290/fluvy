@@ -1,6 +1,7 @@
 /*
  * Inter, self-hosted as a variable font (SIL Open Font License 1.1; licence in ./files/OFL-Inter.txt).
- * Subset: Latin + Latin Extended-A and the symbols the UI uses; every OpenType feature kept (tnum, cv*, ss*).
+ * Subset: Latin + Latin Extended-A and the symbols the UI uses; Cyrillic in files of its own, which a page fetches only
+ * when it draws a Cyrillic letter (their unicode-range); every OpenType feature kept (tnum, cv*, ss*).
  */
 @font-face {
   font-family: 'Inter';
@@ -15,4 +16,20 @@
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('./files/inter-cyrillic-variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('./files/inter-italic-cyrillic-variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }

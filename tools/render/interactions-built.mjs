@@ -410,6 +410,11 @@ function haStandIns(pencil) {
     fetchedFonts.join(', '),
   );
   check(
+    'the Fluvy theme: …and not its Cyrillic, which no letter on an English page asks for',
+    !fetchedFonts.some((name) => name.includes('cyrillic')),
+    fetchedFonts.join(', '),
+  );
+  check(
     'the Fluvy theme: the chart takes the page’s font and primary',
     worn.font === 'Inter, sans-serif' && worn.series === '#856529',
     `${worn.font} · ${worn.series}`,

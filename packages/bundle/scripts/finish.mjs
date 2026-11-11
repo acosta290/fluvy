@@ -21,7 +21,13 @@ const fonts = join(root, '..', 'fonts', 'files');
 const { version } = JSON.parse(await readFile(join(root, '..', '..', 'package.json'), 'utf8'));
 
 await mkdir(join(dist, 'fonts'), { recursive: true });
-for (const file of ['inter-variable.woff2', 'inter-italic-variable.woff2', 'OFL-Inter.txt'])
+for (const file of [
+  'inter-variable.woff2',
+  'inter-italic-variable.woff2',
+  'inter-cyrillic-variable.woff2',
+  'inter-italic-cyrillic-variable.woff2',
+  'OFL-Inter.txt',
+])
   await cp(join(fonts, file), join(dist, 'fonts', file));
 // the module Home Assistant loads on every page: it imports the build beside it (see src/loader.js)
 await cp(join(root, 'src', 'loader.js'), join(dist, 'loader.js'));

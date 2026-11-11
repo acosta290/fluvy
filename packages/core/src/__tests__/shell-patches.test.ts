@@ -311,9 +311,10 @@ describe('the settings lists’ glyphs', () => {
 describe('the panel frames (HACS)', () => {
   /** The fonts the frame's window was asked for. */
   const faces: string[] = [];
-  /** The frame's document, loading until a test says it loaded. */
+  /** The frame's document, loading until a test says it loaded; its font set takes a face fetched on demand. */
   const frameDocument = {
     readyState: 'loading',
+    fonts: { add: () => undefined },
     defaultView: {
       FontFace: class {
         constructor(family: string) {

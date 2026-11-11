@@ -15,6 +15,22 @@
   font-style: italic;
   font-display: block;
 }
+/* Cyrillic, as the bundle registers it: its own files, fetched by a page that draws a Cyrillic letter */
+@font-face {
+  font-family: Inter;
+  src: url('../../../packages/fonts/files/inter-cyrillic-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: Inter;
+  src: url('../../../packages/fonts/files/inter-italic-cyrillic-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: block;
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
 html,
 body {
   margin: 0;

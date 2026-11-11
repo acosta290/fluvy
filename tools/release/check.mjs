@@ -192,6 +192,7 @@ if (release) {
     'frontend/loader.js',
     'frontend/manifest.json',
     'frontend/fonts/inter-variable.woff2',
+    'frontend/fonts/inter-cyrillic-variable.woff2',
     'themes/fluvy.yaml',
     'brand/icon.png',
     'brand/icon@2x.png',

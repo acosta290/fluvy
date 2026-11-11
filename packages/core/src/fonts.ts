@@ -6,9 +6,24 @@
  * another theme fetches none), and in every same-origin panel frame the shell reaches (HACS), whose document
  * has fonts of its own.
  */
-const FACES: ReadonlyArray<readonly [file: string, style: string]> = [
-  ['inter-variable.woff2', 'normal'],
-  ['inter-italic-variable.woff2', 'italic'],
+
+/** Inter's Cyrillic (Russian's letters, Ukrainian's, Belarusian's, Serbian's, Bulgarian's, and №): a file of its own. */
+const CYRILLIC = 'U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116';
+/** Every other letter and symbol, in the Latin file: the two ranges share no character, whichever face came first. */
+const LATIN = 'U+0000-03FF, U+0460-048F, U+0492-04AF, U+04B2-2115, U+2117-10FFFF';
+
+/**
+ * The faces, each with the characters it draws. The Latin ones are fetched when Fluvy is in use; a Cyrillic one only
+ * when the page lays out a Cyrillic letter (the browser fetches a face by its range), so a page in any other language
+ * never asks for it.
+ */
+const FACES: ReadonlyArray<
+  readonly [file: string, style: string, range: string, onDemand: boolean]
+> = [
+  ['inter-variable.woff2', 'normal', LATIN, false],
+  ['inter-italic-variable.woff2', 'italic', LATIN, false],
+  ['inter-cyrillic-variable.woff2', 'normal', CYRILLIC, true],
+  ['inter-italic-cyrillic-variable.woff2', 'italic', CYRILLIC, true],
 ];
 
 /** A host page that ships Inter itself (the playground, a test) opts out with `__FLUVY_FONTS__ = false`. */
@@ -40,21 +55,26 @@ export function addFonts(target: Document): void {
   // `new URL('…', import.meta.url)` literal so the bundler does not try to inline the font files.
   const here: string = import.meta.url;
   const base = new URL(folder ?? new URL('fonts/', here).href);
-  for (const [file, style] of FACES) {
+  for (const [file, style, unicodeRange, onDemand] of FACES) {
     const face = new Face('Inter', `url(${new URL(file, base).href}) format("woff2")`, {
       style,
       weight: '100 900',
       display: 'swap',
+      unicodeRange,
     });
-    face
-      .load()
-      .then((loaded) => {
-        target.fonts.add(loaded);
-        target.fonts.dispatchEvent(new Event(FACES_ADDED));
-      })
-      .catch(() => {
-        /* Roboto remains: the stack has a real fallback */
-      });
+    // a face on demand is the page's from the start, fetched once a letter in its range is laid out: the page's fonts
+    // then say `loadingdone` themselves, where a face loaded first and added after must be said (`FACES_ADDED`)
+    if (onDemand) target.fonts.add(face);
+    else
+      face
+        .load()
+        .then((loaded) => {
+          target.fonts.add(loaded);
+          target.fonts.dispatchEvent(new Event(FACES_ADDED));
+        })
+        .catch(() => {
+          /* Roboto remains: the stack has a real fallback */
+        });
   }
 }
 
