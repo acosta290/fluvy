@@ -164,6 +164,17 @@ export const CLIMATE: Words = {
     'preset_mode.boost': '强劲',
     'preset_mode.sleep': '睡眠',
   },
+  ru: {
+    'fan_mode.auto': 'Автоматический',
+    'fan_mode.low': 'Низкий',
+    'fan_mode.medium': 'Средний',
+    'fan_mode.high': 'Высокий',
+    'preset_mode.none': 'Нет',
+    'preset_mode.eco': 'Эко',
+    'preset_mode.comfort': 'Комфорт',
+    'preset_mode.boost': 'Турбо',
+    'preset_mode.sleep': 'Сон',
+  },
 };
 
 /** A Matter fan's presets (`matter`'s), by `attribute.value`. */
@@ -280,6 +291,14 @@ export const MATTER_FAN: Words = {
     'preset_mode.natural_wind': '自然风',
     'preset_mode.sleep_wind': '睡眠风',
   },
+  ru: {
+    'preset_mode.auto': 'Автоматический',
+    'preset_mode.low': 'Низкий',
+    'preset_mode.medium': 'Средний',
+    'preset_mode.high': 'Высокий',
+    'preset_mode.natural_wind': 'Естественный ветер',
+    'preset_mode.sleep_wind': 'Ветер для сна',
+  },
 };
 
 /** A Roborock's suction (`roborock`'s), by `attribute.value`. */
@@ -381,6 +400,13 @@ export const ROBOROCK: Words = {
     'fan_speed.turbo': '增强',
     'fan_speed.max': '最大',
     'fan_speed.max_plus': '超速',
+  },
+  ru: {
+    'fan_speed.quiet': 'Тихая',
+    'fan_speed.balanced': 'Сбалансированная',
+    'fan_speed.turbo': 'Турбо',
+    'fan_speed.max': 'Максимальная',
+    'fan_speed.max_plus': 'Максимальная плюс',
   },
 };
 

@@ -50,7 +50,7 @@ const chunk = (name) =>
 const english = {};
 for (const part of await readdir(join(LOCALES, 'en')))
   Object.assign(english, await readJson(join(LOCALES, 'en', part)));
-const LANGUAGES = ['en', 'de', 'pl', 'zh-Hans'];
+const LANGUAGES = ['en', 'de', 'pl', 'zh-Hans', 'ru'];
 const WORDS = { en: english };
 for (const lang of LANGUAGES.slice(1)) WORDS[lang] = await readJson(join(LOCALES, `${lang}.json`));
 
@@ -621,6 +621,60 @@ function applyTheme([name, css]) {
     JSON.stringify(views),
   );
   check('the themed views: no page error', errors.length === 0, errors.join(' | '));
+  await tab.close();
+}
+
+{
+  // a Russian page on the Fluvy theme: Inter's Cyrillic, a file of its own, fetched for its letters and drawing them
+  const tab = await browser.newPage();
+  await tab.addInitScript(standIn);
+  await tab.goto(`${BASE}/lovelace/home?lang=ru`);
+  await tab.waitForFunction(() => Boolean(window.__fluvy), null, { timeout: 15000 });
+  // Home Assistant applies the Fluvy theme: its sentinel and its font inline on <html>
+  await tab.evaluate(() => {
+    const style = document.documentElement.style;
+    style.setProperty('--fluvy-theme', '1');
+    style.setProperty('--ha-font-family-body', 'Inter, sans-serif');
+  });
+  const status = await tab.evaluate(async (file) => {
+    await import(`/${file}`);
+    const hass = window.standInHass('ru');
+    document.body.replaceChildren(
+      Object.assign(document.createElement('fluvy-wall-toast'), { hass, kind: 'paused' }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await document.fonts.ready;
+    return [...document.fonts]
+      .filter((face) => face.unicodeRange.includes('U+400'))
+      .map((face) => `${face.style} ${face.status}`);
+  }, chunk('wall'));
+  check(
+    'ru: Inter’s Cyrillic is fetched for the page’s letters, upright, the italic left for a page that draws one',
+    status.join() === 'normal loaded,italic unloaded',
+    status.join(', '),
+  );
+  // the face the browser drew each Cyrillic word in, as it reports it for the text's element
+  const cdp = await tab.context().newCDPSession(tab);
+  await cdp.send('DOM.enable');
+  await cdp.send('CSS.enable');
+  const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
+  const holders = [];
+  const walk = (node, parent) => {
+    if (node.nodeType === 3 && /[Ѐ-ӿ]/.test(node.nodeValue)) holders.push(parent);
+    for (const child of [...(node.children ?? []), ...(node.shadowRoots ?? [])])
+      walk(child, node.nodeType === 1 ? node : parent);
+  };
+  walk(root, null);
+  const faces = new Set();
+  for (const { nodeId } of holders) {
+    const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
+    for (const { familyName } of fonts) faces.add(familyName);
+  }
+  check(
+    'ru: every Cyrillic letter on it is drawn in Inter',
+    holders.length > 0 && [...faces].join() === 'Inter',
+    `${holders.length} texts · ${[...faces].join(', ')}`,
+  );
   await tab.close();
 }
 

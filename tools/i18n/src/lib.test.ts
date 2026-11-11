@@ -91,7 +91,7 @@ describe('the catalogues on disk', () => {
     expect(await readFile(APPLIANCE_OUT, 'utf8')).toBe(await generateAppliance());
   });
 
-  it('give every appliance kind plain stems in every language: a name is read with its accents taken off, kana and kanji as written', async () => {
+  it('give every appliance kind plain stems in every language: a name is read with its accents taken off, Cyrillic, kana and kanji as written', async () => {
     for (const code of await catalogueCodes()) {
       const words = (await readCatalogue(code))['words'] as Record<string, readonly string[]>;
       const kinds = Object.entries(words).filter(([category]) => category.startsWith('appliance_'));
@@ -100,9 +100,10 @@ describe('the catalogues on disk', () => {
         for (const stem of stems) {
           expect(stem, `${code} ${category}`).toBe(plain(stem));
           for (const char of stem)
-            expect(/[\x20-\x7e]/.test(char) || CJK.test(char), `${code} ${category} ${stem}`).toBe(
-              true,
-            );
+            expect(
+              /[\x20-\x7e\p{Script=Cyrillic}]/u.test(char) || CJK.test(char),
+              `${code} ${category} ${stem}`,
+            ).toBe(true);
         }
     }
   });
@@ -202,6 +203,39 @@ describe('a count', () => {
     ).toEqual([]);
   });
 
+  it('carries the number in a one its language says of 21 too: Russian’s, never Polish’s', () => {
+    expect([...reached('ru', 0)]).toEqual([
+      ['many', 0],
+      ['one', 1],
+      ['few', 2],
+    ]);
+    expect([...reached('ru', 2)]).toEqual([
+      ['few', 2],
+      ['many', 5],
+      ['one', 21],
+    ]);
+    const tomorrow = { calendar: { next_days_one: 'Tomorrow', next_days: 'Next {count} days' } };
+    const said = (language: string, one: string): string[] =>
+      compare(
+        language,
+        {
+          calendar: {
+            next_days_one: one,
+            next_days_few: '{count}',
+            next_days_many: '{count}',
+            next_days: '{count}',
+          },
+        },
+        tomorrow,
+      ).flatMap((p) => (p.level === 'error' ? [p.text] : []));
+    // "Завтра" would say 21 days as tomorrow
+    expect(said('ru', 'Завтра')).toEqual([
+      'calendar.next_days_one: placeholders {} ≠ English {count}',
+    ]);
+    expect(said('ru', 'Ближайший {count} день')).toEqual([]);
+    expect(said('pl', 'Jutro')).toEqual([]);
+  });
+
   it('is written in English in its two forms, with its other form', () => {
     expect(
       englishCounts({
@@ -257,6 +291,11 @@ describe('the generated patterns', () => {
     // a whole word beside no Latin letter whatever its marks, a digit or an underscore; kana bound one
     for (const name of ['Großes', 'Spálňa', 'sensor2', 'sensor_1'])
       expect(name.replace(noise, ' '), name).toBe(name);
+    // a Cyrillic letter too: a sensor's word is no part of another, nor a preposition the start of a place
+    const russian = new RegExp(pattern(['датчик', 'в'], 'words'), 'giu');
+    for (const name of ['Датчики', 'Вход', 'Северный'])
+      expect(name.replace(russian, ' '), name).toBe(name);
+    expect('Датчик в Гостиной'.replace(russian, ' ').trim()).toBe('Гостиной');
     expect('リビングsensor'.replace(noise, ' ')).toBe('リビング ');
     // a substring shape holds both in one alternation, a stem after the longer ones that begin with it
     expect(pattern(['washer', '洗濯', '洗濯機'], 'substring')).toBe('(washer|洗濯機|洗濯)');
@@ -335,5 +374,10 @@ describe('the generated patterns', () => {
     expect(plain('ガレージ'.normalize('NFD'))).toBe('ガレージ');
     expect(plain('食洗機')).toBe('食洗機');
     expect(plain('ぱぴぷ')).toBe('ぱぴぷ');
+    // Russian's ё as е, as Russian writes it as often as not; its й a letter of its own, never и (a Romanian ă is a)
+    expect(plain('Счётчик ЁЛКА')).toBe('счетчик елка');
+    expect(plain('Чайник Кофейный')).toBe('чайник кофейный');
+    expect(plain('Чайник Кофейный'.normalize('NFD'))).toBe('чайник кофейный');
+    expect(plain('Mașină de spălat vase')).toBe('masina de spalat vase');
   });
 });

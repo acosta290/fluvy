@@ -24,6 +24,7 @@ language, so the card starts from Fluvy's.
 | `sk` | Slovak | `packages/core/src/i18n/locales/sk.json` | — |
 | `pl` | Polish | `packages/core/src/i18n/locales/pl.json` | [@paproh](https://github.com/paproh) |
 | `zh-Hans` | Chinese (Simplified) | `packages/core/src/i18n/locales/zh-Hans.json` — `zh`, `zh-CN` and `zh-SG` read it; Traditional Chinese (`zh-Hant`, `zh-TW`, `zh-HK`) is not it | — |
+| `ru` | Russian | `packages/core/src/i18n/locales/ru.json` | — |
 
 ## How a language works
 
@@ -34,7 +35,9 @@ language, so the card starts from Fluvy's.
   beside `devices` ("{n} devices", the form of every other number), or `days_other` alone for a count it only ever
   says of two or more. A language adds the forms its own rules give a whole number, beside English's: Slovak writes
   `devices_few` for 2 to 4 ("3 zariadenia") and keeps the bare key for 5 and more ("5 zariadení"); Japanese says
-  every number one way, in the bare key. A card says every count through `plural()`, which picks the form.
+  every number one way, in the bare key. Russian says its one of 21, 31 and 101 too ("21 устройство"), so its `_one`
+  carries the number where English's is a word ("1 device", "Tomorrow"): `pnpm i18n` holds it to the other form's
+  placeholders. A card says every count through `plural()`, which picks the form.
 - **English is in parts**, `packages/core/src/i18n/locales/en/`: `core.json` ships inline and is behind every
   lookup; each lazy family's words (`panel.json`, `history.json`, `energy.json`, `media.json`, …) travel with that
   family's chunk, so a page that never opens the settings panel never carries the panel's words, and the editors'
@@ -45,8 +48,9 @@ language, so the card starts from Fluvy's.
 - **The naming words**, `packages/core/src/i18n/words/<code>.json`: the stems the automatic dashboard reads a house
   by (what people call their lights, their garden, the solar inverter, the grid meter), and the `appliance_*` stems
   an appliance card tells a washer from a dishwasher by (plain lower-case letters: a name is read with its accents
-  taken off and in ordinary width, so "Kühlschrank" is `kuhlschrank`, "Płyta" is `plyta` and "ＬＥＤ" is `led`). A
-  stem in Latin letters is matched as its category asks (a light's as a whole word, a place's noise as whole words, the
+  taken off and in ordinary width, so "Kühlschrank" is `kuhlschrank`, "Płyta" is `plyta`, "Счётчик" is `счетчик` and
+  "ＬＥＤ" is `led`; a Russian й stays й, a letter of its own). A stem in Latin or Cyrillic letters is matched as its
+  category asks (a light's as a whole word, a place's noise as whole words, the
   rest as a substring);
   a stem in Han or kana is always matched as a substring, since Chinese and Japanese write no spaces between words. The words
   that join a place's noise to the place (`place_joins`: an article, a preposition, the language's "and", an elision
@@ -113,7 +117,9 @@ update of a device or an add-on, and saving or refreshing a page).
    day parts), and its loader to `LOADERS` in `packages/core/src/i18n/index.ts`.
 3. Fill `words/<code>.json` with the stems people use in that language, then `pnpm i18n build`.
 4. Add `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json`.
-5. Add the language to the table above. `pnpm i18n` is the check; `pnpm check` runs it.
+5. Add the language to the table above. A language written in letters Inter's files do not carry yet takes them as a file
+   of their own, fetched only by a page that draws one (`packages/fonts/README.md`: Cyrillic is one); Han and kana are
+   the system's. `pnpm i18n` is the check; `pnpm check` runs it.
 
 A right-to-left language needs a design pass first (the rulers and the layouts are written for left-to-right
 reading); none ships yet.

@@ -158,26 +158,42 @@ export function reached(language: string, from: number): Map<string, number> {
   return first;
 }
 
+/** A language whose `one` is said of more numbers than 1 (Russian's 21, 31, 101): its `_one` is a count like any. */
+function oneSaysMore(language: string): boolean {
+  const rules = new Intl.PluralRules(language);
+  for (let n = 2; n <= 1000; n++) if (rules.select(n) === 'one') return true;
+  return false;
+}
+
 /**
  * What a language's counts hold beside English's keys: the forms its rules have that English does not write (Slovak's
- * `_few`), each with the English form whose placeholders it keeps (the other form); and every form it needs, English's
- * or its own, with the number that needs it.
+ * `_few`), each with the English form whose placeholders it keeps (the other form); English's `_one` where the
+ * language says it of more numbers than 1, with the other form whose placeholders it keeps too (English's "1 event" is
+ * Russian's 21 events as well, so it carries the number); and every form it needs, English's or its own, with the
+ * number that needs it.
  */
 function countForms(
   language: string,
   table: Table,
-): { readonly forms: Map<string, string>; readonly needed: Map<string, number> } {
+): {
+  readonly forms: Map<string, string>;
+  readonly counted: Map<string, string>;
+  readonly needed: Map<string, number>;
+} {
   const categories = new Intl.PluralRules(language).resolvedOptions().pluralCategories;
+  const oneOfMany = oneSaysMore(language);
   const forms = new Map<string, string>();
+  const counted = new Map<string, string>();
   const needed = new Map<string, number>();
   for (const [base, { other, from }] of counts(table)) {
     for (const category of categories)
       if (category !== 'other' && !(`${base}_${category}` in table))
         forms.set(`${base}_${category}`, other);
+    if (oneOfMany && `${base}_one` in table) counted.set(`${base}_one`, other);
     for (const [category, n] of reached(language, from))
       needed.set(category === 'other' ? other : `${base}_${category}`, n);
   }
-  return { forms, needed };
+  return { forms, counted, needed };
 }
 
 /**
@@ -212,7 +228,7 @@ export function englishCounts(english: Catalogue): Problem[] {
  * A language against English: every key present (missing ones are warnings, or errors when `strict`), none that
  * English lacks, none empty, the same placeholders, every word category present; and every count in each form the
  * language's rules give a whole number (a missing one is always an error: the count would say another number's words),
- * its own forms beside English's allowed.
+ * its own forms beside English's allowed, and its `_one` with the number where it is said of more numbers than 1.
  */
 export function compare(
   language: string,
@@ -243,7 +259,7 @@ export function compare(
       continue;
     }
     const keys = Object.keys(table);
-    const { forms, needed } = countForms(language, table as Table);
+    const { forms, counted, needed } = countForms(language, table as Table);
     const ownForms = [...forms.keys()].filter((form) => needed.has(form) || form in own);
     for (const key of [...keys, ...ownForms]) {
       const text = (own as Table)[key];
@@ -256,7 +272,9 @@ export function compare(
       if (typeof text !== 'string' || text.trim() === '')
         problem('error', `${namespace}.${key}: empty`);
       else {
-        const expected = placeholders((table as Table)[forms.get(key) ?? key] ?? '');
+        const expected = placeholders(
+          (table as Table)[forms.get(key) ?? counted.get(key) ?? key] ?? '',
+        );
         const found = placeholders(text);
         if (expected.join(',') !== found.join(','))
           problem(

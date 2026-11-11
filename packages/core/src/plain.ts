@@ -8,14 +8,16 @@ export const plainLetters = (text: string): string =>
 /**
  * A name as Fluvy's words read it (an appliance's kind, a dashboard's naming words, a view's icon, and the words' build
  * in `tools/i18n`): lower case, in ordinary width, its accents taken off ("Kühlschrank" is "kuhlschrank", "Płyta" is
- * "plyta", "ＬＥＤ" is "led", half-width "ｶﾞﾚｰｼﾞ" is "ガレージ"); a kana keeps its voicing mark (が is not か) and is
- * composed again.
+ * "plyta", "ＬＥＤ" is "led", half-width "ｶﾞﾚｰｼﾞ" is "ガレージ", "Счётчик" is "счетчик", as Russian writes ё as е as
+ * often as not); a kana keeps its voicing mark (が is not か) and a Cyrillic й its breve (й is no и), each composed
+ * again.
  */
 export const plain = (text: string): string =>
   plainLetters(
     text
       .normalize('NFKC')
       .normalize('NFD')
-      .replace(/(?![゙゚])\p{M}/gu, '')
+      .replace(/(?![゙゚\u0306])\p{M}/gu, '')
+      .replace(/(?<![иИ])\u0306/g, '')
       .normalize('NFC'),
   ).toLowerCase();

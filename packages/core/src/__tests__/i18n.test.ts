@@ -43,9 +43,13 @@ describe('the language registry', () => {
     expect(resolveLanguage('en-GB')).toBe('en');
     expect(resolveLanguage('pl')).toBe('pl');
     expect(resolveLanguage('pl-PL')).toBe('pl');
+    expect(resolveLanguage('ru')).toBe('ru');
+    expect(resolveLanguage('ru-RU')).toBe('ru');
+    expect(resolveLanguage('ru_RU')).toBe('ru');
     expect(resolveLanguage('sv')).toBe('en');
     expect(resolveLanguage(undefined)).toBe('en');
     expect(speaks('de-CH')).toBe(true);
+    expect(speaks('ru-RU')).toBe(true);
     expect(speaks('sv')).toBe(false);
     expect(isCardLanguage('auto')).toBe(true);
     expect(isCardLanguage('fr')).toBe(true);
@@ -185,6 +189,24 @@ describe('the words', () => {
     expect([3, 5].map((n) => plural({ language: 'sk' }, 'page.days', n))).toEqual([
       '3 dni',
       '5 dní',
+    ]);
+  });
+
+  it('count in Russian in its three forms of a whole number, its one said of 21 too: 1, 3, 5, 11, 21 устройств…', () => {
+    const said = (key: CountKey) =>
+      [1, 3, 5, 11, 21].map((n) => plural({ language: 'ru' }, key, n, { count: n }));
+    expect(said('common.devices')).toEqual([
+      '1 устройство',
+      '3 устройства',
+      '5 устройств',
+      '11 устройств',
+      '21 устройство',
+    ]);
+    // a count said only of two or more: its few, its many, and its one again at 21
+    expect([3, 5, 21].map((n) => plural({ language: 'ru' }, 'page.days', n))).toEqual([
+      '3 дня',
+      '5 дней',
+      '21 день',
     ]);
   });
 

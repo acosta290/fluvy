@@ -157,6 +157,39 @@ describe('the icon a view’s name says', () => {
       ['家电', undefined],
     ];
     expect(chinese.map(([t]) => named(t))).toEqual(chinese.map(([, icon]) => icon));
+    // Russian, a word by its start in any case (the kitchen's кухня and кухне), ё read as е and й as itself
+    const russian: ReadonlyArray<readonly [string, string | undefined]> = [
+      ['Свет', 'bulb'],
+      ['Освещение', 'bulb'],
+      ['Тёплый пол', 'thermo'],
+      ['Отопление', 'thermo'],
+      ['Аккумулятор', 'battery'],
+      ['Погода', 'cloud'],
+      ['Солнечные панели', 'sun'],
+      ['Энергия', 'bolt'],
+      ['Охрана', 'shield'],
+      ['Гостиная', 'rooms'],
+      ['На кухне', 'rooms'],
+      ['2 этаж', 'rooms'],
+      ['Камеры', 'camera'],
+      ['Замки', 'lock'],
+      ['Музыка', 'speaker'],
+      ['ТВ', 'film'],
+      ['Сад', 'leaf'],
+      ['Сценарии', 'automation'],
+      ['Гараж', 'car'],
+      ['Календарь', 'calendar'],
+      ['Семья', 'person'],
+      ['Полив', 'drop'],
+      ['Вентиляция', 'fan'],
+      ['Шторы', 'blinds'],
+      ['Пылесос', 'vacuum'],
+      ['Датчики', 'chart'],
+      ['Главная', 'home'],
+      ['Мой дом', 'home'],
+      ['Садовник Иван', undefined],
+    ];
+    expect(russian.map(([t]) => named(t))).toEqual(russian.map(([, icon]) => icon));
     // a name it does not know reads its path
     expect(named('Mi sitio', 'fotovoltaica')).toBe('sun');
     expect(named('Xyzzy', 'qwerty')).toBeUndefined();

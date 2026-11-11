@@ -253,6 +253,60 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
       homePower: 'sensor.house',
     });
   });
+
+  it('reads a Russian house by its names as written: its lights, its garden, its appliances’ switches, a lock that is none', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.r1', 'on', { friendly_name: 'Свет в гостиной' }),
+        entity('switch.r2', 'off', { friendly_name: 'Фонарь сад' }),
+        entity('switch.r3', 'off', { friendly_name: 'Люстра' }),
+        entity('switch.r4', 'off', { friendly_name: 'Розетка стиральной машины' }),
+        entity('switch.r5', 'off', { friendly_name: 'Чайник' }),
+        entity('switch.r6', 'off', { friendly_name: 'Блокировка посудомойки' }),
+      ]),
+    );
+    const { lights, appliances } = registry;
+    expect(lights).toEqual(expect.arrayContaining(['switch.r1', 'switch.r2', 'switch.r3']));
+    expect(registry.outdoor('switch.r2')).toBe(true);
+    expect(registry.outdoor('switch.r1')).toBe(false);
+    for (const id of ['switch.r4', 'switch.r5']) {
+      expect(lights, id).not.toContain(id);
+      expect(appliances, id).toContain(id);
+    }
+    expect(appliances).not.toContain('switch.r6');
+  });
+
+  it('names a Russian house’s energy readings’ roles: the sun, what is bought and sold, the battery, the charger, the house', () => {
+    const registry = powerHouse(
+      [
+        power('sensor.solnechnye_paneli', 'Солнечные панели'),
+        power('sensor.iz_seti', 'Импорт из сети'),
+        power('sensor.v_set', 'Экспорт в сеть'),
+        power('sensor.akkumuliator', 'Аккумулятор'),
+        power('sensor.zariadnaia_stantsiia', 'Зарядная станция'),
+        power('sensor.potreblenie_doma', 'Потребление дома'),
+      ],
+      'ru',
+    );
+    expect(findEnergyRoles(registry, null)).toMatchObject({
+      solarPowers: [{ id: 'sensor.solnechnye_paneli' }],
+      gridPower: 'sensor.iz_seti',
+      gridImport: 'sensor.iz_seti',
+      gridExport: 'sensor.v_set',
+      batteryPowers: [{ id: 'sensor.akkumuliator' }],
+      charger: 'sensor.zariadnaia_stantsiia',
+      homePower: 'sensor.potreblenie_doma',
+    });
+    // a power strip (сетевой фильтр), a home cinema and a sunny side say no role: "сеть", "дом" and the sun's panels
+    // are words of their own
+    for (const name of ['Сетевой фильтр', 'Домашний кинотеатр', 'Солнечная сторона']) {
+      const roles = findEnergyRoles(powerHouse([power('sensor.x', name)], 'ru'), null);
+      expect(
+        [roles.solarPowers, roles.gridPower, roles.batteryPowers, roles.homePower],
+        name,
+      ).toEqual([[], undefined, [], undefined]);
+    }
+  });
 });
 
 describe('custom:fluvy-home strategy — a place named by its device, no separator left hanging', () => {
@@ -492,6 +546,20 @@ describe('custom:fluvy-home strategy — a place named by its device, no separat
     ).toEqual(['Obývačka', 'Spálňa', 'Kúpeľňa', 'Pracovni', 'Garáž', 'Konyha', 'Nappali']);
   });
 
+  it('reads Russian’s sensor words in every case they are said in, ё or е, a place keeping its own', () => {
+    expect(
+      placed([
+        'Датчик температуры Гостиная',
+        'Датчик температуры и влажности Спальня',
+        'Термометр Детская',
+        'Температура в гостиной',
+        'Влажность на кухне',
+        'Термостатом Кабинет',
+        'Датчики Ёлочная',
+      ]),
+    ).toEqual(['Гостиная', 'Спальня', 'Детская', 'Гостиной', 'Кухне', 'Кабинет', 'Ёлочная']);
+  });
+
   it('keeps a word that joins two places, a conjunction among them, and takes one that joins the sensor words, in every language', () => {
     // each language's "and" between two sensor words, then between two places: [name, its place] each
     const and: Record<string, readonly (readonly [string, string])[]> = {
@@ -552,6 +620,10 @@ describe('custom:fluvy-home strategy — a place named by its device, no separat
         ['客厅和餐厅温度', '客厅和餐厅'],
         ['客厅温度与湿度', '客厅'],
         ['客厅与餐厅温度', '客厅与餐厅'],
+      ],
+      ru: [
+        ['Датчик температуры и влажности Гостиная', 'Гостиная'],
+        ['Кухня и Гостиная Датчик', 'Кухня и Гостиная'],
       ],
     };
     for (const [code, names] of Object.entries(and))

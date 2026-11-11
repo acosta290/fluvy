@@ -493,6 +493,41 @@ const zhHans: Table = {
   'notice.auto': '自动仪表盘在 Home Assistant 中生成；“仪表盘”标签页显示它的预览',
 };
 
+const ru: Table = {
+  'brand.sub': 'Живое демо',
+  'family.home': 'Дом',
+  'family.devices': 'Устройства',
+  'family.climate': 'Климат',
+  'family.energy': 'Энергия',
+  'family.charts': 'Графики',
+  'family.media': 'Медиа',
+  'family.time': 'Время',
+  'family.helpers': 'Вспомогательное',
+  'family.vehicles': 'Автомобили',
+  'page.panel': 'Настройки',
+  'page.activity': 'Активность',
+  'page.history': 'История',
+  'mode.light': 'Светлая',
+  'mode.dark': 'Тёмная',
+  'device.title': 'Устройство',
+  'device.phone': 'Телефон',
+  'device.phone-l': 'Большой телефон',
+  'device.tablet': 'Планшет',
+  'device.desktop': 'Компьютер',
+  'palette.title': 'Палитра',
+  'palette.custom': 'Свой акцентный цвет — в панели настроек',
+  'language.title': 'Язык',
+  'links.install': 'Установить',
+  'links.github': 'GitHub',
+  'banner.text':
+    'Дом понарошку: квартира Марты в четверг вечером. Каждая карточка, страница и настройка здесь настоящие; вместо Home Assistant работает небольшая имитация, которая меняет состояние через 140 мс после вызова действия. Ничего не подключено.',
+  'banner.ok': 'Понятно',
+  'notice.more_info': 'Открывает подробности {entity} в Home Assistant',
+  'notice.navigate': 'Открывает {path} в Home Assistant',
+  'notice.auto':
+    'Автоматическая панель создаётся в самом Home Assistant; вкладка «Панели» показывает её предпросмотр',
+};
+
 const TABLES: Readonly<Record<LanguageCode, Table>> = {
   en,
   es,
@@ -508,6 +543,7 @@ const TABLES: Readonly<Record<LanguageCode, Table>> = {
   sk,
   pl,
   'zh-Hans': zhHans,
+  ru,
 };
 
 /** A word of the demo in `language`. */

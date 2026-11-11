@@ -19,6 +19,7 @@ export const LANGUAGE_CODES = [
   'sk',
   'pl',
   'zh-Hans',
+  'ru',
 ] as const;
 
 /** A code as Home Assistant reports `hass.language` for it (`pt-BR`, not `pt_BR`). */
@@ -168,6 +169,14 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     // 晚安 is said on parting or going to sleep, never as a greeting, and never shows
     dayParts: { morning: 5, afternoon: 12, night: 18 },
     script: 'Hans',
+  },
+  ru: {
+    code: 'ru',
+    name: 'Русский',
+    english: 'Russian',
+    // "доброе утро" until noon, "добрый день" through the afternoon, "добрый вечер" from 18:00 until the morning:
+    // "доброй ночи" is said on parting before sleep, so the night says the evening's greeting
+    dayParts: { morning: 5, afternoon: 12, night: 18 },
   },
 };
 

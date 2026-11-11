@@ -12,7 +12,7 @@
  *
  * A stem is matched as a substring; a stem may carry regex of its own (a boundary: `pv\b`, `mode$`; a lookaround:
  * `(?<!ガス)レンジ`). `light` matches whole words between separators, `generic` matches the whole name, `place_noise`
- * and `place_joins` whole words, no Latin letter beside them whatever its marks — for a stem in Latin letters; a join
+ * and `place_joins` whole words, no letter beside them whatever its marks — for a stem in Latin or Cyrillic; a join
  * that ends in an apostrophe (an elision: "d'", "dell'") leans on the word after it, either apostrophe. A stem in kana
  * or kanji is matched as a substring whatever its category's shape (Japanese writes no spaces between words): its
  * alternation follows the word-shaped one. The appliance words are plain lower-case letters, matched against a name
@@ -151,11 +151,11 @@ export function ordered(stems: readonly string[]): string[] {
 export const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
 
 /**
- * What a whole word in Latin letters never touches: a Latin letter whatever its marks (`\b` knows ASCII's alone, where
- * Großes would hold an "es" and Spálňa an "a"), a digit or an underscore; kana and kanji bound a word, Japanese writing
- * no spaces. A pattern with it compiles with the `u` flag.
+ * What a whole word in an alphabet never touches: a Latin or a Cyrillic letter whatever its marks (`\b` knows ASCII's
+ * alone, where Großes would hold an "es", Spálňa an "a" and датчики a "датчик"), a digit or an underscore; kana and
+ * kanji bound a word, Japanese writing no spaces. A pattern with it compiles with the `u` flag.
  */
-const IN_A_WORD = '[\\p{Script=Latin}\\d_]';
+const IN_A_WORD = '[\\p{Script=Latin}\\p{Script=Cyrillic}\\d_]';
 
 /**
  * A category's regex source: its Latin stems in the category's shape, its kana and kanji stems as substrings after
