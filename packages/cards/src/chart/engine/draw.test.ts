@@ -218,6 +218,21 @@ describe('bars', () => {
     expect(readAt(bars, 0.01).index).toBe(0);
   });
 
+  it('keep now without its hairline where a card marks it on lines over them: those to come hollow, now’s lit', () => {
+    const style = { ...resolveStyle('soft', { highlight: 'current' }, caps), now: 'none' as const };
+    const drawing = host(drawChart({ ...spec('soft'), style, kind: 'bars', now: 0.5 }));
+    expect(drawing.querySelector('.fc-now')).toBeNull();
+    const bars = [...drawing.querySelectorAll('.fc-bar')].map((bar) =>
+      bar.classList.contains('fc-bar--hollow')
+        ? 'hollow'
+        : bar.classList.contains('fc-bar--quiet')
+          ? 'quiet'
+          : 'lit',
+    );
+    // now in the sixth slot: lit, the five before it quiet, the five after it to come
+    expect(bars).toEqual([...Array(5).fill('quiet'), 'lit', ...Array(5).fill('hollow')]);
+  });
+
   it('light the highest in the soft style and quiet the rest, its value over it', () => {
     const style = resolveStyle('soft', {}, caps);
     const drawing = host(

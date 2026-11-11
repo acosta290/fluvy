@@ -601,6 +601,42 @@ describe('a calendar day of history (#158)', () => {
     expect(parseFloat(knobs[0]?.style.left ?? '') + 8).toBeCloseTo(now, 2);
   });
 
+  it('marks now once where a line is drawn over columns: on the line’s end, the columns after it hollow', async () => {
+    const hairlines = async (chart: NonNullable<ChartCardConfig['chart']>) => {
+      const card = await draw(
+        {
+          series: [{ entity: 'sensor.nordpool', kind: 'columns' }, 'sensor.living'],
+          span: 'today',
+          chart,
+          _now: NOON,
+        },
+        rooms(),
+      );
+      const svgs = [...root(card).querySelectorAll('svg.fc-chart')];
+      const line = svgs.at(-1)?.querySelector('.fc-line:not(.fc-run)')?.getAttribute('d');
+      return {
+        now: [...root(card).querySelectorAll('.fc-now')].map((n) => Number(n.getAttribute('x1'))),
+        end: line ? endOf(line) : null,
+        hollow: root(card).querySelectorAll('.fc-bar--hollow').length,
+      };
+    };
+    // a line style draws the columns, the line over them, and now on the line's end alone (a step's in the slot that
+    // holds it, where the columns' was too); classic marks no now
+    for (const chart of ['soft', 'glow', 'band', 'step'] as const) {
+      const drawn = await hairlines(chart);
+      expect(drawn.now, chart).toHaveLength(1);
+      if (chart !== 'step') expect(drawn.now[0], chart).toBeCloseTo(drawn.end as number, 2);
+      expect(drawn.hollow, chart).toBe(12);
+    }
+    expect((await hairlines('classic')).now).toHaveLength(0);
+    // bars and columns draw every series as bars: their own now, once
+    for (const chart of ['bars', 'columns'] as const) {
+      const drawn = await hairlines(chart);
+      expect(drawn.now, chart).toHaveLength(1);
+      expect(drawn.hollow, chart).toBeGreaterThan(0);
+    }
+  });
+
   it('keeps a price that runs past now dashed from now on, beside a history that ends there', async () => {
     const card = await draw(
       {

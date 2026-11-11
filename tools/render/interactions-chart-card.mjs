@@ -16,6 +16,7 @@
  * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines;
  * - what has happened is whole (#158): three rooms' lines of today at noon end on noon, none dashed; a room beside the
  *   price of both days, and the measured beside the weather's forecast, end on now's hairline, nothing dashed before it;
+ *   a line over columns marks now once, on the line's end, the columns to come hollow;
  * - four rooms: their legend under the axis in two columns at 360, the value row's lines at 266 and 211 (where the
  *   columns would cut the names), every name legible, the card at the height it declares;
  * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
@@ -519,6 +520,35 @@ const marksOf = (card) =>
       JSON.stringify(drawn),
     );
   }
+  // a line over columns: one now, on the line's end (the columns draw none of their own), the hours to come hollow
+  const over = await frame(page, 'Chart · a line over columns at noon')
+    .locator('fluvy-chart-card')
+    .first()
+    .evaluate((card) => {
+      const root = card.shadowRoot;
+      const line = root.querySelector('svg.fc-chart .fc-line:not(.fc-run)')?.getAttribute('d');
+      return {
+        charts: root.querySelectorAll('svg.fc-chart').length,
+        now: [...root.querySelectorAll('.fc-now')].map((n) => Number(n.getAttribute('x1'))),
+        end: Number([...(line ?? '').matchAll(/(-?[\d.]+),-?[\d.]+$/g)].at(-1)?.[1]),
+        knobs: root.querySelectorAll('.ch-chart > .fv-knob').length,
+        // each column's middle, and whether it is to come
+        columns: [...root.querySelectorAll('.fc-bar')].map((bar) => {
+          const box = bar.getBBox();
+          return [box.x + box.width / 2, bar.classList.contains('fc-bar--hollow')];
+        }),
+      };
+    });
+  check(
+    'a line over columns at noon: one now hairline, on the line’s end, its knob there, the hours to come hollow',
+    over.charts === 2 &&
+      over.now.length === 1 &&
+      near(over.now[0], over.end) &&
+      over.knobs === 1 &&
+      over.columns.some(([, hollow]) => hollow) &&
+      over.columns.every(([x, hollow]) => (hollow ? x > over.now[0] : x < over.now[0])),
+    JSON.stringify(over),
+  );
 }
 await page.close();
 

@@ -15,7 +15,8 @@ if (!customElements.get('fluvy-chart-card'))
  * list in kW under a kWh sensor; a weather's hourly forecast (`weather/subscribe_forecast`) after the measured
  * temperature; a sensor's history with its change on yesterday; its statistics' band; four rooms on one chart (the
  * legend under the axis), and four and six at half a section and in a narrow column; compact, tiles, empty, out of
- * reach and half a section; and at noon (#158), three rooms' day so far, and a room beside the price of both days.
+ * reach and half a section; and at noon (#158), three rooms' day so far, a room beside the price of both days, and the
+ * panels' power over the solar forecast as columns.
  */
 
 const QUARTER = 15 * 60_000;
@@ -71,11 +72,12 @@ const TIBBER = Object.fromEntries(
   ]),
 );
 
+/** How high the sun stands at an hour of the day, 0 at night: what the panels make and what is forecast follow it. */
+const sun = (h: number): number => Math.max(0, Math.sin(((h % 24) - 7) * (Math.PI / 13)));
+
 /** Solcast's day ahead in half hours (kW, with its tenth and ninetieth percentiles), under a sensor in kWh. */
 const SOLCAST = Array.from({ length: 96 }, (_unused, i) => {
-  const hour = i / 2;
-  const sun = (h: number): number => Math.max(0, Math.sin(((h % 24) - 7) * (Math.PI / 13)));
-  const kw = Math.round(5.2 * sun(hour) ** 1.4 * (i < 48 ? 0.85 : 1) * 100) / 100;
+  const kw = Math.round(5.2 * sun(i / 2) ** 1.4 * (i < 48 ? 0.85 : 1) * 100) / 100;
   return {
     period_start: local(TODAY + i * 30 * 60_000),
     pv_estimate: kw,
@@ -110,6 +112,15 @@ const NOON_ROOMS = [
   'sensor.ch_noon_office_temperature',
   'sensor.ch_noon_bedroom_temperature',
 ];
+/**
+ * The panels' power up to Thursday's noon (kW), half an hour a reading from Wednesday's midnight, a passing cloud in
+ * it.
+ */
+const SOLAR_TO_NOON = Array.from(
+  { length: 73 },
+  (_unused, i) =>
+    Math.round(4.6 * sun(i / 2) ** 1.4 * (0.92 + 0.06 * Math.sin(i * 1.3)) * 100) / 100,
+);
 
 /** The weather's next hours from the sheets' hour on: a cool night, a warm Friday afternoon. */
 const FORECAST = Array.from({ length: 30 }, (_unused, h) => {
@@ -216,6 +227,11 @@ export const sheet: SheetSpec = {
     sensor('sensor.ch_noon_living_temperature', '20.9', 'Living room', TEMPERATURE),
     sensor('sensor.ch_noon_office_temperature', '22.2', 'Office', TEMPERATURE),
     sensor('sensor.ch_noon_bedroom_temperature', '19.2', 'Bedroom', TEMPERATURE),
+    sensor('sensor.ch_noon_solar_power', String(SOLAR_TO_NOON.at(-1)), 'Solar power', {
+      unit_of_measurement: 'kW',
+      device_class: 'power',
+      state_class: 'measurement',
+    }),
     ['sensor.ch_gone', 'unavailable', { friendly_name: 'Nordpool', ...PRICE }],
   ],
   history: {
@@ -229,6 +245,7 @@ export const sheet: SheetSpec = {
     'sensor.ch_noon_living_temperature': toNoon(LIVING, true),
     'sensor.ch_noon_office_temperature': toNoon(room(21.6, 3.1), false),
     'sensor.ch_noon_bedroom_temperature': toNoon(room(18.9, 1.4), false),
+    'sensor.ch_noon_solar_power': SOLAR_TO_NOON,
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -380,6 +397,23 @@ export const sheet: SheetSpec = {
             { entity: 'sensor.ch_nordpool', name: 'Price', curve: 'step' },
           ],
           span: 'today+tomorrow',
+          chart: 'soft',
+          _now: NOON_ISO,
+        }),
+      ],
+    },
+    // the panels' power over Solcast's forecast as columns: now marked once, on the line's end, the hours to come
+    // hollow
+    {
+      title: 'Chart · a line over columns at noon',
+      cards: [
+        card({
+          title: 'Solar power',
+          series: [
+            { entity: 'sensor.ch_noon_solar_power', name: 'Measured' },
+            { entity: 'sensor.ch_solcast_today', unit: 'kW', kind: 'columns', name: 'Forecast' },
+          ],
+          span: 'today',
           chart: 'soft',
           _now: NOON_ISO,
         }),

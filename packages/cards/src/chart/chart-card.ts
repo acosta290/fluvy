@@ -1509,7 +1509,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const main: ChartSpec = {
       ...common,
       series: columned.map((d) => asSeries(d, true)),
-      style,
+      // now is marked once: on the end of the lines drawn over the columns, where they are (the columns to come hollow)
+      style: lined.length ? { ...style, now: 'none' } : style,
       kind: 'bars',
       reach: lined
         .flatMap((d) => [...d.points, ...(d.band ? [...d.band.low, ...d.band.high] : [])])
