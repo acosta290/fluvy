@@ -1,6 +1,7 @@
 import { PAGE_ATTRIBUTE, WALL_ATTRIBUTE } from '../look/attributes.js';
+import type { MenuIcons } from '../settings/schema.js';
 import { patchChartFont, patchChartSeries } from './charts.js';
-import { adoptLast, walkShadow } from './dom.js';
+import { adoptLast, insideOf, walkShadow } from './dom.js';
 import { ORIGINAL_ICONS } from './css/chrome.js';
 import { PanelFrames } from './frames.js';
 import { refreshLegacyIcons } from './icons.js';
@@ -148,34 +149,50 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     : undefined;
 
   let active: boolean | null = null;
-  let icons: boolean | null = null;
+  /** The places that keep Home Assistant's own icons, as `<html>` says them (none: ours everywhere). */
+  let kept: string | null = null;
   let wall: boolean | null = null;
+  /** Where our icons are drawn now, place by place: the page wears Fluvy and the house keeps ours there. */
+  let icons: MenuIcons = { sidebar: false, settings: false };
+  /**
+   * Whether a Material icon of Home Assistant's is drawn as ours: the sidebar's choice inside the sidebar, Settings'
+   * anywhere else (the menus, pencils, close and back of Home Assistant's own pages, Settings' most of all).
+   */
+  const oursOn = (icon: Element): boolean =>
+    icons.sidebar === icons.settings
+      ? icons.sidebar
+      : icons[insideOf(icon, 'ha-sidebar') ? 'sidebar' : 'settings'];
   /** The house's choices the sheets wait on (`when`), as the attributes on `<html>` say them now, with their values. */
   const choices = [...new Set(SHEETS.flatMap((spec) => (spec.when ? [spec.when] : [])))];
   let chosen = '';
   const sync = (): void => {
     const html = env.document.documentElement;
     const on = themed(env.document);
-    const ours = !html.hasAttribute(ORIGINAL_ICONS);
+    const original = html.getAttribute(ORIGINAL_ICONS) ?? '';
     const walled = html.hasAttribute(WALL_ATTRIBUTE);
     const now = choices
       .filter((name) => html.hasAttribute(name))
       .map((name) => `${name}=${html.getAttribute(name)}`)
       .join('\n');
-    if (on === active && ours === icons && walled === wall && now === chosen) return;
+    if (on === active && original === kept && walled === wall && now === chosen) return;
     chosen = now;
     const holds = (spec: ShellSheet): boolean => !spec.when || html.hasAttribute(spec.when);
     const cssOf = (spec: ShellSheet): string =>
       spec.drawn && spec.when ? spec.drawn(html.getAttribute(spec.when) ?? '') : spec.css;
-    const drawn = active === true && icons === true;
+    const places = original.split(' ');
+    const drawn = icons;
+    icons = {
+      sidebar: on && !places.includes('sidebar'),
+      settings: on && !places.includes('settings'),
+    };
     const first = active === null;
     // the page wears Fluvy now: the panel frames on it get their shells
     if (on && active === false) frames?.scan();
     active = on;
-    icons = ours;
+    kept = original;
     wall = walled;
-    // a wall sheet follows the wall attribute alone (a wall is a wall in every scope), an `always` sheet its marks;
-    // the rest follow the theme
+    // a wall sheet follows the wall attribute alone (a wall is a wall in every scope), an `always` sheet its marks, an
+    // icons sheet its place's icons; the rest follow the theme
     for (const { spec, sheet } of entries)
       sheet.replaceSync(
         !holds(spec)
@@ -186,12 +203,13 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
               ? walled
                 ? cssOf(spec)
                 : ''
-              : on && (spec.choice !== 'icons' || ours)
+              : (spec.choice ? icons[spec.choice] : on)
                 ? cssOf(spec)
                 : '',
       );
-    // Home Assistant's Material icons drawn as ours (or back) on what is already on the page
-    if (!first && drawn !== (on && ours)) redrawSvgIcons(env.document, on && ours);
+    // Home Assistant's Material icons drawn as ours (or back) on what is already on the page, where that changed
+    if (!first && (drawn.sidebar !== icons.sidebar || drawn.settings !== icons.settings))
+      redrawSvgIcons(env.document, oursOn);
   };
   sync();
 
@@ -218,12 +236,9 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     'navigationGlyphs',
     patchNavigationGlyphs(env.customElements, env.document, configGlyph),
   );
-  void track(
-    'svgIcons',
-    patchSvgIcons(env.customElements, () => active === true && icons === true),
-  ).then((done) => {
+  void track('svgIcons', patchSvgIcons(env.customElements, oursOn)).then((done) => {
     // the icons drawn before the patch (the page's first render) take ours too
-    if (done && active && icons) redrawSvgIcons(env.document, true);
+    if (done && (icons.sidebar || icons.settings)) redrawSvgIcons(env.document, oursOn);
   });
   if (frames) void track('panelFrames', frames.watch());
 

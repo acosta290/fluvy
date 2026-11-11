@@ -7,7 +7,7 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 | --- | --- | --- |
 | **Appearance** | palette (fifteen presets, the house's saved palettes, the community's, or a custom accent — shared as a file), shape (soft, round, crisp), button style, the dashboards' tabs (Fluvy, pills, original or hidden; names, icons or both; the dashboard's name), the sidebar and header (Home Assistant's logo, dividers, the header on the page), lines in the sidebar after the items chosen; the cards (how opaque, and the blur behind a see-through one), the sliders (the style every slider is drawn in), the lights, where a card says nothing, and the status colours (see below); a live preview on real cards (its little house answers a tap itself: nothing at home changes) | the house; a person may keep their own palette and shape |
 | **Charts** | the style every chart is drawn in and the gauge every gauge reads in, each a tile the chart engine draws; what the style lets the house tune; motion; how much of the past every chart shows and how far apart a line's points stand; the series colours (the palette's six, or a set of the house's own, made and checked here); a preview of a chart, its bars and a gauge in both modes side by side — see [Charts](#charts) | the house |
-| **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, the icons, the Activity page, the History page | the house |
+| **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
 | **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
@@ -238,3 +238,17 @@ Home Assistant's own pages take Fluvy's design only while the theme Home Assista
 — their profile's theme, or the house's default. With another theme, every Home Assistant page keeps that theme and the
 look stays on Fluvy's dashboards, as with "only dashboards". The panel says so, and offers the Fluvy theme through the
 profile's own theme picker; it never changes anyone's theme by itself.
+
+## Our icons
+
+With the look everywhere, Fluvy draws its own icons in Home Assistant's menus, in two places the house chooses apart
+(1.19), each on until it is turned off:
+
+| Switch | What it covers | Off |
+| --- | --- | --- |
+| **Our icons in the sidebar** | the sidebar's own pages, the apps people add most, the notifications, Settings' item and the menu button | Home Assistant's icons in the sidebar |
+| **Our icons in Settings** | Settings' lists (their icon circles, About's, the restart dialog's) and the Material icons of Home Assistant's own pages: the menus, the pencils, close, back and search, the edit bar's | Home Assistant's coloured circles and its icons |
+
+So a house can wear Fluvy's icons in the sidebar and keep Home Assistant's in Settings, or the other way round. A house
+that had turned the one icons switch of 1.18 off finds both off, one that left it on finds both on: nothing changes on
+upgrade, and a settings file exported from 1.18 imports the same way.

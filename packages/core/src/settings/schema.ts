@@ -48,6 +48,8 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
+ * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
  * 3 since 1.11: the house keeps its chart settings and its saved sets of series colours (a 2 is read field by
  * field, each missing field its factory default — `classic` everywhere, so nothing on a dashboard changes). 2 since
  * 1.3: the house keeps its shared palettes and its wall settings. A 1.2 bundle reads a 2 as its own (it parses field
@@ -57,7 +59,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -71,6 +73,15 @@ export type WallExit = 'button' | 'hold';
 export type WallSubview = 'button' | 'header';
 export const WALL_AFTER = [0, 2, 5, 10, 30] as const;
 export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
+
+/**
+ * Where the house wears our icons in Home Assistant's own menus (1.19), each place its own choice: `sidebar`, its items
+ * and its menu button; `settings`, Settings' rows (their icon circles, About's, the restart dialog's) and the Material
+ * icons of Home Assistant's chrome everywhere else (menus, pencils, close, back). Off keeps Home Assistant's there.
+ */
+export const ICON_PLACES = ['sidebar', 'settings'] as const;
+export type IconPlace = (typeof ICON_PLACES)[number];
+export type MenuIcons = Readonly<Record<IconPlace, boolean>>;
 
 /** When a light card shows its light's colour on its surface: never, while the light is on, or at rest too. */
 export const LIGHT_TINTS = ['off', 'on', 'always'] as const;
@@ -135,8 +146,8 @@ export interface HouseSettings {
   readonly dashboards: readonly string[];
   /** The floating frame around the app on wide screens (`everywhere`). */
   readonly frame: boolean;
-  /** Our icons in Home Assistant's own menus (the sidebar, Settings); false keeps Home Assistant's. */
-  readonly icons: boolean;
+  /** Our icons in Home Assistant's own menus, place by place (1.19); false keeps Home Assistant's there. */
+  readonly icons: MenuIcons;
   /** Our Activity view in place of Home Assistant's logbook page (where the look reaches it); false keeps Home Assistant's. */
   readonly activity: boolean;
   /** Our History view in place of Home Assistant's history page (where the look reaches it); false keeps Home Assistant's. */
@@ -184,7 +195,7 @@ export interface EffectiveSettings {
   readonly scope: Scope;
   readonly dashboards: readonly string[];
   readonly frame: boolean;
-  readonly icons: boolean;
+  readonly icons: MenuIcons;
   readonly activity: boolean;
   readonly history: boolean;
   readonly language: CardLanguage;
@@ -213,7 +224,7 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   scope: 'dashboards',
   dashboards: [],
   frame: true,
-  icons: true,
+  icons: { sidebar: true, settings: true },
   activity: true,
   history: true,
   palettes: [],
@@ -324,6 +335,17 @@ export function parseCards(raw: unknown): CardSurface {
   };
 }
 
+/** Our icons, place by place: a 1.18 house's one boolean (the sidebar and Settings together) is both. */
+export function parseIcons(raw: unknown): MenuIcons {
+  if (typeof raw === 'boolean') return { sidebar: raw, settings: raw };
+  const value = isRecord(raw) ? raw : {};
+  const d = HOUSE_DEFAULTS.icons;
+  return {
+    sidebar: typeof value['sidebar'] === 'boolean' ? value['sidebar'] : d.sidebar,
+    settings: typeof value['settings'] === 'boolean' ? value['settings'] : d.settings,
+  };
+}
+
 export function parseHouse(raw: unknown): HouseSettings {
   const value = isRecord(raw) ? raw : {};
   const d = HOUSE_DEFAULTS;
@@ -339,7 +361,7 @@ export function parseHouse(raw: unknown): HouseSettings {
       ? value['dashboards'].filter((path): path is string => typeof path === 'string')
       : d.dashboards,
     frame: typeof value['frame'] === 'boolean' ? value['frame'] : d.frame,
-    icons: typeof value['icons'] === 'boolean' ? value['icons'] : d.icons,
+    icons: parseIcons(value['icons']),
     activity: typeof value['activity'] === 'boolean' ? value['activity'] : d.activity,
     history: typeof value['history'] === 'boolean' ? value['history'] : d.history,
     palettes: parseSavedPalettes(value['palettes']),

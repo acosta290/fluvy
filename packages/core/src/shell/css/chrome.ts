@@ -23,7 +23,7 @@ import { mask } from './shared.js';
 const GAP = '16px';
 /** On `<home-assistant>`: the house turned the frame off (fluvy's settings); the app then fills the window. */
 export const NO_FRAME = 'fluvy-no-frame';
-/** On `<html>`: the house keeps Home Assistant's own icons in its menus (fluvy's settings). */
+/** On `<html>`: the places where the house keeps Home Assistant's own icons (`sidebar`, `settings`; fluvy's settings). */
 export const ORIGINAL_ICONS = 'fluvy-original-icons';
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
 const inset = (side: (typeof SIDES)[number]): string =>

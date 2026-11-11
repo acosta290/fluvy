@@ -23,6 +23,8 @@
  * with motion and under reduced motion, nor when the panel is hidden and shown again. The Cards group (1.15, #121), at
  * 360 and 1400: solid until chosen; its ruler holds in its card's column; four steps down on the keys make 80 %, said in
  * the bar, the preview's cards see-through and blurred on a picture; the blur off leaves them see-through, unblurred.
+ * Our icons (1.19), at 360 and 1400: the sidebar's and Settings' are two rows in the Scope card, each on, and each
+ * switch turns its own place alone, said in the bar.
  * The house ticking (1.17, #135): twenty ticks of an entity no card watches draw none of the Appearance, Dashboard or
  * night wall previews again, nor the cards of a page that speak a language of the person's own.
  */
@@ -955,6 +957,68 @@ const chartsTab = (page) => ({
       `${width}: the blur off, the cards stay see-through, unblurred`,
       (await page.locator('fluvy-panel .pn-preview [glass="blur"]').count()) === 0 &&
         (await glassy()) > 0,
+    );
+    await page.close();
+  }
+}
+
+/* ---------- our icons in the sidebar and in Settings, each its own switch (1.19) ---------- */
+{
+  for (const width of [360, 1400]) {
+    const page = await suite.page('panel=scope&state=everywhere', {
+      viewport: { width, height: 900 },
+    });
+    const row = (title) =>
+      page.locator('fluvy-panel .fv-row').filter({
+        has: page.locator('.fv-row__title', { hasText: new RegExp(`^${title}$`) }),
+      });
+    const SIDEBAR = 'Our icons in the sidebar';
+    const SETTINGS = 'Our icons in Settings';
+    const switches = async () =>
+      Promise.all(
+        [SIDEBAR, SETTINGS].map((title) =>
+          row(title).locator('.fv-switch').getAttribute('aria-checked'),
+        ),
+      );
+    const edit = () => page.evaluate(() => document.querySelector('fluvy-panel').houseEdit.icons);
+    const flip = async (title) => {
+      await row(title).locator('.fv-hit').click();
+      await settle(page, 200);
+    };
+    await row(SIDEBAR).scrollIntoViewIfNeeded();
+    // each row in the card's column, its switch inside it
+    const inside = await page.evaluate(() => {
+      const panel = document.querySelector('fluvy-panel').shadowRoot;
+      const rows = [...panel.querySelectorAll('.fv-row')].filter((r) =>
+        r.querySelector('.fv-row__title')?.textContent.trim().startsWith('Our icons in'),
+      );
+      return (
+        rows.length === 2 &&
+        rows.every((r) => {
+          const card = r.closest('.pn-card').getBoundingClientRect();
+          const toggle = r.querySelector('.fv-switch').getBoundingClientRect();
+          return toggle.left >= card.left && toggle.right <= card.right;
+        })
+      );
+    });
+    check(
+      `${width}: the scope's icons are two rows, the sidebar's and Settings', each on, its switch in the card`,
+      inside && JSON.stringify(await switches()) === '["true","true"]',
+    );
+    await flip(SETTINGS);
+    check(
+      `${width}: Settings' switch turns Settings' icons off alone, said in the bar`,
+      JSON.stringify(await switches()) === '["true","false"]' &&
+        JSON.stringify(await edit()) === '{"sidebar":true,"settings":false}' &&
+        (await barText(page)) === 'Our icons in Settings · Off',
+    );
+    await flip(SIDEBAR);
+    await flip(SETTINGS);
+    check(
+      `${width}: the sidebar's switch turns the sidebar's off alone, Settings' back on`,
+      JSON.stringify(await switches()) === '["false","true"]' &&
+        JSON.stringify(await edit()) === '{"sidebar":false,"settings":true}' &&
+        (await barText(page)) === 'Our icons in the sidebar · Off',
     );
     await page.close();
   }

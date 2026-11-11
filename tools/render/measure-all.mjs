@@ -97,6 +97,8 @@ const PANEL = [
   ['charts-styled', 'charts&state=styled,sets'],
   ['charts-editor', 'charts&state=sets,editor'],
   ['scope', 'scope'],
+  // everywhere: the frame, our icons in the sidebar and in Settings, the Activity and History pages
+  ['scope-everywhere', 'scope&state=everywhere'],
   ['dashboard', 'dashboard&state=dashboards'],
   ['wall', 'wall&state=wall'],
   ['wall-night', 'wall&state=wall,night'],

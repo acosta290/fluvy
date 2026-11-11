@@ -17,8 +17,9 @@ chooses here is the house's look; anyone can keep a palette of their own in the 
 ## 3. Decide where it applies
 
 **Scope**: the look on Fluvy's dashboards only, or **everywhere** — Home Assistant's own pages, dialogs and forms in
-the same design — with switches for the frame, the icons, and the Activity and History pages. "Everywhere" works while
-the theme Home Assistant wears for you is Fluvy; another theme keeps its pages and Fluvy stays on its dashboards.
+the same design — with switches for the frame, the icons of the sidebar and of Settings, and the Activity and History
+pages. "Everywhere" works while the theme Home Assistant wears for you is Fluvy; another theme keeps its pages and
+Fluvy stays on its dashboards.
 
 ## 4. Let it build a dashboard
 

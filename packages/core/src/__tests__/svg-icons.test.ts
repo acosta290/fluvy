@@ -68,11 +68,11 @@ describe('the ha-svg-icon patch', () => {
     const other = await icon(mdi.mdiAbacus);
     expect(other.path).toBe(mdi.mdiAbacus);
     on = false;
-    redrawSvgIcons(document, false);
+    redrawSvgIcons(document, () => on);
     await pencil.updateComplete;
     expect(pencil.path).toBe(mdi.mdiPencil);
     on = true;
-    redrawSvgIcons(document, true);
+    redrawSvgIcons(document, () => on);
     await pencil.updateComplete;
     expect(pencil.path).toBe(ICON_PATHS['pencil']);
     document.body.replaceChildren();
@@ -81,7 +81,7 @@ describe('the ha-svg-icon patch', () => {
   it('looks no path up while our icons are off, and draws the path Home Assistant set meanwhile when they come back', async () => {
     const pencil = await icon(mdi.mdiPencil);
     on = false;
-    redrawSvgIcons(document, false);
+    redrawSvgIcons(document, () => on);
     await pencil.updateComplete;
     // another theme: Home Assistant draws its own, and nothing of ours is kept on a new icon
     const close = await icon(mdi.mdiClose);
@@ -92,12 +92,12 @@ describe('the ha-svg-icon patch', () => {
     pencil.path = mdi.mdiDelete;
     await pencil.updateComplete;
     on = true;
-    redrawSvgIcons(document, true);
+    redrawSvgIcons(document, () => on);
     await pencil.updateComplete;
     expect(pencil.path).toBe(ICON_PATHS['trash']);
     expect(close.path).toBe(ICON_PATHS['close']);
     on = false;
-    redrawSvgIcons(document, false);
+    redrawSvgIcons(document, () => on);
     await pencil.updateComplete;
     expect(pencil.path).toBe(mdi.mdiDelete);
     on = true;
@@ -120,7 +120,7 @@ describe('the ha-svg-icon patch', () => {
     const after = await icon(mdi.mdiPencil);
     expect(after.path).toBe(mdi.mdiPencil);
     // nor are the icons redrawn as ours
-    redrawSvgIcons(document, true);
+    redrawSvgIcons(document, () => on);
     await after.updateComplete;
     expect(after.path).toBe(mdi.mdiPencil);
     warn.mockRestore();

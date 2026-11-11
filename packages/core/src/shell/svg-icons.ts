@@ -7,10 +7,10 @@ import { guard, wrap } from './patches.js';
 /**
  * Home Assistant's own chrome draws its Material icons with `ha-svg-icon`, told only a path (a property no stylesheet
  * can read): the edit bar's undo / redo / help / menu, the menus' items, pencils, close buttons, back arrows. While
- * the shell is on and the house keeps our icons, a path we know (`MDI_GLYPHS`, by a key of the path) is drawn as our
- * glyph on the same 24 grid; the Material path is kept on the element, and comes back when the icons go. Home
- * Assistant's own `willUpdate` runs first, always; a path is looked up only while our icons are drawn, so a page that
- * does not wear Fluvy never pays for it.
+ * the shell is on and the house keeps our icons where an icon is (the sidebar, or anywhere else: the shell says), a
+ * path we know (`MDI_GLYPHS`, by a key of the path) is drawn as our glyph on the same 24 grid; the Material path is
+ * kept on the element, and comes back when the icons go. Home Assistant's own `willUpdate` runs first, always; a path
+ * is looked up only while our icons are drawn, so a page that does not wear Fluvy never pays for it.
  */
 
 interface SvgIcon extends HTMLElement {
@@ -36,10 +36,10 @@ function drawOurs(icon: SvgIcon): void {
   } else if (material !== ourPath(icon.__fluvyMdi)) delete icon.__fluvyMdi;
 }
 
-/** Wraps `ha-svg-icon` once; `on()` says whether our icons are drawn now. */
+/** Wraps `ha-svg-icon` once; `on(icon)` says whether our icons are drawn now where the icon is. */
 export async function patchSvgIcons(
   registry: CustomElementRegistry,
-  on: () => boolean,
+  on: (icon: Element) => boolean,
 ): Promise<boolean> {
   await registry.whenDefined('ha-svg-icon');
   return wrap(
@@ -55,10 +55,10 @@ export async function patchSvgIcons(
 }
 
 /**
- * Every icon on the page redrawn after the icons were switched on or off (the Material path back, or ours), as part
- * of the patch (it steps aside with it).
+ * Every icon on the page redrawn after the icons were switched on or off (the Material path back, or ours, as `on`
+ * says for each), as part of the patch (it steps aside with it).
  */
-export const redrawSvgIcons = (doc: Document, on: boolean): void =>
+export const redrawSvgIcons = (doc: Document, on: (icon: Element) => boolean): void =>
   void guard(
     'svgIcons',
     () =>
@@ -72,7 +72,7 @@ export const redrawSvgIcons = (doc: Document, on: boolean): void =>
         const glyph = ourPath(material);
         if (!material || !glyph) return;
         icon.__fluvyMdi = material;
-        icon.path = on ? glyph : material;
+        icon.path = on(icon) ? glyph : material;
       }),
     doc,
   );

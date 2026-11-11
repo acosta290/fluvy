@@ -16,6 +16,7 @@ import { cachedSettings, SettingsStore } from '../settings/store.js';
 import {
   resolveSettings,
   HOUSE_DEFAULTS,
+  ICON_PLACES,
   pageScope,
   PERSONAL_DEFAULTS,
   wearsLook,
@@ -187,8 +188,10 @@ export function startLook(): LookHandle | undefined {
     setMotionPreference(now.motion);
     setHaptics(now.haptics);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
-    // Home Assistant's own icons in its menus, if the house keeps them (the shell empties its icon sheets)
-    env.document.documentElement.toggleAttribute(ORIGINAL_ICONS, !now.icons);
+    // Home Assistant's own icons in its menus where the house keeps them, place by place (the shell empties those sheets)
+    const kept = ICON_PLACES.filter((place) => !now.icons[place]);
+    if (kept.length) env.document.documentElement.setAttribute(ORIGINAL_ICONS, kept.join(' '));
+    else env.document.documentElement.removeAttribute(ORIGINAL_ICONS);
     // Home Assistant's own Activity page, if the house keeps it (the takeover gives the page back)
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);

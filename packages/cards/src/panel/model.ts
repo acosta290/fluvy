@@ -1,4 +1,5 @@
 import {
+  ICON_PLACES,
   LANGUAGES,
   localize,
   lookKey,
@@ -477,7 +478,10 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(t(house.scope === 'everywhere' ? 'change.everywhere' : 'change.dashboards'));
   if (house.dashboards) lines.push(`${t('scope.list')} · ${shown.dashboards.length}`);
   if (house.frame !== undefined) lines.push(`${t('scope.frame')} · ${onOff(house.frame)}`);
-  if (house.icons !== undefined) lines.push(`${t('scope.icons')} · ${onOff(house.icons)}`);
+  if (house.icons)
+    for (const place of ICON_PLACES)
+      if (house.icons[place] !== ctx.settings.icons[place])
+        lines.push(`${t(`scope.icons_${place}`)} · ${onOff(house.icons[place])}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
   const device = ctx.deviceEdit;

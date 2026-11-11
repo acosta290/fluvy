@@ -7,6 +7,7 @@ import {
   MAX_SAVED_PALETTES,
   parseCards,
   parseHouse,
+  parseIcons,
   parsePalette,
   parsePersonal,
   parseSavedPalettes,
@@ -59,7 +60,7 @@ describe('parsing stored settings', () => {
         scope: 'everywhere',
         dashboards: ['fluvy-home', 3],
         frame: false,
-        icons: false,
+        icons: { sidebar: false, settings: true },
         activity: false,
         history: false,
         tabs: { style: 'pills', content: 'icons', title: false },
@@ -78,7 +79,7 @@ describe('parsing stored settings', () => {
         extra: true,
       }),
     ).toEqual({
-      version: 3,
+      version: 4,
       palette: 'volt',
       shape: 'round',
       pills: 'crisp',
@@ -93,7 +94,7 @@ describe('parsing stored settings', () => {
       scope: 'everywhere',
       dashboards: ['fluvy-home'],
       frame: false,
-      icons: false,
+      icons: { sidebar: false, settings: true },
       activity: false,
       history: false,
       palettes: [],
@@ -113,7 +114,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 3, palette: 'volt' });
     expect(upgraded.sliders).toEqual({ style: 'ruler', words: 'ends' });
     expect(HOUSE_DEFAULTS.sliders).toEqual(SLIDER_DEFAULTS);
-    expect(upgraded.version).toBe(3);
+    expect(upgraded.version).toBe(4);
     expect(parseSliderSettings({ style: 'bar', words: 'none' })).toEqual({
       style: 'bar',
       words: 'none',
@@ -163,7 +164,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 3, palette: 'volt' });
     expect(upgraded.cards).toEqual({ opacity: 100, blur: true, unavailable: 'dashed' });
     expect(HOUSE_DEFAULTS.cards).toEqual({ opacity: 100, blur: true, unavailable: 'dashed' });
-    expect(upgraded.version).toBe(3);
+    expect(upgraded.version).toBe(4);
     expect(parseCards({ opacity: 80, blur: false })).toEqual({
       opacity: 80,
       blur: false,
@@ -186,7 +187,7 @@ describe('parsing stored settings', () => {
     // a 1.15 house stored its surface without it: dashed, as before, and the same version
     const upgraded = parseHouse({ version: 3, cards: { opacity: 80, blur: true } });
     expect(upgraded.cards.unavailable).toBe('dashed');
-    expect(upgraded.version).toBe(3);
+    expect(upgraded.version).toBe(4);
     expect(parseCards({ unavailable: 'quiet' }).unavailable).toBe('quiet');
     expect(parseCards({ unavailable: 'dashed' }).unavailable).toBe('dashed');
     // a word it does not know, another case, or not a word: dashed
@@ -197,12 +198,41 @@ describe('parsing stored settings', () => {
     ).toEqual({ opacity: 100, blur: true, unavailable: 'quiet' });
   });
 
+  it('reads our icons place by place: a 1.18 house’s one switch is both places, so nothing changes on upgrade (1.19)', () => {
+    // a 1.18 house stored one boolean for the sidebar and Settings together: each place takes it
+    expect(parseHouse({ version: 3, icons: false }).icons).toEqual({
+      sidebar: false,
+      settings: false,
+    });
+    expect(parseHouse({ version: 3, icons: true }).icons).toEqual({
+      sidebar: true,
+      settings: true,
+    });
+    // none stored: ours in both, as before
+    expect(parseHouse({ version: 3, palette: 'volt' }).icons).toEqual({
+      sidebar: true,
+      settings: true,
+    });
+    expect(HOUSE_DEFAULTS.icons).toEqual({ sidebar: true, settings: true });
+    // each place its own, one left out or broken ours
+    expect(parseIcons({ sidebar: true, settings: false })).toEqual({
+      sidebar: true,
+      settings: false,
+    });
+    expect(parseIcons({ sidebar: false })).toEqual({ sidebar: false, settings: true });
+    for (const broken of ['off', 0, null, [false], { sidebar: 'off', settings: 1 }])
+      expect(parseIcons(broken)).toEqual({ sidebar: true, settings: true });
+    expect(
+      resolveSettings(parseHouse({ icons: { settings: false } }), PERSONAL_DEFAULTS).icons,
+    ).toEqual({ sidebar: true, settings: false });
+  });
+
   it('reads the house’s chart settings: a 1.10 house (version 2, none stored) draws every chart classic, as before', () => {
     // the migration is the parse: a field a 2 never stored is its factory value
     const upgraded = parseHouse({ version: 2, palette: 'volt', statuses: { warning: '#dc630b' } });
     expect(upgraded.charts).toEqual(CHART_DEFAULTS);
     expect(upgraded.chartSets).toEqual([]);
-    expect(upgraded.version).toBe(3);
+    expect(upgraded.version).toBe(4);
     expect(CHART_DEFAULTS).toMatchObject({
       style: 'classic',
       gauge: 'ticks',
@@ -519,6 +549,30 @@ describe('the settings store', () => {
       type: 'frontend/set_user_data',
       key: 'fluvy',
       value: { ...PERSONAL_DEFAULTS, language: 'es' },
+    });
+  });
+
+  it('writes a 1.18 house’s one icons switch back as both places, and each place on its own after (1.19)', async () => {
+    const { hass, listeners, sent } = fakeHass();
+    const store = new SettingsStore(() => hass, undefined);
+    store.start(() => undefined);
+    listeners.get('frontend/subscribe_system_data')?.({
+      value: { version: 3, palette: 'volt', icons: false },
+    });
+    expect(store.effective.icons).toEqual({ sidebar: false, settings: false });
+    await store.saveHouse({ shape: 'round' });
+    expect(sent[0]?.value).toEqual({
+      ...HOUSE_DEFAULTS,
+      palette: 'volt',
+      shape: 'round',
+      icons: { sidebar: false, settings: false },
+    });
+    listeners.get('frontend/subscribe_system_data')?.({ value: sent[0]?.value });
+    await store.saveHouse({ icons: { sidebar: true, settings: false } });
+    expect(sent[1]?.value).toMatchObject({
+      version: 4,
+      shape: 'round',
+      icons: { sidebar: true, settings: false },
     });
   });
 

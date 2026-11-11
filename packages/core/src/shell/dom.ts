@@ -13,6 +13,16 @@ export function walkShadow(
   walk(root, 0);
 }
 
+/** Whether `element` is drawn inside a `tag`: one of the hosts of the shadow roots around it is one. */
+export function insideOf(element: Element, tag: string): boolean {
+  let root = element.getRootNode() as Partial<ShadowRoot>;
+  while (root.host) {
+    if (root.host.localName === tag) return true;
+    root = root.host.getRootNode() as Partial<ShadowRoot>;
+  }
+  return false;
+}
+
 /** Puts `sheet` last among a root's adopted sheets (last wins at equal specificity); a no-op when it already is. */
 export function adoptLast(root: DocumentOrShadowRoot, sheet: CSSStyleSheet): void {
   const sheets = root.adoptedStyleSheets;

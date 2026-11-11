@@ -799,26 +799,52 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
-  it('lets the house keep Home Assistant’s own icons in its menus, shown before it is saved', async () => {
+  it('lets the house keep Home Assistant’s own icons in the sidebar or in Settings, each its own switch, shown before it is saved', async () => {
     const { panel, root, row, button, written, handle, previews, settle } = await mount();
     await handle.store.saveHouse({ scope: 'everywhere' });
     panel.tab = 'scope';
     await panel.updateComplete;
-    const icons = row('Our icons in the menus');
-    expect(icons?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('true');
-    const saves = written.length;
-    icons?.querySelector<HTMLElement>('.fv-hit')?.click();
-    await settle();
-    // an edit: on the screen at once, saved only from the bar
-    expect(written.length).toBe(saves);
-    expect(previews.at(-1)).toEqual({ icons: false });
-    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
-      'Our icons in the menus · Off',
+    const SIDEBAR = 'Our icons in the sidebar';
+    const SETTINGS = 'Our icons in Settings';
+    const switches = (): (string | null | undefined)[] =>
+      [SIDEBAR, SETTINGS].map((title) =>
+        row(title)?.querySelector('.fv-switch')?.getAttribute('aria-checked'),
+      );
+    const flip = async (title: string): Promise<void> => {
+      row(title)?.querySelector<HTMLElement>('.fv-hit')?.click();
+      await settle();
+    };
+    const bar = (): string | undefined => root.querySelector('.pn-bar__text')?.textContent?.trim();
+    // two rows where there was one, beside the frame, each with its glyph and what off keeps
+    expect(switches()).toEqual(['true', 'true']);
+    expect(row('Our icons in the menus')).toBeUndefined();
+    const titles = [...root.querySelectorAll('.fv-row__title')].map((t) => t.textContent?.trim());
+    expect(
+      titles.slice(titles.indexOf('Floating frame'), titles.indexOf('Floating frame') + 3),
+    ).toEqual(['Floating frame', SIDEBAR, SETTINGS]);
+    expect(row(SIDEBAR)?.querySelector('.fv-row__sub')?.textContent).toBe(
+      'Its pages, apps and notifications; off keeps Home Assistant’s',
     );
+    const saves = written.length;
+    // Settings' alone: an edit, on the screen at once, saved only from the bar
+    await flip(SETTINGS);
+    expect(written.length).toBe(saves);
+    expect(switches()).toEqual(['true', 'false']);
+    expect(previews.at(-1)).toEqual({ icons: { sidebar: true, settings: false } });
+    expect(bar()).toBe('Our icons in Settings · Off');
+    // the sidebar's too, then Settings' back: each switch moves its own place alone
+    await flip(SIDEBAR);
+    expect(previews.at(-1)).toEqual({ icons: { sidebar: false, settings: false } });
+    expect(bar()).toBe('2 changes');
+    await flip(SETTINGS);
+    expect(switches()).toEqual(['false', 'true']);
+    expect(previews.at(-1)).toEqual({ icons: { sidebar: false, settings: true } });
+    expect(bar()).toBe('Our icons in the sidebar · Off');
     button('Save')!.click();
     await settle();
     expect(written.at(-1)?.type).toBe('frontend/set_system_data');
-    expect(handle.settings().icons).toBe(false);
+    expect(written.at(-1)?.value).toMatchObject({ icons: { sidebar: false, settings: true } });
+    expect(handle.settings().icons).toEqual({ sidebar: false, settings: true });
     // Home Assistant handed the saved value back: nothing is pending (the bar is on its way out), nothing previewed
     expect(root.querySelector('.pn-foot:not(.is-leaving) .pn-bar')).toBeNull();
     expect(previews.at(-1)).toBeNull();
@@ -1713,6 +1739,8 @@ describe('the settings panel', () => {
       shape: 'round',
       pills: 'soft',
       frame: false,
+      // our icons, place by place (1.19)
+      icons: { sidebar: false, settings: true },
       charts,
       chartSets: [sea, garden],
       // the cards' surface travels too (1.15), how one out of reach looks (1.16), and the sliders' style (1.18)
@@ -1738,6 +1766,7 @@ describe('the settings panel', () => {
       shape: 'round',
       pills: 'soft',
       frame: false,
+      icons: { sidebar: false, settings: true },
       charts,
       chartSets: [sea, garden],
       cards: { opacity: 75, blur: false, unavailable: 'quiet' },
@@ -1753,6 +1782,7 @@ describe('the settings panel', () => {
       shape: 'soft',
       pills: 'round',
       frame: true,
+      icons: { sidebar: true, settings: true },
       charts: CHART_DEFAULTS,
       chartSets: [],
       cards: { opacity: 100, blur: true, unavailable: 'dashed' },
@@ -1772,6 +1802,7 @@ describe('the settings panel', () => {
       chrome: CHROME_DEFAULTS,
     });
     expect(handle.settings().frame).toBe(false);
+    expect(handle.settings().icons).toEqual({ sidebar: false, settings: true });
     expect(handle.settings().language).toBe('es');
     expect(handle.settings().charts).toEqual(charts);
     expect(handle.store.house.chartSets).toEqual([sea, garden]);
@@ -1780,6 +1811,21 @@ describe('the settings panel', () => {
     expect(saved.at(-1)?.config).toEqual({
       strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'], caps },
     });
+    // a 1.18 file says our icons with one switch: both places take it
+    importSettings(
+      panel as unknown as FluvyPanel,
+      new File(
+        [
+          JSON.stringify({
+            ...exported,
+            house: { ...exported['house'], version: 3, icons: false },
+          }),
+        ],
+        'fluvy-settings.json',
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(handle.settings().icons).toEqual({ sidebar: false, settings: false });
     // a 1.2 file names only the home dashboard's options: they land on it too
     importSettings(
       panel as unknown as FluvyPanel,

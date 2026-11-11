@@ -102,6 +102,7 @@ import {
   wallSubviewHeaderCss,
 } from './css/wall.js';
 import { WALL_BACK_ATTRIBUTE, WALL_HEADER_ATTRIBUTE } from '../look/attributes.js';
+import type { IconPlace } from '../settings/schema.js';
 import {
   dateRangeNavCss,
   debugViewportCss,
@@ -207,12 +208,12 @@ export interface ShellSheet {
    */
   readonly instead?: string;
   /**
-   * A choice the house can turn off: `icons`, our icons in Home Assistant's own menus (the sidebar's glyphs,
-   * Settings' icon circles) — off, the sheet stays empty and Home Assistant draws its own. `wall`: the sheet fills
-   * only while `<html>` carries the wall attribute, and then whatever the theme. `always`: filled whatever the theme,
-   * every rule hanging on a mark of ours (a dashboard that wears the look while Home Assistant wears another theme).
+   * A choice the house can turn off, our icons in one place of Home Assistant's own menus: `sidebar` (its glyphs),
+   * `settings` (Settings' icon circles) — off, the sheet stays empty and Home Assistant draws its own. `wall`: the sheet
+   * fills only while `<html>` carries the wall attribute, and then whatever the theme. `always`: filled whatever the
+   * theme, every rule hanging on a mark of ours (a dashboard that wears the look while Home Assistant wears another theme).
    */
-  readonly choice?: 'icons' | 'wall' | 'always';
+  readonly choice?: IconPlace | 'wall' | 'always';
   /** An attribute of `<html>`: the sheet fills only while it is there (and the sheet's own rule holds), a house's choice. */
   readonly when?: string;
   /** The sheet drawn from the value of its `when` attribute (a house's list), in place of `css`. */
@@ -226,7 +227,7 @@ export const SHEETS: readonly ShellSheet[] = [
   { id: 'frame', target: 'home-assistant', css: frameCss, probe: 'home-assistant-main' },
   { id: 'drawer', target: 'ha-drawer', css: drawerCss, probe: '.sidebar-shell' },
   { id: 'sidebar', target: 'ha-sidebar', css: sidebarCss, probe: 'ha-list-item-button' },
-  { id: 'sidebar-icons', target: 'ha-sidebar', css: sidebarIconsCss, choice: 'icons' },
+  { id: 'sidebar-icons', target: 'ha-sidebar', css: sidebarIconsCss, choice: 'sidebar' },
   // the corner, as the house chose it: Home Assistant's logo in the sidebar's head, no hairline under it
   { id: 'sidebar-logo', target: 'ha-sidebar', css: sidebarLogoCss, when: SIDEBAR_LOGO_ATTRIBUTE },
   { id: 'sidebar-flat', target: 'ha-sidebar', css: sidebarFlatCss, when: FLAT_ATTRIBUTE },
@@ -312,21 +313,21 @@ export const SHEETS: readonly ShellSheet[] = [
     target: 'ha-config-navigation-list',
     css: configListCss,
     probe: '.icon-background',
-    choice: 'icons',
+    choice: 'settings',
   },
   {
     id: 'config-info',
     target: 'ha-config-info',
     css: configListCss,
     probe: '.icon-background',
-    choice: 'icons',
+    choice: 'settings',
   },
   {
     id: 'restart-dialog',
     target: 'dialog-restart',
     css: configListCss,
     probe: '.icon-background',
-    choice: 'icons',
+    choice: 'settings',
   },
   { id: 'config-section', target: 'ha-config-section', css: configSectionCss },
   {

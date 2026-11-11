@@ -10,7 +10,8 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 - **The frame**: the app steps 16 px inside the window, with a rounded opening and a hairline, and one scroll per
   page. It is the *Frame* switch in the *Scope* tab.
 - **Icons**: the Material icons Home Assistant draws in its chrome (menus, pencils, close, back, search…) are shown
-  as Fluvy's glyphs. The *Icons* switch.
+  as Fluvy's glyphs: in the sidebar with its glyphs (the *Our icons in the sidebar* switch), everywhere else with
+  Settings' icon circles (*Our icons in Settings*).
 - **Settings and its lists**, the notifications drawer, the quick search, the pickers, the code editor.
 - **Forms and dialogs**: fields, selects, menus, switches, sliders, dialog footers, creation forms.
 - **Dashboards in edit mode**: the edit bar, the frames of what can be edited, what adds and what edits.

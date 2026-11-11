@@ -6,6 +6,8 @@ import {
   DEVICE_ZOOMS,
   type HomeAssistant,
   HOUSE_DEFAULTS,
+  ICON_PLACES,
+  type IconPlace,
   LANGUAGES,
   LIGHT_TINTS,
   localize,
@@ -1198,6 +1200,9 @@ function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
   </div>`;
 }
 
+/** Each place of our icons by the glyph it wears in our sidebar: its menu button, Settings' item. */
+const PLACE_GLYPHS: Readonly<Record<IconPlace, string>> = { sidebar: 'menu', settings: 'sliders' };
+
 export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResult {
   const { shown, admin } = ctx;
   const pick = admin ? (key: string) => ctx.editHouse({ scope: key as Scope }) : null;
@@ -1248,15 +1253,17 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
                 readonly: !admin,
                 onToggle: (on) => ctx.editHouse({ frame: on }),
               })}
-              ${listRow({
-                icon: 'grid',
-                title: ctx.t('scope.icons'),
-                sub: ctx.t('scope.icons_sub'),
-                trailing: 'switch',
-                on: shown.icons,
-                readonly: !admin,
-                onToggle: (on) => ctx.editHouse({ icons: on }),
-              })}
+              ${ICON_PLACES.map((place) =>
+                listRow({
+                  icon: PLACE_GLYPHS[place],
+                  title: ctx.t(`scope.icons_${place}`),
+                  sub: ctx.t(`scope.icons_${place}_sub`),
+                  trailing: 'switch',
+                  on: shown.icons[place],
+                  readonly: !admin,
+                  onToggle: (on) => ctx.editHouse({ icons: { ...shown.icons, [place]: on } }),
+                }),
+              )}
               ${listRow({
                 icon: 'clock',
                 title: ctx.t('scope.activity'),
