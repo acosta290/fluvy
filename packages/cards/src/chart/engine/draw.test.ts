@@ -111,6 +111,30 @@ describe('the end of a line and now', () => {
     expect(future.getAttribute('d')?.startsWith('M192.00,')).toBe(true);
   });
 
+  it('ends what has happened of a line at its own times on its last reading at or before now, not half way (#158)', () => {
+    // a line through time over a day to 12:29: its round times, then now, off them; its length says nothing of now
+    const at = [0, 0.125, 0.25, 0.375, 0.5, 0.52];
+    const values = [18, 18.5, 19.4, 21, 23.2, 24.6];
+    const line = (more: Partial<ChartSpec> = {}): ChartSpec =>
+      spec('soft', { series: [{ values, at }], now: 0.52, ...more });
+    const end = 0.52 * 320;
+    const soft = host(drawChart(line()));
+    expect(soft.querySelector('.fc-future')).toBeNull();
+    expect(Number(soft.querySelector('.fc-now')?.getAttribute('x1'))).toBeCloseTo(end, 2);
+    const knobs = soft.querySelectorAll('.fv-knob');
+    expect(knobs.length).toBe(1);
+    expect(parseFloat((knobs[0] as HTMLElement).style.left) + 8).toBeCloseTo(end, 2);
+    expect(readAt(line(), null).x).toBeCloseTo(end, 2);
+    // classic marks no now: its curve whole, its dot on the line's end
+    const classic = host(drawChart(line({ style: resolveStyle('classic', {}, caps) })));
+    expect(classic.querySelector('.fc-future')).toBeNull();
+    expect(Number(classic.querySelector('.curve-dot')?.getAttribute('cx'))).toBeCloseTo(end, 2);
+    // a reading past now is to come: dashed from the last one before it, where now's knob stands
+    const ahead = host(drawChart(line({ series: [{ values, at: [...at.slice(0, -1), 0.75] }] })));
+    expect(ahead.querySelector('.fc-future')?.getAttribute('d')?.startsWith('M160.00,')).toBe(true);
+    expect(Number(ahead.querySelector('.fc-now')?.getAttribute('x1'))).toBeCloseTo(160, 2);
+  });
+
   it('reads where the cursor is: the knob there, the hairline across, the bubble’s x', () => {
     const read = spec('soft', { cursor: 0.25 });
     const drawing = host(drawChart(read));

@@ -14,6 +14,8 @@
  *   — the marked windows' pills stay where they were, seen; the keys move it (Home, →), Escape lets it go; without the
  *   head the bubble says it in its 44 above the plot; two series read in the row's lines, the time a pill on the axis;
  * - a weather's forecast is subscribed by the hour, and two series share the value row as the legend's lines;
+ * - what has happened is whole (#158): three rooms' lines of today at noon end on noon, none dashed; a room beside the
+ *   price of both days, and the measured beside the weather's forecast, end on now's hairline, nothing dashed before it;
  * - four rooms: their legend under the axis in two columns at 360, the value row's lines at 266 and 211 (where the
  *   columns would cut the names), every name legible, the card at the height it declares;
  * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
@@ -467,6 +469,56 @@ const marksOf = (card) =>
       both.future >= 1,
     JSON.stringify({ subscribed, ...both }),
   );
+}
+
+/* ---------- what has happened is whole: only what runs past now is dashed (#158) ---------- */
+{
+  // each chart's width, now's hairline, where each line ends and where each dashed path starts
+  const read = (title) =>
+    frame(page, title)
+      .locator('fluvy-chart-card')
+      .first()
+      .evaluate((card) => {
+        const svg = card.shadowRoot.querySelector('svg.fc-chart');
+        const end = (d) => Number([...(d ?? '').matchAll(/(-?[\d.]+),-?[\d.]+$/g)].at(-1)?.[1]);
+        const start = (d) => Number(/^M(-?[\d.]+),/.exec(d ?? '')?.[1]);
+        return {
+          width: Number(svg.getAttribute('width')),
+          now: Number(svg.querySelector('.fc-now')?.getAttribute('x1')),
+          lines: [...svg.querySelectorAll('.curve-line, .fc-line:not(.fc-run)')].map((line) =>
+            end(line.getAttribute('d')),
+          ),
+          dashed: [...svg.querySelectorAll('.fc-future:not(.fc-run)')].map((future) =>
+            start(future.getAttribute('d')),
+          ),
+        };
+      });
+  const near = (a, b) => Math.abs(a - b) <= 0.5;
+  // classic marks no now: noon is the plot's middle
+  const noon = await read('Chart · today at noon');
+  check(
+    'today at noon: three rooms’ lines whole to noon, none of them dashed as to come',
+    noon.lines.length === 3 &&
+      noon.lines.every((x) => near(x, noon.width / 2)) &&
+      noon.dashed.length === 0,
+    JSON.stringify(noon),
+  );
+  // the history first: its line ends on now, every dash (the price's tomorrow, the weather's hours) from now on; noon
+  // is a quarter of the two days
+  for (const [title, at] of [
+    ['today and tomorrow at noon', 1 / 4],
+    ['measured and forecast', null],
+  ]) {
+    const drawn = await read(`Chart · ${title}`);
+    check(
+      `${title}: the room’s line whole to now’s hairline, nothing dashed before it`,
+      (at === null || near(drawn.now, drawn.width * at)) &&
+        near(drawn.lines[0], drawn.now) &&
+        drawn.dashed.length >= 1 &&
+        drawn.dashed.every((x) => x >= drawn.now - 0.5),
+      JSON.stringify(drawn),
+    );
+  }
 }
 await page.close();
 

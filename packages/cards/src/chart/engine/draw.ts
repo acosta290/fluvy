@@ -111,8 +111,11 @@ interface Laid {
   readonly points: ReadonlyArray<ReadonlyArray<Pt | null>>;
   /** The index of the last reading that has happened; null when the chart has no now of its own. */
   readonly nowIndex: number | null;
-  /** The same for a series of its own curve and length: a stepped one counts its slots, a line its points. */
-  readonly nowOf: (stepped: boolean, length?: number) => number | null;
+  /**
+   * The same for one series: a stepped one counts its slots, a line its points, one at its own times is its last
+   * reading at or before now (-1 where none is).
+   */
+  readonly nowOf: (index: number) => number | null;
   /** Where the chart reads at rest: the end of what has happened (a step's in its slot's middle). */
   readonly restX: number;
   readonly cursorX: number;
@@ -232,24 +235,39 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
         return pts;
       });
   const f = spec.now;
-  const nowOf = (stepped: boolean, length = count): number | null =>
+  const until = given(f) ? clamp01(f) : 1;
+  // now among evenly spaced readings: the slot that holds it, else the point nearest it
+  const evenly = (stepped: boolean, length: number): number | null =>
     !given(f)
       ? null
       : stepped
-        ? Math.min(length - 1, Math.max(0, Math.ceil(clamp01(f) * length) - 1))
-        : Math.round(clamp01(f) * Math.max(0, length - 1));
-  const nowIndex = nowOf(bars || step);
+        ? Math.min(length - 1, Math.max(0, Math.ceil(until * length) - 1))
+        : Math.round(until * Math.max(0, length - 1));
+  // a series at its own times stands only as far as its readings go (a line through time ends at now), so its length
+  // says nothing of now: what has happened ends on its last reading at or before now (-1: none has happened)
+  const lastOf = (series: ChartSeries): number => {
+    for (let i = series.values.length - 1; i >= 0; i--)
+      if (Number.isFinite(series.values[i]) && (series.at?.[i] ?? 1) <= until) return i;
+    return -1;
+  };
+  const nowOf = (index: number): number | null => {
+    const series = spec.series[index];
+    if (!given(f) || !series) return null;
+    return series.at
+      ? lastOf(series)
+      : evenly(curveOf(spec, index) === 'step', series.values.length);
+  };
+  const nowIndex = evenly(bars || step, count);
   const lastIndex = nowIndex ?? count - 1;
-  // what has happened ends on the first series' last reading: one of its own times may stop short of the plot's end
+  // what has happened ends on the first series' last reading: one at its own times its last at or before now, which may
+  // stop short of the plot's end
   const lead = spec.series[0];
-  const restAt = lead?.at
-    ? lead.at.filter((_at, i) => lead.values[i] !== null && lead.values[i] !== undefined).pop()
-    : undefined;
+  const restAt = lead?.at ? (lead.at[lastOf(lead)] ?? until) : undefined;
   const restX =
     bars || step
       ? left + (lastIndex + 0.5) * slot
-      : nowIndex === null
-        ? left + (restAt ?? 1) * span
+      : restAt !== undefined
+        ? left + restAt * span
         : left + (lastIndex / Math.max(1, count - 1)) * span;
   const cursorX = given(cursor) ? left + clamp01(cursor) * plotWidth : restX;
   return {
@@ -527,11 +545,7 @@ function lineBody(spec: ChartSpec, laid: Laid, index: number): SVGTemplateResult
   const fill = fillOf(spec, index);
   // a slot still running reads so far: its last stretch is dashed, as what is to come, so it never reads as a whole one
   const nowIndex =
-    laid.nowIndex !== null
-      ? laid.nowOf(curve === 'step', series.values.length)
-      : series.soFar
-        ? series.values.length - 2
-        : null;
+    laid.nowIndex !== null ? laid.nowOf(index) : series.soFar ? series.values.length - 2 : null;
   const { past, future } =
     nowIndex === null ? { past: pts, future: [] } : splitAt(pts, nowIndex, curve);
   const line = linePath(past, curve);
@@ -660,7 +674,7 @@ export function drawChart(spec: ChartSpec): TemplateResult {
         // the lowest and highest of what has happened: the forecast's are the Chart card's window to name
         const past = (spec.series[index]?.values ?? []).slice(
           0,
-          (laid.nowIndex ?? laid.count - 1) + 1,
+          (laid.nowOf(index) ?? laid.count - 1) + 1,
         );
         const p = laid.points[index]?.[extreme(past, pick)];
         if (p)

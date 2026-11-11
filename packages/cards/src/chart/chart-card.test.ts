@@ -517,6 +517,115 @@ describe('a sensor’s history', () => {
   });
 });
 
+describe('a calendar day of history (#158)', () => {
+  /** Noon on the tests' day: half of today has happened. */
+  const NOON = '2026-09-17T12:00:00Z';
+  const ROOMS = ['sensor.living', 'sensor.office', 'sensor.bedroom'];
+  /** A house whose recorder keeps three rooms, a reading every ten minutes up to what it is asked. */
+  const rooms = (): HomeAssistant => {
+    const base = house();
+    const room = {
+      unit_of_measurement: '°C',
+      device_class: 'temperature',
+      state_class: 'measurement',
+    };
+    return {
+      ...base,
+      states: {
+        ...base.states,
+        ...Object.fromEntries(ROOMS.map((id, n) => [id, state(id, String(20 + n), room)])),
+      },
+      callWS: (message: Record<string, unknown>) => {
+        if (message['type'] !== 'history/history_during_period')
+          return base.callWS(message as never);
+        const start = Date.parse(String(message['start_time']));
+        const end = Date.parse(String(message['end_time']));
+        const id = (message['entity_ids'] as string[])[0] as string;
+        const n = ROOMS.indexOf(id);
+        const rows = [];
+        for (let t = start; t <= end; t += 600_000)
+          rows.push({ s: String(20 + n + Math.sin(t / 7_200_000)), lu: t / 1000 });
+        return Promise.resolve({ [id]: rows });
+      },
+    } as HomeAssistant;
+  };
+  /** Where a path ends across the plot: its last point's x. */
+  const endOf = (d: string | null | undefined): number =>
+    Number([...(d ?? '').matchAll(/(-?[\d.]+),-?[\d.]+$/g)].at(-1)?.[1]);
+
+  it('draws what has happened whole: three lines of today at noon, none of them dashed as to come', async () => {
+    for (const chart of ['classic', 'soft'] as const) {
+      const card = await draw({ series: ROOMS, span: 'today', chart, _now: NOON }, rooms());
+      const svg = root(card).querySelector('svg.fc-chart') as SVGSVGElement;
+      const lines = [...svg.querySelectorAll('.curve-line, .fc-line:not(.fc-run)')];
+      expect(lines).toHaveLength(3);
+      expect(svg.querySelector('.fc-future')).toBeNull();
+      // each line ends on now, half way across the day
+      const half = Number(svg.getAttribute('width')) / 2;
+      for (const line of lines) expect(endOf(line.getAttribute('d'))).toBeCloseTo(half, 1);
+      // soft marks now there, its knob on the first line's end
+      if (chart === 'soft')
+        expect(Number(svg.querySelector('.fc-now')?.getAttribute('x1'))).toBeCloseTo(half, 1);
+    }
+  });
+
+  it('marks the end of what has happened off the round times: the tile’s dot, a band’s knob and now', async () => {
+    const at = '2026-09-17T12:20:00Z';
+    const tile = await draw(
+      { series: ['sensor.living'], span: 'today', variant: 'tile', _now: at },
+      rooms(),
+    );
+    const spark = root(tile).querySelector('.ch-spark svg') as SVGSVGElement;
+    expect(spark.querySelector('.fc-future')).toBeNull();
+    const end = endOf(spark.querySelector('.curve-line')?.getAttribute('d'));
+    expect(end).toBeCloseTo((Number(spark.getAttribute('width')) * (12 + 20 / 60)) / 24, 1);
+    expect(Number(spark.querySelector('.curve-dot')?.getAttribute('cx'))).toBeCloseTo(end, 2);
+    // a band's mean stands in its slots' middles: now's hairline and knob on the last of them that has passed
+    const band = await draw(
+      {
+        series: [{ entity: 'sensor.living', kind: 'band' }],
+        chart: 'band',
+        span: 'today',
+        _now: at,
+      },
+      rooms(),
+    );
+    const svg = root(band).querySelector('svg.fc-chart') as SVGSVGElement;
+    const now = Number(svg.querySelector('.fc-now')?.getAttribute('x1'));
+    expect(endOf(svg.querySelector('.fc-line:not(.fc-run)')?.getAttribute('d'))).toBeCloseTo(
+      now,
+      2,
+    );
+    const knobs = [...root(band).querySelectorAll<HTMLElement>('.ch-chart > .fv-knob')];
+    expect(knobs).toHaveLength(1);
+    expect(parseFloat(knobs[0]?.style.left ?? '') + 8).toBeCloseTo(now, 2);
+  });
+
+  it('keeps a price that runs past now dashed from now on, beside a history that ends there', async () => {
+    const card = await draw(
+      {
+        series: ['sensor.living', 'sensor.nordpool'],
+        span: 'today+tomorrow',
+        chart: 'soft',
+        _now: NOON,
+      },
+      rooms(),
+    );
+    const svg = root(card).querySelector('svg.fc-chart') as SVGSVGElement;
+    // noon is a quarter of the two days
+    const now = Number(svg.getAttribute('width')) / 4;
+    expect(Number(svg.querySelector('.fc-now')?.getAttribute('x1'))).toBeCloseTo(now, 1);
+    const [history, price] = [...svg.querySelectorAll('.fc-line:not(.fc-run)')];
+    expect(endOf(history?.getAttribute('d'))).toBeCloseTo(now, 1);
+    expect(endOf(price?.getAttribute('d'))).toBeCloseTo(now, 1);
+    // the price's tomorrow alone is to come
+    const future = [...svg.querySelectorAll('.fc-future:not(.fc-run)')];
+    expect(future).toHaveLength(1);
+    expect(future[0]?.closest('g')).toBe(price?.closest('g'));
+    expect(Number(future[0]?.getAttribute('d')?.match(/^M(-?[\d.]+),/)?.[1])).toBeCloseTo(now, 1);
+  });
+});
+
 describe('bars, a band and a step on the house’s round times (1.18)', () => {
   /** The sheets' clock: its hour's statistic is not compiled yet, its moment not on a round time. */
   const AT = '2026-09-17T14:37:00Z';

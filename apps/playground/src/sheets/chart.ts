@@ -15,7 +15,7 @@ if (!customElements.get('fluvy-chart-card'))
  * list in kW under a kWh sensor; a weather's hourly forecast (`weather/subscribe_forecast`) after the measured
  * temperature; a sensor's history with its change on yesterday; its statistics' band; four rooms on one chart (the
  * legend under the axis), and four and six at half a section and in a narrow column; compact, tiles, empty, out of
- * reach and half a section.
+ * reach and half a section; and at noon (#158), three rooms' day so far, and a room beside the price of both days.
  */
 
 const QUARTER = 15 * 60_000;
@@ -24,6 +24,8 @@ const HOUR = 4 * QUARTER;
 const TODAY = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()).getTime();
 const TOMORROW = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate() + 1).getTime();
 const NOW_ISO = NOW.toISOString();
+/** Thursday's noon: half of today has happened. */
+const NOON_ISO = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate(), 12).toISOString();
 
 /** A moment as Nordpool writes it: the local time with its offset (`2026-09-17T13:00:00+02:00`). */
 function local(t: number): string {
@@ -97,6 +99,17 @@ const room = (base: number, swing: number): number[] =>
     );
   });
 const LIVING = room(20.4, 2.6);
+/**
+ * A room's readings up to Thursday's noon, as the recorder answers a card read then: from yesterday's midnight for its
+ * first series (its change is on yesterday), from today's for the others.
+ */
+const toNoon = (readings: readonly number[], first: boolean): number[] =>
+  readings.slice(first ? 0 : 48, 73);
+const NOON_ROOMS = [
+  'sensor.ch_noon_living_temperature',
+  'sensor.ch_noon_office_temperature',
+  'sensor.ch_noon_bedroom_temperature',
+];
 
 /** The weather's next hours from the sheets' hour on: a cool night, a warm Friday afternoon. */
 const FORECAST = Array.from({ length: 30 }, (_unused, h) => {
@@ -199,6 +212,10 @@ export const sheet: SheetSpec = {
     sensor('sensor.ch_cellar_temperature', '14.2', 'Cellar', TEMPERATURE),
     sensor('sensor.ch_bathroom_temperature', '23.4', 'Bathroom', TEMPERATURE),
     sensor('sensor.ch_hall_temperature', '18.2', 'Hall', TEMPERATURE),
+    // the rooms at Thursday's noon, each reading its line's last
+    sensor('sensor.ch_noon_living_temperature', '20.9', 'Living room', TEMPERATURE),
+    sensor('sensor.ch_noon_office_temperature', '22.2', 'Office', TEMPERATURE),
+    sensor('sensor.ch_noon_bedroom_temperature', '19.2', 'Bedroom', TEMPERATURE),
     ['sensor.ch_gone', 'unavailable', { friendly_name: 'Nordpool', ...PRICE }],
   ],
   history: {
@@ -209,6 +226,9 @@ export const sheet: SheetSpec = {
     'sensor.ch_cellar_temperature': [],
     'sensor.ch_bathroom_temperature': room(22.8, 2.6),
     'sensor.ch_hall_temperature': room(17.6, 1.1),
+    'sensor.ch_noon_living_temperature': toNoon(LIVING, true),
+    'sensor.ch_noon_office_temperature': toNoon(room(21.6, 3.1), false),
+    'sensor.ch_noon_bedroom_temperature': toNoon(room(18.9, 1.4), false),
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -335,6 +355,34 @@ export const sheet: SheetSpec = {
       cards: [
         { ...NORDPOOL, cols: 6 },
         card({ series: ['sensor.ch_living_temperature'], cols: 6 }),
+      ],
+    },
+    // #158: the readings up to now stand at their own times, whole; only what runs past now is dashed
+    {
+      title: 'Chart · today at noon',
+      cards: [
+        card({
+          title: 'Temperature',
+          series: NOON_ROOMS,
+          span: 'today',
+          chart: 'classic',
+          _now: NOON_ISO,
+        }),
+      ],
+    },
+    {
+      title: 'Chart · today and tomorrow at noon',
+      cards: [
+        card({
+          title: 'Living room and price',
+          series: [
+            { entity: 'sensor.ch_noon_living_temperature', name: 'Living room' },
+            { entity: 'sensor.ch_nordpool', name: 'Price', curve: 'step' },
+          ],
+          span: 'today+tomorrow',
+          chart: 'soft',
+          _now: NOON_ISO,
+        }),
       ],
     },
   ],
