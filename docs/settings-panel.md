@@ -247,7 +247,7 @@ With the look everywhere, Fluvy draws its own icons in Home Assistant's menus, i
 | Switch | What it covers | Off |
 | --- | --- | --- |
 | **Our icons in the sidebar** | the sidebar's own pages, the apps people add most, the notifications, Settings' item and the menu button | Home Assistant's icons in the sidebar |
-| **Our icons in Settings** | Settings' lists (their icon circles, About's, the restart dialog's) and the Material icons of Home Assistant's own pages: the menus, the pencils, close, back and search, the edit bar's | Home Assistant's coloured circles and its icons |
+| **Our icons in Settings** | Settings' lists (their icon circles, About's, the restart dialog's) and the Material icons of Home Assistant's own pages, HACS's among them: the menus, the pencils, close, back and search, the edit bar's | Home Assistant's coloured circles and its icons |
 
 So a house can wear Fluvy's icons in the sidebar and keep Home Assistant's in Settings, or the other way round. A house
 that had turned the one icons switch of 1.18 off finds both off, one that left it on finds both on: nothing changes on

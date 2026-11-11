@@ -167,6 +167,54 @@ describe('shell on real Lit classes', () => {
     expect(report?.active).toBe(true);
     expect(header).toMatchObject({ attached: true, instances: 2, probe: true });
   });
+
+  it('says each place’s choice in a panel frame too (HACS): its icons follow Settings’, from its first moment', async () => {
+    const look = startLook();
+    const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+    // HACS's panel writes a same-origin frame (its window stood in for by the page's), whose body Home Assistant themes
+    const frame = document.implementation.createHTMLDocument('HACS');
+    frame.body.style.setProperty(THEME_SENTINEL, '1');
+    const icon = frame.body.appendChild(frame.createElement('ha-svg-icon')) as FakeSvgIcon;
+    icon.path = mdiCog;
+    class Panel extends HTMLElement {
+      _createPanel(): void {
+        const iframe = document.createElement('iframe');
+        Object.defineProperties(iframe, {
+          contentWindow: { value: window },
+          contentDocument: { value: frame },
+        });
+        this.append(iframe);
+      }
+    }
+    customElements.define('ha-panel-custom', Panel);
+    await settle();
+    // Settings' icons off before the frame is made: it starts with Home Assistant's
+    look?.preview({ icons: { sidebar: true, settings: false } });
+    const panel = document.body.appendChild(new Panel());
+    panel._createPanel();
+    panel.querySelector('iframe')!.dispatchEvent(new Event('load'));
+    await settle();
+    expect(shell?.report().frames).toHaveLength(1);
+    expect(frame.documentElement.getAttribute(ORIGINAL_ICONS)).toBe('settings');
+    expect(icon.path).toBe(mdiCog);
+    // on again: the frame follows
+    look?.preview({ icons: { sidebar: true, settings: true } });
+    await settle();
+    expect(frame.documentElement.hasAttribute(ORIGINAL_ICONS)).toBe(false);
+    expect(icon.path).toBe(GEAR);
+    // the sidebar's choice is not the frame's; Settings' off again is
+    look?.preview({ icons: { sidebar: false, settings: true } });
+    await settle();
+    expect(icon.path).toBe(GEAR);
+    look?.preview({ icons: { sidebar: false, settings: false } });
+    await settle();
+    expect(frame.documentElement.getAttribute(ORIGINAL_ICONS)).toBe('sidebar settings');
+    expect(icon.path).toBe(mdiCog);
+    look?.preview(null);
+    await settle();
+    expect(icon.path).toBe(GEAR);
+    look?.stop();
+  });
 });
 
 describe('the sidebar’s glyphs', () => {

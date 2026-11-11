@@ -15,8 +15,9 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 - **Settings and its lists**, the notifications drawer, the quick search, the pickers, the code editor.
 - **Forms and dialogs**: fields, selects, menus, switches, sliders, dialog footers, creation forms.
 - **Dashboards in edit mode**: the edit bar, the frames of what can be edited, what adds and what edits.
-- **Panels in a frame** (HACS): they get Inter and a shell of their own while the page wears Fluvy; on another theme
-  the frame is left as Home Assistant draws it.
+- **Panels in a frame** (HACS): they get Inter and a shell of their own while the page wears Fluvy, and are told the
+  house's icons as the page is (theirs follow *Our icons in Settings*); on another theme the frame is left as Home
+  Assistant draws it.
 - **The Activity and History pages** (see [pages](pages.md)), with their own switches.
 
 ## The view tabs' sheet

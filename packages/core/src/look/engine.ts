@@ -8,6 +8,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { setFallbackTokens } from '@fluvy/ui';
 import type { EffectiveSettings } from '../settings/schema.js';
+import { ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import { inUse } from '../shell/patches.js';
 import { declarationsOf, lookKey, type Look } from './css.js';
 import { PAGE_ATTRIBUTE, PANEL_ATTRIBUTE } from './attributes.js';
@@ -68,6 +69,8 @@ export class LookEngine {
   private pageCss = '';
   /** Whether the last apply left Fluvy in use on the page, its chrome then synced. */
   private chromed = false;
+  /** The places where the house keeps Home Assistant's own icons, as every document is told them ('' none). */
+  private kept = '';
 
   /** `early`: the sheet the loader applied from this browser's cache before the build arrived, taken over as is. */
   constructor(
@@ -87,6 +90,21 @@ export class LookEngine {
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     sheet.replaceSync(this.pageCss);
     document.documentElement.toggleAttribute(PAGE_ATTRIBUTE, this.pageCss !== '');
+    this.sayIcons(document);
+  }
+
+  /**
+   * The places where the house keeps Home Assistant's own icons (`sidebar`, `settings`, '' none), said on every
+   * document the look reaches: a panel frame's shell reads its own, and a frame's icons are its page's (Settings').
+   */
+  keepIcons(places: string): void {
+    this.kept = places;
+    for (const { document } of this.targets) this.sayIcons(document);
+  }
+
+  private sayIcons(document: Document): void {
+    if (this.kept) document.documentElement.setAttribute(ORIGINAL_ICONS, this.kept);
+    else document.documentElement.removeAttribute(ORIGINAL_ICONS);
   }
 
   /** Applies the look; true when anything changed (the cards then look for the theme again). */

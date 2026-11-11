@@ -14,7 +14,8 @@
  *   editor brings it, worded;
  * - on a page that wears another theme, the patches leave Home Assistant's stand-in elements as Home Assistant draws
  *   them (a chart's font and colour, an icon's path, no attribute of ours, no Inter or sheet in HACS's frame, the
- *   page's chrome), and once Home Assistant applies the Fluvy theme they take Fluvy's;
+ *   page's chrome), and once Home Assistant applies the Fluvy theme they take Fluvy's; HACS's frame is told where the
+ *   house keeps Home Assistant's icons, and its icons follow Settings' choice (1.19);
  * - where the house's look covers every page, the page's background and theme colour and the frame's mark follow Home
  *   Assistant's theme as Home Assistant applies it: Fluvy's on the Fluvy theme, the other theme's (or Home Assistant's
  *   first colour) once it leaves, though Home Assistant wrote them while Fluvy's sheet was still on;
@@ -432,6 +433,42 @@ function haStandIns(pencil) {
     worn.frameFonts.includes('Inter') && worn.frameSheets > 0,
     `${worn.frameFonts.join(', ')} · ${worn.frameSheets} sheets`,
   );
+  // HACS draws its pages in its frame with Home Assistant's icon of its own (the stand-ins are defined in every frame),
+  // the theme on the frame's body: the frame is told where the house keeps Home Assistant's icons as the page is, and
+  // its icons follow Settings' choice (1.19)
+  await tab.evaluate((pencil) => {
+    const frame = document.querySelector('ha-panel-custom iframe').contentDocument;
+    frame.body.style.setProperty('--fluvy-theme', '1');
+    frame.body.appendChild(frame.createElement('ha-svg-icon')).path = pencil;
+  }, mdiPencil);
+  /** What the frame's document says and how its icon is drawn, after the house's icons are previewed as `icons`. */
+  const frameIcons = async (icons) => {
+    if (icons !== undefined)
+      await tab.evaluate((icons) => window.__fluvy.look.preview(icons), icons);
+    await tab.waitForTimeout(150);
+    return tab.evaluate((pencil) => {
+      const frame = document.querySelector('ha-panel-custom iframe').contentDocument;
+      const icon = frame.querySelector('ha-svg-icon');
+      return `${frame.documentElement.getAttribute('fluvy-original-icons') ?? ''}|${icon.path === pencil ? 'material' : 'ours'}`;
+    }, mdiPencil);
+  };
+  for (const [name, icons, expected] of [
+    ['HACS’s frame: its icons are Fluvy’s while Settings’ are', undefined, '|ours'],
+    [
+      'Settings’ icons off: HACS’s frame is told, and draws Home Assistant’s',
+      { icons: { sidebar: true, settings: false } },
+      'settings|material',
+    ],
+    [
+      'the sidebar’s off alone: HACS’s frame draws Fluvy’s again',
+      { icons: { sidebar: false, settings: true } },
+      'sidebar|ours',
+    ],
+    ['the house’s own again: nothing said in the frame', null, '|ours'],
+  ]) {
+    const seen = await frameIcons(icons);
+    check(name, seen === expected, seen);
+  }
   check('the patches: no page error', errors.length === 0, errors.join(' | '));
   await tab.close();
 }

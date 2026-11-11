@@ -140,11 +140,11 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     sheet: env.createSheet(),
     attached: false,
   }));
+  // a frame is told what its page says (the look, where the house keeps Home Assistant's icons) before its shell reads it
   const frames = options.frames
     ? new PanelFrames(env, (frameEnv) => {
-        const shell = createShell(frameEnv);
         for (const listener of frameListeners) listener(frameEnv);
-        return shell;
+        return createShell(frameEnv);
       })
     : undefined;
 
@@ -299,7 +299,7 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
 
 const frameListeners = new Set<(env: ShellEnv) => void>();
 
-/** Tells `listener` about every same-origin panel frame the page's shell starts in from now on (HACS). */
+/** Tells `listener` about every same-origin panel frame the page's shell starts in from now on (HACS), before it starts. */
 export function onPanelFrame(listener: (env: ShellEnv) => void): () => void {
   frameListeners.add(listener);
   return () => frameListeners.delete(listener);

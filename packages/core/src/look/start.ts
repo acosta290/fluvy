@@ -22,7 +22,7 @@ import {
   wearsLook,
   type EffectiveSettings,
 } from '../settings/schema.js';
-import { NO_FRAME, ORIGINAL_ICONS } from '../shell/css/chrome.js';
+import { NO_FRAME } from '../shell/css/chrome.js';
 import {
   attachToElementClass,
   browserEnv,
@@ -188,10 +188,9 @@ export function startLook(): LookHandle | undefined {
     setMotionPreference(now.motion);
     setHaptics(now.haptics);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
-    // Home Assistant's own icons in its menus where the house keeps them, place by place (the shell empties those sheets)
-    const kept = ICON_PLACES.filter((place) => !now.icons[place]);
-    if (kept.length) env.document.documentElement.setAttribute(ORIGINAL_ICONS, kept.join(' '));
-    else env.document.documentElement.removeAttribute(ORIGINAL_ICONS);
+    // Home Assistant's own icons in its menus where the house keeps them, place by place, said on the page and its
+    // panel frames (each one's shell empties those sheets)
+    engine.keepIcons(ICON_PLACES.filter((place) => !now.icons[place]).join(' '));
     // Home Assistant's own Activity page, if the house keeps it (the takeover gives the page back)
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
