@@ -1023,6 +1023,7 @@ export class FluvyPanel extends LitElement {
     const word = (key: string, fallback: string): string =>
       typeof strategy[key] === 'string' ? (strategy[key] as string) : fallback;
     const size = word('tile_size', 'large') === 'compact' ? 'compact' : 'large';
+    const switches = word('tile_switch', 'show');
     const variant = word('thermostat_variant', 'dial');
     const flow = word('flow_style', 'stream');
     const room = word('room_variant', 'tile');
@@ -1033,7 +1034,7 @@ export class FluvyPanel extends LitElement {
             ${house.room('living', room)}${house.room('kitchen', room)}
           </div>
           <div class="pn-preview__side">${house.thermostat(variant)}</div>
-          ${house.tile('living', size)}
+          ${house.tile('living', size, switches)}
         </div>`;
       case 'energy':
         return html`<div class="pn-preview">${house.energy(flow, this.meters ?? null)}</div>`;
@@ -1053,7 +1054,7 @@ export class FluvyPanel extends LitElement {
       default:
         return html`<div class="pn-preview pn-preview--dash">
           <div class="pn-preview__tiles">
-            ${house.tile('living', size)}${house.tile('kitchen', size)}
+            ${house.tile('living', size, switches)}${house.tile('kitchen', size, switches)}
           </div>
           <div class="pn-preview__side">${house.thermostat(variant)}</div>
           ${house.energy(flow, this.meters ?? null)}

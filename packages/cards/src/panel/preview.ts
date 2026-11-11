@@ -1,5 +1,6 @@
 import { remember, type HassEntity, type HomeAssistant, type LovelaceCard } from '@fluvy/core';
 import { simulate } from '@fluvy/demo-home/simulate';
+import { tileSwitch } from '../strategy/layout.js';
 
 /**
  * The preview's own little house: a few real cards on made-up entities, so the look is judged on the
@@ -259,12 +260,15 @@ export class PreviewHouse {
     return card;
   }
 
-  /** A tile of the house: large (a dashboard's six columns) or a compact row. */
-  tile(entity: TileEntity, size: 'large' | 'compact' = 'large'): LovelaceCard {
+  /**
+   * A tile of the house: large (a dashboard's six columns), its switch as a dashboard asks (`tile_switch`), or a
+   * compact row.
+   */
+  tile(entity: TileEntity, size: 'large' | 'compact' = 'large', switches?: string): LovelaceCard {
     return this.card({
       type: 'custom:fluvy-tile-card',
       entity: ENTITY[entity],
-      ...(size === 'compact' ? { size } : {}),
+      ...(size === 'compact' ? { size } : tileSwitch(switches)),
       grid_options: { columns: 6 },
     });
   }

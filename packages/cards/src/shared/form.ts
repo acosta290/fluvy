@@ -1,5 +1,6 @@
 import {
   addEnglish,
+  domainOf,
   idsOf,
   localize,
   resolveEntity,
@@ -13,6 +14,7 @@ import {
   SLIDER_WORDS,
   sliderDefaults,
   type SliderStyle,
+  TOGGLE_DOMAINS,
   UNAVAILABLE_LOOKS,
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
@@ -376,6 +378,16 @@ export const holdsLight =
   (data: Readonly<Record<string, unknown>>): boolean =>
     idsOf(listed(data, key, alias)).some((id) => id.startsWith('light.'));
 
+/** Whether an entity is one a tile switches: what a large tile's switch acts on (`showSwitchField`). */
+export const switches = (entity: unknown): boolean =>
+  typeof entity === 'string' && TOGGLE_DOMAINS.has(domainOf(entity));
+
+/** Whether a card's list names an entity a tile switches. */
+export const holdsSwitch =
+  (key: string, alias?: string) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    idsOf(listed(data, key, alias)).some(switches);
+
 /** A field (or a row) shown only while `when` says it can act: one that acts only in a style is shown in that style. */
 export const onlyWhen = (
   when: NonNullable<HaFormSchemaItem['when']>,
@@ -547,6 +559,20 @@ export const whenOffField = (): HaFormSchemaItem => selectField('when_off', ['al
 
 /** A small tile's name in one line (the default) or two where one would cut it (`name_lines`, #100). */
 export const nameLinesField = (): HaFormSchemaItem => selectField('name_lines', ['1', '2']);
+
+/**
+ * What ends a large tile's head where its entity switches (`show_switch`, #160), as its config writes it: its switch
+ * (the default), nothing, or its level's figure — its circle the switch then, as the word under it says. An item's
+ * (`item`: a tile of a group) is empty until chosen, its group's then.
+ */
+export const showSwitchField = ({ item = false } = {}): HaFormSchemaItem => ({
+  ...choiceField('show_switch', [
+    ['true', 'editor.switch_shown'],
+    ['false', 'editor.switch_hidden'],
+    ['value', 'editor.switch_value'],
+  ]),
+  helper: item ? 'editor.item_show_switch_helper' : 'editor.show_switch_helper',
+});
 
 /** A card's head: its title and its subtitle, on one row. */
 export const titleFields = (): HaFormSchemaItem =>

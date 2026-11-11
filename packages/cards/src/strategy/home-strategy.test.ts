@@ -807,6 +807,39 @@ describe('custom:fluvy-home strategy', () => {
     expect(tiles.every((c) => c['size'] === 'compact')).toBe(true);
   });
 
+  it('hides its tiles’ switches, or says their level in their place, where the dashboard asks (#160)', async () => {
+    const tilesOf = async (config: Record<string, unknown>) => {
+      const { views } = await FluvyHomeStrategy.generate(
+        { type: 'custom:fluvy-home', ...config },
+        everything(),
+      );
+      return views
+        .flatMap((v) => v.sections.flatMap((s) => s.cards))
+        .filter((c) => c.type === 'custom:fluvy-tile-card');
+    };
+    // the lights' tiles and the appliances', with their readings: nothing said where the switches show
+    const shown = await tilesOf({});
+    expect(shown.some((c) => Array.isArray(c['readouts']))).toBe(true);
+    expect(shown.some((c) => !c['readouts'] && c['size'] !== 'compact')).toBe(true);
+    expect(shown.every((c) => !('show_switch' in c))).toBe(true);
+    expect(await tilesOf({ tile_switch: 'show' })).toEqual(shown);
+    for (const [asked, said] of [
+      ['hide', false],
+      ['value', 'value'],
+    ] as const) {
+      const tiles = await tilesOf({ tile_switch: asked });
+      // every tile carries the dashboard's word, and nothing else of it moved
+      expect(tiles.every((c) => c['show_switch'] === said)).toBe(true);
+      expect(
+        tiles.map((c) =>
+          Object.fromEntries(Object.entries(c).filter(([k]) => k !== 'show_switch')),
+        ),
+      ).toEqual(shown);
+    }
+    // a word no dashboard knows says nothing
+    expect(await tilesOf({ tile_switch: 'never' })).toEqual(shown);
+  });
+
   it('puts every card of the library to use in a house that has one of everything', async () => {
     const CATALOGUE = await (await import('../index.js')).catalogue();
     // the views as chips under the greeting too: the chips card is in use

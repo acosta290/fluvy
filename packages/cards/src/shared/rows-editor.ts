@@ -717,7 +717,9 @@ export class FluvyRowsEditor extends LitElement {
     event.stopPropagation();
     if (!this.config) return;
     const entries = this.written(list);
-    const entry = entryOf(event.detail.value, list);
+    // a toggle among an item's select's own choices goes back as the toggle, as the card's form writes its own
+    const held = itemOf(entries[index], list) ?? {};
+    const entry = entryOf(unworded(event.detail.value, held, selectsOf(list.schema)), list);
     // an item that says nothing any more (its id cleared) leaves the list
     if (entry === null) entries.splice(index, 1);
     else entries[index] = entry;

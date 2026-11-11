@@ -219,7 +219,7 @@ export function roomSections(
     ctx,
     { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
     parts.appliances,
-    (ids) => tileRows(ids.map((id) => applianceTile(home, id))),
+    (ids) => tileRows(ids.map((id) => applianceTile(home, id, ctx.style))),
   );
   // every reading on the room's page is the room's: each is named by what it measures, as the room card names its
   // climate, where it alone measures it (two thermometers keep their own names)
@@ -288,7 +288,7 @@ export function roomSections(
         moreAfter(
           headed(
             heading(t('strategy.appliances'), 'fluvy:plug', parts.appliances),
-            tileRows(plugs.shown.map((id) => applianceTile(home, id))),
+            tileRows(plugs.shown.map((id) => applianceTile(home, id, ctx.style))),
           ),
           plugs,
         ),

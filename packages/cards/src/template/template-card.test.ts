@@ -543,3 +543,45 @@ describe('the editor offers the colour at rest where it can act', () => {
     expect(await tint({ color: 'teal', active: 'never' })).toBe(true);
   });
 });
+
+describe('a large tile without its switch, as the tile card’s (#160)', () => {
+  const LAMP = { entity: 'light.desk', variant: 'large' };
+
+  it('hides its switch where asked, its circle the switch; its level’s figure in its place where asked', async () => {
+    expect((await drawn(LAMP)).tile().querySelector('.fv-hit')).not.toBeNull();
+    document.body.replaceChildren();
+    const hidden = (await drawn({ ...LAMP, show_switch: false })).tile();
+    expect(hidden.querySelector('.fv-hit')).toBeNull();
+    expect(hidden.querySelector('.fv-tile__head > .fv-ico')!.getAttribute('role')).toBe('switch');
+    expect(text(hidden, '.fv-tile__state')).toBe('On · 50 %');
+    document.body.replaceChildren();
+    const figure = (await drawn({ ...LAMP, show_switch: 'value' })).tile();
+    expect(text(figure, '.fv-tile__value')).toBe('50 %');
+    expect(text(figure, '.fv-tile__state')).toBe('On');
+  });
+
+  it('keeps a line of the person’s own whole: the figure goes up only from a line that says it', async () => {
+    const tile = (await drawn({ ...LAMP, show_switch: 'value', secondary: 'Reading nook' })).tile();
+    expect(tile.querySelector('.fv-tile__value')).toBeNull();
+    expect(text(tile, '.fv-tile__state')).toBe('Reading nook');
+  });
+
+  it('declares the height it did', () => {
+    expect(templateHeight({ type: 'x', ...LAMP, show_switch: false })).toBe(168);
+    expect(templateHeight({ type: 'x', ...LAMP, show_switch: 'value' })).toBe(168);
+  });
+
+  it('its editor offers it to a large tile of an entity that switches', async () => {
+    const offers = async (config: Record<string, unknown>): Promise<boolean> => {
+      const editor = await FluvyTemplateCard.getConfigElement();
+      (editor as HTMLElement & { hass: HomeAssistant }).hass = house(LIVE);
+      const form = await drawEditor(editor, { type: 'custom:fluvy-template-card', ...config });
+      return shownNames(cardForm(form).schema).includes('show_switch');
+    };
+    expect(await offers(LAMP)).toBe(true);
+    // a compact tile (the default) draws no switch, a sensor and a tile of nothing have none
+    expect(await offers({ entity: 'light.desk' })).toBe(false);
+    expect(await offers({ entity: 'sensor.office', variant: 'large' })).toBe(false);
+    expect(await offers({ variant: 'large' })).toBe(false);
+  });
+});

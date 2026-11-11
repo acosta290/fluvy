@@ -135,6 +135,7 @@ there; *Recreate* takes them all back to their defaults):
 | `hide` | view names: `rooms`, `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` (home); `today`, `production`, `devices`, `water`, `meters` (energy); `cameras`, `openings` (security) | home, energy, security | views left out (the first view always stays) |
 | `thermostat_variant` | `dial` (default), `compact`, `ruler` | home, rooms, wall | how the thermostats are drawn |
 | `tile_size` | `large` (default), `compact` | home, rooms | the tiles' size on the Lights view, the Home view and a room's page |
+| `tile_switch` | `show` (default), `hide`, `value` | home, rooms | the large tiles' switches, the lights' and the appliances': beside their icon circles, hidden (a tap on a tile's circle switches it, a tap on the tile opens its details), or the level's figure in their place (the tile card's `show_switch`) |
 | `flow_style` | `stream` (default; `ribbons` reads as it), `legs`, `rail` | home, energy | the energy flow's drawing |
 | `room_variant` | `photo` (default: a photo where the area has one, else a tile), `tile`, `row` | home, rooms | the rooms' cards |
 | `areas` | a list of area ids | wall | the rooms the wall shows, in that order, an empty one kept (default: every room with something in it) |

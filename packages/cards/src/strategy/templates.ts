@@ -93,6 +93,12 @@ const TILES = choice('tile_size', 'dashboard.tiles', [
   { value: 'large', label: 'dashboard.large' },
   { value: 'compact', label: 'dashboard.rows' },
 ]);
+/** The large tiles' switches: beside their circles, hidden (each circle switches its tile), or the level's figure there. */
+const SWITCHES = choice('tile_switch', 'dashboard.tile_switch', [
+  { value: 'show', label: 'dashboard.switch_show' },
+  { value: 'hide', label: 'dashboard.switch_hide' },
+  { value: 'value', label: 'dashboard.switch_value' },
+]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
 /** The long lists: at the house's caps, each with its "N more" row, or whole. */
@@ -126,7 +132,7 @@ export const TEMPLATES: readonly Template[] = [
     // the rooms open from the Rooms view: none without it
     rooms: (ctx, paths) => (paths.includes('rooms') ? everyRoom(ctx, () => 'rooms') : []),
     appliances: true,
-    options: [HIDE, THERMOSTAT, TILES, FLOW, ROOM, GREETING_TABS, CAPS, EXCLUDE],
+    options: [HIDE, THERMOSTAT, TILES, SWITCHES, FLOW, ROOM, GREETING_TABS, CAPS, EXCLUDE],
   },
   {
     id: 'rooms',
@@ -139,7 +145,7 @@ export const TEMPLATES: readonly Template[] = [
     header: 'hello',
     views: roomsViews,
     rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
-    options: [ROOM, THERMOSTAT, TILES, GREETING_TABS, CAPS, EXCLUDE],
+    options: [ROOM, THERMOSTAT, TILES, SWITCHES, GREETING_TABS, CAPS, EXCLUDE],
   },
   {
     id: 'energy',

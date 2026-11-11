@@ -461,6 +461,17 @@ describe('the dashboard templates', () => {
         templateById('wall'),
       ),
     ).toEqual({ areas: ['kitchen'] });
+    // the tiles' switches (#160) beside their size: the dashboards that draw large tiles, a word they know
+    for (const id of ['home', 'rooms'] as const) {
+      expect(strategyOptions({ tile_switch: 'hide' }, templateById(id))).toEqual({
+        tile_switch: 'hide',
+      });
+      expect(strategyOptions({ tile_switch: 'value' }, templateById(id))).toEqual({
+        tile_switch: 'value',
+      });
+      expect(strategyOptions({ tile_switch: false }, templateById(id))).toEqual({});
+    }
+    expect(strategyOptions({ tile_switch: 'hide' }, templateById('energy'))).toEqual({});
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
     // the caps: every list whole, or a list's own number or `none`, the lists every template knows
     for (const template of TEMPLATES) {

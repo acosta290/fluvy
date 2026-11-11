@@ -11,6 +11,7 @@ import type { TemplateResult } from 'lit';
 import {
   FluvyTileCard,
   type NameLines,
+  type ShowSwitch,
   type TileCardConfig,
   type TileItem,
   type TileLevel,
@@ -46,6 +47,8 @@ export interface TemplateCardConfig extends FluvyCardConfig {
   variant?: TileSize;
   /** A compact or mini tile's name in two lines where one would cut it (`2`), the tile a line taller. */
   name_lines?: NameLines;
+  /** A large tile's switch (#160): hidden (`false`) or its level's figure in its place (`value`), its circle the switch. */
+  show_switch?: ShowSwitch;
   /** Sensors as small readouts in a large tile's foot. */
   readouts?: readonly string[];
 }

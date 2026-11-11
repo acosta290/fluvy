@@ -56,9 +56,20 @@ export const deviceRow = (home: HomeRegistry, entity: string) => ({
   entity,
   name: home.deviceLabel(entity),
 });
-export const applianceTile = (home: HomeRegistry, id: string): Card => {
+/**
+ * A tile's switch as the dashboard asks (`tile_switch`), in its card's own words (`show_switch`): hidden, its level's
+ * figure in its place, or nothing said where it shows.
+ */
+export const tileSwitch = (asked: unknown): { show_switch?: false | 'value' } =>
+  asked === 'hide' ? { show_switch: false } : asked === 'value' ? { show_switch: 'value' } : {};
+/** An appliance's plug as a large tile, its readings at its foot, its switch as the dashboard asks. */
+export const applianceTile = (home: HomeRegistry, id: string, style: CardStyle): Card => {
   const readouts = home.readoutsOf(id);
-  return tile(id, { ...home.named(id), ...(readouts.length ? { readouts: [...readouts] } : {}) });
+  return tile(id, {
+    ...home.named(id),
+    ...(readouts.length ? { readouts: [...readouts] } : {}),
+    ...tileSwitch(style.switches),
+  });
 };
 /** A source's power in the energy cards' words: its sensor, its own sign, a battery's own charge. */
 const powerKeys = (p: SourcePower): Record<string, unknown> => ({
@@ -176,9 +187,16 @@ export const readoutsCards = (
 /** A thermostat in the dashboard's variant. */
 export const thermostat = (id: string, style: CardStyle): Card =>
   full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });
-/** A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`). */
+/**
+ * A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`), its switch as the
+ * dashboard asks: a compact tile draws none, and keeps the word for the day it is made large.
+ */
 export const sizedTile = (id: string, extra: Record<string, unknown>, style: CardStyle): Card =>
-  tile(id, { ...extra, ...(style.tiles === 'compact' ? { size: 'compact' } : {}) });
+  tile(id, {
+    ...extra,
+    ...(style.tiles === 'compact' ? { size: 'compact' } : {}),
+    ...tileSwitch(style.switches),
+  });
 
 /** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
 /** The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer). */

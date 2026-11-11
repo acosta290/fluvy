@@ -126,15 +126,18 @@ const ENTITY_ITEM: readonly HaFormSchemaItem[] = [
   ...GROUP_ITEM.slice(2),
 ];
 
-/** A room's tiles are a group's but for their look out of reach, which is the room's: they sit inside it. */
-const ownLook = (key: string): boolean => key !== 'unavailable';
+/**
+ * A room's tiles are a group's but for their look out of reach, which is the room's (they sit inside it), and a large
+ * tile's switch: they are compact, the tile itself the button.
+ */
+const ownField = (key: string): boolean => key !== 'unavailable' && key !== 'show_switch';
 
 export const lists: readonly RowsListSpec[] = [
   {
     key: 'tiles',
     title: 'editor.tiles',
-    keys: (tilesLists[0]?.keys ?? []).filter(ownLook),
-    schema: (tilesLists[0]?.schema ?? []).filter((field) => ownLook(field.name)),
+    keys: (tilesLists[0]?.keys ?? []).filter(ownField),
+    schema: (tilesLists[0]?.schema ?? []).filter((field) => ownField(field.name)),
     when: drawsTiles,
   },
   {

@@ -104,6 +104,7 @@ export async function buildContext(
     style: {
       ...(config.thermostat_variant ? { thermostat: config.thermostat_variant } : {}),
       ...(config.tile_size ? { tiles: config.tile_size } : {}),
+      ...(config.tile_switch ? { switches: config.tile_switch } : {}),
       ...(config.flow_style ? { flow: config.flow_style } : {}),
       ...(config.room_variant ? { room: config.room_variant } : {}),
       ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),

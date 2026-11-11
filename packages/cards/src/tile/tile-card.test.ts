@@ -2,7 +2,7 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
-import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
+import { cardForm, drawEditor, nextConfig, shownNames } from '../shared/fixtures/editor.js';
 import { stateLineWidths } from '../shared/fixtures/widths.js';
 import { FluvyTilesCard } from '../tiles/tiles-card.js';
 import { FluvyTileCard } from './tile-card.js';
@@ -581,5 +581,267 @@ describe('a small tile’s name in two lines, the tile a line taller (#100)', ()
     expect(await lines('mini', { name_lines: '2' })).toBe(true);
     expect(await lines('large', { name_lines: 2 })).toBe(false);
     expect(await lines('compact')).toBe(false);
+  });
+});
+
+describe('a large tile without its switch: its circle is the switch (#160)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const LAMP = { type: 'custom:fluvy-tile-card', entity: 'light.desk' };
+  const OFF = {
+    ...LIVE,
+    'light.desk': state('light.desk', 'off', {
+      friendly_name: 'Desk lamp',
+      supported_color_modes: ['brightness'],
+    }),
+  };
+  /** The house with the calls it is sent kept. */
+  const calling = (states: Record<string, unknown>) => {
+    const calls: unknown[][] = [];
+    const hass = {
+      ...house(states),
+      callService: (...call: unknown[]) => (calls.push(call), Promise.resolve()),
+    } as unknown as HomeAssistant;
+    return { hass, calls };
+  };
+  const circle = (tile: HTMLElement): HTMLElement =>
+    tile.querySelector<HTMLElement>('.fv-tile__head > .fv-ico')!;
+  const figure = (tile: HTMLElement): string | undefined =>
+    tile.querySelector('.fv-tile__value')?.textContent?.replace(/\s+/g, ' ').trim();
+  const line = (tile: HTMLElement): string =>
+    tile.querySelector('.fv-tile__state')!.textContent!.trim();
+
+  it('shows its switch unless it is asked not to, whatever else a config writes', async () => {
+    for (const show_switch of [undefined, true, 'yes', 0, null]) {
+      const [tile] = await drawn({ ...LAMP, show_switch }, LIVE);
+      expect(tile!.querySelector('.fv-hit [role="switch"]'), String(show_switch)).not.toBeNull();
+      expect(circle(tile!).tagName).toBe('SPAN');
+      document.body.replaceChildren();
+    }
+  });
+
+  it('declares the height it did: the option moves nothing', () => {
+    for (const show_switch of [false, 'value'] as const) {
+      expect(FluvyTileCard.layoutHeight({ ...LAMP, show_switch })).toBe(168);
+      expect(
+        FluvyTilesCard.layoutHeight({
+          type: 'custom:fluvy-tiles-card',
+          size: 'large',
+          show_switch,
+          entities: ['light.desk', 'switch.washer'],
+        }),
+      ).toBe(168);
+    }
+  });
+
+  it('hidden: no switch beside the circle, the circle a switch a reader hears by the tile’s name', async () => {
+    const [on] = await drawn({ ...LAMP, show_switch: false }, LIVE);
+    expect(on!.querySelector('.fv-hit')).toBeNull();
+    expect(circle(on!).tagName).toBe('BUTTON');
+    expect(circle(on!).getAttribute('role')).toBe('switch');
+    expect(circle(on!).getAttribute('aria-checked')).toBe('true');
+    expect(circle(on!).getAttribute('aria-label')).toBe('Desk lamp');
+    // the head is left clean, and the line says the state and the level as it did
+    expect(figure(on!)).toBeUndefined();
+    expect(line(on!)).toBe('On · 50 %');
+    document.body.replaceChildren();
+    const [off] = await drawn({ ...LAMP, show_switch: false }, OFF);
+    expect(circle(off!).getAttribute('aria-checked')).toBe('false');
+    expect(anatomy(off!)).toEqual(anatomy(on!));
+  });
+
+  it('a tap on the circle switches it, a tap on the tile opens its details, a hold runs its hold action', async () => {
+    const { hass, calls } = calling(LIVE);
+    const [tile] = await drawn(
+      { ...LAMP, show_switch: false, hold_action: { action: 'toggle' } },
+      LIVE,
+      360,
+      hass,
+    );
+    // the details are asked of Home Assistant from the card itself
+    const opened: string[] = [];
+    (tile!.getRootNode() as ShadowRoot).host.addEventListener('hass-more-info', (event) =>
+      opened.push((event as CustomEvent<{ entityId: string }>).detail.entityId),
+    );
+    circle(tile!).click();
+    expect(calls).toEqual([['light', 'turn_off', {}, { entity_id: 'light.desk' }]]);
+    expect(opened).toEqual([]);
+    // the tile's own button is beside the circle, never around it
+    const tap = tile!.querySelector<HTMLElement & { fvHold?: () => void }>('.fv-tile__tap')!;
+    expect(tap.contains(circle(tile!))).toBe(false);
+    tap.click();
+    expect(opened).toEqual(['light.desk']);
+    expect(calls).toHaveLength(1);
+    tap.fvHold?.();
+    expect(calls).toHaveLength(2);
+  });
+
+  it('a tile asked to toggle on its tap does, beside its circle (tap_action: toggle)', async () => {
+    const { hass, calls } = calling(LIVE);
+    const [tile] = await drawn(
+      { ...LAMP, show_switch: false, tap_action: { action: 'toggle' } },
+      LIVE,
+      360,
+      hass,
+    );
+    tile!.querySelector<HTMLElement>('.fv-tile__tap')!.click();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.slice(0, 2)).toEqual(['light', 'turn_off']);
+  });
+
+  it('out of reach it keeps its anatomy and its size: a circle that is not pressed, its ruler at rest', async () => {
+    for (const show_switch of [false, 'value'] as const) {
+      const [off] = await drawn({ ...LAMP, show_switch }, OFF);
+      document.body.replaceChildren();
+      const [dead] = await drawn({ ...LAMP, show_switch }, DEAD);
+      expect(anatomy(dead!)).toEqual(anatomy(off!));
+      expect(dead!.classList.contains('fv-tile--off')).toBe(true);
+      expect(circle(dead!).tagName).toBe('SPAN');
+      expect(dead!.querySelector('.fv-hit')).toBeNull();
+      expect(dead!.querySelector('fluvy-ruler')!.hasAttribute('inert')).toBe(true);
+      expect(figure(dead!)).toBeUndefined();
+      document.body.replaceChildren();
+    }
+  });
+
+  it('value: the level’s figure ends the head and the line says the state alone', async () => {
+    const [on] = await drawn({ ...LAMP, show_switch: 'value' }, LIVE);
+    expect(on!.querySelector('.fv-hit')).toBeNull();
+    expect(circle(on!).getAttribute('role')).toBe('switch');
+    expect(figure(on!)).toBe('50 %');
+    expect(on!.querySelector('.fv-tile__value .fv-unit')!.textContent).toBe('%');
+    expect(line(on!)).toBe('On');
+    document.body.replaceChildren();
+    // off there is no figure to say, on the line or in the head
+    const [off] = await drawn({ ...LAMP, show_switch: 'value' }, OFF);
+    expect(figure(off!)).toBeUndefined();
+    expect(line(off!)).toBe('Off');
+  });
+
+  it('value: a muted player says so on its line, its volume in the head; a plug has no level to show', async () => {
+    const PLAYER = {
+      'media_player.soundbar': state('media_player.soundbar', 'on', {
+        friendly_name: 'Soundbar',
+        supported_features: 4 | 8,
+        volume_level: 0.3,
+        is_volume_muted: true,
+      }),
+    };
+    const [player] = await drawn(
+      { type: 'custom:fluvy-tile-card', entity: 'media_player.soundbar', show_switch: 'value' },
+      PLAYER,
+    );
+    expect(figure(player!)).toBe('30 %');
+    expect(line(player!)).toBe('Muted');
+    document.body.replaceChildren();
+    const [plug] = await drawn(
+      { type: 'custom:fluvy-tile-card', ...PLUG, show_switch: 'value' },
+      LIVE,
+    );
+    expect(figure(plug!)).toBeUndefined();
+    expect(plug!.querySelector('.fv-hit')).toBeNull();
+    expect(circle(plug!).getAttribute('role')).toBe('switch');
+    expect(line(plug!)).toBe('On');
+  });
+
+  it('value: where the scale’s widest figure would not hold beside the circle, it stays on the line', async () => {
+    // "100 %" is 40 by the test page's widths: beside the circle and its 8 of air it asks for an inner 92
+    const [narrow] = await drawn({ ...LAMP, show_switch: 'value' }, LIVE, 123);
+    expect(figure(narrow!)).toBeUndefined();
+    expect(line(narrow!)).toBe('On · 50 %');
+    document.body.replaceChildren();
+    const [wide] = await drawn({ ...LAMP, show_switch: 'value' }, LIVE, 124);
+    expect(figure(wide!)).toBe('50 %');
+  });
+
+  it('a tile too narrow for a switch beside its circle is as it was, whatever is asked', async () => {
+    for (const show_switch of [true, false] as const) {
+      const [tile] = await drawn({ ...LAMP, show_switch }, LIVE, 131);
+      expect(tile!.querySelector('.fv-hit')).toBeNull();
+      expect(circle(tile!).getAttribute('role')).toBe('switch');
+      document.body.replaceChildren();
+    }
+  });
+
+  it('a sensor never had a switch: its reading ends its head as it did', async () => {
+    const [tile] = await drawn(
+      { type: 'custom:fluvy-tile-card', entity: 'sensor.office', show_switch: false },
+      LIVE,
+    );
+    expect(circle(tile!).tagName).toBe('SPAN');
+    expect(figure(tile!)).toBe('21.5 °C');
+  });
+
+  it('a group says it for its tiles, and a tile’s own word wins', async () => {
+    const group = { type: 'custom:fluvy-tiles-card', size: 'large', columns: 2 };
+    const switches = (tiles: readonly HTMLElement[]): boolean[] =>
+      tiles.map((tile) => tile.querySelector('.fv-hit') !== null);
+    expect(
+      switches(
+        await drawn(
+          {
+            ...group,
+            show_switch: false,
+            tiles: ['light.desk', { entity: 'switch.washer', show_switch: true }],
+          },
+          LIVE,
+        ),
+      ),
+    ).toEqual([false, true]);
+    document.body.replaceChildren();
+    const tiles = await drawn(
+      { ...group, tiles: [{ entity: 'light.desk', show_switch: 'value' }, 'switch.washer'] },
+      LIVE,
+    );
+    expect(switches(tiles)).toEqual([false, true]);
+    expect(figure(tiles[0]!)).toBe('50 %');
+  });
+
+  it('a compact and a mini tile never drew one: they are as they were', async () => {
+    for (const size of ['compact', 'mini'] as const) {
+      const [asked] = await drawn({ ...LAMP, size, show_switch: false }, LIVE);
+      const html = asked!.outerHTML;
+      document.body.replaceChildren();
+      const [plain] = await drawn({ ...LAMP, size }, LIVE);
+      expect(plain!.outerHTML).toBe(html);
+      document.body.replaceChildren();
+    }
+  });
+});
+
+describe('the tile’s editor offers its switch where it has one (#160)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const edited = async (config: Record<string, unknown>) => {
+    const editor = await FluvyTileCard.getConfigElement();
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = house(LIVE);
+    return drawEditor(editor, { type: 'custom:fluvy-tile-card', ...config });
+  };
+
+  it('to a large tile of an entity that switches, never to a small one nor to a sensor', async () => {
+    const shown = async (config: Record<string, unknown>): Promise<boolean> =>
+      shownNames(cardForm(await edited(config)).schema).includes('show_switch');
+    expect(await shown({ entity: 'light.desk' })).toBe(true);
+    expect(await shown({ entity: 'switch.washer', size: 'large' })).toBe(true);
+    expect(await shown({ entity: 'light.desk', size: 'compact' })).toBe(false);
+    expect(await shown({ entity: 'light.desk', size: 'mini' })).toBe(false);
+    expect(await shown({ entity: 'sensor.office' })).toBe(false);
+  });
+
+  it('shows it shown until chosen, and writes hidden as the toggle the config holds, the value as its word', async () => {
+    const editor = await edited({ entity: 'light.desk' });
+    expect(cardForm(editor).data['show_switch']).toBe('true');
+    let next = nextConfig(editor);
+    cardForm(editor).change('show_switch', 'false');
+    expect(await next).toEqual({
+      type: 'custom:fluvy-tile-card',
+      entity: 'light.desk',
+      show_switch: false,
+    });
+    await editor.updateComplete;
+    expect(cardForm(editor).data['show_switch']).toBe('false');
+    next = nextConfig(editor);
+    cardForm(editor).change('show_switch', 'value');
+    expect((await next)['show_switch']).toBe('value');
   });
 });

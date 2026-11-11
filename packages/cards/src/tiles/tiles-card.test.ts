@@ -2,6 +2,15 @@
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { setCardDefaults, type HomeAssistant } from '@fluvy/core';
 import { familiesDefined } from '../index.js';
+import {
+  cardForm,
+  drawEditor,
+  nextConfig,
+  shownNames,
+  type FormStub,
+} from '../shared/fixtures/editor.js';
+import type { FluvyRowsEditor } from '../shared/rows-editor.js';
+import { FluvyTilesCard } from './tiles-card.js';
 
 // the index fetches the media and energy families: they land before this file's page goes
 afterAll(() => familiesDefined);
@@ -163,5 +172,55 @@ describe('a tile out of reach', () => {
       tiles: ['switch.kitchen', { entity: 'switch.printer', unavailable: 'dashed' }],
     });
     expect(house.map((tile) => tile.getAttribute('data-unavailable'))).toEqual(['quiet', null]);
+  });
+});
+
+describe('the group’s editor offers its large tiles’ switches where they have one (#160)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const edited = async (config: Record<string, unknown>) => {
+    const editor = await FluvyTilesCard.getConfigElement();
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = hass;
+    return drawEditor(editor, { type: 'custom:fluvy-tiles-card', ...config });
+  };
+  const items = (editor: FluvyRowsEditor): FormStub[] => [
+    ...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form'),
+  ];
+  const offers = (form: FormStub): boolean => shownNames(form.schema).includes('show_switch');
+  const TILES = ['switch.kitchen', 'sensor.office'];
+
+  it('the group’s own, to large tiles where one of them switches', async () => {
+    expect(offers(cardForm(await edited({ size: 'large', tiles: TILES })))).toBe(true);
+    expect(offers(cardForm(await edited({ size: 'large', entities: TILES })))).toBe(true);
+    // compact tiles (the default) and minis draw no switch, and a sensor has none
+    expect(offers(cardForm(await edited({ tiles: TILES })))).toBe(false);
+    expect(offers(cardForm(await edited({ size: 'mini', tiles: TILES })))).toBe(false);
+    expect(offers(cardForm(await edited({ size: 'large', tiles: ['sensor.office'] })))).toBe(false);
+  });
+
+  it('a tile’s own, to a large tile whose entity switches', async () => {
+    expect(items(await edited({ size: 'large', tiles: TILES })).map(offers)).toEqual([true, false]);
+    expect(items(await edited({ tiles: TILES })).map(offers)).toEqual([false, false]);
+  });
+
+  it('shows a tile’s own word and writes its pick as the toggle the config holds, empty back to its id', async () => {
+    const editor = await edited({
+      size: 'large',
+      tiles: [{ entity: 'switch.kitchen', show_switch: false }, 'switch.porch'],
+    });
+    const written = async (pick: unknown): Promise<unknown> => {
+      const next = nextConfig(editor);
+      items(editor)[1]!.change('show_switch', pick);
+      const tiles = (await next)['tiles'] as unknown[];
+      await editor.updateComplete;
+      return tiles[1];
+    };
+    expect(items(editor)[0]!.data['show_switch']).toBe('false');
+    // a tile that says nothing shows nothing: its group's
+    expect(items(editor)[1]!.data['show_switch']).toBeUndefined();
+    expect(await written('false')).toEqual({ entity: 'switch.porch', show_switch: false });
+    expect(await written('true')).toEqual({ entity: 'switch.porch', show_switch: true });
+    expect(await written('value')).toEqual({ entity: 'switch.porch', show_switch: 'value' });
+    expect(await written(undefined)).toBe('switch.porch');
   });
 });

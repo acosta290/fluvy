@@ -1682,9 +1682,11 @@ describe('the settings panel', () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
+    // and the tiles' switches, hidden (#160)
     const strategy = {
       type: 'custom:fluvy-home',
       thermostat_variant: 'ruler',
+      tile_switch: 'hide',
       hide: ['media'],
       caps,
     };
@@ -1774,7 +1776,7 @@ describe('the settings panel', () => {
     });
     expect(exported['personal']).toMatchObject({ language: 'es', haptics: false });
     expect(exported['dashboards']).toEqual({
-      'fluvy-auto': { thermostat_variant: 'ruler', hide: ['media'], caps },
+      'fluvy-auto': { thermostat_variant: 'ruler', tile_switch: 'hide', hide: ['media'], caps },
     });
     // another house, reset; the file brings it all back
     await handle.store.saveHouse({
@@ -1809,7 +1811,13 @@ describe('the settings panel', () => {
     expect(handle.settings().cards).toEqual({ opacity: 75, blur: false, unavailable: 'quiet' });
     expect(handle.settings().sliders).toEqual({ style: 'bar', words: 'none' });
     expect(saved.at(-1)?.config).toEqual({
-      strategy: { type: 'custom:fluvy-home', thermostat_variant: 'ruler', hide: ['media'], caps },
+      strategy: {
+        type: 'custom:fluvy-home',
+        thermostat_variant: 'ruler',
+        tile_switch: 'hide',
+        hide: ['media'],
+        caps,
+      },
     });
     // a 1.18 file says our icons with one switch: both places take it
     importSettings(

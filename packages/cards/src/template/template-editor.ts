@@ -15,8 +15,10 @@ import {
   nameLinesField,
   onlyWhen,
   selectField,
+  showSwitchField,
   sinceChoices,
   sinceField,
+  switches,
   textField,
   tintField,
 } from '../shared/form.js';
@@ -45,12 +47,14 @@ export const keys = configKeys<TemplateCardConfig>()([
   'tint',
   'variant',
   'name_lines',
+  'show_switch',
   'readouts',
 ]);
 
 export const defaults: EditorDefaults = (config) => ({
   variant: 'compact',
   name_lines: '1',
+  show_switch: true,
   secondary: config['entity'] ? 'state' : 'none',
   since: '',
   active: 'auto',
@@ -72,8 +76,13 @@ export function getConfigForm(): LovelaceConfigForm {
         selectField('variant', VARIANTS),
         selectField('active', ['auto', 'always', 'never'], { custom: true }),
       ),
-      // a compact or mini tile's name may take two lines
+      // a compact or mini tile's name may take two lines; a large one's switch may give way to its circle, where
+      // its entity is one that switches
       onlyWhen((data) => data['variant'] !== 'large', nameLinesField()),
+      onlyWhen(
+        (data) => data['variant'] === 'large' && switches(data['entity']),
+        showSwitchField(),
+      ),
       ...colourFields(),
       // a colour at rest needs a rest and something to show then (a colour, or a tone that washes); readouts need
       // a large tile's foot

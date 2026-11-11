@@ -62,6 +62,12 @@ export type TileSize = 'large' | 'compact' | 'mini';
 export const TILE_SIZES: readonly TileSize[] = ['large', 'compact', 'mini'];
 /** The lines a small tile's name may take (`name_lines`): YAML's figure, or the editor's word for it. */
 export type NameLines = 1 | 2 | '1' | '2';
+/**
+ * What ends a large tile's head where its entity switches (`show_switch`, #160): its switch (`true`, the default);
+ * nothing (`false`), its circle being the switch, as on a tile too narrow for one beside it; or its level's figure
+ * (`value`: "70 %", its line the state alone), its circle the switch too.
+ */
+export type ShowSwitch = boolean | 'value';
 
 /** One tile's own settings — the single card's config, or one item of a tiles group. */
 export interface TileItem {
@@ -77,6 +83,11 @@ export interface TileItem {
   since?: string;
   /** How it looks out of reach (1.16, #126): `quiet`, as it rests; else the group's, else the house's (`dashed`). */
   unavailable?: UnavailableLook;
+  /**
+   * A large tile's switch beside its circle (#160): hidden (`false`), or its level's figure in its place (`value`),
+   * its circle the switch then; else the group's, else shown.
+   */
+  show_switch?: ShowSwitch;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
 }
@@ -126,12 +137,27 @@ const COVER_SET_POSITION = 4;
 const FAN_SET_SPEED = 1;
 const MORE_INFO: ActionConfig = { action: 'more-info' };
 const TOGGLE: ActionConfig = { action: 'toggle' };
+/** A head's circle and the 8 of air before what ends it: its switch, a reading, a level's figure. */
+const HEAD_LEAD = 44 + 8;
 /** A large tile's head holds its icon circle, 8 of air and the switch; a narrower tile's circle is the switch. */
-const HEAD_ROOM = 44 + 8 + 48;
+const HEAD_ROOM = HEAD_LEAD + 48;
 /** Two readouts share a foot from this inner width; under it the first one has the foot to itself. */
 const TWO_READOUTS = 120;
 /** Three readouts (power, today, cost) share a foot from this inner width: a tile on its own row. */
 const THREE_READOUTS = 292;
+
+/**
+ * The switch a large tile is asked to show (`show_switch`), by the one rule every card that draws one follows: its
+ * own word, else its card's (a group's, a card's built on the tile), else shown — as is whatever a config writes that
+ * is neither `false` nor `value`.
+ */
+const switchOf = (
+  item: Pick<TileItem, 'show_switch'>,
+  card?: Pick<TileItem, 'show_switch'>,
+): ShowSwitch => {
+  const asked = item.show_switch ?? card?.show_switch;
+  return asked === false || asked === 'value' ? asked : true;
+};
 
 /**
  * Whether a large tile's foot is its ruler, never its readouts: a light that dims, a cover set to a position, a fan to
@@ -147,6 +173,12 @@ export const ruled = (view: EntityView): boolean =>
 
 /** A tile's ruler is short: its ticks are 1/12 and 1/4, or one a step up to twelve steps (`ticksOf`). */
 const TILE_TICKS = 12;
+
+/** A figure at the end of a large tile's head, its unit small beside it: a sensor's reading, a level's (`value`). */
+const headValue = (value: string, unit: string): TemplateResult =>
+  html`<span class="fv-tile__value"
+    >${value}${unit ? html` <span class="fv-unit">${unit}</span>` : nothing}</span
+  >`;
 
 /** What a large tile's foot ruler sets (`level`): where the entity stands on its scale, and the call that sets it. */
 export interface TileLevel {
@@ -189,7 +221,8 @@ export const tintsAtRest = (
  * ruler (brightness, cover position, fan speed) or two small readouts. Compact (76 tall) and mini
  * (108 tall, icon over name) are the same tile without the switch: the whole surface toggles on tap
  * and opens the details on hold — the Mushroom-sized buttons people group in pairs and threes. A large tile's
- * surface taps and holds the same, through a button stretched under its switch and ruler (never around them).
+ * surface taps and holds the same, through a button stretched under its switch and ruler (never around them); asked
+ * not to show its switch (`show_switch`, #160), its circle is the switch, and the three sizes are one tile.
  * Active = the tone's pastel fill in every size; unavailable = the off skin on the same anatomy, at the same size.
  */
 export class FluvyTileCard extends Card<TileCardConfig> {
@@ -675,35 +708,50 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // everything in a large tile is drawn to its inner width (its own less 16 px sides): a tile squeezed narrow
     // folds its switch into the icon circle, gives its value to the state line, keeps one readout
     const inner = Math.floor(this.tileWidth()) - 32;
-    const family = getComputedStyle(this).fontFamily;
+    // what ends the head is drawn at 16/600: it holds where it fits beside the circle
+    const face = `600 16px ${getComputedStyle(this).fontFamily}`;
+    const holds = (text: string): boolean => HEAD_LEAD + textWidth(text, face) <= inner;
     // a tile of nothing (a template card without an entity) has no reading, and one whose foot sets it (a number) says
     // it on its line
     const parts = sensorLike && item.entity && !level ? valueParts(this.hass, view) : null;
-    const valueInHead =
-      parts !== null &&
-      44 + 8 + textWidth(`${parts.value} ${parts.unit}`.trim(), `600 16px ${family}`) <= inner;
-    // a card built on the tile may end its head otherwise (the Slider card's control); else the tile's switch
+    const valueInHead = parts !== null && holds(`${parts.value} ${parts.unit}`.trim());
+    // a card built on the tile may end its head otherwise (the Slider card's control); else the tile's switch, apart
+    // where the tile is asked to show it (`show_switch`) and holds it beside its circle — else its circle is the switch
     const control = this.headControl?.(view, lit, tone, label, usable);
-    const switchApart = control === undefined && canToggle && inner >= HEAD_ROOM;
+    const switches = control === undefined && canToggle;
+    const shows = switchOf(item, this.config);
+    const switchApart = switches && shows === true && inner >= HEAD_ROOM;
     const flip = (event: Event): void => {
       event.stopPropagation();
       this.flip(view, !lit);
     };
     const lead = !usable
       ? ico(quiet ? icon : 'ban', quiet ? iconTone : 'off')
-      : control === undefined && canToggle && !switchApart
+      : switches && !switchApart
         ? ico(icon, iconTone, { onTap: flip, label, checked: lit })
         : ico(icon, iconTone);
+    const line = this.tileLine(item, view, lit, level, valueInHead);
+    // its level's figure in the switch's place (`show_switch: value`): the one its line ends in ("On · 70 %") goes up
+    // to the head's end, as a sensor's reading stands there, and the line keeps the state alone — where the scale's
+    // widest figure holds beside the circle, so a level never moves its figure from one to the other
+    const said = switches && shows === 'value' && level ? ` · ${level.text}` : '';
+    const raised =
+      level &&
+      said &&
+      line.endsWith(said) &&
+      holds(`${scaleText(this.hass, level.scale, level.scale.max)} ${level.scale.unit}`.trim())
+        ? level
+        : null;
     const trailing =
       control !== undefined
         ? control
         : switchApart
           ? toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
-          : parts && valueInHead
-            ? html`<span class="fv-tile__value"
-                >${parts.value}${parts.unit ? html` <span class="fv-unit">${parts.unit}</span>` : nothing}</span
-              >`
-            : nothing;
+          : raised
+            ? headValue(scaleText(this.hass, raised.scale, raised.value), raised.scale.unit)
+            : parts && valueInHead
+              ? headValue(parts.value, parts.unit)
+              : nothing;
 
     // the tile's button is laid over it, under its controls (the switch, a circle that is one, the ruler): a tap runs
     // the tap action, a still press the hold action — never a switch inside a button
@@ -796,7 +844,6 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       </div>`;
     }
 
-    const line = this.tileLine(item, view, lit, level, valueInHead);
     return html`<article
       class=${`${classes}${fill ? ' fv-tile--fill' : ''}${foot === nothing ? ' fv-tile--footless' : this.nameFits(name) ? '' : ' fv-tile--tight'}`}
       data-card
@@ -808,7 +855,13 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       <div class="fv-tile__head">${lead}${trailing}</div>
       <h3 class="fv-tile__name">${name}</h3>
       <p class="fv-tile__state" data-name=${words ? '' : nothing}>
-        ${this.fitState(line, size, view, { dash: !usable, inside, under: true, words, figure })}
+        ${this.fitState(raised ? line.slice(0, -said.length) : line, size, view, {
+          dash: !usable,
+          inside,
+          under: true,
+          words,
+          figure,
+        })}
       </p>
       ${foot} ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
     </article>`;

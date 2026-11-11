@@ -517,6 +517,50 @@ describe('a select’s options as the house has them', () => {
     expect(items[1]!.data).toEqual({ entity: 'sensor.b' });
   });
 
+  it('writes an item’s toggle among its select’s own choices back as the toggle, as the card’s (a tile’s switch, #160)', async () => {
+    const shows = {
+      name: 'show_switch',
+      selector: {
+        select: { options: ['true', 'false', 'value'].map((v) => ({ value: v, label: v })) },
+      },
+    };
+    const title = { name: 'name', selector: { text: {} } };
+    const list: RowsListSpec = { ...rows, schema: [rows.schema[0]!, shows, title] };
+    const editor = await drawEditor(listsEditor({ schema: [] }, [list]), {
+      type: 'custom:x',
+      rows: [{ entity: 'switch.a', show_switch: false }, 'switch.b'],
+    });
+    const item = (index: number): FormStub =>
+      [...editor.shadowRoot!.querySelectorAll<FormStub>('.item ha-form')][index]!;
+    const written = async (index: number, name: string, value: unknown): Promise<unknown> => {
+      const next = nextConfig(editor);
+      item(index).change(name, value);
+      const entries = (await next)['rows'] as unknown[];
+      await editor.updateComplete;
+      return entries[index];
+    };
+    expect(item(0).data['show_switch']).toBe('false');
+    // another field changed: the toggle stays as the config holds it
+    expect(await written(0, 'name', 'Lamp')).toEqual({
+      entity: 'switch.a',
+      show_switch: false,
+      name: 'Lamp',
+    });
+    // a pick is the toggle it says, a word stays a word
+    expect(await written(1, 'show_switch', 'true')).toEqual({
+      entity: 'switch.b',
+      show_switch: true,
+    });
+    expect(await written(1, 'show_switch', 'false')).toEqual({
+      entity: 'switch.b',
+      show_switch: false,
+    });
+    expect(await written(1, 'show_switch', 'value')).toEqual({
+      entity: 'switch.b',
+      show_switch: 'value',
+    });
+  });
+
   it('draws the card’s fields a list names over its items, edited as the card’s (an appliance’s scan, #98)', async () => {
     const schema = [textField('title'), boolField('scan')];
     const list: RowsListSpec = { ...rows, fields: ['scan'] };

@@ -93,7 +93,7 @@ export function homeView(ctx: StrategyContext): Section[] {
     ctx,
     { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
     home.applianceTiles,
-    (ids) => tileRows(ids.map((id) => applianceTile(home, id))),
+    (ids) => tileRows(ids.map((id) => applianceTile(home, id, ctx.style))),
   );
   const covers = capped(
     ctx,
@@ -137,7 +137,7 @@ export function homeView(ctx: StrategyContext): Section[] {
         moreAfter(
           headed(
             heading(t('strategy.appliances'), 'fluvy:plug', home.applianceTiles),
-            tileRows(appliances.shown.map((id) => applianceTile(home, id))),
+            tileRows(appliances.shown.map((id) => applianceTile(home, id, ctx.style))),
           ),
           appliances,
         ),
