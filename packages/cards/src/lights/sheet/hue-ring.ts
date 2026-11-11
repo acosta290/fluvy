@@ -143,9 +143,12 @@ export class FluvyHueRing extends LitElement {
       const { x, y } = localPoint(ring, event);
       return hueAt(x, y, this.size);
     };
+    // the hue before the press: a turn taken away goes back to it
+    let from = 0;
     this.untrack = trackDrag(ring, {
       start: (s) => {
         if (this.disabled) return false;
+        from = this.value;
         this.dragging = true;
         this.turn(hueOf(s.event), 'fluvy-input');
         return true;
@@ -154,6 +157,11 @@ export class FluvyHueRing extends LitElement {
       end: (s) => {
         this.dragging = false;
         this.turn(hueOf(s.event), 'fluvy-change');
+      },
+      // taken away before its release (the system: the ring keeps the page's scroll off): nothing is sent
+      cancel: () => {
+        this.dragging = false;
+        this.value = from;
       },
     });
   }

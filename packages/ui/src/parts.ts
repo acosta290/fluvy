@@ -4,6 +4,7 @@ import {
   clickPress,
   holdKey,
   preventMenu,
+  releaseStepRepeat,
   startPress,
   startStepRepeat,
   stopStepRepeat,
@@ -304,7 +305,7 @@ export function stepper(
       ?disabled=${options.disabled ?? false}
       .fvStep=${onStep}
       @pointerdown=${(event: PointerEvent) => startStepRepeat(event, direction)}
-      @pointerup=${stopStepRepeat}
+      @pointerup=${releaseStepRepeat}
       @pointerleave=${stopStepRepeat}
       @pointercancel=${stopStepRepeat}
       @click=${keyClick(direction)}

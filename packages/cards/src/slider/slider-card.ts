@@ -468,6 +468,7 @@ export class FluvySliderCard extends FluvyTileCard {
       commit: (v) => this.setting.set(this.settle(view, scale, v)),
       input: (v) =>
         this.setting.input(this.settle(view, scale, v), this.slider.live_update === true),
+      cancel: () => this.setting.cancel(),
     };
   }
 
@@ -620,6 +621,7 @@ export class FluvySliderCard extends FluvyTileCard {
           this.setting.input(this.settle(view, scale, e.detail.value), config.live_update === true)}
         @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) =>
           this.setting.set(this.settle(view, scale, e.detail.value))}
+        @fluvy-cancel=${() => this.setting.cancel()}
         @fluvy-window=${(e: CustomEvent<RulerWindowDetail>) => this.setting.zoom(e.detail)}
       ></fluvy-ruler>
       ${rulerLabels(ticksWords)}

@@ -306,13 +306,16 @@ async function open(sheet, width = 360, options = {}) {
   await page.waitForTimeout(400);
   await reset(page);
 
-  // a lost pointer capture ends the gesture where it was
-  const before = Number(
-    (await card.locator('.fv-readout--l .fv-readout__value span').first().textContent()).trim(),
-  );
+  // a lost pointer capture (not a release) cancels the gesture: nothing sent, the card's figure back where it was
+  const readout = async () =>
+    Number(
+      (await card.locator('.fv-readout--l .fv-readout__value span').first().textContent()).trim(),
+    );
+  const before = await readout();
   await page.mouse.move(box.x + box.width * 0.5, y);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.55, y, { steps: 6 });
+  const previewed = await readout();
   await page.evaluate(() => {
     const el = document
       .querySelector('fluvy-light-card')
@@ -323,16 +326,17 @@ async function open(sheet, width = 360, options = {}) {
   await page.waitForTimeout(80);
   c = await calls(page);
   const dragging = await ruler.evaluate((el) => el.classList.contains('is-dragging'));
+  const after = await readout();
   check(
-    'ruler: losing pointer capture commits and releases the drag',
-    c.length === 1 && !dragging && c[0].d.brightness_pct !== before,
-    `${before} → ${JSON.stringify(c.map((x) => x.d.brightness_pct))} · dragging ${dragging}`,
+    'ruler: losing pointer capture cancels the drag: nothing sent, the figure back where it was',
+    c.length === 0 && !dragging && previewed !== before && after === before,
+    `${before} → ${previewed} → ${after} · ${JSON.stringify(c.map((x) => x.d.brightness_pct))} · dragging ${dragging}`,
   );
   await page.mouse.up();
   await page.waitForTimeout(400);
-  await reset(page);
   c = await calls(page);
-  check('…and the late pointerup does not fire a second call', c.length === 0, `${c.length} calls`);
+  check('…and the late pointerup sends nothing either', c.length === 0, `${c.length} calls`);
+  await reset(page);
 
   check('ruler: no page errors', errors.length === 0, errors.join(' | ').slice(0, 200));
   await page.close();

@@ -55,7 +55,8 @@ interface Mark {
  *
  * Times are milliseconds. `density` counts the entries per equal stretch of the period, oldest first; `densityKey`
  * names what it counts (a new key crossfades the histogram, the same key eases each bar to its new length). Events:
- * `fluvy-scrub` (`TimeRailDetail`) while scrubbing, on release and for each key.
+ * `fluvy-scrub` (`TimeRailDetail`) while scrubbing, on release and for each key; `fluvy-cancel` when a scrub is taken
+ * away before its release (the page's scroll, the system): nothing is picked, the page is the finger's again.
  */
 export class FluvyTimeRail extends LitElement {
   static override styles = [
@@ -370,6 +371,11 @@ export class FluvyTimeRail extends LitElement {
       end: (sample) => {
         this.scrubbing = false;
         this.scrub(sample.event, true);
+      },
+      // taken away (the page's scroll beside the knob, the system): no moment is settled on
+      cancel: () => {
+        this.scrubbing = false;
+        this.dispatchEvent(new CustomEvent('fluvy-cancel', { bubbles: true, composed: true }));
       },
     });
     this.addEventListener('click', this.onTap);

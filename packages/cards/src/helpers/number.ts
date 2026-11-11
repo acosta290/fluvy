@@ -152,6 +152,7 @@ export function numberBlocks(
         host.expect(view.id, String(event.detail.value));
         host.call(view.domain, 'set_value', { value: event.detail.value }, view.id);
       }}
+      @fluvy-cancel=${() => host.setPreview(view.id, null)}
     ></fluvy-ruler>`,
   );
   return blocks;

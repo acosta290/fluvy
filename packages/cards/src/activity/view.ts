@@ -819,6 +819,13 @@ export class FluvyActivity extends LitElement {
     this.pin = undefined;
   };
 
+  /** A finger's scrub taken away before its release (the page's scroll, the system): the rail follows the page again. */
+  readonly onScrubCancel = (): void => {
+    this.scrubbing = false;
+    this.onManual();
+    this.onScroll();
+  };
+
   readonly onScrub = (event: CustomEvent<TimeRailDetail>): void => {
     const { value, done, via, key } = event.detail;
     const rail = this.rail;
@@ -896,6 +903,7 @@ export class FluvyActivity extends LitElement {
       .formatLabel=${this.railLabel}
       .formatBubble=${this.railBubble}
       @fluvy-scrub=${this.onScrub}
+      @fluvy-cancel=${this.onScrubCancel}
     ></fluvy-time-rail>`;
     return html`${renderBar(this)}
       <div

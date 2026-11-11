@@ -195,6 +195,8 @@ export interface TileLevel {
   readonly commit: (value: number) => void;
   /** The value under the finger as it moves, for a card that sends it then (the Slider card's `live_update`). */
   readonly input?: ((value: number) => void) | undefined;
+  /** The drag taken away before its release (the page's scroll): the value under the finger goes, nothing chosen. */
+  readonly cancel?: (() => void) | undefined;
 }
 
 /**
@@ -771,6 +773,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         .format=${(v: number) => scaleText(this.hass, scale, v)}
         @fluvy-input=${(e: CustomEvent<RulerChangeDetail>) => level.input?.(e.detail.value)}
         @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => level.commit(e.detail.value)}
+        @fluvy-cancel=${() => level.cancel?.()}
         @fluvy-tap=${tapNow}
         @fluvy-hold=${holdNow}
       ></fluvy-ruler>`;

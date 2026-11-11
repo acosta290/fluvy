@@ -65,9 +65,12 @@ lives in the ruler's slot, so no card or tile changes height with it.
 Every style keeps the ruler's gestures: the drag is relative (grabbing never jumps the value), a finger drifting away
 from the axis slows it to a tenth, the bubble reads the value while dragging, the keys step, page and go to the ends,
 and a tap goes there. Only the Ruler holds still for the fine scale: a bar cannot zoom without lying about the level,
-and a still press on a tile's fill is the tile's own (its tap, or its hold of 500 ms for the details). A change shows on
-every card of the page at once, before it is saved; a card that sets `slider_style` keeps its own (its editor shows the
-house's until a value is chosen, and never writes it).
+and a still press on a tile's fill is the tile's own (its tap, or its hold of 500 ms for the details). On a touch screen
+the page's scroll comes first (#166): a finger that sets off across a slider (up or down the page past a ruler, a bar or
+a fill) scrolls the page and leaves the slider where it was, a drag the browser takes for a scroll on its way sends
+nothing, and the − and + of a stepper take their step as the finger lifts, so a scroll that starts on one steps nothing.
+A change shows on every card of the page at once, before it is saved; a card that sets `slider_style` keeps its own (its
+editor shows the house's until a value is chosen, and never writes it).
 
 **When unavailable** covers every card that shows a device: a tile, the tiles of a group (each may say its own: a
 tile's `unavailable` in `tiles`), the light card, rows, rounds, chips, a room's tiles, an appliance's and a printer's

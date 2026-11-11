@@ -5,6 +5,7 @@ import { baseStyles } from '../styles/index.js';
 import {
   clamp,
   keyValue,
+  releaseStepRepeat,
   saneRange,
   snap,
   startStepRepeat,
@@ -328,6 +329,15 @@ export class FluvyDial extends LitElement {
         if (moved) this.settle();
         else this.springs[index]?.jump(this.shown[index] as number);
       },
+      // taken away before its release (the system: the knob keeps the page's scroll off): nothing is sent, the knob
+      // glides back to what was set
+      cancel: () => {
+        const index = this.dragIndex;
+        if (index === -1) return;
+        this.dragIndex = -1;
+        this.springs[index]?.jump(this.shown[index] as number);
+        this.sync();
+      },
     });
   }
 
@@ -440,7 +450,7 @@ export class FluvyDial extends LitElement {
       ?disabled=${inert}
       .fvStep=${this.stepFn}
       @pointerdown=${direction < 0 ? this.stepDownMinus : this.stepDownPlus}
-      @pointerup=${stopStepRepeat}
+      @pointerup=${releaseStepRepeat}
       @pointerleave=${stopStepRepeat}
       @pointercancel=${stopStepRepeat}
       @click=${direction < 0 ? this.stepKeyMinus : this.stepKeyPlus}

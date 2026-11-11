@@ -79,7 +79,11 @@ const HUE_STOPS = [0, 1, 2, 3, 4, 5, 6].map(
  * fine scale; a tile's fill covers its tile, so a still press on it is the tile's tap (`fluvy-tap`) or hold
  * (`fluvy-hold`), never a jump to the value.
  *
+ * A finger that sets off across the axis is the page's scroll: the ruler lets it go and does not move. A drag the
+ * browser takes away before its release (a scroll, the system) chooses nothing: the knob goes back, nothing is sent.
+ *
  * Events: `fluvy-input` while dragging (preview), `fluvy-change` on release, key or tap,
+ * `fluvy-cancel` when a previewed drag is taken away (the preview is over, nothing was chosen),
  * `fluvy-window` when the fine scale comes up or goes away (so a card can relabel its axis).
  */
 export class FluvyRuler extends LitElement {
@@ -337,6 +341,7 @@ export class FluvyRuler extends LitElement {
     const el = this.renderRoot.querySelector<HTMLElement>('.fv-ruler');
     if (!el) return;
     this.release = trackDrag(el, {
+      axis: () => (this.vertical ? 'y' : 'x'),
       start: () => {
         // a tile's fill takes every press, the slide being only the interactive one's: the rest is the tile's
         if (!this.interactive && !this.fill) return false;
@@ -400,7 +405,25 @@ export class FluvyRuler extends LitElement {
         const f = this.vertical ? 1 - (s.y - rect.top) / extent : (s.x - rect.left) / extent;
         this.commit(this.valueAt(clamp(f, 0, 1)));
       },
+      cancel: () => this.cancelDrag(),
     });
+  }
+
+  /**
+   * The gesture was taken away before its release (the page's scroll, the system), or a finger set off across the
+   * axis: nothing was chosen, a still press tapped nothing. The fine scale goes down, the knob glides back to the value
+   * the person had settled on, and a card that drew the preview hears it is over.
+   */
+  private cancelDrag(): void {
+    clearTimeout(this.holdTimer);
+    const previewed = !Number.isNaN(this.lastPreview);
+    this.lastPreview = Number.NaN;
+    if (this.fine) this.dropFine();
+    this.dragging = false;
+    this.rise?.set(0);
+    this.follow?.jump(this.shown);
+    this.follow?.set(this.fraction(this.settled));
+    if (previewed) this.say('fluvy-cancel');
   }
 
   /** A still press of 500 ms on a tile's fill: the tile's hold, said once; the release that follows is nothing. */
@@ -409,8 +432,11 @@ export class FluvyRuler extends LitElement {
     this.say('fluvy-hold');
   }
 
-  /** The tile's tap or hold, for the tile the fill covers to run (the press cover under it never sees a pointer). */
-  private say(event: 'fluvy-tap' | 'fluvy-hold'): void {
+  /**
+   * An event with nothing to carry: the tile's tap or hold, for the tile the fill covers to run (the press cover under
+   * it never sees a pointer), or a previewed drag's cancel.
+   */
+  private say(event: 'fluvy-tap' | 'fluvy-hold' | 'fluvy-cancel'): void {
     this.dispatchEvent(new CustomEvent(event, { bubbles: true, composed: true }));
   }
 

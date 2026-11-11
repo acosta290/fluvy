@@ -549,6 +549,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
               @fluvy-input=${(e: CustomEvent<RulerChangeDetail>) =>
                 this.level.input(e.detail.value, this.config?.live_update === true)}
               @fluvy-change=${(e: CustomEvent<RulerChangeDetail>) => this.level.set(e.detail.value)}
+              @fluvy-cancel=${() => this.level.cancel()}
               @fluvy-window=${(e: CustomEvent<RulerWindowDetail>) => this.level.zoom(e.detail)}
             ></fluvy-ruler>
             ${rulerLabels(sliderWordsOf(this.config, ticks, look))}`

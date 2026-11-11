@@ -54,6 +54,7 @@ describe('pointer geometry under zoom', () => {
       start: () => true,
       move: (s) => void samples.push(s),
       end: (s, moved) => void ends.push([s, moved]),
+      cancel: () => undefined,
     });
     el.dispatchEvent(pointer('pointerdown', 200));
     el.dispatchEvent(pointer('pointermove', 203)); // under the 4 px intent: not yet a drag
@@ -75,6 +76,7 @@ describe('pointer geometry under zoom', () => {
       start: () => true,
       move: (s) => void samples.push(s),
       end: () => undefined,
+      cancel: () => undefined,
     });
     el.dispatchEvent(pointer('pointerdown', 10, 10));
     el.dispatchEvent(pointer('pointermove', 50, 30));

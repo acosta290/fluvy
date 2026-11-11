@@ -1,10 +1,12 @@
 import { zoomOf } from './zoom.js';
 
 /**
- * Pointer tracking shared by the ruler and the dial. Pointer Events (not a gesture library): no
- * 10 px dead zone, pointer capture, coalesced moves. Scroll keeps working: the control declares
- * `touch-action: pan-y` (or pan-x) and the drag only claims the gesture once the finger has clearly
- * moved along the control's own axis.
+ * Pointer tracking shared by the ruler, the dial and every control dragged along a track. Pointer Events (not a
+ * gesture library): no 10 px dead zone, pointer capture, coalesced moves. Scroll keeps working: the control declares
+ * `touch-action: pan-y` (or pan-x), and a finger or a pen claims the drag only once it has moved along the control's
+ * own axis more than across it; one that sets off across it is the page's scroll, and the control lets go of it. A
+ * gesture the browser takes for itself (`pointercancel`), or whose capture goes without a release, is cancelled, never
+ * released: the control puts back what it showed and sends nothing.
  */
 export interface DragSample {
   /** Where the pointer is, in viewport pixels (what a `getBoundingClientRect()` compares with). */
@@ -16,15 +18,41 @@ export interface DragSample {
   readonly event: PointerEvent;
 }
 
+/** The axis a control slides along: `x` across the page, `y` up and down it. */
+export type DragAxis = 'x' | 'y';
+
 export interface DragCallbacks {
+  /**
+   * The control's own axis, read at each press (a ruler may stand vertical). None: any direction drags (a knob on a
+   * ring, a surface that keeps the page's scroll off with `touch-action: none`).
+   */
+  axis?(): DragAxis;
   /** Return false to ignore the gesture (disabled, wrong button…). */
   start(sample: DragSample): boolean;
   move(sample: DragSample): void;
-  /** `moved` is false for a tap: the pointer never travelled past the intent threshold. */
+  /** The release. `moved` is false for a tap: the pointer never travelled past the intent threshold. */
   end(sample: DragSample, moved: boolean): void;
+  /**
+   * The gesture was taken away before its release: the browser took it for a scroll (`pointercancel`), its capture went
+   * without one, or a finger set off across the axis. Nothing was chosen: the control goes back to its settled value,
+   * sends nothing and taps nothing.
+   */
+  cancel(): void;
 }
 
 const INTENT = 4;
+
+/**
+ * Whether a press that has travelled past the intent threshold claims the gesture as a drag: a mouse's always does, as
+ * does any pointer on a control with no axis; a finger's or a pen's only once it has moved along the axis more than
+ * across it — one that sets off across it is the page's scroll. Where a drag is claimed is decided here alone.
+ */
+function claims(s: DragSample, axis: DragAxis | undefined): boolean {
+  if (!axis || s.event.pointerType === 'mouse') return true;
+  const along = Math.abs(axis === 'x' ? s.dx : s.dy);
+  const across = Math.abs(axis === 'x' ? s.dy : s.dx);
+  return along > across;
+}
 
 export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => void {
   let id = -1;
@@ -32,6 +60,7 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
   let oy = 0;
   let zoom = 1;
   let moved = false;
+  let axis: DragAxis | undefined;
 
   const sample = (event: PointerEvent): DragSample => ({
     x: event.clientX,
@@ -41,12 +70,23 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
     event,
   });
 
+  /** Nothing more of this gesture reaches the control. */
+  const free = (pointerId: number): void => {
+    id = -1;
+    try {
+      target.releasePointerCapture(pointerId);
+    } catch {
+      /* already released */
+    }
+  };
+
   const down = (event: PointerEvent): void => {
     if (id !== -1 || (event.pointerType === 'mouse' && event.button !== 0)) return;
     ox = event.clientX;
     oy = event.clientY;
     zoom = zoomOf(target); // read once: the size cannot change under a finger
     moved = false;
+    axis = callbacks.axis?.();
     if (!callbacks.start(sample(event))) return;
     id = event.pointerId;
     try {
@@ -55,40 +95,44 @@ export function trackDrag(target: HTMLElement, callbacks: DragCallbacks): () => 
       /* the pointer is already gone */
     }
   };
+  // The browser took the gesture (a scroll), or the capture went without a release (the element is moved in the DOM,
+  // another script releases it, the OS takes the pointer): the gesture is cancelled instead of sticking.
+  const cancel = (event: PointerEvent): void => {
+    if (event.pointerId !== id) return;
+    free(event.pointerId);
+    callbacks.cancel();
+  };
   const move = (event: PointerEvent): void => {
     if (event.pointerId !== id) return;
     const s = sample(event);
-    if (!moved && Math.hypot(s.dx, s.dy) < INTENT) return;
-    moved = true;
+    if (!moved) {
+      if (Math.hypot(s.dx, s.dy) < INTENT) return;
+      // a finger setting off across the axis is the page's scroll: the control lets go, untouched
+      if (!claims(s, axis)) {
+        cancel(event);
+        return;
+      }
+      moved = true;
+    }
     callbacks.move(s);
   };
   const up = (event: PointerEvent): void => {
     if (event.pointerId !== id) return;
-    id = -1;
-    try {
-      target.releasePointerCapture(event.pointerId);
-    } catch {
-      /* already released */
-    }
+    free(event.pointerId);
     callbacks.end(sample(event), moved);
-  };
-  // Capture can go away without a pointerup or pointercancel (the element is moved in the DOM, another
-  // script releases it, the OS takes the pointer): the gesture ends where it was instead of sticking.
-  const lost = (event: PointerEvent): void => {
-    if (event.pointerId === id) up(event);
   };
 
   target.addEventListener('pointerdown', down);
   target.addEventListener('pointermove', move);
   target.addEventListener('pointerup', up);
-  target.addEventListener('pointercancel', up);
-  target.addEventListener('lostpointercapture', lost);
+  target.addEventListener('pointercancel', cancel);
+  target.addEventListener('lostpointercapture', cancel);
   return () => {
     target.removeEventListener('pointerdown', down);
     target.removeEventListener('pointermove', move);
     target.removeEventListener('pointerup', up);
-    target.removeEventListener('pointercancel', up);
-    target.removeEventListener('lostpointercapture', lost);
+    target.removeEventListener('pointercancel', cancel);
+    target.removeEventListener('lostpointercapture', cancel);
     if (id !== -1) {
       id = -1;
     }
@@ -191,20 +235,39 @@ export interface StepButton extends HTMLElement {
 
 let stepDelay = 0;
 let stepInterval = 0;
+/** A finger's or a pen's first step, still to take: at its release, or as the repeat starts. */
+let stepPending: (() => void) | undefined;
 
 export function stopStepRepeat(): void {
   clearTimeout(stepDelay);
   clearInterval(stepInterval);
   stepDelay = 0;
   stepInterval = 0;
+  stepPending = undefined;
+}
+
+/** Takes the step a finger's or a pen's press still owes, once. */
+function takeStep(): void {
+  const step = stepPending;
+  stepPending = undefined;
+  step?.();
+}
+
+/** The release of a stepper half (its `pointerup`): a finger's or a pen's press that has not repeated takes its step. */
+export function releaseStepRepeat(): void {
+  takeStep();
+  stopStepRepeat();
 }
 
 /**
- * Press-and-hold repeat for stepper halves rendered by a template. Two things make it safe:
+ * Press-and-hold repeat for stepper halves rendered by a template. Three things make it safe:
  * the repeat always calls the button's CURRENT handler (the element's `fvStep` property, which the
  * template refreshes on every render — a closure captured at press time would count from a stale
- * value), and there is ONE repeat for the whole page, stopped by any pointer end, by the button
- * leaving the document, or by the next press. A repeat can never outlive its press.
+ * value); there is ONE repeat for the whole page, stopped by any pointer end, by the button
+ * leaving the document, or by the next press; and a finger or a pen steps only once its press is one —
+ * at its release (`releaseStepRepeat`) or as the repeat starts — so a scroll that sets off on a stepper
+ * (the browser's `pointercancel`) steps nothing. A mouse steps at the press. A repeat can never outlive
+ * its press.
  */
 export function startStepRepeat(event: PointerEvent, direction: 1 | -1): void {
   if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -217,9 +280,11 @@ export function startStepRepeat(event: PointerEvent, direction: 1 | -1): void {
     }
     button.fvStep?.(direction);
   };
-  fire();
+  if (event.pointerType === 'mouse') fire();
+  else stepPending = fire;
   stepDelay = window.setTimeout(() => {
     stepInterval = window.setInterval(fire, 110);
+    takeStep();
   }, 420);
   window.addEventListener('pointerup', stopStepRepeat, { once: true });
   window.addEventListener('pointercancel', stopStepRepeat, { once: true });

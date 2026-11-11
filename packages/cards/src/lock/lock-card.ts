@@ -343,6 +343,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
 
   private bind(track: HTMLElement): void {
     this.detach = trackDrag(track, {
+      axis: () => 'x',
       start: (sample) => {
         if (this.frozen) return false;
         // the knob is placed in the track's own pixels: the finger is read in them too (a zoomed view)
@@ -358,16 +359,20 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         return true;
       },
       move: (sample) => this.jumpTo(clamp(this.from + sample.dx, 0, this.span)),
-      end: (sample, moved) => {
-        const decided =
-          moved && sample.event.type === 'pointerup' && this.travel(this.pos) >= COMMIT; // a cancelled touch never decides
+      end: (_sample, moved) => {
         this.dragging = false;
         track.classList.remove('is-dragging');
-        if (decided) {
+        if (moved && this.travel(this.pos) >= COMMIT) {
           this.commit();
           return;
         }
         if (!moved) this.nudge();
+        this.springTo(this.rest);
+      },
+      // a cancelled touch (the page starts scrolling) never decides, however far it went
+      cancel: () => {
+        this.dragging = false;
+        track.classList.remove('is-dragging');
         this.springTo(this.rest);
       },
     });

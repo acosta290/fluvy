@@ -88,6 +88,12 @@ export class Level implements ReactiveController {
     this.send(value);
   }
 
+  /** The drag was taken away before its release (the page's scroll): nothing was chosen, the preview goes. */
+  cancel(): void {
+    this.preview = null;
+    this.host.requestUpdate();
+  }
+
   /** The ruler's fine scale came up, or went away. */
   zoom(detail: RulerWindowDetail): void {
     this.window = detail.fine ? detail : null;
