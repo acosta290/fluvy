@@ -351,6 +351,99 @@ describe('a chart of its series’ own (the Chart card’s)', () => {
   });
 });
 
+describe('series in several units', () => {
+  const PRICE = [0.05, 0.12, 0.3, 0.35, 0.18, 0.08];
+  const ROOM = [18.2, 18.9, 20.4, 23.6, 22.1, 19.5];
+  const extras = { tick: String, measure: (t: string) => t.length * 7, now: 0.6 };
+  /** How much of the plot's height (44 … 112) a path's points take. */
+  const height = (d: string | null | undefined): number => {
+    const ys = [...(d ?? '').matchAll(/-?[\d.]+,(-?[\d.]+)/g)].map((m) => Number(m[1]));
+    return (Math.max(...ys) - Math.min(...ys)) / (112 - 44);
+  };
+
+  it('one unit: the very drawing it was without one, in every style', () => {
+    const thresholds = [{ value: 20, colour: 'danger' as const }];
+    for (const preset of [
+      'classic',
+      'soft',
+      'glow',
+      'minimal',
+      'step',
+      'bars',
+      'columns',
+      'band',
+    ] as const) {
+      const series = [
+        { values: ROOM, band: { low: ROOM.map((v) => v - 1), high: ROOM.map((v) => v + 1) } },
+        { values: DAY },
+      ];
+      // the chart's zero and its thresholds as they were, against each series' unit and zero
+      const bare = spec(preset, { ...extras, zero: true, thresholds, series });
+      const named = spec(preset, {
+        ...extras,
+        thresholds: thresholds.map((t) => ({ ...t, unit: '°C' })),
+        series: series.map((s) => ({ ...s, unit: '°C', zero: true })),
+      });
+      expect(host(drawChart(named)).innerHTML, preset).toBe(host(drawChart(bare)).innerHTML);
+    }
+  });
+
+  it('two units: each takes the plot’s height on a scale of its own, the ticks the first one’s alone', () => {
+    const style = resolveStyle('soft', { show_grid: 'y' }, caps);
+    const lines = (series: ChartSpec['series']) => {
+      const drawing = host(drawChart(spec('soft', { ...extras, style, series })));
+      return {
+        ticks: [...drawing.querySelectorAll('.fc-tick')].map((t) => Number(t.textContent)),
+        heights: [...drawing.querySelectorAll('.fc-line:not(.fc-run)')].map((l) =>
+          height(l.getAttribute('d')),
+        ),
+      };
+    };
+    // on one scale, the price is a flat line along the temperature's floor
+    const one = lines([{ values: PRICE, zero: true }, { values: ROOM }]);
+    expect(one.heights[0]).toBeLessThan(0.05);
+    // in their units, each its height; the ticks the price's, from its zero (a temperature's would never start there)
+    const two = lines([
+      { values: PRICE, unit: '€/kWh', zero: true },
+      { values: ROOM, unit: '°C' },
+    ]);
+    expect(two.ticks).toEqual([0, 0.1, 0.2, 0.3, 0.4]);
+    for (const share of two.heights) expect(share).toBeGreaterThan(0.7);
+  });
+
+  it('colours the series of its thresholds’ unit alone, and stands each unit’s bars on its own scale', () => {
+    const series = [
+      { values: PRICE, unit: '€/kWh', zero: true },
+      { values: ROOM, unit: '°C' },
+    ];
+    const lines = host(
+      drawChart(
+        spec('soft', { series, thresholds: [{ value: 0.25, colour: 'danger', unit: '€/kWh' }] }),
+      ),
+    );
+    expect(lines.querySelector('#c-run-0-0')).not.toBeNull();
+    expect(lines.querySelector('#c-run-1-0')).toBeNull();
+    // stacked columns stack within a unit: each unit's from the zero line, its tallest reaching the plot's top
+    const reached = (series: ChartSpec['series']): number[] => {
+      const bars = [
+        ...host(drawChart(spec('columns', { series, kind: 'bars' }))).querySelectorAll('.fc-bar'),
+      ];
+      // a bar's path starts at its top (and its corner's radius under it): how far up the plot the tallest reaches
+      const tops = bars.map((bar) =>
+        Number(/^M[\d.]+,([\d.]+)/.exec(bar.getAttribute('d') ?? '')?.[1]),
+      );
+      return [0, 1].map(
+        (k) => (112 - Math.min(...tops.filter((_y, i) => i % 2 === k))) / (112 - 44),
+      );
+    };
+    const [price, room] = reached(series);
+    expect(price).toBeGreaterThan(0.7);
+    expect(room).toBeGreaterThan(0.7);
+    // on one scale, the price's columns are stubs on the floor under the temperature's
+    expect(reached(series.map(({ values }) => ({ values })))[0]).toBeLessThan(0.1);
+  });
+});
+
 describe('the gauges, each one of Fluvy’s controls read-only', () => {
   const gauge = (preset: Parameters<typeof resolveGauge>[0], value: number | null = 62) =>
     host(

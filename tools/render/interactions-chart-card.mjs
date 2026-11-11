@@ -18,6 +18,9 @@
  *   price of both days, and the measured beside the weather's forecast, end on now's hairline, nothing dashed before
  *   it; a line over columns marks now once, on the line's end, the columns to come hollow; the keys read a window past
  *   now from where it rests, ← a step back from now;
+ * - two units on one chart, full, compact and as tiles: each unit's series take the plot's height on a scale of their
+ *   own (a price's columns under a temperature, a power beside a humidity), the ticks the columns' alone, every value
+ *   in the row in its own unit;
  * - four rooms: their legend under the axis in two columns at 360, the value row's lines at 266 and 211 (where the
  *   columns would cut the names), every name legible, the card at the height it declares;
  * - a series that names a colour of the palette's (`graph-4`) wears each palette's own (`?palette=`), its line and its
@@ -576,6 +579,85 @@ const marksOf = (card) =>
   );
 }
 await page.close();
+
+/* ---------- two units: each on a scale of its own, the ticks the columns' ---------- */
+{
+  const page = await suite.sheet('chart');
+  // every card of a frame: its ticks, how far up its plot each line (what has happened and what is to come) and the
+  // tallest columns reach, and the values its row says
+  const read = (title) =>
+    frame(page, title)
+      .locator('fluvy-chart-card')
+      .evaluateAll((cards) =>
+        cards.map((card) => {
+          const root = card.shadowRoot;
+          const svgs = [...root.querySelectorAll('svg.fc-chart')];
+          // the plot: a vertical gridline's ends, else a spark's frame (4 above it and under it)
+          const down = [...svgs[0].querySelectorAll('.fc-grid')].find(
+            (line) => line.getAttribute('x1') === line.getAttribute('x2'),
+          );
+          const [top, bottom] = down
+            ? [Number(down.getAttribute('y1')), Number(down.getAttribute('y2'))]
+            : [4, Number(svgs[0].getAttribute('height')) - 4];
+          const share = (ys) => (Math.max(...ys) - Math.min(...ys)) / (bottom - top);
+          const ysOf = (path) =>
+            [...(path.getAttribute('d') ?? '').matchAll(/-?[\d.]+,(-?[\d.]+)/g)].map((m) => +m[1]);
+          const tops = svgs.flatMap((svg) =>
+            [...svg.querySelectorAll('.fc-bar')].map((bar) => ysOf(bar)[0]),
+          );
+          return {
+            ticks: [...svgs[0].querySelectorAll('.fc-tick')].map((t) => Number(t.textContent)),
+            lines: svgs.flatMap((svg) =>
+              [...svg.querySelectorAll('.fc-line:not(.fc-run), .curve-line')].map((line) =>
+                share(
+                  [
+                    ...line.parentElement.querySelectorAll(
+                      '.fc-line:not(.fc-run), .curve-line, .fc-future:not(.fc-run)',
+                    ),
+                  ].flatMap(ysOf),
+                ),
+              ),
+            ),
+            columns: tops.length ? (bottom - Math.min(...tops)) / (bottom - top) : null,
+            values: [...root.querySelectorAll('.ch-lines .fc-legend__value')].map((v) =>
+              v.textContent.replace(/\s+/g, ' ').trim(),
+            ),
+          };
+        }),
+      );
+  const tall = (x) => x > 0.7;
+  const [price, power] = await read('Chart · two units');
+  check(
+    'two units: a price’s columns under a temperature, each its height, the ticks the price’s, each value in its unit',
+    price.ticks.length > 1 &&
+      Math.max(...price.ticks) < 1 &&
+      tall(price.columns) &&
+      price.lines.length === 1 &&
+      price.lines.every(tall) &&
+      /€\/kWh$/.test(price.values[0] ?? '') &&
+      /°C$/.test(price.values[1] ?? ''),
+    JSON.stringify(price),
+  );
+  check(
+    'two units: a power beside a humidity, each its height, each value in its unit',
+    power.lines.length === 2 &&
+      power.lines.every(tall) &&
+      / W$/.test(power.values[0] ?? '') &&
+      / %$/.test(power.values[1] ?? ''),
+    JSON.stringify(power),
+  );
+  const [compact, ...tiles] = await read('Chart · two units, compact and tiles');
+  check(
+    'two units, compact and as tiles: the price’s ticks and columns, and every spark’s line, each its height',
+    Math.max(...compact.ticks) < 1 &&
+      tall(compact.columns) &&
+      compact.lines.every(tall) &&
+      tiles.length === 2 &&
+      tiles.every((tile) => tile.lines.length === 2 && tile.lines.every(tall)),
+    JSON.stringify({ compact, tiles }),
+  );
+  await page.close();
+}
 
 /* ---------- a legend of four or more: names that read at every width, the card at its height ---------- */
 {

@@ -93,13 +93,17 @@ export function seriesOf(
     .slice(0, MOST_SERIES);
 }
 
-/** The thresholds a config draws: each with a value and a tone, in the engine's terms. */
+/**
+ * The thresholds a config draws: each with a value and a tone, in the engine's terms, written in `unit` (the first
+ * series', whose figure the head says): they colour the series of that unit alone.
+ */
 export const thresholdsOf = (
   config: { readonly thresholds?: ReadonlyArray<{ tone?: Tone; value?: number }> } | undefined,
+  unit?: string,
 ): Threshold[] =>
   (config?.thresholds ?? []).flatMap((t): Threshold[] =>
     typeof t?.value === 'number' && Number.isFinite(t.value) && t.tone
-      ? [{ value: t.value, colour: t.tone }]
+      ? [{ value: t.value, colour: t.tone, ...(unit === undefined ? {} : { unit }) }]
       : [],
   );
 

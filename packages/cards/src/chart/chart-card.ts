@@ -1470,13 +1470,12 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       line: Math.min(resolved.line, ...drawn.map((d) => d.line?.style.line ?? resolved.line)),
     };
     const bars = isBars(style.preset);
-    const own = new Set(drawn.map((d) => d.scale.unit)).size > 1 ? ('own' as const) : undefined;
-    const zero = drawn.some(
-      (d) =>
-        d.price || readingsOf(d.view.deviceClass, d.view.attr('state_class'), d.view.unit).zero,
-    );
     const stretches: Stretch[] = marks.map((m) => ({ from: m.from, to: m.to, colour: m.tone }));
+    // each series in the unit its figures are written in, its scale from zero where its quantity starts there: series of
+    // one unit share a scale, another unit's stand on one of their own (the engine's)
     const asSeries = (d: Drawn, slots: boolean): ChartSeries => ({
+      unit: d.scale.unit,
+      zero: d.price || readingsOf(d.view.deviceClass, d.view.attr('state_class'), d.view.unit).zero,
       values: slots || d.curve === 'step' ? d.slots : d.points,
       ...(d.at && !slots && d.curve !== 'step' ? { at: d.at } : {}),
       ...(window.running && (slots || d.curve === 'step' || d.kind === 'band')
@@ -1491,9 +1490,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     });
     const common = {
       frame,
-      zero,
       now: nowFraction(window),
-      thresholds: thresholdsOf(this.config),
+      thresholds: thresholdsOf(this.config, lead.scale.unit),
       stretches,
       tick: (value: number, decimals: number) => tickText(this.hass, value, decimals),
       measure: (text: string) => this.headFit.ruler.width('fc-tick', text),
@@ -1505,14 +1503,12 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const lined = bars ? [] : drawn.filter((d) => d.kind !== 'columns');
     if (!columned.length)
       return {
-        main: {
-          ...common,
-          series: lined.map((d) => asSeries(d, false)),
-          style,
-          ...(own ? { scale: own } : {}),
-        },
+        main: { ...common, series: lined.map((d) => asSeries(d, false)), style },
         over: null,
       };
+    // the scale's ticks are the columns' (a column's height is its value on them): a line of their unit stands on them,
+    // one of another unit on its own, its figure in the row, the legend and the bubble
+    const unit = (columned[0] as Drawn).scale.unit;
     const main: ChartSpec = {
       ...common,
       series: columned.map((d) => asSeries(d, true)),
@@ -1520,6 +1516,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       style: lined.length ? { ...style, now: 'none' } : style,
       kind: 'bars',
       reach: lined
+        .filter((d) => d.scale.unit === unit)
         .flatMap((d) => [...d.points, ...(d.band ? [...d.band.low, ...d.band.high] : [])])
         .filter((v): v is number => v !== null),
     };
@@ -1535,7 +1532,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         series: lined.map((d) => asSeries(d, false)),
         style: { ...style, grid: { ...style.grid, axes: 'none' }, axis: false },
         kind: 'line',
-        scale: own ?? { min: ticks.min, max: ticks.max },
+        scale: { min: ticks.min, max: ticks.max },
+        unit,
         id: 'ch-over',
       },
     };
@@ -1818,6 +1816,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
                     values: d.points,
                     ...(d.at ? { at: d.at } : {}),
                   }),
+              // series of one unit share the spark's scale, another unit's take its height on their own
+              unit: d.scale.unit,
               colour: d.colour,
               ...(d.accent ? { accent: d.accent } : {}),
               ...(d.item.curve ? { curve: d.item.curve } : {}),
@@ -1866,7 +1866,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
                   style: resolveStyle(minimal ? 'minimal' : 'classic', fine, {}),
                   now: nowFraction(window),
                   ...(series.length > 1 ? { scale: 'air' as const } : {}),
-                  thresholds: thresholdsOf(this.config),
+                  thresholds: thresholdsOf(this.config, lead.scale.unit),
                   id: 'ch-spark',
                 })
               : nothing

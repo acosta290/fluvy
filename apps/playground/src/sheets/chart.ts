@@ -15,8 +15,9 @@ if (!customElements.get('fluvy-chart-card'))
  * list in kW under a kWh sensor; a weather's hourly forecast (`weather/subscribe_forecast`) after the measured
  * temperature; a sensor's history with its change on yesterday; its statistics' band; four rooms on one chart (the
  * legend under the axis), and four and six at half a section and in a narrow column; compact, tiles, empty, out of
- * reach and half a section; and at noon (#158), three rooms' day so far, a room beside the price of both days, and the
- * panels' power over the solar forecast as columns.
+ * reach and half a section; and at noon (#158), three rooms' day so far, a room beside the price of both days, the
+ * panels' power over the solar forecast as columns, and two units on one chart (a price's columns under a temperature,
+ * a power beside a humidity), full, compact and as tiles.
  */
 
 const QUARTER = 15 * 60_000;
@@ -121,6 +122,26 @@ const SOLAR_TO_NOON = Array.from(
   (_unused, i) =>
     Math.round(4.6 * sun(i / 2) ** 1.4 * (0.92 + 0.06 * Math.sin(i * 1.3)) * 100) / 100,
 );
+/**
+ * The house's power up to Thursday's noon (W), half an hour a reading from Wednesday's midnight: the kettle, the oven,
+ * lunch.
+ */
+const POWER_TO_NOON = Array.from({ length: 73 }, (_unused, i) => {
+  const hour = (i / 2) % 24;
+  return Math.round(
+    240 +
+      1500 * Math.exp(-((hour - 7.5) ** 2) / 0.4) +
+      2200 * Math.exp(-((hour - 19) ** 2) / 0.9) +
+      650 * Math.exp(-((hour - 12) ** 2) / 0.6) +
+      40 * Math.sin(i * 2.1),
+  );
+});
+/** The bathroom's humidity from Thursday's midnight to noon (%), half an hour a reading: the shower at 07:30. */
+const HUMIDITY_TO_NOON = Array.from(
+  { length: 25 },
+  (_unused, i) =>
+    Math.round((54 + 14 * Math.exp(-((i / 2 - 7.5) ** 2) / 0.8) - 0.35 * (i / 2)) * 10) / 10,
+);
 
 /** The weather's next hours from the sheets' hour on: a cool night, a warm Friday afternoon. */
 const FORECAST = Array.from({ length: 30 }, (_unused, h) => {
@@ -177,6 +198,29 @@ const FOUR_ROOMS = [
 ];
 const ROOMS = card({ title: 'Rooms', series: FOUR_ROOMS });
 
+/** Tibber's hours as columns under the office's temperature, today at noon: €/kWh and °C, each on its own scale. */
+const PRICE_UNDER_ROOM = card({
+  title: 'Price and office',
+  series: [
+    { entity: 'sensor.ch_tibber', attribute: 'prices', kind: 'columns', name: 'Price' },
+    { entity: 'sensor.ch_noon_office_temperature', name: 'Office' },
+  ],
+  span: 'today',
+  chart: 'soft',
+  _now: NOON_ISO,
+});
+/** The house's power beside the bathroom's humidity, today at noon: W and %, each on a scale of its own. */
+const POWER_AND_HUMIDITY = card({
+  title: 'Power and humidity',
+  series: [
+    { entity: 'sensor.ch_noon_house_power', name: 'House' },
+    { entity: 'sensor.ch_noon_bathroom_humidity', name: 'Bathroom' },
+  ],
+  span: 'today',
+  chart: 'soft',
+  _now: NOON_ISO,
+});
+
 export const sheet: SheetSpec = {
   states: [
     sensor('sensor.ch_nordpool', String(NOW_PRICE), 'Nordpool', {
@@ -232,6 +276,16 @@ export const sheet: SheetSpec = {
       device_class: 'power',
       state_class: 'measurement',
     }),
+    sensor('sensor.ch_noon_house_power', String(POWER_TO_NOON.at(-1)), 'House', {
+      unit_of_measurement: 'W',
+      device_class: 'power',
+      state_class: 'measurement',
+    }),
+    sensor('sensor.ch_noon_bathroom_humidity', String(HUMIDITY_TO_NOON.at(-1)), 'Bathroom', {
+      unit_of_measurement: '%',
+      device_class: 'humidity',
+      state_class: 'measurement',
+    }),
     ['sensor.ch_gone', 'unavailable', { friendly_name: 'Nordpool', ...PRICE }],
   ],
   history: {
@@ -246,6 +300,8 @@ export const sheet: SheetSpec = {
     'sensor.ch_noon_office_temperature': toNoon(room(21.6, 3.1), false),
     'sensor.ch_noon_bedroom_temperature': toNoon(room(18.9, 1.4), false),
     'sensor.ch_noon_solar_power': SOLAR_TO_NOON,
+    'sensor.ch_noon_house_power': POWER_TO_NOON,
+    'sensor.ch_noon_bathroom_humidity': HUMIDITY_TO_NOON,
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -417,6 +473,17 @@ export const sheet: SheetSpec = {
           chart: 'soft',
           _now: NOON_ISO,
         }),
+      ],
+    },
+    // two units on one chart: each unit's series on a scale of their own, every series the plot's height; the ticks
+    // the columns', else the first series' (a price's columns under a temperature, a power beside a humidity)
+    { title: 'Chart · two units', cards: [PRICE_UNDER_ROOM, POWER_AND_HUMIDITY] },
+    {
+      title: 'Chart · two units, compact and tiles',
+      cards: [
+        { ...PRICE_UNDER_ROOM, variant: 'compact' },
+        { ...PRICE_UNDER_ROOM, variant: 'tile', cols: 6 },
+        { ...POWER_AND_HUMIDITY, variant: 'tile', cols: 6 },
       ],
     },
   ],

@@ -91,6 +91,25 @@ describe('columns', () => {
     expect(drawn[2]?.d).toBe(barPath(30, 100, 40, 5, 4, 'bottom'));
   });
 
+  it('stacks each unit’s on its own scale, from the zero line, each stack’s outermost rounded', () => {
+    // a price (0 … 0.5 across the plot) under kilowatt hours (0 … 50): each on its own scale, never on the other
+    const scaled = (v: number, series: number): number => 100 - (series === 1 ? v * 200 : v * 2);
+    const units = ['kWh', '€/kWh', 'kWh'];
+    const drawn = columns({
+      series: [[10], [0.2], [20]],
+      count: 1,
+      left: 0,
+      width: 100,
+      y: scaled,
+      stack: (series) => units[series],
+    });
+    expect(drawn.map((c) => [c.series, c.y, c.height, c.outer])).toEqual([
+      [0, 80, 20, false],
+      [1, 60, 40, true],
+      [2, 40, 40, true],
+    ]);
+  });
+
   it('rounds both ends where asked, keeps a trickle visible, and draws nothing for nothing', () => {
     const both = columns({ series: [[10]], count: 1, left: 0, width: 100, y, caps: 'both' });
     expect(both[0]?.d).toBe(barPath(30, 90, 40, 10, 4, 'both'));

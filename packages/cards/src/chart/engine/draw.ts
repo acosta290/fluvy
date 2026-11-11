@@ -53,9 +53,15 @@ export interface ChartSpec {
    */
   readonly scale?: 'tight' | 'air' | 'own' | Scale;
   /**
+   * The unit the scale is written in where the series are written in several (`ChartSeries.unit`): its series stand on
+   * the scale the card names, its ticks and its reach; each other unit's on one of its own as the chart would draw
+   * them alone, without ticks (never ticks a series does not follow). None: the first series'.
+   */
+  readonly unit?: string;
+  /**
    * The quantity starts at zero (a counter, power, rain, a price, a percentage from nothing): its scale holds zero. A
    * measurement (a temperature, a humidity, a pressure) keeps to its own range unless its readings reach zero; bars
-   * always stand on it.
+   * always stand on it. A series may say it of its own unit (`ChartSeries.zero`).
    */
   readonly zero?: boolean;
   /**
@@ -137,18 +143,24 @@ const fillOf = (spec: ChartSpec, index: number): NonNullable<ChartSeries['fill']
 const slotted = (spec: ChartSpec, index: number): boolean =>
   curveOf(spec, index) === 'step' && !spec.series[index]?.at;
 
-/** The lows and highs of every band the chart draws: a band is in the scale only where it is drawn. */
-const bandsOf = (spec: ChartSpec, bars: boolean): number[][] =>
+/** The lows and highs of every band some series draw: a band is in the scale only where it is drawn. */
+const bandsOf = (spec: ChartSpec, members: readonly number[], bars: boolean): number[][] =>
   bars
     ? []
-    : spec.series.flatMap((s, index) =>
-        s.band && fillOf(spec, index) === 'band' ? [[...s.band.low], [...s.band.high]] : [],
-      );
+    : members.flatMap((index) => {
+        const band = spec.series[index]?.band;
+        return band && fillOf(spec, index) === 'band' ? [[...band.low], [...band.high]] : [];
+      });
 
 /** The ends a nice scale must reach: every reading and band drawn, or the stacks' rises and falls for stacked columns. */
-function reach(spec: ChartSpec, bars: boolean, stacked: boolean): number[] {
-  const all = spec.series.map((s) => s.values);
-  if (!stacked) return [...finite(all.flat()), ...bandsOf(spec, bars).flat()];
+function reach(
+  spec: ChartSpec,
+  members: readonly number[],
+  bars: boolean,
+  stacked: boolean,
+): number[] {
+  const all = members.map((index) => spec.series[index]?.values ?? []);
+  if (!stacked) return [...finite(all.flat()), ...bandsOf(spec, members, bars).flat()];
   const count = Math.max(0, ...all.map((values) => values.length));
   return Array.from({ length: count }, (_unused, i) => {
     let up = 0;
@@ -163,6 +175,43 @@ function reach(spec: ChartSpec, bars: boolean, stacked: boolean): number[] {
   }).flat();
 }
 
+/**
+ * The scale some of a chart's series stand on (all of them, or one unit's): nice ticks (for the axis's unit the card's
+ * own, reaching what it draws beside them), the series' own ends, a tenth of air, one each, or the ends given; zero
+ * held where the chart or one of them starts there.
+ */
+function scaleOf(
+  spec: ChartSpec,
+  members: readonly number[],
+  bars: boolean,
+  wanted: NonNullable<ChartSpec['scale']> | 'nice',
+  axis: boolean,
+): { readonly ticks: Ticks | null; readonly scales: readonly Scale[] } {
+  const values = members.map((index) => spec.series[index]?.values ?? []);
+  const zeroOf = (index: number): boolean =>
+    spec.zero === true || spec.series[index]?.zero === true;
+  const zero = spec.zero === true || members.some(zeroOf);
+  if (wanted === 'nice') {
+    const stacked = bars && spec.style.preset === 'columns' && members.length > 1;
+    const ends = [...reach(spec, members, bars, stacked), ...(axis ? (spec.reach ?? []) : [])];
+    const ticks =
+      (axis ? spec.ticks : undefined) ??
+      niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || zero);
+    return { ticks, scales: members.map(() => ticks) };
+  }
+  if (typeof wanted === 'object') return { ticks: null, scales: members.map(() => wanted) };
+  if (wanted === 'own')
+    return {
+      ticks: null,
+      scales: members.map((index, k) => airScale([values[k] ?? []], zeroOf(index))),
+    };
+  const shared =
+    wanted === 'air'
+      ? airScale([...values, ...bandsOf(spec, members, bars)], zero)
+      : tightScale(finite(values.flat()));
+  return { ticks: null, scales: members.map(() => shared) };
+}
+
 /** The frame, the scales and every series' points, as the layers and `readAt` read them. */
 function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
   const { frame, style } = spec;
@@ -170,29 +219,23 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
   const step = !bars && style.curve === 'step';
   const all = spec.series.map((s) => s.values);
   const count = Math.max(0, ...all.map((values) => values.length));
-  // the scale: nice under a horizontal grid and under bars, else what the card asks (a lone curve on its own ends)
-  let ticks: Ticks | null = null;
-  let scales: Scale[];
+  // the scale: nice under a horizontal grid and under bars, else a lone curve on its own ends, several with air
+  const styled = bars || style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight';
   // bars stand on a nice scale; a scale the card names wins over the style's (several sensors keep one each)
-  const wanted = bars
-    ? 'nice'
-    : (spec.scale ?? (style.scale === 'nice' ? 'nice' : all.length > 1 ? 'air' : 'tight'));
-  if (wanted === 'nice') {
-    const ends = [
-      ...reach(spec, bars, bars && style.preset === 'columns' && all.length > 1),
-      ...(spec.reach ?? []),
-    ];
-    ticks =
-      spec.ticks ?? niceTicks(Math.min(...ends), Math.max(...ends), 4, bars || spec.zero === true);
-    scales = all.map(() => ticks as Ticks);
-  } else if (typeof wanted === 'object') scales = all.map(() => wanted);
-  else if (wanted === 'own') scales = all.map((values) => airScale([values], spec.zero));
-  else if (wanted === 'air') {
-    const shared = airScale([...all, ...bandsOf(spec, bars)], spec.zero);
-    scales = all.map(() => shared);
-  } else {
-    const shared = tightScale(finite(all.flat()));
-    scales = all.map(() => shared);
+  const wanted = bars ? 'nice' : (spec.scale ?? styled);
+  // the series of one unit share a scale: the axis's unit the one the card names and its ticks, every other unit one of
+  // its own without ticks, beside another's as several are (nice where the style draws it, else aired): a price's
+  // columns and a temperature's line each take the plot's height
+  const axis = spec.unit ?? spec.series[0]?.unit;
+  const other = wanted === 'own' ? 'own' : styled === 'nice' ? 'nice' : 'air';
+  let ticks: Ticks | null = null;
+  const scales: Scale[] = [];
+  for (const unit of new Set([axis, ...spec.series.map((s) => s.unit)])) {
+    const members = spec.series.flatMap((s, index) => (s.unit === unit ? [index] : []));
+    const own = unit === axis;
+    const laid = scaleOf(spec, members, bars, own ? wanted : other, own);
+    members.forEach((index, k) => (scales[index] = laid.scales[k] as Scale));
+    if (own) ticks = laid.ticks;
   }
   // the scale's column: its widest label and the gap to the plot, on the 4 grid (the axis row starts where it ends)
   const measured = (t: Ticks): number => {
@@ -353,17 +396,27 @@ const painted = (
 const group = (spec: ChartSpec, index: number, content: unknown): SVGTemplateResult =>
   painted(paintOf(spec, index), content, spec.series[index]?.accent);
 
-/** The thresholds from the lowest up, each with the value the next one starts at (none above the highest). */
-const thresholdsOf = (spec: ChartSpec): Array<Threshold & { readonly next: number | null }> => {
+/**
+ * The thresholds that colour a series (those written in its unit), from the lowest up, each with the value the next
+ * one starts at (none above the highest).
+ */
+const thresholdsOf = (
+  spec: ChartSpec,
+  index: number,
+): Array<Threshold & { readonly next: number | null }> => {
+  const unit = spec.series[index]?.unit;
   const sorted = [...(spec.thresholds ?? [])]
-    .filter((t) => Number.isFinite(t.value))
+    .filter(
+      (t) =>
+        Number.isFinite(t.value) && (t.unit === undefined || unit === undefined || t.unit === unit),
+    )
     .sort((a, b) => a.value - b.value);
   return sorted.map((t, i) => ({ ...t, next: sorted[i + 1]?.value ?? null }));
 };
 
-/** The threshold a value falls in (the highest it reaches), none under the lowest: a bar's colour. */
-const thresholdAt = (spec: ChartSpec, value: number): Threshold | undefined =>
-  thresholdsOf(spec)
+/** The threshold a series' value falls in (the highest it reaches), none under the lowest: a bar's colour. */
+const thresholdAt = (spec: ChartSpec, index: number, value: number): Threshold | undefined =>
+  thresholdsOf(spec, index)
     .filter((t) => value >= t.value)
     .pop();
 
@@ -377,7 +430,7 @@ function thresholdRuns(
   index: number,
   paths: { readonly line: string; readonly forecast: string; readonly lineClass: string },
 ): SVGTemplateResult | typeof nothing {
-  const thresholds = thresholdsOf(spec);
+  const thresholds = thresholdsOf(spec, index);
   if (!thresholds.length) return nothing;
   const scale = laid.scales[index] as Scale;
   const width = spec.style.line;
@@ -491,7 +544,7 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
     const soFar = spec.series[c.series]?.soFar === true && c.slot === laid.count - 1;
     const bar = svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''} ${soFar ? 'fc-bar--sofar' : ''} ${c.sign < 0 ? 'fc-bar--hanging' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`;
     // a bar over a threshold wears its ink
-    const over = thresholdAt(spec, c.value);
+    const over = thresholdAt(spec, c.series, c.value);
     return over ? painted(seriesPaint(over.colour), bar) : group(spec, c.series, bar);
   })}`;
 }
@@ -643,7 +696,8 @@ export function drawChart(spec: ChartSpec): TemplateResult {
         count: laid.count,
         left: laid.left,
         width: laid.span,
-        y: (v) => yOf(v, laid.scales[0] as Scale, laid.box),
+        y: (v, series) => yOf(v, laid.scales[series] as Scale, laid.box),
+        stack: (series) => spec.series[series]?.unit,
         stacked: style.preset === 'columns',
         caps: style.caps,
         least: 2,

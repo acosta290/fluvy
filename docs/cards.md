@@ -856,19 +856,22 @@ usual ones, else its history), `attribute` (the list; one that says today reads 
 for statistics (a meter's change and a measurement's mean by default; an hour a reading through a week, a day beyond),
 `name`, `tone` or `color`, `unit` and `decimals` (a unit its sensor's converts to scales its figures; any other names
 the unit its list is written in — Solcast's kW under a kWh sensor), `curve`, `fill` and `kind`: `line`, `area`,
-`columns` (drawn under the lines, on one scale) or `band` (its lows and highs). The lists read are Nordpool's (24 hours
-or 96 quarters a day, and its plain `today` and `tomorrow`), Tibber's map of hours to prices, ENTSO-E's and Frank
-Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band), and any list of entries with a
-moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative price stays
-negative. `span` is the window: the house's (fluvy's settings → Charts: the last 12 hours from the factory, 24 before
-1.18) where it names none, or any `<N>h` or `<N>d` rolling to now (`4h`, `12h`, `24h`, `48h`, `7d`, `30d` offered),
-`today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. A series of the recorder's
-drawn as a line or an area runs through time as the sensor card's does, on `points` (an hour's statistics never finer
-than the hour). Bars, columns, a band and a stepped line stand on whole round periods of the house's clock (12:00,
-13:00 …, as many as the card's width holds calmly), each reading what Home Assistant says of its period: a bar at 12:00
-is its 12:00 hour — a statistic's mean, its changes added up, its lowest or its highest as its `stat` says — the band
-its lows and highs of each period, the axis on the same round times. The slot still running reads so far, paler, and
-says Now.
+`columns` (drawn under the lines, on their scale where they share a unit) or `band` (its lows and highs). Series of
+different units each stand on a scale of their own, every one taking the chart's height — a price's columns under a
+temperature, a power beside a humidity: the scale's ticks are the columns' where some are drawn, else the first
+series', and every value is read in its own unit in the value row, the legend and the bubble. The lists read are
+Nordpool's (24 hours or 96 quarters a day, and its plain `today` and `tomorrow`), Tibber's map of hours to prices,
+ENTSO-E's and Frank Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band), and any list of
+entries with a moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative
+price stays negative. `span` is the window: the house's (fluvy's settings → Charts: the last 12 hours from the factory,
+24 before 1.18) where it names none, or any `<N>h` or `<N>d` rolling to now (`4h`, `12h`, `24h`, `48h`, `7d`, `30d`
+offered), `today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. A series of the
+recorder's drawn as a line or an area runs through time as the sensor card's does, on `points` (an hour's statistics
+never finer than the hour). Bars, columns, a band and a stepped line stand on whole round periods of the house's clock
+(12:00, 13:00 …, as many as the card's width holds calmly), each reading what Home Assistant says of its period: a bar
+at 12:00 is its 12:00 hour — a statistic's mean, its changes added up, its lowest or its highest as its `stat` says —
+the band its lows and highs of each period, the axis on the same round times. The slot still running reads so far,
+paler, and says Now.
 
 A series wears the card's colour alone, and the palette's series colours (or the house's set, fluvy's settings →
 Charts) beside others; its own `color` wins over both. It may name a colour of the palette's, which follows the
@@ -877,7 +880,8 @@ palette and the mode as the rest of the house does — `graph-1` … `graph-12` 
 `home` — the editor offers them by name; a Home Assistant colour's name or a `#rrggbb` stays as it is.
 
 `thresholds` colour the line from a value up to the next threshold, each in a tone — `ok` is the good, cheap one: the
-line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. `highlight`
+line changes colour where it crosses one, and a bar takes the tone of the threshold its value reaches. Their values are
+in the first series' unit, and they colour the series of that unit alone. `highlight`
 marks the cheapest and the dearest window of what is to come (`min`, `max` or `both`; a price's in the ok and the
 danger tones, any other series' in its own) as a stretch of the plot behind the line and a pill that names it —
 "Cheapest 13:00–15:00 · 0.078 EUR/kWh", shorter where the row is narrow — over `highlight_hours` (one by default);

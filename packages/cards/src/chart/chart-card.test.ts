@@ -656,6 +656,80 @@ describe('a calendar day of history (#158)', () => {
     expect(await press(prices, 'ArrowRight')).toBe('21:00');
   });
 
+  it('stands two units each on a scale of its own, the ticks the columns’ and every value in its unit', async () => {
+    /** A drawing's ticks, its plot (from the lowest tick to the highest) and how far up it each thing reaches. */
+    const read = (svg: Element) => {
+      const ticks = [...svg.querySelectorAll('.fc-tick')];
+      const ys = ticks.map((t) => Number(t.getAttribute('y')) - 4);
+      const [floor, top] = [Math.max(...ys), Math.min(...ys)];
+      return {
+        ticks: ticks.map((t) => Number(t.textContent)),
+        reach: (y: number) => (floor - y) / (floor - top),
+        floor,
+        top,
+      };
+    };
+    const ysOf = (d: string | null | undefined): number[] =>
+      [...(d ?? '').matchAll(/-?[\d.]+,(-?[\d.]+)/g)].map((m) => Number(m[1]));
+    const card = await draw(
+      {
+        series: [{ entity: 'sensor.nordpool', kind: 'columns' }, 'sensor.living'],
+        span: 'today',
+        chart: 'soft',
+        _now: NOON,
+      },
+      rooms(),
+    );
+    const [columns, lines] = [...root(card).querySelectorAll('svg.fc-chart')] as Element[];
+    const scale = read(columns as Element);
+    // the ticks are the price's (the columns'), never the temperature's 0 … 30
+    expect(Math.max(...scale.ticks)).toBeLessThan(1);
+    // the dearest column reaches the plot's top part; the temperature's line takes its height on its own scale
+    const tops = [...(columns as Element).querySelectorAll('.fc-bar')].map((bar) =>
+      Number(/^M[\d.]+,([\d.]+)/.exec(bar.getAttribute('d') ?? '')?.[1]),
+    );
+    expect(scale.reach(Math.min(...tops))).toBeGreaterThan(0.7);
+    const line = ysOf(lines?.querySelector('.fc-line:not(.fc-run)')?.getAttribute('d'));
+    expect((Math.max(...line) - Math.min(...line)) / (scale.floor - scale.top)).toBeGreaterThan(
+      0.7,
+    );
+    // each read in its own unit in the row
+    const values = texts(card, '.ch-lines .fc-legend__value').map((v) => v.replace(/\s+/g, ''));
+    expect(values[0]).toMatch(/EUR\/kWh$/);
+    expect(values[1]).toMatch(/°C$/);
+  });
+
+  it('gives lines of two units the first one’s ticks, the other its height, neither held at a zero not its own', async () => {
+    const card = await draw(
+      {
+        series: ['sensor.living', 'sensor.nordpool'],
+        span: 'today+tomorrow',
+        chart: 'soft',
+        show_grid: 'y',
+        _now: NOON,
+      },
+      rooms(),
+    );
+    const svg = root(card).querySelector('svg.fc-chart') as SVGSVGElement;
+    const ticks = [...svg.querySelectorAll('.fc-tick')];
+    const ys = ticks.map((t) => Number(t.getAttribute('y')) - 4);
+    const plot = Math.max(...ys) - Math.min(...ys);
+    // a temperature's ticks, around its readings (19 … 21): never from the price's zero
+    expect(Math.min(...ticks.map((t) => Number(t.textContent)))).toBeGreaterThan(10);
+    const span = (paths: Element[]): number => {
+      const all = paths.flatMap((p) =>
+        [...(p.getAttribute('d') ?? '').matchAll(/-?[\d.]+,(-?[\d.]+)/g)].map((m) => Number(m[1])),
+      );
+      return (Math.max(...all) - Math.min(...all)) / plot;
+    };
+    const groups = [...svg.querySelectorAll('.fc-line:not(.fc-run)')].map((line) =>
+      line.closest('g'),
+    ) as Element[];
+    // the room's day so far and the price's two days (what has happened and what is to come) each take its height
+    for (const group of groups)
+      expect(span([...group.querySelectorAll('.fc-line, .fc-future')])).toBeGreaterThan(0.7);
+  });
+
   it('keeps a price that runs past now dashed from now on, beside a history that ends there', async () => {
     const card = await draw(
       {

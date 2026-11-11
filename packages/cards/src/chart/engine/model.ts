@@ -49,6 +49,13 @@ export interface ChartSeries {
   readonly soFar?: boolean;
   /** What lies under this series' line, where it is not the style's: its gradient or flat fill, its band, nothing. */
   readonly fill?: 'gradient' | 'flat' | 'band' | 'none';
+  /**
+   * The unit its readings are written in: series of one unit share a scale, those of another unit stand on one of their
+   * own (`ChartSpec.unit` says whose the axis is). None: the chart's one.
+   */
+  readonly unit?: string;
+  /** Its quantity starts at zero, so its scale holds it (`ChartSpec.zero`, for this series' unit alone). */
+  readonly zero?: boolean;
 }
 
 /**
@@ -58,6 +65,8 @@ export interface ChartSeries {
 export interface Threshold {
   readonly value: number;
   readonly colour: SeriesColour;
+  /** The unit its value is written in: it colours the series of that unit alone. None: every series. */
+  readonly unit?: string;
 }
 
 /** A stretch of the plot marked behind the lines (the day's cheapest hours): its ends as fractions of what the series cover. */

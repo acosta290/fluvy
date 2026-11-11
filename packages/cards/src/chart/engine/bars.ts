@@ -69,10 +69,12 @@ export interface ColumnsOptions {
   /** The plot's left edge and width. */
   readonly left: number;
   readonly width: number;
-  /** Where a value sits, in px from the drawing's top (the scale's `yOf`). */
-  readonly y: (value: number) => number;
+  /** Where a value of a series sits, in px from the drawing's top (its scale's `yOf`). */
+  readonly y: (value: number, series: number) => number;
   /** Several series on one another (the default), or each from the zero line on its own. */
   readonly stacked?: boolean;
+  /** Which stack a series joins: those of one unit stack, another unit's stand on the zero line of their own scale. */
+  readonly stack?: (series: number) => string | undefined;
   /** Rounded at the end away from the axis, or at both ends. */
   readonly caps?: 'top' | 'both';
   /** A bar's least height when its value is not zero: a trickle still reads as a bar. */
@@ -81,13 +83,14 @@ export interface ColumnsOptions {
 
 /**
  * The columns of a chart: one bar per slot for one series; for several, their segments stacked by sign on the zero
- * line (every rise on the rises, every fall on the falls), only the outermost segment of each sign rounded, so the
- * column reads as one bar of parts. A slot with nothing in it draws nothing.
+ * line (every rise on the rises, every fall on the falls) — each unit's on its own (`stack`) — only the outermost
+ * segment of each sign rounded, so the column reads as one bar of parts. A slot with nothing in it draws nothing.
  */
 export function columns(o: ColumnsOptions): Column[] {
   const geometry = barGeometry(o.count, o.width);
   const out: Column[] = [];
   const least = o.least ?? 0;
+  const stackOf = (part: { readonly series: number }): string | undefined => o.stack?.(part.series);
   for (let slot = 0; slot < o.count; slot++) {
     const x = o.left + slot * geometry.slot + (geometry.slot - geometry.bar) / 2;
     const parts: Array<{ series: number; value: number }> = [];
@@ -98,17 +101,20 @@ export function columns(o: ColumnsOptions): Column[] {
     });
     for (const sign of [1, -1] as const) {
       const own = parts.filter((part) => Math.sign(part.value) === sign);
-      let acc = 0;
+      const acc = new Map<string | undefined, number>();
       own.forEach((part, index) => {
-        const from = o.stacked === false ? 0 : acc;
+        const stack = stackOf(part);
+        const from = o.stacked === false ? 0 : (acc.get(stack) ?? 0);
         const to = from + part.value;
-        acc = to;
-        const top = Math.min(o.y(from), o.y(to));
-        const bottom = Math.max(o.y(from), o.y(to));
+        acc.set(stack, to);
+        const top = Math.min(o.y(from, part.series), o.y(to, part.series));
+        const bottom = Math.max(o.y(from, part.series), o.y(to, part.series));
         const height = Math.max(least, bottom - top);
         // a stacked segment keeps its foot on the one below it; a hanging one its head on the zero line
         const y = sign > 0 ? bottom - height : top;
-        const outer = o.stacked === false || index === own.length - 1;
+        // the outermost of its stack: no segment of its stack above it
+        const outer =
+          o.stacked === false || own.slice(index + 1).every((next) => stackOf(next) !== stack);
         const rounded: Rounded = !outer
           ? 'both'
           : o.caps === 'both'
