@@ -5,6 +5,162 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.19.0] — 2026-11-12
+
+### Visible on upgrade
+
+- The Room card's photo stands its readouts on one row (#159). Where a label would not hold its third, its icon stands
+  for it, then the figures take the smaller size and the short units ("21.4°", "3/10"). On a phone the card is 60 px
+  shorter in most languages; in half a section three readouts stand two and one where they stood one a line.
+  `readout_style: wrap` brings the old rows back.
+- The Room card's photo keeps its readouts' row while a reading is out of reach, a dash where its figure would be.
+- On a touch screen, a swipe that sets off more up or down than along a slider, a diagonal one too, scrolls the page
+  and no longer moves the slider, and a finger's tap on a stepper's − or + takes its step as the finger lifts rather
+  than as it lands (#166).
+- A device whose system asks for reduced motion, or which reports 2 GB of memory or less, draws Lite (#165;
+  Performance is Auto from the factory): nothing blurred behind a see-through card, no card's entrance, gauges and
+  liquids at rest. Fluvy's settings › Preferences › This device › Performance › Full brings the old look back.
+- A Bars or an Entities card whose list already held a `type: section` or a `type: divider` entry (pasted from Home
+  Assistant's entities card, or handed over by auto-entities) now draws it and is taller by it, where it was skipped
+  (#157).
+- The Media card's `secondary` naming an entity that is out of reach says "—" where it said "Unavailable", and one the
+  house does not have is shown as written where it said "Entity not found".
+- A Chart card of lines in several units, in a style that draws a scale (step, band, or `show_grid: y`), shows the
+  first series' ticks, where it showed none.
+
+### Added
+
+- Russian, the fifteenth language (#167): every card, page, dialog and editor in Russian, with Home Assistant's own
+  words for its states; the automatic dashboards, the appliance cards and a view's icon read a house named in Russian,
+  and Inter draws Cyrillic from files fetched only by a page that draws a Cyrillic letter. A first translation,
+  waiting for a native speaker's review: corrections are welcome.
+- The Tile card, the Tiles card and the Template card's large tile can leave their switch out (`show_switch: false`,
+  #160): the icon circle is then the switch, as on a compact or a mini tile, a tap anywhere else on the tile still
+  opens its details, and the tile keeps its size. On a Tiles card the group says it for its tiles and a tile may
+  answer otherwise. In the editors, where a large tile has a switch to hide.
+- `show_switch: value` puts the level where the switch stood: a light's brightness, a cover's position, a fan's speed
+  or a player's volume at the end of the tile's head, the line under the name saying the state alone.
+- The automatic dashboards take the same choice for every tile they draw: Fluvy's settings › Dashboards › Tile
+  switches (Shown, Hidden, Value) on the Home and Rooms dashboards, or `tile_switch: hide` in a dashboard's
+  configuration.
+- The Room card's photo can carry its name at the top (`name_position: top`, #159), so its foot is the quick actions'
+  alone: five hold on a phone where two stood beside the name, and half a section holds two where it held none.
+- The Room card's `readout_labels` writes its readouts' labels as `words`, `icons` or `none`; `auto`, the default,
+  keeps the words while they hold and draws their icons where they would not (#159).
+- The automatic dashboards offer the rooms' name position, their readouts' row and their labels on the Home and Rooms
+  dashboards while their rooms may be photos (Fluvy's settings › Dashboards; `room_name_position`,
+  `room_readout_style`, `room_readout_labels`), and `rooms` takes the same three for one room (#159).
+- The Bars and the Entities cards take sections in their list (#157): a label among the rows (`type: section` with a
+  `label`, or `section: Upstairs`), a hairline over it with `line: true`, or the hairline alone with `type: divider`.
+- A row of the Bars and the Entities cards can show only while a condition holds (#157): `show_when` with `above`,
+  `below`, `state` or `state_not`, of another entity with `entity`; `show_rows_when` on the card gives every row the
+  same one. A label is drawn only while a row shows under it, the head's counts read the rows that show, and a card
+  with none showing is its empty panel.
+- The rows editor of both cards adds sections and dividers, dragged into place with the rows, and a "Show" choice on
+  each row and over the rows (#157).
+- A palette can set its cards off the page by their edge instead of by a darker page (#154, asked for by maxhayim).
+  With `surface: line` the page and the cards are one colour (white in light, near-black in dark), each card is closed
+  by a line that clears 3:1 against the page, and nothing casts a shadow, for e-paper panels and walls that should
+  read like a page. `surface: ink` draws that line in the text's ink. The settings panel's palette editor offers it as
+  Cards: Filled, Outlined or Ink.
+- E-ink, a community palette by maxhayim (#153): black ink on white paper, each card closed by its edge and no shadow,
+  for e-paper panels and walls that should read like a page (Fluvy's settings › Appearance › Community).
+- A page background behind the cards of every dashboard that wears the look (Discussion #155; Fluvy's settings ›
+  Appearance › Background): plain as before, the palette's gradient, a colour or two, or a picture from Home
+  Assistant's `/local/` or the web, dimmed 40 % so the greeting reads and blurred if asked, held still while the page
+  scrolls.
+- Each automatic dashboard may keep the house's background or have its own (Fluvy's settings › Dashboards ›
+  Background, `background:` in its configuration), and a wall's background can be "As the dashboard", so a wall tablet
+  shows the house's picture or colours; plain and the mesh still win where chosen.
+- Any card can be drawn without its border, the hairline round it (Discussion #171): `card_border: false` on the card
+  or the switch under its opacity in its editor, and Border in the Cards block of Fluvy's settings for every card; a
+  tile, a group's tiles and a card of its own colour lose theirs too, while what is inside a card, its focus, a tile
+  under the pointer and the dashes of a card out of reach stay.
+- Our icons in the sidebar and our icons in Settings are two choices (Fluvy's settings › Scope), so a house can wear
+  Fluvy's icons in the sidebar and keep Home Assistant's in Settings and in HACS, or the other way round; a house that
+  had turned the one icons switch off finds both off.
+- Hold to slide (#166), a person's setting in Fluvy's settings › Preferences, off from the factory: on a touch screen
+  a slider (the ruler, the bar, the liquid, a tile's fill, the cover's position, the thermostat's dial, the room's hue
+  wheel, the History page's time rail) moves only after the finger has stood still on it for 200 ms, a ring closing
+  round its knob meanwhile; a finger that moves first scrolls the page, a tap moves no value, and a mouse and the keys
+  are untouched.
+- Lite (#165), Fluvy's settings › Preferences › This device › Performance (Auto, Full or Lite), remembered by the
+  screen alone: Lite takes away the blur behind see-through cards and over a page's background, the cards' entrance
+  and the gauges' and liquids' motion, and reduces motion, while Auto is Lite where the system asks for reduced motion
+  or the device has 2 GB of memory or less. Not in this release: loading each view's code only as the view opens, and
+  a separate phone layout.
+- The Gauge card's `subtitle` and `badge` take an entity, shown as its state with its unit, or a Home Assistant
+  template, rendered and kept live, as well as your words (Discussion #156), and a badge of your own that does not fit
+  beside the name moves into the line under it; the `subtitle` of the Humidity, Sensor, Thermostat, Cover, Fan,
+  Vacuum, Lock, Alarm, Camera and To-do cards takes the same.
+- An app of the TV remote card takes an `activity` of your own, a deep link or an application ID that Android TV
+  Remote opens it by, over its platform's (`activity: netflix://`), and the editor asks for it where the card names a
+  remote.
+
+### Fixed
+
+- The Chart card with `span: today` or `today+tomorrow` draws a sensor's history whole up to now, where from about
+  half of the day so far it was dashed as if it were a forecast (#158).
+- The Chart card stands series of different units each on a scale of its own, so a price's columns under a temperature
+  or a power beside a humidity each use the chart's height, the scale's ticks belonging to the columns (or the first
+  series) and the thresholds to the first series' unit, where the price's columns stood on the temperature's 0 to 30
+  and could not be seen.
+- The Chart card with a line drawn over columns on a window that runs past now draws one now hairline, on the line's
+  end, where the columns drew a second one a few pixels beside it.
+- The arrow keys read the Chart card, the History page and the Energy usage card from now on a window that runs past
+  now, where the first press jumped to the window's end (on `today` at noon, tonight).
+- On a phone, a swipe up or down the page that started on a slider (the Light card's ruler, a tile's ruler or fill,
+  the Slider card's, a bar or a liquid alike) sent the slider's value as the page took the finger, turning a light on
+  or off or nudging a brightness, a volume or a fan's speed (#166); a finger that sets off across a slider now scrolls
+  the page and leaves it where it was, a drag the browser takes for a scroll sends nothing, and a slide along it, the
+  fine scale's hold and a tap on the scale are as they were.
+- On a phone, a scroll that started on a stepper's − or + (the Slider card's, the Thermostat card's, a light's or a
+  helper's) took one step (#166); a finger's tap on a stepper now steps as it lifts and a held one repeats as before,
+  so a scroll steps nothing.
+- The TV remote card opens an app on Android TV Remote by the app's deep link (Netflix, YouTube, Disney+, Prime Video,
+  Apple TV, DAZN, HBO Max, Plex, Twitch, Spotify, Crunchyroll, Pluto TV, Tubi and Emby), where 1.18.0 sent its
+  application ID, which a change of the Play Store's has stopped opening for many apps: every key worked and no app
+  opened.
+- The TV remote card reads the app an Android TV runs by its package (`app_id`, `current_activity`), so a card with
+  only a `remote`, or an app the integration's own list renames, shows which app is open, and it says that app by its
+  platform's name, where on Android TV Remote with no app names of its own the card's line read the app's package
+  (com.amazon.amazonvideo.livingroom for Prime Video); a package no platform knows is not said, and the chips of
+  sources are named the same way.
+- The TV remote card names Rakuten TV and Amazon Music on Android TV by their Google Play packages (`tv.wuaki.apptv`,
+  `com.amazon.music.tv`), where it named a package no store lists and a Fire TV's.
+- The Alerts card draws its line at once in a house with many culprits (#169, by LouisForaux): to name as many as its
+  line holds ("Battery 148, Battery 444 +66"), it laid out every run of names from all of them down, a hundred ever
+  longer lines for a hundred low batteries, where it now starts from the most the line can hold, its names measured
+  one by one (the first frame of a Low batteries alert over 148 batteries: 100 ms down to 20, and the card picker's
+  scroll no longer stalls on its preview).
+- The dashboard editor's card picker ("Add card", "By card") no longer crawls as its search is typed once the Fluvy
+  previews were drawn (#168, by LouisForaux): Home Assistant moves every preview at each keystroke, and each Fluvy
+  card with text to fit (Tile, Sensor, Clock, Hello, Readouts and the others that measure their words) drew itself
+  twice more at every move, waiting on the fonts it had already settled on. A card only moved now draws again only
+  when a face loaded or was added meanwhile (five letters in a house of 2,300 entities: 1,070 ms of blocked page down
+  to 220 ms, the longest freeze 670 ms down to 165).
+- The card picker opens without laying the page out once for each Fluvy preview (#168, by LouisForaux): every card
+  that fits its text asked the browser whether the fonts were ready as it was attached, and the picker attaches its
+  previews one by one, so the answer was worked out again for each (60 ms of the opening); the cards now ask once
+  until a face starts loading.
+- The Thermostat card says Fluvy's own word for a fan speed where Home Assistant's would not hold a chip of its own
+  line ("Авто" for Home Assistant's Russian "Автоматический"), and the Energy card's word for its sources gives way
+  where it would meet the battery's "100 %" on a narrow chart.
+- The Gauge card with `badge: ''` no longer draws an empty pill in its ring and bar styles.
+- The Entities card in a narrow column (half a section, two cards side by side on a phone) no longer cuts a row or
+  lets it run past the card: a long state such as "Niet gedetecteerd" takes two lines or goes under the name, a
+  switch's row says "55 d" where "55 d ago" was cut, and a list's ages read in one form.
+- The settings panel's Scope tab in Dutch names the History row Onze Geschiedenis, whole on a phone, where Onze
+  geschiedenisweergave was cut at 360.
+
+### Development
+
+- The tests read their times in UTC whatever the machine's zone: six of the appliances' failed anywhere else (reported
+  by LouisForaux and maxhayim).
+- Dependencies: vite 8.3.6, playwright 1.65.0.
+- Budgets: a language's catalogue 40 KB (Russian's Cyrillic is two bytes a letter), a view's icons 5 KB, the
+  appliances 68 KB; a new `background` chunk of 4 KB, fetched only by a page that draws a background.
+
 ## [1.18.0] — 2026-11-09
 
 ### Visible on upgrade
