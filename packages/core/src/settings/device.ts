@@ -1,9 +1,11 @@
 import { readStored, writeStored } from '../storage.js';
+import type { EffectiveSettings } from './schema.js';
 
 /*
- * What this browser is: a wall panel, or not, and the size it reads its dashboards at. The house says how its walls
- * behave (`HouseSettings.wall`); the device says it is one, in its own storage, so a person's phone never becomes
- * a wall because the house has some — and a tablet across the room reads larger without the phone following.
+ * What this browser is: a wall panel, or not, the size it reads its dashboards at, and how hard it works. The house
+ * says how its walls behave (`HouseSettings.wall`); the device says it is one, in its own storage, so a person's
+ * phone never becomes a wall because the house has some — a tablet across the room reads larger, and an old one draws
+ * Lite, without the phone following.
  */
 
 export const DEVICE_KEY = 'fluvy:device';
@@ -13,18 +15,31 @@ export const DEVICE_VERSION = 1;
 export const DEVICE_ZOOMS = [90, 100, 110, 125, 150] as const;
 export type DeviceZoom = (typeof DEVICE_ZOOMS)[number];
 
+/**
+ * How hard a device works (1.19, #165): Auto (Lite where it asks for less motion or is short of memory), Full, or Lite,
+ * what an old tablet that struggles wants: no blur, no entrance, every gauge and liquid at rest.
+ */
+export const DEVICE_PERFORMANCES = ['auto', 'full', 'lite'] as const;
+export type DevicePerformance = (typeof DEVICE_PERFORMANCES)[number];
+
 export interface DeviceSettings {
   readonly version: typeof DEVICE_VERSION;
   /** This browser is a wall panel. */
   readonly wall: boolean;
   /** The size this browser reads its dashboards at (the view alone, never Home Assistant's chrome). */
   readonly zoom: DeviceZoom;
+  readonly performance: DevicePerformance;
 }
 
 /** What a device may change about itself (the version is never written). */
 export type DevicePatch = Partial<Omit<DeviceSettings, 'version'>>;
 
-export const DEVICE_DEFAULTS: DeviceSettings = { version: DEVICE_VERSION, wall: false, zoom: 100 };
+export const DEVICE_DEFAULTS: DeviceSettings = {
+  version: DEVICE_VERSION,
+  wall: false,
+  zoom: 100,
+  performance: 'auto',
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -35,14 +50,48 @@ const isZoom = (value: unknown): value is DeviceZoom =>
 /** What this browser remembers of itself; anything missing or broken is the default. */
 export function parseDevice(raw: unknown): DeviceSettings {
   const value = isRecord(raw) ? raw : {};
+  const performance = value['performance'];
   return {
     version: DEVICE_VERSION,
     wall: typeof value['wall'] === 'boolean' ? value['wall'] : DEVICE_DEFAULTS.wall,
     zoom: isZoom(value['zoom']) ? value['zoom'] : DEVICE_DEFAULTS.zoom,
+    performance: (DEVICE_PERFORMANCES as readonly unknown[]).includes(performance)
+      ? (performance as DevicePerformance)
+      : DEVICE_DEFAULTS.performance,
   };
 }
 
 export const readDevice = (): DeviceSettings => parseDevice(readStored<unknown>(DEVICE_KEY));
+
+/**
+ * Whether this device draws Lite: its own choice, or Auto's, which is Lite where the system asks for less motion or the
+ * browser says the device has 2 GB of memory or less (`navigator.deviceMemory`, Chromium's; a browser that does not
+ * say counts by the motion alone).
+ */
+export function isLite(performance: DevicePerformance = readDevice().performance): boolean {
+  if (performance !== 'auto') return performance === 'lite';
+  const memory = (navigator as { deviceMemory?: number }).deviceMemory;
+  return (
+    (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) ||
+    (memory !== undefined && memory <= 2)
+  );
+}
+
+/**
+ * The settings as a device in Lite wears them (#165): what exists, turned down, and nothing new — motion reduced (no
+ * card enters, no spring glides), nothing blurred behind a see-through card, every chart and gauge at rest (a liquid
+ * on its first frame). What the person and the house chose stays theirs: Full wears it again.
+ */
+export function wornLite<T extends Pick<EffectiveSettings, 'motion' | 'cards' | 'charts'>>(
+  settings: T,
+): T {
+  return {
+    ...settings,
+    motion: 'reduced',
+    cards: { ...settings.cards, blur: false },
+    charts: { ...settings.charts, animate: false },
+  };
+}
 
 export function writeDevice(patch: DevicePatch): DeviceSettings {
   const next = parseDevice({ ...readDevice(), ...patch });

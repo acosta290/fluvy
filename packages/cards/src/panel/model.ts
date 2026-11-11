@@ -133,7 +133,10 @@ export interface PanelContext {
   readonly houseEdit: HouseEdit;
   readonly personalEdit: PersonalEdit;
   readonly strategyEdits: StrategyEdits;
-  /** What this browser is (a wall panel or not, its size), as remembered, and the changes waiting in the apply bar. */
+  /**
+   * What this browser is (a wall panel or not, its size, how hard it works), as remembered, and the changes waiting in
+   * the apply bar.
+   */
   readonly device: DeviceSettings;
   readonly deviceEdit: DevicePatch;
   /** The house's saved palettes (an administrator's to change). */
@@ -492,6 +495,8 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(`${t('tab.wall')} · ${t('wall.use')} · ${onOff(device.wall)}`);
   if (device.zoom !== undefined)
     lines.push(`${t('pref.size')} · ${t('wall.percent', { count: device.zoom })}`);
+  if (device.performance)
+    lines.push(`${t('pref.performance')} · ${t(`pref.performance_${device.performance}`)}`);
   if (house.wall)
     for (const [key, label] of WALL_LABELS)
       if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))

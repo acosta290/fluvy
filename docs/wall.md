@@ -65,6 +65,10 @@ held three cards holds two. Home Assistant's header and sidebar, its dialogs and
 a dashboard is edited as it is laid out. The size is read before Home Assistant paints, so a page never starts small
 and jumps.
 
+An older tablet that struggles can draw **Lite**, its own choice too: *This device · Performance* in the panel's
+*Preferences* tab. Nothing blurs behind a see-through card, no card enters, the gauges rest — see
+[Lite](settings-panel.md#lite).
+
 ## Details
 
 - The first visit with `?kiosk` paints the sidebar for an instant before the wall takes over; every reload after

@@ -12,6 +12,7 @@ import {
 import { ensureFonts } from '../fonts.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { setLanguageOverride } from '../i18n/index.js';
+import { DEVICE_KEY, isLite, wornLite } from '../settings/device.js';
 import { cachedSettings, SettingsStore } from '../settings/store.js';
 import {
   resolveSettings,
@@ -92,6 +93,8 @@ export interface LookHandle {
   onChange(listener: (settings: EffectiveSettings) => void): () => void;
   /** The wall's say: on, the frame goes; a forced mode re-derives the look. */
   setWall(state: WallState): void;
+  /** This device's own settings were saved (the panel): Lite is worn, or taken off, at once. */
+  wearDevice(): void;
   stop(): void;
 }
 
@@ -136,13 +139,19 @@ export function startLook(): LookHandle | undefined {
     typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
   let previewed: LookPreview | null = null;
   let wall: WallState = { on: false, dark: undefined };
+  /**
+   * Whether this device draws Lite (#165): read again as its choice is saved, here or in another tab, and as the
+   * system's motion changes (Auto follows it).
+   */
+  let lite = isLite();
   const listeners = new Set<(settings: EffectiveSettings) => void>();
   /**
-   * What this page wears: the settings, or the settings being previewed on it — "everywhere" only while Home
-   * Assistant's theme for this person is Fluvy (`pageScope`).
+   * What this page wears: the settings, or the settings being previewed on it, turned down where the device draws Lite
+   * — "everywhere" only while Home Assistant's theme for this person is Fluvy (`pageScope`).
    */
   const current = (): EffectiveSettings => {
-    const now = previewed ? { ...settings, ...previewed } : settings;
+    const shown = previewed ? { ...settings, ...previewed } : settings;
+    const now = lite ? wornLite(shown) : shown;
     const scope = pageScope(now.scope, appHass()?.themes?.theme);
     return scope === now.scope ? now : { ...now, scope };
   };
@@ -241,6 +250,21 @@ export function startLook(): LookHandle | undefined {
   });
   observer.observe(env.document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
+  /** This device draws Lite, or Full, again: the cards move (or stop) and blur as it says. */
+  const wearDevice = (): void => {
+    const before = current();
+    lite = isLite();
+    preferences();
+    apply();
+    if (current().motion !== before.motion) refreshCards();
+  };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  reduced.addEventListener('change', wearDevice);
+  const onStorage = (event: StorageEvent): void => {
+    if (event.key === null || event.key === DEVICE_KEY) wearDevice();
+  };
+  window.addEventListener('storage', onStorage);
+
   void connected().then((hass) => {
     if (!hass || !handle) return;
     console.debug(`[fluvy] ${versionNote()}`);
@@ -280,8 +304,11 @@ export function startLook(): LookHandle | undefined {
       preferences();
       apply();
     },
+    wearDevice,
     stop: () => {
       observer.disconnect();
+      reduced.removeEventListener('change', wearDevice);
+      window.removeEventListener('storage', onStorage);
       offFrames();
       offThemes();
       store.stop();

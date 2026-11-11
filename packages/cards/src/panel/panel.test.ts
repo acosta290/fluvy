@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   paletteOf,
+  readDevice,
   SettingsStore,
   type EffectiveSettings,
   type HomeAssistant,
@@ -45,6 +46,8 @@ function fixture(admin = true, extra: Record<string, unknown> = {}) {
   const store = new SettingsStore(() => storage, undefined);
   const listeners = new Set<(settings: EffectiveSettings) => void>();
   const previews: unknown[] = [];
+  /** How this device draws, each time the panel had the look wear its saved settings. */
+  const worn: string[] = [];
   const handle: LookHandle = {
     store,
     settings: () => store.effective,
@@ -54,6 +57,7 @@ function fixture(admin = true, extra: Record<string, unknown> = {}) {
       return () => listeners.delete(listener);
     },
     setWall: () => undefined,
+    wearDevice: () => void worn.push(readDevice().performance),
     stop: () => undefined,
   };
   store.start((settings) => listeners.forEach((listener) => listener(settings)));
@@ -85,7 +89,7 @@ function fixture(admin = true, extra: Record<string, unknown> = {}) {
     formatEntityState: (s: { state: string }) => s.state,
     ...extra,
   } as unknown as HomeAssistant;
-  return { handle, hass, written, previews };
+  return { handle, hass, written, previews, worn };
 }
 
 async function mount(admin = true, extra: Record<string, unknown> = {}) {
@@ -1784,6 +1788,44 @@ describe('the settings panel', () => {
     again.panel.remove();
     localStorage.removeItem('fluvy:device');
     document.documentElement.style.removeProperty('--fluvy-zoom');
+  });
+
+  it('draws this device Lite from Preferences: Auto, Full or Lite, saved to the device and worn at once (#165)', async () => {
+    localStorage.removeItem('fluvy:device');
+    const { panel, root, chip, button, written, worn, settle } = await mount(false);
+    panel.tab = 'preferences';
+    await settle();
+    const device = [...root.querySelectorAll('.pn-card')].find(
+      (card) => card.querySelector('.fv-card__title')?.textContent?.trim() === 'This device',
+    )!;
+    expect([...device.querySelectorAll('.pn-label')].map((p) => p.textContent?.trim())).toEqual([
+      'Size',
+      'Performance',
+    ]);
+    const modes = () =>
+      [...device.querySelectorAll<HTMLElement>('.fv-chip')]
+        .filter((c) => !/%/.test(c.textContent ?? ''))
+        .map((c) => `${c.textContent?.trim()}${c.classList.contains('is-active') ? '*' : ''}`);
+    expect(modes()).toEqual(['Auto*', 'Full', 'Lite']);
+    expect(device.querySelector('.pn-hint:last-child')?.textContent?.trim()).toBe(
+      'Lite: no blur behind see-through cards, no entrance, gauges and liquids at rest',
+    );
+    chip('Lite')!.click();
+    await settle();
+    expect(modes()).toEqual(['Auto', 'Full', 'Lite*']);
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Performance · Lite');
+    expect(worn).toEqual([]); // nothing worn before the bar says so
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    // the device's own memory, nothing of the house's or the person's, and the page wears it at once
+    expect(written).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('fluvy:device') ?? '{}')).toMatchObject({
+      performance: 'lite',
+    });
+    expect(worn).toEqual(['lite']);
+    panel.remove();
+    localStorage.removeItem('fluvy:device');
   });
 
   it('says why only on dashboards cannot hold while the profile wears the Fluvy theme', async () => {

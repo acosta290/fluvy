@@ -2,6 +2,8 @@
 import './english.js';
 import { catalogue } from '@fluvy/cards';
 import {
+  cardDefaults,
+  chartDefaults,
   ensureLanguage,
   fallbackCss,
   LIGHT_TINTS,
@@ -14,6 +16,7 @@ import {
   setChartDefaults,
   setLightDefaults,
   setSliderDefaults,
+  wornLite,
   type HomeAssistant,
   type Look,
 } from '@fluvy/core';
@@ -32,7 +35,7 @@ import {
   type PaletteChoice,
   type PillName,
 } from '@fluvy/tokens/runtime';
-import { setFallbackTokens, setHoldToSlide, textWidth } from '@fluvy/ui';
+import { setFallbackTokens, setHoldToSlide, setMotionPreference, textWidth } from '@fluvy/ui';
 import { pinClock } from './clock.js';
 import { automaticFrames, automaticViews } from './automatic.js';
 import { dashboardOptions, mountDashboard } from './dashboard.js';
@@ -77,6 +80,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  *                        words under a bar or a liquid (`"words":"none"`), each read as the settings read it
  * ?hold=1               a person's hold to slide (fluvy's settings → Preferences, #166): on a touch screen (a phone, or
  *                        the browser's touch emulation) a slider moves only after a still press of 200 ms
+ * ?lite=1               this device in Lite (fluvy's settings → Preferences › This device, #165), as the look composes
+ *                        it: motion reduced, nothing blurred behind a see-through card, every chart and gauge at rest
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
  * ?panel=appearance      fluvy's settings panel (appearance | charts | scope | dashboard | wall | preferences);
@@ -219,6 +224,18 @@ if (params.has('sliders'))
 
 // the person's hold to slide, as fluvy's settings would hand it to every slider
 if (params.get('hold') === '1') setHoldToSlide(true);
+
+// this device in Lite: the house's settings above, turned down as the look turns them down
+if (params.get('lite') === '1') {
+  const worn = wornLite({
+    motion: 'system',
+    cards: cardDefaults(),
+    charts: chartDefaults().settings,
+  });
+  setMotionPreference(worn.motion);
+  setCardDefaults(worn.cards);
+  setChartDefaults({ ...chartDefaults(), settings: worn.charts });
+}
 
 const activity = params.get('activity') === '1';
 const history = params.get('history') === '1';

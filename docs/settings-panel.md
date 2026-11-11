@@ -10,14 +10,15 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options, its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background; the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
-| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
+| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
 
 ## House and person
 
 The **house settings** are what an administrator sets: everyone sees them. The **personal settings** are each person's,
 on every device they sign in on: a palette, a shape and tabs of their own, or the house's; language; motion; hold to
 slide; haptics. The look a person sees is the house's, with their own choices on top. A **device setting** belongs to
-one browser alone — whether it is a wall panel, and the size it reads at — and never follows a person.
+one browser alone — whether it is a wall panel, the size it reads at, and how hard it works (Lite) — and never follows
+a person.
 
 ## Cards
 
@@ -53,7 +54,8 @@ What shows through is the view's background: Home Assistant's *Background* in a 
 alignment and opacity), else the theme's `lovelace-background`, else the page's colour. Fluvy never paints over it; on a
 wall the view's own background shows, and the wall's (the mesh, or the plain page) where the view has none.
 
-Blur costs a tablet's graphics: on an older wall panel that scrolls slowly, turn it off (the cards stay see-through).
+Blur costs a tablet's graphics: on an older wall panel that scrolls slowly, turn it off (the cards stay see-through),
+or set that tablet alone to [Lite](#lite).
 
 ## Sliders
 
@@ -98,6 +100,17 @@ the house at all keeps the ⊘ glyph: it has no kind to borrow one from. A card 
 
 A card on a dashboard that opens in a see-through or an as-when-off house draws its first frame in that look, never
 solid or dashed a moment before.
+
+## Lite
+
+*Preferences › This device › Performance* (1.19, #165): **Auto** (the factory's), **Full** or **Lite**, remembered by
+the screen alone, so an old tablet can draw Lite while the phones do not. Lite turns down what exists, for that screen:
+nothing is blurred behind a see-through card (it stays see-through), no card enters as a view opens, every chart and
+gauge rests (a liquid on its first frame), and motion is reduced as with *Reduce motion*, whatever the person chose.
+Colours, sizes and what every card can do stay as they are, and the house's and the person's own settings are kept:
+Full wears them again. **Auto** is Lite where the system asks for reduced motion, or where the browser says the device
+has 2 GB of memory or less (Chromium's `navigator.deviceMemory`, which rounds 3 GB down to 2; Safari does not say, so
+there Auto follows the motion alone).
 
 ## Lights
 
@@ -245,8 +258,8 @@ the wall, the Charts tab (the style, the gauge, every detail, motion, the time s
 own series colours. The panel's
 *Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic
 dashboard — and *Import* (an administrator's) reads it back on another house; a file from an earlier version brings
-what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size*, a device's
-wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
+what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size* and
+*Performance*, a device's wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
 dashboard's configuration, which Home Assistant's backups keep as well.
 
 ## "Everywhere" and the theme

@@ -1,4 +1,5 @@
 import {
+  isLite,
   LookEngine,
   refreshCards,
   setCardDefaults,
@@ -6,6 +7,7 @@ import {
   setLanguageOverride,
   setSliderDefaults,
   SettingsStore,
+  wornLite,
   type EffectiveSettings,
   type LookHandle,
   type SettingsHass,
@@ -58,9 +60,10 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
   let mode = dark;
   let wallDark: boolean | undefined;
   // as at home: the look on the page, and the language, motion, hold to slide, charts, surface and sliders the cards
-  // use
+  // use, turned down where this device draws Lite
   const apply = (): void => {
-    const now = previewed ? { ...store.effective, ...previewed } : store.effective;
+    const shown = previewed ? { ...store.effective, ...previewed } : store.effective;
+    const now = isLite() ? wornLite(shown) : shown;
     engine.apply(now, wallDark ?? mode);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
     setMotionPreference(now.motion);
@@ -85,6 +88,7 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
       wallDark = state.dark;
       apply();
     },
+    wearDevice: apply,
     stop: () => store.stop(),
   };
   store.start((settings) => {

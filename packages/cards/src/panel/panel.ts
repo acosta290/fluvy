@@ -170,7 +170,7 @@ export class FluvyPanel extends LitElement {
   declare houseEdit: HouseEdit;
   declare personalEdit: PersonalEdit;
   declare strategyEdits: StrategyEdits;
-  /** This device's own changes waiting in the apply bar (a wall panel or not, its size). */
+  /** This device's own changes waiting in the apply bar (a wall panel or not, its size, how hard it works). */
   declare deviceEdit: DevicePatch;
   /** The Share card's words for the custom palette in the draft. */
   declare share: ShareDraft;
@@ -785,13 +785,14 @@ export class FluvyPanel extends LitElement {
     }
     if (written) await this.loadDashboards();
     if (Object.keys(this.deviceEdit).length) {
-      // the device's own memory: the wall's controller, in every page, reads it again; the size shows at once
+      // the device's own memory: the wall's controller, in every page, reads it again; the size and Lite show at once
       const edit = this.deviceEdit;
       this.device = writeDevice(edit);
       this.deviceEdit = {};
       if (edit.wall !== undefined)
         (window as { __fluvy?: { wall?: { refresh?: () => void } } }).__fluvy?.wall?.refresh?.();
       if (edit.zoom !== undefined) applyZoom(this.device.zoom);
+      if (edit.performance !== undefined) handle.wearDevice();
     }
     this.tryOnApp = false;
   }

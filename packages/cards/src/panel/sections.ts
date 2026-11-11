@@ -3,6 +3,7 @@ import {
   areaOf,
   clock12,
   dayPeriods,
+  DEVICE_PERFORMANCES,
   DEVICE_ZOOMS,
   type HomeAssistant,
   HOUSE_DEFAULTS,
@@ -1954,7 +1955,29 @@ export function preferences(ctx: PanelContext): TemplateResult {
       ${head({ icon: 'frame', title: ctx.t('pref.device'), sub: ctx.t('pref.device_sub') })}
       ${deviceSize(ctx)}
       <p class="pn-hint pn-hint--after">${ctx.t('pref.size_sub')}</p>
+      ${devicePerformance(ctx)}
     </section>`;
+}
+
+/**
+ * How hard this device works (#165): Auto · Full · Lite, its own memory, saved from the apply bar like its size. Lite
+ * turns down what exists (motion, the blur behind a see-through card, the charts' and gauges' motion); Auto is Lite
+ * where the device asks for less motion or is short of memory.
+ */
+function devicePerformance(ctx: PanelContext): TemplateResult {
+  const performance = ctx.deviceEdit.performance ?? ctx.device.performance;
+  return html`<p class="fv-label pn-label">${ctx.t('pref.performance')}</p>
+    ${choice(
+      ctx,
+      DEVICE_PERFORMANCES.map((key) => ({
+        key,
+        label: ctx.t(`pref.performance_${key}`),
+        active: key === performance,
+      })),
+      (key) => ctx.editDevice({ performance: key as (typeof DEVICE_PERFORMANCES)[number] }),
+      3,
+    )}
+    <p class="pn-hint pn-hint--after">${ctx.t('pref.performance_sub')}</p>`;
 }
 
 /** Automatic (with the language it resolves to now), then Fluvy's languages by their own names, English beside. */
