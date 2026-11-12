@@ -31,6 +31,7 @@ import {
 import {
   BATTERY_POWER,
   CHARGER,
+  FORECAST,
   GENERIC,
   GRID,
   GRID_EXPORT,
@@ -67,6 +68,8 @@ export {
 };
 const WEATHER_PLATFORMS =
   /aemet|met\b|met_|openweather|accuweather|forecast|weather|tomorrow|pirate|ecowitt|buienradar|nws/i;
+/** The integrations that forecast what the sun will make: Forecast.Solar, Solcast, Open-Meteo's solar forecast. */
+const FORECAST_PLATFORMS = /forecast|solcast/i;
 const OPENINGS = new Set([
   'door',
   'window',
@@ -495,9 +498,14 @@ export class HomeRegistry {
     return id.startsWith('switch.') && says(plain(this.label(id)), SWITCH_WORDS) === 'light';
   }
   private fromWeather(id: string): boolean {
-    return (
-      WEATHER_PLATFORMS.test(this.platform(id)) || this.label(id).toLowerCase().includes('forecast')
-    );
+    return WEATHER_PLATFORMS.test(this.platform(id)) || this.forecast(id);
+  }
+  /**
+   * Whether a reading is a forecast, what is still to come (Solcast's, Forecast.Solar's; "… forecast", 预测,
+   * "Prognose", "previsión"): never what is measured.
+   */
+  forecast(id: string): boolean {
+    return FORECAST.test(this.label(id)) || FORECAST_PLATFORMS.test(this.platform(id));
   }
 
   /** The power and energy readings beside an entity: the same device's (or the same name stem's) power, and its energy — today's first. */

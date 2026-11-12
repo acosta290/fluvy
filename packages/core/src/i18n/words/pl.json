@@ -128,6 +128,7 @@
     "za[ _-]dzień",
     "(^|[ _-])doba"
   ],
+  "forecast": ["prognoz", "przewidyw"],
   "not_appliance": [
     "minutnik",
     "timer",

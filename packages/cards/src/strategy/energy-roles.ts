@@ -16,7 +16,8 @@ import {
 /*
  * The house's energy readings by their role — solar, grid, battery, house, a car charger, today's production, the
  * energy dashboard's devices, water and gas — from the energy dashboard's own preferences first, then from the
- * registries' words: a reading's name says one role, the longest of words that overlap winning (`shared/words.ts`).
+ * registries' words: a reading's name says one role, the longest of words that overlap winning (`shared/words.ts`); a
+ * forecast says none, being what is still to come.
  */
 
 type Role = 'solar' | 'export' | 'grid' | 'battery' | 'charger' | 'home';
@@ -63,9 +64,12 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const solarPrefs = preferredPowers(home, prefs, 'solar');
   const gridPref = preferredPowers(home, prefs, 'grid')[0];
   const batteryPrefs = preferredPowers(home, prefs, 'battery');
-  // each reading's one role by its words (a reading the preferences name may say any)
+  // each reading's one role by its words (a reading the preferences name may say any); a forecast says none (#170)
   const role = new Map(
-    [...powers, ...energies].map((id) => [id, says(home.label(id), ROLE_WORDS)]),
+    [...powers, ...energies].map((id) => [
+      id,
+      home.forecast(id) ? undefined : says(home.label(id), ROLE_WORDS),
+    ]),
   );
   const saying = (list: readonly string[], said: Role): string[] =>
     list.filter((id) => role.get(id) === said);
@@ -97,9 +101,11 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const taken = [...arrays, gridPower, ...batteryPowers.map((p) => p.id)];
   const charger = saying(powers, 'charger').find((id) => !taken.includes(id));
   const homePower = saying(powers, 'home').find((id) => !taken.includes(id));
+  // today's production: the energy dashboard's solar meter (the cards read its day from its statistics), else a day's
+  // counter its words name; never a forecast
   const solarToday =
-    saying(energies, 'solar').find((id) => TODAY.test(home.label(id))) ??
-    house.sources.find((s) => s.kind === 'solar')?.energyIn[0];
+    house.sources.find((s) => s.kind === 'solar')?.energyIn.find((id) => home.hasState(id)) ??
+    saying(energies, 'solar').find((id) => TODAY.test(home.label(id)));
   const consumption = (prefs?.device_consumption ?? [])
     .map((d) => d.stat_consumption)
     .filter((id) => home.hasState(id));

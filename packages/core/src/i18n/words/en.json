@@ -17,6 +17,7 @@
   ],
   "home": ["house", "home", "load", "total_consum"],
   "today": ["today", "daily", "day\\b", "_d$"],
+  "forecast": ["forecast", "predict"],
   "not_appliance": [
     "force",
     "timer",

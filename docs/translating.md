@@ -46,12 +46,11 @@ language, so the card starts from Fluvy's.
   Every other language is fetched whole the first time it is needed (a chunk of its own), so a dashboard pays for
   the language it speaks and no other.
 - **The naming words**, `packages/core/src/i18n/words/<code>.json`: the stems the automatic dashboard reads a house
-  by (what people call their lights, their garden, the solar inverter, the grid meter), and the `appliance_*` stems
-  an appliance card tells a washer from a dishwasher by (plain lower-case letters: a name is read with its accents
-  taken off and in ordinary width, so "Kühlschrank" is `kuhlschrank`, "Płyta" is `plyta`, "Счётчик" is `счетчик` and
-  "ＬＥＤ" is `led`; a Russian й stays й, a letter of its own). A stem in Latin or Cyrillic letters is matched as its
-  category asks (a light's as a whole word, a place's noise as whole words, the
-  rest as a substring);
+  by (what people call their lights, their garden, the solar inverter, the grid meter, a forecast), and the
+  `appliance_*` stems an appliance card tells a washer from a dishwasher by (plain lower-case letters: a name is read
+  with its accents taken off and in ordinary width, so "Kühlschrank" is `kuhlschrank`, "Płyta" is `plyta`, "Счётчик"
+  is `счетчик` and "ＬＥＤ" is `led`; a Russian й stays й, a letter of its own). A stem in Latin or Cyrillic letters is
+  matched as its category asks (a light's as a whole word, a place's noise as whole words, the rest as a substring);
   a stem in Han or kana is always matched as a substring, since Chinese and Japanese write no spaces between words. The words
   that join a place's noise to the place (`place_joins`: an article, a preposition, the language's "and", an elision
   such as `d'`) are written as the language writes them, marks and all, since a mark makes another word (`és` is

@@ -28,6 +28,7 @@
   "charger": ["laadpaal", "laadpunt", "laadstation"],
   "home": ["huis", "woning", "totaal verbruik", "totaalverbruik"],
   "today": ["vandaag", "dag"],
+  "forecast": ["voorspel", "verwacht", "prognos"],
   "not_appliance": [
     "vakantie",
     "kinderslot",

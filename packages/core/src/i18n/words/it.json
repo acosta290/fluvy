@@ -36,6 +36,7 @@
     "consumo casa"
   ],
   "today": ["oggi", "giornaliero", "giornata", "giorno"],
+  "forecast": ["previs"],
   "not_appliance": [
     "vacanza",
     "blocco bambini",

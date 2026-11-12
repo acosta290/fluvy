@@ -67,6 +67,7 @@ const CATEGORIES: ReadonlyArray<{
   { category: 'charger', name: 'CHARGER', shape: 'substring' },
   { category: 'home', name: 'HOME_POWER', shape: 'substring' },
   { category: 'today', name: 'TODAY', shape: 'substring' },
+  { category: 'forecast', name: 'FORECAST', shape: 'substring' },
   { category: 'not_appliance', name: 'NOT_APPLIANCE', shape: 'substring' },
   { category: 'generic', name: 'GENERIC', shape: 'whole' },
   { category: 'place_noise', name: 'PLACE_NOISE', shape: 'words' },

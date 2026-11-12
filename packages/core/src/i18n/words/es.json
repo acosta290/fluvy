@@ -30,6 +30,7 @@
   "charger": ["cargador", "punto de carga", "punto_de_carga", "estación de carga"],
   "home": ["casa(?![\\s_.-]*de[\\s_.-]*ba(nho|[nñ]o))", "consumo_total"],
   "today": ["hoy", "dia\\b", "día"],
+  "forecast": ["previs", "pronóstic", "pronostic", "predicci"],
   "not_appliance": [
     "forzar",
     "vacacion",

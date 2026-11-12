@@ -51,6 +51,7 @@
   "charger": ["充电桩", "随车充", "charger", "wallbox", "evse", "ev_charg", "charge_point"],
   "home": ["家庭", "全屋", "总负载", "总用电", "house", "home", "load"],
   "today": ["今日", "今天", "当日", "daily"],
+  "forecast": ["预测", "预报", "预计", "预估"],
   "not_appliance": [
     "模式",
     "定时",

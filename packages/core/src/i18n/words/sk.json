@@ -43,6 +43,7 @@
     "odber[ _-]domu"
   ],
   "today": ["(^|[ _-])dnes", "denna", "denny", "denne", "denn(?!i)", "za[ _-]den"],
+  "forecast": ["predpove", "prognóz", "prognoz"],
   "not_appliance": [
     "casovac",
     "dovolenka",

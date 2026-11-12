@@ -41,6 +41,7 @@
     "consumo da casa"
   ],
   "today": ["hoje", "diário", "diario", "dia"],
+  "forecast": ["previs"],
   "not_appliance": [
     "férias",
     "ferias",

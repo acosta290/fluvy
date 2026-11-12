@@ -83,6 +83,7 @@
     "konut"
   ],
   "today": ["bugün", "bugun", "günlük", "gunluk", "gün\\b", "gun\\b", "_d$"],
+  "forecast": ["tahmin", "öngörü", "ongoru"],
   "not_appliance": [
     "zorla",
     "zamanlayıcı",

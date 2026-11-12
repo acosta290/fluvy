@@ -272,6 +272,7 @@
     "nichiji",
     "nitiji"
   ],
+  "forecast": ["予測", "予報", "予想", "yosoku", "yohou"],
   "not_appliance": [
     "強制",
     "タイマー",

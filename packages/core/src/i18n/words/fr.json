@@ -33,6 +33,7 @@
   "charger": ["borne", "chargeur", "point de charge"],
   "home": ["maison", "logement", "consommation totale", "conso"],
   "today": ["aujourd", "journée", "journee", "jour"],
+  "forecast": ["prévis", "previs", "prédict"],
   "not_appliance": [
     "vacances",
     "sécurité enfant",
