@@ -4,7 +4,7 @@ import { css, html, LitElement } from 'lit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { THEME_SENTINEL } from '@fluvy/tokens/config';
 import { ICON_PATHS } from '../icons/generated.js';
-import { startLook } from '../look/start.js';
+import { connected, startLook } from '../look/start.js';
 import { ORIGINAL_ICONS, sidebarIconsCss } from '../shell/css/chrome.js';
 import { startShell } from '../shell/index.js';
 
@@ -257,5 +257,20 @@ describe('the sidebar’s glyphs', () => {
       'sidebar-panel-5c53de3b_esphome ha-icon',
       'sidebar-panel-history ha-svg-icon',
     ]);
+  });
+
+  it('stops waiting for Home Assistant once the one waiting has gone, as a stopped look does', async () => {
+    let asked = 0;
+    let live = true;
+    const waiting = connected(
+      () => {
+        asked += 1;
+        return undefined;
+      },
+      () => live,
+    );
+    live = false;
+    await expect(waiting).resolves.toBeUndefined();
+    expect(asked).toBe(1);
   });
 });

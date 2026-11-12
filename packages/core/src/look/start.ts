@@ -106,11 +106,15 @@ type HassElement = Element & { hass?: HomeAssistant };
 export const appHass = (): HomeAssistant | undefined =>
   (document.querySelector('home-assistant') as HassElement | null)?.hass;
 
-/** Home Assistant's app once it has connected (it connects before any panel renders). */
+/**
+ * Home Assistant's app once it has connected (it connects before any panel renders); undefined after a minute, or as
+ * soon as `live` says the one waiting has gone (a look stopped asks no more).
+ */
 export async function connected(
   app: () => HomeAssistant | undefined = appHass,
+  live: () => boolean = () => true,
 ): Promise<HomeAssistant | undefined> {
-  for (let tries = 0; tries < 600; tries += 1) {
+  for (let tries = 0; tries < 600 && live(); tries += 1) {
     const hass = app();
     if (hass?.connection) return hass;
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -283,7 +287,8 @@ export function startLook(): LookHandle | undefined {
   };
   window.addEventListener('storage', onStorage);
 
-  void connected().then((hass) => {
+  let running = true;
+  void connected(appHass, () => running).then((hass) => {
     if (!hass || !handle) return;
     console.debug(`[fluvy] ${versionNote()}`);
     frame(); // `<home-assistant>` exists now
@@ -326,6 +331,7 @@ export function startLook(): LookHandle | undefined {
     },
     wearDevice,
     stop: () => {
+      running = false;
       observer.disconnect();
       reduced.removeEventListener('change', wearDevice);
       window.removeEventListener('storage', onStorage);

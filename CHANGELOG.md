@@ -59,6 +59,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 ### Development
 
 - Budgets: the automatic dashboards' chunk 25 KB (was 24), the energy chunk 81 KB (was 80).
+- A look that stops no longer keeps asking for Home Assistant for a minute after: its wait ended in a page that was
+  gone and failed a test run at random.
 
 ## [1.19.0] — 2026-11-12
 
