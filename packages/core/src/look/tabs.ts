@@ -57,6 +57,12 @@ export interface Chrome {
   /** The header's actions (add, search, Assist, edit): Home Assistant's buttons, or its own one menu, as on a phone. */
   readonly actions: 'buttons' | 'menu';
   /**
+   * The menu as on a tablet held sideways: the sidebar hidden away, the header's menu icon opening it beside the page
+   * (the page moves over for it) and the sidebar's own closing it again, where Home Assistant opens it over the page or
+   * folds it to a row of icons. A wide screen only: a phone keeps Home Assistant's drawer.
+   */
+  readonly tablet: boolean;
+  /**
    * The sidebar's items a line is drawn after (their url paths: a dashboard, a page, an app), to set a group apart;
    * the line follows its item wherever a person's own order puts it.
    */
@@ -68,6 +74,7 @@ export const CHROME_DEFAULTS: Chrome = {
   dividers: true,
   header: 'bar',
   actions: 'buttons',
+  tablet: false,
   separators: [],
 };
 
@@ -85,6 +92,7 @@ export function parseChrome(raw: unknown): Chrome | undefined {
     dividers: typeof raw['dividers'] === 'boolean' ? raw['dividers'] : d.dividers,
     header: raw['header'] === 'bar' || raw['header'] === 'page' ? raw['header'] : d.header,
     actions: raw['actions'] === 'buttons' || raw['actions'] === 'menu' ? raw['actions'] : d.actions,
+    tablet: typeof raw['tablet'] === 'boolean' ? raw['tablet'] : d.tablet,
     separators: Array.isArray(separators)
       ? [...new Set(separators.filter(isPanelPath))]
       : d.separators,
@@ -96,12 +104,15 @@ export const sameChrome = (a: Chrome, b: Chrome): boolean =>
   a.dividers === b.dividers &&
   a.header === b.header &&
   a.actions === b.actions &&
+  a.tablet === b.tablet &&
   a.separators.join(' ') === b.separators.join(' ');
 
 /** On `<html>`: Home Assistant's logo in the sidebar's head (the shell's `sidebar-logo` sheet fills on it). */
 export const SIDEBAR_LOGO_ATTRIBUTE = 'fluvy-sidebar-logo';
 /** On `<html>`: the sidebar's items a line follows, their url paths apart by spaces (the `sidebar-separators` sheet). */
 export const SIDEBAR_SEPARATORS_ATTRIBUTE = 'fluvy-sidebar-separators';
+/** On `<html>`: the menu as on a tablet held sideways (`tablet.ts` opens and closes it, the `tablet-menu` sheet places it). */
+export const TABLET_ATTRIBUTE = 'fluvy-tablet';
 /** On `<html>` and on a dashboard's `hui-root`: no hairline under the sidebar's head or the header. */
 export const FLAT_ATTRIBUTE = 'fluvy-flat';
 /** On `hui-root`: the header on the page's colour, no bar. */

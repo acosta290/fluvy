@@ -2396,6 +2396,8 @@
     "chrome.page_sub": "Az oldal színében",
     "chrome.actions": "Műveletek egy menüben",
     "chrome.actions_sub": "Hozzáadás, keresés, Assist, szerkesztés",
+    "chrome.tablet": "Fekvő tablet",
+    "chrome.tablet_sub": "A menü az oldal mellett nyílik meg",
     "chrome.hint": "Az oldalsáv ezeket ott veszi át, ahol a Fluvy a teljes Home Assistantot stilizálja ({scope} → {everywhere}).",
     "chrome.separators": "Vonalak az oldalsávon",
     "chrome.separators_sub": "Egy vonal minden bekapcsolt elem után",

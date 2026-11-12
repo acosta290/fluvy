@@ -2446,6 +2446,8 @@
     "chrome.page_sub": "В цвет страницы",
     "chrome.actions": "Действия в одном меню",
     "chrome.actions_sub": "Добавление, поиск, Assist, изменение",
+    "chrome.tablet": "Планшет горизонтально",
+    "chrome.tablet_sub": "Меню открывается рядом со страницей",
     "chrome.hint": "Боковая панель получает эти настройки, когда Fluvy оформляет весь Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Линии в боковой панели",
     "chrome.separators_sub": "Линия после каждого включённого пункта",

@@ -45,9 +45,11 @@ import {
   patchViewRoots,
   SIDEBAR_LOGO_ATTRIBUTE,
   SIDEBAR_SEPARATORS_ATTRIBUTE,
+  TABLET_ATTRIBUTE,
   type RootElement,
   type TabsFor,
 } from './tabs.js';
+import { watchTablet } from './tablet.js';
 import { safeStorage } from '../storage.js';
 
 /**
@@ -210,6 +212,8 @@ export function startLook(): LookHandle | undefined {
     if (markPanels(env.document, wears)) resyncCardThemes();
     markRoots(env.document, tabsFor, paint);
   };
+  /** The menu as on a tablet held sideways: the sidebar is Home Assistant's own until the look covers the whole app. */
+  const tablet = (): boolean => current().scope === 'everywhere' && chromeOf(current().look).tablet;
   const preferences = (): void => {
     const now = current();
     setMotionPreference(now.motion);
@@ -232,6 +236,7 @@ export function startLook(): LookHandle | undefined {
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);
     env.document.documentElement.toggleAttribute(FLAT_ATTRIBUTE, !chrome.dividers);
+    env.document.documentElement.toggleAttribute(TABLET_ATTRIBUTE, tablet());
     if (chrome.separators.length)
       env.document.documentElement.setAttribute(
         SIDEBAR_SEPARATORS_ATTRIBUTE,
@@ -286,6 +291,7 @@ export function startLook(): LookHandle | undefined {
     if (event.key === null || event.key === DEVICE_KEY) wearDevice();
   };
   window.addEventListener('storage', onStorage);
+  const offTablet = watchTablet(env.document, tablet);
 
   let running = true;
   void connected(appHass, () => running).then((hass) => {
@@ -335,6 +341,7 @@ export function startLook(): LookHandle | undefined {
       observer.disconnect();
       reduced.removeEventListener('change', wearDevice);
       window.removeEventListener('storage', onStorage);
+      offTablet();
       offFrames();
       offThemes();
       store.stop();

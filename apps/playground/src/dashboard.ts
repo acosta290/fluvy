@@ -178,6 +178,7 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
     dividers: params.get('flat') !== '1',
     header: params.get('header') === 'page' ? 'page' : 'bar',
     actions: params.get('actions') === 'menu' ? 'menu' : 'buttons',
+    tablet: params.get('tablet') === '1',
     // `separators=fluvy-home,history`: a line after each of those sidebar items
     separators: (params.get('separators') ?? '').split(',').filter(Boolean),
   };

@@ -1152,6 +1152,8 @@
     "chrome.page_sub": "In der Farbe der Seite",
     "chrome.actions": "Aktionen in einem Menü",
     "chrome.actions_sub": "Neu, Suche, Assist, Bearbeiten",
+    "chrome.tablet": "Tablet, quer",
+    "chrome.tablet_sub": "Das Menü öffnet sich neben der Seite",
     "chrome.hint": "Die Seitenleiste übernimmt das, wo Fluvy ganz Home Assistant gestaltet ({scope} → {everywhere}).",
     "chrome.separators": "Linien in der Seitenleiste",
     "chrome.separators_sub": "Eine Linie nach jedem eingeschalteten Eintrag",

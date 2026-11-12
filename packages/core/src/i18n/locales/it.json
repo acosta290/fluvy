@@ -1152,6 +1152,8 @@
     "chrome.page_sub": "Del colore della pagina",
     "chrome.actions": "Azioni in un menu",
     "chrome.actions_sub": "Aggiungi, cerca, Assist, modifica",
+    "chrome.tablet": "Tablet in orizzontale",
+    "chrome.tablet_sub": "Il menu si apre accanto alla pagina",
     "chrome.hint": "La barra laterale li prende dove Fluvy veste tutto Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Linee nella barra laterale",
     "chrome.separators_sub": "Una linea dopo ogni voce attivata",
