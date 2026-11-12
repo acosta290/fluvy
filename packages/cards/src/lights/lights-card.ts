@@ -349,24 +349,39 @@ export class FluvyLightsCard extends FluvyTileCard {
     });
   }
 
+  /**
+   * Lamps on or off together, those within reach, each drawn so until Home Assistant agrees, one call a domain: a
+   * lamp on a plug is a switch, which a light's call never reaches. What a light takes as it comes on (a level, a
+   * colour) goes to the lights alone; a switch beside them just comes on.
+   */
+  private switchLamps(
+    lamps: readonly Lamp[],
+    on: boolean,
+    data: Record<string, unknown> = {},
+  ): void {
+    const usable = lamps.filter((lamp) => lamp.usable);
+    for (const lamp of usable) this.expect(lamp.view.id, on ? 'on' : 'off');
+    for (const domain of new Set(usable.map((lamp) => lamp.view.domain)))
+      this.call(
+        domain,
+        on ? 'turn_on' : 'turn_off',
+        {
+          entity_id: usable
+            .filter((lamp) => lamp.view.domain === domain)
+            .map((lamp) => lamp.view.id),
+          ...(on && domain === 'light' ? data : {}),
+        },
+        '',
+      );
+  }
+
   /** The whole room: every light off when one is on, else every light on. */
   private flipRoom(lamps: readonly Lamp[]): void {
-    const usable = lamps.filter((lamp) => lamp.usable);
-    if (!usable.length || !this.hass) return;
-    const next = !usable.some((lamp) => lamp.on);
-    for (const lamp of usable) this.expect(lamp.view.id, next ? 'on' : 'off');
-    this.call(
-      'light',
-      next ? 'turn_on' : 'turn_off',
-      { entity_id: usable.map((lamp) => lamp.view.id) },
-      '',
-    );
+    this.switchLamps(lamps, !lamps.some((lamp) => lamp.on));
   }
 
   private flipLamp(lamp: Lamp): void {
-    if (!lamp.usable) return;
-    this.expect(lamp.view.id, lamp.on ? 'off' : 'on');
-    this.call('light', lamp.on ? 'turn_off' : 'turn_on', {}, lamp.view.id);
+    this.switchLamps([lamp], !lamp.on);
   }
 
   private openLamp(lamp: Lamp): void {
@@ -375,13 +390,8 @@ export class FluvyLightsCard extends FluvyTileCard {
 
   /** The room's level for its ruler: what is on (all of it when nothing is), to the level asked. */
   private setRoom(lamps: readonly Lamp[], value: number): void {
-    const usable = lamps.filter((lamp) => lamp.usable);
-    const lit = usable.filter((lamp) => lamp.on);
-    const targets = (lit.length ? lit : usable).map((lamp) => lamp.view.id);
-    if (!targets.length) return;
-    for (const id of targets) this.expect(id, value > 0 ? 'on' : 'off');
-    if (value <= 0) this.call('light', 'turn_off', { entity_id: targets }, '');
-    else this.call('light', 'turn_on', { entity_id: targets, brightness_pct: value }, '');
+    const lit = lamps.filter((lamp) => lamp.on);
+    this.switchLamps(lit.length ? lit : lamps, value > 0, { brightness_pct: value });
   }
 
   /** The average level of what is on and dims, or `null`. */
@@ -554,13 +564,10 @@ export class FluvyLightsCard extends FluvyTileCard {
 
   /**
    * A colour for the room: every light that can be read takes it in one call, each as Home Assistant fits it (a
-   * white bulb the nearest white, one that only dims its brightness), and wakes to it.
+   * white bulb the nearest white, one that only dims its brightness), and wakes to it; a plug's lamp just comes on.
    */
   private colourRoom(lamps: readonly Lamp[], data: Record<string, unknown>): void {
-    const usable = lamps.filter((lamp) => lamp.usable);
-    if (!usable.length) return;
-    for (const lamp of usable) this.expect(lamp.view.id, 'on');
-    this.call('light', 'turn_on', { entity_id: usable.map((lamp) => lamp.view.id), ...data }, '');
+    this.switchLamps(lamps, true, data);
   }
 
   /** What the sheet asks of the card: the room as it draws it, its switch, its colours, its sliders' style. */

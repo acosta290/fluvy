@@ -91,6 +91,8 @@ export const sheet: SheetSpec = {
     ['light.lt_full', 'on', white('Desk lamp', 100)],
     ['light.lt_plug_a', 'on', plain('Fairy lights')],
     ['light.lt_plug_b', 'off', plain('Salt lamp')],
+    // a lamp on a plug: a switch the automatic dashboards count as a light by its name (#170)
+    ['switch.lt_lamp', 'off', { friendly_name: 'Corner lamp' }],
     ['light.lt_long', 'on', white('The big paper lantern over the dining table in the corner', 60)],
     // a cool white: Home Assistant's colour for 8000 K, a blue a shade off white (6500 K is daylight, neutral)
     ['light.lt_cool', 'on', white('Bathroom', 80, 8000)],
@@ -445,6 +447,21 @@ export const sheet: SheetSpec = {
             { entity: 'light.lt_floor', name: 'Floor lamp by the sofa' },
           ],
         }),
+      ],
+    },
+    // #170: a lamp on a plug beside the room's lights, drawn as one that only switches and switched as a switch; the
+    // room's level and colour are the lights' alone, the plug just comes on
+    {
+      title: 'A lamp on a plug (#170)',
+      cards: [
+        lights({
+          name: 'Study',
+          show_brightness: true,
+          show_color: true,
+          lights: ['light.lt_floor', 'switch.lt_lamp'],
+        }),
+        lights({ name: 'Study', variant: 'chips', lights: ['light.lt_floor', 'switch.lt_lamp'] }),
+        lights({ name: 'Study', variant: 'tiles', lights: ['light.lt_floor', 'switch.lt_lamp'] }),
       ],
     },
   ],

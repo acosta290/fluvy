@@ -1098,6 +1098,33 @@ describe('custom:fluvy-home strategy', () => {
     ).toBe(false);
   });
 
+  it('gives a lamp on a plug its room’s lights card and a tile, never the light card, which calls lights alone (#170)', async () => {
+    const hass = house([
+      entity(
+        'light.study_desk',
+        'on',
+        { friendly_name: 'Desk', supported_color_modes: ['brightness'] },
+        { area_id: 'study' },
+      ),
+      entity('switch.study_lamp', 'off', { friendly_name: 'Floor lamp' }, { area_id: 'study' }),
+    ]) as HomeAssistant;
+    hass.areas['study'] = { area_id: 'study', name: 'Study' } as never;
+    const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, hass);
+    const cards = views.find((v) => v.path === 'lights')!.sections.flatMap((s) => s.cards);
+    const of = (type: string) =>
+      cards.filter((c) => c.type === `custom:fluvy-${type}-card`).map((c) => c['entity']);
+    expect(
+      cards.find(
+        (c) =>
+          c.type === 'custom:fluvy-lights-card' &&
+          (c['lights'] as string[]).includes('switch.study_lamp'),
+      )?.['lights'],
+    ).toEqual(['light.study_desk', 'switch.study_lamp']);
+    expect(of('tile')).toContain('switch.study_lamp');
+    expect(of('light')).toContain('light.study_desk');
+    expect(of('light').every((id) => String(id).startsWith('light.'))).toBe(true);
+  });
+
   it('groups the lights by area, dimmable ones as light cards', async () => {
     const { views } = await FluvyHomeStrategy.generate({ type: 'custom:fluvy-home' }, house());
     const lights = views.find((v) => v.path === 'lights')!;

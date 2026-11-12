@@ -258,6 +258,10 @@ show_color: true
 colors: [warm, cool, red, orange, '#8e44ad', picker]
 ```
 
+A lamp on a plug can stand among a room's lights (a `switch`, as the automatic dashboards count one whose name says
+it is a light): its round, chip or tile switches it as a switch, and the room's tap turns it on and off with the
+lights, while the brightness ruler and the colours set the lights alone and it just comes on (1.19.1).
+
 The history bars card reads a sensor's long-term statistics (`days` bars of a `period`: days, weeks or months; a
 bar is what a meter gained, or a measurement's `mean`, `max` or `min`). Its head readouts (`head`) and the facts
 under the chart (`facts`) are lists of kinds you compose in order — `total`, `average`, `highest`, `lowest`,

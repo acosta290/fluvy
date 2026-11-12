@@ -62,7 +62,7 @@ export interface LightsColourHost {
   look(): SliderStyle;
   still(): boolean;
   words<T>(items: readonly T[]): readonly T[];
-  /** What the finger chose, sent to every light of the room that can be read (`light.turn_on`). */
+  /** What the finger chose, for every light of the room that can be read (`light.turn_on`; a plug just comes on). */
   pick(data: Record<string, unknown>): void;
   /** The card's colours, adopted into the sheet's own root. */
   adopt(root: ShadowRoot): void;

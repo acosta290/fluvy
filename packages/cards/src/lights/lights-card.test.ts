@@ -174,6 +174,80 @@ describe('the room lights in their bulbs’ colours, in every style (#58)', () =
   });
 });
 
+describe('a lamp on a plug, switched in its own domain (#170)', () => {
+  /**
+   * A room of a light and a lamp on a plug (a switch the house counts as a light), both off: its card and each call it
+   * makes, as Home Assistant hears it (domain, service, data).
+   */
+  async function room(config: Record<string, unknown> = {}) {
+    const calls: unknown[][] = [];
+    const card = document.createElement('fluvy-lights-card') as CardElement & {
+      sheetHost: { pick(data: Record<string, unknown>): void };
+    };
+    card.setConfig({
+      type: 'custom:fluvy-lights-card',
+      lights: ['light.sconce', 'switch.lamp'],
+      ...config,
+    });
+    card.hass = {
+      ...house({ 'switch.lamp': state('switch.lamp', 'off', { friendly_name: 'Lamp' }) }),
+      callService: (...args: unknown[]) => {
+        calls.push(args.slice(0, 3));
+        return Promise.resolve();
+      },
+    } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    return { card, root: card.shadowRoot!, calls };
+  }
+  const tap = (el: Element | undefined | null): void =>
+    (el as unknown as { fvTap(): void }).fvTap();
+
+  it('the room’s tap turns the light on as a light and the plug as a switch', async () => {
+    const { root, calls } = await room();
+    tap(root.querySelector('.lt-room'));
+    expect(calls).toEqual([
+      ['light', 'turn_on', { entity_id: ['light.sconce'] }],
+      ['switch', 'turn_on', { entity_id: ['switch.lamp'] }],
+    ]);
+  });
+
+  it('the plug’s own round and chip switch it as a switch', async () => {
+    const { root, calls } = await room();
+    tap(root.querySelectorAll('.lt-bulb')[1]);
+    const chips = await room({ variant: 'chips' });
+    chips.root.querySelectorAll<HTMLElement>('.fv-chip')[1]!.click();
+    expect([...calls, ...chips.calls]).toEqual([
+      ['switch', 'turn_on', { entity_id: ['switch.lamp'] }],
+      ['switch', 'turn_on', { entity_id: ['switch.lamp'] }],
+    ]);
+  });
+
+  it('a level is the light’s alone: the plug beside it just comes on, and both go off at 0', async () => {
+    const { root, calls } = await room({ show_brightness: true });
+    const ruler = root.querySelector('fluvy-ruler')!;
+    const slide = (value: number): boolean =>
+      ruler.dispatchEvent(new CustomEvent('fluvy-change', { detail: { value } }));
+    slide(40);
+    slide(0);
+    expect(calls).toEqual([
+      ['light', 'turn_on', { entity_id: ['light.sconce'], brightness_pct: 40 }],
+      ['switch', 'turn_on', { entity_id: ['switch.lamp'] }],
+      ['light', 'turn_off', { entity_id: ['light.sconce'] }],
+      ['switch', 'turn_off', { entity_id: ['switch.lamp'] }],
+    ]);
+  });
+
+  it('a colour is the light’s alone: the plug beside it just comes on', async () => {
+    const { card, calls } = await room({ show_color: true });
+    card.sheetHost.pick({ hs_color: [30, 80] });
+    expect(calls).toEqual([
+      ['light', 'turn_on', { entity_id: ['light.sconce'], hs_color: [30, 80] }],
+      ['switch', 'turn_on', { entity_id: ['switch.lamp'] }],
+    ]);
+  });
+});
+
 describe('the colour round (#137)', () => {
   const ROUND = '.fv-round.lt-colour';
 
