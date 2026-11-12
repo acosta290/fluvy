@@ -1152,6 +1152,8 @@
     "chrome.page_sub": "De la couleur de la page",
     "chrome.actions": "Actions dans un menu",
     "chrome.actions_sub": "Ajout, recherche, Assist, édition",
+    "chrome.tablet": "Tablette à l'horizontale",
+    "chrome.tablet_sub": "Le menu s'ouvre à côté de la page",
     "chrome.hint": "La barre latérale les prend là où Fluvy habille tout Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Lignes dans la barre latérale",
     "chrome.separators_sub": "Une ligne après chaque élément activé",

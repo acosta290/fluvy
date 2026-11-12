@@ -175,3 +175,10 @@ export const sidebarIconsCss = [
   iconRule('#sidebar-notifications', 'bell'),
   ...APP_GLYPHS.map(([slug, glyph]) => iconRule(`[id^="sidebar-panel-"][id*="_${slug}"]`, glyph)),
 ].join('\n');
+
+/**
+ * The menu as on a tablet held sideways: with the sidebar hidden, a dashboard's header starts with Home Assistant's menu
+ * icon, which stands on the floating frame's corner; it steps in by the frame's own 16 (none where there is no frame).
+ */
+export const tabletMenuCss =
+  '.toolbar > ha-menu-button { margin-inline-start: var(--fluvy-frame, 0px); }';

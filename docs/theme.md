@@ -212,6 +212,13 @@ search, Assist and edit behind one "…", as Home Assistant draws them on a phon
 screenshots. The sidebar takes them where Fluvy styles all of Home Assistant (*Scope → Everywhere*); a
 dashboard's header takes them wherever the dashboard wears the look. The edit mode keeps Home Assistant's header.
 
+**Tablet, horizontal** (with *Scope → Everywhere*) is the menu for a tablet held sideways, or any wide screen: the
+sidebar stays hidden until it is asked for. The menu icon in the header opens it beside the page, which moves over for
+it, and the sidebar's own menu icon hides it again, where Home Assistant opens a hidden sidebar over the page and folds
+an open one to a row of icons. The two states are Home Assistant's own (*Profile → This browser → Always hide the
+sidebar*, and the sidebar docked), so each browser remembers which it was left in. A phone keeps Home Assistant's
+drawer.
+
 *Appearance → Lines in the sidebar* (with *Scope → Everywhere*) lists the sidebar's items, the dashboards first: each
 one switched on gets a line after it, the hairline under the sidebar's name, to set a group apart — the dashboards from
 the tools, say. The line belongs to its item, not to a place: it follows the item wherever a person's own order (Home

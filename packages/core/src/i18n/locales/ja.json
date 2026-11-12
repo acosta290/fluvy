@@ -2293,6 +2293,8 @@
     "chrome.page_sub": "ページと同じ色で",
     "chrome.actions": "アクションを1つのメニューに",
     "chrome.actions_sub": "追加、検索、アシスト、編集",
+    "chrome.tablet": "タブレット(横向き)",
+    "chrome.tablet_sub": "メニューはページの横に開きます",
     "chrome.hint": "サイドバーに反映されるのは、FluvyがHome Assistant全体を装飾している場合です（{scope} → {everywhere}）。",
     "chrome.separators": "サイドバーの区切り線",
     "chrome.separators_sub": "オンにした項目の後に線を引きます",

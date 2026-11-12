@@ -1152,6 +1152,8 @@
     "chrome.page_sub": "In de kleur van de pagina",
     "chrome.actions": "Acties in één menu",
     "chrome.actions_sub": "Toevoegen, zoeken, Assist, bewerken",
+    "chrome.tablet": "Tablet, liggend",
+    "chrome.tablet_sub": "Het menu opent naast de pagina",
     "chrome.hint": "De zijbalk neemt dit over waar Fluvy heel Home Assistant aankleedt ({scope} → {everywhere}).",
     "chrome.separators": "Lijnen in de zijbalk",
     "chrome.separators_sub": "Een lijn na elk ingeschakeld item",

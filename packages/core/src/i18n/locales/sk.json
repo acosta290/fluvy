@@ -2394,6 +2394,8 @@
     "chrome.page_sub": "Vo farbe stránky",
     "chrome.actions": "Akcie v jednej ponuke",
     "chrome.actions_sub": "Pridať, hľadať, Assist, upraviť",
+    "chrome.tablet": "Tablet na šírku",
+    "chrome.tablet_sub": "Ponuka sa otvorí vedľa stránky",
     "chrome.hint": "Bočný panel používa tieto voľby, keď Fluvy upravuje celý Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Čiary v bočnom paneli",
     "chrome.separators_sub": "Čiara za každou zapnutou položkou",

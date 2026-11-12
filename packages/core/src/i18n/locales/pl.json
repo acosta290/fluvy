@@ -2151,6 +2151,8 @@
     "chrome.page_sub": "W kolorze strony",
     "chrome.actions": "Akcje w jednym menu",
     "chrome.actions_sub": "Dodaj, szukaj, Assist, edytuj",
+    "chrome.tablet": "Tablet poziomo",
+    "chrome.tablet_sub": "Menu otwiera się obok strony",
     "chrome.hint": "Pasek boczny przyjmuje te ustawienia, gdy Fluvy stylizuje cały Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Linie w pasku bocznym",
     "chrome.separators_sub": "Linia po każdej włączonej pozycji",

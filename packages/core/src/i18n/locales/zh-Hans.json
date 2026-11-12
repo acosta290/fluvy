@@ -2339,6 +2339,8 @@
     "chrome.page_sub": "使用页面底色",
     "chrome.actions": "操作收进菜单",
     "chrome.actions_sub": "添加、搜索、Assist、编辑",
+    "chrome.tablet": "平板横屏",
+    "chrome.tablet_sub": "菜单在页面旁边打开",
     "chrome.hint": "当 Fluvy 样式覆盖整个 Home Assistant（{scope} → {everywhere}）时，侧边栏会采用这些设置。",
     "chrome.separators": "侧边栏分隔线",
     "chrome.separators_sub": "每个开启项之后加一条线",

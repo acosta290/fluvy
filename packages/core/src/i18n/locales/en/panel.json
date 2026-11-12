@@ -78,6 +78,8 @@
     "chrome.page_sub": "On the page's colour",
     "chrome.actions": "Actions in one menu",
     "chrome.actions_sub": "Add, search, Assist, edit",
+    "chrome.tablet": "Tablet, horizontal",
+    "chrome.tablet_sub": "The menu opens beside the page",
     "chrome.hint": "The sidebar takes these where Fluvy styles all of Home Assistant ({scope} → {everywhere}).",
     "chrome.separators": "Lines in the sidebar",
     "chrome.separators_sub": "A line after each one switched on",
