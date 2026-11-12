@@ -1,5 +1,6 @@
 import { flowHeight } from '../energy-family.js';
 import {
+  deviceNameOf,
   strings,
   type EntityName,
   type FluvyCardConfig,
@@ -186,6 +187,13 @@ interface Words {
   readonly way: string;
   readonly second?: { readonly value: string; readonly unit: string; readonly way: string };
   readonly dim: boolean;
+}
+
+/** A source as it is named: its kind, its own name, and the sensor it is read by. */
+interface Named {
+  readonly kind: SourceKind;
+  readonly name: string | undefined;
+  readonly entity: string | undefined;
 }
 
 interface Consumer {
@@ -466,13 +474,23 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       const house = readPrefs(this.prefs);
       const data = this.periodData;
       const sources = house.sources.filter((p) => p.energyIn.length || p.energyOut.length);
-      nodes = sources.map((p, i) => this.periodNode(p, i, sources, data));
+      const names = this.namesOf(
+        sources.map((p) => ({
+          kind: p.kind,
+          name: p.name,
+          entity: p.energyIn[0] ?? p.energyOut[0],
+        })),
+      );
+      nodes = sources.map((p, i) => this.periodNode(p, i, names[i] as string, data));
       allocation = data ? data.allocation : null;
       if (allocation) allocation = scaleAllocation(allocation, 1000);
       if (!sources.length && this.prefs !== undefined) empty = 'period';
     } else {
       const configs = this.sourceList();
-      nodes = configs.map((c, i) => this.liveNode(c, i, configs));
+      const names = this.namesOf(
+        configs.map((c) => ({ kind: c.type, name: c.name, entity: sourceIds(c)[0] })),
+      );
+      nodes = configs.map((c, i) => this.liveNode(c, i, names[i] as string));
       // a source that cannot be read counts as nothing while another of its kind reads (an array asleep)
       const readable = nodes.every(
         (n) => together(nodes.filter((o) => o.kind === n.kind).map((o) => net(o.reading))) !== null,
@@ -572,7 +590,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     return { ink: { tone: KIND_INK[kind] }, tone: KIND[kind].tone, accent: undefined };
   }
 
-  private liveNode(c: SourceConfig, i: number, all: readonly SourceConfig[]): Omit<Node, 'lanes'> {
+  private liveNode(c: SourceConfig, i: number, name: string): Omit<Node, 'lanes'> {
     const measure = measureOfSource(c);
     const reading: Directed = measure
       ? readMeasure(measure, (id) => this.entity(id))
@@ -583,8 +601,6 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       : reading;
     const levelView = c.level ? this.entity(c.level) : undefined;
     const level = levelView?.number ?? null;
-    const same = all.filter((o) => o.type === c.type).length;
-    const name = c.name ?? (same > 1 ? this.nameOf(c) : this.kindName(c.type));
     const { ink, tone, accent } = this.inkOf(c.type, c.color);
     return {
       key: `source-${i}`,
@@ -605,24 +621,38 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     };
   }
 
-  /** A source's name when there are several of its kind: its sensor's, short. */
-  private nameOf(c: SourceConfig): string {
-    const id = sourceIds(c)[0];
-    return id ? shortName(this.entity(id)) : this.kindName(c.type);
+  /**
+   * The sources' names: each its own, else its kind's; where several share a kind, its sensor's, short, and where two
+   * of those read the same (two inverters' "MPPT 累计发电量", #170), its device's, as the house names it.
+   */
+  private namesOf(sources: readonly Named[]): string[] {
+    const several = (kind: SourceKind): boolean =>
+      sources.filter((o) => o.kind === kind).length > 1;
+    const names = sources.map(
+      (o) =>
+        o.name ??
+        (several(o.kind) && o.entity ? shortName(this.entity(o.entity)) : this.kindName(o.kind)),
+    );
+    return names.map((name, i) => {
+      const { kind, name: own, entity } = sources[i] as Named;
+      const twin = names.some((other, j) => j !== i && other === name && sources[j]?.kind === kind);
+      const device =
+        own === undefined && twin && entity
+          ? deviceNameOf(this.hass?.devices?.[this.hass.entities?.[entity]?.device_id ?? ''])
+          : undefined;
+      return device ?? name;
+    });
   }
 
   private periodNode(
     p: PrefSource,
     i: number,
-    all: readonly PrefSource[],
+    name: string,
     data: PeriodEnergy | null | undefined,
   ): Omit<Node, 'lanes'> {
     const sum = (ids: readonly string[]): number | null =>
       data ? ids.reduce((acc, id) => acc + (data.byStat.get(id) ?? 0), 0) * 1000 : null;
-    const same = all.filter((o) => o.kind === p.kind).length;
     const first = p.energyIn[0] ?? p.energyOut[0];
-    const name =
-      p.name ?? (same > 1 && first ? shortName(this.entity(first)) : this.kindName(p.kind));
     const { ink, tone, accent } = this.inkOf(p.kind, undefined);
     const into = sum(p.energyIn);
     const out = oneWay(p.kind) ? (into === null ? null : 0) : sum(p.energyOut);

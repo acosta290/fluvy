@@ -31,7 +31,8 @@ const up4 = (v: number): number => Math.ceil(v / 4) * 4;
 /**
  * The labels of a card's `readouts`: their names, else the sensors' as the energy cards write them (`shortName`: a
  * name past eleven characters of several words by its last, "Kitchen speaker" as "Speaker"; the house's, read by
- * `house-heights.ts`), else their ids.
+ * `house-heights.ts`), else their ids. A Chinese or Japanese name, which the cards keep whole, is counted by its last
+ * word too: the test of those scripts stays in the energy family's chunk, for the rare readout left so named.
  */
 const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
   (Array.isArray(config['readouts']) ? (config['readouts'] as unknown[]) : []).map((item) => {

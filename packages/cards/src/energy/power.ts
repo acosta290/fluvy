@@ -99,12 +99,18 @@ export function deviceName(view: EntityView): string {
   return trimmed || view.name;
 }
 
+/** Chinese and Japanese: scripts that do not part their words with spaces. */
+const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+
 /** "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name. */
 export function shortName(view: EntityView): string {
   const name = deviceName(view);
-  // an 11/600 uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never "KITCHEN SPEA…"
+  // an 11/600 uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never
+  // "KITCHEN SPEA…"; a name in Chinese or Japanese is kept whole, a space in it parting phrases, its last no name (#170)
   const words = name.split(' ');
-  return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
+  return name.length > 11 && words.length > 1 && !UNSPACED.test(name)
+    ? (words[words.length - 1] as string)
+    : name;
 }
 
 /** Safe share: 0 when the total is 0 or missing, never NaN and never Infinity. */

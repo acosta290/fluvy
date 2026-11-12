@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import type { EntityView, HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { allocate } from '../energy-model/allocate.js';
+import { shortName } from '../energy/power.js';
 import { normaliseConfig } from '../shared/config.js';
 import { writesZero } from '../shared/units.js';
 import { FluvyEnergyFlowCard } from './energy-flow-card.js';
@@ -463,15 +464,29 @@ describe('the sources editor', () => {
 describe('several sources of a kind', () => {
   if (!customElements.get('fluvy-energy-flow-card'))
     customElements.define('fluvy-energy-flow-card', FluvyEnergyFlowCard);
-  const power = (id: string, state: string) => ({
+  const power = (id: string, state: string, name?: string) => ({
     entity_id: id,
     state,
-    attributes: { unit_of_measurement: 'W', device_class: 'power' },
+    attributes: {
+      unit_of_measurement: 'W',
+      device_class: 'power',
+      ...(name ? { friendly_name: name } : {}),
+    },
     last_changed: '',
     last_updated: '',
   });
-  /** What the house uses as the flow reads it: two arrays (E1, E2) and the grid bringing 300 W. */
-  const houseOf = async (e1: string, e2: string): Promise<number | null> => {
+  interface House {
+    /** The arrays' sensors' names, and the registries that tie them to their devices. */
+    readonly names?: readonly [string, string];
+    readonly entities?: Record<string, unknown>;
+    readonly devices?: Record<string, unknown>;
+  }
+  /** The flow as it reads two arrays (E1, E2) and the grid bringing 300 W. */
+  const sceneOf = async (
+    e1: string,
+    e2: string,
+    house: House = {},
+  ): Promise<{ houseValue: number | null; nodes: readonly { label: string }[] }> => {
     const card = document.createElement('fluvy-energy-flow-card') as FluvyEnergyFlowCard;
     card.setConfig({
       type: 'custom:fluvy-energy-flow-card',
@@ -487,27 +502,91 @@ describe('several sources of a kind', () => {
       config: {},
       themes: { darkMode: false },
       states: {
-        'sensor.e1': power('sensor.e1', e1),
-        'sensor.e2': power('sensor.e2', e2),
+        'sensor.e1': power('sensor.e1', e1, house.names?.[0]),
+        'sensor.e2': power('sensor.e2', e2, house.names?.[1]),
         'sensor.grid': power('sensor.grid', '300'),
       },
-      entities: {},
-      devices: {},
+      entities: house.entities ?? {},
+      devices: house.devices ?? {},
       areas: {},
       localize: (key: string) => key,
       callWS: async () => ({}),
     } as unknown as HomeAssistant;
     document.body.append(card);
     await card.updateComplete;
-    const scene = (card as unknown as { build(): { houseValue: number | null } }).build();
+    const scene = (
+      card as unknown as {
+        build(): { houseValue: number | null; nodes: readonly { label: string }[] };
+      }
+    ).build();
     card.remove();
-    return scene.houseValue;
+    return scene;
   };
 
   it('counts an array that cannot be read as nothing while another reads; none read, the house is unknown (#140)', async () => {
     // E1's inverter offline, E2 making 942 W: the house uses 1242 W
-    expect(await houseOf('unavailable', '942')).toBe(1242);
-    expect(await houseOf('600', '942')).toBe(1842);
-    expect(await houseOf('unavailable', 'unavailable')).toBeNull();
+    expect((await sceneOf('unavailable', '942')).houseValue).toBe(1242);
+    expect((await sceneOf('600', '942')).houseValue).toBe(1842);
+    expect((await sceneOf('unavailable', 'unavailable')).houseValue).toBeNull();
+  });
+
+  /** The labels of two arrays whose sensors are named `names`, on devices the house names "Inverter E1" and "Garage inverter". */
+  const labelsOf = async (names: readonly [string, string], devices = true): Promise<string[]> =>
+    (
+      await sceneOf('900', '700', {
+        names,
+        ...(devices
+          ? {
+              entities: {
+                'sensor.e1': { entity_id: 'sensor.e1', device_id: 'd1' },
+                'sensor.e2': { entity_id: 'sensor.e2', device_id: 'd2' },
+              },
+              devices: {
+                d1: { id: 'd1', name: 'Inverter E1', name_by_user: null },
+                d2: { id: 'd2', name: 'SPH 6000', name_by_user: 'Garage inverter' },
+              },
+            }
+          : {}),
+      })
+    ).nodes.map((n) => n.label);
+
+  it('#170: two arrays whose sensors read the same are named by their devices, as the house names them', async () => {
+    expect(await labelsOf(['MPPT 累计发电量', 'MPPT 累计发电量'])).toEqual([
+      'Inverter E1',
+      'Garage inverter',
+      'Grid',
+    ]);
+    // "Kitchen roof solar power" and "Garage roof solar power" both read "solar"
+    expect(await labelsOf(['Kitchen roof solar power', 'Garage roof solar power'])).toEqual([
+      'Inverter E1',
+      'Garage inverter',
+      'Grid',
+    ]);
+  });
+
+  it('a house whose names differ reads as it did; without its devices, as its sensors are named', async () => {
+    expect(await labelsOf(['East roof power', 'West roof power'])).toEqual([
+      'East roof',
+      'West roof',
+      'Grid',
+    ]);
+    expect(await labelsOf(['MPPT 累计发电量', 'MPPT 累计发电量'], false)).toEqual([
+      'MPPT 累计发电量',
+      'MPPT 累计发电量',
+      'Grid',
+    ]);
+  });
+
+  it('a name in Chinese or Japanese is never cut to its last phrase (#170)', async () => {
+    expect(await labelsOf(['Inverter E1 累计发电量', 'Inverter E2 累计发电量'], false)).toEqual([
+      'Inverter E1 累计发电量',
+      'Inverter E2 累计发电量',
+      'Grid',
+    ]);
+    const named = (name: string) =>
+      shortName({ name, unit: '', deviceClass: undefined } as unknown as EntityView);
+    expect(named('東 屋根 発電量 本日')).toBe('東 屋根 発電量 本日');
+    expect(named('Kitchen speaker')).toBe('speaker');
+    expect(named('Garage')).toBe('Garage');
   });
 });

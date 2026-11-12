@@ -283,6 +283,12 @@ export const sheet: SheetSpec = {
     ['sensor.fl_five_battery', '2.4', power('Battery power', 'kW')],
     ['sensor.fl_five_car', '1.1', power('Car power', 'kW')],
 
+    /* two inverters whose sensors read the same, and a house that names them in Chinese (#170) */
+    ['sensor.fl_mppt_e1', '2.6', power('MPPT 累计发电量', 'kW')],
+    ['sensor.fl_mppt_e2', '1.9', power('MPPT 累计发电量', 'kW')],
+    ['sensor.fl_cjk_e1', '2.6', power('Inverter E1 累计发电量', 'kW')],
+    ['sensor.fl_cjk_e2', '1.9', power('Inverter E2 累计发电量', 'kW')],
+
     /* the Energy dashboard's meters and power sensors */
     ['sensor.fl_grid_in_energy', '4.1', energy('Grid import')],
     ['sensor.fl_grid_out_energy', '1.3', energy('Grid export')],
@@ -296,6 +302,34 @@ export const sheet: SheetSpec = {
       ([id, state]) => [id, state, level('Battery')] as [string, string, Attributes],
     ),
   ],
+
+  // the two inverters' devices, as the house names them
+  registry: {
+    entities: Object.fromEntries(
+      [
+        ['sensor.fl_mppt_e1', 'fl-d-inverter-e1'],
+        ['sensor.fl_mppt_e2', 'fl-d-inverter-e2'],
+      ].map(([id, device]) => [id, { entity_id: id, device_id: device, labels: [] }]),
+    ),
+    devices: Object.fromEntries(
+      [
+        ['fl-d-inverter-e1', 'Inverter E1'],
+        ['fl-d-inverter-e2', 'Inverter E2'],
+      ].map(([id, name]) => [
+        id,
+        {
+          id,
+          name,
+          name_by_user: null,
+          model: 'SPH 6000',
+          manufacturer: '',
+          area_id: null,
+          labels: [],
+          via_device_id: null,
+        },
+      ]),
+    ),
+  },
 
   ws: {
     'energy/get_prefs': () => ({
@@ -717,6 +751,37 @@ export const sheet: SheetSpec = {
       title: 'Five sources · a narrow column',
       width: 266,
       cards: [{ type: 'custom:fluvy-energy-flow-card', ...five }],
+    },
+    // #170: two inverters whose sensors read the same are named by their devices; a name in Chinese is never cut to
+    // its last phrase
+    {
+      title: 'Two inverters of one name',
+      cards: [
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          sources: [
+            { type: 'solar', power: 'sensor.fl_mppt_e1' },
+            { type: 'solar', power: 'sensor.fl_mppt_e2' },
+            { type: 'grid', power: 'sensor.fl_many_grid' },
+          ],
+          _now: NOW,
+        },
+      ],
+    },
+    {
+      title: 'Two inverters named in Chinese',
+      width: 412,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          sources: [
+            { type: 'solar', power: 'sensor.fl_cjk_e1' },
+            { type: 'solar', power: 'sensor.fl_cjk_e2' },
+            { type: 'grid', power: 'sensor.fl_many_grid' },
+          ],
+          _now: NOW,
+        },
+      ],
     },
     // #170: a card keeps its lanes or its list at a width whatever its figures say, its battery charging 0.6 kW or
     // discharging 10.4 kW
