@@ -71,7 +71,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `fluvy.js` | 2 KB | the entry |
 | `core` | 236 KB | what every page loads |
 | `panel` | 40 KB | the settings panel and its English |
-| `strategy` | 24 KB | the automatic dashboards |
+| `strategy` | 25 KB | the automatic dashboards |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
 | `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |

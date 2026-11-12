@@ -31,7 +31,9 @@ const BUDGETS = {
   core: 241_664,
   // the settings panel and its English
   panel: 40_960,
-  strategy: 24_576,
+  // the automatic dashboards. 25 KB since 2026-11-12 (1.19.1: scenes on Home and room pages, labels told apart,
+  // forecasts): 24 before
+  strategy: 25_600,
   // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
   'house-heights': 4096,
   wall: 16_384,
