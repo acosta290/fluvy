@@ -11,6 +11,7 @@ import {
   heading,
   lightGroups,
   readoutsCards,
+  scenesCard,
   section,
   sizedTile,
   thermostat,
@@ -21,9 +22,9 @@ import type { Card, Section, StrategyContext, View } from './types.js';
 
 /*
  * The rooms: a view of every room of the house (its card, grouped by floor when there are floors), and a subview
- * per room with everything it shows, every device its card counts among it — its thermostats, lights, covers, gates,
- * fans, media, plugs, readings, openings and cameras, the rest of it as rows, its automations on a card of their own,
- * and its appliances across under them.
+ * per room with everything it shows, every device its card counts among it — its scenes first, its thermostats,
+ * lights, covers, gates, fans, media, plugs, readings, openings and cameras, the rest of it as rows, its automations on
+ * a card of their own, and its appliances across under them.
  */
 
 /** The areas a dashboard shows: those with something to show, by the room card's own rule, floor by floor. */
@@ -110,6 +111,8 @@ export interface RoomParts {
   /** Doors, windows, motion, leaks, smoke and gas. */
   readonly openings: readonly string[];
   readonly cameras: readonly string[];
+  /** Its scenes, on a Scenes card of their own (#172): never a device. */
+  readonly scenes: readonly string[];
   /** Its automations, on an Automations card of their own (#118): never a device. */
   readonly automations: readonly string[];
   /** The appliances drawn whole across the page (their devices). */
@@ -138,6 +141,7 @@ export function roomParts(home: HomeRegistry, areaId: string): RoomParts {
     readings: of([...home.temperatures, ...home.humidities]),
     openings: of(home.openings),
     cameras: of(home.cameras),
+    scenes: of(home.scenes),
     automations: of(home.automations),
   };
   const drawn = new Set(Object.values(parts).flat());
@@ -247,6 +251,12 @@ export function roomSections(
     parts.cameras,
     each(camera),
   );
+  const scenes = capped(
+    ctx,
+    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
+    parts.scenes,
+    (ids) => [[scenesCard(t('strategy.scenes'), ids)]],
+  );
   const rest = capped(
     ctx,
     { key: 'devices', title: 'strategy.devices', icon: 'fluvy:devices' },
@@ -257,6 +267,10 @@ export function roomSections(
     ctx,
     [
       [heading(back.title, 'fluvy:home', [], back.path)],
+      // its scenes first, a tap each, as its card's quick actions are read before its devices (#172)
+      ...when(scenes.shown.length, () =>
+        moreAfter([[scenesCard(t('strategy.scenes'), scenes.shown)]], scenes),
+      ),
       ...moreAfter(
         thermostats.shown.map((id) => [thermostat(id, ctx.style)]),
         thermostats,

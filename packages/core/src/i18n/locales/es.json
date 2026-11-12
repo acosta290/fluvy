@@ -600,6 +600,7 @@
     "indoor": "Interior",
     "outdoor": "Exterior",
     "automations": "Automatizaciones",
+    "scenes": "Escenas",
     "consumption": "Consumo",
     "batteries": "Baterías",
     "phones": "Móviles",

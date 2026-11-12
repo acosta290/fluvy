@@ -184,6 +184,10 @@ export const readoutsCards = (
     rows: run.map((id) => ({ entity: id, name: nameOf(id) })),
   }));
 
+/** Scenes (and what runs like one) on one Scenes card under a title, the last run marked. */
+export const scenesCard = (title: string, ids: readonly string[]): Card =>
+  full('scenes', { title, scenes: [...ids] });
+
 /** A thermostat in the dashboard's variant. */
 export const thermostat = (id: string, style: CardStyle): Card =>
   full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });

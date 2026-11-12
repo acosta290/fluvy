@@ -1157,7 +1157,8 @@ of whose members can act takes no tap. With a `confirmation` Home Assistant asks
 (blinds that only tilt beside blinds that close as well), and nothing moves before its answer. A hold (or
 `more-info`) opens an entity's details, or where the room opens for a set of several. `show_quick_actions: false` hides
 them. `show_arrow: false` hides the arrows on a tile's head and on its rows, so the words have their room; a tap still
-opens the room.
+opens the room. A scene's round runs the scene at a tap (`scene.turn_on`), as a script's runs the script; a scene has no
+on or off, so its round is never drawn as on.
 
 ```yaml
 type: custom:fluvy-room-card
@@ -1172,6 +1173,16 @@ quick_actions:
   - entity: switch.kettle
     name: Kettle
     color: '#e2725b'
+```
+
+```yaml
+type: custom:fluvy-room-card
+area: living_room
+quick_actions:
+  - lights
+  - scene.movie_night
+  - entity: scene.reading
+    icon: mdi:book-open-variant
 ```
 
 On the **photo**, `name_position: top` stands the room's name at the picture's top, so its foot is the quick actions'

@@ -23,9 +23,9 @@ time it opens, from the registries, so a new device shows up by itself.
 
 | View | What goes in it |
 | --- | --- |
-| **Home** | "Needs attention" first (leaks and smoke, open, unlocked, errors, low batteries; for an administrator also updates and repairs — hidden while all is clear), the greeting (your person, the date, the weather), the tabs, the lights under one heading, the covers, the running thermostat, the temperatures, the weather and the clock, the energy flow and the solar or home energy curve, the locks and openings, at the columns' feet the first media player, the vacuum, a to-do list and the first scene, and under the columns the house's appliances: the large ones as whole cards side by side (four across a desktop, as many as fit on a tablet or a phone), the small ones as rows, each band leading to the Appliances page |
+| **Home** | "Needs attention" first (leaks and smoke, open, unlocked, errors, low batteries; for an administrator also updates and repairs — hidden while all is clear), the greeting (your person, the date, the weather), the tabs, the lights under one heading, the covers, the running thermostat, the temperatures, the weather and the clock, the energy flow and the solar or home energy curve, the locks and openings, at the columns' feet the first media player, the vacuum, a to-do list and the house's scenes on one Scenes card, and under the columns the house's appliances: the large ones as whole cards side by side (four across a desktop, as many as fit on a tablet or a phone), the small ones as rows, each band leading to the Appliances page |
 | **Rooms** | a card a room (its photo where the area has one), headed by floor when the house has more than one; each room opens its own page with everything its card counts (see [A room's page](#a-rooms-page)) — when the house has two rooms with something in them |
-| **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the light automations as scenes last |
+| **Lights** | every light and every switch whose words say it is a light, grouped by area (indoor and outdoor when there are no areas), dimmable ones as light cards and switches as tiles; the scenes and the light automations last on one card, titled *Scenes*, or *Automations* where an automation is among them |
 | **Climate** | thermostats, water heaters and humidifiers, the weather, the temperature and humidity sensors that are not the weather service's — humidity paired with its temperature |
 | **Energy** | the energy flow and the balance, the house's power by source, the grid (by phase when its meters are named so), the batteries, a car charger, the day's flow, where it went and the score (when the Energy dashboard meters its sources), production, the energy dashboard's devices, their distribution, water and gas |
 | **Security** | alarm panels, locks, gates and garage doors, the openings, the first four cameras on one Cameras card — when the house has an alarm, a lock, a camera or a gate |
@@ -40,13 +40,14 @@ subview: it opens from its card, never from the tabs, and its heading leads back
 ## A room's page
 
 A room's page reaches every entity of its area that a dashboard shows (not hidden, not a configuration or diagnostic
-entity): in reading order, its thermostats, its lights, its blinds, its garage doors and gates (each a cover card), its
-fans, its media players, its plugs (with their power and energy beside them), its temperatures and humidities (each
-named by what it measures where it alone measures it, as the room card names them), its doors, windows, motion, leak,
-smoke and gas sensors on one Openings card for the room, its cameras, everything else it holds as rows under
-*Devices*, and its automations on one Automations card for the room (each with its switch and when it last ran); its
-appliances across the page as on Home. Each list keeps the house's cap (below), with its "N more" row; the Openings and
-Automations cards fold theirs at it on the card itself.
+entity): in reading order, its scenes on one Scenes card, as its card's quick actions come before its devices, its
+thermostats, its lights, its blinds, its garage doors and gates (each a cover card), its fans, its media players, its
+plugs (with their power and energy beside them), its temperatures and humidities (each named by what it measures where
+it alone measures it, as the room card names them), its doors, windows, motion, leak, smoke and gas sensors on one
+Openings card for the room, its cameras, everything else it holds as rows under *Devices*, and its automations on one
+Automations card for the room (each with its switch and when it last ran); its appliances across the page as on Home.
+Each list keeps the house's cap (below), with its "N more" row; the Openings and Automations cards fold theirs at it on
+the card itself.
 
 A room's card counts its devices among them, and fills while one is on: its lights, its fans and covers, its media
 players, its thermostats, water heaters and humidifiers, its vacuums and mowers, and its switches that power something.
@@ -55,9 +56,9 @@ is a plug or a relay; on a device that also has an appliance's controls (a selec
 dishwasher's programme, its delay, its start), a switch is the appliance's own option, and neither it nor those controls
 count — unless the device is a plug that files its timer or its power-on behaviour as no setting (some Tuya and
 Zigbee2MQTT plugs): its one switch beside a power or energy reading, with no other control, counts. Sensors, helpers,
-scenes, automations, locks and cameras never count; the page still reaches them all, its automations on an Automations
-card of their own. A plug tile on Home and on a room's page follows the same rule, and `rooms` (below) gives a room its
-own say: what it includes counts, what it excludes leaves its card and its page.
+scenes, automations, locks and cameras never count; the page still reaches them all, its scenes on a Scenes card and its
+automations on an Automations card of their own. A plug tile on Home and on a room's page follows the same rule, and
+`rooms` (below) gives a room its own say: what it includes counts, what it excludes leaves its card and its page.
 
 ## Capped lists
 
@@ -80,7 +81,7 @@ list of rows or tiles is shown instead: it takes the room a "1 more" row would.
 | `alarms`, `locks`, `cameras` | Security (the Security dashboard's Cameras view: 12), a room's cameras | 2, 4, 4 |
 | `media` | Media, a room | 6 |
 | `calendars`, `lists`, `timers`, `actions` | Agenda | 3, 3, 3, 6 |
-| `scenes` | Lights (scenes and light automations) | 6 |
+| `scenes` | Home, Lights (scenes and light automations), a room | 6 |
 | `batteries`, `phones`, `plants`, `helpers`, `updates` | Sensors | 8, 8, 4, 6, 8 |
 | `consumption` | the energy dashboard's devices (Energy; the Energy dashboard's Devices view: 12) | 8 |
 | `today` | the day's energy readings as stat tiles | 4 |

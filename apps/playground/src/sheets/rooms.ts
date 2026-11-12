@@ -249,6 +249,26 @@ const SUNROOM_ENTITIES = Object.fromEntries(
   SUNROOM.map(([entity_id]) => entry(entity_id, 'rm_sunroom')),
 );
 
+/*
+ * #172's lounge, lit by scenes rather than by its lamp: its page leads with them, and its card's rounds may run them.
+ */
+const LOUNGE: readonly StateSeed[] = [
+  ['light.rm_lounge', 'off', { friendly_name: 'Lounge lamp', supported_color_modes: ['onoff'] }],
+  [
+    'scene.rm_lounge_movie',
+    '2026-09-17T20:12:00+00:00',
+    { friendly_name: 'Movie night', entity_id: ['light.rm_lounge'] },
+  ],
+  ['scene.rm_lounge_reading', '2026-09-16T19:40:00+00:00', { friendly_name: 'Reading' }],
+  ['scene.rm_lounge_goodnight', 'unknown', { friendly_name: 'Goodnight' }],
+  ['scene.rm_lounge_dinner', '2026-09-15T18:02:00+00:00', { friendly_name: 'Dinner' }],
+  ['scene.rm_lounge_party', 'unknown', { friendly_name: 'Party' }],
+];
+const LOUNGE_ENTITIES = Object.fromEntries(
+  LOUNGE.map(([entity_id]) => entry(entity_id, 'rm_lounge')),
+);
+const LOUNGE_AREA = { area_id: 'rm_lounge', name: 'Lounge', icon: 'mdi:sofa' };
+
 /**
  * A room's page as the automatic dashboard lays it out (#76), in the page's language: the way back, then what it
  * holds — in a column, in reading order. Read when the frame is drawn, once the page's words have landed.
@@ -396,6 +416,7 @@ export const sheet: SheetSpec = {
     ...GALLEY,
     ...UTILITY,
     ...SUNROOM,
+    ...LOUNGE,
     ['switch.rm_porch', 'unavailable', { friendly_name: 'Porch lantern' }],
     [
       'climate.rm_study',
@@ -493,6 +514,7 @@ export const sheet: SheetSpec = {
       ...GALLEY_ENTITIES,
       ...UTILITY_ENTITIES,
       ...SUNROOM_ENTITIES,
+      ...LOUNGE_ENTITIES,
     },
     devices: {
       [GARAGE_DEVICE.id]: GARAGE_DEVICE,
@@ -539,6 +561,7 @@ export const sheet: SheetSpec = {
       rm_galley: GALLEY_AREA,
       rm_utility: { area_id: 'rm_utility', name: 'Utility room', icon: 'mdi:washing-machine' },
       rm_sunroom: { area_id: 'rm_sunroom', name: 'Sunroom', icon: 'mdi:flower' },
+      rm_lounge: LOUNGE_AREA,
     },
     floors: {
       rm_ground: { floor_id: 'rm_ground', name: 'Ground floor', level: 0 },
@@ -901,6 +924,25 @@ export const sheet: SheetSpec = {
           temperature_entity: 'sensor.rm_hall_a_temperature',
           readout_labels: 'none',
           cols: 6,
+        }),
+      ],
+    },
+    // #172: a room's page leads with its scenes, on one Scenes card, before its lamp; none of them a row of its devices
+    {
+      title: 'Room page · its scenes first (#172)',
+      get cards() {
+        return roomPage(LOUNGE_AREA, LOUNGE, LOUNGE_ENTITIES, { id: 'rm-lounge' });
+      },
+    } satisfies FrameSpec,
+    // …and its card's rounds run them: a scene has no on or off, so its round is never drawn as on
+    {
+      title: 'Room · a scene’s round (#172)',
+      cards: [
+        room({
+          area: 'rm_lounge',
+          variant: 'tile',
+          quick_actions: ['lights', 'scene.rm_lounge_movie', 'scene.rm_lounge_goodnight'],
+          path: '/fluvy-auto/room-rm_lounge',
         }),
       ],
     },

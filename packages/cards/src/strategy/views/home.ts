@@ -12,6 +12,7 @@ import {
   lightGroups,
   readoutsCards,
   runsOf,
+  scenesCard,
   sizedTile,
   solarCurves,
   solarGauges,
@@ -117,6 +118,12 @@ export function homeView(ctx: StrategyContext): Section[] {
     [...home.domain('lock'), ...home.openings],
     (ids) => byArea(ctx, ids, t('strategy.security'), (title, own) => [rowsCard(home, title, own)]),
   );
+  const scenes = capped(
+    ctx,
+    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
+    home.scenes,
+    (ids) => [[scenesCard(t('strategy.scenes'), ids)]],
+  );
   // what needs a look, then the controls, the climate and the day, the energy and the house's state, in reading
   // order; the single-purpose cards fill the columns' feet; the appliances as the reporter of #47 drew them, across
   // under them
@@ -179,8 +186,10 @@ export function homeView(ctx: StrategyContext): Section[] {
       // every printer, compact: an overview's card (the camera and the buttons are a tap away, on the device)
       ...home.printers.map((device) => full('printer', { device, variant: 'compact' })),
       ...when(home.first('todo'), (id) => [full('todo', { entity: id })]),
-      // the house's first scene, one tap away
-      ...when(home.scenes[0], (id) => [full('scene', { entity: id, ...home.named(id) })]),
+      // the house's scenes, a tap away, their "N more" row kept under them
+      ...when(scenes.shown.length, () =>
+        looseAfter([scenesCard(t('strategy.scenes'), scenes.shown)], scenes),
+      ),
     ],
   );
   return [
@@ -192,19 +201,23 @@ export function homeView(ctx: StrategyContext): Section[] {
   ];
 }
 
-/** By area when areas are assigned, else indoor / outdoor; the biggest group first; light automations as scenes last. */
+/**
+ * By area when areas are assigned, else indoor / outdoor; the biggest group first; the scenes and the light automations
+ * last, on one card titled by what it holds: Scenes, else Automations.
+ */
 export function lightsView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   const blocks = lightGroups(ctx, home.lights);
-  const scenesCard = (ids: readonly string[]): Card =>
-    full('scenes', { title: t('strategy.automations'), scenes: [...ids] });
+  const automations = home.automations.filter((id) => LIGHT_WORDS.test(id));
+  const title = automations.length ? 'strategy.automations' : 'strategy.scenes';
   const scenes = capped(
     ctx,
-    { key: 'scenes', title: 'strategy.automations', icon: 'fluvy:sparkle' },
-    [...home.scenes, ...home.automations.filter((id) => LIGHT_WORDS.test(id))],
-    (ids) => [[scenesCard(ids)]],
+    { key: 'scenes', title, icon: 'fluvy:sparkle' },
+    [...home.scenes, ...automations],
+    (ids) => [[scenesCard(t(title), ids)]],
   );
-  if (scenes.shown.length) blocks.push(...moreAfter([[scenesCard(scenes.shown)]], scenes));
+  if (scenes.shown.length)
+    blocks.push(...moreAfter([[scenesCard(t(title), scenes.shown)]], scenes));
   return flowed(ctx, blocks);
 }
 

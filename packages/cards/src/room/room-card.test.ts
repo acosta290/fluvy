@@ -876,6 +876,25 @@ describe('a room’s quick actions (#113)', () => {
     ]);
   });
 
+  it('runs a scene of its own at a tap, never drawn as on (#172)', async () => {
+    sent.length = 0;
+    const evening: Seed = [
+      'scene.lounge_evening',
+      '2026-09-17T18:31:00+00:00',
+      { friendly_name: 'Evening' },
+    ];
+    const card = await room(
+      { area: 'lounge', quick_actions: ['scene.lounge_evening'] },
+      lounge([evening]),
+    );
+    const [round] = rounds(card);
+    expect(names(card)).toEqual(['Evening']);
+    expect(round?.classList.contains('is-on')).toBe(false);
+    round!.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(sent.map(({ domain, service }) => `${domain}.${service}`)).toEqual(['scene.turn_on']);
+  });
+
   it('holds: an entity’s details, a set of one’s too; a set of several opens where the room opens', async () => {
     const opened: string[] = [];
     const went: string[] = [];

@@ -859,8 +859,10 @@ describe('custom:fluvy-home strategy', () => {
     // Energy usage card (#62) is the person's to place; so is the Slider card (#77): the dashboards set a player's
     // volume, a number and a fan on their own cards; and the Vehicle card (#84), a car being the person's to place;
     // and the remote card (#143): which television, which remote entity and which receiver its volume goes to are
-    // the person's to say, and a player's own card stands for a television on the dashboards
+    // the person's to say, and a player's own card stands for a television on the dashboards; one scene's tile too,
+    // the dashboards gathering the scenes on one Scenes card (#172)
     const byHand = new Set([
+      'custom:fluvy-scene-card',
       'custom:fluvy-automations-card',
       'custom:fluvy-remote-card',
       'custom:fluvy-appliance-card',
@@ -2303,5 +2305,132 @@ describe('custom:fluvy-home strategy — what a dashboard leaves out of every vi
     // a list that leaves nothing out tunes no room
     for (const exclude of [[], ['light.nothing_here'], [7, '', null] as never])
       expect(new HomeRegistry(hass, {}, exclude).tuning('kitchen')).toEqual({});
+  });
+});
+
+describe('custom:fluvy-home strategy — the house’s scenes (#172)', () => {
+  /** A scene of that name, in that area (none: the house's). */
+  const scene = (id: string, friendly_name: string, area?: string): DemoEntity =>
+    entity(`scene.${id}`, 'unknown', { friendly_name }, area ? { area_id: area } : {});
+  /** The demo home with a lounge of a lamp and two scenes, and six scenes of no room. */
+  const scenic = () => {
+    const hass = house([
+      entity(
+        'light.lounge_lamp',
+        'off',
+        { supported_color_modes: ['onoff'] },
+        { area_id: 'lounge' },
+      ),
+      scene('lounge_movie', 'Movie', 'lounge'),
+      scene('lounge_reading', 'Reading', 'lounge'),
+      ...['Morning', 'Dinner', 'Away', 'Night', 'Party', 'Relax'].map((name) =>
+        scene(name.toLowerCase(), name),
+      ),
+    ]) as unknown as HomeAssistant;
+    hass.areas['lounge'] = { area_id: 'lounge', name: 'Lounge' } as never;
+    return hass;
+  };
+  const scenesCards = (cards: readonly Record<string, unknown>[]) =>
+    cards.filter((card) => card['type'] === 'custom:fluvy-scenes-card');
+
+  it('gathers the house’s scenes on Home on one Scenes card, at the cap, its "N more" kept under it', async () => {
+    const hass = scenic();
+    const home = new HomeRegistry(hass);
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    const page = views.find((view) => view.path === 'home')!;
+    const cards = cardsIn([page]);
+    expect(cards.some((card) => card.type === 'custom:fluvy-scene-card')).toBe(false);
+    expect(scenesCards(cards)).toEqual([
+      {
+        type: 'custom:fluvy-scenes-card',
+        title: 'Scenes',
+        scenes: home.scenes.slice(0, CAPS.scenes),
+        grid_options: { columns: 12 },
+      },
+    ]);
+    // its "N more" row right under it, in its column, to a page of every scene
+    const column = page.sections.find((section) =>
+      section.cards.some((card) => card.type === 'custom:fluvy-scenes-card'),
+    )!.cards;
+    const at = column.findIndex((card) => card.type === 'custom:fluvy-scenes-card');
+    expect(column[at + 1]).toMatchObject({
+      type: 'custom:fluvy-entities-card',
+      more: home.scenes.length - CAPS.scenes,
+      more_path: '/fluvy-home/home-scenes',
+    });
+    const every = views.find((view) => view.path === 'home-scenes')!;
+    expect(every).toMatchObject({ subview: true, title: 'Scenes', back_path: '/fluvy-home/home' });
+    expect(scenesCards(cardsIn([every])).flatMap((card) => card['scenes'])).toEqual(home.scenes);
+  });
+
+  it('gives a room’s page its scenes on a Scenes card first, never rows among its devices', async () => {
+    const hass = scenic();
+    const parts = roomParts(new HomeRegistry(hass), 'lounge');
+    expect(parts.scenes).toEqual(['scene.lounge_movie', 'scene.lounge_reading']);
+    expect(parts.rest).toEqual([]);
+    const { views } = await generate({ type: 'custom:fluvy-rooms' }, hass as never);
+    const cards = cardsIn([views.find((view) => view.path === 'room-lounge')!]);
+    // the greeting, the way back, then its scenes before its lights
+    expect(cards.map((card) => card.type).slice(1, 4)).toEqual([
+      'custom:fluvy-heading-card',
+      'custom:fluvy-scenes-card',
+      'custom:fluvy-heading-card',
+    ]);
+    expect(scenesCards(cards)).toEqual([
+      expect.objectContaining({ title: 'Scenes', scenes: parts.scenes }),
+    ]);
+    expect(cards.filter((card) => card.type === 'custom:fluvy-entities-card')).toEqual([]);
+    expect(reachedFrom(views, 'room-lounge', hass as never).has('scene.lounge_reading')).toBe(true);
+  });
+
+  it('titles the Lights view’s card by what it holds: Scenes, Automations where a light automation is among them', async () => {
+    const titled = async (more: readonly DemoEntity[]) =>
+      scenesCards(
+        cardsIn(
+          (await generate({ type: 'custom:fluvy-home' }, house(more))).views.filter(
+            (view) => view.path === 'lights',
+          ),
+        ),
+      ).map((card) => card['title']);
+    const relax = scene('relax', 'Relax');
+    const automation = entity('automation.hall_light_at_dusk', 'on', {
+      friendly_name: 'Hall light at dusk',
+    });
+    expect(await titled([relax])).toEqual(['Scenes']);
+    expect(await titled([relax, automation])).toEqual(['Automations']);
+    expect(await titled([automation])).toEqual(['Automations']);
+    expect(await titled([])).toEqual([]);
+  });
+
+  it('leaves out what the dashboard excludes and caps them as asked; a house without scenes draws none', async () => {
+    const hass = scenic();
+    const { views } = await generate(
+      {
+        type: 'custom:fluvy-home',
+        exclude: ['scene.lounge_movie', 'scene.party'],
+        caps: { scenes: 2 },
+      },
+      hass as never,
+    );
+    // Home's and the Lights view's
+    expect(
+      scenesCards(cardsIn(views.filter((view) => !view.subview))).map((card) => card['scenes']),
+    ).toEqual([
+      ['scene.away', 'scene.dinner'],
+      ['scene.away', 'scene.dinner'],
+    ]);
+    expect(
+      scenesCards(cardsIn(views.filter((view) => view.path === 'room-lounge'))).map(
+        (card) => card['scenes'],
+      ),
+    ).toEqual([['scene.lounge_reading']]);
+    expect(scenesCards(cardsIn(views)).flatMap((card) => card['scenes'])).not.toContain(
+      'scene.lounge_movie',
+    );
+    for (const template of ['home', 'rooms', 'wall'] as const)
+      expect(
+        scenesCards(cardsIn((await generate({ type: `custom:fluvy-${template}` }, house())).views)),
+        template,
+      ).toEqual([]);
   });
 });

@@ -75,7 +75,8 @@ function firedAt(view: EntityView, state: string): number {
  * most recently carries the accent fill (the sheet's one active tile), and a press fills its tile at once (optimistic) while the
  * call is on its way.
  */
-/** The tiles' grid gap, and a tile's padding (16 + 16), circle (44) and circle-to-text gap (12). */
+/** A tile's height, the tiles' grid gap, and a tile's padding (16 + 16), circle (44) and circle-to-text gap (12). */
+const TILE = 76;
 const GRID_GAP = 16;
 const TILE_CHROME = 88;
 
@@ -85,7 +86,7 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
     const n = entryCount(config, ['scenes', 'entities']);
     const perRow = columnsOf(config.columns, 'auto') === 1 ? 1 : 2;
     // no scenes: the empty panel where the tiles would be
-    return (config.title ? 40 : 0) + (n ? rowsOf(n, perRow) * 84 - 8 : EMPTY);
+    return (config.title ? 40 : 0) + (n ? rowsOf(n, perRow) * (TILE + GRID_GAP) - GRID_GAP : EMPTY);
   }
 
   static override styles: CSSResultGroup = [
