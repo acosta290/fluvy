@@ -110,10 +110,10 @@ export function houseShares(a: Allocation | null): { key: Ink['tone']; value: nu
   ];
 }
 
-/** The words beside a node: which figure, and what the direction is called. */
+/** The words beside a node: which figure, what the direction is called, and whether it runs out of the house. */
 export interface Said {
-  readonly first: { readonly value: number | null; readonly way: string };
-  readonly second?: { readonly value: number; readonly way: string };
+  readonly first: { readonly value: number | null; readonly way: string; readonly out: boolean };
+  readonly second?: { readonly value: number; readonly way: string; readonly out: boolean };
   /** Nothing flows (no way reaches its threshold): the figure, whatever it says, in the secondary ink. */
   readonly idle: boolean;
 }
@@ -150,18 +150,20 @@ export function waysOf(
 export function said(node: SceneNode, words: WayWords, reads?: (total: number) => boolean): Said {
   const into = node.reading.in;
   const out = node.reading.out;
-  if (into === null || out === null) return { first: { value: null, way: '' }, idle: false };
+  if (into === null || out === null)
+    return { first: { value: null, way: '', out: false }, idle: false };
   const flows = (value: number): boolean => value >= node.threshold && value > 0;
   const says = reads ?? flows;
   const inSaid = says(into);
   const outSaid = !oneWay(node.kind) && says(out);
   const idle = !flows(into) && (oneWay(node.kind) || !flows(out));
   const ways = waysOf(node.kind, words, reads !== undefined);
-  if (!ways) return { first: { value: inSaid ? into : 0, way: '' }, idle };
+  if (!ways) return { first: { value: inSaid ? into : 0, way: '', out: false }, idle };
   const [inWord, outWord] = ways;
-  if (inSaid && outSaid)
-    return { first: { value: into, way: inWord }, second: { value: out, way: outWord }, idle };
-  if (outSaid) return { first: { value: out, way: outWord }, idle };
-  if (inSaid) return { first: { value: into, way: inWord }, idle };
-  return { first: { value: 0, way: '' }, idle: true };
+  const inward = { value: into, way: inWord, out: false };
+  const outward = { value: out, way: outWord, out: true };
+  if (inSaid && outSaid) return { first: inward, second: outward, idle };
+  if (outSaid) return { first: outward, idle };
+  if (inSaid) return { first: inward, idle };
+  return { first: { value: 0, way: '', out: false }, idle: true };
 }

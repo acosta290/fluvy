@@ -783,6 +783,16 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // #170: a phone's column keeps the diagram: a battery says its way on the line under its figure, a day's pair by
+    // its lanes' heads beside its figures
+    {
+      title: 'A phone’s column',
+      width: 344,
+      cards: [
+        { type: 'custom:fluvy-energy-flow-card', ...house19 },
+        { type: 'custom:fluvy-energy-flow-card', title: 'Today', period: 'day', _now: NOW },
+      ],
+    },
     // #170: a card keeps its lanes or its list at a width whatever its figures say, its battery charging 0.6 kW or
     // discharging 10.4 kW
     {
@@ -800,8 +810,10 @@ export const sheet: SheetSpec = {
         cols: 6,
       })),
     },
+    // the list stands as tall as the card declares, in every language (#170)
     {
       title: 'Half a column',
+      heights: [152, 172, 211, 266],
       cards: [
         { type: 'custom:fluvy-energy-flow-card', ...house19, title: 'Energy', cols: 6 },
         {

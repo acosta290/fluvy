@@ -1,4 +1,4 @@
-import { flowHeight } from '../energy-family.js';
+import { flowHeight, flowStage } from '../energy-family.js';
 import {
   deviceNameOf,
   strings,
@@ -82,6 +82,8 @@ import {
   type Cubic,
   type Point,
   type RowsLayout,
+  type WayMode,
+  type WordsWidth,
 } from './geometry.js';
 import { PulseEngine, type MotionMode, type Pulse } from './motion.js';
 import {
@@ -89,6 +91,7 @@ import {
   KIND_INK,
   lanesOf,
   oneWay,
+  outInk,
   said,
   waysOf,
   type Ink,
@@ -163,6 +166,8 @@ const PERIOD_THRESHOLD = 50;
 const USUAL = 8888;
 /** The widest reading a house's figures take: three figures and a separator in kW or kWh (88.9), five in W or Wh. */
 const WIDEST = 88888;
+/** A way's glyph beside its figure: 4 off its unit, 8 wide. */
+const WAY_GLYPH = 12;
 
 /** One node of the diagram, resolved: what it is, how it reads, how it is drawn. */
 interface Node extends SceneNode {
@@ -180,12 +185,18 @@ interface Node extends SceneNode {
   readonly dead: boolean;
 }
 
-interface Words {
-  readonly label: string;
+/** A figure's line: the figure, its unit, its way's word, and the lane it says (out of the house or into it, its ink). */
+interface Line {
   readonly value: string;
   readonly unit: string;
   readonly way: string;
-  readonly second?: { readonly value: string; readonly unit: string; readonly way: string };
+  readonly out?: boolean;
+  readonly ink?: Ink;
+}
+
+interface Words extends Line {
+  readonly label: string;
+  readonly second?: Line;
   readonly dim: boolean;
 }
 
@@ -544,12 +555,17 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const reads = period ? (total: number): boolean => !writesZero(total, scale) : undefined;
     const words = shown.map((n): Words => {
       const say = said(n, ways, reads);
-      const first = fig(say.first.value);
+      // a way's ink is its lane's: the node's toward the house, its origin's out of it
+      const line = (l: { value: number | null; way: string; out: boolean }): Line => ({
+        ...fig(l.value),
+        way: l.way,
+        out: l.out,
+        ink: l.out ? outInk(n, origins) : n.ink,
+      });
       return {
         label: n.label,
-        ...first,
-        way: say.first.way,
-        ...(say.second ? { second: { ...fig(say.second.value), way: say.second.way } } : {}),
+        ...line(say.first),
+        ...(say.second ? { second: line(say.second) } : {}),
         dim: say.idle || stale,
       };
     });
@@ -811,26 +827,75 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     );
   }
 
-  private wordsWidth(w: Words): number {
+  /** A figure's line with its way said `as`: beside the figure, on the line under it, or by its glyph. */
+  private saidWidth(l: Line, as: WayMode): number {
+    if (as === 'inline' || !l.way)
+      return this.lineWidth(l.value, l.unit, as === 'inline' ? l.way : '');
+    const figure = this.lineWidth(l.value, l.unit, '');
+    return as === 'line'
+      ? Math.max(figure, this.head.ruler.width('en-words__dir', l.way))
+      : figure + WAY_GLYPH;
+  }
+
+  private wordsWidth(w: Words, as: WayMode = 'inline'): number {
+    return Math.max(this.head.ruler.width('en-words__label', w.label), this.linesWidth(w, as));
+  }
+
+  /** A words block's figure lines, their ways said `as`. */
+  private linesWidth(w: Words, as: WayMode): number {
+    return Math.max(this.saidWidth(w, as), w.second ? this.saidWidth(w.second, as) : 0);
+  }
+
+  /**
+   * The ways a node may say its way, the one it prefers first (#170): beside its figure; on the free line under it, where
+   * it has no second figure there; by a glyph in its lane's ink.
+   */
+  private waysFor(n: Node, words: Words): readonly WayMode[] {
+    if (oneWay(n.kind)) return ['inline'];
+    return n.pair || words.second ? ['inline', 'glyph'] : ['inline', 'line', 'glyph'];
+  }
+
+  /** A node's figure lines whatever it reads, its way said `as`: the usual figure (`USUAL`) with each of its ways. */
+  private steadyLines(n: Node, period: boolean, as: WayMode): number {
+    const usual = this.figureOf(USUAL, period);
     return Math.max(
-      this.head.ruler.width('en-words__label', w.label),
-      this.lineWidth(w.value, w.unit, w.way),
-      w.second ? this.lineWidth(w.second.value, w.second.unit, w.second.way) : 0,
+      ...(waysOf(n.kind, this.ways(), period) ?? ['']).map((way) =>
+        this.saidWidth({ ...usual, way }, as),
+      ),
     );
   }
 
   /**
-   * A node's words whatever it reads (#170): its label with a full charge, and the usual figure (`USUAL`) in the card's
-   * unit and decimals with each of its ways.
+   * A node's words in each of its ways (#170): as they can read, its label with a full charge, and as they read now. The
+   * rows take the first that leaves a lane.
    */
-  private steadyWidth(n: Node, period: boolean): number {
-    const usual = this.figureOf(USUAL, period);
-    return Math.max(
-      this.head.ruler.width('en-words__label', charged(n.name, n.level === null ? null : 100)),
-      ...(waysOf(n.kind, this.ways(), period) ?? ['']).map((way) =>
-        this.lineWidth(usual.value, usual.unit, way),
-      ),
+  private widths(n: Node, words: Words, period: boolean): WordsWidth[] {
+    const label = this.head.ruler.width(
+      'en-words__label',
+      charged(n.name, n.level === null ? null : 100),
     );
+    return this.waysFor(n, words).map((way) => ({
+      way,
+      steady: Math.max(label, this.steadyLines(n, period, way)),
+      now: this.wordsWidth(words, way),
+    }));
+  }
+
+  /**
+   * How a list's row says its way in `room`: the first of its ways its figures hold in, as they can read and as they
+   * read now; none where none holds.
+   */
+  private listWay(n: Node, words: Words, period: boolean, room: number): WayMode | undefined {
+    return this.waysFor(n, words).find(
+      (as) => Math.max(this.steadyLines(n, period, as), this.linesWidth(words, as)) <= room,
+    );
+  }
+
+  /** A node's round's words: its name, and its ways where a glyph says them beside its figures. */
+  private roundLabel(n: Node, words: Words, as: WayMode): string {
+    return as === 'glyph'
+      ? [n.label, words.way, words.second?.way ?? ''].filter(Boolean).join(' · ')
+      : n.label;
   }
 
   /** A reading of `value` as the card writes it, in its unit and decimals: the figure and the unit. */
@@ -844,15 +909,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const widest = this.figureOf(WIDEST, scene.period !== null);
     return rowsLayout({
       width: w,
-      nodes: scene.nodes.map((n, i) => {
-        const words = scene.words[i] as Words;
-        return {
-          wordsH: blockH(words),
-          wordsW: this.wordsWidth(words),
-          steadyW: this.steadyWidth(n, scene.period !== null),
-          pair: n.pair,
-        };
-      }),
+      nodes: scene.nodes.map((n, i) => ({
+        words: this.widths(n, scene.words[i] as Words, scene.period !== null),
+        pair: n.pair,
+      })),
       houseWordsH: 36,
       // laid out for its widest figure, so its words keep their place as its figures change
       houseWordsW: Math.max(
@@ -1015,7 +1075,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       </g>`;
   }
 
-  private nodeIcon(n: Node, c: Point): TemplateResult {
+  private nodeIcon(n: Node, c: Point, label = n.label): TemplateResult {
     const active = n.lanes.some((l) => !l.rest && !l.hidden);
     return html`<div
       class="en-node ${n.dead ? 'is-outage' : ''}"
@@ -1024,7 +1084,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     >
       ${ico(n.glyph, n.dead ? 'neutral' : active ? n.tone : 'neutral', {
         onTap: n.entity ? () => this.tap(n.entity, { action: 'more-info' }) : undefined,
-        label: n.label,
+        label,
       })}
     </div>`;
   }
@@ -1086,9 +1146,12 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       ${scene.nodes.map((n, i) => {
         const c = rows.nodes[i] as Point;
         const words = scene.words[i] as Words;
-        return html`${this.nodeIcon(n, c)}
-          <div class="en-place" style="left:${TEXT}px;top:${c[1] - blockH(words) / 2}px">
-            ${renderWords(words, 'left')}
+        const as = rows.ways[i] ?? 'inline';
+        // a node with a line under its figure (a pair's second, its way) stands as its three lines, whatever it says now
+        const top = n.pair || as === 'line' ? 28 : blockH(words) / 2;
+        return html`${this.nodeIcon(n, c, this.roundLabel(n, words, as))}
+          <div class="en-place" style="left:${TEXT}px;top:${c[1] - top}px">
+            ${renderWords(words, 'left', as, n.pair)}
           </div>`;
       })}
       ${this.houseIcon(rows.house)}
@@ -1285,17 +1348,29 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   }
 
   /** Too narrow for lanes: one row per node, the direction on its own line when its line would not fit. */
+  /**
+   * Too narrow for lanes: one row per node, its way beside its figure, on the line under it or by a glyph, the rows
+   * spread over the height the diagram declares (`flowStage`).
+   */
   private renderList(scene: Scene, w: number): TemplateResult {
-    const all = [...scene.words, scene.house];
-    // below Home Assistant's own minimum a figure no longer fits beside a circle: the rows drop their circles
-    const bare = all.some(
-      (words) =>
-        this.lineWidth(words.value, words.unit, '') > w - TEXT ||
-        (words.second
-          ? this.lineWidth(words.second.value, words.second.unit, '') > w - TEXT
-          : false),
-    );
+    const period = scene.period !== null;
+    // below Home Assistant's own minimum a figure no longer fits beside a circle, said any way: the rows drop their circles
+    const bare =
+      scene.nodes.some((n, i) => !this.listWay(n, scene.words[i] as Words, period, w - TEXT)) ||
+      this.linesWidth(scene.house, 'inline') > w - TEXT;
     const room = bare ? w : w - TEXT;
+    const ways = scene.nodes.map(
+      (n, i) => this.listWay(n, scene.words[i] as Words, period, room) ?? 'glyph',
+    );
+    // the rows on the 4 px grid, as far apart as the height the diagram declares leaves them
+    const heights = [
+      ...scene.nodes.map((n, i) => wordsH(scene.words[i] as Words, n.pair, ways[i] ?? 'inline')),
+      36,
+    ].map((h) => (bare ? h : Math.max(44, h)));
+    const H = flowStage(Math.max(1, scene.nodes.length));
+    const gap =
+      Math.floor((H - heights.reduce((a, b) => a + b, 0)) / Math.max(1, scene.nodes.length) / 4) *
+      4;
     const row = (
       glyph: string,
       tone: Tone,
@@ -1303,12 +1378,9 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       words: Words,
       tap: (() => void) | undefined,
       label: string,
+      as: WayMode,
+      pair = false,
     ): TemplateResult => {
-      const wraps =
-        this.lineWidth(words.value, words.unit, words.way) > room ||
-        (words.second
-          ? this.lineWidth(words.second.value, words.second.unit, words.second.way) > room
-          : false);
       // "Battery · 62 %" keeps "Battery" in a narrow column: the segments after the first go before anything is cut
       const fitted = fitLine(
         words.label.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
@@ -1319,20 +1391,24 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         class="en-list__row ${bare ? 'is-bare' : ''}"
         data-accent=${accent ?? nothing}
       >
-        ${bare ? nothing : ico(glyph, tone, { onTap: tap, label })}${renderWords({ ...words, label: fitted }, 'left', wraps)}
+        ${bare ? nothing : ico(glyph, tone, { onTap: tap, label })}${renderWords({ ...words, label: fitted }, 'left', as, pair)}
       </div>`;
     };
-    return html`<div class="en-list">
-      ${scene.nodes.map((n, i) =>
-        row(
+    return html`<div class="en-list" style="height:${H}px;gap:${gap}px">
+      ${scene.nodes.map((n, i) => {
+        const words = scene.words[i] as Words;
+        const as = ways[i] ?? 'inline';
+        return row(
           n.glyph,
           n.dead || n.lanes.every((l) => l.rest || l.hidden) ? 'neutral' : n.tone,
           n.accent,
-          scene.words[i] as Words,
+          words,
           n.entity ? () => this.tap(n.entity, { action: 'more-info' }) : undefined,
-          n.label,
-        ),
-      )}
+          this.roundLabel(n, words, as),
+          as,
+          n.pair,
+        );
+      })}
       ${row(
         'home',
         'neutral',
@@ -1340,6 +1416,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         scene.house,
         this.config?.home ? () => this.tap(this.config?.home, { action: 'more-info' }) : undefined,
         scene.house.label,
+        'inline',
       )}
     </div>`;
   }
@@ -1488,20 +1565,50 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 const charged = (name: string, level: number | null): string =>
   level === null ? name : `${name} · ${Math.round(Math.min(100, Math.max(0, level)))} %`;
 
-/** A words block's height: label 16, a value line 20 each, a direction line 16 when it wraps. */
-function blockH(w: Words | undefined, wraps = false): number {
-  if (!w) return 36;
-  return 16 + 20 + (w.second ? 20 : 0) + (wraps ? (w.way ? 16 : 0) + (w.second?.way ? 16 : 0) : 0);
+/** A words block's height: label 16, a value line 20 each. */
+function blockH(w: Words | undefined): number {
+  return w?.second ? 56 : 36;
 }
 
-function renderWords(w: Words, align: 'left' | 'right' | 'center', wraps = false): TemplateResult {
-  const line = (value: string, unit: string, way: string): TemplateResult =>
-    html`<span class="en-words__value"
-        >${value}${unit || (way && !wraps) ? html`<span class="en-words__unit">${unit}${way && !wraps ? ` ${way}` : ''}</span>` : nothing}</span
-      >${way && wraps ? html`<span class="en-words__dir">${way}</span>` : nothing}`;
+/**
+ * A node's words block as it stands whatever it says: label 16 and a value line 20, and a pair's second (20) or its
+ * way's own line (16) held where it may say one.
+ */
+const wordsH = (w: Words, pair: boolean, as: WayMode): number =>
+  pair || w.second ? 56 : as === 'line' ? 52 : 36;
+
+/** A way said by its lane's own head (#170): toward the house or away from it, in the lane's ink. */
+const wayGlyph = (l: Line): TemplateResult =>
+  html`<svg
+    class="en-words__way en-ink--${l.ink?.tone ?? 'home'}"
+    data-accent=${l.ink?.accent ?? nothing}
+    viewBox="-7 -4 8 8"
+    width="8"
+    height="8"
+    aria-hidden="true"
+  >
+    <path d=${headPath('thin')} transform=${l.out ? 'rotate(180 -3 0)' : nothing}></path>
+  </svg>`;
+
+/**
+ * A node's words, its way said `as`: beside its figure, on the line under it, or by a glyph. A `pair` holds its second
+ * line, and a way said on its own line that line, while they say nothing, so the words stand still.
+ */
+function renderWords(
+  w: Words,
+  align: 'left' | 'right' | 'center',
+  as: WayMode = 'inline',
+  pair = false,
+): TemplateResult {
+  const line = (l: Line): TemplateResult => {
+    const beside = l.way && as === 'inline' ? ` ${l.way}` : '';
+    return html`<span class="en-words__value"
+        >${l.value}${l.unit || beside ? html`<span class="en-words__unit">${l.unit}${beside}</span>` : nothing}${l.way && as === 'glyph' ? wayGlyph(l) : nothing}</span
+      >${as === 'line' ? html`<span class="en-words__dir">${l.way}</span>` : nothing}`;
+  };
   return html`<span class="en-words en-words--${align} ${w.dim ? 'is-dim' : ''}"
-    ><span class="en-words__label" data-name>${w.label}</span>${line(w.value, w.unit, w.way)}${
-      w.second ? line(w.second.value, w.second.unit, w.second.way) : nothing
+    ><span class="en-words__label" data-name>${w.label}</span>${line(w)}${
+      w.second ? line(w.second) : pair ? html`<span class="en-words__value"></span>` : nothing
     }</span
   >`;
 }

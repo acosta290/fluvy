@@ -920,14 +920,20 @@ a dashed ring, its figure "—", the sub "Grid · unavailable · since 19:47" (i
 leaves whole first), the badge "Unavailable". Nothing is taken away in any state, so nothing reshuffles.
 
 **Rows (the default).** Sources stacked on the left, one pitch (80) apart from TOP 42 (one pitch under the head's
-icon centre); words centred on their circle (lines 16 · 20 · 20); every lane leaves 12 px after the widest words of
-the column (measured) and meets the house's ring (34 = 28 + 6) at a slot: 20 px of arc between neighbours (lane 6 +
+icon centre); words centred on their circle (lines 16 · 20 · 20), a node with a line under its figure (a pair's
+second, its way) standing as its three lines whatever it says; every lane leaves 12 px after the widest words of the
+column, measured as they can read (the label with a full charge, a usual figure, 8.9 kW, with each of its ways) and
+as they read now, and meets the house's ring (34 = 28 + 6) at a slot: 20 px of arc between neighbours (lane 6 +
 head 8 + 6 clear); a grid that can import and export at once (read per phase, or by two sensors) is a pair of
 parallel lanes 16 px apart, its second lane shown only while it does both; the window is 90° above the house's left
-point and 48° below it (its words hang there); when the slots cannot fit, a pair shares one contact; a pair level
-with the house arrives level at ±8. A lane shorter than 56 px is no lane: the card lists its nodes (the direction
-drops to its own line only when its line would not fit, and then every line of that node does; a label keeps its
-first segment — "Battery · 62 %" → "Battery"); below Home Assistant's own minimum the rows drop their circles.
+point and 48° below it (its words hang there, lower where a lane would pass within 4 px); when the slots cannot fit,
+a pair shares one contact; a pair level with the house arrives level at ±8. Before the card lists, its words give
+way (1.19.1): a node says its way on the free line under its figure, a pair, which has none, by its lane's own head
+beside each figure in the lane's ink, the word its round's label. A lane shorter than 56 px even so is no lane: the
+card lists its nodes, spread over the height the diagram takes, each saying its way the same way where its line
+would not hold beside its circle (a label keeps its first segment — "Battery · 62 %" → "Battery"); below Home
+Assistant's own minimum the rows drop their circles. The arrangement and the height hold for a config at a width,
+whatever its figures say.
 Consumers (≥ 560 of content) mirror the sources on the right, the house in the middle, their lanes in ink; narrower,
 they are rows with ink bars, "64 % of the house", and the rest of the house as its own row.
 

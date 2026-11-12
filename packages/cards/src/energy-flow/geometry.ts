@@ -13,7 +13,7 @@
  * - The house's words hang under its ring, lowered as far as every lane passes them 4 px clear.
  */
 
-import { FLOW_PITCH, FLOW_TOP } from '../energy-family.js';
+import { FLOW_PITCH, FLOW_TOP, flowStage } from '../energy-family.js';
 
 export type Point = readonly [number, number];
 export interface Cubic {
@@ -179,16 +179,24 @@ export const TEXT = 56; // 44 circle + 12
 export const RING = 34; // the house's ring (28) + 6
 export const LANE_MIN = 56; // a lane shorter than this is no lane: the card becomes its list
 
+/** How a node says its way: beside its figure, on the line under it, or by a glyph in its lane's ink. */
+export type WayMode = 'inline' | 'line' | 'glyph';
+
+/** A node's words with its way said in one of them: as wide as they can read, and as they read now. */
+export interface WordsWidth {
+  readonly way: WayMode;
+  readonly steady: number;
+  readonly now: number;
+}
+
 export interface RowNode {
-  /** Words' height (16 · 20 · 20) and width, measured by the card. */
-  readonly wordsH: number;
-  readonly wordsW: number;
   /**
-   * Their width whatever the node reads (#170): its label at its widest, and a figure as wide as a house's usually
-   * is with each of its ways. The card lists only where these leave no lane, so at a width it keeps its lanes or its
-   * list as its figures change.
+   * Its words' widths, measured by the card, in the ways it may say its way, the one it prefers first (#170). It takes
+   * the first whose words as they can read (its label at its widest, a figure as wide as a house's usually is, each of
+   * its ways) leave a lane; where none does the card lists, so at a width a card keeps its lanes or its list as its
+   * figures change.
    */
-  readonly steadyW: number;
+  readonly words: readonly WordsWidth[];
   /** Two lanes: a source that can flow both ways at the same moment. */
   readonly pair: boolean;
 }
@@ -221,6 +229,8 @@ export interface RowsLayout {
   readonly out: readonly Cubic[];
   /** Where the house's words begin (y). */
   readonly houseWords: number;
+  /** How each node says its way. */
+  readonly ways: readonly WayMode[];
 }
 
 const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
@@ -245,11 +255,15 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const consumers = o.consumers ?? [];
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
-  // the card lists where the words as they can read leave no lane; the lanes leave after them, or after a figure
-  // wider than a house's usual as it reads now
-  const steady = Math.max(0, ...o.nodes.map((n) => n.steadyW));
-  const tail = up4(TEXT + Math.max(steady, ...o.nodes.map((n) => n.wordsW)) + 12);
-  const narrow = house[0] - RING - up4(TEXT + steady + 12) < LANE_MIN;
+  // each node's words as the first of its ways that leaves a lane, the card's list where none does; the lanes leave
+  // after them, or after a figure wider than a house's usual as it reads now
+  const leaves = (w: WordsWidth): boolean =>
+    house[0] - RING - up4(TEXT + w.steady + 12) >= LANE_MIN;
+  const chosen = o.nodes.map((n) => n.words.find(leaves));
+  const narrow = chosen.some((w) => !w);
+  const tail = up4(
+    TEXT + Math.max(0, ...chosen.map((w) => (w ? Math.max(w.steady, w.now) : 0))) + 12,
+  );
   const lanes: RowLane[] = [];
   const out: Cubic[] = [];
   const cys = consumers.map((_, i, all) =>
@@ -308,7 +322,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     house[1] + 36,
   );
   const bottoms = [
-    last + Math.max(22, (o.nodes[o.nodes.length - 1]?.wordsH ?? 36) / 2),
+    flowStage(Math.max(1, o.nodes.length)),
     houseWords + o.houseWordsH,
     ...cys.map((y, i) => y + Math.max(22, (consumers[i]?.wordsH ?? 36) / 2)),
   ];
@@ -322,6 +336,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     lanes,
     out,
     houseWords,
+    ways: chosen.map((w) => w?.way ?? 'inline'),
   };
 }
 

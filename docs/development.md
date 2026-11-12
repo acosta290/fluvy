@@ -77,7 +77,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
 | `chart-card` | 16 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
 | `energy-period` | 16 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
-| `energy` | 80 KB | the energy family and its sheet, the history bars with it |
+| `energy` | 81 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times |

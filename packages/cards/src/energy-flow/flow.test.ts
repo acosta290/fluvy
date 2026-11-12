@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import type { EntityView, HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
+import { flowStage } from '../energy-family.js';
 import { allocate } from '../energy-model/allocate.js';
 import { shortName } from '../energy/power.js';
 import { normaliseConfig } from '../shared/config.js';
@@ -25,6 +26,7 @@ import {
   upTo,
   paramAt,
   type RowsLayout,
+  type WayMode,
 } from './geometry.js';
 import { budget, density, pace, type Pulse } from './motion.js';
 import { lanesOf, said, waysOf, type SceneNode, type WayWords } from './scene.js';
@@ -64,7 +66,14 @@ describe('the arrowhead ends the lane', () => {
 });
 
 describe('rows', () => {
-  const node = (pair = false) => ({ wordsH: 36, wordsW: 100, steadyW: 100, pair });
+  /** A node whose words read `now` and can read `steady` wide, in the ways it may say its way. */
+  const widths = (steady: number, now = steady, ...ways: [WayMode, number][]) =>
+    [['inline', steady] as [WayMode, number], ...ways].map(([way, wide]) => ({
+      way,
+      steady: wide,
+      now: way === 'inline' ? now : Math.min(now, wide),
+    }));
+  const node = (pair = false) => ({ words: widths(100), pair });
   /** The house's words: "House" over "4.1 kW". */
   const house = { houseWordsH: 36, houseWordsW: 48 };
 
@@ -96,17 +105,45 @@ describe('rows', () => {
 
   it('lists by the words as they can read, whatever the figures say now (#170)', () => {
     // a battery whose words can read "8.9 kW discharging" (124): lanes at 320 with a day's figure or a month's
-    const battery = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 124, pair: false });
+    const battery = (now: number) => ({ words: widths(124, now), pair: false });
     const day = rowsLayout({ width: 320, nodes: [node(), battery(103)], ...house });
     const month = rowsLayout({ width: 320, nodes: [node(), battery(134)], ...house });
     expect([day.narrow, month.narrow]).toEqual([false, false]);
     // the lanes leave after the words as they can read, and after a figure that reads wider than the usual
     expect(day.tail).toBe(192);
     expect(month.tail).toBe(204);
-    // and where the words as they can read leave no lane, the card lists at any figure
-    const long = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 140, pair: false });
+    // and where no way of its words leaves a lane, the card lists at any figure
+    const long = (now: number) => ({ words: widths(140, now), pair: false });
     expect(rowsLayout({ width: 320, nodes: [node(), long(60)], ...house }).narrow).toBe(true);
     expect(rowsLayout({ width: 320, nodes: [node(), long(140)], ...house }).narrow).toBe(true);
+  });
+
+  it('where its way beside its figure leaves no lane, a node says it on the line under it, a pair by a glyph (#170)', () => {
+    // "8,9 kW descargando" (135) leaves 54 px at 320: the word goes under the figure, the grid's pair takes glyphs
+    const battery = { words: widths(135, 120, ['line', 98], ['glyph', 70]), pair: false };
+    const grid = { words: widths(140, 120, ['glyph', 72]), pair: true };
+    const r = rowsLayout({ width: 320, nodes: [node(), grid, battery], ...house });
+    expect(r.narrow).toBe(false);
+    expect(r.ways).toEqual(['inline', 'glyph', 'line']);
+    expect(r.tail).toBe(168);
+    // each way is taken only where the one before leaves no lane; none leaving one, the card lists
+    expect(rowsLayout({ width: 400, nodes: [node(), grid, battery], ...house }).ways).toEqual([
+      'inline',
+      'inline',
+      'inline',
+    ]);
+    const wordy = { words: widths(160, 160, ['line', 150], ['glyph', 150]), pair: false };
+    expect(rowsLayout({ width: 320, nodes: [node(), wordy], ...house }).narrow).toBe(true);
+  });
+
+  it('the stage is the height the card declares, whatever its words and its ways (#170)', () => {
+    for (const count of [1, 2, 3, 4, 5]) {
+      const nodes = Array.from({ length: count }, (_, i) => node(i === count - 1));
+      expect(rowsLayout({ width: 320, nodes, ...house }).height).toBe(flowStage(count));
+    }
+    // three lines under the last node; the list's rows, three lines a node and 6 between, in two
+    expect(flowStage(3)).toBe(232);
+    expect(flowStage(2)).toBe(168);
   });
 
   /** How near the middle of a lane, in or out, comes to the house's words standing in [left, right]. */
@@ -143,7 +180,7 @@ describe('rows', () => {
     // five rows: lower, and the stage as tall as five rows make it, as the card declares
     const five = rowsLayout({ width: 320, nodes: [1, 2, 3, 4, 5].map(() => node()), ...wideHouse });
     expect(five.houseWords).toBeGreaterThan(five.house[1] + 36);
-    expect(five.height).toBe(384);
+    expect(five.height).toBe(flowStage(5));
   });
 
   it('beside consumers they stand centred under the house, clear of the lanes in and out', () => {
@@ -284,8 +321,8 @@ describe('the scene', () => {
       ink: { tone: 'solar' },
     });
     expect(said(grid(1900, 400), words)).toEqual({
-      first: { value: 1900, way: 'in' },
-      second: { value: 400, way: 'out' },
+      first: { value: 1900, way: 'in', out: false },
+      second: { value: 400, way: 'out', out: true },
       idle: false,
     });
   });
@@ -307,10 +344,11 @@ describe('the scene', () => {
     expect(lanesOf(battery, origins)).toEqual([
       { way: 'out', rest: false, hidden: false, watts: 600, ink: { tone: 'solar' } },
     ]);
-    expect(said(battery, words).first).toEqual({ value: 600, way: 'charging' });
+    expect(said(battery, words).first).toEqual({ value: 600, way: 'charging', out: true });
     expect(said(battery, words, (total) => total > 0).first).toEqual({
       value: 600,
       way: 'charged',
+      out: true,
     });
   });
 
@@ -341,7 +379,7 @@ describe('the scene', () => {
       pair: false,
     };
     expect(lanesOf(solar, origins)[0]).toMatchObject({ way: 'in', rest: true });
-    expect(said(solar, words)).toEqual({ first: { value: 0, way: '' }, idle: true });
+    expect(said(solar, words)).toEqual({ first: { value: 0, way: '', out: false }, idle: true });
   });
 
   it('over a period every total is said as it is, rounded only by its decimals; under the threshold it rests (#109)', () => {
@@ -357,24 +395,24 @@ describe('the scene', () => {
       pair: false,
     };
     expect(said(solar, words, reads)).toEqual({
-      first: { value: 49.999999999997, way: '' },
+      first: { value: 49.999999999997, way: '', out: false },
       idle: true,
     });
     expect(lanesOf(solar, origins)[0]).toMatchObject({ rest: true });
     const battery: SceneNode = { ...solar, kind: 'battery', reading: { in: 0, out: 20 } };
     expect(said(battery, words, reads)).toEqual({
-      first: { value: 20, way: 'charged' },
+      first: { value: 20, way: 'charged', out: true },
       idle: true,
     });
     // both ways over the day: each said, the one that flowed lighting the figures
     expect(said({ ...grid(3000, 20), threshold: 50 }, words, reads)).toEqual({
-      first: { value: 3000, way: 'in' },
-      second: { value: 20, way: 'out' },
+      first: { value: 3000, way: 'in', out: false },
+      second: { value: 20, way: 'out', out: true },
       idle: false,
     });
     // what its decimals write as 0.00 rests at 0, its way unsaid
     expect(said({ ...battery, reading: { in: 4, out: 0 } }, words, reads)).toEqual({
-      first: { value: 0, way: '' },
+      first: { value: 0, way: '', out: false },
       idle: true,
     });
   });

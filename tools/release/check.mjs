@@ -44,10 +44,12 @@ const BUDGETS = {
   // the Chart card (1.11, #68): the card, the readers of its series (history, statistics, a list, a forecast), its
   // editor and its English
   'chart-card': 16_384,
-  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 80 KB since
-  // 1.10 (its sheet left core, 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the
-  // power chart's axes); 64 before
-  energy: 81_920,
+  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 81 KB since
+  // 2026-11-12 (1.19.1, #170, 0.9 KB: the flow's steady layout, its words giving way before its list, the house's words
+  // clear of its lanes, two sources of a kind told apart by their devices); 80 KB since 1.10 (its sheet left core,
+  // 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the power chart's axes); 64
+  // before
+  energy: 82_944,
   // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it
   'energy-period': 16_384,
   // the history bars' readings: the resets and the steps, the recorder's history, fetched by the first card needing them

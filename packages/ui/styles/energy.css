@@ -440,11 +440,24 @@
   color: var(--fluvy-text-secondary);
 }
 
-/* the flow too narrow for lanes: one row per node */
+/* a way said by its lane's own head where its word has no room (#170): toward the house or away from it, in the
+   lane's ink, 4 px off its unit, its 8 px box centred on its 20 px line */
+.en-words__way {
+  display: inline-block;
+  margin: 6px 0 0 4px;
+  vertical-align: top;
+  overflow: visible;
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* the flow too narrow for lanes: one row per node, spread over the height the diagram takes (the card sets it, and
+   the gap on the 4 px grid) */
 .en-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
   margin-top: 16px;
 }
 
@@ -452,7 +465,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  min-height: 52px;
+  min-height: 44px;
 }
 
 .en-list__row .fv-ico {

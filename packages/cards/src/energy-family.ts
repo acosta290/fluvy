@@ -51,13 +51,21 @@ const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
 const periodChips = (config: LovelaceCardConfig): number =>
   config['show_period'] === false || config['collection_key'] ? 0 : 60;
 
+/**
+ * The rows' stage, as the diagram draws it at any width and the list it becomes: its last node's three lines (16 · 20 ·
+ * 20 about its circle), the house's words under its ring, and the list's rows, three lines a node (56) and 6 between,
+ * and the house's (44).
+ */
+export function flowStage(count: number): number {
+  const last = FLOW_TOP + (count - 1) * FLOW_PITCH;
+  const house = Math.round((FLOW_TOP + last) / 2 / 4) * 4;
+  return up4(Math.max(last + 28, house + 72, 62 * count + 44));
+}
+
 /** The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals. */
 export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const sources = Array.isArray(config['sources']) ? config['sources'].length : 0;
-  const count = Math.max(1, sources || 3);
-  const last = FLOW_TOP + (count - 1) * FLOW_PITCH;
-  const house = Math.round((FLOW_TOP + last) / 2 / 4) * 4;
-  const stage = config['variant'] === 'cross' ? 292 : up4(Math.max(last + 22, house + 72));
+  const stage = config['variant'] === 'cross' ? 292 : flowStage(Math.max(1, sources || 3));
   const period = config['period'] !== undefined && config['period'] !== 'live';
   // at a 360 column consumers are rows with bars (76), and the rest of the house one more
   const consumers = listLength(config, ['consumers']);
