@@ -196,3 +196,31 @@ describe('the production card’s editor', () => {
     ]);
   });
 });
+
+describe('the production card reads a lifetime meter’s day', () => {
+  it('reads today’s gain from a meter that counts a lifetime, never its reading (#170: the energy dashboard’s solar meter)', async () => {
+    // the day's hours from yesterday's last reading, 12,332.2: 11.0 kWh compiled to 12,343.2, 2.4 since
+    const LIFETIME = 12_242.2;
+    const hass = house();
+    hass.states['sensor.lifetime'] = meter('sensor.lifetime', 12_345.6);
+    const counted = hass.callWS.bind(hass);
+    hass.callWS = (async (message: { type: string; [key: string]: unknown }) => {
+      const rows = await counted<Record<string, { state: number }[]>>(message);
+      return Object.fromEntries(
+        Object.entries(rows).map(([id, list]) => [
+          id,
+          list.map((row) => ({ ...row, state: row.state + LIFETIME })),
+        ]),
+      );
+    }) as HomeAssistant['callWS'];
+    const card = document.createElement('fluvy-production-card') as FluvyProductionCard;
+    // as the automatic dashboard writes it
+    card.setConfig({ type: 'custom:fluvy-production-card', entity: 'sensor.lifetime', _now: NOW });
+    card.hass = hass;
+    document.body.append(card);
+    await settle(card);
+    const value = card.shadowRoot!.querySelector('.so-top .fv-readout__value');
+    expect(value?.textContent?.replace(/\s+/g, '')).toBe('13.4kWh');
+    expect(card.shadowRoot!.textContent).not.toMatch(/12[,.]?34[0-9]/);
+  });
+});

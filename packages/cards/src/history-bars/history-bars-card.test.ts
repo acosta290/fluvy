@@ -697,6 +697,48 @@ describe('the history bars’ height at a 360 column', () => {
   });
 });
 
+describe('the history bars of a meter that counts a lifetime', () => {
+  beforeEach(() => {
+    clearBarsCache();
+    clearLiveCache();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.replaceChildren();
+  });
+
+  /** The solar meter at 12,345.6 kWh: the week's days, and 12.3 counted of today through its newest five minutes. */
+  const lifetime = () =>
+    house(
+      (message) =>
+        message['type'] === 'recorder/statistic_during_period'
+          ? { change: 12.3 }
+          : message['period'] === '5minute'
+            ? {
+                'sensor.solar': [
+                  { start: local(10, 11), end: local(10, 11) + 300_000, state: 12_343.2 },
+                ],
+              }
+            : week(),
+      { states: { 'sensor.solar': '12345.6' } },
+    );
+
+  it('draws each day’s gain and today’s, never its reading, as the automatic dashboard places it (#170)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 10, 12, 0));
+    // the energy dashboard's solar meter as today's production: the bars it draws on the Production view
+    const days = await mount({ _now: '', color: 'amber' }, lifetime().hass);
+    expect(texts(days, '.hb-value')).toEqual(DAYS.map(String));
+    expect(readouts(days)).toEqual(['Total 191.5kWh', 'Daily avg 27.4kWh']);
+    // today too where asked: 12.3 counted and 2.4 since, from the meter's reading now
+    const today = await mount({ _now: '', color: 'amber', include_today: true }, lifetime().hass);
+    expect(texts(today, '.hb-value').at(-1)).toBe('14.7');
+    expect(readouts(today)).toEqual(['Total 206.2kWh', 'Daily avg 27.4kWh']);
+    for (const card of [days, today])
+      expect(card.shadowRoot!.textContent).not.toMatch(/12[,.]?34[0-9]/);
+  });
+});
+
 describe('the history bars card', () => {
   beforeEach(() => clearBarsCache());
   afterEach(() => document.body.replaceChildren());
