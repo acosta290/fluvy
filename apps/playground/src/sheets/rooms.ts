@@ -269,6 +269,67 @@ const LOUNGE_ENTITIES = Object.fromEntries(
 );
 const LOUNGE_AREA = { area_id: 'rm_lounge', name: 'Lounge', icon: 'mdi:sofa' };
 
+/*
+ * #170's outdoors, as the reporter's house names it: its temperature and humidity, and two weather integrations that
+ * both say 大气压, PM2.5 and 风速 — each row told apart by its device, a label said once left as it was.
+ */
+const WEATHER_DEVICES = [
+  { id: 'rm_shouguang', name: '寿光天气', name_by_user: null, area_id: 'rm_huwai' },
+  { id: 'rm_qweather', name: '和风天气', name_by_user: null, area_id: 'rm_huwai' },
+];
+/** A reading outdoors: on a weather integration's device where one is named, else in the area. */
+const outdoor = (
+  id: string,
+  value: string,
+  name: string,
+  attributes: Record<string, unknown>,
+  device?: string,
+) => {
+  const seed: StateSeed = [`sensor.${id}`, value, { friendly_name: name, ...attributes }];
+  return { seed, device };
+};
+const OUTDOOR = [
+  outdoor('rm_huwai_temperature', '16.2', '户外气温', {
+    device_class: 'temperature',
+    unit_of_measurement: '°C',
+  }),
+  outdoor('rm_huwai_humidity', '71', '户外湿度', {
+    device_class: 'humidity',
+    unit_of_measurement: '%',
+  }),
+  ...WEATHER_DEVICES.flatMap(({ id, name }) => [
+    outdoor(
+      `${id}_pressure`,
+      '1012',
+      `${name} 大气压`,
+      { device_class: 'atmospheric_pressure', unit_of_measurement: 'hPa' },
+      id,
+    ),
+    outdoor(
+      `${id}_pm25`,
+      '38',
+      `${name} PM2.5`,
+      { device_class: 'pm25', unit_of_measurement: 'µg/m³' },
+      id,
+    ),
+    outdoor(
+      `${id}_wind`,
+      '9',
+      `${name} 风速`,
+      { device_class: 'wind_speed', unit_of_measurement: 'km/h' },
+      id,
+    ),
+  ]),
+  outdoor('rm_huwai_uv', '3', '紫外线指数', { unit_of_measurement: 'UV index' }),
+];
+const HUWAI: readonly StateSeed[] = OUTDOOR.map(({ seed }) => seed);
+const HUWAI_ENTITIES = Object.fromEntries(
+  OUTDOOR.map(({ seed: [entity_id], device }) =>
+    device ? [entity_id, { entity_id, device_id: device }] : entry(entity_id, 'rm_huwai'),
+  ),
+);
+const HUWAI_AREA = { area_id: 'rm_huwai', name: '户外', icon: 'mdi:tree' };
+
 /**
  * A room's page as the automatic dashboard lays it out (#76), in the page's language: the way back, then what it
  * holds — in a column, in reading order. Read when the frame is drawn, once the page's words have landed.
@@ -277,7 +338,7 @@ const roomPage = (
   area: AreaRegistryEntry,
   seeds: readonly StateSeed[],
   entities: Record<string, unknown>,
-  device: { readonly id: string },
+  ...devices: readonly { readonly id: string }[]
 ): LovelaceCardConfig[] => {
   const t = wordsIn(resolveLanguage(new URLSearchParams(location.search).get('lang') ?? 'en'));
   const house = {
@@ -288,7 +349,7 @@ const roomPage = (
       ]),
     ),
     entities,
-    devices: { [device.id]: device },
+    devices: Object.fromEntries(devices.map((device) => [device.id, device])),
     areas: { [area.area_id]: area },
     language: 'en',
     user: { id: 'u1', name: 'Marta', is_admin: true },
@@ -417,6 +478,7 @@ export const sheet: SheetSpec = {
     ...UTILITY,
     ...SUNROOM,
     ...LOUNGE,
+    ...HUWAI,
     ['switch.rm_porch', 'unavailable', { friendly_name: 'Porch lantern' }],
     [
       'climate.rm_study',
@@ -515,11 +577,13 @@ export const sheet: SheetSpec = {
       ...UTILITY_ENTITIES,
       ...SUNROOM_ENTITIES,
       ...LOUNGE_ENTITIES,
+      ...HUWAI_ENTITIES,
     },
     devices: {
       [GARAGE_DEVICE.id]: GARAGE_DEVICE,
       [GALLEY_DEVICE.id]: GALLEY_DEVICE,
       [UTILITY_DEVICE.id]: UTILITY_DEVICE,
+      ...Object.fromEntries(WEATHER_DEVICES.map((device) => [device.id, device])),
     },
     areas: {
       rm_living: {
@@ -562,6 +626,7 @@ export const sheet: SheetSpec = {
       rm_utility: { area_id: 'rm_utility', name: 'Utility room', icon: 'mdi:washing-machine' },
       rm_sunroom: { area_id: 'rm_sunroom', name: 'Sunroom', icon: 'mdi:flower' },
       rm_lounge: LOUNGE_AREA,
+      rm_huwai: HUWAI_AREA,
     },
     floors: {
       rm_ground: { floor_id: 'rm_ground', name: 'Ground floor', level: 0 },
@@ -931,7 +996,7 @@ export const sheet: SheetSpec = {
     {
       title: 'Room page · its scenes first (#172)',
       get cards() {
-        return roomPage(LOUNGE_AREA, LOUNGE, LOUNGE_ENTITIES, { id: 'rm-lounge' });
+        return roomPage(LOUNGE_AREA, LOUNGE, LOUNGE_ENTITIES);
       },
     } satisfies FrameSpec,
     // …and its card's rounds run them: a scene has no on or off, so its round is never drawn as on
@@ -946,5 +1011,12 @@ export const sheet: SheetSpec = {
         }),
       ],
     },
+    // #170: outdoors, two weather integrations' rows that would read alike, each told apart by its device
+    {
+      title: 'Room page · rows that would read alike (#170)',
+      get cards() {
+        return roomPage(HUWAI_AREA, HUWAI, HUWAI_ENTITIES, ...WEATHER_DEVICES);
+      },
+    } satisfies FrameSpec,
   ],
 };

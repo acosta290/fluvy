@@ -104,9 +104,9 @@ const PLACE_WORDS: Rules<'outdoor' | 'home'> = [
  * The separators and spaces at a name's ends, once words are taken out of it: the device's name in front of its
  * entity's ("Kitchen sensor: Temperature"), a reading's words after its place ("Kitchen · Temperature", 「寝室：温度」,
  * 「キッチン温度・湿度」, whose 温度 and 湿度 leave 「キッチン ・」), the mark that joined two of them ("Temperature &
- * Humidity Kitchen").
+ * Humidity Kitchen"), an id's underscore where a name is its id ("garden_humidity").
  */
-const LOOSE_ENDS = /^[\s・：:·\-–—/／|&,]+|[\s・：:·\-–—/／|&,]+$/g;
+const LOOSE_ENDS = /^[\s・：:·\-–—/／|&,_]+|[\s・：:·\-–—/／|&,_]+$/g;
 
 /** A word found in a place's name, where it stands: one that says a reading, or one that joins (`PLACE_JOINS`). */
 interface PlaceWord {
@@ -186,6 +186,22 @@ function inCaseOf(name: string, place: string): string {
   const word = /[\p{L}\p{N}]+/u.exec(place)?.[0] ?? '';
   if (first === first.toLowerCase() || word !== word.toLowerCase()) return place;
   return place.replace(/\p{L}/u, (letter) => letter.toUpperCase());
+}
+
+/** A name without its place at either end, nor the separators that leaves there (「户外气温」 in 户外 is 气温). */
+function withoutPlace(name: string, place: string): string {
+  const lower = name.toLowerCase();
+  const said = place.toLowerCase();
+  const from = lower.startsWith(said) ? place.length : 0;
+  const to = !from && lower.endsWith(said) ? name.length - place.length : name.length;
+  return name.slice(from, to).replace(LOOSE_ENDS, '');
+}
+
+/** How many times each name is said. */
+function counted(names: Iterable<string>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+  return counts;
 }
 
 export type Registry = Pick<
@@ -396,6 +412,47 @@ export class HomeRegistry {
         .replace(LOOSE_ENDS, '');
       return device ? inCaseOf(name, device) : this.displayName(id);
     });
+  }
+  /**
+   * A reading's own words: its name without its device's in front of it (`ownName`) nor its place at either end; none
+   * where Home Assistant gives it no name.
+   */
+  private ownWords(id: string): string {
+    return this.attr(id, 'friendly_name') === undefined
+      ? ''
+      : withoutPlace(this.ownName(id), this.placeName(id));
+  }
+  /**
+   * Labels for what is shown together (a card's rows, or cards built together), each as `label` says it, save where
+   * two would read alike (#170): those gain, after a "·", what tells them apart, the reading's own words, else its
+   * device's name, else its place ("配电室 · 实时放电功率", "大气压 · 寿光天气"). A label said once stays as it is;
+   * what nothing tells apart stays alike.
+   */
+  apart(ids: readonly string[], label: (id: string) => string): (id: string) => string {
+    const base = new Map(ids.map((id) => [id, label(id)]));
+    const said = new Map(base);
+    const tellers = [
+      (id: string) => this.ownWords(id),
+      (id: string) => this.deviceName(id) ?? '',
+      (id: string) => this.placeName(id),
+    ];
+    for (const tell of tellers) {
+      const alike = counted(said.values());
+      const told = new Map<string, string>();
+      for (const [id, name] of base) {
+        if (alike.get(said.get(id)!)! < 2) continue;
+        // read only where a label repeats, and as every name is: a throw costs the part alone (`optional`)
+        const part = this.optional('names', () => tell(id), '');
+        if (part && part.toLowerCase() !== name.toLowerCase()) told.set(id, `${name} · ${part}`);
+      }
+      // a part that two would share tells neither apart
+      const seen = counted([
+        ...ids.filter((id) => !told.has(id)).map((id) => said.get(id)!),
+        ...told.values(),
+      ]);
+      for (const [id, name] of told) if (seen.get(name) === 1) said.set(id, name);
+    }
+    return (id) => said.get(id) ?? label(id);
   }
   /** `name` for a card only when it improves on what the card would show by itself. */
   named(id: string, name = this.displayName(id)): Record<string, string> {

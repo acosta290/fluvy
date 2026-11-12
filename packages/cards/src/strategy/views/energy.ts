@@ -1,7 +1,7 @@
 import {
   balanced,
   batteriesCard,
-  deviceRow,
+  deviceRows,
   energyBalance,
   energyFlow,
   full,
@@ -71,7 +71,7 @@ export function consumptionRows(ctx: StrategyContext, cap?: number): Card[] {
   const card = (ids: readonly string[]): Card =>
     full('energy-devices', {
       title: t('strategy.appliances'),
-      rows: ids.map((id) => deviceRow(home, id)),
+      rows: deviceRows(home, ids),
     });
   const devices = capped(
     ctx,
@@ -190,10 +190,11 @@ function metersCards({ energy }: StrategyContext): Card[] {
   ]);
 }
 
-/** A day's curve for every power meter of the house. */
+/** A day's curve for every power meter of the house, each by its place, two of one place told apart (#170). */
 function metersView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
-  const curve = (id: string): Card => full('energy', { entity: id, name: home.placeName(id) });
+  const place = home.apart(home.powers, (id) => home.placeName(id));
+  const curve = (id: string): Card => full('energy', { entity: id, name: place(id) });
   const meters = capped(
     ctx,
     { key: 'meters', title: 'strategy.meters', icon: 'fluvy:chart' },

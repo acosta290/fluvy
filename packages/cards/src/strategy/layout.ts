@@ -48,14 +48,16 @@ export const when = <V, T = Card>(
   build: (value: V) => T[],
 ): T[] => (value ? build(value) : []);
 
-export const entityRow = (home: HomeRegistry, entity: string) => ({
-  entity,
-  ...home.named(entity),
-});
-export const deviceRow = (home: HomeRegistry, entity: string) => ({
-  entity,
-  name: home.deviceLabel(entity),
-});
+/** Rows of entities, each by its display name, two alike told apart (`apart`). */
+export const entityRows = (home: HomeRegistry, ids: readonly string[]) => {
+  const name = home.apart(ids, (id) => home.displayName(id));
+  return ids.map((entity) => ({ entity, ...home.named(entity, name(entity)) }));
+};
+/** Rows of a device's reading (a battery, a phone), each by its device, two alike told apart. */
+export const deviceRows = (home: HomeRegistry, ids: readonly string[]) => {
+  const name = home.apart(ids, (id) => home.deviceLabel(id));
+  return ids.map((entity) => ({ entity, name: name(entity) }));
+};
 /**
  * A tile's switch as the dashboard asks (`tile_switch`), in its card's own words (`show_switch`): hidden, its level's
  * figure in its place, or nothing said where it shows.
@@ -169,20 +171,22 @@ export const runsOf = <T>(items: readonly T[], size: number): T[][] =>
   );
 
 /**
- * Readings side by side, each named by its place (`nameOf`, else where it is): four on one card (two by two), else a
- * card a run of three — a readouts card draws four at most.
+ * Readings side by side, each named by its place (`label`, else where it is), two alike told apart (`apart`): four on
+ * one card (two by two), else a card a run of three — a readouts card draws four at most.
  */
 export const readoutsCards = (
   home: HomeRegistry,
   ids: readonly string[],
   extra: Record<string, unknown> = {},
-  nameOf: (id: string) => string = (id) => home.placeName(id),
-): Card[] =>
-  (ids.length > 4 ? runsOf(ids, 3) : ids.length ? [ids] : []).map((run) => ({
+  label: (id: string) => string = (id) => home.placeName(id),
+): Card[] => {
+  const name = home.apart(ids, label);
+  return (ids.length > 4 ? runsOf(ids, 3) : ids.length ? [ids] : []).map((run) => ({
     type: 'custom:fluvy-readouts-card',
     ...extra,
-    rows: run.map((id) => ({ entity: id, name: nameOf(id) })),
+    rows: run.map((id) => ({ entity: id, name: name(id) })),
   }));
+};
 
 /** Scenes (and what runs like one) on one Scenes card under a title, the last run marked. */
 export const scenesCard = (title: string, ids: readonly string[]): Card =>

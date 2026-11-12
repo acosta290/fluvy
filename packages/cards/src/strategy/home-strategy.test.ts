@@ -2434,3 +2434,116 @@ describe('custom:fluvy-home strategy — the house’s scenes (#172)', () => {
       ).toEqual([]);
   });
 });
+
+describe('custom:fluvy-home strategy — labels that would repeat (#170)', () => {
+  /** A reading of that class, on that device, in that area. */
+  const reading = (
+    id: string,
+    friendly_name: string,
+    device_class: string,
+    registry: Record<string, unknown>,
+  ): DemoEntity => entity(`sensor.${id}`, '12', { friendly_name, device_class }, registry);
+  /**
+   * The reporter's house, in Chinese: a switch room (配电室) of a battery's charge and discharge power and two inverters'
+   * power, each named 实时功率; outdoors (户外), a temperature, a balcony thermometer's and a humidity, and two weather
+   * integrations' pressure and PM2.5 (寿光天气, 和风天气).
+   */
+  const reporter = () => {
+    const room = { area_id: 'pei_dian_shi' };
+    const out = { area_id: 'hu_wai' };
+    const hass = house([
+      reading('battery_charge', '电池组 1 实时充电功率', 'power', { device_id: 'd-battery' }),
+      reading('battery_discharge', '电池组 1 实时放电功率', 'power', { device_id: 'd-battery' }),
+      reading('inverter_e1_power', '逆变器 E1 实时功率', 'power', { device_id: 'd-e1' }),
+      reading('inverter_e2_power', '逆变器 E2 实时功率', 'power', { device_id: 'd-e2' }),
+      reading('outdoor_temperature', '户外气温', 'temperature', out),
+      reading('balcony_temperature', '阳台温度计 温度', 'temperature', { device_id: 'd-balcony' }),
+      reading('outdoor_humidity', '户外湿度', 'humidity', out),
+      reading('shouguang_pressure', '寿光天气 大气压', 'pressure', { device_id: 'd-shouguang' }),
+      reading('shouguang_pm25', '寿光天气 PM2.5', 'pm25', { device_id: 'd-shouguang' }),
+      reading('qweather_pressure', '和风天气 大气压', 'pressure', { device_id: 'd-qweather' }),
+      reading('qweather_pm25', '和风天气 PM2.5', 'pm25', { device_id: 'd-qweather' }),
+    ]) as unknown as HomeAssistant;
+    hass.areas['pei_dian_shi'] = { area_id: 'pei_dian_shi', name: '配电室' } as never;
+    hass.areas['hu_wai'] = { area_id: 'hu_wai', name: '户外' } as never;
+    const device = (id: string, name: string, area: { area_id: string }) =>
+      (hass.devices[id] = { id, name, ...area } as never);
+    device('d-battery', '电池组 1', room);
+    device('d-e1', '逆变器 E1', room);
+    device('d-e2', '逆变器 E2', room);
+    device('d-balcony', '阳台温度计', out);
+    device('d-shouguang', '寿光天气', out);
+    device('d-qweather', '和风天气', out);
+    return hass;
+  };
+  /** What each card of those views calls each of those entities, by entity. */
+  const names = (views: readonly View[], path: string): Record<string, unknown> => {
+    const named: Record<string, unknown> = {};
+    for (const card of cardsIn(views.filter((view) => view.path === path))) {
+      if (typeof card['entity'] === 'string') named[card['entity']] = card['name'];
+      for (const row of (card['rows'] as { entity: string; name?: string }[] | undefined) ?? [])
+        named[row.entity] = row.name;
+    }
+    return named;
+  };
+
+  it('tells a place’s meters apart by their own words, else by their device, on their view and on its page of every one', async () => {
+    const hass = reporter();
+    const { views } = await generate(
+      { type: 'custom:fluvy-energy', caps: { meters: 2 } },
+      hass as never,
+    );
+    // the view's two first, named as on the page of every one
+    expect(names(views, 'meters')).toEqual({
+      'sensor.battery_charge': '配电室 · 实时充电功率',
+      'sensor.battery_discharge': '配电室 · 实时放电功率',
+    });
+    const every = names(views, 'meters-meters');
+    expect(every).toMatchObject({
+      'sensor.battery_charge': '配电室 · 实时充电功率',
+      'sensor.battery_discharge': '配电室 · 实时放电功率',
+      'sensor.inverter_e1_power': '配电室 · 逆变器 E1',
+      'sensor.inverter_e2_power': '配电室 · 逆变器 E2',
+    });
+    // a label said once stays as it was
+    expect(every['sensor.grid_meter_power']).toBe(
+      new HomeRegistry(hass).placeName('sensor.grid_meter_power'),
+    );
+  });
+
+  it('tells two thermometers of one place apart on the Climate view, never a humidity from a temperature, and two integrations’ rows by their device', async () => {
+    const hass = reporter();
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    // a humidity card beside a temperature's says what it reads: each keeps its place
+    expect(names(views, 'climate')).toMatchObject({
+      'sensor.outdoor_temperature': '户外 · 气温',
+      'sensor.balcony_temperature': '户外 · 温度',
+      'sensor.outdoor_humidity': '户外',
+    });
+    expect(names(views, 'room-hu_wai')).toMatchObject({
+      'sensor.shouguang_pressure': '大气压 · 寿光天气',
+      'sensor.qweather_pressure': '大气压 · 和风天气',
+      'sensor.shouguang_pm25': 'PM2.5 · 寿光天气',
+      'sensor.qweather_pm25': 'PM2.5 · 和风天气',
+    });
+  });
+
+  it('leaves alike what nothing tells apart, and every label said once as it is', () => {
+    const home = new HomeRegistry(
+      house([
+        reading('hall_a', 'Hall', 'temperature', { area_id: 'kitchen' }),
+        reading('hall_b', 'Hall', 'temperature', { area_id: 'kitchen' }),
+        reading('hall_c', 'Hall', 'temperature', { area_id: 'kitchen' }),
+        reading('porch', 'Porch thermometer', 'temperature', { area_id: 'kitchen' }),
+      ]),
+    );
+    const ids = ['sensor.hall_a', 'sensor.hall_b', 'sensor.porch'];
+    // the hall's two are named alike and stand in one place, on no device: nothing tells them apart
+    const name = home.apart(ids, (id) => home.displayName(id));
+    expect(ids.map(name)).toEqual(['Hall', 'Hall', 'Porch thermometer']);
+    // a part two of three would share tells only the third apart
+    const place = home.apart([...ids, 'sensor.hall_c'], () => 'Kitchen');
+    expect(place('sensor.porch')).toBe('Kitchen · Porch thermometer');
+    expect(place('sensor.hall_a')).toBe('Kitchen');
+  });
+});
