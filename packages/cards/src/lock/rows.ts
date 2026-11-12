@@ -28,7 +28,7 @@ import {
   SELECTS,
   type SelectRowConfig,
 } from '../shared/dropdown.js';
-import { withUnit } from '../shared/duration.js';
+import { ageShort } from '../shared/duration.js';
 import { buttonWidth, rowsKeepIcon, rowStacks } from '../shared/row-end.js';
 import { secondaryText } from '../shared/secondary.js';
 import { changedAt, sinceIds } from '../shared/since.js';
@@ -294,15 +294,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
   /** An age in its short form: "21 d", "3 h", "12 min" — "21日", "12分". */
   private shortAge(p: RowPlan): string {
     const changed = lastChanged(this.hass, p.view, p.row.since);
-    if (!changed) return '';
-    const minutes = Math.max(1, Math.round((Date.now() - changed.date.getTime()) / 60_000));
-    const [n, unit] =
-      minutes < 60
-        ? [minutes, 'time.unit_min' as const]
-        : minutes < 1440
-          ? [Math.round(minutes / 60), 'time.unit_h' as const]
-          : [Math.round(minutes / 1440), 'time.unit_d' as const];
-    return withUnit(n, this.t(unit));
+    return changed ? ageShort(this.hass, changed.date) : '';
   }
 
   private renderRow(p: RowPlan, events: boolean, keep: boolean, short: boolean): TemplateResult {

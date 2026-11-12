@@ -343,6 +343,14 @@ rows:
     since: attribute:last_opened
 ```
 
+A row of the Entities card never cuts what ends it, however narrow its column (half a section is 152 px). The rows
+give their circles to the names together; beside a switch, a chevron or a value the name then ends in its ellipsis;
+a state of several words takes two lines; and where even so nothing would be left of the name, the state goes under
+it. That row is a line taller and the card with it: the height the card declares is its rows of 60 (48 compact), which
+a section's width always holds. The line under a name is said shorter before it would be cut: an age down to its
+figure ("32 days ago", "32 d ago", "32 d"), in one form for the whole list, and a line no form of which holds is left
+out (a screen reader still hears it whole).
+
 ## Sections and rows on a condition
 
 The lists of the Bars and the Entities cards may stand in parts (1.19). A section among the rows is its label, in the

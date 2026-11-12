@@ -1,7 +1,7 @@
 import { resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { stateSkin } from './domain.js';
-import { ownLine, secondaryText } from './secondary.js';
+import { ownLine, rowLine, secondaryText } from './secondary.js';
 import type { TemplateTexts } from './templates.js';
 
 const now = new Date(); // relativeTime reads the clock
@@ -106,6 +106,84 @@ describe('secondaryText', () => {
       `sensor.blank: ${template}`,
     );
     expect(secondaryText(hass, view('sensor.blank'), 'last-changed')).toBe('Unknown');
+  });
+});
+
+describe('a row’s line in its forms (rowLine)', () => {
+  const old = {
+    ...hass,
+    states: {
+      ...hass.states,
+      'switch.old': {
+        entity_id: 'switch.old',
+        state: 'off',
+        attributes: { friendly_name: 'Old' },
+        last_changed: new Date(now.getTime() - 55 * 86_400_000).toISOString(),
+      },
+    },
+  } as unknown as HomeAssistant;
+
+  it('says an age whole, short, then as its figure alone', () => {
+    const line = rowLine(old, resolveEntity(old, 'switch.old'), 'last-changed');
+    expect(line.forms).toEqual(['55 days ago', '55 d ago', '55 d']);
+    expect(line).toMatchObject({ age: true, name: false });
+    // minutes and hours have one form with their "ago", and their figure
+    expect(rowLine(hass, view('light.desk'), 'last-changed').forms).toEqual([
+      '5 min ago',
+      '5 min ago',
+      '5 min',
+    ]);
+    // the time a row's `since` reads is an age too
+    expect(
+      rowLine(hass, view('light.desk'), 'last-changed', false, undefined, 'attribute:switched_at')
+        .forms[2],
+    ).toBe('3 h');
+  });
+
+  it('says the area as a name, which has no shorter form', () => {
+    expect(rowLine(hass, view('light.desk'), undefined)).toEqual({
+      forms: ['Study', 'Study', 'Study'],
+      age: false,
+      name: true,
+    });
+    // a row that shows its state elsewhere and has no area says the time instead: an age
+    expect(rowLine(old, resolveEntity(old, 'switch.old'), 'state', true)).toMatchObject({
+      age: true,
+      name: false,
+    });
+  });
+
+  it('says a state that cannot be read whole, then in its one word: neither an age nor a name', () => {
+    const line = rowLine(hass, view('sensor.nowhere'), 'last-changed');
+    expect(line.forms[0]).not.toBe('');
+    expect(line.forms[2]).toBe(line.forms[1]);
+    expect(line).toMatchObject({ age: false, name: false });
+    expect(rowLine(hass, view('sensor.gone'), undefined)).toMatchObject({
+      age: false,
+      name: false,
+    });
+  });
+
+  it('says a template’s line as the person’s own words, a state’s or an attribute’s as they are, none as none', () => {
+    expect(rowLine(hass, view('light.desk'), '{{ 1 }}', false, texts)).toEqual({
+      forms: ['light.desk: {{ 1 }}', 'light.desk: {{ 1 }}', 'light.desk: {{ 1 }}'],
+      age: false,
+      name: true,
+    });
+    expect(rowLine(hass, view('light.desk'), 'state')).toMatchObject({
+      forms: ['On', 'On', 'On'],
+      age: false,
+      name: false,
+    });
+    expect(rowLine(hass, view('light.desk'), 'brightness')).toMatchObject({
+      age: false,
+      name: false,
+    });
+    expect(rowLine(hass, view('light.desk'), 'none')).toEqual({
+      forms: ['', '', ''],
+      age: false,
+      name: false,
+    });
   });
 });
 

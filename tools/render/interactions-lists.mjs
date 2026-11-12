@@ -8,8 +8,11 @@
  * among the matches are no rows; a card asked to `hide_empty` steps out of the page and tells its wrapper, never in
  * the editor; the panel stands on the page in the page's other fill and in a card in the page's, 16 under its head
  * and 20 above the card's foot in every card of a list (20 all round where it has no head); the card's own words and
- * every language's.
+ * every language's; and the entities card's rows in narrow columns (half a section at 152 and 172, a column of 211 and
+ * 266) in every language: nothing cut but a name, no name cut to nothing, what ends a row inside it, every row and
+ * card on the grid, the ages of a list in one form.
  */
+import { everyLanguage } from './lib.mjs';
 import { frame, HOUSE_HEIGHTS, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -243,6 +246,75 @@ const cardsOf = (page, title) =>
     words.join(' · '),
   );
   await page.close();
+}
+
+/* ---------- the entities card's rows in narrow columns, every language ---------- */
+// a switch and a chevron keep their place and the name gives way beside them; a state takes its two lines, then goes
+// under its words; a line is said shorter or left out, never cut; the ages of a list take one form. Every card of the
+// sections sheet that draws at the probe's width: a half card in a section of twice its width and Fluvy's 16
+{
+  const languages = await everyLanguage();
+  const wrong = [];
+  let seen = 0;
+  for (const lang of languages) {
+    for (const card of [152, 172, 211, 266]) {
+      const page = await suite.sheet('sections', {
+        width: card < 211 ? 2 * card + 16 : card,
+        lang,
+      });
+      const found = await page.evaluate((card) => {
+        const out = [];
+        let rows = 0;
+        for (const el of document.querySelectorAll('fluvy-entities-card')) {
+          const box = el.renderRoot.querySelector('[data-card]')?.getBoundingClientRect();
+          if (!box || Math.round(box.width) !== card) continue;
+          const at = `${el.closest('[data-frame]')?.getAttribute('data-frame').split('/').pop()}:`;
+          // a column on the grid holds its cards to it (211 is the floor, off it by its own remainder)
+          if (card % 4 === 0 && box.height % 4) out.push(`${at} the card is ${box.height} tall`);
+          const ages = new Set();
+          for (const row of el.renderRoot.querySelectorAll('.fv-rows > .fv-row')) {
+            rows += 1;
+            const r = row.getBoundingClientRect();
+            const bare = row.classList.contains('fv-row--bare');
+            if (r.height % 4) out.push(`${at} a row is ${r.height} tall`);
+            for (const part of row.querySelectorAll(
+              '.fv-row__title, .fv-row__sub, .fv-row__value',
+            )) {
+              const b = part.getBoundingClientRect();
+              if (!b.width) continue;
+              const text = part.textContent.trim();
+              const name =
+                part.classList.contains('fv-row__title') || part.hasAttribute('data-name');
+              const cut = part.scrollWidth > part.clientWidth + 1;
+              // a name may end in its ellipsis: with 96 beside its circle, two letters and the ellipsis without it
+              if (cut && !name) out.push(`${at} "${text}" is cut`);
+              if (
+                cut &&
+                part.classList.contains('fv-row__title') &&
+                part.clientWidth < (bare ? 40 : 95)
+              )
+                out.push(`${at} the name "${text}" has ${part.clientWidth}`);
+              if (b.right > r.right + 0.5 || b.left < r.left - 0.5 || b.bottom > r.bottom + 0.5)
+                out.push(`${at} "${text}" leaves its row`);
+            }
+            const line = row.querySelector('.fv-row__sub')?.textContent.trim() ?? '';
+            // every row of the sheet changed at one moment: its ages read alike where they are said in one form
+            if (/\p{Nd}/u.test(line)) ages.add(line);
+          }
+          if (ages.size > 1) out.push(`${at} ages in ${ages.size} forms (${[...ages].join(', ')})`);
+        }
+        return { out, rows };
+      }, card);
+      seen += found.rows;
+      for (const said of found.out) wrong.push(`${lang} ${card} ${said}`);
+      await page.close();
+    }
+  }
+  check(
+    `entities rows at 152, 172, 211 and 266 in ${languages.length} languages: nothing cut but a name, no name to nothing, every end inside its row, rows and cards on the grid, ages in one form`,
+    wrong.length === 0 && seen > 0,
+    wrong.length ? wrong.slice(0, 8).join(' · ') : `${seen} rows`,
+  );
 }
 
 await suite.finish();

@@ -34,6 +34,21 @@ export function durationParts(seconds: number): DurationPart[] | null {
 export const unitWord = (hass: HomeAssistant | undefined, unit: DurationUnit): string =>
   localize(hass, unit === 'd' ? 'time.unit_d' : unit === 'h' ? 'time.unit_h' : 'time.unit_min');
 
+/**
+ * How long ago `since` was, as its figure alone: "21 d", "3 h", "12 min" — "21日", "12分". The shortest an age is
+ * said, for a row too narrow for "21 d ago".
+ */
+export function ageShort(hass: HomeAssistant | undefined, since: Date, now = Date.now()): string {
+  const minutes = Math.max(1, Math.round((now - since.getTime()) / 60_000));
+  const [n, unit]: [number, DurationUnit] =
+    minutes < 60
+      ? [minutes, 'min']
+      : minutes < 1440
+        ? [Math.round(minutes / 60), 'h']
+        : [Math.round(minutes / 1440), 'd'];
+  return withUnit(n, unitWord(hass, unit));
+}
+
 /** The gap between a figure and its unit, as the unit's script writes it: a space ("12 min"), or none ("12分", no unit). */
 export const unitGap = (unit: string): string => (!unit || attachedUnit(unit) ? '' : ' ');
 

@@ -206,22 +206,14 @@ export const sheet: SheetSpec = {
       title: 'Entities · sections, no head',
       cards: [{ type: 'custom:fluvy-entities-card', rows: kitchen() }],
     },
-    // half a section: the labels start where the names do. The rows of 60 here end in a state, which holds beside
-    // its line at 152 or goes under it (a switch's row cuts its age there, with or without sections: not this
-    // sheet's to show); a row that takes its state under its words grows, so the frame holds no height at 152
+    // half a section: the labels start where the names do, and every kind of row holds what ends it. A switch and a
+    // chevron keep their place and the name gives way beside them; a state takes its two lines, then goes under its
+    // words, where the row grows (so the frame holds no height here); the ages take one form down the list, an age
+    // or a state's word no row has room for is left out, never cut
     {
       title: 'Entities · sections, half a section',
       cards: [
-        entities({
-          cols: 6,
-          rows: [
-            { section: 'Sensors' },
-            'binary_sensor.sc_window',
-            'binary_sensor.sc_motion',
-            { section: 'Doors' },
-            'lock.sc_door',
-          ],
-        }),
+        entities({ cols: 6 }),
         entities({ cols: 6, variant: 'compact', rows: kitchen(true) }),
       ],
     },

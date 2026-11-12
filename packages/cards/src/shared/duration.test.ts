@@ -1,6 +1,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import {
+  ageShort,
   durationText,
   spanText,
   unitGap,
@@ -72,5 +73,25 @@ describe('a span as a readout says it', () => {
   it('gives the widest span a readout lays itself out by, in the language', () => {
     expect(widestDuration(en)).toEqual({ value: '88 h 88', unit: 'min' });
     expect(widestDuration(ja)).toEqual({ value: '88時間88', unit: '分' });
+  });
+});
+
+describe('an age as its figure alone', () => {
+  const now = Date.UTC(2026, 10, 12, 12);
+  const ago = (minutes: number): Date => new Date(now - minutes * 60_000);
+
+  it('says minutes, then hours, then days, each rounded, never less than a minute', () => {
+    expect(ageShort(en, ago(0.2), now)).toBe('1 min');
+    expect(ageShort(en, ago(12), now)).toBe('12 min');
+    expect(ageShort(en, ago(59), now)).toBe('59 min');
+    expect(ageShort(en, ago(60), now)).toBe('1 h');
+    expect(ageShort(en, ago(200), now)).toBe('3 h');
+    expect(ageShort(en, ago(1440), now)).toBe('1 d');
+    expect(ageShort(en, ago(55 * 1440), now)).toBe('55 d');
+  });
+
+  it('joins the unit as the language writes it', () => {
+    expect(ageShort(ja, ago(12), now)).toBe('12分');
+    expect(ageShort(ja, ago(21 * 1440), now)).toBe('21日');
   });
 });

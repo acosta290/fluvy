@@ -1,5 +1,6 @@
 import { glyph } from '@fluvy/ui';
 import { css, html, nothing, type TemplateResult } from 'lit';
+import { NAME_FLOOR } from '../energy/head.js';
 import { type TextRuler } from './fit.js';
 
 /*
@@ -78,6 +79,68 @@ const holds = (
     width - (bare ? 12 : ROW_SIDES) - pill >= Math.min(NAME_MIN, ruler.width(cls, name))
   );
 };
+
+/** The narrowest a value in words is on two lines, broken between its words: its wider half at the best break. */
+export function twoLines(text: string, measure: (text: string) => number): number {
+  const words = text.split(' ');
+  let narrowest = measure(text);
+  for (let at = 1; at < words.length; at++)
+    narrowest = Math.min(
+      narrowest,
+      Math.max(measure(words.slice(0, at).join(' ')), measure(words.slice(at).join(' '))),
+    );
+  return narrowest;
+}
+
+/** A row that ends in a value's words, as `fitValue` weighs it. */
+export interface ValueRow {
+  /** The row's width: its card's content column. */
+  readonly row: number;
+  /** What its words and its value share: the row less its circle (where it kept one) and the gap. */
+  readonly base: number;
+  readonly name: string;
+  readonly value: string;
+  /** The classes the value is drawn in: what it is measured in. */
+  readonly cls: string;
+  /** The width of the least its line says (an age's figure, a state's one word): 0 for a row with no line. */
+  readonly least: number;
+  /** The value is a state in words: it may take two lines, broken between its words (a figure and its unit never). */
+  readonly wraps: boolean;
+}
+
+/** How a row's value stands with its words (`fitValue`). */
+export interface ValueFit {
+  /** The value goes under the words, which have the row. */
+  readonly stack: boolean;
+  /** The width it wraps to beside the words: its two lines. */
+  readonly width?: number;
+  /** Under the words, a word of it the row would not hold at its size: the smaller size that does (14, then 12). */
+  readonly size?: 's' | 'xs';
+  /** The room the row's words have, for its name and its line. */
+  readonly room: number;
+}
+
+/**
+ * Where a row's value stands, by measure, so neither it nor the line beside it is ever cut. On one line beside the
+ * words while the name keeps its room (96, or the name itself) and the line its least form. Where it would not, a
+ * state in words takes its two lines and the name what that frees. Where even so the name would be cut to nothing
+ * (under `NAME_FLOOR`, or under itself) or the line would not hold, the value goes under the words: they have the
+ * row, the value its own lines broken between its words, a word the row would not hold in the smaller sizes.
+ */
+export function fitValue(ruler: TextRuler, o: ValueRow): ValueFit {
+  const measure = (text: string, size = ''): number => ruler.width(`${o.cls}${size}`, text);
+  const name = ruler.width('fv-row__title', o.name);
+  const one = measure(o.value);
+  if (o.base - one >= Math.max(Math.min(NAME_MIN, name), o.least))
+    return { stack: false, room: o.base - one };
+  const two = o.wraps ? twoLines(o.value, measure) : one;
+  if (o.base - two >= Math.max(Math.min(NAME_FLOOR, name), o.least))
+    return { stack: false, room: o.base - two, ...(two < one ? { width: two } : {}) };
+  const parts = o.wraps ? o.value.split(' ') : [o.value];
+  const widest = (size: string): number => Math.max(...parts.map((part) => measure(part, size)));
+  const size = widest('') <= o.row ? undefined : widest(' fv-row__value--s') <= o.row ? 's' : 'xs';
+  return { stack: true, room: o.row, ...(size ? { size } : {}) };
+}
 
 /**
  * The sheet's content-sized row button (44 in a row, text + 16 px sides on the 4 grid). `label` is the

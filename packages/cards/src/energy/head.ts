@@ -12,8 +12,11 @@ export const BADGE_SIDES = 28;
 const ICON_COMPACT = 40 + 12;
 /** The least a row's name may have beside its value before the circle gives way to it (the name itself when shorter). */
 export const ROW_NAME_MIN = 96;
-/** The least a head's name keeps beside a circle it must show (`always`): two letters and the ellipsis at 16/600. */
-const NAME_FLOOR = 40;
+/**
+ * The least a name keeps before it is cut to nothing: two letters and the ellipsis at 16/600. A head's beside a circle
+ * it must show (`always`), a row's beside what ends it once it gave its circle away (`fitValue`).
+ */
+export const NAME_FLOOR = 40;
 
 /** How a row is laid out: the compact row's 40 circle, or no circle at all (given to the name). */
 export interface RowLayout {

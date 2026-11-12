@@ -10,6 +10,7 @@ import {
 } from '@fluvy/core';
 import type { Secondary } from './config.js';
 import { stateWord } from './domain.js';
+import { ageShort } from './duration.js';
 import { changedAt } from './since.js';
 import { asText, isTemplate, type TemplateTexts } from './templates.js';
 
@@ -42,6 +43,44 @@ export function secondaryText(
   if (mode === 'area') return view.areaName || fallback(hass, view, short, since);
   if (mode === 'last-changed') return changed(hass, view, short, since);
   return attribute(hass, view, mode);
+}
+
+/** A row's line as it may be said, for a row too narrow for it whole (`rowLine`). */
+export interface RowLine {
+  /** The line whole, its short form (`secondaryText`'s), and the least it says: an age's figure alone ("32 d"). */
+  readonly forms: readonly [full: string, short: string, least: string];
+  /** The line is how long ago the entity changed: a list says its ages in one form. */
+  readonly age: boolean;
+  /** The line is a name (the area's, a template's own words): it may end in an ellipsis, as names may. */
+  readonly name: boolean;
+}
+
+/**
+ * The line under a row's name in its forms, longest first (`secondaryText` whole and short; an age then as its
+ * figure alone), and what kind of line it is: what a card draws is the longest its row holds, by measure.
+ */
+export function rowLine(
+  hass: HomeAssistant | undefined,
+  view: EntityView,
+  secondary: Secondary | undefined,
+  stateShown = false,
+  texts?: TemplateTexts,
+  since?: string,
+): RowLine {
+  const said = (short: boolean): string =>
+    secondaryText(hass, view, secondary, stateShown, texts, short, since);
+  const full = said(false);
+  const short = said(true);
+  const at = view.status === 'ok' ? changedAt(hass, view, since) : null;
+  const age = full !== '' && at !== null && full === relativeTime(hass, at);
+  return {
+    forms: [full, short, age && at ? ageShort(hass, at) : short],
+    age,
+    name:
+      full !== '' &&
+      ((isTemplate(secondary ?? '') && isUsable(view)) ||
+        (view.status === 'ok' && full === view.areaName)),
+  };
 }
 
 /** The area, or the time: what a row says when what was asked has nothing to say. */

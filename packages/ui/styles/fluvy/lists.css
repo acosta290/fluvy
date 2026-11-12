@@ -284,3 +284,25 @@
   font-size: 14px;
   line-height: 18px;
 }
+
+/* a value in words beside words that need the room (its card measured both): as wide as its two lines, broken
+   between its words, right-aligned; the words have the rest of the row */
+.fv-row__value.fv-row__value--wrap {
+  display: block;
+  flex: none;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: normal;
+  text-align: end;
+  top: 0;
+}
+
+/* a value under its row's words that its line would not hold at its size: the smaller one, then the smallest */
+.fv-row__value.fv-row__value--s {
+  font-size: 14px;
+}
+
+.fv-row__value.fv-row__value--xs {
+  font-size: 12px;
+}

@@ -12,7 +12,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { head, listRow } from '@fluvy/ui';
+import { head, listRow, wordsClass } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -24,10 +24,17 @@ import { DETAILS, type RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
-import { buttonWidth, rowEndStyles, rowsKeepIcon, rowStacks } from '../shared/row-end.js';
-import { secondaryText } from '../shared/secondary.js';
+import {
+  buttonWidth,
+  fitValue,
+  rowEndStyles,
+  rowsKeepIcon,
+  rowStacks,
+  type ValueFit,
+} from '../shared/row-end.js';
+import { rowLine, type RowLine } from '../shared/secondary.js';
 import { sinceIds } from '../shared/since.js';
-import { isTemplate, TemplateTexts } from '../shared/templates.js';
+import { TemplateTexts } from '../shared/templates.js';
 import { EMPTY, entryCount, HEAD, ROW_COMPACT, ROW, sectionsHeight } from '../shared/heights.js';
 import {
   conditionIds,
@@ -81,7 +88,12 @@ const moreOf = (config: EntitiesCardConfig | undefined): { count: number; path: 
  * condition holds (#157): the head counts the rows that show, and with none showing the card is its empty panel.
  */
 export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns: its rows of 60 (48 compact), which a
+   * section's column always holds. In a column so narrow that a row's state goes under its words (`fitValue`: half
+   * a section, a long word), the live card is that state's lines taller (20 each, 4 over them) and its grid follows
+   * it (`rows: auto`); no config can say which states those are.
+   */
   static override layoutHeight(config: EntitiesCardConfig): number {
     const n = entryCount(config, ['rows', 'entities']) + (moreOf(config) ? 1 : 0);
     // nothing to list: the panel under the head, or alone in the card (20 + 120 + 20)
@@ -116,14 +128,19 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       .fv-row:has(.fv-row__value--text) .fv-row__text {
         min-width: 0;
       }
-      /* a row that gave its circle away lets a state of a few words take a second line between them ("No /
-         detectado") before the time under the name is cut */
-      .fv-row--bare > .fv-row__value--words {
-        flex-shrink: 1;
-        white-space: normal;
-        text-align: end;
+      /* a row that gave its circle away holds its value at the width the card measured (fitValue): on one line, or a
+         state of a few words at its two ("No / detectado", the part's own wrap); the words have the rest of the row,
+         the name ending in its ellipsis */
+      .fv-row--bare > .fv-row__value:not(.fv-row__value--wrap) {
+        display: block;
+        flex: none;
+        max-width: none;
+        overflow: visible;
+        white-space: nowrap;
       }
-      /* …and where not even then, the state goes under the words, at their start, and the row grows */
+      /* …and where even so the name would be cut to nothing or the line under it would not hold, the state goes
+         under the words, at their start, and the row grows by its lines of 20, on the grid: broken between its words,
+         and inside one only where the row would not hold it at the smallest size */
       .fv-row--stack {
         flex-wrap: wrap;
         row-gap: 4px;
@@ -135,7 +152,14 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         flex-basis: 100%;
       }
       .fv-row--stack > .fv-row__value.fv-row__value {
+        top: 0;
+        display: block;
+        flex: none;
         max-width: 100%;
+        overflow: visible;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 20px;
         text-align: start;
       }
     `,
@@ -184,6 +208,45 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
+  }
+
+  /**
+   * Where a row's end stands in the card's column, and the room its words have (`ValueFit`). A switch and a chevron
+   * keep their own width at the row's end and never move: the name gives way beside them. A dropdown goes under the
+   * words where even without the circle it would not hold beside them (`rowStacks`), a compact row's too. A value's
+   * words are weighed by `fitValue`: on one line, on two, or under the words.
+   */
+  private fit(
+    row: {
+      readonly trailing: 'switch' | 'value' | 'chevron' | 'menu';
+      readonly title: string;
+      readonly value: string;
+      readonly end: number | undefined;
+      readonly lines: RowLine;
+    },
+    keep: boolean,
+    compact: boolean,
+  ): ValueFit {
+    const { ruler } = this.head;
+    const width = this.contentWidth;
+    const base = this.head.rowRoom(width, '', { icon: keep, compact });
+    const [, short, least] = row.lines.forms;
+    if (row.trailing === 'menu') {
+      const stack =
+        !keep && rowStacks(ruler, width, dropdownEnd(row.title, row.value, compact ? '' : short));
+      return { stack, room: stack ? width : base - (row.end ?? 0) };
+    }
+    if (row.end !== undefined) return { stack: false, room: base - row.end };
+    return fitValue(ruler, {
+      row: width,
+      base,
+      name: row.title,
+      value: row.value,
+      cls: `fv-row__value ${wordsClass(row.value)}`.trim(),
+      least: compact ? 0 : ruler.width('fv-row__sub', least),
+      // a state in words; a figure and its unit stay on one line
+      wraps: /\p{L}/u.test(row.value) && !/\p{Nd}/u.test(row.value) && row.value.includes(' '),
+    });
   }
 
   protected renderCard(): TemplateResult {
@@ -284,17 +347,16 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             : menu
               ? buttonWidth(this.head.ruler, value, true)
               : undefined;
-      const sub = (short = false): string =>
-        secondaryText(
-          this.hass,
-          view,
-          row.secondary,
-          trailing === 'value' || menu,
-          this.texts,
-          short,
-          row.since,
-        );
-      return { view, usable, trailing, title: this.nameFor(view, row.name), value, end, sub };
+      // the row's line in its forms: whole, short, and the least it says
+      const lines = rowLine(
+        this.hass,
+        view,
+        row.secondary,
+        trailing === 'value' || menu,
+        this.texts,
+        row.since,
+      );
+      return { view, usable, trailing, title: this.nameFor(view, row.name), value, end, lines };
     });
     // the "N more" row says it in words where they hold beside its chevron, else as "+N"
     const moreWords = more ? this.t('common.more_count', { count: more.count }) : '';
@@ -308,11 +370,11 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       this.head.rowsKeepIcon(
         this.contentWidth,
         [
-          ...laid.map(({ title, value, end, sub }) => ({
+          ...laid.map(({ title, value, end, lines }) => ({
             title,
             value,
-            // the least the line says (a time's short form), so a passing minute never moves the circles
-            sub: compact ? '' : sub(true),
+            // the line's short form (a time's "32 d ago"), so a passing minute never moves the circles
+            sub: compact ? '' : lines.forms[1],
             ...(end === undefined ? {} : { end }),
           })),
           ...(more ? [{ title: moreTitle, value: '', end: 44 }] : []),
@@ -327,42 +389,30 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           trailing === 'menu' ? [dropdownEnd(title, value)] : [],
         ),
       );
-    // a line too long for its row even so takes its short form ("32 d geleden", "Not found"); where not even that
-    // holds beside a state in words at its narrowest (its longest word), the state goes under the words. A dropdown
-    // goes under them where even without the circle it would not hold beside them (`rowStacks`), a compact row's (its
-    // name alone) too: its value is never cut where the row can hold it
-    const line = ({
-      trailing,
-      title,
-      value,
-      end,
-      sub,
-    }: (typeof laid)[number]): {
-      sub: string;
-      stack: boolean;
-    } => {
-      const full = compact ? '' : sub();
-      const short = compact ? '' : sub(true);
-      const width = (text: string): number => this.head.ruler.width('fv-row__sub', text);
-      if (
-        trailing === 'menu' &&
-        !keep &&
-        rowStacks(this.head.ruler, this.contentWidth, dropdownEnd(title, value, short))
-      )
-        return { sub: width(full) <= this.contentWidth ? full : short, stack: true };
-      if (compact) return { sub: '', stack: false };
-      const room = this.head.rowRoom(
-        this.contentWidth,
-        value,
-        end === undefined ? { icon: keep } : { icon: keep, end },
+    // where each row's end stands and the room its words have, by measure (`fit`): nothing but a name is ever cut
+    const width = this.contentWidth;
+    const fits = laid.map((p) => this.fit(p, keep, compact));
+    const lineWidth = (text: string): number => this.head.ruler.width('fv-row__sub', text);
+    /** The first of a row's line's forms its room holds, from `from` on: 3 where none does. */
+    const formOf = (index: number, from: number): number => {
+      const at = laid[index]!.lines.forms.findIndex(
+        (form, i) => i >= from && lineWidth(form) <= fits[index]!.room,
       );
-      if (width(full) <= room) return { sub: full, stack: false };
-      const least = Math.max(
-        0,
-        ...value.split(' ').map((word) => this.head.ruler.width('fv-row__value', word)),
-      );
-      const stack = !keep && end === undefined && this.contentWidth - 12 - least < width(short);
-      return { sub: stack && width(full) <= this.contentWidth ? full : short, stack };
+      return at < 0 ? 3 : at;
+    };
+    // an age is said in one form down the list, the longest every row of an age holds ("32 days ago", "32 d ago",
+    // "32 d"): one form a list, as the lock's, the alarm's and the camera's rows say theirs
+    const ages = Math.min(2, Math.max(0, ...laid.map((p, i) => (p.lines.age ? formOf(i, 0) : 0))));
+    /**
+     * The line a row says: the longest of its forms its room holds (an age's from the list's form on). Where none
+     * does, a name ends in its ellipsis, as names may; anything else is left out rather than cut, and read in the
+     * row's label.
+     */
+    const line = (index: number): string => {
+      const { lines } = laid[index]!;
+      if (compact) return '';
+      const at = formOf(index, lines.age ? ages : 0);
+      return at < 3 ? lines.forms[at]! : lines.name ? lines.forms[0] : '';
     };
 
     return html`<article class="fv-card" data-card>
@@ -385,17 +435,25 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
                   glows ? litColour(view, on, this.config?.light_whites, this.hass) : undefined,
                 )
               : ([row.color, statusToneOf(row, toneFor(view))] as const);
-          const said = line(laid[i]!);
+          const fit = fits[i]!;
+          const sub = line(i);
+          const whole = laid[i]!.lines.forms[0];
           const menu = trailing === 'menu';
           return listRow({
             icon: keep ? iconOf(view, row.icon) : null,
             tone: currentTone(view, on ? rowTone : 'neutral'),
             title,
             name: true,
-            sub: said.sub,
-            stack: said.stack,
-            // a template's line is the owner's words: a name, that may end in its ellipsis
-            subName: isTemplate(row.secondary ?? ''),
+            sub,
+            stack: fit.stack,
+            // a template's line is the owner's words and an area's the house's: names, that may end in their ellipsis
+            subName: laid[i]!.lines.name,
+            // a line said short or left out is read whole
+            ...(!compact && !menu && whole && sub !== whole
+              ? { label: [title, whole, value].filter(Boolean).join(' · ') }
+              : {}),
+            valueWidth: fit.width,
+            valueSize: fit.size,
             trailing: menu
               ? dropdown({
                   host: this.controlHost,
@@ -404,9 +462,9 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
                   row,
                   name: title,
                   value,
-                  stack: said.stack,
+                  stack: fit.stack,
                   ruler: this.head.ruler,
-                  width: this.contentWidth,
+                  width,
                 })
               : trailing,
             on,

@@ -624,6 +624,13 @@ export interface ListRowOptions {
   readonly stack?: boolean;
   /** The sub is the owner's own words (a template's), a name that may end in its ellipsis. */
   readonly subName?: boolean;
+  /**
+   * The width a value in words wraps to beside its row's words (its two lines, as its card measured them): the value
+   * takes it, broken between its words, and the words the rest.
+   */
+  readonly valueWidth?: number | undefined;
+  /** A value under its row's words that its line would not hold at its size: the smaller one (14), then the smallest (12). */
+  readonly valueSize?: 's' | 'xs' | undefined;
 }
 
 /**
@@ -634,9 +641,10 @@ const words = (value: string | undefined): boolean => /[a-zà-ÿа-яё]{3}/i.te
 const wordy = (value: string | undefined): boolean => (value ?? '').length > 14 && words(value);
 /**
  * A value in words: prose (`--text`, a smaller two-line style) or a short state of several words (`--words`, which a
- * card may let wrap between them; one word has no second line to take, and stays a value).
+ * card may let wrap between them; one word has no second line to take, and stays a value). A card that fits a value
+ * by measure measures it in this class.
  */
-const wordsClass = (value: string | undefined): string =>
+export const wordsClass = (value: string | undefined): string =>
   wordy(value)
     ? 'fv-row__value--text'
     : words(value) && /\S\s+\S/.test(value ?? '')
@@ -659,7 +667,8 @@ export function listRow(o: ListRowOptions): TemplateResult {
           )
         : trailing === 'value'
           ? html`<span
-              class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${o.valueGlyph ? 'fv-row__value--glyph' : ''} ${wordsClass(o.value)}"
+              class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${o.valueGlyph ? 'fv-row__value--glyph' : ''} ${wordsClass(o.value)} ${o.valueWidth ? 'fv-row__value--wrap' : ''} ${o.valueSize ? `fv-row__value--${o.valueSize}` : ''}"
+              style=${o.valueWidth ? `width:${o.valueWidth}px` : nothing}
               >${o.valueGlyph ? icon(o.valueGlyph) : nothing}${o.value ?? ''}</span
             >`
           : trailing === 'chevron'
