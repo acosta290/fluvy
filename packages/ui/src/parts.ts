@@ -633,16 +633,15 @@ export interface ListRowOptions {
   readonly valueSize?: 's' | 'xs' | undefined;
 }
 
+/** A value that reads as words, not a figure: three letters in a row, in any script ("Not detected", "Не обнаружено"). */
+const words = (value: string | undefined): boolean => /\p{L}{3}/u.test(value ?? '');
+/** Prose: a long value in Latin words, the one the smaller two-line style is drawn for. */
+const wordy = (value: string | undefined): boolean =>
+  (value ?? '').length > 14 && /[a-zà-ÿ]{3}/i.test(value ?? '');
 /**
- * A value that reads as words, not a figure, in Latin letters or Cyrillic ("Não detectado", "Не обнаружено"): it
- * may take two lines instead of one.
- */
-const words = (value: string | undefined): boolean => /[a-zà-ÿа-яё]{3}/i.test(value ?? '');
-const wordy = (value: string | undefined): boolean => (value ?? '').length > 14 && words(value);
-/**
- * A value in words: prose (`--text`, a smaller two-line style) or a short state of several words (`--words`, which a
- * card may let wrap between them; one word has no second line to take, and stays a value). A card that fits a value
- * by measure measures it in this class.
+ * A value in words: prose (`--text`, a smaller two-line style) or a state of several words (`--words`, which a card
+ * may let wrap between them, whatever their script; one word has no second line to take, and stays a value). A card
+ * that fits a value by measure measures it in this class.
  */
 export const wordsClass = (value: string | undefined): string =>
   wordy(value)
