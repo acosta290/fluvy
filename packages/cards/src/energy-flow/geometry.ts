@@ -10,6 +10,7 @@
  *   that can flow both ways at once (a grid read per phase, or by two sensors) is a pair of parallel lanes 16 px
  *   apart; the window is 90° above the house's left point and 48° below it (its words hang under the ring); pairs that
  *   cannot fit share one contact; a pair level with the house arrives level at ±8.
+ * - The house's words hang under its ring, lowered as far as every lane passes them 4 px clear.
  */
 
 import { FLOW_PITCH, FLOW_TOP } from '../energy-family.js';
@@ -194,7 +195,9 @@ export interface RowNode {
 export interface RowsOptions {
   readonly width: number;
   readonly nodes: readonly RowNode[];
+  /** The house's words: their height, and their width at the widest figure the card writes. */
   readonly houseWordsH: number;
+  readonly houseWordsW: number;
   /** Where the energy goes, on the right (the house moves to the middle). */
   readonly consumers?: readonly { readonly wordsH: number; readonly wordsW: number }[];
 }
@@ -216,9 +219,25 @@ export interface RowsLayout {
   readonly lanes: readonly RowLane[];
   /** From the house out to each consumer. */
   readonly out: readonly Cubic[];
+  /** Where the house's words begin (y). */
+  readonly houseWords: number;
 }
 
 const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
+
+/** A lane's middle keeps this far off words it passes: its half (3) and 4 clear. */
+const CLEAR = 7;
+
+/** The top of words standing in the column [left, right], from `from` down: under every lane that enters the column. */
+function wordsUnder(paths: readonly Cubic[], left: number, right: number, from: number): number {
+  let top = from;
+  for (const path of paths)
+    for (let i = 0; i <= SAMPLES; i++) {
+      const [x, y] = at(path, i / SAMPLES);
+      if (x > left - CLEAR && x < right + CLEAR) top = Math.max(top, y + CLEAR);
+    }
+  return up4(top);
+}
 
 export function rowsLayout(o: RowsOptions): RowsLayout {
   const ys = o.nodes.map((_, i) => TOP + i * PITCH);
@@ -279,9 +298,18 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
       });
     }
   }
+  // the house's words hang under its ring (centred under it beside consumers), as low as the lanes ask: a fan of four
+  // rows, or of pairs, reaches 48° under the house and comes in through words wider than its ring (#170)
+  const half = o.houseWordsW / 2;
+  const houseWords = wordsUnder(
+    [...lanes.map((l) => l.path), ...out],
+    wide ? house[0] - half : o.width - o.houseWordsW,
+    wide ? house[0] + half : o.width,
+    house[1] + 36,
+  );
   const bottoms = [
     last + Math.max(22, (o.nodes[o.nodes.length - 1]?.wordsH ?? 36) / 2),
-    house[1] + 36 + o.houseWordsH,
+    houseWords + o.houseWordsH,
     ...cys.map((y, i) => y + Math.max(22, (consumers[i]?.wordsH ?? 36) / 2)),
   ];
   return {
@@ -293,6 +321,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     tail,
     lanes,
     out,
+    houseWords,
   };
 }
 

@@ -54,6 +54,18 @@ const house19 = {
   _now: NOW,
 };
 
+/** Five sources: two roofs, the grid, a battery and a car giving the house 12.4 kW (#170). */
+const five = {
+  sources: [
+    { type: 'solar', power: 'sensor.fl_five_east' },
+    { type: 'solar', power: 'sensor.fl_five_west' },
+    { type: 'grid', power: 'sensor.fl_five_grid' },
+    { type: 'battery', power: 'sensor.fl_five_battery' },
+    { type: 'vehicle', power: 'sensor.fl_five_car' },
+  ],
+  _now: NOW,
+};
+
 /** A day's energy hour by hour (four buckets: night, morning, afternoon, evening) for the period frames. */
 const DAY = Date.parse('2026-09-16T22:00:00Z');
 const buckets = (values: readonly number[]): { start: number; change: number }[] =>
@@ -263,6 +275,13 @@ export const sheet: SheetSpec = {
     ['sensor.fl_large_solar', '11.6', power('Solar power', 'kW')],
     ['sensor.fl_large_grid', '2.1', power('Grid power', 'kW')],
     ['sensor.fl_large_battery', '10.4', power('Battery power', 'kW')],
+
+    /* five sources, the house at 12.4 kW (#170) */
+    ['sensor.fl_five_east', '4.2', power('East roof power', 'kW')],
+    ['sensor.fl_five_west', '3.1', power('West roof power', 'kW')],
+    ['sensor.fl_five_grid', '1.6', power('Grid power', 'kW')],
+    ['sensor.fl_five_battery', '2.4', power('Battery power', 'kW')],
+    ['sensor.fl_five_car', '1.1', power('Car power', 'kW')],
 
     /* the Energy dashboard's meters and power sensors */
     ['sensor.fl_grid_in_energy', '4.1', energy('Grid import')],
@@ -691,6 +710,13 @@ export const sheet: SheetSpec = {
       title: 'The narrowest column',
       width: 328,
       cards: [{ type: 'custom:fluvy-energy-flow-card', ...house19 }],
+    },
+    // #170: five sources come in 48° under the house; its words stand lower, where every lane passes them clear
+    { title: 'Five sources', cards: [{ type: 'custom:fluvy-energy-flow-card', ...five }] },
+    {
+      title: 'Five sources · a narrow column',
+      width: 266,
+      cards: [{ type: 'custom:fluvy-energy-flow-card', ...five }],
     },
     // #170: a card keeps its lanes or its list at a width whatever its figures say, its battery charging 0.6 kW or
     // discharging 10.4 kW

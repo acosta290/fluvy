@@ -160,6 +160,8 @@ const PERIOD_THRESHOLD = 50;
  * Wh, at the card's decimals. The rows are laid out for it, so the day's figures never swing the card to its list.
  */
 const USUAL = 8888;
+/** The widest reading a house's figures take: three figures and a separator in kW or kWh (88.9), five in W or Wh. */
+const WIDEST = 88888;
 
 /** One node of the diagram, resolved: what it is, how it reads, how it is drawn. */
 interface Node extends SceneNode {
@@ -792,18 +794,24 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
    * unit and decimals with each of its ways.
    */
   private steadyWidth(n: Node, period: boolean): number {
-    const scale = scaleOf([USUAL], period ? 'Wh' : 'W', this.config);
-    const figure = scaled(this.hass, USUAL, scale);
+    const usual = this.figureOf(USUAL, period);
     return Math.max(
       this.head.ruler.width('en-words__label', charged(n.name, n.level === null ? null : 100)),
       ...(waysOf(n.kind, this.ways(), period) ?? ['']).map((way) =>
-        this.lineWidth(figure, scale.unit, way),
+        this.lineWidth(usual.value, usual.unit, way),
       ),
     );
   }
 
+  /** A reading of `value` as the card writes it, in its unit and decimals: the figure and the unit. */
+  private figureOf(value: number, period: boolean): { value: string; unit: string } {
+    const scale = scaleOf([value], period ? 'Wh' : 'W', this.config);
+    return { value: scaled(this.hass, value, scale), unit: scale.unit };
+  }
+
   /** The rows at `w`: its consumers drawn beside the house where `wide`. */
   private rowsOf(scene: Scene, w: number, wide: boolean): RowsLayout {
+    const widest = this.figureOf(WIDEST, scene.period !== null);
     return rowsLayout({
       width: w,
       nodes: scene.nodes.map((n, i) => {
@@ -816,6 +824,11 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         };
       }),
       houseWordsH: 36,
+      // laid out for its widest figure, so its words keep their place as its figures change
+      houseWordsW: Math.max(
+        this.head.ruler.width('en-words__label', scene.house.label),
+        this.lineWidth(widest.value, widest.unit, ''),
+      ),
       ...(wide
         ? {
             consumers: scene.consumerWords.map((cw) => ({
@@ -1053,7 +1066,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         wide
           ? html`<div
                 class="en-place"
-                style="left:${rows.house[0] - 60}px;top:${rows.house[1] + 36}px;width:120px"
+                style="left:${rows.house[0] - 60}px;top:${rows.houseWords}px;width:120px"
               >
                 ${renderWords(scene.house, 'center')}
               </div>
@@ -1071,7 +1084,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
                     ${renderWords(words, 'right')}
                   </div>`;
               })}`
-          : html`<div class="en-place" style="right:0;top:${rows.house[1] + 36}px">
+          : html`<div class="en-place" style="right:0;top:${rows.houseWords}px">
               ${renderWords(scene.house, 'right')}
             </div>`
       }

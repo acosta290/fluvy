@@ -23,6 +23,7 @@ import {
   rowsLayout,
   upTo,
   paramAt,
+  type RowsLayout,
 } from './geometry.js';
 import { budget, density, pace, type Pulse } from './motion.js';
 import { lanesOf, said, waysOf, type SceneNode, type WayWords } from './scene.js';
@@ -63,9 +64,11 @@ describe('the arrowhead ends the lane', () => {
 
 describe('rows', () => {
   const node = (pair = false) => ({ wordsH: 36, wordsW: 100, steadyW: 100, pair });
+  /** The house's words: "House" over "4.1 kW". */
+  const house = { houseWordsH: 36, houseWordsW: 48 };
 
   it('the #19 house: a lane for the sun, a pair for the grid, a lane for the battery, 6 px off the ring', () => {
-    const r = rowsLayout({ width: 320, nodes: [node(), node(true), node()], houseWordsH: 36 });
+    const r = rowsLayout({ width: 320, nodes: [node(), node(true), node()], ...house });
     expect(r.narrow).toBe(false);
     expect(r.lanes.map((l) => `${l.node}.${l.index}`)).toEqual(['0.0', '1.0', '1.1', '2.0']);
     for (const l of r.lanes) expect(dist(l.path.b, r.house)).toBeCloseTo(RING, 5);
@@ -75,7 +78,7 @@ describe('rows', () => {
   });
 
   it('keeps 20 px of ring between neighbouring contacts, 16 inside a pair', () => {
-    const r = rowsLayout({ width: 320, nodes: [node(), node(true), node()], houseWordsH: 36 });
+    const r = rowsLayout({ width: 320, nodes: [node(), node(true), node()], ...house });
     const ends = r.lanes.map((l) => l.path.b);
     for (let i = 1; i < ends.length; i++) {
       const gap = dist(ends[i - 1] ?? [0, 0], ends[i] ?? [0, 0]);
@@ -84,35 +87,76 @@ describe('rows', () => {
   });
 
   it('a lane shorter than 56 px is no lane: the card lists', () => {
-    expect(
-      rowsLayout({ width: 248, nodes: [node(), node(), node()], houseWordsH: 36 }).narrow,
-    ).toBe(true);
-    expect(
-      rowsLayout({ width: 320, nodes: [node(), node(), node()], houseWordsH: 36 }).narrow,
-    ).toBe(false);
+    expect(rowsLayout({ width: 248, nodes: [node(), node(), node()], ...house }).narrow).toBe(true);
+    expect(rowsLayout({ width: 320, nodes: [node(), node(), node()], ...house }).narrow).toBe(
+      false,
+    );
   });
 
   it('lists by the words as they can read, whatever the figures say now (#170)', () => {
     // a battery whose words can read "8.9 kW discharging" (124): lanes at 320 with a day's figure or a month's
     const battery = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 124, pair: false });
-    const day = rowsLayout({ width: 320, nodes: [node(), battery(103)], houseWordsH: 36 });
-    const month = rowsLayout({ width: 320, nodes: [node(), battery(134)], houseWordsH: 36 });
+    const day = rowsLayout({ width: 320, nodes: [node(), battery(103)], ...house });
+    const month = rowsLayout({ width: 320, nodes: [node(), battery(134)], ...house });
     expect([day.narrow, month.narrow]).toEqual([false, false]);
     // the lanes leave after the words as they can read, and after a figure that reads wider than the usual
     expect(day.tail).toBe(192);
     expect(month.tail).toBe(204);
     // and where the words as they can read leave no lane, the card lists at any figure
     const long = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 140, pair: false });
-    expect(rowsLayout({ width: 320, nodes: [node(), long(60)], houseWordsH: 36 }).narrow).toBe(
-      true,
-    );
-    expect(rowsLayout({ width: 320, nodes: [node(), long(140)], houseWordsH: 36 }).narrow).toBe(
-      true,
-    );
+    expect(rowsLayout({ width: 320, nodes: [node(), long(60)], ...house }).narrow).toBe(true);
+    expect(rowsLayout({ width: 320, nodes: [node(), long(140)], ...house }).narrow).toBe(true);
+  });
+
+  /** How near the middle of a lane, in or out, comes to the house's words standing in [left, right]. */
+  const nearest = (r: RowsLayout, left: number, right: number): number => {
+    let near = Infinity;
+    for (const path of [...r.lanes.map((l) => l.path), ...r.out])
+      for (let i = 0; i <= 200; i++) {
+        const [x, y] = at(path, i / 200);
+        const dx = Math.max(left - x, 0, x - right);
+        const dy = Math.max(r.houseWords - y, 0, y - (r.houseWords + 36));
+        near = Math.min(near, Math.hypot(dx, dy));
+      }
+    return near;
+  };
+  const wideHouse = { houseWordsH: 36, houseWordsW: 67 }; // "13.4 kWh", as wide as the house's figures read
+
+  it('#170: the house’s words keep every lane 4 px off them, however many rows come in under the house', () => {
+    for (const nodes of [
+      [node(), node(), node()],
+      [node(), node(true), node(true)],
+      [node(), node(), node(), node()],
+      [node(), node(), node(true), node(), node()],
+    ])
+      for (const width of [320, 372, 600]) {
+        const r = rowsLayout({ width, nodes, ...wideHouse });
+        // a lane's half (3) and 4 clear
+        expect(nearest(r, width - 67, width)).toBeGreaterThanOrEqual(7);
+      }
+  });
+
+  it('they hang under the ring where no lane comes through, lower where one would, in the stage the rows ask', () => {
+    const three = rowsLayout({ width: 320, nodes: [node(), node(), node()], ...house });
+    expect(three.houseWords).toBe(three.house[1] + 36);
+    // five rows: lower, and the stage as tall as five rows make it, as the card declares
+    const five = rowsLayout({ width: 320, nodes: [1, 2, 3, 4, 5].map(() => node()), ...wideHouse });
+    expect(five.houseWords).toBeGreaterThan(five.house[1] + 36);
+    expect(five.height).toBe(384);
+  });
+
+  it('beside consumers they stand centred under the house, clear of the lanes in and out', () => {
+    const r = rowsLayout({
+      width: 696,
+      nodes: [1, 2, 3, 4].map(() => node()),
+      ...wideHouse,
+      consumers: [1, 2, 3].map(() => ({ wordsH: 36, wordsW: 80 })),
+    });
+    expect(nearest(r, 348 - 33.5, 348 + 33.5)).toBeGreaterThanOrEqual(7);
   });
 
   it('the stage ends at the last words, on the 4 px grid', () => {
-    const r = rowsLayout({ width: 320, nodes: [node(), node(), node()], houseWordsH: 36 });
+    const r = rowsLayout({ width: 320, nodes: [node(), node(), node()], ...house });
     expect(r.height % 4).toBe(0);
     expect(r.height).toBeGreaterThanOrEqual(202 + 22);
   });
@@ -121,7 +165,7 @@ describe('rows', () => {
     const r = rowsLayout({
       width: 696,
       nodes: [node(), node(), node()],
-      houseWordsH: 36,
+      ...house,
       consumers: [
         { wordsH: 36, wordsW: 80 },
         { wordsH: 36, wordsW: 80 },
