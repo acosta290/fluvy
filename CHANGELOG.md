@@ -5,6 +5,61 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.19.1] — 2026-11-12
+
+### Visible on upgrade
+
+- The automatic dashboards' Home view shows the house's scenes on one Scenes card, with an "N more" row past six,
+  where only the first scene stood, and each room's page opens with its own scenes on a Scenes card, where they were
+  plain rows under Devices (#172).
+- The Energy flow keeps one shape at a width whatever its figures say: its lanes start after the widest words a source
+  can say, so on a card with a battery or a car they start a little further right, and the card no longer turns
+  into its list when a figure grows. A rows card with three sources or more is 8 px taller (two sources 12 px), room for a line under the last
+  source, and the house's words sit lower under its ring where a lane came close, by 12 to 36 px (#170).
+- An Energy flow source whose sensor shares its name with another of its kind shows its device's name (#170).
+- Under a mouse, a narrow window's view tabs show Home Assistant's chevrons at the row's ends on the header's colour,
+  as a wide screen does, in place of the fades; a phone's tabs are unchanged (#170).
+- A house whose Energy dashboard has a solar source reads that meter on the automatic dashboards' Production card and
+  history bars (today's gain, as before), where a counter found by its words was preferred.
+
+### Added
+
+- The automatic dashboards draw the house's scenes: one Scenes card on Home, and a room's own on its page (#172). A
+  Room card can take a scene as a quick action (`quick_actions: [lights, scene.movie_night]`).
+
+### Fixed
+
+- The Room lights card switches a lamp on a plug: a switch the automatic dashboards put among a room's lights did
+  nothing under its round, its chip or the room's tap, and now turns on and off as a switch, while the brightness ruler
+  and the colours set the lights alone and the plug just comes on (#170, reported by @waphbs).
+- The view tabs keep Home Assistant's chevrons under a mouse in a narrow window, a desktop browser at a phone's width or
+  a tablet with a mouse, where a row of tabs longer than the header had no way along it; a phone in the hand keeps its
+  row that scrolls under the finger (#170, reported by @waphbs).
+- The Energy flow no longer swings between its diagram and its list as its figures change, such as a battery
+  discharging 10.4 kW or a month's totals beside a day's, and on a phone it keeps its diagram in every language: where
+  a source's way does not fit beside its figure it goes on the line under it, or a pair shows its lanes' arrowheads
+  beside its figures (#170, reported by @waphbs).
+- The Energy flow's lanes no longer run through the house's words with four sources or more, or with the grid and the
+  battery read both ways over a day (#170, reported by @waphbs).
+- The Energy flow names two sources of one kind by their devices where their sensors share a name, such as two
+  inverters' "MPPT 累计发电量", and the energy cards no longer cut a name in Chinese or Japanese to its last word (#170,
+  reported by @waphbs).
+- The Energy flow's list, in a narrow card, is as tall as the card declares, where it stood 32 px over (#170).
+- The automatic dashboards tell apart two readings of one kind shown together that would read alike, such as one
+  room's meters, two thermometers of one place on Climate, or two weather services' rows on a room's page, each gaining
+  its own words or its device's name after a "·" (#170, reported by @waphbs).
+- The automatic dashboards never take a forecast (Solcast, Forecast.Solar, or a sensor named as a forecast in any of the
+  fifteen languages) as the sun's power, a grid, battery or house meter, or today's production (#170, reported by
+  @waphbs).
+- The automatic dashboards' Lights view titles its card Scenes when it holds only scenes, where it always said
+  Automations (#172).
+- The Scenes card declared its rows 8 px closer than it draws them, so a column with three rows of scenes or more ended
+  lower than the others.
+
+### Development
+
+- Budgets: the automatic dashboards' chunk 25 KB (was 24), the energy chunk 81 KB (was 80).
+
 ## [1.19.0] — 2026-11-12
 
 ### Visible on upgrade
