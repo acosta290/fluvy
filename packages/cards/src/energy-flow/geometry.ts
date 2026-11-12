@@ -182,6 +182,12 @@ export interface RowNode {
   /** Words' height (16 · 20 · 20) and width, measured by the card. */
   readonly wordsH: number;
   readonly wordsW: number;
+  /**
+   * Their width whatever the node reads (#170): its label at its widest, and a figure as wide as a house's usually
+   * is with each of its ways. The card lists only where these leave no lane, so at a width it keeps its lanes or its
+   * list as its figures change.
+   */
+  readonly steadyW: number;
   /** Two lanes: a source that can flow both ways at the same moment. */
   readonly pair: boolean;
 }
@@ -220,8 +226,11 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const consumers = o.consumers ?? [];
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
-  const tail = up4(TEXT + Math.max(0, ...o.nodes.map((n) => n.wordsW)) + 12);
-  const narrow = house[0] - RING - tail < LANE_MIN;
+  // the card lists where the words as they can read leave no lane; the lanes leave after them, or after a figure
+  // wider than a house's usual as it reads now
+  const steady = Math.max(0, ...o.nodes.map((n) => n.steadyW));
+  const tail = up4(TEXT + Math.max(steady, ...o.nodes.map((n) => n.wordsW)) + 12);
+  const narrow = house[0] - RING - up4(TEXT + steady + 12) < LANE_MIN;
   const lanes: RowLane[] = [];
   const out: Cubic[] = [];
   const cys = consumers.map((_, i, all) =>

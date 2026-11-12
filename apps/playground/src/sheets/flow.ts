@@ -256,6 +256,14 @@ export const sheet: SheetSpec = {
     ['sensor.fl_v2h_car', '2.4', power('Car', 'kW')],
     ['sensor.fl_v2h_level', '58', level('Car')],
 
+    /* one house at small and at large figures (#170) */
+    ['sensor.fl_small_solar', '3.2', power('Solar power', 'kW')],
+    ['sensor.fl_small_grid', '300', power('Grid power')],
+    ['sensor.fl_small_battery', '-600', power('Battery power')],
+    ['sensor.fl_large_solar', '11.6', power('Solar power', 'kW')],
+    ['sensor.fl_large_grid', '2.1', power('Grid power', 'kW')],
+    ['sensor.fl_large_battery', '10.4', power('Battery power', 'kW')],
+
     /* the Energy dashboard's meters and power sensors */
     ['sensor.fl_grid_in_energy', '4.1', energy('Grid import')],
     ['sensor.fl_grid_out_energy', '1.3', energy('Grid export')],
@@ -683,6 +691,23 @@ export const sheet: SheetSpec = {
       title: 'The narrowest column',
       width: 328,
       cards: [{ type: 'custom:fluvy-energy-flow-card', ...house19 }],
+    },
+    // #170: a card keeps its lanes or its list at a width whatever its figures say, its battery charging 0.6 kW or
+    // discharging 10.4 kW
+    {
+      title: 'Small and large figures',
+      width: 736,
+      cards: (['small', 'large'] as const).map((size) => ({
+        type: 'custom:fluvy-energy-flow-card',
+        title: 'Energy',
+        sources: [
+          { type: 'solar', power: `sensor.fl_${size}_solar` },
+          { type: 'grid', power: `sensor.fl_${size}_grid` },
+          { type: 'battery', power: `sensor.fl_${size}_battery` },
+        ],
+        _now: NOW,
+        cols: 6,
+      })),
     },
     {
       title: 'Half a column',

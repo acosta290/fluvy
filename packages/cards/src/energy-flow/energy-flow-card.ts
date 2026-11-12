@@ -80,6 +80,7 @@ import {
   type CrossKey,
   type Cubic,
   type Point,
+  type RowsLayout,
 } from './geometry.js';
 import { PulseEngine, type MotionMode, type Pulse } from './motion.js';
 import {
@@ -88,6 +89,7 @@ import {
   lanesOf,
   oneWay,
   said,
+  waysOf,
   type Ink,
   type LaneState,
   type Origins,
@@ -153,10 +155,17 @@ const DEFAULT_PEAK = 6000;
 const CONSUMERS_WIDE = 560;
 /** Over a period, a way under 50 Wh rests: its lane and its figure dim, the figure still its total. */
 const PERIOD_THRESHOLD = 50;
+/**
+ * A reading as wide as a house's usually is (W, or Wh over a period): one whole figure in kW or kWh, 8.9, four in W or
+ * Wh, at the card's decimals. The rows are laid out for it, so the day's figures never swing the card to its list.
+ */
+const USUAL = 8888;
 
 /** One node of the diagram, resolved: what it is, how it reads, how it is drawn. */
 interface Node extends SceneNode {
   readonly key: string;
+  /** Its name, and the name with its charge ("Battery · 62 %"). */
+  readonly name: string;
   readonly label: string;
   readonly glyph: string;
   readonly tone: Tone;
@@ -582,7 +591,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       reading: clean,
       threshold: c.threshold ?? DEFAULT_THRESHOLD,
       pair: bothWays(c),
-      label: level === null ? name : `${name} · ${Math.round(Math.min(100, Math.max(0, level)))} %`,
+      name,
+      label: charged(name, level),
       glyph: c.icon ?? KIND[c.type].glyph,
       tone,
       accent,
@@ -621,6 +631,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       reading: { in: into, out },
       threshold: PERIOD_THRESHOLD,
       pair: !oneWay(p.kind) && p.energyIn.length > 0 && p.energyOut.length > 0,
+      name,
       label: name,
       glyph: KIND[p.kind].glyph,
       tone,
@@ -776,6 +787,46 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     );
   }
 
+  /**
+   * A node's words whatever it reads (#170): its label with a full charge, and the usual figure (`USUAL`) in the card's
+   * unit and decimals with each of its ways.
+   */
+  private steadyWidth(n: Node, period: boolean): number {
+    const scale = scaleOf([USUAL], period ? 'Wh' : 'W', this.config);
+    const figure = scaled(this.hass, USUAL, scale);
+    return Math.max(
+      this.head.ruler.width('en-words__label', charged(n.name, n.level === null ? null : 100)),
+      ...(waysOf(n.kind, this.ways(), period) ?? ['']).map((way) =>
+        this.lineWidth(figure, scale.unit, way),
+      ),
+    );
+  }
+
+  /** The rows at `w`: its consumers drawn beside the house where `wide`. */
+  private rowsOf(scene: Scene, w: number, wide: boolean): RowsLayout {
+    return rowsLayout({
+      width: w,
+      nodes: scene.nodes.map((n, i) => {
+        const words = scene.words[i] as Words;
+        return {
+          wordsH: blockH(words),
+          wordsW: this.wordsWidth(words),
+          steadyW: this.steadyWidth(n, scene.period !== null),
+          pair: n.pair,
+        };
+      }),
+      houseWordsH: 36,
+      ...(wide
+        ? {
+            consumers: scene.consumerWords.map((cw) => ({
+              wordsH: blockH(cw),
+              wordsW: this.wordsWidth(cw),
+            })),
+          }
+        : {}),
+    });
+  }
+
   /* ---------- render ---------- */
 
   private arrangement(scene: Scene): 'rows' | 'cross' | 'list' {
@@ -872,26 +923,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const layout = this.arrangement(scene);
     if (layout === 'cross') return this.renderCross(scene, w);
     const wide = scene.consumers.length > 0 && w >= CONSUMERS_WIDE && layout === 'rows';
-    const rows =
-      layout === 'rows'
-        ? rowsLayout({
-            width: w,
-            nodes: scene.nodes.map((n, i) => ({
-              wordsH: blockH(scene.words[i]),
-              wordsW: this.wordsWidth(scene.words[i] as Words),
-              pair: n.pair,
-            })),
-            houseWordsH: 36,
-            ...(wide
-              ? {
-                  consumers: scene.consumerWords.map((cw) => ({
-                    wordsH: blockH(cw),
-                    wordsW: this.wordsWidth(cw),
-                  })),
-                }
-              : {}),
-          })
-        : null;
+    const rows = layout === 'rows' ? this.rowsOf(scene, w, wide) : null;
     if (!rows || rows.narrow)
       return html`${this.renderList(scene, w)}${this.renderConsumerRows(scene)}`;
     return html`${this.renderRows(scene, w, rows, wide)}${wide ? nothing : this.renderConsumerRows(scene)}`;
@@ -969,12 +1001,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     </div>`;
   }
 
-  private renderRows(
-    scene: Scene,
-    w: number,
-    rows: ReturnType<typeof rowsLayout>,
-    wide: boolean,
-  ): TemplateResult {
+  private renderRows(scene: Scene, w: number, rows: RowsLayout, wide: boolean): TemplateResult {
     const style = this.flowStyle();
     const H = rows.height;
     const lanes =
@@ -1052,7 +1079,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   }
 
   /** The rail: inflows join one track into the house; outflows keep a connector of their own. */
-  private railLanes(scene: Scene, rows: ReturnType<typeof rowsLayout>): TemplateResult[] {
+  private railLanes(scene: Scene, rows: RowsLayout): TemplateResult[] {
     const trackX = rows.tail + 32;
     const house = rows.house;
     const d = headPath('thin');
@@ -1386,23 +1413,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     }
     const wide = scene.consumers.length > 0 && w >= CONSUMERS_WIDE && layout === 'rows';
     if (layout !== 'rows') return [];
-    const rows = rowsLayout({
-      width: w,
-      nodes: scene.nodes.map((n, i) => ({
-        wordsH: blockH(scene.words[i]),
-        wordsW: this.wordsWidth(scene.words[i] as Words),
-        pair: n.pair,
-      })),
-      houseWordsH: 36,
-      ...(wide
-        ? {
-            consumers: scene.consumerWords.map((cw) => ({
-              wordsH: blockH(cw),
-              wordsW: this.wordsWidth(cw),
-            })),
-          }
-        : {}),
-    });
+    const rows = this.rowsOf(scene, w, wide);
     if (rows.narrow) return [];
     for (const l of rows.lanes) {
       const n = scene.nodes[l.node] as Node;
@@ -1429,6 +1440,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 }
 
 /* ---------- pieces ---------- */
+
+/** A source's name with its charge, where it has one: "Battery · 62 %". */
+const charged = (name: string, level: number | null): string =>
+  level === null ? name : `${name} · ${Math.round(Math.min(100, Math.max(0, level)))} %`;
 
 /** A words block's height: label 16, a value line 20 each, a direction line 16 when it wraps. */
 function blockH(w: Words | undefined, wraps = false): number {

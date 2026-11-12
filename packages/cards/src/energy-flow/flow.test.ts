@@ -25,7 +25,7 @@ import {
   paramAt,
 } from './geometry.js';
 import { budget, density, pace, type Pulse } from './motion.js';
-import { lanesOf, said, type SceneNode, type WayWords } from './scene.js';
+import { lanesOf, said, waysOf, type SceneNode, type WayWords } from './scene.js';
 
 const dist = (p: readonly number[], q: readonly number[]): number =>
   Math.hypot((p[0] ?? 0) - (q[0] ?? 0), (p[1] ?? 0) - (q[1] ?? 0));
@@ -62,7 +62,7 @@ describe('the arrowhead ends the lane', () => {
 });
 
 describe('rows', () => {
-  const node = (pair = false) => ({ wordsH: 36, wordsW: 100, pair });
+  const node = (pair = false) => ({ wordsH: 36, wordsW: 100, steadyW: 100, pair });
 
   it('the #19 house: a lane for the sun, a pair for the grid, a lane for the battery, 6 px off the ring', () => {
     const r = rowsLayout({ width: 320, nodes: [node(), node(true), node()], houseWordsH: 36 });
@@ -90,6 +90,25 @@ describe('rows', () => {
     expect(
       rowsLayout({ width: 320, nodes: [node(), node(), node()], houseWordsH: 36 }).narrow,
     ).toBe(false);
+  });
+
+  it('lists by the words as they can read, whatever the figures say now (#170)', () => {
+    // a battery whose words can read "8.9 kW discharging" (124): lanes at 320 with a day's figure or a month's
+    const battery = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 124, pair: false });
+    const day = rowsLayout({ width: 320, nodes: [node(), battery(103)], houseWordsH: 36 });
+    const month = rowsLayout({ width: 320, nodes: [node(), battery(134)], houseWordsH: 36 });
+    expect([day.narrow, month.narrow]).toEqual([false, false]);
+    // the lanes leave after the words as they can read, and after a figure that reads wider than the usual
+    expect(day.tail).toBe(192);
+    expect(month.tail).toBe(204);
+    // and where the words as they can read leave no lane, the card lists at any figure
+    const long = (wordsW: number) => ({ wordsH: 36, wordsW, steadyW: 140, pair: false });
+    expect(rowsLayout({ width: 320, nodes: [node(), long(60)], houseWordsH: 36 }).narrow).toBe(
+      true,
+    );
+    expect(rowsLayout({ width: 320, nodes: [node(), long(140)], houseWordsH: 36 }).narrow).toBe(
+      true,
+    );
   });
 
   it('the stage ends at the last words, on the 4 px grid', () => {
@@ -313,6 +332,13 @@ describe('the scene', () => {
       first: { value: 0, way: '' },
       idle: true,
     });
+  });
+
+  it('a node says its ways in its kind’s words, a moment’s or a period’s; the sun none', () => {
+    expect(waysOf('solar', words, false)).toBeNull();
+    expect(waysOf('grid', words, true)).toEqual(['in', 'out']);
+    expect(waysOf('battery', words, false)).toEqual(['discharging', 'charging']);
+    expect(waysOf('vehicle', words, true)).toEqual(['discharged', 'charged']);
   });
 
   it('an unreadable source says nothing it does not know', () => {

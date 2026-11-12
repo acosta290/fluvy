@@ -129,6 +129,20 @@ export interface WayWords {
 }
 
 /**
+ * The words a node says its ways in, toward the house and out of it: the grid's in and out, a battery's (or a car's)
+ * discharging and charging — over a period, discharged and charged; none for a source that only flows in.
+ */
+export function waysOf(
+  kind: SourceKind,
+  words: WayWords,
+  period: boolean,
+): readonly [string, string] | null {
+  if (oneWay(kind)) return null;
+  if (kind === 'grid') return [words.in, words.out];
+  return period ? [words.discharged, words.charged] : [words.discharging, words.charging];
+}
+
+/**
  * A node's words. Live, a way under its threshold says 0: nothing flows. Over a period (`reads`, which tells a total
  * its figures' decimals write as more than nothing) every total is said as it is, rounded only by those decimals, as
  * Home Assistant's Energy dashboard says it (#109); the threshold only dims it, as it rests its lane.
@@ -142,11 +156,9 @@ export function said(node: SceneNode, words: WayWords, reads?: (total: number) =
   const inSaid = says(into);
   const outSaid = !oneWay(node.kind) && says(out);
   const idle = !flows(into) && (oneWay(node.kind) || !flows(out));
-  if (oneWay(node.kind)) return { first: { value: inSaid ? into : 0, way: '' }, idle };
-  const grid = node.kind === 'grid';
-  // a period's battery charged and discharged; a moment's is charging, discharging
-  const inWord = grid ? words.in : reads ? words.discharged : words.discharging;
-  const outWord = grid ? words.out : reads ? words.charged : words.charging;
+  const ways = waysOf(node.kind, words, reads !== undefined);
+  if (!ways) return { first: { value: inSaid ? into : 0, way: '' }, idle };
+  const [inWord, outWord] = ways;
   if (inSaid && outSaid)
     return { first: { value: into, way: inWord }, second: { value: out, way: outWord }, idle };
   if (outSaid) return { first: { value: out, way: outWord }, idle };
