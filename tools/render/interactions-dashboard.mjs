@@ -8,17 +8,19 @@
  * pills are 36 tall in the 56 bar, the open one filled; icons alone or with the name; hidden tabs leave the name and
  * the actions at the end; Home Assistant's own style, the edit mode, a subview, a single view and a dashboard that
  * does not wear the look keep Home Assistant's header; a subview's tab stays hidden; on a phone there is no name,
- * the row scrolls under the finger, fades where it goes on, and its last tab clears the fade. The sidebar's counts
- * (Settings, the notifications) keep their figures under Fluvy's glyphs (#86); no view of the automatic dashboard
- * reaches past a phone's edge, from its first frame on (#104).
+ * the row scrolls under the finger, fades where it goes on, and its last tab clears the fade; a mouse in a window as
+ * narrow keeps Home Assistant's chevrons, whole, and pages the row with them (#170). The sidebar's counts (Settings,
+ * the notifications) keep their figures under Fluvy's glyphs (#86); no view of the automatic dashboard reaches past a
+ * phone's edge, from its first frame on (#104).
  */
 import { startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
 
-const open = (query, width = 1280) =>
-  suite.page(`dashboard=home&width=360&${query}`, { viewport: { width, height: 700 } });
+/** The home dashboard at `width`, under a mouse (a finger where `touch`). */
+const open = (query, width = 1280, touch = false) =>
+  suite.page(`dashboard=home&width=360&${query}`, { viewport: { width, height: 700 }, touch });
 
 /** The header as the tests read it: the root's marks, the title, every shown tab. */
 const header = (page) =>
@@ -593,9 +595,9 @@ for (const [query, why, title] of [
   );
 }
 
-/* ---------- a phone ---------- */
+/* ---------- a phone, in the hand ---------- */
 {
-  const page = await open('tabs=fluvy&views=8', 390);
+  const page = await open('tabs=fluvy&views=8', 390, true);
   const h = await header(page);
   check(
     'phone: no dashboard name (the tabs keep the room), the menu button first',
@@ -645,11 +647,49 @@ for (const [query, why, title] of [
     last.box.right <= end.nav.box.right - 24 + 0.5 && (await fades()) === '24px 0px',
     JSON.stringify({ last: last.box.right, nav: end.nav.box.right, fades: await fades() }),
   );
-  const hidden = await header(await open('tabs=hidden', 390));
+  const hidden = await header(await open('tabs=hidden', 390, true));
   check(
     'phone, hidden tabs: the name after the menu button',
     hidden.title === '"Home"' && hidden.group.display === 'none',
     JSON.stringify({ title: hidden.title }),
+  );
+}
+
+/* ---------- a mouse in a window as narrow (#170) ---------- */
+{
+  const page = await open('tabs=fluvy&views=8', 390);
+  /** Home Assistant's chevrons as drawn (`start`, `end`), and how far the row is scrolled. */
+  const row = () =>
+    page.evaluate(() => {
+      const group = document.querySelector('hui-root').shadowRoot.querySelector('ha-tab-group');
+      return {
+        chevrons: [...group.shadowRoot.querySelectorAll('[part~="scroll-button"]')]
+          .filter((button) => getComputedStyle(button).display !== 'none')
+          .map((button) => (button.matches('[part~="scroll-button-end"]') ? 'end' : 'start')),
+        scrolled: group.shadowRoot.querySelector('.nav').scrollLeft,
+      };
+    });
+  const h = await header(page);
+  const rest = await row();
+  check(
+    'mouse, narrow: no dashboard name, the row overflows, Home Assistant’s end chevron shows, whole (no fade over it)',
+    h.title === 'none' &&
+      h.nav.scroll > h.nav.client &&
+      h.nav.mask === 'none' &&
+      rest.chevrons.join() === 'end',
+    JSON.stringify({ title: h.title, nav: h.nav, ...rest }),
+  );
+  // a chevron that is not drawn takes no click: the check below says so
+  await page
+    .locator('hui-root ha-tab-group [part~="scroll-button-end"]')
+    .click({ timeout: 2000 })
+    .catch(() => undefined);
+  await page.waitForTimeout(800);
+  const paged = await row();
+  check(
+    'mouse, narrow: the end chevron pages the row, and the start one comes to page it back',
+    paged.scrolled > 0 && paged.chevrons.includes('start'),
+    JSON.stringify(paged),
   );
 }
 

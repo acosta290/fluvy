@@ -160,7 +160,8 @@ dashboard that wears it, as the house chooses in *Appearance → Dashboard tabs*
 With Fluvy's tabs or pills, each tab shows the view's **name** (default), its **icon**, or **both**; a view without an
 icon gets the one its name says, in any of Fluvy's languages ("Luces" a bulb, "Hab 1" a room), and keeps its words
 when its name says none. The **dashboard's name** before the tabs is a switch of its own, in every style; on a phone
-it gives way to the tabs, which scroll under the finger and fade where the row goes on. The edit mode, a subview and a dashboard of a
+it gives way to the tabs, which scroll under the finger and fade where the row goes on; under a mouse, in a narrow
+window too, Home Assistant's chevrons page the row. The edit mode, a subview and a dashboard of a
 single view keep Home Assistant's header. A person who keeps their own look keeps their own tabs too.
 
 ## Sidebar and header

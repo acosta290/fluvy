@@ -12,12 +12,13 @@ import { mask } from './shared.js';
  * controls are (`fluvy/labels.css`, #122): the words Home Assistant puts in the tab's `base` where they are alone there
  * (the base made a block: a flex row's words cannot be trimmed), and the name written after an icon; words beside Home
  * Assistant's own icon in the base (a view showing both) keep their line. A tab hidden from this person (`.hide-tab`)
- * stays hidden. On the phone the row scrolls under the finger and fades where it goes on — at its start once scrolled,
- * at its end while there is more (`look/tabs.ts` follows the scroll; without it the end fades) — and Home Assistant's
- * chevrons give way; on a wide screen they stay, for the mouse. The dashboard's name never shrinks for the tabs (the
+ * stays hidden. On a phone's header under a finger the row scrolls and fades where it goes on — at its start once
+ * scrolled, at its end while there is more (`look/tabs.ts` follows the scroll; without it the end fades) — and Home
+ * Assistant's chevrons give way; wherever a mouse points (a narrow window too, a tablet with one) they stay, as on a
+ * wide screen: a mouse has no other way along the row (#170). The dashboard's name never shrinks for the tabs (the
  * row scrolls; a long name ends in an ellipsis at 40 %), and stands on the view's column: 12 + 12 from the bar's edge,
- * the view's 24 grown with this device's size. On a wide screen Home Assistant's chevrons sit on the header's colour,
- * the words fading under them.
+ * the view's 24 grown with this device's size. Home Assistant's chevrons sit on the header's colour, the words fading
+ * under them.
  */
 
 const ROOT = ':host([fluvy-tabs])';
@@ -54,12 +55,10 @@ ${PILLS} ha-tab-group::part(nav) { padding-inline: 4px; }
 ${PILLS} ${TAB} { height: 36px; padding-inline: 16px; border-radius: var(--fluvy-radius-pill, 9999px); background-color: var(--fluvy-card, var(--card-background-color)); box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border, var(--divider-color))); }
 ${PILLS} ${TAB}[active] { background-color: var(--fluvy-selected, var(--fluvy-text)); color: var(--fluvy-on-selected, var(--fluvy-page)); box-shadow: none; }
 ${PILLS} ${TAB}:focus-visible { outline-offset: 2px; border-radius: var(--fluvy-radius-pill, 9999px); }
-${ROOT} .narrow ha-tab-group::part(scroll-button) { display: none; }
+@media not all and (hover: hover) and (pointer: fine) { ${ROOT} .narrow ha-tab-group::part(scroll-button) { display: none; } ${ROOT} .narrow ha-tab-group::part(tabs) { padding-inline-end: 24px; } ${ROOT} .narrow ha-tab-group::part(nav) { -webkit-mask-image: ${FADE}; mask-image: ${FADE}; } }
 :host([fluvy-tabs]:not([fluvy-flat])) ha-tab-group::part(scroll-button) { inset-block-end: 1px; }
 ${ROOT} ha-tab-group::part(scroll-button-start) { width: 48px; justify-content: flex-start; background: linear-gradient(90deg, var(--app-header-background-color) 60%, transparent); }
 ${ROOT} ha-tab-group::part(scroll-button-end) { width: 48px; justify-content: flex-end; background: linear-gradient(270deg, var(--app-header-background-color) 60%, transparent); }
-${ROOT} .narrow ha-tab-group::part(tabs) { padding-inline-end: 24px; }
-${ROOT} .narrow ha-tab-group::part(nav) { -webkit-mask-image: ${FADE}; mask-image: ${FADE}; }
 ${HIDDEN} ha-tab-group { display: none; }
 ${ROOT} .toolbar > ha-menu-button, :host([fluvy-tab-title]) .toolbar > ha-menu-button { order: -1; }
 ${ROOT} .toolbar > .action-items { margin-inline-start: auto; }
