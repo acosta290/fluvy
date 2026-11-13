@@ -167,6 +167,9 @@ const BUDGETS = {
   dock: 1024,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
+  // what only the chunks fetched later share (1.20: it left core, 1.9 KB of what every page loads): the local dates
+  // and the month grid, the ticker, a sheet's laid width, a name's plain letters; measured at 2.3 KB
+  shared: 4096,
   // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,
   // sources, layers, CSV and chrome's sheet. 12 KB since 1.10 (those left core, 2.3 KB; the sources in 1.13): 8 before
   pages: 12_288,

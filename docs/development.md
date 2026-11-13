@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel, what they share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
@@ -61,7 +61,9 @@ own details sheets (the first time a card opens one), the
 light card's colour controls (the first colour bulb), the cards' visual editor, the fields every editor is built of
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
 are see-through), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
-one), the page's background (the first dashboard that wears one), the icon set's other part (the first time Home Assistant asks for one of its icons)
+one), the page's background (the first dashboard that wears one), the icon set's other part (the first time Home Assistant asks for one of its icons),
+what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, a name's
+plain letters: with the first chunk that needs them)
 and a language's catalogue (English's core part ships in core; a lazy family's English part travels with the family's
 chunk, registered as it lands). `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group
 names its English part, or core keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
@@ -121,6 +123,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
+| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, a name's plain letters |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |

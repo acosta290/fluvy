@@ -321,6 +321,15 @@ const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
 /** The icon set's other part (`fluvy:washer`, `fluvy:gate-open` …): fetched the first time Home Assistant asks for one. */
 const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 
+/**
+ * What only the chunks fetched later share (1.20): the local dates and the month grid (the calendar, the date picker,
+ * the schedule sheet, the Energy period card, the items' fields), the clock of the cards that say how long ago
+ * (`Ticker`), the width a sheet was laid out at (`LaidWidth`) and a name's plain letters (the appliances, the strategy,
+ * the view icons). Nothing every page runs reaches them: in core every page waited on them, here they come with the
+ * first chunk that needs them — as the bundle starts, beside the editors' fields the families fetch too.
+ */
+const SHARED = /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid)|core\/src\/plain)\.ts/;
+
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
 
@@ -355,7 +364,7 @@ const FORMS =
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the
  * Expander card (its editor on its own, before the forms), the Slider card, the ring, the drive pad, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
- * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -412,6 +421,7 @@ export const GROUPS = [
   { name: 'background', test: BACKGROUND },
   { name: 'dock', test: DOCK },
   { name: 'icons', test: ICONS },
+  { name: 'shared', test: SHARED },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];
 
