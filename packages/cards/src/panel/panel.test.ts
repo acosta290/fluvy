@@ -582,16 +582,26 @@ describe('the settings panel', () => {
     const { panel, root, row, chip, button, handle, settle } = await mount();
     panel.tab = 'wall';
     await settle();
-    // this device is not a wall; the house's wall waits ten minutes
+    // this device is not a wall, and the row says so, with what turning it on does under it (#183); the house's
+    // wall waits ten minutes
+    const hint = (): string | undefined =>
+      [...root.querySelectorAll('.pn-hint')]
+        .map((p) => p.textContent ?? '')
+        .find((words) => words.includes('this browser'));
     expect(row('Wall panel')?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe(
       'false',
     );
+    expect(row('Wall panel')?.textContent).toContain('Off in this browser');
+    expect(hint()).toContain('no sidebar and no header');
     expect(chip('10 min')?.classList.contains('is-active')).toBe(true);
     chip('5 min')!.click();
     await settle();
     expect(root.querySelector('.pn-bar')?.textContent).toContain('Wall · Screensaver after');
     row('Wall panel')!.querySelector<HTMLElement>('.fv-hit')!.click();
     await settle();
+    // on, the row says so and the hint has nothing left to say
+    expect(row('Wall panel')?.textContent).toContain('On in this browser');
+    expect(hint()).toBeUndefined();
     expect(root.querySelector('.pn-bar')?.textContent).toContain('2 changes');
     button('Save')!.click();
     // the house's write, the store's echo and the device's memory take a few ticks

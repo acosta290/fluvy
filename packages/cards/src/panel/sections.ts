@@ -1897,12 +1897,16 @@ export function wall(ctx: PanelContext): TemplateResult {
           icon: 'frame',
           tone: isWall ? 'accent' : 'neutral',
           title: ctx.t('wall.use'),
-          sub: ctx.t('wall.use_sub'),
+          sub: ctx.t(isWall ? 'wall.use_on' : 'wall.use_off'),
           trailing: 'switch',
           on: isWall,
           onToggle: (on) => ctx.editDevice({ wall: on }),
         })}
       </div>
+      ${
+        // the switch is this browser's own, kept in no house setting: while it is off, what turning it on does
+        isWall ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('wall.use_hint')}</p>`
+      }
       ${deviceSize(ctx)}
       <p class="fv-label pn-label">${ctx.t('wall.address')}</p>
       <div class="pn-address">

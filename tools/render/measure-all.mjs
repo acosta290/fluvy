@@ -104,6 +104,8 @@ const PANEL = [
   ['dashboard', 'dashboard&state=dashboards'],
   ['wall', 'wall&state=wall'],
   ['wall-night', 'wall&state=wall,night'],
+  // this browser not a wall panel: its row says so, and what turning it on does under it
+  ['wall-off', 'wall'],
   ['preferences', 'preferences'],
   ['preferences-menu', 'preferences&state=menu'],
 ];

@@ -858,7 +858,9 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   the date under it in a 480 column, centred; dimmed, the clock is white at 60 %. It fades in over 320 ms and out over
   200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over
   the page while awake.
-- The panel's Wall tab: *This device* (the wall switch and the address with a copy button), *Wall dashboards* (the
+- The panel's Wall tab: *This device* (the wall switch, its row saying where this browser stands — "On in this
+  browser", "Off in this browser" — and, while it is off, one hint under it saying what turning it on does, as the
+  switch is the browser's own and kept in no house setting; then the address with a copy button), *Wall dashboards* (the
   Scope list's idiom), *Screen* (the minutes as chips — five, in two rows on a phone —, two switch rows, a row
   whose button shows the screensaver itself over the page until a tap, and the motion sensor as a dropdown of every
   one the house has, its room as the hint), *Day and night* (four option tiles in 2 × 2 with a value line each, two
