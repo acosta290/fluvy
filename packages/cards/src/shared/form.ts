@@ -772,7 +772,8 @@ const WHEN_PARTS = ['when_above', 'when_below', 'when_state', 'when_entity'] as 
  * A condition among a form's fields, by its key (`show_when`: a `ShowWhen`). One field, which Fluvy's editor draws as
  * how it is asked and what that asks for (`withConditions`), writing the condition they say (`foldConditions`): the
  * fields that cannot act are never shown. A row's keeps to the card's while it names none (`follows`: the card's
- * key), and its first choice then says so.
+ * key): on a card that has one, its first choice says so, and "Always" is the row's own (`show_when: always`), shown
+ * whatever the card's says.
  */
 export const whenField = (name: string, follows?: string): HaFormSchemaItem => ({
   name,
@@ -810,12 +811,25 @@ const modeOf = (when: unknown): WhenMode => {
           : 'always';
 };
 
-/** How a form's condition stands: how it is asked, the states its entity offers, whether it keeps to the card's. */
+/** How a form's condition stands: how it is asked, the states its entity offers, whether the card has one too. */
 export interface ConditionStand {
-  readonly mode: WhenMode;
+  /** `follows`: a row's that names none, keeping to the card's. */
+  readonly mode: WhenMode | 'follows';
   readonly states: readonly SelectOption[];
   readonly follows: boolean;
 }
+
+/** Whether a row's condition field stands on a card with a condition of its own, which a row naming none keeps to. */
+const cardAsks = (field: HaFormSchemaItem, card: Bag | undefined): boolean =>
+  field.condition?.follows !== undefined && modeOf(card?.[field.condition.follows]) !== 'always';
+
+/** How a condition is asked as it stands: a row's that names none keeps to the card's where the card has one. */
+const askedOf = (
+  field: HaFormSchemaItem,
+  data: Bag,
+  card: Bag | undefined,
+): WhenMode | 'follows' =>
+  data[field.name] === undefined && cardAsks(field, card) ? 'follows' : modeOf(data[field.name]);
 
 /**
  * How the conditions of a form stand in what it holds (`data`), by their names: a state's choices are what the entity
@@ -831,7 +845,7 @@ export function standsOf(
   return Object.fromEntries(
     conditionsOf(schema).map((field) => {
       const when = bagOf(data[field.name]);
-      const mode = modeOf(when);
+      const mode = askedOf(field, data, card);
       const state = hass?.states[String(when['entity'] ?? data['entity'])];
       const listed: unknown = state?.attributes['options'];
       const values =
@@ -848,7 +862,7 @@ export function standsOf(
           value,
           label: (state && hass?.formatEntityState?.(state, value)) || value,
         })),
-        follows: mode === 'always' && modeOf(card?.[field.condition?.follows ?? '']) !== 'always',
+        follows: cardAsks(field, card),
       };
       return [field.name, stand];
     }),
@@ -860,14 +874,11 @@ function conditionFields(
   name: string,
   { mode, states, follows }: ConditionStand,
 ): HaFormSchemaItem[] {
-  const asked = choiceField(
-    name,
-    WHEN_MODES.map(
-      (value) =>
-        [value, value === 'always' && follows ? 'editor.when_follows' : MODE_WORDS[value]] as const,
-    ),
-  );
-  if (mode === 'always') return [asked];
+  const asked = choiceField(name, [
+    ...(follows ? [['follows', 'editor.when_follows'] as const] : []),
+    ...WHEN_MODES.map((value) => [value, MODE_WORDS[value]] as const),
+  ]);
+  if (mode === 'always' || mode === 'follows') return [asked];
   const asks: HaFormSchemaItem[] =
     mode === 'state' || mode === 'state_not'
       ? [
@@ -911,14 +922,15 @@ export const withConditions = (
 
 /**
  * A form's data with its conditions (`fields`) as their fields hold them: how each is asked under its own name, its
- * parts beside it.
+ * parts beside it; a row's on the card's form (`card`) that it may keep to.
  */
-export function unfoldConditions(data: Bag, fields: readonly HaFormSchemaItem[]): Bag {
+export function unfoldConditions(data: Bag, fields: readonly HaFormSchemaItem[], card?: Bag): Bag {
   if (!fields.length) return data;
   const next: Record<string, unknown> = { ...data };
-  for (const { name } of fields) {
+  for (const field of fields) {
+    const { name } = field;
     const when = bagOf(data[name]);
-    const mode = modeOf(when);
+    const mode = askedOf(field, data, card);
     next[name] = mode;
     next['when_above'] = when['above'] ?? undefined;
     next['when_below'] = when['below'] ?? undefined;
@@ -930,18 +942,20 @@ export function unfoldConditions(data: Bag, fields: readonly HaFormSchemaItem[])
 
 /**
  * A form's value with its conditions (`fields`) back as the config holds them (`ShowWhen`): the parts the choice asks
- * for (a bound not typed yet keeps its place), none at all for "always"; one whose fields stand as they were handed
- * (`held`) stays as the config wrote it.
+ * for (a bound not typed yet keeps its place), none at all for "always" — save a row's on a card with a condition of
+ * its own (`card`), which says `always` to show whatever the card's says, and says none to keep to it; one whose
+ * fields stand as they were handed (`held`) stays as the config wrote it.
  */
 export function foldConditions(
   value: Bag,
   held: Bag,
   fields: readonly HaFormSchemaItem[],
+  card?: Bag,
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...value };
   for (const field of fields) {
     const { name } = field;
-    const before = unfoldConditions(held, [field]);
+    const before = unfoldConditions(held, [field], card);
     const touched = [name, ...WHEN_PARTS].some(
       (key) => JSON.stringify(next[key]) !== JSON.stringify(before[key]),
     );
@@ -951,7 +965,8 @@ export function foldConditions(
     if (!touched) {
       if (held[name] === undefined) delete next[name];
       else next[name] = held[name];
-    } else if (mode === 'always' || !WHEN_MODES.includes(mode as WhenMode)) delete next[name];
+    } else if (mode === 'always' && cardAsks(field, card)) next[name] = 'always';
+    else if (mode === 'always' || !WHEN_MODES.includes(mode as WhenMode)) delete next[name];
     else {
       const words = statesOf(states);
       next[name] = {

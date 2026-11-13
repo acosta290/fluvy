@@ -367,7 +367,8 @@ A row shows only while its `show_when` holds: its state a number `above` one, `b
 that is a word (or one of a list), or a `state_not`; `entity` reads another entity in the row's place. Every part
 given must hold, the bounds are strict, and a state that is no number (unavailable, unknown) is neither above nor
 below one. `show_rows_when` on the card is the same condition for every row that names none, which is how a list
-filled by auto-entities takes one. It is plain data compared with the state, never a template.
+filled by auto-entities takes one; `show_when: always` keeps a row shown whatever the card's says (the editor's
+*Always*, beside *As every row*). It is plain data compared with the state, never a template.
 
 A label with no row showing under it is not drawn, nor is a hairline with no row showing on either side. The count in
 the head ("2 low", "3 on") reads the rows that show, and with none showing the card is its empty panel in its
@@ -385,6 +386,8 @@ rows:
   - sensor.front_door_battery
   - entity: sensor.kitchen_window_battery
     show_when: { below: 50 }      # or a row its own
+  - entity: sensor.smoke_alarm_battery
+    show_when: always             # or none: shown whatever its level
   - type: divider
   - section: Upstairs
     line: true

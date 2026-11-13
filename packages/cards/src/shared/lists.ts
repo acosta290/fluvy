@@ -86,11 +86,14 @@ export interface ShowWhen {
   readonly state_not?: string | readonly string[];
 }
 
+/** A row's condition: one of its own, or `always`, shown whatever the card's says. */
+export type RowWhen = ShowWhen | 'always';
+
 /** A row of a list whose rows show on a condition. */
 export interface ConditionalRow {
   readonly entity: string;
-  /** Shown while it holds; the card's `show_rows_when` where the row names none. */
-  readonly show_when?: ShowWhen;
+  /** Shown while it holds (`always`: whatever the card's says); the card's `show_rows_when` where it names none. */
+  readonly show_when?: RowWhen;
 }
 
 /** What a card of such a list adds to its own keys: one condition for every row that names none. */
@@ -174,13 +177,13 @@ const boundOf = (value: unknown): number =>
       : NaN;
 
 /**
- * Whether a condition holds for the entity `id` (or the one it names): none always does. An entity the house does
- * not hold reads as out of reach, as its row says it is.
+ * Whether a condition holds for the entity `id` (or the one it names): none always does, nor does `always` ask
+ * anything. An entity the house does not hold reads as out of reach, as its row says it is.
  */
 export function holds(
   hass: HomeAssistant | undefined,
   id: string,
-  when: ShowWhen | undefined,
+  when: RowWhen | undefined,
 ): boolean {
   if (typeof when !== 'object' || when === null) return true;
   const other = when.entity;
@@ -212,7 +215,7 @@ export const drawnOf = <T extends ConditionalRow>(
 /** The other entities a list's conditions read: watched with its rows'. */
 export const conditionIds = (rows: readonly ConditionalRow[], every?: ShowWhen): string[] =>
   [every, ...rows.map((row) => row.show_when)].flatMap((when) =>
-    typeof when?.entity === 'string' && when.entity ? [when.entity] : [],
+    typeof when === 'object' && typeof when.entity === 'string' && when.entity ? [when.entity] : [],
   );
 
 /**

@@ -245,13 +245,20 @@ describe('a row’s condition', () => {
 });
 
 describe('a card’s list as drawn now', () => {
-  const hass = house({ 'sensor.a': '10', 'sensor.b': '50', 'sensor.c': '90', 'switch.x': 'off' });
+  const hass = house({
+    'sensor.a': '10',
+    'sensor.b': '50',
+    'sensor.c': '90',
+    'sensor.d': '95',
+    'switch.x': 'off',
+  });
   const list = [
     { section: 'Low' },
     'sensor.a',
     { entity: 'sensor.b', show_when: { below: 60 } },
     { section: 'High' },
     { entity: 'sensor.c', show_when: {} },
+    { entity: 'sensor.d', show_when: 'always' },
   ];
 
   it('gives every row the card’s condition, a row’s own winning over it', () => {
@@ -259,11 +266,11 @@ describe('a card’s list as drawn now', () => {
       drawnOf<{ entity: string }>(hass, list, every)
         .filter(isRow)
         .map((row) => row.entity);
-    expect(ids()).toEqual(['sensor.a', 'sensor.b', 'sensor.c']);
-    // the card's for the bare id; `sensor.b` keeps to its own 60, `sensor.c` asks nothing
-    expect(ids({ below: 30 })).toEqual(['sensor.a', 'sensor.b', 'sensor.c']);
-    expect(ids({ above: 30 })).toEqual(['sensor.b', 'sensor.c']);
-    expect(ids({ entity: 'switch.x', state: 'on' })).toEqual(['sensor.b', 'sensor.c']);
+    expect(ids()).toEqual(['sensor.a', 'sensor.b', 'sensor.c', 'sensor.d']);
+    // the card's for the bare id; `sensor.b` keeps to its own 60, `sensor.c` asks nothing, `sensor.d` shows always
+    expect(ids({ below: 30 })).toEqual(['sensor.a', 'sensor.b', 'sensor.c', 'sensor.d']);
+    expect(ids({ above: 30 })).toEqual(['sensor.b', 'sensor.c', 'sensor.d']);
+    expect(ids({ entity: 'switch.x', state: 'on' })).toEqual(['sensor.b', 'sensor.c', 'sensor.d']);
   });
 
   it('names the other entities its conditions read, to be watched', () => {
@@ -273,6 +280,7 @@ describe('a card’s list as drawn now', () => {
           { entity: 'sensor.a' },
           { entity: 'sensor.b', show_when: { entity: 'switch.x', state: 'on' } },
           { entity: 'sensor.c', show_when: { below: 3 } },
+          { entity: 'sensor.d', show_when: 'always' },
         ],
         { entity: 'input_boolean.guests', state: 'on' },
       ),

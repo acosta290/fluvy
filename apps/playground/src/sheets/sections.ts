@@ -150,7 +150,7 @@ export const sheet: SheetSpec = {
       title: 'Bars · rows on a condition',
       cards: [bars({ show_rows_when: { below: 30 }, empty_text: 'Nothing under 30 %' })],
     },
-    // a row's own condition wins over the card's: the front door shows whatever it holds, the valve below 50
+    // a row's own condition wins over the card's: the front door shows whatever it holds (`always`), the valve below 50
     {
       title: 'Bars · a row’s own condition',
       cards: [
@@ -158,7 +158,7 @@ export const sheet: SheetSpec = {
           show_rows_when: { below: 30 },
           rows: [
             { section: 'Downstairs' },
-            { entity: DOWN[0], show_when: {} },
+            { entity: DOWN[0], show_when: 'always' },
             ...DOWN.slice(1),
             { section: 'Upstairs' },
             { entity: UP[0], show_when: { below: 50 } },

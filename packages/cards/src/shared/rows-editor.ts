@@ -809,13 +809,14 @@ export class FluvyRowsEditor extends LitElement {
     if (!this.config) return;
     const entries = this.written(list);
     // a toggle among an item's select's own choices goes back as the toggle, as the card's form writes its own, and a
-    // row's condition as its config holds it; a section has none
+    // row's condition as its config holds it, on the card's that it may keep to; a section has none
     const held = this.items(list)[index] ?? {};
     const entry = entryOf(
       foldConditions(
         unworded(event.detail.value, held, selectsOf(list.schema)),
         held,
         isSection(held, list) ? [] : conditionsOf(list.schema),
+        this.config,
       ),
       list,
     );
@@ -1013,7 +1014,7 @@ export class FluvyRowsEditor extends LitElement {
                   ? html`<span class="item__divider">${this.t('editor.divider')}</span>`
                   : html`<ha-form
                       .hass=${this.hass}
-                      .data=${worded(unfoldConditions(item, section ? [] : conditionsOf(list.schema)), selectsOf(schema))}
+                      .data=${worded(unfoldConditions(item, section ? [] : conditionsOf(list.schema), card.asked), selectsOf(schema))}
                       .schema=${schema}
                       .computeLabel=${section ? sectionLabels.computeLabel : this.labeler(list)}
                       .computeHelper=${this.helper(list, item)}

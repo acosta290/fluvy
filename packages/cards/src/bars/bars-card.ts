@@ -36,8 +36,8 @@ import {
   withSections,
   type ConditionalRows,
   type EmptyList,
+  type RowWhen,
   type SectionEntry,
-  type ShowWhen,
 } from '../shared/lists.js';
 import { PENDING_LINE, TemplateTexts } from '../shared/templates.js';
 
@@ -69,8 +69,11 @@ export interface BarRowConfig {
   plain?: boolean;
   /** The row's own colour: its circle and its bar, in the palette's family. */
   color?: string;
-  /** Shown while it holds (a battery only below a number, #157); the card's `show_rows_when` where it names none. */
-  show_when?: ShowWhen;
+  /**
+   * Shown while it holds (a battery only below a number, #157; `always`: whatever the card's says); the card's
+   * `show_rows_when` where it names none.
+   */
+  show_when?: RowWhen;
   /** What the row answers: its entity's details where none is said, never the card's; a double tap none (#179). */
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;

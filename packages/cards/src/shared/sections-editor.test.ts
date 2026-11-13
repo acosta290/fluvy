@@ -438,8 +438,8 @@ describe('a condition, in the editor (#157)', () => {
     expect((await next)['show_rows_when']).toEqual({ below: 30 });
     await editor.updateComplete;
     // a row with none of its own keeps to the card's, and its first choice says so
-    expect(offered(formOf(editor, 0), 'show_when')[0]).toBe('As every row');
-    expect(formOf(editor, 0).data['show_when']).toBe('always');
+    expect(offered(formOf(editor, 0), 'show_when').slice(0, 2)).toEqual(['As every row', 'Always']);
+    expect(formOf(editor, 0).data['show_when']).toBe('follows');
     // the card's other fields leave it as it is
     next = nextConfig(editor);
     cardForm(editor).change('title', 'Low batteries');
@@ -453,6 +453,33 @@ describe('a condition, in the editor (#157)', () => {
     next = nextConfig(editor);
     head().change('show_rows_when', 'always');
     expect(await next).toEqual({ type: 'custom:x', title: 'Low batteries', rows: ['sensor.a'] });
+  });
+
+  it('lets a row show always whatever the card’s condition says, and keep to it again', async () => {
+    const editor = await editorOf({
+      show_rows_when: { below: 30 },
+      rows: ['sensor.a', { entity: 'sensor.b', show_when: 'always' }],
+    });
+    // the row's own: its form says Always, its condition's fields none
+    expect(formOf(editor, 1).data['show_when']).toBe('always');
+    expect(shownNames(formOf(editor, 1).schema)).toEqual(['entity', 'name', 'show_when']);
+    // chosen on a row that keeps to the card's, it is written; As every row takes it back to the bare id
+    expect(await edit(editor, 'show_when', 'always')).toEqual({
+      entity: 'sensor.a',
+      show_when: 'always',
+    });
+    expect(formOf(editor, 0).data['show_when']).toBe('always');
+    expect(await edit(editor, 'show_when', 'follows')).toBe('sensor.a');
+    // another field leaves the row's own as it is
+    expect(await edit(editor, 'name', 'Hall', 1)).toEqual({
+      entity: 'sensor.b',
+      name: 'Hall',
+      show_when: 'always',
+    });
+    // with no condition on the card, Always is the row's default again: nothing is written
+    const plain = await editorOf({ rows: [{ entity: 'sensor.a', show_when: { below: 30 } }] });
+    expect(offered(formOf(plain, 0), 'show_when')[0]).toBe('Always');
+    expect(await edit(plain, 'show_when', 'always')).toBe('sensor.a');
   });
 
   it('hands a form the same schema while its condition stands as it did', async () => {
