@@ -1,8 +1,8 @@
 /**
  * Every measurable page at every probe, one report each: the playground's sheets (`[data-frame]`) and the settings
  * panel's tabs (`fluvy-panel`), including the moments that change what a tab shows (the language menu, with and
- * without the Popover API; a custom palette; the house's palettes; its status colours; every template's dashboard; this
- * device a wall).
+ * without the Popover API; a custom palette; the house's palettes; its status colours; every template's dashboard; a
+ * dashboard being customised; this device a wall).
  * Reports land in `--out` (default `out/measure`); the violations are then held against the known ones, and the exit
  * code is 1 when one is new or a known one is gone — after every page has been measured, so one report never hides
  * another.
@@ -102,6 +102,11 @@ const PANEL = [
   // everywhere: the frame, our icons in the sidebar and in Settings, the Activity and History pages
   ['scope-everywhere', 'scope&state=everywhere'],
   ['dashboard', 'dashboard&state=dashboards'],
+  // Customise (1.20, #170), on the demo home: the home dashboard's views and the Home view's cards; what was saved
+  // before, with its lights unfolded to their entities; the clock's options in their sheet
+  ['customise', 'dashboard&state=dashboards,customise'],
+  ['customise-list', 'dashboard&state=dashboards,customise,customised,list'],
+  ['customise-sheet', 'dashboard&state=dashboards,customise,sheet'],
   ['wall', 'wall&state=wall'],
   ['wall-night', 'wall&state=wall,night'],
   // this browser not a wall panel: its row says so, and what turning it on does under it

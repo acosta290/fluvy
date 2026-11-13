@@ -1,0 +1,233 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the automatic dashboards’ parts (#170) > keep their ids for a house with one of everything (golden file) 1`] = `
+{
+  "energy": {
+    "devices": [
+      "consumption",
+      "distribution",
+    ],
+    "meters": [
+      "meters",
+    ],
+    "now": [
+      "flow",
+      "balance",
+      "sources",
+      "grid",
+      "batteries",
+      "charger",
+      "distribution",
+      "today",
+    ],
+    "production": [
+      "production",
+      "tomorrow",
+      "history",
+      "gauges",
+      "curve",
+    ],
+    "today": [
+      "period",
+      "day_flow",
+      "sankey",
+      "score",
+      "day_balance",
+      "usage",
+      "usage_water",
+      "usage_gas",
+    ],
+    "water": [
+      "water",
+    ],
+  },
+  "home": {
+    "agenda": [
+      "calendars",
+      "lists",
+      "timers",
+      "actions",
+    ],
+    "appliances": [
+      "large",
+      "small",
+    ],
+    "climate": [
+      "thermostats",
+      "fans",
+      "weather",
+      "humidity",
+      "temperatures",
+    ],
+    "energy": [
+      "flow",
+      "balance",
+      "sources",
+      "grid",
+      "batteries",
+      "charger",
+      "day_flow",
+      "sankey",
+      "score",
+      "day_balance",
+      "today",
+      "gauges",
+      "production",
+      "tomorrow",
+      "history",
+      "distribution",
+      "consumption",
+      "water",
+    ],
+    "home": [
+      "attention",
+      "lights",
+      "appliances",
+      "covers",
+      "thermostat",
+      "readings",
+      "weather",
+      "clock",
+      "flow",
+      "curve",
+      "security",
+      "media",
+      "vacuum",
+      "printer:d-printer",
+      "todo",
+      "scenes",
+      "large",
+      "small",
+    ],
+    "lights": [
+      "lights:bedroom",
+      "lights:living_room",
+      "lights:kitchen",
+      "lights:outdoor",
+      "scenes",
+    ],
+    "media": [
+      "media",
+    ],
+    "room-bedroom": [
+      "back",
+      "lights",
+      "readings",
+    ],
+    "room-garden": [
+      "back",
+      "readings",
+    ],
+    "room-kitchen": [
+      "back",
+      "lights",
+    ],
+    "room-living_room": [
+      "back",
+      "lights",
+    ],
+    "rooms": [
+      "floor:ground",
+      "room:kitchen",
+      "room:living_room",
+      "floor:upstairs",
+      "room:bedroom",
+      "other",
+      "room:garden",
+    ],
+    "security": [
+      "alarms",
+      "locks",
+      "gates",
+      "openings",
+      "cameras",
+    ],
+    "sensors": [
+      "batteries",
+      "phones",
+      "people",
+      "map",
+      "plants",
+      "helpers",
+      "updates",
+      "camera",
+    ],
+  },
+  "rooms": {
+    "floor-ground": [
+      "room:kitchen",
+      "room:living_room",
+    ],
+    "floor-upstairs": [
+      "room:bedroom",
+    ],
+    "room-bedroom": [
+      "back",
+      "lights",
+      "readings",
+    ],
+    "room-garden": [
+      "back",
+      "readings",
+    ],
+    "room-kitchen": [
+      "back",
+      "lights",
+    ],
+    "room-living_room": [
+      "back",
+      "lights",
+    ],
+    "rooms": [
+      "room:garden",
+    ],
+  },
+  "security": {
+    "cameras": [
+      "cameras",
+    ],
+    "openings": [
+      "other",
+    ],
+    "overview": [
+      "alarms",
+      "locks",
+      "gates",
+      "openings",
+      "cameras",
+    ],
+  },
+  "wall": {
+    "room-bedroom": [
+      "back",
+      "lights",
+      "readings",
+    ],
+    "room-garden": [
+      "back",
+      "readings",
+    ],
+    "room-kitchen": [
+      "back",
+      "lights",
+    ],
+    "room-living_room": [
+      "back",
+      "lights",
+    ],
+    "wall": [
+      "hello",
+      "clock",
+      "readings",
+      "scenes",
+      "room:kitchen",
+      "room:living_room",
+      "room:bedroom",
+      "room:garden",
+      "thermostat",
+      "security",
+      "people",
+    ],
+  },
+}
+`;

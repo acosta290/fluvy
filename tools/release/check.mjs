@@ -31,9 +31,15 @@ const BUDGETS = {
   core: 241_664,
   // the settings panel and its English
   panel: 40_960,
-  // the automatic dashboards. 25 KB since 2026-11-12 (1.19.1: scenes on Home and room pages, labels told apart,
-  // forecasts): 24 before
-  strategy: 25_600,
+  // Customise (1.20, #170): the Dashboards tab's section that edits an automatic dashboard's views and cards (what it
+  // reads of the dashboard, what it changes of its `edit`, its rows, its sheet, its English), fetched the first time a
+  // dashboard is customised. Measured at 9.3 KB
+  customise: 12_288,
+  // the automatic dashboards. 29 KB since 2026-11-13 (1.20: every card stands in a part with an id of its own and a
+  // person's `edit` is laid over them, #170, 2.1 KB; the range's usage, tomorrow's production, several arrays and
+  // what is shown together told apart, 1.4 KB: measured at 27.7 KB); 25 KB since 2026-11-12 (1.19.1: scenes on Home
+  // and room pages, labels told apart, forecasts): 24 before
+  strategy: 29_696,
   // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
   'house-heights': 4096,
   wall: 16_384,

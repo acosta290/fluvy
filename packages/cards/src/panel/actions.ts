@@ -145,10 +145,19 @@ export function importSettings(panel: FluvyPanel, file: File): void {
       const dashboard = panel.dashboards.find((d) => d.urlPath === urlPath);
       const template = dashboard?.template;
       if (!template) continue;
+      // what a person changed on its views and cards (#170) names this house's own entities: a file never carries
+      // it, and never takes it away
+      const edit = dashboard.strategy?.['edit'];
       await panel.hass?.callWS({
         type: 'lovelace/config/save',
         url_path: urlPath,
-        config: { strategy: { type: template.type, ...strategyOptions(options, template) } },
+        config: {
+          strategy: {
+            type: template.type,
+            ...strategyOptions(options, template),
+            ...(edit === undefined ? {} : { edit }),
+          },
+        },
       });
       written = true;
     }

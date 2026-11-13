@@ -1,6 +1,6 @@
 import type { AreaRegistryEntry } from '@fluvy/core';
 import { flowed } from '../layout.js';
-import { roomCard, roomsOf } from '../rooms.js';
+import { roomPart, roomsOf } from '../rooms.js';
 import type { Section, StrategyContext, ViewSpec } from '../types.js';
 
 /*
@@ -20,7 +20,7 @@ const floorsOf = (ctx: StrategyContext) => {
 const grid = (ctx: StrategyContext, rooms: readonly AreaRegistryEntry[]): Section[] =>
   flowed(
     ctx,
-    rooms.map((area) => [roomCard(ctx, area)]),
+    rooms.map((area) => roomPart(ctx, area)),
     [],
     3,
   );

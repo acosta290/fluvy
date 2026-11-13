@@ -132,6 +132,48 @@ export interface FluvyStrategyConfig {
    * (Appearance › Background). The page draws it (`core/look/background.ts`); the views carry nothing of it.
    */
   background?: Partial<PageBackground>;
+  /**
+   * What a person changed on the dashboard (#170), kept as differences so that everything else stays automatic: a view
+   * or a card hidden, moved or given options of its own, a list's entities left out, added or put in order, cards of
+   * the person's own. Fluvy's panel writes it (Dashboards › Customise); without it the dashboard is the house's alone.
+   */
+  edit?: DashboardEdit;
+}
+
+/** A view's own changes, by its path (`climate`, `room-kitchen`). */
+export interface ViewEdit {
+  /** Left out of the dashboard: any view but the template's first. */
+  readonly hidden?: boolean;
+  /** Its place among the tabs: from the first (0, 1 …) or, negative, from the last (-1). */
+  readonly order?: number;
+  /** Cards of the person's own, laid out after the view's (each a part: `<view>/own:<index>`). */
+  readonly add?: readonly Card[];
+}
+
+/** A part's own changes, by its id (`home/flow`, `rooms/room:kitchen`; a list's card of one entity, `home/lights:light.sofa`). */
+export interface CardEdit {
+  readonly hidden?: boolean;
+  /** Its place among its view's parts: from the first (0, 1 …) or, negative, from the last (-1). */
+  readonly order?: number;
+  /** Keys laid over the card's generated config (a variant, a title, a colour); `null` takes a key away. */
+  readonly options?: Readonly<Record<string, unknown>>;
+}
+
+/** A list's own changes, by its part's id (`home/lights`). */
+export interface ListEdit {
+  /** Entities it leaves out. */
+  readonly drop?: readonly string[];
+  /** Entities it shows besides, each of a domain the list takes. */
+  readonly add?: readonly string[];
+  /** The entities it shows first, in this order; the others follow in the house's. */
+  readonly order?: readonly string[];
+}
+
+/** Everything a person changed on one automatic dashboard (`edit`); an id the house no longer has is ignored, and kept. */
+export interface DashboardEdit {
+  readonly views?: Readonly<Record<string, ViewEdit>>;
+  readonly cards?: Readonly<Record<string, CardEdit>>;
+  readonly entities?: Readonly<Record<string, ListEdit>>;
 }
 
 /** The home dashboard's config: the same keys, its views by name. */
@@ -256,9 +298,39 @@ export interface StrategyContext {
   readonly more: MoreHost;
 }
 
+/** A part of a view (#170): the cards that stand under one id, as they were built — none while the part is hidden. */
+export interface Part {
+  /** Its id inside its view (`flow`, `lights`, `room:kitchen`); the dashboard's `edit` names it after the view's path. */
+  readonly id: string;
+  readonly cards: readonly Card[];
+}
+
+/** A list a part draws: every entity the house gives it (before its cap), and what it takes besides. */
+export interface PartList {
+  readonly items: readonly string[];
+  /** The domains of what a person may add (`*`: any entity). */
+  readonly takes: readonly string[];
+  /** Its own title and icon, where it is a list of the view's (a capped one). */
+  readonly title?: string;
+  readonly icon?: string;
+}
+
+/** A view's columns as `flowed` was asked for them: an order of the person's lays them out again. */
+export interface Flow {
+  readonly blocks: readonly (readonly Card[])[];
+  readonly loose: readonly (Card | readonly Card[])[];
+  /** The sections it gave. */
+  readonly sections: readonly Section[];
+  readonly lay: (
+    blocks: readonly (readonly Card[])[],
+    loose: readonly (Card | readonly Card[])[],
+  ) => Section[];
+}
+
 /**
- * A view as its capped lists see it (#78): the subviews their "N more" rows open are gathered on it, each one's path
- * after the view's (`climate-humidity`, `room-kitchen-lights`) and its way back leading to it.
+ * A view as it is built. Its capped lists gather on it the subviews their "N more" rows open (#78), each one's path
+ * after the view's (`climate-humidity`, `room-kitchen-lights`) and its way back leading to it; and its cards stand on
+ * it part by part (#170), each under an id the dashboard's `edit` names.
  */
 export interface MoreHost {
   /** The view's path inside its dashboard. */
@@ -270,6 +342,14 @@ export interface MoreHost {
   readonly columns: number;
   /** The subviews gathered while the view is built. */
   readonly views: View[];
+  /** What a person changed on the dashboard (`edit`). */
+  readonly edit: DashboardEdit;
+  /** The view's parts, in the order they are built: the order they are read in. */
+  readonly parts: Part[];
+  /** The lists its parts draw, by the part's id. */
+  readonly lists: Map<string, PartList>;
+  /** Its columns, once `flowed` has cut them. */
+  flow?: Flow;
 }
 
 export interface ViewSpec {

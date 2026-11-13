@@ -1,5 +1,6 @@
 import { byArea, capped, foldAt, moreCard } from '../caps.js';
 import { COLUMNS } from '../context.js';
+import { listed, part } from '../edit.js';
 import { balanced, flowed, full, runsOf } from '../layout.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 import { securityCards } from './home.js';
@@ -36,7 +37,10 @@ function camerasView(ctx: StrategyContext): Section[] {
     {
       type: 'grid',
       column_span: COLUMNS,
-      cards: [{ ...cameras(all.shown, ctx), grid_options: { columns: 'full' } }, ...moreCard(all)],
+      cards: part(ctx, 'cameras', [
+        { ...cameras(all.shown, ctx), grid_options: { columns: 'full' } } as Card,
+        ...moreCard(all),
+      ]),
     },
   ];
 }
@@ -48,9 +52,18 @@ function camerasView(ctx: StrategyContext): Section[] {
 function openingsView(ctx: StrategyContext): Section[] {
   return flowed(
     ctx,
-    byArea(ctx, ctx.home.openings, ctx.t('strategy.sensors'), (title, ids) => [
-      full('openings', { title, entities: [...ids], ...foldAt(ctx, 'openings', ids) }),
-    ]),
+    byArea(ctx, ctx.home.openings, ctx.t('strategy.sensors'), (title, ids, area) => {
+      // a part's id is never the head of another's (`openings` beside `openings:kitchen`): those in no room are `other`
+      const id = area ? `openings:${area}` : 'other';
+      const own = listed(ctx, id, ids, { title });
+      return part(
+        ctx,
+        id,
+        own.length
+          ? [full('openings', { title, entities: [...own], ...foldAt(ctx, 'openings', own) })]
+          : [],
+      );
+    }),
   );
 }
 

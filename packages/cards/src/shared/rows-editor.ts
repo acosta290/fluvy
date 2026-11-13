@@ -1118,8 +1118,11 @@ const fieldsNamed = (
     item.schema ? fieldsNamed(item.schema, names) : names.has(item.name) ? [item] : [],
   );
 
-/** The list fields, and those their sections draw, taken out of a card's form: the editor draws those itself. */
-function withoutLists(
+/**
+ * The list fields, and those their sections draw, taken out of a card's form: the editor draws those itself (and
+ * Customise a list of an automatic dashboard's card, #170).
+ */
+export function withoutLists(
   schema: readonly HaFormSchemaItem[],
   keys: ReadonlySet<string>,
 ): HaFormSchemaItem[] {

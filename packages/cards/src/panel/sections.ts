@@ -1697,6 +1697,8 @@ export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
   open(urlPath: string): void;
+  /** Opens Customise on a dashboard: its views and cards, hidden, moved and tuned (#170). */
+  customise(urlPath: string): void;
   /** Lists a dashboard in Home Assistant's sidebar, or not. */
   showInSidebar(urlPath: string, on: boolean): void;
   /** The url path of the dashboard being created ('' when none): its row says so and takes no second tap. */
@@ -1705,7 +1707,10 @@ export interface DashboardActions {
   readonly recreateArmed: string;
 }
 
-/** A dashboard's options: its template's, each as rows (the views) or chips (a choice, the rooms), then its rows. */
+/**
+ * A dashboard's options: the way into Customise first (its views and cards, #170: an administrator's, said so to
+ * anyone else), then its template's, each as rows (the views) or chips (a choice, the rooms), then its rows.
+ */
 function dashboardOptions(
   ctx: PanelContext,
   dashboard: DashboardInfo,
@@ -1722,6 +1727,23 @@ function dashboardOptions(
       title: dashboard.title,
       ...(ctx.admin ? {} : { sub: ctx.t('scope.admin_only') }),
     })}
+    <div class="pn-rows pn-rows--lead">
+      ${listRow({
+        icon: 'sliders',
+        tone: strategy['edit'] === undefined ? 'neutral' : 'accent',
+        title: ctx.t('dashboard.customise'),
+        sub: ctx.t(
+          !ctx.admin
+            ? 'dashboard.customise_admin'
+            : strategy['edit'] === undefined
+              ? 'dashboard.customise_sub'
+              : 'dashboard.customised',
+        ),
+        ...(ctx.admin
+          ? { onTap: () => actions.customise(dashboard.urlPath) }
+          : { trailing: 'none' as const }),
+      })}
+    </div>
     ${template.options.map((option) => {
       // a house without areas has no rooms to choose from
       if (option.kind === 'areas' && !Object.keys(ctx.hass.areas ?? {}).length) return nothing;

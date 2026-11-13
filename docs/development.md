@@ -42,9 +42,10 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
-shows it), the settings panel, what they share (the date picker; the pages'
+shows it), the settings panel (and Customise, the first time one of its dashboards is customised), what they
+share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
@@ -78,7 +79,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `fluvy.js` | 2 KB | the entry |
 | `core` | 236 KB | what every page loads |
 | `panel` | 40 KB | the settings panel and its English |
-| `strategy` | 25 KB | the automatic dashboards |
+| `customise` | 12 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
+| `strategy` | 29 KB | the automatic dashboards: their views and cards, each card in a part with an id of its own, and a person's `edit` laid over them |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
 | `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |

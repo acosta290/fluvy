@@ -1,3 +1,4 @@
+import { listed, part, TAKES } from './edit.js';
 import { OUTDOOR, type HomeRegistry } from './home-registry.js';
 import type {
   Card,
@@ -154,11 +155,11 @@ export const solarGauges = (e: EnergyRoles): Card[] =>
  * energy dashboard all of theirs together under the sun's word, each array named as the house calls it, by its device
  * where two read alike (as the flow names them, #170), where the first alone was read (#183); and where the Energy
  * dashboard links a forecast to an array, what it is expected to make tomorrow, the same card a day on, under today's
- * in its column (one block).
+ * in its column (one block). Each is a part of its view (#170): `production`, `tomorrow`, `history`.
  */
-export function productionCards({ energy, home, t }: StrategyContext): Loose[] {
+export function productionCards(ctx: StrategyContext): Loose[] {
+  const { energy, home, t } = ctx;
   const { solarToday: entity, solarMeters: meters } = energy;
-  if (!entity) return [];
   let today: Record<string, unknown> = { entity };
   let bars: Record<string, unknown> = { entity, color: 'amber' };
   if (meters.length > 1) {
@@ -172,12 +173,28 @@ export function productionCards({ energy, home, t }: StrategyContext): Loose[] {
     today = { entity, name, arrays };
     bars = { entity, name, entities: [...meters], color: 'amber' };
   }
+  const block = [
+    ...part(
+      ctx,
+      'production',
+      when(entity, () => [full('production', today)]),
+    ),
+    ...part(
+      ctx,
+      'tomorrow',
+      when(entity && energy.solarForecast, () => [
+        full('production', { ...today, day: 'tomorrow' }),
+      ]),
+    ),
+  ];
   return [
-    [
-      full('production', today),
-      ...when(energy.solarForecast, () => [full('production', { ...today, day: 'tomorrow' })]),
-    ],
-    full('history-bars', bars),
+    // today's and tomorrow's in one column, whichever of them a person keeps
+    ...when(block.length, () => [block]),
+    ...part(
+      ctx,
+      'history',
+      when(entity, () => [full('history-bars', bars)]),
+    ),
   ];
 }
 
@@ -326,8 +343,12 @@ const listLength = (card: Card): number => {
   }
   return 0;
 };
-/** What the columns are cut with: the header's height over the first column, and the house the cards count with. */
-export type LayoutContext = Pick<StrategyContext, 'header' | 'hass'>;
+/**
+ * What the columns are cut with: the header's height over the first column, the house the cards count with, and — for
+ * a view's own columns — the view being built, which keeps what they were cut from (`Flow`).
+ */
+export type LayoutContext = Pick<StrategyContext, 'header' | 'hass'> &
+  Partial<Pick<StrategyContext, 'more'>>;
 export /** A card's height: what it draws in this house (`houseHeightOf`), else a head and 64 a row. */
 const heightOf = (card: Card, { hass }: LayoutContext): number =>
   houseHeightOf(card, 100 + 64 * listLength(card), hass);
@@ -392,7 +413,16 @@ export function flowed(
     if (!best || spread < best.spread)
       best = { columns: laid.map((column) => column.cards), spread };
   }
-  return (best?.columns ?? []).map((cards) => section(...cards));
+  const sections = (best?.columns ?? []).map((cards) => section(...cards));
+  // what the view's columns were cut from: a person's order (`arranged`) cuts them again
+  if (ctx.more)
+    ctx.more.flow = {
+      blocks: runs,
+      loose,
+      sections,
+      lay: (again, feet) => flowed({ header: ctx.header, hass: ctx.hass }, again, feet, columns),
+    };
+  return sections;
 }
 
 /** Cards shared out over the columns: the lead under the header, every other one where the columns are shortest. */
@@ -419,11 +449,13 @@ export function headed(head: Card, rows: readonly Card[][]): Card[][] {
 /**
  * Lights by area (indoor and outdoor where they have none), the biggest group first: a room of two lights or more
  * starts with all of them on one card (the room in one tap, a round a light); a dimmable light is a full card (a row of
- * its own); the switches after it are tiles, two a row.
+ * its own); the switches after it are tiles, two a row. On the lights' own view each group is a part (`parts`, #170:
+ * `lights:<area id>`, a list of its own); in a subview of every light they are cards alone.
  */
 export function lightGroups(
-  ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
+  ctx: Pick<StrategyContext, 'home' | 't' | 'style'> & Partial<Pick<StrategyContext, 'more'>>,
   ids: readonly string[],
+  parts = false,
 ): Card[][] {
   const { home, t } = ctx;
   const groups = new Map<string, string[]>();
@@ -433,19 +465,29 @@ export function lightGroups(
       (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor'));
     groups.set(key, [...(groups.get(key) ?? []), id]);
   }
+  const blocks = (name: string, group: readonly string[]): Card[][] => {
+    // a group's cards and tiles stand together under its heading: two alike are told apart
+    const named = namesOf(home, group);
+    return headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', group), [
+      ...(group.length > 1 ? [[full('lights', { lights: group })]] : []),
+      ...group
+        .filter((id) => home.dimmable(id))
+        .map((id) => [full('light', { entity: id, ...named(id) })]),
+      ...tileRows(
+        group.filter((id) => !home.dimmable(id)).map((id) => sizedTile(id, named(id), ctx.style)),
+      ),
+    ]);
+  };
   return [...groups.entries()]
     .sort((a, b) => b[1].length - a[1].length)
     .flatMap(([name, group]) => {
-      // a group's cards and tiles stand together under its heading: two alike are told apart
-      const named = namesOf(home, group);
-      return headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', group), [
-        ...(group.length > 1 ? [[full('lights', { lights: group })]] : []),
-        ...group
-          .filter((id) => home.dimmable(id))
-          .map((id) => [full('light', { entity: id, ...named(id) })]),
-        ...tileRows(
-          group.filter((id) => !home.dimmable(id)).map((id) => sizedTile(id, named(id), ctx.style)),
-        ),
-      ]);
+      if (!parts) return blocks(name, group);
+      const [first = ''] = group;
+      const id = `lights:${home.areaOf(first) ?? (home.outdoor(first) ? 'outdoor' : 'indoor')}`;
+      const own = listed(ctx, id, group, {
+        takes: TAKES['lights'] as readonly string[],
+        title: name,
+      });
+      return part(ctx, id, own.length ? blocks(name, own) : []);
     });
 }

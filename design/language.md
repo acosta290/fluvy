@@ -788,6 +788,44 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   rooms as chips that toggle, then the sidebar switch and *Recreate* in two taps (the armed row in the warning tone,
   "Cancels in 4 seconds"). The preview draws the template touched last.
 
+## Customise (1.20, #170)
+
+- **Where**: each dashboard's card in the Dashboards tab opens with a *Customise* row (the sliders glyph, the bare
+  chevron; the accent circle and "Customised" once it holds an edit; for someone who is not an administrator a line
+  that says whose it is, and no tap). The tap gives the tab's cards over to the section, and its address says so
+  (`/fluvy/dashboard/<url path>`); the × in its head goes back.
+- **The head card**: the sliders circle, *Customise* over the dashboard's name, the ×; one line of prose (what stays
+  automatic); *Views*, the dashboard's tabs as a full chip row in the order they will stand; *Pages*, the rooms' pages
+  and the appliances' the same way.
+- **The view card**: the view's own icon and name over "15 of 16 shown", an *Edited* badge at the head's end once
+  anything of it changed. A tab has two rows: *Show this view* (a switch; the first view says *Always*) and *Place
+  among the tabs* ("2 of 9" under it, two quiet rounds at its end, earlier and later). Then *Cards*: a row a part, in
+  the order they are read.
+- **A part's row**: the icon circle (the accent's while it shows, neutral while it is hidden), its name, and under it
+  what it is ("Thermostat") or how much of its list shows ("5 of 6 shown"), "Hidden" or "Edited" before it; at its end
+  a caret that says it unfolds, then the switch. An edited part carries a dot of the accent on its circle, ringed by
+  what it stands on. Rows are never cut: a long name takes a second line.
+- **Open**, the row and what it unfolds stand on the page's ground as one panel (radius 16, 12 past the card's column
+  on each side, no hairline round it): a row of glyph buttons in equal cells on the 8 gap, on the card's fill with its
+  hairline, as buttons on the page are (up, down, the sliders for *Options*, the undo for reset: armed, it takes the
+  accent and a line under the row says what the second tap does, in the warning's ink); then, for a list, *Entities*
+  (or *Devices*): compact rows, each a switch, an open one unfolding its own row of buttons, and Home Assistant's
+  entity picker to add one.
+- **Options**: the house's bottom sheet in the top layer (a native dialog, 480 at most, 24 from the top): the grabber,
+  the card's circle and name over *Options*, the ×; one line (only what you change is kept); the card's own form,
+  which scrolls between the head and an equal pair, *Reset* (quiet, out of reach until an option is kept) and *Done*.
+- **Your cards**: a label, a line of what they are, and a row with the small quiet *Add* button; tapped, Home
+  Assistant's YAML field in its place over an equal pair, *Cancel* and *Add* (out of reach until the YAML names a
+  type). An own card is a row among the view's, its chevron in the switch's place; open, its YAML under its buttons.
+- **Reset**: a row at the view card's foot once the view is edited, and a card of its own under it for the whole
+  dashboard (*Back to automatic*), each armed on the first tap as Recreate is.
+- **The preview** (the side column, from 1184): the open view as the dashboard will draw it with what is pending,
+  its real cards on the real house stacked as a phone stacks them (a section's twelve columns on the dashboard's 16
+  gap), inert: it is looked at, never touched. It is built again 160 ms after the edit rests; a card whose config
+  stays the same keeps its element, so nothing blinks. Under 1184 there is none: the rows are the page.
+- Nothing saves on a tap: every change is an edit of the dashboard's `edit`, counted entry by entry in the bar
+  ("Fluvy auto · Customise", "3 changes").
+
 ## View tabs (1.5, the dashboard header's)
 
 - Home Assistant's own tabs (`hui-root`'s `ha-tab-group`), restyled by marks on the root, never replaced: a tab is

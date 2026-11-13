@@ -324,6 +324,26 @@ export function unsaved<T extends object>(edit: T, saved: object): T {
   return kept as T;
 }
 
+/**
+ * How many entries of a dashboard's `edit` (#170) differ between what is saved and what Customise holds — a view, a
+ * card, a list each count once; one at least, since something of it changed.
+ */
+export function editChanges(saved: unknown, draft: unknown): number {
+  const table = (edit: unknown, name: string): Readonly<Record<string, unknown>> => {
+    const entries = (edit as Record<string, unknown> | null | undefined)?.[name];
+    return typeof entries === 'object' && entries !== null
+      ? (entries as Record<string, unknown>)
+      : {};
+  };
+  let count = 0;
+  for (const name of ['views', 'cards', 'entities']) {
+    const [before, after] = [table(saved, name), table(draft, name)];
+    for (const id of new Set([...Object.keys(before), ...Object.keys(after)]))
+      if (!same(before[id], after[id])) count++;
+  }
+  return Math.max(1, count);
+}
+
 /** A strategy with its edits on top (an `undefined` edit takes the key away). */
 export function withEdit(
   strategy: Readonly<Record<string, unknown>>,
@@ -541,7 +561,12 @@ export function changeLines(ctx: PanelContext): string[] {
     const dashboard = ctx.dashboards.find((d) => d.urlPath === urlPath);
     for (const key of Object.keys(edit)) {
       const label = dashboard?.template?.options.find((option) => option.key === key)?.label;
-      lines.push(`${dashboard?.title ?? urlPath} · ${t(label ?? 'dashboard.cards')}`);
+      // what Customise changed counts entry by entry: a card hidden and a list thinned out are two changes
+      const count = key === 'edit' ? editChanges(dashboard?.strategy?.['edit'], edit[key]) : 1;
+      for (let n = 0; n < count; n++)
+        lines.push(
+          `${dashboard?.title ?? urlPath} · ${t(key === 'edit' ? 'dashboard.customise' : (label ?? 'dashboard.cards'))}`,
+        );
     }
   }
   const personal = ctx.personalEdit;

@@ -1,6 +1,7 @@
 import type { MessageKey } from '@fluvy/core';
+import { hiddenPart, listed, TAKES } from './edit.js';
 import { flowed, full, headed, heading, type Loose } from './layout.js';
-import type { Card, CapKey, Caps, MoreHost, StrategyContext } from './types.js';
+import type { Card, CapKey, Caps, DashboardEdit, MoreHost, StrategyContext } from './types.js';
 
 /*
  * The automatic dashboards' capped lists (#78): a view shows the first of a long list, so a big house still reads,
@@ -114,37 +115,50 @@ export interface ListSpec {
 }
 
 /** What a view shows of a list, and what it leaves to the subview. */
-export interface Capped<T> {
-  readonly shown: readonly T[];
+export interface Capped {
+  readonly shown: readonly string[];
+  /** Every one of the list, as the person left it: what its heading counts. */
+  readonly all: readonly string[];
   /** How many the subview holds besides (0: the list is whole). */
   readonly rest: number;
   /** The subview's url, where the list leaves some to it. */
   readonly path: string | undefined;
 }
 
-/** A view to gather on: its path, its title and icon for the way back, the template's columns. */
-export const moreHost = (path: string, title: string, icon: string, columns: number): MoreHost => ({
-  path,
-  title,
-  icon,
-  columns,
-  views: [],
-});
+/**
+ * A view to build on: its path, its title and icon for the way back, the template's columns, and what a person changed
+ * on its dashboard.
+ */
+export const moreHost = (
+  path: string,
+  title: string,
+  icon: string,
+  columns: number,
+  edit: DashboardEdit = {},
+): MoreHost => ({ path, title, icon, columns, views: [], edit, parts: [], lists: new Map() });
 
 /**
  * A list at its cap: its first `cap` items, and past them the subview of every one (`every` lays them out in blocks,
  * which `flowed` cuts into its columns), gathered on the view being built, under the way back to it. One past the cap
- * of a list of rows or tiles is shown instead.
+ * of a list of rows or tiles is shown instead. The list is a part of its view under its own name (`home/lights`, #170):
+ * the person's entities are in it before it is cut, and one they hide shows none and opens no subview.
  */
-export function capped<T>(
+export function capped(
   ctx: StrategyContext,
   list: ListSpec,
-  items: readonly T[],
-  every: (items: readonly T[]) => readonly (readonly Card[])[],
-): Capped<T> {
+  house: readonly string[],
+  every: (items: readonly string[]) => readonly (readonly Card[])[],
+): Capped {
+  const takes = TAKES[list.key];
+  const items = listed(ctx, list.key, house, {
+    ...(takes ? { takes } : {}),
+    title: ctx.t(list.title),
+    icon: list.icon,
+  });
+  if (hiddenPart(ctx, list.key)) return { shown: [], all: [], rest: 0, path: undefined };
   const cap = capOf(ctx.caps, list.key, list.cap);
   if (items.length <= cap || (ROWS.has(list.key) && items.length === cap + 1))
-    return { shown: items, rest: 0, path: undefined };
+    return { shown: items, all: items, rest: 0, path: undefined };
   const host = ctx.more;
   const path = `${host.path}-${list.key}`;
   const back = `${ctx.base}/${host.path}`;
@@ -157,8 +171,9 @@ export function capped<T>(
       max_columns: host.columns,
       subview: true,
       back_path: back,
+      // the subview's own columns: never the view's, which a person may order
       sections: flowed(
-        ctx,
+        { header: ctx.header, hass: ctx.hass },
         headed(
           heading(host.title, host.icon, [], back),
           every(items).map((block) => [...block]),
@@ -167,40 +182,46 @@ export function capped<T>(
         host.columns,
       ),
     });
-  return { shown: items.slice(0, cap), rest: items.length - cap, path: `${ctx.base}/${path}` };
+  return {
+    shown: items.slice(0, cap),
+    all: items,
+    rest: items.length - cap,
+    path: `${ctx.base}/${path}`,
+  };
 }
 
 /** The keys that end a card of rows (the entities card's) with the "N more" row, where the list leaves some. */
-export const moreKeys = ({ rest, path }: Capped<unknown>): Record<string, unknown> =>
+export const moreKeys = ({ rest, path }: Capped): Record<string, unknown> =>
   path ? { more: rest, more_path: path } : {};
 
 /** The "N more" row on a card of its own, where the list leaves some. */
-export const moreCard = (list: Capped<unknown>): Card[] =>
+export const moreCard = (list: Capped): Card[] =>
   list.path ? [full('entities', moreKeys(list))] : [];
 
 /** A list's blocks, its "N more" row riding on the last: a block never splits, so the row stays under its list. */
-export function moreAfter(blocks: readonly (readonly Card[])[], list: Capped<unknown>): Card[][] {
+export function moreAfter(blocks: readonly (readonly Card[])[], list: Capped): Card[][] {
   const rows = blocks.map((block) => [...block]);
   rows.at(-1)?.push(...moreCard(list));
   return rows;
 }
 
 /** A list's cards, each where the columns are shortest, its "N more" row kept under the last of them. */
-export function looseAfter(cards: readonly Card[], list: Capped<unknown>): Loose[] {
+export function looseAfter(cards: readonly Card[], list: Capped): Loose[] {
   const more = moreCard(list);
   const last = cards.at(-1);
   return more.length && last ? [...cards.slice(0, -1), [last, ...more]] : [...cards];
 }
 
 /**
- * Every one of a list, a card a room (`block` draws a room's: its card, or a heading and its card), the biggest first,
- * as the Security dashboard's Openings view lays its openings; those in no room under the list's own name.
+ * Every one of a list, a card a room (`block` draws a room's: its card, or a heading and its card; it is told the room's
+ * id, none for those in no room), the biggest first, as the Security dashboard's Openings view lays its openings; those
+ * in no room under the list's own name.
  */
 export function byArea(
   ctx: StrategyContext,
   ids: readonly string[],
   title: string,
-  block: (title: string, ids: readonly string[]) => readonly Card[],
+  block: (title: string, ids: readonly string[], area: string | undefined) => readonly Card[],
 ): Card[][] {
   const { home } = ctx;
   const groups = new Map<string, string[]>();
@@ -210,7 +231,7 @@ export function byArea(
   }
   return [...groups.entries()]
     .sort((a, b) => b[1].length - a[1].length)
-    .map(([name, group]) => [...block(name, group)]);
+    .map(([name, group]) => [...block(name, group, home.areaOf(group[0] as string))]);
 }
 
 /** Every one of a list of whole cards, a block each. */

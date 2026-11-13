@@ -1,9 +1,10 @@
 import { deviceNameOf } from '@fluvy/core';
 import type { ApplianceKind } from '../appliance/kinds.js';
 import { applianceVariant } from '../appliances-family.js';
+import { arranged, listed, part } from './edit.js';
 import type { HomeRegistry } from './home-registry.js';
 import { heading } from './layout.js';
-import type { Card, Section, StrategyContext, View } from './types.js';
+import type { Card, MoreHost, Section, StrategyContext, View } from './types.js';
 
 /*
  * The house's appliances as the reporter of #47 drew them, across the view under its columns: "Large appliances" —
@@ -126,59 +127,83 @@ function band(
 /**
  * The bands of a set of appliances, as one section across `span` columns: the large ones, then the small ones, then
  * the pets', each capped where `caps` says (Home's), each heading leading to `path` (every appliance) where there is
- * one. None for a house without appliances.
+ * one. None for a house without appliances. Each band is a part of its view (`large`, `small`, `pets`, #170), its
+ * devices a list a person may thin out and put in order.
  */
 export function applianceSections(
-  ctx: Pick<StrategyContext, 'home' | 't'>,
+  ctx: Pick<StrategyContext, 'home' | 't'> & Partial<Pick<StrategyContext, 'more'>>,
   devices: readonly string[],
   span: number,
   { path, caps = false }: { readonly path?: string; readonly caps?: boolean } = {},
 ): Section[] {
-  const { large, small, pets } = bandsOf(ctx.home, devices);
+  const bands = bandsOf(ctx.home, devices);
   const link = (text: 'strategy.all_appliances' | 'strategy.show_all') =>
     path ? { path, text: ctx.t(text) } : undefined;
+  /** A band under its id: its devices as the person left them, at its cap where Home asks. */
+  const drawn = (
+    id: 'large' | 'small' | 'pets',
+    title: string,
+    icon: string,
+    text: 'strategy.all_appliances' | 'strategy.show_all',
+    cap: number,
+  ): Card[] => {
+    const items = bands[id];
+    const kept = listed(
+      ctx,
+      id,
+      items.map((item) => item.device),
+      { title, icon },
+    ).flatMap((device) => items.filter((item) => item.device === device));
+    return part(
+      ctx,
+      id,
+      kept.length
+        ? band(title, icon, caps ? kept.slice(0, cap) : kept, link(text), id === 'small')
+        : [],
+    );
+  };
   const cards = [
-    ...(large.length
-      ? band(
-          ctx.t('strategy.large_appliances'),
-          'fluvy:dishwasher',
-          caps ? large.slice(0, HOME_LARGE) : large,
-          link('strategy.all_appliances'),
-          false,
-        )
-      : []),
-    ...(small.length
-      ? band(
-          ctx.t('strategy.small_appliances'),
-          'fluvy:plug',
-          caps ? small.slice(0, HOME_SMALL) : small,
-          link('strategy.show_all'),
-          true,
-        )
-      : []),
-    ...(pets.length
-      ? band(
-          ctx.t('strategy.pet_devices'),
-          'mdi:paw',
-          caps ? pets.slice(0, HOME_LARGE) : pets,
-          link('strategy.show_all'),
-          false,
-        )
-      : []),
+    ...drawn(
+      'large',
+      ctx.t('strategy.large_appliances'),
+      'fluvy:dishwasher',
+      'strategy.all_appliances',
+      HOME_LARGE,
+    ),
+    ...drawn(
+      'small',
+      ctx.t('strategy.small_appliances'),
+      'fluvy:plug',
+      'strategy.show_all',
+      HOME_SMALL,
+    ),
+    ...drawn('pets', ctx.t('strategy.pet_devices'), 'mdi:paw', 'strategy.show_all', HOME_LARGE),
   ];
   return cards.length ? [{ type: 'grid', column_span: span, cards }] : [];
 }
 
-/** Every appliance of the house on a view of its own, reached from Home's bands (never a tab), back to Home. */
-export function appliancesView(ctx: StrategyContext, columns: number): View {
+/**
+ * Every appliance of the house on a view of its own, reached from Home's bands (never a tab), back to Home; built on
+ * a host of its own (`hostOf`), its bands its parts.
+ */
+export function appliancesView(
+  ctx: StrategyContext,
+  columns: number,
+  hostOf: (path: string, title: string, icon: string) => MoreHost,
+): View {
+  const title = ctx.t('strategy.appliances');
+  const more = hostOf(APPLIANCES_PATH, title, 'fluvy:washer');
   return {
-    title: ctx.t('strategy.appliances'),
+    title,
     icon: 'fluvy:washer',
     path: APPLIANCES_PATH,
     type: 'sections',
     max_columns: columns,
     subview: true,
     back_path: `${ctx.base}/home`,
-    sections: applianceSections(ctx, ctx.home.applianceDevices, columns),
+    sections: arranged(
+      more,
+      applianceSections({ ...ctx, more }, ctx.home.applianceDevices, columns),
+    ),
   };
 }

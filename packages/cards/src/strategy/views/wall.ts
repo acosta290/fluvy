@@ -1,7 +1,8 @@
 import type { AreaRegistryEntry } from '@fluvy/core';
 import { byArea, capped, moreCard, moreKeys } from '../caps.js';
+import { listed, part } from '../edit.js';
 import { entityRows, full, helloCard, readoutsCards, section, thermostat } from '../layout.js';
-import { roomCard, roomsOf } from '../rooms.js';
+import { roomCard, roomPart, roomsOf } from '../rooms.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
 /*
@@ -23,9 +24,13 @@ export function wallRooms(ctx: StrategyContext): AreaRegistryEntry[] {
 
 function wallView(ctx: StrategyContext): Section[] {
   const { home, t, weather, style } = ctx;
-  const scenes = home.scenes.slice(0, style.scenes ?? 6);
+  const scenes = listed(ctx, 'scenes', home.scenes, { title: t('strategy.scenes') }).slice(
+    0,
+    style.scenes ?? 6,
+  );
   // the scenes' chips, each by its display name, two alike told apart (#170)
   const chipName = home.apart(scenes, (id) => home.displayName(id));
+  const people = listed(ctx, 'people', home.people);
   const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
     full('entities', { title, rows: entityRows(home, ids), ...extra });
   const readings = capped(
@@ -42,36 +47,48 @@ function wallView(ctx: StrategyContext): Section[] {
     (ids) => byArea(ctx, ids, t('strategy.security'), (title, own) => [rows(title, own)]),
   );
   const left: Card[] = [
-    helloCard(weather),
-    full('clock', { variant: 'side', ...(weather ? { weather } : {}) }),
-    ...readoutsCards(home, readings.shown, { variant: 'row' }),
-    ...moreCard(readings),
-    ...(scenes.length
-      ? [
-          {
-            type: 'custom:fluvy-chips-card',
-            chips: scenes.map((id) => ({
-              name: chipName(id),
-              icon: 'fluvy:sparkle',
-              tap_action: {
-                action: 'perform-action',
-                perform_action: 'scene.turn_on',
-                target: { entity_id: id },
-              },
-            })),
-          } as Card,
-        ]
-      : []),
-    ...wallRooms(ctx).map((area) => ({ ...roomCard(ctx, area), variant: 'tile' })),
+    ...part(ctx, 'hello', [helloCard(weather)]),
+    ...part(ctx, 'clock', [full('clock', { variant: 'side', ...(weather ? { weather } : {}) })]),
+    ...part(ctx, 'readings', [
+      ...readoutsCards(home, readings.shown, { variant: 'row' }),
+      ...moreCard(readings),
+    ]),
+    ...part(
+      ctx,
+      'scenes',
+      scenes.length
+        ? [
+            {
+              type: 'custom:fluvy-chips-card',
+              chips: scenes.map((id) => ({
+                name: chipName(id),
+                icon: 'fluvy:sparkle',
+                tap_action: {
+                  action: 'perform-action',
+                  perform_action: 'scene.turn_on',
+                  target: { entity_id: id },
+                },
+              })),
+            } as Card,
+          ]
+        : [],
+    ),
+    ...wallRooms(ctx).flatMap((area) =>
+      roomPart(ctx, area, { ...roomCard(ctx, area), variant: 'tile' }),
+    ),
   ];
   const right: Card[] = [
-    ...(home.climate[0] ? [thermostat(home.climate[0], style)] : []),
-    ...(secured.shown.length
-      ? [rows(t('strategy.security'), secured.shown, moreKeys(secured))]
-      : []),
-    ...(home.people.length
-      ? [full('people', { title: t('strategy.people'), entities: [...home.people] })]
-      : []),
+    ...part(ctx, 'thermostat', home.climate[0] ? [thermostat(home.climate[0], style)] : []),
+    ...part(
+      ctx,
+      'security',
+      secured.shown.length ? [rows(t('strategy.security'), secured.shown, moreKeys(secured))] : [],
+    ),
+    ...part(
+      ctx,
+      'people',
+      people.length ? [full('people', { title: t('strategy.people'), entities: [...people] })] : [],
+    ),
   ];
   return [section(...left), section(...right)];
 }

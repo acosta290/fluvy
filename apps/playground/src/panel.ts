@@ -1,4 +1,11 @@
-import { DEMO_AREAS, DEMO_DASHBOARDS } from '@fluvy/demo-home';
+import {
+  DEMO_AREAS,
+  DEMO_DASHBOARDS,
+  DEMO_ENERGY_SOURCES,
+  DEMO_EXTRAS,
+  DEMO_ROOMS,
+  demoHass,
+} from '@fluvy/demo-home';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import '@fluvy/cards/panel';
 import {
@@ -11,6 +18,7 @@ import {
   type LookHandle,
   type SavedSeries,
 } from '@fluvy/core';
+import { defineFormStub } from './ha-form.js';
 import { defineSelectorStub } from './ha-selector.js';
 import { createMemoryLook, type MemoryLook } from './look-memory.js';
 
@@ -28,7 +36,11 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * (`statuses`), the house's charts in the soft style with a gauge that moves (`styled`: every fine row, its waves
  * too), three sets of series colours kept by the house, the second worn (`sets`), a new set being made with two
  * colours too close, one too pale for a light card, which it wears deepened, and two of the palette's, the first
- * being picked (`editor`), the house's cards see-through at 80 % (`glass`). Several join with commas.
+ * being picked (`editor`), the house's cards see-through at 80 % (`glass`). The home dashboard being customised
+ * (`customise`, #170: on the demo home, opened by its address), with changes waiting — a card hidden, one moved first,
+ * a light left out of a list and a switch added to it, a view hidden (`changes`) — with what was saved before
+ * (`customised`: the clock as an analogue one, a room put first), its lights unfolded to their entities (`list`), the
+ * clock's options in their sheet (`sheet`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -54,7 +66,12 @@ export type PanelState =
   | 'styled'
   | 'sets'
   | 'editor'
-  | 'glass';
+  | 'glass'
+  | 'customise'
+  | 'changes'
+  | 'customised'
+  | 'list'
+  | 'sheet';
 
 /**
  * Three sets of series colours a house might keep: the earth's, which follows the palette (its colours named), the
@@ -146,6 +163,11 @@ export function mountPanel(
       },
     } as HomeAssistant;
   }
+  // Customise reads a whole house: the demo home's, with its rooms, its energy and one of everything
+  demoHome = has('customise');
+  if (demoHome) hass = withDemoHome(hass);
+  if (has('customised'))
+    configs.set('fluvy-auto', { strategy: { type: 'custom:fluvy-home', edit: SAVED_EDIT } });
   // two sensors that see a person, so the Screen card offers its wake-on-motion dropdown (a room as the hint)
   if (has('wall')) hass = withMotionSensors(hass);
   // the dashboards as Home Assistant hands them to every frontend (its own Overview, the house's, maybe ours)
@@ -226,20 +248,23 @@ export function mountPanel(
     tryOnApp: boolean;
     houseEdit: Record<string, unknown>;
     personalEdit: Record<string, unknown>;
+    strategyEdits: Record<string, unknown>;
     seriesDraft: unknown;
     notice: string;
     updateComplete: Promise<boolean>;
   };
   panel.handle = handle;
-  panel.route = { prefix: '/fluvy', path: `/${tab}` };
+  // Customise is opened as a link to it opens it: the dashboard's url path after the tab's
+  panel.route = { prefix: '/fluvy', path: has('customise') ? '/dashboard/fluvy-auto' : `/${tab}` };
   panel.narrow = window.innerWidth < 870;
   panel.hass = hass;
   onPanels = () => {
     panel.hass = { ...panel.hass, panels: panelsFor(states) } as HomeAssistant;
   };
   stage.classList.add('pg-panel');
-  // the Dashboards tab's entity picker is Home Assistant's
+  // the Dashboards tab's entity picker is Home Assistant's, and so is the form a card's options are edited in
   defineSelectorStub();
+  if (has('customise')) defineFormStub();
   stage.append(panel);
   // the moment asked for, once the panel has its settings
   setTimeout(() => {
@@ -274,6 +299,11 @@ export function mountPanel(
         colours: ['#1d4ed8', '#1f52dc', 'graph-3', 'solar', '#f4e9d0', '#7e22ce'],
         slot: 2,
       };
+    if (has('changes'))
+      panel.strategyEdits = {
+        'fluvy-auto': { edit: { ...(has('customised') ? SAVED_EDIT : {}), ...PENDING_EDIT } },
+      };
+    if (has('list') || has('sheet')) setTimeout(() => void unfold(panel, has('sheet')), 400);
     if (has('saved')) panel.notice = hass.language === 'es' ? 'Guardado' : 'Saved';
     if (has('menu'))
       void panel.updateComplete.then(() => {
@@ -282,6 +312,84 @@ export function mountPanel(
       });
   }, 50);
   return { panel, look };
+}
+
+/** What a person saved on the home dashboard before: the clock as an analogue one, the garden's card first. */
+const SAVED_EDIT = {
+  cards: {
+    'home/clock': { options: { face: 'analog' } },
+    'rooms/room:garden': { order: 0 },
+  },
+};
+/**
+ * What waits in the bar: the weather hidden, the energy flow read second, the patio's light left out of Home's lights
+ * and the fan's switch added to them, the Media view hidden.
+ */
+const PENDING_EDIT = {
+  views: { media: { hidden: true } },
+  cards: {
+    ...SAVED_EDIT.cards,
+    'home/weather': { hidden: true },
+    'home/flow': { order: 1 },
+  },
+  entities: {
+    'home/lights': { drop: ['switch.patio_light'], add: ['switch.washing_machine_outlet'] },
+  },
+};
+
+/** Whether the page's house is the demo home (the energy preferences are then its own). */
+let demoHome = false;
+
+/** A name the demo home left as its entity's id (`heat_pump`), as a person would write it ("Heat pump"). */
+const named = (name: unknown): { friendly_name?: string } =>
+  typeof name === 'string' && /^[a-z0-9_]+$/.test(name)
+    ? { friendly_name: (name[0]?.toUpperCase() ?? '') + name.slice(1).replace(/_/g, ' ') }
+    : {};
+
+/** The house as the demo home: its rooms, floors and devices, its entities over the page's own. */
+function withDemoHome(hass: HomeAssistant): HomeAssistant {
+  const demo = demoHass({ more: [...DEMO_EXTRAS, ...DEMO_ROOMS], sources: DEMO_ENERGY_SOURCES });
+  const stamp = '2026-09-17T19:47:00Z';
+  return {
+    ...hass,
+    states: {
+      ...hass.states,
+      ...Object.fromEntries(
+        Object.entries(demo.states).map(([entity_id, state]) => [
+          entity_id,
+          {
+            entity_id,
+            ...state,
+            attributes: { ...state.attributes, ...named(state.attributes['friendly_name']) },
+            last_changed: stamp,
+            last_updated: stamp,
+          },
+        ]),
+      ),
+    },
+    entities: demo.entities,
+    devices: demo.devices,
+    areas: demo.areas,
+    floors: demo.floors,
+  } as unknown as HomeAssistant;
+}
+
+/**
+ * Unfolds Home's lights to their entities, as a tap on their row does; with `sheet`, the clock instead, and its
+ * options in their sheet (the third of its buttons). Each waits for what it taps to be drawn.
+ */
+async function unfold(panel: HTMLElement, sheet: boolean): Promise<void> {
+  const find = async (selector: string): Promise<HTMLElement | null> => {
+    for (let tries = 0; tries < 100; tries++) {
+      const found = panel.shadowRoot?.querySelector<HTMLElement>(selector);
+      if (found) return found;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return null;
+  };
+  const part = `.cz-part[data-part="home/${sheet ? 'clock' : 'lights'}"]`;
+  (await find(`${part} > .fv-row`))?.click();
+  if (sheet) (await find(`${part} .fv-action:nth-child(3)`))?.click();
 }
 
 /** The dashboard panels of the demo home (one of them the home template's, unless `missing`) and the created ones. */
@@ -339,6 +447,14 @@ const inSidebar = new Map(DEMO_DASHBOARDS.map((dashboard) => [dashboard.url_path
 const configs = new Map<string, Record<string, unknown>>();
 
 export const PANEL_WS: Record<string, (message: Record<string, unknown>) => unknown> = {
+  // the demo home's own energy dashboard, where the page's house is the demo home (the page's own otherwise)
+  'energy/get_prefs': () =>
+    demoHome
+      ? {
+          energy_sources: DEMO_ENERGY_SOURCES,
+          device_consumption: [{ stat_consumption: 'sensor.washing_machine_energy_today' }],
+        }
+      : undefined,
   'lovelace/config': (message) => {
     const url = String(message['url_path']);
     const saved = configs.get(url);

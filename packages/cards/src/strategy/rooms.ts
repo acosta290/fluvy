@@ -1,6 +1,7 @@
 import { climateAttribute, holdsSomething, type AreaRegistryEntry } from '@fluvy/core';
 import { applianceSections } from './appliances.js';
 import { byArea, capped, each, foldAt, moreAfter, moreKeys } from './caps.js';
+import { arranged, listed, part } from './edit.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
   applianceTiles,
@@ -25,7 +26,9 @@ import type { Card, Section, StrategyContext, View } from './types.js';
  * The rooms: a view of every room of the house (its card, grouped by floor when there are floors), and a subview
  * per room with everything it shows, every device its card counts among it — its scenes first, its thermostats,
  * lights, covers, gates, fans, media, plugs, readings, openings and cameras, the rest of it as rows, its automations on
- * a card of their own, and its appliances across under them.
+ * a card of their own, and its appliances across under them. Every card stands in a part of its view (#170): a room's
+ * card `room:<area id>`, a floor's heading `floor:<floor id>` (`other` over the rooms on no floor), a room's lists by
+ * their own names.
  */
 
 /** The areas a dashboard shows: those with something to show, by the room card's own rule, floor by floor. */
@@ -60,6 +63,13 @@ export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card =>
   grid_options: { columns: 12 },
 });
 
+/** A room's card as a part of its view. */
+export const roomPart = (
+  ctx: StrategyContext,
+  area: AreaRegistryEntry,
+  card = roomCard(ctx, area),
+) => part(ctx, `room:${area.area_id}`, [card]);
+
 /** The Rooms view: a card a room; headed by floor when the house has more than one. */
 export function roomsView(ctx: StrategyContext): Section[] {
   const { home, t, base } = ctx;
@@ -70,27 +80,29 @@ export function roomsView(ctx: StrategyContext): Section[] {
   if (floors.length < 2)
     return flowed(
       ctx,
-      rooms.map((area) => [roomCard(ctx, area)]),
+      rooms.map((area) => roomPart(ctx, area)),
     );
   const unplaced = rooms.filter(
     (room) => !floors.some((floor) => floor.floor_id === room.floor_id),
   );
+  /** A heading and the rooms under it: the heading rides with the first of them it still shows. */
+  const under = (id: string, head: Card, areas: readonly AreaRegistryEntry[]): Card[][] => {
+    const top = part(ctx, id, [head]);
+    const [first = [], ...rest] = areas
+      .map((area) => roomPart(ctx, area))
+      .filter((cards) => cards.length);
+    return [[...top, ...first], ...rest];
+  };
   return flowed(ctx, [
-    ...floors
-      .map((floor) =>
-        headed(
-          heading(floor.name, floor.icon ?? 'fluvy:home', [], `${base}/rooms`),
-          rooms
-            .filter((room) => room.floor_id === floor.floor_id)
-            .map((area) => [roomCard(ctx, area)]),
-        ),
-      )
-      .flat(),
+    ...floors.flatMap((floor) =>
+      under(
+        `floor:${floor.floor_id}`,
+        heading(floor.name, floor.icon ?? 'fluvy:home', [], `${base}/rooms`),
+        rooms.filter((room) => room.floor_id === floor.floor_id),
+      ),
+    ),
     ...(unplaced.length
-      ? headed(
-          heading(t('strategy.rooms'), 'fluvy:home', [], `${base}/rooms`),
-          unplaced.map((area) => [roomCard(ctx, area)]),
-        )
+      ? under('other', heading(t('strategy.rooms'), 'fluvy:home', [], `${base}/rooms`), unplaced)
       : []),
   ]);
 }
@@ -268,91 +280,145 @@ export function roomSections(
     parts.rest,
     (ids) => byArea(ctx, ids, t('strategy.devices'), (title, own) => [rows(title, own)]),
   );
+  const openings = listed(ctx, 'openings', parts.openings);
+  const automations = listed(ctx, 'automations', parts.automations);
   const sections = flowed(
     ctx,
     [
-      [heading(back.title, 'fluvy:home', [], back.path)],
+      part(ctx, 'back', [heading(back.title, 'fluvy:home', [], back.path)]),
       // its scenes first, a tap each, as its card's quick actions are read before its devices (#172)
-      ...when(scenes.shown.length, () =>
-        moreAfter([[scenesCard(home, t('strategy.scenes'), scenes.shown)]], scenes),
-      ),
-      ...moreAfter(
-        thermostats.shown.map((id) => [thermostat(id, ctx.style)]),
-        thermostats,
-      ),
-      ...when(lights.shown.length, () =>
-        moreAfter(
-          headed(
-            heading(t('room.lights'), 'fluvy:bulb', parts.lights),
-            tileRows(lightTiles(home, lights.shown, ctx.style)),
-          ),
-          lights,
+      ...part(
+        ctx,
+        'scenes',
+        when(scenes.shown.length, () =>
+          moreAfter([[scenesCard(home, t('strategy.scenes'), scenes.shown)]], scenes),
         ),
       ),
-      ...when(covers.shown.length, () =>
+      ...part(
+        ctx,
+        'thermostats',
         moreAfter(
-          [
+          thermostats.shown.map((id) => [thermostat(id, ctx.style)]),
+          thermostats,
+        ),
+      ),
+      ...part(
+        ctx,
+        'lights',
+        when(lights.shown.length, () =>
+          moreAfter(
+            headed(
+              heading(t('room.lights'), 'fluvy:bulb', lights.all),
+              tileRows(lightTiles(home, lights.shown, ctx.style)),
+            ),
+            lights,
+          ),
+        ),
+      ),
+      ...part(
+        ctx,
+        'covers',
+        when(covers.shown.length, () =>
+          moreAfter(
             [
-              heading(t('room.covers'), 'fluvy:blinds', parts.covers),
-              coverTiles(home, covers.shown),
+              [
+                heading(t('room.covers'), 'fluvy:blinds', covers.all),
+                coverTiles(home, covers.shown),
+              ],
             ],
-          ],
-          covers,
+            covers,
+          ),
         ),
       ),
       // a garage door or a gate as a cover, as the security view draws it
-      ...moreAfter(
-        gates.shown.map((id) => [gate(id)]),
-        gates,
-      ),
-      ...moreAfter(
-        fans.shown.map((id) => [fan(id)]),
-        fans,
-      ),
-      ...moreAfter(
-        players.shown.map((id) => [player(id)]),
-        players,
-      ),
-      ...when(plugs.shown.length, () =>
+      ...part(
+        ctx,
+        'gates',
         moreAfter(
-          headed(
-            heading(t('strategy.appliances'), 'fluvy:plug', parts.appliances),
-            tileRows(applianceTiles(home, plugs.shown, ctx.style)),
-          ),
-          plugs,
+          gates.shown.map((id) => [gate(id)]),
+          gates,
         ),
       ),
-      ...moreAfter(
-        readoutsCards(home, readings.shown, {}, measureName).map((card) => [card]),
-        readings,
+      ...part(
+        ctx,
+        'fans',
+        moreAfter(
+          fans.shown.map((id) => [fan(id)]),
+          fans,
+        ),
+      ),
+      ...part(
+        ctx,
+        'media',
+        moreAfter(
+          players.shown.map((id) => [player(id)]),
+          players,
+        ),
+      ),
+      ...part(
+        ctx,
+        'appliances',
+        when(plugs.shown.length, () =>
+          moreAfter(
+            headed(
+              heading(t('strategy.appliances'), 'fluvy:plug', plugs.all),
+              tileRows(applianceTiles(home, plugs.shown, ctx.style)),
+            ),
+            plugs,
+          ),
+        ),
+      ),
+      ...part(
+        ctx,
+        'readings',
+        moreAfter(
+          readoutsCards(home, readings.shown, {}, measureName).map((card) => [card]),
+          readings,
+        ),
       ),
       // the openings and the safety sensors on one card scoped to the room, which folds them itself at their cap
-      ...when(parts.openings.length, () => [
-        [
-          full('openings', {
-            title: t('strategy.sensors'),
-            entities: [...parts.openings],
-            ...foldAt(ctx, 'openings', parts.openings),
-          }),
-        ],
-      ]),
-      ...moreAfter(
-        cameras.shown.map((id) => [camera(id)]),
-        cameras,
+      ...part(
+        ctx,
+        'openings',
+        when(openings.length, () => [
+          [
+            full('openings', {
+              title: t('strategy.sensors'),
+              entities: [...openings],
+              ...foldAt(ctx, 'openings', openings),
+            }),
+          ],
+        ]),
       ),
-      ...when(rest.shown.length, () => [[rows(t('strategy.devices'), rest.shown, moreKeys(rest))]]),
+      ...part(
+        ctx,
+        'cameras',
+        moreAfter(
+          cameras.shown.map((id) => [camera(id)]),
+          cameras,
+        ),
+      ),
+      ...part(
+        ctx,
+        'devices',
+        when(rest.shown.length, () => [[rows(t('strategy.devices'), rest.shown, moreKeys(rest))]]),
+      ),
       // its automations on their own card, each with its switch, its last and next run (the card folds them at their
       // cap); no `+`: a schedule added there would be of no room, and never on this card
-      ...when(parts.automations.length, () => [
-        [
-          full('automations', {
-            title: t('strategy.automations'),
-            entities: [...parts.automations],
-            show_add: false,
-            ...foldAt(ctx, 'automations', parts.automations),
-          }),
-        ],
-      ]),
+      ...part(
+        ctx,
+        'automations',
+        when(automations.length, () => [
+          [
+            full('automations', {
+              title: t('strategy.automations'),
+              entities: [...automations],
+              show_add: false,
+              ...foldAt(ctx, 'automations', automations),
+            }),
+          ],
+        ]),
+      ),
     ],
     [],
     columns,
@@ -378,6 +444,6 @@ export function roomView(
     max_columns: columns,
     subview: true,
     back_path: back.path,
-    sections: roomSections(ctx, area, back, columns),
+    sections: arranged(ctx.more, roomSections(ctx, area, back, columns)),
   };
 }

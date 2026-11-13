@@ -142,7 +142,8 @@ small) and lead to every appliance.
 ## Options
 
 In a dashboard's raw configuration, or in the panel's *Dashboards* tab (each dashboard has its own card of options
-there; *Recreate* takes them all back to their defaults):
+there; *Recreate* takes them all back to their defaults). What goes past an option, one card hidden, moved or tuned,
+is [Customise](#customise):
 
 | Option | Values | Templates | What it does |
 | --- | --- | --- | --- |
@@ -163,6 +164,7 @@ there; *Recreate* takes them all back to their defaults):
 | `caps` | a list's own number or `none` by its key (`caps: { lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default) or *In full* |
 | `rooms` | by area id, a room's `include` and `exclude`, as the room card takes them: entity ids, patterns of ids, device ids or domains (`rooms: { kitchen: { exclude: [switch.dishwasher_*] } }`); and that room's own `name_position`, `readout_style` and `readout_labels`, over the dashboard's (`rooms: { kitchen: { name_position: top } }`) | home, rooms, wall | what that room's card counts and fills by, whether the room is shown, and what its page holds, and how its photo is drawn; in the raw configuration only (the settings file never carries a house's entities) |
 | `exclude` | a list of entity ids, patterns of ids, device ids or domains, as a room's `exclude` takes them (`exclude: [climate.water_heater, sensor.inverter_mppt_*]`) | all | what no view shows nor counts, as if the house had none of it (below); the panel offers it in Home Assistant's entity picker, and the settings file never carries it |
+| `edit` | an object of `views`, `cards` and `entities` | all | what was changed on its views and cards, kept as differences: hidden, moved, given options, a list's entities left out, added or put in order ([Customise](#customise), which writes it) |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
 | `language` | `en`, `es`, `de`, `nl`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja`, `hu`, `sk`, `pl`, `zh-Hans`, `ru`, `uk` | all | the dashboard's words in that language, whoever opens it |
 
@@ -213,8 +215,87 @@ strategy:
 In the panel's *Dashboards* tab each dashboard lists what it leaves out under *Entities left out*, in Home Assistant's
 entity picker; a pattern, a device or a domain written in the raw configuration stays there as written.
 
+## Customise
+
+An automatic dashboard can be shaped without giving up what makes it automatic. In the panel's *Dashboards* tab each
+dashboard's card opens with a **Customise** row (an administrator's): it lists the dashboard's views as chips, its
+rooms' pages after them, and the open view's cards as rows, in the order they are read.
+
+- **A view**: *Show this view* leaves it out or brings it back (the first view always shows), and the two arrows
+  place it among the tabs, so any view can lead.
+- **A card**: its switch hides it. A tap on its row unfolds its buttons: move up, move down, *Options* and reset.
+  *Options* opens the card's own form in a sheet; only what you change there is kept, so the rest of the card stays
+  as the house builds it.
+- **A list** (the lights of the Home view, a view's thermostats, the rows of the Security card): its entities are
+  rows of their own under it. Each has a switch that leaves it out; a tap on one unfolds its own buttons (move up,
+  move down, and *Options* where the entity is a card of its own, such as a light's tile); *Add an entity* adds one
+  of a domain the list takes.
+- **Your cards**: *Add a card* takes a card's YAML and lays it after the view's own; it is then moved like any other.
+- **Reset**: one card, one view or the whole dashboard (*Back to automatic*), each on a second tap.
+
+Nothing is saved on a tap: the bar at the foot counts the changes ("3 changes") and saves or discards them, and on a
+wide screen the view is drawn beside its rows as it will be, on the real house.
+
+What is saved is one `edit` object in the dashboard's strategy. It holds differences, never a copy: everything it
+does not name stays automatic, a new device still arrives in the card that draws it, and deleting `edit` is the
+dashboard as the house builds it.
+
+```yaml
+strategy:
+  type: custom:fluvy-home
+  edit:
+    views:
+      media: { hidden: true }            # a view left out
+      energy: { order: 0 }               # first among the tabs
+      climate:
+        add:                             # cards of your own, after the view's
+          - type: markdown
+            content: Filters are due in March
+    cards:
+      home/weather: { hidden: true }     # a card left out
+      home/flow: { order: 1 }            # read second on its view
+      home/clock:
+        options: { face: analog }        # keys laid over the generated card
+      rooms/room:garden: { order: -1 }   # a negative place counts from the end: last
+      home/lights:light.sofa:
+        options: { name: Reading lamp }  # one card of a list
+    entities:
+      home/lights:
+        drop: [switch.patio_light]          # left out of the list
+        add: [switch.desk_socket]           # shown besides
+        order: [light.sofa, light.ceiling]  # these first, the rest in the house's order
+```
+
+| Key | What it holds |
+| --- | --- |
+| `views.<view>` | `hidden` (any view but the template's first), `order` (its place among the tabs) and `add` (card configs laid after the view's own, each the part `<view>/own:<its place in the list>`) |
+| `cards.<id>` | `hidden`, `order` (its place among its view's parts) and `options`: keys laid over the generated config (a variant, a title, a colour, the entity itself), `null` to take one away; a card's `type` is never changed |
+| `entities.<id>` | `drop` (entities left out), `add` (entities shown besides: each one the house has, of a domain the list takes) and `order` (the entities read first, the others after them in the house's order) |
+
+**Ids.** A view is named by its path (`home`, `climate`, `room-kitchen`). Every card stands in a part with an id of its
+own, given by the generator and never read from what the card holds, so a renamed entity or a device added elsewhere
+never moves an edit: `<view>/<part>`, such as `home/flow`, `home/lights`, `rooms/room:<area id>`,
+`lights/lights:<area id>`, `energy/sankey`, `energy/tomorrow` (tomorrow's production, under today's
+`energy/production`), `today/usage_water` (the Energy dashboard's water usage, beside `today/usage` and
+`today/usage_gas`) or `room-kitchen/readings`. A list is one part (its heading, its cards and its "N more" row go
+together), and a card it draws for one entity is `<list>:<entity id>`. The quickest way to learn an id is to make the
+change in the panel and read the dashboard's raw configuration.
+
+**Order.** `order` is a place: `0` is first, `1` second, and a negative one counts from the end (`-1` is last). The
+parts that have none keep the house's order round those that do. A view's columns are cut again round a part that
+moved, so they still end level; on the wall, a card joins the column of the card it now follows.
+
+**What the house no longer has.** An id that matches nothing (a room that was deleted) is ignored and kept: it works
+again if the room comes back, and a reset takes it away.
+
+The dashboard's other options keep working beside `edit`: `hide`, `exclude`, `areas`, `caps` and the rest are read
+first, and `edit` is laid over what they leave. A list's cap counts what the list shows after the edit, so an entity
+left out makes room for the next. The settings file never carries `edit` (it names this house's own entities) and
+importing one leaves it where it is; *Recreate* takes it away with the other options.
+
 ## Limits
 
 They never invent: a house without a weather entity gets no forecast, a house without energy preferences gets a flow
-only if the words find its meters, a wall without scenes has no scene chips. A dashboard you want to shape by hand is
-better started by hand — add the cards from the picker; each is documented in [the cards](cards.md).
+only if the words find its meters, a wall without scenes has no scene chips. A dashboard you want to shape card by
+card is [customised](#customise); one you want to lay out freely is better started by hand — add the cards from the
+picker; each is documented in [the cards](cards.md).

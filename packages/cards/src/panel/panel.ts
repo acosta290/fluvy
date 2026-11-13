@@ -83,6 +83,7 @@ import {
 
 import { backgroundStyles, panelStyles } from './styles.js';
 import { charts, chartsPreview } from './charts.js';
+import type { Customiser } from './customise/index.js';
 import type { SeriesDraft } from './series.js';
 
 import {
@@ -157,6 +158,7 @@ export class FluvyPanel extends LitElement {
     meters: { state: true },
     leaving: { state: true },
     creating: { state: true },
+    customising: { state: true },
     dark: { type: Boolean, reflect: true },
     noTheme: { type: Boolean, reflect: true, attribute: 'no-theme' },
   };
@@ -201,6 +203,8 @@ export class FluvyPanel extends LitElement {
   declare leaving: boolean;
   /** The url path of the dashboard being created ('' when none: two writes, then the list reloads). */
   declare creating: string;
+  /** The url path of the dashboard being customised ('' when none: the Dashboards tab lists them). */
+  declare customising: string;
   declare dark: boolean;
   declare noTheme: boolean;
 
@@ -223,6 +227,9 @@ export class FluvyPanel extends LitElement {
   private lastEdited = '';
   /** Home Assistant's pickers the Dashboards tab offers (what a dashboard leaves out), pulled in once. */
   private pickers: Promise<void> | undefined;
+  /** Customise (#170), once its file has landed: fetched the first time a dashboard is customised. */
+  private customiser: Customiser | undefined;
+  private customiserLoading: Promise<void> | undefined;
   private barTimer = 0;
   private stillTimer = 0;
   private fontTimer = 0;
@@ -275,6 +282,7 @@ export class FluvyPanel extends LitElement {
     this.content = 0;
     this.leaving = false;
     this.creating = '';
+    this.customising = '';
     this.dark = false;
     this.noTheme = false;
   }
@@ -328,6 +336,7 @@ export class FluvyPanel extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.closeSaver?.();
+    this.customiser?.dispose();
     this.offWords?.();
     this.offWords = undefined;
     this.off?.();
@@ -371,7 +380,10 @@ export class FluvyPanel extends LitElement {
       // `/fluvy/about` (a link from before 1.5) opens Preferences, where Fluvy's own card now is
       const tab = (segment === 'about' ? 'preferences' : segment) as Tab | undefined;
       if (tab && TABS.includes(tab)) this.tab = tab;
+      // `/fluvy/dashboard/<url path>` opens Customise on that dashboard (a url path is a slug: read as it is written)
+      this.customising = tab === 'dashboard' ? (this.route.path.split('/')[2] ?? '') : '';
     }
+    if (this.customising) this.loadCustomiser();
     if (changed.has('hass') && this.hass) {
       if (!this.off) this.attach();
       this.dark = this.hass.themes?.darkMode ?? false;
@@ -447,6 +459,7 @@ export class FluvyPanel extends LitElement {
       this.entered = true;
       this.stillTimer = window.setTimeout(() => this.setAttribute('still', ''), 700);
     }
+    if (this.customising) this.customiser?.updated(this.renderRoot);
     // the tab strip scrolls sideways on a phone: a mouse drags it too
     const strip = this.renderRoot.querySelector<HTMLElement>('.pn-tabs__row');
     if (strip !== this.strip) {
@@ -609,6 +622,33 @@ export class FluvyPanel extends LitElement {
       if (Object.keys(kept).length) edits[dashboard.urlPath] = kept;
     }
     this.strategyEdits = edits;
+  }
+
+  /**
+   * Opens Customise on a dashboard (its url path), or closes it (''): the Dashboards tab's cards give way to it, and
+   * the address says so, so a link or a reload comes back to it.
+   */
+  customise(urlPath: string): void {
+    this.customising = urlPath;
+    if (this.route) navigate(`${this.route.prefix}/dashboard${urlPath ? `/${urlPath}` : ''}`, true);
+  }
+
+  /** Customise's own file, fetched once: its styles join the panel's as it lands. */
+  private loadCustomiser(): void {
+    this.customiserLoading ??= import('./customise/index.js').then(
+      ({ Customiser, customiseStyles }) => {
+        const root = this.renderRoot as ShadowRoot;
+        if (customiseStyles.styleSheet)
+          root.adoptedStyleSheets = [...root.adoptedStyleSheets, customiseStyles.styleSheet];
+        this.customiser = new Customiser(this);
+        this.requestUpdate();
+      },
+      (error: unknown) => {
+        this.customiserLoading = undefined;
+        this.customising = '';
+        this.show(error instanceof Error ? error.message : String(error));
+      },
+    );
   }
 
   /** The dashboard the Dashboards tab previews: the one touched last, else the first of ours. */
@@ -903,10 +943,14 @@ export class FluvyPanel extends LitElement {
         this.pickers ??= import('../shared/rows-editor.js').then((editor) =>
           editor.ensureEditorElements(),
         );
+        // a dashboard being customised (an administrator's): its views and cards in the tab's place
+        if (this.customising && ctx.admin)
+          return this.customiser?.render(ctx, this.customising) ?? html``;
         return dashboards(ctx, {
           create: (template) => createDashboard(this, ctx, template),
           recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
           open: (urlPath) => navigate(`/${urlPath}`),
+          customise: (urlPath) => this.customise(urlPath),
           showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),
           creating: this.creating,
           recreateArmed: this.recreateArmed,
@@ -931,6 +975,19 @@ export class FluvyPanel extends LitElement {
    */
   private previewCard(ctx: PanelContext): TemplateResult | undefined {
     const house = this.previewHouse();
+    if (this.tab === 'dashboard' && this.customising && ctx.admin) {
+      // the view being customised as it will be drawn, beside its rows where there is room: never under them
+      const strategy = ctx.strategyOf(this.customising);
+      const view = this.side ? this.customiser?.preview(ctx, this.customising) : undefined;
+      const dashboard = this.dashboards.find((d) => d.urlPath === this.customising);
+      return view && dashboard
+        ? dashboardPreview(
+            ctx,
+            this.page('pn-preview', this.pageBackground(ctx, strategy), this.dark, view),
+            dashboard.title,
+          )
+        : undefined;
+    }
     if (this.tab === 'dashboard') {
       const previewed = this.previewed();
       if (!previewed) return undefined;
