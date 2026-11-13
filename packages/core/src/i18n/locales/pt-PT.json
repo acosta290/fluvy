@@ -3066,5 +3066,28 @@
     "so_far": "até agora",
     "open": "Abrir no Histórico",
     "read": "O histórico neste período. Use as setas do teclado para ler."
+  },
+  "drive": {
+    "start": "Conduzir",
+    "done": "Pronto",
+    "forward": "Para a frente",
+    "back": "Para trás",
+    "left": "Esquerda",
+    "right": "Direita",
+    "hint": "Mantenha uma seta premida para continuar o movimento",
+    "none": "A integração deste robô não tem controlo remoto no Home Assistant",
+    "editor.section": "Comando de condução",
+    "editor.show_drive": "Comando Conduzir",
+    "editor.drive_speed": "Velocidade",
+    "editor.drive_style": "O comando abre",
+    "editor.drive_entity": "Robô a conduzir",
+    "editor.drive_entity_helper": "O mesmo robô através de outra integração; sem ele, o do cartão",
+    "editor.drive": "Ações de condução",
+    "editor.drive_helper": "Para um robô cuja integração não é conhecida: start, move e stop, cada um uma ação, em YAML",
+    "option.slow": "Lenta",
+    "option.normal": "Normal",
+    "option.fast": "Rápida",
+    "option.card": "No cartão",
+    "option.sheet": "Numa folha"
   }
 }

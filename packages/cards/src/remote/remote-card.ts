@@ -23,7 +23,7 @@ import {
   type RulerChangeDetail,
   type Tone,
 } from '@fluvy/ui';
-import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
+import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { Hold } from '../cover/common.js';
 import { HeadFit } from '../energy/head.js';
@@ -41,6 +41,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
 import { iconOf } from '../shared/domain.js';
 import { drawnAs } from '../shared/heights.js';
+import { ring, ringStyles } from '../shared/ring.js';
 import { changedAt } from '../shared/since.js';
 import { buttonService, commandFor, isKey, KEY_GLYPHS, type Key } from './keys.js';
 import {
@@ -229,6 +230,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
+    ringStyles,
     css`
       .rm-gap {
         height: 16px;
@@ -265,68 +267,6 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
         position: absolute;
         top: 0;
         display: block;
-      }
-      .rm-ring svg {
-        display: block;
-      }
-      .rm-ring__disc {
-        fill: var(--fluvy-inset, var(--fluvy-page));
-      }
-      .rm-wedge {
-        fill: var(--fluvy-accent-fill);
-      }
-      .rm-arrow,
-      .rm-ok {
-        position: absolute;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: none;
-        font: inherit;
-        color: var(--fluvy-text);
-        cursor: pointer;
-        transition:
-          transform var(--fv-fast) var(--fv-ease),
-          color var(--fv-base) var(--fv-ease),
-          background-color var(--fv-base) var(--fv-ease);
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: manipulation;
-      }
-      .rm-arrow {
-        width: 44px;
-        height: 44px;
-      }
-      .rm-arrow svg {
-        width: 20px;
-        height: 20px;
-      }
-      .rm-arrow.is-pressed {
-        color: var(--fluvy-accent-on-fill);
-      }
-      .rm-ok {
-        width: 64px;
-        height: 64px;
-        background: var(--fv-solid-card, var(--fluvy-card));
-        box-shadow:
-          inset 0 0 0 1px var(--fluvy-border),
-          0 1px 2px rgb(0 0 0 / calc(0.06 * var(--fluvy-shade, 1)));
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-      }
-      .rm-ok:active {
-        transform: scale(0.94);
-        background: var(--fluvy-page-alt);
-      }
-      .rm-arrow[disabled],
-      .rm-ok[disabled] {
-        opacity: 0.4;
-        pointer-events: none;
       }
       .rm-okcell {
         background: var(--fv-solid-card, var(--fluvy-card));
@@ -469,25 +409,18 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       /* out of reach: what would vanish into the card's page fill wears the dashed skin the card wears; quiet, none of
          it (the keys rest as they do, still and at full strength, and the quiet sheet answers the shared ones) */
       .is-off:where(:not([data-unavailable='quiet']))
-        :is(.fv-round, .fv-action, .fv-chip__pill, .rm-ok, .rm-app__circle, .fv-stepper) {
+        :is(.fv-round, .fv-action, .fv-chip__pill, .rm-app__circle, .fv-stepper) {
         background: transparent;
         outline: 1px dashed var(--fluvy-unavailable-border);
         outline-offset: -1px;
         box-shadow: none;
         color: var(--fluvy-unavailable);
       }
-      .is-off:where(:not([data-unavailable='quiet'])) .rm-ring__disc {
-        fill: transparent;
-        stroke: var(--fluvy-unavailable-border);
-        stroke-dasharray: 3 3;
-      }
-      .is-off:where(:not([data-unavailable='quiet'])) :is(.rm-arrow, .rm-label, .rm-app__name) {
+      .is-off:where(:not([data-unavailable='quiet'])) :is(.rm-label, .rm-app__name) {
         color: var(--fluvy-unavailable);
       }
       .is-off .fv-round[disabled],
       .is-off .fv-action[disabled],
-      .is-off .rm-arrow[disabled],
-      .is-off .rm-ok[disabled],
       .is-off .rm-app__circle[disabled],
       .is-off .fv-stepper__half[disabled] {
         opacity: 1;
@@ -1003,71 +936,26 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       }`;
   }
 
-  /**
-   * The ring: a disc of the inset ground, four arrows at 44 targets, OK a 64 disc of the card's colour on its hairline
-   * (a drawn key, a target but none of the house's control heights).
-   */
+  /** The ring (`shared/ring.ts`): its four arrows the remote's, each repeating while held, OK in its middle. */
   private renderRing(size: number): TemplateResult {
-    const c = size / 2;
-    const rGap = 36;
-    const rGlyph = c - 28;
-    const rad = (deg: number): number => (deg * Math.PI) / 180;
-    const pt = (r: number, deg: number): [number, number] => [
-      c + r * Math.cos(rad(deg)),
-      c + r * Math.sin(rad(deg)),
-    ];
-    const wedge = (deg: number): string => {
-      const [x0, y0] = pt(c - 1, deg - 45);
-      const [x1, y1] = pt(c - 1, deg + 45);
-      const [x2, y2] = pt(rGap, deg + 45);
-      const [x3, y3] = pt(rGap, deg - 45);
-      return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${c - 1} ${c - 1} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)} A${rGap} ${rGap} 0 0 0 ${x3.toFixed(1)} ${y3.toFixed(1)} Z`;
-    };
-    const arrows: ReadonlyArray<[Key, number]> = [
-      ['up', -90],
-      ['right', 0],
-      ['down', 90],
-      ['left', 180],
-    ];
-    const pressed = arrows.find(([k]) => k === this.pressed_);
-    const okStill = !this.takes('ok') || !this.alive('ok');
-    const word = (this.remote.ok_label ?? 'word') === 'word';
-    return html`<svg width=${size} height=${size} viewBox="0 0 ${size} ${size}" aria-hidden="true">
-        <circle class="rm-ring__disc" cx=${c} cy=${c} r=${c - 0.5} />
-        ${pressed ? svg`<path class="rm-wedge" d=${wedge(pressed[1])} />` : nothing}
-      </svg>
-      ${arrows.map(([k, deg]) => {
-        const [x, y] = pt(rGlyph, deg);
-        const { down, up, click } = this.repeating(k, k);
-        const still = !this.takes(k) || !this.alive(k);
-        return html`<button
-          class="rm-arrow ${this.pressed_ === k ? 'is-pressed' : ''}"
-          style="left:${Math.round(x - 22)}px;top:${Math.round(y - 22)}px"
-          data-control
-          data-target
-          aria-label=${this.keyLabel(k)}
-          title=${this.keyLabel(k)}
-          ?disabled=${still}
-          @pointerdown=${down}
-          @pointerup=${up}
-          @pointerleave=${up}
-          @pointercancel=${up}
-          @click=${click}
-        >
-          ${icon(KEY_GLYPHS[k])}
-        </button>`;
-      })}
-      <button
-        class="rm-ok"
-        style="left:${c - 32}px;top:${c - 32}px"
-        data-target
-        aria-label=${this.keyLabel('ok')}
-        title=${this.keyLabel('ok')}
-        ?disabled=${okStill}
-        @click=${() => this.press('ok')}
-      >
-        ${word ? s(this.hass, 'key.ok') : nothing}
-      </button>`;
+    const arrows: readonly Key[] = ['up', 'right', 'down', 'left'];
+    return ring({
+      size,
+      arrows: arrows.map((k) => ({
+        key: k,
+        label: this.keyLabel(k),
+        glyph: KEY_GLYPHS[k],
+        still: !this.takes(k) || !this.alive(k),
+        ...this.repeating(k, k),
+      })),
+      lit: this.pressed_,
+      centre: {
+        label: this.keyLabel('ok'),
+        content: (this.remote.ok_label ?? 'word') === 'word' ? s(this.hass, 'key.ok') : nothing,
+        still: !this.takes('ok') || !this.alive('ok'),
+        click: () => this.press('ok'),
+      },
+    });
   }
 
   /** The reference's grid: nine cells, the four keys at the corners, OK in the middle on the card's colour. */

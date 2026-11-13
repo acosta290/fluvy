@@ -255,8 +255,8 @@ describe('the TV remote card (#143)', () => {
     expect([...root.querySelectorAll('.fv-chip__pill')].map((c) => c.textContent?.trim())).toEqual([
       'HDMI 1',
     ]);
-    expect(root.querySelectorAll('.rm-arrow').length).toBe(4);
-    expect(root.querySelector('.rm-ok')?.textContent?.trim()).toBe('OK');
+    expect(root.querySelectorAll('.fv-ring__arrow').length).toBe(4);
+    expect(root.querySelector('.fv-ring__mid')?.textContent?.trim()).toBe('OK');
     expect(root.querySelectorAll('.rm-pad__key').length).toBe(4);
     expect(root.querySelectorAll('.rm-transport .fv-round').length).toBe(3);
     expect(
@@ -345,9 +345,9 @@ describe('the TV remote card (#143)', () => {
       hass,
     );
     expect(root.querySelector('.fv-card')?.classList.contains('is-off')).toBe(true);
-    expect(root.querySelectorAll('.rm-arrow').length).toBe(4);
+    expect(root.querySelectorAll('.fv-ring__arrow').length).toBe(4);
     expect(root.querySelector('fluvy-ruler')).not.toBeNull();
-    root.querySelector<HTMLButtonElement>('.rm-ok')!.click();
+    root.querySelector<HTMLButtonElement>('.fv-ring__mid')!.click();
     expect(calls).toEqual([]);
   });
 

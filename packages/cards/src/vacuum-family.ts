@@ -84,7 +84,7 @@ export const VACUUM_FAMILY: readonly FamilyEntry[] = [
   [
     'fluvy-vacuum-card',
     'Fluvy · Vacuum',
-    'Robot vacuum or mower: battery, start · stop · dock · locate, suction.',
+    'Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad.',
     vacuumHeight,
   ],
 ];

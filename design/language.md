@@ -2757,6 +2757,60 @@ panel) and the controls' row (the map's zone columns as buttons: a circle and it
   keeps every part.
 - Its chunk is its own (`vehicle`, 20.2 KB of 24, its editor on its class): every page carries only its name and height.
 
+## Drive pad (1.20, #178)
+
+A robot that can be driven by hand gains a Drive command on the Vacuum card (`show_drive`; idea by @maxhayim), and
+driving it is **a mode of the card, never a taller card**: the battery and the suction give the pad their room and
+come back with Done. The owner gave his OK up front, without a design page; its decisions: the remote's ring for the
+pad (one drawing for both cards), the mode at the card's own size, Stop in the middle, no power switch (Start and
+Return to dock are in the row), the compact card's pad in a sheet.
+
+- **The command.** Drive is the row's last cell (the set's four-way arrow, brought by the card's chunk); in a compact
+  card it stands second, after Start, so half a section's two cells keep it. It is drawn only where the card knows how
+  the robot is driven (its integration's actions, or the config's own `drive`), and stays, disabled in its row's
+  skin, while the robot is out of reach: a robot found drivable once keeps its command for the page's life, so the
+  row keeps its cells. While driving it reads Done (the check) and is the row's one filled cell: Start goes quiet.
+- **The mode.** The battery (96 under its 16) and the suction (72 with one row of chips) stay in the card, hidden,
+  for the room they take; the commands step under them (`order`: the same buttons, Done where Drive was tapped); the
+  pad lies over the two, 16 under what precedes it as their labels are (`.vc-body`). The card is as tall as it was
+  whatever the column, the language or the robot's speeds do, by construction. A row of five commands that a narrow
+  column cannot hold on one line is three and two, the shorter row's cells sharing the column on the gap both rows
+  land on. A robot sent to work or home (Start, Pause, Stop, Return to dock) is driven no more: remote control ends
+  first, then the command goes; Locate leaves the mode alone.
+- **The ring** is the TV remote's (`shared/ring.ts`, a chunk both fetch): a disc of the inset ground, four chevrons
+  at 44 targets 28 inside its edge, the pressed arrow's quadrant in the accent's fill (180 ms after a tap, as long as
+  it is held), and a middle key of the card's colour on its hairline with its lift. The remote writes OK in it; the
+  pad draws the stop glyph. It is 176 with a 64 middle; where the room or the column holds less, the largest on the 4
+  grid down to 144, its middle the ring less 112 held between 44 and 64, so no arrow's target is laid under it
+  (`ringMiddle`). In a 360 column with one row of chips the room is 184: the ring stands 20 under the head and 20
+  over the commands.
+- **No room, or asked: the sheet.** A card that draws no battery or no suction (one alone leaves 96 or 72), a
+  column under 144 of content and the compact card have no room for the ring: the pad opens in the house's bottom
+  sheet, as it does where the card asks (`drive_style: sheet`): the robot's name, the 176 ring 16 under the head,
+  "Hold an arrow to keep moving" 16 under the ring (13/500 in the secondary ink, centred, on two balanced lines
+  where a language or a narrow sheet needs them: prose, never cut), and a quiet Done 24 under it across the sheet.
+  Escape, the scrim and Done close it; it leaves in 200 ms and the card is at rest behind it.
+- **A press.** A tap is one step. An arrow held 400 ms repeats every 400 ms, never before Home Assistant has
+  answered the last move, and stops the robot as it is let go (a move that goes nowhere), so the robot stops under
+  the finger and not a step later; Stop sends the same. The arrow keeps its pointer wherever the finger slides
+  (`touch-action: none`: a held arrow never scrolls the page). The pad takes the focus as it comes, on Stop, so the
+  keyboard drives from the first key: its arrows hold as fingers do, Enter and Space on an arrow are one step, on
+  Stop they stop the robot, and Escape is Done, the focus back on Drive.
+- **What ends it**, each telling the robot once: Done; ten seconds without a press (the clock stands while an arrow
+  is held); the card off the page; the page hidden; the robot out of reach; a call refused, which leaves the head in
+  the warning tone for three seconds while Home Assistant's own toast says what was refused.
+- **Motion.** The pad comes in over 220 ms (opacity, a scale from 0.94); none with reduced motion, the system's or
+  the person's. The sheet moves as every sheet.
+- **The editor** folds the pad's fields under "Drive pad": the Drive command's switch where the robot can be driven,
+  else a line in its place saying why ("This robot's integration has no remote control in Home Assistant"); the
+  speed and where the pad opens once it is on (the second never on a compact card); the robot to drive where it is
+  another; the robot's own calls, as YAML.
+- **Guards.** `drive.test.ts` holds each integration's calls to their exact data and the config's own profile to
+  numbers only; `drive/session.test.ts` the mode's life on a clock (a tap, a hold, each way out);
+  `drive-card.test.ts` the card (its cells, its parts kept, the calls in order, the sheet, the editor); the
+  playground's `vacuum` sheet draws the mode held (`_drive`) and the sheet docked (`_sheet`), and
+  `interactions-vacuum.mjs` drives it in a browser: the card's height before and in the mode, a held arrow, Done.
+
 ## Value row (1.9)
 
 A card's reading — its big figure — and what goes with it share one 64 row, 16 under the head: the control that sets

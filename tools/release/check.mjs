@@ -97,8 +97,14 @@ const BUDGETS = {
   web: 8192,
   // the Slider card: its card on the tile's and its English, its editor with the forms (1.11.1, #77)
   slider: 8192,
-  // the Vacuum card (1.20: it left core, 1.3 KB of what every page loads): the robot's and the mower's card
-  vacuum: 4096,
+  // the Vacuum card (1.20: it left core, 1.4 KB of what every page loads): the robot's and the mower's card, which
+  // robots a hand can drive and how (#178), the drive pad's English
+  vacuum: 8192,
+  // the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop,
+  // its sheet; fetched by the first Vacuum card that draws a Drive command
+  'vacuum-drive': 8192,
+  // the ring (1.20): the disc of four arrows round a middle key the TV remote and the drive pad both draw
+  ring: 4096,
   // the TV remote card (1.18, #143): the card, its keys and the integrations' commands for them, the platforms it
   // knows by name, its English; its editor goes with the forms. Measured at 11.2 KB
   remote: 16_384,

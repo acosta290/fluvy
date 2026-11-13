@@ -1,0 +1,25 @@
+{
+  "drive": {
+    "start": "Drive",
+    "done": "Done",
+    "forward": "Forward",
+    "back": "Back",
+    "left": "Left",
+    "right": "Right",
+    "hint": "Hold an arrow to keep moving",
+    "none": "This robot’s integration has no remote control in Home Assistant",
+    "editor.section": "Drive pad",
+    "editor.show_drive": "Drive command",
+    "editor.drive_speed": "Speed",
+    "editor.drive_style": "The pad opens",
+    "editor.drive_entity": "Robot to drive",
+    "editor.drive_entity_helper": "The same robot through another integration; left out, the card’s own",
+    "editor.drive": "Drive actions",
+    "editor.drive_helper": "For a robot whose integration is not known: start, move and stop, each an action, in YAML",
+    "option.slow": "Slow",
+    "option.normal": "Normal",
+    "option.fast": "Fast",
+    "option.card": "In the card",
+    "option.sheet": "In a sheet"
+  }
+}

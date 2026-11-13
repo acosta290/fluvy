@@ -3066,5 +3066,28 @@
     "so_far": "bisher",
     "open": "Im Verlauf öffnen",
     "read": "Der Verlauf in diesem Zeitraum. Mit den Pfeiltasten ablesen."
+  },
+  "drive": {
+    "start": "Fahren",
+    "done": "Fertig",
+    "forward": "Vorwärts",
+    "back": "Rückwärts",
+    "left": "Links",
+    "right": "Rechts",
+    "hint": "Pfeil gedrückt halten, um weiterzufahren",
+    "none": "Die Integration dieses Roboters hat in Home Assistant keine Fernsteuerung",
+    "editor.section": "Fahrsteuerung",
+    "editor.show_drive": "Befehl „Fahren“",
+    "editor.drive_speed": "Geschwindigkeit",
+    "editor.drive_style": "Die Steuerung öffnet sich",
+    "editor.drive_entity": "Zu steuernder Roboter",
+    "editor.drive_entity_helper": "Derselbe Roboter über eine andere Integration; leer gelassen, der Roboter der Karte",
+    "editor.drive": "Fahraktionen",
+    "editor.drive_helper": "Für einen Roboter, dessen Integration nicht bekannt ist: start, move und stop, jeweils eine Aktion, in YAML",
+    "option.slow": "Langsam",
+    "option.normal": "Normal",
+    "option.fast": "Schnell",
+    "option.card": "In der Karte",
+    "option.sheet": "In einem Blatt"
   }
 }

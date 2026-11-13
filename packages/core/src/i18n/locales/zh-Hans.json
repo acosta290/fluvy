@@ -3066,5 +3066,28 @@
     "so_far": "至今",
     "open": "在历史中打开",
     "read": "此时段的历史。用方向键查看。"
+  },
+  "drive": {
+    "start": "遥控",
+    "done": "完成",
+    "forward": "前进",
+    "back": "后退",
+    "left": "左转",
+    "right": "右转",
+    "hint": "按住方向键可持续移动",
+    "none": "此机器人的集成在 Home Assistant 中不提供遥控",
+    "editor.section": "手动遥控",
+    "editor.show_drive": "遥控命令",
+    "editor.drive_speed": "速度",
+    "editor.drive_style": "遥控打开位置",
+    "editor.drive_entity": "要遥控的机器人",
+    "editor.drive_entity_helper": "通过另一个集成接入的同一台机器人；留空：卡片的机器人",
+    "editor.drive": "遥控动作",
+    "editor.drive_helper": "用于集成未知的机器人：start、move 和 stop，各为一个动作，以 YAML 填写",
+    "option.slow": "慢",
+    "option.normal": "正常",
+    "option.fast": "快",
+    "option.card": "在卡片中",
+    "option.sheet": "在面板中"
   }
 }

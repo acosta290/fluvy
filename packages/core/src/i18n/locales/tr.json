@@ -3066,5 +3066,28 @@
     "so_far": "şimdiye kadar",
     "open": "Geçmiş’te aç",
     "read": "Bu aralıktaki geçmiş. Okumak için ok tuşlarını kullanın."
+  },
+  "drive": {
+    "start": "Sür",
+    "done": "Bitti",
+    "forward": "İleri",
+    "back": "Geri",
+    "left": "Sol",
+    "right": "Sağ",
+    "hint": "Hareketi sürdürmek için bir oku basılı tutun",
+    "none": "Bu robotun entegrasyonunda Home Assistant’ta uzaktan kumanda yok",
+    "editor.section": "Sürüş kumandası",
+    "editor.show_drive": "Sür komutu",
+    "editor.drive_speed": "Hız",
+    "editor.drive_style": "Kumanda şurada açılır",
+    "editor.drive_entity": "Sürülecek robot",
+    "editor.drive_entity_helper": "Aynı robot, başka bir entegrasyon üzerinden; boşsa kartınki",
+    "editor.drive": "Sürüş eylemleri",
+    "editor.drive_helper": "Entegrasyonu bilinmeyen bir robot için: start, move ve stop, her biri bir eylem, YAML olarak",
+    "option.slow": "Yavaş",
+    "option.normal": "Normal",
+    "option.fast": "Hızlı",
+    "option.card": "Kartta",
+    "option.sheet": "Bir sayfada"
   }
 }

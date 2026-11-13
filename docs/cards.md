@@ -504,6 +504,103 @@ commands:
   back: KEY_RETURN
 ```
 
+## Vacuum
+
+The vacuum card is a robot vacuum's or a lawn mower's: the head with what the robot is doing; the readouts its
+integration gives beside it (`area_entity`, `duration_entity`, `remaining_entity`, each only where it is named); the
+battery on a gauge (the battery sensor of the robot's own device, or `battery_entity`; `show_battery: false` draws
+none); Start or Pause, Stop, Return to dock and Locate, each where the robot takes it; and the suction's speeds as
+chips (`suction_style`). `variant: compact` keeps the head and the commands.
+
+**The drive pad (#178).** `show_drive: true` adds a Drive command to the row where the robot can be driven by hand.
+Tapped, the battery and the suction give their room to the pad, the TV remote's ring with an arrow each way round
+Stop, and the card stays exactly as tall as it was; the command reads Done. A tap on an arrow is one short step; an
+arrow held keeps the robot moving and stops it as it is let go; Stop stands it still. The pad takes the focus as it
+opens, so the keyboard's arrows drive too, and Escape is Done. Remote control ends with Done, after ten seconds
+without a press, when the card leaves the page or the page is hidden, and before Start, Pause, Stop or Return to dock
+is sent; a call Home Assistant refuses ends it too, the card in its error's tone for a moment. A compact card, a card
+with no room for the ring (no battery or no suction drawn, a narrow column) and `drive_style: sheet` open the pad in
+a sheet. `drive_speed` is `slow`, `normal` (the default) or `fast`. The robot moves while you hold: drive it where you
+can see it.
+
+The card knows how to drive a robot by its entity's integration, where Home Assistant offers the actions it needs:
+
+| Integration | What the pad calls |
+| --- | --- |
+| Xiaomi Miio (`xiaomi_miio`) | `xiaomi_miio.vacuum_remote_control_start`, `vacuum_remote_control_move` and `vacuum_remote_control_stop` |
+| Roborock (`roborock`) | `vacuum.send_command` with the robot's own `app_rc_start`, `app_rc_move` and `app_rc_end` (the robots that speak Roborock's first protocol; a Q7 or a Q10 refuses them, and the card leaves the mode) |
+| Dreame (`dreame_vacuum`, from HACS) | `dreame_vacuum.vacuum_remote_control_move_step`, and `vacuum.stop` to end |
+| Xiaomi Miot Auto (`xiaomi_miot`, from HACS) | a Dreame-made robot, Xiaomi's X20+ among them: `xiaomi_miot.set_miot_property` on its `remote-state` property (service 4, property 15), and `vacuum.stop` to end; a Roborock: `xiaomi_miot.send_command` with `app_rc_start`, `app_rc_move` and `app_rc_end` |
+
+They are read from each integration's own sources and have been tried on no robot of ours: a report of one that
+drives, or does not, is welcome. With Xiaomi Miot Auto a write the robot refuses is not said to the card (the
+integration logs it): the pad then seems to do nothing. `drive_entity` names the robot to drive where it is not the
+card's own, as the same robot through a second integration. An integration with no remote control in Home Assistant
+(Ecovacs, iRobot, SharkIQ) gains no command, and the editor says why.
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot
+show_drive: true
+drive_speed: slow
+drive_style: sheet
+```
+
+The robot of the card through another integration:
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot # Xiaomi Home: what the card shows
+drive_entity: vacuum.robot_miio # the same robot through Xiaomi Miio: what the pad drives
+show_drive: true
+```
+
+For any other robot, `drive` says its calls: `move` (required), and `start` and `stop` where the robot needs them,
+each an action with its `data` and its `target`. In their data, `{{ velocity }}` is how fast forward (negative: back)
+and `{{ rotation }}` how fast to the left (negative: to the right): `drive.velocity` and `drive.rotation` say what a
+full one is to the robot (1 where left out), halved by `drive_speed: slow` and half as much again by `fast`.
+`{{ seq }}` counts the moves from 1 and `{{ random }}` is a number of its own for each call. The card writes them,
+as numbers and nothing else (they are no Home Assistant templates): a text that is one of them alone becomes the
+number, one inside other words the number's figures. A call goes to its `target`, else to the entity its data names
+(`entity_id`), else to the robot. The Drive command is drawn while Home Assistant offers every action named.
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.hallway
+show_drive: true
+drive:
+  start:
+    action: script.robot_manual_start
+  move:
+    action: script.robot_manual_move
+    data:
+      velocity: '{{ velocity }}' # 0.2 forward, -0.2 back, 0 while turning
+      rotation: '{{ rotation }}' # 45 to the left, -45 to the right
+  stop:
+    action: script.robot_manual_stop
+  velocity: 0.2
+  rotation: 45
+```
+
+A Dreame-made robot through Xiaomi Miot Auto whose model the card does not tell by itself:
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot_cleaner
+show_drive: true
+drive:
+  move:
+    action: xiaomi_miot.set_miot_property
+    data:
+      siid: 4
+      piid: 15
+      value: '{"spdv":{{ velocity }},"spdw":{{ rotation }},"audio":"false","random":{{ random }}}'
+  stop:
+    action: vacuum.stop
+  velocity: 200
+  rotation: 60
+```
+
 ## Chips
 
 A chip's `name` may be a Home Assistant template, rendered and kept live as a row's text is: who is home, the rooms
@@ -1301,7 +1398,7 @@ roles:
 | **Remote** | `custom:fluvy-remote-card` | A TV remote in Fluvy’s hand: power, sources, a D-pad with OK, playback, volume routed where you like, channels, the apps with their logos, keys of your own. | `remote`, `volume_entity`, `variant` (`full`, `compact`, `pad`, `row`), `off_keys` (`live`, `power`), `groups` (`source`, `dpad`, `transport`, `volume`, `channel`, `apps`, `custom`), `dpad` (`ring`, `grid`), `ok_label` (`word`, `plain`), `side_keys` (`auto`, `sides`, `row`), `nav` (`power`, `up`, `down`, `left`, `right`, `ok`, `back`, `home`, `menu`, `info`, `guide`, `captions`, `settings`, `input`, `assistant`, `exit`, `play_pause`, `play`, `pause`, `stop`, `rewind`, `forward`, `previous`, `next`, `record`, `volume_up`, `volume_down`, `mute`, `channel_up`, `channel_down`), `transport` (`power`, `up`, `down`, `left`, `right`, `ok`, `back`, `home`, `menu`, `info`, `guide`, `captions`, `settings`, `input`, `assistant`, `exit`, `play_pause`, `play`, `pause`, `stop`, `rewind`, `forward`, `previous`, `next`, `record`, `volume_up`, `volume_down`, `mute`, `channel_up`, `channel_down`), `volume` (`auto`, `ruler`, `keys`, `stepper`), `apps_style` (`circles`, `chips`), `apps_tint` (`open`, `always`), `keys` (`power`, `up`, `down`, `left`, `right`, `ok`, `back`, `home`, `menu`, `info`, `guide`, `captions`, `settings`, `input`, `assistant`, `exit`, `play_pause`, `play`, `pause`, `stop`, `rewind`, `forward`, `previous`, `next`, `record`, `volume_up`, `volume_down`, `mute`, `channel_up`, `channel_down`), `controls` (`power`, `up`, `down`, `left`, `right`, `ok`, `back`, `home`, `menu`, `info`, `guide`, `captions`, `settings`, `input`, `assistant`, `exit`, `play_pause`, `play`, `pause`, `stop`, `rewind`, `forward`, `previous`, `next`, `record`, `volume_up`, `volume_down`, `mute`, `channel_up`, `channel_down`), `commands`, `apps` (a list: `app`, `name`, `icon`, `image`, `color`, `source`, `key`, `activity`, `tap_action`, `hold_action`, `double_tap_action`), `custom` (a list: `name`, `icon`, `key`, `tap_action`, `hold_action`, `double_tap_action`) | — |
 | **Cover** | `custom:fluvy-cover-card` | Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favourites. | `subtitle`, `tilt_angle`, `variant` (`full`, `compact`), `favorites_style` (`full`, `chips`), `show_tilt`, `show_favorites`, `favorites` (a list: `name`, `position`, `tilt`) | — |
 | **Fan** | `custom:fluvy-fan-card` | Speed ruler with steps, oscillation, direction and presets. | `subtitle`, `variant` (`full`, `compact`), `show_stepper`, `show_presets`, `preset_style` (`full`, `chips`), `show_oscillation`, `show_direction`, `when_off` (`all`, `essentials`) | — |
-| **Vacuum** | `custom:fluvy-vacuum-card` | Robot vacuum or mower: battery, start · stop · dock · locate, suction. | `subtitle`, `variant` (`full`, `compact`), `show_battery`, `battery_entity`, `area_entity`, `duration_entity`, `remaining_entity`, `suction_style` (`full`, `chips`) | — |
+| **Vacuum** | `custom:fluvy-vacuum-card` | Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad. | `subtitle`, `variant` (`full`, `compact`), `show_battery`, `battery_entity`, `area_entity`, `duration_entity`, `remaining_entity`, `suction_style` (`full`, `chips`), `show_drive`, `drive_speed` (`slow`, `normal`, `fast`), `drive_style` (`card`, `sheet`), `drive_entity`, `drive` | — |
 | **Lock** | `custom:fluvy-lock-card` | Slide to unlock, never one accidental tap; codes, jammed state, related rows. | `subtitle`, `variant` (`full`, `compact`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | — |
 | **Alarm** | `custom:fluvy-alarm-card` | Arm modes as tiles and the keypad sheet for codes. | `subtitle`, `variant` (`tiles`, `compact`), `modes` (`disarm`, `arm_home`, `arm_away`, `arm_night`, `arm_vacation`, `arm_custom_bypass`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | — |
 | **Camera** | `custom:fluvy-camera-card` | A still that refreshes itself, or Home Assistant’s live stream, in the shape you choose; tap for the stream. | `subtitle`, `camera_view` (`auto`, `live`), `refresh`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `native`), `fit_mode` (`cover`, `contain`), `show_rows`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `sub` → `subtitle` |

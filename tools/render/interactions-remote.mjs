@@ -143,14 +143,14 @@ const services = async () =>
 {
   await reset(page);
   const gone = card('Out of reach');
-  await gone.locator('.rm-ok').click({ force: true });
-  await gone.locator('.rm-arrow').first().click({ force: true });
+  await gone.locator('.fv-ring__mid').click({ force: true });
+  await gone.locator('.fv-ring__arrow').first().click({ force: true });
   await settle(page, 300);
   const c = await calls(page);
   check('out of reach nothing answers', c.length === 0, JSON.stringify(c));
   check(
     'out of reach the keys wear the dashed skin',
-    (await gone.locator('.is-off .rm-ok').count()) === 1,
+    (await gone.locator('.is-off .fv-ring__mid').count()) === 1,
   );
 }
 

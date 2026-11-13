@@ -3066,5 +3066,28 @@
     "so_far": "eddig",
     "open": "Megnyitás az Előzményekben",
     "read": "Az előzmények ebben az időszakban. A nyílbillentyűkkel olvashatod le."
+  },
+  "drive": {
+    "start": "Vezetés",
+    "done": "Kész",
+    "forward": "Előre",
+    "back": "Hátra",
+    "left": "Balra",
+    "right": "Jobbra",
+    "hint": "Tarts lenyomva egy nyilat a folyamatos mozgáshoz",
+    "none": "A robot integrációja nem kínál távirányítást a Home Assistantben",
+    "editor.section": "Kézi vezetés",
+    "editor.show_drive": "Vezetés parancs",
+    "editor.drive_speed": "Sebesség",
+    "editor.drive_style": "A vezérlő megnyitása",
+    "editor.drive_entity": "Vezetendő robot",
+    "editor.drive_entity_helper": "Ugyanaz a robot egy másik integráción keresztül; üresen: a kártyáé",
+    "editor.drive": "Vezetési műveletek",
+    "editor.drive_helper": "Olyan robothoz, amelynek integrációja nem ismert: start, move és stop, mindegyik egy művelet, YAML-ben",
+    "option.slow": "Lassú",
+    "option.normal": "Normál",
+    "option.fast": "Gyors",
+    "option.card": "A kártyán",
+    "option.sheet": "Külön lapon"
   }
 }

@@ -3066,5 +3066,28 @@
     "so_far": "jusqu’ici",
     "open": "Ouvrir dans l’Historique",
     "read": "L’historique sur cette période. Lisez-le avec les flèches du clavier."
+  },
+  "drive": {
+    "start": "Piloter",
+    "done": "Terminé",
+    "forward": "Avancer",
+    "back": "Reculer",
+    "left": "Gauche",
+    "right": "Droite",
+    "hint": "Maintenez une flèche appuyée pour continuer le mouvement",
+    "none": "L’intégration de ce robot n’offre pas de pilotage à distance dans Home Assistant",
+    "editor.section": "Pavé de pilotage",
+    "editor.show_drive": "Commande Piloter",
+    "editor.drive_speed": "Vitesse",
+    "editor.drive_style": "Le pavé s’ouvre",
+    "editor.drive_entity": "Robot à piloter",
+    "editor.drive_entity_helper": "Le même robot par une autre intégration ; sans elle, celui de la carte",
+    "editor.drive": "Actions de pilotage",
+    "editor.drive_helper": "Pour un robot dont l’intégration n’est pas connue : start, move et stop, chacun une action, en YAML",
+    "option.slow": "Lente",
+    "option.normal": "Normale",
+    "option.fast": "Rapide",
+    "option.card": "Dans la carte",
+    "option.sheet": "Dans une feuille"
   }
 }

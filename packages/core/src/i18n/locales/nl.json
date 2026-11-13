@@ -3066,5 +3066,28 @@
     "so_far": "tot nu",
     "open": "Openen in Geschiedenis",
     "read": "De geschiedenis over deze periode. Lees af met de pijltjestoetsen."
+  },
+  "drive": {
+    "start": "Besturen",
+    "done": "Klaar",
+    "forward": "Vooruit",
+    "back": "Achteruit",
+    "left": "Links",
+    "right": "Rechts",
+    "hint": "Houd een pijl ingedrukt om te blijven rijden",
+    "none": "De integratie van deze robot biedt geen afstandsbesturing in Home Assistant",
+    "editor.section": "Rijbediening",
+    "editor.show_drive": "Opdracht Besturen",
+    "editor.drive_speed": "Snelheid",
+    "editor.drive_style": "De bediening opent",
+    "editor.drive_entity": "Te besturen robot",
+    "editor.drive_entity_helper": "Dezelfde robot via een andere integratie; leeg: die van de kaart",
+    "editor.drive": "Rijacties",
+    "editor.drive_helper": "Voor een robot waarvan de integratie niet bekend is: start, move en stop, elk een actie, in YAML",
+    "option.slow": "Langzaam",
+    "option.normal": "Normaal",
+    "option.fast": "Snel",
+    "option.card": "In de kaart",
+    "option.sheet": "In een blad"
   }
 }

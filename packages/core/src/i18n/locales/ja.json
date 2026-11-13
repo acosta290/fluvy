@@ -3066,5 +3066,28 @@
     "so_far": "現時点まで",
     "open": "履歴で開く",
     "read": "この期間の履歴です。矢印キーで値を読み取れます。"
+  },
+  "drive": {
+    "start": "手動操作",
+    "done": "完了",
+    "forward": "前進",
+    "back": "後退",
+    "left": "左",
+    "right": "右",
+    "hint": "矢印を押し続けると動き続けます",
+    "none": "このロボットの統合には Home Assistant でのリモコン操作がありません",
+    "editor.section": "操作パッド",
+    "editor.show_drive": "手動操作コマンド",
+    "editor.drive_speed": "速度",
+    "editor.drive_style": "パッドを開く場所",
+    "editor.drive_entity": "操作するロボット",
+    "editor.drive_entity_helper": "別の統合を通した同じロボット。空欄ならカードのロボット",
+    "editor.drive": "操作アクション",
+    "editor.drive_helper": "統合が不明なロボット用:start、move、stop をそれぞれアクションとして YAML で指定",
+    "option.slow": "低速",
+    "option.normal": "標準",
+    "option.fast": "高速",
+    "option.card": "カード内",
+    "option.sheet": "シート"
   }
 }

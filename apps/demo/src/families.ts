@@ -14,6 +14,7 @@ export const FAMILIES: readonly Family[] = [
     label: 'family.devices',
     sheets: [
       'devices-motion',
+      'vacuum',
       'devices-security',
       'cameras',
       'printer',

@@ -3066,5 +3066,28 @@
     "so_far": "hasta ahora",
     "open": "Abrir en Historial",
     "read": "El historial de este periodo. Usa las flechas para recorrerlo."
+  },
+  "drive": {
+    "start": "Conducir",
+    "done": "Listo",
+    "forward": "Adelante",
+    "back": "Atrás",
+    "left": "Izquierda",
+    "right": "Derecha",
+    "hint": "Mantén pulsada una flecha para que siga moviéndose",
+    "none": "La integración de este robot no tiene control remoto en Home Assistant",
+    "editor.section": "Mando de conducción",
+    "editor.show_drive": "Comando Conducir",
+    "editor.drive_speed": "Velocidad",
+    "editor.drive_style": "El mando se abre",
+    "editor.drive_entity": "Robot a conducir",
+    "editor.drive_entity_helper": "El mismo robot a través de otra integración; sin él, el de la tarjeta",
+    "editor.drive": "Acciones de conducción",
+    "editor.drive_helper": "Para un robot cuya integración no se conoce: start, move y stop, cada uno una acción, en YAML",
+    "option.slow": "Lenta",
+    "option.normal": "Normal",
+    "option.fast": "Rápida",
+    "option.card": "En la tarjeta",
+    "option.sheet": "En una hoja"
   }
 }

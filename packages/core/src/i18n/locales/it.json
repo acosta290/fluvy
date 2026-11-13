@@ -3066,5 +3066,28 @@
     "so_far": "finora",
     "open": "Apri in Cronologia",
     "read": "La cronologia in questo periodo. Leggila con le frecce della tastiera."
+  },
+  "drive": {
+    "start": "Guida",
+    "done": "Fine",
+    "forward": "Avanti",
+    "back": "Indietro",
+    "left": "Sinistra",
+    "right": "Destra",
+    "hint": "Tieni premuta una freccia per continuare a muoverlo",
+    "none": "L’integrazione di questo robot non ha un controllo remoto in Home Assistant",
+    "editor.section": "Comandi di guida",
+    "editor.show_drive": "Comando Guida",
+    "editor.drive_speed": "Velocità",
+    "editor.drive_style": "I comandi si aprono",
+    "editor.drive_entity": "Robot da guidare",
+    "editor.drive_entity_helper": "Lo stesso robot tramite un’altra integrazione; senza, quello della scheda",
+    "editor.drive": "Azioni di guida",
+    "editor.drive_helper": "Per un robot la cui integrazione non è nota: start, move e stop, ciascuno un’azione, in YAML",
+    "option.slow": "Lenta",
+    "option.normal": "Normale",
+    "option.fast": "Veloce",
+    "option.card": "Nella scheda",
+    "option.sheet": "In un pannello"
   }
 }
