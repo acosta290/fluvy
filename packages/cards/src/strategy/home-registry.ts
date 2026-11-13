@@ -618,11 +618,15 @@ export class HomeRegistry {
       this.sensors('humidity').filter((id) => !this.fromWeather(id) && !this.ofAppliance(id)),
     );
   }
+  /** The house's power readings: what is measured, never a forecast (#170). */
   get powers(): readonly string[] {
-    return this.sensors('power');
+    return this.memo('powers', () => this.sensors('power').filter((id) => !this.forecast(id)));
   }
+  /** Its energy readings, diagnostic ones too: what is measured, never a forecast (#170). */
   get energies(): readonly string[] {
-    return this.sensors('energy', true);
+    return this.memo('energies', () =>
+      this.sensors('energy', true).filter((id) => !this.forecast(id)),
+    );
   }
   get batteries(): readonly string[] {
     return this.memo('batteries', () =>

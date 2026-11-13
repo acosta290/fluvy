@@ -2685,3 +2685,45 @@ describe('custom:fluvy-home strategy — labels that would repeat (#170)', () =>
     expect(place('sensor.hall_a')).toBe('Kitchen');
   });
 });
+
+describe('custom:fluvy-energy strategy — a forecast is no reading (#170)', () => {
+  it('never draws a forecast as a meter, on the Meters view or its page of every one, nor as one of the day’s tiles', async () => {
+    const power = { device_class: 'power', unit_of_measurement: 'W', state_class: 'measurement' };
+    const energy = { device_class: 'energy', unit_of_measurement: 'kWh', state_class: 'total' };
+    const forecasts = [
+      entity(
+        'sensor.solcast_pv_forecast_power_now',
+        '2100',
+        { friendly_name: 'Solcast PV Forecast Power now', ...power },
+        { platform: 'solcast_solar' },
+      ),
+      entity('sensor.solar_power_forecast', '2400', {
+        friendly_name: 'Solar power forecast',
+        ...power,
+      }),
+      entity('sensor.pv_prognose_heute', '31.0', { friendly_name: 'PV Prognose heute', ...energy }),
+      entity(
+        'sensor.energy_production_today',
+        '28.4',
+        { friendly_name: 'Estimated energy production - today', ...energy },
+        { platform: 'forecast_solar' },
+      ),
+    ];
+    const { views } = await generate(
+      { type: 'custom:fluvy-energy', caps: { meters: 2 } },
+      house(forecasts),
+    );
+    const cards = cardsIn(views);
+    const drawn = JSON.stringify(cards);
+    for (const { id } of forecasts) expect(drawn, id).not.toContain(id);
+    // what the house measures is still drawn: its meters and the day's tiles
+    expect(cards.some((card) => card['entity'] === 'sensor.grid_meter_power')).toBe(true);
+    expect(
+      cards.some(
+        (card) =>
+          card.type === 'custom:fluvy-stat-tiles-card' &&
+          (card['tiles'] as string[]).every((id) => TODAY.test(id)),
+      ),
+    ).toBe(true);
+  });
+});

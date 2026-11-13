@@ -65,12 +65,10 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const solarPrefs = preferredPowers(home, prefs, 'solar');
   const gridPref = preferredPowers(home, prefs, 'grid')[0];
   const batteryPrefs = preferredPowers(home, prefs, 'battery');
-  // each reading's one role by its words (a reading the preferences name may say any); a forecast says none (#170)
+  // each reading's one role by its words (a reading the preferences name may say any); the house's readings hold no
+  // forecast, which says none (#170)
   const role = new Map(
-    [...powers, ...energies].map((id) => [
-      id,
-      home.forecast(id) ? undefined : says(home.label(id), ROLE_WORDS),
-    ]),
+    [...powers, ...energies].map((id) => [id, says(home.label(id), ROLE_WORDS)]),
   );
   const saying = (list: readonly string[], said: Role): string[] =>
     list.filter((id) => role.get(id) === said);
