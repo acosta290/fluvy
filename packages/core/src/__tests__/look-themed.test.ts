@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Window } from 'happy-dom';
 import { THEMED_ATTRIBUTE } from '../look/attributes.js';
 import { declarationsOf } from '../look/css.js';
-import { themedRule, watchThemes, wearsFluvy } from '../look/themed.js';
+import { themedMode, themedRule, watchThemes } from '../look/themed.js';
 
 interface ThemeRecord {
   cacheKey: string | undefined;
@@ -15,6 +15,8 @@ type Themed = HTMLElement & { __themes?: ThemeRecord };
 const LINEN = { 'fluvy-theme': '1', 'fluvy-palette': 'linen', 'primary-color': '#856529' };
 const THEMES: { [name: string]: { [key: string]: string } } = {
   Fluvy: LINEN,
+  'Fluvy Light': LINEN,
+  'Fluvy Dark': LINEN,
   'Fluvy Linen': LINEN,
   Other: { 'primary-color': '#ff9800' },
 };
@@ -38,7 +40,10 @@ function applyTheme(element: HTMLElement, theme?: string, dark = false): void {
 /** The look's sheet for the marked elements, Volt's. */
 const sheet = new CSSStyleSheet();
 sheet.replaceSync(
-  themedRule(declarationsOf({ palette: 'volt', shape: 'soft', pills: 'round' }, 'light')),
+  themedRule([
+    'light',
+    declarationsOf({ palette: 'volt', shape: 'soft', pills: 'round' }, 'light'),
+  ]),
 );
 
 /** A view as Home Assistant draws it: its own shadow root, on the page. */
@@ -110,12 +115,33 @@ describe('an element Home Assistant themed with the theme named Fluvy', () => {
     element.remove();
   });
 
+  it('marks an element in Fluvy Light or Fluvy Dark with the mode it holds to, in a page of either mode (#174)', async () => {
+    changed.mockClear();
+    const element = view();
+    applyTheme(element, 'Fluvy Dark');
+    expect(element.getAttribute(THEMED_ATTRIBUTE)).toBe('dark');
+    expect(element.shadowRoot?.adoptedStyleSheets).toContain(sheet);
+    // the page in dark mode: Home Assistant's key is `Fluvy Dark__dark`, the theme the same
+    applyTheme(element, 'Fluvy Dark', true);
+    expect(element.getAttribute(THEMED_ATTRIBUTE)).toBe('dark');
+    applyTheme(element, 'Fluvy Light', true);
+    expect(element.getAttribute(THEMED_ATTRIBUTE)).toBe('light');
+    applyTheme(element, 'Fluvy');
+    expect(element.getAttribute(THEMED_ATTRIBUTE)).toBe('');
+    await beat();
+    // each change of the mark has the cards look again (once a beat)
+    expect(changed).toHaveBeenCalledTimes(1);
+    element.remove();
+  });
+
   it('leaves another theme, and the page itself, as Home Assistant themed them', () => {
-    expect(wearsFluvy({ cacheKey: 'Fluvy' })).toBe(true);
-    expect(wearsFluvy({ cacheKey: 'Fluvy__dark' })).toBe(true);
-    expect(wearsFluvy({ cacheKey: 'Fluvy Linen' })).toBe(false);
-    expect(wearsFluvy({ cacheKey: 'default' })).toBe(false);
-    expect(wearsFluvy(undefined)).toBe(false);
+    expect(themedMode({ cacheKey: 'Fluvy' })).toBe('');
+    expect(themedMode({ cacheKey: 'Fluvy__dark' })).toBe('');
+    expect(themedMode({ cacheKey: 'Fluvy Light__dark' })).toBe('light');
+    expect(themedMode({ cacheKey: 'Fluvy Dark' })).toBe('dark');
+    expect(themedMode({ cacheKey: 'Fluvy Linen' })).toBeUndefined();
+    expect(themedMode({ cacheKey: 'default' })).toBeUndefined();
+    expect(themedMode(undefined)).toBeUndefined();
     const element = view();
     applyTheme(element, 'Fluvy Linen');
     expect(element.hasAttribute(THEMED_ATTRIBUTE)).toBe(false);

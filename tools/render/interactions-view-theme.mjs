@@ -10,7 +10,10 @@
  * Assistant's `hui-view-container`) and in a wrapper without one (a section); a view in another theme (the same file
  * under a name of the person's own) keeps that theme's colours; the mark follows the view's theme as Home Assistant
  * changes it, and the cards follow the palette and the mode as the settings change them, Home Assistant writing nothing
- * again; in the `dashboards` scope the view wears the dashboard's look while the page wears none.
+ * again; in the `dashboards` scope the view wears the dashboard's look while the page wears none. A view in Fluvy Dark on
+ * a light page (Home Assistant writes it in the page's mode, where it has nothing but its shared block) draws as a view
+ * in Fluvy on a dark page does, its view's background and its cards' own mode too, and a view in Fluvy Light on a dark
+ * page as one on a light page (#174); a wall's mode holds such a view as it holds the page.
  */
 import { startSuite } from './lib/suite.mjs';
 
@@ -56,8 +59,12 @@ const read = (page) =>
           differ.push(`${card.localName} ${name}: ${value(own, name)} ≠ ${value(around, name)}`);
     }
     const first = cards[0] ? getComputedStyle(cards[0]) : around;
+    const background = view.querySelector('hui-view-background');
     return {
       marked: view.hasAttribute('fluvy-themed'),
+      mark: view.getAttribute('fluvy-themed'),
+      background: background ? getComputedStyle(background).backgroundColor : '',
+      dark: cards.filter((card) => card.hasAttribute('dark')).length,
       written: view.style.getPropertyValue('--fluvy-accent'),
       names: names.length,
       cards: cards.length,
@@ -180,6 +187,48 @@ for (const mode of ['light', 'dark']) {
     errors.join(' | '),
   );
   await page.close();
+}
+
+/* ---------- Fluvy Light and Fluvy Dark: a view held to its mode on a page in the other (#174) ---------- */
+for (const [theme, page, held] of [
+  ['Fluvy Dark', 'light', 'dark'],
+  ['Fluvy Light', 'dark', 'light'],
+]) {
+  // what a view in Fluvy draws on a page in the held mode
+  const reference = await open(`dashboard=home&viewtheme=Fluvy&mode=${held}`);
+  const want = await read(reference.page);
+  await reference.page.close();
+  const { page: tab, errors } = await open(
+    `dashboard=home&viewtheme=${encodeURIComponent(theme)}&mode=${page}`,
+  );
+  let s = await read(tab);
+  check(
+    `a view in ${theme} on a ${page} page draws ${held}: its mark, its background, every card's surface and its own mode as a view in Fluvy on a ${held} page`,
+    s.mark === held &&
+      s.background === want.background &&
+      s.card.surface === want.card.surface &&
+      s.card.accent === want.card.accent &&
+      s.card.palette === 'volt' &&
+      s.dark === (held === 'dark' ? s.cards : 0) &&
+      s.around.accent !== want.card.accent,
+    detail(s),
+  );
+  // a wall holds the page to its mode, and the view with it
+  await tab.evaluate((dark) => window.fluvyLook({ dark, wall: true }), page === 'dark');
+  s = await read(tab);
+  const around = await open(`dashboard=home&viewtheme=Fluvy&mode=${page}`);
+  const wall = await read(around.page);
+  await around.page.close();
+  check(
+    `…on a wall held ${page}, the view in ${theme} draws ${page} with the page`,
+    s.mark === held &&
+      s.differ.length === 0 &&
+      s.card.surface === wall.card.surface &&
+      s.dark === (page === 'dark' ? s.cards : 0),
+    detail(s),
+  );
+  check(`${theme}: no page error`, errors.length === 0, errors.join(' | '));
+  await tab.close();
 }
 
 /* ---------- the dashboards scope: the look on the dashboard alone ---------- */

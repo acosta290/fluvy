@@ -1339,21 +1339,22 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
 /* ---------- scope ---------- */
 
 /**
- * The theme Home Assistant wears for this person: Fluvy (from their profile, or the house's default theme), or
- * another one (`other`, by its name) — which then keeps every Home Assistant page, Fluvy staying on its dashboards.
+ * The theme Home Assistant wears for this person: Fluvy, Fluvy Light or Fluvy Dark (from their profile, or the house's
+ * default theme), or another one (`other`) — which then keeps every Home Assistant page, Fluvy staying on its
+ * dashboards.
  */
 export interface ThemeInUse {
   readonly source: 'profile' | 'house' | 'other';
-  /** The other theme's name, as the profile lists it. */
-  readonly name?: string;
+  /** The theme's name, as the profile lists it. */
+  readonly name: string;
   /** Home Assistant's own way to the other theme: back to the default one, or to Fluvy. */
   leave(): void;
 }
 
 /**
- * Only on dashboards cannot hold while Home Assistant's own theme is Fluvy: every page would still wear it. Said
- * where the choice is made, with the way back (a person's own profile; the house's default theme is an
- * administrator's).
+ * Only on dashboards cannot hold while Home Assistant's own theme is a theme of Fluvy's: every page would still wear
+ * it. Said where the choice is made, naming the theme, with the way back (a person's own profile; the house's default
+ * theme is an administrator's).
  */
 function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
   const other = theme.source === 'other';
@@ -1365,7 +1366,7 @@ function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
       ? 'scope.theme_profile'
       : 'scope.theme_house';
   const text = other
-    ? ctx.t('scope.theme_another_sub', { theme: theme.name ?? '' })
+    ? ctx.t('scope.theme_another_sub', { theme: theme.name })
     : ctx.t(
         profile
           ? 'scope.theme_profile_sub'
@@ -1374,7 +1375,7 @@ function themeNote(ctx: PanelContext, theme: ThemeInUse): TemplateResult {
             : 'scope.theme_house_guest',
       );
   return html`<div class="pn-status pn-status--warning" role="status">
-    <p class="pn-status__title">${ctx.t(title)}</p>
+    <p class="pn-status__title">${ctx.t(title, { theme: theme.name })}</p>
     <p class="pn-status__text">${text}</p>
     ${
       can

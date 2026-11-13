@@ -19,7 +19,7 @@ export {
 export { EARLY_KEY, fallbackCss, LookEngine, type EarlyLook } from './engine.js';
 export { PALETTE_ACCENT, WHITE } from './accent.js';
 export { lookHandle, startLook, type LookHandle, type LookPreview } from './start.js';
-export { themedRule, watchThemes, wearsFluvy } from './themed.js';
+export { themedMode, themedRule, watchThemes } from './themed.js';
 export { applyZoom, startZoom, ZOOM_VAR } from './zoom.js';
 export {
   CHROME_DEFAULTS,

@@ -19,7 +19,8 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * being made (`custom`), someone who is not an administrator (`guest`), a house without the automatic
  * dashboard (`missing`), Reset armed (`armed`), the notice after a save (`saved`), a person wearing their own
  * look (`own`), the look on the whole of Home Assistant (`everywhere`, with the frame), a look tried on the whole
- * app with nothing changed (`trial`), a profile that chose the Fluvy theme (`themed`), edits on the other tabs
+ * app with nothing changed (`trial`), a profile that chose the Fluvy theme (`themed`) or Fluvy Dark (`themed-dark`),
+ * the house's default theme Fluvy Light (`house-light`), edits on the other tabs
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created, the home's
  * leaving out a water heater and the inverter's MPPT readings (`dashboards`), a dashboard's Recreate row armed
  * (`recreate`), this browser a wall panel (`wall`), three palettes saved by the house (`palettes`), the wall dark
@@ -40,6 +41,8 @@ export type PanelState =
   | 'everywhere'
   | 'trial'
   | 'themed'
+  | 'themed-dark'
+  | 'house-light'
   | 'edits'
   | 'menu'
   | 'dashboards'
@@ -153,6 +156,23 @@ export function mountPanel(
       ...hass,
       selectedTheme: { theme: 'Fluvy' },
       themes: { ...hass.themes, theme: 'Fluvy' },
+    } as HomeAssistant;
+  // Home Assistant holds a theme of one mode to it: Fluvy Dark is dark whatever the profile's mode says
+  if (has('themed-dark'))
+    hass = {
+      ...hass,
+      selectedTheme: { theme: 'Fluvy Dark' },
+      themes: { ...hass.themes, theme: 'Fluvy Dark', darkMode: true },
+    } as HomeAssistant;
+  if (has('house-light'))
+    hass = {
+      ...hass,
+      themes: {
+        ...hass.themes,
+        default_theme: 'Fluvy Light',
+        theme: 'Fluvy Light',
+        darkMode: false,
+      },
     } as HomeAssistant;
   const { handle } = look;
   const { store } = handle;

@@ -78,6 +78,31 @@ describe('the look engine', () => {
     expect(text(sheet)).toMatch(/--fluvy-palette: ?mint ?!important/);
   });
 
+  it('dresses an element in Fluvy Light or Fluvy Dark in the mode it holds to, but where a wall holds the page’s (#174)', () => {
+    const { look } = engine();
+    const volt = settings({ look: { palette: 'volt', shape: 'soft', pills: 'round' } });
+    const sheet = look.themedSheet();
+    /** Each rule of the sheet by what it selects (the marked elements' tree's half), its declarations. */
+    const rules = (): Record<string, string> =>
+      Object.fromEntries(
+        [...sheet.cssRules].map((rule) => [
+          (rule as CSSStyleRule).selectorText.split(',').at(-1)?.trim(),
+          (rule as CSSStyleRule).style.cssText,
+        ]),
+      );
+    look.apply(volt, true);
+    const dark = rules()['[fluvy-themed]'];
+    look.apply(volt, false);
+    const light = rules();
+    expect(Object.keys(light)).toEqual(['[fluvy-themed]', '[fluvy-themed="dark"]']);
+    expect(light['[fluvy-themed="dark"]']).toBe(dark);
+    look.apply(volt, true);
+    expect(rules()['[fluvy-themed="light"]']).toBe(light['[fluvy-themed]']);
+    // a wall's mode holds every element: Fluvy Light at night is dark there
+    look.apply(volt, true, true);
+    expect(Object.keys(rules())).toEqual(['[fluvy-themed]']);
+  });
+
   it('follows the mode, and does nothing again for the same look', () => {
     const { look, page, text } = engine();
     const volt = settings({

@@ -199,7 +199,8 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 
 ## What you get
 
-- **One theme, light and dark**, generated from the same tokens the cards are drawn with.
+- **One theme, light and dark**, generated from the same tokens the cards are drawn with, and as **Fluvy Light** and
+  **Fluvy Dark** for an automation to switch at sunset.
 - **Sixty-five cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and

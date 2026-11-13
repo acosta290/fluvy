@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
-import { PALETTE_TOKEN, THEME_SENTINEL } from '@fluvy/tokens/config';
+import { MODE_TOKEN, PALETTE_TOKEN, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { fetchSliderStyles, motionPreference, type Tone } from '@fluvy/ui';
 import { runAction, type ActionConfig } from './actions.js';
 import { resolveEntity, type EntityView } from './entity.js';
@@ -630,14 +630,15 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   /**
    * The look of `cards` (`syncTheme`), and with `width` their width off their boxes: every read before any write, so
    * cards read together force one style pass (and one layout) between them. The theme carries a sentinel the fallback
-   * never defines, so its read cannot feed back on itself; the rest is read live (`getComputedStyle`) once the
-   * fallback's attributes are on each host: the palette a card is drawn in from its first frame (#40), never the
-   * default's until it is attached again.
+   * never defines, so its read cannot feed back on itself, nor can the mode a theme of fluvy's holds a card to (#174);
+   * the rest is read live (`getComputedStyle`) once the fallback's attributes are on each host: the palette a card is
+   * drawn in from its first frame (#40), never the default's until it is attached again.
    */
   static readLooks(cards: readonly FluvyCard[], width = false): void {
     const computed = cards.map((card) => getComputedStyle(card));
     const bare = computed.map((style) => style.getPropertyValue(THEME_SENTINEL).trim() === '');
-    cards.forEach((card, i) => card.wear(bare[i] ?? false));
+    const held = computed.map((style) => style.getPropertyValue(MODE_TOKEN).trim());
+    cards.forEach((card, i) => card.wear(bare[i] ?? false, held[i]));
     cards.forEach((card, i) => {
       const style = computed[i] as CSSStyleDeclaration;
       card.readLook(style);
@@ -655,8 +656,9 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
    * `no-theme` and `dark` pick the token fallback (`:host([no-theme])`, `[dark]`): written at once, not at the next
    * update as a reflected property would be, so the tokens read after them are those the card is drawn in.
    */
-  private wear(noTheme: boolean): void {
-    const dark = darkOverride ?? this.hass?.themes?.darkMode ?? false;
+  private wear(noTheme: boolean, held?: string): void {
+    // the wall's mode, else the one a theme of fluvy's holds the card to (Fluvy Dark), else the page's
+    const dark = darkOverride ?? (held ? held === 'dark' : (this.hass?.themes?.darkMode ?? false));
     this.noTheme = noTheme;
     this.dark = dark;
     this.toggleAttribute('no-theme', noTheme);

@@ -5,11 +5,14 @@ export {
   cssVar,
   DEFAULT_MODE,
   DEFAULT_PALETTE,
+  isFluvyTheme,
+  MODE_THEMES,
   PALETTE_MODES,
   PALETTE_NAMES,
   PALETTE_TOKEN,
   THEME_NAME,
   THEME_SENTINEL,
+  themeMode,
   type PaletteName,
 } from './config.js';
 

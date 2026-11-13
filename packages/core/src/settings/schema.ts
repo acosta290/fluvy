@@ -14,7 +14,7 @@ import {
   type ShapeName,
   type StatusColours,
 } from '@fluvy/tokens/runtime';
-import { THEME_NAME } from '@fluvy/tokens/config';
+import { isFluvyTheme } from '@fluvy/tokens/config';
 import type { Look } from '../look/css.js';
 import {
   CHROME_DEFAULTS,
@@ -470,11 +470,11 @@ export function wearsLook(
 }
 
 /**
- * The scope a page applies. "Everywhere" holds while Home Assistant's own theme for this person is Fluvy (their
- * profile's, or the house's default): a person who picks another theme keeps it on every Home Assistant page, and the
- * look stays on Fluvy's dashboards, as with "only dashboards". Before Home Assistant says which theme it wears (the
- * first paint), the setting is taken as it is.
+ * The scope a page applies. "Everywhere" holds while Home Assistant's own theme for this person is Fluvy, Fluvy Light or
+ * Fluvy Dark (their profile's, or the house's default): a person who picks another theme keeps it on every Home
+ * Assistant page, and the look stays on Fluvy's dashboards, as with "only dashboards". Before Home Assistant says which
+ * theme it wears (the first paint), the setting is taken as it is.
  */
 export function pageScope(scope: Scope, theme: string | undefined): Scope {
-  return scope === 'everywhere' && theme && theme !== THEME_NAME ? 'dashboards' : scope;
+  return scope === 'everywhere' && theme && !isFluvyTheme(theme) ? 'dashboards' : scope;
 }

@@ -104,8 +104,9 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  *                        a suite mounts its own cards in it (`fluvyCatalogue`, `fluvySheets`, `fluvyOutOfReach`)
  * ?viewtheme=Fluvy       the frames in a view Home Assistant themed (a dashboard's view, else the stage, as a section):
  *                        the look by the bundle's engine and its watch, Fluvy's theme file written on the view as Home
- *                        Assistant writes it (#72); &viewtheme=Sandstone the same file under another name;
- *                        &lookscope=dashboards the look on the dashboard alone (see themes.ts)
+ *                        Assistant writes it (#72); &viewtheme=Fluvy%20Dark (or Light) the theme held to one mode
+ *                        (#174); &viewtheme=Sandstone the same file under another name; &lookscope=dashboards the
+ *                        look on the dashboard alone (see themes.ts)
  */
 const params = new URLSearchParams(location.search);
 const dark = params.get('mode') === 'dark';

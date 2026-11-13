@@ -296,10 +296,11 @@ dashboard's configuration, which Home Assistant's backups keep as well.
 
 ## "Everywhere" and the theme
 
-Home Assistant's own pages take Fluvy's design only while the theme Home Assistant wears for that person is **Fluvy**
-— their profile's theme, or the house's default. With another theme, every Home Assistant page keeps that theme and the
-look stays on Fluvy's dashboards, as with "only dashboards". The panel says so, and offers the Fluvy theme through the
-profile's own theme picker; it never changes anyone's theme by itself.
+Home Assistant's own pages take Fluvy's design only while the theme Home Assistant wears for that person is **Fluvy**,
+**Fluvy Light** or **Fluvy Dark** ([the three](theme.md#the-file)) — their profile's theme, or the house's default. With
+another theme, every Home Assistant page keeps that theme and the look stays on Fluvy's dashboards, as with "only
+dashboards". The panel says so, naming the theme in use, and offers the Fluvy theme through the profile's own theme
+picker; it never changes anyone's theme by itself.
 
 ## Our icons
 

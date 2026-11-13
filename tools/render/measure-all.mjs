@@ -97,6 +97,8 @@ const PANEL = [
   ['charts-styled', 'charts&state=styled,sets'],
   ['charts-editor', 'charts&state=sets,editor'],
   ['scope', 'scope'],
+  // the note that names the theme of fluvy's Home Assistant wears (#174): a profile on Fluvy Dark
+  ['scope-themed', 'scope&state=themed-dark'],
   // everywhere: the frame, our icons in the sidebar and in Settings, the Activity and History pages
   ['scope-everywhere', 'scope&state=everywhere'],
   ['dashboard', 'dashboard&state=dashboards'],

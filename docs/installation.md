@@ -23,7 +23,9 @@ Fluvy is in HACS's default store: it downloads and updates exactly as any other 
 2. Restart Home Assistant (HACS asks for it).
 3. **Settings → Devices & services → Add integration** → search for **Fluvy** → add. There is nothing to configure.
 4. Reload the browser, then choose the **Fluvy** theme in your profile (**Theme → Fluvy**) or accept the offer in
-   the panel's *Scope* tab. Everyone in the house does this once, on any device; it follows their profile.
+   the panel's *Scope* tab. Everyone in the house does this once, on any device; it follows their profile. **Fluvy
+   Light** and **Fluvy Dark** are the same theme held to one mode, for an automation to switch between
+   ([how](theme.md#light-by-day-dark-at-night)).
 
 ## Why an integration, and not a theme
 

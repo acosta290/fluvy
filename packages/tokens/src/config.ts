@@ -45,8 +45,28 @@ export function cssVar(path: string): string {
   return `--${BRAND.prefix}-${path}`;
 }
 
-/** The one theme fluvy installs, as Home Assistant lists it (profile, `frontend.set_theme`). */
+/** The theme fluvy installs, as Home Assistant lists it (profile, `frontend.set_theme`), in Home Assistant's mode. */
 export const THEME_NAME = 'Fluvy';
+
+/**
+ * The same theme held to one mode, installed beside it (Home Assistant holds a theme that has one mode to it): what an
+ * automation switches between with `frontend.set_theme`, as Home Assistant sets a theme but never a mode.
+ */
+export const MODE_THEMES: Readonly<Record<PaletteMode, string>> = {
+  light: `${THEME_NAME} Light`,
+  dark: `${THEME_NAME} Dark`,
+};
+
+/**
+ * The mode a theme of fluvy's holds to: `light` or `dark` for Fluvy Light and Fluvy Dark, `''` for Fluvy, which
+ * follows Home Assistant's; undefined for any other theme.
+ */
+export const themeMode = (name: string | null | undefined): PaletteMode | '' | undefined =>
+  name === THEME_NAME ? '' : PALETTE_MODES.find((mode) => MODE_THEMES[mode] === name);
+
+/** Whether Home Assistant's theme is one of fluvy's: Fluvy, Fluvy Light or Fluvy Dark. */
+export const isFluvyTheme = (name: string | null | undefined): boolean =>
+  themeMode(name) !== undefined;
 
 /**
  * The theme's sentinel: written by every fluvy theme, so it exists exactly where one is applied. The
@@ -59,3 +79,9 @@ export const THEME_SENTINEL = cssVar('theme');
  * card reads it to derive its own colour's family from the very palette it sits on.
  */
 export const PALETTE_TOKEN = cssVar('palette');
+
+/**
+ * Which mode the look is in under an element Home Assistant themed with a theme of fluvy's (`--fluvy-mode: dark` in a
+ * view in Fluvy Dark, on a light page too): a card reads it to draw in that mode.
+ */
+export const MODE_TOKEN = cssVar('mode');

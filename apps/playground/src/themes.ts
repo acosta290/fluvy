@@ -6,6 +6,7 @@ import {
   PERSONAL_DEFAULTS,
   resolveSettings,
   resyncCardThemes,
+  setDarkOverride,
   watchThemes,
   type EffectiveSettings,
   type Look,
@@ -19,38 +20,44 @@ import fluvyFile from '../../../custom_components/fluvy/themes/fluvy.yaml?raw';
  * the stage, which has no shadow root of its own as a section has none — themed as Home Assistant's
  * `applyThemesOnElement` (frontend 2026.10) themes a view, a section or a card's `theme:`: its record (`__themes`)
  * first, then every variable of the theme inline, an `--rgb-*` triplet beside each hex, the last theme's emptied.
- * `Fluvy` is the shipped theme file (`fluvy.yaml`, Linen's colours); `Sandstone` the same file under a name of the
- * person's own, a theme the look leaves as it is. The look is the engine's, as the bundle runs it, with its watch on the
- * records (`look/themed.ts`): on every page, or with `&lookscope=dashboards` on the dashboard alone (the root standing
- * for its panel).
+ * `Fluvy`, `Fluvy Light` and `Fluvy Dark` are the shipped theme file's (`fluvy.yaml`, Linen's colours; in a page of the
+ * other mode Home Assistant writes the last two's shared block alone, as they hold one mode each); `Sandstone` is Fluvy
+ * under a name of the person's own, a theme the look leaves as it is. The look is the engine's, as the bundle runs it,
+ * with its watch on the records (`look/themed.ts`): on every page, or with `&lookscope=dashboards` on the dashboard
+ * alone (the root standing for its panel).
  *
  * For the suites: `fluvyApplyTheme(element, name)` themes any element so (no name: none), `fluvyLook({ look, dark })`
- * applies another look or mode as the settings would.
+ * applies another look or mode as the settings would, and with `wall: true` the mode as a wall holds the page to it
+ * (its cards too).
  */
 
 type Vars = Record<string, string>;
-interface ThemeFile {
-  readonly base: Vars;
-  readonly light: Vars;
-  readonly dark: Vars;
+/** A theme: its top level, and each mode it declares. */
+interface Theme {
+  base: Vars;
+  light?: Vars;
+  dark?: Vars;
 }
 
-/** A theme file as Home Assistant reads it: its top level, then `modes:` with `light:` and `dark:`. */
-function parse(text: string): ThemeFile {
-  const file: ThemeFile = { base: {}, light: {}, dark: {} };
-  let part: keyof ThemeFile = 'base';
+/** A theme file as Home Assistant reads it: each theme by its name, its top level, then `modes:` with its modes. */
+function parse(text: string): Record<string, Theme> {
+  const themes: Record<string, Theme> = {};
+  let theme: Theme | undefined;
+  let vars: Vars = {};
   for (const line of text.split('\n')) {
+    const name = /^([^\s#].*):$/.exec(line)?.[1];
+    if (name) themes[name] = theme = { base: (vars = {}) };
     const mode = /^ {4}(light|dark):$/.exec(line)?.[1];
-    if (mode === 'light' || mode === 'dark') part = mode;
+    if (theme && (mode === 'light' || mode === 'dark')) theme[mode] = vars = {};
     const [, key, value] = /^ +([\w-]+): (".*")$/.exec(line) ?? [];
     // a value is a YAML double-quoted string escaping only `\` and `"`: as JSON reads it
-    if (key && value) file[part][key] = JSON.parse(value) as string;
+    if (key && value) vars[key] = JSON.parse(value) as string;
   }
-  return file;
+  return themes;
 }
 
-const fluvy = parse(fluvyFile);
-const THEMES: Record<string, ThemeFile> = { Fluvy: fluvy, Sandstone: fluvy };
+const shipped = parse(fluvyFile);
+const THEMES: Record<string, Theme> = { ...shipped, Sandstone: shipped['Fluvy'] as Theme };
 
 type Themed = HTMLElement & { __themes?: { cacheKey?: string; keys?: Record<string, ''> } };
 
@@ -93,6 +100,7 @@ export interface ViewThemeOptions {
 /** Puts the look on the page, starts its watch, then themes the frames' wrapper: `root` a dashboard's, or the stage. */
 export async function mountViewTheme(root: HTMLElement, options: ViewThemeOptions): Promise<void> {
   let dark = options.dark;
+  let wall = false;
   let settings: EffectiveSettings = {
     ...resolveSettings(HOUSE_DEFAULTS, PERSONAL_DEFAULTS),
     look: options.look,
@@ -102,15 +110,17 @@ export async function mountViewTheme(root: HTMLElement, options: ViewThemeOption
   const engine = new LookEngine(document, () => new CSSStyleSheet(), undefined);
   // as the bundle's look applies it: the cards look again for their theme when it moved
   const apply = (): void => {
-    if (engine.apply(settings, dark)) resyncCardThemes();
+    setDarkOverride(wall ? dark : undefined);
+    if (engine.apply(settings, dark, wall)) resyncCardThemes();
   };
   apply();
   watchThemes(document, () => engine.themedSheet(), resyncCardThemes);
   Object.assign(window, {
     fluvyApplyTheme: (element: HTMLElement, name?: string) => applyTheme(element, name, dark),
-    fluvyLook: (next: { look?: Look; dark?: boolean }) => {
+    fluvyLook: (next: { look?: Look; dark?: boolean; wall?: boolean }) => {
       settings = { ...settings, ...(next.look ? { look: next.look } : {}) };
       dark = next.dark ?? dark;
+      wall = next.wall ?? wall;
       apply();
     },
   });

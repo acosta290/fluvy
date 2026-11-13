@@ -175,7 +175,7 @@ export function startLook(): LookHandle | undefined {
   /** The mode the page is in: the wall's, else Home Assistant's, else the system's. */
   const dark = (): boolean => wall.dark ?? appHass()?.themes?.darkMode ?? prefersDark();
   const apply = (): void => {
-    const changed = engine.apply(current(), dark());
+    const changed = engine.apply(current(), dark(), wall.dark !== undefined);
     if (changed) resyncCardThemes();
     frame();
     // Inter, once Fluvy is in use on the page (the theme on, the look covering the app, a wall, a dashboard that
@@ -254,7 +254,7 @@ export function startLook(): LookHandle | undefined {
   // the view tabs as the house chose them, in every dashboard's header, and the page's background under its view
   // (re-marked on each of its updates)
   void patchViewRoots(env.customElements, tabsFor, paint);
-  // a view, a section or a card Home Assistant themed with the theme named Fluvy wears the look over the theme file's
+  // a view, a section or a card Home Assistant themed with a theme of fluvy's wears the look over the theme file's
   // colours it wrote on it (the cards inside look again when one is marked)
   const offThemes = watchThemes(env.document, () => engine.themedSheet(), resyncCardThemes);
   const offFrames = onPanelFrame((frame) =>

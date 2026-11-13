@@ -68,6 +68,8 @@ export function validateThemeYaml(source: string): readonly ThemeProblem[] {
   }
   const themes = Object.entries(doc as Record<string, unknown>);
   if (themes.length === 0) problems.push({ path: '$', message: 'no theme declared' });
+  /** The keys the file's first mode declares: every mode of every theme in it declares the same. */
+  let keys: string | undefined;
   for (const [name, body] of themes) {
     if (body === null || typeof body !== 'object' || Array.isArray(body)) {
       problems.push({ path: name, message: 'theme body must be a map' });
@@ -81,7 +83,7 @@ export function validateThemeYaml(source: string): readonly ThemeProblem[] {
       continue;
     }
     if (modes === null || typeof modes !== 'object' || Array.isArray(modes)) {
-      problems.push({ path: `${name}.modes`, message: 'must be a map with "light" and "dark"' });
+      problems.push({ path: `${name}.modes`, message: 'must be a map of "light", "dark" or both' });
       continue;
     }
     const modeMap = modes as Record<string, unknown>;
@@ -89,22 +91,25 @@ export function validateThemeYaml(source: string): readonly ThemeProblem[] {
       if (extra !== 'light' && extra !== 'dark')
         problems.push({ path: `${name}.modes.${extra}`, message: 'unknown mode' });
     }
-    for (const mode of ['light', 'dark'] as const) {
+    // both modes, or one that Home Assistant then holds the theme to
+    const declared = (['light', 'dark'] as const).filter((mode) => mode in modeMap);
+    if (declared.length === 0)
+      problems.push({ path: `${name}.modes`, message: 'declares neither "light" nor "dark"' });
+    for (const mode of declared) {
       const vars = modeMap[mode];
       if (vars === null || typeof vars !== 'object' || Array.isArray(vars)) {
-        problems.push({ path: `${name}.modes.${mode}`, message: 'missing or not a map' });
+        problems.push({ path: `${name}.modes.${mode}`, message: 'not a map' });
         continue;
       }
       checkMap(vars as Record<string, unknown>, `${name}.modes.${mode}`, problems, false);
+      const own = Object.keys(vars).sort().join('|');
+      keys ??= own;
+      if (own !== keys)
+        problems.push({
+          path: `${name}.modes.${mode}`,
+          message: 'declares other keys than the first mode in the file',
+        });
     }
-    const light = Object.keys((modeMap['light'] ?? {}) as object)
-      .sort()
-      .join('|');
-    const dark = Object.keys((modeMap['dark'] ?? {}) as object)
-      .sort()
-      .join('|');
-    if (light !== dark)
-      problems.push({ path: `${name}.modes`, message: 'light and dark declare different keys' });
   }
   return problems;
 }

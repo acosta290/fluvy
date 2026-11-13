@@ -4,7 +4,7 @@ import { parse } from 'yaml';
 import { contrastRatio, derivePalette, derivePalettes, GATES, type Hex } from '@fluvy/tokens';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import { seedOf } from '@fluvy/tokens/runtime';
-import { emitThemeYaml, THEME_NAME } from '../emit.js';
+import { emitThemeYaml, MODE_THEMES, THEME_NAME } from '../emit.js';
 import { validateThemeYaml } from '../validate.js';
 
 const linen = derivePalettes().find((p) => p.name === 'linen')!;
@@ -14,11 +14,21 @@ describe('theme yaml', () => {
   const doc = parse(yaml) as Record<string, Record<string, unknown>>;
   const theme = doc[THEME_NAME]!;
 
-  it('is named for the palette and declares both modes with the same keys', () => {
-    expect(Object.keys(doc)).toEqual(['Fluvy']);
+  it('is named Fluvy and declares both modes with the same keys', () => {
     const modes = theme['modes'] as Record<string, Record<string, string>>;
     expect(Object.keys(modes)).toEqual(['light', 'dark']);
     expect(Object.keys(modes['light']!).sort()).toEqual(Object.keys(modes['dark']!).sort());
+  });
+
+  it('holds Fluvy Light and Fluvy Dark beside it: the same theme with one mode, under the same stamp (#174)', () => {
+    expect(Object.keys(doc)).toEqual(['Fluvy', 'Fluvy Light', 'Fluvy Dark']);
+    const { modes, ...shared } = theme;
+    for (const mode of ['light', 'dark'] as const) {
+      const held = doc[MODE_THEMES[mode]]!;
+      const { modes: own, ...rest } = held;
+      expect(rest).toEqual(shared);
+      expect(own).toEqual({ [mode]: (modes as Record<string, unknown>)[mode] });
+    }
   });
 
   it('passes the offline validator', () => {
@@ -117,5 +127,26 @@ describe('validator', () => {
         'Fluvy:\n  --primary-color: "#aabbcc"\n  modes:\n    light: {}\n    dark: {}\n',
       ).some((p) => p.message.includes('leading')),
     ).toBe(true);
+    expect(validateThemeYaml('Fluvy:\n  modes: {}\n')[0]?.message).toMatch(/neither/);
+  });
+
+  it('takes a theme held to one mode, its keys those of every other mode in the file', () => {
+    const fluvy =
+      'Fluvy:\n  modes:\n    light:\n      primary-color: "#aabbcc"\n    dark:\n      primary-color: "#ccbbaa"\n';
+    expect(
+      validateThemeYaml(
+        `${fluvy}Fluvy Dark:\n  modes:\n    dark:\n      primary-color: "#ccbbaa"\n`,
+      ),
+    ).toEqual([]);
+    expect(
+      validateThemeYaml(
+        `${fluvy}Fluvy Dark:\n  modes:\n    dark:\n      accent-color: "#ccbbaa"\n`,
+      ),
+    ).toEqual([
+      {
+        path: 'Fluvy Dark.modes.dark',
+        message: 'declares other keys than the first mode in the file',
+      },
+    ]);
   });
 });

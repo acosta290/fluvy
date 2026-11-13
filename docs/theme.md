@@ -6,12 +6,51 @@ see in a card and in a Home Assistant dialog comes from the same numbers.
 
 ## The file
 
-`themes/fluvy/fluvy.yaml`, installed by the integration, holds one theme, **Fluvy**, with a light and a dark mode;
-Home Assistant decides which mode from your profile (light, dark, or the system's). The file carries the default
-look, Linen; every other palette and shape is applied on top of it by the panel, live, without a reload — the theme
-file is what paints the first frame and what Home Assistant's own dialogs and pages follow. Wherever Home Assistant
-applies the theme named Fluvy, the look goes over it: your profile's theme, a view's or a section's *Theme*, a card's
-`theme:` all wear the palette and mode you chose, never the file's Linen.
+`themes/fluvy/fluvy.yaml`, installed by the integration, holds three themes, one look in each:
+
+| Theme | Its mode |
+| --- | --- |
+| **Fluvy** | light or dark, as Home Assistant decides from your profile (Auto, Light or Dark) |
+| **Fluvy Light** (1.20) | always light |
+| **Fluvy Dark** (1.20) | always dark |
+
+The file carries the default look, Linen; every other palette and shape is applied on top of it by the panel, live,
+without a reload — the theme file is what paints the first frame and what Home Assistant's own dialogs and pages
+follow. Wherever Home Assistant applies one of the three, the look goes over it: your profile's theme, a view's or a
+section's *Theme*, a card's `theme:` all wear the palette you chose, never the file's Linen, in the theme's mode. A
+view or a section themed **Fluvy Dark** is dark on a light page, its cards too, and one themed **Fluvy Light** is light
+on a dark page; a wall that holds a mode of its own ([*Day and night*](wall.md): Dark, Sun or Hours) holds every view
+to it.
+
+The profile's Auto, Light and Dark choice is **Fluvy**'s alone: Home Assistant shows it only for a theme with both
+modes, and holds Fluvy Light and Fluvy Dark to theirs. Each of the three is the Fluvy theme to *Scope → Everywhere*,
+and the panel's *Scope* tab names the one in use.
+
+### Light by day, dark at night
+
+Home Assistant's `frontend.set_theme` action sets the house's default theme by its name, never a mode: an automation
+switches the mode by switching between Fluvy Light and Fluvy Dark. Set your profile's theme to **Use default theme**
+(in Home Assistant's profile, *Theme*), and let the sun choose:
+
+```yaml
+alias: Fluvy follows the sun
+triggers:
+  - trigger: state
+    entity_id: sun.sun
+    to: below_horizon
+    id: night
+  - trigger: state
+    entity_id: sun.sun
+    to: above_horizon
+    id: day
+actions:
+  - action: frontend.set_theme
+    data:
+      name: "{{ 'Fluvy Dark' if trigger.id == 'night' else 'Fluvy Light' }}"
+```
+
+Every browser on the default theme turns dark at sunset and light at sunrise; a person whose profile names a theme of
+their own keeps it.
 
 ## Palettes
 

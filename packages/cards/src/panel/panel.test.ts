@@ -1986,6 +1986,45 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('names Fluvy Light or Fluvy Dark where Home Assistant wears one, and takes the house back from both (#174)', async () => {
+    const profile = await mount(true, {
+      selectedTheme: { theme: 'Fluvy Dark' },
+      themes: { darkMode: true, theme: 'Fluvy Dark', default_theme: 'default', themes: {} },
+    });
+    profile.panel.tab = 'scope';
+    await profile.settle();
+    expect(profile.root.querySelector('.pn-status')?.textContent).toContain(
+      'Your profile uses the Fluvy Dark theme',
+    );
+    profile.panel.remove();
+    // the house's default theme Fluvy Light, its dark one Fluvy Dark (as an automation or `mode: dark` sets them)
+    const called: unknown[] = [];
+    const house = await mount(true, {
+      selectedTheme: {},
+      themes: {
+        darkMode: false,
+        theme: 'Fluvy Light',
+        default_theme: 'Fluvy Light',
+        default_dark_theme: 'Fluvy Dark',
+        themes: {},
+      },
+      callService: async (domain: string, service: string, data: unknown) =>
+        void called.push([domain, service, data]),
+    });
+    house.panel.tab = 'scope';
+    await house.settle();
+    expect(house.root.querySelector('.pn-status')?.textContent).toContain(
+      'Home Assistant’s default theme is Fluvy Light',
+    );
+    house.root.querySelector<HTMLButtonElement>('.pn-status .fv-btn')!.click();
+    await house.settle();
+    expect(called).toEqual([
+      ['frontend', 'set_theme', { name: 'default' }],
+      ['frontend', 'set_theme', { name: 'none', mode: 'dark' }],
+    ]);
+    house.panel.remove();
+  });
+
   it('says a theme of their own keeps Home Assistant, and offers the Fluvy theme', async () => {
     const { panel, root, handle, settle } = await mount(true, {
       selectedTheme: { theme: 'default' },

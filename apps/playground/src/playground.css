@@ -41,12 +41,13 @@ html[data-mode='dark'] body {
   padding: 32px;
 }
 /* ?dashboard: Home Assistant's page, edge to edge (its header, then the view on its background: `hui-view-background`,
-   under the view, which nothing above the page may paint over — Home Assistant's body paints nothing either) */
+   under the view, which nothing above the page may paint over — Home Assistant's body paints nothing either, in
+   either mode) */
 .pg-stage.pg-dashboard {
   display: block;
   padding: 0;
 }
-body:has(> .pg-dashboard) {
+html body:has(> .pg-dashboard) {
   background: none;
 }
 .pg-dashboard hui-root {

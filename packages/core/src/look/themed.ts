@@ -1,5 +1,5 @@
-import { THEME_NAME } from '@fluvy/tokens/config';
-import { declarationsCss, type CssDeclaration } from '@fluvy/tokens/runtime';
+import { MODE_TOKEN, themeMode } from '@fluvy/tokens/config';
+import { declarationsCss, type CssDeclaration, type PaletteMode } from '@fluvy/tokens/runtime';
 import { adoptLast, walkShadow } from '../shell/dom.js';
 import { guard } from '../shell/patches.js';
 import { THEMED_ATTRIBUTE } from './attributes.js';
@@ -11,10 +11,12 @@ import { THEMED_ATTRIBUTE } from './attributes.js';
  * Linen's colours), so under such an element the palette the person chose lost to Linen's (#72). Home Assistant keeps a
  * record on each element it themes (`__themes`: the theme's key, `Fluvy` or `Fluvy__dark`, and the variables it wrote),
  * set just before it writes them: the record is watched through an accessor on the elements' prototype, and an element
- * in the theme named Fluvy is marked, its root given the look's sheet, whose declarations win over the inline ones
- * (`!important`): the person's palette and mode, as on the page around it, kept in step by the look engine (one sheet
- * for every such element). An element in another theme is the person's choice and stays as Home Assistant themed it;
- * the page itself (`<html>`) is the look's own (`engine.ts`).
+ * in a theme of fluvy's is marked, its root given the look's sheet, whose declarations win over the inline ones
+ * (`!important`): the person's palette, in the mode of the page around it, or in the mode Fluvy Light and Fluvy Dark
+ * hold to (the mark says which: `fluvy-themed="dark"`; Home Assistant writes such a theme in the page's mode, where the
+ * other has nothing), kept in step by the look engine (one sheet for every such element). An element in another theme
+ * is the person's choice and stays as Home Assistant themed it; the page itself (`<html>`) is the look's own
+ * (`engine.ts`).
  */
 
 /** Home Assistant's record on an element it themed (frontend 2026.9–2026.10): the theme's key, `__dark` in dark mode. */
@@ -24,16 +26,29 @@ interface ThemeRecord {
 
 type Recorded = HTMLElement & { __themes?: ThemeRecord };
 
-/** Whether Home Assistant themed an element with the theme named Fluvy, in either mode. */
-export const wearsFluvy = (record: ThemeRecord | undefined): boolean =>
-  record?.cacheKey === THEME_NAME || record?.cacheKey === `${THEME_NAME}__dark`;
+/**
+ * The theme of fluvy's Home Assistant themed an element with, in either mode, by the mode it holds to (`themeMode`:
+ * `light`, `dark`, `''` for Fluvy); undefined for another theme, or none.
+ */
+export const themedMode = (record: ThemeRecord | undefined): PaletteMode | '' | undefined =>
+  themeMode(record?.cacheKey?.replace(/__dark$/, ''));
+
+/** One mode of the look, as declarations. */
+type ModeLook = readonly [mode: PaletteMode, declarations: readonly CssDeclaration[]];
 
 /**
- * The look on a marked element, over the variables Home Assistant wrote inline on it: from the element's own shadow
- * root (`:host`) or from the tree it sits in.
+ * The look on the elements marked `mark` (a bare mark, or `="dark"`), from their own shadow root or from their tree,
+ * with the mode it is in for the cards under them (`MODE_TOKEN`).
  */
-export const themedRule = (declarations: readonly CssDeclaration[]): string =>
-  `:host([${THEMED_ATTRIBUTE}]),[${THEMED_ATTRIBUTE}]{${declarationsCss(declarations, true)}}`;
+const markedRule = (mark: string, [mode, declarations]: ModeLook): string =>
+  `:host([${THEMED_ATTRIBUTE}${mark}]),[${THEMED_ATTRIBUTE}${mark}]{${declarationsCss([...declarations, [MODE_TOKEN, mode]], true)}}`;
+
+/**
+ * The look on a marked element, over the variables Home Assistant wrote inline on it: in the page's mode, and with
+ * `held` in the other mode on an element whose theme holds to that one (Fluvy Dark in a light page).
+ */
+export const themedRule = (page: ModeLook, held?: ModeLook): string =>
+  markedRule('', page) + (held ? markedRule(`="${held[0]}"`, held) : '');
 
 interface Watch {
   /** The look's sheet for the marked elements. */
@@ -53,17 +68,21 @@ let queued = false;
 /** A shadow root or a document: what can adopt a sheet (an element out of the page has neither above it). */
 const adopts = (node: Node): node is Node & DocumentOrShadowRoot => 'adoptedStyleSheets' in node;
 
-/** Marks an element by the theme Home Assistant is about to write on it, and gives its root the look's sheet. */
+/**
+ * Marks an element by the theme Home Assistant is about to write on it (with the mode a theme holds to), and gives its
+ * root the look's sheet.
+ */
 function mark(element: HTMLElement, record: ThemeRecord | undefined): void {
   if (!watch) return;
-  const on = wearsFluvy(record) && element !== element.ownerDocument.documentElement;
-  if (on) {
+  const mode = element === element.ownerDocument.documentElement ? undefined : themedMode(record);
+  if (mode !== undefined) {
     // its own shadow root goes wherever it goes; a section draws in its parent's (Home Assistant themes it on each connect)
     const root = element.shadowRoot ?? element.getRootNode();
     if (adopts(root)) adoptLast(root, watch.sheet());
   }
-  if (element.hasAttribute(THEMED_ATTRIBUTE) === on) return;
-  element.toggleAttribute(THEMED_ATTRIBUTE, on);
+  if (element.getAttribute(THEMED_ATTRIBUTE) === (mode ?? null)) return;
+  if (mode === undefined) element.removeAttribute(THEMED_ATTRIBUTE);
+  else element.setAttribute(THEMED_ATTRIBUTE, mode);
   // a view's sections and cards are themed in one go: their cards look again once, after Home Assistant wrote them all
   if (queued) return;
   queued = true;

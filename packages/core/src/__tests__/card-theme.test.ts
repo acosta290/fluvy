@@ -123,4 +123,24 @@ describe('a card where no look reaches it (#40)', () => {
     expect(card.hasAttribute('no-theme')).toBe(false);
     expect(drawn(card)).toBe(accentHex('iris', 'light', 'black'));
   });
+
+  it('draws in the mode a theme of fluvy’s holds it to, on a page in the other (#174)', async () => {
+    const card = document.createElement('fluvy-card-theme-test-card') as ColourCard;
+    card.setConfig({ type: 'custom:fluvy-card-theme-test-card', color: 'black' });
+    card.hass = hassIn(false);
+    // in a view in Fluvy Dark: the look's sheet on the marked view says the mode its cards are in
+    card.style.setProperty('--fluvy-theme', '1');
+    card.style.setProperty('--fluvy-palette', 'iris');
+    card.style.setProperty('--fluvy-mode', 'dark');
+    document.body.append(card);
+    await card.updateComplete;
+    expect(card.hasAttribute('dark')).toBe(true);
+    expect(drawn(card)).toBe(accentHex('iris', 'dark', 'black'));
+    // in Fluvy Light on a dark page
+    card.style.setProperty('--fluvy-mode', 'light');
+    card.hass = hassIn(true);
+    await card.updateComplete;
+    expect(card.hasAttribute('dark')).toBe(false);
+    expect(drawn(card)).toBe(accentHex('iris', 'light', 'black'));
+  });
 });

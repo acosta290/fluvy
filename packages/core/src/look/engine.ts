@@ -50,8 +50,9 @@ interface HassElement extends Element {
  *   `:root { … !important }` — it wins over whatever theme the profile applies inline, without touching
  *   the profile; `<html fluvy-look>` tells the shell to style Home Assistant's pages;
  * - `dashboards`: the same declarations on `ha-panel-lovelace` hosts that wear the look (`panels.ts`);
- * - in either scope, on the elements Home Assistant themed with the theme named Fluvy (a view, a section, a card's
- *   `theme:`), over the theme file's colours it wrote on them (`themed.ts`);
+ * - in either scope, on the elements Home Assistant themed with a theme of fluvy's (a view, a section, a card's
+ *   `theme:`), over the theme file's colours it wrote on them, in the mode Fluvy Light or Fluvy Dark holds to
+ *   (`themed.ts`);
  * - always: the cards' token fallback becomes this look, so a fluvy card anywhere else follows it.
  * Then, as Home Assistant does after it applies a theme, the page background, the browser's theme colour
  * and the companion app (status bar) are brought up to date — while Fluvy is in use on the page, and once more
@@ -61,9 +62,10 @@ export class LookEngine {
   private readonly targets: Target[] = [];
   /** Pushed into `ha-panel-lovelace`'s styles by the starter. */
   readonly panelSheet: CSSStyleSheet;
-  /** The look on the elements Home Assistant themed with the theme named Fluvy: made when the first is marked. */
+  /** The look on the elements Home Assistant themed with a theme of fluvy's: made when the first is marked. */
   private themed: CSSStyleSheet | undefined;
-  private declarations: readonly CssDeclaration[] = [];
+  /** Its rules for the look applied last, written when it is made. */
+  private themedCss = (): string => '';
   private applied = '';
   private fallback = '';
   private pageCss = '';
@@ -107,11 +109,14 @@ export class LookEngine {
     else document.documentElement.removeAttribute(ORIGINAL_ICONS);
   }
 
-  /** Applies the look; true when anything changed (the cards then look for the theme again). */
-  apply(settings: EffectiveSettings, dark: boolean): boolean {
+  /**
+   * Applies the look; true when anything changed (the cards then look for the theme again). `held`: the page's mode is
+   * held (a wall's), and an element in Fluvy Light or Fluvy Dark follows it too.
+   */
+  apply(settings: EffectiveSettings, dark: boolean, held = false): boolean {
     const mode: PaletteMode = dark ? 'dark' : 'light';
     const { look, scope, statuses } = settings;
-    const key = `${lookKey(look)}${statusesKey(statuses)}|${scope}|${mode}`;
+    const key = `${lookKey(look)}${statusesKey(statuses)}|${scope}|${mode}|${held}`;
     if (key === this.applied) return false;
     this.applied = key;
 
@@ -130,8 +135,13 @@ export class LookEngine {
     this.panelSheet.replaceSync(
       everywhere ? '' : `:host([${PANEL_ATTRIBUTE}]){${declarationsCss(declarations)}}`,
     );
-    this.declarations = declarations;
-    this.themed?.replaceSync(themedRule(declarations));
+    const other: PaletteMode = dark ? 'light' : 'dark';
+    this.themedCss = () =>
+      themedRule(
+        [mode, declarations],
+        held ? undefined : [other, declarationsOf(look, other, statuses)],
+      );
+    this.themed?.replaceSync(this.themedCss());
     this.applyFallback(look, statuses);
     // on a page that does not wear Fluvy, the chrome is Home Assistant's, as its theme left it; on the apply that takes
     // Fluvy off, once more: Home Assistant read it while our sheet was still on, and the page now computes its theme's
@@ -142,11 +152,14 @@ export class LookEngine {
     return true;
   }
 
-  /** The look's sheet for the elements Home Assistant themed with the theme named Fluvy (`themed.ts`), in its mode. */
+  /**
+   * The look's sheet for the elements Home Assistant themed with a theme of fluvy's (`themed.ts`): in the page's mode,
+   * or in the one Fluvy Light or Fluvy Dark holds to.
+   */
   themedSheet(): CSSStyleSheet {
     if (!this.themed) {
       this.themed = this.createSheet();
-      this.themed.replaceSync(themedRule(this.declarations));
+      this.themed.replaceSync(this.themedCss());
     }
     return this.themed;
   }

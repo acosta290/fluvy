@@ -31,7 +31,7 @@ import {
   writeDevice,
 } from '@fluvy/core';
 import { backgroundStyle, styleText } from '@fluvy/core/background';
-import { THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
+import { isFluvyTheme, THEME_NAME, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { statusesKey } from '@fluvy/tokens/runtime';
 
 import { baseStyles, fitPills, ico, motionPreference, reducedMotion, sideScroll } from '@fluvy/ui';
@@ -808,15 +808,16 @@ export class FluvyPanel extends LitElement {
   }
 
   /**
-   * The Fluvy theme chosen in Home Assistant itself (this person's profile, or the house's default theme) wears the
-   * look on every page whatever the scope: the Scope tab says so, and offers Home Assistant's own way back.
+   * A theme of fluvy's chosen in Home Assistant itself (Fluvy, Fluvy Light or Fluvy Dark: this person's profile, or the
+   * house's default theme) wears the look on every page whatever the scope: the Scope tab says so, and offers Home
+   * Assistant's own way back.
    */
   private themeSource(): 'profile' | 'house' | 'other' | null {
     const hass = this.hass;
-    if (hass?.selectedTheme?.theme === THEME_NAME) return 'profile';
+    if (isFluvyTheme(hass?.selectedTheme?.theme)) return 'profile';
     const theme = hass?.themes?.theme;
     if (!theme) return null;
-    return theme === THEME_NAME ? 'house' : 'other';
+    return isFluvyTheme(theme) ? 'house' : 'other';
   }
 
   /** The theme Home Assistant wears, as its profile lists it (its own default is "Home Assistant"). */
@@ -838,7 +839,7 @@ export class FluvyPanel extends LitElement {
     else
       this.run(async () => {
         await hass.callService('frontend', 'set_theme', { name: 'default' });
-        if (hass.themes.default_dark_theme === THEME_NAME)
+        if (isFluvyTheme(hass.themes.default_dark_theme))
           await hass.callService('frontend', 'set_theme', { name: 'none', mode: 'dark' });
       });
   }

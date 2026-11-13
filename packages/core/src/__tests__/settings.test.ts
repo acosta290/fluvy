@@ -528,9 +528,13 @@ describe('resolving the two layers', () => {
 
   it('keeps everywhere only while Home Assistant wears the Fluvy theme', () => {
     expect(pageScope('everywhere', 'Fluvy')).toBe('everywhere');
+    // the same held to one mode (#174)
+    expect(pageScope('everywhere', 'Fluvy Light')).toBe('everywhere');
+    expect(pageScope('everywhere', 'Fluvy Dark')).toBe('everywhere');
     // another theme in the profile (Home Assistant's own, or any other): its pages are its, Fluvy's dashboards stay
     expect(pageScope('everywhere', 'default')).toBe('dashboards');
     expect(pageScope('everywhere', 'Minimalist')).toBe('dashboards');
+    expect(pageScope('everywhere', 'Fluvy Linen')).toBe('dashboards');
     // before Home Assistant says (the first paint) the setting holds
     expect(pageScope('everywhere', undefined)).toBe('everywhere');
     expect(pageScope('dashboards', 'Fluvy')).toBe('dashboards');
