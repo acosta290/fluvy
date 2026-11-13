@@ -300,6 +300,16 @@ describe('what a list’s sections add to its declared height', () => {
     expect(sectionsHeight(['sensor.a', { type: 'divider' }, 'sensor.b'])).toBe(16);
     // a list that sits 8 under its head gives its first label that 8 too
     expect(sectionsHeight([{ section: 'Down' }, 'sensor.a'], 28)).toBe(28);
+    // a label's hairline is drawn inside its band: as tall with it as without; one with no label is a hairline alone
+    expect(
+      sectionsHeight([
+        { section: 'Down', line: true },
+        'sensor.a',
+        { section: 'Up', line: true },
+        'sensor.b',
+      ]),
+    ).toBe(48);
+    expect(sectionsHeight(['sensor.a', { type: 'section', line: true }, 'sensor.b'])).toBe(16);
   });
 
   it('counts what the config can ever draw: every row showing, whatever its condition says now', () => {

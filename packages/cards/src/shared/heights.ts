@@ -49,7 +49,7 @@ export const entryCount = (config: LovelaceCardConfig, keys: readonly string[]):
 /**
  * What a list's sections add to its rows as its config lays it out, every row showing (`shownOf`): a label 28 (its
  * 20 line 8 under what precedes it) — `first` where it starts the list: 20, the line alone under the head's 16 — and
- * a hairline alone 16.
+ * a hairline alone 16. A label's own hairline (`line`) is drawn on its band's top edge, inside its 28: as tall.
  */
 export const sectionsHeight = (list: unknown, first = 20): number =>
   shownOf(listedOf(list), () => true).reduce<number>(
