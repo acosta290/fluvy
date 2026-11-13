@@ -138,14 +138,30 @@ export function sourceNames(
   const names = sources.map(
     (o) => o.name ?? (several(o.kind) && o.entity ? shortName(view(o.entity)) : kindName(o.kind)),
   );
+  return apart(
+    hass,
+    names,
+    sources.map((o) => (o.name === undefined ? o.entity : undefined)),
+    (i, j) => sources[i]?.kind === sources[j]?.kind,
+    (i) => deviceName(view(sources[i]?.entity as string)),
+  );
+}
+
+/**
+ * Names told apart where two read the same (`alike` says which may be twins): each such name its device's, as the house
+ * names it, else `whole(i)`; a name with no sensor given (the person's own) is never replaced (#170).
+ */
+export function apart(
+  hass: HomeAssistant | undefined,
+  names: readonly string[],
+  entities: readonly (string | undefined)[],
+  alike: (i: number, j: number) => boolean,
+  whole: (i: number) => string,
+): string[] {
   return names.map((name, i) => {
-    const { kind, name: own, entity } = sources[i] as NamedSource;
-    const twin = names.some((other, j) => j !== i && other === name && sources[j]?.kind === kind);
-    if (own !== undefined || !twin || !entity) return name;
-    return (
-      deviceNameOf(hass?.devices?.[hass.entities?.[entity]?.device_id ?? '']) ??
-      deviceName(view(entity))
-    );
+    const entity = entities[i];
+    if (!entity || !names.some((other, j) => j !== i && other === name && alike(i, j))) return name;
+    return deviceNameOf(hass?.devices?.[hass.entities?.[entity]?.device_id ?? '']) ?? whole(i);
   });
 }
 

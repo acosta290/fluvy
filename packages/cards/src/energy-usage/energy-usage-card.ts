@@ -1,7 +1,6 @@
 import {
   clock12,
   dateFormat,
-  deviceNameOf,
   houseZone,
   isEntityId,
   isPaletteRef,
@@ -83,7 +82,7 @@ import {
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { energyLegend, legendColumns, type LegendEntry } from '../energy/legend-row.js';
-import { shortName } from '../energy/power.js';
+import { apart, shortName } from '../energy/power.js';
 import {
   GRAIN_PRESET,
   presetSpan,
@@ -789,14 +788,14 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
           ? this.kindWord(false)
           : this.meterName(m.entity),
     );
-    return list.map((m, i) => {
-      const name = names[i] as string;
-      const twin = m.name == null && names.some((other, j) => j !== i && other === name);
-      const device = twin
-        ? deviceNameOf(this.hass?.devices?.[this.hass.entities?.[m.entity]?.device_id ?? ''])
-        : undefined;
-      return { id: m.entity, name: device ?? name, color: m.color };
-    });
+    const told = apart(
+      this.hass,
+      names,
+      list.map((m) => (m.name == null ? m.entity : undefined)),
+      () => true,
+      (i) => names[i] as string,
+    );
+    return list.map((m, i) => ({ id: m.entity, name: told[i] as string, color: m.color }));
   }
 
   /** A meter's own name: an imported statistic's as the recorder keeps it, a sensor's short. */
