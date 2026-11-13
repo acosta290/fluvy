@@ -5,6 +5,176 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- A tap that opens the details of a light, a thermostat, a water heater, a humidifier, a cover, a valve, a media player
+  or a fan on a Fluvy card opens Fluvy's own details sheet, where Home Assistant's dialog opened (#162). Fluvy's
+  settings › Appearance › Cards › Fluvy's details sheets gives the dialog back, and an action may say its own with
+  `details: home-assistant`.
+- Home Assistant's details dialog draws its History block with Fluvy's chart wherever the page wears Fluvy: the house's
+  chart style, chips for the house's window, a day and a week, a reading under the finger and Open in History (#162).
+  Scope › Everywhere › Our chart in the details dialog gives Home Assistant's block back.
+- Every card's editor gathers what the card answers in one Interactions section, the tap and the hold saying what they
+  do while none is chosen, where they were two fields at the end of the form (#179).
+- The automatic Energy dashboard's Today view leads with the period bar across its columns and charts the range's
+  electricity, water and gas with Energy usage cards following it, and it appears for a house whose Energy dashboard
+  meters only water or gas (#181, #182).
+- The Energy period card takes its section's whole width where its config names none (#182).
+- The automatic dashboards' Production and History bars read every solar array of the Energy dashboard together under
+  "Solar", each array in Production's legend named as the house calls it, where they read the first array alone
+  (#183); where the Energy dashboard links a solar forecast to the panels, Production draws it and a "Tomorrow ·
+  forecast" Production card stands under today's.
+- A Production card with no `forecast_entity`, in a house whose Energy dashboard links a solar forecast to its panels,
+  shows forecast bars, the forecast figure and the badge against it; `show_forecast: false` keeps it as it was (#183).
+- Water & gas and the automatic dashboards list the Energy dashboard's water and gas meters that a utility's
+  integration imports (`opower:…`), which they left out (#181).
+- The automatic dashboards: a room's lights take in a lamp on a plug where the house names it as one; a forecast's
+  sensor no longer stands on the Meters view or among the day's tiles; tiles, light cards, scenes and a wall's scene
+  chips that would read alike gain what tells them apart after a "·" (Plug · Desk, Movie · Lounge); the Home and Agenda
+  views' columns are cut with the clock's and the calendar's true heights, so they end level and some cards change
+  column.
+- The profile's theme picker lists Fluvy, Fluvy Dark and Fluvy Light (#174).
+- A dashboard whose address contains an app's word (`dashboard-matter`, `esphome-devices`) gets its own sidebar icon
+  back, where it wore that app's glyph (#175).
+- With Home Assistant's "Always hide the sidebar" on a wide screen, Fluvy's own pages show their menu button, and with
+  the floating frame a page's first button stands where the sidebar's own menu button does (#173).
+- A Home Assistant set to Ukrainian, or a person who picks Українська, sees Fluvy in Ukrainian (Discussion #176).
+- The Energy flow names two sources of one kind whose sensors read the same short name by their whole names ("North
+  garage roof array"), where both read "array".
+- Each automatic dashboard's card in the Dashboards tab opens with a Customise row (#170), and importing a settings
+  file keeps a dashboard's `edit`.
+- A TV remote that Home Assistant's registry does not name is sent no app activity; its apps open by a source, a key or
+  an action. A saved page background address with a name or a password before its host, or an invisible character, is
+  no longer drawn.
+
+### Added
+
+- **Customise an automatic dashboard** (#170, designed with @waphbs): Fluvy's settings › Dashboards opens each
+  automatic dashboard's views and cards as rows, where a card is hidden with a switch, moved, or given options in its
+  own form, a list's entities are left out, added and put in order, a view is hidden or placed among the tabs, and
+  cards of your own are added from YAML. The view is drawn beside its rows as it will be, and every change is kept as
+  a difference in the strategy's `edit` (`views`, `cards`, `entities`) under stable ids the generators give each card
+  (`home/flow`, `rooms/room:<area id>`), so the rest stays automatic and deleting `edit` brings it all back.
+- **Details sheets** (#162, asked by @waphbs): one dial for what the entity sets (a light's brightness, a thermostat's
+  temperature, a cover's or a valve's position, a player's volume, a fan's speed), its commands as keys under it, its
+  options in rows and its last 24 hours with a way to History; a bottom sheet on a phone, a dialog on a wide screen.
+- **The details dialog's history** (#162): a meter by what it gained each hour (each day over a week) and its Total as
+  a running line that breaks where the meter was reset; a measure's line with its change, lowest, highest and average;
+  a door, a lamp or a select as a band of its stretches with how long it was on.
+- **Double tap and icon actions** (#179, asked by @SentinelXS): every card answers `double_tap_action` beside its tap
+  and hold, on its head, a tile, a row, a tab and every item that takes a tap, a tap waiting 250 ms for a second only
+  where one is set. A tile in every size and every card with a head answer `icon_tap_action`, `icon_hold_action` and
+  `icon_double_tap_action` on their circle, which becomes a button of its own only then. The rows of the Entities,
+  Lock, Alarm, Camera, Bars, Readouts, Stat tiles and Energy devices cards, the History bars' head and facts, the
+  Scenes card's scenes, a remote's apps and keys and the Chips card's tabs hold and double-tap too (a tab's `action`
+  reads as its `tap_action`), and the Entities head, the Updates, Scene and Scenes cards, the Alerts card's rows and
+  the Vehicle card's hero gain the actions they lacked.
+- **The Expander card** (#180, asked by @SentinelXS): folds any cards away under a head that counts what is on; a tap
+  opens them, on one surface with the head or each on its own, in up to four columns. It stands as you left it, on
+  this device or for each person, can open by itself while a condition holds (`open_when`) and fold again after some
+  minutes (`close_after`), lends its colour to the Fluvy cards inside it, and its editor edits the cards in Home
+  Assistant's own stack editor.
+- **A wall rocker on the tile** (#177, idea by @maxhayim): `switch_style: rocker` draws the switch as a small plate on
+  end whose raised half is the one you press next and whose bar lights while on, on the Tile, Tiles, Template, Room and
+  Room lights cards, at a compact tile's row end, and as a cover's open, close and stop. The automatic dashboards take
+  it with Fluvy's settings › Dashboards › Tile switches › Wall rockers.
+- **A drive pad on the Vacuum card** (#178, idea by @maxhayim): with `show_drive: true`, a robot that can be driven by
+  hand gains a Drive command, and the battery and suction give their room to a ring of four arrows round Stop, the card
+  as tall as it was. A tap is one step, a held arrow keeps the robot moving until it is let go, and Done, ten seconds
+  without a press or leaving the page end remote control. It knows Xiaomi Miio, Roborock, Dreame and Xiaomi Miot Auto;
+  `drive_speed`, `drive_style` and `drive_entity` adjust it, and `drive:` wires any other robot with actions of your
+  own.
+- **Fluvy Light and Fluvy Dark** (#174, asked by @madmurl0c): the same look held to one mode beside Fluvy, so an
+  automation can turn Home Assistant dark at sunset with `frontend.set_theme`. Scope › Everywhere, a view's, a
+  section's and a card's theme take all three; a view themed Fluvy Dark on a light page draws dark with its cards, and
+  the Scope tab names the theme in use.
+- **Sidebar beside the page** (#173, by @maxhayim): Fluvy's settings › Preferences › This device: on a wide screen (a
+  tablet held sideways), the sidebar stays hidden until the menu opens it beside the page, and the next tap hides it
+  again. A tap, a touch or the keyboard on any menu button works, a long press still edits the sidebar, and a phone, a
+  kiosk, a wall and the companion app's own sidebar keep Home Assistant's way.
+- **Alerts read each entity's attributes** (#184, asked by @SentinelXS): `attributes: {severity: [error, warning]}`
+  keeps the entities whose attributes hold those values; `name`, `icon` and `secondary` take `attribute:<name>` or a
+  template rendered for each entity, so a split alert shows each notice's title, icon and message with how long it has
+  waited; `severity: attribute:severity` reads each row's severity (success in the ok tone) and `since:
+  attribute:start_date` its time; an alert snoozed until it changes comes back with a new message; a key the card does
+  not know is named once in the browser's console.
+- **Water and gas over the picked range** (#181, asked by @Carl-Primitive): the Energy usage card charts water or gas
+  (`kind: water | gas`), each Energy dashboard meter of the kind (an imported statistic among them) or meters of your
+  own, stacked in shades of the kind's colour in the dashboard's unit, saying how far a meter's figures go.
+- **Water & gas reads an imported meter** (#181, asked by @Carl-Primitive): a utility's daily statistic shows its
+  latest day with its date ("Nov 11 · typical 2.1 CCF"), and "No figures since Nov 3" once it is a week old.
+- **The Chart card follows an Energy date picker** (`collection_key`, #181): the picked range in Home Assistant's
+  grain, the range under its title and the compared range as a quiet ghost.
+- **The Energy period card as a bar** (`variant: bar`, #182, asked by @Carl-Primitive): the span between its arrows,
+  the periods' chips beside it and Today and Compare at the far end of a wide section.
+- **Production reads Home Assistant's solar forecast** (#183, idea by @waphbs): where no forecast sensor is named, the
+  forecast the Energy dashboard links to the panels (Forecast.Solar, Solcast, Open-Meteo Solar Forecast), a whole-site
+  forecast counted once and each plane's added; the forecast figure follows the finger. `day: tomorrow` draws
+  tomorrow's hours, its total beside today's, its best hour and hours of sun; `day: ahead` a bar for each day the
+  forecast holds, with the total, the average, the best and the lowest day (`days` caps them).
+- **History bars sum sensors** (`entities`, #183): two arrays' production bar by bar, in one question to the recorder.
+- **The Wall tab** says whether this browser is a wall panel and, while it is not, what turning it on does (#183).
+- **Ukrainian**, the sixteenth language (Discussion #176, asked by @ross104): every card, page, dialog and editor, with
+  Home Assistant's own Ukrainian words for its states, and the automatic dashboards, the appliance cards and a view's
+  icon reading a house named in Ukrainian, an apostrophe typed any way or left out. Corrections are welcome.
+- The Room card's `lights` lists the room's lights for its Lights row and its round, a lamp on a plug among them
+  (#170); `show_when: always` keeps an Entities or Bars row shown whatever the card's `show_rows_when` says (#157).
+
+### Fixed
+
+- The File editor's item in the sidebar shows its icon again with Fluvy everywhere, where it showed only its name since
+  1.0.0; Home Assistant's Marketplace takes the store icon as HACS does (#175, reported by @ross104).
+- Water & gas shows 0 where a meter reads a hair under its last compiled hour, where it showed "-0.00 gal" (#181,
+  reported by @Carl-Primitive).
+- Production no longer takes a lifetime meter a hair under its last hour for a reset, where the hour in progress drew
+  the meter's whole reading as a bar of thousands of kWh.
+- Production's "So far today" counts every array where its meter is one of its arrays, where it compared one array's
+  day with the whole house's forecast (#183, reported by @waphbs).
+- The Energy flow keeps its diagram on a phone where a source has a long name: the name stands on two lines, broken at
+  a space or between two Chinese or Japanese characters, never inside a word, where "逆变器 E2 南 MPPT 累计发电量" or
+  "Wechselrichter Süddach" turned it into its list (#183, reported by @waphbs).
+- The Energy flow keeps every lane at least 56 px long when a figure reads wider than usual, stands at the height it
+  declares under pairs and a wide house figure, keeps the cross's house figure clear of the battery's lane, and gives a
+  way shown by an arrowhead its word for a screen reader; the Energy balance names two arrays that read alike by their
+  devices.
+- Water & gas keeps a row's figures whole in a narrow column, where "typical 39 gal" read "typical…".
+- Production's hourly bars no longer run into one another in half a section, and the compact Production card declares
+  the 204 px it draws, where it declared 236 (#183).
+- A row of the Bars, Stat tiles, Readouts and Energy devices cards with no tap of its own opens its entity's details,
+  where it ran the card's own `tap_action` on it (#179).
+- With the sidebar hidden in the floating frame on a wide screen, a dashboard's view keeps the frame's 16 px on its
+  left, where a masonry view's first column stood under its edge, and Fluvy's own pages have a menu button to bring the
+  sidebar back (#173).
+- The automatic dashboards read a day's counter named in Chinese or Japanese (日发电总量, 日発電量) as today's production,
+  and a forecast's word only where a word begins, so a reading named Unpredictable, imprevisto or 干预计划 keeps its
+  energy role (#170).
+- The Grid and Energy flow cards count a readout named in Chinese or Japanese whole in the height they declare (#170).
+- The Room card's readouts asked to wrap with icons or no labels stay on one row, as the card declares (#159).
+- The settings panel's opacity and dim rulers take back what a drag showed when the drag is taken away.
+- The TV remote says a source named like a web address (bbc.co.uk) as it is, on a player whose integration names no app
+  by its package.
+
+### Development
+
+- The Vacuum card left what every page loads for a chunk of its own, the lock, alarm and camera rows travel with the
+  devices family, and what only later chunks share is a `shared` chunk: every page is 233.2 KB, 3 KB lighter than the
+  round's work would have made it. The build stops where core holds a module only later chunks reach.
+- New lazy chunks: `customise`, `details`, `details-history`, `dock`, `expander`, `expander-editor`, `ring`, `shared`,
+  `switch-styles`, `vacuum`, `vacuum-drive`. Budgets raised, each dated in `check.mjs`: energy 86 KB, strategy 29 KB,
+  Energy period and Chart card 17 KB, forms 15 KB, view icons 6 KB, a language's catalogue 44 KB.
+- One tapper on the card base gives every surface its tap, hold and double tap, and `actionFields()` is every editor's
+  Interactions section; the editors' contract holds a double tap beside every hold (#179).
+- The icon set's generator writes its glyph names as a type every glyph table of the shell takes, so a name the set
+  does not hold no longer compiles (#175).
+- The page takeover stands in for a block of a page and steps aside where Home Assistant's element no longer declares
+  a property it reads; settings version 5 (`details`, `sheets`) (#162).
+- The release check requires every font face the build ships and Inter's licence; the naming words read forecast stems
+  where a word begins, compounds and Chinese stems by their own regex.
+- The playground: the hidden and docked sidebar (`&hidden=1`, `&dock=1`), the Marketplace and apps (`&apps=1`),
+  stand-ins for `hui-card`, `ha-form` and Home Assistant's details dialog, and sheets for every new card and sheet;
+  new interaction suites for actions, the rocker, the vacuum, the Expander, the details sheets and dialog, the
+  sidebar, Customise and the forecast.
+
 ## [1.19.1] — 2026-11-12
 
 ### Visible on upgrade
@@ -2755,7 +2925,31 @@ The first public release.
   registers the panel and the Lovelace resource, installs the theme, and says through Repairs what only you can do.
 - English and Spanish.
 
-[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/acosta290/fluvy/compare/v1.20.0...HEAD
+[1.20.0]: https://github.com/acosta290/fluvy/compare/v1.19.1...v1.20.0
+[1.19.1]: https://github.com/acosta290/fluvy/compare/v1.19.0...v1.19.1
+[1.19.0]: https://github.com/acosta290/fluvy/compare/v1.18.0...v1.19.0
+[1.18.0]: https://github.com/acosta290/fluvy/compare/v1.17.0...v1.18.0
+[1.17.0]: https://github.com/acosta290/fluvy/compare/v1.16.0...v1.17.0
+[1.16.0]: https://github.com/acosta290/fluvy/compare/v1.15.0...v1.16.0
+[1.15.0]: https://github.com/acosta290/fluvy/compare/v1.14.2...v1.15.0
+[1.14.2]: https://github.com/acosta290/fluvy/compare/v1.14.1...v1.14.2
+[1.14.1]: https://github.com/acosta290/fluvy/compare/v1.14.0...v1.14.1
+[1.14.0]: https://github.com/acosta290/fluvy/compare/v1.13.1...v1.14.0
+[1.13.1]: https://github.com/acosta290/fluvy/compare/v1.13.0...v1.13.1
+[1.13.0]: https://github.com/acosta290/fluvy/compare/v1.12.0...v1.13.0
+[1.12.0]: https://github.com/acosta290/fluvy/compare/v1.11.3...v1.12.0
+[1.11.3]: https://github.com/acosta290/fluvy/compare/v1.11.2...v1.11.3
+[1.11.2]: https://github.com/acosta290/fluvy/compare/v1.11.1...v1.11.2
+[1.11.1]: https://github.com/acosta290/fluvy/compare/v1.11.0...v1.11.1
+[1.11.0]: https://github.com/acosta290/fluvy/compare/v1.10.0...v1.11.0
+[1.10.0]: https://github.com/acosta290/fluvy/compare/v1.9.1...v1.10.0
+[1.9.1]: https://github.com/acosta290/fluvy/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/acosta290/fluvy/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/acosta290/fluvy/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/acosta290/fluvy/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/acosta290/fluvy/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/acosta290/fluvy/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/acosta290/fluvy/compare/v1.3.3...v1.4.0
 [1.3.3]: https://github.com/acosta290/fluvy/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/acosta290/fluvy/compare/v1.3.1...v1.3.2
