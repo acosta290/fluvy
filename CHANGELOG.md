@@ -5,12 +5,6 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
-
-- *Appearance → Sidebar and header → Tablet, horizontal*: the sidebar stays hidden, the header's menu icon opens it
-  beside the page (the page moves over for it) and the sidebar's own icon hides it again, for a tablet held sideways.
-  A phone keeps Home Assistant's drawer.
-
 ## [1.19.1] — 2026-11-12
 
 ### Visible on upgrade
