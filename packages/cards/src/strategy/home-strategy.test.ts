@@ -307,6 +307,64 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
       ).toEqual([[], undefined, [], undefined]);
     }
   });
+
+  it('reads a Ukrainian house by its names as written: its lights, its garden, its appliances’ switches, a lock that is none', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.u1', 'on', { friendly_name: 'Світло у вітальні' }),
+        entity('switch.u2', 'off', { friendly_name: 'Ліхтар сад' }),
+        entity('switch.u3', 'off', { friendly_name: 'Люстра' }),
+        entity('switch.u4', 'off', { friendly_name: 'Розетка пральної машини' }),
+        entity('switch.u5', 'off', { friendly_name: 'Чайник' }),
+        entity('switch.u6', 'off', { friendly_name: 'Блокування посудомийки' }),
+        entity('switch.u7', 'off', { friendly_name: 'Гірлянда на подвір’ї' }),
+      ]),
+    );
+    const { lights, appliances } = registry;
+    expect(lights).toEqual(
+      expect.arrayContaining(['switch.u1', 'switch.u2', 'switch.u3', 'switch.u7']),
+    );
+    expect(registry.outdoor('switch.u2')).toBe(true);
+    expect(registry.outdoor('switch.u7')).toBe(true);
+    expect(registry.outdoor('switch.u1')).toBe(false);
+    for (const id of ['switch.u4', 'switch.u5']) {
+      expect(lights, id).not.toContain(id);
+      expect(appliances, id).toContain(id);
+    }
+    expect(appliances).not.toContain('switch.u6');
+  });
+
+  it('names a Ukrainian house’s energy readings’ roles: the sun, what is bought and sold, the battery, the charger, the house', () => {
+    const registry = powerHouse(
+      [
+        power('sensor.soniachni_paneli', 'Сонячні панелі'),
+        power('sensor.z_merezhi', 'Імпорт з мережі'),
+        power('sensor.u_merezhu', 'Експорт у мережу'),
+        power('sensor.akumuliator', 'Акумулятор'),
+        power('sensor.zariadna_stantsiia', 'Зарядна станція'),
+        power('sensor.spozhyvannia_budynku', 'Споживання будинку'),
+      ],
+      'uk',
+    );
+    expect(findEnergyRoles(registry, null)).toMatchObject({
+      solarPowers: [{ id: 'sensor.soniachni_paneli' }],
+      gridPower: 'sensor.z_merezhi',
+      gridImport: 'sensor.z_merezhi',
+      gridExport: 'sensor.u_merezhu',
+      batteryPowers: [{ id: 'sensor.akumuliator' }],
+      charger: 'sensor.zariadna_stantsiia',
+      homePower: 'sensor.spozhyvannia_budynku',
+    });
+    // a power strip (мережевий фільтр), a home cinema and a sunny side say no role: "мережа", "дім" and the sun's
+    // panels are words of their own
+    for (const name of ['Мережевий фільтр', 'Домашній кінотеатр', 'Сонячна сторона']) {
+      const roles = findEnergyRoles(powerHouse([power('sensor.x', name)], 'uk'), null);
+      expect(
+        [roles.solarPowers, roles.gridPower, roles.batteryPowers, roles.homePower],
+        name,
+      ).toEqual([[], undefined, [], undefined]);
+    }
+  });
 });
 
 describe('custom:fluvy-home strategy — a place named by its device, no separator left hanging', () => {
@@ -560,6 +618,20 @@ describe('custom:fluvy-home strategy — a place named by its device, no separat
     ).toEqual(['Гостиная', 'Спальня', 'Детская', 'Гостиной', 'Кухне', 'Кабинет', 'Ёлочная']);
   });
 
+  it('reads Ukrainian’s sensor words in every case they are said in, a place keeping its own', () => {
+    expect(
+      placed([
+        'Датчик температури Вітальня',
+        'Датчик температури та вологості Спальня',
+        'Термометр Дитяча',
+        'Температура у вітальні',
+        'Вологість на кухні',
+        'Термостатом Кабінет',
+        'Датчики Їдальня',
+      ]),
+    ).toEqual(['Вітальня', 'Спальня', 'Дитяча', 'Вітальні', 'Кухні', 'Кабінет', 'Їдальня']);
+  });
+
   it('keeps a word that joins two places, a conjunction among them, and takes one that joins the sensor words, in every language', () => {
     // each language's "and" between two sensor words, then between two places: [name, its place] each
     const and: Record<string, readonly (readonly [string, string])[]> = {
@@ -624,6 +696,10 @@ describe('custom:fluvy-home strategy — a place named by its device, no separat
       ru: [
         ['Датчик температуры и влажности Гостиная', 'Гостиная'],
         ['Кухня и Гостиная Датчик', 'Кухня и Гостиная'],
+      ],
+      uk: [
+        ['Датчик температури і вологості Вітальня', 'Вітальня'],
+        ['Кухня та Вітальня Датчик', 'Кухня та Вітальня'],
       ],
     };
     for (const [code, names] of Object.entries(and))

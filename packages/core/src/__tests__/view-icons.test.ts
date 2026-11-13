@@ -190,6 +190,47 @@ describe('the icon a view’s name says', () => {
       ['Садовник Иван', undefined],
     ];
     expect(russian.map(([t]) => named(t))).toEqual(russian.map(([, icon]) => icon));
+    // Ukrainian, a word by its start, ї read as і, an apostrophe written any of its three ways or left out
+    const ukrainian: ReadonlyArray<readonly [string, string | undefined]> = [
+      ['Світло', 'bulb'],
+      ['Освітлення', 'bulb'],
+      ['Тепла підлога', 'thermo'],
+      ['Опалення', 'thermo'],
+      ['Акумулятор', 'battery'],
+      ['Погода', 'cloud'],
+      ['Сонячні панелі', 'sun'],
+      ['Енергія', 'bolt'],
+      ['Електрика', 'bolt'],
+      ['Безпека', 'shield'],
+      ['Вітальня', 'rooms'],
+      ['Їдальня', 'rooms'],
+      ['2 поверх', 'rooms'],
+      ['Камери', 'camera'],
+      ['Двері', 'lock'],
+      ['Музика', 'speaker'],
+      ['Кіно', 'film'],
+      ['Подвір’я', 'leaf'],
+      ["Подвір'я", 'leaf'],
+      ['Подвірʼя', 'leaf'],
+      ['Подвіря', 'leaf'],
+      ['Автоматизації', 'automation'],
+      ['Гараж', 'car'],
+      ['Розклад', 'calendar'],
+      ['Сім’я', 'person'],
+      ["Сім'я", 'person'],
+      ['Сімʼя', 'person'],
+      ['Сімя', 'person'],
+      ['Полив', 'drop'],
+      ['Рівень води', 'drop'],
+      ['Вентиляція', 'fan'],
+      ['Штори', 'blinds'],
+      ['Пилосос', 'vacuum'],
+      ['Датчики', 'chart'],
+      ['Головна', 'home'],
+      ['Мій дім', 'home'],
+      ['Садівник Іван', undefined],
+    ];
+    expect(ukrainian.map(([t]) => named(t))).toEqual(ukrainian.map(([, icon]) => icon));
     // a name it does not know reads its path
     expect(named('Mi sitio', 'fotovoltaica')).toBe('sun');
     expect(named('Xyzzy', 'qwerty')).toBeUndefined();

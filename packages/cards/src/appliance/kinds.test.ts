@@ -148,7 +148,7 @@ describe('what an appliance is', () => {
     expect(kindOf(signals({ platform: 'matter', tops: [250] }))).toMatchObject({ kind: 'oven' });
   });
 
-  it('reads a name in any of the fifteen languages, accents or none, the more particular kind first', () => {
+  it('reads a name in any of the sixteen languages, accents or none, the more particular kind first', () => {
     const names: ReadonlyArray<readonly [string, string]> = [
       ['Washing machine', 'washer'],
       ['Waschmaschine', 'washer'],
@@ -322,6 +322,34 @@ describe('what an appliance is', () => {
       ['Автокормушка', 'feeder'],
       ['Поилка для кошки', 'fountain'],
       ['Кошачий туалет', 'litter_box'],
+      // Ukrainian, in any case a name says it in, ї or і
+      ['Пральна машина', 'washer'],
+      ['Пралка', 'washer'],
+      ['Прально-сушильна машина', 'washer_dryer'],
+      ['Посудомийна машина', 'dishwasher'],
+      ['Посудомийка на кухні', 'dishwasher'],
+      ['Сушильна машина', 'dryer'],
+      ['Мікрохвильова піч', 'microwave'],
+      ['НВЧ-піч', 'microwave'],
+      ['Духова шафа', 'oven'],
+      ['Духовка', 'oven'],
+      ['Варильна поверхня', 'hob'],
+      ['Індукційна плита', 'hob'],
+      ['Витяжка', 'hood'],
+      ['Винна шафа', 'wine'],
+      ['Холодильник для вина', 'wine'],
+      ['Холодильник з морозильною камерою', 'fridge'],
+      ['Морозильна камера', 'freezer'],
+      ['Кавомашина', 'coffee'],
+      ['Кавоварка', 'coffee'],
+      ['Електрочайник', 'kettle'],
+      ['Аерогриль', 'air_fryer'],
+      ['Сендвічниця', 'sandwich_maker'],
+      ['Тостер', 'toaster'],
+      ['Блендер', 'blender'],
+      ['Автогодівниця', 'feeder'],
+      ['Поїлка для кішки', 'fountain'],
+      ['Котячий туалет', 'litter_box'],
     ];
     for (const [name, kind] of names) expect(byWords(name), name).toEqual({ kind, by: 'words' });
     // a name that says no kind says none: a solar panel is no hob ("placa"), a brand ("marca") no freezer ("arca")
@@ -342,6 +370,11 @@ describe('what an appliance is', () => {
     expect(byWords('Лоток принтера')).toBeUndefined();
     expect(byWords('Печь в бане')).toBeUndefined();
     expect(byWords('Розетка в прачечной')).toBeUndefined();
+    // nor a printer's tray (лоток), a sauna's stove (піч), a laundry room (пральня) in Ukrainian
+    expect(byWords('Лоток принтера')).toBeUndefined();
+    expect(byWords('Піч у лазні')).toBeUndefined();
+    expect(byWords('Розетка в пральні')).toBeUndefined();
+    expect(byWords('Пральня')).toBeUndefined();
   });
 
   it('never takes a vacuum, a charger, a hair dryer or what waits for 1.10 for an appliance', () => {
@@ -366,6 +399,9 @@ describe('what an appliance is', () => {
       'Фен',
       'Сушилка для обуви',
       'Зарядная станция',
+      'Робот-пилосос',
+      'Сушарка для рук',
+      'Зарядна станція',
     ])
       expect(byWords(name), name).toEqual({ excluded: 'name' });
     expect(kindOf(signals({ domains: new Set(['vacuum']), name: 'Waschmaschine' }))).toEqual({
