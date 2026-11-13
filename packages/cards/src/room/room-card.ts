@@ -192,12 +192,16 @@ const LABELS: readonly ReadoutLabels[] = ['words', 'icons', 'none'];
 
 /**
  * How a room's config asks for its readouts (`readout_style`, `readout_labels`): wrapped or on one row, and their
- * labels (what it declares and what it draws read them alike).
+ * labels (what it declares and what it draws read them alike). Wrapping keeps words: labels asked as icons or none
+ * have none to keep, and their figures keep to one row, giving way as the row's do.
  */
-const readoutsAsk = (config: RoomCardConfig | undefined): Required<ReadoutsAsk> => ({
-  wrap: config?.readout_style === 'wrap',
-  labels: LABELS.find((known) => known === config?.readout_labels) ?? 'auto',
-});
+const readoutsAsk = (config: RoomCardConfig | undefined): Required<ReadoutsAsk> => {
+  const labels = LABELS.find((known) => known === config?.readout_labels) ?? 'auto';
+  return {
+    wrap: config?.readout_style === 'wrap' && (labels === 'auto' || labels === 'words'),
+    labels,
+  };
+};
 
 /**
  * A room as the house describes it: what it holds (`areaContents`), whether it has a picture, whether the person

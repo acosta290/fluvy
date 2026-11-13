@@ -1214,7 +1214,8 @@ thermometer, a drop, a power sign; a screen reader still reads the words), the f
 their units to the short form a tile writes ("21.4°", "3/10"). Words that hold stay, whatever the figures did. Only
 where the shortest figures would not hold a third (half a section) do they stand two and one; nothing is ever cut.
 `readout_style: wrap` keeps the words instead and lets the readouts take as many rows as the words need, as they did
-before 1.19. `readout_labels` writes the labels one way: `words` (the row wraps where they would not hold), `icons`,
+before 1.19; with labels as icons or none there are no words to keep, and the readouts stay on one row as `row` lays
+it. `readout_labels` writes the labels one way: `words` (the row wraps where they would not hold), `icons`,
 or `none` (the figures alone, the card 20 px shorter); `auto`, the default, is words while they hold and icons where
 they would not.
 

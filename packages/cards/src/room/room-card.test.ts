@@ -1445,6 +1445,37 @@ describe('a room’s name at the top and its readouts on one row (#159)', () => 
     });
   });
 
+  it('keeps icons and bare figures to one row asked to wrap, as the height it declares says: wrapping keeps words', async () => {
+    // 211: thirds of 46 hold the figures short; wrapped, they once stood two and one, a row over the declared height
+    for (const labels of ['icons', 'none'] as const) {
+      const one = row(await drawn({ readout_labels: labels }, 211));
+      expect(
+        row(await drawn({ readout_style: 'wrap', readout_labels: labels }, 211)),
+        labels,
+      ).toEqual(one);
+      expect(one.columns, labels).toBe(3);
+    }
+    // the editor offers the style only where it acts: with words over the figures
+    const element = await FluvyRoomCard.getConfigElement();
+    (element as HTMLElement & { hass: HomeAssistant }).hass = house();
+    const style = async (config: Record<string, unknown>) =>
+      shownNames(
+        cardForm(
+          await drawEditor(element, {
+            type: 'custom:fluvy-room-card',
+            area: 'garten',
+            variant: 'photo',
+            ...config,
+          }),
+        ).schema,
+      ).includes('readout_style');
+    expect(await style({})).toBe(true);
+    expect(await style({ readout_labels: 'words' })).toBe(true);
+    expect(await style({ readout_labels: 'icons' })).toBe(false);
+    expect(await style({ readout_labels: 'none' })).toBe(false);
+    document.body.replaceChildren();
+  });
+
   it('writes the labels one way where asked: words (the row wraps for them), icons, or none, the words still said', async () => {
     expect(row(await drawn({ readout_labels: 'words' }, 328))).toMatchObject({
       columns: 2,

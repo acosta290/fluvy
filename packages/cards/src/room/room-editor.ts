@@ -78,6 +78,10 @@ const isPhoto = ({ variant }: Readonly<Record<string, unknown>>): boolean => var
 const drawsReadouts = (form: Readonly<Record<string, unknown>>): boolean =>
   isPhoto(form) && (form['show_climate'] !== false || form['show_count'] !== false);
 
+/** …with words over their figures, which a wrapped row keeps (icons or none keep to one row). */
+const keepsWords = ({ readout_labels: labels }: Readonly<Record<string, unknown>>): boolean =>
+  labels !== 'icons' && labels !== 'none';
+
 /** A reading's field: a sensor of its class, or the thermostat (the humidifier) that carries it (`climateAttribute`). */
 const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
   name: `${kind}_entity`,
@@ -282,10 +286,10 @@ export function getConfigForm(): LovelaceConfigForm {
         ]),
       ),
       fieldRow(boolField('show_climate'), boolField('show_count')),
-      // the photo's readouts: on one row or wrapped, and what stands over their figures
+      // the photo's readouts: on one row or wrapped (words alone wrap), and what stands over their figures
       fieldRow(
         onlyWhen(
-          drawsReadouts,
+          (form) => drawsReadouts(form) && keepsWords(form),
           choiceField('readout_style', [
             ['row', 'room-editor.one_row'],
             ['wrap', 'room-editor.several_rows'],

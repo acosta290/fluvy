@@ -1038,7 +1038,7 @@ export const sheet: SheetSpec = {
         woonkamer({ readout_labels: 'none' }),
       ],
     },
-    // wrapped, as before 1.19: fewer columns before a word gives way; with icons, by the figures alone
+    // wrapped, as before 1.19: fewer columns before a word gives way; with icons, no word to keep: one row, as the row's
     {
       title: 'Room · readouts wrapped (#159)',
       cards: [
