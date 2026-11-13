@@ -73,7 +73,7 @@ import {
 } from '../energy/freshness.js';
 import { HeadFit } from '../energy/head.js';
 import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
-import { scaled, scaleOf, shortName, WATT_LADDERS, type Scale } from '../energy/power.js';
+import { scaled, scaleOf, sourceNames, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { kindField, MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles } from '../energy/stats.js';
 import { Card, type BaseKey } from '../shared/base.js';
@@ -462,19 +462,18 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
       if (!sources.length && this.prefs !== undefined) empty = 'period';
     } else {
       const configs = this.sourceList();
-      flows = configs.map((c) => {
+      // one of several of its kind (two arrays) is named as the flow names it: by its sensor, and by its device where
+      // two sensors read the same (#170)
+      const names = sourceNames(
+        this.hass,
+        configs.map((c) => ({ kind: c.type, name: c.name, entity: sourceIds(c)[0] })),
+        (id) => this.entity(id),
+        (kind) => f(this.hass, `kind_${kind}`),
+      );
+      flows = configs.map((c, i) => {
         const reading = this.read(c);
-        if (!dead && (reading.in === null || reading.out === null)) {
-          // one of several of its kind (two arrays) is named by its sensor, as the flow names it
-          const entity = sourceIds(c)[0];
-          const several = configs.filter((o) => o.type === c.type).length > 1;
-          dead = {
-            label:
-              c.name ??
-              (several && entity ? shortName(this.entity(entity)) : f(this.hass, `kind_${c.type}`)),
-            entity,
-          };
-        }
+        if (!dead && (reading.in === null || reading.out === null))
+          dead = { label: names[i] as string, entity: sourceIds(c)[0] };
         return {
           kind: c.type,
           reading: rested(reading, c.threshold ?? DEFAULT_THRESHOLD),

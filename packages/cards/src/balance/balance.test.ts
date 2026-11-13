@@ -1,5 +1,8 @@
+// @vitest-environment happy-dom
+import type { HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { balanceHeight } from '../energy-family.js';
+import { FluvyEnergyBalanceCard } from './balance-card.js';
 import { balanceOf, legendColumns, rested, rowsOf, sumOf, type Flow } from './balance.js';
 
 const flow = (kind: Flow['kind'], into: number | null, out: number | null, extra = {}): Flow => ({
@@ -174,5 +177,57 @@ describe('the balance’s height at a 360 column', () => {
         sources: [{ type: 'grid', phases: ['sensor.l1', 'sensor.l2'] }],
       }),
     ).toBe(308);
+  });
+});
+
+describe('the balance names a source as the flow does (#170)', () => {
+  if (!customElements.get('fluvy-energy-balance-card'))
+    customElements.define('fluvy-energy-balance-card', FluvyEnergyBalanceCard);
+  const power = (id: string, state: string, name: string) => ({
+    entity_id: id,
+    state,
+    attributes: { unit_of_measurement: 'W', device_class: 'power', friendly_name: name },
+    last_changed: '',
+    last_updated: '',
+  });
+
+  it('says which of two arrays whose sensors read alike cannot be read: its device, as the house names it', async () => {
+    const card = document.createElement('fluvy-energy-balance-card') as FluvyEnergyBalanceCard;
+    card.setConfig({
+      type: 'custom:fluvy-energy-balance-card',
+      sources: [
+        { type: 'solar', power: 'sensor.e1' },
+        { type: 'solar', power: 'sensor.e2' },
+        { type: 'grid', power: 'sensor.grid' },
+      ],
+    });
+    card.hass = {
+      language: 'en',
+      locale: { language: 'en', number_format: 'language', time_format: '24' },
+      config: {},
+      themes: { darkMode: false },
+      states: {
+        'sensor.e1': power('sensor.e1', '900', 'MPPT 累计发电量'),
+        'sensor.e2': power('sensor.e2', 'unavailable', 'MPPT 累计发电量'),
+        'sensor.grid': power('sensor.grid', '300', 'Grid'),
+      },
+      entities: {
+        'sensor.e1': { entity_id: 'sensor.e1', device_id: 'd1' },
+        'sensor.e2': { entity_id: 'sensor.e2', device_id: 'd2' },
+      },
+      devices: {
+        d1: { id: 'd1', name: 'Inverter E1', name_by_user: null },
+        d2: { id: 'd2', name: 'Inverter E2', name_by_user: null },
+      },
+      areas: {},
+      localize: (key: string) => key,
+      callWS: async () => ({}),
+    } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    const model = (card as unknown as { build(): { dead: { label: string } | null } }).build();
+    card.remove();
+    // the sensors' "MPPT 累计发电量" twice said nothing of which array was away
+    expect(model.dead?.label).toBe('Inverter E2');
   });
 });
