@@ -27,6 +27,7 @@ import {
   selectField,
   showIconField,
   sliderFields,
+  switchStyleField,
   textField,
   tintField,
 } from '../shared/form.js';
@@ -62,6 +63,7 @@ export const keys = configKeys<LightsCardConfig>()([
   'lights',
   'variant',
   'name_lines',
+  'switch_style',
   'show_count',
   'show_level',
   'show_brightness',
@@ -127,6 +129,7 @@ export const lists: readonly RowsListSpec[] = [
 export const defaults: EditorDefaults = (config, hass) => ({
   variant: 'row',
   name_lines: '1',
+  switch_style: 'toggle',
   show_count: true,
   show_level: true,
   show_brightness: false,
@@ -179,6 +182,8 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       // the tiles' colour at rest and their names' lines: the row and the chips have no surface to wash, no tile
       onlyWhen(({ variant }) => variant === 'tiles', fieldRow(tintField(), nameLinesField())),
+      // the tiles' switches as wall rockers, each at its tile's end
+      onlyWhen(({ variant }) => variant === 'tiles', switchStyleField()),
       emptyFields(),
       // the room on or off where it names no tap of its own
       actionFields({ icon: true, many: true, tap: null }),

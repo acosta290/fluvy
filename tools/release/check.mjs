@@ -139,6 +139,9 @@ const BUDGETS = {
   quiet: 4096,
   // the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet
   'slider-styles': 4096,
+  // the switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked, what a tile's
+  // entity makes of it (a cover’s travels) and its sheet; measured at 1.5 KB
+  'switch-styles': 4096,
   // the page's background: the layer under a dashboard's view, its marks and its sheet. 4 KB since 2026-11-11 (1.19,
   // #155)
   background: 4096,

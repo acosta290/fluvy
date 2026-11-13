@@ -912,6 +912,19 @@ describe('custom:fluvy-home strategy', () => {
         ),
       ).toEqual(shown);
     }
+    // wall rockers (#177): every tile carries the style, its switch shown as it was
+    const rockers = await tilesOf({ tile_switch: 'rocker' });
+    expect(rockers.every((c) => c['switch_style'] === 'rocker' && !('show_switch' in c))).toBe(
+      true,
+    );
+    expect(
+      rockers.map((c) =>
+        Object.fromEntries(Object.entries(c).filter(([k]) => k !== 'switch_style')),
+      ),
+    ).toEqual(shown);
+    // …compact tiles too, whose rockers stand at their rows' ends
+    const rows = await tilesOf({ tile_switch: 'rocker', tile_size: 'compact' });
+    expect(rows.some((c) => c['size'] === 'compact' && c['switch_style'] === 'rocker')).toBe(true);
     // a word no dashboard knows says nothing
     expect(await tilesOf({ tile_switch: 'never' })).toEqual(shown);
   });

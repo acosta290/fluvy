@@ -8,6 +8,7 @@ import {
   actionFields,
   askedSliderStyle,
   colourFields,
+  drawsSwitch,
   entitiesField,
   entityField,
   fieldRow,
@@ -22,6 +23,7 @@ import {
   sinceField,
   sliderFields,
   switches,
+  switchStyleField,
   tintField,
 } from '../shared/form.js';
 import { ENTITY_BASE, ICON_ACTIONS_BASE, SLIDER_BASE } from '../shared/base.js';
@@ -37,6 +39,7 @@ export const keys = configKeys<TileCardConfig>()([
   'size',
   'name_lines',
   'show_switch',
+  'switch_style',
   'readouts',
   'since',
   'tint',
@@ -48,6 +51,7 @@ export const defaults: EditorDefaults = () => ({
   size: 'large',
   name_lines: '1',
   show_switch: true,
+  switch_style: 'toggle',
   since: '',
   tint: 'on',
   light_colors: lightDefaults().colors,
@@ -60,9 +64,18 @@ export const choices: EditorChoices = sinceChoices;
 /** Whether the tile is large: its size where its config names none. */
 const large = (size: unknown): boolean => size === 'large' || size === undefined;
 
-/** Whether the tile is large with a ruler at its foot (`ruled`): what the slider's style and its readouts hang on. */
-const largeRuled: NonNullable<HaFormSchemaItem['when']> = ({ size, entity }, hass) =>
-  large(size) && ruled(resolveEntity(hass, String(entity)));
+/** Whether the tile draws a switch that has a style: a large one that shows it, a compact one, of an entity that switches. */
+const styled: NonNullable<HaFormSchemaItem['when']> = ({ size, entity, show_switch }) =>
+  drawsSwitch(size, show_switch) && switches(entity);
+
+/**
+ * Whether the tile is large with a ruler at its foot (`ruled`): what the slider's style and its readouts hang on. A
+ * wall rocker's tile has none: it switches and nothing more.
+ */
+const largeRuled: NonNullable<HaFormSchemaItem['when']> = (data, hass) =>
+  large(data['size']) &&
+  !(styled(data) && data['switch_style'] === 'rocker') &&
+  ruled(resolveEntity(hass, String(data['entity'])));
 
 export function getConfigForm(): LovelaceConfigForm {
   return {
@@ -75,6 +88,8 @@ export function getConfigForm(): LovelaceConfigForm {
         onlyWhen(({ size }) => size !== 'large', nameLinesField()),
         onlyWhen(({ size, entity }) => large(size) && switches(entity), showSwitchField()),
       ),
+      // its switch's style where it draws one: a large tile that shows it, a compact one's at its row's end
+      onlyWhen(styled, switchStyleField()),
       sinceField(),
       ...colourFields(),
       onlyWhen(tintsAtRest, tintField()),

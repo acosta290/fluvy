@@ -112,4 +112,20 @@ describe('the preview house', () => {
     expect(drawn).toHaveBeenCalledTimes(1);
     tile.remove();
   });
+
+  it('draws a tile’s switch as a dashboard asks, in either size (#160, #177)', () => {
+    const house = new PreviewHouse(NAMES);
+    house.update(realHouse());
+    const config = (card: LovelaceCard): Record<string, unknown> =>
+      (card as unknown as { config: Record<string, unknown> }).config;
+    expect(config(house.tile('living', 'large', 'hide'))['show_switch']).toBe(false);
+    expect(config(house.tile('living', 'large', 'rocker'))['switch_style']).toBe('rocker');
+    // a compact tile draws no switch but a wall rocker's, at its row's end
+    expect(config(house.tile('kitchen', 'compact', 'rocker'))).toMatchObject({
+      size: 'compact',
+      switch_style: 'rocker',
+    });
+    const plain = config(house.tile('kitchen'));
+    expect('switch_style' in plain || 'show_switch' in plain).toBe(false);
+  });
 });

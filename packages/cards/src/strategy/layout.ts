@@ -71,11 +71,19 @@ export const deviceRows = (home: HomeRegistry, ids: readonly string[]) => {
   return ids.map((entity) => ({ entity, name: name(entity) }));
 };
 /**
- * A tile's switch as the dashboard asks (`tile_switch`), in its card's own words (`show_switch`): hidden, its level's
- * figure in its place, or nothing said where it shows.
+ * A tile's switch as the dashboard asks (`tile_switch`), in its card's own words: hidden or its level's figure in its
+ * place (`show_switch`), a wall rocker (`switch_style`), or nothing said where it shows.
  */
-export const tileSwitch = (asked: unknown): { show_switch?: false | 'value' } =>
-  asked === 'hide' ? { show_switch: false } : asked === 'value' ? { show_switch: 'value' } : {};
+export const tileSwitch = (
+  asked: unknown,
+): { show_switch?: false | 'value'; switch_style?: 'rocker' } =>
+  asked === 'hide'
+    ? { show_switch: false }
+    : asked === 'value'
+      ? { show_switch: 'value' }
+      : asked === 'rocker'
+        ? { switch_style: 'rocker' }
+        : {};
 /**
  * Appliances' plugs shown together, each a large tile, its readings at its foot, its switch as the dashboard asks; two
  * alike told apart.
@@ -262,7 +270,7 @@ export const thermostat = (id: string, style: CardStyle): Card =>
   full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });
 /**
  * A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`), its switch as the
- * dashboard asks: a compact tile draws none, and keeps the word for the day it is made large.
+ * dashboard asks: a compact tile draws none but a wall rocker's, and keeps the word for the day it is made large.
  */
 const sizedTile = (id: string, extra: Record<string, unknown>, style: CardStyle): Card =>
   tile(id, {

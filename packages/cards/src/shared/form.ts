@@ -645,6 +645,27 @@ export const showSwitchField = ({ item = false } = {}): HaFormSchemaItem => ({
   helper: item ? 'editor.item_show_switch_helper' : 'editor.show_switch_helper',
 });
 
+/**
+ * What a tile's switch is drawn as (`switch_style`, 1.20, #177): the toggle (the default) or a wall rocker, which
+ * switches and nothing more, as the word under it says. An item's (`item`: a tile of a group) is empty until chosen,
+ * its group's then.
+ */
+export const switchStyleField = ({ item = false } = {}): HaFormSchemaItem => ({
+  ...choiceField('switch_style', [
+    ['toggle', 'editor.switch_toggle'],
+    ['rocker', 'editor.switch_rocker'],
+  ]),
+  helper: item ? 'editor.item_switch_style_helper' : 'editor.switch_style_helper',
+});
+
+/**
+ * Whether a tile that switches draws a switch that has a style (`switchStyleField`), from its size and what it is
+ * asked of its switch (`show_switch`): a large tile that shows it, or a compact one, whose rocker stands at its row's
+ * end. A mini tile's circle stays its switch.
+ */
+export const drawsSwitch = (size: unknown, shown: unknown): boolean =>
+  size !== 'mini' && shown !== false && shown !== 'value';
+
 /** A card's head: its title and its subtitle, on one row. */
 export const titleFields = (): HaFormSchemaItem =>
   fieldRow(textField('title'), textField('subtitle'));

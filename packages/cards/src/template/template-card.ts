@@ -12,6 +12,7 @@ import {
   FluvyTileCard,
   type NameLines,
   type ShowSwitch,
+  type SwitchStyle,
   type TileCardConfig,
   type TileItem,
   type TileLevel,
@@ -49,6 +50,8 @@ export interface TemplateCardConfig extends FluvyCardConfig {
   name_lines?: NameLines;
   /** A large tile's switch (#160): hidden (`false`) or its level's figure in its place (`value`), its circle the switch. */
   show_switch?: ShowSwitch;
+  /** Its switch as a wall rocker (`rocker`, #177), a compact tile's at its row's end: no ruler, no level then. */
+  switch_style?: SwitchStyle;
   /** Sensors as small readouts in a large tile's foot. */
   readouts?: readonly string[];
 }

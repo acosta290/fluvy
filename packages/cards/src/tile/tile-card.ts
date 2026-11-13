@@ -68,6 +68,8 @@ export type NameLines = 1 | 2 | '1' | '2';
  * (`value`: "70 %", its line the state alone), its circle the switch too.
  */
 export type ShowSwitch = boolean | 'value';
+/** What a tile's switch is drawn as (`switch_style`, #177): the toggle (the default), or a wall rocker. */
+export type SwitchStyle = 'toggle' | 'rocker';
 
 /** One tile's own settings — the single card's config, or one item of a tiles group. */
 export interface TileItem {
@@ -88,6 +90,12 @@ export interface TileItem {
    * its circle the switch then; else the group's, else shown.
    */
   show_switch?: ShowSwitch;
+  /**
+   * Its switch as a wall rocker (`rocker`, #177): a plate standing on end in the switch's place — a large tile's
+   * beside its circle, a compact one's at its row's end — the tile then switching and nothing more, with no ruler and
+   * no level; else the group's, else the toggle.
+   */
+  switch_style?: SwitchStyle;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
@@ -115,11 +123,13 @@ export interface TileCardConfig extends FluvyCardConfig, LightColours, Omit<Tile
  * controls). `under`: the line sits under the head (a live large tile: "On · 70 %" over its ruler) and has the whole
  * width. `words`: the line is the person's own (a template card's): what is left of it once its last parts are gone
  * ends in an ellipsis, as a name does, rather than going. `figure`: the figure the line ends in and keeps
- * (`keepsFigure`): where the whole line does not hold, the words before it go and the figure stays, alone.
+ * (`keepsFigure`): where the whole line does not hold, the words before it go and the figure stays, alone. `plated`:
+ * a compact tile's rocker stands at its row's end.
  */
 interface LineFit {
   readonly dash?: boolean;
   readonly inside?: boolean;
+  readonly plated?: boolean;
   readonly under?: boolean;
   readonly words?: boolean | undefined;
   readonly figure?: string | undefined;
@@ -148,6 +158,12 @@ const TOGGLE: ActionConfig = { action: 'toggle' };
 const HEAD_LEAD = 44 + 8;
 /** A large tile's head holds its icon circle, 8 of air and the switch; a narrower tile's circle is the switch. */
 const HEAD_ROOM = HEAD_LEAD + 48;
+/** A wall rocker's plate: narrower than the switch, so a head holds it beside its circle down to 84. */
+const PLATE = 32;
+/** A compact tile holds its rocker from this width (56 of words, 12 of air and the plate inside its sides). */
+const PLATE_ROOM = 132;
+/** A compact tile keeps its circle beside its rocker from this width (tiles.css): under it the words have its room. */
+const PLATE_CIRCLE = 228;
 /** Two readouts share a foot from this inner width; under it the first one has the foot to itself. */
 const TWO_READOUTS = 120;
 /** Three readouts (power, today, cost) share a foot from this inner width: a tile on its own row. */
@@ -165,6 +181,13 @@ const switchOf = (
   const asked = item.show_switch ?? card?.show_switch;
   return asked === false || asked === 'value' ? asked : true;
 };
+
+/**
+ * The wall rocker (`tile/rocker.ts`, the `switch-styles` chunk), once the first tile asked for one has fetched it;
+ * `null` where it cannot be fetched: the tile keeps its toggle.
+ */
+let plates: typeof import('./rocker.js') | null | undefined;
+let fetchingPlates: Promise<unknown> | undefined;
 
 /**
  * Whether a large tile's foot is its ruler, never its readouts: a light that dims, a cover set to a position, a fan to
@@ -229,8 +252,11 @@ export const tintsAtRest = (
  * (108 tall, icon over name) are the same tile without the switch: the whole surface toggles on tap
  * and opens the details on hold — the Mushroom-sized buttons people group in pairs and threes. A large tile's
  * surface taps and holds the same, through a button stretched under its switch and ruler (never around them); asked
- * not to show its switch (`show_switch`, #160), its circle is the switch, and the three sizes are one tile.
- * Active = the tone's pastel fill in every size; unavailable = the off skin on the same anatomy, at the same size.
+ * not to show its switch (`show_switch`, #160), its circle is the switch, and the three sizes are one tile. Asked for
+ * a wall rocker (`switch_style`, #177), its switch is a plate standing on end — a large tile's where its toggle
+ * stood, a compact one's at its row's end, its own tap then opening the details — and it switches and nothing more:
+ * no ruler, no level. Active = the tone's pastel fill in every size; unavailable = the off skin on the same anatomy,
+ * at the same size.
  */
 export class FluvyTileCard extends Card<TileCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -495,18 +521,22 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * forms that does ("5.1M queries", "12 days ago": `shorterForms`, #93); a word that cannot fit at all is a dash or
    * nothing (`dash`) — never a cut. The room is the tile's width less its sides (16 on a large or compact tile, 12 on a
    * mini, or what a narrower mini can spare around its 44 circle) and, where the line sits beside the circle (a large
-   * tile's off skin, a compact one 128 or wider, an inner one 136 or wider), the circle and its gap.
+   * tile's off skin, a compact one 128 or wider, an inner one 136 or wider), the circle and its gap; a compact tile's
+   * rocker takes its plate and its gap too.
    */
   private fitState(line: string, size: TileSize, view: EntityView, fit: LineFit = {}): string {
-    const { dash = false, inside = false, under = false, words = false, figure } = fit;
+    const { dash = false, inside = false, under = false, words = false, figure, plated } = fit;
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
     const mini = size === 'mini';
     const sides = mini ? (width < 68 ? Math.max(8, Math.floor((width - 44) / 2)) : 12) : 16;
-    // a compact tile under 128 (an inner one under 136) hides its circle (tiles.css) and gives the words its room
+    // a compact tile under 128 (an inner one under 136, one with its rocker under 228) hides its circle (tiles.css)
+    // and gives the words its room; its rocker takes its plate and 12 of air at the row's end
     const beside =
-      !mini && !under && (size === 'large' || width >= (inside ? 136 : 128)) ? 44 + 12 : 0;
-    const room = width - 2 * sides - beside;
+      !mini && !under && (size === 'large' || width >= (plated ? PLATE_CIRCLE : inside ? 136 : 128))
+        ? 44 + 12
+        : 0;
+    const room = width - 2 * sides - beside - (plated ? PLATE + 12 : 0);
     const cls = small ? `fv-tile fv-tile--${size} > fv-tile__state` : 'fv-tile > fv-tile__state';
     const measure = (text: string): number => this.ruler.width(cls, text);
     // a line that ends in the figure it keeps loses the words before it, whole, and never the figure
@@ -559,6 +589,40 @@ export class FluvyTileCard extends Card<TileCardConfig> {
   private act(view: EntityView, on: boolean, action: ActionConfig): void {
     if (action.action === 'toggle' && !action.entity && !action.confirmation) this.flip(view, !on);
     else this.tap(view.id, action);
+  }
+
+  /**
+   * The wall rocker in the switch's place (`switch_style: rocker`), drawn by its chunk; until that lands, its box
+   * alone, so nothing moves when it does.
+   */
+  private plate(
+    view: EntityView,
+    lit: boolean,
+    tone: Tone,
+    label: string,
+    usable: boolean,
+  ): TemplateResult {
+    if (plates)
+      return plates.plate(
+        this.renderRoot,
+        this.hass,
+        view,
+        this.stateOf(view),
+        lit,
+        tone,
+        label,
+        usable,
+        (next) => this.flip(view, next),
+        (service, state) => {
+          this.expect(view.id, state);
+          this.call(view.domain, service, {}, view.id);
+        },
+      );
+    void (fetchingPlates ??= import('./rocker.js').then(
+      (module) => (plates = module),
+      () => (plates = null),
+    )).then(() => this.requestUpdate());
+    return html`<span class="fv-hit fv-hit--rocker"></span>`;
   }
 
   protected renderCard(): TemplateResult {
@@ -663,11 +727,20 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         : ([item.color, kindTone] as const);
     // its colour sits on its article, where the card's own (written by the base) is not already it
     const accent = this.accents.item(colour === this.config?.color ? undefined : colour);
-    const level = this.level(view, lit);
+    const canToggle = TOGGLE_DOMAINS.has(view.domain);
+    const shows = switchOf(item, this.config);
+    // asked for a wall rocker where it shows its switch (`switch_style`, #177), a tile switches and nothing more: no
+    // ruler at its foot, no level on its line (a card that ends its head otherwise, the Slider card, has no switch)
+    const rocker =
+      canToggle &&
+      shows === true &&
+      !this.headControl &&
+      plates !== null &&
+      (item.switch_style ?? this.config?.switch_style) === 'rocker';
+    const level = rocker ? null : this.level(view, lit);
     // a number's line (the Slider's tile's) gives way from its words, never its figure: where it does not hold whole,
     // the figure alone
     const figure = level && !words && this.keepsFigure(view) ? level.text : undefined;
-    const canToggle = TOGGLE_DOMAINS.has(view.domain);
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
     const iconTone =
       currentTone(view, on ? tone : 'accent') === 'neutral' ? 'accent' : on ? tone : 'accent';
@@ -708,17 +781,20 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     };
 
     if (small) {
+      // a compact tile's rocker stands at its row's end, where the tile holds it
+      const plated = rocker && size === 'compact' && Math.floor(this.tileWidth()) >= PLATE_ROOM;
       // the whole tile is the button (laid over it) where it has something to run: tap toggles what toggles (opens
-      // what does not), hold opens the details; a tap waits for a second where a double tap is set (#179)
+      // what does not, and a tile whose rocker is its switch, as a large tile), hold opens the details; a tap waits for
+      // a second where a double tap is set (#179)
       const tapNow = this.tapper(
         view.id,
-        runs(item.tap_action ?? (usable && canToggle ? TOGGLE : MORE_INFO)),
+        runs(item.tap_action ?? (usable && canToggle && !plated ? TOGGLE : MORE_INFO)),
         doubleNow,
       );
       let line = this.tileLine(item, view, lit, level, false, true);
       const reading = usable ? this.readoutText(item) : '';
       if (reading) line = `${line} · ${reading}`;
-      line = this.fitState(line, size, view, { dash: !usable, inside, words, figure });
+      line = this.fitState(line, size, view, { dash: !usable, inside, words, figure, plated });
       return html`<article
         class=${classes}
         data-card
@@ -731,6 +807,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
           <h3 class="fv-tile__name">${name}</h3>
           <p class="fv-tile__state" data-name=${words ? '' : nothing}>${line}</p>
         </div>
+        ${plated ? this.plate(view, lit, tone, label, usable) : nothing}
         ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
       </article>`;
     }
@@ -746,11 +823,12 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const parts = sensorLike && item.entity && !level ? valueParts(this.hass, view) : null;
     const valueInHead = parts !== null && holds(`${parts.value} ${parts.unit}`.trim());
     // a card built on the tile may end its head otherwise (the Slider card's control); else the tile's switch, apart
-    // where the tile is asked to show it (`show_switch`) and holds it beside its circle — else its circle is the switch
+    // where the tile is asked to show it (`show_switch`) and holds it beside its circle (a rocker's plate down to 84)
+    // — else its circle is the switch
     const control = this.headControl?.(view, lit, tone, label, usable);
     const switches = control === undefined && canToggle;
-    const shows = switchOf(item, this.config);
-    const switchApart = switches && shows === true && inner >= HEAD_ROOM;
+    const switchApart =
+      switches && shows === true && inner >= (rocker ? HEAD_LEAD + PLATE : HEAD_ROOM);
     const lead = circle(usable && switches && !switchApart);
     const line = this.tileLine(item, view, lit, level, valueInHead);
     // its level's figure in the switch's place (`show_switch: value`): the one its line ends in ("On · 70 %") goes up
@@ -768,7 +846,9 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       control !== undefined
         ? control
         : switchApart
-          ? toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
+          ? rocker
+            ? this.plate(view, lit, tone, label, usable)
+            : toggle(lit, tone, (next) => this.flip(view, next), label, !usable)
           : raised
             ? headValue(scaleText(this.hass, raised.scale, raised.value), raised.scale.unit)
             : parts && valueInHead

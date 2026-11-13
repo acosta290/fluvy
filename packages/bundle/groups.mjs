@@ -253,6 +253,14 @@ const SLIDER_STYLES =
   /\/packages\/ui\/src\/(controls\/slider-styles|styles\/(generated\/)?slider-styles)\.ts/;
 
 /**
+ * The switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked — what a tile's
+ * entity makes of it (`tile/rocker.ts`), its drawing and its sheet — fetched by the first tile asked for one; a house
+ * of toggles never pays for them.
+ */
+const SWITCH_STYLES =
+  /\/packages\/(cards\/src\/tile\/rocker|ui\/src\/(controls\/switch-styles|styles\/(generated\/)?switch-styles))\.ts/;
+
+/**
  * The page's background (1.19, #155): the layer under a dashboard's view that draws it, its marks and its sheet —
  * fetched by the first dashboard that wears one, or with the settings panel (its preview); a house of plain pages
  * never pays for it.
@@ -302,7 +310,7 @@ const FORMS =
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
  * card, the platforms' logos, the remote card, the Vehicle card, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
- * styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -349,6 +357,7 @@ export const GROUPS = [
   { name: 'glass', test: GLASS },
   { name: 'quiet', test: QUIET },
   { name: 'slider-styles', test: SLIDER_STYLES },
+  { name: 'switch-styles', test: SWITCH_STYLES },
   { name: 'background', test: BACKGROUND },
   { name: 'dock', test: DOCK },
   { name: 'icons', test: ICONS },

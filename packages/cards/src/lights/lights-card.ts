@@ -69,7 +69,7 @@ import {
   type LightWhites,
 } from '../shared/light.js';
 import type { SwatchEntry } from '../light/swatches.js';
-import { FluvyTileCard, type NameLines } from '../tile/tile-card.js';
+import { FluvyTileCard, type NameLines, type SwitchStyle } from '../tile/tile-card.js';
 import { fittedColumns } from '../shared/chips.js';
 import { levelRound, ROUND, ROUND_GAP } from '../shared/round.js';
 import type { FluvyLightsColourSheet, LightsColourHost } from './sheet/lights-colour-sheet.js';
@@ -112,6 +112,11 @@ export interface LightsCardConfig extends FluvyCardConfig, EmptyList {
   light_whites?: LightWhites;
   /** `tiles`: a light's name in two lines where one would cut it (`2`), every tile a line taller (#100). */
   name_lines?: NameLines;
+  /**
+   * `tiles`: each light's switch as a wall rocker at its tile's end (`rocker`, #177): a tap on the tile then opens the
+   * light's details, the rocker switching it, and its line says its state alone.
+   */
+  switch_style?: SwitchStyle;
   /**
    * A colour round in the head (#137), its own tap opening the room's colours; off unless asked, and only where a
    * light of the room takes a colour: a card that does not ask draws as it did.

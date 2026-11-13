@@ -23,8 +23,8 @@ export type StrategyType = `custom:fluvy-${TemplateId}`;
 
 /** Seconds between a camera's stills on the security dashboard. */
 export type CameraRefresh = 5 | 10 | 30;
-/** What ends a large tile's head on a dashboard: its switch, nothing, or its level's figure. */
-export type TileSwitch = 'show' | 'hide' | 'value';
+/** What ends a large tile's head on a dashboard: its switch, nothing, its level's figure, or its switch as a wall rocker. */
+export type TileSwitch = 'show' | 'hide' | 'value' | 'rocker';
 /** How many scenes a wall shows as chips. */
 export type ScenesMax = 4 | 6 | 8;
 
@@ -85,7 +85,8 @@ export interface FluvyStrategyConfig {
   tile_size?: 'large' | 'compact';
   /**
    * The large tiles' switches (#160), the lights' and the appliances': beside their circles (`show`, the default),
-   * hidden, each circle its tile's switch (`hide`), or the level's figure in their place (`value`).
+   * hidden, each circle its tile's switch (`hide`), the level's figure in their place (`value`), or wall rockers
+   * (`rocker`, #177: each tile then switches and nothing more, a compact one's rocker at its row's end).
    */
   tile_switch?: TileSwitch;
   /** How the energy flow draws its lanes (default: stream; 1.3's `ribbons` reads as it). */

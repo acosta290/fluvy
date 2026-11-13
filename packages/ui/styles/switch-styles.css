@@ -1,0 +1,136 @@
+/* fluvy · switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked (`switch_style:
+   rocker`). Its own module (`controls/switch-styles.ts`), fetched by the first tile asked for one and adopted beside
+   the card's own sheets; a house of toggles never pays for it. The plate's box is the tile's (fluvy/tiles.css), so a
+   tile keeps its switch's room while this sheet is on its way. */
+
+/* ---------- the plate ---------- */
+/* a wall plate standing on end, 32 × 44: the recess its rocker sits in — one step under the surface it stands on (the
+   inset ground on a card) in the strong hairline, at the control radius. `--rk-key`: the raised half's colour;
+   `--rk-rest`: the bar's at rest; `--rk-corner`: the halves' outer corners, concentric with the plate's */
+.fv-rocker {
+  --rk-key: var(--fv-solid-card, var(--fluvy-card));
+  --rk-rest: var(--fluvy-border-strong);
+  --rk-corner: calc(var(--fluvy-radius-control, 12px) - 4px);
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 44px;
+  border-radius: var(--fluvy-radius-control, 12px);
+  background: var(--fluvy-inset, var(--fluvy-page));
+  box-shadow: inset 0 0 0 1px var(--fluvy-border-strong);
+  transition: box-shadow var(--fv-fast) var(--fv-ease);
+}
+
+/* ---------- the rocker ---------- */
+/* one paddle in two halves, 24 × 18 each, 4 inside the plate and concentric with it at their outer corners, square
+   at the hinge they share. The raised half is a key of the card's colour, lifted as a switch's thumb is — the one a
+   finger presses next: the upper one while off, the lower one while on; the pressed half lies in the recess, the
+   same key in its shade */
+.fv-rocker::before,
+.fv-rocker::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  width: 24px;
+  height: 18px;
+  background: color-mix(in srgb, var(--rk-key) 40%, transparent);
+  transition:
+    background-color var(--fv-fast) var(--fv-ease),
+    box-shadow var(--fv-fast) var(--fv-ease);
+}
+
+.fv-rocker::before {
+  top: 4px;
+  border-radius: var(--rk-corner) var(--rk-corner) 2px 2px;
+}
+
+.fv-rocker::after {
+  top: 22px;
+  border-radius: 2px 2px var(--rk-corner) var(--rk-corner);
+}
+
+.fv-rocker:not(.is-down)::before,
+.fv-rocker.is-down::after {
+  background: var(--rk-key);
+  box-shadow:
+    inset 0 0 0 1px var(--fluvy-edge, transparent),
+    0 1px 2px rgb(0 0 0 / calc(0.18 * var(--fluvy-shade, 1)));
+}
+
+/* under a finger the raised half goes down to meet the other: the two lie level until it lets go and they flip */
+.fv-hit:active .fv-rocker::before,
+.fv-hit:active .fv-rocker::after {
+  background: color-mix(in srgb, var(--rk-key) 70%, transparent);
+  box-shadow: none;
+}
+
+/* ---------- the bar ---------- */
+/* the pilot light on the upper half: 12 × 4, the strong hairline's ink at rest, the tone's ink while the entity is on */
+.fv-rocker__bar {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  left: 10px;
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rk-rest);
+  transition: background-color var(--fv-fast) var(--fv-ease);
+}
+
+.fv-rocker.is-on .fv-rocker__bar {
+  background: var(--tone-ink, var(--fluvy-accent));
+}
+
+/* while what it switches is on its way (a cover opening or closing), the bar breathes: a tap stops it there */
+.fv-rocker.is-moving .fv-rocker__bar {
+  animation: rk-breathe 1600ms var(--fv-ease) infinite;
+}
+
+@keyframes rk-breathe {
+  50% {
+    opacity: 0.32;
+  }
+}
+
+/* ---------- where it stands ---------- */
+/* on a lit tile the recess is the fill itself a step deeper, its hairline and its bar in the fill's own inks; the key
+   stays the card's colour, as the tile's circle does */
+.fv-tile.is-on .fv-rocker {
+  --tone-ink: var(--tone-fill-ink);
+  background: color-mix(in srgb, var(--tone-on) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone-on) 24%, transparent);
+}
+
+/* on a tile inside a card (the page's fill) the recess is the page's deeper step */
+.fv-tile--inner:not(.is-on) .fv-rocker {
+  background: var(--fluvy-page-alt);
+}
+
+/* dark: at rest the key is the lifted surface, a clear step over the card it stands on, and its resting bar the
+   disabled ink (a step quieter than a lit one); on a lit tile it is the card's colour, as in light */
+[data-mode='dark'] .fv-rocker {
+  --rk-key: var(--fluvy-border-strong);
+  --rk-rest: var(--fluvy-text-disabled);
+}
+
+[data-mode='dark'] .fv-tile.is-on .fv-rocker {
+  --rk-key: var(--fv-solid-card, var(--fluvy-card));
+}
+
+/* ---------- under a pointer, out of reach ---------- */
+@media (hover: hover) {
+  .fv-hit:hover .fv-rocker {
+    box-shadow: inset 0 0 0 1px var(--fluvy-text-secondary);
+  }
+}
+
+/* out of reach it is drawn disabled, as a switch is: the off skin, faded; quiet (`unavailable: quiet`), at full
+   strength, as it rests */
+.fv-rocker[aria-disabled='true'] {
+  opacity: 0.4;
+}
+
+.fv-rocker[aria-disabled='true']:where([data-unavailable='quiet'] *) {
+  opacity: 1;
+}

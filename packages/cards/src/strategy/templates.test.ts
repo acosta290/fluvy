@@ -513,6 +513,10 @@ describe('the dashboard templates', () => {
       expect(strategyOptions({ tile_switch: 'value' }, templateById(id))).toEqual({
         tile_switch: 'value',
       });
+      // …or wall rockers (#177)
+      expect(strategyOptions({ tile_switch: 'rocker' }, templateById(id))).toEqual({
+        tile_switch: 'rocker',
+      });
       expect(strategyOptions({ tile_switch: false }, templateById(id))).toEqual({});
     }
     expect(strategyOptions({ tile_switch: 'hide' }, templateById('energy'))).toEqual({});

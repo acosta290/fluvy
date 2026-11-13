@@ -5,6 +5,7 @@ import { configKeys } from '../shared/config.js';
 import {
   actionFields,
   colourFields,
+  drawsSwitch,
   editorLabels,
   editorLanguage,
   editorWord,
@@ -19,6 +20,7 @@ import {
   sinceChoices,
   sinceField,
   switches,
+  switchStyleField,
   textField,
   tintField,
 } from '../shared/form.js';
@@ -48,6 +50,7 @@ export const keys = configKeys<TemplateCardConfig>()([
   'variant',
   'name_lines',
   'show_switch',
+  'switch_style',
   'readouts',
 ]);
 
@@ -55,6 +58,7 @@ export const defaults: EditorDefaults = (config) => ({
   variant: 'compact',
   name_lines: '1',
   show_switch: true,
+  switch_style: 'toggle',
   secondary: config['entity'] ? 'state' : 'none',
   since: '',
   active: 'auto',
@@ -82,6 +86,11 @@ export function getConfigForm(): LovelaceConfigForm {
       onlyWhen(
         (data) => data['variant'] === 'large' && switches(data['entity']),
         showSwitchField(),
+      ),
+      // its switch's style where it draws one: a large tile that shows it, a compact one's at its row's end
+      onlyWhen(
+        (data) => drawsSwitch(data['variant'], data['show_switch']) && switches(data['entity']),
+        switchStyleField(),
       ),
       ...colourFields(),
       // a colour at rest needs a rest and something to show then (a colour, or a tone that washes); readouts need

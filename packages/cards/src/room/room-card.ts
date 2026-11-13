@@ -56,7 +56,12 @@ import {
 } from '../shared/readouts.js';
 import type { CardEditor, Press } from '../shared/base.js';
 import type { LightColours, Tint } from '../shared/colour.js';
-import { FluvyTileCard, type NameLines, type TileItem } from '../tile/tile-card.js';
+import {
+  FluvyTileCard,
+  type NameLines,
+  type SwitchStyle,
+  type TileItem,
+} from '../tile/tile-card.js';
 import type { QuickAction, QuickRounds } from './quick-actions.js';
 
 const s = strings('room');
@@ -109,6 +114,11 @@ export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTunin
   tint?: Tint;
   /** Its tiles' names (and the row's) in two lines where one would cut them (`2`), each a line taller (#100). */
   name_lines?: NameLines;
+  /**
+   * Its tiles' switches as wall rockers (`rocker`, #177), each at its tile's end: a tap on the tile then opens its
+   * details, the rocker switching it; a tile may say its own.
+   */
+  switch_style?: SwitchStyle;
   /** The quick actions at the end of its head, its row or its picture (default). */
   show_quick_actions?: boolean;
   /** The arrows that say the room opens (default); hidden, the words have their room and a tap still opens it. */

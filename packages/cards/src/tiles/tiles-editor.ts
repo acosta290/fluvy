@@ -3,6 +3,7 @@ import {
   accentField,
   actionFields,
   colourFields,
+  drawsSwitch,
   emptyFields,
   entitiesField,
   entityField,
@@ -20,6 +21,7 @@ import {
   sinceField,
   sliderFields,
   switches,
+  switchStyleField,
   tintField,
   toneField,
   unavailableField,
@@ -51,6 +53,7 @@ export const keys = configKeys<TilesCardConfig>()([
   'size',
   'name_lines',
   'show_switch',
+  'switch_style',
   'readouts',
   'tiles',
   'columns',
@@ -60,7 +63,10 @@ export const keys = configKeys<TilesCardConfig>()([
   ...EMPTY_KEYS,
 ]);
 
-/** A tile's fields: every one, and those of a tile with no switch of its own to show or hide. */
+/**
+ * A tile's fields: every one; those of a compact tile, whose switch has a style and no place of its own to hide; those
+ * of a large tile that shows no switch; and those of a tile with no switch at all.
+ */
 const TILE_FIELDS = [
   entityField(),
   nameIconFields(),
@@ -69,10 +75,15 @@ const TILE_FIELDS = [
   sinceField(),
   unavailableField({ item: true }),
   showSwitchField({ item: true }),
+  switchStyleField({ item: true }),
   // a small tile's tap toggles what toggles, a large one's opens; its circle may be its switch
   actionFields({ icon: true, tap: null, iconTap: null }),
 ];
-const TILE_FIELDS_NO_SWITCH = TILE_FIELDS.filter((field) => field.name !== 'show_switch');
+const without = (...names: readonly string[]) =>
+  TILE_FIELDS.filter((field) => !names.includes(field.name));
+const TILE_FIELDS_STYLE = without('show_switch');
+const TILE_FIELDS_NO_STYLE = without('switch_style');
+const TILE_FIELDS_NO_SWITCH = without('show_switch', 'switch_style');
 
 export const lists: readonly RowsListSpec[] = [
   {
@@ -89,6 +100,7 @@ export const lists: readonly RowsListSpec[] = [
       'since',
       'unavailable',
       'show_switch',
+      'switch_style',
       'tap_action',
       'hold_action',
       'double_tap_action',
@@ -97,9 +109,16 @@ export const lists: readonly RowsListSpec[] = [
       'icon_double_tap_action',
     ],
     schema: TILE_FIELDS,
-    // a tile's own switch where it has one: a large tile's, of an entity that switches
-    schemaOf: (item, card) =>
-      card?.['size'] === 'large' && switches(item['entity']) ? TILE_FIELDS : TILE_FIELDS_NO_SWITCH,
+    // a tile's own switch where it has one, of an entity that switches: a large tile's, with its style while it
+    // shows; a compact tile's style, its rocker at its row's end
+    schemaOf: (item, card) => {
+      const size = card?.['size'];
+      if (!card || size === 'mini' || !switches(item['entity'])) return TILE_FIELDS_NO_SWITCH;
+      if (size !== 'large') return TILE_FIELDS_STYLE;
+      return drawsSwitch(size, item['show_switch'] ?? card['show_switch'])
+        ? TILE_FIELDS
+        : TILE_FIELDS_NO_STYLE;
+    },
   },
 ];
 
@@ -112,6 +131,7 @@ export const defaults: EditorDefaults = (config) => ({
   name_lines: '1',
   columns: config['size'] === 'mini' ? '3' : '2',
   show_switch: true,
+  switch_style: 'toggle',
   tint: 'on',
   light_colors: lightDefaults().colors,
   light_whites: 'temperature',
@@ -127,6 +147,12 @@ export function getConfigForm(): LovelaceConfigForm {
       onlyWhen(
         (data) => data['size'] === 'large' && holdsSwitch('tiles', 'entities')(data),
         showSwitchField(),
+      ),
+      // their switches' style where they draw one: large tiles that show them, compact ones' at their rows' ends
+      onlyWhen(
+        (data) =>
+          drawsSwitch(data['size'], data['show_switch']) && holdsSwitch('tiles', 'entities')(data),
+        switchStyleField(),
       ),
       ...colourFields(),
       tintField(),

@@ -98,11 +98,15 @@ const TILES = choice('tile_size', 'dashboard.tiles', [
   { value: 'large', label: 'dashboard.large' },
   { value: 'compact', label: 'dashboard.rows' },
 ]);
-/** The large tiles' switches: beside their circles, hidden (each circle switches its tile), or the level's figure there. */
+/**
+ * The large tiles' switches: beside their circles, hidden (each circle switches its tile), the level's figure there,
+ * or wall rockers.
+ */
 const SWITCHES = choice('tile_switch', 'dashboard.tile_switch', [
   { value: 'show', label: 'dashboard.switch_show' },
   { value: 'hide', label: 'dashboard.switch_hide' },
   { value: 'value', label: 'dashboard.switch_value' },
+  { value: 'rocker', label: 'dashboard.switch_rocker' },
 ]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));

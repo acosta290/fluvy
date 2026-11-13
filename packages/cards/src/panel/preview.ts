@@ -262,14 +262,15 @@ export class PreviewHouse {
   }
 
   /**
-   * A tile of the house: large (a dashboard's six columns), its switch as a dashboard asks (`tile_switch`), or a
-   * compact row.
+   * A tile of the house: large (a dashboard's six columns) or a compact row, its switch as a dashboard asks
+   * (`tile_switch`), as its own tiles are (`sizedTile`).
    */
   tile(entity: TileEntity, size: 'large' | 'compact' = 'large', switches?: string): LovelaceCard {
     return this.card({
       type: 'custom:fluvy-tile-card',
       entity: ENTITY[entity],
-      ...(size === 'compact' ? { size } : tileSwitch(switches)),
+      ...(size === 'compact' ? { size } : {}),
+      ...tileSwitch(switches),
       grid_options: { columns: 6 },
     });
   }

@@ -29,7 +29,7 @@ family owns ships with that family's chunk and is said only where that chunk has
 | Compact card | padding 16, rounds 44 | mini media rows, compact climate row, counter row |
 | Player card | 48 rounds throughout (transport and the head's round on the 80 art: power for a player that can be switched on or off, else "…") | the one card where the header round is 48, so it centres on the art on the grid; the head keeps one trailing round — two beside the art would leave a title 104 px in a phone's column — and the dialog stays a tap on the head — the art and its words, one button — or a still press on it away; a column that would leave the words under 96 beside the art and the round lets the art go (the head keeps its 80). The line under the title is the player's (who made it; at rest its state and when it last played) unless the person writes their own (`secondary`, 1.13, #101: words, a template, an entity's state with its unit), in every variant, the mini row's too, a name's words that may end in an ellipsis; out of reach it says why whatever was asked. A television that is on and plays nothing Home Assistant names is titled by its app, else its input, else its name, and its line never repeats the title |
 | Tile | 172 × 168, padding 16, radius 16 | two per row: 172 + 16 + 172 on the phone (`.fv-grid2`), 152 + 8 + 152 on the desktop, 208 + 8 + 208 on the wall; the foot slot is 40: a 44 ruler hit band drawn 4 up, or two xs readouts |
-| Tile · compact | 76 tall, padding 16, radius 16 — the scene tile's geometry: 44 icon, 12 gap, name 15/600 over state 13/500 (36 block centred on the icon); with `name_lines: 2` (1.13, #100) the name takes two balanced lines where one would end in an ellipsis, an ellipsis only past the second, and the tile is 88 (96 inside a card) whatever its name says, so a row stays level | the whole tile is the button — tap toggles what toggles (opens what does not), hold 500 ms opens the details; no switch: the tone fill says "on"; a small tile says "Unavailable" without the time |
+| Tile · compact | 76 tall, padding 16, radius 16 — the scene tile's geometry: 44 icon, 12 gap, name 15/600 over state 13/500 (36 block centred on the icon); with `name_lines: 2` (1.13, #100) the name takes two balanced lines where one would end in an ellipsis, an ellipsis only past the second, and the tile is 88 (96 inside a card) whatever its name says, so a row stays level | the whole tile is the button — tap toggles what toggles (opens what does not), hold 500 ms opens the details; no switch: the tone fill says "on" (asked for a wall rocker, its plate stands at the row's end and a tap opens the details: § Rocker); a small tile says "Unavailable" without the time |
 | Tile · mini | 108 tall, padding 12, radius 16: 44 icon, 8 gap, name 13/600 over state 12/500, centred; 124 with the name in two lines (`name_lines: 2`), the circles of a row level | same behaviour; three or four per row |
 | Tiles group | `.fv-tiles`: compact or mini tiles 8 px apart, or large ones (icon circle + switch, ruler or readouts) at the section's gaps; 2 / 3 / 4 per row or `auto` (148 / 84 minimum) | one card, the Mushroom-style pairs and threes; grouped and lone tiles are the same tile. A compact tile under 128 gives its name the icon's room, so buttons people reach for on a phone are large |
 | Sheet | 392 wide, padding 16, content 360, radius 24 top | grabber, title/sub + close or switch |
@@ -281,6 +281,7 @@ key hold.
 | Nudge | stepper pill 96 × 44 (− │ +) | on the value row; centred under a dial |
 | Setpoint | dial: soft disc, tick ring, knob riding the ring, current-temperature dot, min/max labels, stepper below | `dial({ min, max, target | range, current })` — real units, never fractions; a range dial keeps the stepper and marks the selected knob with the focus halo (tap to select); its ring comes from the column (84 where it has 216, down to 56: twice the ring, its ticks and their 12, on the 4 grid), and its figure takes the largest size the disc holds with its unit, measured on what it says at rest (a range's two ends), so a knob under the finger never resizes it; `show_stepper: false` draws none, 56 shorter |
 | Toggle | 48 × 28 switch in a 56 × 44 hit | tile heads, rows, sheet heads |
+| Rocker | a tile's switch as the one on the wall (`switch_style: rocker`, 1.20): a 32 × 44 plate in a 44 × 44 target, its raised half the one pressed next, a bar lit while on (§ Rocker) | a large tile's head, a compact tile's end |
 | Modes | option tiles (84 tall, radius 12): a 20 outline glyph top-left, 12/500 label, 16/600 value; active = tone fill + dark ink, **no ring, no dots** | row fills the column exactly: 3 × 104 + 2 × 4 = 320; sheet 3 × 112 + 2 × 12 = 360; desktop 3 × 96 + 2 × 12 = 312; every row is full — a shorter last row splits the column among its own tiles (5 modes: 3 + 2 wider, `optionGrid`) |
 | Stats | the option anatomy, read (`tiles()`; the stat tiles card's take a tap, 1.11), 2 × 156 + 8; **compact** (1.5): 64 tall (12 · label 16 · 4 · value 20 · 12), no glyph row, three a row in the mode row's rhythm (3 × 104 + 2 × 4) while the widest label and value fit a cell (`optionColumnsFor`, measured), four as two by two, else two, one a row where not even two cells hold a value — a value never wraps; `columns: auto \| 2 \| 3` | capacity, sub-values of a card |
 | Gauge | the dial's tick ring without the disc; uppercase label above the value in the open centre; MIN / MAX / AVG readouts below | solar power, any read-only 0–max |
@@ -2608,6 +2609,43 @@ signed range lit from zero (D), the house's tile (F); no vertical form ("too muc
   `common.volume` (the tile's).
 - Its chunk is its own (`slider`, 3.8 KB of 8, its editor with the forms): every page carries only its name and height
   (`slider-family.ts`).
+
+## Rocker (1.20)
+
+A tile's switch as the switch on the wall (#177, an idea by @maxhayim): `switch_style: rocker` draws a plate standing on
+end where the toggle stood, for what a house only ever turns on and off. It is drawn in the language's own idiom — a
+recess, a hairline, the tones — with no gloss and no gradient; its only shadow is the lift a toggle's thumb has, at
+the palette's share (`--fluvy-shade`: none on a surface read by its edges).
+
+- **The plate** is 32 × 44 at the control radius: the recess the rocker sits in, one step under the surface it stands
+  on — the inset ground in the strong hairline on a card, the page's deeper step on a tile inside a card, the fill a
+  step deeper on a lit tile (12 % of the fill's ink, its hairline 24 %). Its target is 44 × 44, centred on it and
+  reaching 6 past each side, so a head holds it beside its circle down to 84 (a 116 tile).
+- **The rocker** is one paddle in two halves of 24 × 18, 4 inside the plate and concentric with it at their outer
+  corners (8), square at the hinge they share (2). The raised half is the one a finger presses next, the upper one
+  while off and the lower one while on: a key of the card's colour, lifted as a toggle's thumb is. The pressed half
+  lies in the recess, the same key let through at 40 %. Under a finger the two lie level (70 %, no lift) until it lets
+  go and they flip in 120 ms (`--fv-fast`), at once without motion.
+- **The bar** is the pilot light on the upper half: 12 × 4, 8 under the plate's top, the strong hairline's ink at rest
+  and the tone's ink while the entity is on (the fill's ink on a lit tile).
+- **Dark**: at rest the key is the lifted surface (the strong hairline's step over the card) and the resting bar the
+  disabled ink; on a lit tile the key is the card's colour, as the tile's circle is. **Read by its edges** (E-ink),
+  where nothing casts a shadow, the raised half is drawn by its edge (`--fluvy-edge`). **On a solid fill** the key
+  stays the card's colour, the recess and the bar in the fill's ink.
+- **The tile switches and nothing more**: no ruler at its foot (free for its readouts, or for a name's second line)
+  and no level on its line; a tap on the tile opens the details, as a large tile's does. Under 116 a large tile's
+  circle is its switch, as with the toggle. A compact tile draws the plate at its row's end from 132, 12 after its
+  words, and gives its circle to its words under 228; a mini tile keeps its circle and its tap.
+- **A cover and a valve travel**: the raised half says where the next tap takes it (up from closed, down from open;
+  stopped part of the way, back the way it came, as Home Assistant's own toggle goes), the bar is lit while it is not
+  closed and breathes while it travels (1.6 s, down to 32 %), when a tap stops it there. One target of 44: two halves
+  of 22 would each be half a finger.
+- **Out of reach** it is the off skin, faded to 40 % as a switch is and still; quiet, at full strength.
+- **In the editor** the style is a dropdown of the two, as every editor's choice is, offered only where a switch is
+  drawn, the word under it saying what a rocker leaves out; a tile of a group says its own, empty until chosen.
+- **Its chunk is its own** (`switch-styles`: the drawing, its sheet, what a cover makes of it), fetched by the first
+  tile asked for a rocker. The tile keeps the plate's box meanwhile, so nothing moves when it lands, and keeps its
+  toggle where it cannot be fetched.
 
 ## Vehicle (1.13)
 

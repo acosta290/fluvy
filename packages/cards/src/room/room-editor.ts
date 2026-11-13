@@ -31,6 +31,8 @@ import {
   selectField,
   showIconField,
   sinceChoices,
+  switches,
+  switchStyleField,
   textField,
   tintField,
   toneField,
@@ -124,6 +126,7 @@ export const keys = configKeys<RoomCardConfig>()([
   'exclude',
   'tint',
   'name_lines',
+  'switch_style',
   'light_colors',
   'light_whites',
 ]);
@@ -150,16 +153,20 @@ const ENTITY_ITEM: readonly HaFormSchemaItem[] = [
 
 /**
  * A room's tiles are a group's but for their look out of reach, which is the room's (they sit inside it), and a large
- * tile's switch: they are compact, the tile itself the button.
+ * tile's switch: they are compact, the tile itself the button — or, asked for a wall rocker, its switch at its end.
  */
 const ownField = (key: string): boolean => key !== 'unavailable' && key !== 'show_switch';
+const TILE_FIELDS = (tilesLists[0]?.schema ?? []).filter((field) => ownField(field.name));
+const TILE_FIELDS_NO_SWITCH = TILE_FIELDS.filter((field) => field.name !== 'switch_style');
 
 export const lists: readonly RowsListSpec[] = [
   {
     key: 'tiles',
     title: 'editor.tiles',
     keys: (tilesLists[0]?.keys ?? []).filter(ownField),
-    schema: (tilesLists[0]?.schema ?? []).filter((field) => ownField(field.name)),
+    schema: TILE_FIELDS,
+    // a tile's own switch style, of an entity that switches
+    schemaOf: (item) => (switches(item['entity']) ? TILE_FIELDS : TILE_FIELDS_NO_SWITCH),
     when: drawsTiles,
   },
   {
@@ -251,6 +258,7 @@ export const defaults: EditorDefaults = (config, hass) => {
     controls: 'rows',
     name_position: 'bottom',
     name_lines: '1',
+    switch_style: 'toggle',
     show_count: true,
     show_climate: true,
     readout_style: 'row',
@@ -327,6 +335,8 @@ export function getConfigForm(): LovelaceConfigForm {
         onlyWhen(drawsTiles, tintField()),
         onlyWhen((form) => drawsTiles(form) || form['variant'] === 'row', nameLinesField()),
       ),
+      // its tiles' switches as wall rockers, each at its tile's end
+      onlyWhen(drawsTiles, switchStyleField()),
       onlyWhen(drawsLights, lightColourFields()),
       // where the room opens, where none is chosen
       actionFields({ icon: true, tap: null }),

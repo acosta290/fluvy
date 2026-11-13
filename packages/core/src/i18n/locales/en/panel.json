@@ -158,6 +158,7 @@
     "dashboard.switch_show": "Shown",
     "dashboard.switch_hide": "Hidden",
     "dashboard.switch_value": "Value",
+    "dashboard.switch_rocker": "Wall rockers",
     "dashboard.flow": "Energy flow",
     "dashboard.rail": "Rail",
     "dashboard.legs": "Lines",

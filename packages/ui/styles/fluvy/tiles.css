@@ -76,6 +76,14 @@
   z-index: 1;
 }
 
+/* a wall rocker's box in the switch's place (`switch_style: rocker`, 1.20, #177): a 44 target reaching 6 past each
+   side of its 32 × 44 plate, which the tile keeps while the rocker's drawing is on its way (switch-styles.css) */
+.fv-hit--rocker {
+  justify-content: center;
+  width: 44px;
+  margin: 0 -6px;
+}
+
 .fv-tile__value {
   height: 44px;
   font-size: 16px;
@@ -329,6 +337,14 @@
    still says on or off (a mini tile is never narrower than 84: its group lays out fewer columns instead) */
 @container (max-width: 95px) {
   .fv-tile--compact > .fv-ico {
+    display: none;
+  }
+}
+
+/* a compact tile with its rocker at its end gives its name the icon's room under 228 (196 inside): the plate says
+   what the tile is for */
+@container (max-width: 195px) {
+  .fv-tile--compact:has(> .fv-hit) > .fv-ico {
     display: none;
   }
 }
