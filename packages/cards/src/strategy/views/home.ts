@@ -160,11 +160,11 @@ export function homeView(ctx: StrategyContext): Section[] {
         readings,
       ),
       ...(weather
-        ? [[full('weather', { entity: weather })], [full('clock', { variant: 'digital', weather })]]
-        : [[full('clock', { variant: 'digital' })]]),
+        ? [[full('weather', { entity: weather })], [full('clock', { face: 'digital', weather })]]
+        : [[full('clock', { face: 'digital' })]]),
       when(hasSources(energy), () => [energyFlow(energy, ctx.style)]),
       energy.solarPowers.length
-        ? solarCurves(energy, { title: t('energy.solar') })
+        ? solarCurves(energy, { name: t('energy.solar') })
         : energy.homePower
           ? [full('energy', { entity: energy.homePower })]
           : [],
@@ -282,9 +282,9 @@ export function energyView(ctx: StrategyContext): Section[] {
     ...(energy.prefsMeters
       ? []
       : energy.solarPowers.length
-        ? solarCurves(energy, { title: t('energy.solar') })
+        ? solarCurves(energy, { name: t('energy.solar') })
         : gridPower
-          ? [full('energy', { entity: gridPower, title: t('energy.grid') })]
+          ? [full('energy', { entity: gridPower, name: t('energy.grid') })]
           : []),
     ...todayCards(ctx),
     ...todayTiles(ctx),
@@ -391,7 +391,7 @@ export function mediaView(ctx: StrategyContext): Section[] {
 export function agendaView(ctx: StrategyContext): Section[] {
   const { home, t } = ctx;
   const calendar = (ids: readonly string[]): Card =>
-    full('calendar', { entities: [...ids], view: 'month-day' });
+    full('calendar', { entities: [...ids], variant: 'month-day' });
   const list = (id: string): Card => full('todo', { entity: id });
   const timer = (id: string): Card => full('timer', { entity: id, ...home.named(id) });
   const actionsCard = (title: string, ids: readonly string[]): Card =>

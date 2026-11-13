@@ -53,7 +53,7 @@ function wallView(ctx: StrategyContext): Section[] {
             chips: scenes.map((id) => ({
               name: chipName(id),
               icon: 'fluvy:sparkle',
-              action: {
+              tap_action: {
                 action: 'perform-action',
                 perform_action: 'scene.turn_on',
                 target: { entity_id: id },

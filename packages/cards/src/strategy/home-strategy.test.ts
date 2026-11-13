@@ -2772,9 +2772,9 @@ describe('custom:fluvy-home strategy — tiles and scenes that would read alike 
             const { entity: id, name } = item as { entity: string; name?: string };
             named[id] = name;
           }
-      for (const chip of (card['chips'] as { name: string; action?: unknown }[] | undefined) ??
+      for (const chip of (card['chips'] as { name: string; tap_action?: unknown }[] | undefined) ??
         []) {
-        const target = (chip.action as { target?: { entity_id?: string } } | undefined)?.target;
+        const target = (chip.tap_action as { target?: { entity_id?: string } } | undefined)?.target;
         if (target?.entity_id) named[target.entity_id] = chip.name;
       }
     }

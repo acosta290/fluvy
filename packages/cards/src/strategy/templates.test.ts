@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { catalogue } from '../index.js';
 
 const CATALOGUE = await catalogue();
+import { type AliasSpec, COMMON_ALIASES, normaliseConfig } from '../shared/config.js';
 import { CAPS } from './caps.js';
 import { FluvyHomeStrategy } from './home-strategy.js';
 import { generate, generateWith } from './generate.js';
@@ -214,6 +215,26 @@ describe('the dashboard templates', () => {
         }
       }
     expect(rejected).toEqual([]);
+  });
+
+  it('write every card by the names its card reads today, which its height is counted by', async () => {
+    const older: string[] = [];
+    for (const hass of [house(), everything()])
+      for (const template of TEMPLATES) {
+        const { views } = await generate({ type: template.type, caps: 'none' }, hass);
+        for (const card of cardsOf(views)) {
+          const tag = card.type.replace(/^custom:/, '');
+          const { aliases } = (CATALOGUE.find(([name]) => name === tag)?.[1] ?? {}) as {
+            aliases?: AliasSpec;
+          };
+          const read = normaliseConfig(card, ...(aliases ? [aliases] : []), COMMON_ALIASES);
+          if (JSON.stringify(read) !== JSON.stringify(card))
+            older.push(`${template.id} ${tag}: ${JSON.stringify(card)}`);
+        }
+      }
+    // an older name is read by the card alone, never by what counts its height: the clock's `variant: digital` cut
+    // the Home view's columns with the analogue face's 352 where the digits stand 196
+    expect(older).toEqual([]);
   });
 
   it('put every card of the library to use, between them, in a house that has one of everything', async () => {
