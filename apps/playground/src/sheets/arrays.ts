@@ -275,5 +275,23 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // #183: the arrays stand for the day where the card's meter is one of them, as the automatic dashboards write it:
+    // "So far today" is both roofs' 11.2 kWh, against the house's forecast
+    {
+      title: 'Two arrays, the day theirs together',
+      cards: [
+        {
+          type: 'custom:fluvy-production-card',
+          entity: 'sensor.ar_east',
+          name: 'Solar',
+          forecast_entity: 'sensor.ar_forecast',
+          arrays: [
+            { entity: 'sensor.ar_east', name: 'East roof' },
+            { entity: 'sensor.ar_west', name: 'West roof' },
+          ],
+          _now: NOW,
+        },
+      ],
+    },
   ],
 };

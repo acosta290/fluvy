@@ -59,6 +59,9 @@ const SENSORS: Record<
   'sensor.hb_house': { daily: series([22.1, 25.3, 28.7, 24.6, 23.9, 26.4, 22.8], 24, 5, 9.8) },
   'sensor.hb_export': { daily: series([28.4, 27.6, 22.1, 19.8, 24.7, 6.2, 21.4], 17, 10, 7.1) },
   'sensor.hb_import': { daily: series([4.8, 6.9, 9.1, 5.6, 4.3, 16.8, 7.2], 7, 5, 2.4) },
+  // two arrays, a roof each (#183): the north one makes about half the south one's
+  'sensor.hb_north': { daily: series([12.1, 11.6, 9.4, 8.8, 10.3, 3.1, 9.0], 8, 4, 4.1) },
+  'sensor.hb_south': { daily: series([23.3, 22.8, 19.2, 17.7, 19.9, 6.4, 17.9], 16, 8, 8.2) },
   // an imported statistic (#149): no entity behind it, its days as the recorder keeps them
   'hb_import:consumption': {
     daily: series([22.1, 25.3, 28.7, 24.6, 23.9, 26.4, 22.8], 24, 5, 9.8),
@@ -362,6 +365,8 @@ export const sheet: SheetSpec = {
     ['sensor.hb_house', '21877.2', { friendly_name: 'House consumption', ...KWH }],
     ['sensor.hb_export', '9210.4', { friendly_name: 'Feed-in to grid', ...KWH }],
     ['sensor.hb_import', '6032.9', { friendly_name: 'Grid import', ...KWH }],
+    ['sensor.hb_north', '6120.4', { friendly_name: 'Inverter E1 north roof', ...KWH }],
+    ['sensor.hb_south', '12222.3', { friendly_name: 'Inverter E2 south roof', ...KWH }],
     ['sensor.hb_outside', '13.0', { friendly_name: 'Outside temperature', ...CELSIUS }],
     ['sensor.hb_dead', 'unavailable', { friendly_name: 'Pool pump energy', ...KWH }],
     ['sensor.hb_fresh', '0.4', { friendly_name: 'Heat pump energy', ...KWH }],
@@ -602,6 +607,21 @@ export const sheet: SheetSpec = {
     {
       title: 'An imported statistic, no entity behind it (#149)',
       cards: [{ type: plain.type, entity: 'hb_import:consumption', color: 'green', _now: NOW }],
+    },
+    // #183: two arrays' days summed bar by bar, as the automatic dashboards write them
+    {
+      title: 'Two arrays, summed',
+      cards: [
+        {
+          type: plain.type,
+          entity: 'sensor.hb_north',
+          name: 'Solar',
+          entities: ['sensor.hb_north', 'sensor.hb_south'],
+          color: 'amber',
+          include_today: true,
+          _now: NOW,
+        },
+      ],
     },
   ],
 };
