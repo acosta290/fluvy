@@ -103,6 +103,7 @@ export type HouseEdit = Partial<
     | 'icons'
     | 'activity'
     | 'history'
+    | 'details'
     | 'wall'
     | 'lightTint'
     | 'lightColors'

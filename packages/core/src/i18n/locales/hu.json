@@ -2460,6 +2460,8 @@
     "scope.activity_sub": "Egy nap egy pillantásra, időskálával; kikapcsolva a Home Assistant nézete marad",
     "scope.history": "Saját Előzmények nézetünk",
     "scope.history_sub": "Kézzel is leolvasható görbék, alattuk az állapotokkal; kikapcsolva a Home Assistant nézete marad",
+    "scope.details": "Saját grafikonunk a részletek ablakban",
+    "scope.details_sub": "Egy entitás előzményei a Fluvy rajzolásában, a Home Assistant ablakában; kikapcsolva a Home Assistant nézete marad",
     "scope.admin_only": "Ezt csak rendszergazda módosíthatja",
     "scope.theme_profile": "A profilod a {theme} témát használja",
     "scope.theme_profile_sub": "Így a Home Assistant minden oldalon ezt viseli. Az alapértelmezett témával csak ezek a vezérlőpultok.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Amivel az Android TV Remote megnyitja az alkalmazást: mélyhivatkozás, például netflix:// (a megbízható mód), vagy alkalmazásazonosító",
     "editor.commands": "Az eszköz parancsai",
     "editor.commands_helper": "Egy gomb és a parancs, amit az eszköz érte elfogad, a táblázat felett (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Előzmények",
+    "sub_5minute": "5 perces átlagok",
+    "sub_hour": "Óránkénti átlagok",
+    "sub_states": "Minden mért érték",
+    "sub_hourly": "Óránkénti növekmény",
+    "sub_daily": "Napi növekmény",
+    "sub_total": "Folyamatos összeg",
+    "on_for": "{state}: {time}",
+    "changes": "{n} változás",
+    "changes_one": "1 változás",
+    "no_changes": "Nincs változás",
+    "change": "Változás",
+    "per_hour": "Óránként",
+    "per_day": "Naponta",
+    "total": "Összesen",
+    "gained": "Növekmény",
+    "best_hour": "Legjobb óra",
+    "best_day": "Legjobb nap",
+    "so_far": "eddig",
+    "open": "Megnyitás az Előzményekben",
+    "read": "Az előzmények ebben az időszakban. A nyílbillentyűkkel olvashatod le."
   }
 }

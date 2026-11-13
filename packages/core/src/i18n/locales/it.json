@@ -1197,6 +1197,8 @@
     "scope.activity_sub": "Una giornata a colpo d’occhio, con una linea del tempo; spento mantiene quella di Home Assistant",
     "scope.history": "La nostra vista Cronologia",
     "scope.history_sub": "Curve leggibili a mano, con gli stati sotto; spento mantiene quella di Home Assistant",
+    "scope.details": "Il nostro grafico nella finestra dei dettagli",
+    "scope.details_sub": "La cronologia di un’entità come la disegna Fluvy, nella finestra di Home Assistant; spento mantiene quella di Home Assistant",
     "scope.admin_only": "Solo un amministratore può cambiarlo",
     "scope.theme_profile": "Il tuo profilo usa il tema {theme}",
     "scope.theme_profile_sub": "Quindi Home Assistant lo indossa in ogni pagina. Con il tema predefinito, solo queste dashboard.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Con cosa Android TV Remote apre l’app: un deep link come netflix:// (il modo affidabile) o un ID applicazione",
     "editor.commands": "Comandi di questo dispositivo",
     "editor.commands_helper": "Un tasto e il comando che il dispositivo accetta per esso, sopra la tabella (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Cronologia",
+    "sub_5minute": "Medie di 5 minuti",
+    "sub_hour": "Medie orarie",
+    "sub_states": "Ogni lettura",
+    "sub_hourly": "Aggiunto ogni ora",
+    "sub_daily": "Aggiunto ogni giorno",
+    "sub_total": "Totale progressivo",
+    "on_for": "{state} per {time}",
+    "changes": "{n} cambiamenti",
+    "changes_one": "1 cambiamento",
+    "no_changes": "Nessun cambiamento",
+    "change": "Variazione",
+    "per_hour": "All’ora",
+    "per_day": "Al giorno",
+    "total": "Totale",
+    "gained": "Aggiunto",
+    "best_hour": "Ora migliore",
+    "best_day": "Giorno migliore",
+    "so_far": "finora",
+    "open": "Apri in Cronologia",
+    "read": "La cronologia in questo periodo. Leggila con le frecce della tastiera."
   }
 }

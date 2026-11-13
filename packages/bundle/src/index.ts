@@ -17,7 +17,7 @@ import {
   type ShellHandle,
   type UpdateWatch,
 } from '@fluvy/core';
-import { panelOnDemand, takeOverActivity, takeOverHistory } from '@fluvy/cards';
+import { panelOnDemand, takeOverActivity, takeOverDetails, takeOverHistory } from '@fluvy/cards';
 
 declare const __FLUVY_VERSION__: string;
 
@@ -69,6 +69,7 @@ if (host.__fluvy) {
     wall: startWall({ look, ui: () => import('@fluvy/cards/wall') }),
     activity: null as boolean | null,
     history: null as boolean | null,
+    details: null as boolean | null,
     update: watchUpdates(buildOf(here)),
   };
   host.__fluvy = fluvy;
@@ -78,6 +79,9 @@ if (host.__fluvy) {
   });
   void takeOverHistory().then((done) => {
     fluvy.history = done;
+  });
+  void takeOverDetails().then((done) => {
+    fluvy.details = done;
   });
   badge(`v${version}`);
 }

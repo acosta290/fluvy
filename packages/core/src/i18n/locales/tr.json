@@ -1197,6 +1197,8 @@
     "scope.activity_sub": "Bir günün özeti, zaman rayıyla; kapalıyken Home Assistant’ınki kalır",
     "scope.history": "Bizim Geçmiş görünümümüz",
     "scope.history_sub": "Elle okunabilen eğriler, altlarında durumlar; kapalıyken Home Assistant’ınki kalır",
+    "scope.details": "Ayrıntılar penceresinde bizim grafiğimiz",
+    "scope.details_sub": "Bir varlığın geçmişi, Fluvy’nin çizdiği gibi, Home Assistant penceresinde; kapalıyken Home Assistant’ınki kalır",
     "scope.admin_only": "Bunu yalnızca bir yönetici değiştirebilir",
     "scope.theme_profile": "Profiliniz {theme} temasını kullanıyor",
     "scope.theme_profile_sub": "Bu yüzden Home Assistant onu her sayfada taşır. Varsayılan temayla yalnızca bu paneller taşır.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Android TV Remote’un uygulamayı neyle açtığı: netflix:// gibi bir derin bağlantı (güvenilir yol) ya da bir uygulama kimliği",
     "editor.commands": "Bu cihazın komutları",
     "editor.commands_helper": "Bir tuş ve cihazın onun için kabul ettiği komut, tablonun üstünde (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Geçmiş",
+    "sub_5minute": "5 dakikalık ortalamalar",
+    "sub_hour": "Saatlik ortalamalar",
+    "sub_states": "Her okuma",
+    "sub_hourly": "Saatlik artış",
+    "sub_daily": "Günlük artış",
+    "sub_total": "Kümülatif toplam",
+    "on_for": "{state}: {time}",
+    "changes": "{n} değişiklik",
+    "changes_one": "1 değişiklik",
+    "no_changes": "Değişiklik yok",
+    "change": "Değişim",
+    "per_hour": "Saatlik",
+    "per_day": "Günlük",
+    "total": "Toplam",
+    "gained": "Artış",
+    "best_hour": "En iyi saat",
+    "best_day": "En iyi gün",
+    "so_far": "şimdiye kadar",
+    "open": "Geçmiş’te aç",
+    "read": "Bu aralıktaki geçmiş. Okumak için ok tuşlarını kullanın."
   }
 }

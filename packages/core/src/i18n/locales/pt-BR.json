@@ -1197,6 +1197,8 @@
     "scope.activity_sub": "Um dia de relance, com uma linha do tempo; desligado mantém a do Home Assistant",
     "scope.history": "Nossa visão de Histórico",
     "scope.history_sub": "Curvas que você lê à mão, com os estados embaixo; desligado mantém a do Home Assistant",
+    "scope.details": "Nosso gráfico no diálogo de detalhes",
+    "scope.details_sub": "O histórico de uma entidade como o Fluvy desenha, no diálogo do Home Assistant; desligado mantém o do Home Assistant",
     "scope.admin_only": "Só um administrador pode mudar isto",
     "scope.theme_profile": "Seu perfil usa o tema {theme}",
     "scope.theme_profile_sub": "Por isso o Home Assistant o usa em todas as páginas. Com o tema padrão, só estes painéis.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Com o que o Android TV Remote abre o app: um link direto como netflix:// (o jeito confiável) ou um ID de aplicativo",
     "editor.commands": "Comandos deste dispositivo",
     "editor.commands_helper": "Uma tecla e o comando que o dispositivo aceita por ela, sobre a tabela (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Histórico",
+    "sub_5minute": "Médias de 5 minutos",
+    "sub_hour": "Médias por hora",
+    "sub_states": "Cada leitura",
+    "sub_hourly": "Somado a cada hora",
+    "sub_daily": "Somado a cada dia",
+    "sub_total": "Total acumulado",
+    "on_for": "{state} por {time}",
+    "changes": "{n} mudanças",
+    "changes_one": "1 mudança",
+    "no_changes": "Sem mudanças",
+    "change": "Variação",
+    "per_hour": "Por hora",
+    "per_day": "Por dia",
+    "total": "Total",
+    "gained": "Somado",
+    "best_hour": "Melhor hora",
+    "best_day": "Melhor dia",
+    "so_far": "até agora",
+    "open": "Abrir no Histórico",
+    "read": "O histórico neste período. Use as setas do teclado para ler."
   }
 }

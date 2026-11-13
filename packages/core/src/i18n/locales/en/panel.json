@@ -123,6 +123,8 @@
     "scope.activity_sub": "A day at a glance, with a time rail; off keeps Home Assistant’s",
     "scope.history": "Our History view",
     "scope.history_sub": "Curves you can read by hand, with the states under them; off keeps Home Assistant’s",
+    "scope.details": "Our chart in the details dialog",
+    "scope.details_sub": "An entity’s history as Fluvy draws it, in Home Assistant’s dialog; off keeps Home Assistant’s",
     "scope.admin_only": "Only an administrator can change this",
     "scope.theme_profile": "Your profile uses the {theme} theme",
     "scope.theme_profile_sub": "So Home Assistant wears it on every page. With the default theme, only these dashboards do.",

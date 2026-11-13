@@ -2135,7 +2135,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -2211,6 +2211,8 @@ describe('the settings panel', () => {
       frame: false,
       // our icons, place by place (1.19)
       icons: { sidebar: false, settings: true },
+      // Home Assistant's own history in its details dialog (1.20, #162)
+      details: false,
       charts,
       chartSets: [sea, garden],
       // the cards' surface travels too (1.15), how one out of reach looks (1.16), and the sliders' style (1.18); the
@@ -2251,6 +2253,7 @@ describe('the settings panel', () => {
       pills: 'soft',
       frame: false,
       icons: { sidebar: false, settings: true },
+      details: false,
       charts,
       chartSets: [sea, garden],
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
@@ -2258,7 +2261,7 @@ describe('the settings panel', () => {
       background,
     });
     expect(exported['personal']).toMatchObject({
-      version: 4,
+      version: 5,
       language: 'es',
       haptics: false,
       holdToSlide: true,
@@ -2279,6 +2282,7 @@ describe('the settings panel', () => {
       pills: 'round',
       frame: true,
       icons: { sidebar: true, settings: true },
+      details: true,
       charts: CHART_DEFAULTS,
       chartSets: [],
       cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
@@ -2300,6 +2304,7 @@ describe('the settings panel', () => {
     });
     expect(handle.settings().frame).toBe(false);
     expect(handle.settings().icons).toEqual({ sidebar: false, settings: true });
+    expect(handle.settings().details).toBe(false);
     expect(handle.settings().language).toBe('es');
     expect(handle.settings().holdToSlide).toBe(true);
     expect(handle.settings().charts).toEqual(charts);

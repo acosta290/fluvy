@@ -42,8 +42,9 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,remote,app-logos,vehicle,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,background,dock,icons,lang-*}-<hash>.js`
-on demand — the Activity page, the History page, the settings panel, what they share (the date picker; the pages'
+`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,remote,app-logos,vehicle,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,background,dock,icons,lang-*}-<hash>.js`
+on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
+shows it), the settings panel, what they share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
@@ -114,6 +115,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
+| `details-history` | 10 KB | our history in Home Assistant's details dialog (1.20, #162): the block, its readers of the recorder and its English; fetched the first time a dialog shows it |
 | `lang` | 40 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |

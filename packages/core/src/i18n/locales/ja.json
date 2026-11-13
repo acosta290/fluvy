@@ -2348,6 +2348,8 @@
     "scope.activity_sub": "一日をひと目で、時間軸付き（オフならHome Assistantのまま）",
     "scope.history": "Fluvyの履歴画面",
     "scope.history_sub": "指でなぞって読めるグラフと、その下に状態（オフならHome Assistantのまま）",
+    "scope.details": "詳細ダイアログにFluvyのグラフ",
+    "scope.details_sub": "Home Assistantのダイアログに、Fluvyが描くエンティティの履歴（オフならHome Assistantのまま）",
     "scope.admin_only": "変更できるのは管理者のみです",
     "scope.theme_profile": "プロファイルは{theme}テーマを使用中",
     "scope.theme_profile_sub": "そのためHome Assistantの全ページに適用されます。デフォルトのテーマでは、これらのダッシュボードだけになります。",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Android TV Remote がアプリを開く手段:netflix:// のようなディープリンク（確実な方法）またはアプリ ID",
     "editor.commands": "このデバイスのコマンド",
     "editor.commands_helper": "キーと、そのキーでデバイスが受け付けるコマンド。表より優先（back: KEY_RETURN）"
+  },
+  "details": {
+    "title": "履歴",
+    "sub_5minute": "5分間の平均",
+    "sub_hour": "1時間ごとの平均",
+    "sub_states": "すべての記録値",
+    "sub_hourly": "1時間ごとの増加量",
+    "sub_daily": "1日ごとの増加量",
+    "sub_total": "累計",
+    "on_for": "{state}：{time}",
+    "changes": "{n}回の変化",
+    "changes_one": "1回の変化",
+    "no_changes": "変化なし",
+    "change": "変化",
+    "per_hour": "1時間ごと",
+    "per_day": "1日ごと",
+    "total": "累計",
+    "gained": "増加量",
+    "best_hour": "最大の時間帯",
+    "best_day": "最大の日",
+    "so_far": "現時点まで",
+    "open": "履歴で開く",
+    "read": "この期間の履歴です。矢印キーで値を読み取れます。"
   }
 }

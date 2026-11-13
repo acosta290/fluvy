@@ -34,7 +34,12 @@ import {
   versionNote,
 } from '../shell/index.js';
 import { LookEngine } from './engine.js';
-import { ACTIVITY_CARD, ORIGINAL_ACTIVITY, ORIGINAL_HISTORY } from './attributes.js';
+import {
+  ACTIVITY_CARD,
+  ORIGINAL_ACTIVITY,
+  ORIGINAL_DETAILS,
+  ORIGINAL_HISTORY,
+} from './attributes.js';
 import { paintRoot, wallKeepsOwn } from './background.js';
 import { chromeOf, tabsOf } from './css.js';
 import { markPanels, patchEditDialog, patchLovelacePanels } from './panels.js';
@@ -222,9 +227,11 @@ export function startLook(): LookHandle | undefined {
     // Home Assistant's own icons in its menus where the house keeps them, place by place, said on the page and its
     // panel frames (each one's shell empties those sheets)
     engine.keepIcons(ICON_PLACES.filter((place) => !now.icons[place]).join(' '));
-    // Home Assistant's own Activity page, if the house keeps it (the takeover gives the page back)
+    // Home Assistant's own Activity and History pages and its details dialog's history, where the house keeps them
+    // (each takeover gives its page or its block back)
     env.document.documentElement.toggleAttribute(ORIGINAL_ACTIVITY, !now.activity);
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
+    env.document.documentElement.toggleAttribute(ORIGINAL_DETAILS, !now.details);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
     // the lights', the charts', the cards' and the sliders' defaults: every card that leaves them to the house draws again
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });

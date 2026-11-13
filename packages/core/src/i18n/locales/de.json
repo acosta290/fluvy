@@ -1197,6 +1197,8 @@
     "scope.activity_sub": "Ein Tag auf einen Blick, mit Zeitleiste; aus behält die von Home Assistant",
     "scope.history": "Unsere Verlaufsansicht",
     "scope.history_sub": "Kurven zum Ablesen, mit den Zuständen darunter; aus behält die von Home Assistant",
+    "scope.details": "Unsere Grafik im Detaildialog",
+    "scope.details_sub": "Der Verlauf einer Entität, wie Fluvy ihn zeichnet, im Dialog von Home Assistant; aus behält den von Home Assistant",
     "scope.admin_only": "Das kann nur ein Administrator ändern",
     "scope.theme_profile": "Dein Profil verwendet das Design {theme}",
     "scope.theme_profile_sub": "Deshalb trägt Home Assistant es auf jeder Seite. Mit dem Standarddesign nur diese Dashboards.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Womit Android TV Remote die App öffnet: ein Deep Link wie netflix:// (der zuverlässige Weg) oder eine App-ID",
     "editor.commands": "Befehle dieses Geräts",
     "editor.commands_helper": "Eine Taste und der Befehl, den das Gerät dafür nimmt, über die Tabelle hinweg (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Verlauf",
+    "sub_5minute": "5-Minuten-Mittel",
+    "sub_hour": "Stundenmittel",
+    "sub_states": "Jeder Messwert",
+    "sub_hourly": "Zuwachs je Stunde",
+    "sub_daily": "Zuwachs je Tag",
+    "sub_total": "Laufender Zählerstand",
+    "on_for": "{state}: {time}",
+    "changes": "{n} Änderungen",
+    "changes_one": "1 Änderung",
+    "no_changes": "Keine Änderungen",
+    "change": "Änderung",
+    "per_hour": "Pro Stunde",
+    "per_day": "Pro Tag",
+    "total": "Gesamt",
+    "gained": "Zuwachs",
+    "best_hour": "Beste Stunde",
+    "best_day": "Bester Tag",
+    "so_far": "bisher",
+    "open": "Im Verlauf öffnen",
+    "read": "Der Verlauf in diesem Zeitraum. Mit den Pfeiltasten ablesen."
   }
 }

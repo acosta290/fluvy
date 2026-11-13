@@ -49,6 +49,9 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 5 since 1.20: the house's `details` (our chart in Home Assistant's details dialog, #162) is on where a 4 stored none:
+ * it is what the theme promises, so its block changes on upgrade (a 1.19 bundle reads a 5's as its own, and keeps the
+ * field on a save).
  * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
  * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
  * The same release's other fields each read as before where a 3 stored none: whether every card draws its border
@@ -63,7 +66,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -164,6 +167,11 @@ export interface HouseSettings {
   readonly activity: boolean;
   /** Our History view in place of Home Assistant's history page (where the look reaches it); false keeps Home Assistant's. */
   readonly history: boolean;
+  /**
+   * Our chart in place of the history block of Home Assistant's details dialog (where the look reaches it, 1.20, #162);
+   * false keeps Home Assistant's.
+   */
+  readonly details: boolean;
   /** The palettes the house keeps (shared files), up to twelve. */
   readonly palettes: readonly SavedPalette[];
   readonly wall: WallSettings;
@@ -214,6 +222,7 @@ export interface EffectiveSettings {
   readonly icons: MenuIcons;
   readonly activity: boolean;
   readonly history: boolean;
+  readonly details: boolean;
   readonly language: CardLanguage;
   readonly motion: Motion;
   readonly haptics: boolean;
@@ -245,6 +254,7 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   icons: { sidebar: true, settings: true },
   activity: true,
   history: true,
+  details: true,
   palettes: [],
   wall: {
     dashboards: [],
@@ -385,6 +395,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     icons: parseIcons(value['icons']),
     activity: typeof value['activity'] === 'boolean' ? value['activity'] : d.activity,
     history: typeof value['history'] === 'boolean' ? value['history'] : d.history,
+    details: typeof value['details'] === 'boolean' ? value['details'] : d.details,
     palettes: parseSavedPalettes(value['palettes']),
     wall: parseWall(value['wall']),
     lightTint: oneOf(value['lightTint'], LIGHT_TINTS) ? value['lightTint'] : d.lightTint,
@@ -441,6 +452,7 @@ export function resolveSettings(
     icons: house.icons,
     activity: house.activity,
     history: house.history,
+    details: house.details,
     language: personal.language,
     motion: personal.motion,
     haptics: personal.haptics,

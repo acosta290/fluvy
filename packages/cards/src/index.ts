@@ -309,6 +309,7 @@ export { CATALOGUE };
 export { loadPanel, panelOnDemand } from './panel/on-demand.js';
 export { activityIsOurs, takeOverActivity } from './activity/takeover.js';
 export { historyIsOurs, takeOverHistory } from './history/takeover.js';
+export { takeOverDetails } from './details-history/takeover.js';
 export {
   FluvyActionsCard,
   FluvyBarsCard,

@@ -27,6 +27,9 @@
  *                                             room; `movingFor(reads)` the ones that read a sensor
  *   ScrubController · scrub(controller)       reading a chart by pointing at it (`scrub.ts`): one owner for every
  *                                             chart that scrubs, the keys that read it without a pointer
+ *   stretchTone(domain, state)                how a stretch of a thing's states is painted (`states.ts`): on,
+ *                                             quiet, nothing known or resting — the History page's state lines,
+ *                                             the details dialog's band (`.fv-stretch`)
  *   timeLine(o) · pastLine(…)                 a line through time (`timeline.ts`, 1.18): the recorder's readings
  *                                             laid on the house's round times as calmly as the plot's width and
  *                                             the style's stroke allow, or every 5, 15, 30 min or hour (`points`),
@@ -173,6 +176,7 @@ export {
 } from './palette.js';
 export { adopt, chartStyles } from './styles.js';
 export { scrub, ScrubController, scrubFraction } from './scrub.js';
+export { stretchTone } from './states.js';
 export {
   everyWord,
   leastGap,

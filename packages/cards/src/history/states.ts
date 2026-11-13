@@ -3,10 +3,10 @@
  * cursor over the stretches it spent in each state, drawn across the card's whole content column, so the cursor
  * lands exactly where every chart's does. The busiest lines come first.
  */
-import { isActiveState, plural, resolveEntity, stateText } from '@fluvy/core';
+import { plural, resolveEntity, stateText } from '@fluvy/core';
 import { spanAt, type Line, type Span } from '@fluvy/core/history';
 import { axis, head } from '@fluvy/ui';
-import { scrub } from '../chart/engine/index.js';
+import { scrub, stretchTone } from '../chart/engine/index.js';
 import { html, nothing, type TemplateResult } from 'lit';
 
 import { axisLabels } from './chart.js';
@@ -15,17 +15,6 @@ import type { FluvyHistory } from './view.js';
 /** A stretch's share of the window, as a percentage of the bar's width. */
 const share = (span: Span, start: number, end: number): number =>
   Math.max(0, ((Math.min(span.to, end) - Math.max(span.from, start)) / (end - start)) * 100);
-
-/** The plain resting states: a thing in one of these is simply not doing anything. */
-const RESTING = new Set(['off', 'closed', 'unlocked', 'not_home', 'disarmed', 'normal', 'clear']);
-
-/** How a stretch is painted: on, resting, something else it is actually doing, or nothing known at all. */
-function tone(line: Line, state: string): string {
-  if (state === 'unavailable' || state === 'unknown' || !state) return 'is-away';
-  if (isActiveState(line.domain, state)) return 'is-on';
-  // paused, idle, docked, returning: not active, but not resting either — it says so quietly
-  return RESTING.has(state) ? '' : 'is-quiet';
-}
 
 /** What a state says in the house's language (Home Assistant's own words for it). */
 function word(page: FluvyHistory, line: Line, state: string): string {
@@ -94,7 +83,7 @@ export function renderStates(
                 const width = share(piece, start, end);
                 if (width <= 0) return nothing;
                 return html`<i
-                  class="hs-span ${tone(line, piece.state)}"
+                  class="hs-span fv-stretch ${stretchTone(line.domain, piece.state)}"
                   style="width:${width.toFixed(3)}%"
                   title=${word(page, line, piece.state)}
                 ></i>`;

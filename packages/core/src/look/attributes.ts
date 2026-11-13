@@ -14,6 +14,8 @@ export const THEMED_ATTRIBUTE = 'fluvy-themed';
 export const ORIGINAL_ACTIVITY = 'fluvy-original-activity';
 /** Set while the house keeps Home Assistant's own History page. */
 export const ORIGINAL_HISTORY = 'fluvy-original-history';
+/** Set while the house keeps the history block of Home Assistant's details dialog (1.20, #162). */
+export const ORIGINAL_DETAILS = 'fluvy-original-details';
 
 /** On `<html>`: this person wants the Activity page's timeline on a card (fluvy's preferences). */
 export const ACTIVITY_CARD = 'fluvy-activity-card';

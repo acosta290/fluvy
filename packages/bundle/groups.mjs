@@ -33,6 +33,14 @@ const ACTIVITY =
 const HISTORY =
   /\/packages\/(cards\/src\/history\/(?!takeover\.ts)|core\/src\/history\/(?!series\.ts)|core\/src\/i18n\/locales\/en\/history\.json)/;
 
+/**
+ * Our history in Home Assistant's details dialog (all of its folder but the takeover, and its English): fetched the
+ * first time a dialog shows it. It reads with the chart engine and the Chart card's readers, which every page fetched
+ * as it started; the History page's own chunk is never asked for.
+ */
+const DETAILS_HISTORY =
+  /\/packages\/(cards\/src\/details-history\/(?!takeover\.ts)|core\/src\/i18n\/locales\/en\/details\.json)/;
+
 /** Fluvy's settings panel (all of its folder but the switch that fetches it, and its English), what its Charts tab draws of the chart engine's (`engine/preview.ts`), the community palettes its gallery lists and the little house its preview answers taps with: fetched when `/fluvy` is opened. */
 const PANEL =
   /\/packages\/(cards\/src\/(panel\/(?!on-demand\.ts)|chart\/engine\/preview\.ts)|tokens\/src\/palettes\/community\/|demo-home\/src\/simulate\.ts|core\/src\/i18n\/locales\/en\/panel\.json)/;
@@ -288,7 +296,7 @@ const FORMS =
 
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
- * page, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
+ * page, our history in the details dialog, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
  * every page carries, the weather card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
@@ -302,6 +310,7 @@ export const GROUPS = [
   { name: 'pages', test: PAGES },
   { name: 'activity', test: ACTIVITY },
   { name: 'history', test: HISTORY },
+  { name: 'details-history', test: DETAILS_HISTORY },
   { name: 'panel', test: PANEL },
   { name: 'strategy', test: STRATEGY },
   { name: 'house-heights', test: HOUSE_HEIGHTS },

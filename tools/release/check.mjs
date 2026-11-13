@@ -150,6 +150,9 @@ const BUDGETS = {
   pages: 12_288,
   activity: 32_768,
   history: 16_384,
+  // our history in Home Assistant's details dialog (1.20, #162): the block, its readers and its English; measured at
+  // 7.3 KB
+  'details-history': 10_240,
   // 40 KB since 2026-11-11 (1.19: Russian, #167, whose Cyrillic is two bytes a letter: its catalogue measured 35.9 KB,
   // where no Latin one passes 32); 32 KB since 2026-11-06 (1.16: a card's look when unavailable and its brightness while on, #126 #124, the names'
   // and roles' editor words, #125 #127, which commands ask first, unknown names said: Hungarian and Slovak, the longest,

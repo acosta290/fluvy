@@ -2394,6 +2394,8 @@
     "scope.activity_sub": "一眼看完一天，带时间轴；关闭则保留 Home Assistant 的",
     "scope.history": "我们的历史视图",
     "scope.history_sub": "可手动查看的曲线，下方列出状态；关闭则保留 Home Assistant 的",
+    "scope.details": "在详情对话框中使用我们的图表",
+    "scope.details_sub": "由 Fluvy 绘制的实体历史，显示在 Home Assistant 的对话框中；关闭则保留 Home Assistant 的",
     "scope.admin_only": "仅管理员可更改",
     "scope.theme_profile": "您的个人资料使用 {theme} 主题",
     "scope.theme_profile_sub": "因此 Home Assistant 每个页面都应用它。使用默认主题时，仅这些仪表盘应用。",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Android TV Remote 打开该应用的方式:netflix:// 这样的深层链接（可靠的方式）或应用 ID",
     "editor.commands": "此设备的命令",
     "editor.commands_helper": "按键及设备为其接受的命令，优先于表格（back: KEY_RETURN）"
+  },
+  "details": {
+    "title": "历史",
+    "sub_5minute": "5 分钟平均",
+    "sub_hour": "每小时平均",
+    "sub_states": "每次读数",
+    "sub_hourly": "每小时增量",
+    "sub_daily": "每日增量",
+    "sub_total": "累计总量",
+    "on_for": "{state}：{time}",
+    "changes": "{n} 次变化",
+    "changes_one": "1 次变化",
+    "no_changes": "无变化",
+    "change": "变化",
+    "per_hour": "每小时",
+    "per_day": "每天",
+    "total": "累计",
+    "gained": "增量",
+    "best_hour": "最高的小时",
+    "best_day": "最高的一天",
+    "so_far": "至今",
+    "open": "在历史中打开",
+    "read": "此时段的历史。用方向键查看。"
   }
 }

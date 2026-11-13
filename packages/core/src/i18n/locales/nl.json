@@ -1197,6 +1197,8 @@
     "scope.activity_sub": "Een dag in één oogopslag, met een tijdlijn; uit houdt die van Home Assistant",
     "scope.history": "Onze Geschiedenis",
     "scope.history_sub": "Curves die je zelf kunt aflezen, met de statussen eronder; uit houdt die van Home Assistant",
+    "scope.details": "Onze grafiek in het detailvenster",
+    "scope.details_sub": "De geschiedenis van een entiteit zoals Fluvy die tekent, in het venster van Home Assistant; uit houdt die van Home Assistant",
     "scope.admin_only": "Alleen een beheerder kan dit wijzigen",
     "scope.theme_profile": "Je profiel gebruikt het thema {theme}",
     "scope.theme_profile_sub": "Daarom draagt Home Assistant het op elke pagina. Met het standaardthema alleen deze dashboards.",
@@ -3014,5 +3016,28 @@
     "editor.activity_helper": "Waarmee Android TV Remote de app opent: een deeplink zoals netflix:// (de betrouwbare manier) of een app-ID",
     "editor.commands": "Commando’s van dit apparaat",
     "editor.commands_helper": "Een toets en het commando dat het apparaat ervoor neemt, boven de tabel (back: KEY_RETURN)"
+  },
+  "details": {
+    "title": "Geschiedenis",
+    "sub_5minute": "Gemiddelden per 5 minuten",
+    "sub_hour": "Uurgemiddelden",
+    "sub_states": "Elke meting",
+    "sub_hourly": "Erbij per uur",
+    "sub_daily": "Erbij per dag",
+    "sub_total": "Lopend totaal",
+    "on_for": "{state}: {time}",
+    "changes": "{n} wijzigingen",
+    "changes_one": "1 wijziging",
+    "no_changes": "Geen wijzigingen",
+    "change": "Verandering",
+    "per_hour": "Per uur",
+    "per_day": "Per dag",
+    "total": "Totaal",
+    "gained": "Erbij",
+    "best_hour": "Beste uur",
+    "best_day": "Beste dag",
+    "so_far": "tot nu",
+    "open": "Openen in Geschiedenis",
+    "read": "De geschiedenis over deze periode. Lees af met de pijltjestoetsen."
   }
 }

@@ -65,6 +65,7 @@ describe('parsing stored settings', () => {
         icons: { sidebar: false, settings: true },
         activity: false,
         history: false,
+        details: false,
         tabs: { style: 'pills', content: 'icons', title: false },
         chrome: {
           logo: true,
@@ -99,6 +100,7 @@ describe('parsing stored settings', () => {
       icons: { sidebar: false, settings: true },
       activity: false,
       history: false,
+      details: false,
       palettes: [],
       wall: WALL_DEFAULTS,
       lightTint: 'always',
@@ -134,9 +136,13 @@ describe('parsing stored settings', () => {
   });
 
   it('reads whether a person’s sliders wait for a hold: off until they say so (1.19, #166: nothing changes on upgrade)', () => {
-    // a 1.18 person stored none: every slider moves at the press, as before; what is read is version 4
+    // a 1.18 person stored none: every slider moves at the press, as before; what is read is this version
     const upgraded = parsePersonal({ version: 3, language: 'es', haptics: false });
-    expect(upgraded).toMatchObject({ version: 4, language: 'es', holdToSlide: false });
+    expect(upgraded).toMatchObject({
+      version: SETTINGS_VERSION,
+      language: 'es',
+      holdToSlide: false,
+    });
     expect(PERSONAL_DEFAULTS.holdToSlide).toBe(false);
     expect(parsePersonal({ holdToSlide: true }).holdToSlide).toBe(true);
     for (const broken of ['yes', 1, null])
@@ -234,7 +240,7 @@ describe('parsing stored settings', () => {
     });
     expect(upgraded.cards).toEqual({ opacity: 80, blur: true, unavailable: 'quiet', border: true });
     expect(HOUSE_DEFAULTS.cards.border).toBe(true);
-    expect(upgraded.version).toBe(4);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(parseCards({ border: false }).border).toBe(false);
     expect(parseCards({ border: true }).border).toBe(true);
     // not a switch: drawn
@@ -624,10 +630,23 @@ describe('the settings store', () => {
     listeners.get('frontend/subscribe_system_data')?.({ value: sent[0]?.value });
     await store.saveHouse({ icons: { sidebar: true, settings: false } });
     expect(sent[1]?.value).toMatchObject({
-      version: 4,
+      version: SETTINGS_VERSION,
       shape: 'round',
       icons: { sidebar: true, settings: false },
     });
+  });
+
+  it('reads whether the details dialog’s history is ours: on where a 4 stored none, the theme’s promise (1.20, #162)', () => {
+    // a 1.19 house stored none: our chart in Home Assistant's details dialog, read in this version
+    const upgraded = parseHouse({ version: 4, palette: 'volt' });
+    expect(upgraded.details).toBe(true);
+    expect(upgraded.version).toBe(5);
+    expect(HOUSE_DEFAULTS.details).toBe(true);
+    // the house keeps Home Assistant's block; anything that is not a switch is the default
+    expect(parseHouse({ details: false }).details).toBe(false);
+    for (const broken of ['off', 0, null, {}])
+      expect(parseHouse({ details: broken }).details).toBe(true);
+    expect(resolveSettings(parseHouse({ details: false }), PERSONAL_DEFAULTS).details).toBe(false);
   });
 
   it('keeps a field of a newer version through a save, and parses what it knows', async () => {

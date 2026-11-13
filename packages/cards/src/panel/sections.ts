@@ -1433,7 +1433,8 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
         gap(ctx),
       )}
       ${
-        // the frame, the menus' icons and the Activity page belong to the whole app: offered where the look reaches it
+        // the frame, the menus' icons, the Activity and History pages and the details dialog's history belong to the
+        // whole app: offered where the look reaches it
         shown.scope === 'everywhere'
           ? html`<div class="pn-rows">
               ${listRow({
@@ -1473,6 +1474,15 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
                 on: shown.history,
                 readonly: !admin,
                 onToggle: (on) => ctx.editHouse({ history: on }),
+              })}
+              ${listRow({
+                icon: 'info',
+                title: ctx.t('scope.details'),
+                sub: ctx.t('scope.details_sub'),
+                trailing: 'switch',
+                on: shown.details,
+                readonly: !admin,
+                onToggle: (on) => ctx.editHouse({ details: on }),
               })}
             </div>`
           : nothing

@@ -10,7 +10,7 @@
 | [Energy](energy.md) | how the energy cards read a house (the Energy dashboard, or your sources: one sensor, two, per phase), and every case |
 | [The automatic dashboards](automatic-dashboard.md) | the five templates (`custom:fluvy-home`, rooms, energy, security, wall), what they build from your home, and their options |
 | [Wall mode](wall.md) | a tablet on the wall: no sidebar or header, the screensaver, day and night, how to leave it |
-| [Activity and History](pages.md) | the two pages that stand in for the logbook and the history |
+| [Activity, History and the details dialog](pages.md) | the two pages that stand in for the logbook and the history, and the history in Home Assistant's details dialog |
 | [Everywhere](shell.md) | what the shell restyles, how to switch pieces off, what to expect after a Home Assistant release |
 | [Troubleshooting](troubleshooting.md) | when something looks wrong, and how to collect a report |
 | [Development](development.md) | the repository, the build, the tools, the integration |

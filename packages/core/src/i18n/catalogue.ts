@@ -5,6 +5,7 @@ import type appliances from './locales/en/appliances.json';
 import type automations from './locales/en/automations.json';
 import type chart from './locales/en/chart.json';
 import type chartCard from './locales/en/chart-card.json';
+import type details from './locales/en/details.json';
 import type devices from './locales/en/devices.json';
 import type editor from './locales/en/editor.json';
 import type energy from './locales/en/energy.json';
@@ -38,6 +39,7 @@ export type Catalogue = typeof core &
   typeof automations &
   typeof chart &
   typeof chartCard &
+  typeof details &
   typeof devices &
   typeof editor &
   typeof energy &

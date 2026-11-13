@@ -312,6 +312,24 @@ export const chartStyles = css`
     white-space: nowrap;
   }
 
+  /* ---------- a thing's states through time (states.ts): its stretches on the track's own fill ---------- */
+  /* a stretch spent switched on: the accent itself, so a glance reads the day without looking twice */
+  .fv-stretch.is-on {
+    background: var(--fluvy-accent);
+  }
+  /* doing something that is not "on" (paused, idle, returning, docked): the neutral ink, clearly not the accent */
+  .fv-stretch.is-quiet {
+    background: var(--fluvy-neutral-50);
+  }
+  /* nothing was known: the same neutral, striped — a state that is missing, not a state that is quiet */
+  .fv-stretch.is-away {
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--fluvy-neutral-50) 0 2px,
+      transparent 2px 5px
+    );
+  }
+
   /* ---------- gauges: the ring and the reading in its middle (the dial and the ruler are the controls') ---------- */
   .fc-gauge {
     position: relative;

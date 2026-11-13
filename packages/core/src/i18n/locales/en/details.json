@@ -1,0 +1,25 @@
+{
+  "details": {
+    "title": "History",
+    "sub_5minute": "5-minute averages",
+    "sub_hour": "Hourly averages",
+    "sub_states": "Every reading",
+    "sub_hourly": "Gained each hour",
+    "sub_daily": "Gained each day",
+    "sub_total": "Running total",
+    "on_for": "{state} for {time}",
+    "changes": "{n} changes",
+    "changes_one": "1 change",
+    "no_changes": "No changes",
+    "change": "Change",
+    "per_hour": "Per hour",
+    "per_day": "Per day",
+    "total": "Total",
+    "gained": "Gained",
+    "best_hour": "Best hour",
+    "best_day": "Best day",
+    "so_far": "so far",
+    "open": "Open in History",
+    "read": "The history over this window. Use the arrow keys to read it."
+  }
+}

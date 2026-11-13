@@ -3132,6 +3132,43 @@ lowest reading, and nothing is read past the end of the record.)*
 - **Its sources** are Home Assistant's own picker in our drawer, with Clear and Done at its foot, and what is picked is kept where Home Assistant keeps it — its links (`?entity_id=…&start_date=…&back=1`) open the same window ours writes.
 - **Nothing to draw** says which nothing it is: nothing picked yet, a window with no history, or a search no measure and no state answers — each one panel (the page's other fill) holding its line and its reason, with the way out under it.
 
+## Details dialog (1.20, #162)
+
+*(Direction 1 "Tarjeta" of the design page of 2026-11-09, with Direction 4's rule for meters.)* Home Assistant's
+details dialog stays Home Assistant's — its head, the gear, the menu, the state row, a light's controls, the logbook —
+and only its **History** block is ours: a card's anatomy without a card's surface (the dialog is the surface), on
+Home Assistant's own 24 sides, so its words start on the column the state row and the logbook start on. The same block
+in the dialog's main view and in the history view a light's chart button opens.
+
+- **The head** is the card's head: the 44 circle (the chart glyph; a thing's states the list glyph), "History", what
+  the chart reads under it ("5-minute averages", "Gained each hour", "Running total", "Open for 40 min"), and at its
+  end what the window says as an **m readout** — a meter's day so far ("Today +8.63 kWh"), a measure's change over the
+  window ("Change +0.2 °C"); never the state, which the dialog's row says once. A column that cannot hold the readout
+  beside the words whole (the head's fitting: the sub's segments, then the circle) stands it under them, on their
+  start. A figure that is not there is a dash alone, no unit.
+- **The window**: a full chip row (equal cells) of the house's window (*Charts*, 12 h from the factory), a day and a
+  week, each once, 12 under the head; a meter's two readings (**Per hour · Total**, *Per day* over a week) a second
+  full row 4 under it. The window chosen is kept for the next dialog on the page.
+- **The chart** is the engine's in the house's style (§ Charts), 168 tall (44 the bubble's, 8 under its floor), its
+  clock under it from where the plot starts, read by hand (the bubble, its tail on the cursor; ← → Home End Escape).
+  No bubble at rest: the dialog's row already says the reading now, and the line ends on it.
+- **A measure** is its line through time (`timeLine`, on the house's round times); in a style of bars, where its
+  readings add up, a slot's mean. Under it its **Min · Max · Average** as the stats row (`statsRow`).
+- **A meter** reads what it gained: a bar a slot (an hour, a day over a week; at most 24), the slot still running so
+  far (paler), from the recorder's five-minute (hourly over a week) `change`, which follows the meter's sum through a
+  reset, and the reading now added to the running slot. Its **Total** is the running total as a line that **breaks at
+  every reset** — a gap at the reset, the mean point that would mix two days a gap too — marked by a dotted hairline in
+  the strong border's ink across the plot; a smooth line never runs down a cliff. Under it **Gained · Best hour ·
+  Average** (Best day over a week).
+- **A thing's states** are one track (32 tall, under the bubble's 44, the controls' 12 corners) of its stretches,
+  painted by the engine's rule (`stretchTone`, the History page's too): on the accent, doing something quieter the
+  neutral ink, unknown striped, resting the track's own fill. A stretch with a tone keeps 2 px (a minute open in a
+  day is a mark, never nothing); two of one tone side by side are told apart by a hairline of the dialog's fill.
+- **Open in History** closes it: a 44 row of the accent's words (14/600) with the chevron at the column's end, its
+  hover the page's fill, leading to the History page on the same entity and window.
+- A climate, a humidifier and a water heater keep Home Assistant's block (their history is their attributes). Out of
+  the house's look, kept by the house, or an element Home Assistant reshaped: Home Assistant's block, at once.
+
 ## Shape
 
 - Three shapes, one scale each (sm · md · control · lg · card · xl): **Soft** 4 · 8 · 12 · 16 · 20 · 24 (approved), **Round** 6 · 10 · 16 · 22 · 28 · 32, **Crisp** 2 · 6 · 8 · 12 · 14 · 18. Cards, tiles, controls and sheets use the role variables (`--fluvy-radius-card|lg|control|xl`); Home Assistant's radius names refer to ours, so a shape moves them too. Circles never change; the small functional radii (bars 2, bubbles 10) do not either.

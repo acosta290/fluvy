@@ -418,25 +418,6 @@ export const historyStyles = css`
     transform-origin: left center;
   }
 
-  /* a stretch spent switched on: the accent itself, so a glance reads the day without looking twice */
-  .hs-span.is-on {
-    background: var(--fluvy-accent);
-  }
-
-  /* doing something that is not "on" (paused, idle, returning, docked): the neutral ink, clearly not the accent */
-  .hs-span.is-quiet {
-    background: var(--fluvy-neutral-50);
-  }
-
-  /* nothing was known: the same neutral, striped — a state that is missing, not a state that is quiet */
-  .hs-span.is-away {
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--fluvy-neutral-50) 0 2px,
-      transparent 2px 5px
-    );
-  }
-
   .hs-line__state {
     grid-area: state;
     min-width: 0;

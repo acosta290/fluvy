@@ -19,7 +19,8 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 - **Panels in a frame** (HACS): they get Inter and a shell of their own while the page wears Fluvy, and are told the
   house's icons as the page is (theirs follow *Our icons in Settings*); on another theme the frame is left as Home
   Assistant draws it.
-- **The Activity and History pages** (see [pages](pages.md)), with their own switches.
+- **The Activity and History pages** and **the details dialog's history** (see [pages](pages.md)), with their own
+  switches.
 
 ## The view tabs' sheet
 
