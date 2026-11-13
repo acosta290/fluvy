@@ -3,6 +3,7 @@ import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import type { EnergyInfo } from './costs.js';
 import { fullDays, type Period, type Range, type StatRow } from './period.js';
 import type { EnergyPrefs } from './prefs.js';
+import type { Recorded } from './recorded.js';
 
 /**
  * An Energy date picker's collection — Home Assistant's `energy-date-selection` card's, or Fluvy's Energy period
@@ -48,9 +49,16 @@ export interface EnergyDataLike {
   readonly endCompare?: Date;
   readonly prefs: EnergyPrefs;
   readonly info?: EnergyInfo;
-  /** Every statistic the Energy dashboard references, over the range: energy as `change` in kWh, power as `mean` in kW. */
+  /**
+   * Every statistic the Energy dashboard references, over the range: energy as `change` in kWh, power as `mean` in kW,
+   * water and gas as `change` in their units (`waterUnit`, `gasUnit`: gas metered as energy in kWh).
+   */
   readonly stats: Statistics;
   readonly statsCompare?: Statistics;
+  /** What the recorder keeps of each of those statistics: an imported one's name and unit. */
+  readonly statsMetadata?: Readonly<Record<string, Recorded>>;
+  readonly waterUnit?: string;
+  readonly gasUnit?: string;
   readonly co2SignalEntity?: string;
   readonly fossilEnergyConsumption?: Readonly<Record<string, number>> | null;
 }

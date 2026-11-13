@@ -466,13 +466,16 @@ export function usagePlot(config: LovelaceCardConfig): number {
  * The Energy usage card at a 360 column: the head, the period's chips, the chart (its plot and 20 of room) and its
  * hours or dates, and the legend: the sources shown (a kind listed twice is its first) as its mode names them and
  * what was charged and exported, in the rows their names take, 12 between them — the card keeps that room whatever
- * the house lacks of it, and folding sources into "Other" (`max_sources`) never takes a row more. Compact is the head,
- * its plot and its axis; mini the head and a 48 strip.
+ * the house lacks of it, and folding sources into "Other" (`max_sources`) never takes a row more. A water or gas
+ * card's legend is its meters' (a meter the house names, by its kind's word; the Energy dashboard's, one row), whose
+ * last fold into "Other" where the house's would need more. Compact is the head, its plot and its axis; mini the head
+ * and a 48 strip.
  */
 export function usageHeight(config: LovelaceCardConfig): number {
   const plot = usagePlot(config);
   if (config['variant'] === 'mini') return HEAD + 20 + plot;
   if (config['variant'] === 'compact') return HEAD + 44 + plot;
+  const kind = config['kind'];
   const words = config['mode'] === 'flows' ? FLOWS_WORDS : USAGE_WORDS;
   const names = new Map<unknown, string>();
   const listed = listLength(config, ['sources']) ? config['sources'] : Object.keys(words);
@@ -482,11 +485,18 @@ export function usageHeight(config: LovelaceCardConfig): number {
     if (word && s['show'] !== false && !names.has(s['type']))
       names.set(s['type'], String(s['name'] ?? word));
   }
-  const shown = [...names.values()];
+  let shown = [...names.values()];
   if (config['show_returns'] !== false) {
     if (names.has('battery')) shown.push('Charged');
     if (names.has('grid')) shown.push('Exported');
   }
+  if (kind === 'water' || kind === 'gas')
+    shown = (listLength(config, ['meters']) ? (config['meters'] as unknown[]) : [0]).map(
+      (meter) => {
+        const name = (meter as Record<string, unknown> | null)?.['name'];
+        return typeof name === 'string' ? name : kind;
+      },
+    );
   const rows = config['show_legend'] === false ? 0 : legendRows(shown);
   return HEAD + periodChips(config) + 44 + plot + (rows && 4 + rows * 52);
 }
@@ -587,7 +597,7 @@ export const ENERGY_PERIOD_FAMILY: readonly FamilyEntry[] = [
   [
     'fluvy-energy-usage-card',
     'Fluvy · Energy usage',
-    'Energy used by the hour, the day or the month, stacked by source.',
+    'Electricity, water or gas used by the hour, the day or the month, stacked by source or meter.',
     usageHeight,
   ],
 ];

@@ -2,7 +2,15 @@
   "energy-usage": {
     "title": "Energy usage",
     "title_short": "Usage",
+    "title_water": "Water usage",
+    "title_gas": "Gas usage",
     "other": "Other",
+    "nothing_water": "No water figures for this range yet",
+    "nothing_gas": "No gas figures for this range yet",
+    "figures_until": "figures up to {date}",
+    "editor_kind": "What it charts",
+    "kind_energy": "Electricity",
+    "editor_meters": "Meters (none: the Energy dashboard’s)",
     "editor_sources": "Sources (none: the Energy dashboard’s)",
     "editor_max_sources": "Sources before the rest become “Other”",
     "editor_show_returns": "Show what was charged and exported",
@@ -16,6 +24,7 @@
     "flows_solar": "Solar production",
     "flows_battery": "Battery discharge",
     "flows_grid": "Grid import",
-    "editor_color_helper": "Empty: its energy’s own colour. The palette’s colours follow it; a colour name or a #hex stays as typed"
+    "editor_color_helper": "Empty: its energy’s own colour. The palette’s colours follow it; a colour name or a #hex stays as typed",
+    "editor_shade_helper": "Empty: a shade of water’s or gas’s colour. The palette’s colours follow it; a colour name or a #hex stays as typed"
   }
 }

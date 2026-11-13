@@ -45,24 +45,30 @@ export function legendColumns(
   );
 }
 
+/**
+ * The legend; `columns`, where the card's room holds no more rows than it declares (a water card's meters, named by the
+ * house), lays it in as many columns, a name that does not hold its column ending in an ellipsis.
+ */
 export function energyLegend(
   items: readonly LegendEntry[],
   width: number,
   ruler: TextRuler,
-): TemplateResult | typeof nothing {
-  if (!items.length) return nothing;
-  const columns = legendColumns(
+  columns = legendColumns(
     items.map((item) => item.name),
     width,
     ruler,
-  );
+  ),
+): TemplateResult | typeof nothing {
+  if (!items.length) return nothing;
   const folded = columns < items.length;
-  // a name up to two pixels wider than its column overhangs it rather than end in an ellipsis
+  // a name up to two pixels wider than its column overhangs it rather than end in an ellipsis (one wider than that, in
+  // the columns a card asks for, ends in one)
   const widest = Math.max(
     0,
     ...items.map((item) => LEAD + ruler.width('en-legend__name', item.name)),
   );
-  const slack = !folded && widest > width / columns;
+  const column = width / columns;
+  const slack = !folded && widest > column && widest <= column + 2;
   // a folded legend's last row splits the width among its own, as option tiles do (five in three: 2·2·2, then 3·3)
   const grid = folded ? optionGrid(items.length, columns) : undefined;
   // each item is centred in its column: its edges fall where the column's middle puts them (`data-align`)

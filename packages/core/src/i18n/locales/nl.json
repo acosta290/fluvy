@@ -2130,7 +2130,15 @@
   "energy-usage": {
     "title": "Energieverbruik",
     "title_short": "Verbruik",
+    "title_water": "Waterverbruik",
+    "title_gas": "Gasverbruik",
     "other": "Overige",
+    "nothing_water": "Voor deze periode nog geen watergegevens",
+    "nothing_gas": "Voor deze periode nog geen gasgegevens",
+    "figures_until": "gegevens tot {date}",
+    "editor_kind": "Wat er getoond wordt",
+    "kind_energy": "Elektriciteit",
+    "editor_meters": "Meters (geen: die van het Energie-dashboard)",
     "editor_sources": "Bronnen (geen: die van het Energie-dashboard)",
     "editor_max_sources": "Bronnen voordat de rest “Overige” wordt",
     "editor_show_returns": "Geladen en teruggeleverd tonen",
@@ -2144,7 +2152,8 @@
     "flows_solar": "Zonne-opwek",
     "flows_battery": "Batterijontlading",
     "flows_grid": "Netafname",
-    "editor_color_helper": "Leeg: de eigen kleur van zijn energie. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt"
+    "editor_color_helper": "Leeg: de eigen kleur van zijn energie. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt",
+    "editor_shade_helper": "Leeg: een tint van de kleur van water of gas. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt"
   },
   "wall": {
     "paused": "Wand gepauzeerd",

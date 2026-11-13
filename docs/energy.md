@@ -94,7 +94,8 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
 
 - **What follows.** The flow, the balance, the sankey and the score (set `period` to anything but `live`), the
   Energy devices card (the Energy dashboard's devices), the Grid card's totals (when it names no readouts), the
-  Energy card, the Energy usage card, Production and Water & gas. History bars keep their own `period` and `days`.
+  Energy card, the Energy usage card (electricity, water or gas), the Chart card, Production and Water & gas.
+  History bars keep their own `period` and `days`.
 - **What a follower does.** It takes the picker's range (the day, the week, the month, whatever was picked) and
   draws **Home Assistant's own figures for it** — the statistics HA fetched once for the whole view, allocated the
   way the dashboard allocates them — so a Fluvy card and HA's beside it say the same numbers and move together, and
@@ -106,7 +107,10 @@ collection_key: energy_casa       # the key of a date picker on this dashboard (
   the range in place of `hours`: a day on the day's axis, a longer range on its dates, with the house's power from
   the power sensors HA names (else the meters: five-minute changes for a day, hours beyond); "right now" and the
   batteries' charge are shown while the range holds now. Production and Water & gas are day cards: they draw the
-  range's last day (the day so far while the range holds today), and say the date.
+  range's last day (the day so far while the range holds today), and say the date: to chart water or gas across the
+  range, use the Energy usage card with `kind: water` or `kind: gas`. The Chart card draws the range in Home
+  Assistant's grain (a meter's change by the hour, the day or the month, a measurement finer), its own `span` set
+  aside, and the range the picker compares with as a quiet ghost behind its first series.
 - **Until the picker is there.** A date picker's card may load after Fluvy's: the follower draws its own period
   (today by default) without chips until the collection appears, then follows it. The card's height never changes.
 - **A key of your own.** Any word starting with `energy_` is a key; a key without that prefix is refused with a
@@ -243,6 +247,15 @@ show_compare: true              # Compare: the period before beside the span, on
   above the line in both modes, so a card with `sources: [solar]` says the sun's total alone. `plot_height` sets the
   chart's own height in px (48 to 480, on the 4 grid) for the full and compact layouts: the bars, the scale and the
   axis grow with it, where a taller card alone would only add room around them.
+
+  `kind: water` or `kind: gas` (#181) charts the house's water or gas the same way: a column a slot, stacked by meter
+  (the Energy dashboard's of that kind, a statistic an integration imports among them, or your own `meters`, in
+  their order), the kind's colour at the foot and shades of it above, in the unit the Energy dashboard reads them in
+  (litres or gallons of water, cubic metres, feet or CCF of gas, kWh for gas metered as energy; `unit` converts). A
+  meter is named by its sensor, an imported one as the recorder names it, a lone one by its kind ("Gas"). Where a
+  meter's figures stop short of the range (a utility's, imported a day or two behind), the head says how far they
+  go: "Gas · figures up to 11 Nov"; a range with none yet says "No gas figures for this range yet" across the chart,
+  at the card's height. It has no "right now" and no typical day: Water & gas keeps those.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
 - **Production** — `arrays` stacks each array's hourly bars.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term
@@ -326,6 +339,24 @@ type: custom:fluvy-energy-usage-card
 period: month                  # day (default) · week · month · year; or collection_key: a date picker's
 compare: true                  # the month before, behind this one
 sources: [solar, battery, { type: grid, name: Utility }]
+```
+
+```yaml
+type: custom:fluvy-energy-usage-card
+kind: gas                      # energy (default) · water · gas
+collection_key: energy_casa    # the range a date picker holds
+meters:                        # none: the Energy dashboard's of its kind
+  - { entity: opower:pge_elec_gas_consumption, name: Utility }   # an imported statistic
+  - { entity: sensor.workshop_gas_meter, color: amber }
+unit: ft³                      # the figures in another unit of their class
+```
+
+```yaml
+type: custom:fluvy-chart-card
+collection_key: energy_casa    # the picked range in Home Assistant's grain; its Compare as a ghost
+chart: bars
+series:
+  - { entity: sensor.water_meter, source: statistics }
 ```
 
 ```yaml

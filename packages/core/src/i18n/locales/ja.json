@@ -2096,7 +2096,15 @@
   "energy-usage": {
     "title": "エネルギー使用量",
     "title_short": "使用量",
+    "title_water": "水道使用量",
+    "title_gas": "ガス使用量",
     "other": "その他",
+    "nothing_water": "この期間の水道のデータはまだありません",
+    "nothing_gas": "この期間のガスのデータはまだありません",
+    "figures_until": "{date}までのデータ",
+    "editor_kind": "表示する内容",
+    "kind_energy": "電気",
+    "editor_meters": "メーター（未設定：エネルギーダッシュボードのもの）",
     "editor_sources": "供給元（未設定：エネルギーダッシュボードのもの）",
     "editor_max_sources": "個別に表示する供給元の数（残りは「その他」）",
     "editor_show_returns": "充電と売電を表示",
@@ -2110,7 +2118,8 @@
     "flows_solar": "太陽光発電",
     "flows_battery": "バッテリー放電",
     "flows_grid": "買電",
-    "editor_color_helper": "空のときはそのエネルギー自身の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます"
+    "editor_color_helper": "空のときはそのエネルギー自身の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます",
+    "editor_shade_helper": "空のときは水道またはガスの色の濃淡。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます"
   },
   "history": {
     "title": "履歴",

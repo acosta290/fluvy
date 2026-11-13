@@ -2130,7 +2130,15 @@
   "energy-usage": {
     "title": "Consumo di energia",
     "title_short": "Consumo",
+    "title_water": "Consumo d’acqua",
+    "title_gas": "Consumo di gas",
     "other": "Altre",
+    "nothing_water": "Ancora nessun dato dell’acqua in questo periodo",
+    "nothing_gas": "Ancora nessun dato del gas in questo periodo",
+    "figures_until": "dati fino al {date}",
+    "editor_kind": "Cosa mostra",
+    "kind_energy": "Elettricità",
+    "editor_meters": "Contatori (nessuno: quelli della dashboard Energia)",
     "editor_sources": "Fonti (nessuna: quelle della dashboard Energia)",
     "editor_max_sources": "Fonti prima che il resto diventi “Altre”",
     "editor_show_returns": "Mostra ciò che è stato caricato e immesso",
@@ -2144,7 +2152,8 @@
     "flows_solar": "Produzione solare",
     "flows_battery": "Scarica batteria",
     "flows_grid": "Prelievo dalla rete",
-    "editor_color_helper": "Vuoto, il colore proprio della sua energia. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto"
+    "editor_color_helper": "Vuoto, il colore proprio della sua energia. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto",
+    "editor_shade_helper": "Vuoto, una sfumatura del colore dell’acqua o del gas. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto"
   },
   "wall": {
     "paused": "Parete in pausa",

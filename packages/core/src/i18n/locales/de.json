@@ -2130,7 +2130,15 @@
   "energy-usage": {
     "title": "Energieverbrauch",
     "title_short": "Verbrauch",
+    "title_water": "Wasserverbrauch",
+    "title_gas": "Gasverbrauch",
     "other": "Weitere",
+    "nothing_water": "Für diesen Zeitraum noch keine Wasserwerte",
+    "nothing_gas": "Für diesen Zeitraum noch keine Gaswerte",
+    "figures_until": "Werte bis {date}",
+    "editor_kind": "Was gezeigt wird",
+    "kind_energy": "Strom",
+    "editor_meters": "Zähler (keine: die des Energie-Dashboards)",
     "editor_sources": "Quellen (keine: die des Energie-Dashboards)",
     "editor_max_sources": "Quellen, bevor der Rest „Weitere“ wird",
     "editor_show_returns": "Geladenes und Eingespeistes zeigen",
@@ -2144,7 +2152,8 @@
     "flows_solar": "Solarerzeugung",
     "flows_battery": "Batterieentladung",
     "flows_grid": "Netzbezug",
-    "editor_color_helper": "Leer: die eigene Farbe seiner Energie. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben"
+    "editor_color_helper": "Leer: die eigene Farbe seiner Energie. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben",
+    "editor_shade_helper": "Leer: ein Ton der Farbe von Wasser oder Gas. Die Farben der Palette folgen ihr; ein Farbname oder ein #Hex bleibt wie eingegeben"
   },
   "wall": {
     "paused": "Wand pausiert",

@@ -1,17 +1,24 @@
 import { houseZone, wallClock, type HomeAssistant } from '@fluvy/core';
 import { niceTicks, type Ticks } from '../chart/engine/index.js';
 import { allocate, type Totals } from '../energy-model/allocate.js';
-import type { Range, Step } from '../energy-model/period.js';
+import type { Range, StatRow, Step } from '../energy-model/period.js';
 import type { SourceKind } from '../energy-model/prefs.js';
 import { midnightOf } from '../energy-period/picker.js';
+import { unitClass } from '../shared/units.js';
 
 /**
  * The Energy usage card's figures, pure: a range in its slots (a day's hours, a week's or a month's days, a year's
  * months), each slot's energy by where the house took it from and where it went — Home Assistant's own series, from
  * the dashboard's own arithmetic (`allocate`, bucket by bucket) — or by what each source's meter measured, and the
  * series a card draws of them, in the order and the colours it asks for, the sources past `max_sources` folded into
- * one, on a scale that hugs them.
+ * one, on a scale that hugs them. A water or a gas card draws its meters instead, each what it measured in a slot.
  */
+
+/** What a card charts: the house's electricity by its sources, or its water or its gas by their meters. */
+export type Charted = 'energy' | 'water' | 'gas';
+export const CHARTED: readonly Charted[] = ['energy', 'water', 'gas'];
+/** Water or gas: what a card draws its meters of. */
+export type Metered = Exclude<Charted, 'energy'>;
 
 /** A slot's grain: the buckets the range is read in (Home Assistant's `getSuggestedPeriod`). */
 export type Grain = Exclude<Step, '5minute'>;
@@ -71,6 +78,13 @@ export function slotsOf(
   }
 }
 
+/** The slot a bucket starting at `start` lands in: the last that starts at or before it (-1 before the first). */
+function slotOf(slots: readonly number[], start: number): number {
+  let index = slots.length - 1;
+  while (index >= 0 && (slots[index] as number) > start) index--;
+  return index;
+}
+
 /**
  * Each slot's energy from the statistics' buckets: every bucket allocated on its own (an hour's import never netted
  * against another hour's export) and added into the slot it starts in; a bucket outside the slots is not drawn.
@@ -91,9 +105,7 @@ export function slotEnergy(
   }));
   for (const { start, totals } of buckets) {
     if (start >= end) continue;
-    let index = slots.length - 1;
-    while (index >= 0 && (slots[index] as number) > start) index--;
-    const slot = out[index];
+    const slot = out[slotOf(slots, start)];
     if (!slot) continue;
     const a = allocate(totals);
     slot.used.solar += a.usedSolar;
@@ -117,10 +129,16 @@ export interface UsageSource {
   color?: string;
 }
 
-/** What a series is: a source above the line, the sources folded into one, or what went out below it. */
-export type SeriesKey = UsageKind | 'other' | 'charged' | 'exported';
+/**
+ * What a series is: a source above the line, the sources folded into one, what went out below it, or a water or gas
+ * meter.
+ */
+export type SeriesKey = UsageKind | 'other' | 'charged' | 'exported' | 'meter';
 
-/** A series as the card draws it: kWh per slot (what went out below zero), and its total over the range. */
+/**
+ * A series as the card draws it: kWh per slot (what went out below zero) — a meter's figures in its kind's unit — and
+ * its total over the range.
+ */
 export interface UsageSeries {
   readonly key: SeriesKey;
   /** The source it is (above), the one it went into or out through (below); none for the folded sources. */
@@ -130,7 +148,21 @@ export interface UsageSeries {
   /** The source's own name and colour, as the card lists them. */
   readonly name?: string | undefined;
   readonly color?: string | undefined;
+  /** A meter's place among its kind's shades: the first its kind's colour, each after it a shade of it. */
+  readonly shade?: number;
 }
+
+/** A series of `values`, its total what they add up to on both sides of the line. */
+const series = (
+  key: SeriesKey,
+  values: number[],
+  more: Partial<UsageSeries> = {},
+): UsageSeries => ({
+  key,
+  values,
+  total: values.reduce((sum, v) => sum + Math.abs(v), 0),
+  ...more,
+});
 
 /** A `sources` entry as an object: a bare kind is one shown with its own words. */
 const sourceOf = (entry: UsageSource | UsageKind): UsageSource =>
@@ -176,16 +208,6 @@ export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): Usa
         (o.ins.has(s.type) || o.outs.has(s.type)),
     );
   const shown = listed.filter((s, i) => listed.findIndex((other) => other.type === s.type) === i);
-  const series = (
-    key: SeriesKey,
-    values: number[],
-    more: Partial<UsageSeries> = {},
-  ): UsageSeries => ({
-    key,
-    values,
-    total: values.reduce((sum, v) => sum + Math.abs(v), 0),
-    ...more,
-  });
   const sources = shown.filter((s) => o.ins.has(s.type));
   const side = o.mode === 'flows' ? 'metered' : 'used';
   const named = foldAt(sources.length, o.max);
@@ -221,6 +243,113 @@ export function usageSeries(slots: readonly SlotEnergy[], o: SeriesOptions): Usa
       );
   }
   return out;
+}
+
+/* ---------- water and gas ---------- */
+
+/** A water or gas meter as a card draws it: its statistic, its name (the card's, told apart) and its own colour. */
+export interface MeterLine {
+  readonly id: string;
+  readonly name: string;
+  readonly color?: string | undefined;
+}
+
+/** A statistics row as Home Assistant answers it: its bucket's start and end, what the meter measured over it. */
+export type MeterRow = StatRow & { readonly end?: number };
+
+/**
+ * A meter's figures in a range's slots: each of its rows' change (what it measured over its bucket, in the unit it was
+ * asked in) added into the slot the row starts in; a row at or past `end`, or before the first slot, is not drawn.
+ */
+export function meterSlots(
+  rows: readonly MeterRow[] | undefined,
+  slots: readonly number[],
+  end: number,
+): number[] {
+  const out = slots.map(() => 0);
+  for (const row of rows ?? []) {
+    const change = Number(row.change ?? 0);
+    const index = row.start < end ? slotOf(slots, row.start) : -1;
+    if (index >= 0 && Number.isFinite(change))
+      out[index] = (out[index] as number) + Math.max(0, change);
+  }
+  return out;
+}
+
+/**
+ * The series of a water or gas card, bottom of the stack first: each meter in its order, in a shade of its kind's
+ * colour by its place (its own colour over it), the last past `max` folded into one "other" (`foldAt`). A meter that
+ * measured nothing in the range draws its zeros.
+ */
+export function meterSeries(
+  values: ReadonlyMap<string, readonly number[]>,
+  meters: readonly MeterLine[],
+  count: number,
+  max: unknown,
+): UsageSeries[] {
+  const of = (m: MeterLine, i: number): number => values.get(m.id)?.[i] ?? 0;
+  const slots = Array.from({ length: count }, (_unused, i) => i);
+  const named = foldAt(meters.length, max);
+  const out = meters.slice(0, named).map((m, shade) =>
+    series(
+      'meter',
+      slots.map((i) => of(m, i)),
+      { name: m.name, color: m.color, shade },
+    ),
+  );
+  const rest = meters.slice(named);
+  if (rest.length)
+    out.push(
+      series(
+        'other',
+        slots.map((i) => rest.reduce((sum, m) => sum + of(m, i), 0)),
+      ),
+    );
+  return out;
+}
+
+/** A bucket of each grain (a month at its shortest): what a row lasts where it says no end of its own. */
+const BUCKET: Readonly<Record<Grain, number>> = {
+  hour: HOUR,
+  day: 24 * HOUR,
+  month: 28 * 24 * HOUR,
+};
+
+/** Where a meter's newest figures end: its last row's end (its bucket's, where it says none); none without a row. */
+export function newestOf(rows: readonly MeterRow[] | undefined, grain: Grain): number | undefined {
+  let newest: number | undefined;
+  for (const row of rows ?? [])
+    if (row.change !== null && row.change !== undefined)
+      newest = Math.max(newest ?? -Infinity, row.end ?? row.start + BUCKET[grain]);
+  return newest;
+}
+
+/**
+ * Whether a meter's figures stop short of what has happened of the range (`until`: its end, or now while it runs) by a
+ * whole bucket of its grain: an hour, a day or a month still being compiled is no gap; a utility's meter imported a
+ * day or two behind is.
+ */
+export const stopsShort = (newest: number | undefined, until: number, grain: Grain): boolean =>
+  newest !== undefined && until - newest >= BUCKET[grain];
+
+/** The volume units Home Assistant converts water and gas between (its `VOLUME_UNITS`). */
+const VOLUMES: readonly string[] = ['L', 'gal', 'ft³', 'm³', 'CCF', 'MCF'];
+
+/**
+ * The unit a kind's figures are asked in, as the Energy dashboard asks them (`getEnergyWaterUnit`,
+ * `getEnergyGasUnit`): gas metered as energy in kWh; meters that agree on a volume in it; else the house's own —
+ * litres or gallons of water, cubic metres or feet of gas.
+ */
+export function meteredUnit(
+  kind: Metered,
+  units: readonly (string | null | undefined)[],
+  metric: boolean,
+): string {
+  if (kind === 'gas' && units.some((unit) => unit && unitClass(unit) === 'energy')) return 'kWh';
+  const [first] = units;
+  if (first && VOLUMES.includes(first) && units.every((unit) => unit === first)) return first;
+  if (kind === 'water') return metric ? 'L' : 'gal';
+  return metric ? 'm³' : 'ft³';
 }
 
 /** What went out, below the line: into the battery and out to the grid. */

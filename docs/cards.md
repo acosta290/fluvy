@@ -1053,6 +1053,23 @@ what the columns reach on both sides of zero; `chart` draws them `classic` in th
 draws as classic), or `soft` a step lighter; `show_axis` and `show_grid` turn the scale and its gridlines off, and
 `unit` and `decimals` say how the figures read. With no Energy dashboard the card says so.
 
+`kind` says what it charts (#181): the house's electricity (`energy`, the default), its `water` or its `gas`, each
+slot's column stacked by meter — the Energy dashboard's of that kind (an imported statistic, an id with a colon, among
+them), or `meters` of the card's own, each with its `name` and `color` — the kind's colour at the foot and shades of
+it above, in the unit the Energy dashboard reads it in (`unit` converts: litres to cubic metres, CCF to cubic feet).
+Where a meter's figures stop short of the range, a utility's imported a day or two behind, the head says how far they
+go ("Gas · figures up to 11 Nov"); a range with none yet says "No gas figures for this range yet" across the chart, at
+the card's height. `mode`, `sources` and `show_returns` are the electricity's.
+
+```yaml
+type: custom:fluvy-energy-usage-card
+kind: water
+period: month
+meters:
+  - { entity: sensor.house_water_meter, name: House }
+  - { entity: sensor.garden_water_meter, name: Garden, color: teal }
+```
+
 ```yaml
 type: custom:fluvy-energy-usage-card
 period: week
@@ -1407,7 +1424,7 @@ roles:
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
 | **Energy period** | `custom:fluvy-energy-period-card` | The view’s date picker as a strip: ‹ the day, week, month or year › and back to today, Home Assistant’s own, so its energy cards follow it as Fluvy’s do. | `variant` (`row`, `compact`, `stacked`, `bar`), `collection_key`, `periods` (`day`, `week`, `month`, `year`, `custom`), `show_today`, `show_compare` | — |
-| **Energy usage** | `custom:fluvy-energy-usage-card` | Energy used by the hour, the day or the month, stacked by source. | `title`, `subtitle`, `variant` (`full`, `compact`, `mini`), `mode` (`usage`, `flows`), `plot_height`, `period` (`day`, `week`, `month`, `year`), `collection_key`, `show_period`, `show_returns`, `show_legend`, `compare`, `max_sources`, `chart` (`classic`, `soft`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `animate`, `unit` (`auto`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `name`, `color`, `show`) | — |
+| **Energy usage** | `custom:fluvy-energy-usage-card` | Electricity, water or gas used by the hour, the day or the month, stacked by source or meter. | `kind` (`energy`, `water`, `gas`), `title`, `subtitle`, `variant` (`full`, `compact`, `mini`), `mode` (`usage`, `flows`), `plot_height`, `period` (`day`, `week`, `month`, `year`), `collection_key`, `show_period`, `show_returns`, `show_legend`, `compare`, `max_sources`, `chart` (`classic`, `soft`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `animate`, `unit` (`auto`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `name`, `color`, `show`), `meters` (a list: `entity`, `name`, `color`) | — |
 | **Energy** | `custom:fluvy-energy-card` | Power right now, the day curve and the energy legend. | `invert`, `subtitle`, `variant` (`full`, `compact`, `sources`, `overview`), `hours`, `collection_key`, `show_soc`, `show_house`, `stack`, `cost_entity`, `show_cost`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`), `points` (`auto`, `5m`, `15m`, `30m`, `1h`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `legend` (a list: `entity`, `name`, `period`, `unit`, `decimals`) | `title` → `name` |
 | **Energy flow** | `custom:fluvy-energy-flow-card` | Where the house’s energy comes from and where it goes, live or over a period: import and export at once, every source, lanes in their origin’s colour. | `title`, `subtitle`, `home`, `variant` (`rows`, `cross`, `list`), `flow_style` (`stream`, `legs`, `rail`), `motion` (`full`, `calm`, `off`), `max_power`, `badge` (`solar`, `self_powered`, `grid`, `none`), `period` (`live`, `day`, `week`, `month`), `collection_key`, `show_period`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `power`, `phases`, `import`, `export`, `invert`, `level`, `capacity`, `name`, `icon`, `color`, `threshold`, `arrows`, `show`), `consumers` (a list: `entity`, `name`, `icon`, `color`), `readouts` (a list: `entity`, `name`, `unit`, `decimals`) | `home_power` → `home`, `solar_power` (folded in), `grid_power` (folded in), `grid_invert` (folded in), `battery_power` (folded in), `battery_invert` (folded in), `battery_level` (folded in) |
 | **Energy balance** | `custom:fluvy-energy-balance-card` | What comes in against what goes out, live or over a period: the house is the remainder, so the totals agree; each phase of the grid, and the money. | `title`, `subtitle`, `period` (`live`, `day`, `week`, `month`), `collection_key`, `show_period`, `show_phases`, `show_cost`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `sources` (a list: `type`, `power`, `phases`, `import`, `export`, `invert`, `name`, `color`, `threshold`) | — |

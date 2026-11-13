@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import { dateFormat, type HaFormSchemaItem, type HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usageHeight } from '../energy-family.js';
 import type { EnergyCollectionLike, EnergyDataLike } from '../energy-model/collection.js';
@@ -515,5 +515,220 @@ describe('its height and its stub', () => {
       mode: 'usage',
       plot_height: 96,
     });
+  });
+});
+
+describe('water and gas (#181)', () => {
+  /** The Energy dashboard's water — two meters in litres — and its gas, a statistic the utility imports in CCF. */
+  const VOLUMES = {
+    energy_sources: [
+      ...PREFS.energy_sources,
+      { type: 'water', stat_energy_from: 'sensor.house_water' },
+      { type: 'water', stat_energy_from: 'sensor.garden_water' },
+      { type: 'gas', stat_energy_from: 'opower:pge_gas' },
+    ],
+    device_consumption: [],
+  };
+  /** What each meter measured in an hour of today, and the imported gas a day, up to Tuesday's (two days behind). */
+  const LITRES: Readonly<Record<string, Readonly<Record<number, number>>>> = {
+    'sensor.house_water': { 7: 30, 8: 12, 20: 18 },
+    'sensor.garden_water': { 6: 40 },
+  };
+  const GAS_DAYS = [Date.parse('2026-09-13T22:00:00Z'), Date.parse('2026-09-14T22:00:00Z')];
+
+  const water = (id: string, name: string) => ({
+    entity_id: id,
+    state: '18240',
+    attributes: {
+      friendly_name: name,
+      unit_of_measurement: 'L',
+      device_class: 'water',
+      state_class: 'total_increasing',
+    },
+    last_changed: NOW,
+    last_updated: NOW,
+  });
+
+  /** The house with its water and gas; `asked` keeps every statistics request. */
+  function volumes(asked: Array<Record<string, unknown>> = [], more: object = {}): HomeAssistant {
+    const base = hassWith({}, VOLUMES);
+    return {
+      ...base,
+      states: {
+        ...base.states,
+        'sensor.house_water': water('sensor.house_water', 'House'),
+        'sensor.garden_water': water('sensor.garden_water', 'Garden'),
+      },
+      callWS: async (message: Record<string, unknown>) => {
+        if (message['type'] === 'recorder/get_statistics_metadata')
+          return [
+            {
+              statistic_id: 'opower:pge_gas',
+              name: 'PG&E Gas',
+              has_sum: true,
+              statistics_unit_of_measurement: 'CCF',
+            },
+          ];
+        if (message['type'] !== 'recorder/statistics_during_period')
+          return base.callWS(message as never);
+        asked.push(message);
+        const start = Date.parse(String(message['start_time']));
+        const out: Record<string, unknown[]> = {};
+        for (const id of message['statistic_ids'] as string[])
+          out[id] =
+            id === 'opower:pge_gas'
+              ? GAS_DAYS.filter((t) => t >= start).map((t) => ({
+                  start: t,
+                  end: t + 24 * HOUR,
+                  change: 1.8,
+                }))
+              : Object.entries(LITRES[id] ?? {}).map(([hour, change]) => ({
+                  start: start + Number(hour) * HOUR,
+                  end: start + (Number(hour) + 1) * HOUR,
+                  change,
+                }));
+        return out;
+      },
+      ...more,
+    } as HomeAssistant;
+  }
+
+  const squares = (card: Card): (string | null)[] =>
+    [...root(card).querySelectorAll('.en-legend__item .en-sq')].map((sq) =>
+      sq.getAttribute('style'),
+    );
+
+  it('stacks the Energy dashboard’s water meters in shades of water’s colour, in litres', async () => {
+    const asked: Array<Record<string, unknown>> = [];
+    const card = await mount({ kind: 'water' }, volumes(asked));
+    expect(root(card).querySelector('.fv-card__title')?.textContent?.trim()).toBe('Water usage');
+    expect(root(card).querySelector('.eu-card--water')).not.toBeNull();
+    expect(legend(card).map((item) => item.name)).toEqual(['House', 'Garden']);
+    expect(squares(card)).toEqual(['--ink:var(--eu-shade-0)', '--ink:var(--eu-shade-1)']);
+    expect(badge(card)).toBe('100 L');
+    // one request for both meters, by the hour, in the kind's unit
+    expect(asked.map((m) => [m['period'], m['statistic_ids'], m['units']])).toEqual([
+      ['hour', ['sensor.house_water', 'sensor.garden_water'], { volume: 'L' }],
+    ]);
+  });
+
+  it('charts an imported gas meter by the recorder’s name and unit, and says where its figures stop', async () => {
+    const asked: Array<Record<string, unknown>> = [];
+    const card = await mount({ kind: 'gas', period: 'week' }, volumes(asked));
+    expect(asked.at(-1)).toMatchObject({
+      period: 'day',
+      statistic_ids: ['opower:pge_gas'],
+      units: { volume: 'CCF' },
+    });
+    // a lone meter is its kind's; Monday and Tuesday imported, nothing since
+    expect(legend(card).map((item) => item.name)).toEqual(['Gas']);
+    expect(badge(card)).toBe('3.6 CCF');
+    const tuesday = dateFormat('en', {
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Europe/Madrid',
+    }).format(GAS_DAYS[1]);
+    expect(root(card).querySelector('.fv-card__sub')?.textContent?.trim()).toBe(
+      `Gas · figures up to ${tuesday}`,
+    );
+  });
+
+  it('keeps its chart at its height where the range has no figures yet, and says so', async () => {
+    const card = await mount({ kind: 'gas' }, volumes());
+    expect(root(card).querySelector('.eu-nothing')?.textContent?.trim()).toBe(
+      'No gas figures for this range yet',
+    );
+    expect(Number(root(card).querySelector('.eu-chart > svg')?.getAttribute('height'))).toBe(180);
+    expect(legend(card).map((item) => item.name)).toEqual(['Gas']);
+  });
+
+  it('draws the meters of its own, in their order, named and coloured; with none of its kind it says so', async () => {
+    const card = await mount(
+      {
+        kind: 'water',
+        meters: [{ entity: 'sensor.garden_water', name: 'Irrigation' }, 'sensor.house_water'],
+      },
+      volumes(),
+    );
+    expect(legend(card).map((item) => item.name)).toEqual(['Irrigation', 'House']);
+    const none = await mount({ kind: 'gas' }, hassWith({}, PREFS));
+    expect(root(none).querySelector('.fv-empty-state')?.textContent).toContain(
+      'No water or gas meters yet',
+    );
+  });
+
+  it('follows a picker with Home Assistant’s figures in its unit, the period before as ghosts', async () => {
+    const asked: Array<Record<string, unknown>> = [];
+    const stats = Object.fromEntries(
+      Object.entries(LITRES).map(([id, hours]) => [
+        id,
+        Object.entries(hours).map(([hour, change]) => ({
+          start: TODAY + Number(hour) * HOUR,
+          end: TODAY + (Number(hour) + 1) * HOUR,
+          change,
+        })),
+      ]),
+    );
+    const statsCompare = Object.fromEntries(
+      Object.entries(stats).map(([id, rows]) => [
+        id,
+        rows.map((row) => ({ ...row, start: row.start - 24 * HOUR, end: row.end - 24 * HOUR })),
+      ]),
+    );
+    const state: EnergyDataLike = {
+      start: new Date(TODAY),
+      end: new Date(TODAY + 24 * HOUR - 1),
+      startCompare: new Date(YESTERDAY),
+      endCompare: new Date(TODAY - 1),
+      prefs: VOLUMES,
+      stats,
+      statsCompare,
+      waterUnit: 'L',
+      gasUnit: 'CCF',
+    };
+    const collection: EnergyCollectionLike = {
+      start: state.start,
+      end: state.end,
+      compare: 'previous',
+      state,
+      subscribe: () => () => {},
+      setPeriod: () => {},
+      setCompare: () => {},
+      refresh: () => {},
+    };
+    const card = await mount(
+      { kind: 'water', collection_key: 'energy_t' },
+      volumes(asked, { connection: { _energy_t: collection } }),
+    );
+    expect(asked).toEqual([]);
+    expect(badge(card)).toBe('100 L');
+    // yesterday's four hours, behind today's
+    expect(root(card).querySelectorAll('.eu-ghost').length).toBe(4);
+  });
+
+  it('offers what it charts first, as tiles; the electricity’s keys only for electricity, the meters for water and gas', () => {
+    const form = FluvyEnergyUsageCard.getConfigForm();
+    const kind = form.schema[0] as HaFormSchemaItem;
+    expect(kind.name).toBe('kind');
+    const select = kind.selector?.['select'] as { mode: string; options: { label: string }[] };
+    expect(select.mode).toBe('box');
+    expect(select.options.map((option) => option.label)).toEqual(['Electricity', 'Water', 'Gas']);
+    const flat = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+      schema.flatMap((item) => (item.schema ? flat(item.schema) : [item]));
+    const when = (name: string, data: Record<string, unknown>) =>
+      flat(form.schema)
+        .find((field) => field.name === name)
+        ?.when?.(data) ?? true;
+    expect(when('mode', { kind: 'water' })).toBe(false);
+    expect(when('show_returns', { kind: 'gas' })).toBe(false);
+    expect(when('mode', {})).toBe(true);
+    const list = (key: string) => FluvyEnergyUsageCard.lists.find((l) => l.key === key);
+    expect(list('meters')?.when?.({ kind: 'gas' })).toBe(true);
+    expect(list('meters')?.when?.({})).toBe(false);
+    expect(list('sources')?.when?.({ kind: 'water' })).toBe(false);
+    expect(FluvyEnergyUsageCard.defaults?.({ type: '' }, undefined)['kind']).toBe('energy');
+    expect(FluvyEnergyUsageCard.layoutHeight({ type: '', kind: 'gas' })).toBe(
+      usageHeight({ type: '', kind: 'gas' }),
+    );
   });
 });

@@ -2130,7 +2130,15 @@
   "energy-usage": {
     "title": "Enerji kullanımı",
     "title_short": "Kullanım",
+    "title_water": "Su kullanımı",
+    "title_gas": "Gaz kullanımı",
     "other": "Diğer",
+    "nothing_water": "Bu dönem için henüz su verisi yok",
+    "nothing_gas": "Bu dönem için henüz gaz verisi yok",
+    "figures_until": "{date} tarihine kadar veriler",
+    "editor_kind": "Gösterdiği",
+    "kind_energy": "Elektrik",
+    "editor_meters": "Sayaçlar (yoksa: Enerji panosununkiler)",
     "editor_sources": "Kaynaklar (yoksa: Enerji panosununkiler)",
     "editor_max_sources": "Geri kalanı “Diğer” olmadan önceki kaynak sayısı",
     "editor_show_returns": "Şarj edileni ve verileni göster",
@@ -2144,7 +2152,8 @@
     "flows_solar": "Güneş üretimi",
     "flows_battery": "Batarya deşarjı",
     "flows_grid": "Şebekeden alım",
-    "editor_color_helper": "Boşsa, enerjisinin kendi rengi. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır"
+    "editor_color_helper": "Boşsa, enerjisinin kendi rengi. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır",
+    "editor_shade_helper": "Boşsa, su ya da gaz renginin bir tonu. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır"
   },
   "wall": {
     "paused": "Duvar duraklatıldı",

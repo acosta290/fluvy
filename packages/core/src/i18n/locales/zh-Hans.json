@@ -1791,7 +1791,15 @@
   "energy-usage": {
     "title": "能源使用",
     "title_short": "用量",
+    "title_water": "用水",
+    "title_gas": "用气",
     "other": "其他",
+    "nothing_water": "该时段暂无用水数据",
+    "nothing_gas": "该时段暂无燃气数据",
+    "figures_until": "数据截至 {date}",
+    "editor_kind": "显示内容",
+    "kind_energy": "电力",
+    "editor_meters": "表计（留空：用能源仪表盘的）",
     "editor_sources": "来源（留空：用能源仪表盘的）",
     "editor_max_sources": "超过后归入“其他”的来源数",
     "editor_show_returns": "显示充入电池和输出电网的电量",
@@ -1805,7 +1813,8 @@
     "flows_solar": "光伏发电",
     "flows_battery": "电池放电",
     "flows_grid": "电网输入",
-    "editor_color_helper": "留空：用其能源自身的颜色。配色会随之变化；颜色名或 #hex 会原样保留"
+    "editor_color_helper": "留空：用其能源自身的颜色。配色会随之变化；颜色名或 #hex 会原样保留",
+    "editor_shade_helper": "留空：用水或燃气颜色的深浅。配色会随之变化；颜色名或 #hex 会原样保留"
   },
   "energy-devices": {
     "title": "家电",

@@ -2130,7 +2130,15 @@
   "energy-usage": {
     "title": "Consommation d’énergie",
     "title_short": "Conso",
+    "title_water": "Consommation d’eau",
+    "title_gas": "Consommation de gaz",
     "other": "Autres",
+    "nothing_water": "Pas encore de relevés d’eau sur cette période",
+    "nothing_gas": "Pas encore de relevés de gaz sur cette période",
+    "figures_until": "relevés jusqu’au {date}",
+    "editor_kind": "Ce qu’elle montre",
+    "kind_energy": "Électricité",
+    "editor_meters": "Compteurs (aucun : ceux du tableau Énergie)",
     "editor_sources": "Sources (aucune : celles du tableau Énergie)",
     "editor_max_sources": "Sources avant que le reste devienne « Autres »",
     "editor_show_returns": "Afficher ce qui a été chargé et injecté",
@@ -2144,7 +2152,8 @@
     "flows_solar": "Production solaire",
     "flows_battery": "Décharge batterie",
     "flows_grid": "Soutirage réseau",
-    "editor_color_helper": "Vide, la couleur propre à son énergie. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi"
+    "editor_color_helper": "Vide, la couleur propre à son énergie. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi",
+    "editor_shade_helper": "Vide, une nuance de la couleur de l’eau ou du gaz. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi"
   },
   "wall": {
     "paused": "Mur en pause",

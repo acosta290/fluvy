@@ -23,12 +23,15 @@ import {
   readPrefs,
   type EnergyPrefs,
 } from '../../../packages/cards/src/energy-model/prefs.js';
+import type { Recorded } from '../../../packages/cards/src/energy-model/recorded.js';
+import { meteredUnit } from '../../../packages/cards/src/energy-usage/series.js';
 
 /**
  * An Energy date picker's collection as Home Assistant makes one (`getEnergyDataCollection`), on the mock's
  * connection as `_<key>`: a card given the key finds it there, subscribes, and is handed an `EnergyData` built from
  * the sheet's preferences (`energy/get_prefs`) and its statistics (`recorder/statistics_during_period`, in the
- * buckets Home Assistant would ask for) over the range it holds — today unless `?period=` says otherwise — moved by
+ * buckets Home Assistant would ask for; the water and the gas in their units, with what the recorder keeps of them)
+ * over the range it holds — today unless `?period=` says otherwise — moved by
  * `setPeriod` and `refresh()` as a picker moves it, and the period before beside it once `setCompare('previous')`.
  * Home Assistant's card helpers make its date card (`stubCardHelpers`), which makes a collection when connected.
  */
@@ -92,13 +95,40 @@ async function energyData(
     ]),
   ].filter((id): id is string => typeof id === 'string' && id !== '');
   const powerIds = [...new Set(house.sources.flatMap((s) => measureIds(s.measure)))];
-  const ask = (ids: readonly string[], period: string, types: readonly string[], units: object) =>
+  // the water and the gas, in the units their meters agree on (Home Assistant's `getEnergyWaterUnit` and
+  // `getEnergyGasUnit`), what the recorder keeps of each beside them
+  const volumeIds = [...house.water, ...house.gas];
+  const statsMetadata: Record<string, Recorded> = Object.fromEntries(
+    (volumeIds.length
+      ? await hass
+          .callWS<Recorded[]>({
+            type: 'recorder/get_statistics_metadata',
+            statistic_ids: volumeIds,
+          })
+          .catch(() => [])
+      : []
+    ).map((meta) => [meta.statistic_id, meta]),
+  );
+  const unitOf = (id: string): string | undefined =>
+    (hass.states[id]?.attributes['unit_of_measurement'] as string | undefined) ??
+    statsMetadata[id]?.statistics_unit_of_measurement ??
+    undefined;
+  const metric = hass.config.unit_system?.length !== 'mi';
+  const waterUnit = meteredUnit('water', house.water.map(unitOf), metric);
+  const gasUnit = meteredUnit('gas', house.gas.map(unitOf), metric);
+  const ask = (
+    over: Range,
+    ids: readonly string[],
+    period: string,
+    types: readonly string[],
+    units: object,
+  ): Promise<Statistics> =>
     ids.length
       ? hass
           .callWS<Statistics>({
             type: 'recorder/statistics_during_period',
-            start_time: range.start.toISOString(),
-            ...(range.end ? { end_time: range.end.toISOString() } : {}),
+            start_time: over.start.toISOString(),
+            ...(over.end ? { end_time: over.end.toISOString() } : {}),
             statistic_ids: [...ids],
             period,
             types: [...types],
@@ -106,14 +136,23 @@ async function energyData(
           })
           .catch(() => ({}))
       : Promise.resolve({});
+  /** What a range's meters measured: the energy's, the water's and the gas's, each in its unit. */
+  const changes = async (over: Range): Promise<Statistics> => {
+    const [energy, water, gas] = await Promise.all([
+      ask(over, energyIds, stepFor(over), ['change'], { energy: 'kWh' }),
+      ask(over, house.water, stepFor(over), ['change'], { volume: waterUnit }),
+      ask(over, house.gas, stepFor(over), ['change'], { energy: 'kWh', volume: gasUnit }),
+    ]);
+    return { ...energy, ...water, ...gas };
+  };
   const co2 = co2SignalOf(hass);
   const imports = house.sources.filter((s) => s.kind === 'grid').flatMap((s) => s.energyIn);
   // the period before, as long as this one, walked as the pickers walk it
   const before =
     compare && range.end ? shiftSpan(hass, { start: range.start, end: range.end }, -1) : undefined;
-  const [energy, power, fossil, energyBefore] = await Promise.all([
-    ask(energyIds, stepFor(range), ['change'], { energy: 'kWh' }),
-    ask(powerIds, finePeriod(range), ['mean'], { power: 'kW' }),
+  const [stats, power, fossil, statsBefore] = await Promise.all([
+    changes(range),
+    ask(range, powerIds, finePeriod(range), ['mean'], { power: 'kW' }),
     co2 && imports.length
       ? hass
           .callWS<Record<string, number>>({
@@ -126,28 +165,19 @@ async function energyData(
           })
           .catch(() => null)
       : Promise.resolve(undefined),
-    before
-      ? hass
-          .callWS<Statistics>({
-            type: 'recorder/statistics_during_period',
-            start_time: before.start.toISOString(),
-            end_time: before.end.toISOString(),
-            statistic_ids: energyIds,
-            period: stepFor(before),
-            types: ['change'],
-            units: { energy: 'kWh' },
-          })
-          .catch(() => ({}))
-      : Promise.resolve(undefined),
+    before ? changes(before) : Promise.resolve(undefined),
   ]);
   return {
     start: range.start,
     ...(range.end ? { end: range.end } : {}),
-    ...(before && energyBefore
-      ? { startCompare: before.start, endCompare: before.end, statsCompare: energyBefore }
+    ...(before && statsBefore
+      ? { startCompare: before.start, endCompare: before.end, statsCompare: statsBefore }
       : {}),
     prefs,
-    stats: { ...energy, ...power },
+    stats: { ...stats, ...power },
+    statsMetadata,
+    waterUnit,
+    gasUnit,
     ...(co2 ? { co2SignalEntity: co2 } : {}),
     ...(fossil !== undefined ? { fossilEnergyConsumption: fossil } : {}),
   };

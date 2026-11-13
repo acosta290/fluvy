@@ -1835,7 +1835,15 @@
   "energy-usage": {
     "title": "Spotreba energie",
     "title_short": "Spotreba",
+    "title_water": "Spotreba vody",
+    "title_gas": "Spotreba plynu",
     "other": "Ostatné",
+    "nothing_water": "Za toto obdobie zatiaľ žiadne údaje o vode",
+    "nothing_gas": "Za toto obdobie zatiaľ žiadne údaje o plyne",
+    "figures_until": "údaje do {date}",
+    "editor_kind": "Čo zobrazuje",
+    "kind_energy": "Elektrina",
+    "editor_meters": "Merače (prázdne: merače z panelu Energia)",
     "editor_sources": "Zdroje (prázdne: zdroje z panelu Energia)",
     "editor_max_sources": "Počet zdrojov pred skupinou „Ostatné“",
     "editor_show_returns": "Zobraziť nabíjanie a dodávku do siete",
@@ -1849,7 +1857,8 @@
     "flows_solar": "Solárna výroba",
     "flows_battery": "Vybíjanie batérie",
     "flows_grid": "Odber zo siete",
-    "editor_color_helper": "Prázdne: farba danej energie. Farby palety sa menia so zvolenou paletou; názov farby alebo #hex zostanú nezmenené"
+    "editor_color_helper": "Prázdne: farba danej energie. Farby palety sa menia so zvolenou paletou; názov farby alebo #hex zostanú nezmenené",
+    "editor_shade_helper": "Prázdne: odtieň farby vody alebo plynu. Farby palety sa menia so zvolenou paletou; názov farby alebo #hex zostanú nezmenené"
   },
   "energy-devices": {
     "title": "Spotrebiče",

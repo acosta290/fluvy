@@ -1857,7 +1857,15 @@
   "energy-usage": {
     "title": "Energiafelhasználás",
     "title_short": "Felhasználás",
+    "title_water": "Vízfelhasználás",
+    "title_gas": "Gázfelhasználás",
     "other": "Egyéb",
+    "nothing_water": "Erre az időszakra még nincs vízadat",
+    "nothing_gas": "Erre az időszakra még nincs gázadat",
+    "figures_until": "adatok eddig: {date}",
+    "editor_kind": "Mit mutat",
+    "kind_energy": "Áram",
+    "editor_meters": "Mérők (egy sem: az Energia vezérlőpult mérői)",
     "editor_sources": "Források (egy sem: az Energia vezérlőpult forrásai)",
     "editor_max_sources": "Források száma, mielőtt a többi „Egyéb” lesz",
     "editor_show_returns": "A töltött és a betáplált energia megjelenítése",
@@ -1871,7 +1879,8 @@
     "flows_solar": "Napenergia-termelés",
     "flows_battery": "Akkumulátor kisütése",
     "flows_grid": "Hálózati vételezés",
-    "editor_color_helper": "Üresen: az energia saját színe. A paletta színei követik; a színnév vagy a #hex úgy marad, ahogy beírtad"
+    "editor_color_helper": "Üresen: az energia saját színe. A paletta színei követik; a színnév vagy a #hex úgy marad, ahogy beírtad",
+    "editor_shade_helper": "Üresen: a víz vagy a gáz színének egy árnyalata. A paletta színei követik; a színnév vagy a #hex úgy marad, ahogy beírtad"
   },
   "energy-devices": {
     "title": "Készülékek",

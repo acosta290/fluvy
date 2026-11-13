@@ -10,9 +10,14 @@ import {
   drawnTotal,
   fallOf,
   foldAt,
+  meteredUnit,
+  meterSeries,
+  meterSlots,
+  newestOf,
   riseOf,
   slotEnergy,
   slotsOf,
+  stopsShort,
   usageSeries,
   usageTicks,
   type SlotEnergy,
@@ -437,5 +442,104 @@ describe('the declared height', () => {
         sources: ['grid', 'grid', { type: 'solar', show: false }],
       }),
     ).toBe(usageHeight({ type, show_period: false, sources: ['grid'] }));
+  });
+});
+
+describe('water and gas, by their meters (#181)', () => {
+  const week = slotsOf(HOUSE, presetSpan(HOUSE, 'this_week', NOW), 'day', NOW);
+  const day = (n: number): number => week[n] as number;
+  const end = NOW.getTime();
+
+  it('a meter’s rows land in the slot each starts in, none past the range or before its first slot', () => {
+    const rows = [
+      { start: day(0) - 24 * HOUR, change: 9 },
+      { start: day(0), end: day(1), change: 140 },
+      { start: day(0) + 2 * HOUR, change: 12 },
+      { start: day(2), change: null },
+      { start: day(3), change: -4 },
+      { start: end + HOUR, change: 7 },
+    ];
+    expect(meterSlots(rows, week, end)).toEqual([152, 0, 0, 0, 0, 0, 0]);
+    expect(meterSlots(undefined, week, end)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+
+  it('stacks the meters in their order, each a shade by its place, the last past max folded into Other', () => {
+    const values = new Map([
+      ['sensor.house', [100, 120]],
+      ['sensor.garden', [40, 0]],
+      ['opower:pge_gas', [3, 2]],
+    ]);
+    const lines = [
+      { id: 'sensor.house', name: 'House' },
+      { id: 'sensor.garden', name: 'Garden', color: 'teal' },
+      { id: 'opower:pge_gas', name: 'Utility' },
+    ];
+    const series = meterSeries(values, lines, 2, 6);
+    expect(series.map((s) => [s.key, s.name, s.shade, s.color, s.total])).toEqual([
+      ['meter', 'House', 0, undefined, 220],
+      ['meter', 'Garden', 1, 'teal', 40],
+      ['meter', 'Utility', 2, undefined, 5],
+    ]);
+    // what is drawn above the line is every meter's, the head's figure
+    expect(drawnTotal(series)).toBe(265);
+    expect(riseOf(series, 0)).toBe(143);
+    const folded = meterSeries(values, lines, 2, 2);
+    expect(folded.map((s) => [s.key, s.name, s.values])).toEqual([
+      ['meter', 'House', [100, 120]],
+      ['other', undefined, [43, 2]],
+    ]);
+    // a meter with no figures in the range draws its zeros
+    expect(meterSeries(new Map(), [lines[0]!], 2, 6)[0]?.values).toEqual([0, 0]);
+  });
+
+  it('knows where a meter’s figures stop, and whether they stop short of the range by a whole bucket', () => {
+    const rows = [
+      { start: day(0), end: day(1), change: 2.1 },
+      { start: day(1), end: day(2), change: 1.8 },
+      { start: day(2), end: day(3), change: null },
+    ];
+    expect(newestOf(rows, 'day')).toBe(day(2));
+    expect(newestOf([{ start: day(0), change: 1 }], 'hour')).toBe(day(0) + HOUR);
+    expect(newestOf([], 'day')).toBeUndefined();
+    // Thursday evening: figures up to Tuesday leave Wednesday out — an imported meter a day or two behind
+    expect(stopsShort(day(2), end, 'day')).toBe(true);
+    // today's figures still being compiled are no gap, nor an hour not yet compiled
+    expect(stopsShort(day(4), end, 'day')).toBe(false);
+    expect(stopsShort(end - 30 * 60_000, end, 'hour')).toBe(false);
+    expect(stopsShort(undefined, end, 'day')).toBe(false);
+  });
+
+  it('asks its figures in the unit the Energy dashboard does', () => {
+    expect(meteredUnit('water', ['L', 'L'], true)).toBe('L');
+    expect(meteredUnit('gas', ['CCF'], false)).toBe('CCF');
+    // gas metered as energy reads kWh
+    expect(meteredUnit('gas', ['m³', 'kWh'], true)).toBe('kWh');
+    // meters that disagree, or a unit no volume, read the house's own
+    expect(meteredUnit('water', ['L', 'gal'], true)).toBe('L');
+    expect(meteredUnit('water', ['L', 'gal'], false)).toBe('gal');
+    expect(meteredUnit('gas', [undefined], true)).toBe('m³');
+    expect(meteredUnit('gas', [null], false)).toBe('ft³');
+  });
+
+  it('declares its legend’s rows by its config: the Energy dashboard’s meters one row, named meters theirs', () => {
+    const type = 'custom:fluvy-energy-usage-card';
+    const one = usageHeight({ type, kind: 'gas', show_period: false });
+    expect(one).toBe(360);
+    // two meters the house names hold a row, as the chips do theirs
+    expect(usageHeight({ type, kind: 'water', meters: ['sensor.a', 'opower:b'] })).toBe(one + 60);
+    // three long names fold to one a row at a 360 column
+    expect(
+      usageHeight({
+        type,
+        kind: 'water',
+        show_period: false,
+        meters: [
+          { entity: 'sensor.a', name: 'Main house water meter' },
+          { entity: 'sensor.b', name: 'Garden irrigation meter' },
+          { entity: 'sensor.c', name: 'Swimming pool top-up' },
+        ],
+      }),
+    ).toBe(one + 2 * 52);
+    expect(usageHeight({ type, kind: 'gas', variant: 'compact' })).toBe(240);
   });
 });

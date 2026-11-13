@@ -1,18 +1,21 @@
 import {
   clock12,
   dateFormat,
+  deviceNameOf,
   houseZone,
   isEntityId,
   isPaletteRef,
   localize,
   strings,
   wallClock,
+  type EntityName,
   type FluvyCardConfig,
   type HaFormSchemaItem,
+  type HomeAssistant,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { axis, head, linesNeeded } from '@fluvy/ui';
+import { axis, head, linesNeeded, type Tone } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
@@ -56,11 +59,14 @@ import { usageHeight, usagePlot } from '../energy-family.js';
 import {
   CollectionFollower,
   collectionKeyOf,
+  type CompareMode,
   type EnergyDataLike,
+  type Statistics,
 } from '../energy-model/collection.js';
 import { fetchPrefs } from '../energy-model/house.js';
 import { meterOutage } from '../energy-model/outage.js';
 import { allocatePeriod, fetchRange, stepFor, type Range } from '../energy-model/period.js';
+import { fetchRecorded, isImported, type Recorded } from '../energy-model/recorded.js';
 import {
   readPrefs,
   type EnergyPrefs,
@@ -76,7 +82,8 @@ import {
   following,
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
-import { energyLegend, type LegendEntry } from '../energy/legend-row.js';
+import { energyLegend, legendColumns, type LegendEntry } from '../energy/legend-row.js';
+import { shortName } from '../energy/power.js';
 import {
   GRAIN_PRESET,
   presetSpan,
@@ -98,6 +105,7 @@ import {
   editorWord,
   fieldRow,
   iconField,
+  nameField,
   NUMBER_DEFAULTS,
   numberField,
   numberFields,
@@ -106,6 +114,7 @@ import {
   showIconField,
   textField,
   titleFields,
+  unitChoices,
 } from '../shared/form.js';
 import type {
   EditorChoices,
@@ -113,18 +122,27 @@ import type {
   FormHelper,
   RowsListSpec,
 } from '../shared/rows-editor.js';
-import { figuresOf, writeFigure, type Figures, type NumberKeys } from '../shared/units.js';
+import { figuresOf, LADDERS, writeFigure, type Figures, type NumberKeys } from '../shared/units.js';
+import { fetchMeters } from './meters.js';
 import {
+  CHARTED,
   drawnTotal,
   fallOf,
   isReturn,
+  meteredUnit,
+  meterSeries,
+  meterSlots,
+  newestOf,
   riseOf,
   slotEnergy,
+  stopsShort,
   usageTicks,
   slotsOf,
   USAGE_KINDS,
   usageSeries,
+  type Charted,
   type Grain,
+  type MeterLine,
   type SeriesKey,
   type SlotEnergy,
   type UsageKind,
@@ -137,6 +155,7 @@ const u = strings('energy-usage');
 const flow = strings('energy-flow');
 const sankey = strings('energy-sankey');
 const periodCard = strings('energy-period-card');
+const meters = strings('meters');
 
 /**
  * How a series is painted: its columns' colour, and its squares' — its source's ink (`en-ink--<ink>`), the person's own
@@ -171,6 +190,13 @@ const STEP: Readonly<Record<Period, 'hour' | 'day' | 'month'>> = {
   year: 'month',
 };
 
+/** A water or gas meter of the card's own: its statistic (a sensor, or one an integration imports), name and colour. */
+export interface UsageMeter {
+  entity: string;
+  name?: EntityName;
+  color?: string;
+}
+
 export interface EnergyUsageCardConfig
   extends
     FluvyCardConfig,
@@ -178,6 +204,8 @@ export interface EnergyUsageCardConfig
     Pick<ChartKeys, 'chart' | 'show_grid' | 'show_axis' | 'animate'> {
   title?: string;
   subtitle?: string;
+  /** What it charts: the house's electricity by its sources (default), or its water or its gas by their meters. */
+  kind?: Charted;
   /** The span drawn while no date picker is followed: today, this week, this month, this year (default day). */
   period?: Period;
   /** Day · Week · Month · Year chips (default true; the full layout's). */
@@ -192,7 +220,12 @@ export interface EnergyUsageCardConfig
   plot_height?: number;
   /** The sources drawn, bottom of the stack first, with their names and colours; none: every one the Energy dashboard has. */
   sources?: readonly (UsageSource | UsageKind)[];
-  /** Sources that keep their own name before the rest fold into "Other" (default 6). */
+  /**
+   * A water or gas card's meters, bottom of the stack first, with their names and colours (an imported statistic, an
+   * id with a colon, too); none: the Energy dashboard's of its kind.
+   */
+  meters?: readonly (string | UsageMeter)[];
+  /** Sources (a water or gas card's meters) that keep their own name before the rest fold into "Other" (default 6). */
   max_sources?: number;
   /** What went into the battery and out to the grid, below the line (default true). */
   show_returns?: boolean;
@@ -238,19 +271,59 @@ const LINE = 18;
 const SQUARE = 16;
 const FIGURE_GAP = 16;
 
-/** What the card draws of its range: its slots, each slot's energy, and the period before's beside them. */
-interface Drawn {
+/**
+ * A range's figures laid on its slots: the house's energy by source in each, or each water or gas meter's figures in
+ * each and where its newest end.
+ */
+interface Laid {
+  readonly energy: readonly SlotEnergy[];
+  readonly metered: ReadonlyMap<string, readonly number[]>;
+  readonly newest: ReadonlyMap<string, number | undefined>;
+}
+type Lay = (slots: readonly number[], end: number, grain: Grain) => Laid;
+
+const NONE: ReadonlyMap<string, never> = new Map<string, never>();
+
+/** The statistics' buckets of the house's energy, laid on a range's slots. */
+const energyLay =
+  (buckets: Parameters<typeof slotEnergy>[0]): Lay =>
+  (slots, end) => ({ energy: slotEnergy(buckets, slots, end), metered: NONE, newest: NONE });
+
+/** Water or gas meters' rows, laid on a range's slots: each meter's figures, and where its newest end. */
+const meterLay =
+  (ids: readonly string[], rows: Statistics): Lay =>
+  (slots, end, grain) => ({
+    energy: [],
+    metered: new Map(ids.map((id) => [id, meterSlots(rows[id], slots, end)])),
+    newest: new Map(ids.map((id) => [id, newestOf(rows[id], grain)])),
+  });
+
+/** The unit a card's figures are written from, and what one of its series' figures is in it: kWh as 1 000 Wh. */
+interface Base {
+  readonly unit: string;
+  readonly factor: number;
+}
+const ENERGY: Base = { unit: 'Wh', factor: 1000 };
+
+/** What the card draws of its range: its slots, each slot's figures, and the period before's beside them. */
+interface Drawn extends Laid {
   readonly grain: Grain;
   readonly slots: readonly number[];
   /** Where the range ends: its own end (today's midnight, past now), else now's (a range open to now). */
   readonly end: number;
-  readonly energy: readonly SlotEnergy[];
-  readonly before?: {
-    readonly range: Range;
-    readonly slots: readonly number[];
-    readonly energy: readonly SlotEnergy[];
-  };
+  readonly base: Base;
+  readonly before?: Laid & { readonly range: Range; readonly slots: readonly number[] };
 }
+
+/** A card's figures of a range as it fetches them itself, keyed by what they are of; none where nothing is metered. */
+interface OwnFetch {
+  readonly key: string;
+  readonly base: Base;
+  readonly of: (range: Range) => Promise<Lay | null>;
+}
+
+/** Each kind's glyph: the head's circle (a water or gas card's panel's ring too). */
+const GLYPH: Readonly<Record<Charted, string>> = { energy: 'chart', water: 'drop', gas: 'flame' };
 
 /**
  * Where the plot lies in the chart's width, for the pointer and the keys: its start, a slot's width, the slots, and
@@ -285,6 +358,17 @@ const SOURCE_FIELDS: HaFormSchemaItem[] = [
   boolField('show'),
 ];
 
+/** A meter's statistic: a sensor's, or one an integration imports (Home Assistant's statistic picker offers both). */
+const METER_FIELD: HaFormSchemaItem = { name: 'entity', selector: { statistic: {} } };
+
+/** The editor's config charts the house's electricity (the default), or its water or its gas. */
+const charting = (data: Readonly<Record<string, unknown>>): Charted => {
+  const kind = data['kind'] as Charted;
+  return CHARTED.includes(kind) ? kind : 'energy';
+};
+const electric = (data: Readonly<Record<string, unknown>>): boolean => charting(data) === 'energy';
+const metered = (data: Readonly<Record<string, unknown>>): boolean => !electric(data);
+
 /** Under the mode, what the chosen one draws; under the date picker's key and the period, what they do. */
 const usageHelper: FormHelper = (schema, localize, data) =>
   schema.name === 'mode'
@@ -311,6 +395,22 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     css`
       .eu-card {
         width: 100%;
+      }
+      /* a water or gas card's meters, from the foot of the stack: its kind's colour, then shades of it that stand
+         apart from their neighbours — a step towards the card, a step towards the text, in turn */
+      .eu-card--water {
+        --eu-kind: var(--fluvy-state-energy-water);
+      }
+      .eu-card--gas {
+        --eu-kind: var(--fluvy-state-energy-gas);
+      }
+      .eu-card {
+        --eu-shade-0: var(--eu-kind);
+        --eu-shade-1: color-mix(in srgb, var(--eu-kind) 58%, var(--fluvy-card));
+        --eu-shade-2: color-mix(in srgb, var(--eu-kind) 66%, var(--fluvy-text));
+        --eu-shade-3: color-mix(in srgb, var(--eu-kind) 32%, var(--fluvy-card));
+        --eu-shade-4: color-mix(in srgb, var(--eu-kind) 44%, var(--fluvy-text));
+        --eu-shade-5: color-mix(in srgb, var(--eu-kind) 18%, var(--fluvy-card));
       }
       .eu-chart {
         position: relative;
@@ -448,6 +548,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     'show_icon',
   ];
   static override keys = configKeys<EnergyUsageCardConfig>()([
+    'kind',
     'title',
     'subtitle',
     'variant',
@@ -457,6 +558,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     'show_period',
     'collection_key',
     'sources',
+    'meters',
     'max_sources',
     'show_returns',
     'show_legend',
@@ -477,9 +579,22 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       keys: ['type', 'show', 'name', 'color'],
       schema: SOURCE_FIELDS,
       computeLabel: editorLabels(flow, { type: 'editor_type', show: 'editor_show' }).computeLabel,
+      when: electric,
+    },
+    {
+      key: 'meters',
+      title: 'energy-usage.editor_meters',
+      picker: METER_FIELD,
+      keys: ['entity', 'name', 'color'],
+      schema: [
+        METER_FIELD,
+        fieldRow(nameField(), seriesColourField('energy-usage.editor_shade_helper')),
+      ],
+      when: metered,
     },
   ];
   static override defaults: EditorDefaults = (config) => ({
+    kind: 'energy',
     variant: 'full',
     mode: 'usage',
     plot_height: usagePlot(config),
@@ -493,15 +608,37 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     ...chartDefaultsFor(config, CAPS),
     ...NUMBER_DEFAULTS,
   });
-  /** The date pickers on the dashboard, for the key. */
-  static override choices: EditorChoices = (_config, hass) => ({
+  /** The date pickers on the dashboard, for the key; the units of what the card charts. */
+  static override choices: EditorChoices = (config, hass) => ({
     collection_key: collectionChoices(hass),
+    unit: unitChoices(
+      {
+        energy: LADDERS.energy,
+        water: LADDERS.volume,
+        gas: [...LADDERS.volume, ...LADDERS.energy],
+      }[charting(config)],
+    ),
   });
   static override getConfigForm(): LovelaceConfigForm {
     const language = editorLanguage();
     const full = (data: Readonly<Record<string, unknown>>): boolean =>
       (data['variant'] ?? 'full') === 'full';
     const own = (data: Readonly<Record<string, unknown>>): boolean => !following(data);
+    // what it charts, first: Home Assistant's tiles, each its kind's word
+    const kind: HaFormSchemaItem = {
+      name: 'kind',
+      selector: {
+        select: {
+          mode: 'box',
+          box_max_columns: 3,
+          options: CHARTED.map((value) => ({
+            value,
+            label:
+              value === 'energy' ? u(language, 'kind_energy') : meters(language, `kind_${value}`),
+          })),
+        },
+      },
+    };
     const period: HaFormSchemaItem = {
       name: 'period',
       selector: {
@@ -517,12 +654,13 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     };
     return {
       schema: [
+        kind,
         titleFields(),
         fieldRow(iconField(), selectField('variant', VARIANTS)),
         showIconField(),
-        // what the columns stand for, and the plot's height where the layout has a scale
+        // what the columns stand for (the electricity's), and the plot's height where the layout has a scale
         fieldRow(
-          selectField('mode', MODES),
+          onlyWhen(electric, selectField('mode', MODES)),
           onlyWhen((data) => data['variant'] !== 'mini', numberField('plot_height', 48, 480, 4)),
         ),
         period,
@@ -531,7 +669,10 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
           collectionField(),
           onlyWhen((data) => own(data) && full(data), boolField('show_period')),
         ),
-        fieldRow(boolField('show_returns'), onlyWhen(full, boolField('show_legend'))),
+        fieldRow(
+          onlyWhen(electric, boolField('show_returns')),
+          onlyWhen(full, boolField('show_legend')),
+        ),
         fieldRow(onlyWhen(own, boolField('compare')), numberField('max_sources', 2, 6)),
         chartSection([CAPS, STRIP_CAPS], capsIn),
         ...colourFields(),
@@ -541,6 +682,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       ...editorLabels(
         u,
         {
+          kind: 'editor_kind',
           mode: 'editor_mode',
           plot_height: 'editor_plot_height',
           max_sources: 'editor_max_sources',
@@ -581,6 +723,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   private dataKey = '';
   /** The picker's answer the chart was last drawn from. */
   private followed: EnergyDataLike | undefined;
+  /** What the recorder keeps of a meter with no state (an imported statistic): undefined while asked. */
+  private readonly recorded = new Map<string, Recorded | null | undefined>();
   private plot: Plot = { left: 0, slot: 1, count: 0, rest: 1 };
 
   override getCardSize(): number {
@@ -597,21 +741,94 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     return own && VARIANTS.includes(own) ? own : 'full';
   }
 
+  private get kind(): Charted {
+    return charting(this.config ?? {});
+  }
+
+  /** The card's tone: its own, else its kind's (water's, gas's) or the accent. */
+  private get tone(): Tone {
+    const kind = this.kind;
+    return toneOf(this.config, kind === 'energy' ? 'accent' : kind);
+  }
+
   private period(): Period {
     const own = this.config?.period;
     return this.chosen ?? (own && PERIODS.includes(own) ? own : 'day');
   }
 
-  /** The house's sources with meters: a followed picker's preferences once they are there, else the house's own. */
+  /** The preferences the card reads: a followed picker's once they are there, else the house's own. */
+  private house(): EnergyPrefs | null | undefined {
+    return this.follower.data()?.prefs ?? this.prefs;
+  }
+
+  /** The house's sources with meters. */
   private sources(): PrefSource[] {
-    const prefs = this.follower.data()?.prefs ?? this.prefs;
-    return readPrefs(prefs).sources.filter((p) => p.energyIn.length || p.energyOut.length);
+    return readPrefs(this.house()).sources.filter((p) => p.energyIn.length || p.energyOut.length);
+  }
+
+  /** A water or gas card's meters: its own, else the Energy dashboard's of its kind (an imported statistic too). */
+  private meterConfigs(): UsageMeter[] {
+    const kind = this.kind;
+    if (kind === 'energy') return [];
+    const own = (this.config?.meters ?? [])
+      .map((m) => (typeof m === 'string' ? { entity: m } : m))
+      .filter((m) => typeof m?.entity === 'string' && m.entity !== '');
+    return own.length ? own : readPrefs(this.house())[kind].map((entity) => ({ entity }));
+  }
+
+  /**
+   * A water or gas card's meters as it draws them, in their order: each its own name (Home Assistant's parts of it, or
+   * words), else a lone meter its kind's word, several their sensors' short names (an imported statistic's as the
+   * recorder names it) — two that read the same their devices', as the house names them (#170).
+   */
+  private meterLines(): MeterLine[] {
+    const list = this.meterConfigs();
+    const names = list.map((m) =>
+      m.name != null
+        ? this.nameFor(this.entity(m.entity), m.name)
+        : list.length === 1
+          ? this.kindWord(false)
+          : this.meterName(m.entity),
+    );
+    return list.map((m, i) => {
+      const name = names[i] as string;
+      const twin = m.name == null && names.some((other, j) => j !== i && other === name);
+      const device = twin
+        ? deviceNameOf(this.hass?.devices?.[this.hass.entities?.[m.entity]?.device_id ?? ''])
+        : undefined;
+      return { id: m.entity, name: device ?? name, color: m.color };
+    });
+  }
+
+  /** A meter's own name: an imported statistic's as the recorder keeps it, a sensor's short. */
+  private meterName(id: string): string {
+    return isImported(id) ? this.metaOf(id)?.name || id : shortName(this.entity(id));
+  }
+
+  /** What the recorder keeps of a meter: a followed picker's word for it, else the card's own asking. */
+  private metaOf(id: string): Recorded | null | undefined {
+    return this.follower.data()?.statsMetadata?.[id] ?? this.recorded.get(id);
+  }
+
+  /** The card's kind in a word: the title ("Water usage"), or its short one ("Water"). */
+  private kindWord(title: boolean): string {
+    const kind = this.kind;
+    if (kind === 'energy') return u(this.hass, title ? 'title' : 'title_short');
+    return title ? u(this.hass, `title_${kind}`) : meters(this.hass, `kind_${kind}`);
   }
 
   protected override watched(): readonly string[] {
-    return this.sources()
-      .flatMap((p) => [...p.energyIn, ...p.energyOut])
-      .filter(isEntityId);
+    return (
+      this.kind === 'energy'
+        ? this.sources().flatMap((p) => [...p.energyIn, ...p.energyOut])
+        : this.meterConfigs().map((m) => m.entity)
+    ).filter(isEntityId);
+  }
+
+  /** The card has something to chart, or may yet: a meter of its own, or the preferences it reads on their way. */
+  private configured(): boolean {
+    const charted = this.kind === 'energy' ? this.sources() : this.meterConfigs();
+    return charted.length > 0 || this.house() === undefined;
   }
 
   /* ---------- lifecycle ---------- */
@@ -632,15 +849,25 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
-    if (!this.config || !this.hass) return;
-    this.follower.attach(this.hass, this.config.collection_key || undefined);
+    const hass = this.hass;
+    if (!this.config || !hass) return;
+    this.follower.attach(hass, this.config.collection_key || undefined);
     if (!this.prefsAsked) {
       this.prefsAsked = true;
-      void fetchPrefs(this.hass).then((prefs) => {
+      void fetchPrefs(hass).then((prefs) => {
         this.prefs = prefs;
         this.requestUpdate();
       });
     }
+    // a meter with no state (an imported statistic) is named and measured as the recorder keeps it: asked once
+    for (const { entity: id } of this.meterConfigs())
+      if (!hass.states[id] && this.metaOf(id) === undefined && !this.recorded.has(id)) {
+        this.recorded.set(id, undefined);
+        void fetchRecorded(hass, id).then((meta) => {
+          this.recorded.set(id, meta);
+          this.requestUpdate();
+        });
+      }
     this.askData();
   }
 
@@ -656,12 +883,13 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       : this.config?.compare === true;
   }
 
-  /** A range drawn in its slots, with the period before's where it is given. */
+  /** A range drawn in its slots, its figures laid on them, with the period before's where it is given. */
   private drawnOf(
     range: Range,
-    buckets: Parameters<typeof slotEnergy>[0],
-    before?: { readonly range: Range; readonly buckets: Parameters<typeof slotEnergy>[0] },
-    step?: 'hour' | 'day' | 'month',
+    base: Base,
+    lay: Lay,
+    before?: { readonly range: Range; readonly lay: Lay },
+    step?: Grain,
   ): Drawn {
     const now = this.now();
     const grain = step ?? stepFor(range, now);
@@ -672,13 +900,14 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       grain,
       slots,
       end,
-      energy: slotEnergy(buckets, slots, end),
+      base,
+      ...lay(slots, end, grain),
       ...(before
         ? {
             before: {
               range: before.range,
               slots: beforeSlots,
-              energy: slotEnergy(before.buckets, beforeSlots, (before.range.end ?? now).getTime()),
+              ...before.lay(beforeSlots, (before.range.end ?? now).getTime(), grain),
             },
           }
         : {}),
@@ -686,9 +915,26 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   }
 
   /**
+   * The unit a water or gas card's figures are asked in (`meteredUnit`) from its meters' units — a sensor's, an imported
+   * statistic's as the recorder keeps it; none while one of those is still asked for.
+   */
+  private meterUnit(ids: readonly string[]): string | undefined {
+    const kind = this.kind;
+    const hass = this.hass;
+    if (kind === 'energy' || ids.some((id) => !hass?.states[id] && this.metaOf(id) === undefined))
+      return undefined;
+    const units = ids.map(
+      (id) =>
+        (hass?.states[id]?.attributes['unit_of_measurement'] as string | undefined) ??
+        this.metaOf(id)?.statistics_unit_of_measurement,
+    );
+    return meteredUnit(kind, units, hass?.config?.unit_system?.length !== 'mi');
+  }
+
+  /**
    * The figures: a followed picker's (Home Assistant's statistics for its range, and the period before's where it
-   * compares), once per answer; else the card's own period and, asked for, the one before it, fetched again every five
-   * minutes.
+   * compares), once per answer — a meter of the card's own that the Energy dashboard does not chart asked for over the
+   * same range; else the card's own period and, asked for, the one before it, fetched again every five minutes.
    */
   private askData(): void {
     const hass = this.hass;
@@ -697,87 +943,158 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     if (followed) {
       const data = this.follower.data();
       if (!data || data === this.followed) return;
+      if (this.kind !== 'energy') return this.followMeters(hass, data, followed.compare);
       this.followed = data;
       const sources = this.sources();
-      const before =
+      this.drawn = this.drawnOf(
+        { start: data.start, end: data.end },
+        ENERGY,
+        energyLay(allocatePeriod(data.stats, sources).buckets),
         followed.compare && data.statsCompare && data.startCompare
           ? {
               range: { start: data.startCompare, end: data.endCompare },
-              buckets: allocatePeriod(data.statsCompare, sources).buckets,
+              lay: energyLay(allocatePeriod(data.statsCompare, sources).buckets),
             }
-          : undefined;
-      this.drawn = this.drawnOf(
-        { start: data.start, end: data.end },
-        allocatePeriod(data.stats, sources).buckets,
-        before,
+          : undefined,
       );
       return;
     }
-    if (this.prefs === undefined) return;
-    const sources = this.sources();
-    if (!sources.length) return;
+    const step = STEP[this.period()];
+    const own = this.ownFetch(hass, step);
+    if (!own) return;
     const now = this.now();
     const span = presetSpan(hass, GRAIN_PRESET[this.period()], now);
     const before = this.config?.compare === true ? shiftSpan(hass, span, -1) : undefined;
-    const key = `${this.period()}|${span.start.getTime()}|${before ? 1 : 0}|${Math.floor(now.getTime() / 300_000)}`;
+    const key = `${own.key}|${this.period()}|${span.start.getTime()}|${before ? 1 : 0}|${Math.floor(now.getTime() / 300_000)}`;
     if (key === this.dataKey) return;
     this.dataKey = key;
-    void Promise.all([
-      fetchRange(hass, sources, span, [], STEP[this.period()]),
-      before ? fetchRange(hass, sources, before, [], STEP[this.period()]) : undefined,
-    ]).then(([data, earlier]) => {
+    void Promise.all([own.of(span), before ? own.of(before) : undefined]).then(([lay, earlier]) => {
       if (this.dataKey !== key) return;
-      this.drawn = data
+      this.drawn = lay
         ? this.drawnOf(
             span,
-            data.buckets,
-            before && earlier ? { range: before, buckets: earlier.buckets } : undefined,
-            STEP[this.period()],
+            own.base,
+            lay,
+            before && earlier ? { range: before, lay: earlier } : undefined,
+            step,
           )
         : null;
       this.requestUpdate();
     });
   }
 
+  /**
+   * How the card fetches its own period's figures: the Energy dashboard's sources allocated, or its meters' changes in
+   * their kind's unit; none until the preferences (or an imported meter's unit) are there, or where nothing is metered.
+   */
+  private ownFetch(hass: HomeAssistant, step: Grain): OwnFetch | undefined {
+    if (this.kind === 'energy') {
+      const sources = this.sources();
+      if (this.prefs === undefined || !sources.length) return undefined;
+      return {
+        key: 'energy',
+        base: ENERGY,
+        of: (range) =>
+          fetchRange(hass, sources, range, [], step).then((data) =>
+            data ? energyLay(data.buckets) : null,
+          ),
+      };
+    }
+    const ids = this.meterConfigs().map((m) => m.entity);
+    const unit = this.meterUnit(ids);
+    if (!ids.length || unit === undefined) return undefined;
+    return {
+      key: `${this.kind}|${unit}|${ids.join(',')}`,
+      base: { unit, factor: 1 },
+      of: (range) =>
+        fetchMeters(hass, ids, range, step, unit).then((rows) =>
+          rows ? meterLay(ids, rows) : null,
+        ),
+    };
+  }
+
+  /**
+   * A water or gas card following a picker: the meters' figures the collection carries (in its kind's unit, Home
+   * Assistant's), and one request over the same ranges for a meter of the card's own it does not.
+   */
+  private followMeters(hass: HomeAssistant, data: EnergyDataLike, compare?: CompareMode): void {
+    const ids = this.meterConfigs().map((m) => m.entity);
+    const unit = (this.kind === 'water' ? data.waterUnit : data.gasUnit) ?? this.meterUnit(ids);
+    if (unit === undefined) return;
+    this.followed = data;
+    const range: Range = { start: data.start, end: data.end };
+    const before: Range | undefined =
+      compare && data.startCompare ? { start: data.startCompare, end: data.endCompare } : undefined;
+    const step = stepFor(range, this.now());
+    const missing = ids.filter((id) => !(id in data.stats));
+    const draw = (own: Statistics | null, earlier: Statistics | null | undefined): void => {
+      this.drawn = this.drawnOf(
+        range,
+        { unit, factor: 1 },
+        meterLay(ids, { ...data.stats, ...own }),
+        before
+          ? { range: before, lay: meterLay(ids, { ...data.statsCompare, ...earlier }) }
+          : undefined,
+        step,
+      );
+    };
+    if (!missing.length) return draw(null, null);
+    void Promise.all([
+      fetchMeters(hass, missing, range, step, unit),
+      before ? fetchMeters(hass, missing, before, step, unit) : undefined,
+    ]).then(([own, earlier]) => {
+      if (this.followed !== data) return;
+      draw(own, earlier);
+      this.requestUpdate();
+    });
+  }
+
   /* ---------- the series ---------- */
 
-  /** The series of a range's slots, as the card's sources, mode and returns ask. */
-  private series(energy: readonly SlotEnergy[]): UsageSeries[] {
+  /**
+   * The series of a range's slots: the electricity's as the card's sources, mode and returns ask, or the meters' — the
+   * last past `max` folded into "Other".
+   */
+  private series(laid: Laid, count: number, max = this.config?.max_sources): UsageSeries[] {
+    if (this.kind !== 'energy') return meterSeries(laid.metered, this.meterLines(), count, max);
     const sources = this.sources();
     const kinds = (side: 'energyIn' | 'energyOut'): Set<SourceKind> =>
       new Set(sources.filter((p) => p[side].length).map((p) => p.kind));
-    return usageSeries(energy, {
+    return usageSeries(laid.energy, {
       ins: kinds('energyIn'),
       outs: kinds('energyOut'),
       sources: this.config?.sources,
-      max: this.config?.max_sources,
+      max,
       returns: this.config?.show_returns,
       mode: this.config?.mode,
     });
   }
 
   /**
-   * A series' name: the one it was given, its kind's (by what its meter measured in the `flows` mode: "Solar
-   * production"), "Other", or what went out.
+   * A series' name: the one it was given (a meter's always), its kind's (by what its meter measured in the `flows`
+   * mode: "Solar production"), "Other", or what went out.
    */
   private nameOf(series: UsageSeries): string {
     if (series.name) return series.name;
     const key: SeriesKey = series.key;
-    if (key === 'other') return u(this.hass, 'other');
+    if (key === 'other' || key === 'meter') return u(this.hass, 'other');
     if (key === 'charged' || key === 'exported') return localize(this.hass, `energy.${key}`);
     return this.config?.mode === 'flows'
       ? u(this.hass, `flows_${key}`)
       : flow(this.hass, `kind_${key}`);
   }
 
-  /** How a series is painted (`Paint`). */
+  /** How a series is painted (`Paint`): a meter in its shade of its kind's colour (`--eu-shade-<n>`). */
   private paintOf(series: UsageSeries): Paint {
     const accent = series.color ? this.accents.item(series.color) : undefined;
     if (accent) return { ink: 'accent', colour: 'accent', accent };
-    if (series.color && isPaletteRef(series.color)) {
-      const own = refInk(series.color);
-      return { ink: '', colour: own as SeriesColour, own };
-    }
+    const own =
+      series.color && isPaletteRef(series.color)
+        ? refInk(series.color)
+        : series.shade !== undefined
+          ? `var(--eu-shade-${series.shade})`
+          : undefined;
+    if (own) return { ink: '', colour: own as SeriesColour, own };
     if (!series.kind) return { ink: 'home', colour: 'var(--eu-other)' };
     return { ink: series.kind, colour: `var(--fluvy-state-energy-${series.kind})` };
   }
@@ -916,24 +1233,25 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const variant = this.variant;
     const followed = this.follower.range();
     const now = this.now();
-    const sources = this.sources();
-    // the preferences the card reads (a followed picker's, else the house's) are on their way, or name a meter
-    const configured =
-      (this.follower.data()?.prefs ?? this.prefs) === undefined || sources.length > 0;
+    const configured = this.configured();
     const drawn = configured ? this.drawn : undefined;
-    const series = drawn ? this.series(drawn.energy) : [];
+    const legendRoom = this.legendRoom();
+    const laid = drawn ? this.laidOut(drawn, legendRoom) : { series: [], columns: undefined };
+    const { series } = laid;
+    const base = drawn?.base ?? ENERGY;
     // what the columns above the line add up to: the sources drawn, in the card's mode
     const used = drawnTotal(series);
     // one unit for the range's totals (the head's and the legend's), one for the slots (the scale and the bubble)
     const totals = figuresOf(
       this.hass,
       this.config,
-      'Wh',
-      Math.max(used, ...series.map((s) => s.total)) * 1000,
+      base.unit,
+      Math.max(used, ...series.map((s) => s.total)) * base.factor,
     );
-    const own = this.config?.subtitle ?? this.outage(sources);
+    const own = this.config?.subtitle ?? this.outage() ?? this.stale(drawn);
     const range = followed ?? presetSpan(this.hass, GRAIN_PRESET[this.period()], now);
     const sub = own ?? rangeWords(this.hass, range, now);
+    const tone = this.tone;
     const fit = (title: string) =>
       this.head.fit({
         width: w,
@@ -941,27 +1259,24 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         sub,
         badge:
           drawn && used > 0
-            ? {
-                text: `${writeFigure(this.hass, used * 1000, totals)} ${totals.unit}`,
-                tone: toneOf(this.config, 'accent'),
-              }
+            ? { text: `${writeFigure(this.hass, used * base.factor, totals)} ${totals.unit}`, tone }
             : null,
       });
-    let titleWord = this.config?.title ?? u(this.hass, 'title');
+    let titleWord = this.config?.title ?? this.kindWord(true);
     let fitted = fit(titleWord);
     // the card's own title where it holds whole, else its short one ("Consommation d’énergie" in half a section); a
     // typed title is the person's
     if (this.config?.title === undefined && fitted.cut) {
-      titleWord = u(this.hass, 'title_short');
+      titleWord = this.kindWord(false);
       fitted = fit(titleWord);
     }
     const chips =
       variant === 'full' && this.config?.show_period !== false && !this.follower.following;
-    return html`<article class="fv-card en-card eu-card" data-card>
+    return html`<article class="fv-card en-card eu-card eu-card--${this.kind}" data-card>
       ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'chart') : null,
+        icon: fitted.icon ? (this.config?.icon ?? GLYPH[this.kind]) : null,
         small: fitted.small,
-        tone: toneOf(this.config, 'accent'),
+        tone,
         title: titleWord,
         sub: fitted.sub,
         trailing: fitted.badge,
@@ -980,7 +1295,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
                       ? periodCard(this.hass, 'chip_year')
                       : flow(this.hass, `chip_${p}`),
                   active: p === this.period(),
-                  tone: toneOf(this.config, 'accent'),
+                  tone,
                 })),
                 (key) => {
                   this.chosen = key as Period;
@@ -993,8 +1308,45 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
             </div>`
           : nothing
       }
-      ${this.renderBody(configured, drawn, series, totals)}
+      ${this.renderBody(configured, drawn, series, totals, legendRoom, laid.columns)}
     </article>`;
+  }
+
+  /**
+   * The series drawn and, for a water or gas card, its legend's columns: in the rows its config declares (the house
+   * names its meters), as many columns as hold every meter in them, each figure whole — and where not even that
+   * would, its last meters fold into "Other" until it does. None: the legend lays itself out as the family's does.
+   */
+  private laidOut(
+    drawn: Drawn,
+    room: number,
+  ): { readonly series: UsageSeries[]; readonly columns: number | undefined } {
+    const count = drawn.slots.length;
+    const series = this.series(drawn, count);
+    if (this.kind === 'energy' || !room) return { series, columns: undefined };
+    const w = this.contentWidth;
+    const rows = Math.max(1, Math.round((room - 4) / 52));
+    const names = series.map((s) => this.nameOf(s));
+    const natural = legendColumns(names, w, this.head.ruler);
+    if (Math.ceil(series.length / natural) <= rows) return { series, columns: natural };
+    // each column holds the widest of the totals' figures, as the legend writes them
+    const totals = figuresOf(
+      this.hass,
+      this.config,
+      drawn.base.unit,
+      Math.max(...series.map((s) => s.total)),
+    );
+    const figure = Math.max(
+      ...series.map((s) =>
+        this.head.ruler.width(
+          'en-legend__value',
+          `${writeFigure(this.hass, s.total, totals)} ${totals.unit}`,
+        ),
+      ),
+    );
+    const held = rows * Math.max(1, Math.floor(w / Math.max(1, figure)));
+    const shown = held < series.length ? this.series(drawn, count, held) : series;
+    return { series: shown, columns: Math.ceil(shown.length / rows) };
   }
 
   /** The body under the head (and the chips): the chart, its axis and its legend, or what stands in their place. */
@@ -1003,12 +1355,15 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     drawn: Drawn | null | undefined,
     series: readonly UsageSeries[],
     totals: Figures,
+    legendRoom: number,
+    columns: number | undefined,
   ): TemplateResult {
     const variant = this.variant;
     const height = this.frameHeight();
-    const legendRoom = this.legendRoom();
     if (!configured)
-      return this.panel(flow(this.hass, 'no_period'), flow(this.hass, 'no_period_hint'));
+      return this.kind === 'energy'
+        ? this.panel(flow(this.hass, 'no_period'), flow(this.hass, 'no_period_hint'))
+        : this.panel(meters(this.hass, 'no_meters'), meters(this.hass, 'no_meters_hint'));
     if (drawn === null)
       return this.panel(
         sankey(this.hass, 'no_statistics'),
@@ -1020,7 +1375,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         </div>
         ${variant === 'mini' ? nothing : html`<div class="eu-axis">${axis([])}</div>`}
         ${legendRoom ? html`<div class="eu-legend" style="min-height:${legendRoom - 16}px"></div>` : nothing}`;
-    return this.renderChart(drawn, series, totals, legendRoom);
+    return this.renderChart(drawn, series, totals, legendRoom, columns);
   }
 
   /** The legend's room: 16 over its rows, as the card declares it (what the house lacks of it stays empty). */
@@ -1031,12 +1386,13 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
   }
 
   /**
-   * What stands in the chart's place where there is nothing to draw (no Energy dashboard, statistics that cannot be
-   * read): the energy family's panel, or in the mini strip its words alone, at the strip's height.
+   * What stands in the chart's place where there is nothing to draw (no Energy dashboard or no meter, statistics that
+   * cannot be read): the energy family's panel, or in the mini strip its words alone, at the strip's height.
    */
   private panel(text: string, hint: string): TemplateResult {
     const w = this.contentWidth;
-    if (this.variant !== 'mini') return this.head.empty('bolt', text, hint, w);
+    if (this.variant !== 'mini')
+      return this.head.empty(this.kind === 'energy' ? 'bolt' : GLYPH[this.kind], text, hint, w);
     return html`<div class="eu-chart" style="height:${this.frameHeight()}px">
       <div class="eu-nothing" style="top:0;bottom:0">${this.head.emptyText(text, w)}</div>
     </div>`;
@@ -1047,6 +1403,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     series: readonly UsageSeries[],
     totals: Figures,
     legendRoom: number,
+    columns: number | undefined,
   ): TemplateResult {
     const w = this.contentWidth;
     const variant = this.variant;
@@ -1054,16 +1411,19 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const box: PlotBox = { top: HEADROOM, bottom: height - PAD };
     const count = drawn.slots.length;
     const before = this.comparing() ? drawn.before : undefined;
-    // the period before drawn as this range is: the same sources, in the same mode
-    const past = before ? this.series(before.energy) : undefined;
+    // the period before drawn as this range is: the same sources, in the same mode; the same meters, folded alike
+    const past = before
+      ? this.series(before, before.slots.length, this.kind === 'energy' ? undefined : series.length)
+      : undefined;
     const ghostUp = past ? drawn.slots.map((_t, i) => riseOf(past, i)) : [];
     const ghostDown = past ? drawn.slots.map((_t, i) => fallOf(past, i)) : [];
     // what the columns reach, the ghosts with them: the tallest rise and the deepest fall
     const rise = Math.max(0, ...ghostUp, ...drawn.slots.map((_t, i) => riseOf(series, i)));
     const fall = Math.max(0, ...ghostDown, ...drawn.slots.map((_t, i) => fallOf(series, i)));
     // the slots' unit: the larger of the two's
-    const figures = figuresOf(this.hass, this.config, 'Wh', Math.max(rise, fall) * 1000);
-    const shown = (kWh: number): number => (kWh * 1000) / figures.divisor;
+    const { unit, factor } = drawn.base;
+    const figures = figuresOf(this.hass, this.config, unit, Math.max(rise, fall) * factor);
+    const shown = (value: number): number => (value * factor) / figures.divisor;
     const caps = capsIn(this.config ?? {});
     const chosen = styleOf(this.config, caps);
     // drawn as the engine's columns whatever the style's name (classic's bar is one series' gradient): one column a
@@ -1124,9 +1484,10 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         : nothing;
     const label =
       reading?.label ??
-      `${this.config?.title ?? u(this.hass, 'title')}: ${writeFigure(this.hass, drawnTotal(series) * 1000, totals)} ${totals.unit}`;
+      `${this.config?.title ?? this.kindWord(true)}: ${writeFigure(this.hass, drawnTotal(series) * factor, totals)} ${totals.unit}`;
+    const kind = this.kind;
     return html`<div
-        class="eu-chart fv-tone--${toneOf(this.config, 'accent')} ${scaled ? 'is-scaled' : ''} ${chosen.preset === 'soft' ? 'is-soft' : ''} ${style.animate ? '' : 'is-still'}"
+        class="eu-chart fv-tone--${this.tone} ${scaled ? 'is-scaled' : ''} ${chosen.preset === 'soft' ? 'is-soft' : ''} ${style.animate ? '' : 'is-still'}"
         style="height:${height}px"
         role="img"
         tabindex="0"
@@ -1144,7 +1505,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
                 class="eu-nothing"
                 style="top:${box.top}px;height:${box.bottom - box.top}px;left:${plot.left}px"
               >
-                ${sankey(this.hass, 'nothing_yet')}
+                ${kind === 'energy' ? sankey(this.hass, 'nothing_yet') : u(this.hass, `nothing_${kind}`)}
               </div>`
             : nothing
         }
@@ -1160,7 +1521,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
       ${
         legendRoom
           ? html`<div class="eu-legend" style="min-height:${legendRoom - 16}px">
-              ${energyLegend(this.legend(series, paints, totals), w, this.head.ruler)}
+              ${energyLegend(this.legend(series, paints, totals, factor), w, this.head.ruler, columns)}
             </div>`
           : nothing
       }`;
@@ -1209,7 +1570,8 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     figures: Figures,
     earlierRise: readonly number[],
   ): { readonly template: TemplateResult; readonly label: string } {
-    const bare = (kWh: number): string => writeFigure(this.hass, Math.abs(kWh) * 1000, figures);
+    const bare = (kWh: number): string =>
+      writeFigure(this.hass, Math.abs(kWh) * drawn.base.factor, figures);
     const value = (kWh: number): string => `${bare(kWh)} ${figures.unit}`;
     const heading = this.slotWords(drawn, drawn.grain, index);
     const used = value(riseOf(series, index));
@@ -1318,28 +1680,55 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     series: readonly UsageSeries[],
     paints: readonly Paint[],
     totals: Figures,
+    factor: number,
   ): LegendEntry[] {
     return series.map((s, i) => ({
       ink: inkOf(paints[i]),
       accent: paints[i]?.accent,
       ...(paints[i]?.own ? { paint: paints[i]?.own } : {}),
       name: this.nameOf(s),
-      value: writeFigure(this.hass, s.total * 1000, totals),
+      value: writeFigure(this.hass, s.total * factor, totals),
       unit: totals.unit,
       ...(isReturn(s) ? { square: 'out' as const } : {}),
     }));
   }
 
   /** A meter that cannot be read now: the head says so. */
-  private outage(sources: readonly PrefSource[]): string | undefined {
+  private outage(): string | undefined {
     return meterOutage(
       this.hass,
-      sources.flatMap((p) =>
-        [...p.energyIn, ...p.energyOut].map((id) => ({
-          id,
-          name: p.name ?? flow(this.hass, `kind_${p.kind}`),
-        })),
-      ),
+      this.kind === 'energy'
+        ? this.sources().flatMap((p) =>
+            [...p.energyIn, ...p.energyOut].map((id) => ({
+              id,
+              name: p.name ?? flow(this.hass, `kind_${p.kind}`),
+            })),
+          )
+        : this.meterLines(),
     );
+  }
+
+  /**
+   * A water or gas meter whose figures stop short of what has happened of the range (a utility's, imported a day or
+   * two behind): the head says how far they go, "Gas · figures up to 11 Nov" — its hour on a day's chart, its month on
+   * a year's.
+   */
+  private stale(drawn: Drawn | null | undefined): string | undefined {
+    if (!drawn || this.kind === 'energy') return undefined;
+    const until = Math.min(drawn.end, this.now().getTime());
+    const late = this.meterLines().find((m) =>
+      stopsShort(drawn.newest.get(m.id), until, drawn.grain),
+    );
+    const newest = late && drawn.newest.get(late.id);
+    if (!late || newest === undefined) return undefined;
+    const grain = drawn.grain;
+    const date =
+      grain === 'hour'
+        ? this.format({ hour: '2-digit', minute: '2-digit', hour12: clock12(this.hass) })
+        : this.format(grain === 'day' ? { day: 'numeric', month: 'short' } : { month: 'long' });
+    // a day's or a month's figures end on its last moment's day: up to the day before the midnight they stop at
+    return `${late.name} · ${u(this.hass, 'figures_until', {
+      date: date.format(grain === 'hour' ? newest : newest - 1),
+    })}`;
   }
 }

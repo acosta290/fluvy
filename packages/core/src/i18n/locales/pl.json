@@ -1386,7 +1386,15 @@
   "energy-usage": {
     "title": "Zużycie energii",
     "title_short": "Zużycie",
+    "title_water": "Zużycie wody",
+    "title_gas": "Zużycie gazu",
     "other": "Inne",
+    "nothing_water": "Brak danych o wodzie za ten okres",
+    "nothing_gas": "Brak danych o gazie za ten okres",
+    "figures_until": "dane do {date}",
+    "editor_kind": "Co pokazuje",
+    "kind_energy": "Prąd",
+    "editor_meters": "Liczniki (brak: z pulpitu Energia)",
     "editor_sources": "Źródła (brak: z pulpitu Energia)",
     "editor_max_sources": "Źródła, zanim reszta trafi do „Inne”",
     "editor_show_returns": "Pokaż ładowanie i oddanie",
@@ -1400,7 +1408,8 @@
     "flows_solar": "Produkcja PV",
     "flows_battery": "Rozładowanie baterii",
     "flows_grid": "Pobór z sieci",
-    "editor_color_helper": "Puste: własny kolor danej energii. Kolory z palety zmieniają się razem z nią; nazwa koloru lub #hex zostaje jak wpisano"
+    "editor_color_helper": "Puste: własny kolor danej energii. Kolory z palety zmieniają się razem z nią; nazwa koloru lub #hex zostaje jak wpisano",
+    "editor_shade_helper": "Puste: odcień koloru wody lub gazu. Kolory z palety zmieniają się razem z nią; nazwa koloru lub #hex zostaje jak wpisano"
   },
   "ev-charger": {
     "title": "Ładowarka samochodu",

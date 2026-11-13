@@ -1197,6 +1197,20 @@ allocates them, so its figures are Home Assistant's.
   axis) + the legend: 16 and its rows (`legendRows` of its names in a 360 card's 320, 40 each, 12 between) — 412 for
   the Energy dashboard's three sources and their two returns, 472 with the chips; compact 240; mini 168. Half a
   section holds compact, mini and the full chart without its chips and legend at every width.
+- **Water and gas** (1.20, #181, `kind`). The same chart of the house's water or gas: a column a slot stacked by meter
+  in the kind's energy ink (`--fluvy-state-energy-water`, `-gas`) — the first meter at the foot in the ink itself,
+  each after it a shade that stands apart from its neighbours, a step towards the card and a step towards the text
+  in turn (58 % over the card, 66 % over the text, 32 %, 44 %, 18 %), a person's `color` over it; its "Other" the
+  house's ink. The head's circle and badge wear the kind's tone (drop, flame), the title its words ("Water usage",
+  short "Water"). The figures are in the kind's unit, Home Assistant's (the meters' where they agree, kWh for gas
+  metered as energy, else the house's litres or gallons, cubic metres or feet), never cut. A meter whose figures stop
+  a whole bucket short of what has happened of the range (a utility's, imported a day or two behind) is said in the
+  head's line in the outage's segments: "Gas · figures up to 11 Nov" (its hour on a day's chart, its month on a
+  year's). Nothing yet in the range: the chart, its zero line and its legend of zeros, "No gas figures for this range
+  yet" across the plot. The legend keeps the rows its config declares (a meter of the house's counted by its kind's
+  word, the Energy dashboard's one row): where the house names more meters than they hold, they take as many columns
+  as hold each figure whole, their names ending in an ellipsis, and the last fold into "Other" where even that would
+  not. No "now" and no typical day: Water & gas keeps those.
 
 ## History bars (1.8)
 
