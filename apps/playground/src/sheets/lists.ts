@@ -251,7 +251,7 @@ export const sheet: SheetSpec = {
           rows: [
             {
               entity: 'binary_sensor.kitchen_window',
-              secondary: "{{ states('sensor.ls_temperature') | round(1) }} °C inside",
+              secondary: "{{ states('sensor.ls_temperature') | round(1) }} °C",
             },
           ],
         },

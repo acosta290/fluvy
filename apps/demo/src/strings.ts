@@ -528,6 +528,41 @@ const ru: Table = {
     'Автоматическая панель создаётся в самом Home Assistant; вкладка «Панели» показывает её предпросмотр',
 };
 
+const uk: Table = {
+  'brand.sub': 'Живе демо',
+  'family.home': 'Дім',
+  'family.devices': 'Пристрої',
+  'family.climate': 'Клімат',
+  'family.energy': 'Енергія',
+  'family.charts': 'Графіки',
+  'family.media': 'Медіа',
+  'family.time': 'Час',
+  'family.helpers': 'Помічники',
+  'family.vehicles': 'Автомобілі',
+  'page.panel': 'Налаштування',
+  'page.activity': 'Активність',
+  'page.history': 'Історія',
+  'mode.light': 'Світла',
+  'mode.dark': 'Темна',
+  'device.title': 'Пристрій',
+  'device.phone': 'Телефон',
+  'device.phone-l': 'Великий телефон',
+  'device.tablet': 'Планшет',
+  'device.desktop': 'Комп’ютер',
+  'palette.title': 'Палітра',
+  'palette.custom': 'Власний акцентний колір — у панелі налаштувань',
+  'language.title': 'Мова',
+  'links.install': 'Встановити',
+  'links.github': 'GitHub',
+  'banner.text':
+    'Уявний дім: квартира Марти в четвер увечері. Кожна картка, сторінка й налаштування тут справжні; замість Home Assistant працює невелика імітація, яка змінює стан через 140 мс після виклику дії. Нічого не підключено.',
+  'banner.ok': 'Зрозуміло',
+  'notice.more_info': 'Відкриває подробиці {entity} у Home Assistant',
+  'notice.navigate': 'Відкриває {path} у Home Assistant',
+  'notice.auto':
+    'Автоматична панель створюється в самому Home Assistant; вкладка «Панелі» показує її попередній перегляд',
+};
+
 const TABLES: Readonly<Record<LanguageCode, Table>> = {
   en,
   es,
@@ -544,6 +579,7 @@ const TABLES: Readonly<Record<LanguageCode, Table>> = {
   pl,
   'zh-Hans': zhHans,
   ru,
+  uk,
 };
 
 /** A word of the demo in `language`. */

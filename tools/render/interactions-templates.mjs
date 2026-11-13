@@ -79,7 +79,7 @@ const bars = frame(page, 'Bars · template').locator('fluvy-bars-card');
     again,
   );
   const inside = await sub(lock, 0);
-  check('lock: a row’s template renders', inside === '22.5 °C inside', inside);
+  check('lock: a row’s template renders', inside === '22.5 °C', inside);
   const watered = await sub(bars, 0);
   check(
     'bars: a row’s template renders, an attribute as an int',
@@ -114,10 +114,7 @@ const bars = frame(page, 'Bars · template').locator('fluvy-bars-card');
   ]);
   check(
     'a state change re-renders every row that reads it, on every card',
-    first === '21.7 °C' &&
-      two === '21.7 °C · 61 %' &&
-      again === '21.7 °C' &&
-      inside === '21.7 °C inside',
+    first === '21.7 °C' && two === '21.7 °C · 61 %' && again === '21.7 °C' && inside === '21.7 °C',
     `${first} | ${two} | ${again} | ${inside}`,
   );
   await page.evaluate(() => window.fluvyMock.set('sensor.ls_humidity', '58'));

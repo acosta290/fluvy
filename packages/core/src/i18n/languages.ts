@@ -20,6 +20,7 @@ export const LANGUAGE_CODES = [
   'pl',
   'zh-Hans',
   'ru',
+  'uk',
 ] as const;
 
 /** A code as Home Assistant reports `hass.language` for it (`pt-BR`, not `pt_BR`). */
@@ -176,6 +177,14 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     english: 'Russian',
     // "доброе утро" until noon, "добрый день" through the afternoon, "добрый вечер" from 18:00 until the morning:
     // "доброй ночи" is said on parting before sleep, so the night says the evening's greeting
+    dayParts: { morning: 5, afternoon: 12, night: 18 },
+  },
+  uk: {
+    code: 'uk',
+    name: 'Українська',
+    english: 'Ukrainian',
+    // "доброго ранку" until noon, "добрий день" through the afternoon, "добрий вечір" from 18:00 until the morning:
+    // "на добраніч" is said on parting before sleep, so the night says the evening's greeting
     dayParts: { morning: 5, afternoon: 12, night: 18 },
   },
 };
