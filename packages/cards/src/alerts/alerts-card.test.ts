@@ -3,7 +3,7 @@ import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { alertsHeight } from '../alerts-family.js';
 import { FluvyAlertsCard } from './alerts-card.js';
-import { change, house, MINUTE, NOW, type HouseOptions, type Seed } from './fixture.js';
+import { change, house, KIOSK, MINUTE, NOW, type HouseOptions, type Seed } from './fixture.js';
 import { alertFields, ALERTS_LIST } from './form.js';
 import type { FluvyAlertsSheet } from './sheet/alerts-sheet.js';
 
@@ -373,6 +373,136 @@ describe('the alerts card', () => {
     ]);
   });
 
+  it('draws each entity of a split alert in its own words, glyph, time and tone (#184)', async () => {
+    const card = await mount(
+      {
+        alerts: [
+          {
+            id: 'kiosk',
+            entity_id: 'binary_sensor.kiosk_*',
+            state: 'on',
+            attributes: { severity: ['error', 'warning', 'success'] },
+            split: true,
+            name: 'attribute:title',
+            icon: 'attribute:icon',
+            secondary: 'attribute:message',
+            severity: 'attribute:severity',
+            since: 'attribute:start_date',
+          },
+        ],
+        columns: 1,
+      },
+      home(KIOSK).hass,
+    );
+    expect(
+      tiles(card).map((tile) => [
+        text(tile.querySelector('.fv-tile__name')),
+        text(tile.querySelector('.al-who')),
+        text(tile.querySelector('.al-what')),
+        [...tile.classList].find((name) => /^fv-tile--(danger|warning|notice|ok)$/.test(name)),
+      ]),
+    ).toEqual([
+      // the message may end in its ellipsis (a name's), how long stays whole beside it
+      ['Aquarium in the nursery', 'Replace the biochemical filter.', '· 2 h', 'fv-tile--danger'],
+      ['Monstera', 'Water me.', '· 20 min', 'fv-tile--warning'],
+      ['Backup', 'Done.', '· 10 min', 'fv-tile--ok'],
+    ]);
+    expect(tiles(card)[0]?.querySelector('.al-who')?.hasAttribute('data-name')).toBe(true);
+  });
+
+  it('says an entity’s message whole in its sheet, over where it is and how long (#184)', async () => {
+    const card = await mount(
+      {
+        alerts: [
+          {
+            id: 'kiosk',
+            entity_id: 'binary_sensor.kiosk_*',
+            state: 'on',
+            name: 'Kiosk',
+            name_by: 'attribute:title',
+            secondary: 'attribute:message',
+          },
+        ],
+        _sheet: 'kiosk',
+      },
+      home(KIOSK).hass,
+    );
+    const rows = async (): Promise<string[][]> => {
+      const sheet = root(card).querySelector('fluvy-alerts-sheet') as FluvyAlertsSheet | null;
+      await sheet?.updateComplete;
+      return [...(sheet?.shadowRoot?.querySelectorAll('.as-rows .fv-row') ?? [])].map((row) => [
+        text(row.querySelector('.fv-row__title')),
+        text(row.querySelector('.as-message')),
+      ]);
+    };
+    await vi.waitFor(async () => expect(await rows()).toHaveLength(4));
+    expect(await rows()).toEqual([
+      ['Aquarium in the nursery', 'Replace the biochemical filter.'],
+      ['Monstera', 'Water me.'],
+      ['Backup', 'Done.'],
+      ['kiosk_bare', ''],
+    ]);
+  });
+
+  it('renders a template for each entity it matches, and lets go of one that leaves (#184)', async () => {
+    const { hass } = home(KIOSK);
+    const live = new Map<string, ReturnType<typeof vi.fn>>();
+    const connection = {
+      subscribeMessage: async (
+        callback: (message: { result: unknown }) => void,
+        message: { type: string; template?: string; variables?: { entity?: string } },
+      ) => {
+        if (message.type !== 'render_template') return () => undefined;
+        const entity = message.variables?.entity ?? '';
+        const attribute = /'(\w+)' *\) *}}/.exec(message.template ?? '')?.[1] ?? '';
+        queueMicrotask(() =>
+          callback({ result: hass.states[entity]?.attributes[attribute] ?? '' }),
+        );
+        const stop = vi.fn();
+        live.set(`${entity} ${attribute}`, stop);
+        return stop;
+      },
+    };
+    const templated = { ...hass, connection } as unknown as HomeAssistant;
+    const card = await mount(
+      {
+        alerts: [
+          {
+            id: 'kiosk',
+            entity_id: 'binary_sensor.kiosk_*',
+            state: 'on',
+            attributes: { severity: ['error', 'warning'] },
+            split: true,
+            name: "{{ state_attr(entity, 'title') }}",
+            secondary: "{{ state_attr(entity, 'message') }}",
+          },
+        ],
+        columns: 1,
+      },
+      templated,
+    );
+    await vi.waitFor(() =>
+      expect(tiles(card).map((tile) => text(tile.querySelector('.fv-tile__name')))).toEqual([
+        'Aquarium in the nursery',
+        'Monstera',
+      ]),
+    );
+    expect(text(tiles(card)[1]?.querySelector('.fv-tile__state'))).toBe('Water me. · 20 min');
+    expect([...live.keys()].sort()).toEqual([
+      'binary_sensor.kiosk_fish message',
+      'binary_sensor.kiosk_fish title',
+      'binary_sensor.kiosk_plant message',
+      'binary_sensor.kiosk_plant title',
+    ]);
+    card.hass = change(templated, 'binary_sensor.kiosk_plant', { state: 'off' });
+    await card.updateComplete;
+    await card.updateComplete;
+    expect(tiles(card)).toHaveLength(1);
+    expect(live.get('binary_sensor.kiosk_plant title')).toHaveBeenCalled();
+    expect(live.get('binary_sensor.kiosk_plant message')).toHaveBeenCalled();
+    expect(live.get('binary_sensor.kiosk_fish title')).not.toHaveBeenCalled();
+  });
+
   it('keeps no timer once it leaves the page, and watches again when it is back', async () => {
     vi.useFakeTimers({ now: NOW, toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const { hass } = home({
@@ -442,5 +572,23 @@ describe('the alerts card’s editor', () => {
     // a custom alert that matches nothing yet is a list still empty, never a mistake
     expect(write({ preset: 'custom' })).toEqual({ match: [] });
     expect(write({ preset: 'open', exclude: [] })).toEqual({ preset: 'open' });
+  });
+
+  it('offers the words read off each entity where they act, a severity and a row’s name typed as an attribute (#184)', () => {
+    const fields = (item: Record<string, unknown>) =>
+      alertFields(item).flatMap((field) => field.schema ?? [field]);
+    const names = (item: Record<string, unknown>): string[] => fields(item).map(({ name }) => name);
+    expect(names({ preset: 'custom' })).toEqual(
+      expect.arrayContaining(['attribute', 'attributes', 'secondary', 'since']),
+    );
+    expect(names({ preset: 'open' })).toEqual(expect.arrayContaining(['secondary', 'since']));
+    expect(names({ preset: 'open' })).not.toContain('attributes');
+    // a repair has no entity to read
+    expect(names({ preset: 'repairs' })).not.toContain('secondary');
+    expect(names({ preset: 'repairs' })).not.toContain('since');
+    const select = (name: string) =>
+      fields({ preset: 'custom' }).find((field) => field.name === name)?.selector?.['select'];
+    expect(select('severity')).toMatchObject({ custom_value: true });
+    expect(select('name_by')).toMatchObject({ custom_value: true });
   });
 });

@@ -55,6 +55,7 @@ import {
 } from '../shared/form.js';
 import { EMPTY_KEYS, type EmptyList } from '../shared/lists.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { isTemplate, TemplateTexts } from '../shared/templates.js';
 import { Ticker } from '../shared/ticker.js';
 import { bindAction } from './actions.js';
 import { AlertEngine, type AlertResult, type AlertsState } from './engine.js';
@@ -66,6 +67,7 @@ import {
   culpritText,
   culprits,
   lasted,
+  messageOf,
   mostNames,
   rowState,
   type LookContext,
@@ -79,6 +81,7 @@ import {
 } from './model.js';
 import { repairsFor, type RepairsStore } from './repairs.js';
 import type { FluvyAlertsSheet, SheetHost } from './sheet/alerts-sheet.js';
+import { CulpritWords } from './words.js';
 
 const s = strings('alerts');
 
@@ -261,6 +264,10 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
   /** The head's fitting and the words' (what gives way, in its order), measured as the card sets them. */
   private readonly headFit = new HeadFit(this);
   private definitions: readonly AlertDefinition[] = [];
+  /** The templates the alerts read off their entities (#184), rendered by Home Assistant: made by a config with one. */
+  private texts: TemplateTexts | undefined;
+  /** What the alerts say of their entities, read for the last render (none where none says anything of them). */
+  private words: CulpritWords | undefined;
   private engine: AlertEngine | undefined;
   private alerts: AlertsState = { alerts: [], shown: [] };
   private memory: AlertMemory = OFF;
@@ -390,6 +397,8 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
   /** Every alert read once: one readable error for a mistake, an empty list is a list. */
   protected override prepare(config: AlertsCardConfig): AlertsCardConfig {
     this.definitions = definitionsOf(config);
+    if (this.definitions.some(({ words }) => Object.values(words ?? {}).some(isTemplate)))
+      this.texts ??= new TemplateTexts(this);
     return config;
   }
 
@@ -418,7 +427,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
 
   /** What an alert's words read besides the house. */
   private context(): LookContext {
-    return { hass: this.hass, repairs: this.repairs, now: this.now() };
+    return { hass: this.hass, repairs: this.repairs, now: this.now(), words: this.words };
   }
 
   /* ---------- watching ---------- */
@@ -642,6 +651,10 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
           : config?.show_duration === false
             ? ''
             : lasted(context, lead.since);
+      // a split alert's entity's message first (#184): it may end in its ellipsis, how long or how much stays whole
+      const message = messageOf(context, result, result.entity);
+      const after = `${detail ? ` · ${detail}` : ''}${tail}`;
+      if (message && room - width(after) >= WHO_MIN) return { who: message, what: after };
       const [name] = names;
       if (name && detail && width(`${name} · ${detail}${tail}`) <= room)
         return { who: name, what: ` · ${detail}${tail}` };
@@ -739,6 +752,10 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
   protected renderCard(): TemplateResult {
     // every alert's own colour is derived now: the sheet draws the snoozed and the clear ones too
     for (const result of this.alerts.alerts) this.accents.item(result.color);
+    // and what each says of its entities (#184), its templates asked for as this render draws
+    this.words = this.definitions.some(({ words }) => words)
+      ? new CulpritWords(this.hass, this.texts, this.alerts.alerts)
+      : undefined;
     if (this.config?._sheet)
       return html`<fluvy-alerts-sheet
         docked
@@ -746,6 +763,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
         ?no-theme=${this.noTheme}
         .hass=${this.hass}
         .state=${this.alerts}
+        .words=${this.words}
         .card=${this.sheetHost}
       ></fluvy-alerts-sheet>`;
     const { shown, more } = this.visible();
@@ -766,6 +784,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
             ?no-theme=${this.noTheme}
             .hass=${this.hass}
             .state=${this.alerts}
+            .words=${this.words}
             .card=${this.sheetHost}
           ></fluvy-alerts-sheet>`
         : nothing

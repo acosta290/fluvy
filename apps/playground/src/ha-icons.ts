@@ -8,6 +8,8 @@ import {
   mdiDeskLamp,
   mdiDoor,
   mdiFence,
+  mdiFish,
+  mdiFishbowl,
   mdiFlash,
   mdiFlashOutline,
   mdiFlower,
@@ -21,6 +23,7 @@ import {
   mdiHumanGreeting,
   mdiLamp,
   mdiLampOutline,
+  mdiLeaf,
   mdiLightbulbGroup,
   mdiLightningBolt,
   mdiMolecule,
@@ -38,6 +41,7 @@ import {
   mdiUmbrellaOutline,
   mdiVibrate,
   mdiWashingMachine,
+  mdiWaterPump,
   mdiWeatherNight,
 } from '@mdi/js';
 
@@ -57,6 +61,8 @@ const MDI: Readonly<Record<string, string>> = {
   'mdi:desk-lamp': mdiDeskLamp,
   'mdi:door': mdiDoor,
   'mdi:fence': mdiFence,
+  'mdi:fish': mdiFish,
+  'mdi:fishbowl': mdiFishbowl,
   'mdi:flash': mdiFlash,
   'mdi:flash-outline': mdiFlashOutline,
   'mdi:flower': mdiFlower,
@@ -69,6 +75,7 @@ const MDI: Readonly<Record<string, string>> = {
   'mdi:human-greeting': mdiHumanGreeting,
   'mdi:lamp': mdiLamp,
   'mdi:lamp-outline': mdiLampOutline,
+  'mdi:leaf': mdiLeaf,
   'mdi:lightbulb-group': mdiLightbulbGroup,
   'mdi:lightning-bolt': mdiLightningBolt,
   'mdi:outdoor-lamp': mdiOutdoorLamp,
@@ -83,6 +90,7 @@ const MDI: Readonly<Record<string, string>> = {
   'mdi:tumble-dryer': mdiTumbleDryer,
   'mdi:umbrella-outline': mdiUmbrellaOutline,
   'mdi:washing-machine': mdiWashingMachine,
+  'mdi:water-pump': mdiWaterPump,
   'mdi:weather-night': mdiWeatherNight,
 };
 

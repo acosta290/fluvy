@@ -39,6 +39,7 @@ import {
   culprits,
   groupsOf,
   lasted,
+  messageOf,
   rowArea,
   rowGlyph,
   rowName,
@@ -55,6 +56,7 @@ import {
 } from '../memory.js';
 import type { AlertAction, AlertButton } from '../model.js';
 import { SEVERITY_TONE } from '../severity.js';
+import type { CulpritWords } from '../words.js';
 
 const s = strings('alerts');
 
@@ -238,6 +240,16 @@ export class FluvyAlertsSheet extends LitElement {
       .as-rows .fv-row__sub:not([data-name]) {
         white-space: normal;
       }
+      /* an entity's message (#184) is said whole, in the text's ink over where and how long: its row grows with it */
+      .as-rows .fv-row:has(> .fv-row__text > .as-message) {
+        height: auto;
+        min-height: 60px;
+        padding-block: 10px;
+      }
+      .as-message {
+        color: var(--fluvy-text);
+        overflow-wrap: anywhere;
+      }
       .fv-sheet__title {
         overflow: hidden;
         white-space: nowrap;
@@ -314,6 +326,7 @@ export class FluvyAlertsSheet extends LitElement {
   static override properties = {
     hass: { attribute: false },
     state: { attribute: false },
+    words: { attribute: false },
     card: { attribute: false },
     docked: { type: Boolean, reflect: true },
     key_: { state: true },
@@ -328,6 +341,8 @@ export class FluvyAlertsSheet extends LitElement {
   declare hass?: HomeAssistant;
   /** Every alert as the card has it now. */
   declare state: AlertsState | undefined;
+  /** What the alerts say of their entities (#184), as the card read them for its last render. */
+  declare words: CulpritWords | undefined;
   declare card: SheetHost | undefined;
   /** Draws the sheet in the flow instead of in a modal dialog (the playground). */
   declare docked: boolean;
@@ -475,7 +490,12 @@ export class FluvyAlertsSheet extends LitElement {
 
   private context(): LookContext {
     const context = this.card?.context();
-    return { hass: this.hass, repairs: context?.repairs, now: context?.now ?? Date.now() };
+    return {
+      hass: this.hass,
+      repairs: context?.repairs,
+      now: context?.now ?? Date.now(),
+      words: this.words,
+    };
   }
 
   /* ---------- what a tap does ---------- */
@@ -671,8 +691,15 @@ export class FluvyAlertsSheet extends LitElement {
     const dead = lead.state?.state === 'unavailable' || lead.state?.state === 'unknown';
     const area = rowArea(context, lead);
     const time = lasted(context, lead.since);
-    // a source item's word is its own severity ("Warning" beside a critical repair): it is said in that severity's ink
-    const valueTone = lead.severity ? SEVERITY_TONE[lead.severity] : tone;
+    // what the alert says of the row's entity (#184): a device of several has no one message
+    const message = messageOf(context, result, group.rows.length > 1 ? undefined : lead.id);
+    // a row's own severity — a repair's, an entity's attribute's — is said in that severity's ink ("Warning" beside a
+    // critical repair), one that went well in the ok tone's; an entity's (#184) draws its circle too, but under a tone
+    // asked for by name
+    const own = lead.ok ? 'ok' : lead.severity ? SEVERITY_TONE[lead.severity] : undefined;
+    const valueTone = own ?? tone;
+    const named = result.definition.tone !== undefined || tone !== result.tone;
+    const circleTone = dead ? 'off' : lead.state && own && !named ? own : tone;
     // under the name: the state where a button stands in its place, how many entities a device has, where, how long
     const sub = fitLine(
       [
@@ -687,15 +714,15 @@ export class FluvyAlertsSheet extends LitElement {
       (text) => this.ruler.width('fv-row__sub', text),
     );
     return html`<div class="fv-row fv-row--tap ${keep ? '' : 'fv-row--bare'}">
-      ${keep ? this.circle(rowGlyph(context, result, lead), dead ? 'off' : tone) : nothing}
+      ${keep ? this.circle(rowGlyph(context, result, lead), circleTone) : nothing}
       <span class="fv-row__text"
         ><span class="fv-row__title" data-name>${name}</span>${
-          sub ? html`<span class="fv-row__sub">${sub}</span>` : nothing
-        }</span
+          message ? html`<span class="fv-row__sub as-message">${message}</span>` : nothing
+        }${sub ? html`<span class="fv-row__sub">${sub}</span>` : nothing}</span
       >
       ${value ? html`<span class="fv-row__value as-value fv-tone--${valueTone}">${value}</span>` : nothing}
       ${pressCover(
-        [name, sub || state].filter(Boolean).join(' · '),
+        [name, message, sub || state].filter(Boolean).join(' · '),
         () => this.rowTap(result, group, false),
         () => this.rowTap(result, group, true),
       )}

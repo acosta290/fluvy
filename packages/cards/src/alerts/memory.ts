@@ -26,7 +26,8 @@ import { instantAt, plusDays, wallNow } from './time.js';
  * value with one change made — pruned of what is over — and written once.
  *
  * A snooze ends at an instant. An acknowledgement ("until it changes") keeps, for each entity of the alert, the
- * `last_changed` it had: the entity is back the moment it changes again.
+ * `last_changed` it had — its `last_updated` where the alert's words come from its entities (#184: a new message is
+ * news): the entity is back the moment it changes again.
  */
 
 export const MEMORY_SCOPES = ['user', 'device', 'house', 'off'] as const;
@@ -36,7 +37,7 @@ export type MemoryScope = (typeof MEMORY_SCOPES)[number];
 export const MEMORY_KEY = 'fluvy-alerts';
 export const DEVICE_KEY = 'fluvy:alerts';
 
-/** What is kept: snoozes (alert key → until, ms) and acknowledgements (alert key → entity → its `last_changed`). */
+/** What is kept: snoozes (alert key → until, ms) and acknowledgements (alert key → entity → its stamp then). */
 export interface Remembered {
   readonly v: 1;
   readonly snoozed: Readonly<Record<string, number>>;
@@ -67,7 +68,10 @@ export function parseRemembered(raw: unknown): Remembered {
   return { v: 1, snoozed, acked };
 }
 
-/** What is over left out: snoozes that ended, acknowledgements of entities that changed since or are gone. */
+/**
+ * What is over left out: snoozes that ended, acknowledgements of entities that changed since (their stamp neither their
+ * last change nor their last update: the engine knows which its alert compares) or are gone.
+ */
 export function prune(
   value: Remembered,
   now: number,
@@ -79,7 +83,8 @@ export function prune(
   const acked: Record<string, Record<string, string>> = {};
   for (const [key, stamps] of Object.entries(value.acked)) {
     const kept = Object.entries(stamps).filter(
-      ([id, stamp]) => !states || states[id]?.last_changed === stamp,
+      ([id, stamp]) =>
+        !states || states[id]?.last_changed === stamp || states[id]?.last_updated === stamp,
     );
     if (kept.length) acked[key] = Object.fromEntries(kept);
   }
@@ -97,7 +102,7 @@ export interface AlertMemory extends MemoryView {
   subscribe(listener: () => void): () => void;
   /** Snoozes the alert of that key until then (ms). */
   snooze(key: string, until: number): Promise<void>;
-  /** Acknowledges these entities of the alert (each with its `last_changed` now), beside any acknowledged before. */
+  /** Acknowledges these entities of the alert (each with its stamp now), beside any acknowledged before. */
   acknowledge(key: string, stamps: Readonly<Record<string, string>>): Promise<void>;
   /** Ends the alert's snooze and its acknowledgements. */
   wake(key: string): Promise<void>;
@@ -352,19 +357,19 @@ export function snoozeEnd(
 }
 
 /**
- * Snoozes an alert as the person chose: until an instant, or until each of its entities changes (its rows'
- * `last_changed` kept).
+ * Snoozes an alert as the person chose: until an instant, or until each of its entities changes (its rows' stamps
+ * kept: `last_changed`, or `last_updated` where its words come from its entities).
  */
 export function snoozeAlert(
   memory: AlertMemory,
   hass: HomeAssistant,
-  result: Pick<AlertResult, 'key' | 'rows'>,
+  result: Pick<AlertResult, 'key' | 'rows' | 'definition'>,
   choice: SnoozeChoice,
   now = Date.now(),
 ): Promise<void> {
   if (choice !== 'changes')
     return memory.snooze(result.key, snoozeEnd(choice, now, houseZone(hass)));
   const stamps: Record<string, string> = {};
-  for (const row of result.rows) if (row.state) stamps[row.id] = row.state.last_changed;
+  for (const row of result.rows) if (row.state) stamps[row.id] = row.state[result.definition.stamp];
   return memory.acknowledge(result.key, stamps);
 }

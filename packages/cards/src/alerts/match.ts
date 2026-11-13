@@ -22,7 +22,9 @@ import {
  * entities), then the clause's exclusions. What a test asks of a registry by name (an area called "Kitchen") is
  * resolved to ids once per registry object. Unavailable and unknown never match unless the clause names them in
  * `state` or says `include_unavailable`. Home Assistant files every update as a config entity (one it can install)
- * or a diagnostic one: a clause that asks for the update domain keeps them whatever their category.
+ * or a diagnostic one: a clause that asks for the update domain keeps them whatever their category. `attribute`
+ * keeps Home Assistant's meaning (it points `state`, `not_state`, `above` and `below` at the attribute; alone, the
+ * attribute is there and truthy); `attributes` (#184) names attributes and their values, each compared as `state` is.
  */
 
 /** One test of an entity: its id, its state, the house. */
@@ -113,6 +115,19 @@ const patternDomain = (text: string): string | undefined =>
   /^([a-z_]+)\.[^*?]*/.test(text) && !text.startsWith('/')
     ? text.slice(0, text.indexOf('.'))
     : undefined;
+
+/**
+ * Whether a value is one of those a clause names: as its words (an unquoted on or off as well, `said`), or a number
+ * as a number (`5` is "5.0").
+ */
+function among(values: readonly unknown[]): (value: unknown) => boolean {
+  const words = said(values);
+  const numbers = new Set(values.flatMap((value) => numberOf(value) ?? []));
+  return (value) =>
+    value !== undefined &&
+    value !== null &&
+    (words.has(String(value)) || numbers.has(numberOf(value) ?? Number.NaN));
+}
 
 /** A threshold a config wrote as a number or as its digits. */
 const threshold = (value: unknown): number | undefined =>
@@ -224,6 +239,10 @@ function partTests(part: MatchConfig): { tests: Test[]; domains: ReadonlySet<str
     below === undefined
   )
     tests.push((_id, state) => Boolean(state.attributes[attribute]));
+  for (const [name, values] of Object.entries(part.attributes ?? {})) {
+    const holds = among(many(values));
+    tests.push((_id, state) => holds(state.attributes[name]));
+  }
 
   // the registries
   const integrations = many(part.integration);
@@ -330,7 +349,9 @@ function compileClause(spec: ClauseSpec): CompiledClause {
   const asked =
     spec.includeUnavailable ||
     spec.parts.some((part) => many(part.state).some((s) => UNAVAILABLE.has(s)));
-  const onAttribute = spec.parts.some((part) => part.attribute !== undefined);
+  const onAttribute = spec.parts.some(
+    (part) => part.attribute !== undefined || part.attributes !== undefined,
+  );
   const domains = within(parts.flatMap((part) => (part.domains ? [part.domains] : [])));
   const updates = domains?.has('update') ?? false;
   return {

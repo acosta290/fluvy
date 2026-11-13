@@ -9,9 +9,10 @@ import {
   type ServiceTarget,
 } from '@fluvy/core';
 import type { VisibilityCondition } from './conditions.js';
-import { PRESETS, isPreset, type PresetName } from './presets.js';
+import { PRESETS, isPreset, type PresetDefaults, type PresetName } from './presets.js';
 import { isAlertTone, isSeverity, type AlertTone, type Severity } from './severity.js';
 import { durationMs, type DurationConfig } from './time.js';
+import { attributeOf, fromEntity, type EntityWords } from './words.js';
 
 /*
  * One definition per alert drives everything the card shows of it: what it matches (the count, the list) and what
@@ -23,7 +24,7 @@ import { durationMs, type DurationConfig } from './time.js';
  * without a preset or `match` is one clause, its own keys. With either, the alert's own matcher keys narrow every
  * clause (the AND of both) — but those a preset reads as its parameters (`below` for low batteries) — and its
  * modifiers (`for`, `unchanged_for`, `include_unavailable`, `hidden`, `diagnostic`) are the default of every clause
- * that names none, before the preset's own.
+ * that names none, before the preset's own. A key no alert or clause takes is left out, and said once in the console.
  */
 
 type OneOrMany<T> = T | readonly T[];
@@ -64,6 +65,11 @@ export interface MatchConfig {
   readonly below?: number | string;
   /** An attribute: with `state`, `above` or `below` they compare it; alone, it must be there and truthy. */
   readonly attribute?: string;
+  /**
+   * Attributes by name, each one of these values (`severity: [error, warning]`), compared as `state` is, a number as a
+   * number (#184): every one of them must hold, beside the clause's other keys.
+   */
+  readonly attributes?: Readonly<Record<string, OneOrMany<string | number | boolean>>>;
   /** Matching for this long before it counts. */
   readonly for?: DurationConfig;
   /**
@@ -93,6 +99,7 @@ export const MATCH_KEYS = [
   'above',
   'below',
   'attribute',
+  'attributes',
 ] as const satisfies readonly (keyof MatchConfig)[];
 
 /** What a clause says about how it counts rather than what it matches: an alert's own are every clause's defaults. */
@@ -148,10 +155,20 @@ export interface AlertConfig extends MatchConfig {
   readonly preset?: PresetName;
   /** The key its snoozes are remembered by (else one made of what it matches). */
   readonly id?: string;
+  /**
+   * Its name: the person's words; or each entity's (#184), `attribute:<name>` or a template rendered for it
+   * (`{{ state_attr(entity, 'title') }}`), which names a split alert's tile and every alert's rows.
+   */
   readonly name?: string;
+  /** Its glyph: the person's; or each entity's, as `name` reads it (`attribute:icon`). */
   readonly icon?: string;
-  /** How much it matters: the order and the tone (warning unless said). */
-  readonly severity?: Severity;
+  /** Each entity's message (#184): words, `attribute:<name>` or a template; a split alert's line, a row's in its sheet. */
+  readonly secondary?: string;
+  /**
+   * How much it matters: the order and the tone (warning unless said); or each entity's (#184), `attribute:<name>`
+   * read in its words (`error` is critical, `success` information in the ok tone, `severity.ts`).
+   */
+  readonly severity?: Severity | `attribute:${string}`;
   /** A tone by name: outranks the severity's. */
   readonly tone?: AlertTone;
   /** The alert's own colour: its identity (circle, rest wash), never the severity's fill. */
@@ -174,9 +191,11 @@ export interface AlertConfig extends MatchConfig {
   /** A button on each row; `false` takes a preset's away. */
   readonly row_button?: AlertButton | false;
   readonly actions?: readonly AlertButton[];
-  /** A row's name: the entity's, its device's or its area's. */
-  readonly name_by?: NameBy;
+  /** A row's name: the entity's, its device's, its area's, or an attribute of the entity (`attribute:title`, #184). */
+  readonly name_by?: NameBy | `attribute:${string}`;
   readonly sort_rows?: SortRows;
+  /** Where each row's time is read from (#184): `attribute:<name>`, ISO or an epoch; else when its state last changed. */
+  readonly since?: string;
   /** Whether it may be snoozed (true). */
   readonly snooze?: boolean;
   /** Low batteries: phones too (they cross 20 % every day; left out unless asked). */
@@ -223,7 +242,22 @@ export interface AlertDefinition {
   readonly name: string | undefined;
   readonly title: MessageKey | undefined;
   readonly icon: string;
+  /** Its own severity: a row's where the row's attribute says none (`severityFrom`). */
   readonly severity: Severity;
+  /** The attribute each row's severity is read from (#184). */
+  readonly severityFrom: string | undefined;
+  /**
+   * What it says of each entity (#184): `name` (its own, else an attribute `name_by` names), `secondary` and `icon`;
+   * undefined where it says nothing of them.
+   */
+  readonly words: EntityWords | undefined;
+  /** Where each row's time is read from (`attribute:<name>`, #184). */
+  readonly since: string | undefined;
+  /**
+   * What "until it changes" compares: when the state last changed, or where its words come from its entities when
+   * they last updated (a new message is news).
+   */
+  readonly stamp: 'last_changed' | 'last_updated';
   readonly tone: AlertTone | undefined;
   readonly color: string | undefined;
   /** Any of these matching: the entity matches. */
@@ -373,6 +407,8 @@ function checkClause(clause: MatchConfig, problem: (text: string) => AlertProble
       }
   if (clause.entities !== undefined && !Array.isArray(clause.entities))
     throw problem('"entities" must be a list');
+  if (clause.attributes !== undefined && !isRecord(clause.attributes))
+    throw problem('"attributes" takes attributes by name, each a value or a list of them');
   for (const excluded of many(clause.exclude))
     if (isRecord(excluded)) checkClause(excluded as MatchConfig, problem);
     else if (typeof excluded !== 'string')
@@ -410,6 +446,52 @@ function escalationOf(
   return { forMs, count, severity };
 }
 
+/** Every key an alert takes besides a clause's: the compiler holds the list to `AlertConfig`. */
+const ALERT_KEYS: Readonly<Record<Exclude<keyof AlertConfig, keyof MatchConfig>, 1>> = {
+  preset: 1,
+  id: 1,
+  name: 1,
+  icon: 1,
+  secondary: 1,
+  severity: 1,
+  tone: 1,
+  color: 1,
+  match: 1,
+  count_by: 1,
+  min_count: 1,
+  split: 1,
+  escalate: 1,
+  conditions: 1,
+  admin_only: 1,
+  tap_action: 1,
+  hold_action: 1,
+  row_action: 1,
+  row_hold_action: 1,
+  row_button: 1,
+  actions: 1,
+  name_by: 1,
+  sort_rows: 1,
+  since: 1,
+  snooze: 1,
+  phones: 1,
+  acknowledged: 1,
+};
+const CLAUSE_KEYS: ReadonlySet<string> = new Set([...MATCH_KEYS, ...MODIFIER_KEYS, 'exclude']);
+
+/** The slips said already: each once, however often its config is read (an editor reads it at every keystroke). */
+const slips = new Set<string>();
+
+/** The keys of an alert (`own`) or of a clause that none takes (`attribute_value`): left out, each said once. */
+function slip(card: string, index: number, raw: object, own: boolean): void {
+  for (const key of Object.keys(raw)) {
+    if (CLAUSE_KEYS.has(key) || (own && Object.hasOwn(ALERT_KEYS, key))) continue;
+    const text = `${card}: alerts[${index}]: "${key}" is no key of ${own ? 'an alert' : 'a clause'}: left out`;
+    if (slips.has(text)) continue;
+    slips.add(text);
+    console.warn(text);
+  }
+}
+
 /** One alert, read. */
 export function definitionOf(raw: unknown, index: number, card: string): AlertDefinition {
   const problem = (text: string): AlertProblem => new AlertProblem(card, index, text);
@@ -419,10 +501,13 @@ export function definitionOf(raw: unknown, index: number, card: string): AlertDe
     throw problem(`unknown preset "${String(config.preset)}" (${Object.keys(PRESETS).join(', ')})`);
   const preset = config.preset ? PRESETS[config.preset] : undefined;
   const params = preset?.params ?? [];
-  const defaults: AlertConfig = preset?.defaults ?? {};
+  const defaults: PresetDefaults = preset?.defaults ?? {};
 
-  if (config.severity !== undefined && !isSeverity(config.severity))
-    throw problem('"severity" must be info, warning or critical');
+  const severityFrom = attributeOf(config.severity);
+  if (config.severity !== undefined && !isSeverity(config.severity) && !severityFrom)
+    throw problem('"severity" must be info, warning, critical or attribute:<name>');
+  if (config.since !== undefined && !attributeOf(config.since))
+    throw problem('"since" takes attribute:<name>');
   if (config.tone !== undefined && !isAlertTone(config.tone))
     throw problem(`unknown tone "${String(config.tone)}"`);
   const minCount = config.min_count ?? 1;
@@ -449,6 +534,8 @@ export function definitionOf(raw: unknown, index: number, card: string): AlertDe
     if (!isRecord(clause)) throw problem('a clause of "match" is a set of keys');
     else checkClause(clause, problem);
   checkClause(config, problem);
+  slip(card, index, config, true);
+  for (const clause of many(config.match)) if (isRecord(clause)) slip(card, index, clause, false);
   for (const button of [
     ...(config.row_button ? [config.row_button] : []),
     ...(config.actions ?? []),
@@ -462,16 +549,34 @@ export function definitionOf(raw: unknown, index: number, card: string): AlertDe
 
   const rowButton =
     config.row_button === false ? undefined : (config.row_button ?? defaults.row_button);
+  // the words read off each entity: its own name, else the attribute `name_by` names; its message; its glyph
+  const nameWord = attributeOf(config.name_by) ? config.name_by : undefined;
+  const said = (text: unknown): string | undefined =>
+    typeof text === 'string' && text.trim() ? text : undefined;
+  const entityWords = Object.entries({
+    name: fromEntity(config.name) ? config.name : nameWord,
+    secondary: said(config.secondary),
+    icon: fromEntity(config.icon) ? config.icon : undefined,
+  }).filter((entry): entry is [keyof EntityWords, string] => entry[1] !== undefined);
+  const words = entityWords.length ? (Object.fromEntries(entityWords) as EntityWords) : undefined;
   return {
     key: alertKey(config),
     index,
     config,
     preset: config.preset,
     source: preset?.source ?? 'states',
-    name: typeof config.name === 'string' && config.name.trim() ? config.name : undefined,
+    name: said(config.name) && !fromEntity(config.name) ? config.name : undefined,
     title: preset?.title,
-    icon: config.icon ?? preset?.icon ?? 'warn',
-    severity: config.severity ?? preset?.severity ?? 'warning',
+    icon: (fromEntity(config.icon) ? undefined : config.icon) ?? preset?.icon ?? 'warn',
+    severity:
+      (severityFrom ? undefined : (config.severity as Severity)) ?? preset?.severity ?? 'warning',
+    severityFrom,
+    words,
+    since: config.since,
+    stamp:
+      severityFrom || (words && Object.values(words).some(fromEntity))
+        ? 'last_updated'
+        : 'last_changed',
     tone: config.tone,
     color: config.color,
     clauses: preset?.source ? [] : clauses,
@@ -483,7 +588,10 @@ export function definitionOf(raw: unknown, index: number, card: string): AlertDe
     escalate: escalationOf(config.escalate, problem),
     conditions: config.conditions ?? [],
     adminOnly: config.admin_only ?? defaults.admin_only ?? false,
-    nameBy: oneOf(config.name_by, NAME_BY, 'name_by', problem) ?? defaults.name_by ?? 'entity',
+    nameBy:
+      oneOf(nameWord ? undefined : config.name_by, NAME_BY, 'name_by', problem) ??
+      defaults.name_by ??
+      'entity',
     sortRows:
       oneOf(config.sort_rows, SORT_ROWS, 'sort_rows', problem) ?? defaults.sort_rows ?? 'duration',
     snooze: config.snooze !== false,

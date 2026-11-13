@@ -114,3 +114,42 @@ export function change(hass: HomeAssistant, id: string, seed: Seed | undefined):
   else delete states[id];
   return { ...hass, states };
 }
+
+/**
+ * The house of #184: a kiosk's notices, each a template binary sensor on while it has something to say, its words and
+ * its severity in its attributes; one went well, one is off, one says nothing; a sensor beside them has a severity too.
+ */
+export const KIOSK: Readonly<Record<string, Seed>> = {
+  'binary_sensor.kiosk_fish': {
+    state: 'on',
+    attributes: {
+      severity: 'error',
+      icon: 'mdi:fishbowl',
+      title: 'Aquarium in the nursery',
+      message: 'Replace the biochemical filter.',
+      start_date: '2026-10-17T10:00:00Z',
+    },
+    changed: NOW - 30 * MINUTE,
+  },
+  'binary_sensor.kiosk_plant': {
+    state: 'on',
+    attributes: {
+      severity: 'warning',
+      icon: 'mdi:flower',
+      title: 'Monstera',
+      message: 'Water me.',
+    },
+    changed: NOW - 20 * MINUTE,
+  },
+  'binary_sensor.kiosk_done': {
+    state: 'on',
+    attributes: { severity: 'success', icon: 'mdi:check', title: 'Backup', message: 'Done.' },
+    changed: NOW - 10 * MINUTE,
+  },
+  'binary_sensor.kiosk_old': {
+    state: 'off',
+    attributes: { severity: 'error', title: 'Old notice', message: 'Gone.' },
+  },
+  'binary_sensor.kiosk_bare': { state: 'on', changed: NOW - 5 * MINUTE },
+  'binary_sensor.hall_motion': { state: 'on', attributes: { severity: 'error' } },
+};

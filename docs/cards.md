@@ -786,17 +786,17 @@ max_live: 2
 The alerts card gathers what needs a look. Each alert is one line — a `preset` (`low_battery`, `unavailable`, `open`,
 `unlocked`, `hazards`, `errors`, `updates`, `lights_on`, `ha_alerts`, `repairs`) or a matcher of your own (ids,
 `entity_id` patterns, `domain`, `device_class`, `integration`, `area`, `floor`, `label`, `device`, `state`, `above`,
-`below`, `attribute`, `for`…) — and one definition drives its count, its list in the sheet and its buttons. A preset
-waits where a moment is no news — `unavailable` and `open` five minutes, `unlocked` ten — and `for` says otherwise
-(`for: 0` shows it at once). Alerts are ordered by `severity` (critical, warning, info; info in the palette's accent,
-or its blue where the accent is warm enough to pass for a warning), an alert can `escalate` after a while or past a
-count, and `conditions` take Home Assistant's own visibility shapes. `variant` draws them as `tiles` (the default),
-`mini`, `chips`, `rows` under a head, or a `banner` that turns through them; the card hides itself while all is clear
-(`hide_empty: false` keeps an "All clear" tile). A tap opens the alert's sheet — each entity with its state, where
-and how long, a button of its own (Lock, Close, Install, Dock, Acknowledge) and the alert's (Lock all, asked first) —
-and Snooze (an hour, eight, until tomorrow morning, until it changes; the snooze follows you to every device, or
-stays on this device with `snooze: device`); a long press opens every alert, the snoozed ones with Wake. Home
-Assistant's repairs (for administrators) and its `alert` entities are alerts too.
+`below`, `attribute`, `attributes`, `for`…) — and one definition drives its count, its list in the sheet and its
+buttons. A preset waits where a moment is no news — `unavailable` and `open` five minutes, `unlocked` ten — and `for`
+says otherwise (`for: 0` shows it at once). Alerts are ordered by `severity` (critical, warning, info; info in the
+palette's accent, or its blue where the accent is warm enough to pass for a warning), an alert can `escalate` after a
+while or past a count, and `conditions` take Home Assistant's own visibility shapes. `variant` draws them as `tiles`
+(the default), `mini`, `chips`, `rows` under a head, or a `banner` that turns through them; the card hides itself
+while all is clear (`hide_empty: false` keeps an "All clear" tile). A tap opens the alert's sheet — each entity with
+its state, where and how long, a button of its own (Lock, Close, Install, Dock, Acknowledge) and the alert's (Lock
+all, asked first) — and Snooze (an hour, eight, until tomorrow morning, until it changes; the snooze follows you to
+every device, or stays on this device with `snooze: device`); a long press opens every alert, the snoozed ones with
+Wake. Home Assistant's repairs (for administrators) and its `alert` entities are alerts too.
 
 ```yaml
 type: custom:fluvy-alerts-card
@@ -809,6 +809,47 @@ alerts:
     for: { minutes: 15 }
   - preset: errors
   - preset: updates
+```
+
+How a matcher reads: every key of an alert, and of a clause in `match`, must hold, so `entity_id`, `state` and
+`attributes` together ask for all three; `match` takes a list of clauses and any one of them may hold, each together
+with the alert's own keys. `attribute` is Home Assistant's own: it points `state`, `not_state`, `above` and `below`
+at that attribute (`attribute: severity` with `state: error` compares the attribute, never the entity's state), and
+alone it asks only that the attribute is there and not empty. To ask for a state and an attribute's value at once,
+use `attributes`: attribute names, each with a value or a list of values (`severity: [error, warning]`), compared as
+`state` is, a number as a number. A key the card does not know (`attribute_value`) is left out, and said once in the
+browser's console.
+
+What an alert says can come from each entity it matches: `name`, `icon` and `secondary` (a message) take
+`attribute:<name>`, or a template rendered for each entity with `entity` as its id and `user` as your name
+(`{{ state_attr(entity, 'title') }}`). With `split: true` every entity has a tile of its own, named, drawn and toned
+by its own words, its line saying its message and how long ("Replace the filter · 6 min": the message may end in an
+ellipsis, the time never does), and its sheet says the message whole. Without `split` the words name the rows of the
+alert's sheet and who is at fault on its line; `name_by: attribute:title` names them while the alert keeps a name of
+its own. `severity: attribute:severity` reads each entity's severity in its own words: critical, error, alert,
+emergency, danger and high are critical; warning, warn and medium a warning; info, notice and low information;
+success and ok information in the ok tone; any other word is the alert's own severity. `since: attribute:start_date`
+reads how long each has waited from an attribute (an ISO time, or Unix seconds or milliseconds; else when its state
+last changed). Templates are rendered for an alert's first 50 entities, one subscription each, let go of as an entity
+leaves; past them a row keeps its entity's own name and glyph and says no message (an attribute is read for every
+one). Snoozed "until it changes", such an alert comes back with its entity's next update, so a new message raises it
+again.
+
+```yaml
+type: custom:fluvy-alerts-card
+variant: rows
+alerts:
+  - id: kiosk
+    entity_id: binary_sensor.kiosk_notice_* # template binary sensors, on while they have something to say
+    state: "on"
+    attributes:
+      severity: [error, warning] # and of those, only these
+    split: true # a row each, in its own words
+    name: attribute:title
+    secondary: "{{ state_attr(entity, 'message') }}" # or attribute:message
+    icon: attribute:icon
+    severity: attribute:severity
+    since: attribute:start_date
 ```
 
 ## Items
@@ -1315,7 +1356,7 @@ roles:
 | **Readouts** | `custom:fluvy-readouts-card` | Up to four values side by side with their trends. | `hours`, `variant` (`grid`, `row`), `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `rows` (a list: `entity`, `name`, `unit`, `decimals`, `tap_action`) | `entities` → `rows` |
 | **People** | `custom:fluvy-people-card` | Who is home: avatars, zones, times and phone batteries, each person with a tap of their own. | `title`, `variant` (`grid`, `rows`), `map_path`, `show_zone`, `show_time`, `show_battery`, `empty_text`, `hide_empty`, `people` (a list: `entity`, `name`, `battery`, `color`, `since`, `tap_action`, `hold_action`) | `layout` → `variant`, `entities` → `people` |
 | **Openings** | `custom:fluvy-openings-card` | Doors, windows and motion at a glance, with what is open counted. | `title`, `subtitle`, `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_time`, `since_pattern`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `color`, `device_class`, `states`, `since`, `tap_action`, `hold_action`) | `entities` → `rows` |
-| **Alerts** | `custom:fluvy-alerts-card` | What needs a look — low batteries, devices gone, doors left open, leaks, updates, repairs — each from one line, as tiles, chips, rows or a banner, hidden while all is clear. | `title`, `subtitle`, `variant` (`tiles`, `mini`, `chips`, `rows`, `banner`), `columns` (`1`, `2`, `3`, `4`, `auto`), `show_count`, `show_culprit`, `show_duration`, `compact`, `order` (`severity`, `config`), `rotate`, `snooze` (`user`, `device`, `house`, `off`), `max_alerts`, `empty_text`, `hide_empty`, `alerts` (a list: `preset`, `name`, `icon`, `severity`, `tone`, `color`, `entity`, `domain`, `device_class`, `entity_id`, `integration`, `state`, `not_state`, `above`, `below`, `attribute`, `phones`, `acknowledged`, `area`, `floor`, `label`, `device`, `exclude`, `for`, `unchanged_for`, `include_unavailable`, `hidden`, `diagnostic`, `count_by`, `min_count`, `name_by`, `sort_rows`, `split`, `snooze`, `admin_only`, `tap_action`, `hold_action`, `row_action`, `row_hold_action`, `row_button`, `actions`, `conditions`, `escalate`, `match`, `id`) | — |
+| **Alerts** | `custom:fluvy-alerts-card` | What needs a look — low batteries, devices gone, doors left open, leaks, updates, repairs — each from one line, as tiles, chips, rows or a banner, hidden while all is clear. | `title`, `subtitle`, `variant` (`tiles`, `mini`, `chips`, `rows`, `banner`), `columns` (`1`, `2`, `3`, `4`, `auto`), `show_count`, `show_culprit`, `show_duration`, `compact`, `order` (`severity`, `config`), `rotate`, `snooze` (`user`, `device`, `house`, `off`), `max_alerts`, `empty_text`, `hide_empty`, `alerts` (a list: `preset`, `name`, `icon`, `secondary`, `severity`, `tone`, `color`, `entity`, `domain`, `device_class`, `entity_id`, `integration`, `state`, `not_state`, `above`, `below`, `attribute`, `attributes`, `phones`, `acknowledged`, `area`, `floor`, `label`, `device`, `exclude`, `for`, `unchanged_for`, `since`, `include_unavailable`, `hidden`, `diagnostic`, `count_by`, `min_count`, `name_by`, `sort_rows`, `split`, `snooze`, `admin_only`, `tap_action`, `hold_action`, `row_action`, `row_hold_action`, `row_button`, `actions`, `conditions`, `escalate`, `match`, `id`) | — |
 
 ## Rooms and the map
 

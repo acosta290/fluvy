@@ -10,37 +10,58 @@ import {
 } from '@fluvy/core';
 import { durationShort } from '../helpers/datetime.js';
 import { iconOf } from '../shared/domain.js';
+import { iconRefOf } from '../shared/templates.js';
 import { nameOf, type AlertResult, type AlertRow } from './engine.js';
 import type { NameBy } from './model.js';
 import type { RepairsStore } from './repairs.js';
+import { fromEntity, type CulpritWords } from './words.js';
 
 /*
  * What an alert says, the same on the card and in its sheet: its name and glyph, who is at fault (its culprits, by
  * device when it counts devices, rows of one name told apart or counted), how long or how much (a battery's 12 %, a
- * door's 6 min), and its rows grouped as it counts them.
+ * door's 6 min), its rows grouped as it counts them, and what it says of each entity (#184: its name, its message, its
+ * glyph, read off the entity).
  */
 
-/** What a card and its sheet read an alert's words from besides `hass`: the repairs' titles, the clock. */
+/** What a card and its sheet read an alert's words from besides `hass`: the repairs' titles, the clock, its entities' words. */
 export interface LookContext {
   readonly hass: HomeAssistant | undefined;
   readonly repairs?: RepairsStore | undefined;
   readonly now: number;
+  readonly words?: CulpritWords | undefined;
 }
 
-/** An alert's name: the person's, a split alert's entity's own, else its preset's title. */
-export function alertName({ hass }: LookContext, result: AlertResult): string {
-  const { definition } = result;
+/** An alert's name: the person's, a split alert's entity's (its word, else its own name), else its preset's title. */
+export function alertName(context: LookContext, result: AlertResult): string {
+  const { definition, entity } = result;
   if (definition.name) return definition.name;
-  if (result.entity) return nameOf(hass as HomeAssistant, result.entity);
-  return definition.title ? localize(hass, definition.title) : definition.key;
+  if (entity)
+    return (
+      context.words?.of(result, entity, 'name') ?? nameOf(context.hass as HomeAssistant, entity)
+    );
+  return definition.title ? localize(context.hass, definition.title) : definition.key;
 }
 
-/** An alert's glyph: the person's, a split alert's entity's own icon, else its preset's. */
-export function alertIcon({ hass }: LookContext, result: AlertResult): string {
-  const own = result.definition.config.icon;
-  const entity = result.entity ? hass?.states[result.entity]?.attributes['icon'] : undefined;
-  return own ?? (typeof entity === 'string' ? entity : result.definition.icon);
+/** A glyph an entity's word names (`mdi:fishbowl`, a Fluvy glyph's name); none for any other words. */
+const glyphOf = (word: string | undefined): string | undefined =>
+  word ? iconRefOf(word) : undefined;
+
+/** An alert's glyph: the person's, a split alert's entity's (its word, else its own icon), else its preset's. */
+export function alertIcon(context: LookContext, result: AlertResult): string {
+  const { definition, entity } = result;
+  const own = definition.config.icon;
+  if (own !== undefined && !fromEntity(own)) return own;
+  const word = entity ? glyphOf(context.words?.of(result, entity, 'icon')) : undefined;
+  const stated = entity ? context.hass?.states[entity]?.attributes['icon'] : undefined;
+  return word ?? (typeof stated === 'string' ? stated : definition.icon);
 }
+
+/** What an alert says of an entity under its name (#184): its message, while there is one (a template's answer is held). */
+export const messageOf = (
+  context: LookContext,
+  result: AlertResult,
+  id: string | undefined,
+): string => (id ? (context.words?.of(result, id, 'secondary')?.trim() ?? '') : '');
 
 /** One of an alert's rows as a sheet lists it: an entity, a device and its entities, or a source's item. */
 export interface RowGroup {
@@ -75,14 +96,17 @@ export function groupsOf(result: AlertResult): RowGroup[] {
 const namedBy = ({ definition }: AlertResult, group: RowGroup): NameBy =>
   definition.countBy === 'device' && group.device ? 'device' : definition.nameBy;
 
-/** A row's name: a repair's title, a device's when the alert counts devices, else by the alert's `name_by`. */
-export function rowName(
-  { hass, repairs }: LookContext,
-  result: AlertResult,
-  group: RowGroup,
-): string {
-  if (result.definition.source === 'repairs') return repairs?.item(group.id)?.title ?? group.id;
-  return nameOf(hass as HomeAssistant, group.lead.id, namedBy(result, group));
+/**
+ * A row's name: a repair's title, a device's when the alert counts devices, else what the alert says of its entity
+ * (#184), else by the alert's `name_by`.
+ */
+export function rowName(context: LookContext, result: AlertResult, group: RowGroup): string {
+  if (result.definition.source === 'repairs')
+    return context.repairs?.item(group.id)?.title ?? group.id;
+  // a device the alert counts is named by its device; an entity, by what the alert says of it first
+  const device = result.definition.countBy === 'device' && group.device;
+  const word = device ? undefined : context.words?.of(result, group.lead.id, 'name');
+  return word ?? nameOf(context.hass as HomeAssistant, group.lead.id, namedBy(result, group));
 }
 
 /** One of who is at fault: a name, and how many of the alert's rows (or devices) go by it. */
@@ -167,9 +191,13 @@ export function rowState({ hass }: LookContext, row: AlertRow): string {
 export const rowDetail = (context: LookContext, row: AlertRow): string =>
   row.value !== undefined && row.state ? rowState(context, row) : lasted(context, row.since);
 
-/** A row's glyph: its entity's (a door as it stands, a battery), else the alert's. */
+/** A row's glyph: what the alert says of its entity (#184), else its entity's (a door as it stands, a battery), else the alert's. */
 export function rowGlyph(context: LookContext, result: AlertResult, row: AlertRow): string {
-  return row.state ? iconOf(resolveEntity(context.hass, row.id)) : alertIcon(context, result);
+  if (!row.state) return alertIcon(context, result);
+  return (
+    glyphOf(context.words?.of(result, row.id, 'icon')) ??
+    iconOf(resolveEntity(context.hass, row.id))
+  );
 }
 
 /** Where a row is: its area's name. */

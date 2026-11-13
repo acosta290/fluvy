@@ -3,15 +3,18 @@ import {
   deviceNameOf,
   domainOf,
   registryText,
+  resolveEntity,
   type HassEntities,
   type HassEntity,
   type HomeAssistant,
 } from '@fluvy/core';
 import type { Tone } from '@fluvy/ui';
+import { changedAt } from '../shared/since.js';
 import { compileConditions, screenMatches, type Conditions } from './conditions.js';
 import { compileMatcher, type Matcher } from './match.js';
 import type { AlertDefinition, AlertSource, NameBy } from './model.js';
-import { bySeverity, graver, lookOf, type Severity } from './severity.js';
+import { bySeverity, graver, lookOf, severityIn, type Severity } from './severity.js';
+import { attributeOf, attributeText } from './words.js';
 
 /*
  * The alerts of a card, kept up to date as the house changes, at the cost of what changed. A card's `hass` arrives
@@ -35,7 +38,10 @@ export interface MemoryView {
   readonly version: number;
   /** Until when the alert of that key is snoozed (ms), if it is. */
   snoozedUntil(key: string): number | undefined;
-  /** The entities acknowledged under that key, each with the `last_changed` it had then: back when it moves. */
+  /**
+   * The entities acknowledged under that key, each with the `last_changed` it had then (its `last_updated`, for an
+   * alert whose words come from its entities: `AlertDefinition.stamp`): back when it moves.
+   */
   acknowledged(key: string): Readonly<Record<string, string>> | undefined;
 }
 
@@ -64,8 +70,10 @@ export interface AlertRow {
   readonly device: string | undefined;
   /** Its state's number, if it is one (`sort_rows: value`: the lowest battery first). */
   readonly value: number | undefined;
-  /** A source item's own severity. */
+  /** A source item's own severity, or the one its entity's attribute says (`severity: attribute:…`, #184). */
   readonly severity: Severity | undefined;
+  /** Its attribute said it went well (`success`, `ok`): information, drawn in the ok tone. */
+  readonly ok: boolean;
 }
 
 /** An alert as it stands. */
@@ -75,7 +83,7 @@ export interface AlertResult {
   readonly definition: AlertDefinition;
   /** A split alert's one entity. */
   readonly entity: string | undefined;
-  /** Its severity now: escalated, or raised by a source item's own. */
+  /** Its severity now: escalated, or raised by a row's own (a repair's, an entity's attribute's). */
   readonly severity: Severity;
   readonly escalated: boolean;
   readonly tone: Tone;
@@ -419,6 +427,9 @@ export class AlertEngine {
           : (Number.isFinite(updated) ? updated : start) + clause.unchangedMs;
       from = Math.min(from, Math.max(start + clause.forMs, unchanged));
     }
+    // a row's time read off its entity (#184): the attribute's moment, else when its state last changed
+    const own = watch.definition.since;
+    if (own) since = changedAt(hass, resolveEntity(hass, id), own)?.getTime() ?? since;
     if (before && before.state === state && before.since === since && before.from === from) return;
     watch.tracks.set(id, { state, sinces, since, from });
     watch.dirty = true;
@@ -464,6 +475,7 @@ export class AlertEngine {
     let until = watch.conditions.next(hass, now);
 
     const rows: AlertRow[] = [];
+    const told = definition.severityFrom;
     if (definition.adminOnly && !admin) {
       // never shown to this person: no results at all
     } else if (definition.source === 'states')
@@ -472,13 +484,17 @@ export class AlertEngine {
           until = earlier(until, track.from);
           continue;
         }
+        // a severity its entity says (#184), in its words; one it does not say is the alert's own
+        const said = told === undefined ? undefined : severityIn(track.state.attributes[told]);
         rows.push({
           id,
           state: track.state,
           since: track.since,
           device: hass.entities?.[id]?.device_id,
           value: numberOf(track.state.state),
-          severity: undefined,
+          severity:
+            told === undefined ? undefined : said === 'ok' ? 'info' : (said ?? definition.severity),
+          ok: said === 'ok',
         });
       }
     else
@@ -490,6 +506,7 @@ export class AlertEngine {
           device: undefined,
           value: undefined,
           severity: item.severity,
+          ok: false,
         });
     this.sort(rows, definition, hass);
 
@@ -503,7 +520,7 @@ export class AlertEngine {
       const counted: AlertRow[] = [];
       const acknowledged: AlertRow[] = [];
       for (const row of all)
-        (stamps?.[row.id] !== undefined && stamps[row.id] === row.state?.last_changed
+        (stamps?.[row.id] !== undefined && stamps[row.id] === row.state?.[definition.stamp]
           ? acknowledged
           : counted
         ).push(row);
@@ -512,7 +529,8 @@ export class AlertEngine {
           ? new Set(counted.map((row) => row.device ?? row.id)).size
           : counted.length;
 
-      let severity = definition.severity;
+      // rows that each say their own severity make the alert as grave as the gravest of them
+      let severity: Severity = told && counted.length ? 'info' : definition.severity;
       for (const row of counted) if (row.severity) severity = graver(severity, row.severity);
       let escalated = false;
       const escalate = definition.escalate;
@@ -530,7 +548,11 @@ export class AlertEngine {
       const snoozed = memory.snoozedUntil(key);
       const snoozedUntil = snoozed !== undefined && snoozed > now ? snoozed : undefined;
       until = earlier(until, snoozedUntil);
-      const look = lookOf(severity, definition);
+      const look = lookOf(
+        severity,
+        definition,
+        severity === 'info' && counted.length > 0 && counted.every((row) => row.ok),
+      );
       return {
         key,
         definition,
@@ -561,7 +583,10 @@ export class AlertEngine {
 
   /** A list's order: the longest-standing first, the lowest value, by name, or by area. */
   private sort(rows: AlertRow[], definition: AlertDefinition, hass: HomeAssistant): void {
-    const name = (row: AlertRow): string => nameOf(hass, row.id, definition.nameBy);
+    // the attribute that names the rows, where one does (a template's words come later: the rows keep their names)
+    const named = attributeOf(definition.words?.name);
+    const name = (row: AlertRow): string =>
+      (named && attributeText(row.state, named)) || nameOf(hass, row.id, definition.nameBy);
     const area = (row: AlertRow): string => {
       const id = areaOf(hass, row.id);
       return (id && registryText(hass.areas?.[id]?.name)) || '';

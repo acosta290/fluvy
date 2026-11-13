@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { alertKey, definitionOf, definitionsOf, type AlertConfig } from './model.js';
 import { PRESET_NAMES, PRESETS } from './presets.js';
-import { lookOf, SEVERITY_TONE } from './severity.js';
+import { lookOf, severityIn, SEVERITY_TONE } from './severity.js';
 import { clockSeconds, durationMs, instantAt, wallNow } from './time.js';
 
 const CARD = 'fluvy-alerts-card';
@@ -143,7 +143,20 @@ describe('an alert definition', () => {
     wrong('low_battery', 'an alert is a set of keys');
     wrong({ preset: 'batery' }, 'unknown preset "batery" (low_battery, unavailable,');
     wrong({ name: 'Nothing' }, 'give it a preset, or what it matches');
-    wrong({ preset: 'open', severity: 'high' }, '"severity" must be info, warning or critical');
+    wrong(
+      { preset: 'open', severity: 'high' },
+      '"severity" must be info, warning, critical or attribute:<name>',
+    );
+    wrong(
+      { preset: 'open', severity: 'attribute:' },
+      '"severity" must be info, warning, critical or attribute:<name>',
+    );
+    wrong({ preset: 'open', since: 'start_date' }, '"since" takes attribute:<name>');
+    wrong({ preset: 'open', name_by: 'attribute:' }, '"name_by" must be entity, device or area');
+    wrong(
+      { domain: 'sensor', attributes: 'severity' } as unknown as AlertConfig,
+      '"attributes" takes attributes by name, each a value or a list of them',
+    );
     wrong({ preset: 'open', tone: 'pink' }, 'unknown tone "pink"');
     wrong({ preset: 'open', for: 'soon' }, '"for" is not a duration');
     wrong({ domain: 'sensor', below: 'low' }, '"below" must be a number');
@@ -156,6 +169,68 @@ describe('an alert definition', () => {
       'a button (row_button, actions) needs a tap_action',
     );
     wrong({ match: 'sensor.a' }, '"match" takes a clause or a list of clauses', 3);
+  });
+
+  it('leaves out a key no alert or clause takes, and says so once in the console (#184)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const config = {
+      entity_id: 'binary_sensor.kiosk_*',
+      attribute: 'severity',
+      attribute_value: 'success',
+      match: { state: 'on', title: 'x' },
+    } as unknown as AlertConfig;
+    read(config, 7);
+    read(config, 7);
+    expect(warn.mock.calls.map(([text]) => text)).toEqual([
+      `${CARD}: alerts[7]: "attribute_value" is no key of an alert: left out`,
+      `${CARD}: alerts[7]: "title" is no key of a clause: left out`,
+    ]);
+    // every key an alert takes is known, whatever it says
+    read({ preset: 'open', secondary: 'x', since: 'attribute:at', phones: true, snooze: false }, 8);
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('reads what it says of each entity: an attribute or a template, its own words else (#184)', () => {
+    const kiosk = read({
+      entity_id: 'binary_sensor.kiosk_*',
+      name: 'attribute:title',
+      secondary: "{{ state_attr(entity, 'message') }}",
+      icon: 'attribute:icon',
+      severity: 'attribute:severity',
+      since: 'attribute:start_date',
+    });
+    expect(kiosk).toMatchObject({
+      name: undefined,
+      icon: 'warn',
+      severity: 'warning',
+      severityFrom: 'severity',
+      since: 'attribute:start_date',
+      stamp: 'last_updated',
+      words: {
+        name: 'attribute:title',
+        secondary: "{{ state_attr(entity, 'message') }}",
+        icon: 'attribute:icon',
+      },
+    });
+    // the alert's own name and glyph stay its own; `name_by` names the rows by an attribute
+    const named = read({
+      preset: 'open',
+      name: 'Kiosk',
+      icon: 'bell',
+      name_by: 'attribute:title',
+      secondary: 'Look at the screen',
+    });
+    expect(named).toMatchObject({
+      name: 'Kiosk',
+      icon: 'bell',
+      nameBy: 'entity',
+      words: { name: 'attribute:title', secondary: 'Look at the screen' },
+      stamp: 'last_updated',
+    });
+    // words of its own alone are no news when they change: "until it changes" is its state's change
+    expect(read({ preset: 'open', secondary: 'Close it' }).stamp).toBe('last_changed');
+    expect(read({ preset: 'open' })).toMatchObject({ words: undefined, stamp: 'last_changed' });
   });
 });
 
@@ -175,6 +250,11 @@ describe('an alert’s key', () => {
       alertKey({ preset: 'low_battery' }),
     );
     expect(alertKey({ domain: 'light', state: 'on' })).toMatch(/^custom:/);
+    // words read off its entities are words: its snoozes keep; what it matches by attribute is what it matches
+    expect(alertKey({ preset: 'open', area: 'hall', name: 'attribute:title' })).toBe(base);
+    expect(alertKey({ preset: 'open', area: 'hall', attributes: { severity: 'error' } })).not.toBe(
+      base,
+    );
   });
 
   it('is made unique in a card: a twin takes the next number', () => {
@@ -214,6 +294,20 @@ describe('severity', () => {
     expect(lookOf('critical', {})).toEqual({ tone: 'danger', color: undefined });
     expect(lookOf('critical', { tone: 'heat' }).tone).toBe('heat');
     expect(lookOf('warning', { color: 'orange' })).toEqual({ tone: 'warning', color: 'orange' });
+    expect(lookOf('info', {}, true).tone).toBe('ok');
+    expect(lookOf('info', { tone: 'heat' }, true).tone).toBe('heat');
+  });
+
+  it('reads an entity’s own words for it, in any case (#184)', () => {
+    const read = (words: readonly string[]) => words.map(severityIn);
+    expect(read(['critical', 'Error', 'ALERT', 'emergency', 'danger', 'high'])).toEqual(
+      Array(6).fill('critical'),
+    );
+    expect(read(['warning', 'warn', 'Medium'])).toEqual(Array(3).fill('warning'));
+    expect(read(['info', 'notice', 'low'])).toEqual(Array(3).fill('info'));
+    expect(read(['success', ' OK '])).toEqual(['ok', 'ok']);
+    expect(read(['debug', '', 'on'])).toEqual([undefined, undefined, undefined]);
+    expect(severityIn(3)).toBeUndefined();
   });
 });
 

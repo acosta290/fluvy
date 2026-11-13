@@ -1,7 +1,14 @@
 import type { HomeAssistant, MessageKey } from '@fluvy/core';
 import { LOW_BATTERY, type GlyphName } from '@fluvy/ui';
 import { charging } from '../shared/battery.js';
-import type { AlertButton, AlertConfig, AlertSource, MatchConfig, PresetCheck } from './model.js';
+import type {
+  AlertButton,
+  AlertConfig,
+  AlertSource,
+  MatchConfig,
+  NameBy,
+  PresetCheck,
+} from './model.js';
 import type { Severity } from './severity.js';
 
 /*
@@ -28,13 +35,12 @@ export type PresetName = (typeof PRESET_NAMES)[number];
 export const isPreset = (value: unknown): value is PresetName =>
   typeof value === 'string' && (PRESET_NAMES as readonly string[]).includes(value);
 
-/** What an alert takes from its preset unless it says otherwise. */
-export type PresetDefaults = Pick<
+/** What an alert takes from its preset unless it says otherwise (its rows named by an entity, a device or an area). */
+export type PresetDefaults = { readonly name_by?: NameBy } & Pick<
   AlertConfig,
   | 'for'
   | 'diagnostic'
   | 'count_by'
-  | 'name_by'
   | 'sort_rows'
   | 'split'
   | 'admin_only'

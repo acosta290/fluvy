@@ -23,8 +23,10 @@ import { SEVERITIES, SEVERITY_WORDS } from './severity.js';
  * The alerts card's editor: its list of alerts in the rows editor, each picked as a preset (or `custom`, an alert of
  * the person's own), its form then showing what that alert reads — a preset's parameters, the scope that narrows it,
  * how it counts and names its rows, its look, its actions — or, for a custom one, the whole matcher. Every key an alert
- * takes has its field; what has no field of Home Assistant's own (conditions, escalation, buttons, `match`) is an
- * object field, written as Home Assistant's own YAML. The choices' words are the family's (they travel with its chunk).
+ * takes has its field; what has no field of Home Assistant's own (conditions, escalation, buttons, `match`,
+ * `attributes`) is an object field, written as Home Assistant's own YAML. What an alert reads off each entity (#184:
+ * its name, message, glyph, severity, rows' names and time) is typed, `attribute:<name>` or a template, as its helper
+ * says. The choices' words are the family's (they travel with its chunk).
  */
 
 const s = strings('alerts');
@@ -45,6 +47,12 @@ const durationField = (name: string): HaFormSchemaItem => ({
 });
 /** A part with no field of Home Assistant's own: its YAML. */
 const objectField = (name: string): HaFormSchemaItem => ({ name, selector: { object: {} } });
+/** A choice that takes an entity's attribute as well (`attribute:<name>`, #184), typed, as its helper says. */
+const orAttribute = (field: HaFormSchemaItem, helper: MessageKey): HaFormSchemaItem => ({
+  ...field,
+  helper,
+  selector: { select: { ...(field.selector?.['select'] as object), custom_value: true } },
+});
 
 const PRESET_FIELD = choiceField('preset', [
   ...PRESET_NAMES.map((preset) => [preset, PRESETS[preset].title] as const),
@@ -54,11 +62,19 @@ const PRESET_FIELD = choiceField('preset', [
 /** Every field an alert may show, in the form's order: a preset's form is a part of it. */
 const FIELDS: readonly HaFormSchemaItem[] = [
   PRESET_FIELD,
-  fieldRow(textField('name'), iconField()),
+  // words of the person's own, or each entity's
   fieldRow(
-    choiceField(
-      'severity',
-      SEVERITIES.map((severity) => [severity, SEVERITY_WORDS[severity]] as const),
+    { ...textField('name'), helper: 'alerts.editor.words_help' },
+    { ...iconField(), helper: 'alerts.editor.icon_help' },
+  ),
+  { ...textField('secondary'), helper: 'alerts.editor.words_help' },
+  fieldRow(
+    orAttribute(
+      choiceField(
+        'severity',
+        SEVERITIES.map((severity) => [severity, SEVERITY_WORDS[severity]] as const),
+      ),
+      'alerts.editor.severity_help',
     ),
     toneField(),
   ),
@@ -70,6 +86,7 @@ const FIELDS: readonly HaFormSchemaItem[] = [
   fieldRow(valuesField('state'), valuesField('not_state')),
   fieldRow(numberField('above', -100000, 100000, 0.1), numberField('below', -100000, 100000, 0.1)),
   textField('attribute'),
+  { ...objectField('attributes'), helper: 'alerts.editor.attributes_help' },
   // a preset's parameters
   fieldRow(boolField('phones'), boolField('acknowledged')),
   // the scope that narrows it
@@ -78,6 +95,7 @@ const FIELDS: readonly HaFormSchemaItem[] = [
   pickerField('exclude', 'entity'),
   // time
   fieldRow(durationField('for'), durationField('unchanged_for')),
+  { ...textField('since'), helper: 'alerts.editor.since_help' },
   fieldRow(boolField('include_unavailable'), boolField('hidden')),
   boolField('diagnostic'),
   // how it counts, names and orders its rows
@@ -89,11 +107,14 @@ const FIELDS: readonly HaFormSchemaItem[] = [
     numberField('min_count', 1, 100),
   ),
   fieldRow(
-    choiceField('name_by', [
-      ['entity', 'alerts.o_entity'],
-      ['device', 'alerts.o_device'],
-      ['area', 'option.area'],
-    ]),
+    orAttribute(
+      choiceField('name_by', [
+        ['entity', 'alerts.o_entity'],
+        ['device', 'alerts.o_device'],
+        ['area', 'option.area'],
+      ]),
+      'alerts.editor.name_by_help',
+    ),
     choiceField('sort_rows', [
       ['duration', 'alerts.o_duration'],
       ['value', 'alerts.o_value'],
@@ -136,14 +157,19 @@ const EVERY = [
   'escalate',
   'id',
 ];
-/** What an alert of the house's states shows besides: its scope, its time, how it counts and names its rows. */
+/**
+ * What an alert of the house's states shows besides: its scope, its time, how it counts and names its rows, what it
+ * says of each entity.
+ */
 const STATES = [
+  'secondary',
   'area',
   'floor',
   'label',
   'device',
   'exclude',
   'for',
+  'since',
   'hidden',
   'count_by',
   'name_by',
@@ -211,6 +237,7 @@ const write = (item: Readonly<Record<string, unknown>>): Record<string, unknown>
 /** Each item field's word. */
 const ITEM_WORDS: Readonly<Record<string, MessageKey>> = {
   preset: 'alerts.editor.preset',
+  secondary: 'alerts.editor.secondary',
   severity: 'alerts.editor.severity',
   entity: 'editor.entities',
   domain: 'alerts.editor.domain',
@@ -222,6 +249,7 @@ const ITEM_WORDS: Readonly<Record<string, MessageKey>> = {
   above: 'alerts.editor.above',
   below: 'alerts.editor.below',
   attribute: 'alerts.editor.attribute',
+  attributes: 'alerts.editor.attributes',
   phones: 'alerts.editor.phones',
   acknowledged: 'alerts.editor.acknowledged',
   floor: 'alerts.editor.floor',
@@ -229,6 +257,7 @@ const ITEM_WORDS: Readonly<Record<string, MessageKey>> = {
   exclude: 'alerts.editor.exclude',
   for: 'alerts.editor.for',
   unchanged_for: 'alerts.editor.unchanged_for',
+  since: 'alerts.editor.since',
   include_unavailable: 'alerts.editor.include_unavailable',
   hidden: 'alerts.editor.hidden',
   diagnostic: 'alerts.editor.diagnostic',

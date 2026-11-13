@@ -20,6 +20,27 @@
       "reason": "the chips are sized by the alerts' words and counts (live): three a row are declared"
     },
     {
+      "frame": "alerts/Plants and fish",
+      "tag": "fluvy-alerts-card",
+      "declared": 148,
+      "drawn": 328,
+      "reason": "a split alert is a row for each entity it matches (live): one alert is declared"
+    },
+    {
+      "frame": "alerts/Plants and fish · templates",
+      "tag": "fluvy-alerts-card",
+      "declared": 148,
+      "drawn": 328,
+      "reason": "a split alert is a row for each entity it matches (live): one alert is declared"
+    },
+    {
+      "frame": "alerts/Plants and fish · tiles",
+      "tag": "fluvy-alerts-card",
+      "declared": 76,
+      "drawn": 328,
+      "reason": "a split alert is a tile for each entity it matches (live): one alert is declared"
+    },
+    {
       "frame": "ambient/Map · map",
       "tag": "fluvy-map-card",
       "declared": 384,

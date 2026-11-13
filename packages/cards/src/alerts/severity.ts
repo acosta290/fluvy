@@ -45,7 +45,32 @@ export const bySeverity = (a: Severity, b: Severity): number =>
 /** The more severe of two. */
 export const graver = (a: Severity, b: Severity): Severity => (bySeverity(a, b) <= 0 ? a : b);
 
-/** What an alert is drawn in: the tone by name, else its severity's; its own colour beside, for its identity only. */
+/** The words an entity's attribute says a severity in (#184), each read as one of the three; `ok`: information, said well. */
+const SAID: Readonly<Record<string, Severity | 'ok'>> = {
+  critical: 'critical',
+  error: 'critical',
+  alert: 'critical',
+  emergency: 'critical',
+  danger: 'critical',
+  high: 'critical',
+  warning: 'warning',
+  warn: 'warning',
+  medium: 'warning',
+  info: 'info',
+  notice: 'info',
+  low: 'info',
+  success: 'ok',
+  ok: 'ok',
+};
+
+/** A severity as an attribute says it, in any case; undefined for words it does not know (the alert's own stands). */
+export const severityIn = (value: unknown): Severity | 'ok' | undefined =>
+  typeof value === 'string' ? SAID[value.trim().toLowerCase()] : undefined;
+
+/**
+ * What an alert is drawn in: the tone by name, else its severity's — the ok tone where every match said it went well
+ * (`success`, #184); its own colour beside, for its identity only.
+ */
 export interface AlertLook {
   readonly tone: Tone;
   readonly color: string | undefined;
@@ -54,6 +79,7 @@ export interface AlertLook {
 export function lookOf(
   severity: Severity,
   own: { readonly tone?: AlertTone | undefined; readonly color?: string | undefined },
+  ok = false,
 ): AlertLook {
-  return { tone: own.tone ?? SEVERITY_TONE[severity], color: own.color };
+  return { tone: own.tone ?? (ok ? 'ok' : SEVERITY_TONE[severity]), color: own.color };
 }

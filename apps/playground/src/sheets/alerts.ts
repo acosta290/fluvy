@@ -17,7 +17,8 @@ if (!customElements.get('fluvy-alerts-card'))
  * well level stuck for a day and two repairs (a third ignored), and eight windows named "Window" (#89). Then every
  * variant, the narrow columns, all clear, colours, a fold, and the sheets docked: an alert's rows, its snooze, the
  * overview with a snoozed alert. The cards' clock is the sheets' (`_now`), but for the live frames (a `for` reached, a
- * banner turning).
+ * banner turning). Then a kiosk's notices (#184): template binary sensors on while they have something to say, their
+ * title, message, glyph, severity and start in their attributes, said in their own words.
  */
 
 const at = (seconds: number): string => new Date(NOW.getTime() - seconds * 1000).toISOString();
@@ -139,6 +140,70 @@ const STATES: readonly StateSeed[] = [
     { device_class: 'window', friendly_name: 'Window' },
     270 - i * 30,
   ]),
+  /* a kiosk's notices (#184): on while each has something to say, in its attributes; the pond's said its piece */
+  [
+    'binary_sensor.al_kiosk_aquarium',
+    'on',
+    {
+      friendly_name: 'Kiosk notice · aquarium',
+      severity: 'error',
+      icon: 'mdi:fishbowl',
+      title: 'Aquarium in the nursery',
+      message: 'Replace the biochemical filter before the weekend',
+      start_date: at(2 * 3600 + 15 * 60),
+    },
+    3600,
+  ],
+  [
+    'binary_sensor.al_kiosk_monstera',
+    'on',
+    {
+      friendly_name: 'Kiosk notice · monstera',
+      severity: 'warning',
+      icon: 'mdi:sprout',
+      title: 'Monstera',
+      message: 'The soil is dry: water it today',
+      start_date: at(5 * 3600),
+    },
+    5 * 3600,
+  ],
+  [
+    'binary_sensor.al_kiosk_basil',
+    'on',
+    {
+      friendly_name: 'Kiosk notice · basil',
+      severity: 'info',
+      icon: 'mdi:leaf',
+      title: 'Basil on the windowsill',
+      message: 'Turn the pot towards the light',
+      start_date: at(26 * 3600),
+    },
+    26 * 3600,
+  ],
+  [
+    'binary_sensor.al_kiosk_feeder',
+    'on',
+    {
+      friendly_name: 'Kiosk notice · feeder',
+      severity: 'success',
+      icon: 'mdi:fish',
+      title: 'Fish fed',
+      message: 'The feeder ran at 08:00',
+      start_date: at(40 * 60),
+    },
+    40 * 60,
+  ],
+  [
+    'binary_sensor.al_kiosk_pond',
+    'off',
+    {
+      friendly_name: 'Kiosk notice · pond',
+      severity: 'error',
+      icon: 'mdi:water-pump',
+      title: 'Pond pump',
+      message: 'Clean the pre-filter',
+    },
+  ],
 ];
 
 const AREAS = {
@@ -151,6 +216,7 @@ const AREAS = {
   al_garden: 'Garden',
   al_living: 'Living room',
   al_bedroom: 'Bedroom',
+  al_nursery: 'Nursery',
 };
 
 /** Each entity's device and area. */
@@ -182,6 +248,15 @@ const PLACES: Readonly<Record<string, readonly [device: string, area: keyof type
   'binary_sensor.al_window_6': ['al_window_6', 'al_bedroom'],
   'binary_sensor.al_window_7': ['al_window_7', 'al_bedroom'],
   'binary_sensor.al_window_8': ['al_window_8', 'al_bedroom'],
+};
+
+/** The kiosk's notices: template entities, in an area of their own and on no device. */
+const KIOSK_AREAS: Readonly<Record<string, keyof typeof AREAS>> = {
+  'binary_sensor.al_kiosk_aquarium': 'al_nursery',
+  'binary_sensor.al_kiosk_monstera': 'al_living',
+  'binary_sensor.al_kiosk_basil': 'al_kitchen',
+  'binary_sensor.al_kiosk_feeder': 'al_nursery',
+  'binary_sensor.al_kiosk_pond': 'al_garden',
 };
 
 const DEVICES: Readonly<Record<string, string>> = {
@@ -232,6 +307,45 @@ const windows = (...ns: readonly number[]): AlertConfig => ({
   for: 0,
   entity: ns.map((n) => WINDOWS[n - 1] as string),
 });
+
+/**
+ * The kiosk's notices that need a look (#184): those on whose severity is one of four (every key of an alert holds),
+ * each its own (`split`) in its own words, glyph and tone, how long it has waited read from its start.
+ */
+const KIOSK: AlertConfig = {
+  id: 'kiosk',
+  entity_id: 'binary_sensor.al_kiosk_*',
+  state: 'on',
+  attributes: { severity: ['error', 'warning', 'info', 'success'] },
+  split: true,
+  name: 'attribute:title',
+  secondary: 'attribute:message',
+  icon: 'attribute:icon',
+  severity: 'attribute:severity',
+  since: 'attribute:start_date',
+};
+
+/** The same notices said by templates Home Assistant renders for each of them. */
+const KIOSK_TEMPLATES: AlertConfig = {
+  ...KIOSK,
+  id: 'kiosk-templates',
+  name: "{{ state_attr(entity, 'title') }}",
+  secondary: "{{ state_attr(entity, 'message') }}",
+  icon: "{{ state_attr(entity, 'icon') }}",
+};
+
+/** The notices as one alert of its own name: its rows named by their titles, as grave as the gravest. */
+const KIOSK_ONE: AlertConfig = {
+  id: 'kiosk-one',
+  name: 'Plants and fish',
+  entity_id: 'binary_sensor.al_kiosk_*',
+  state: 'on',
+  name_by: 'attribute:title',
+  secondary: 'attribute:message',
+  icon: 'attribute:icon',
+  severity: 'attribute:severity',
+  since: 'attribute:start_date',
+};
 
 const sheetFrame = (title: string, alerts: readonly AlertConfig[], open: string): FrameSpec => ({
   title,
@@ -396,6 +510,37 @@ const FRAMES: readonly FrameSpec[] = [
   { title: 'One name · one room', cards: [card({ alerts: [windows(5, 6, 7, 8)] })] },
   { title: 'One name · mixed', cards: [card({ alerts: [windows(1, 5, 6, 7)], variant: 'rows' })] },
   { title: 'One name · half', cards: [{ ...card({ alerts: [windows(5, 6, 7, 8)] }), cols: 6 }] },
+  // a kiosk's notices (#184): each a row in its own words and tone (the fish fed went well), its message ending in an
+  // ellipsis before how long it has waited; at a phone's column and a narrow one, as tiles, by templates
+  {
+    title: 'Plants and fish',
+    cards: [
+      card({ variant: 'rows', title: 'Plants and fish', icon: 'mdi:sprout', alerts: [KIOSK] }),
+    ],
+  },
+  {
+    title: 'Plants and fish · 211',
+    width: 211,
+    cards: [
+      card({ variant: 'rows', title: 'Plants and fish', icon: 'mdi:sprout', alerts: [KIOSK] }),
+    ],
+  },
+  { title: 'Plants and fish · tiles', cards: [card({ alerts: [KIOSK], columns: 1 })] },
+  { title: 'Plants and fish · tiles 211', width: 211, cards: [card({ alerts: [KIOSK] })] },
+  {
+    title: 'Plants and fish · templates',
+    cards: [
+      card({
+        variant: 'rows',
+        title: 'Plants and fish',
+        icon: 'mdi:sprout',
+        alerts: [KIOSK_TEMPLATES],
+      }),
+    ],
+  },
+  // one alert of them all: its culprits by their titles; its sheet says each message whole
+  { title: 'Plants and fish · one alert', cards: [card({ alerts: [KIOSK_ONE], columns: 1 })] },
+  sheetFrame('Sheet · plants and fish', [KIOSK_ONE], 'kiosk-one'),
 ];
 
 export const sheet: SheetSpec = {
@@ -409,6 +554,7 @@ export const sheet: SheetSpec = {
           {
             entity_id: id,
             ...(place ? { device_id: place[0], area_id: place[1] } : {}),
+            ...(KIOSK_AREAS[id] ? { area_id: KIOSK_AREAS[id], platform: 'template' } : {}),
             ...(id === 'sensor.al_phone_battery' ? { platform: 'mobile_app' } : {}),
             // as Home Assistant files an update it can install (#79)
             ...(id.startsWith('update.') ? { entity_category: 'config' as const } : {}),

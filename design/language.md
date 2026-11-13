@@ -2182,11 +2182,14 @@ The count, the list in the sheet and the buttons all read that one definition, s
   `entity` / `entities` (ids, or objects naming one), `entity_id` (`*` and `?`, or `/regex/`), `domain`,
   `device_class`, `integration`, `area` and `floor` (id or name; the entity's area, else its device's), `label` (on
   the entity, its device or its area), `device` (id, name or a name's pattern), `exclude`. Conditions: `state`,
-  `not_state`, `above` / `below` (strict, as Home Assistant's numeric state), `attribute` (alone: there and truthy).
-  Modifiers: `for`, `unchanged_for`, `include_unavailable`, `hidden`, `diagnostic`. With a preset or `match`, the
-  alert's own matcher keys narrow every clause (but the preset's parameters: `below`, `phones`, `acknowledged`), and
-  its modifiers are every clause's default before the preset's. A config entity matches only when named by its id;
-  unavailable and unknown never match unless `state` names them or the clause includes them.
+  `not_state`, `above` / `below` (strict, as Home Assistant's numeric state), `attribute` (Home Assistant's: it points
+  `state` and the numbers at the attribute; alone, there and truthy), `attributes` (1.20, #184: attributes by name,
+  each one of its values, beside the state; compared as `state` is, a number as a number). Modifiers: `for`,
+  `unchanged_for`, `include_unavailable`, `hidden`, `diagnostic`. With a preset or `match`, the alert's own matcher
+  keys narrow every clause (but the preset's parameters: `below`, `phones`, `acknowledged`), and its modifiers are
+  every clause's default before the preset's. A config entity matches only when named by its id; unavailable and
+  unknown never match unless `state` names them or the clause includes them. A key no alert or clause takes
+  (`attribute_value`) is left out and said once in the console.
 - **Honest time.** `for` counts from when the state last changed (a restart resets it, as in Home Assistant); a
   number or an attribute counts from the first moment the card has seen it hold, seeded with the entity's last
   change or update — a lower bound, never a guess. `unchanged_for` is "neither state nor attributes changed": the
@@ -2241,6 +2244,20 @@ The count, the list in the sheet and the buttons all read that one definition, s
   line (a tile's badge, a row's value) the names alone, the first ending in its ellipsis where it must; where not even
   that holds, how many ("4 devices"). A split alert (a Home Assistant alert) is its own entity: its line says how long.
   `show_culprit`, `show_duration` and `show_count` turn each part off.
+- **Words from each entity (1.20, #184).** An alert's `name`, `icon` and `secondary` may be read off each entity it
+  matches, `attribute:<name>` or a template rendered for it (`entity`, `user`); `name_by: attribute:<name>` names the
+  rows while the alert keeps its own name. A split alert's tile is its entity's: its name, its glyph (an icon the words
+  name, `mdi:…` or a Fluvy glyph, else the entity's own), and a line "message · 6 min" where the message is the
+  person's text and may end in its ellipsis, the time or the figure staying whole; too narrow for both, the time alone.
+  In the sheet the message is said whole in the text's ink, over where and how long, and its row grows from its 60 to
+  hold it. A template not answered yet holds a blank name (never the entity's id flashing first) and no message; one
+  that answers nothing gives the entity's own words back. `severity: attribute:<name>` reads each row's severity in
+  its entity's words, folded onto the three (error, alert, emergency, danger, high critical; warn, medium a warning;
+  notice, low information); success and ok are information in the ok tone, an alert of several in it only where every
+  row went well, never once escalated. A row's own severity inks its state in the sheet, as a repair's does, and its
+  circle too (each notice as grave as it says), but under a tone asked for by name.
+  `since: attribute:<name>` reads its time (ISO, Unix seconds or milliseconds; else its last change). Where its words
+  come from its entities, "until it changes" waits for the entity's next update: a new message is news.
 - **What gives way, in a tile.** The count's badge first, as a head's: it stays only where the name is whole beside it.
   Then the circles, all together, as a head's circle: where dropping them makes a name whole, or where a name would
   end before it had begun beside one (96, or the name itself). A compact tile under 128 hides its circle by its own

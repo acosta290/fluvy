@@ -302,4 +302,49 @@ describe('snoozing', () => {
       'lock.back',
     ]);
   });
+
+  it('brings an alert whose words come from its entities back on a new message, its state unchanged (#184)', async () => {
+    const { hass: base } = connected();
+    const notice = (message: string, updated: number) => ({
+      state: 'on',
+      attributes: { title: 'Aquarium', message },
+      changed: NOW - 30 * MINUTE,
+      updated,
+    });
+    const hass = change(base, 'binary_sensor.kiosk_fish', notice('Replace the filter.', NOW));
+    const quiet = (alert: Record<string, unknown>) => async (): Promise<boolean[]> => {
+      const memory = memoryFor(hass);
+      const engine = new AlertEngine(
+        [definitionOf({ entity: 'binary_sensor.kiosk_fish', state: 'on', ...alert }, 0, 'card')],
+        { now: () => NOW },
+      );
+      const [kiosk] = engine.evaluate(hass, memory).shown;
+      await snoozeAlert(memory, hass, kiosk!, 'changes');
+      const later = change(
+        hass,
+        'binary_sensor.kiosk_fish',
+        notice('Feed the fish.', NOW + MINUTE),
+      );
+      return [
+        engine.evaluate(hass, memory).shown.length === 0,
+        engine.evaluate(later, memory).shown.length === 0,
+      ];
+    };
+    // its message is news: snoozed until it changes, the new one raises it again
+    expect(await quiet({ id: 'words', secondary: 'attribute:message' })()).toEqual([true, false]);
+    // without words of its entities, only its state's change is: a new attribute keeps it quiet
+    expect(await quiet({ id: 'plain', name: 'Aquarium' })()).toEqual([true, true]);
+  });
+
+  it('keeps an acknowledgement stamped with its entity’s last update while that update stands', () => {
+    const states = house({
+      'binary_sensor.kiosk_fish': {
+        state: 'on',
+        changed: NOW - 30 * MINUTE,
+        updated: NOW - MINUTE,
+      },
+    }).states;
+    const acked = { kiosk: { 'binary_sensor.kiosk_fish': iso(NOW - MINUTE) } };
+    expect(prune({ v: 1, snoozed: {}, acked }, NOW, states).acked).toEqual(acked);
+  });
 });

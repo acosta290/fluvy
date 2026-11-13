@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HomeAssistant } from '@fluvy/core';
-import { house, iso, NOW, MINUTE, type Seed } from './fixture.js';
+import { house, iso, KIOSK, NOW, MINUTE, type Seed } from './fixture.js';
 import { compileMatcher } from './match.js';
 import { definitionOf, type AlertConfig } from './model.js';
 
@@ -305,5 +305,65 @@ describe('the matcher', () => {
     expect(matcher({ domain: 'climate', attribute: 'hvac_action' })?.seed(state)).toBe(
       NOW - 5 * MINUTE,
     );
+    expect(
+      matcher({ domain: 'climate', attributes: { hvac_action: 'heating' } })?.seed(state),
+    ).toBe(NOW - 5 * MINUTE);
+  });
+});
+
+describe('attributes and their values (#184)', () => {
+  const kiosk = house(KIOSK);
+  const notices = (alert: AlertConfig): string[] =>
+    matched({ entity_id: 'binary_sensor.kiosk_*', ...alert }, kiosk).map((id) =>
+      id.replace('binary_sensor.kiosk_', ''),
+    );
+
+  it('keeps those whose attributes hold one of their values, ANDed with the clause’s other keys', () => {
+    expect(notices({ state: 'on', attributes: { severity: ['error', 'warning'] } })).toEqual([
+      'fish',
+      'plant',
+    ]);
+    expect(notices({ state: 'on', attributes: { severity: 'success' } })).toEqual(['done']);
+    // every attribute it names must hold; one an entity lacks never does
+    expect(notices({ attributes: { severity: 'error', title: 'Old notice' } })).toEqual(['old']);
+    expect(notices({ state: 'on', attributes: { missing: 'x' } })).toEqual([]);
+  });
+
+  it('is OR only between the clauses of a `match` list, each ANDed with the alert’s own keys', () => {
+    expect(
+      notices({
+        state: 'on',
+        match: [{ attributes: { severity: 'error' } }, { attributes: { severity: 'success' } }],
+      }),
+    ).toEqual(['done', 'fish']);
+  });
+
+  it('compares a number as a number, and an unquoted true or false as the loader reads it', () => {
+    const levels = house({
+      'sensor.a': { state: 'x', attributes: { level: 5, charging: true } },
+      'sensor.b': { state: 'x', attributes: { level: '5.0', charging: false } },
+      'sensor.c': { state: 'x', attributes: { level: 50 } },
+    });
+    expect(matched({ domain: 'sensor', attributes: { level: 5 } }, levels)).toEqual([
+      'sensor.a',
+      'sensor.b',
+    ]);
+    expect(matched({ domain: 'sensor', attributes: { level: ['50'] } }, levels)).toEqual([
+      'sensor.c',
+    ]);
+    expect(matched({ domain: 'sensor', attributes: { charging: true } }, levels)).toEqual([
+      'sensor.a',
+    ]);
+  });
+
+  it('leaves `attribute` as Home Assistant reads it: alone there and truthy, whatever the state', () => {
+    expect(notices({ attribute: 'severity' })).toEqual(['done', 'fish', 'old', 'plant']);
+    // with `state` it is the attribute that is compared, never the entity's state
+    expect(notices({ attribute: 'severity', state: 'on' })).toEqual([]);
+    expect(notices({ attribute: 'severity', state: ['error', 'warning'] })).toEqual([
+      'fish',
+      'old',
+      'plant',
+    ]);
   });
 });

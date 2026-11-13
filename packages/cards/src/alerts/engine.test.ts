@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HomeAssistant } from '@fluvy/core';
 import { AlertEngine, NO_MEMORY, type MemoryView } from './engine.js';
-import { change, house, MINUTE, NOW, type Seed } from './fixture.js';
+import { change, house, KIOSK, MINUTE, NOW, type Seed } from './fixture.js';
 import { definitionOf, type AlertConfig, type SortRows } from './model.js';
 
 const define = (...alerts: AlertConfig[]) =>
@@ -394,5 +394,81 @@ describe('counting and order', () => {
   it('reads no memory by default', () => {
     const engine = new AlertEngine(define({ preset: 'unavailable', for: 0 }), { now: () => NOW });
     expect(engine.evaluate(HOUSE, NO_MEMORY).shown).toHaveLength(1);
+  });
+});
+
+describe('what each entity says of itself (#184)', () => {
+  const KIOSK_ALERT: AlertConfig = {
+    id: 'kiosk',
+    entity_id: 'binary_sensor.kiosk_*',
+    state: 'on',
+    severity: 'attribute:severity',
+  };
+  const evaluate = (alert: AlertConfig, hass = house(KIOSK)) =>
+    new AlertEngine(define(alert), { now: () => NOW }).evaluate(hass).alerts;
+
+  it('reads each row’s severity in its entity’s words, and a split alert’s tone by its own', () => {
+    const split = evaluate({ ...KIOSK_ALERT, split: true });
+    expect(split.map((alert) => [alert.entity, alert.severity, alert.tone])).toEqual([
+      ['binary_sensor.kiosk_fish', 'critical', 'danger'],
+      ['binary_sensor.kiosk_plant', 'warning', 'warning'],
+      // a severity it does not say is the alert's own
+      ['binary_sensor.kiosk_bare', 'warning', 'warning'],
+      // success is information, said well
+      ['binary_sensor.kiosk_done', 'info', 'ok'],
+    ]);
+    expect(split[3]?.rows[0]).toMatchObject({ severity: 'info', ok: true });
+  });
+
+  it('makes an alert of several as grave as its gravest row, in the ok tone only where all went well', () => {
+    const [all] = evaluate(KIOSK_ALERT);
+    expect([all?.severity, all?.tone]).toEqual(['critical', 'danger']);
+    const [done] = evaluate({ ...KIOSK_ALERT, attributes: { severity: ['success', 'ok'] } });
+    expect([done?.severity, done?.tone]).toEqual(['info', 'ok']);
+    const [lower] = evaluate({
+      ...KIOSK_ALERT,
+      severity: 'attribute:severity',
+      attributes: { severity: ['success', 'warning'] },
+    });
+    expect([lower?.severity, lower?.tone]).toEqual(['warning', 'warning']);
+    // an escalation is never said well
+    const [late] = evaluate({
+      ...KIOSK_ALERT,
+      attributes: { severity: 'success' },
+      escalate: { for: { minutes: 5 } },
+    });
+    expect([late?.severity, late?.tone]).toEqual(['critical', 'danger']);
+  });
+
+  it('reads each row’s time from its attribute (ISO, Unix seconds or milliseconds), else its last change', () => {
+    const at = (value: unknown) =>
+      evaluate(
+        { ...KIOSK_ALERT, entity: 'binary_sensor.kiosk_plant', since: 'attribute:start_date' },
+        change(house(KIOSK), 'binary_sensor.kiosk_plant', {
+          state: 'on',
+          attributes: { start_date: value },
+          changed: NOW - 20 * MINUTE,
+        }),
+      )[0]?.rows[0]?.since;
+    expect(at('2026-10-17T10:00:00Z')).toBe(NOW - 2 * 60 * MINUTE);
+    expect(at((NOW - 3 * 60 * MINUTE) / 1000)).toBe(NOW - 3 * 60 * MINUTE);
+    expect(at(String(NOW - 4 * 60 * MINUTE))).toBe(NOW - 4 * 60 * MINUTE);
+    expect(at(undefined)).toBe(NOW - 20 * MINUTE);
+    expect(at('soon')).toBe(NOW - 20 * MINUTE);
+  });
+
+  it('orders its rows by the attribute that names them', () => {
+    const [kiosk] = evaluate({
+      ...KIOSK_ALERT,
+      name_by: 'attribute:title',
+      sort_rows: 'name',
+    });
+    expect(kiosk?.rows.map((row) => row.id.replace('binary_sensor.kiosk_', ''))).toEqual([
+      'fish',
+      'done',
+      // an entity without the attribute goes by its own name
+      'bare',
+      'plant',
+    ]);
   });
 });
