@@ -286,6 +286,10 @@ describe('a card’s list as drawn now', () => {
       ),
     ).toEqual(['input_boolean.guests', 'switch.x']);
     expect(conditionIds([{ entity: 'sensor.a' }])).toEqual([]);
+    // an empty `show_when:` or `show_rows_when:` in YAML is null: nothing to watch, and no throw
+    expect(conditionIds([{ entity: 'sensor.a', show_when: null as never }], null as never)).toEqual(
+      [],
+    );
   });
 });
 

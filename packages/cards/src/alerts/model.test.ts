@@ -308,6 +308,9 @@ describe('severity', () => {
     expect(read(['success', ' OK '])).toEqual(['ok', 'ok']);
     expect(read(['debug', '', 'on'])).toEqual([undefined, undefined, undefined]);
     expect(severityIn(3)).toBeUndefined();
+    // a word the table does not hold, an object's own names among them, is no severity
+    expect(severityIn('constructor')).toBeUndefined();
+    expect(severityIn('__proto__')).toBeUndefined();
   });
 });
 

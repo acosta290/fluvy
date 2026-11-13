@@ -65,7 +65,9 @@ const SAID: Readonly<Record<string, Severity | 'ok'>> = {
 
 /** A severity as an attribute says it, in any case; undefined for words it does not know (the alert's own stands). */
 export const severityIn = (value: unknown): Severity | 'ok' | undefined =>
-  typeof value === 'string' ? SAID[value.trim().toLowerCase()] : undefined;
+  typeof value === 'string' && Object.hasOwn(SAID, value.trim().toLowerCase())
+    ? SAID[value.trim().toLowerCase()]
+    : undefined;
 
 /**
  * What an alert is drawn in: the tone by name, else its severity's — the ok tone where every match said it went well

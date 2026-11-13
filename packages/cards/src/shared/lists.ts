@@ -215,7 +215,10 @@ export const drawnOf = <T extends ConditionalRow>(
 /** The other entities a list's conditions read: watched with its rows'. */
 export const conditionIds = (rows: readonly ConditionalRow[], every?: ShowWhen): string[] =>
   [every, ...rows.map((row) => row.show_when)].flatMap((when) =>
-    typeof when === 'object' && typeof when.entity === 'string' && when.entity ? [when.entity] : [],
+    // an empty `show_when:` in YAML is null, which is an object too
+    typeof when === 'object' && when !== null && typeof when.entity === 'string' && when.entity
+      ? [when.entity]
+      : [],
   );
 
 /**
