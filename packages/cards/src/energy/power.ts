@@ -6,6 +6,7 @@ import {
   type HomeAssistant,
   type ValueParts,
 } from '@fluvy/core';
+import { labelName } from '../energy-family.js';
 import type { SourceKind } from '../energy-model/prefs.js';
 import { convert, unitClass } from '../history-bars/units.js';
 import {
@@ -101,19 +102,11 @@ export function deviceName(view: EntityView): string {
   return trimmed || view.name;
 }
 
-/** Chinese and Japanese: scripts that do not part their words with spaces. */
-export const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
-
-/** "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name. */
-export function shortName(view: EntityView): string {
-  const name = deviceName(view);
-  // an 11/600 uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never
-  // "KITCHEN SPEA…"; a name in Chinese or Japanese is kept whole, a space in it parting phrases, its last no name (#170)
-  const words = name.split(' ');
-  return name.length > 11 && words.length > 1 && !UNSPACED.test(name)
-    ? (words[words.length - 1] as string)
-    : name;
-}
+/**
+ * "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name, as
+ * an energy card's label says it (`labelName`).
+ */
+export const shortName = (view: EntityView): string => labelName(deviceName(view));
 
 /** A source as it is named: its kind, its own name, and the sensor it is read by. */
 export interface NamedSource {

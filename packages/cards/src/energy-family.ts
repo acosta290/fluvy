@@ -28,11 +28,24 @@ export const FLOW_PITCH = 80;
 
 const up4 = (v: number): number => Math.ceil(v / 4) * 4;
 
+/** Chinese and Japanese: scripts that do not part their words with spaces. */
+export const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+
 /**
- * The labels of a card's `readouts`: their names, else the sensors' as the energy cards write them (`shortName`: a
- * name past eleven characters of several words by its last, "Kitchen speaker" as "Speaker"; the house's, read by
- * `house-heights.ts`), else their ids. A Chinese or Japanese name, which the cards keep whole, is counted by its last
- * word too: the test of those scripts stays in the energy family's chunk, for the rare readout left so named.
+ * A name as an energy card's label says it: past eleven characters and of several words, by its last (an 11/600
+ * uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never "KITCHEN
+ * SPEA…"); a name in Chinese or Japanese whole, a space in it parting phrases, its last no name (#170).
+ */
+export function labelName(name: string): string {
+  const words = name.split(' ');
+  return name.length > 11 && words.length > 1 && !UNSPACED.test(name)
+    ? (words[words.length - 1] as string)
+    : name;
+}
+
+/**
+ * The labels of a card's `readouts`: their names, else the sensors' as the energy cards write them (`labelName`; the
+ * house's, read by `house-heights.ts`), else their ids.
  */
 const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
   (Array.isArray(config['readouts']) ? (config['readouts'] as unknown[]) : []).map((item) => {
@@ -42,9 +55,9 @@ const readoutLabels = (config: LovelaceCardConfig, nameOf?: NameOf): string[] =>
     >;
     if (typeof entry['name'] === 'string') return entry['name'];
     const own = nameOf?.(entry['entity']);
-    const name = typeof own === 'string' ? own : String(entry['entity'] ?? '').replace(/^.*\./, '');
-    const words = name.split(' ');
-    return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
+    return labelName(
+      typeof own === 'string' ? own : String(entry['entity'] ?? '').replace(/^.*\./, ''),
+    );
   });
 
 /** The chips a period card carries by default: 16 under the head, a 44 row; none while a date picker is followed. */

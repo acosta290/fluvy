@@ -1,4 +1,4 @@
-import { flowHeight, flowStage } from '../energy-family.js';
+import { flowHeight, flowStage, UNSPACED } from '../energy-family.js';
 import {
   strings,
   type EntityName,
@@ -62,7 +62,6 @@ import {
   scaleOf,
   shortName,
   sourceNames,
-  UNSPACED,
   watts,
   type NamedSource,
   type Scale,

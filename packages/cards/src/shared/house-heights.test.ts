@@ -7,7 +7,7 @@ import {
 } from '@fluvy/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { printerHeight } from '../devices-family.js';
-import { devicesHeight, legendFold, legendRows } from '../energy-family.js';
+import { devicesHeight, labelName, legendFold, legendRows } from '../energy-family.js';
 import { appliancesHeight } from '../appliances-family.js';
 import { alertsHeight } from '../alerts-family.js';
 import { houseHeightOf } from '../house-heights.js';
@@ -586,6 +586,33 @@ describe('the energy family and the lists', () => {
         hass,
       ),
     ).toBe(flowHeight({ type: 'x', sources }) + 60);
+  });
+
+  it('a readout named in Chinese or Japanese is counted whole, as the energy cards write it (#170)', () => {
+    const [e1, e2] = ['逆变器 E1 南 MPPT 累计发电量', '逆变器 E2 北 MPPT 累计发电量'];
+    const zh = house([
+      entity('sensor.e1', '9120', { friendly_name: e1, unit_of_measurement: 'kWh' }),
+      entity('sensor.e2', '8730', { friendly_name: e2, unit_of_measurement: 'kWh' }),
+    ]);
+    const grid = (readouts: readonly unknown[]): number =>
+      gridHeight({ type: 'x', power: 'sensor.g', readouts }, zh);
+    // the house's names, each whole: as tall as those names written in the config, taller than their last words
+    expect(grid(['sensor.e1', 'sensor.e2'])).toBe(
+      grid([
+        { entity: 'sensor.e1', name: e1 },
+        { entity: 'sensor.e2', name: e2 },
+      ]),
+    );
+    expect(grid(['sensor.e1', 'sensor.e2'])).toBeGreaterThan(
+      grid([
+        { entity: 'sensor.e1', name: '累计发电量' },
+        { entity: 'sensor.e2', name: '累计发电量' },
+      ]),
+    );
+    // one rule for the label and the height: a name of several words by its last, one in Chinese or Japanese whole
+    expect(labelName('Kitchen speaker')).toBe('speaker');
+    expect(labelName(e1)).toBe(e1);
+    expect(labelName('リビング スピーカー 消費電力量')).toBe('リビング スピーカー 消費電力量');
   });
 
   it('a legend folds where two neighbours’ names would stand closer than 8, not only where one overhangs', () => {
