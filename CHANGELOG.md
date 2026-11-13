@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.20.0] — 2026-11-13
+
 ### Visible on upgrade
 
 - A tap that opens the details of a light, a thermostat, a water heater, a humidifier, a cover, a valve, a media player
