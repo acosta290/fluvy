@@ -1,4 +1,4 @@
-import { announceCard, registerCard } from '@fluvy/core';
+import { announceCard, lookHandle, registerCard, setDetailsSheets } from '@fluvy/core';
 import '@fluvy/ui';
 import { FluvyActionsCard } from './actions/actions-card.js';
 import { FluvyBarsCard } from './bars/bars-card.js';
@@ -36,6 +36,7 @@ import { APPLIANCES_FAMILY } from './appliances-family.js';
 import { AUTOMATIONS_FAMILY } from './automations-family.js';
 import { CALENDAR_FAMILY } from './calendar-family.js';
 import { CHART_FAMILY } from './chart-family.js';
+import { detailsSheets } from './details-family.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
 import { ITEMS_FAMILY } from './items-family.js';
@@ -298,10 +299,14 @@ export async function catalogue(): Promise<readonly CatalogueEntry[]> {
 // the automatic dashboards' strategies (`strategy: { type: custom:fluvy-home }` and the other templates; their file is fetched when asked)
 defineStrategies();
 
+// Fluvy's own details sheets (1.20, #162) where the house asks for them, fetched the first time one opens
+setDetailsSheets(detailsSheets(() => lookHandle()?.settings().sheets));
+
 // fluvy's settings: the element of the `panel_custom` Home Assistant shows in the sidebar
 
 export { CATALOGUE };
 export { loadPanel, panelOnDemand } from './panel/on-demand.js';
+export { detailsSheets } from './details-family.js';
 export { activityIsOurs, takeOverActivity } from './activity/takeover.js';
 export { historyIsOurs, takeOverHistory } from './history/takeover.js';
 export { takeOverDetails } from './details-history/takeover.js';

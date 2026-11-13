@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Em cada cartão translúcido, o da casa ou o seu próprio",
     "cards.border": "Contorno",
     "cards.border_sub": "A linha fina à volta de cada cartão e bloco",
+    "cards.sheets": "Detalhes do Fluvy",
+    "cards.sheets_sub": "Para uma luz, um termóstato, um estore, um leitor ou uma ventoinha; desligado abre a caixa de diálogo do Home Assistant",
     "cards.unavailable": "Quando indisponível",
     "sliders.title": "Cursores",
     "sliders.style": "Estilo",
@@ -3089,5 +3091,16 @@
     "option.fast": "Rápida",
     "option.card": "No cartão",
     "option.sheet": "Numa folha"
+  },
+  "sheets": {
+    "more": "Mais no Home Assistant",
+    "power": "Liga/desliga",
+    "effect": "Efeito",
+    "swing": "Oscilação",
+    "swing_horizontal": "Oscilação horizontal",
+    "sound_mode": "Modo de som",
+    "history": "Últimas 24 horas",
+    "history_open": "Abrir no Histórico",
+    "history_none": "Sem histórico"
   }
 }

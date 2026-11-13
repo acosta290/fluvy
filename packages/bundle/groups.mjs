@@ -226,6 +226,13 @@ const REMOTE =
 const VEHICLE =
   /\/packages\/(cards\/src\/(vehicle-cards\.ts|vehicle\/)|core\/src\/i18n\/locales\/en\/vehicle\.json)/;
 
+/**
+ * Fluvy's own details (1.20, #162: the sheets of a light, a thermostat, a cover, a player and a fan, what they share
+ * and their English): fetched the first time a card opens one, never by a dashboard nobody opens details on
+ * (`details-family.ts` stays in core: which entities have a sheet, who opens it).
+ */
+const DETAILS = /\/packages\/(cards\/src\/details\/|core\/src\/i18n\/locales\/en\/sheets\.json)/;
+
 /** The items' sheet: fetched the first time an item of an Items card is tapped, never by a dashboard that only lists. */
 const ITEMS_SHEET = /\/packages\/cards\/src\/items\/sheet\//;
 
@@ -329,7 +336,7 @@ const FORMS =
  * every page carries, the weather card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
- * card, the ring, the drive pad, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
+ * card, the ring, the drive pad, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
  * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
@@ -370,6 +377,7 @@ export const GROUPS = [
   { name: 'app-logos', test: APP_LOGOS },
   { name: 'remote', test: REMOTE },
   { name: 'vehicle', test: VEHICLE },
+  { name: 'details', test: DETAILS },
   { name: 'items-sheet', test: ITEMS_SHEET },
   { name: 'items', test: ITEMS },
   { name: 'lights-colour', test: LIGHTS_COLOUR },

@@ -1,6 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { goBack, navigate, runAction, toggleService, type ActionConfig } from '../actions.js';
+import {
+  goBack,
+  navigate,
+  runAction,
+  setDetailsSheets,
+  toggleService,
+  type ActionConfig,
+  type DetailsSheetsOpener,
+} from '../actions.js';
 import type { HomeAssistant } from '../ha/types.js';
 
 const callService = vi.fn(() => Promise.resolve());
@@ -37,6 +45,7 @@ beforeEach(() => {
 afterEach(() => {
   card.remove();
   for (const stop of stops.splice(0)) stop();
+  setDetailsSheets(undefined);
   vi.restoreAllMocks();
 });
 
@@ -48,6 +57,59 @@ describe('runAction', () => {
 
     expect(details).toEqual([{ entityId: 'light.desk' }]);
     expect(callService).not.toHaveBeenCalled();
+  });
+
+  describe('Fluvy’s own details sheets (#162)', () => {
+    it('hands a more-info to whoever opens them: the card, the house, the entity and what the action asks', async () => {
+      const dialog = listen('hass-more-info');
+      const opener = vi.fn<DetailsSheetsOpener>(() => true);
+      setDetailsSheets(opener);
+      const hass = house();
+
+      await runAction(card, hass, undefined, 'light.desk');
+      await runAction(card, hass, { action: 'more-info', details: 'home-assistant' }, 'light.desk');
+      await runAction(card, hass, { action: 'more-info', entity: 'fan.attic', details: 'fluvy' });
+
+      expect(opener.mock.calls).toEqual([
+        [card, hass, 'light.desk', undefined],
+        [card, hass, 'light.desk', 'home-assistant'],
+        [card, hass, 'fan.attic', 'fluvy'],
+      ]);
+      // taken: Home Assistant's dialog stays shut
+      expect(dialog).toEqual([]);
+    });
+
+    it('opens Home Assistant’s dialog for what it does not take, and where nobody opens them', async () => {
+      const dialog = listen('hass-more-info');
+      setDetailsSheets(() => false);
+      await runAction(card, house(), undefined, 'sensor.outside');
+      setDetailsSheets(undefined);
+      await runAction(card, house(), { action: 'more-info' }, 'light.desk');
+
+      expect(dialog).toEqual([{ entityId: 'sensor.outside' }, { entityId: 'light.desk' }]);
+    });
+
+    it('asks nobody for a more-info with no entity, nor for any other action', async () => {
+      const opener = vi.fn<DetailsSheetsOpener>(() => true);
+      setDetailsSheets(opener);
+
+      await runAction(card, house(), { action: 'more-info' });
+      await runAction(card, house({ 'light.desk': 'off' }), { action: 'toggle' }, 'light.desk');
+      await runAction(card, house(), { action: 'none' }, 'light.desk');
+
+      expect(opener).not.toHaveBeenCalled();
+    });
+
+    it('leaves a more-info that must be asked about to Home Assistant, dialog and all', async () => {
+      const handed = listen('hass-action');
+      const opener = vi.fn<DetailsSheetsOpener>(() => true);
+      setDetailsSheets(opener);
+
+      await runAction(card, house(), { action: 'more-info', confirmation: true }, 'light.desk');
+
+      expect(handed).toHaveLength(1);
+      expect(opener).not.toHaveBeenCalled();
+    });
   });
 
   it('fire-dom-event: the whole action leaves the card as ll-custom, as Home Assistant sends it', async () => {

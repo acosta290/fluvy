@@ -32,7 +32,7 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, type CardEditor, type ControlHost } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
@@ -77,7 +77,8 @@ export interface ThermostatCardConfig extends FluvyCardConfig {
   when_off?: WhenOff;
 }
 
-interface Model {
+/** A thermostat as its card and its details sheet draw it. */
+export interface ThermostatModel {
   readonly kind: 'climate' | 'water_heater' | 'humidifier';
   readonly tone: Tone;
   readonly off: boolean;
@@ -273,6 +274,266 @@ export function stepTarget(
   return value === undefined ? target : { value: next(value, min, max) };
 }
 
+/* The setpoint each mode was last used at, so an inactive mode tile can say "Cool · 24°". */
+const rememberSetpoint = (entityId: string, mode: string, value: string): void =>
+  writeText(`fluvy:setpoint:${entityId}:${mode}`, value);
+const recallSetpoint = (entityId: string, mode: string): string =>
+  readText(`fluvy:setpoint:${entityId}:${mode}`);
+
+function degrees(hass: HomeAssistant | undefined, value: number | undefined, step: number): string {
+  if (value === undefined) return '';
+  const digits = step < 1 ? 1 : 0;
+  return `${formatNumber(hass, value, { digits, minDigits: digits })}°`;
+}
+
+/**
+ * What reading a thermostat asks of whoever draws it (its card, its details sheet): the house in the language Fluvy
+ * speaks and as the page has it, the state it shows (the expected one while a change is in flight), and the modes it
+ * lists where the entity has never said its own.
+ */
+export interface ThermostatHost {
+  readonly hass: HomeAssistant | undefined;
+  readonly rawHass: HomeAssistant | undefined;
+  state(view: EntityView): string;
+  readonly modes?: readonly string[] | undefined;
+}
+
+/**
+ * A climate, a water heater or a humidifier read as one thermostat: its range, its target (or its low and high), what
+ * it measures, the tone and the arc its dial takes, its state's word, and its modes, presets and fan speeds.
+ */
+export function thermostatModel(host: ThermostatHost, view: EntityView): ThermostatModel {
+  const num = (key: string): number | undefined => {
+    const v = view.attr<number | null>(key);
+    return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+  };
+  const state = host.state(view);
+  // a climate this page has never read (missing since it opened) keeps its row of modes: those its config lists,
+  // else the commonest three
+  const offered = modeOrder(view);
+  const modes =
+    offered.length || view.stateObj || view.domain !== 'climate'
+      ? offered
+      : (host.modes ?? ['off', 'heat', 'cool']);
+  const word = (m: string): string => modeLabel(host.rawHass, view, m);
+  // a mode's setpoint from when it last ran ("Cool · 24°"), while the device can be read
+  const recall = (m: string): string => (view.status === 'ok' ? recallSetpoint(view.id, m) : '');
+  if (view.domain === 'humidifier') {
+    // on runs a mode, off is Off; out of reach is neither
+    const off = state === 'off';
+    const on = state === 'on';
+    const mode = view.attr<string>('mode');
+    const target = num('humidity');
+    return {
+      kind: 'humidifier',
+      tone: 'water',
+      off,
+      min: num('min_humidity') ?? 0,
+      max: num('max_humidity') ?? 100,
+      step: 1,
+      unit: '%',
+      target,
+      low: undefined,
+      high: undefined,
+      current: num('current_humidity'),
+      action: undefined,
+      canRange: false,
+      canOff: true,
+      arc: 'to-target',
+      badgeText: stateText(host.hass, view),
+      modes: modes.map((m): OptionItem =>
+        m === 'off'
+          ? {
+              key: m,
+              label: word(m),
+              value: off ? localize(host.hass, 'climate.standby') : '',
+              glyph: 'power',
+              tone: 'neutral',
+              active: off,
+            }
+          : {
+              key: m,
+              label: word(m),
+              value:
+                on && m === mode && target !== undefined
+                  ? `${formatNumber(host.hass, target, { digits: 0 })} %`
+                  : '',
+              glyph: MODE_GLYPH[m] ?? 'humid',
+              tone: 'water',
+              active: on && m === mode,
+            },
+      ),
+      presets: [],
+      preset: undefined,
+      fans: [],
+      fan: undefined,
+    };
+  }
+  // the house's unit: Home Assistant gives a climate's and a water heater's temperatures in it; where an entity says
+  // no range or step of its own, its defaults are Home Assistant's, in that unit
+  const unit = host.hass?.config.unit_system.temperature ?? '°C';
+  const fahrenheit = unit === '°F';
+  if (view.domain === 'water_heater') {
+    const off = state === 'off';
+    const target = num('temperature');
+    return {
+      kind: 'water_heater',
+      tone: 'heat',
+      off,
+      min: num('min_temp') ?? (fahrenheit ? 110 : 43),
+      max: num('max_temp') ?? (fahrenheit ? 140 : 60),
+      step: num('target_temp_step') ?? 1,
+      unit,
+      target,
+      low: undefined,
+      high: undefined,
+      current: num('current_temperature'),
+      action: undefined,
+      canRange: false,
+      canOff: modes.includes('off'),
+      arc: 'to-target',
+      badgeText: stateText(host.hass, view),
+      modes: modes.map((m): OptionItem => ({
+        key: m,
+        label: word(m),
+        value:
+          m === state
+            ? m === 'off'
+              ? localize(host.hass, 'climate.standby')
+              : degrees(host.hass, target, 1)
+            : recall(m),
+        glyph: MODE_GLYPH[m] ?? 'heater',
+        tone: m === 'off' ? 'neutral' : 'heat',
+        active: m === state,
+      })),
+      presets: [],
+      preset: undefined,
+      fans: [],
+      fan: undefined,
+    };
+  }
+  // a whole degree in Fahrenheit, a half in Celsius, as Home Assistant's own thermostat steps
+  const step = num('target_temp_step') ?? (fahrenheit ? 1 : 0.5);
+  const off = state === 'off';
+  const action = view.attr<string>('hvac_action');
+  const low = num('target_temp_low');
+  const high = num('target_temp_high');
+  const isRange =
+    (state === 'heat_cool' || state === 'auto') && low !== undefined && high !== undefined;
+  const tone: Tone = off
+    ? 'neutral'
+    : action === 'cooling' || state === 'cool'
+      ? 'cool'
+      : state === 'dry'
+        ? 'dry'
+        : state === 'fan_only'
+          ? 'fan'
+          : isRange
+            ? 'accent'
+            : 'heat';
+  const target = num('temperature');
+  const setpoint = isRange
+    ? `${degrees(host.hass, low, 1).replace('°', '')}–${degrees(host.hass, high, 1)}`
+    : degrees(host.hass, target, step);
+  if (!off && view.status === 'ok') rememberSetpoint(view.id, state, setpoint);
+  const actionKey = `climate.action.${action ?? (off ? 'off' : 'idle')}` as MessageKey;
+  return {
+    kind: 'climate',
+    tone,
+    off,
+    min: num('min_temp') ?? (fahrenheit ? 45 : 7),
+    max: num('max_temp') ?? (fahrenheit ? 95 : 35),
+    step,
+    unit,
+    target: isRange ? undefined : target,
+    low: isRange ? low : undefined,
+    high: isRange ? high : undefined,
+    current: num('current_temperature'),
+    action,
+    canRange:
+      (view.supports(TARGET_RANGE) || isRange) &&
+      (modes.includes('heat_cool') || modes.includes('auto')),
+    canOff: modes.includes('off'),
+    arc: isRange
+      ? 'range'
+      : tone === 'cool'
+        ? 'from-target'
+        : state === 'fan_only' || state === 'dry'
+          ? 'none'
+          : 'to-target',
+    badgeText:
+      action && ['heating', 'cooling', 'drying', 'fan', 'idle', 'off'].includes(action)
+        ? localize(host.hass, actionKey)
+        : off
+          ? localize(host.hass, 'climate.mode.off')
+          : stateText(host.hass, view),
+    modes: modes.map((m): OptionItem => ({
+      key: m,
+      label: word(m),
+      value:
+        m === state
+          ? m === 'off'
+            ? localize(host.hass, 'climate.standby')
+            : setpoint
+          : m === 'off'
+            ? ''
+            : recall(m),
+      glyph: MODE_GLYPH[m] ?? 'thermo',
+      tone: MODE_TONE[m] ?? 'accent',
+      active: m === state,
+    })),
+    presets: view.attr<string[]>('preset_modes') ?? [],
+    preset: view.attr<string>('preset_mode'),
+    fans: view.attr<string[]>('fan_modes') ?? [],
+    fan: view.attr<string>('fan_mode'),
+  };
+}
+
+/**
+ * The call that sets a thermostat's target from its dial: a humidifier's humidity, a water heater's temperature, a
+ * climate's temperature or its low and high; none where the dial says neither.
+ */
+export function targetCall(
+  m: ThermostatModel,
+  { value, low, high }: DialChangeDetail,
+): readonly [service: string, data: Record<string, number>] | undefined {
+  if (m.kind === 'climate' && low !== undefined && high !== undefined)
+    return ['set_temperature', { target_temp_low: low, target_temp_high: high }];
+  if (value === undefined) return undefined;
+  return m.kind === 'humidifier'
+    ? ['set_humidity', { humidity: value }]
+    : ['set_temperature', { temperature: value }];
+}
+
+/**
+ * Chooses a mode, shown at once: a climate's HVAC mode, a water heater's operation, a humidifier's mode — Off switching
+ * it off, any other switching it on first where it is off.
+ */
+export function chooseMode(
+  host: ControlHost,
+  view: EntityView,
+  m: ThermostatModel,
+  key: string,
+): void {
+  if (m.kind === 'humidifier') {
+    if (key === 'off') {
+      host.expect(view.id, 'off');
+      host.call('humidifier', 'turn_off', {}, view.id);
+      return;
+    }
+    if (m.off) {
+      host.expect(view.id, 'on');
+      host.call('humidifier', 'turn_on', {}, view.id);
+    }
+    host.call('humidifier', 'set_mode', { mode: key }, view.id);
+    return;
+  }
+  host.expect(view.id, key);
+  if (m.kind === 'water_heater')
+    host.call('water_heater', 'set_operation_mode', { operation_mode: key }, view.id);
+  else host.call('climate', 'set_hvac_mode', { hvac_mode: key }, view.id);
+}
+
 /**
  * Thermostat, water heater and humidifier on one card: the dial with its knob on the ring (two for a
  * heat/cool range), the measured value as a dot outside it, the stepper, then the modes as option
@@ -344,241 +605,25 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     }
   }
 
-  /* The setpoint each mode was last used at, so an inactive mode tile can say "Cool · 24°". */
-  private remember(entityId: string, mode: string, value: string): void {
-    writeText(`fluvy:setpoint:${entityId}:${mode}`, value);
+  private model(view: EntityView): ThermostatModel {
+    return thermostatModel(
+      {
+        hass: this.hass,
+        rawHass: this.rawHass,
+        state: (shown) => this.stateOf(shown),
+        modes: this.config?.modes,
+      },
+      view,
+    );
   }
 
-  private recall(entityId: string, mode: string): string {
-    return readText(`fluvy:setpoint:${entityId}:${mode}`);
+  private setTarget(view: EntityView, m: ThermostatModel, detail: DialChangeDetail): void {
+    const call = targetCall(m, detail);
+    if (call) this.call(m.kind, call[0], call[1], view.id);
   }
 
-  private degrees(value: number | undefined, step: number): string {
-    if (value === undefined) return '';
-    const digits = step < 1 ? 1 : 0;
-    return `${formatNumber(this.hass, value, { digits, minDigits: digits })}°`;
-  }
-
-  private model(view: EntityView): Model {
-    const num = (key: string): number | undefined => {
-      const v = view.attr<number | null>(key);
-      return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
-    };
-    const state = this.stateOf(view);
-    // a climate this page has never read (missing since it opened) keeps its row of modes: those its config lists,
-    // else the commonest three
-    const offered = modeOrder(view);
-    const modes =
-      offered.length || view.stateObj || view.domain !== 'climate'
-        ? offered
-        : (this.config?.modes ?? ['off', 'heat', 'cool']);
-    const word = (m: string): string => modeLabel(this.rawHass, view, m);
-    // a mode's setpoint from when it last ran ("Cool · 24°"), while the device can be read
-    const recall = (m: string): string => (view.status === 'ok' ? this.recall(view.id, m) : '');
-    if (view.domain === 'humidifier') {
-      // on runs a mode, off is Off; out of reach is neither
-      const off = state === 'off';
-      const on = state === 'on';
-      const mode = view.attr<string>('mode');
-      const target = num('humidity');
-      return {
-        kind: 'humidifier',
-        tone: 'water',
-        off,
-        min: num('min_humidity') ?? 0,
-        max: num('max_humidity') ?? 100,
-        step: 1,
-        unit: '%',
-        target,
-        low: undefined,
-        high: undefined,
-        current: num('current_humidity'),
-        action: undefined,
-        canRange: false,
-        canOff: true,
-        arc: 'to-target',
-        badgeText: stateText(this.hass, view),
-        modes: modes.map((m): OptionItem =>
-          m === 'off'
-            ? {
-                key: m,
-                label: word(m),
-                value: off ? this.t('climate.standby') : '',
-                glyph: 'power',
-                tone: 'neutral',
-                active: off,
-              }
-            : {
-                key: m,
-                label: word(m),
-                value:
-                  on && m === mode && target !== undefined
-                    ? `${formatNumber(this.hass, target, { digits: 0 })} %`
-                    : '',
-                glyph: MODE_GLYPH[m] ?? 'humid',
-                tone: 'water',
-                active: on && m === mode,
-              },
-        ),
-        presets: [],
-        preset: undefined,
-        fans: [],
-        fan: undefined,
-      };
-    }
-    // the house's unit: Home Assistant gives a climate's and a water heater's temperatures in it; where an entity says
-    // no range or step of its own, its defaults are Home Assistant's, in that unit
-    const unit = this.hass?.config.unit_system.temperature ?? '°C';
-    const fahrenheit = unit === '°F';
-    if (view.domain === 'water_heater') {
-      const off = state === 'off';
-      const target = num('temperature');
-      return {
-        kind: 'water_heater',
-        tone: 'heat',
-        off,
-        min: num('min_temp') ?? (fahrenheit ? 110 : 43),
-        max: num('max_temp') ?? (fahrenheit ? 140 : 60),
-        step: num('target_temp_step') ?? 1,
-        unit,
-        target,
-        low: undefined,
-        high: undefined,
-        current: num('current_temperature'),
-        action: undefined,
-        canRange: false,
-        canOff: modes.includes('off'),
-        arc: 'to-target',
-        badgeText: stateText(this.hass, view),
-        modes: modes.map((m): OptionItem => ({
-          key: m,
-          label: word(m),
-          value:
-            m === state
-              ? m === 'off'
-                ? this.t('climate.standby')
-                : this.degrees(target, 1)
-              : recall(m),
-          glyph: MODE_GLYPH[m] ?? 'heater',
-          tone: m === 'off' ? 'neutral' : 'heat',
-          active: m === state,
-        })),
-        presets: [],
-        preset: undefined,
-        fans: [],
-        fan: undefined,
-      };
-    }
-    // a whole degree in Fahrenheit, a half in Celsius, as Home Assistant's own thermostat steps
-    const step = num('target_temp_step') ?? (fahrenheit ? 1 : 0.5);
-    const off = state === 'off';
-    const action = view.attr<string>('hvac_action');
-    const low = num('target_temp_low');
-    const high = num('target_temp_high');
-    const isRange =
-      (state === 'heat_cool' || state === 'auto') && low !== undefined && high !== undefined;
-    const tone: Tone = off
-      ? 'neutral'
-      : action === 'cooling' || state === 'cool'
-        ? 'cool'
-        : state === 'dry'
-          ? 'dry'
-          : state === 'fan_only'
-            ? 'fan'
-            : isRange
-              ? 'accent'
-              : 'heat';
-    const target = num('temperature');
-    const setpoint = isRange
-      ? `${this.degrees(low, 1).replace('°', '')}–${this.degrees(high, 1)}`
-      : this.degrees(target, step);
-    if (!off && view.status === 'ok') this.remember(view.id, state, setpoint);
-    const actionKey = `climate.action.${action ?? (off ? 'off' : 'idle')}` as MessageKey;
-    return {
-      kind: 'climate',
-      tone,
-      off,
-      min: num('min_temp') ?? (fahrenheit ? 45 : 7),
-      max: num('max_temp') ?? (fahrenheit ? 95 : 35),
-      step,
-      unit,
-      target: isRange ? undefined : target,
-      low: isRange ? low : undefined,
-      high: isRange ? high : undefined,
-      current: num('current_temperature'),
-      action,
-      canRange:
-        (view.supports(TARGET_RANGE) || isRange) &&
-        (modes.includes('heat_cool') || modes.includes('auto')),
-      canOff: modes.includes('off'),
-      arc: isRange
-        ? 'range'
-        : tone === 'cool'
-          ? 'from-target'
-          : state === 'fan_only' || state === 'dry'
-            ? 'none'
-            : 'to-target',
-      badgeText:
-        action && ['heating', 'cooling', 'drying', 'fan', 'idle', 'off'].includes(action)
-          ? this.t(actionKey)
-          : off
-            ? this.t('climate.mode.off')
-            : stateText(this.hass, view),
-      modes: modes.map((m): OptionItem => ({
-        key: m,
-        label: word(m),
-        value:
-          m === state
-            ? m === 'off'
-              ? this.t('climate.standby')
-              : setpoint
-            : m === 'off'
-              ? ''
-              : recall(m),
-        glyph: MODE_GLYPH[m] ?? 'thermo',
-        tone: MODE_TONE[m] ?? 'accent',
-        active: m === state,
-      })),
-      presets: view.attr<string[]>('preset_modes') ?? [],
-      preset: view.attr<string>('preset_mode'),
-      fans: view.attr<string[]>('fan_modes') ?? [],
-      fan: view.attr<string>('fan_mode'),
-    };
-  }
-
-  private setTarget(view: EntityView, m: Model, detail: DialChangeDetail): void {
-    if (m.kind === 'humidifier' && detail.value !== undefined)
-      this.call('humidifier', 'set_humidity', { humidity: detail.value });
-    else if (m.kind === 'water_heater' && detail.value !== undefined)
-      this.call('water_heater', 'set_temperature', { temperature: detail.value });
-    else if (detail.low !== undefined && detail.high !== undefined)
-      this.call('climate', 'set_temperature', {
-        target_temp_low: detail.low,
-        target_temp_high: detail.high,
-      });
-    else if (detail.value !== undefined)
-      this.call('climate', 'set_temperature', { temperature: detail.value });
-    void view;
-  }
-
-  private setMode(view: EntityView, m: Model, key: string): void {
-    if (m.kind === 'humidifier') {
-      if (key === 'off') {
-        this.expect(view.id, 'off');
-        this.call('humidifier', 'turn_off');
-        return;
-      }
-      if (m.off) {
-        this.expect(view.id, 'on');
-        this.call('humidifier', 'turn_on');
-      }
-      this.call('humidifier', 'set_mode', { mode: key });
-      return;
-    }
-    this.expect(view.id, key);
-    if (m.kind === 'water_heater')
-      this.call('water_heater', 'set_operation_mode', { operation_mode: key });
-    else this.call('climate', 'set_hvac_mode', { hvac_mode: key });
+  private setMode(view: EntityView, m: ThermostatModel, key: string): void {
+    chooseMode(this.controlHost, view, m, key);
   }
 
   private readonly head = new HeadFit(this);
@@ -601,7 +646,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     clearTimeout(this.sendTimer);
   }
 
-  private end(m: Model): 0 | 1 {
+  private end(m: ThermostatModel): 0 | 1 {
     return this.rangeEnd ?? (m.action === 'cooling' ? 1 : 0);
   }
 
@@ -609,7 +654,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
    * One step of the target, or of a range's chosen end, from the value row's stepper: shown at once, sent after the
    * taps settle (650 ms, like the light card).
    */
-  private nudge(view: EntityView, m: Model, direction: 1 | -1): void {
+  private nudge(view: EntityView, m: ThermostatModel, direction: 1 | -1): void {
     const shown: DialChangeDetail =
       this.held ??
       (m.low !== undefined && m.high !== undefined
@@ -645,7 +690,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
    */
   private renderValueRow(
     view: EntityView,
-    m: Model,
+    m: ThermostatModel,
     name: string,
     unusable: boolean,
     figure: (v: number) => string,
@@ -758,7 +803,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
    * The modes the config asks for, in its order (a humidifier's older `__off` is its `off`), those the entity offers;
    * else what the card shows by default (`defaultModes`). None where the config hides the row.
    */
-  private shownModes(m: Model): readonly OptionItem[] {
+  private shownModes(m: ThermostatModel): readonly OptionItem[] {
     if (this.config?.show_modes === false) return [];
     if (!this.config?.modes?.length) return defaultModes(m.kind === 'climate', m.modes);
     return this.config.modes
@@ -766,7 +811,11 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       .filter((o): o is OptionItem => o !== undefined);
   }
 
-  private renderModes(view: EntityView, m: Model, modes: readonly OptionItem[]): TemplateResult {
+  private renderModes(
+    view: EntityView,
+    m: ThermostatModel,
+    modes: readonly OptionItem[],
+  ): TemplateResult {
     const style = this.config?.modes_style ?? 'tiles';
     const select = (key: string): void => this.setMode(view, m, key);
     // tiles only while every mode's word holds its cell (a water heater's "Performance" in a 211 column does not):

@@ -1,6 +1,7 @@
 import { haptic, setHaptics, type HapticKind } from '@fluvy/ui';
 import { domainOf } from './entity.js';
 import type { HomeAssistant, ServiceTarget } from './ha/types.js';
+import type { Sheets } from './settings/schema.js';
 
 export function fireEvent<T>(node: EventTarget, type: string, detail?: T): void {
   node.dispatchEvent(
@@ -13,6 +14,22 @@ export { haptic, setHaptics, type HapticKind };
 
 export const moreInfo = (node: EventTarget, entityId: string): void =>
   fireEvent(node, 'hass-more-info', { entityId });
+
+/**
+ * Who opens Fluvy's own details sheets (1.20, #162): the cards' package says so (`details-family.ts`), and answers whether
+ * it took the entity — one it has a sheet for, where the action (`own`: its `details`) or else the house asks for
+ * Fluvy's. Home Assistant's dialog opens wherever it did not, and where nobody says (a page without the cards).
+ */
+export type DetailsSheetsOpener = (
+  node: HTMLElement,
+  hass: HomeAssistant,
+  entityId: string,
+  own: Sheets | undefined,
+) => boolean;
+let detailsSheets: DetailsSheetsOpener | undefined;
+export const setDetailsSheets = (opener: DetailsSheetsOpener | undefined): void => {
+  detailsSheets = opener;
+};
 
 /** What Home Assistant keeps on its history entries: the page an entry was opened from, and the app's first entry. */
 interface EntryState {
@@ -76,6 +93,8 @@ export interface ActionConfig {
   service_data?: Record<string, unknown>;
   /** Asked before the action runs, by Home Assistant's own dialog. */
   confirmation?: boolean | ActionConfirmation;
+  /** Whose details a `more-info` opens (1.20, #162): Fluvy's sheet or Home Assistant's dialog; unset, the house's. */
+  details?: Sheets;
   /** `fire-dom-event` hands the whole action on, so it carries whatever its listener reads (`browser_mod: {…}`). */
   [key: string]: unknown;
 }
@@ -199,7 +218,7 @@ export async function runAction(
   }
   switch (config.action) {
     case 'more-info':
-      if (entity) moreInfo(node, entity);
+      if (entity && !detailsSheets?.(node, hass, entity, config.details)) moreInfo(node, entity);
       return;
     case 'toggle':
       if (entity) {

@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel, what they share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
@@ -56,7 +56,8 @@ their cards are announced in core — `src/energy-family.ts` and its siblings, t
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
 history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
 draws one), the drive pad (the first Vacuum card that draws a Drive command; its ring is the remote's, a chunk both
-fetch), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), the
+fetch), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), Fluvy's
+own details sheets (the first time a card opens one), the
 light card's colour controls (the first colour bulb), the cards' visual editor, the fields every editor is built of
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
 are see-through), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
@@ -100,6 +101,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `app-logos` | 24 KB | the platforms' logos (Simple Icons, Material Design Icons, Fluvy's monograms), fetched by the first remote card that draws an app |
 | `vehicle` | 24 KB | the Vehicle card: what finds a car's entities and folds its integration's words, its glyphs, its English |
 | `items` | 12 KB | the Items card, its fields and presets, its English |
+| `details` | 16 KB | Fluvy's own details sheets (#162): the light's, the thermostat's, the cover's, the player's and the fan's, opened by a card's more-info |
 | `items-sheet` | 8 KB | an item's sheet |
 | `lights-colour` | 8 KB | the Room lights card's colour sheet and its hue wheel (#137), opened by the card's colour round |
 | `light-colour` | 8 KB | the light card's quick colours and hue ruler, and the quick colours' grammar its editor shares |

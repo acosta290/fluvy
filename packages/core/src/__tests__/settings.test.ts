@@ -79,6 +79,7 @@ describe('parsing stored settings', () => {
         lightColors: true,
         statuses: { warning: '#DC630B', danger: 'red' },
         cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
+        sheets: 'home-assistant',
         extra: true,
       }),
     ).toEqual({
@@ -111,7 +112,24 @@ describe('parsing stored settings', () => {
       cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
       sliders: SLIDER_DEFAULTS,
       background: BACKGROUND_DEFAULTS,
+      sheets: 'home-assistant',
     });
+  });
+
+  it('reads whose details a card opens: Fluvy’s own sheets until the house keeps Home Assistant’s dialog (1.20, #162)', () => {
+    // a 1.19 house stored none: Fluvy's sheets from this version on, said on upgrade; version 5
+    const upgraded = parseHouse({ version: 4, palette: 'volt' });
+    expect(upgraded.sheets).toBe('fluvy');
+    expect(upgraded.version).toBe(5);
+    expect(HOUSE_DEFAULTS.sheets).toBe('fluvy');
+    expect(parseHouse({ sheets: 'home-assistant' }).sheets).toBe('home-assistant');
+    // a word it does not know, another case, or not a word: the default
+    for (const broken of ['ha', 'Fluvy', true, null, 1])
+      expect(parseHouse({ sheets: broken }).sheets).toBe('fluvy');
+    // the house's, whoever looks
+    expect(
+      resolveSettings(parseHouse({ sheets: 'home-assistant' }), PERSONAL_DEFAULTS).sheets,
+    ).toBe('home-assistant');
   });
 
   it('reads the house’s slider settings: the ruler until the house chooses a style (1.18, #144: nothing changes on upgrade)', () => {

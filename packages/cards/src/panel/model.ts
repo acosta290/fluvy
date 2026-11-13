@@ -108,6 +108,7 @@ export type HouseEdit = Partial<
     | 'lightTint'
     | 'lightColors'
     | 'statuses'
+    | 'sheets'
   >
 >;
 /** A person's preferences, their own to save. */
@@ -476,6 +477,8 @@ export function changeLines(ctx: PanelContext): string[] {
         `${t('cards.title')} · ${t('cards.unavailable')} · ${localize(ctx.hass, `option.${unavailable}`)}`,
       );
   }
+  if (house.sheets)
+    lines.push(`${t('cards.title')} · ${t('cards.sheets')} · ${onOff(house.sheets === 'fluvy')}`);
   if (house.sliders) {
     const { style, words } = house.sliders;
     if (style !== ctx.settings.sliders.style)

@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Su ogni scheda trasparente, quella della casa o la sua",
     "cards.border": "Bordo",
     "cards.border_sub": "La linea sottile attorno a ogni scheda e riquadro",
+    "cards.sheets": "Dettagli di Fluvy",
+    "cards.sheets_sub": "Per una luce, un termostato, una tapparella, un lettore o un ventilatore; disattivato apre la finestra di Home Assistant",
     "cards.unavailable": "Se offline",
     "sliders.title": "Cursori",
     "sliders.style": "Stile",
@@ -3089,5 +3091,16 @@
     "option.fast": "Veloce",
     "option.card": "Nella scheda",
     "option.sheet": "In un pannello"
+  },
+  "sheets": {
+    "more": "Altro in Home Assistant",
+    "power": "Accensione",
+    "effect": "Effetto",
+    "swing": "Oscillazione",
+    "swing_horizontal": "Oscillazione orizzontale",
+    "sound_mode": "Modalità audio",
+    "history": "Ultime 24 ore",
+    "history_open": "Apri in Cronologia",
+    "history_none": "Nessuna cronologia"
   }
 }

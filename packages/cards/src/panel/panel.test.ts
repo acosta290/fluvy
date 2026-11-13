@@ -4,6 +4,7 @@ import {
   BACKGROUND_DEFAULTS,
   paletteOf,
   readDevice,
+  SETTINGS_VERSION,
   SettingsStore,
   writeDevice,
   type EffectiveSettings,
@@ -1416,6 +1417,39 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house keep Home Assistant’s details dialog, Fluvy’s sheets until then (1.20, #162)', async () => {
+    const { panel, root, row, button, handle, settle } = await mount();
+    const name = 'Fluvy’s details sheets';
+    const sheets = () => row(name)?.querySelector('.fv-switch');
+    // Fluvy's own sheets, by default: said on upgrade
+    expect(row(name)?.textContent).toContain(
+      'For a light, a thermostat, a cover, a player or a fan; off opens Home Assistant’s dialog',
+    );
+    expect(sheets()?.getAttribute('aria-checked')).toBe('true');
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(sheets()?.getAttribute('aria-checked')).toBe('false');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Cards · Fluvy’s details sheets · Off',
+    );
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().sheets).toBe('home-assistant');
+    // and back
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().sheets).toBe('fluvy');
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    guest.row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await guest.settle();
+    expect(guest.row(name)?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('true');
+    guest.panel.remove();
+  });
+
   it('lets the house give each status a colour of its own, the palette’s until then (1.9)', async () => {
     const { panel, root, button, handle, previews, settle } = await mount();
     const card = () =>
@@ -2278,6 +2312,8 @@ describe('the settings panel', () => {
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
       background,
+      // whose details a card opens (1.20, #162)
+      sheets: 'home-assistant',
     });
     // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
     await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
@@ -2317,9 +2353,10 @@ describe('the settings panel', () => {
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
       background,
+      sheets: 'home-assistant',
     });
     expect(exported['personal']).toMatchObject({
-      version: 5,
+      version: SETTINGS_VERSION,
       language: 'es',
       haptics: false,
       holdToSlide: true,
@@ -2346,6 +2383,7 @@ describe('the settings panel', () => {
       cards: { opacity: 100, blur: true, unavailable: 'dashed', border: true },
       sliders: { style: 'ruler', words: 'ends' },
       background: BACKGROUND_DEFAULTS,
+      sheets: 'fluvy',
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
@@ -2378,6 +2416,7 @@ describe('the settings panel', () => {
     // this device's own choices stay as they were
     expect(readDevice()).toMatchObject({ dock: true, zoom: 125 });
     localStorage.removeItem('fluvy:device');
+    expect(handle.settings().sheets).toBe('home-assistant');
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',

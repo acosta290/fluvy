@@ -2460,6 +2460,8 @@
     "cards.blur_sub": "Na każdej przezroczystej karcie, domowej lub własnej",
     "cards.border": "Obramowanie",
     "cards.border_sub": "Cienka linia wokół każdej karty i kafelka",
+    "cards.sheets": "Szczegóły Fluvy",
+    "cards.sheets_sub": "Dla światła, termostatu, rolety, odtwarzacza i wentylatora; wyłączone otwiera okno Home Assistant",
     "cards.unavailable": "Gdy niedostępne",
     "sliders.title": "Suwaki",
     "sliders.style": "Styl",
@@ -3212,5 +3214,16 @@
     "option.fast": "Szybko",
     "option.card": "W karcie",
     "option.sheet": "W arkuszu"
+  },
+  "sheets": {
+    "more": "Więcej w Home Assistant",
+    "power": "Zasilanie",
+    "effect": "Efekt",
+    "swing": "Ruch łopatek",
+    "swing_horizontal": "Ruch łopatek w poziomie",
+    "sound_mode": "Tryb dźwięku",
+    "history": "Ostatnie 24 godziny",
+    "history_open": "Otwórz w Historii",
+    "history_none": "Brak historii"
   }
 }

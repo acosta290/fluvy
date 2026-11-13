@@ -17,6 +17,7 @@ export {
   keyValue,
   precisionGain,
   preventMenu,
+  releaseStepRepeat,
   saneRange,
   setHoldToSlide,
   snap,

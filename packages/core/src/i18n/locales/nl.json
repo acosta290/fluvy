@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Op elke doorschijnende kaart, die van het huis of haar eigen",
     "cards.border": "Rand",
     "cards.border_sub": "De dunne lijn rond elke kaart en tegel",
+    "cards.sheets": "Details van Fluvy",
+    "cards.sheets_sub": "Voor een lamp, een thermostaat, een zonwering, een speler of een ventilator; uit opent het dialoogvenster van Home Assistant",
     "cards.unavailable": "Als offline",
     "sliders.title": "Schuifregelaars",
     "sliders.style": "Stijl",
@@ -3089,5 +3091,16 @@
     "option.fast": "Snel",
     "option.card": "In de kaart",
     "option.sheet": "In een blad"
+  },
+  "sheets": {
+    "more": "Meer in Home Assistant",
+    "power": "Aan/uit",
+    "effect": "Effect",
+    "swing": "Zwenken",
+    "swing_horizontal": "Horizontaal zwenken",
+    "sound_mode": "Geluidsmodus",
+    "history": "Laatste 24 uur",
+    "history_open": "Openen in Geschiedenis",
+    "history_none": "Geen geschiedenis"
   }
 }

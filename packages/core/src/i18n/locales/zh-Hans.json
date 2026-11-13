@@ -2651,6 +2651,8 @@
     "cards.blur_sub": "应用于所有透明卡片，无论是全屋设置还是卡片自身",
     "cards.border": "边框",
     "cards.border_sub": "每张卡片和磁贴周围的细线",
+    "cards.sheets": "Fluvy 的详情面板",
+    "cards.sheets_sub": "用于灯、温控器、窗帘、播放器和风扇；关闭后打开 Home Assistant 的对话框",
     "cards.unavailable": "不可用时",
     "sliders.title": "滑块",
     "sliders.style": "样式",
@@ -3089,5 +3091,16 @@
     "option.fast": "快",
     "option.card": "在卡片中",
     "option.sheet": "在面板中"
+  },
+  "sheets": {
+    "more": "在 Home Assistant 中查看更多",
+    "power": "电源",
+    "effect": "灯效",
+    "swing": "摆风",
+    "swing_horizontal": "水平摆风",
+    "sound_mode": "声音模式",
+    "history": "过去 24 小时",
+    "history_open": "在历史中打开",
+    "history_none": "没有历史"
   }
 }

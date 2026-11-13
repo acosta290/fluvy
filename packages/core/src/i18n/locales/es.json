@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "En cada tarjeta translúcida, la de la casa o la suya propia",
     "cards.border": "Borde",
     "cards.border_sub": "La línea fina alrededor de cada tarjeta y mosaico",
+    "cards.sheets": "Detalles de Fluvy",
+    "cards.sheets_sub": "Para una luz, un termostato, una persiana, un reproductor o un ventilador; apagado abre el diálogo de Home Assistant",
     "cards.unavailable": "Si no está disponible",
     "sliders.title": "Deslizadores",
     "sliders.style": "Estilo",
@@ -3089,5 +3091,16 @@
     "option.fast": "Rápida",
     "option.card": "En la tarjeta",
     "option.sheet": "En una hoja"
+  },
+  "sheets": {
+    "more": "Más en Home Assistant",
+    "power": "Encendido",
+    "effect": "Efecto",
+    "swing": "Oscilación",
+    "swing_horizontal": "Oscilación horizontal",
+    "sound_mode": "Modo de sonido",
+    "history": "Últimas 24 horas",
+    "history_open": "Abrir en Historial",
+    "history_none": "Sin historial"
   }
 }

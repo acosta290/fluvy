@@ -63,6 +63,48 @@ and `hold_action` (nothing by default), and one whose entity cannot be read is n
 nothing to act on (a card of many entities has no details of its own) is no button at all. An action with a `confirmation` is asked about first, by Home Assistant's own dialog, and nothing
 on the card moves before the answer.
 
+## Details sheets
+
+A `more-info` on a Fluvy card (the default tap of a head, a row's tap, a tile's hold) opens Fluvy's own sheet for the
+kinds that have one, where Home Assistant's dialog opened before 1.20. Each sheet is built round one control, a dial,
+with the entity's commands under it:
+
+| Kind | The dial | Under it |
+| --- | --- | --- |
+| Light | Brightness, in the lamp's own colour | One step down, the switch, one step up; the light card's hue ruler or colour-temperature ruler and its quick colours; **Effect** where the light has effects |
+| Climate, water heater, humidifier | The target (a low and a high for a range), what it measures as a dot outside the ring and under the figure | One step down, one step up; the modes as chips; **Preset**, **Fan**, **Swing** and **Horizontal swing** where a climate lists them |
+| Cover, valve | Position | Open, stop, close; **Tilt** on a ruler, or as two steps where it only opens and closes |
+| Media player | Volume | Power, previous, play or pause, next, mute; **Source** and **Sound mode**; the artwork in the head |
+| Fan | Speed, in the fan's own speeds | One speed down, the switch, one speed up; **Oscillate**, **Direction**, **Preset** |
+
+Only what the entity supports is drawn: a light that only switches, a fan with no speeds, a cover with no position and
+a player with no volume to set draw their ring, lit while they are on, and their keys. An entity out of reach keeps
+its sheet's anatomy, every control still.
+
+The head says the entity's name over its area and its state; its **…** opens Home Assistant's own details of the
+entity (its settings, its history, what it relates to, its attributes), and Close, Escape or a tap outside the sheet
+closes it, the focus going back to what was tapped. At the foot, the entity's last 24 hours are drawn in the house's
+chart style (how long it was on, or a thermostat's temperature), and a tap on them opens Fluvy's
+[History](pages.md#history) for that entity. A sheet is a bottom sheet on a phone and a dialog in the middle of a wide
+screen.
+
+Every other entity opens Home Assistant's dialog as before, and so does every card that is not Fluvy's: Fluvy answers
+only the `more-info` of its own cards.
+
+The house chooses whose details open (the settings panel → Appearance → Cards → **Fluvy's details sheets**, on by
+default; see [the settings panel](settings-panel.md#cards)), and an action may say its own with `details`:
+
+```yaml
+type: custom:fluvy-tile-card
+entity: light.floor_lamp
+tap_action:
+  action: more-info
+  details: home-assistant # this tile keeps Home Assistant's dialog
+```
+
+`details: fluvy` asks for the sheet in a house that keeps Home Assistant's dialog. `details` is read on every action
+of a Fluvy card (`tap_action`, `hold_action`, a row's or a tile's own).
+
 ## Customisation
 
 Every card exposes what to show (section switches such as `show_fan`), which items appear and in which order (subset

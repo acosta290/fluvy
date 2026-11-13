@@ -18,6 +18,7 @@ import type media from './locales/en/media.json';
 import type panel from './locales/en/panel.json';
 import type remote from './locales/en/remote.json';
 import type roomEditor from './locales/en/room-editor.json';
+import type sheets from './locales/en/sheets.json';
 import type slider from './locales/en/slider.json';
 import type strategy from './locales/en/strategy.json';
 import type template from './locales/en/template.json';
@@ -53,6 +54,7 @@ export type Catalogue = typeof core &
   typeof panel &
   typeof remote &
   typeof roomEditor &
+  typeof sheets &
   typeof slider &
   typeof strategy &
   typeof template &

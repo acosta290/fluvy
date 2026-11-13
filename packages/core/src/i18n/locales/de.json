@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Auf jeder durchscheinenden Karte, der des Hauses wie einer eigenen",
     "cards.border": "Rand",
     "cards.border_sub": "Die feine Linie um jede Karte und Kachel",
+    "cards.sheets": "Fluvys Detailansichten",
+    "cards.sheets_sub": "Für Licht, Thermostat, Abdeckung, Player und Ventilator; aus öffnet den Dialog von Home Assistant",
     "cards.unavailable": "Wenn offline",
     "sliders.title": "Schieberegler",
     "sliders.style": "Stil",
@@ -3089,5 +3091,16 @@
     "option.fast": "Schnell",
     "option.card": "In der Karte",
     "option.sheet": "In einem Blatt"
+  },
+  "sheets": {
+    "more": "Mehr in Home Assistant",
+    "power": "Ein/Aus",
+    "effect": "Effekt",
+    "swing": "Schwenken",
+    "swing_horizontal": "Horizontal schwenken",
+    "sound_mode": "Klangmodus",
+    "history": "Letzte 24 Stunden",
+    "history_open": "Im Verlauf öffnen",
+    "history_none": "Kein Verlauf"
   }
 }

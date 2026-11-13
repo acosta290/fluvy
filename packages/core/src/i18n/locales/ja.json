@@ -2606,6 +2606,8 @@
     "cards.blur_sub": "透けるすべてのカードで（家の設定でも、カード個別でも）",
     "cards.border": "枠線",
     "cards.border_sub": "各カードとタイルを囲む細い線",
+    "cards.sheets": "Fluvyの詳細シート",
+    "cards.sheets_sub": "照明、サーモスタット、カバー、プレーヤー、ファンで開きます。オフにするとHome Assistantのダイアログが開きます",
     "cards.unavailable": "利用不可のとき",
     "sliders.title": "スライダー",
     "sliders.style": "スタイル",
@@ -3089,5 +3091,16 @@
     "option.fast": "高速",
     "option.card": "カード内",
     "option.sheet": "シート"
+  },
+  "sheets": {
+    "more": "Home Assistantで詳細を見る",
+    "power": "電源",
+    "effect": "エフェクト",
+    "swing": "スイング",
+    "swing_horizontal": "左右スイング",
+    "sound_mode": "サウンドモード",
+    "history": "過去24時間",
+    "history_open": "履歴で開く",
+    "history_none": "履歴なし"
   }
 }

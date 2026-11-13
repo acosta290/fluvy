@@ -2811,6 +2811,65 @@ Return to dock are in the row), the compact card's pad in a sheet.
   playground's `vacuum` sheet draws the mode held (`_drive`) and the sheet docked (`_sheet`), and
   `interactions-vacuum.mjs` drives it in a browser: the card's height before and in the mode, a held arrow, Done.
 
+## Details sheets (1.20)
+
+What a Fluvy card opens for an entity's details (#162), where Home Assistant's dialog opened before: one family of
+sheets, each built round **one control, a dial**, for the kinds whose card is built round one too — a light, a
+thermostat (a climate, a water heater, a humidifier), a cover (and a valve), a player and a fan. Every other entity,
+and every card that is not Fluvy's, keeps Home Assistant's dialog. The house may keep it for all (`sheets`), an action
+may say its own (`details`).
+
+- **The sheet.** The language's sheet (392 at the most, 16 sides, a content column of 360, radius 24 at the top, the
+  grabber), opened on the page's body as a modal dialog over a 48 % scrim: at the foot of a phone, rising 320 ms; on a
+  screen 600 wide and 600 tall or more, **a dialog in the middle** — every corner 24, no grabber (16 over the head),
+  a lift under it (`0 24px 64px -24px` at 40 % of the palette's shade), rising 12 px as it fades in, 240 ms. It reads at
+  the size the device reads its dashboards at (`--fluvy-zoom`), in the look the page wears and Home Assistant's mode.
+  Taller than the screen, the sheet scrolls as one; nothing inside it ever scrolls. Reduced motion: no rise, no fade.
+- **The head** (44). The entity's circle in its tone while it is doing something (neutral at rest, the off skin out
+  of reach; a player's artwork in its place), its name 20/600 over its line 13/500 — its area, where that says more
+  than the name, its state, and what the state adds ("Living room · On · 72 %", "Heating · 46 % RH"; a player's line
+  is what plays, a name) — then two quiet rounds, 8 apart: **…**, Home Assistant's own details of the entity (its
+  settings, its history, what it relates to), and **Close**. The line is fitted by measure: what the state adds gives
+  way first, then the area, never the state's own word. In a column that would leave the name under 96 beside the
+  circle and the rounds, or the state's word no room, the words go under them and take the whole column. No switch in
+  the head: the sheet's own two rounds are its trailing, and the entity's switch is a key.
+- **The dial.** 16 under the head, centred: the thermostat's dial, ring 96 with 12 ticks in a 240 × 224 box (the
+  large dial: a 48 figure, a 36 knob), without its own stepper; the ring follows the column
+  (`min(96, max(56, ⌊column / 8⌋ × 4 − 28))`) and is the small dial (a 32 figure, a 28 knob) under 80. It says the
+  figure and its unit, the words for what it sets under them where the disc holds them whole (Brightness, Position,
+  Volume, Speed; a thermostat's "Now 20.8°"), and its ends under the sweep. A lamp's dial wears the lamp's own colour.
+  Off, the figure is the word ("Off") and the knob rests at the start: dragging it wakes the device at that level, the
+  figure following the finger. A kind with nothing to set — a light that only switches, a fan with no speeds, a cover
+  with no position, a player with no volume — draws the ring alone, every tick lit while it is on, its state's word in
+  the middle. **Why a dial for a cover**: the family is one control, and a position from 0 to 100 reads on the sweep as
+  the card's figure does; the cover card keeps the vertical ruler, where up and down are the blind's.
+- **The keys.** 16 under the dial, one row of equal cells that fill the column (the action row: 44 tall, radius 12,
+  the gap that lands the cells on the grid — 12 for three, 16 for two, 20 for five at 360), each a glyph named for a
+  reader: a light's and a fan's − · switch · +, a thermostat's − · +, a cover's open · stop · close, a player's switch ·
+  previous · play · next · mute. A step repeats while it is held and a burst of steps is one call; a switch that is on
+  wears its tone's fill and hairline, as a lit tile does, and says so (`aria-pressed`); a command that would do
+  nothing is still. Never two rows: where a player's five do not hold 44 each, they give way in the players' own
+  order (next, previous, mute, the switch; never play).
+- **Under the keys**, what the entity has and nothing more: a label (16 over it) and a ruler — the light card's own
+  colour controls (the hue ruler or the temperature ruler in one slot, the quick colours), a cover's tilt — or a
+  thermostat's modes as chips that fill the row, each with its glyph, the chosen one in its mode's tone; then rows of
+  60 with hairlines, 8 under what stands over them: a choice among options (a preset, a fan speed, a swing, an effect,
+  a source, a sound mode) ends in its value, which opens the dropdown; an oscillation in a switch; a direction in a
+  chevron, its way on the line under its name; a tilt that only opens and closes in two steps. A row's name is a label
+  and is never cut: the rows give their circles to their names together, and a value that still would not hold goes
+  under its name.
+- **The day.** At the foot, 16 under what stands over it, a hairline and 12: "Last 24 hours" (the label's 11/600
+  capitals) and what the day amounts to (13/500, with a 16 chevron: "On · 5 h 12 min", "19.5 – 21.7 °C"), then a
+  drawing 48 tall by the chart engine in the house's chart style and the kind's tone, and the window's clock under it.
+  For a state it is the share of each stretch spent on (open, in use); for a thermostat what it measures. The line
+  ends on what the entity reads now. The whole strip is one button to Fluvy's History page for the entity. Where the
+  label and the words do not hold on one line the words go under the label, and a state's word gives way before a
+  figure is cut.
+- **Out of reach.** The sheet keeps its anatomy: the head in the off skin saying why, its rounds alive; the dial at
+  "—" with no knob, the keys and the rows still, the chips dashed, all faded as one; the day in the neutral ink.
+- **Focus.** It opens on Close; Tab walks the sheet and nothing behind it; Escape, Close and a tap on the scrim close
+  it and give the focus back to what was tapped; leaving the page closes it too.
+
 ## Value row (1.9)
 
 A card's reading — its big figure — and what goes with it share one 64 row, 16 under the head: the control that sets

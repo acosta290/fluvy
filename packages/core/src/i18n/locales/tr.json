@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Her yarı saydam kartta, evinki ya da kendisininki",
     "cards.border": "Kenarlık",
     "cards.border_sub": "Her kartın ve kutunun çevresindeki ince çizgi",
+    "cards.sheets": "Fluvy ayrıntıları",
+    "cards.sheets_sub": "Işık, termostat, perde, oynatıcı ve vantilatör için; kapalıyken Home Assistant’ın penceresi açılır",
     "cards.unavailable": "Kullanılamadığında",
     "sliders.title": "Kaydırıcılar",
     "sliders.style": "Stil",
@@ -3089,5 +3091,16 @@
     "option.fast": "Hızlı",
     "option.card": "Kartta",
     "option.sheet": "Bir sayfada"
+  },
+  "sheets": {
+    "more": "Home Assistant’ta daha fazlası",
+    "power": "Güç",
+    "effect": "Efekt",
+    "swing": "Salınım",
+    "swing_horizontal": "Yatay salınım",
+    "sound_mode": "Ses modu",
+    "history": "Son 24 saat",
+    "history_open": "Geçmiş’te aç",
+    "history_none": "Geçmiş yok"
   }
 }

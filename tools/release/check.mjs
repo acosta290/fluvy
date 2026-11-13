@@ -114,6 +114,10 @@ const BUDGETS = {
   // the Vehicle card: the card (three layouts, its editor), what finds a car's entities on thirteen integrations and
   // folds their words, its glyphs and its English (1.13, #84); measured at 20.2 KB
   vehicle: 24_576,
+  // Fluvy's own details sheets (1.20, #162): the light's, the thermostat's, the cover's, the player's and the fan's,
+  // what they share (the sheet, its keys and rows, its day) and their English, fetched the first time a card opens
+  // one. Measured at 11.5 KB
+  details: 16_384,
   // the items family: the card, its fields and presets, its English (1.11, #66)
   items: 12_288,
   // the items' sheet: fetched when an item is tapped

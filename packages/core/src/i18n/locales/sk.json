@@ -2708,6 +2708,8 @@
     "cards.blur_sub": "Na každej priesvitnej karte, domácej aj vlastnej",
     "cards.border": "Okraj",
     "cards.border_sub": "Tenká čiara okolo každej karty a dlaždice",
+    "cards.sheets": "Podrobnosti Fluvy",
+    "cards.sheets_sub": "Pre svetlo, termostat, roletu, prehrávač a ventilátor; vypnuté otvorí dialóg Home Assistant",
     "cards.unavailable": "Keď je nedostupné",
     "sliders.title": "Posuvníky",
     "sliders.style": "Štýl",
@@ -3148,5 +3150,16 @@
     "option.fast": "Rýchla",
     "option.card": "V karte",
     "option.sheet": "V hárku"
+  },
+  "sheets": {
+    "more": "Viac v Home Assistant",
+    "power": "Napájanie",
+    "effect": "Efekt",
+    "swing": "Výkyv",
+    "swing_horizontal": "Vodorovný výkyv",
+    "sound_mode": "Režim zvuku",
+    "history": "Posledných 24 hodín",
+    "history_open": "Otvoriť v Histórii",
+    "history_none": "Žiadna história"
   }
 }

@@ -2773,6 +2773,8 @@
     "cards.blur_sub": "На любой прозрачной карточке, по настройке дома или по своей",
     "cards.border": "Рамка",
     "cards.border_sub": "Тонкая линия вокруг каждой карточки и плитки",
+    "cards.sheets": "Подробности Fluvy",
+    "cards.sheets_sub": "Для света, термостата, шторы, медиаплеера и вентилятора; если выключено, открывается диалог Home Assistant",
     "cards.unavailable": "Когда недоступно",
     "sliders.title": "Ползунки",
     "sliders.style": "Стиль",
@@ -3213,5 +3215,16 @@
     "option.fast": "Быстрая",
     "option.card": "В карточке",
     "option.sheet": "В отдельном окне"
+  },
+  "sheets": {
+    "more": "Ещё в Home Assistant",
+    "power": "Питание",
+    "effect": "Эффект",
+    "swing": "Качание",
+    "swing_horizontal": "Горизонтальное качание",
+    "sound_mode": "Режим звука",
+    "history": "Последние 24 часа",
+    "history_open": "Открыть в «Истории»",
+    "history_none": "Нет истории"
   }
 }

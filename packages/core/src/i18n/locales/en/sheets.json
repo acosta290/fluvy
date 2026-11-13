@@ -1,0 +1,13 @@
+{
+  "sheets": {
+    "more": "More in Home Assistant",
+    "power": "Power",
+    "effect": "Effect",
+    "swing": "Swing",
+    "swing_horizontal": "Horizontal swing",
+    "sound_mode": "Sound mode",
+    "history": "Last 24 hours",
+    "history_open": "Open in History",
+    "history_none": "No history"
+  }
+}

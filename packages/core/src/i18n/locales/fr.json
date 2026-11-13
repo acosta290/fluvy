@@ -1444,6 +1444,8 @@
     "cards.blur_sub": "Sur chaque carte translucide, celle de la maison ou la sienne",
     "cards.border": "Bordure",
     "cards.border_sub": "Le filet autour de chaque carte et tuile",
+    "cards.sheets": "Détails de Fluvy",
+    "cards.sheets_sub": "Pour une lumière, un thermostat, un volet, un lecteur ou un ventilateur ; désactivé, la boîte de dialogue de Home Assistant s’ouvre",
     "cards.unavailable": "Si indisponible",
     "sliders.title": "Curseurs",
     "sliders.style": "Style",
@@ -3089,5 +3091,16 @@
     "option.fast": "Rapide",
     "option.card": "Dans la carte",
     "option.sheet": "Dans une feuille"
+  },
+  "sheets": {
+    "more": "Plus dans Home Assistant",
+    "power": "Marche/arrêt",
+    "effect": "Effet",
+    "swing": "Balayage",
+    "swing_horizontal": "Balayage horizontal",
+    "sound_mode": "Mode sonore",
+    "history": "Dernières 24 heures",
+    "history_open": "Ouvrir dans l’Historique",
+    "history_none": "Aucun historique"
   }
 }

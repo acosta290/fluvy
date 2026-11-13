@@ -358,6 +358,8 @@
     "cards.blur_sub": "On every see-through card, the house’s or its own",
     "cards.border": "Border",
     "cards.border_sub": "The hairline round every card and tile",
+    "cards.sheets": "Fluvy’s details sheets",
+    "cards.sheets_sub": "For a light, a thermostat, a cover, a player or a fan; off opens Home Assistant’s dialog",
     "cards.unavailable": "When unavailable",
     "sliders.title": "Sliders",
     "sliders.style": "Style",

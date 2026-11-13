@@ -54,14 +54,16 @@ each dashboard's travel in the settings file, and in Home Assistant's backups wi
 
 ## Cards
 
-How solid every card is, whether it draws its border, and how one looks while a device is unavailable, where a card
-says nothing of its own (1.15, 1.19, 1.16). Solid, bordered and dashed until chosen, so a dashboard looks as it did:
+How solid every card is, whether it draws its border, how one looks while a device is unavailable, and whose details
+it opens, where a card says nothing of its own (1.15, 1.19, 1.16, 1.20). Solid, bordered and dashed until chosen, so a
+dashboard looks as it did; Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened before:
 
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
 | **Opacity** | 0 to 100 %, in 5 % steps, on a ruler with its figure beside it (100: solid) | `card_opacity`: under 100 the view's background shows through the card |
 | **Blur what shows through** | on · off (on by default) | what shows through a see-through card is blurred, so its words read over a busy picture; it covers every see-through card, the house's and one that sets its own `card_opacity` |
 | **Border** | on · off (on by default) | `card_border`: off, a card draws no border, the hairline round it — round each tile where the card is a tile or a group of them — so it stands on its fill alone, or on its content alone where it is see-through at 0 % |
+| **Fluvy's details sheets** | on · off (on by default) | whose details a `more-info` opens for a light, a thermostat (a climate, a water heater, a humidifier), a cover or a valve, a media player and a fan: Fluvy's own [sheet](cards.md#details-sheets), or, off, Home Assistant's dialog as for every other entity. An action's own `details: fluvy` or `details: home-assistant` wins. Stored as `sheets: fluvy` or `sheets: home-assistant` |
 | **When unavailable** | Dashed · As when off (Dashed by default) | `unavailable`: `dashed` draws a card or a tile out of reach on the page's fill in a dashed hairline, its words faded and the ⊘ glyph in its circle; `quiet` (As when off) draws it as it is while off — its own surface, its own glyph, its words and controls at full strength — still saying "Unavailable", every value it cannot know a dash, every control still |
 
 A change shows on every card of the page at once, before it is saved, and the preview stands its cards on a picture

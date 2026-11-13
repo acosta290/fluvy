@@ -2718,6 +2718,8 @@
     "cards.blur_sub": "Minden áttetsző kártyán, a házé és a sajátja is",
     "cards.border": "Keret",
     "cards.border_sub": "A vékony vonal minden kártya és csempe körül",
+    "cards.sheets": "A Fluvy részletei",
+    "cards.sheets_sub": "Lámpához, termosztáthoz, árnyékolóhoz, lejátszóhoz és ventilátorhoz; kikapcsolva a Home Assistant párbeszédablaka nyílik meg",
     "cards.unavailable": "Ha nem elérhető",
     "sliders.title": "Csúszkák",
     "sliders.style": "Stílus",
@@ -3089,5 +3091,16 @@
     "option.fast": "Gyors",
     "option.card": "A kártyán",
     "option.sheet": "Külön lapon"
+  },
+  "sheets": {
+    "more": "Több a Home Assistantben",
+    "power": "Főkapcsoló",
+    "effect": "Effektus",
+    "swing": "Legyezés",
+    "swing_horizontal": "Vízszintes legyezés",
+    "sound_mode": "Hangmód",
+    "history": "Elmúlt 24 óra",
+    "history_open": "Megnyitás az Előzményekben",
+    "history_none": "Nincs előzmény"
   }
 }

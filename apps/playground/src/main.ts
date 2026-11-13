@@ -1,6 +1,6 @@
 // every part of English first: the sheets define the families' cards themselves
 import './english.js';
-import { catalogue } from '@fluvy/cards';
+import { catalogue, detailsSheets } from '@fluvy/cards';
 import {
   cardDefaults,
   chartDefaults,
@@ -14,6 +14,7 @@ import {
   resolveLanguage,
   setCardDefaults,
   setChartDefaults,
+  setDetailsSheets,
   setLightDefaults,
   setSliderDefaults,
   wornLite,
@@ -80,6 +81,9 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?sliders={"style":"bar"} the house's slider settings (fluvy's settings → Appearance → Sliders), as JSON: the
  *                        style every slider is drawn in where a card says none (ruler | bar | liquid | fill) and the
  *                        words under a bar or a liquid (`"words":"none"`), each read as the settings read it
+ * ?sheets=fluvy         the house's details sheets (fluvy's settings → Appearance → Cards, #162): a card's more-info opens
+ *                        Fluvy's own sheet for a light, a thermostat, a cover, a player or a fan; without it, as in a
+ *                        house that keeps Home Assistant's dialog, every more-info is the mock's
  * ?hold=1               a person's hold to slide (fluvy's settings → Preferences, #166): on a touch screen (a phone, or
  *                        the browser's touch emulation) a slider moves only after a still press of 200 ms
  * ?lite=1               this device in Lite (fluvy's settings → Preferences › This device, #165), as the look composes
@@ -227,6 +231,10 @@ if (params.has('sliders'))
 
 // the person's hold to slide, as fluvy's settings would hand it to every slider
 if (params.get('hold') === '1') setHoldToSlide(true);
+
+// the house's details, as fluvy's settings would say them: the playground starts no look, so nobody says, and a card's
+// details are Home Assistant's dialog (what every suite counts) until the page asks for Fluvy's sheets
+if (params.get('sheets') === 'fluvy') setDetailsSheets(detailsSheets(() => 'fluvy'));
 
 // this device in Lite: the house's settings above, turned down as the look turns them down
 if (params.get('lite') === '1') {

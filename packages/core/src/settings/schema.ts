@@ -50,8 +50,10 @@ export type { CardLanguage };
 export const SETTINGS_KEY = 'fluvy';
 /**
  * 5 since 1.20: the house's `details` (our chart in Home Assistant's details dialog, #162) is on where a 4 stored none:
- * it is what the theme promises, so its block changes on upgrade (a 1.19 bundle reads a 5's as its own, and keeps the
- * field on a save).
+ * it is what the theme promises, so its block changes on upgrade; and the house says whose details a Fluvy card opens
+ * (`sheets`, #162): Fluvy's own sheets for the kinds that have one, where a 4 stored nothing and every card opened Home
+ * Assistant's dialog — visible on upgrade, and `home-assistant` gives the dialog back (a 1.19 bundle reads a 5's as its
+ * own, and keeps both fields on a save).
  * 4 since 1.19: the house's `icons` is a choice for each place (the sidebar, Settings), where it was one boolean for
  * both; a 3's boolean is read as both, so nothing changes on upgrade (a 1.18 bundle reads a 4's as its default, ours).
  * The same release's other fields each read as before where a 3 stored none: whether every card draws its border
@@ -95,6 +97,12 @@ export const WALL_NIGHT_DIM = [0, 20, 40, 60] as const;
 export const ICON_PLACES = ['sidebar', 'settings'] as const;
 export type IconPlace = (typeof ICON_PLACES)[number];
 export type MenuIcons = Readonly<Record<IconPlace, boolean>>;
+
+/**
+ * Whose details a Fluvy card opens for an entity Fluvy has a sheet for (1.20, #162: a light, a thermostat, a cover, a
+ * player, a fan and their kin): Fluvy's own sheet, or Home Assistant's dialog, as every other entity opens.
+ */
+export type Sheets = 'fluvy' | 'home-assistant';
 
 /** When a light card shows its light's colour on its surface: never, while the light is on, or at rest too. */
 export const LIGHT_TINTS = ['off', 'on', 'always'] as const;
@@ -191,6 +199,8 @@ export interface HouseSettings {
   readonly sliders: SliderSettings;
   /** What lies behind the cards of every dashboard that wears the look, where it says none of its own (1.19, #155). */
   readonly background: PageBackground;
+  /** Whose details a Fluvy card opens where its action says none of its own (1.20, #162). */
+  readonly sheets: Sheets;
 }
 
 /** What each person may choose for themselves. */
@@ -239,6 +249,7 @@ export interface EffectiveSettings {
   readonly cards: CardSurface;
   readonly sliders: SliderSettings;
   readonly background: PageBackground;
+  readonly sheets: Sheets;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -285,6 +296,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   sliders: SLIDER_DEFAULTS,
   // every page plain behind its cards, as before 1.19
   background: BACKGROUND_DEFAULTS,
+  // Fluvy's own details sheets from 1.20 on, where Home Assistant's dialog opened before
+  sheets: 'fluvy',
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -406,6 +419,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     cards: parseCards(value['cards']),
     sliders: parseSliderSettings(value['sliders']),
     background: parseBackground(value['background']),
+    sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
   };
 }
 
@@ -467,6 +481,7 @@ export function resolveSettings(
     cards: house.cards,
     sliders: house.sliders,
     background: house.background,
+    sheets: house.sheets,
   };
 }
 
