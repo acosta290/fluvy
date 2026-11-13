@@ -51,9 +51,9 @@ export class FluvyTilesCard extends FluvyTileCard {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: LovelaceCardConfig): number {
     const n = entryCount(config, ['tiles', 'entities']);
-    // a mini tile is 108 tall three a row, a compact one (the default) 76 two a row, a large one 168; 8 between
-    // rows, or the columns the config asks for (`auto` holds two compact tiles, three minis, in a 360 column); none,
-    // the empty panel where they would be
+    // a mini tile is 108 tall three a row, a compact one (the default) 76 two a row, a large one 168; 8 between small
+    // tiles' rows and the section's own gap between large ones (16 in Fluvy's theme), or the columns the config asks
+    // for (`auto` holds two compact tiles, three minis, in a 360 column); none, the empty panel where they would be
     if (!n) return EMPTY;
     const size =
       config['size'] === 'mini' || config['size'] === 'large' ? config['size'] : 'compact';
@@ -65,7 +65,8 @@ export class FluvyTilesCard extends FluvyTileCard {
     );
     // a small tile's name in two lines makes every tile a line taller (`name_lines: 2`)
     const lines = size !== 'large' && twoLines(config) ? NAME_LINE[size] : 0;
-    return rowsOf(n, perRow) * ({ mini: 116, compact: 84, large: 176 }[size] + lines) - 8;
+    const gap = size === 'large' ? GAP : 8;
+    return rowsOf(n, perRow) * ({ mini: 108, compact: 76, large: 168 }[size] + lines + gap) - gap;
   }
 
   static override markedItems = true;

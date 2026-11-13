@@ -33,7 +33,7 @@ import { TextRuler } from '../shared/fit.js';
 
 import { FontsSettled } from '../shared/fonts.js';
 import { columnsOf, ITEM_ALIASES, type AliasSpec, type Columns } from '../shared/config.js';
-import { EMPTY, entryCount, rowsOf } from '../shared/heights.js';
+import { EMPTY, entryCount, rowsOf, textWidth } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
 const s = strings('scenes');
@@ -95,7 +95,19 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: ScenesCardConfig): number {
     const n = entryCount(config, ['scenes', 'entities']);
-    const perRow = columnsOf(config.columns, 'auto') === 1 ? 1 : 2;
+    const asked = columnsOf(config.columns, 'auto');
+    // two a row, unless asked one, or a name the config gives would not read in its two lines on a half tile at 360
+    // (the card's own rule, `columns`, estimated: a title is 15/600)
+    const half = (360 - GRID_GAP) / 2 - TILE_CHROME;
+    const named = itemsOf<SceneItemConfig>(config.scenes ?? config.entities).flatMap((item) =>
+      typeof item.name === 'string' ? [item.name] : [],
+    );
+    const long =
+      asked === 'auto' &&
+      named.some(
+        (name) => linesNeeded(name, half, (text) => textWidth(text, 'title') * (15 / 16)) > 2,
+      );
+    const perRow = asked === 1 || long ? 1 : 2;
     // no scenes: the empty panel where the tiles would be
     return (config.title ? 40 : 0) + (n ? rowsOf(n, perRow) * (TILE + GRID_GAP) - GRID_GAP : EMPTY);
   }

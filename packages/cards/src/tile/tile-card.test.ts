@@ -565,7 +565,7 @@ describe('a small tile’s name in two lines, the tile a line taller (#100)', ()
     };
     expect(FluvyTilesCard.layoutHeight(group)).toBe(2 * 96 - 8);
     expect(FluvyTilesCard.layoutHeight({ ...group, size: 'mini' })).toBe(132 - 8);
-    expect(FluvyTilesCard.layoutHeight({ ...group, size: 'large' })).toBe(2 * 176 - 8);
+    expect(FluvyTilesCard.layoutHeight({ ...group, size: 'large' })).toBe(2 * 184 - 16);
     expect(FluvyTilesCard.layoutHeight({ ...group, name_lines: 1 })).toBe(2 * 84 - 8);
   });
 
