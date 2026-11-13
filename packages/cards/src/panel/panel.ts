@@ -795,14 +795,15 @@ export class FluvyPanel extends LitElement {
     }
     if (written) await this.loadDashboards();
     if (Object.keys(this.deviceEdit).length) {
-      // the device's own memory: the wall's controller, in every page, reads it again; the size and Lite show at once
+      // the device's own memory: the wall's controller, in every page, reads it again; the size, Lite and the sidebar
+      // beside the page come at once
       const edit = this.deviceEdit;
       this.device = writeDevice(edit);
       this.deviceEdit = {};
       if (edit.wall !== undefined)
         (window as { __fluvy?: { wall?: { refresh?: () => void } } }).__fluvy?.wall?.refresh?.();
       if (edit.zoom !== undefined) applyZoom(this.device.zoom);
-      if (edit.performance !== undefined) handle.wearDevice();
+      if (edit.performance !== undefined || edit.dock !== undefined) handle.wearDevice();
     }
     this.tryOnApp = false;
   }

@@ -14,8 +14,8 @@ import {
 } from '../settings/device.js';
 import { HOUSE_DEFAULTS, PERSONAL_DEFAULTS, resolveSettings } from '../settings/schema.js';
 
-/** A device as it is from the factory: no wall, at 100 %, Auto. */
-const FACTORY = { version: 1, wall: false, zoom: 100, performance: 'auto' } as const;
+/** A device as it is from the factory: no wall, at 100 %, Auto, Home Assistant's own sidebar. */
+const FACTORY = { version: 1, wall: false, zoom: 100, performance: 'auto', dock: false } as const;
 
 describe('what this device is', () => {
   beforeEach(() => localStorage.clear());
@@ -31,7 +31,7 @@ describe('what this device is', () => {
   });
 
   it('reads a broken value as the default', () => {
-    localStorage.setItem(DEVICE_KEY, '{"wall":"yes","performance":"turbo"}');
+    localStorage.setItem(DEVICE_KEY, '{"wall":"yes","performance":"turbo","dock":"yes"}');
     expect(readDevice()).toEqual(FACTORY);
     localStorage.setItem(DEVICE_KEY, 'nonsense');
     expect(readDevice()).toEqual(FACTORY);
@@ -100,6 +100,21 @@ describe('how hard this device works (Lite, #165)', () => {
       expect(parseDevice({ performance }).performance).toBe(performance);
     expect(writeDevice({ performance: 'lite' })).toEqual({ ...FACTORY, performance: 'lite' });
     expect(writeDevice({ zoom: 125 })).toEqual({ ...FACTORY, zoom: 125, performance: 'lite' });
+  });
+
+  it('keeps the sidebar beside the page as its own choice (#173), off where a 1.19 device stored none', () => {
+    localStorage.setItem(DEVICE_KEY, '{"version":1,"wall":true,"zoom":125,"performance":"lite"}');
+    expect(readDevice()).toEqual({ ...FACTORY, wall: true, zoom: 125, performance: 'lite' });
+    expect(writeDevice({ dock: true })).toEqual({
+      ...FACTORY,
+      wall: true,
+      zoom: 125,
+      performance: 'lite',
+      dock: true,
+    });
+    expect(readDevice().dock).toBe(true);
+    expect(writeDevice({ wall: false }).dock).toBe(true);
+    expect(writeDevice({ dock: false }).dock).toBe(false);
   });
 
   it('draws Lite where the device chose it, never where it chose Full, and for Auto where the system asks for less motion or memory is short', () => {

@@ -250,6 +250,12 @@ const SLIDER_STYLES =
  */
 const BACKGROUND = /\/packages\/core\/src\/look\/background-layer\.ts/;
 
+/**
+ * This device's sidebar beside the page (1.20, #173): what answers the menus' asks — fetched on a device that chose it;
+ * every other device never pays for it.
+ */
+const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
+
 /** The icon set's other part (`fluvy:washer`, `fluvy:gate-open` …): fetched the first time Home Assistant asks for one. */
 const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 
@@ -287,7 +293,7 @@ const FORMS =
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
  * card, the platforms' logos, the remote card, the Vehicle card, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
- * styles, the page's background, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -334,6 +340,7 @@ export const GROUPS = [
   { name: 'quiet', test: QUIET },
   { name: 'slider-styles', test: SLIDER_STYLES },
   { name: 'background', test: BACKGROUND },
+  { name: 'dock', test: DOCK },
   { name: 'icons', test: ICONS },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];

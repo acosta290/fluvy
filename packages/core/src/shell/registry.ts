@@ -20,7 +20,6 @@ import {
   FLAT_ATTRIBUTE,
   SIDEBAR_LOGO_ATTRIBUTE,
   SIDEBAR_SEPARATORS_ATTRIBUTE,
-  TABLET_ATTRIBUTE,
 } from '../look/tabs.js';
 import {
   drawerCss,
@@ -30,7 +29,6 @@ import {
   sidebarIconsCss,
   sidebarLogoCss,
   sidebarSeparatorsCss,
-  tabletMenuCss,
 } from './css/chrome.js';
 import {
   cardEditCss,
@@ -233,8 +231,6 @@ export const SHEETS: readonly ShellSheet[] = [
   // the corner, as the house chose it: Home Assistant's logo in the sidebar's head, no hairline under it
   { id: 'sidebar-logo', target: 'ha-sidebar', css: sidebarLogoCss, when: SIDEBAR_LOGO_ATTRIBUTE },
   { id: 'sidebar-flat', target: 'ha-sidebar', css: sidebarFlatCss, when: FLAT_ATTRIBUTE },
-  // the menu as on a tablet held sideways: the header's menu icon off the frame's corner
-  { id: 'tablet-menu', target: 'hui-root', css: tabletMenuCss, when: TABLET_ATTRIBUTE },
   // a line after the items the house chose, to set a group apart (`css` is the sheet for one, the Overview)
   {
     id: 'sidebar-separators',

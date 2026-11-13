@@ -157,7 +157,6 @@ describe('the marks on a dashboard’s header', () => {
       dividers: false,
       header: 'page',
       actions: 'buttons',
-      tablet: false,
       separators: [],
     } as const;
     markRoot(

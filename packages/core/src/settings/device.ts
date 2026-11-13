@@ -29,6 +29,12 @@ export interface DeviceSettings {
   /** The size this browser reads its dashboards at (the view alone, never Home Assistant's chrome). */
   readonly zoom: DeviceZoom;
   readonly performance: DevicePerformance;
+  /**
+   * The sidebar beside the page (1.20, #173): on a wide screen it stays hidden until a menu button asks for it, then
+   * stands beside the page, and the next ask hides it again (`look/dock.ts`) — a tablet's choice, a desktop keeps
+   * Home Assistant's way.
+   */
+  readonly dock: boolean;
 }
 
 /** What a device may change about itself (the version is never written). */
@@ -39,6 +45,7 @@ export const DEVICE_DEFAULTS: DeviceSettings = {
   wall: false,
   zoom: 100,
   performance: 'auto',
+  dock: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -58,6 +65,7 @@ export function parseDevice(raw: unknown): DeviceSettings {
     performance: (DEVICE_PERFORMANCES as readonly unknown[]).includes(performance)
       ? (performance as DevicePerformance)
       : DEVICE_DEFAULTS.performance,
+    dock: value['dock'] === true,
   };
 }
 

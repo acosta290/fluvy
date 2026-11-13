@@ -528,6 +528,7 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(`${t('pref.size')} · ${t('wall.percent', { count: device.zoom })}`);
   if (device.performance)
     lines.push(`${t('pref.performance')} · ${t(`pref.performance_${device.performance}`)}`);
+  if (device.dock !== undefined) lines.push(`${t('pref.dock')} · ${onOff(device.dock)}`);
   if (house.wall)
     for (const [key, label] of WALL_LABELS)
       if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))

@@ -12,7 +12,7 @@ import {
 import { ensureFonts } from '../fonts.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { setLanguageOverride } from '../i18n/index.js';
-import { DEVICE_KEY, isLite, wornLite } from '../settings/device.js';
+import { DEVICE_KEY, isLite, readDevice, wornLite } from '../settings/device.js';
 import { cachedSettings, SettingsStore } from '../settings/store.js';
 import {
   resolveSettings,
@@ -45,11 +45,9 @@ import {
   patchViewRoots,
   SIDEBAR_LOGO_ATTRIBUTE,
   SIDEBAR_SEPARATORS_ATTRIBUTE,
-  TABLET_ATTRIBUTE,
   type RootElement,
   type TabsFor,
 } from './tabs.js';
-import { watchTablet } from './tablet.js';
 import { safeStorage } from '../storage.js';
 
 /**
@@ -97,7 +95,10 @@ export interface LookHandle {
   onChange(listener: (settings: EffectiveSettings) => void): () => void;
   /** The wall's say: on, the frame goes; a forced mode re-derives the look. */
   setWall(state: WallState): void;
-  /** This device's own settings were saved (the panel): Lite is worn, or taken off, at once. */
+  /**
+   * This device's own settings were saved (the panel): Lite is worn, or taken off, at once, and the sidebar beside the
+   * page comes where it was chosen.
+   */
   wearDevice(): void;
   stop(): void;
 }
@@ -212,8 +213,6 @@ export function startLook(): LookHandle | undefined {
     if (markPanels(env.document, wears)) resyncCardThemes();
     markRoots(env.document, tabsFor, paint);
   };
-  /** The menu as on a tablet held sideways: the sidebar is Home Assistant's own until the look covers the whole app. */
-  const tablet = (): boolean => current().scope === 'everywhere' && chromeOf(current().look).tablet;
   const preferences = (): void => {
     const now = current();
     setMotionPreference(now.motion);
@@ -236,7 +235,6 @@ export function startLook(): LookHandle | undefined {
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);
     env.document.documentElement.toggleAttribute(FLAT_ATTRIBUTE, !chrome.dividers);
-    env.document.documentElement.toggleAttribute(TABLET_ATTRIBUTE, tablet());
     if (chrome.separators.length)
       env.document.documentElement.setAttribute(
         SIDEBAR_SEPARATORS_ATTRIBUTE,
@@ -274,10 +272,24 @@ export function startLook(): LookHandle | undefined {
   observer.observe(env.document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
   /**
+   * The sidebar beside the page, where this device chose it (`dock.ts`): its file fetched once the choice is made, as
+   * the page starts or as the choice is saved; each menu's ask reads the choice again (a wall keeps its own).
+   */
+  let offSidebar: (() => void) | undefined;
+  let docking = false;
+  const dock = (): void => {
+    if (docking || !readDevice().dock) return;
+    docking = true;
+    void import('./dock.js').then((m) => {
+      if (handle) offSidebar = m.watchSidebar(() => readDevice().dock && !wall.on);
+    });
+  };
+  /**
    * This device draws Lite, or Full, again: the cards move (or stop) and blur as it says, and a page's background is
-   * in focus or blurred again under its header.
+   * in focus or blurred again under its header; its sidebar beside the page comes where it was chosen.
    */
   const wearDevice = (): void => {
+    dock();
     const before = current();
     lite = isLite();
     preferences();
@@ -291,7 +303,7 @@ export function startLook(): LookHandle | undefined {
     if (event.key === null || event.key === DEVICE_KEY) wearDevice();
   };
   window.addEventListener('storage', onStorage);
-  const offTablet = watchTablet(env.document, tablet);
+  dock();
 
   let running = true;
   void connected(appHass, () => running).then((hass) => {
@@ -341,7 +353,7 @@ export function startLook(): LookHandle | undefined {
       observer.disconnect();
       reduced.removeEventListener('change', wearDevice);
       window.removeEventListener('storage', onStorage);
-      offTablet();
+      offSidebar?.();
       offFrames();
       offThemes();
       store.stop();

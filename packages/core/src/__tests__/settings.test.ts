@@ -91,7 +91,6 @@ describe('parsing stored settings', () => {
         dividers: false,
         header: 'page',
         actions: 'menu',
-        tablet: false,
         separators: ['fluvy-home', 'history'],
       },
       scope: 'everywhere',

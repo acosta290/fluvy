@@ -147,6 +147,9 @@ export interface HomeAssistant {
   panels?: Record<string, HassPanel>;
   /** The panel open now, by its url path (`lovelace`, `energy`, `dashboard-home`): what HA's energy cards key their collection on. */
   panelUrl?: string;
+  /** This browser's sidebar: beside the page, on its icons alone (`auto`), or hidden in Home Assistant's drawer. */
+  dockedSidebar?: 'docked' | 'auto' | 'always_hidden';
+  kioskMode?: boolean;
   /** The actions Home Assistant offers, by domain then name (`notify.mobile_app_pixel_9`). */
   services?: Record<string, Record<string, unknown>>;
   connection: HassConnection;

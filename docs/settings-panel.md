@@ -10,15 +10,15 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, its options (its background among them: the house's, or its own), its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel, its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background (plain, the wall mesh, or the dashboard's own: the house's page background or the wall dashboard's); the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
-| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
+| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *This device · Sidebar beside the page* (see [below](#sidebar-beside-the-page)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
 
 ## House and person
 
 The **house settings** are what an administrator sets: everyone sees them. The **personal settings** are each person's,
 on every device they sign in on: a palette, a shape and tabs of their own, or the house's; language; motion; hold to
 slide; haptics. The look a person sees is the house's, with their own choices on top. A **device setting** belongs to
-one browser alone — whether it is a wall panel, the size it reads at, and how hard it works (Lite) — and never follows
-a person.
+one browser alone — whether it is a wall panel, the size it reads at, how hard it works (Lite) and how its sidebar
+opens — and never follows a person.
 
 ## Background
 
@@ -143,6 +143,20 @@ Colours, sizes and what every card can do stay as they are, and the house's and 
 Full wears them again. **Auto** is Lite where the system asks for reduced motion, or where the browser says the device
 has 2 GB of memory or less (Chromium's `navigator.deviceMemory`, which rounds 3 GB down to 2; Safari does not say, so
 there Auto follows the motion alone).
+
+## Sidebar beside the page
+
+*Preferences › This device › Sidebar beside the page* (1.20, #173), for a tablet held sideways or any wide screen that
+wants its width for the page: off from the factory and remembered by the screen alone, so a desktop keeps Home
+Assistant's own way. On, the sidebar stays hidden until a menu button asks for it; it then stands beside the page,
+which moves over for it, and the next tap of the menu hides it again. Without it, Home Assistant opens a hidden sidebar
+as a drawer over the page, and folds an open one to its icons.
+
+Every menu button asks: the header's, the sidebar's own, an app's (an add-on's panel) and a panel in a frame, by a tap,
+a touch or the keyboard (Enter or Space). A long press on the sidebar's menu button still opens Home Assistant's *Edit
+sidebar*. The two states are Home Assistant's own (*Profile › This browser › Always hide the sidebar*, and the sidebar
+open), so the browser remembers the one it was left in, after the switch is turned off too. A phone (870 px wide or
+less) keeps Home Assistant's drawer, and so do a kiosk, a wall and the companion app's own sidebar.
 
 ## Lights
 
@@ -290,8 +304,8 @@ the wall, the Charts tab (the style, the gauge, every detail, motion, the time s
 own series colours. The panel's
 *Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic
 dashboard — and *Import* (an administrator's) reads it back on another house; a file from an earlier version brings
-what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size* and
-*Performance*, a device's wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
+what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size*,
+*Performance* and *Sidebar beside the page*, a device's wall) stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
 dashboard's configuration, which Home Assistant's backups keep as well.
 
 ## "Everywhere" and the theme

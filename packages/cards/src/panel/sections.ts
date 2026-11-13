@@ -762,14 +762,6 @@ function cornerCard(ctx: PanelContext): TemplateResult {
         on: chrome.actions === 'menu',
         onToggle: (on) => set({ actions: on ? 'menu' : 'buttons' }),
       })}
-      ${listRow({
-        icon: 'dock',
-        title: ctx.t('chrome.tablet'),
-        sub: ctx.t('chrome.tablet_sub'),
-        trailing: 'switch',
-        on: chrome.tablet,
-        onToggle: (on) => set({ tablet: on }),
-      })}
     </div>
     ${
       // the sidebar is Home Assistant's own until the look covers the whole app
@@ -2154,6 +2146,16 @@ export function preferences(ctx: PanelContext): TemplateResult {
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'frame', title: ctx.t('pref.device'), sub: ctx.t('pref.device_sub') })}
+      <div class="pn-rows">
+        ${listRow({
+          icon: 'menu',
+          title: ctx.t('pref.dock'),
+          sub: ctx.t('pref.dock_sub'),
+          trailing: 'switch',
+          on: ctx.deviceEdit.dock ?? ctx.device.dock,
+          onToggle: (on) => ctx.editDevice({ dock: on }),
+        })}
+      </div>
       ${deviceSize(ctx)}
       <p class="pn-hint pn-hint--after">${ctx.t('pref.size_sub')}</p>
       ${devicePerformance(ctx)}

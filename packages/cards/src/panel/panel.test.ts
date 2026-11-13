@@ -5,6 +5,7 @@ import {
   paletteOf,
   readDevice,
   SettingsStore,
+  writeDevice,
   type EffectiveSettings,
   type HomeAssistant,
   type LookHandle,
@@ -1969,6 +1970,38 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
   });
 
+  it('keeps the sidebar beside the page as this device’s own, from Preferences: off from the factory, saved to the device alone (#173)', async () => {
+    localStorage.removeItem('fluvy:device');
+    const { panel, root, row, button, written, settle } = await mount(false); // everyone's, not an administrator's
+    panel.tab = 'preferences';
+    await settle();
+    const device = [...root.querySelectorAll('.pn-card')].find(
+      (card) => card.querySelector('.fv-card__title')?.textContent?.trim() === 'This device',
+    )!;
+    const dock = row('Sidebar beside the page')!;
+    expect(device.contains(dock)).toBe(true);
+    expect(dock.querySelector('.fv-row__sub')?.textContent?.trim()).toBe(
+      'On a wide screen, hidden until the menu opens it',
+    );
+    const toggle = dock.querySelector<HTMLElement>('[role="switch"]')!;
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    toggle.click();
+    await settle();
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Sidebar beside the page · On',
+    );
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    expect(written).toEqual([]);
+    expect(readDevice().dock).toBe(true);
+    expect(
+      row('Sidebar beside the page')!.querySelector('.fv-switch')?.getAttribute('aria-checked'),
+    ).toBe('true');
+    panel.remove();
+    localStorage.removeItem('fluvy:device');
+  });
+
   it('says why only on dashboards cannot hold while the profile wears the Fluvy theme', async () => {
     const { panel, root, settle } = await mount(true, {
       selectedTheme: { theme: 'Fluvy' },
@@ -2182,12 +2215,23 @@ describe('the settings panel', () => {
     URL.createObjectURL = (blob: Blob) => ((file = blob), 'blob:fluvy');
     const click = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = () => undefined;
+    // what this screen keeps for itself (#173's sidebar beside the page among it) travels with no file
+    writeDevice({ dock: true, zoom: 125 });
     const ops = panel as unknown as { context(): PanelContext };
     exportSettings(panel as unknown as FluvyPanel, ops.context());
     URL.createObjectURL = create;
     HTMLAnchorElement.prototype.click = click;
     const exported = JSON.parse(await file!.text()) as Record<string, Record<string, unknown>>;
     expect(exported['fluvy']).toBe(1);
+    expect(Object.keys(exported).sort()).toEqual([
+      'dashboards',
+      'exported',
+      'fluvy',
+      'house',
+      'personal',
+      'version',
+    ]);
+    expect(JSON.stringify(exported)).not.toContain('dock');
     expect(exported['house']).toMatchObject({
       palette: 'volt',
       shape: 'round',
@@ -2255,6 +2299,9 @@ describe('the settings panel', () => {
     });
     expect(handle.settings().sliders).toEqual({ style: 'bar', words: 'none' });
     expect(handle.settings().background).toEqual(background);
+    // this device's own choices stay as they were
+    expect(readDevice()).toMatchObject({ dock: true, zoom: 125 });
+    localStorage.removeItem('fluvy:device');
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',

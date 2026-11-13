@@ -141,6 +141,8 @@ const BUDGETS = {
   'slider-styles': 4096,
   // the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet
   background: 4096,
+  // this device's sidebar beside the page (1.20, #173): what answers the menus' asks
+  dock: 1024,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
   // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,
