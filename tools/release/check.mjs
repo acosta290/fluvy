@@ -97,6 +97,8 @@ const BUDGETS = {
   web: 8192,
   // the Slider card: its card on the tile's and its English, its editor with the forms (1.11.1, #77)
   slider: 8192,
+  // the Vacuum card (1.20: it left core, 1.3 KB of what every page loads): the robot's and the mower's card
+  vacuum: 4096,
   // the TV remote card (1.18, #143): the card, its keys and the integrations' commands for them, the platforms it
   // knows by name, its English; its editor goes with the forms. Measured at 11.2 KB
   remote: 16_384,

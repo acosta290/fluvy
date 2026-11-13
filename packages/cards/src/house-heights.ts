@@ -37,7 +37,8 @@ import type { NameOf } from './shared/heights.js';
 import { statTilesHeight, type StatTilesCardConfig } from './stat-tiles/stat-tiles-card.js';
 import { thermostatHeight, type ThermostatCardConfig } from './thermostat/thermostat-card.js';
 import { updatesHeight, type UpdatesCardConfig } from './updates/updates-card.js';
-import { vacuumHeight, type VacuumCardConfig } from './vacuum/vacuum-card.js';
+import { vacuumHeight } from './vacuum-family.js';
+import type { VacuumCardConfig } from './vacuum/vacuum-card.js';
 import { weatherHeight } from './weather-family.js';
 
 /*

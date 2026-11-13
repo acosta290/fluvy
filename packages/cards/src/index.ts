@@ -27,7 +27,6 @@ import { FluvyTilesCard } from './tiles/tiles-card.js';
 import { FluvyTimerCard } from './timer/timer-card.js';
 import { FluvyTodoCard } from './todo/todo-card.js';
 import { FluvyUpdatesCard } from './updates/updates-card.js';
-import { FluvyVacuumCard } from './vacuum/vacuum-card.js';
 import { FluvyRoomCard, loadQuickActions } from './room/room-card.js';
 import { FluvyLightsCard } from './lights/lights-card.js';
 import { FluvyMapCard } from './map/map-card.js';
@@ -43,6 +42,7 @@ import { ITEMS_FAMILY } from './items-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
 import { REMOTE_FAMILY } from './remote-family.js';
 import { SLIDER_FAMILY } from './slider-family.js';
+import { VACUUM_FAMILY } from './vacuum-family.js';
 import { VEHICLE_FAMILY } from './vehicle-family.js';
 import { TEMPLATE_FAMILY } from './template-family.js';
 import { loadChartEngine } from './shared/chart-load.js';
@@ -111,12 +111,6 @@ const CATALOGUE: readonly CatalogueEntry[] = [
     FluvyFanCard,
     'Fluvy · Fan',
     'Speed ruler with steps, oscillation, direction and presets.',
-  ],
-  [
-    'fluvy-vacuum-card',
-    FluvyVacuumCard,
-    'Fluvy · Vacuum',
-    'Robot vacuum or mower: battery, start · stop · dock · locate, suction.',
   ],
   [
     'fluvy-sensor-card',
@@ -255,8 +249,8 @@ type Family = readonly [
 ];
 
 /**
- * The weather, calendar, template, web page, Slider, remote, items and chart cards, the Energy period and Energy usage
- * cards, and the media, energy, devices, automations, appliances and alerts families.
+ * The weather, calendar, template, web page, Slider, Vacuum, remote, items and chart cards, the Energy period and Energy
+ * usage cards, and the media, energy, devices, automations, appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
   [WEATHER_FAMILY, () => import('./weather-cards.js')],
@@ -272,6 +266,7 @@ const FAMILIES: readonly Family[] = [
   [TEMPLATE_FAMILY, () => import('./template-cards.js')],
   [WEB_FAMILY, () => import('./web-cards.js')],
   [SLIDER_FAMILY, () => import('./slider-cards.js')],
+  [VACUUM_FAMILY, () => import('./vacuum-cards.js')],
   [VEHICLE_FAMILY, () => import('./vehicle-cards.js')],
   [ITEMS_FAMILY, () => import('./items-cards.js')],
   [CHART_FAMILY, () => import('./chart-cards.js')],
@@ -338,5 +333,4 @@ export {
   FluvyTimerCard,
   FluvyTodoCard,
   FluvyUpdatesCard,
-  FluvyVacuumCard,
 };

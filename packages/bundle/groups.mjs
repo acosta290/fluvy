@@ -183,6 +183,13 @@ const SLIDER =
   /\/packages\/(cards\/src\/(slider-cards\.ts|slider\/)|core\/src\/i18n\/locales\/en\/slider\.json)/;
 
 /**
+ * The Vacuum card (the robot's and the mower's card; its editor goes with the forms, its words are core's: the alerts
+ * say one of them): fetched as the bundle starts and defined as it lands, as the Slider card is (`vacuum-family.ts`
+ * stays in core: the name, the height). It left core in 1.20.
+ */
+const VACUUM = /\/packages\/cards\/src\/(vacuum-cards\.ts|vacuum\/)/;
+
+/**
  * The platforms' logos (1.18, #143): the marks of Simple Icons and Material Design Icons adapted to the grid, and
  * Fluvy's monograms for the rest, each registered as `app:<id>` as the chunk lands — fetched by the first remote card
  * that draws an app, never at start, never by a dashboard without one.
@@ -308,7 +315,7 @@ const FORMS =
  * every page carries, the weather card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
- * card, the platforms' logos, the remote card, the Vehicle card, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
+ * card, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
  * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
@@ -343,6 +350,7 @@ export const GROUPS = [
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
   { name: 'slider', test: SLIDER },
+  { name: 'vacuum', test: VACUUM },
   { name: 'app-logos', test: APP_LOGOS },
   { name: 'remote', test: REMOTE },
   { name: 'vehicle', test: VEHICLE },

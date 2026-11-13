@@ -39,10 +39,18 @@ import {
 } from '../cover/common.js';
 import type { RowStyle } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
-import { modeWord, pretty } from '../shared/mode-words.js';
+import { modeWord } from '../shared/mode-words.js';
 import { HeadFit } from '../energy/head.js';
-import { chipBlock, chipRows, COMPACT, drawnAs } from '../shared/heights.js';
+import { drawnAs } from '../shared/heights.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
+import {
+  MOWER_BITS,
+  usual,
+  VACUUM_BITS,
+  vacuumHeight,
+  type Command,
+  type RobotBits,
+} from '../vacuum-family.js';
 
 const vacuumStrings = strings('vacuum');
 
@@ -63,11 +71,9 @@ export interface VacuumCardConfig extends FluvyCardConfig {
   suction_style?: RowStyle;
 }
 
-type Command = 'start' | 'pause' | 'stop' | 'dock' | 'locate';
-
 interface Robot {
   readonly running: string;
-  readonly bits: Readonly<Record<Command | 'suction' | 'battery', number>>;
+  readonly bits: RobotBits;
   /** Command → the service to call and the state to show until Home Assistant answers. */
   readonly services: Readonly<
     Partial<Record<Command, readonly [service: string, expect: string | null]>>
@@ -76,7 +82,7 @@ interface Robot {
 
 const VACUUM: Robot = {
   running: 'cleaning',
-  bits: { pause: 4, stop: 8, dock: 16, suction: 32, battery: 64, locate: 512, start: 8192 },
+  bits: VACUUM_BITS,
   services: {
     start: ['start', 'cleaning'],
     pause: ['pause', 'paused'],
@@ -89,57 +95,13 @@ const VACUUM: Robot = {
 /** A lawn mower is the same machine outdoors, with three features of its own. */
 const MOWER: Robot = {
   running: 'mowing',
-  bits: { start: 1, pause: 2, dock: 4, stop: 0, locate: 0, suction: 0, battery: 0 },
+  bits: MOWER_BITS,
   services: {
     start: ['start_mowing', 'mowing'],
     pause: ['pause', 'paused'],
     dock: ['dock', 'returning'],
   },
 };
-
-/**
- * What a robot draws where the house is not there to say (`layoutHeight`; one never read): Start, Stop and Dock, its
- * battery and its suction.
- */
-const usual = ({ bits }: Robot): number =>
-  bits.start | bits.stop | bits.dock | bits.battery | bits.suction;
-
-/**
- * What the house says of a robot: what it does (`supported_features`; its kind's usual where the house has not read
- * it), whether it reports its own battery (`battery_level`), its suction's speeds.
- */
-export interface RobotDoes {
-  readonly features: number | undefined;
-  readonly level: boolean;
-  readonly speeds: readonly string[];
-}
-
-/**
- * The card's height at a 360 column, for the automatic dashboard's columns: the head; the readouts' row (16 + 44)
- * where the config names a sensor; the battery (a label, the gauge and its marks: 112) where the robot has one; the
- * commands (16 + 44) it takes; its suction as a row of chips under a label — what it does as the house describes it
- * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips.
- */
-export function vacuumHeight(config: VacuumCardConfig, does?: RobotDoes): number {
-  if (config.variant === 'compact') return COMPACT;
-  const id = config.entity;
-  const robot = typeof id === 'string' && id.startsWith('lawn_mower.') ? MOWER : VACUUM;
-  const features = does?.features ?? usual(robot);
-  const has = (key: Command | 'suction' | 'battery'): boolean =>
-    robot.bits[key] !== 0 && (features & robot.bits[key]) !== 0;
-  const readouts = config.area_entity || config.duration_entity || config.remaining_entity ? 60 : 0;
-  const battery =
-    config.show_battery !== false && (config.battery_entity || does?.level || has('battery'))
-      ? 112
-      : 0;
-  const commands =
-    has('start') || has('pause') || has('stop') || has('dock') || has('locate') ? 60 : 0;
-  const style = config.suction_style === 'chips' ? 'chips' : 'full';
-  const suction = has('suction')
-    ? chipBlock(does ? chipRows(does.speeds.map(pretty), style) : 2, style)
-    : 0;
-  return 64 + readouts + battery + commands + suction + 20;
-}
 
 const GAUGE: ReadonlyArray<readonly [number, number]> = [
   [0, 0],
@@ -260,7 +222,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     // disabled: only the colours change (1.9)
     const found = this.entity();
     const robot = found.domain === 'lawn_mower' ? MOWER : VACUUM;
-    const view = drawnAs(found, usual(robot));
+    const view = drawnAs(found, usual(robot.bits));
     const name = this.nameFor(view, this.config?.name);
     const unusable = !isUsable(view);
     const compact = this.config?.variant === 'compact';
