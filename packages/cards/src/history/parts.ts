@@ -8,6 +8,7 @@ import { html, nothing, type TemplateResult } from 'lit';
 import { goBack, plural } from '@fluvy/core';
 import { countFilters, countTargets } from '@fluvy/core/sources';
 import { describePeriod } from '../shared/period.js';
+import { menuShown } from '../shared/page-menu.js';
 import { dayRange, sameRange } from '../shared/range.js';
 
 import { renderChart } from './chart.js';
@@ -15,8 +16,9 @@ import { renderPopoverDates } from './layers.js';
 import { renderStates } from './states.js';
 import type { FluvyHistory } from './view.js';
 
-/** The page's bar: the way back (or the menu on a phone), the page's name, and the data as a file. */
+/** The page's bar: the way back (or the menu, on a phone or beside a hidden sidebar), the page's name, and the data as a file. */
 export function renderBar(page: FluvyHistory): TemplateResult {
+  const menu = !page.back && menuShown(page.narrow, page.hass);
   const lead = page.back
     ? html`<button
         class="fv-round fv-round--bare"
@@ -25,7 +27,7 @@ export function renderBar(page: FluvyHistory): TemplateResult {
       >
         ${glyph('chevronLeft')}
       </button>`
-    : page.narrow
+    : menu
       ? html`<button
           class="fv-round fv-round--bare"
           aria-label=${page.t('menu')}
@@ -37,7 +39,7 @@ export function renderBar(page: FluvyHistory): TemplateResult {
           ${glyph('menu')}
         </button>`
       : nothing;
-  return html`<header class="fv-page-bar">
+  return html`<header class="fv-page-bar ${menu ? 'fv-page-bar--menu' : ''}">
     ${lead}
     <h1 class="fv-page-bar__title">${page.t('title')}</h1>
     <button

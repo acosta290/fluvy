@@ -111,7 +111,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
-| `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet |
+| `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
 | `lang` | 40 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |

@@ -46,6 +46,7 @@ import { roomLook } from '../strategy/home-registry.js';
 import { energySources, hasSources } from '../strategy/layout.js';
 
 import { TextRuler } from '../shared/fit.js';
+import { menuShown } from '../shared/page-menu.js';
 import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.js';
 import { knownPalettes, matchOf } from './palettes.js';
 
@@ -1252,7 +1253,7 @@ export class FluvyPanel extends LitElement {
       <div class="pn-col">
         <header class="pn-top">
           ${
-            this.narrow
+            menuShown(this.narrow, this.hass)
               ? ico('menu', 'neutral', {
                   label: this.t('menu'),
                   onTap: () =>

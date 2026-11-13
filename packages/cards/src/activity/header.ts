@@ -19,8 +19,10 @@ import { singleEntity } from './sources.js';
 import type { FluvyActivity } from './view.js';
 
 import { drawer, popover } from '../shared/layer.js';
+import { menuShown } from '../shared/page-menu.js';
 
 export function renderBar(page: FluvyActivity): TemplateResult {
+  const menu = !page.back && menuShown(page.narrow, page.hass);
   const lead = page.back
     ? html`<button
         class="fv-round fv-round--bare"
@@ -29,7 +31,7 @@ export function renderBar(page: FluvyActivity): TemplateResult {
       >
         ${glyph('chevronLeft')}
       </button>`
-    : page.narrow
+    : menu
       ? html`<button
           class="fv-round fv-round--bare"
           aria-label=${page.t('menu')}
@@ -42,7 +44,7 @@ export function renderBar(page: FluvyActivity): TemplateResult {
         </button>`
       : nothing;
   const { title } = describeRange(page);
-  return html`<header class="fv-page-bar">
+  return html`<header class="fv-page-bar ${menu ? 'fv-page-bar--menu' : ''}">
     ${lead}
     <h1 class="fv-page-bar__title">
       <span class="av-swap ${page.scrolled ? '' : 'is-shown'}">${page.t('title')}</span>

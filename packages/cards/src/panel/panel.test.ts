@@ -1970,6 +1970,19 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
   });
 
+  it('has its menu beside a hidden sidebar, as Home Assistant’s pages do, where nothing else would bring it back (#173)', async () => {
+    const menu = (root: ShadowRoot) => root.querySelector('.pn-top [aria-label="Open the menu"]');
+    const docked = await mount(false, { dockedSidebar: 'docked' });
+    expect(menu(docked.root)).toBeNull(); // the sidebar's own beside it
+    docked.panel.remove();
+    const hidden = await mount(false, { dockedSidebar: 'always_hidden' });
+    const asked: Event[] = [];
+    window.addEventListener('hass-toggle-menu', (event) => asked.push(event), { once: true });
+    (menu(hidden.root) as HTMLElement).click();
+    expect(asked).toHaveLength(1);
+    hidden.panel.remove();
+  });
+
   it('keeps the sidebar beside the page as this device’s own, from Preferences: off from the factory, saved to the device alone (#173)', async () => {
     localStorage.removeItem('fluvy:device');
     const { panel, root, row, button, written, settle } = await mount(false); // everyone's, not an administrator's
