@@ -637,8 +637,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
 
   /**
    * The head: the card's button. A tap folds and unfolds (the default, and a toggle with nothing of its own to
-   * toggle); a tap that runs something else leaves the fold to the chevron, a button of its own then. A hold is the
-   * person's to give.
+   * toggle); a tap that runs something else leaves the fold to the chevron, a button of its own then. A hold and a
+   * double tap are the person's to give, the tap waiting for a second only where a double tap is set (#179).
    */
   private renderHead(open: boolean): TemplateResult {
     const config = this.config as ExpanderCardConfig;
@@ -647,7 +647,11 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     const tap = config.tap_action;
     const runs = tap !== undefined && actionRuns(tap);
     const folds = !runs && tap?.action !== 'none';
-    const onTap = folds ? this.toggle : runs ? () => this.tap(undefined) : undefined;
+    const onTap = this.tapper(
+      'head',
+      folds ? this.toggle : runs ? () => this.tap(undefined) : undefined,
+      this.runner(config.double_tap_action, undefined),
+    );
     const onHold = actionRuns(config.hold_action) ? () => this.hold(undefined) : undefined;
     const press = Boolean(onTap ?? onHold);
     const position: ChevronPosition = config.chevron_position === 'start' ? 'start' : 'end';

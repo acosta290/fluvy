@@ -65,6 +65,7 @@ export const base: readonly BaseKey[] = [
   'card_border',
   'tap_action',
   'hold_action',
+  'double_tap_action',
 ];
 
 export const keys = configKeys<ExpanderCardConfig>()([
