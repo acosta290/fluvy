@@ -132,7 +132,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
 | `details-history` | 10 KB | our history in Home Assistant's details dialog (1.20, #162): the block, its readers of the recorder and its English; fetched the first time a dialog shows it |
-| `lang` | 40 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
+| `lang` | 44 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |
 

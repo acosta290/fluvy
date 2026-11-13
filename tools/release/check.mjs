@@ -192,7 +192,9 @@ const BUDGETS = {
   // our history in Home Assistant's details dialog (1.20, #162): the block, its readers and its English; measured at
   // 7.3 KB
   'details-history': 10_240,
-  // 40 KB since 2026-11-11 (1.19: Russian, #167, whose Cyrillic is two bytes a letter: its catalogue measured 35.9 KB,
+  // 44 KB since 2026-11-13 (1.20: Customise's words, #170, the details sheets' and dialog's, #162, the drive pad's, the
+  // Expander's, the alerts' and the round's editor words, about 3 KB a language: Russian, the longest, went 140 B over
+  // 40, and Ukrainian, #176, stands beside it); 40 KB since 2026-11-11 (1.19: Russian, #167, whose Cyrillic is two bytes a letter: its catalogue measured 35.9 KB,
   // where no Latin one passes 32); 32 KB since 2026-11-06 (1.16: a card's look when unavailable and its brightness while on, #126 #124, the names'
   // and roles' editor words, #125 #127, which commands ask first, unknown names said: Hungarian and Slovak, the longest,
   // went 64 B over 30); 30 KB since 2026-11-04 (the pet devices' words, #112, and the Vehicle card's, #84: its states, its line, its
@@ -200,7 +202,7 @@ const BUDGETS = {
   // over 28); 28 since 1.11 (the date picker's, the units', a row's real last change's, the web page's and the Items
   // card's words, the flights preset's among them: Japanese, the longest, went 320 B over 24); 24 since 1.9 (the
   // appliances' and the alerts' words), 20 in 1.8, 16 before
-  lang: 40_960,
+  lang: 45_056,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };
