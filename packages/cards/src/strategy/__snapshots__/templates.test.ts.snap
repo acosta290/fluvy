@@ -606,6 +606,9 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "grid_options": {
                 "columns": 12,
               },
+              "lights": [
+                "switch.kitchen_light",
+              ],
               "path": "/fluvy-home/room-kitchen",
               "type": "custom:fluvy-room-card",
             },
@@ -915,6 +918,9 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "grid_options": {
                 "columns": 12,
               },
+              "lights": [
+                "switch.kitchen_light",
+              ],
               "path": "/fluvy-home/room-kitchen",
               "type": "custom:fluvy-room-card",
               "variant": "tile",

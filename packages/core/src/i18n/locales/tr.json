@@ -1564,6 +1564,7 @@
     "include": "Bunları da say",
     "exclude": "Hariç tut",
     "entries_help": "Varlıklar, cihazlar ya da alan adları veya switch.dishwasher_* gibi bir kimlik deseni",
+    "lights_help": "“Işıklar” satırının saydığı ve hızlı eylemin açıp kapattığı ışıklar. Buraya eklenen prizdeki bir lamba da onlarla birlikte açılıp kapanır.",
     "name_position": "Fotoğraftaki ad",
     "bottom": "Altta",
     "top": "Üstte",

@@ -1564,6 +1564,7 @@
     "include": "Contar también",
     "exclude": "Dejar fuera",
     "entries_help": "Entidades, dispositivos o dominios, o un patrón de ID como switch.dishwasher_*",
+    "lights_help": "Lo que cuenta la fila «Luces» y enciende su acción rápida. Una lámpara en un enchufe añadida aquí se enciende y se apaga con ellas.",
     "name_position": "Nombre en la foto",
     "bottom": "Abajo",
     "top": "Arriba",

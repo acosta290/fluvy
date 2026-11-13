@@ -1201,6 +1201,23 @@ describe('custom:fluvy-home strategy', () => {
     expect(of('tile')).toContain('switch.study_lamp');
     expect(of('light')).toContain('light.study_desk');
     expect(of('light').every((id) => String(id).startsWith('light.'))).toBe(true);
+    // the room's card counts it among the room's lights, for its row and its round (the demo's kitchen has one too,
+    // a light's switch); a room of lights alone says none, its card's own being its lights
+    const rooms = views
+      .find((v) => v.path === 'rooms')!
+      .sections.flatMap((s) => s.cards)
+      .filter((c) => c.type === 'custom:fluvy-room-card');
+    expect(rooms.find((c) => c['area'] === 'study')?.['lights']).toEqual([
+      'light.study_desk',
+      'switch.study_lamp',
+    ]);
+    expect(
+      rooms
+        .filter((c) => c['lights'])
+        .map((c) => c['area'])
+        .sort(),
+    ).toEqual(['kitchen', 'study']);
+    expect(rooms.length).toBeGreaterThan(2);
   });
 
   it('groups the lights by area, dimmable ones as light cards', async () => {

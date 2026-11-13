@@ -35,8 +35,17 @@ export function roomsOf(home: HomeRegistry): AreaRegistryEntry[] {
 const roomPath = (base: string, area: AreaRegistryEntry): string => `${base}/room-${area.area_id}`;
 
 /**
+ * A room's lights where the house counts a lamp on a plug among them (`home.lights`), for its card's row and round:
+ * the card's own are its `light.*` alone.
+ */
+function roomLights(home: HomeRegistry, areaId: string): { lights?: string[] } {
+  const { lights } = roomParts(home, areaId);
+  return lights.some((id) => !id.startsWith('light.')) ? { lights: [...lights] } : {};
+}
+
+/**
  * A room's card: its page as its path, the dashboard's style — its photo's own (#159) as the dashboard asks of every
- * room, then of this one — and what the dashboard tunes it to hold (`rooms`).
+ * room, then of this one — what the dashboard tunes it to hold (`rooms`), and its lights where a lamp on a plug is one.
  */
 export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card => ({
   type: 'custom:fluvy-room-card',
@@ -46,6 +55,7 @@ export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card =>
   ...ctx.style.roomLook,
   ...ctx.home.look(area.area_id),
   ...ctx.home.tuning(area.area_id),
+  ...roomLights(ctx.home, area.area_id),
   grid_options: { columns: 12 },
 });
 

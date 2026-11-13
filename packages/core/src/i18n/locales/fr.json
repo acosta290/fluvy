@@ -1564,6 +1564,7 @@
     "include": "Compter aussi",
     "exclude": "Laisser de côté",
     "entries_help": "Des entités, des appareils ou des domaines, ou un motif d’identifiants comme switch.dishwasher_*",
+    "lights_help": "Ce que compte la ligne « Lumières » et qu’allume son action rapide. Une lampe sur une prise ajoutée ici s’allume et s’éteint avec elles.",
     "name_position": "Nom sur la photo",
     "bottom": "En bas",
     "top": "En haut",

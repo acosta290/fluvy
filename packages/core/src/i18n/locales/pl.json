@@ -2670,6 +2670,7 @@
     "include": "Licz też",
     "exclude": "Pomiń",
     "entries_help": "Encje, urządzenia lub domeny albo wzorzec identyfikatorów, np. switch.dishwasher_*",
+    "lights_help": "To, co liczy wiersz „Światła” i przełącza szybka akcja. Lampa w gniazdku dodana tutaj włącza się i wyłącza razem z nimi.",
     "name_position": "Nazwa na zdjęciu",
     "bottom": "Na dole",
     "top": "Na górze",

@@ -1564,6 +1564,7 @@
     "include": "Ook meetellen",
     "exclude": "Weglaten",
     "entries_help": "Entiteiten, apparaten of domeinen, of een patroon van ID’s zoals switch.dishwasher_*",
+    "lights_help": "Wat de rij “Verlichting” telt en de snelle actie schakelt. Een lamp aan een stekker die je hier toevoegt, gaat met de rest aan en uit.",
     "name_position": "Naam op de foto",
     "bottom": "Onderaan",
     "top": "Bovenaan",

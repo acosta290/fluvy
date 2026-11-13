@@ -1564,6 +1564,7 @@
     "include": "Conta anche",
     "exclude": "Escludi",
     "entries_help": "Entità, dispositivi o domini, oppure uno schema di ID come switch.dishwasher_*",
+    "lights_help": "Ciò che conta la riga “Luci” e accende la sua azione rapida. Una lampada su una presa aggiunta qui si accende e si spegne con loro.",
     "name_position": "Nome sulla foto",
     "bottom": "In basso",
     "top": "In alto",

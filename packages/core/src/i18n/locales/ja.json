@@ -763,6 +763,7 @@
     "include": "追加でカウント",
     "exclude": "除外",
     "entries_help": "エンティティ、デバイス、ドメイン、またはswitch.dishwasher_*のようなIDのパターン",
+    "lights_help": "「照明」の行が数え、クイックアクションが切り替えるもの。ここに追加したプラグのランプも一緒にオン・オフします。",
     "name_position": "写真上の名前の位置",
     "bottom": "下",
     "top": "上",

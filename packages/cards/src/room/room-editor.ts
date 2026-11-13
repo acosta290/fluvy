@@ -19,6 +19,7 @@ import {
   choiceField,
   colourFields,
   editorWord,
+  entitiesField,
   entityField,
   fieldRow,
   formLabels,
@@ -37,7 +38,7 @@ import {
 import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { lists as tilesLists } from '../tiles/tiles-editor.js';
-import type { RoomCardConfig } from './room-card.js';
+import { roomLights, type RoomCardConfig } from './room-card.js';
 import { defaultGroups, QUICK_GROUPS, quickEntry } from './quick-actions.js';
 import words from '@fluvy/core/locales/en/room-editor.json';
 
@@ -58,12 +59,17 @@ const drawsTiles = (form: Readonly<Record<string, unknown>>): boolean =>
 const drawsLights = (form: Readonly<Record<string, unknown>>): boolean =>
   drawsControls(form) && form['controls'] !== 'none';
 
+/** …its category rows. */
+const drawsRows = ({ variant, controls }: Readonly<Record<string, unknown>>): boolean =>
+  variant !== 'row' && (controls ?? 'rows') === 'rows';
+
 /** …its quick actions. */
-/** The arrows stand on a tile's head and on the category rows: a card of neither has none to hide. */
-const drawsArrows = ({ variant, controls }: Readonly<Record<string, unknown>>): boolean =>
-  variant === 'tile' || (variant !== 'row' && (controls ?? 'rows') === 'rows');
 const drawsQuick = ({ show_quick_actions: shown }: Readonly<Record<string, unknown>>): boolean =>
   shown !== false;
+
+/** The arrows stand on a tile's head and on the category rows: a card of neither has none to hide. */
+const drawsArrows = (form: Readonly<Record<string, unknown>>): boolean =>
+  form['variant'] === 'tile' || drawsRows(form);
 
 /** The photo alone carries the name's pill, a picture and the readouts. */
 const isPhoto = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant === 'photo';
@@ -106,6 +112,7 @@ export const keys = configKeys<RoomCardConfig>()([
   'controls',
   'tiles',
   'quick_actions',
+  'lights',
   'path',
   'temperature_entity',
   'humidity_entity',
@@ -233,6 +240,8 @@ export const defaults: EditorDefaults = (config, hass) => {
   const area = hass?.areas?.[String(config['area'] ?? '')];
   const found =
     hass && area ? areaContents(hass, area.area_id, config as RoomCardConfig) : undefined;
+  const devices = found?.devices ?? [];
+  const lights = roomLights(config as RoomCardConfig, devices);
   return {
     variant: config['picture'] || area?.picture ? 'photo' : 'tile',
     controls: 'rows',
@@ -244,7 +253,8 @@ export const defaults: EditorDefaults = (config, hass) => {
     readout_labels: 'auto',
     show_quick_actions: true,
     show_arrow: true,
-    quick_actions: defaultGroups(hass, found?.devices ?? []),
+    quick_actions: defaultGroups({ hass, devices, lights }),
+    lights,
     tint: 'on',
     light_colors: lightDefaults().colors,
     light_whites: 'temperature',
@@ -296,6 +306,11 @@ export function getConfigForm(): LovelaceConfigForm {
       { name: 'quick_actions', selector: { object: {} } },
       // a picture is the photo's alone (the default where the room has one)
       fieldRow(onlyWhen(isPhoto, textField('picture')), textField('path')),
+      // the lights its row and its lights' round count and switch: a lamp on a plug among them
+      onlyWhen((form) => drawsRows(form) || drawsQuick(form), {
+        ...entitiesField('lights', ['light', 'switch']),
+        helper: 'room-editor.lights_help',
+      }),
       fieldRow(
         readingField('temperature', 'climate'),
         readingField('humidity', 'climate', 'humidifier'),
@@ -321,6 +336,7 @@ export function getConfigForm(): LovelaceConfigForm {
       readout_style: 'room-editor.readout_style',
       readout_labels: 'room-editor.readout_labels',
       quick_actions: 'room-editor.quick_actions',
+      lights: 'room.lights',
       include: 'room-editor.include',
       exclude: 'room-editor.exclude',
     }),

@@ -1564,6 +1564,7 @@
     "include": "Auch zählen",
     "exclude": "Weglassen",
     "entries_help": "Entitäten, Geräte oder Domänen, oder ein Muster von IDs wie switch.dishwasher_*",
+    "lights_help": "Was die Zeile „Licht“ zählt und die Schnellaktion schaltet. Eine Lampe an einer Steckdose, hier hinzugefügt, geht mit ihnen an und aus.",
     "name_position": "Name auf dem Foto",
     "bottom": "Unten",
     "top": "Oben",

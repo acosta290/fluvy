@@ -2787,6 +2787,7 @@
     "include": "Zahrnúť aj",
     "exclude": "Vylúčiť",
     "entries_help": "Entity, zariadenia, domény alebo vzor ID, napríklad switch.dishwasher_*",
+    "lights_help": "Čo počíta riadok „Svetlá“ a prepína rýchla akcia. Lampa v zásuvke pridaná sem sa zapína a vypína spolu s nimi.",
     "name_position": "Názov na fotografii",
     "bottom": "Dole",
     "top": "Hore",

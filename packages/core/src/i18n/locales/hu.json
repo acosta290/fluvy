@@ -763,6 +763,7 @@
     "include": "Ezeket is számolja",
     "exclude": "Kihagyás",
     "entries_help": "Entitások, eszközök vagy tartományok, vagy egy azonosítóminta, például switch.dishwasher_*",
+    "lights_help": "Amit a „Világítás” sor számol és a gyorsművelet kapcsol. Az itt hozzáadott, konnektorba dugott lámpa velük együtt kapcsol be és ki.",
     "name_position": "A név helye a fényképen",
     "bottom": "Alul",
     "top": "Felül",

@@ -10,6 +10,7 @@ import {
 } from '@fluvy/core';
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
+import { ROW } from '../shared/heights.js';
 import { FluvyRoomCard, loadQuickActions, roomHeight, type RoomCardConfig } from './room-card.js';
 import * as roomEditor from './room-editor.js';
 
@@ -565,6 +566,17 @@ describe('the room card’s editor offers what acts in the room’s style (#58)'
     expect(await shown({ variant: 'tile', controls: 'none' })).not.toContain('light_colors');
   });
 
+  it('its lights wherever its rows or its quick actions count them (#170)', async () => {
+    expect(await shown({ variant: 'tile' })).toContain('lights');
+    expect(await shown({ variant: 'row' })).toContain('lights');
+    expect(await shown({ variant: 'tile', controls: 'tiles' })).toContain('lights');
+    expect(
+      await shown({ variant: 'tile', controls: 'tiles', show_quick_actions: false }),
+    ).not.toContain('lights');
+    expect(await shown({ variant: 'row', show_quick_actions: false })).not.toContain('lights');
+    expect(await shown({ controls: 'rows', show_quick_actions: false })).toContain('lights');
+  });
+
   it('a picture for the photo alone: its default where the room has one or the card names one', async () => {
     expect(await shown({ variant: 'tile', controls: 'tiles' })).not.toContain('picture');
     expect(await shown({ variant: 'tile', picture: '/local/garden.jpg' })).not.toContain('picture');
@@ -726,6 +738,50 @@ describe('a room’s quick actions (#113)', () => {
     expect(rounds(card)[0]?.getAttribute('aria-checked')).toBe('false');
     rounds(card)[0]!.click();
     expect(sent.at(-1)?.service).toBe('turn_on');
+  });
+
+  it('counts a lamp on a plug among its lights where it lists one, and switches it as a switch (#170)', async () => {
+    const lamp: Seed = ['switch.lounge_floor_lamp', 'on', { friendly_name: 'Floor lamp' }];
+    const lights = ['light.lounge_ceiling', 'light.lounge_reading', 'switch.lounge_floor_lamp'];
+    sent.length = 0;
+    const card = await room({ area: 'lounge', variant: 'tile', lights }, lounge([lamp]));
+    const row = [...root(card).querySelectorAll('.am-rows .fv-row')][0]!;
+    expect(row.querySelector('.fv-row__title')?.textContent?.trim()).toBe('Lights');
+    expect(row.querySelector('.fv-row__sub')?.textContent?.trim()).toBe('2 of 3 on');
+    // (70 + 0 + 100) / 3 lit: the plug at its whole while on
+    expect(ring(rounds(card)[0]!)).toBe(57);
+    rounds(card)[0]!.click();
+    await card.updateComplete;
+    expect(sent).toEqual([
+      {
+        domain: 'light',
+        service: 'turn_off',
+        data: { entity_id: ['light.lounge_ceiling', 'light.lounge_reading'] },
+      },
+      { domain: 'switch', service: 'turn_off', data: { entity_id: ['switch.lounge_floor_lamp'] } },
+    ]);
+    expect(rounds(card)[0]?.getAttribute('aria-checked')).toBe('false');
+    // a room whose one lamp is on a plug has its lights' round and row, the height it declares counting the row
+    const alone = lounge([lamp]);
+    for (const id of Object.keys(alone.states))
+      if (id.startsWith('light.lounge')) delete alone.states[id];
+    const only = await room(
+      { area: 'lounge', quick_actions: ['lights'], lights: ['switch.lounge_floor_lamp'] },
+      alone,
+    );
+    expect(names(only)).toEqual(['Lights']);
+    const found = areaContents(alone, 'lounge');
+    expect(
+      roomHeight(
+        { type: 'custom:fluvy-room-card', area: 'lounge', lights: ['switch.lounge_floor_lamp'] },
+        { found, picture: false, admin: false },
+      ),
+    ).toBe(
+      roomHeight(
+        { type: 'custom:fluvy-room-card', area: 'lounge' },
+        { found, picture: false, admin: false },
+      ) + ROW,
+    );
   });
 
   it('closes open blinds, opens closed ones, and stops them while they move', async () => {

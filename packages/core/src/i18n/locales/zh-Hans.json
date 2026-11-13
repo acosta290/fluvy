@@ -2731,6 +2731,7 @@
     "include": "同时计入",
     "exclude": "排除",
     "entries_help": "实体、设备或域，或 switch.dishwasher_* 这类 ID 匹配模式",
+    "lights_help": "“灯光”一行统计、快捷操作开关的灯。在此添加插座上的台灯，它会随这些灯一起开关。",
     "name_position": "照片上的名称位置",
     "bottom": "底部",
     "top": "顶部",

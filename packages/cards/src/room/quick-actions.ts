@@ -82,6 +82,8 @@ export interface QuickHost {
   readonly config?: RoomCardConfig | undefined;
   /** The room's devices as the card counts them. */
   readonly devices: readonly string[];
+  /** The room's lights as the card counts them (`roomLights`): a lamp on a plug among them where it lists one. */
+  readonly lights: readonly string[];
   /** A state as drawn: the one a tap expects until Home Assistant says it. */
   state(view: EntityView): string;
   expect(entityId: string, state: string): void;
@@ -105,24 +107,26 @@ export interface QuickRounds {
   readonly template: TemplateResult | typeof nothing;
 }
 
-/** A set's entities among a room's devices: those of its domain (its blinds, never its doors and gates). */
-function membersOf(
-  hass: HomeAssistant | undefined,
-  devices: readonly string[],
-  group: QuickGroup,
-): string[] {
-  return devices.filter(
-    (id) =>
-      id.startsWith(`${GROUPS[group]}.`) &&
-      (group !== 'covers' || !GATEWAYS.has(resolveEntity(hass, id).deviceClass)),
-  );
+/** What a room's sets are drawn from: its house, its devices and its lights as the card counts them. */
+export type QuickRoom = Pick<QuickHost, 'hass' | 'devices' | 'lights'>;
+
+/**
+ * A set's entities in a room: its lights (a lamp on a plug among them where the card lists one), else its devices of
+ * the set's domain (its blinds, never its doors and gates).
+ */
+function membersOf({ hass, devices, lights }: QuickRoom, group: QuickGroup): readonly string[] {
+  return group === 'lights'
+    ? lights
+    : devices.filter(
+        (id) =>
+          id.startsWith(`${GROUPS[group]}.`) &&
+          (group !== 'covers' || !GATEWAYS.has(resolveEntity(hass, id).deviceClass)),
+      );
 }
 
 /** The sets a room's rounds stand for when the card names none: its lights, then its blinds, where it has them. */
-export const defaultGroups = (
-  hass: HomeAssistant | undefined,
-  devices: readonly string[],
-): QuickGroup[] => DEFAULT.filter((group) => membersOf(hass, devices, group).length);
+export const defaultGroups = (room: QuickRoom): QuickGroup[] =>
+  DEFAULT.filter((group) => membersOf(room, group).length);
 
 /** The rounds asked for (`quick_actions`), else the room's lights and blinds; a set the room does not hold has none. */
 function quickActions(host: QuickHost): QuickAction[] {
@@ -136,7 +140,7 @@ function quickActions(host: QuickHost): QuickAction[] {
           ? Boolean(item.entity)
           : item.group !== undefined &&
             Object.hasOwn(GROUPS, item.group) &&
-            membersOf(host.hass, host.devices, item.group).length > 0),
+            membersOf(host, item.group).length > 0),
     );
 }
 
@@ -201,30 +205,37 @@ const PAUSES: Ways = [
 const PLAYS: Ways = [['media_play', MEDIA_PLAY]];
 const WAKES: Ways = [['turn_on', MEDIA_TURN_ON]];
 
-/** One call of a round's: a service of its domain and the members that take it. */
+/** One call of a round's: a service of a domain and the members of that domain that take it. */
 interface Call {
+  readonly domain: string;
   readonly service: string;
   readonly ids: readonly string[];
 }
 
 /**
- * The calls that move `views`, one a service in the order of `ways`: each member by the first of them it supports, one
- * that supports none left out (Home Assistant refuses a whole call one of its entities cannot take).
+ * The calls that move `views`, one a service in the order of `ways` and a domain (a lamp on a plug among lights is a
+ * switch, which a light's call never reaches): each member by the first of them it supports, one that supports none
+ * left out (Home Assistant refuses a whole call one of its entities cannot take).
  */
 function callsOf(views: readonly EntityView[], ways: Ways): Call[] {
   const way = (view: EntityView): string | undefined =>
     ways.find(([, feature]) => !feature || view.supports(feature))?.[0];
+  const domains = [...new Set(views.map((view) => view.domain))];
   return ways
-    .map(([service]) => ({
-      service,
-      ids: views.filter((view) => way(view) === service).map((view) => view.id),
-    }))
+    .flatMap(([service]) =>
+      domains.map((domain) => ({
+        domain,
+        service,
+        ids: views
+          .filter((view) => view.domain === domain && way(view) === service)
+          .map((view) => view.id),
+      })),
+    )
     .filter((call) => call.ids.length > 0);
 }
 
 /** A round's on and off as it would go now: its calls (none: none of its members can), and the state they expect. */
 interface Flip {
-  readonly domain: string;
   readonly calls: readonly Call[];
   readonly expect?: string;
 }
@@ -232,7 +243,8 @@ interface Flip {
 /**
  * A round's own on and off, for all of it at once: a set on goes off, a set off comes on; blinds that move stop, else
  * open ones close and closed ones open; players that play pause, else those on play and those off come on — each
- * member by what it takes (a blind that only tilts by its slats), one call a service.
+ * member by what it takes (a blind that only tilts by its slats, a lamp on a plug as a switch), one call a service
+ * and a domain.
  */
 function flipOf(domain: string, views: readonly EntityView[], on: boolean): Flip {
   const usable = views.filter(isUsable);
@@ -241,21 +253,20 @@ function flipOf(domain: string, views: readonly EntityView[], on: boolean): Flip
       usable.filter((view) => MOVING.has(view.state)),
       STOPS,
     );
-    if (stops.length) return { domain, calls: stops };
+    if (stops.length) return { calls: stops };
     return on
-      ? { domain, calls: callsOf(usable, CLOSES), expect: 'closed' }
-      : { domain, calls: callsOf(usable, OPENS), expect: 'open' };
+      ? { calls: callsOf(usable, CLOSES), expect: 'closed' }
+      : { calls: callsOf(usable, OPENS), expect: 'open' };
   }
   if (domain === 'media_player') {
     const playing = usable.filter((view) => view.state === 'playing');
-    if (playing.length) return { domain, calls: callsOf(playing, PAUSES) };
+    if (playing.length) return { calls: callsOf(playing, PAUSES) };
     const awake = usable.filter((view) => view.state !== 'off');
     return awake.length
-      ? { domain, calls: callsOf(awake, PLAYS), expect: 'playing' }
-      : { domain, calls: callsOf(usable, WAKES) };
+      ? { calls: callsOf(awake, PLAYS), expect: 'playing' }
+      : { calls: callsOf(usable, WAKES) };
   }
   return {
-    domain,
     calls: callsOf(usable, [[on ? 'turn_off' : 'turn_on', 0]]),
     expect: on ? 'off' : 'on',
   };
@@ -263,9 +274,9 @@ function flipOf(domain: string, views: readonly EntityView[], on: boolean): Flip
 
 /** Every call of a round's at once, its members drawn as they will be. */
 function perform(host: QuickHost, flip: Flip): void {
-  for (const { service, ids } of flip.calls) {
+  for (const { domain, service, ids } of flip.calls) {
     if (flip.expect) for (const id of ids) host.expect(id, flip.expect);
-    host.call(flip.domain, service, { entity_id: [...ids] });
+    host.call(domain, service, { entity_id: [...ids] });
   }
 }
 
@@ -311,7 +322,7 @@ function runFlip(
     return host.run(
       {
         action: 'perform-action',
-        perform_action: `${flip.domain}.${first.service}`,
+        perform_action: `${first.domain}.${first.service}`,
         target: { entity_id: [...first.ids] },
         confirmation,
       },
@@ -355,27 +366,27 @@ const TOGGLE: ActionConfig = { action: 'toggle' };
 function roundOf(host: QuickHost, item: QuickAction): LevelRound {
   const { hass, config } = host;
   const group = item.group === 'entity' ? undefined : item.group;
-  const ids = group ? membersOf(hass, host.devices, group) : [item.entity ?? ''];
+  const ids = group ? membersOf(host, group) : [item.entity ?? ''];
   const views = ids.map((id) => resolveEntity(hass, id));
   const first = views[0] ?? resolveEntity(hass, undefined);
+  // the room's lights (a lamp on a plug among them), or a light of its own
+  const light = group ? group === 'lights' : first.domain === 'light';
   const lit = (view: EntityView): boolean =>
     isUsable(view) && isActiveState(view.domain, host.state(view));
   // a set of lights counts each lamp once (a group in the room is its members)
-  const lamps =
-    first.domain === 'light' ? lampsOf(ids, hass).map((id) => resolveEntity(hass, id)) : views;
+  const lamps = light ? lampsOf(ids, hass).map((id) => resolveEntity(hass, id)) : views;
   const on = views.some(lit);
   const level =
     lamps.reduce((sum, view) => sum + (lit(view) ? levelOf(view) : 0), 0) / lamps.length;
   const glow =
-    first.domain === 'light' && on && (config?.light_colors ?? lightDefaults().colors)
+    light && on && (config?.light_colors ?? lightDefaults().colors)
       ? group
         ? meanHex(lamps, config?.light_whites)
         : litColour(first, true, config?.light_whites, hass)
       : undefined;
-  const [colour, tone] =
-    first.domain === 'light'
-      ? lightLook(item, config, glow)
-      : [item.color, statusToneOf(item, toneFor(first))];
+  const [colour, tone] = light
+    ? lightLook(item, config, glow)
+    : [item.color, statusToneOf(item, toneFor(first))];
   const single = ids.length === 1 ? ids[0] : undefined;
   // what its actions are for: its own entity, else its one member; a set of several has none
   const own = item.entity ?? single;

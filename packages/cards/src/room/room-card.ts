@@ -94,6 +94,11 @@ export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTunin
   controls?: RoomControls;
   /** The tiles to draw (default: the room's lights, then its switches, covers and fans, four at most). */
   tiles?: readonly TileItem[];
+  /**
+   * The room's lights, for its lights' row and round (default: its `light.*`): a lamp on a plug (a `switch.*`) among
+   * them comes on and goes off with the rest, switched as a switch.
+   */
+  lights?: readonly string[];
   /** Where the room opens (an admin without one goes to the area's settings). */
   path?: string;
   /** The room's temperature, a sensor or a thermostat (its own reading); default: the area's (`areaClimate`). */
@@ -173,6 +178,15 @@ const NOTHING: RoomContents = {
 const askedTiles = (config: RoomCardConfig | undefined): readonly TileItem[] | undefined =>
   Array.isArray(config?.tiles) && config.tiles.length ? config.tiles : undefined;
 
+/** The room's lights: those its config lists, else its `light.*` devices (what it declares and what it draws alike). */
+export const roomLights = (
+  config: RoomCardConfig | undefined,
+  devices: readonly string[],
+): readonly string[] => {
+  const own = idsOf(config?.lights);
+  return own.length ? own : devices.filter((id) => id.startsWith('light.'));
+};
+
 /** The labels a room's readouts may be asked for besides `auto`, which anything else is read as. */
 const LABELS: readonly ReadoutLabels[] = ['words', 'icons', 'none'];
 
@@ -221,7 +235,10 @@ export function roomHeight(config: RoomCardConfig, room?: RoomHolds): number {
     found?.devices.some((id) => id.startsWith(`${domain}.`)) ? 1 : 0;
   // every device's row only where it has one (a room of sensors alone has its readings, and no rows)
   const rows = found
-    ? has('light') + has('climate') + has('media_player') + (found.devices.length ? 1 : 0)
+    ? (roomLights(config, found.devices).length ? 1 : 0) +
+      has('climate') +
+      has('media_player') +
+      (found.devices.length ? 1 : 0)
     : 4;
   const tiles = Math.min(TILES, asked ?? found?.controls.length ?? TILES);
   const drawn = config.controls === 'none' ? 0 : config.controls === 'tiles' ? tiles : rows;
@@ -325,6 +342,7 @@ export class FluvyRoomCard extends FluvyTileCard {
 
   protected override prepare(config: RoomCardConfig): RoomCardConfig {
     if (!config.area) throw new Error('fluvy-room-card: "area" is required');
+    listOf(config, 'lights');
     // its rounds a list, or none: what it watches and what it draws read them as one; one round written without its
     // dash (`quick_actions: lights`) is a list of one
     const rounds: unknown = config.quick_actions;
@@ -407,8 +425,8 @@ export class FluvyRoomCard extends FluvyTileCard {
   protected override watched(): readonly string[] {
     const { members, entities, climate } = this.contents();
     // every entity the area holds, shown or not: one whose state comes late fills the room, a hidden one moves the hint;
-    // what it includes from elsewhere, and its quick actions' own; a light group's members (its colour is theirs); and
-    // what a tile's last change is read from (`since`)
+    // what it includes from elsewhere, its quick actions' own and its lights; a light group's members (its colour is
+    // theirs); and what a tile's last change is read from (`since`)
     const tiles = this.tiles();
     return withMembers(
       [
@@ -417,6 +435,7 @@ export class FluvyRoomCard extends FluvyTileCard {
           ...entities,
           ...tiles,
           ...(this.room?.quick_actions ?? []),
+          ...(this.room?.lights ?? []),
           climate.temperature,
           climate.humidity,
         ]),
@@ -500,6 +519,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         hass: this.hass,
         config: this.room,
         devices: this.contents().devices,
+        lights: roomLights(this.room, this.contents().devices),
         state: (view) => this.stateOf(view),
         expect: (id, state) => this.expect(id, state),
         call: (domain, service, data) => this.call(domain, service, data, ''),
@@ -622,7 +642,7 @@ export class FluvyRoomCard extends FluvyTileCard {
     const { devices: ids } = this.contents();
     if (!this.hass) return nothing;
     const to = this.destination();
-    const lights = ids.filter((id) => id.startsWith('light.'));
+    const lights = roomLights(this.room, ids);
     const climate = ids.find((id) => id.startsWith('climate.'));
     const player = ids.find((id) => id.startsWith('media_player.'));
     const unavailable = ids.filter((id) => !isUsable(this.entity(id))).length;

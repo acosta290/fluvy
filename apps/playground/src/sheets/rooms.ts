@@ -863,6 +863,40 @@ export const sheet: SheetSpec = {
         }),
       ],
     },
+    // #170: a lamp on a plug among the room's lights, as the automatic dashboards list it: the Lights row counts it, and
+    // the lights' round switches it as a switch with the rest, its ring counting it whole while it is on
+    {
+      title: 'Room · a lamp on a plug among its lights (#170)',
+      hass: (hass) => ({
+        ...hass,
+        states: {
+          ...hass.states,
+          'switch.rm_bedside_lamp': {
+            ...hass.states['switch.rm_kettle']!,
+            entity_id: 'switch.rm_bedside_lamp',
+            state: 'on',
+            attributes: { friendly_name: 'Bedside lamp' },
+          },
+        },
+        entities: {
+          ...hass.entities,
+          'switch.rm_bedside_lamp': { entity_id: 'switch.rm_bedside_lamp', area_id: 'rm_bedroom' },
+        } as HomeAssistant['entities'],
+      }),
+      cards: [
+        room({
+          area: 'rm_bedroom',
+          variant: 'tile',
+          lights: ['light.rm_bedroom', 'switch.rm_bedside_lamp'],
+          path: '/fluvy-auto/room-rm_bedroom',
+        }),
+        room({
+          area: 'rm_bedroom',
+          variant: 'row',
+          lights: ['light.rm_bedroom', 'switch.rm_bedside_lamp'],
+        }),
+      ],
+    },
     // half a section: as many rounds as the name leaves room for, none where it leaves none; and none asked for
     {
       title: 'Room · quick actions in half a section (#113)',
