@@ -1,4 +1,5 @@
 import { FluvyMetersCard } from '../../../../packages/cards/src/meters/meters-card.js';
+import { house } from '../houses.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-meters-card'))
@@ -70,7 +71,14 @@ const GAS_HOURS = [
   0.2, 0.25, 0.2, 0.05,
 ];
 
+/** An American house's water in gallons: 20.8 compiled, 1.1 since; and one that has used nothing since midnight. */
+const GALLON_HOURS = WATER_HOURS.map((v) => Math.round(v * 0.26 * 10) / 10);
+const NIGHT_HOURS = WATER_HOURS.map(() => 0);
+
 const TODAY: Record<string, (message: Record<string, unknown>) => Row[]> = {
+  'sensor.mt_water_gal': (m) => hours(m, 12_718.4, GALLON_HOURS),
+  // the hour before midnight's 0.1 gal, then nothing: the meter now reads 0.003 gal under its last hour (#181)
+  'sensor.mt_dip': (m) => hours(m, 30_512.6, NIGHT_HOURS),
   'sensor.mt_water': (m) => hours(m, 48_126, WATER_HOURS),
   'sensor.mt_gas': (m) => hours(m, 1529.7, GAS_HOURS),
   'sensor.mt_water_long': (m) => hours(m, 48_126, WATER_HOURS),
@@ -94,7 +102,58 @@ const WEEK: Record<string, (message: Record<string, unknown>) => Row[]> = {
   'sensor.mt_gas_kwh': (m) => days(m, [29, 33, 31, 30, 28, 32, 34]),
   // a meter added three days ago: the mean of the days there are
   'sensor.mt_garden': (m) => days(m, [0.3, 0.9, 0.6]),
+  'sensor.mt_water_gal': (m) => days(m, [36, 43, 39, 36, 42, 38, 39]),
+  'sensor.mt_dip': (m) => days(m, [41, 38, 44, 40, 37, 42, 39]),
 };
+
+/** The recorder as the sheet keeps it: the hours of today, else the days of the last week. */
+const statistics = (message: Record<string, unknown>) => {
+  const ids = (message['statistic_ids'] as string[] | undefined) ?? [];
+  const table = message['period'] === 'day' ? WEEK : TODAY;
+  return Object.fromEntries(ids.map((id) => [id, table[id]?.(message) ?? []]));
+};
+
+/**
+ * A house whose gas is a statistic its utility imports (#181: `opower:…`, in CCF, one figure a day): its days of the
+ * last month up to `behind` days before today, a winter's use, beside the house's own water meter in gallons. Each
+ * frame's its own statistic: the meters' answers are kept by what was asked, as one house's are.
+ */
+const utility = (behind: number, gas = 'opower:pge_gas') =>
+  house({
+    'energy/get_prefs': () => ({
+      energy_sources: [
+        { type: 'water', stat_energy_from: 'sensor.mt_water_gal' },
+        { type: 'gas', stat_energy_from: gas },
+      ],
+      device_consumption: [],
+    }),
+    'recorder/get_statistics_metadata': () => [
+      {
+        statistic_id: gas,
+        name: 'PG&E gas consumption',
+        source: 'opower',
+        has_sum: true,
+        mean_type: 0,
+        statistics_unit_of_measurement: 'CCF',
+      },
+    ],
+    'recorder/statistics_during_period': (message) => {
+      const ids = (message['statistic_ids'] as string[] | undefined) ?? [];
+      if (!ids.includes(gas)) return statistics(message);
+      const from = Date.parse(String(message['start_time']));
+      const to = Date.parse(String(message['end_time']));
+      const count = Math.max(0, Math.floor((to - from) / DAY) - behind);
+      const use = [2.4, 1.8, 2.0, 2.2, 1.9, 2.3, 2.1];
+      return {
+        [gas]: Array.from({ length: count }, (_u, i) => ({
+          start: from + i * DAY,
+          end: from + (i + 1) * DAY,
+          change: use[i % use.length],
+          state: 0,
+        })),
+      };
+    },
+  });
 
 export const sheet: SheetSpec = {
   states: [
@@ -109,6 +168,8 @@ export const sheet: SheetSpec = {
       432,
     ],
     ['valve.mt_main', 'open', { friendly_name: 'Main valve', device_class: 'water' }],
+    ['sensor.mt_water_gal', '12740.3', meter('Water meter', 'gal', 'water')],
+    ['sensor.mt_dip', '30512.597', meter('Water meter', 'gal', 'water')],
 
     /* the hard ones */
     ['sensor.mt_water_dead', 'unavailable', meter('Water meter', 'L', 'water')],
@@ -168,16 +229,10 @@ export const sheet: SheetSpec = {
       energy_sources: [
         { type: 'water', stat_energy_from: 'sensor.mt_water' },
         { type: 'gas', stat_energy_from: 'sensor.mt_gas' },
-        // an imported statistic: no reading of its own, left out
-        { type: 'water', stat_energy_from: 'utility:water_bill' },
       ],
       device_consumption: [],
     }),
-    'recorder/statistics_during_period': (message) => {
-      const ids = (message['statistic_ids'] as string[] | undefined) ?? [];
-      const table = message['period'] === 'day' ? WEEK : TODAY;
-      return Object.fromEntries(ids.map((id) => [id, table[id]?.(message) ?? []]));
-    },
+    'recorder/statistics_during_period': statistics,
   },
 
   frames: [
@@ -325,6 +380,28 @@ export const sheet: SheetSpec = {
           _now: NOW,
         },
       ],
+    },
+    // #181: a meter a hair under its last compiled hour has used nothing since: "0 gal", never "-0.00 gal"
+    {
+      title: 'A dip under the last hour',
+      cards: [{ type: 'custom:fluvy-meters-card', meters: ['sensor.mt_dip'], _now: NOW }],
+    },
+    // #181: the Energy dashboard's gas a statistic its utility imports: its latest day with its date, beside the
+    // house's water today; then its figures a fortnight old
+    {
+      title: 'A utility’s gas, imported',
+      hass: utility(2),
+      cards: [{ type: 'custom:fluvy-meters-card', _now: NOW }],
+    },
+    {
+      title: 'A utility’s gas, imported · its figures a fortnight old',
+      hass: utility(14, 'opower:pge_gas_old'),
+      cards: [{ type: 'custom:fluvy-meters-card', _now: NOW }],
+    },
+    {
+      title: 'A utility’s gas, imported · rows',
+      hass: utility(2, 'opower:pge_gas_rows'),
+      cards: [{ type: 'custom:fluvy-meters-card', variant: 'rows', _now: NOW }],
     },
   ],
 };

@@ -2075,7 +2075,9 @@
     "editor_rate": "Şu anki akış (isteğe bağlı)",
     "editor_typical": "Olağan bir gün (boşsa: son 7 günün ortalaması)",
     "editor_kind": "Tür",
-    "no_statistics": "Henüz istatistik yok"
+    "no_statistics": "Henüz istatistik yok",
+    "no_figures_since": "{date} tarihinden beri veri yok",
+    "latest": "Son veriler"
   },
   "energy-sankey": {
     "title": "Nereye gitti",

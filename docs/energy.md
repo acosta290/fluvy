@@ -184,7 +184,11 @@ show_compare: true              # Compare: the period before beside the span, on
   into the house, the battery and the export, and the house into its devices and what is not measured.
 - **Energy score** — self-powered, the sun used and low-carbon, as the Energy dashboard's own gauges compute them.
 - **Water & gas** — each meter's use today against a typical day, what flows right now, and a leak sensor or a valve
-  beside them.
+  beside them. A meter can be a statistic a utility's integration imports (`opower:…`, one figure a day, a day or two
+  behind), as the Energy dashboard's water and gas sources often are: the card reads its latest day and says its date
+  ("Nov 11 · typical 2.1 CCF"), its unit and name from the statistic, its kind from the Energy dashboard's list (or
+  `kind`), with no "now" and nothing to open; once its figures are more than a week old it says since when ("No figures
+  since Nov 3"), its bar empty. A figure that rounds to nothing reads 0, never "-0.00".
 - **Energy** — a sensor's power now and its curve today, with up to three totals under it. Where the card names no
   `tone` or `color`, its line and its head wear the colour of what the line shows: the Energy dashboard's sensor of a
   source (its power or its meter) the source's colour — the sun's, the grid's, a battery's, a generator's, a car's —,
@@ -386,6 +390,13 @@ meters:
   - { entity: sensor.water_meter, rate: sensor.water_flow, typical: 150 }
   - { entity: sensor.gas_meter }
 rows: [binary_sensor.kitchen_leak, valve.main_water]
+```
+
+```yaml
+type: custom:fluvy-meters-card
+meters:
+  - sensor.water_meter
+  - { entity: "opower:pge_elec_gas_consumption", kind: gas }   # imported: its latest day, with its date
 ```
 
 ```yaml

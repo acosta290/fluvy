@@ -1840,7 +1840,9 @@
     "editor_rate": "Bieżący przepływ (opcjonalnie)",
     "editor_typical": "Typowy dzień (puste: średnia z 7 dni)",
     "editor_kind": "Rodzaj",
-    "no_statistics": "Brak statystyk"
+    "no_statistics": "Brak statystyk",
+    "no_figures_since": "Brak danych od {date}",
+    "latest": "Najnowsze dane"
   },
   "now-playing": {
     "progress": "{position} z {duration}",

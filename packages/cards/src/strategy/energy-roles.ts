@@ -1,4 +1,5 @@
 import { readPrefs, type EnergyPrefs } from '../energy-model/prefs.js';
+import { isImported } from '../energy-model/recorded.js';
 import { prefSources } from '../energy-model/sources.js';
 import { says, type Rules } from '../shared/words.js';
 import type { EnergyRoles, SourcePower } from './types.js';
@@ -118,12 +119,18 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const consumptionPowers = (consumption.length ? consumption : home.appliances)
     .map(powerBeside)
     .filter((p): p is string => Boolean(p));
-  // water and gas: the energy dashboard's meters, else every meter of that class the house has
+  // water and gas: the energy dashboard's meters, a statistic a utility imports among them (#181) with its list's kind,
+  // having no device class to say it; else every meter of that class the house has
   const volume = (deviceClass: string): string[] =>
     home
       .sensors(deviceClass, true)
       .filter((id) => home.state(id) !== undefined && home.stateClass(id) === 'total_increasing');
-  const meters = [...house.water, ...house.gas].filter((id) => home.hasState(id));
+  const meters = [
+    ...house.water.map((entity) => ({ entity, kind: 'water' as const })),
+    ...house.gas.map((entity) => ({ entity, kind: 'gas' as const })),
+  ].flatMap((m) =>
+    isImported(m.entity) ? [m] : home.hasState(m.entity) ? [{ entity: m.entity }] : [],
+  );
   return {
     solarPowers,
     gridPower,
@@ -146,7 +153,9 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
       (prefSources(prefs).length > 0 && !gridPower && !gridPhases.length),
     prefsMeters: house.sources.some((s) => s.energyIn.length > 0 || s.energyOut.length > 0),
     prefsMetered: (['water', 'gas'] as const).filter((kind) => house[kind].length > 0),
-    meters: meters.length ? meters : [...volume('water'), ...volume('gas')].slice(0, 4),
+    meters: meters.length
+      ? meters
+      : [...volume('water'), ...volume('gas')].slice(0, 4).map((entity) => ({ entity })),
     any: Boolean(
       arrays.length || gridPower || gridPhases.length || consumption.length || energies.length,
     ),

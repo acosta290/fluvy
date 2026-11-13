@@ -200,7 +200,7 @@ function devicesView(ctx: StrategyContext): Section[] {
 /** The house's water and gas meters. */
 function metersCards({ energy }: StrategyContext): Card[] {
   return when(energy.meters.length, () => [
-    full('meters', { meters: energy.meters.map((entity) => ({ entity })) }),
+    full('meters', { meters: energy.meters.map((meter) => ({ ...meter })) }),
   ]);
 }
 

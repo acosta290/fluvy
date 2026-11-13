@@ -2180,7 +2180,9 @@
     "editor_rate": "Текущий расход (необязательно)",
     "editor_typical": "Обычный день (пусто: среднее за 7 дней)",
     "editor_kind": "Тип",
-    "no_statistics": "Пока нет статистики"
+    "no_statistics": "Пока нет статистики",
+    "no_figures_since": "Нет данных с {date}",
+    "latest": "Последние данные"
   },
   "energy-sankey": {
     "title": "Куда ушла энергия",

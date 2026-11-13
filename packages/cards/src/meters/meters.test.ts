@@ -6,6 +6,7 @@ import {
   fetchWeek,
   fractionOf,
   kindOf,
+  latestOf,
   meterFigure,
   todayOf,
   typicalOf,
@@ -54,6 +55,27 @@ describe('todayOf', () => {
     expect(todayOf([], MIDNIGHT, 10)).toBeNull();
     expect(todayOf(rows(100, [1, 2]), MIDNIGHT, null)).toBeNull();
     expect(todayOf([{ start: MIDNIGHT, change: 3 }], MIDNIGHT, 10)).toBeNull(); // no reading to start the hour from
+  });
+});
+
+describe('latestOf', () => {
+  const DAY = 86_400_000;
+  it('reads an imported meter’s last day with a figure, against the seven before it (#181)', () => {
+    // a utility's gas meter, a day's figure two days behind: nine days, the last on the 11th
+    const changes = [2.4, 1.8, 2.0, 2.2, 1.9, 2.3, 2.1, 1.6, 2.6];
+    const rows = changes.map((change, i) => ({ start: MIDNIGHT - (10 - i) * DAY, change }));
+    expect(latestOf(rows)).toEqual({
+      start: MIDNIGHT - 2 * DAY,
+      value: 2.6,
+      typical: expect.closeTo(13.9 / 7, 5),
+    });
+    expect(latestOf([...rows, { start: MIDNIGHT, change: null }])?.value).toBe(2.6);
+    expect(latestOf([])).toBeNull();
+    expect(latestOf([{ start: MIDNIGHT, change: 3 }])).toEqual({
+      start: MIDNIGHT,
+      value: 3,
+      typical: null,
+    });
   });
 });
 

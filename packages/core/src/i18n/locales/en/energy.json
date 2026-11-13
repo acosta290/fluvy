@@ -259,7 +259,9 @@
     "editor_rate": "Flow now (optional)",
     "editor_typical": "A typical day (empty: the last 7 days’ mean)",
     "editor_kind": "Kind",
-    "no_statistics": "No statistics yet"
+    "no_statistics": "No statistics yet",
+    "no_figures_since": "No figures since {date}",
+    "latest": "Latest figures"
   },
   "energy-sankey": {
     "title": "Where it went",

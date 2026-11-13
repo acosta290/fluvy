@@ -2075,7 +2075,9 @@
     "editor_rate": "Flusso ora (facoltativo)",
     "editor_typical": "Un giorno tipico (vuoto: la media degli ultimi 7 giorni)",
     "editor_kind": "Tipo",
-    "no_statistics": "Ancora nessuna statistica"
+    "no_statistics": "Ancora nessuna statistica",
+    "no_figures_since": "Nessun dato dal {date}",
+    "latest": "Ultimi dati"
   },
   "energy-sankey": {
     "title": "Dov’è andata",

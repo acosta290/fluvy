@@ -2075,7 +2075,9 @@
     "editor_rate": "Durchfluss jetzt (optional)",
     "editor_typical": "Ein üblicher Tag (leer: Mittel der letzten 7 Tage)",
     "editor_kind": "Art",
-    "no_statistics": "Noch keine Statistik"
+    "no_statistics": "Noch keine Statistik",
+    "no_figures_since": "Keine Werte seit {date}",
+    "latest": "Letzte Werte"
   },
   "energy-sankey": {
     "title": "Wohin es ging",

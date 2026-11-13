@@ -2039,7 +2039,9 @@
     "editor_rate": "現在の流量（オプション）",
     "editor_typical": "平常日の値（空のとき：過去7日間の平均）",
     "editor_kind": "種類",
-    "no_statistics": "統計はまだありません"
+    "no_statistics": "統計はまだありません",
+    "no_figures_since": "{date}以降のデータなし",
+    "latest": "最新のデータ"
   },
   "energy-sankey": {
     "title": "行き先",

@@ -2142,7 +2142,9 @@
     "editor_rate": "Mostani átfolyás (nem kötelező)",
     "editor_typical": "Egy átlagos nap (üresen: az utolsó 7 nap átlaga)",
     "editor_kind": "Fajta",
-    "no_statistics": "Még nincs statisztika"
+    "no_statistics": "Még nincs statisztika",
+    "no_figures_since": "{date} óta nincs adat",
+    "latest": "Legutóbbi adatok"
   },
   "energy-sankey": {
     "title": "Hová ment",

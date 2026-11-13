@@ -95,3 +95,88 @@ describe('a meter out of reach keeps its lines (1.9)', () => {
     expect(gone[1]?.figure).toBe('—Not found');
   });
 });
+
+describe('a meter that is a statistic a utility imports (#181)', () => {
+  const DAY = 86_400_000;
+  /** Thursday 13 November 2026 at 14:00, on the clock the house reads. */
+  const NOW = '2026-11-13T14:00:00Z';
+  const midnight = Date.parse('2026-11-13T00:00:00Z');
+  /** The Energy dashboard's gas, an imported statistic in CCF whose last figure is `last` days back. */
+  const utility = (last: number, asked: Record<string, unknown>[] = []): HomeAssistant =>
+    ({
+      ...house('live'),
+      callWS: async (message: Record<string, unknown>) => {
+        asked.push(message);
+        switch (message['type']) {
+          case 'energy/get_prefs':
+            return { energy_sources: [{ type: 'gas', stat_energy_from: 'opower:pge_gas' }] };
+          case 'recorder/get_statistics_metadata':
+            return [
+              {
+                statistic_id: 'opower:pge_gas',
+                name: 'PG&E gas consumption',
+                has_sum: true,
+                statistics_unit_of_measurement: 'CCF',
+              },
+            ];
+          default:
+            return {
+              'opower:pge_gas': [2.4, 1.8, 2.0, 2.2, 1.9, 2.3, 2.1, 1.6].map((change, i) => ({
+                start: midnight - (last + 7 - i) * DAY,
+                change,
+              })),
+            };
+        }
+      },
+    }) as unknown as HomeAssistant;
+
+  const mount = async (hass: HomeAssistant) => {
+    const card = document.createElement('fluvy-meters-card') as CardElement;
+    card.setConfig({ type: 'custom:fluvy-meters-card', _now: NOW });
+    card.hass = hass;
+    card.width = 360;
+    document.body.append(card);
+    for (let i = 0; i < 6; i++) {
+      await card.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    const root = card.shadowRoot!;
+    const row = root.querySelector('.ef-meter');
+    return {
+      sub: root.querySelector('.fv-card__sub')?.textContent?.trim(),
+      figure: row?.querySelector('.fv-readout__value')?.textContent?.replace(/\s+/g, ' ').trim(),
+      note: row?.querySelector('.ef-meter__note')?.textContent?.trim(),
+      bar: row?.querySelector('.ef-bar') !== null,
+      button: row?.getAttribute('role'),
+    };
+  };
+
+  it('reads its latest day with its date, against its typical day, in its own unit, with nothing to open', async () => {
+    const asked: Record<string, unknown>[] = [];
+    // its last figure on Tuesday the 11th, two days behind
+    expect(await mount(utility(2, asked))).toEqual({
+      sub: 'Latest figures · vs a typical day',
+      figure: '1.6CCF',
+      note: 'Nov 11 · typical 2.1 CCF',
+      bar: true,
+      button: null,
+    });
+    expect(asked.find((m) => m['period'] === 'day')).toMatchObject({
+      statistic_ids: ['opower:pge_gas'],
+      types: ['change'],
+      units: { volume: 'CCF' },
+    });
+    // never its hours since midnight: it has none
+    expect(asked.some((m) => m['period'] === 'hour')).toBe(false);
+  });
+
+  it('says since when it has no figures once they are older than its week, keeping its size', async () => {
+    expect(await mount(utility(10))).toEqual({
+      sub: 'Latest figures · vs a typical day',
+      figure: '—',
+      note: 'No figures since Nov 3',
+      bar: true,
+      button: null,
+    });
+  });
+});

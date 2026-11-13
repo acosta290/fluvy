@@ -2125,7 +2125,9 @@
     "editor_rate": "Aktuálny prietok (voliteľné)",
     "editor_typical": "Bežný deň (prázdne: priemer posledných 7 dní)",
     "editor_kind": "Typ",
-    "no_statistics": "Zatiaľ žiadne štatistiky"
+    "no_statistics": "Zatiaľ žiadne štatistiky",
+    "no_figures_since": "Žiadne údaje od {date}",
+    "latest": "Najnovšie údaje"
   },
   "energy-sankey": {
     "title": "Kam to išlo",

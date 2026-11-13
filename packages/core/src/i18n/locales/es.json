@@ -2075,7 +2075,9 @@
     "editor_rate": "Caudal ahora (opcional)",
     "editor_typical": "Un día normal (vacío: la media de los últimos 7 días)",
     "editor_kind": "Tipo",
-    "no_statistics": "Aún sin estadísticas"
+    "no_statistics": "Aún sin estadísticas",
+    "no_figures_since": "Sin datos desde el {date}",
+    "latest": "Últimos datos"
   },
   "energy-sankey": {
     "title": "A dónde fue",

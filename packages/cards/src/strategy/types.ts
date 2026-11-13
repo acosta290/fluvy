@@ -205,8 +205,11 @@ export interface EnergyRoles {
   readonly prefsMeters: boolean;
   /** What else the energy dashboard meters, in its order: water, gas (an imported statistic too), charted over a range. */
   readonly prefsMetered: readonly ('water' | 'gas')[];
-  /** Water and gas meters: the energy dashboard's, else the house's own. */
-  readonly meters: readonly string[];
+  /**
+   * Water and gas meters: the energy dashboard's, else the house's own; a statistic a utility imports with its kind,
+   * which no device class says (#181).
+   */
+  readonly meters: readonly { readonly entity: string; readonly kind?: 'water' | 'gas' }[];
   readonly any: boolean;
 }
 

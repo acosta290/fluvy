@@ -63,10 +63,12 @@ import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows
 import { convert, convertible } from '../history-bars/units.js';
 import { decimalsOf, LADDERS, type NumberKeys } from '../shared/units.js';
 import {
+  fetchDays,
   fetchToday,
   fetchWeek,
   fractionOf,
   kindOf,
+  latestOf,
   meterFigure,
   METER_KINDS,
   todayOf,
@@ -81,7 +83,10 @@ export type MetersVariant = 'full' | 'rows';
 export const METERS_VARIANTS: readonly MetersVariant[] = ['full', 'rows'];
 
 export interface MeterConfig extends NumberKeys {
-  /** A growing meter (`total_increasing`): m³, L, ft³, gal, CCF — or kWh for gas. */
+  /**
+   * A growing meter (`total_increasing`): m³, L, ft³, gal, CCF — or kWh for gas; or a statistic a utility's
+   * integration imports (`opower:…`), read as its latest day.
+   */
   entity: string;
   /** What flows right now ("6 L/min"): a flow sensor, optional. */
   rate?: string;
@@ -118,6 +123,8 @@ export interface MetersCardConfig extends FluvyCardConfig, NumberKeys {
 const BARS_MIN = 96;
 const FIGURE_MIN = 120;
 const GAP = 16;
+/** A day's middle, from its midnight: the day a date is said of, whatever a clock change made of its length. */
+const HALF_DAY = 43_200_000;
 
 /** Rows that get a switch: what is safe to flip from a list (a valve, a switch), never a lock or a scene. */
 const SWITCHED = new Set([
@@ -144,6 +151,10 @@ interface Meter {
   readonly typical: number | null;
   /** The note's first words when the meter cannot give a figure: its state, or that it has no statistics. */
   readonly trouble: string;
+  /** A statistic an integration imports: no reading now, no flow, nothing to open (#181). */
+  readonly imported: boolean;
+  /** The day its figure is of, where it is not the day the card reads: an imported meter's latest ("11 Nov"). */
+  readonly dated: string | undefined;
   /** `undefined`: no flow sensor; `null`: one that cannot be read. */
   readonly rate: string | null | undefined;
   /** It has a line under its figure, read or not: a typical day, a flow, or the recorder holding nothing of it. */
@@ -314,6 +325,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     string,
     { readonly rows: readonly StatRow[] | null; readonly midnight: number }
   >();
+  /** Each meter's past days: its last seven full ones (its typical day), an imported meter's last month (its latest). */
   private readonly weeks = new Map<string, readonly StatRow[] | null>();
   private readonly asked = new Map<string, string>();
   /** The meters missing from the house: as the recorder describes them (their unit), so their day is still read. */
@@ -335,12 +347,12 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       .map((m) => (typeof m === 'string' ? { entity: m } : m))
       .filter((m) => typeof m.entity === 'string' && m.entity !== '');
     if (own.length) return own;
-    // the Energy dashboard's meters: an entity each (an imported statistic has no reading to show)
+    // the Energy dashboard's meters, each of its list's kind: an entity, or a statistic a utility imports (#181)
     const house = readPrefs(this.prefs);
     return [
       ...house.water.map((entity) => ({ entity, kind: 'water' as const })),
       ...house.gas.map((entity) => ({ entity, kind: 'gas' as const })),
-    ].filter((m) => !m.entity.includes(':'));
+    ];
   }
 
   private rowList(): MeterRowConfig[] {
@@ -405,7 +417,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     this.askStatistics(this.hass);
   }
 
-  /** Each meter's hours since midnight (again each hour) and, when no typical day is given, its last seven days. */
+  /**
+   * Each meter's hours since midnight (again each hour) and, when no typical day is given, its last seven days; an
+   * imported meter's last month of days, once a day.
+   */
   private askStatistics(hass: HomeAssistant): void {
     const now = this.now();
     const midnight = houseMidnight(hass, now).getTime();
@@ -413,6 +428,12 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       const view = this.meterView(m.entity);
       if (!this.recorded.ready(view)) continue;
       const unit = this.unitOf(m, view);
+      if (this.recorded.imported(view)) {
+        this.askDays(`${m.entity}|${unit}|${midnight}`, m.entity, () =>
+          fetchDays(hass, m.entity, unit, now),
+        );
+        continue;
+      }
       const hour = `${m.entity}|${unit}|${Math.floor(now.getTime() / 3_600_000)}`;
       if (this.asked.get(`day|${m.entity}`) !== hour) {
         this.asked.set(`day|${m.entity}`, hour);
@@ -423,16 +444,21 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
         });
       }
       if (typeof m.typical === 'number') continue;
-      const day = `${m.entity}|${unit}|${midnight}`;
-      if (this.asked.get(`week|${m.entity}`) !== day) {
-        this.asked.set(`week|${m.entity}`, day);
-        void fetchWeek(hass, m.entity, unit, now).then((rows) => {
-          if (this.asked.get(`week|${m.entity}`) !== day) return;
-          this.weeks.set(m.entity, rows);
-          this.requestUpdate();
-        });
-      }
+      this.askDays(`${m.entity}|${unit}|${midnight}`, m.entity, () =>
+        fetchWeek(hass, m.entity, unit, now),
+      );
     }
+  }
+
+  /** A meter's past days, asked once per `key` (its unit and the day), kept for the last one asked. */
+  private askDays(key: string, id: string, load: () => Promise<readonly StatRow[] | null>): void {
+    if (this.asked.get(`week|${id}`) === key) return;
+    this.asked.set(`week|${id}`, key);
+    void load().then((rows) => {
+      if (this.asked.get(`week|${id}`) !== key) return;
+      this.weeks.set(id, rows);
+      this.requestUpdate();
+    });
   }
 
   /* ---------- the meters ---------- */
@@ -448,7 +474,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
 
   private meters(): Meter[] {
     const list = this.configured();
-    const midnight = this.hass ? houseMidnight(this.hass, this.now()).getTime() : 0;
+    const now = this.now();
+    const midnight = this.hass ? houseMidnight(this.hass, now).getTime() : 0;
+    // an imported meter's latest day is fresh within the week a typical day is taken from
+    const week = this.hass ? houseMidnight(this.hass, now, 7).getTime() : 0;
     const kinds = list.map((m) => {
       const view = this.meterView(m.entity);
       return m.kind ?? kindOf(view.deviceClass, view.unit);
@@ -456,29 +485,69 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     return list.map((m, i): Meter => {
       const view = this.meterView(m.entity);
       const kind = kinds[i] as MeterKind;
+      const imported = this.recorded.imported(view);
       const same = kinds.filter((k) => k === kind).length;
+      // an imported statistic is named by its metadata (`recordedView`), as a sensor by its name
       const label =
         m.name == null
-          ? same > 1 && view.status !== 'missing'
+          ? same > 1 && (view.status !== 'missing' || imported)
             ? shortName(view)
             : this.kindWord(kind)
           : this.nameFor(view, m.name);
-      // yesterday's hours are no longer today's: the meter waits for its new day
-      const asked = this.days.get(m.entity);
-      const day = asked?.midnight === midnight ? asked : undefined;
       // the day in the unit the meter reads in: the statistics were asked in it, the reading and the typical day are
       // brought to it
       const unit = this.unitOf(m, view);
+      const own =
+        typeof m.typical === 'number' && Number.isFinite(m.typical) && m.typical >= 0
+          ? convert(m.typical, view.unit, unit)
+          : null;
+      const past = this.weeks.get(m.entity);
+      const named = {
+        key: `${m.entity}#${i}`,
+        id: m.entity,
+        kind,
+        label,
+        glyph: m.icon ?? (kind === 'gas' ? 'flame' : 'drop'),
+        view,
+        unit,
+        decimals: decimalsOf(m.decimals) ?? decimalsOf(this.config?.decimals),
+        imported,
+      };
+      if (imported) {
+        // its latest day, with its date; past the week, the date it has no figures since
+        const latest = past ? latestOf(past) : null;
+        const fresh = latest !== null && latest.start >= week;
+        const date = latest
+          ? rangeWords(
+              this.hass,
+              { start: new Date(latest.start), end: new Date(latest.start + HALF_DAY) },
+              this.clock(),
+            )
+          : '';
+        return {
+          ...named,
+          today: fresh ? latest.value : null,
+          typical: own ?? latest?.typical ?? null,
+          trouble:
+            past === undefined
+              ? ''
+              : !latest
+                ? s(this.hass, 'no_statistics')
+                : fresh
+                  ? ''
+                  : s(this.hass, 'no_figures_since', { date }),
+          dated: fresh ? date : undefined,
+          rate: undefined,
+          lined: true,
+        };
+      }
+      // yesterday's hours are no longer today's: the meter waits for its new day
+      const asked = this.days.get(m.entity);
+      const day = asked?.midnight === midnight ? asked : undefined;
       const live =
         view.status === 'ok' && view.number !== null ? convert(view.number, view.unit, unit) : null;
       const today = day?.rows ? todayOf(day.rows, day.midnight, live, this.closed) : null;
-      const typical =
-        typeof m.typical === 'number' && Number.isFinite(m.typical) && m.typical >= 0
-          ? convert(m.typical, view.unit, unit)
-          : (() => {
-              const week = this.weeks.get(m.entity);
-              return week ? typicalOf(week) : null;
-            })();
+      const typical = own ?? (past ? typicalOf(past) : null);
       const trouble =
         view.status !== 'ok'
           ? stateText(this.hass, view)
@@ -495,17 +564,11 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
             : null;
       }
       return {
-        key: `${m.entity}#${i}`,
-        id: m.entity,
-        kind,
-        label,
-        glyph: m.icon ?? (kind === 'gas' ? 'flame' : 'drop'),
-        view,
-        unit,
-        decimals: decimalsOf(m.decimals) ?? decimalsOf(this.config?.decimals),
+        ...named,
         today: view.status === 'ok' ? today : null,
         typical,
         trouble,
+        dated: undefined,
         rate,
         lined: typical !== null || rate !== undefined || (day !== undefined && !day.rows?.length),
       };
@@ -520,6 +583,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   private note(m: Meter, room: number, cls = 'ef-meter__note'): string {
     const segments: Segment[] = [];
     if (m.trouble) segments.push({ text: m.trouble });
+    else if (m.dated !== undefined) segments.push({ text: m.dated });
     else if (m.rate !== undefined)
       segments.push({ text: s(this.hass, 'now', { value: m.rate ?? '—' }) });
     if (!m.trouble && m.typical !== null)
@@ -559,9 +623,13 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const typical = meters.some((m) => m.typical !== null);
     const first = meters[0]?.id;
     const now = this.now();
-    const today = this.follower.range()
-      ? rangeWords(this.hass, { start: houseMidnight(this.hass, now), end: now }, this.clock())
-      : this.t('common.today');
+    // meters that are all imported say their latest figures, each its own day
+    const today =
+      meters.length && meters.every((m) => m.imported)
+        ? s(this.hass, 'latest')
+        : this.follower.range()
+          ? rangeWords(this.hass, { start: houseMidnight(this.hass, now), end: now }, this.clock())
+          : this.t('common.today');
     const sub =
       this.config?.subtitle ?? (typical ? `${today} · ${s(this.hass, 'vs_typical')}` : today);
     const fit = (round: boolean) =>
@@ -611,7 +679,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
           : {}),
         name: Boolean(this.config?.title),
         cut: fitted.cut,
-        ...this.headActions(first),
+        ...this.headActions(isEntityId(first) ? first : undefined),
       })}
       ${
         empty
@@ -644,21 +712,22 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     const room = (stacked ? w : w - figure - GAP) - 1;
     // out of reach, the row keeps its lines (the owner's rule, 1.9): the bar, empty, where the meter has a typical day,
     // and its state in the note; a stacked row with no line of its own says its state beside the dash, in the short
-    // word a figure's line has room for ("— Not found")
-    const away = m.view.status !== 'ok';
+    // word a figure's line has room for ("— Not found"); an imported meter past its week keeps its bar, empty, too
+    const away = m.view.status !== 'ok' && !m.imported;
     const aside = stacked && away && !m.lined;
     const note = aside ? '' : this.note(m, room);
     const after = aside ? stateWord(this.hass, m.view) : unit;
-    const bar = m.typical !== null && (away || !m.trouble);
-    const open = (): void => this.tap(m.id, { action: 'more-info' });
+    const bar = m.typical !== null && (away || m.imported || !m.trouble);
+    // an imported statistic has no entity to open
+    const open = m.imported ? undefined : (): void => this.tap(m.id, { action: 'more-info' });
     return html`<div
-      class="ef-meter fv-row--tap ${stacked ? 'ef-meter--stack' : ''} ${m.trouble ? 'is-dead' : ''}"
+      class="ef-meter ${open ? 'fv-row--tap' : ''} ${stacked ? 'ef-meter--stack' : ''} ${m.trouble ? 'is-dead' : ''}"
       style="--figure:${figure}px"
-      role="button"
-      tabindex="0"
-      aria-label=${m.label}
-      @click=${open}
-      @keydown=${activateKey(open)}
+      role=${open ? 'button' : nothing}
+      tabindex=${open ? '0' : nothing}
+      aria-label=${open ? m.label : nothing}
+      @click=${open ?? nothing}
+      @keydown=${open ? activateKey(open) : nothing}
     >
       ${readout({ label: m.label, value, unit: after, name: true })}
       <div class="ef-meter__bars">
@@ -690,7 +759,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       value,
       fraction: fractionOf(m.today, m.typical),
       barTone: m.kind,
-      onTap: () => this.tap(m.id, { action: 'more-info' }),
+      ...(m.imported ? {} : { onTap: () => this.tap(m.id, { action: 'more-info' }) }),
     });
   }
 

@@ -2075,7 +2075,9 @@
     "editor_rate": "Débit actuel (facultatif)",
     "editor_typical": "Un jour habituel (vide : la moyenne des 7 derniers jours)",
     "editor_kind": "Type",
-    "no_statistics": "Pas encore de statistiques"
+    "no_statistics": "Pas encore de statistiques",
+    "no_figures_since": "Aucun relevé depuis le {date}",
+    "latest": "Derniers relevés"
   },
   "energy-sankey": {
     "title": "Où elle est allée",

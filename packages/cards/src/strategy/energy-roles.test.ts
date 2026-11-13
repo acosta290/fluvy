@@ -150,4 +150,14 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     });
     expect(roles(house).solarMeters).toEqual([]);
   });
+
+  it('keeps a meter a utility imports, with its list’s kind, where an entity the house no longer has is left (#181)', () => {
+    const prefs: EnergyPrefs = {
+      energy_sources: [
+        { type: 'water', stat_energy_from: 'sensor.gone_water' },
+        { type: 'gas', stat_energy_from: 'opower:pge_gas' },
+      ],
+    };
+    expect(roles([], prefs).meters).toEqual([{ entity: 'opower:pge_gas', kind: 'gas' }]);
+  });
 });

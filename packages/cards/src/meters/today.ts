@@ -20,6 +20,8 @@ export interface StatRow {
 }
 
 const HOUR = 3_600_000;
+/** How far back an imported meter's latest day is looked for: a month. */
+const DAYS = 31;
 
 /** What a meter measures: its device class says; a meter counting energy is gas; anything else is taken as water. */
 export function kindOf(
@@ -60,6 +62,28 @@ export function todayOf(
   if (closed) return finished;
   if (baseline === null || live === null) return null;
   return finished + usedSince(baseline, live);
+}
+
+/** An imported meter's latest day: when it began, what it used, and the typical day of the (up to) seven before it. */
+export interface LatestDay {
+  readonly start: number;
+  readonly value: number;
+  readonly typical: number | null;
+}
+
+/**
+ * A meter without a "now" (a statistic a utility's integration imports, `opower:…`: a day's figure, a day or two
+ * behind, #181): the last day its statistics have a figure for. `null` with none.
+ */
+export function latestOf(rows: readonly StatRow[]): LatestDay | null {
+  const days = rows.filter((row) => finite(row.change) !== null).sort((a, b) => a.start - b.start);
+  const last = days[days.length - 1];
+  if (!last) return null;
+  return {
+    start: last.start,
+    value: Math.max(0, finite(last.change) ?? 0),
+    typical: typicalOf(days.slice(-8, -1)),
+  };
 }
 
 /** A typical day: the mean of the full days the statistics know (of the last seven). `null` with none. */
@@ -151,6 +175,25 @@ export function fetchWeek(
   return ask(hass, `week|${id}|${unit}|${midnight.getTime()}`, {
     start_time: houseMidnight(hass, now, 7).toISOString(),
     end_time: midnight.toISOString(),
+    statistic_ids: [id],
+    period: 'day',
+    types: ['change'],
+    ...(units ? { units } : {}),
+  });
+}
+
+/** An imported meter's days of the last month, one row each: where its latest day is found. */
+export function fetchDays(
+  hass: HomeAssistant,
+  id: string,
+  unit: string,
+  now: Date,
+): Promise<readonly StatRow[] | null> {
+  const midnight = houseMidnight(hass, now);
+  const units = unitsFor(unit);
+  return ask(hass, `days|${id}|${unit}|${midnight.getTime()}`, {
+    start_time: houseMidnight(hass, now, DAYS).toISOString(),
+    end_time: now.toISOString(),
     statistic_ids: [id],
     period: 'day',
     types: ['change'],

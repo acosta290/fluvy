@@ -2075,7 +2075,9 @@
     "editor_rate": "Doorstroming nu (optioneel)",
     "editor_typical": "Een gewone dag (leeg: het gemiddelde van de laatste 7 dagen)",
     "editor_kind": "Soort",
-    "no_statistics": "Nog geen statistieken"
+    "no_statistics": "Nog geen statistieken",
+    "no_figures_since": "Geen cijfers sinds {date}",
+    "latest": "Laatste cijfers"
   },
   "energy-sankey": {
     "title": "Waar het heen ging",

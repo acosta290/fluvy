@@ -2076,7 +2076,9 @@
     "editor_rate": "当前流量（可选）",
     "editor_typical": "通常日（留空：近 7 天均值）",
     "editor_kind": "类型",
-    "no_statistics": "暂无统计"
+    "no_statistics": "暂无统计",
+    "no_figures_since": "自 {date} 起无数据",
+    "latest": "最新数据"
   },
   "energy-sankey": {
     "title": "能量去向",
