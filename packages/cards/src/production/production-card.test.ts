@@ -198,11 +198,12 @@ describe('the production card’s editor', () => {
 });
 
 describe('the production card reads a lifetime meter’s day', () => {
-  it('reads today’s gain from a meter that counts a lifetime, never its reading (#170: the energy dashboard’s solar meter)', async () => {
-    // the day's hours from yesterday's last reading, 12,332.2: 11.0 kWh compiled to 12,343.2, 2.4 since
+  /** The day's hours from yesterday's last reading, 12,332.2: 11.0 kWh compiled to 12,343.2, the meter read `live` now. */
+  async function lifetime(live: number, config: Partial<ProductionCardConfig> = {}) {
     const LIFETIME = 12_242.2;
     const hass = house();
-    hass.states['sensor.lifetime'] = meter('sensor.lifetime', 12_345.6);
+    hass.states['sensor.lifetime'] = meter('sensor.lifetime', live);
+    hass.states['sensor.east'] = meter('sensor.east', live);
     const counted = hass.callWS.bind(hass);
     hass.callWS = (async (message: { type: string; [key: string]: unknown }) => {
       const rows = await counted<Record<string, { state: number }[]>>(message);
@@ -215,12 +216,32 @@ describe('the production card reads a lifetime meter’s day', () => {
     }) as HomeAssistant['callWS'];
     const card = document.createElement('fluvy-production-card') as FluvyProductionCard;
     // as the automatic dashboard writes it
-    card.setConfig({ type: 'custom:fluvy-production-card', entity: 'sensor.lifetime', _now: NOW });
+    card.setConfig({
+      type: 'custom:fluvy-production-card',
+      entity: 'sensor.lifetime',
+      _now: NOW,
+      ...config,
+    });
     card.hass = hass;
     document.body.append(card);
     await settle(card);
-    const value = card.shadowRoot!.querySelector('.so-top .fv-readout__value');
-    expect(value?.textContent?.replace(/\s+/g, '')).toBe('13.4kWh');
-    expect(card.shadowRoot!.textContent).not.toMatch(/12[,.]?34[0-9]/);
+    return card.shadowRoot!;
+  }
+  const figure = (root: ShadowRoot, selector = '.so-top .fv-readout__value') =>
+    root.querySelector(selector)?.textContent?.replace(/\s+/g, '');
+
+  it('reads today’s gain from a meter that counts a lifetime, never its reading (#170: the energy dashboard’s solar meter)', async () => {
+    const root = await lifetime(12_345.6);
+    expect(figure(root)).toBe('13.4kWh');
+    expect(root.textContent).not.toMatch(/12[,.]?34[0-9]/);
+  });
+
+  it('reads a lifetime meter a hair under its last hour as no gain yet, never as a reset worth its whole reading', async () => {
+    // 12,343.1 now against 12,343.2 at the hour: a dip, not 12,343.1 kWh more
+    const root = await lifetime(12_343.1);
+    expect(figure(root)).toBe('11.0kWh');
+    expect(root.textContent).not.toMatch(/12[,.]?3[0-9]{3}/);
+    const arrays = await lifetime(12_343.1, { arrays: ['sensor.east'] });
+    expect(figure(arrays, '.pr-legend .en-legend__value')).toBe('11.0kWh');
   });
 });

@@ -6,6 +6,7 @@ import {
   type StatisticsRow,
 } from '@fluvy/core';
 import { houseMidnight } from '../energy-model/period.js';
+import { usedSince } from '../history-bars/gain.js';
 
 /**
  * One day of a growing meter, hour by hour, on the house's clock: "today" begins at the midnight Home Assistant
@@ -99,9 +100,26 @@ async function fromHistory(
   for (let hour = 0; hour < Math.min(24, current); hour++) {
     const from = at(midnight + hour * HOUR);
     const to = at(midnight + (hour + 1) * HOUR);
-    hours[hour] = to >= from ? to - from : to; // a meter that reset counts again from zero
+    hours[hour] = usedSince(from, to); // a meter that reset counts again from zero, one that dipped gained nothing
   }
   return { hours, baseline: at(midnight + current * HOUR) };
+}
+
+/**
+ * A day's hours in the base unit (`factor` brings the meter's unit to it): the finished ones as recorded, the hour in
+ * progress (`hour`) plus what the meter has gained since the last of them was compiled (`usedSince`, `live` its
+ * reading now; `null` for a day that is over).
+ */
+export function dayHours(
+  record: DayRecord,
+  factor: number,
+  hour: number,
+  live: number | null,
+): number[] {
+  const hours = record.hours.map((v) => Math.max(0, v ?? 0) * factor);
+  if (record.baseline !== null && live !== null)
+    hours[hour] = (hours[hour] ?? 0) + usedSince(record.baseline, live) * factor;
+  return hours;
 }
 
 /**

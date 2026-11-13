@@ -87,7 +87,7 @@ import {
 } from '../shared/form.js';
 import { Refresher } from '../shared/refresh.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { houseDay, loadDay, loadPowerDay, type DayRecord } from './day.js';
+import { dayHours, houseDay, loadDay, loadPowerDay, type DayRecord } from './day.js';
 
 import { hourlyForecast } from './forecast.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
@@ -497,13 +497,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     if (kind === 'power') return record.hours.map((v) => Math.max(0, v ?? 0));
     const base = toBase(1, view.unit);
     if (kind !== 'energy' || base.unit !== 'Wh') return null;
-    const hours = record.hours.map((v) => Math.max(0, v ?? 0) * base.value);
-    if (record.baseline !== null && view.number !== null && !this.closed) {
-      const gain = view.number - record.baseline;
-      hours[hourNow] =
-        (hours[hourNow] ?? 0) + (gain >= 0 ? gain : Math.max(0, view.number)) * base.value;
-    }
-    return hours;
+    return dayHours(record, base.value, hourNow, this.closed ? null : view.number);
   }
 
   protected renderCard(): TemplateResult {
@@ -524,16 +518,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const arrays = this.arrayList();
 
     // finished hours from the recorder, the hour in progress from the meter itself
-    const produced = Array.from(
-      { length: HOURS },
-      (_unused, hour) => Math.max(0, record?.hours[hour] ?? 0) * base.value,
-    );
     const closed = this.closed;
-    if (record && record.baseline !== null && view.number !== null && !closed) {
-      const gain = view.number - record.baseline;
-      produced[hourNow] =
-        (produced[hourNow] ?? 0) + (gain >= 0 ? gain : Math.max(0, view.number)) * base.value; // a meter below its last reading has reset
-    }
+    const produced = record
+      ? dayHours(record, base.value, hourNow, closed ? null : view.number)
+      : new Array<number>(HOURS).fill(0);
     const known = record !== null && record !== undefined;
     const hovered = known ? this.scrubber.value : null;
     const total = sum(produced);
