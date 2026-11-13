@@ -8,8 +8,10 @@ wears for you is Fluvy. This is the shell: a set of stylesheets the module attac
 
 - **The sidebar and the header**: Fluvy's glyphs for the built-in panels, the theme's colours, the type.
 - **The frame**: the app steps 16 px inside the window, with a rounded opening and a hairline, and one scroll per
-  page. It is the *Frame* switch in the *Scope* tab. With the sidebar hidden, a page's menu button (or its way back)
-  stands off the frame's corner, where the sidebar's own menu button does.
+  page. It is the *Frame* switch in the *Scope* tab. With the sidebar hidden (Home Assistant's *Always hide the
+  sidebar*, or this device's sidebar beside the page between asks), a page's menu button (or its way back) stands off
+  the frame's corner, where the sidebar's own menu button does, and a dashboard's view keeps the frame's 16 px on its
+  left, where Home Assistant insets it on a phone alone.
 - **Icons**: the Material icons Home Assistant draws in its chrome (menus, pencils, close, back, search…) are shown
   as Fluvy's glyphs: in the sidebar with its glyphs (the *Our icons in the sidebar* switch), everywhere else with
   Settings' icon circles (*Our icons in Settings*).

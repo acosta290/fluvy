@@ -24,6 +24,7 @@ import {
 import {
   drawerCss,
   frameCss,
+  frameViewCss,
   sidebarCss,
   sidebarFlatCss,
   sidebarIconsCss,
@@ -249,7 +250,11 @@ export const SHEETS: readonly ShellSheet[] = [
     css: pageTitleCss,
     probe: '.title',
   },
-  { id: 'dashboard-root', target: 'hui-root', css: `${subpageCss}\n${editBarCss}` },
+  {
+    id: 'dashboard-root',
+    target: 'hui-root',
+    css: `${subpageCss}\n${editBarCss}\n${frameViewCss}`,
+  },
   // the view tabs as the house chose them, on the dashboards that wear the look (marked by look/tabs.ts)
   { id: 'view-tabs', target: 'hui-root', css: viewTabsCss, probe: '.toolbar', choice: 'always' },
   // the size this device reads its dashboards at, on the view alone (`look/zoom.ts` keeps the variable on <html>)

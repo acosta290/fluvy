@@ -12,6 +12,7 @@ import {
 } from '../../../packages/core/src/look/tabs.js';
 import {
   frameCss,
+  frameViewCss,
   NO_FRAME,
   sidebarCss,
   sidebarFlatCss,
@@ -657,7 +658,7 @@ class MockRoot extends LitElement {
         box-sizing: border-box;
       }
     `,
-    unsafeCSS(`${subpageCss}\n${editBarCss}`),
+    unsafeCSS(`${subpageCss}\n${editBarCss}\n${frameViewCss}`),
     unsafeCSS(viewTabsCss),
     unsafeCSS(deviceZoomCss),
   ];

@@ -25,7 +25,9 @@ import { mask } from './shared.js';
  * this device's sidebar beside the page between asks), a page's header starts on the frame's corner, which Home
  * Assistant pads by its 12 alone (the left inset only on a phone): `--fluvy-corner` steps its first button in to where
  * the sidebar's own menu button stands (4 inside the inset), so the menu stays under the finger as the sidebar comes
- * and goes (`cornerCss`, in `tables.ts`).
+ * and goes (`cornerCss`, in `tables.ts`); and nothing takes the left inset any more, so a dashboard's view, which Home
+ * Assistant insets on a phone alone, would stand under the frame's edge, a masonry view's first column 8 from the
+ * window: it steps in by the inset (`--fluvy-view-start`, `frameViewCss`).
  */
 const GAP = '16px';
 /** On `<home-assistant>`: the house turned the frame off (fluvy's settings); the app then fills the window. */
@@ -51,6 +53,7 @@ ${SIDES.map(
   }
   :host(:not([${NO_FRAME}])) home-assistant-main[modal] {
     --fluvy-corner: calc(var(--safe-area-inset-left) - 8px);
+    --fluvy-view-start: var(--safe-area-inset-left);
   }
   :host(:not([${NO_FRAME}])) home-assistant-main::after {
     content: "";
@@ -62,6 +65,9 @@ ${SIDES.map(
     box-shadow: 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)), 0 0 0 100vmax var(--fluvy-page-alt);
   }
 }`;
+
+/** A dashboard's view inside the floating frame beside a hidden sidebar: in by the frame's left inset (`frameCss`). */
+export const frameViewCss = '#view { margin-left: var(--fluvy-view-start, 0px); }';
 
 /**
  * The drawer: no hairline between the white sidebar and the linen content; on a surface read by its edges the two are

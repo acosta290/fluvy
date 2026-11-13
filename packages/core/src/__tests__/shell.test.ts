@@ -145,6 +145,16 @@ describe('shell registry', () => {
     for (const sheet of SHEETS) expect(sheet.css, sheet.id).not.toMatch(zero);
   });
 
+  it('steps a dashboard’s view in by the floating frame’s left inset while the sidebar is hidden, and only then', () => {
+    const css = (id: string): string => SHEETS.find((sheet) => sheet.id === id)?.css ?? '';
+    // Home Assistant's drawer hides the sidebar: the frame hands its left inset on, inside the frame's media only
+    expect(css('frame')).toMatch(
+      /@media \(min-width: 1024px\)[\s\S]*home-assistant-main\[modal\] \{\s*--fluvy-view-start: var\(--safe-area-inset-left\);/,
+    );
+    // the view takes it, nothing where the frame says none (a phone, a docked sidebar, the frame off)
+    expect(css('dashboard-root')).toContain('#view { margin-left: var(--fluvy-view-start, 0px); }');
+  });
+
   it('ends every keyframes it redefines opaque, so a dialog that has shown is never left see-through', () => {
     const redefined = SHEETS.flatMap((sheet) =>
       [...sheet.css.matchAll(/@keyframes\s+([\w-]+)\s*\{([\s\S]*?\})\s*\}/g)].map(
