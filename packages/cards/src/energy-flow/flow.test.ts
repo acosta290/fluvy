@@ -6,7 +6,7 @@ import { allocate } from '../energy-model/allocate.js';
 import { shortName } from '../energy/power.js';
 import { normaliseConfig } from '../shared/config.js';
 import { writesZero } from '../shared/units.js';
-import { FluvyEnergyFlowCard } from './energy-flow-card.js';
+import { brokenName, FluvyEnergyFlowCard } from './energy-flow-card.js';
 import { lists } from './energy-flow-editor.js';
 import {
   arcLengths,
@@ -66,10 +66,11 @@ describe('the arrowhead ends the lane', () => {
 });
 
 describe('rows', () => {
-  /** A node whose words read `now` and can read `steady` wide, in the ways it may say its way. */
+  /** A node whose words read `now` and can read `steady` wide, in the ways it may say its way, its label on one line. */
   const widths = (steady: number, now = steady, ...ways: [WayMode, number][]) =>
     [['inline', steady] as [WayMode, number], ...ways].map(([way, wide]) => ({
       way,
+      lines: 1 as const,
       steady: wide,
       now: way === 'inline' ? now : Math.min(now, wide),
     }));
@@ -109,9 +110,11 @@ describe('rows', () => {
     const day = rowsLayout({ width: 320, nodes: [node(), battery(103)], ...house });
     const month = rowsLayout({ width: 320, nodes: [node(), battery(134)], ...house });
     expect([day.narrow, month.narrow]).toEqual([false, false]);
-    // the lanes leave after the words as they can read, and after a figure that reads wider than the usual
+    // the lanes leave after the words as they can read, and after a figure that reads wider than the usual as far as
+    // every lane stays one (56 px: the house's ring at 258), where a month's "134" took the lane to 54
     expect(day.tail).toBe(192);
-    expect(month.tail).toBe(204);
+    expect(month.tail).toBe(200);
+    expect(month.house[0] - RING - month.tail).toBeGreaterThanOrEqual(56);
     // and where no way of its words leaves a lane, the card lists at any figure
     const long = (now: number) => ({ words: widths(140, now), pair: false });
     expect(rowsLayout({ width: 320, nodes: [node(), long(60)], ...house }).narrow).toBe(true);
@@ -134,6 +137,25 @@ describe('rows', () => {
     ]);
     const wordy = { words: widths(160, 160, ['line', 150], ['glyph', 150]), pair: false };
     expect(rowsLayout({ width: 320, nodes: [node(), wordy], ...house }).narrow).toBe(true);
+  });
+
+  it('a long name on two lines keeps the lanes where one line would list them (#183)', () => {
+    // "Wechselrichter Süddach" (176) leaves no lane at 320; "Wechselrichter" over "Süddach" (104) does
+    const long = {
+      words: [
+        { way: 'inline' as const, lines: 1 as const, steady: 176, now: 176 },
+        { way: 'inline' as const, lines: 2 as const, steady: 104, now: 104 },
+      ],
+      pair: false,
+    };
+    const r = rowsLayout({ width: 320, nodes: [long, node(), node()], ...house });
+    expect(r.narrow).toBe(false);
+    expect([r.ways, r.lines]).toEqual([
+      ['inline', 'inline', 'inline'],
+      [2, 1, 1],
+    ]);
+    // one line where it leaves a lane
+    expect(rowsLayout({ width: 420, nodes: [long, node()], ...house }).lines).toEqual([1, 1]);
   });
 
   it('the stage is the height the card declares, whatever its words and its ways (#170)', () => {
@@ -171,6 +193,22 @@ describe('rows', () => {
         const r = rowsLayout({ width, nodes, ...wideHouse });
         // a lane's half (3) and 4 clear
         expect(nearest(r, width - 67, width)).toBeGreaterThanOrEqual(7);
+      }
+  });
+
+  it('a fan whose lanes would take the house’s words past the stage leans up, so the stage is what the card declares', () => {
+    // pairs under the house's "88,888 W" (75): its words stood 4 to 8 px past the stage at 226 to 362
+    for (let width = 226; width <= 400; width += 2)
+      for (const nodes of [
+        [node(), node(true), node(true)],
+        [node(true), node(), node(true)],
+        [node(true), node(true), node(true)],
+        [node(), node(true)],
+      ]) {
+        const r = rowsLayout({ width, nodes, houseWordsH: 36, houseWordsW: 75 });
+        if (r.narrow) continue;
+        expect(r.height).toBe(flowStage(nodes.length));
+        expect(nearest(r, width - 75, width)).toBeGreaterThanOrEqual(7);
       }
   });
 
@@ -220,6 +258,19 @@ describe('rows', () => {
 });
 
 describe('the cross', () => {
+  it('hangs the house’s words under its ring, lower where the battery’s lane would brush them, in its 292', () => {
+    expect(crossLayout(320, 40).houseWords).toBe(186);
+    // "12.4 kW" and wider: under the lane, 4 px clear of its middle's half
+    for (const wide of [60, 67, 90]) {
+      const g = crossLayout(320, wide);
+      expect(g.houseWords + 36).toBeLessThanOrEqual(292);
+      for (let i = 0; i <= 200; i++) {
+        const [x, y] = at(g.lanes.batteryHouse, i / 200);
+        if (x > 320 - wide - 7) expect(y + 7).toBeLessThanOrEqual(g.houseWords);
+      }
+    }
+  });
+
   it('is mirrored about the middle of the grid and the house', () => {
     const g = crossLayout(320);
     expect(g.sun[0]).toBe((g.grid[0] + g.house[0]) / 2);
@@ -499,6 +550,29 @@ describe('the sources editor', () => {
   });
 });
 
+describe('a long name on two lines (#183)', () => {
+  /** A width of a character each, a Chinese or Japanese one two. */
+  const width = (text: string): number =>
+    [...text].reduce((w, c) => w + (/[\u3000-\u9fff]/.test(c) ? 2 : 1), 0);
+
+  it('breaks at the space that leaves its lines the most even, its charge at the end of the second', () => {
+    expect(brokenName('Wechselrichter Süddach', '', width)).toEqual(['Wechselrichter', 'Süddach']);
+    expect(brokenName('East roof array', '', width)).toEqual(['East roof', 'array']);
+    expect(brokenName('Garage battery', ' · 100 %', width)).toEqual(['Garage', 'battery']);
+  });
+
+  it('breaks between two Chinese or Japanese characters, never inside a word of another script', () => {
+    expect(brokenName('逆变器 E2 南 MPPT 累计发电量', '', width)).toEqual([
+      '逆变器 E2 南',
+      'MPPT 累计发电量',
+    ]);
+    expect(brokenName('太陽光発電量', '', width)).toEqual(['太陽光', '発電量']);
+    expect(brokenName('Wechselrichter', '', width)).toBeNull();
+    // a small kana never begins a line
+    expect(brokenName('バッテリー', '', width)?.[1]).not.toMatch(/^[ッー]/);
+  });
+});
+
 describe('several sources of a kind', () => {
   if (!customElements.get('fluvy-energy-flow-card'))
     customElements.define('fluvy-energy-flow-card', FluvyEnergyFlowCard);
@@ -613,6 +687,10 @@ describe('several sources of a kind', () => {
       'MPPT 累计发电量',
       'Grid',
     ]);
+    // both "array" short: told apart by their sensors' whole names, without the words of a reading (#183)
+    expect(
+      await labelsOf(['North garage roof array power', 'South house roof array power'], false),
+    ).toEqual(['North garage roof array', 'South house roof array', 'Grid']);
   });
 
   it('a name in Chinese or Japanese is never cut to its last phrase (#170)', async () => {

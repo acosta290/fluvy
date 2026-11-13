@@ -926,21 +926,29 @@ column, measured as they can read (the label with a full charge, a usual figure,
 as they read now, and meets the house's ring (34 = 28 + 6) at a slot: 20 px of arc between neighbours (lane 6 +
 head 8 + 6 clear); a grid that can import and export at once (read per phase, or by two sensors) is a pair of
 parallel lanes 16 px apart, its second lane shown only while it does both; the window is 90° above the house's left
-point and 48° below it (its words hang there, lower where a lane would pass within 4 px); when the slots cannot fit,
-a pair shares one contact; a pair level with the house arrives level at ±8. Before the card lists, its words give
-way (1.19.1): a node says its way on the free line under its figure, a pair, which has none, by its lane's own head
-beside each figure in the lane's ink, the word its round's label. A lane shorter than 56 px even so is no lane: the
-card lists its nodes, spread over the height the diagram takes, each saying its way the same way where its line
-would not hold beside its circle (a label keeps its first segment — "Battery · 62 %" → "Battery"); below Home
-Assistant's own minimum the rows drop their circles. The arrangement and the height hold for a config at a width,
-whatever its figures say.
+point and 48° below it (its words hang there, lower where a lane would pass within 4 px; where that would take them
+past the stage the card declares, the fan leans up 4° at a time, as far as 90° above); when the slots cannot fit,
+a pair shares one contact; a pair level with the house arrives level at ±8. A figure wider than the usual moves the
+lanes' start only as far as each lane stays 56 px. Before the card lists, its words give way (1.19.1): a node says
+its way on the free line under its figure, a pair, which has none, by its lane's own head beside each figure in the
+lane's ink, the head carrying the way's word for assistive technology; and in each of those ways a long name first
+tries its label on one line, then on two (1.20, #183): broken where the two lines come out the most even, at a space
+or between two Chinese or Japanese characters (never before a small kana), never inside a word of another script,
+its charge ending the second line; the column is the widest of the label's lines and the figures'; the block grows
+by 16 (8 above, 8 under, inside the stage), so a pair's 72 still keeps 8 to its neighbour at the 80 pitch. A label
+that would need a third line lists the card. A lane shorter than 56 px even so is no lane: the card lists its nodes,
+spread over the height the diagram takes, each saying its way the same way where its line would not hold beside its
+circle (a label keeps its first segment — "Battery · 62 %" → "Battery"); below Home Assistant's own minimum the rows
+drop their circles. The arrangement and the height hold for a config at a width, whatever its figures say.
 Consumers (≥ 560 of content) mirror the sources on the right, the house in the middle, their lanes in ink; narrower,
 they are rows with ink bars, "64 % of the house", and the rest of the house as its own row.
 
 **Cross.** Home Assistant's arrangement: sun above, grid left, house right, battery below, mirror-symmetric about the
 middle of the grid and the house; diagonals leave at ±45° and arrive radially with one pull (44). Each source's lane
 into the house is always there (at rest when idle); the lanes between sources (sun → grid, sun → battery,
-grid ↔ battery) appear only while they carry energy. The grid → house lane bridges the sun → battery lane: it is
+grid ↔ battery) appear only while they carry energy. The house's words hang under its ring, lower where the battery's
+lane would pass within 4 px (1.20); the battery's words say its way by its lane's head where the word would leave
+the card ("10,4 kW descarregando" on a phone), never on a line of their own. The grid → house lane bridges the sun → battery lane: it is
 drawn over it with a 12 px card-coloured edge, and its pulses travel over the other's.
 
 **Motion.** Pulses are comets (a 26 × 6 capsule, its head the lane's cap in full ink, its tail fading into the lane)

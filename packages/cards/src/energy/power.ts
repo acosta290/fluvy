@@ -1,10 +1,12 @@
 import {
+  deviceNameOf,
   formatNumber,
   valueParts,
   type EntityView,
   type HomeAssistant,
   type ValueParts,
 } from '@fluvy/core';
+import type { SourceKind } from '../energy-model/prefs.js';
 import { convert, unitClass } from '../history-bars/units.js';
 import {
   decimalsOf,
@@ -100,7 +102,7 @@ export function deviceName(view: EntityView): string {
 }
 
 /** Chinese and Japanese: scripts that do not part their words with spaces. */
-const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+export const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
 
 /** "Washing machine Energy today" → "Washing machine": a legend label is the device, not the sensor's full name. */
 export function shortName(view: EntityView): string {
@@ -111,6 +113,40 @@ export function shortName(view: EntityView): string {
   return name.length > 11 && words.length > 1 && !UNSPACED.test(name)
     ? (words[words.length - 1] as string)
     : name;
+}
+
+/** A source as it is named: its kind, its own name, and the sensor it is read by. */
+export interface NamedSource {
+  readonly kind: SourceKind;
+  readonly name: string | undefined;
+  readonly entity: string | undefined;
+}
+
+/**
+ * The sources' names, as the flow and the balance say them: each its own, else its kind's (`kindName`); where several
+ * share a kind, its sensor's, short, and where two of those read the same (two inverters' "MPPT 累计发电量", #170),
+ * its device's, as the house names it, else its sensor's whole ("North roof array" beside "South roof array", which
+ * both read "array" short).
+ */
+export function sourceNames(
+  hass: HomeAssistant | undefined,
+  sources: readonly NamedSource[],
+  view: (id: string) => EntityView,
+  kindName: (kind: SourceKind) => string,
+): string[] {
+  const several = (kind: SourceKind): boolean => sources.filter((o) => o.kind === kind).length > 1;
+  const names = sources.map(
+    (o) => o.name ?? (several(o.kind) && o.entity ? shortName(view(o.entity)) : kindName(o.kind)),
+  );
+  return names.map((name, i) => {
+    const { kind, name: own, entity } = sources[i] as NamedSource;
+    const twin = names.some((other, j) => j !== i && other === name && sources[j]?.kind === kind);
+    if (own !== undefined || !twin || !entity) return name;
+    return (
+      deviceNameOf(hass?.devices?.[hass.entities?.[entity]?.device_id ?? '']) ??
+      deviceName(view(entity))
+    );
+  });
 }
 
 /** Safe share: 0 when the total is 0 or missing, never NaN and never Infinity. */

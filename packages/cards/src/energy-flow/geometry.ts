@@ -10,7 +10,8 @@
  *   that can flow both ways at once (a grid read per phase, or by two sensors) is a pair of parallel lanes 16 px
  *   apart; the window is 90° above the house's left point and 48° below it (its words hang under the ring); pairs that
  *   cannot fit share one contact; a pair level with the house arrives level at ±8.
- * - The house's words hang under its ring, lowered as far as every lane passes them 4 px clear.
+ * - The house's words hang under its ring, lowered as far as every lane passes them 4 px clear; where that would take
+ *   them past the stage the card declares, the fan leans up as far as its window allows.
  */
 
 import { FLOW_PITCH, FLOW_TOP, flowStage } from '../energy-family.js';
@@ -182,19 +183,24 @@ export const LANE_MIN = 56; // a lane shorter than this is no lane: the card bec
 /** How a node says its way: beside its figure, on the line under it, or by a glyph in its lane's ink. */
 export type WayMode = 'inline' | 'line' | 'glyph';
 
-/** A node's words with its way said in one of them: as wide as they can read, and as they read now. */
+/**
+ * A node's words with its way said in one of them and its label on one line or two: as wide as they can read, and as
+ * they read now.
+ */
 export interface WordsWidth {
   readonly way: WayMode;
+  /** The label's lines: 1, or 2 where a long name breaks (#183). */
+  readonly lines: 1 | 2;
   readonly steady: number;
   readonly now: number;
 }
 
 export interface RowNode {
   /**
-   * Its words' widths, measured by the card, in the ways it may say its way, the one it prefers first (#170). It takes
-   * the first whose words as they can read (its label at its widest, a figure as wide as a house's usually is, each of
-   * its ways) leave a lane; where none does the card lists, so at a width a card keeps its lanes or its list as its
-   * figures change.
+   * Its words' widths, measured by the card, in the ways it may say its way, the one it prefers first (#170), each with
+   * its label on one line, then on two (#183). It takes the first whose words as they can read (its label at its
+   * widest, a figure as wide as a house's usually is, each of its ways) leave a lane; where none does the card lists,
+   * so at a width a card keeps its lanes or its list as its figures change.
    */
   readonly words: readonly WordsWidth[];
   /** Two lanes: a source that can flow both ways at the same moment. */
@@ -229,8 +235,9 @@ export interface RowsLayout {
   readonly out: readonly Cubic[];
   /** Where the house's words begin (y). */
   readonly houseWords: number;
-  /** How each node says its way. */
+  /** How each node says its way, and on how many lines its label stands. */
   readonly ways: readonly WayMode[];
+  readonly lines: readonly (1 | 2)[];
 }
 
 const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
@@ -238,7 +245,10 @@ const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
 /** A lane's middle keeps this far off words it passes: its half (3) and 4 clear. */
 const CLEAR = 7;
 
-/** The top of words standing in the column [left, right], from `from` down: under every lane that enters the column. */
+/**
+ * The top of words standing in the column [left, right], from `from` down: under every lane that enters the column, on
+ * the 4 px grid where a lane lowers them.
+ */
 function wordsUnder(paths: readonly Cubic[], left: number, right: number, from: number): number {
   let top = from;
   for (const path of paths)
@@ -246,7 +256,7 @@ function wordsUnder(paths: readonly Cubic[], left: number, right: number, from: 
       const [x, y] = at(path, i / SAMPLES);
       if (x > left - CLEAR && x < right + CLEAR) top = Math.max(top, y + CLEAR);
     }
-  return up4(top);
+  return top > from ? up4(top) : from;
 }
 
 export function rowsLayout(o: RowsOptions): RowsLayout {
@@ -255,30 +265,43 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const consumers = o.consumers ?? [];
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
+  const stage = flowStage(Math.max(1, o.nodes.length));
   // each node's words as the first of its ways that leaves a lane, the card's list where none does; the lanes leave
-  // after them, or after a figure wider than a house's usual as it reads now
+  // after them, or after a figure wider than a house's usual as it reads now, as far as every lane stays one
   const leaves = (w: WordsWidth): boolean =>
     house[0] - RING - up4(TEXT + w.steady + 12) >= LANE_MIN;
   const chosen = o.nodes.map((n) => n.words.find(leaves));
   const narrow = chosen.some((w) => !w);
-  const tail = up4(
-    TEXT + Math.max(0, ...chosen.map((w) => (w ? Math.max(w.steady, w.now) : 0))) + 12,
+  const tail = Math.min(
+    up4(TEXT + Math.max(0, ...chosen.map((w) => (w ? Math.max(w.steady, w.now) : 0))) + 12),
+    Math.floor((house[0] - RING - LANE_MIN) / 4) * 4,
   );
-  const lanes: RowLane[] = [];
-  const out: Cubic[] = [];
   const cys = consumers.map((_, i, all) =>
     all.length === 1 ? house[1] : Math.round(TOP + ((last - TOP) / (all.length - 1)) * i),
   );
-  if (!narrow) {
-    // the slots: a single lane needs 20 px of arc to its neighbour; a pair is two lanes 16 px apart
-    const gap = (a: RowNode, b: RowNode): number => 20 + (a.pair ? 8 : 0) + (b.pair ? 8 : 0);
-    let need = o.nodes.slice(1).reduce((sum, b, k) => sum + gap(o.nodes[k] ?? b, b), 0);
-    const share = toDeg(need) > 138;
-    if (share) need = 20 * Math.max(0, o.nodes.length - 1);
-    // centred on the house's left point, at most 48° of it below (the words hang there), at most 90° above
-    const span = toDeg(need);
-    const upAngle = Math.min(90, span - Math.min(48, span / 2));
-    let angle = 180 + upAngle;
+  // consumers: mirrored on the right, the house's lanes out to them
+  const out: Cubic[] = [];
+  if (wide && !narrow) {
+    const m = consumers.length;
+    const ctail = o.width - up4(TEXT + Math.max(0, ...consumers.map((c) => c.wordsW)) + 12);
+    const rise = m === 1 ? 0 : Math.min(60, 16 * (m - 1));
+    const fall = m === 1 ? 0 : Math.min(48, 16 * (m - 1));
+    consumers.forEach((_, i) => {
+      const a = m === 1 ? 0 : -rise + ((rise + fall) / (m - 1)) * i;
+      const p = onCircle(house, RING, a);
+      out.push(lane(p, a, [ctail, cys[i] ?? house[1]], 0, (ctail - p[0]) * 0.45));
+    });
+  }
+  // the slots: a single lane needs 20 px of arc to its neighbour; a pair is two lanes 16 px apart
+  const gap = (a: RowNode, b: RowNode): number => 20 + (a.pair ? 8 : 0) + (b.pair ? 8 : 0);
+  let need = o.nodes.slice(1).reduce((sum, b, k) => sum + gap(o.nodes[k] ?? b, b), 0);
+  const share = toDeg(need) > 138;
+  if (share) need = 20 * Math.max(0, o.nodes.length - 1);
+  const span = toDeg(need);
+  /** The lanes into the house, their fan's top `up` degrees above its left point. */
+  const fan = (up: number): RowLane[] => {
+    const lanes: RowLane[] = [];
+    let angle = 180 + up;
     o.nodes.forEach((node, k) => {
       if (k > 0) angle -= toDeg(share ? 20 : gap(o.nodes[k - 1] ?? node, node));
       const row = ys[k] ?? TOP;
@@ -299,30 +322,31 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
         });
       }
     });
-    // consumers: mirrored on the right, the house's lanes out to them
-    if (wide) {
-      const m = consumers.length;
-      const ctail = o.width - up4(TEXT + Math.max(0, ...consumers.map((c) => c.wordsW)) + 12);
-      const rise = m === 1 ? 0 : Math.min(60, 16 * (m - 1));
-      const fall = m === 1 ? 0 : Math.min(48, 16 * (m - 1));
-      consumers.forEach((_, i) => {
-        const a = m === 1 ? 0 : -rise + ((rise + fall) / (m - 1)) * i;
-        const p = onCircle(house, RING, a);
-        out.push(lane(p, a, [ctail, cys[i] ?? house[1]], 0, (ctail - p[0]) * 0.45));
-      });
-    }
-  }
+    return lanes;
+  };
   // the house's words hang under its ring (centred under it beside consumers), as low as the lanes ask: a fan of four
   // rows, or of pairs, reaches 48° under the house and comes in through words wider than its ring (#170)
   const half = o.houseWordsW / 2;
-  const houseWords = wordsUnder(
-    [...lanes.map((l) => l.path), ...out],
-    wide ? house[0] - half : o.width - o.houseWordsW,
-    wide ? house[0] + half : o.width,
-    house[1] + 36,
-  );
+  const under = (lanes: readonly RowLane[]): number =>
+    wordsUnder(
+      [...lanes.map((l) => l.path), ...out],
+      wide ? house[0] - half : o.width - o.houseWordsW,
+      wide ? house[0] + half : o.width,
+      house[1] + 36,
+    );
+  // the fan centred on the house's left point, at most 48° of it below (the words hang there), at most 90° above; where
+  // its words would hang past the stage the card declares, it leans up, 4° at a time, as far as 90° above
+  let up = Math.min(90, span - Math.min(48, span / 2));
+  let lanes = narrow ? [] : fan(up);
+  let houseWords = under(lanes);
+  while (!narrow && houseWords + o.houseWordsH > stage && up < 90) {
+    up = Math.min(90, up + 4);
+    const leaning = fan(up);
+    const lower = under(leaning);
+    if (lower < houseWords) [lanes, houseWords] = [leaning, lower];
+  }
   const bottoms = [
-    flowStage(Math.max(1, o.nodes.length)),
+    stage,
     houseWords + o.houseWordsH,
     ...cys.map((y, i) => y + Math.max(22, (consumers[i]?.wordsH ?? 36) / 2)),
   ];
@@ -337,6 +361,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     out,
     houseWords,
     ways: chosen.map((w) => w?.way ?? 'inline'),
+    lines: chosen.map((w) => w?.lines ?? 1),
   };
 }
 
@@ -378,15 +403,18 @@ export interface CrossLayout {
   readonly battery: Point;
   readonly house: Point;
   readonly lanes: Readonly<Record<CrossKey, Cubic>>;
+  /** Where the house's words begin (y): under its ring, lower where a lane would pass them. */
+  readonly houseWords: number;
 }
 
 /**
  * Home Assistant's arrangement in our idiom: the sun above, the grid left, the house right, the battery below,
  * mirror-symmetric about the middle of the grid and the house; every diagonal leaves at ±45° and arrives radially
  * with one pull. The battery → grid lane is its own curve (the reverse of grid → battery would arrive 6 px off the
- * battery's ring, not the grid's).
+ * battery's ring, not the grid's). The house's words (`houseWordsW` wide, at the right edge) hang under its ring,
+ * lowered as far as the battery's lane passes them 4 px clear.
  */
-export function crossLayout(width: number): CrossLayout {
+export function crossLayout(width: number, houseWordsW = 0): CrossLayout {
   const grid: Point = [22, 150];
   const house: Point = [width - 28, 150];
   const mid = (grid[0] + house[0]) / 2;
@@ -394,21 +422,23 @@ export function crossLayout(width: number): CrossLayout {
   const battery: Point = [mid, 270];
   const off = 28; // a 44 node's ring (22) + 6
   const pull = 44;
+  const lanes: Record<CrossKey, Cubic> = {
+    sunGrid: lane(onCircle(sun, 22, 135), 135, onCircle(grid, off, -45), 135, pull),
+    sunHouse: lane(onCircle(sun, 22, 45), 45, onCircle(house, RING, -135), 45, pull),
+    sunBattery: lane([sun[0], sun[1] + 22], 90, [battery[0], battery[1] - off], 90, 60),
+    gridHouse: lane([grid[0] + 22, grid[1]], 0, [house[0] - RING, house[1]], 0, 80),
+    gridBattery: lane(onCircle(grid, 22, 45), 45, onCircle(battery, off, -135), 45, pull),
+    batteryHouse: lane(onCircle(battery, 22, -45), -45, onCircle(house, RING, 135), -45, pull),
+    batteryGrid: lane(onCircle(battery, 22, -135), -135, onCircle(grid, off, 45), -135, pull),
+  };
   return {
     height: battery[1] + 22,
     sun,
     grid,
     battery,
     house,
-    lanes: {
-      sunGrid: lane(onCircle(sun, 22, 135), 135, onCircle(grid, off, -45), 135, pull),
-      sunHouse: lane(onCircle(sun, 22, 45), 45, onCircle(house, RING, -135), 45, pull),
-      sunBattery: lane([sun[0], sun[1] + 22], 90, [battery[0], battery[1] - off], 90, 60),
-      gridHouse: lane([grid[0] + 22, grid[1]], 0, [house[0] - RING, house[1]], 0, 80),
-      gridBattery: lane(onCircle(grid, 22, 45), 45, onCircle(battery, off, -135), 45, pull),
-      batteryHouse: lane(onCircle(battery, 22, -45), -45, onCircle(house, RING, 135), -45, pull),
-      batteryGrid: lane(onCircle(battery, 22, -135), -135, onCircle(grid, off, 45), -135, pull),
-    },
+    lanes,
+    houseWords: wordsUnder(Object.values(lanes), width - houseWordsW, width, house[1] + 36),
   };
 }
 

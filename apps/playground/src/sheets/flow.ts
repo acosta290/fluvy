@@ -289,6 +289,17 @@ export const sheet: SheetSpec = {
     ['sensor.fl_cjk_e1', '2.6', power('Inverter E1 累计发电量', 'kW')],
     ['sensor.fl_cjk_e2', '1.9', power('Inverter E2 累计发电量', 'kW')],
 
+    /* two arrays whose long names break onto two lines on a phone, in a house of each language (#183) */
+    ['sensor.fl_long_zh_e1', '2.8', power('逆变器 E1 北 MPPT 累计发电量', 'kW')],
+    ['sensor.fl_long_zh_e2', '3.4', power('逆变器 E2 南 MPPT 累计发电量', 'kW')],
+    ['sensor.fl_long_de_e1', '2.8', power('WR1 Leistung', 'kW')],
+    ['sensor.fl_long_de_e2', '3.4', power('WR2 Leistung', 'kW')],
+    ['sensor.fl_long_en_e1', '2.8', power('North garage roof array power', 'kW')],
+    ['sensor.fl_long_en_e2', '3.4', power('South house roof array power', 'kW')],
+    ['sensor.fl_long_grid', '-1.2', power('Grid power', 'kW')],
+    ['sensor.fl_long_battery', '-2.1', power('Battery power', 'kW')],
+    ['sensor.fl_long_level', '64', level('Battery')],
+
     /* the Energy dashboard's meters and power sensors */
     ['sensor.fl_grid_in_energy', '4.1', energy('Grid import')],
     ['sensor.fl_grid_out_energy', '1.3', energy('Grid export')],
@@ -966,6 +977,47 @@ export const sheet: SheetSpec = {
           entity: 'sensor.fl_down_grid',
           _now: NOW,
           cols: 6,
+        },
+      ],
+    },
+    // #183: two arrays with long names keep the diagram on a phone: each name on two lines, broken at a space or
+    // between two Chinese characters, never inside a word (the German house names its arrays itself)
+    ...(
+      [
+        ['zh', {}, {}],
+        ['de', { name: 'Wechselrichter Norddach' }, { name: 'Wechselrichter Süddach' }],
+        ['en', {}, {}],
+      ] as const
+    ).map(([house, e1, e2]) => ({
+      title: `Two long array names · a phone · ${house}`,
+      width: 360,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          sources: [
+            { type: 'solar', power: `sensor.fl_long_${house}_e1`, ...e1 },
+            { type: 'solar', power: `sensor.fl_long_${house}_e2`, ...e2 },
+            { type: 'grid', power: 'sensor.fl_long_grid' },
+            { type: 'battery', power: 'sensor.fl_long_battery', level: 'sensor.fl_long_level' },
+          ],
+          _now: NOW,
+        },
+      ],
+    })),
+    // the cross's house words hang under the battery's lane, its "12.4 kW" clear of it
+    {
+      title: 'Cross · a phone, a large house',
+      width: 360,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-flow-card',
+          sources: [
+            { type: 'solar', power: 'sensor.fl_large_solar' },
+            { type: 'grid', power: 'sensor.fl_large_grid' },
+            { type: 'battery', power: 'sensor.fl_large_battery' },
+          ],
+          variant: 'cross',
+          _now: NOW,
         },
       ],
     },

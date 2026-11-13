@@ -166,8 +166,11 @@ show_compare: true              # Compare: the period before beside the span, on
   `motion: full | calm | off`; `consumers` (where it goes: the house's biggest loads, and the rest of the house);
   the badge says how much of the house runs on sun (`badge: solar`), its self-sufficiency (`self_powered`), or the
   grid's way (`grid`). In a narrow column the words give way before the diagram does: a source says its way on the
-  line under its figure, or by its lane's arrowhead beside it, and the card lists its sources only where even their
-  names leave no room for the lanes, whatever its figures say.
+  line under its figure, or by its lane's arrowhead beside it; a long name ("Wechselrichter Süddach", "逆变器 E2 南
+  MPPT 累计发电量") stands on two lines, broken at a space or between two Chinese or Japanese characters, never inside
+  a word; and the card lists its sources only where even then their names leave no room for the lanes, whatever its
+  figures say. Two sources of one kind are named by their sensors, by their devices where two sensors read alike, and
+  by their sensors' whole names where even those are one.
 - **Energy balance** — what comes in against what goes out, live or over a period, always adding up (the house is
   what is left); the grid's phases under it; over a period, what it cost and what the feed-in paid.
 - **Grid** — the net import or export, what comes in and goes out, each phase with its voltage, the price now, and
