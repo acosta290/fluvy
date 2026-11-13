@@ -913,9 +913,10 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
         .join(' · ');
     }
     // an app is often its own source too: said once; a package as its platform's name, or not at all
+    const integration = this.hass?.entities?.[p.id]?.platform;
     const said = [
-      saidName(textAttr(p, 'app_name')) || textAttr(p, 'media_title'),
-      saidName(textAttr(p, 'source')),
+      saidName(textAttr(p, 'app_name'), integration) || textAttr(p, 'media_title'),
+      saidName(textAttr(p, 'source'), integration),
     ];
     return [...new Set(said.filter(Boolean))].join(' · ') || stateText(this.hass, p);
   }
@@ -1474,7 +1475,13 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       for (const group of groups)
         switch (group) {
           case 'source':
-            parts.push(this.renderSources(p, width, sourceChips(this.sources(p), appsDrawn)));
+            parts.push(
+              this.renderSources(
+                p,
+                width,
+                sourceChips(this.sources(p), appsDrawn, this.hass?.entities?.[p.id]?.platform),
+              ),
+            );
             break;
           case 'dpad':
             if (keyed) parts.push(this.renderPad(width));

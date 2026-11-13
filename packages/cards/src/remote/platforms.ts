@@ -320,27 +320,35 @@ export const appActivity = (
 const PACKAGE = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/;
 export const isPackage = (name: string): boolean => PACKAGE.test(name);
 
+/** The integrations that name an app by its Android package where their own list names none of it. */
+const BY_PACKAGE: ReadonlySet<string> = new Set(['androidtv_remote', 'androidtv']);
+
 /**
- * An app or a source as the card says it, never as a package (Android TV Remote names an app by its package where its
- * own list names none): a package a platform answers to as the platform's title ("Prime Video"), any other package
- * as nothing, a name as it is.
+ * An app or a source as the card says it, never as a package: a package a platform answers to as the platform's title
+ * ("Prime Video"); any other as nothing where the player's integration names apps by their packages (Android TV
+ * Remote's, the Android Debug Bridge's), as it is elsewhere, where a name shaped like one is a name ("bbc.co.uk" is a
+ * radio's); a name as it is.
  */
-export const saidName = (name: string): string =>
-  isPackage(name) ? (platformOf(name)?.title ?? '') : name;
+export const saidName = (name: string, integration: string | undefined): string =>
+  isPackage(name)
+    ? (platformOf(name)?.title ?? (BY_PACKAGE.has(integration ?? '') ? '' : name))
+    : name;
 
 /** A source as a chip of the remote: the source it selects, and what it says. */
 export type SourceChip = readonly [source: string, label: string];
 
 /**
- * The player's sources as the remote's chips say them, each with its source: the platforms among them left to the
- * apps row where that row draws them, a package no platform answers to left out.
+ * The player's sources as the remote's chips say them (`saidName`, by the player's integration), each with its
+ * source: the platforms among them left to the apps row where that row draws them, a package no platform answers to
+ * left out.
  */
 export const sourceChips = (
   sources: readonly string[],
   withoutApps: boolean,
+  integration: string | undefined,
 ): readonly SourceChip[] =>
   sources.flatMap((source) => {
-    const label = withoutApps && platformOf(source) ? '' : saidName(source);
+    const label = withoutApps && platformOf(source) ? '' : saidName(source, integration);
     return label ? [[source, label] as const] : [];
   });
 

@@ -287,7 +287,9 @@ const remote = (config: LovelaceCardConfig, hass: HomeAssistant): number => {
   const appsDrawn = remoteGroups(config['groups']).includes('apps') && !own.length;
   const entity = typeof config['entity'] === 'string' ? config['entity'] : '';
   return remoteHeight(config, {
-    sources: sourceChips(sources, appsDrawn).map(([, label]) => label),
+    sources: sourceChips(sources, appsDrawn, hass.entities?.[entity]?.platform).map(
+      ([, label]) => label,
+    ),
     apps: own.length
       ? own.map(appSaid)
       : sources.flatMap((source) => {

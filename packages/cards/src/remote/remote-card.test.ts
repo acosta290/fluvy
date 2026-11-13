@@ -688,6 +688,30 @@ describe('the TV remote card (#143)', () => {
       expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('Amazon Prime');
     });
 
+    it('a source named like a package is said as it is where the integration names no app by its package', async () => {
+      const { hass } = house(
+        [
+          [
+            'media_player.lg',
+            'on',
+            {
+              friendly_name: 'LG',
+              source: 'bbc.co.uk',
+              source_list: ['HDMI 1', 'bbc.co.uk'],
+              volume_level: 0.2,
+              supported_features: TV,
+            },
+          ],
+        ],
+        { 'media_player.lg': 'webostv' },
+      );
+      const root = await draw({ entity: 'media_player.lg', groups: ['source'] }, hass);
+      expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('bbc.co.uk');
+      expect(
+        [...root.querySelectorAll('.fv-chip__pill')].map((c) => c.textContent?.trim()),
+      ).toEqual(['HDMI 1', 'bbc.co.uk']);
+    });
+
     it('the sources a player lists by package: a chip by its platform’s name, an unknown one left out, the house counting the same', async () => {
       const box = (sources: readonly string[]): Seed[] => [
         [

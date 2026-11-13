@@ -121,22 +121,41 @@ describe('the platforms the remote knows by name (#143)', () => {
   });
 
   it('says an app or a source, never a package: its platform’s title, or nothing; a name as it is', () => {
-    expect(saidName('com.amazon.amazonvideo.livingroom')).toBe('Prime Video');
-    expect(saidName('com.netflix.ninja')).toBe('Netflix');
-    expect(saidName('com.example.launcher')).toBe('');
-    expect(saidName('Prime Video')).toBe('Prime Video');
-    expect(saidName('My Netflix')).toBe('My Netflix');
-    expect(saidName('HDMI 1')).toBe('HDMI 1');
-    expect(saidName('')).toBe('');
+    for (const integration of ['androidtv_remote', 'androidtv']) {
+      expect(saidName('com.amazon.amazonvideo.livingroom', integration)).toBe('Prime Video');
+      expect(saidName('com.netflix.ninja', integration)).toBe('Netflix');
+      expect(saidName('com.example.launcher', integration)).toBe('');
+    }
+    for (const integration of ['androidtv_remote', 'webostv', undefined]) {
+      expect(saidName('Prime Video', integration)).toBe('Prime Video');
+      expect(saidName('My Netflix', integration)).toBe('My Netflix');
+      expect(saidName('HDMI 1', integration)).toBe('HDMI 1');
+      expect(saidName('', integration)).toBe('');
+    }
+  });
+
+  it('says a name shaped like a package as it is where the integration names no app by its package', () => {
+    // a radio's source, a web address: Android's integrations alone write a package where they know no name
+    for (const integration of ['music_assistant', 'sonos', undefined]) {
+      expect(saidName('bbc.co.uk', integration)).toBe('bbc.co.uk');
+      expect(saidName('radio.net', integration)).toBe('radio.net');
+      expect(sourceChips(['bbc.co.uk', 'HDMI 1'], false, integration)).toEqual([
+        ['bbc.co.uk', 'bbc.co.uk'],
+        ['HDMI 1', 'HDMI 1'],
+      ]);
+    }
+    // a package a platform answers to is that platform's wherever it stands
+    expect(saidName('com.netflix.ninja', 'sonos')).toBe('Netflix');
+    expect(saidName('bbc.co.uk', 'androidtv_remote')).toBe('');
   });
 
   it('the sources as chips: a package by its platform’s name, an unknown one left out, the platforms left to the apps row where it draws them', () => {
     const sources = ['HDMI 1', 'com.netflix.ninja', 'com.example.box', 'Disney+'];
-    expect(sourceChips(sources, false)).toEqual([
+    expect(sourceChips(sources, false, 'androidtv')).toEqual([
       ['HDMI 1', 'HDMI 1'],
       ['com.netflix.ninja', 'Netflix'],
       ['Disney+', 'Disney+'],
     ]);
-    expect(sourceChips(sources, true)).toEqual([['HDMI 1', 'HDMI 1']]);
+    expect(sourceChips(sources, true, 'androidtv')).toEqual([['HDMI 1', 'HDMI 1']]);
   });
 });
