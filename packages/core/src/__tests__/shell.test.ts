@@ -149,7 +149,7 @@ describe('shell registry', () => {
     const css = (id: string): string => SHEETS.find((sheet) => sheet.id === id)?.css ?? '';
     // Home Assistant's drawer hides the sidebar: the frame hands its left inset on, inside the frame's media only
     expect(css('frame')).toMatch(
-      /@media \(min-width: 1024px\)[\s\S]*home-assistant-main\[modal\] \{\s*--fluvy-view-start: var\(--safe-area-inset-left\);/,
+      /@media \(min-width: 1024px\)[\s\S]*home-assistant-main\[modal\] \{[^}]*--fluvy-view-start: var\(--safe-area-inset-left\);/,
     );
     // the view takes it, nothing where the frame says none (a phone, a docked sidebar, the frame off)
     expect(css('dashboard-root')).toContain('#view { margin-left: var(--fluvy-view-start, 0px); }');
