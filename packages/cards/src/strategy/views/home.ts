@@ -10,6 +10,7 @@ import {
   headed,
   heading,
   lightGroups,
+  productionCards,
   readoutsCards,
   runsOf,
   scenesCard,
@@ -282,7 +283,7 @@ export function climateView(ctx: StrategyContext): Section[] {
  */
 export function energyView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
-  const { gridPower, solarToday, consumptionPowers } = energy;
+  const { gridPower, consumptionPowers } = energy;
   return balanced(ctx, [
     ...liveCards(ctx),
     ...(energy.prefsMeters
@@ -295,8 +296,7 @@ export function energyView(ctx: StrategyContext): Section[] {
     ...todayCards(ctx),
     ...todayTiles(ctx),
     ...solarGauges(energy),
-    ...when(solarToday, (id) => [full('production', { entity: id })]),
-    ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
+    ...productionCards(ctx),
     ...when(consumptionPowers.length >= 2, () => [
       full('distribution', {
         title: t('strategy.consumption'),

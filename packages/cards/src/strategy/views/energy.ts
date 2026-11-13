@@ -8,6 +8,7 @@ import {
   gridCard,
   hasBattery,
   hasSources,
+  productionCards,
   runsOf,
   solarCurves,
   solarGauges,
@@ -172,10 +173,8 @@ function todayView(ctx: StrategyContext): Section[] {
 /** What the sun makes: today's production, its last days as bars, each inverter's gauge and its day. */
 function productionView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
-  const { solarToday } = energy;
   return balanced(ctx, [
-    ...when(solarToday, (id) => [full('production', { entity: id })]),
-    ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
+    ...productionCards(ctx),
     ...solarGauges(energy),
     ...solarCurves(energy, { name: t('energy.solar') }),
   ]);

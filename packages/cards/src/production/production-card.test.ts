@@ -245,3 +245,21 @@ describe('the production card reads a lifetime meter’s day', () => {
     expect(figure(arrays, '.pr-legend .en-legend__value')).toBe('11.0kWh');
   });
 });
+
+describe('the production card’s several arrays (#183)', () => {
+  const head = (card: FluvyProductionCard) =>
+    card.shadowRoot!.querySelector('.so-top .fv-readout__value')?.textContent?.replace(/\s+/g, '');
+  const legend = (card: FluvyProductionCard) =>
+    [...card.shadowRoot!.querySelectorAll('.pr-legend .en-legend__value')].map((v) =>
+      v.textContent?.replace(/\s+/g, ''),
+    );
+
+  it('says the arrays’ day together where its meter is one of them, a meter of its own its own', async () => {
+    // east: 11.0 kWh compiled and 2.3 since; west: half of it, 5.5 and 1.1
+    const both = await mount({ entity: 'sensor.east', ...ARRAYS });
+    expect(legend(both)).toEqual(['13.3kWh', '6.6kWh']);
+    expect(head(both)).toBe('19.9kWh');
+    const own = await mount(ARRAYS);
+    expect(head(own)).toBe('13.4kWh');
+  });
+});

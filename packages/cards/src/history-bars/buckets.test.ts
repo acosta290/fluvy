@@ -8,6 +8,7 @@ import {
   bucketStarts,
   bucketsOf,
   clearBarsCache,
+  sumRecords,
   defaultStat,
   fetchBars,
   kindOf,
@@ -349,5 +350,24 @@ describe('asking the recorder', () => {
       'offline',
     );
     expect(broken.asked.length).toBe(2);
+  });
+});
+
+describe('several sensors’ bars as one (#183)', () => {
+  const span = (start: number) => ({ start, end: start + 1 });
+  const record = (values: ReadonlyArray<number | null>, today: number | null) => ({
+    buckets: values.map((value, i) => ({ ...span(i), value })),
+    current: { ...span(values.length), value: today },
+  });
+
+  it('adds them bar by bar, a bar none has staying none, and waits for every one', () => {
+    const summed = sumRecords([record([null, 2, 3], 1), record([null, null, 4], null), null]);
+    expect(summed?.buckets.map((b) => b.value)).toEqual([null, 2, 7]);
+    expect(summed?.current.value).toBe(1);
+    expect(sumRecords([record([1], 1), undefined])).toBeUndefined();
+    expect(sumRecords([null, null])).toBeNull();
+    // one sensor's are its own, its live base kept
+    const own = { ...record([5], 1), live: { rule: 'gain' as const, from: 10 } };
+    expect(sumRecords([own])).toBe(own);
   });
 });

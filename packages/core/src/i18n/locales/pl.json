@@ -1649,6 +1649,7 @@
     "editor_price": "Cena za jednostkę",
     "editor_head": "Odczyty w nagłówku",
     "editor_facts": "Fakty pod wykresem",
+    "editor_entities": "Czujniki sumowane słupek po słupku (kilka pól PV)",
     "editor_kind": "Rodzaj",
     "editor_factor": "Współczynnik",
     "editor_factor_help": "CO₂: kg na kWh · drzewa: kg pochłaniane przez drzewo w roku · kilometry: km na kWh · pieniądze: cena za jednostkę",

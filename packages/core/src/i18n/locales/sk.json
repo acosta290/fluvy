@@ -1999,6 +1999,7 @@
     "editor_price": "Cena za jednotku",
     "editor_head": "Hodnoty v hlavičke",
     "editor_facts": "Fakty pod grafom",
+    "editor_entities": "Snímače sčítané stĺpec po stĺpci (viac polí panelov)",
     "editor_kind": "Typ",
     "editor_factor": "Koeficient",
     "editor_factor_help": "CO₂: kg na kWh · stromy: kg absorbovaných jedným stromom za rok · kilometre: km na kWh · peniaze: cena za jednotku",

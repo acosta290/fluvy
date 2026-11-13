@@ -135,6 +135,7 @@
     "editor_price": "Price per unit",
     "editor_head": "Readouts in the head",
     "editor_facts": "Facts under the chart",
+    "editor_entities": "Sensors summed bar by bar (several arrays)",
     "editor_kind": "Kind",
     "editor_factor": "Factor",
     "editor_factor_help": "CO₂: kg per kWh · trees: kg a tree takes in a year · kilometres: km per kWh · money: the price per unit",

@@ -194,6 +194,8 @@ export interface EnergyRoles {
   /** The grid meter came from the energy dashboard's preferences, with its sign: nothing left to find out. */
   readonly gridSigned: boolean;
   readonly solarToday: string | undefined;
+  /** Every array's meter in the energy dashboard, in its order: today's production is theirs together (#183). */
+  readonly solarMeters: readonly string[];
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];

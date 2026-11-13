@@ -130,4 +130,24 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     // a meter the house no longer has is none
     expect(roles(house.slice(1), prefs).solarToday).toBe('sensor.pv_today');
   });
+
+  it('takes every array’s meter the energy dashboard names, in its order, for today’s production (#183)', () => {
+    const house = [
+      reading('sensor.e1_energy', 'Inverter E1 累计发电量', '9120', 'energy'),
+      reading('sensor.e2_energy', 'Inverter E2 累计发电量', '8450', 'energy'),
+    ];
+    const prefs: EnergyPrefs = {
+      energy_sources: [
+        { type: 'solar', stat_energy_from: 'sensor.e1_energy' },
+        { type: 'grid', stat_energy_from: 'sensor.grid_in' },
+        { type: 'solar', stat_energy_from: 'sensor.e2_energy' },
+        { type: 'solar', stat_energy_from: 'sensor.gone_energy' },
+      ],
+    };
+    expect(roles(house, prefs)).toMatchObject({
+      solarToday: 'sensor.e1_energy',
+      solarMeters: ['sensor.e1_energy', 'sensor.e2_energy'],
+    });
+    expect(roles(house).solarMeters).toEqual([]);
+  });
 });

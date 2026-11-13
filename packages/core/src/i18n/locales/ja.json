@@ -1915,6 +1915,7 @@
     "editor_price": "単位あたりの価格",
     "editor_head": "ヘッダーの表示値",
     "editor_facts": "グラフの下の集計",
+    "editor_entities": "棒ごとに合計するセンサー（複数のパネルなど）",
     "editor_kind": "種類",
     "editor_factor": "係数",
     "editor_factor_help": "CO₂：kWhあたりのkg · 樹木：1本が1年に吸収するkg · キロメートル：kWhあたりのkm · 金額：単位あたりの価格",

@@ -737,6 +737,47 @@ describe('the history bars of a meter that counts a lifetime', () => {
     for (const card of [days, today])
       expect(card.shadowRoot!.textContent).not.toMatch(/12[,.]?34[0-9]/);
   });
+
+  it('sums two arrays bar by bar, their days asked in one question, today each one’s live step added (#183)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 10, 12, 0));
+    // the second array makes twice the first's each day; today 12.3 + 2.4 and 5.0 + 1.5 since their newest five minutes
+    const counted: Record<string, number> = { 'sensor.solar': 12.3, 'sensor.house': 5 };
+    const newest: Record<string, number> = { 'sensor.solar': 12_343.2, 'sensor.house': 21_600 };
+    const { hass, asked } = house(
+      (message) =>
+        message['type'] === 'recorder/statistic_during_period'
+          ? { change: counted[message['statistic_id'] as string] }
+          : message['period'] === '5minute'
+            ? Object.fromEntries(
+                (message['statistic_ids'] as string[]).map((id) => [
+                  id,
+                  [{ start: local(10, 11), end: local(10, 11) + 300_000, state: newest[id] }],
+                ]),
+              )
+            : week(),
+      { states: { 'sensor.solar': '12345.6', 'sensor.house': '21601.5' } },
+    );
+    const card = await mount(
+      { _now: '', entities: ['sensor.solar', 'sensor.house'], include_today: true },
+      hass,
+    );
+    const days = asked.filter((message) => message['period'] === 'day');
+    expect(days).toHaveLength(1);
+    expect(days[0]).toMatchObject({ statistic_ids: ['sensor.solar', 'sensor.house'] });
+    expect(texts(card, '.hb-value')).toEqual([
+      '106.2',
+      '103.2',
+      '85.8',
+      '79.5',
+      '90.6',
+      '28.5',
+      '80.7',
+      '21.2',
+    ]);
+    expect(readouts(card)).toEqual(['Total 595.7kWh', 'Daily avg 82.1kWh']);
+    expect(card.watched()).toEqual(['sensor.solar', 'sensor.house']);
+  });
 });
 
 describe('the history bars card', () => {

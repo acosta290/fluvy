@@ -101,11 +101,13 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const taken = [...arrays, gridPower, ...batteryPowers.map((p) => p.id)];
   const charger = saying(powers, 'charger').find((id) => !taken.includes(id));
   const homePower = saying(powers, 'home').find((id) => !taken.includes(id));
-  // today's production: the energy dashboard's solar meter (the cards read its day from its statistics), else a day's
-  // counter its words name; never a forecast
+  // today's production: the energy dashboard's solar meters, an array each (the cards read their day from their
+  // statistics, several together, #183), else a day's counter its words name; never a forecast
+  const solarMeters = house.sources.flatMap((s) =>
+    s.kind === 'solar' ? s.energyIn.filter((id) => home.hasState(id)).slice(0, 1) : [],
+  );
   const solarToday =
-    house.sources.find((s) => s.kind === 'solar')?.energyIn.find((id) => home.hasState(id)) ??
-    saying(energies, 'solar').find((id) => TODAY.test(home.label(id)));
+    solarMeters[0] ?? saying(energies, 'solar').find((id) => TODAY.test(home.label(id)));
   const consumption = (prefs?.device_consumption ?? [])
     .map((d) => d.stat_consumption)
     .filter((id) => home.hasState(id));
@@ -134,6 +136,7 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
     gridInvert: gridPref?.inverted ?? false,
     gridSigned: gridPref !== undefined || gridPhases.length > 0,
     solarToday,
+    solarMeters,
     consumption,
     consumptionPowers,
     // the cards read the energy dashboard themselves when it carries the grid's power (or the house has no grid to

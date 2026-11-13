@@ -1627,6 +1627,7 @@
     "editor_price": "Precio por unidad",
     "editor_head": "Lecturas en la cabecera",
     "editor_facts": "Datos bajo el gráfico",
+    "editor_entities": "Sensores sumados barra a barra (varios campos solares)",
     "editor_kind": "Tipo",
     "editor_factor": "Factor",
     "editor_factor_help": "CO₂: kg por kWh · árboles: kg que absorbe un árbol al año · kilómetros: km por kWh · dinero: el precio por unidad",

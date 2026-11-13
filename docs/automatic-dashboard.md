@@ -129,7 +129,9 @@ small) and lead to every appliance.
   phase; a grid meter that reads negative through the night is understood as exporting-positive and inverted; the
   battery's charge is the battery sensor beside its power. A car charger is a power sensor named so (*wallbox*,
   *charger*, *ladestation*, *cargador*…); water and gas are the Energy dashboard's meters, else the house's own. Today's
-  production is the Energy dashboard's solar meter, else a day's counter named for the sun. A forecast is never a
+  production is the Energy dashboard's solar meter, else a day's counter named for the sun; with several arrays there,
+  Production and History bars read them all together, each array in Production's legend named as the house calls it
+  (by its device where two meters read alike). A forecast is never a
   reading: one named so in any language (*forecast*, *Prognose*, *previsión*, 预测…) or of a forecasting integration
   (Forecast.Solar, Solcast) takes no role, and no room or Climate view counts it.
 

@@ -122,7 +122,10 @@ export interface ProductionCardConfig
   show_peak?: boolean;
   /** `full` (default): the total, the bars, their axis and the figures. `compact`: the head, the bars and their axis. */
   variant?: 'full' | 'compact';
-  /** Several arrays (east and west roofs): each hour's bar stacked per array, and a legend of each one's day. */
+  /**
+   * Several arrays (east and west roofs): each hour's bar stacked per array, and a legend of each one's day. Where
+   * `entity` is one of them, the day's figure is theirs together; a meter of its own keeps its own.
+   */
   arrays?: ReadonlyArray<string | ProductionArray>;
   /** An Energy date picker's key (`energy_…`): the card draws the last day of its range (the day so far while it holds today). */
   collection_key?: string;
@@ -390,6 +393,11 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       .slice(0, MAX_ARRAYS);
   }
 
+  /** The arrays stand for the whole day: the card's meter is one of them (several arrays, #183). */
+  private get summed(): boolean {
+    return this.arrayList().some((a) => a.entity === this.config?.entity);
+  }
+
   protected override watched(): readonly string[] {
     return [
       this.config?.entity ?? '',
@@ -441,13 +449,16 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     // a meter out of reach, even one no longer there, keeps the day the recorder holds of it
     if (!hass || !this.recorded.ready(view)) return;
     const now = this.now();
-    const day = `${view.id}|${houseDay(hass, now)}`;
-    const previous = this.history.request(
-      `${day}|${wallClock(now, houseZone(hass)).hour}`,
-      () => loadDay(hass, view.id, view.unit, now),
-      (record) => (this.day_ = record),
-    );
-    if (previous !== null && !previous.startsWith(`${day}|`)) this.day_ = undefined;
+    // the arrays' days are the day where they stand for it
+    if (!this.summed) {
+      const day = `${view.id}|${houseDay(hass, now)}`;
+      const previous = this.history.request(
+        `${day}|${wallClock(now, houseZone(hass)).hour}`,
+        () => loadDay(hass, view.id, view.unit, now),
+        (record) => (this.day_ = record),
+      );
+      if (previous !== null && !previous.startsWith(`${day}|`)) this.day_ = undefined;
+    }
     this.loadArrays(hass, now);
   }
 
@@ -500,11 +511,34 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return dayHours(record, base.value, hourNow, this.closed ? null : view.number);
   }
 
+  /**
+   * The arrays' day together, in Wh an hour: an array that cannot be read counts as nothing while another reads; null
+   * where none can, undefined while they load.
+   */
+  private arraysDay(
+    arrays: readonly ProductionArray[],
+    hourNow: number,
+  ): number[] | null | undefined {
+    if (this.arrays_ === undefined) return undefined;
+    const days = arrays
+      .map((a, i) => this.arrayHours(i, this.entity(a.entity), hourNow))
+      .filter((hours): hours is number[] => hours !== null);
+    return days.length
+      ? Array.from({ length: HOURS }, (_u, hour) => sum(days.map((hours) => hours[hour] ?? 0)))
+      : null;
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
-    // out of reach, the card is the live one in the off skin (the owner's rule, 1.9): the day so far is the recorder's
-    const unusable = !isUsable(view);
+    const arrays = this.arrayList();
+    // the arrays stand for the day where the meter is one of them (#183): its figures are theirs together, in Wh
+    const summed = this.summed;
+    // out of reach, the card is the live one in the off skin (the owner's rule, 1.9): the day so far is the recorder's;
+    // the arrays' only where none of them can be read
+    const unusable = summed
+      ? arrays.every((a) => !isUsable(this.entity(a.entity)))
+      : !isUsable(view);
     const tone: Tone = unusable ? 'off' : toneOf(this.config, 'solar');
     const compact = this.compact;
     const now = this.now();
@@ -512,17 +546,17 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const wall = wallClock(now, zone);
     const hourNow = wall.hour;
     const minutes = wall.minute;
-    const base = toBase(1, view.unit);
+    const base = summed ? { unit: 'Wh', value: 1 } : toBase(1, view.unit);
     const record = this.day_;
-    const loading = record === undefined;
-    const arrays = this.arrayList();
 
     // finished hours from the recorder, the hour in progress from the meter itself
     const closed = this.closed;
-    const produced = record
-      ? dayHours(record, base.value, hourNow, closed ? null : view.number)
-      : new Array<number>(HOURS).fill(0);
-    const known = record !== null && record !== undefined;
+    const day = summed
+      ? this.arraysDay(arrays, hourNow)
+      : record && dayHours(record, base.value, hourNow, closed ? null : view.number);
+    const loading = day === undefined;
+    const known = day !== null && day !== undefined;
+    const produced = day ?? new Array<number>(HOURS).fill(0);
     const hovered = known ? this.scrubber.value : null;
     const total = sum(produced);
 

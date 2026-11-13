@@ -111,6 +111,29 @@ export const solarGauges = (e: EnergyRoles): Card[] =>
   e.solarPowers.map((p) => full('gauge', { entity: p.id }));
 
 /**
+ * What the sun made today and its last days, Production and History bars: its meter's — or, with several arrays in the
+ * energy dashboard, all of theirs together under the sun's word, each array named as the house calls it, by its
+ * device where two read alike (as the flow names them, #170), where the first alone was read (#183).
+ */
+export function productionCards({ energy, home, t }: StrategyContext): Card[] {
+  const { solarToday: entity, solarMeters: meters } = energy;
+  if (!entity) return [];
+  if (meters.length < 2)
+    return [full('production', { entity }), full('history-bars', { entity, color: 'amber' })];
+  const names = meters.map((id) => home.displayName(id));
+  const arrays = meters.map((id, i) => {
+    const name = names[i] as string;
+    const alike = names.filter((other) => other === name).length > 1;
+    return { entity: id, ...home.named(id, (alike && home.deviceName(id)) || name) };
+  });
+  const name = t('energy.solar');
+  return [
+    full('production', { entity, name, arrays }),
+    full('history-bars', { entity, name, entities: [...meters], color: 'amber' }),
+  ];
+}
+
+/**
  * What the sun made today: its array's curve, named as `named` says, or with several arrays a curve each, named by its
  * own sensor.
  */

@@ -1627,6 +1627,7 @@
     "editor_price": "Prix par unité",
     "editor_head": "Mesures dans l’en-tête",
     "editor_facts": "Repères sous le graphique",
+    "editor_entities": "Capteurs additionnés barre par barre (plusieurs champs de panneaux)",
     "editor_kind": "Type",
     "editor_factor": "Facteur",
     "editor_factor_help": "CO₂ : kg par kWh · arbres : kg qu’un arbre absorbe par an · kilomètres : km par kWh · argent : le prix par unité",

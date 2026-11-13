@@ -1952,6 +1952,7 @@
     "editor_price": "单位价格",
     "editor_head": "顶部的读数",
     "editor_facts": "图表下方的信息",
+    "editor_entities": "逐柱相加的传感器（如多个阵列）",
     "editor_kind": "类型",
     "editor_factor": "系数",
     "editor_factor_help": "CO₂：每 kWh 的 kg 数 · 树木：一棵树一年吸收的 kg 数 · 公里：每 kWh 的公里数 · 金额：单位价格",

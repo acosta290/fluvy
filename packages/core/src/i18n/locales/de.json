@@ -1627,6 +1627,7 @@
     "editor_price": "Preis pro Einheit",
     "editor_head": "Messwerte im Kopf",
     "editor_facts": "Fakten unter dem Diagramm",
+    "editor_entities": "Sensoren, Balken für Balken addiert (mehrere Modulfelder)",
     "editor_kind": "Art",
     "editor_factor": "Faktor",
     "editor_factor_help": "CO₂: kg pro kWh · Bäume: kg, die ein Baum im Jahr aufnimmt · Kilometer: km pro kWh · Geld: der Preis pro Einheit",

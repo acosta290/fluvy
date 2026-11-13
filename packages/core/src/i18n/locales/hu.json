@@ -2018,6 +2018,7 @@
     "editor_price": "Egységár",
     "editor_head": "Kijelzők a fejlécben",
     "editor_facts": "Tények a diagram alatt",
+    "editor_entities": "Oszloponként összeadott érzékelők (több napelemtábla)",
     "editor_kind": "Fajta",
     "editor_factor": "Tényező",
     "editor_factor_help": "CO₂: kg kWh-nként · fák: ennyi kg-ot köt meg egy fa évente · kilométer: km kWh-nként · pénz: az egységár",

@@ -1627,6 +1627,7 @@
     "editor_price": "Prezzo per unità",
     "editor_head": "Letture nell’intestazione",
     "editor_facts": "Dati sotto il grafico",
+    "editor_entities": "Sensori sommati barra per barra (più stringhe di pannelli)",
     "editor_kind": "Tipo",
     "editor_factor": "Fattore",
     "editor_factor_help": "CO₂: kg per kWh · alberi: kg che un albero assorbe in un anno · chilometri: km per kWh · denaro: il prezzo per unità",

@@ -258,7 +258,10 @@ show_compare: true              # Compare: the period before beside the span, on
   go: "Gas · figures up to 11 Nov"; a range with none yet says "No gas figures for this range yet" across the chart,
   at the card's height. It has no "right now" and no typical day: Water & gas keeps those.
 - **Energy devices** — rows can nest (`parent`), and a `total` meter shows what is not measured, at every level.
-- **Production** — `arrays` stacks each array's hourly bars.
+- **Production** — `arrays` stacks each array's hourly bars. Where `entity` is one of the arrays, the day's figure
+  ("So far today", the hour under a finger, the badge against the forecast) is the arrays' together; a meter of its
+  own (a whole-house counter) keeps its own figure. The automatic dashboards write it so for a house with several
+  arrays in the Energy dashboard.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term
   statistics, the value over each bar, the total and the average beside the title, and a strip of facts under the
   chart: the highest, the lowest and the average, or `co2`, `trees`, `km`, `money`, a `share` of another sensor and
@@ -267,6 +270,8 @@ show_compare: true              # Compare: the period before beside the span, on
   `never` for a lifetime meter) so a reset or a restart is never counted twice; a sensor with no state class reads
   the recorder's history; today is live and the average, highest and lowest are the finished bars'.
   `entity` also takes a statistic an integration imports, one with no entity behind it (`linky:consumption`), in YAML.
+  `entities` sums several sensors bar by bar (two arrays' production): each is read as `entity` is, in the card's unit,
+  and the bar in progress adds each one's live step; `entity` still names the card and is what a tap opens.
 - **Gauge** — `variant: signed` for a meter that can be negative: zero at the top, "1.8 kW out".
 
 `chart` draws a card's chart in a style of its own, or in the house's where it names none (fluvy's settings → Charts,
@@ -394,6 +399,22 @@ entity: sensor.solar_energy_today
 arrays:
   - { entity: sensor.east_array_power, name: East }
   - { entity: sensor.west_array_power, name: West }
+```
+
+```yaml
+type: custom:fluvy-production-card
+entity: sensor.east_array_energy       # one of the arrays: the day's figure is both together
+name: Solar
+arrays:
+  - { entity: sensor.east_array_energy, name: East roof }
+  - { entity: sensor.west_array_energy, name: West roof }
+```
+
+```yaml
+type: custom:fluvy-history-bars-card
+entity: sensor.east_array_energy
+name: Solar
+entities: [sensor.east_array_energy, sensor.west_array_energy]   # each bar both arrays' day
 ```
 
 ```yaml

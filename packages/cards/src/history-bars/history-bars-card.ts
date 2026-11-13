@@ -4,10 +4,12 @@ import {
   dateFormat,
   formatNumber,
   houseZone,
+  idsOf,
   isUsable,
   plural,
   stateText,
   strings as words,
+  type EntityEntry,
   type EntityView,
   type FluvyCardConfig,
   type HaFormSchemaItem,
@@ -57,9 +59,9 @@ import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
-import { Card, HEAD_BASE } from '../shared/base.js';
+import { Card, HEAD_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
-import { configKeys, type AliasSpec } from '../shared/config.js';
+import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import {
   accentField,
   actionFields,
@@ -95,12 +97,15 @@ import {
   CAPS,
   defaultStat,
   fetchBars,
+  fetchBarsOf,
   kindOf,
   meterCycle,
   questionFor,
   RESETS,
   SOURCES,
   STATS,
+  sumOf,
+  sumRecords,
   type BarsRecord,
   type BarsRequest,
   type Bucket,
@@ -145,6 +150,11 @@ export interface HistoryBarsCardConfig
   extends FluvyCardConfig, Pick<ChartKeys, 'chart' | 'highlight' | 'animate'> {
   /** Under the name; empty, "Last 7 days". */
   subtitle?: string;
+  /**
+   * Sensors whose bars are summed, bar by bar (two arrays' production): each read as `entity` is, in the card's unit.
+   * The card's `entity` names it and is what a tap opens.
+   */
+  entities?: readonly EntityEntry[];
   /** How many bars (days, weeks or months by `period`): 1–92, 7 by default. */
   days?: number;
   /** What a bar is: a day (default), a week or a month. */
@@ -262,10 +272,20 @@ interface Sensor {
   readonly counting: Reads<Counted>;
 }
 
-/** The sensor a share is of, as the card has it: its bars (undefined while they load, null with none), its count. */
+/** A sensor's reads in a card's map of them, made the first time it is read. */
+function memoryOf(map: Map<string, Sensor>, id: string): Sensor {
+  let memory = map.get(id);
+  if (!memory) map.set(id, (memory = { bars: new Reads(), counting: new Reads() }));
+  return memory;
+}
+
+/**
+ * A sensor's bars as the card has them (its own, one it sums, one a share is of): undefined while they load, null with
+ * none; and its count.
+ */
 interface ShareBars {
-  readonly record?: BarsRecord | null;
-  readonly counted?: CountedBucket;
+  readonly record?: BarsRecord | null | undefined;
+  readonly counted?: CountedBucket | undefined;
 }
 
 /** What the render laid the bars out with, for the pointer's snapping. */
@@ -666,6 +686,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     failed_: { state: true },
     counted_: { state: true },
     shares_: { state: true },
+    parts_: { state: true },
   };
 
   /** undefined while the bars load, null when the recorder knows nothing of the sensor. */
@@ -676,6 +697,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   declare counted_: CountedBucket | undefined;
   /** The sensors a share is of, by id: their bars (the same; undefined while they load) and their count. */
   declare shares_: Readonly<Record<string, ShareBars>>;
+  /** The sensors the bars sum (`entities`), by id: their bars and their count, as a share's. */
+  declare parts_: Readonly<Record<string, ShareBars>>;
 
   /** Where the chart is read, on the middle of the bar there (a fraction of its width); null: the whole period. */
   private readonly scrubber = new ScrubController(this, (fraction) => this.barMiddle(fraction));
@@ -684,6 +707,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   /** The card's sensor while it is missing from the house: as the recorder describes it. */
   private readonly recorded = new RecordedSensors(this);
   private readonly shareSensors = new Map<string, Sensor>();
+  private readonly partSensors = new Map<string, Sensor>();
   /** The window the bars on screen are of (the sensor and how it is read, not the hour): another one shows the skeleton. */
   private window = '';
   private readonly head = new HeadFit(this);
@@ -700,13 +724,15 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     this.failed_ = false;
     this.counted_ = undefined;
     this.shares_ = {};
+    this.parts_ = {};
     this.ruler = this.head.ruler;
     // the card's clock: an hour asked again once compiled, the window rolled at midnight, a failed read retried
     // after a minute — for a quiet sensor too, whose state never changes to ask for it
     new Ticker(this, () => this.due());
   }
 
-  static override base = HEAD_BASE;
+  /** Its sensor's, and the sensors its bars sum. */
+  static override base: readonly BaseKey[] = [...HEAD_BASE, 'entities'];
   static override keys = configKeys<HistoryBarsCardConfig>()([
     'subtitle',
     'days',
@@ -737,6 +763,13 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
+      key: 'entities',
+      title: 'history-bars.editor_entities',
+      domains: ['sensor'],
+      keys: ['entity'],
+      schema: [entityField(['sensor'])],
+    },
+    {
       key: 'head',
       title: 'history-bars.editor_head',
       idKey: 'kind',
@@ -760,7 +793,10 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     },
   ];
   /** The card's head is its sensor's name (`title` is the older word for it). */
-  static override aliases: AliasSpec = { keys: [{ from: 'title', to: 'name' }] };
+  static override aliases: AliasSpec = {
+    keys: [{ from: 'title', to: 'name' }],
+    items: { entities: ITEM_ALIASES },
+  };
   /** What the editor shows where the config says nothing: what the card does then. */
   static override defaults: EditorDefaults = (config, hass) => {
     const entity = typeof config['entity'] === 'string' ? config['entity'] : '';
@@ -952,9 +988,16 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     ];
   }
 
+  /** The sensors the bars sum (`entities`), those the house has; none: the card's sensor alone. */
+  private partIds(): string[] {
+    return [
+      ...new Set(idsOf(this.config?.entities).filter((id) => this.entity(id).status !== 'missing')),
+    ];
+  }
+
   protected override watched(): readonly string[] {
     const view = this.entity();
-    return [view.id, ...this.shareIds(view)].filter(Boolean);
+    return [...new Set([view.id, ...this.partIds(), ...this.shareIds(view)])].filter(Boolean);
   }
 
   private now(): Date {
@@ -1016,9 +1059,10 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   }
 
   /**
-   * The reads the card makes now, each with its key: its sensor's bars, what Home Assistant has counted of the bucket
-   * in progress where the bars are its count and that bucket is read live, and the bars of each sensor a share is of
-   * (each by its own reset, the bucket in progress counted where it is drawn).
+   * The reads the card makes now, each with its key: its sensor's bars (or those of each sensor it sums, asked
+   * together), what Home Assistant has counted of the bucket in progress where the bars are its count and that bucket
+   * is read live, and the bars of each sensor a share is of (each by its own reset, the bucket in progress counted
+   * where it is drawn).
    */
   private reads(): Array<{ readonly due: () => boolean; readonly run: () => void }> {
     const hass = this.hass;
@@ -1030,20 +1074,26 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const out: Array<{ due: () => boolean; run: () => void }> = [];
     const sensor = (
       of: EntityView,
-      [reset, unit]: readonly [Reset, string],
+      request: BarsRequest,
       memory: Sensor,
       counts: boolean,
       onBars: (record: BarsRecord | null) => void,
       onCounted: (counted: CountedBucket) => void,
       onFail: () => void = () => undefined,
+      load = (): Promise<BarsRecord | null> => fetchBars(hass, request),
     ): void => {
-      const request = this.requestOf(of, reset, now, unit);
       const key = barsKey(hass, request);
       out.push({
         due: () => memory.bars.due(key),
-        run: () => memory.bars.ask(key, () => fetchBars(hass, request), onBars, onFail),
+        run: () => memory.bars.ask(key, load, onBars, onFail),
       });
-      const plan = questionFor(request.kind, request.stat, reset, request.period, request.source);
+      const plan = questionFor(
+        request.kind,
+        request.stat,
+        request.reset,
+        request.period,
+        request.source,
+      );
       if (!counts || !live || plan.from !== 'rows' || plan.stat !== 'change') return;
       const start = bucketStarts(hass, now, request.period, 0).current;
       const withReset = of.attr('last_reset') !== undefined;
@@ -1058,29 +1108,48 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           ),
       });
     };
-    sensor(
-      view,
-      [this.resetOf(), this.unitOf(view)],
-      this.own,
-      this.readsCurrent(view),
-      (record) => {
-        this.record_ = record;
-        this.failed_ = false;
-      },
-      (counted) => (this.counted_ = counted),
-      () => (this.failed_ = true),
+    const reset = this.resetOf();
+    const counts = this.readsCurrent(view);
+    const parts = this.partIds().map((id) => this.entity(id));
+    if (!parts.length)
+      sensor(
+        view,
+        this.requestOf(view, reset, now, this.unitOf(view)),
+        this.own,
+        counts,
+        (record) => {
+          this.record_ = record;
+          this.failed_ = false;
+        },
+        (counted) => (this.counted_ = counted),
+        () => (this.failed_ = true),
+      );
+    // the sensors it sums, in the card's unit where theirs converts to it: their rows asked in one question
+    const requests = parts.map((of) => this.requestOf(of, reset, now, this.shareUnit(of)));
+    parts.forEach((of, i) =>
+      sensor(
+        of,
+        requests[i] as BarsRequest,
+        memoryOf(this.partSensors, of.id),
+        counts,
+        (record) => {
+          this.parts_ = { ...this.parts_, [of.id]: { ...this.parts_[of.id], record } };
+          this.failed_ = false;
+        },
+        (counted) =>
+          (this.parts_ = { ...this.parts_, [of.id]: { ...this.parts_[of.id], counted } }),
+        () => (this.failed_ = true),
+        () => fetchBarsOf(hass, requests).then((records) => records[i] ?? null),
+      ),
     );
     const drawn = Boolean(this.config?.include_today);
     for (const id of this.shareIds(view)) {
       const of = this.entity(id);
       if (of.status === 'missing') continue;
-      let memory = this.shareSensors.get(id);
-      if (!memory)
-        this.shareSensors.set(id, (memory = { bars: new Reads(), counting: new Reads() }));
       sensor(
         of,
-        ['auto', this.shareUnit(of)],
-        memory,
+        this.requestOf(of, 'auto', now, this.shareUnit(of)),
+        memoryOf(this.shareSensors, id),
         drawn,
         (record) => (this.shares_ = { ...this.shares_, [id]: { ...this.shares_[id], record } }),
         (counted) => (this.shares_ = { ...this.shares_, [id]: { ...this.shares_[id], counted } }),
@@ -1102,11 +1171,12 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const view = this.entity();
     if (!this.hass || !this.recorded.ready(view)) return;
     const request = this.requestOf(view, this.resetOf(), this.now(), this.unitOf(view));
-    const window = `${view.id}|${this.period}|${this.count}|${request.stat}|${request.reset}|${request.source}|${request.unit}`;
+    const window = `${[view.id, ...this.partIds()].join(',')}|${this.period}|${this.count}|${request.stat}|${request.reset}|${request.source}|${request.unit}`;
     if (window !== this.window) {
       if (this.window) {
         this.record_ = undefined;
         this.counted_ = undefined;
+        this.parts_ = {};
         this.failed_ = false;
       }
       this.window = window;
@@ -1299,19 +1369,34 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const name = this.nameFor(view, this.config?.name);
     // out of reach, the card is the live one in the off skin (the owner's rule, 1.9): its head opens its line with the
     // state, its bars are the recorder's and stay
-    const unusable = !isUsable(view) && !this.recorded.imported(view);
+    // the sensors the bars are read from, each with what the card has of it: its own, or those it sums (#183) — out
+    // of reach only where every one is
+    const parts = this.partIds().map((id) => this.entity(id));
+    const sources: ReadonlyArray<{ readonly view: EntityView; readonly bars: ShareBars }> =
+      parts.length
+        ? parts.map((of) => ({ view: of, bars: this.parts_[of.id] ?? {} }))
+        : [{ view, bars: { record: this.record_, counted: this.counted_ } }];
+    const unusable = sources.every(({ view: of }) => !isUsable(of) && !this.recorded.imported(of));
     const tone: Tone = unusable ? 'off' : toneOf(this.config, 'accent');
     const variant = this.variant;
     const width = this.contentWidth;
-    const record = this.record_;
+    const record = sumRecords(sources.map(({ bars }) => bars.record));
     const failed = record === undefined && this.failed_;
     const loading = record === undefined && !failed;
     const drawn = Boolean(this.config?.include_today);
 
-    // the bucket in progress, live; the buckets drawn in the unit shown (a Wh series reads in kWh when its figures
-    // ask for it), the one in progress last where it is drawn
+    // the bucket in progress, live (each sensor's carried on to its reading now); the buckets drawn in the unit shown
+    // (a Wh series reads in kWh when its figures ask for it), the one in progress last where it is drawn
     const asked = this.unitOf(view);
-    const live = record ? this.liveCurrent(record, view, this.counted_, asked) : null;
+    const live = record
+      ? sumOf(
+          sources.map(({ view: of, bars }) =>
+            bars.record
+              ? this.liveCurrent(bars.record, of, bars.counted, this.shareUnit(of))
+              : null,
+          ),
+        )
+      : null;
     const buckets: readonly Bucket[] = record
       ? [...record.buckets, ...(drawn ? [{ ...record.current, value: live }] : [])]
       : [];

@@ -1627,6 +1627,7 @@
     "editor_price": "Birim fiyatı",
     "editor_head": "Başlıktaki okumalar",
     "editor_facts": "Grafiğin altındaki bilgiler",
+    "editor_entities": "Çubuk çubuk toplanan sensörler (birkaç panel dizisi)",
     "editor_kind": "Tür",
     "editor_factor": "Katsayı",
     "editor_factor_help": "CO₂: kWh başına kg · ağaç: bir ağacın yılda tuttuğu kg · kilometre: kWh başına km · para: birim fiyatı",

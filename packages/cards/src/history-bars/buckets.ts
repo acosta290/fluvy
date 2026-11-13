@@ -213,6 +213,34 @@ export function bucketsOf(
   });
 }
 
+/** The sum of the figures there are; null where there is none. */
+export function sumOf(values: ReadonlyArray<number | null | undefined>): number | null {
+  let total: number | null = null;
+  for (const value of values) if (typeof value === 'number') total = (total ?? 0) + value;
+  return total;
+}
+
+/**
+ * Several sensors' bars as one, bar by bar (two arrays' production, #183): undefined while one of them loads, null
+ * where the recorder knows none of them, and a bar none of them has is none. One sensor's are its own.
+ */
+export function sumRecords(
+  records: ReadonlyArray<BarsRecord | null | undefined>,
+): BarsRecord | null | undefined {
+  if (records.length === 1) return records[0];
+  if (records.some((record) => record === undefined)) return undefined;
+  const known = records.filter((record): record is BarsRecord => record !== null);
+  const [first] = known;
+  if (!first) return null;
+  return {
+    buckets: first.buckets.map((bucket, i) => ({
+      ...bucket,
+      value: sumOf(known.map((record) => record.buckets[i]?.value)),
+    })),
+    current: { ...first.current, value: sumOf(known.map((record) => record.current.value)) },
+  };
+}
+
 /* ---------- what to ask ---------- */
 
 /** What a sensor is to the recorder, by its state class. */
@@ -348,56 +376,101 @@ function remember(key: string, promise: Promise<BarsRecord | null>): Promise<Bar
   return promise;
 }
 
+/** A question asked within the last five minutes, still in flight or answered. */
+function kept(key: string): Promise<BarsRecord | null> | undefined {
+  const hit = cache.get(key);
+  return hit && Date.now() - hit.at < TTL ? hit.promise : undefined;
+}
+
+/** How a request's bars are read (`questionFor`). */
+const planOf = (request: BarsRequest): Plan =>
+  questionFor(request.kind, request.stat, request.reset, request.period, request.source);
+
+/** What a bar shows where Home Assistant's own rows answer it. */
+type RowStat = Extract<Plan, { from: 'rows' }>['stat'];
+
 /**
  * The sensor's bars, asked as `questionFor` says, shared by the cards that ask the same within five minutes. Resolves
  * null when the recorder knows nothing of the sensor; rejects when it cannot be read (never kept: asked again).
  */
 export function fetchBars(hass: HomeAssistant, request: BarsRequest): Promise<BarsRecord | null> {
   const key = barsKey(hass, request);
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < TTL) return hit.promise;
-  const plan = questionFor(
-    request.kind,
-    request.stat,
-    request.reset,
-    request.period,
-    request.source,
-  );
+  const hit = kept(key);
+  if (hit) return hit;
+  const plan = planOf(request);
   const spans = bucketSpans(hass, request.now, request.period, request.count);
   const promise =
     plan.from === 'rows'
-      ? fetchRows(hass, request, plan.stat, spans)
+      ? fetchRows(hass, [request], plan.stat, spans).then(([record]) => record ?? null)
       : plan.from === 'readings'
         ? import('./readings.js').then((m) => m.readBars(hass, request, plan.step, spans))
         : import('./history.js').then((m) => m.historyBars(hass, request, plan.step, spans));
   return remember(key, promise);
 }
 
-/** Home Assistant's own rows at the bars' period, from the oldest bucket: a meter's change, a measurement's mean or extreme. */
+/**
+ * Several sensors' bars in one window, for a card that sums them (two arrays, #183): those Home Assistant's rows
+ * answer, in one unit, asked in one question and each kept as `fetchBars` keeps it; the rest asked as it asks them.
+ */
+export function fetchBarsOf(
+  hass: HomeAssistant,
+  requests: readonly BarsRequest[],
+): Promise<Array<BarsRecord | null>> {
+  const together = new Map<string, { stat: RowStat; asked: BarsRequest[] }>();
+  for (const request of requests) {
+    const plan = planOf(request);
+    if (plan.from !== 'rows' || kept(barsKey(hass, request))) continue;
+    const key = `${plan.stat}|${request.unit}`;
+    const group = together.get(key) ?? { stat: plan.stat, asked: [] };
+    group.asked.push(request);
+    together.set(key, group);
+  }
+  for (const { stat, asked } of together.values()) {
+    const [first] = asked;
+    if (!first || asked.length < 2) continue;
+    const spans = bucketSpans(hass, first.now, first.period, first.count);
+    const answer = fetchRows(hass, asked, stat, spans);
+    asked.forEach((request, i) =>
+      remember(
+        barsKey(hass, request),
+        answer.then((records) => records[i] ?? null),
+      ),
+    );
+  }
+  return Promise.all(requests.map((request) => fetchBars(hass, request)));
+}
+
+/**
+ * Home Assistant's own rows at the bars' period, from the oldest bucket, for each sensor asked: a meter's change, a
+ * measurement's mean or extreme. Null for a sensor it has none of.
+ */
 async function fetchRows(
   hass: HomeAssistant,
-  request: BarsRequest,
-  stat: 'change' | 'mean' | 'max' | 'min',
+  requests: readonly BarsRequest[],
+  stat: RowStat,
   spans: ReturnType<typeof bucketSpans>,
-): Promise<BarsRecord | null> {
+): Promise<Array<BarsRecord | null>> {
   const from = spans.finished[0]?.start ?? spans.current.start;
-  const units = unitsFor(request.unit);
+  const [first] = requests;
+  const units = unitsFor(first?.unit ?? '');
   const result = await hass.callWS<Record<string, Row[]>>({
     type: 'recorder/statistics_during_period',
     start_time: new Date(from).toISOString(),
-    statistic_ids: [request.id],
-    period: request.period,
+    statistic_ids: requests.map((request) => request.id),
+    period: first?.period,
     types: [stat],
     ...(units ? { units } : {}),
   });
-  const rows = result?.[request.id];
-  if (!Array.isArray(rows) || rows.length === 0) return null;
-  const [current] = bucketsOf(rows, [spans.current], stat);
-  return {
-    buckets: bucketsOf(rows, spans.finished, stat),
-    current: current as Bucket,
-    ...(stat === 'max' || stat === 'min' ? { live: { rule: stat } } : {}),
-  };
+  return requests.map((request): BarsRecord | null => {
+    const rows = result?.[request.id];
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const [current] = bucketsOf(rows, [spans.current], stat);
+    return {
+      buckets: bucketsOf(rows, spans.finished, stat),
+      current: current as Bucket,
+      ...(stat === 'max' || stat === 'min' ? { live: { rule: stat } } : {}),
+    };
+  });
 }
 
 export const clearBarsCache = (): void => cache.clear();

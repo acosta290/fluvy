@@ -1338,6 +1338,51 @@ describe('custom:fluvy-home strategy', () => {
     expect(sun('home')).toEqual(['energy sensor.mppt_power_e1', 'energy sensor.mppt_power_e2']);
   });
 
+  it('reads today’s production from every array the energy dashboard names, each named apart (#183)', async () => {
+    // two inverters whose meters read alike: told apart by their devices, as the flow tells them (#170)
+    const meter = (id: string, device: string) =>
+      entity(
+        id,
+        '9120.4',
+        {
+          unit_of_measurement: 'kWh',
+          device_class: 'energy',
+          state_class: 'total_increasing',
+          friendly_name: 'MPPT 累计发电量',
+        },
+        { device_id: device },
+      );
+    const hass = demoHass({
+      more: [meter('sensor.e1_energy', 'inverter-e1'), meter('sensor.e2_energy', 'inverter-e2')],
+      sources: [
+        { type: 'grid', stat_energy_from: 'sensor.grid_energy_today' },
+        { type: 'solar', stat_energy_from: 'sensor.e1_energy' },
+        { type: 'solar', stat_energy_from: 'sensor.e2_energy' },
+      ],
+    });
+    hass.devices['inverter-e1'] = { id: 'inverter-e1', area_id: null, name: 'Inverter E1' };
+    hass.devices['inverter-e2'] = { id: 'inverter-e2', area_id: null, name: 'Inverter E2' };
+    const { views } = await FluvyHomeStrategy.generate(
+      { type: 'custom:fluvy-home' },
+      hass as never,
+    );
+    const energy = views.find((v) => v.path === 'energy')!.sections.flatMap((s) => s.cards);
+    const of = (type: string) => energy.find((c) => c.type === `custom:fluvy-${type}-card`);
+    expect(of('production')).toMatchObject({
+      entity: 'sensor.e1_energy',
+      name: 'Solar',
+      arrays: [
+        { entity: 'sensor.e1_energy', name: 'Inverter E1' },
+        { entity: 'sensor.e2_energy', name: 'Inverter E2' },
+      ],
+    });
+    expect(of('history-bars')).toMatchObject({
+      entity: 'sensor.e1_energy',
+      name: 'Solar',
+      entities: ['sensor.e1_energy', 'sensor.e2_energy'],
+    });
+  });
+
   it('reads an export meter as the grid’s second sensor, never as the grid', async () => {
     const hass = house([
       entity('sensor.grid_import_power', '1900', {

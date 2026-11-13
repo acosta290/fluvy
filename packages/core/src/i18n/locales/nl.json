@@ -1627,6 +1627,7 @@
     "editor_price": "Prijs per eenheid",
     "editor_head": "Meetwaarden in de kop",
     "editor_facts": "Feiten onder de grafiek",
+    "editor_entities": "Sensoren per staaf opgeteld (meerdere panelenvelden)",
     "editor_kind": "Soort",
     "editor_factor": "Factor",
     "editor_factor_help": "CO₂: kg per kWh · bomen: kg die een boom per jaar opneemt · kilometers: km per kWh · geld: de prijs per eenheid",
