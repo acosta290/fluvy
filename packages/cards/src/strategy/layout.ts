@@ -48,10 +48,22 @@ export const when = <V, T = Card>(
   build: (value: V) => T[],
 ): T[] => (value ? build(value) : []);
 
-/** Rows of entities, each by its display name, two alike told apart (`apart`). */
-export const entityRows = (home: HomeRegistry, ids: readonly string[]) => {
+/**
+ * What each of `ids` shown together is called (its display name) where that improves on its card's own (`named`), two
+ * alike told apart (`apart`, #170).
+ */
+export const namesOf = (
+  home: HomeRegistry,
+  ids: readonly string[],
+): ((id: string) => Record<string, string>) => {
   const name = home.apart(ids, (id) => home.displayName(id));
-  return ids.map((entity) => ({ entity, ...home.named(entity, name(entity)) }));
+  return (id) => home.named(id, name(id));
+};
+
+/** Rows of entities, each by its display name, two alike told apart. */
+export const entityRows = (home: HomeRegistry, ids: readonly string[]) => {
+  const named = namesOf(home, ids);
+  return ids.map((entity) => ({ entity, ...named(entity) }));
 };
 /** Rows of a device's reading (a battery, a phone), each by its device, two alike told apart. */
 export const deviceRows = (home: HomeRegistry, ids: readonly string[]) => {
@@ -64,13 +76,32 @@ export const deviceRows = (home: HomeRegistry, ids: readonly string[]) => {
  */
 export const tileSwitch = (asked: unknown): { show_switch?: false | 'value' } =>
   asked === 'hide' ? { show_switch: false } : asked === 'value' ? { show_switch: 'value' } : {};
-/** An appliance's plug as a large tile, its readings at its foot, its switch as the dashboard asks. */
-export const applianceTile = (home: HomeRegistry, id: string, style: CardStyle): Card => {
-  const readouts = home.readoutsOf(id);
-  return tile(id, {
-    ...home.named(id),
-    ...(readouts.length ? { readouts: [...readouts] } : {}),
-    ...tileSwitch(style.switches),
+/**
+ * Appliances' plugs shown together, each a large tile, its readings at its foot, its switch as the dashboard asks; two
+ * alike told apart.
+ */
+export const applianceTiles = (
+  home: HomeRegistry,
+  ids: readonly string[],
+  style: CardStyle,
+): Card[] => {
+  const named = namesOf(home, ids);
+  return ids.map((id) => {
+    const readouts = home.readoutsOf(id);
+    return tile(id, {
+      ...named(id),
+      ...(readouts.length ? { readouts: [...readouts] } : {}),
+      ...tileSwitch(style.switches),
+    });
+  });
+};
+/** Blinds, curtains, awnings: a row of compact tiles, two a row, two alike told apart. */
+export const coverTiles = (home: HomeRegistry, ids: readonly string[]): Card => {
+  const named = namesOf(home, ids);
+  return full('tiles', {
+    size: 'compact',
+    columns: 2,
+    tiles: ids.map((id) => ({ entity: id, ...named(id) })),
   });
 };
 /** A source's power in the energy cards' words: its sensor, its own sign, a battery's own charge. */
@@ -211,9 +242,20 @@ export const readoutsCards = (
   }));
 };
 
-/** Scenes (and what runs like one) on one Scenes card under a title, the last run marked. */
-export const scenesCard = (title: string, ids: readonly string[]): Card =>
-  full('scenes', { title, scenes: [...ids] });
+/**
+ * Scenes (and what runs like one) on one Scenes card under a title, the last run marked: each as Home Assistant names
+ * it, two alike told apart (#170).
+ */
+export const scenesCard = (home: HomeRegistry, title: string, ids: readonly string[]): Card => {
+  const name = home.apart(ids, (id) => home.name(id));
+  return full('scenes', {
+    title,
+    scenes: ids.map((id) => {
+      const said = home.named(id, name(id));
+      return said['name'] ? { entity: id, ...said } : id;
+    }),
+  });
+};
 
 /** A thermostat in the dashboard's variant. */
 export const thermostat = (id: string, style: CardStyle): Card =>
@@ -222,12 +264,21 @@ export const thermostat = (id: string, style: CardStyle): Card =>
  * A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`), its switch as the
  * dashboard asks: a compact tile draws none, and keeps the word for the day it is made large.
  */
-export const sizedTile = (id: string, extra: Record<string, unknown>, style: CardStyle): Card =>
+const sizedTile = (id: string, extra: Record<string, unknown>, style: CardStyle): Card =>
   tile(id, {
     ...extra,
     ...(style.tiles === 'compact' ? { size: 'compact' } : {}),
     ...tileSwitch(style.switches),
   });
+/** Lights shown together, each a tile in the dashboard's size (`sizedTile`), two alike told apart. */
+export const lightTiles = (
+  home: HomeRegistry,
+  ids: readonly string[],
+  style: CardStyle,
+): Card[] => {
+  const named = namesOf(home, ids);
+  return ids.map((id) => sizedTile(id, named(id), style));
+};
 
 /** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
 /** The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer). */
@@ -367,17 +418,17 @@ export function lightGroups(
   }
   return [...groups.entries()]
     .sort((a, b) => b[1].length - a[1].length)
-    .flatMap(([name, group]) =>
-      headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', group), [
+    .flatMap(([name, group]) => {
+      // a group's cards and tiles stand together under its heading: two alike are told apart
+      const named = namesOf(home, group);
+      return headed(heading(name, OUTDOOR.test(name) ? 'fluvy:moon' : 'fluvy:bulb', group), [
         ...(group.length > 1 ? [[full('lights', { lights: group })]] : []),
         ...group
           .filter((id) => home.dimmable(id))
-          .map((id) => [full('light', { entity: id, ...home.named(id) })]),
+          .map((id) => [full('light', { entity: id, ...named(id) })]),
         ...tileRows(
-          group
-            .filter((id) => !home.dimmable(id))
-            .map((id) => sizedTile(id, home.named(id), ctx.style)),
+          group.filter((id) => !home.dimmable(id)).map((id) => sizedTile(id, named(id), ctx.style)),
         ),
-      ]),
-    );
+      ]);
+    });
 }

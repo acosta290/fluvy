@@ -24,6 +24,8 @@ export function wallRooms(ctx: StrategyContext): AreaRegistryEntry[] {
 function wallView(ctx: StrategyContext): Section[] {
   const { home, t, weather, style } = ctx;
   const scenes = home.scenes.slice(0, style.scenes ?? 6);
+  // the scenes' chips, each by its display name, two alike told apart (#170)
+  const chipName = home.apart(scenes, (id) => home.displayName(id));
   const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
     full('entities', { title, rows: entityRows(home, ids), ...extra });
   const readings = capped(
@@ -49,7 +51,7 @@ function wallView(ctx: StrategyContext): Section[] {
           {
             type: 'custom:fluvy-chips-card',
             chips: scenes.map((id) => ({
-              name: home.displayName(id),
+              name: chipName(id),
               icon: 'fluvy:sparkle',
               action: {
                 action: 'perform-action',

@@ -3,17 +3,18 @@ import { applianceSections } from './appliances.js';
 import { byArea, capped, each, foldAt, moreAfter, moreKeys } from './caps.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
-  applianceTile,
+  applianceTiles,
+  coverTiles,
   entityRows,
   flowed,
   full,
   headed,
   heading,
   lightGroups,
+  lightTiles,
   readoutsCards,
   scenesCard,
   section,
-  sizedTile,
   thermostat,
   tileRows,
   when,
@@ -190,12 +191,6 @@ export function roomSections(
   const fan = (id: string): Card => full('fan', { entity: id, ...home.named(id) });
   const player = (id: string): Card => full('media', { entity: id, ...home.named(id) });
   const camera = (id: string): Card => full('camera', { entity: id });
-  const coverTiles = (ids: readonly string[]): Card =>
-    full('tiles', {
-      size: 'compact',
-      columns: 2,
-      tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
-    });
   const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
     full('entities', { title, rows: entityRows(home, ids), ...extra });
   const thermostats = capped(
@@ -214,7 +209,7 @@ export function roomSections(
     ctx,
     { key: 'covers', title: 'room.covers', icon: 'fluvy:blinds' },
     parts.covers,
-    (ids) => [[coverTiles(ids)]],
+    (ids) => [[coverTiles(home, ids)]],
   );
   const gates = capped(
     ctx,
@@ -238,7 +233,7 @@ export function roomSections(
     ctx,
     { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
     parts.appliances,
-    (ids) => tileRows(ids.map((id) => applianceTile(home, id, ctx.style))),
+    (ids) => tileRows(applianceTiles(home, ids, ctx.style)),
   );
   // every reading on the room's page is the room's: each is named by what it measures, as the room card names its
   // climate, where it alone measures it (two thermometers keep their own names)
@@ -265,7 +260,7 @@ export function roomSections(
     ctx,
     { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
     parts.scenes,
-    (ids) => [[scenesCard(t('strategy.scenes'), ids)]],
+    (ids) => [[scenesCard(home, t('strategy.scenes'), ids)]],
   );
   const rest = capped(
     ctx,
@@ -279,7 +274,7 @@ export function roomSections(
       [heading(back.title, 'fluvy:home', [], back.path)],
       // its scenes first, a tap each, as its card's quick actions are read before its devices (#172)
       ...when(scenes.shown.length, () =>
-        moreAfter([[scenesCard(t('strategy.scenes'), scenes.shown)]], scenes),
+        moreAfter([[scenesCard(home, t('strategy.scenes'), scenes.shown)]], scenes),
       ),
       ...moreAfter(
         thermostats.shown.map((id) => [thermostat(id, ctx.style)]),
@@ -289,14 +284,19 @@ export function roomSections(
         moreAfter(
           headed(
             heading(t('room.lights'), 'fluvy:bulb', parts.lights),
-            tileRows(lights.shown.map((id) => sizedTile(id, home.named(id), ctx.style))),
+            tileRows(lightTiles(home, lights.shown, ctx.style)),
           ),
           lights,
         ),
       ),
       ...when(covers.shown.length, () =>
         moreAfter(
-          [[heading(t('room.covers'), 'fluvy:blinds', parts.covers), coverTiles(covers.shown)]],
+          [
+            [
+              heading(t('room.covers'), 'fluvy:blinds', parts.covers),
+              coverTiles(home, covers.shown),
+            ],
+          ],
           covers,
         ),
       ),
@@ -317,7 +317,7 @@ export function roomSections(
         moreAfter(
           headed(
             heading(t('strategy.appliances'), 'fluvy:plug', parts.appliances),
-            tileRows(plugs.shown.map((id) => applianceTile(home, id, ctx.style))),
+            tileRows(applianceTiles(home, plugs.shown, ctx.style)),
           ),
           plugs,
         ),

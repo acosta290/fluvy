@@ -1,6 +1,7 @@
 import {
-  applianceTile,
+  applianceTiles,
   balanced,
+  coverTiles,
   deviceRows,
   energyFlow,
   entityRows,
@@ -10,11 +11,11 @@ import {
   headed,
   heading,
   lightGroups,
+  lightTiles,
   productionCards,
   readoutsCards,
   runsOf,
   scenesCard,
-  sizedTile,
   solarCurves,
   solarGauges,
   thermostat,
@@ -45,14 +46,6 @@ import { consumptionRows, liveCards, metersCards, todayCards, todayTiles } from 
  * still reads, and ends in a "N more" row to a subview of every one (`caps.ts`). The other templates borrow these
  * builders.
  */
-
-/** A row of compact tiles, two a row: blinds, curtains, awnings. */
-const coverTiles = (home: HomeRegistry, ids: readonly string[]): Card =>
-  full('tiles', {
-    size: 'compact',
-    columns: 2,
-    tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
-  });
 
 /** Rows of entities under a title (a room's, where a subview lays them a card a room). */
 const rowsCard = (
@@ -95,7 +88,7 @@ export function homeView(ctx: StrategyContext): Section[] {
     ctx,
     { key: 'appliances', title: 'strategy.appliances', icon: 'fluvy:plug' },
     home.applianceTiles,
-    (ids) => tileRows(ids.map((id) => applianceTile(home, id, ctx.style))),
+    (ids) => tileRows(applianceTiles(home, ids, ctx.style)),
   );
   const covers = capped(
     ctx,
@@ -123,7 +116,7 @@ export function homeView(ctx: StrategyContext): Section[] {
     ctx,
     { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
     home.scenes,
-    (ids) => [[scenesCard(t('strategy.scenes'), ids)]],
+    (ids) => [[scenesCard(home, t('strategy.scenes'), ids)]],
   );
   // what needs a look, then the controls, the climate and the day, the energy and the house's state, in reading
   // order; the single-purpose cards fill the columns' feet; the appliances as the reporter of #47 drew them, across
@@ -136,7 +129,7 @@ export function homeView(ctx: StrategyContext): Section[] {
         moreAfter(
           headed(
             heading(t('room.lights'), 'fluvy:bulb', home.lights, `${base}/lights`),
-            tileRows(lights.shown.map((id) => sizedTile(id, home.named(id), ctx.style))),
+            tileRows(lightTiles(home, lights.shown, ctx.style)),
           ),
           lights,
         ),
@@ -145,7 +138,7 @@ export function homeView(ctx: StrategyContext): Section[] {
         moreAfter(
           headed(
             heading(t('strategy.appliances'), 'fluvy:plug', home.applianceTiles),
-            tileRows(appliances.shown.map((id) => applianceTile(home, id, ctx.style))),
+            tileRows(applianceTiles(home, appliances.shown, ctx.style)),
           ),
           appliances,
         ),
@@ -189,7 +182,7 @@ export function homeView(ctx: StrategyContext): Section[] {
       ...when(home.first('todo'), (id) => [full('todo', { entity: id })]),
       // the house's scenes, a tap away, their "N more" row kept under them
       ...when(scenes.shown.length, () =>
-        looseAfter([scenesCard(t('strategy.scenes'), scenes.shown)], scenes),
+        looseAfter([scenesCard(home, t('strategy.scenes'), scenes.shown)], scenes),
       ),
     ],
   );
@@ -215,10 +208,10 @@ export function lightsView(ctx: StrategyContext): Section[] {
     ctx,
     { key: 'scenes', title, icon: 'fluvy:sparkle' },
     [...home.scenes, ...automations],
-    (ids) => [[scenesCard(t(title), ids)]],
+    (ids) => [[scenesCard(home, t(title), ids)]],
   );
   if (scenes.shown.length)
-    blocks.push(...moreAfter([[scenesCard(t(title), scenes.shown)]], scenes));
+    blocks.push(...moreAfter([[scenesCard(home, t(title), scenes.shown)]], scenes));
   return flowed(ctx, blocks);
 }
 

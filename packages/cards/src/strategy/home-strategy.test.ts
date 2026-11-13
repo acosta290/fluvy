@@ -2686,6 +2686,81 @@ describe('custom:fluvy-home strategy — labels that would repeat (#170)', () =>
   });
 });
 
+describe('custom:fluvy-home strategy — tiles and scenes that would read alike (#170)', () => {
+  /** Two rooms, each with a ceiling light that only switches, a plug and a Movie scene, and a scene said once. */
+  const twoRooms = () => {
+    const lounge = { area_id: 'al_lounge' };
+    const bedroom = { area_id: 'al_bedroom' };
+    const ceiling = { friendly_name: 'Ceiling light', supported_color_modes: ['onoff'] };
+    const plug = { friendly_name: 'Plug', device_class: 'outlet' };
+    const hass = house([
+      entity('light.al_lounge_ceiling', 'on', ceiling, lounge),
+      entity('light.al_bedroom_ceiling', 'off', ceiling, bedroom),
+      entity('switch.al_lounge_plug', 'on', plug, lounge),
+      entity('switch.al_bedroom_plug', 'off', plug, bedroom),
+      entity('scene.al_lounge_movie', 'unknown', { friendly_name: 'Movie' }, lounge),
+      entity('scene.al_bedroom_movie', 'unknown', { friendly_name: 'Movie' }, bedroom),
+      entity('scene.al_goodnight', 'unknown', { friendly_name: 'Good night' }, bedroom),
+    ]) as unknown as HomeAssistant;
+    hass.areas['al_lounge'] = { area_id: 'al_lounge', name: 'Lounge' } as never;
+    hass.areas['al_bedroom'] = { area_id: 'al_bedroom', name: 'Bedroom' } as never;
+    return hass;
+  };
+  /** What each card of a view calls each entity: a card's own, its tiles', its scenes', its chips'. */
+  const names = (views: readonly View[], path: string): Record<string, unknown> => {
+    const named: Record<string, unknown> = {};
+    for (const card of cardsIn(views.filter((view) => view.path === path))) {
+      if (typeof card['entity'] === 'string') named[card['entity']] = card['name'];
+      for (const key of ['tiles', 'scenes'])
+        for (const item of (card[key] as unknown[] | undefined) ?? [])
+          if (typeof item === 'string') named[item] = undefined;
+          else {
+            const { entity: id, name } = item as { entity: string; name?: string };
+            named[id] = name;
+          }
+      for (const chip of (card['chips'] as { name: string; action?: unknown }[] | undefined) ??
+        []) {
+        const target = (chip.action as { target?: { entity_id?: string } } | undefined)?.target;
+        if (target?.entity_id) named[target.entity_id] = chip.name;
+      }
+    }
+    return named;
+  };
+
+  it('tells alike tiles and scenes apart on Home, by their place, and leaves a name said once as it was', async () => {
+    const { views } = await generate(
+      { type: 'custom:fluvy-home', caps: { lights: 50, appliances: 50, scenes: 50 } },
+      twoRooms() as never,
+    );
+    expect(names(views, 'home')).toMatchObject({
+      'light.al_lounge_ceiling': 'Ceiling light · Lounge',
+      'light.al_bedroom_ceiling': 'Ceiling light · Bedroom',
+      'switch.al_lounge_plug': 'Plug · Lounge',
+      'switch.al_bedroom_plug': 'Plug · Bedroom',
+      'scene.al_lounge_movie': 'Movie · Lounge',
+      'scene.al_bedroom_movie': 'Movie · Bedroom',
+      'scene.al_goodnight': undefined,
+    });
+  });
+
+  it('tells a wall’s alike scene chips apart, and a room page’s scenes and tiles say what they always said', async () => {
+    const hass = twoRooms();
+    const wall = await generate({ type: 'custom:fluvy-wall', scenes_max: 8 }, hass as never);
+    expect(names(wall.views, 'wall')).toMatchObject({
+      'scene.al_lounge_movie': 'Movie · Lounge',
+      'scene.al_bedroom_movie': 'Movie · Bedroom',
+      'scene.al_goodnight': 'Good night',
+    });
+    // on its room's page a scene, a tile, each said once: nothing to tell apart
+    const { views } = await generate({ type: 'custom:fluvy-home' }, hass as never);
+    expect(names(views, 'room-al_lounge')).toMatchObject({
+      'light.al_lounge_ceiling': undefined,
+      'switch.al_lounge_plug': undefined,
+      'scene.al_lounge_movie': undefined,
+    });
+  });
+});
+
 describe('custom:fluvy-energy strategy — a forecast is no reading (#170)', () => {
   it('never draws a forecast as a meter, on the Meters view or its page of every one, nor as one of the day’s tiles', async () => {
     const power = { device_class: 'power', unit_of_measurement: 'W', state_class: 'measurement' };

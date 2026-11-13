@@ -108,10 +108,11 @@ small) and lead to every appliance.
   readings beside it.
 - **Places**: an entity whose name only says what it measures (*Temperature*) is named after its device or area. A
   reading in no area is placed by its device's name without the words that say a sensor (*Sensor*, *Snímač*,
-  *érzékelő*, *Temperatur*), read with or without their accents. Where readings of one kind shown together would read
-  alike (a room's two meters, two thermometers of one place on Climate, two weather services' rows in one list), each
-  gains what tells it apart after a "·": its own words, else its device's name, else where it is
-  (*Utility · Discharge power*, *Pressure · Met.no*); a name said once stays as it is, and a humidity card beside a
+  *érzékelő*, *Temperatur*), read with or without their accents. Where things shown together would read alike (a
+  room's two meters, two thermometers of one place on Climate, two weather services' rows in one list, two *Ceiling
+  light* tiles or two *Plug* tiles on Home, two *Movie* scenes on its Scenes card or among a wall's chips), each gains
+  what tells it apart after a "·": its own words, else its device's name, else where it is (*Utility · Discharge
+  power*, *Pressure · Met.no*, *Movie · Lounge*); a name said once stays as it is, and a humidity card beside a
   temperature card keeps its place, the cards saying what they read.
 - **Rooms**: an entity belongs to its own area, else to its device's; hidden, configuration and diagnostic entities
   stay out. A room's climate comes from the temperature and humidity sensors set in the area's settings (honoured even

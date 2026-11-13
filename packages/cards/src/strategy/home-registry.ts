@@ -351,7 +351,8 @@ export class HomeRegistry {
   private attr<T>(id: string, name: string): T | undefined {
     return this.hass.states[id]?.attributes[name] as T | undefined;
   }
-  private name(id: string): string {
+  /** What Home Assistant calls an entity (its friendly name), as a card names it by itself. */
+  name(id: string): string {
     return String(this.attr<string>(id, 'friendly_name') ?? id);
   }
   private platform(id: string): string {

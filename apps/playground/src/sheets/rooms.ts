@@ -330,6 +330,44 @@ const HUWAI_ENTITIES = Object.fromEntries(
 );
 const HUWAI_AREA = { area_id: 'rm_huwai', name: '户外', icon: 'mdi:tree' };
 
+/*
+ * #170: a study whose two plugs Home Assistant names alike ("Plug"), each on its own device, and two scenes of one
+ * name its lamps' integration made, one a lamp: on the room's page each tile and each scene is told apart by its
+ * device. Drawn by its own frame alone (its states and registry are the frame's), so no other card of the sheet moves.
+ */
+const TWINS_AREA = { area_id: 'rm_twins', name: 'Study', icon: 'mdi:desk' };
+const TWINS_DEVICES = [
+  { id: 'rm_twin_desk', name: 'Desk', name_by_user: null, area_id: 'rm_twins' },
+  { id: 'rm_twin_printer', name: 'Printer', name_by_user: null, area_id: 'rm_twins' },
+  { id: 'rm_twin_ceiling', name: 'Ceiling lamp', name_by_user: null, area_id: 'rm_twins' },
+  { id: 'rm_twin_floor', name: 'Floor lamp', name_by_user: null, area_id: 'rm_twins' },
+];
+/** A thing of the study's, on its device. */
+const twin = (seed: StateSeed, device: string) => ({ seed, device });
+const TWIN_THINGS = [
+  twin(
+    ['switch.rm_twin_desk_plug', 'on', { friendly_name: 'Plug', device_class: 'outlet' }],
+    'rm_twin_desk',
+  ),
+  twin(
+    ['switch.rm_twin_printer_plug', 'off', { friendly_name: 'Plug', device_class: 'outlet' }],
+    'rm_twin_printer',
+  ),
+  twin(
+    ['scene.rm_twin_ceiling_reading', 'unknown', { friendly_name: 'Reading' }],
+    'rm_twin_ceiling',
+  ),
+  twin(['scene.rm_twin_floor_reading', 'unknown', { friendly_name: 'Reading' }], 'rm_twin_floor'),
+  twin(['scene.rm_twin_focus', 'unknown', { friendly_name: 'Focus' }], 'rm_twin_ceiling'),
+];
+const TWINS: readonly StateSeed[] = TWIN_THINGS.map(({ seed }) => seed);
+const TWINS_ENTITIES = Object.fromEntries(
+  TWIN_THINGS.map(({ seed: [entity_id], device }) => [
+    entity_id,
+    { entity_id, device_id: device, area_id: 'rm_twins' },
+  ]),
+);
+
 /**
  * A room's page as the automatic dashboard lays it out (#76), in the page's language: the way back, then what it
  * holds — in a column, in reading order. Read when the frame is drawn, once the page's words have landed.
@@ -1050,6 +1088,32 @@ export const sheet: SheetSpec = {
       title: 'Room page · rows that would read alike (#170)',
       get cards() {
         return roomPage(HUWAI_AREA, HUWAI, HUWAI_ENTITIES, ...WEATHER_DEVICES);
+      },
+    } satisfies FrameSpec,
+    // #170: a study's two plugs both called Plug and two scenes both called Reading, each told apart by its device;
+    // Focus, said once, stays as it is
+    {
+      title: 'Room page · tiles and scenes that would read alike (#170)',
+      hass: (hass) => ({
+        ...hass,
+        states: {
+          ...hass.states,
+          ...Object.fromEntries(
+            TWINS.map(([entity_id, state, attributes = {}]) => [
+              entity_id,
+              { entity_id, state, attributes, last_changed: '', last_updated: '' },
+            ]),
+          ),
+        },
+        entities: { ...hass.entities, ...TWINS_ENTITIES } as HomeAssistant['entities'],
+        devices: {
+          ...hass.devices,
+          ...Object.fromEntries(TWINS_DEVICES.map((device) => [device.id, device])),
+        } as HomeAssistant['devices'],
+        areas: { ...hass.areas, rm_twins: TWINS_AREA } as HomeAssistant['areas'],
+      }),
+      get cards() {
+        return roomPage(TWINS_AREA, TWINS, TWINS_ENTITIES, ...TWINS_DEVICES);
       },
     } satisfies FrameSpec,
   ],
