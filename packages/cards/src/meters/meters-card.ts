@@ -576,9 +576,10 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   }
 
   /**
-   * "6 L/min now · typical 150 L": what flows now first, the typical day after it (the first to go when narrow); the
-   * rate alone where even "6 L/min now" would not fit — a figure per minute says it is now. Measured in the class that
-   * draws it: the block's note, or a row's second line.
+   * "6 L/min now · typical 150 L": what flows now first (an imported meter's date, "Nov 11"), the typical day after it,
+   * whole or not at all (the first to go when narrow, alone too: a figure is never cut); the rate alone where even
+   * "6 L/min now" would not fit — a figure per minute says it is now. Measured in the class that draws it: the block's
+   * note, or a row's second line.
    */
   private note(m: Meter, room: number, cls = 'ef-meter__note'): string {
     const segments: Segment[] = [];
@@ -589,7 +590,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     if (!m.trouble && m.typical !== null)
       segments.push({
         text: s(this.hass, 'typical', { value: this.amount(m.typical, m.unit, m.decimals) }),
-        optional: segments.length > 0,
+        optional: true,
       });
     if (!segments.length) return '';
     const width = (text: string): number => this.head.ruler.width(cls, text);
@@ -657,8 +658,8 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       ...(variant === 'rows' ? meters : []).map((m) => ({
         title: m.label,
         value: m.today === null ? '—' : this.amount(m.today, m.unit, m.decimals),
-        // what flows now is the note's figure, whole or gone with its circle
-        sub: m.trouble ? '' : (m.rate ?? ''),
+        // what flows now (an imported meter's date) is the note's figure, whole or gone with its circle
+        sub: m.trouble ? '' : (m.dated ?? m.rate ?? ''),
       })),
       ...rows.map((r) => this.rowEnd(r)),
     ]);

@@ -5,8 +5,9 @@
  *   PLAYGROUND=http://127.0.0.1:5187/ node interactions-meters.mjs
  * What it proves: a meter's today is its statistics since the house's midnight plus what it gained since, against a
  * typical day (given, or the mean of its last seven), and moves live; its flow is said as it reads; a leak is said
- * in words, the valve's switch calls the valve and flips at once; the Energy dashboard's meters are read (an imported
- * statistic left out); an unreadable meter says so. Devices hang under their parent on a spine from its circle, one
+ * in words, the valve's switch calls the valve and flips at once; the Energy dashboard's meters are read, a statistic a
+ * utility imports as its latest day with its date (#181); a dip under the last hour reads 0; an unreadable meter says
+ * so. Devices hang under their parent on a spine from its circle, one
  * ink scale, what is not measured said per parent and for the house, "82 % measured" — from the rows, or from the
  * Energy dashboard's statistics; nothing is guessed when a device cannot be read. Production stacks each hour per
  * array (the first in the ink, the second a step down the ramp), the hours to come faint, a legend of each array's
@@ -110,7 +111,7 @@ const rowTexts = (locator) =>
 
   const dash = frame(page, 'From the Energy dashboard').locator('fluvy-meters-card');
   check(
-    'meters: with none given, the Energy dashboard’s water and gas (an imported statistic left out)',
+    'meters: with none given, the Energy dashboard’s water and gas',
     (await texts(dash.locator('.ef-meter .fv-readout__label'))).join() === 'Water,Gas',
   );
 
@@ -132,6 +133,39 @@ const rowTexts = (locator) =>
       deadNotes[2] === 'No statistics yet' &&
       deadNotes[3] === 'Entity not found',
     `${deadFigures.join('|')} / ${deadNotes.join(' | ')}`,
+  );
+
+  const dip = frame(page, 'A dip under the last hour').locator('fluvy-meters-card');
+  check(
+    'meters: a meter a hair under its last hour has used nothing: 0 gal, never -0.00 (#181)',
+    (await text(dip.locator('.ef-meter .fv-readout__value'))) === '0gal',
+    await text(dip.locator('.ef-meter .fv-readout__value')),
+  );
+
+  // #181: the Energy dashboard's gas, a statistic its utility imports
+  const utility = frame(page, 'A utility’s gas, imported').locator('fluvy-meters-card');
+  const imported = utility.locator('.ef-meter').nth(1);
+  check(
+    'meters: an imported gas meter reads its latest day, with its date and its typical day, in CCF',
+    (await text(imported.locator('.fv-readout__value'))) === '2.4CCF' &&
+      (await text(imported.locator('.ef-meter__note'))) === 'Sep 14 · typical 2.1 CCF',
+    `${await text(imported.locator('.fv-readout__value'))} / ${await text(imported.locator('.ef-meter__note'))}`,
+  );
+  check(
+    'meters: an imported meter has nothing to open, the house’s water still does',
+    (await imported.getAttribute('role')) === null &&
+      (await utility.locator('.ef-meter').first().getAttribute('role')) === 'button',
+  );
+  const old = frame(page, 'A utility’s gas, imported · its figures a fortnight old')
+    .locator('fluvy-meters-card')
+    .locator('.ef-meter')
+    .nth(1);
+  check(
+    'meters: an imported meter a fortnight behind says since when, its bar kept empty',
+    (await text(old.locator('.fv-readout__value'))) === '—' &&
+      (await text(old.locator('.ef-meter__note'))) === 'No figures since Sep 2' &&
+      (await old.locator('.ef-bar').count()) === 1,
+    `${await text(old.locator('.fv-readout__value'))} / ${await text(old.locator('.ef-meter__note'))}`,
   );
 
   const leak = frame(page, 'A leak, the valve closed').locator('fluvy-meters-card');
