@@ -82,9 +82,9 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
 | `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
-| `chart-card` | 16 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
-| `energy-period` | 16 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
-| `energy` | 81 KB | the energy family and its sheet, the history bars with it |
+| `chart-card` | 17 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
+| `energy-period` | 17 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
+| `energy` | 86 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times, the rows the lock, the alarm and the camera are built on |
@@ -116,8 +116,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 8 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 14 KB | the editors of the cards every page carries and of the template, Slider, Vacuum and remote cards: their forms, lists and defaults |
-| `view-icons` | 5 KB | a view's icon from its name |
+| `forms` | 15 KB | the editors of the cards every page carries and of the template, Slider, Vacuum and remote cards: their forms, lists and defaults |
+| `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
 | `slider-styles` | 4 KB | the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet; fetched by the first ruler asked for one, or as the house asks |

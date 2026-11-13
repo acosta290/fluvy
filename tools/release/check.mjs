@@ -42,16 +42,21 @@ const BUDGETS = {
   // chunk of its own. Planned at 19–20 KB before the moving gauges
   chart: 24_576,
   // the Chart card (1.11, #68): the card, the readers of its series (history, statistics, a list, a forecast), its
-  // editor and its English
-  'chart-card': 16_384,
-  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 81 KB since
-  // 2026-11-12 (1.19.1, #170, 0.9 KB: the flow's steady layout, its words giving way before its list, the house's words
+  // editor and its English. 17 KB since 2026-11-13 (1.20: following an Energy date picker, `collection_key`, #181, and
+  // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before
+  'chart-card': 17_408,
+  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 86 KB since
+  // 2026-11-13 (1.20, 4.6 KB: Production's forecast from Home Assistant, tomorrow and the days ahead, #183; every
+  // array counted, History bars summing sensors, the flow's names on two lines, imported meters, #181, #183; the
+  // round's double tap, #179): measured at 85.5 KB; 81 KB since 2026-11-12 (1.19.1, #170, 0.9 KB: the flow's steady layout, its words giving way before its list, the house's words
   // clear of its lanes, two sources of a kind told apart by their devices); 80 KB since 1.10 (its sheet left core,
   // 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the power chart's axes); 64
   // before
-  energy: 82_944,
-  // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it
-  'energy-period': 16_384,
+  energy: 88_064,
+  // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it. 17 KB
+  // since 2026-11-13 (1.20: water and gas over the range, #181, and the period's bar, #182): measured at 16.7 KB; 16
+  // before
+  'energy-period': 17_408,
   // the history bars' readings: the resets and the steps, the recorder's history, fetched by the first card needing them
   'history-bars-readings': 8192,
   // the media family: the player and the now-playing strip
@@ -147,10 +152,13 @@ const BUDGETS = {
   fields: 8192,
   // the editors of the cards every page carries: their forms, lists and defaults, fetched with the visual editor
   // (1.11: they left core, 6.3 KB). 14 KB since 1.18 (the TV remote's editor, #143, and the room's colour round, #137,
-  // with the sliders' style on every editor that draws one): measured at 12.7 KB; 12 before
-  forms: 14_336,
-  // 5 KB since 2026-11-11 (1.19: Russian's words for a view's icon, #167, about 800 B; measured at 4.6 KB); 4 before
-  'view-icons': 5120,
+  // with the sliders' style on every editor that draws one): measured at 12.7 KB; 12 before. 15 KB since 2026-11-13
+  // (1.20: every editor's Interactions section, #179, the vacuum's drive pad, #178, the rocker's style, #177): measured
+  // at 14.1 KB
+  forms: 15_360,
+  // 6 KB since 2026-11-13 (1.20: Ukrainian's words for a view's icon, #176, about 400 B; measured at 5.0 KB); 5 since
+  // 2026-11-11 (1.19: Russian's, #167, about 800 B); 4 before
+  'view-icons': 6144,
   // what a see-through card wears (1.15): its sheet and what writes its fills at its opacity
   glass: 4096,
   // what a card quiet out of reach wears (1.16): its sheet
