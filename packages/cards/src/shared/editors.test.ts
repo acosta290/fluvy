@@ -5,7 +5,7 @@ import { CATALOGUE, catalogue } from '../index.js';
 import type { Card, CardEditor } from './base.js';
 import { COMMON_ALIASES } from './config.js';
 import { visibleFields } from './form.js';
-import { editorDefaults, itemHelpers, itemLabels, type FluvyRowsEditor } from './rows-editor.js';
+import { editorDefaults, FluvyRowsEditor, itemHelpers, itemLabels } from './rows-editor.js';
 
 /**
  * The editors' contract (see `Card` in base.ts), held for every card of the catalogue: the editor is the base's,
@@ -102,7 +102,8 @@ describe('the editors’ contract', () => {
     '$tag: the editor is the base’s, from the form, the lists and the defaults',
     async ({ card, editor, lists }) => {
       const element = (await card.getConfigElement()) as FluvyRowsEditor;
-      expect(element.tagName.toLowerCase()).toBe('fluvy-rows-editor');
+      // the base's own element, or one built on it (the Expander's, which edits the cards it holds under the form)
+      expect(element).toBeInstanceOf(FluvyRowsEditor);
       const spec = element.spec!;
       // the card's own lists, or none
       if (editor.lists) expect(spec.lists).toBe(editor.lists);
@@ -285,7 +286,8 @@ describe('the editors’ contract', () => {
     '$tag: offers its look out of reach wherever it offers its opacity, but on a card that shows no entity (#126)',
     ({ tag, editor }) => {
       const shown = names(editor.getConfigForm().schema);
-      const none = tag === 'fluvy-web-card';
+      // a web page, and an expander: the entities its head counts are never out of reach on it, only fewer
+      const none = tag === 'fluvy-web-card' || tag === 'fluvy-expander-card';
       expect(shown.includes('unavailable')).toBe(shown.includes('card_opacity') && !none);
       expect(editor.base.includes('unavailable')).toBe(
         editor.base.includes('card_opacity') && !none,

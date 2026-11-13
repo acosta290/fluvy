@@ -242,6 +242,10 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       .rm-card--row {
         padding: 16px;
       }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .rm-card--row) {
+        --fv-pad: 16px;
+      }
       .rm-row {
         display: flex;
         align-items: center;

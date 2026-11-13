@@ -78,7 +78,13 @@ const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly string[]]>
   ['Rooms and the map', ['fluvy-room-card', 'fluvy-map-card']],
   [
     'Structure and navigation',
-    ['fluvy-hello-card', 'fluvy-chips-card', 'fluvy-heading-card', 'fluvy-web-card'],
+    [
+      'fluvy-hello-card',
+      'fluvy-chips-card',
+      'fluvy-heading-card',
+      'fluvy-expander-card',
+      'fluvy-web-card',
+    ],
   ],
   [
     'Scenes, actions and helpers',

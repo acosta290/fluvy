@@ -805,6 +805,16 @@ export const whenField = (name: string, follows?: string): HaFormSchemaItem => (
 /** When a row shows (`show_when`), on a card with a condition for every row (`show_rows_when`). */
 export const rowWhenField = (): HaFormSchemaItem => whenField('show_when', 'show_rows_when');
 
+/**
+ * A condition of the card's own, with no row beside it (the Expander's `open_when`): it reads the entity it names,
+ * and while it asks nothing, nothing happens — its first choice says "Never", where a row's says "Always".
+ */
+export const cardWhenField = (name: string): HaFormSchemaItem => ({
+  name,
+  selector: { object: {} },
+  condition: { alone: true },
+});
+
 /** A schema's condition fields, through its rows. */
 export const conditionsOf = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
   schema.flatMap((item) =>
@@ -832,12 +842,16 @@ const modeOf = (when: unknown): WhenMode => {
           : 'always';
 };
 
-/** How a form's condition stands: how it is asked, the states its entity offers, whether the card has one too. */
+/**
+ * How a form's condition stands: how it is asked, the states its entity offers, whether the card has one too, and
+ * whether it is a card's own with no row beside it.
+ */
 export interface ConditionStand {
   /** `follows`: a row's that names none, keeping to the card's. */
   readonly mode: WhenMode | 'follows';
   readonly states: readonly SelectOption[];
   readonly follows: boolean;
+  readonly alone: boolean;
 }
 
 /** Whether a row's condition field stands on a card with a condition of its own, which a row naming none keeps to. */
@@ -884,6 +898,7 @@ export function standsOf(
           label: (state && hass?.formatEntityState?.(state, value)) || value,
         })),
         follows: cardAsks(field, card),
+        alone: field.condition?.alone === true,
       };
       return [field.name, stand];
     }),
@@ -893,11 +908,14 @@ export function standsOf(
 /** A condition's fields as it stands: how it is asked, what that asks for beside it, and the entity it reads. */
 function conditionFields(
   name: string,
-  { mode, states, follows }: ConditionStand,
+  { mode, states, follows, alone }: ConditionStand,
 ): HaFormSchemaItem[] {
   const asked = choiceField(name, [
     ...(follows ? [['follows', 'editor.when_follows'] as const] : []),
-    ...WHEN_MODES.map((value) => [value, MODE_WORDS[value]] as const),
+    // a card's own condition that asks nothing does nothing: its first choice says so (`alone`)
+    ...WHEN_MODES.map(
+      (value) => [value, value === 'always' && alone ? 'option.never' : MODE_WORDS[value]] as const,
+    ),
   ]);
   if (mode === 'always' || mode === 'follows') return [asked];
   const asks: HaFormSchemaItem[] =
@@ -919,9 +937,11 @@ function conditionFields(
           ...(mode === 'below' ? [] : [anyNumberField('when_above')]),
           ...(mode === 'above' ? [] : [anyNumberField('when_below')]),
         ];
+  // a row's reads its own entity where it names none; a card's own has none to fall back on
+  const entity = entityField(undefined, 'when_entity', false);
   return [
     fieldRow(asked, ...asks),
-    { ...entityField(undefined, 'when_entity', false), helper: 'editor.when_entity_helper' },
+    alone ? entity : { ...entity, helper: 'editor.when_entity_helper' },
   ];
 }
 

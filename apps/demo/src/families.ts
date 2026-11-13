@@ -49,7 +49,7 @@ export const FAMILIES: readonly Family[] = [
   {
     key: 'helpers',
     label: 'family.helpers',
-    sheets: ['inputs', 'lists', 'items', 'template', 'automations', 'alerts', 'web'],
+    sheets: ['inputs', 'lists', 'items', 'template', 'automations', 'alerts', 'web', 'expander'],
   },
 ];
 

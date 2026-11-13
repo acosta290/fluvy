@@ -968,6 +968,10 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         height: 76px;
         padding: 16px;
       }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .ap-card--row) {
+        --fv-pad: 16px;
+      }
       .ap-card--row .fv-row__text {
         flex: 1 1 auto;
         min-width: 0;

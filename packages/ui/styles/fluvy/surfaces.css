@@ -7,8 +7,16 @@
 .fv-card {
   padding: 20px;
   border-radius: var(--fluvy-radius-card);
-  background: var(--fluvy-card);
-  box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
+  background: var(--fv-held, var(--fluvy-card));
+  box-shadow: var(--fv-held, inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)));
+}
+
+/* a card held by another's surface (the Expander's, 1.20: `--fv-held: none` and `--fv-held-bleed: -1` on what it
+   holds) draws no surface of its own and stands out of its place by its padding (`--fv-pad` on the host of a card
+   whose padding is not 20: a compact row's 16), so its column and its rhythm are the holder's; what stands on the
+   page (a tile, a chip, a title) has no padding to turn out, and keeps its place */
+:host:has(> .fv-card) {
+  margin: calc(var(--fv-held-bleed, 0) * var(--fv-pad, 20px));
 }
 
 /* a card without its border (`card_border: false`, 1.19, #171; core marks it `borderless`): no hairline round its own

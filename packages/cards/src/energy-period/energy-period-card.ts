@@ -177,6 +177,10 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       .ep-card--compact {
         padding: 12px;
       }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .ep-card--compact) {
+        --fv-pad: 12px;
+      }
       .ep-row {
         display: flex;
         align-items: center;

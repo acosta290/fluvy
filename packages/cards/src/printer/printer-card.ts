@@ -484,6 +484,10 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
         height: 76px;
         padding: 16px;
       }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .pr-card--row) {
+        --fv-pad: 16px;
+      }
       .pr-ring {
         position: relative;
         display: grid;

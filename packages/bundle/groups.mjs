@@ -175,6 +175,21 @@ const WEB =
   /\/packages\/(cards\/src\/(web-cards\.ts|web\/)|core\/src\/i18n\/locales\/en\/web\.json)/;
 
 /**
+ * The Expander card's editor (1.20, #180: its form, and the element that sets Home Assistant's own stack editor under
+ * it for the cards it holds): fetched the first time an expander is edited, never by a dashboard. Named before the
+ * forms and the card, whose patterns would take it.
+ */
+const EXPANDER_EDITOR = /\/packages\/cards\/src\/expander\/expander-editor\.ts$/;
+
+/**
+ * The Expander card (1.20, #180: its card, what holds the cards it folds, what remembers how it was left, and its
+ * English): fetched as the bundle starts and defined as it lands, as the web page card is (`expander-family.ts` stays
+ * in core: the name, the height).
+ */
+const EXPANDER =
+  /\/packages\/(cards\/src\/(expander-cards\.ts|expander\/)|core\/src\/i18n\/locales\/en\/expander\.json)/;
+
+/**
  * The Slider card (its card on the tile's and its English; its editor goes with the forms; the ruler, the head, the
  * value row and the scales it reads with are core's, the light card's and the tile's): fetched as the bundle starts and
  * defined as it lands, as the web page card is (`slider-family.ts` stays in core: the name, the height).
@@ -335,8 +350,8 @@ const FORMS =
  * page, our history in the details dialog, the settings panel, the strategy and the heights it counts with the house, the wall, the forms of the cards
  * every page carries, the weather card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
- * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the Slider
- * card, the ring, the drive pad, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
+ * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the
+ * Expander card (its editor on its own, before the forms), the Slider card, the ring, the drive pad, the Vacuum card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
  * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
@@ -351,6 +366,7 @@ export const GROUPS = [
   { name: 'strategy', test: STRATEGY },
   { name: 'house-heights', test: HOUSE_HEIGHTS },
   { name: 'wall', test: WALL },
+  { name: 'expander-editor', test: EXPANDER_EDITOR },
   { name: 'forms', test: FORMS },
   { name: 'weather', test: WEATHER },
   { name: 'calendar', test: CALENDAR },
@@ -370,6 +386,7 @@ export const GROUPS = [
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
+  { name: 'expander', test: EXPANDER },
   { name: 'slider', test: SLIDER },
   { name: 'ring', test: RING },
   { name: 'vacuum-drive', test: VACUUM_DRIVE },

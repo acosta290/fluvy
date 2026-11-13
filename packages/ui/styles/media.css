@@ -159,6 +159,11 @@
   padding: 16px;
 }
 
+/* held by another card's surface (the Expander's), the row stands out by its own padding */
+:host:has(> .md-mini__card) {
+  --fv-pad: 16px;
+}
+
 .md-mini__card + .md-mini__card {
   margin-top: 16px;
 }

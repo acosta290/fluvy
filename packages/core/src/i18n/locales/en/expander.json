@@ -1,0 +1,25 @@
+{
+  "expander": {
+    "card": "Expander",
+    "open": "Open {name}",
+    "close": "Close {name}",
+    "empty": "No cards yet",
+    "editor.cards": "Cards",
+    "editor.style": "Style",
+    "editor.o_card": "One card",
+    "editor.gap": "Room between cards (px)",
+    "editor.show_summary": "Count the entities on its line",
+    "editor.entities_helper": "Counted on the line under the title: 2 of 5 on",
+    "editor.show_chevron": "Show the chevron",
+    "editor.chevron_position": "Chevron",
+    "editor.o_start": "At the start",
+    "editor.expanded": "Open at first",
+    "editor.remember": "Remember how it was left",
+    "editor.o_device": "On this device",
+    "editor.o_person": "For each person",
+    "editor.open_when": "Open by itself",
+    "editor.open_when_helper": "It opens when this starts to hold, and folds again when it no longer does",
+    "editor.close_after": "Fold again after (minutes)",
+    "editor.icon_color": "Icon colour"
+  }
+}

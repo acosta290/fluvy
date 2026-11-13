@@ -23,7 +23,7 @@
   <a href="https://acosta290.github.io/fluvy/?palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/hero.webp" width="822" alt="Fluvy on the Linen palette: light and plug tiles, a thermostat, the day's energy in the soft style and a media player"></a>
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, sixty-five cards, five automatic dashboards, a
+Fluvy brings one design to the whole of Home Assistant: a theme, sixty-six cards, five automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in sixteen languages.
@@ -82,7 +82,7 @@ frame where less motion is asked for.
   <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-battery.gif" width="274" alt="A battery gauge charging at 62 %: bubbles rising through the charge, the bolt glowing"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-pulse.gif" width="274" alt="A power gauge as a pulse: rings beating out from the bolt at 1.8 kW"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-sun.gif" width="274" alt="A solar gauge as the sun: long rays turning at 5.4 kW of production"></a>
 </p>
 
-## Sixty-five cards
+## Sixty-six cards
 
 Every card has an editor form and a live preview in the card picker; every option is documented in
 [the cards](docs/cards.md). Sliders and dials are precision controls: relative drag, slide away to slow down,
@@ -157,7 +157,8 @@ timeline, upcoming), clocks (analog, digital, world), readouts and trends, safet
 lists, and the house's automations: every one as a row with its switch and last run, and schedules written in a
 sheet as native Home Assistant automations — for the whole house, or for the one lamp a popup is about. A web page on
 a plate (a map, a site of your own), and the items of a sensor's list as rows — the flights overhead, a departures
-board — each with a sheet of its details.
+board — each with a sheet of its details. And an Expander for what is seldom used: any cards, Fluvy's or not, folded
+away under a head that counts what is on, opened with a tap, on one surface or each on its own.
 
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?sheet=web&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/web.webp" width="411" alt="The Web page card: a map of lightning strikes on a plate under its head, with open and full screen"></a><a href="https://acosta290.github.io/fluvy/?sheet=items&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/items.webp" width="411" alt="The Items card: the flights overhead as tiles"></a>
@@ -201,7 +202,7 @@ creates any of them with one tap. Every one is rebuilt every time it opens, so a
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with, and as **Fluvy Light** and
   **Fluvy Dark** for an automation to switch at sunset.
-- **Sixty-five cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Sixty-six cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
   a Chart card for any time series, from a sensor's history to tomorrow's prices.

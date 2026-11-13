@@ -20,6 +20,12 @@
   color: inherit;
 }
 
+/* held by another card's surface (the Expander's, 1.20), a card draws none of its own, quiet as live */
+.fv-card.is-off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *) {
+  background: var(--fv-held, var(--fluvy-card));
+  box-shadow: var(--fv-held, inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)));
+}
+
 /* a tile inside a card (a room's controls) on the page's fill, as it rests */
 .fv-tile--inner.fv-tile--off:where([data-unavailable='quiet'], [data-unavailable='quiet'] *) {
   background: var(--fluvy-inset, var(--fluvy-page));

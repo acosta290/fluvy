@@ -687,7 +687,8 @@ export class FluvyRowsEditor extends LitElement {
       .filter((entry): entry is Entry => entry !== null);
   }
 
-  private commit(next: LovelaceCardConfig): void {
+  /** The config as the editor now has it, said to Home Assistant; an editor built on this one says its own part so. */
+  protected commit(next: LovelaceCardConfig): void {
     this.config = next;
     fireEvent(this, 'config-changed', { config: next });
   }

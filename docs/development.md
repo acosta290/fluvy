@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel, what they share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
@@ -50,7 +50,7 @@ counts with the house (what an entity's capabilities draw, what a room holds; ev
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
 card import it from their own chunks), a room's quick actions (fetched as the bundle starts too: the room card in
-core reaches them through `loadQuickActions`), the weather, calendar, template, Energy period and usage, web page, Slider, Vacuum, remote, Vehicle, items and
+core reaches them through `loadQuickActions`), the weather, calendar, template, Energy period and usage, web page, Expander, Slider, Vacuum, remote, Vehicle, items and
 chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
 their cards are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
@@ -93,6 +93,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `alerts-sheet` | 12 KB | the alerts' sheet |
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
+| `expander` | 8 KB | the Expander card, what holds the cards it folds, what remembers how it was left, its English |
+| `expander-editor` | 4 KB | the Expander card's editor: its form, Home Assistant's stack editor under it |
 | `slider` | 8 KB | the Slider card on the tile's, its English |
 | `vacuum` | 8 KB | the Vacuum card: the robot's and the mower's (1.20: it left core), which robots a hand can drive and how (#178), the drive pad's English |
 | `vacuum-drive` | 8 KB | the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop, its sheet; fetched by the first Vacuum card that draws a Drive command |
@@ -385,7 +387,7 @@ cp -a usr/lib/x86_64-linux-gnu/. ~/.cache/ms-playwright/webkit-*/minibrowser-wpe
 
 ### The facts guard
 
-`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "sixty-five cards", "fifteen
+`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "sixty-six cards", "fifteen
 palettes", "five automatic dashboards", "sixteen languages", "six tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;

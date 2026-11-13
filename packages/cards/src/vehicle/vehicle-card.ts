@@ -730,6 +730,10 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         padding: 16px;
         box-sizing: border-box;
       }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .vh-card--mini) {
+        --fv-pad: 16px;
+      }
       .vh-ring {
         position: relative;
         display: grid;

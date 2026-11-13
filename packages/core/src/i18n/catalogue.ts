@@ -11,6 +11,7 @@ import type editor from './locales/en/editor.json';
 import type energy from './locales/en/energy.json';
 import type energyPeriod from './locales/en/energy-period.json';
 import type energyUsage from './locales/en/energy-usage.json';
+import type expander from './locales/en/expander.json';
 import type history from './locales/en/history.json';
 import type items from './locales/en/items.json';
 import type job from './locales/en/job.json';
@@ -47,6 +48,7 @@ export type Catalogue = typeof core &
   typeof energy &
   typeof energyPeriod &
   typeof energyUsage &
+  typeof expander &
   typeof history &
   typeof items &
   typeof job &

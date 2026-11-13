@@ -243,9 +243,10 @@ export interface HaFormSchemaItem {
   /**
    * The field holds a condition (a row's `show_when`): Fluvy's editor draws it as how it is asked and what that asks
    * for, and writes the condition they say. A row's keeps to the card's while it names none (`follows`: the card's
-   * key). Never handed to `ha-form`.
+   * key); a card's own with no row beside it (`alone`) reads the entity it names, and does nothing while it asks
+   * nothing. Never handed to `ha-form`.
    */
-  condition?: { readonly follows?: string };
+  condition?: { readonly follows?: string; readonly alone?: boolean };
 }
 
 export interface LovelaceConfigForm {

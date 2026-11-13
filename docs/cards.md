@@ -1,6 +1,6 @@
 # The cards
 
-Sixty-five cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
+Sixty-six cards, listed as **Fluvy · …** in the card picker, each with a live preview and an editor form. The form is
 the reference for a card's options: it shows what the card does by default, and a default you leave as it is is never
 written into the configuration. It shows an option only where it acts — in the style chosen, with the card's other
 options as they are — and an option it hides keeps its value for when it acts again. In YAML, a card is
@@ -1033,6 +1033,105 @@ refresh: 5
 show_reload: true
 ```
 
+## Expander
+
+The Expander card folds cards away under a head: what is seldom used, a room's extras, a camera for when the garage
+is open. Its head is one button — its circle (`icon`, `tone`), its `title`, the line under it (`subtitle`: words of
+your own, an entity's state or a template; then the count of `entities`, "2 of 5 on", which `show_summary: false`
+leaves out) and a chevron that turns (`show_chevron`; `chevron_position: start` stands it before the circle) — and a
+tap opens what it holds. `cards` are any cards, as a stack's: Fluvy's, Home Assistant's own or a custom one. Home
+Assistant builds them the first time the card opens, with their own `visibility`, and they leave the page again once
+it is folded, so a folded expander costs the page nothing.
+
+`style: card` (the default) draws the head and the cards on one surface: the cards draw none of their own and stand
+in the head's column, a hairline between them, so a group reads as one card. `plain` leaves the head on the page and
+each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width holds (two
+on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the hairline),
+16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
+Fluvy's it holds that name none of their own, so a group can have a colour; `icon_color` colours the circle alone.
+`card_color`, `card_opacity` and `card_border` are the surface's.
+
+It is folded unless `expanded: true`, and stands as you left it: `remember: device` (the default) keeps that in this
+browser, so a phone keeps folded what a wall tablet keeps open; `user` keeps it with the person in Home Assistant, on
+every device they sign in on; `off` keeps nothing. `open_when` opens it by itself when a condition starts to hold —
+a door open, a washer running, a sensor over a figure: an `entity` with `state`, `state_not`, `above` or `below` —
+and folds it again when it no longer does, unless you touched it meanwhile. `close_after` folds an open card again
+after so many minutes. While every card it holds is hidden, by its own conditions or by itself, the expander hides
+too, as a stack does; a folded one cannot know, and shows its head. In the editor's preview it is always open.
+
+A tap folds and unfolds. Give the head a `tap_action` of its own (a page to go to) and the chevron becomes the button
+that folds; `hold_action` is yours, as on any card. In the editor the cards are edited in Home Assistant's own stack
+editor — a tab a card, its picker, copy, move and delete — or as code where that editor is not to be had.
+
+```yaml
+type: custom:fluvy-expander-card
+title: Seldom used
+icon: mdi:archive
+entities:
+  - light.guest_room
+  - light.attic
+  - switch.towel_heater
+cards:
+  - type: custom:fluvy-tiles-card
+    entities:
+      - light.guest_room
+      - light.attic
+      - switch.towel_heater
+  - type: entities
+    entities:
+      - sensor.attic_temperature
+```
+
+A garage that opens with its door and folds again ten minutes after you opened it yourself, kept with the person,
+its cards on their own surfaces in two columns:
+
+```yaml
+type: custom:fluvy-expander-card
+title: Garage
+subtitle: "{{ states('cover.garage_door') }}"
+icon: mdi:garage
+style: plain
+columns: 2
+gap: 8
+remember: user
+open_when:
+  entity: binary_sensor.garage_door
+  state: "on"
+close_after: 10
+cards:
+  - type: custom:fluvy-camera-card
+    entity: camera.garage
+  - type: custom:fluvy-cover-card
+    entity: cover.garage_door
+```
+
+A group in its own colour, open from the start, its chevron before the circle and no count on its line; the head
+goes to the garden's view and the chevron folds:
+
+```yaml
+type: custom:fluvy-expander-card
+title: Garden
+icon: mdi:leaf
+color: green
+expanded: true
+show_summary: false
+show_chevron: true
+chevron_position: start
+tap_action:
+  action: navigate
+  navigation_path: /lovelace/garden
+entities:
+  - light.terrace
+  - switch.lawn_sprinklers
+cards:
+  - type: custom:fluvy-light-card
+    entity: light.terrace
+  - type: custom:fluvy-tiles-card
+    entities:
+      - switch.lawn_sprinklers
+      - switch.flower_beds
+```
+
 ## Chart
 
 The chart card draws any time series (#68) — a sensor's history, its long-term statistics, a list in its attributes or
@@ -1470,6 +1569,7 @@ roles:
 | **Hello** | `custom:fluvy-hello-card` | The greeting: name, date, weather and avatar. | `person`, `weather`, `show_weather`, `show_date`, `show_avatar` | — |
 | **Chips** | `custom:fluvy-chips-card` | A row of chips that navigate between views or open entities. | `tint` (`on`, `always`), `empty_text`, `hide_empty`, `chips` (a list: `name`, `icon`, `path`, `entity`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `label` → `name` |
 | **Heading** | `custom:fluvy-heading-card` | A section title with its count and a link. | `title`, `heading_style` (`title`, `subtitle`), `variant` (`bar`, `plain`), `subtitle`, `path` | `meta` → `subtitle` |
+| **Expander** | `custom:fluvy-expander-card` | Any cards folded away under a head: a tap opens them, on one surface or each on its own. | `title`, `subtitle`, `show_summary`, `style` (`card`, `plain`), `columns` (`1`, `2`, `3`, `4`), `gap`, `show_chevron`, `chevron_position` (`end`, `start`), `expanded`, `remember` (`device`, `user`, `off`), `open_when`, `close_after`, `icon_color`, `cards` | — |
 | **Web page** | `custom:fluvy-web-card` | A web page on a plate — a map, a chart, a site of your own — under a head, in a frame or bare; sandboxed as Home Assistant’s iframe card is. | `url`, `variant` (`plate`, `frame`, `bare`), `title`, `subtitle`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `fill`), `height`, `scale`, `refresh`, `look` (`page`, `dark`, `auto`), `sandbox` (`standard`, `strict`, `off`), `allow_open_top_navigation`, `allow`, `show_open`, `show_fullscreen`, `show_reload` | `hide_background` → `variant`, `disable_sandbox` → `sandbox` |
 
 ## Scenes, actions and helpers

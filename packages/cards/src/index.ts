@@ -39,6 +39,7 @@ import { CHART_FAMILY } from './chart-family.js';
 import { detailsSheets } from './details-family.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
+import { EXPANDER_FAMILY } from './expander-family.js';
 import { ITEMS_FAMILY } from './items-family.js';
 import { MEDIA_FAMILY } from './media-family.js';
 import { REMOTE_FAMILY } from './remote-family.js';
@@ -250,8 +251,8 @@ type Family = readonly [
 ];
 
 /**
- * The weather, calendar, template, web page, Slider, Vacuum, remote, items and chart cards, the Energy period and Energy
- * usage cards, and the media, energy, devices, automations, appliances and alerts families.
+ * The weather, calendar, template, web page, Expander, Slider, Vacuum, remote, items and chart cards, the Energy period
+ * and Energy usage cards, and the media, energy, devices, automations, appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
   [WEATHER_FAMILY, () => import('./weather-cards.js')],
@@ -266,6 +267,7 @@ const FAMILIES: readonly Family[] = [
   [ALERTS_FAMILY, () => import('./alerts-cards.js')],
   [TEMPLATE_FAMILY, () => import('./template-cards.js')],
   [WEB_FAMILY, () => import('./web-cards.js')],
+  [EXPANDER_FAMILY, () => import('./expander-cards.js')],
   [SLIDER_FAMILY, () => import('./slider-cards.js')],
   [VACUUM_FAMILY, () => import('./vacuum-cards.js')],
   [VEHICLE_FAMILY, () => import('./vehicle-cards.js')],

@@ -95,6 +95,11 @@ const BUDGETS = {
   template: 8192,
   // the web page card: its card, its address and rounds rules, its English (1.11, #61)
   web: 8192,
+  // the Expander card (1.20, #180): the card, what holds the cards it folds, what remembers how it was left and its
+  // English; measured at 5.2 KB
+  expander: 8192,
+  // the Expander card's editor: its form, and Home Assistant's stack editor set under it; fetched when one is edited
+  'expander-editor': 4096,
   // the Slider card: its card on the tile's and its English, its editor with the forms (1.11.1, #77)
   slider: 8192,
   // the Vacuum card (1.20: it left core, 1.4 KB of what every page loads): the robot's and the mower's card, which

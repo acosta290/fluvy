@@ -222,8 +222,15 @@ const cards = CATALOGUE.map(([tag, element]) => ({ tag, card: element as unknown
 /** The lists whose items take no name of their own: the map's people, the updates. */
 const UNNAMED_ITEMS = new Set(['fluvy-map-card', 'fluvy-updates-card']);
 
-/** The lists whose items' names the card's face does not say: a heading's badges, a calendar's (its events do). */
-const FACELESS_ITEMS = new Set(['fluvy-heading-card', 'fluvy-calendar-card']);
+/**
+ * The lists whose items' names the card's face does not say: a heading's badges, a calendar's (its events do), the
+ * entities an expander's head counts.
+ */
+const FACELESS_ITEMS = new Set([
+  'fluvy-heading-card',
+  'fluvy-calendar-card',
+  'fluvy-expander-card',
+]);
 
 /** Whether a config carries a list of entities. */
 const lists = (config: LovelaceCardConfig): boolean =>

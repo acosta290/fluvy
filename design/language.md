@@ -2870,6 +2870,75 @@ may say its own (`details`).
 - **Focus.** It opens on Close; Tab walks the sheet and nothing behind it; Escape, Close and a tap on the scrim close
   it and give the focus back to what was tapped; leaving the page closes it too.
 
+## Expander (1.20)
+
+The Expander card (#180) folds any cards away under a head: what is seldom used stays one row until it is asked for.
+It is a head card whose body is other cards, and it adds nothing of its own between them but room and a hairline.
+
+- **The head** is the card's button, as every head (§ Header pattern): the 44 circle (the `grid` glyph until it is
+  given an icon), the title 16/600 — the person's own, a name that may end in its ellipsis and is read whole under
+  the pointer — and one line under it: the person's words (`subtitle`: words, an entity's state, a template, held
+  blank until Home Assistant answers) and after them the count of `entities` in the house's words ("2 of 5 on",
+  "5 devices"). It says `aria-expanded` and what it folds (`aria-controls`), and under the pointer what a tap will
+  do ("Open Garden", "Close Garden"). On its surface the button reaches the card's edges round the head, so the
+  folded card is one tap, its focus ring the card's, and a card a quarter of a section wide keeps a target of 44. What gives way in a narrow column has the head's order: the count (the line's
+  last part), then its shorter forms ("2/5 on", "2/5") where it stands alone, then the circle; the person's words end
+  in an ellipsis as a name does. The chevron says the state and stays through half a section (152); it gives way
+  last, only where the name would not keep its floor beside it (40, or the whole of a shorter name: a third or a
+  quarter of a section), for the name is what the head is.
+- **The chevron** is a mark of the button, not a control: a 20 glyph in a 44 box whose ink lands on the column's edge
+  (the box 8 past it, the glyph 4 back), in the secondary ink, the text's under the pointer. It points down while the
+  card is folded and up while it is open: half a turn, with the fold. At the start (`chevron_position: start`) it
+  stands before the circle, its ink on the column's start, 16 from the circle. A head with a tap of its own
+  (`tap_action`: a page to go to) leaves the fold to the chevron, which is then a round of its own (44, quiet on the
+  card, the card's fill and hairline on the page), raised over the head's button, named "Open Garden"; a tap of
+  `none` leaves the head no button at all, and the round still folds.
+- **One surface (`style: card`, the default).** The head stands in the card's 20: folded, the card is the head
+  (84). Open, the fold reaches the surface's edges and the cards stand in the head's column, the first 40 under the
+  head and each 40 under the last (`gap`), a hairline in the middle of that room, in the column: the first where the
+  folded card's foot was. The cards draw no surface of their own, so the group reads as one card:
+  - a card of Fluvy's is held (`--fv-held: none`: no fill, no hairline) and turns its own padding out
+    (`--fv-held-bleed`, by its `--fv-pad`: 20, a compact row's 16, the Energy period strip's 12), so its circle
+    stands under the head's and its controls end on the head's chevron; it keeps its own size, so its declared
+    height is what it draws there too;
+  - what stands on the page elsewhere (a tile, a set of tiles, a scene, a chip, a title) stands on the card here,
+    in the column, with its own surface and the card's inks;
+  - a card of Home Assistant's wears none through `--ha-card-background`, `-border-width`, `-box-shadow` and
+    `-backdrop-filter`, its corners a control's 12 (`--ha-card-border-radius`: what clips a picture), and is turned
+    out by Home Assistant's own 16 (12 above and below, where a picture has none to give);
+  - an expander inside is held as any card: a head in the column, its fold a part of the outer one's.
+- **No surface (`style: plain`).** The head stands on the page, in the ink the page's background asks for
+  (`--fluvy-page-ink`), 44 tall; the cards keep their surfaces, 16 under the head and 16 apart, as a section's.
+- **Columns.** `columns` 1–4 lays the cards side by side, as many as asked for while each stands 148 at least (on
+  the surface: its column and the padding it turns out): two on a phone, three or four across a desktop. A hairline
+  stands over each card, so a row of columns is ruled column by column.
+- **Motion.** The fold is a grid row from 0fr to 1fr, 240 ms on the house's ease, the chevron's half turn with it;
+  it is clipped only while it moves, so at rest a card's focus ring and its entrance reach past its box. The cards
+  are built by the first opening and enter with their own entrance, 30 ms apart; folding, they stay under the fold
+  until it has closed and leave the page then. Reduced motion: at once. A section's rows are the card's own (`rows:
+  auto`), so what stands under it moves with the fold and never jumps.
+- **Colour.** `tone` and `color` are the circle's as on every head; `color`, being the card's, is also the accent
+  of the cards of Fluvy's it holds that name none, so a group can have a colour; `icon_color` is the circle's alone.
+  `card_color` washes the surface, and what it holds stands on the wash.
+- **Heights** are the config's alone: the card declares its head (84, 44 plain), whatever it holds and however it
+  was left; a masonry view counts one row folded and one more than its cards open; a section gives it all twelve
+  columns, three at least.
+- **Hidden, previewed, empty.** While every card it holds is hidden — by its own `visibility`, or by itself — the
+  open expander hides too, as a stack does, and comes back with the first that shows; folded, it cannot know, and
+  shows its head. In the editor's preview it is always open. With no cards yet, the open fold says so in one quiet
+  line.
+- **By itself.** It stands as the person left it (`remember`: this device by default, the person on every device,
+  or not at all; a card that is as its config says is not kept); `open_when` opens it as its condition starts to
+  hold and folds it again when it no longer does, unless a person touched it meanwhile; `close_after` folds it after
+  so many minutes, leaving it to its condition while that still holds.
+- **Editor.** Fluvy's form for the head and the options, with `when`: the count's switch with entities to count,
+  the chevron's place with a chevron, the surface's wash, opacity and border on a surface. Under it the cards, in
+  Home Assistant's own stack editor (a tab a card, its picker, copy, cut, move, delete, its code view), its own Title
+  field left out; where that editor is not to be had, or refuses the cards, the form's code field edits them.
+- Its chunk is its own (`expander`, 5.3 KB of 8), its editor's too (`expander-editor`, fetched when one is edited):
+  every page carries only its name and height (`expander-family.ts`) and the two rules a held card reads
+  (`fluvy/surfaces.css`).
+
 ## Value row (1.9)
 
 A card's reading — its big figure — and what goes with it share one 64 row, 16 under the head: the control that sets

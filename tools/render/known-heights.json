@@ -234,6 +234,85 @@
       "reason": "a water meter among the energy rows is a plain 60 row (its kind is live): a bar row is declared"
     },
     {
+      "frame": "expander/A card it cannot build · a hidden one",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 284,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/A group in its colour",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 372,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Columns 2",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 300,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Garden · open",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 640,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Media · Home Assistant’s cards",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 512,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Nested",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 452,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Nested",
+      "tag": "fluvy-expander-card",
+      "n": 2,
+      "declared": 84,
+      "drawn": 284,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/No cards yet",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 144,
+      "reason": "open with no cards yet: its one line where its cards would be"
+    },
+    {
+      "frame": "expander/Opens by itself",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 200,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Plain · open",
+      "tag": "fluvy-expander-card",
+      "declared": 44,
+      "drawn": 608,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Seldom used · folded and open",
+      "tag": "fluvy-expander-card",
+      "n": 2,
+      "declared": 84,
+      "drawn": 284,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
       "frame": "flow/The whole house · no battery, no house line",
       "tag": "fluvy-energy-card",
       "declared": 492,
