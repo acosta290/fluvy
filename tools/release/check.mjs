@@ -139,7 +139,8 @@ const BUDGETS = {
   quiet: 4096,
   // the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet
   'slider-styles': 4096,
-  // the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet
+  // the page's background: the layer under a dashboard's view, its marks and its sheet. 4 KB since 2026-11-11 (1.19,
+  // #155)
   background: 4096,
   // this device's sidebar beside the page (1.20, #173): what answers the menus' asks
   dock: 1024,
@@ -205,8 +206,12 @@ if (release) {
     'frontend/fluvy.js',
     'frontend/loader.js',
     'frontend/manifest.json',
+    // every face the build ships (packages/bundle/scripts/finish.mjs) and the licence that goes with them
     'frontend/fonts/inter-variable.woff2',
+    'frontend/fonts/inter-italic-variable.woff2',
     'frontend/fonts/inter-cyrillic-variable.woff2',
+    'frontend/fonts/inter-italic-cyrillic-variable.woff2',
+    'frontend/fonts/OFL-Inter.txt',
     'themes/fluvy.yaml',
     'brand/icon.png',
     'brand/icon@2x.png',
