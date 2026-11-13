@@ -1783,6 +1783,7 @@
     "compare_help": "与上一周期对比",
     "only_dashboard": "仅在仪表盘上",
     "variant_stacked": "带周期",
+    "variant_bar": "横跨整个分区",
     "editor_periods": "周期",
     "editor_show_today": "显示“今天”按钮",
     "editor_show_compare": "显示“对比”按钮"

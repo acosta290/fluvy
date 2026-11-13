@@ -2088,6 +2088,7 @@
     "compare_help": "前の期間と比較",
     "only_dashboard": "ダッシュボードでのみ使えます",
     "variant_stacked": "期間つき",
+    "variant_bar": "セクションの幅いっぱい",
     "editor_periods": "期間",
     "editor_show_today": "今日ボタンを表示",
     "editor_show_compare": "比較ボタンを表示"

@@ -122,7 +122,8 @@ yesterday, this week, this month, this year — and a date grid for a span of yo
 
 ```yaml
 type: custom:fluvy-energy-period-card
-variant: stacked                # row (the default) · compact · stacked (the row over Day · Week · Month · Year)
+variant: bar                    # row (the default) · compact · stacked (the row over Day · Week · Month · Year)
+                                # · bar (across a wide section: the periods beside the span, Today and Compare at its end)
 periods: [day, week, month, year, custom]   # what it offers, in this order (custom: the sheet's date grid)
 show_compare: true              # Compare: the period before beside the span, on the charts that draw it
 ```
@@ -143,6 +144,10 @@ show_compare: true              # Compare: the period before beside the span, on
   words has them all. `stacked` keeps its periods on one line, which scrolls where the four do not hold it, so the
   strip is as tall at every width. Across a wide band the capsule and the periods run 360 at most, on the strip's
   start. `compact` is the span alone between its arrows, in a 60 strip.
+- **A bar across a wide section** (`variant: bar`, #182). The card takes its section's whole width (it asks for
+  `columns: full`), and the bar uses it: the span between its arrows (360 at most), the periods' chips beside it
+  (Day · Week · Month · Year, the span's own lit), Today and Compare at the far end. As the band narrows the chips give
+  way first, then the row's own steps above; the bar is 84 tall at every width, as the row is.
 - **Only on a dashboard.** The strip needs a dashboard around it to make a picker; anywhere else it says so, at its
   size, its buttons off.
 - **The automatic Energy dashboard.** Its Today view leads with the strip across the view, and the day's flow,

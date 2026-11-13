@@ -1876,6 +1876,7 @@
     "compare_help": "Сравнить с предыдущим периодом",
     "only_dashboard": "Только на панели",
     "variant_stacked": "С периодами",
+    "variant_bar": "На всю ширину раздела",
     "editor_periods": "Периоды",
     "editor_show_today": "Показывать кнопку «Сегодня»",
     "editor_show_compare": "Показывать кнопку «Сравнить»"

@@ -65,6 +65,19 @@ export const sheet: SheetSpec = {
     { title: 'Row', cards: [strip({ show_compare: true })] },
     { title: 'Compact', cards: [strip({ variant: 'compact' })] },
     { title: 'Stacked', cards: [strip({ variant: 'stacked' })] },
+    // the bar across a wide section (#182): the capsule, its periods' chips beside it, Today and Compare at its far
+    // end; narrower, the chips give way first, then the row's own steps, at one height
+    {
+      title: 'Bar across a wide section',
+      width: 1400,
+      cards: [strip({ variant: 'bar', show_compare: true })],
+    },
+    {
+      title: 'Bar in two columns',
+      width: 800,
+      cards: [strip({ variant: 'bar', show_compare: true })],
+    },
+    { title: 'Bar on a phone', width: 412, cards: [strip({ variant: 'bar', show_compare: true })] },
     { title: 'Followers', cards: [strip(), ...followers('energy_pg')] },
     {
       title: 'Found late',

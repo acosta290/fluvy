@@ -2122,6 +2122,7 @@
     "compare_help": "Confronta con il periodo precedente",
     "only_dashboard": "Solo in una dashboard",
     "variant_stacked": "Con i periodi",
+    "variant_bar": "Per tutta la sezione",
     "editor_periods": "Periodi",
     "editor_show_today": "Mostra il pulsante Oggi",
     "editor_show_compare": "Mostra il pulsante Confronta"

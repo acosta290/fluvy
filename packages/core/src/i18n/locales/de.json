@@ -2122,6 +2122,7 @@
     "compare_help": "Mit dem Zeitraum davor vergleichen",
     "only_dashboard": "Nur auf einem Dashboard",
     "variant_stacked": "Mit den Zeiträumen",
+    "variant_bar": "Über den ganzen Abschnitt",
     "editor_periods": "Zeiträume",
     "editor_show_today": "Heute-Schaltfläche zeigen",
     "editor_show_compare": "Vergleichen-Schaltfläche zeigen"

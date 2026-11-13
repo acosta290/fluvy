@@ -2122,6 +2122,7 @@
     "compare_help": "Vergelijken met de periode ervoor",
     "only_dashboard": "Alleen op een dashboard",
     "variant_stacked": "Met de periodes",
+    "variant_bar": "Over de hele sectie",
     "editor_periods": "Periodes",
     "editor_show_today": "Knop Vandaag tonen",
     "editor_show_compare": "Knop Vergelijken tonen"

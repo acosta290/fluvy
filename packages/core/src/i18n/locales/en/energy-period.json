@@ -13,6 +13,7 @@
     "compare_help": "Compare with the period before",
     "only_dashboard": "Only on a dashboard",
     "variant_stacked": "With the periods",
+    "variant_bar": "Across the section",
     "editor_periods": "Periods",
     "editor_show_today": "Show the Today button",
     "editor_show_compare": "Show the Compare button"

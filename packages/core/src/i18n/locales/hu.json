@@ -1849,6 +1849,7 @@
     "compare_help": "Összehasonlítás az előző időszakkal",
     "only_dashboard": "Csak vezérlőpulton",
     "variant_stacked": "Az időszakokkal",
+    "variant_bar": "A szakasz teljes szélességében",
     "editor_periods": "Időszakok",
     "editor_show_today": "A Ma gomb megjelenítése",
     "editor_show_compare": "Az Összehasonlítás gomb megjelenítése"

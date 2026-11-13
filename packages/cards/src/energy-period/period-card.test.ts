@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { periodHeight } from '../energy-family.js';
 import type {
   CompareMode,
@@ -314,6 +314,63 @@ describe('the collection, made by Home Assistant when none holds the key', () =>
   });
 });
 
+describe('the bar across a wide section (#182)', () => {
+  /** The bar at `width` on yesterday (Today shows, Compare is asked for), every word 7 px a character. */
+  async function bar(width: number) {
+    const collection = collectionOn(span('yesterday'));
+    const card = await mount(
+      { variant: 'bar', show_compare: true },
+      hassWith({ [`_${KEY}`]: collection }),
+    );
+    vi.spyOn(
+      (card as unknown as { ruler: { measure: (cls: string, text: string) => number } }).ruler,
+      'measure',
+    ).mockImplementation((_cls, text) => text.length * 7);
+    card.width = width;
+    card.requestUpdate();
+    await card.updateComplete;
+    const row = root(card).querySelector('.ep-row') as HTMLElement;
+    return {
+      collection,
+      card,
+      // the row's parts in their order: the capsule, the chips, the far end
+      parts: [...row.children].map((part) => part.className.trim().split(/\s+/)[0]),
+      chips: [...row.querySelectorAll('.ep-chips .fv-chip')].map((c) => c.textContent?.trim()),
+      ends: [...row.querySelectorAll('.ep-end > button')].map(
+        (b) => b.textContent?.trim() || b.getAttribute('aria-label'),
+      ),
+    };
+  }
+
+  it('lays the capsule, the periods’ chips beside it and Today and Compare at the far end of a wide band', async () => {
+    for (const width of [1400, 800]) {
+      const { parts, chips, ends } = await bar(width);
+      expect(parts, String(width)).toEqual(['ep-walk', 'ep-chips', 'ep-end']);
+      expect(chips, String(width)).toEqual(['Day', 'Week', 'Month', 'Year']);
+      expect(ends, String(width)).toEqual(['Today', 'Compare']);
+    }
+  });
+
+  it('gives the chips away first as the band narrows, then the steps the row takes, at one height', async () => {
+    // 412: the widest form holds (343 of 372), its chips beside it (292 more) do not
+    const phone = await bar(412);
+    expect(phone.parts).toEqual(['ep-walk', 'ep-end']);
+    expect(phone.ends).toEqual(['Today', 'Compare']);
+    // 360: Compare gives its words for its glyph, as the row's would
+    expect((await bar(360)).ends).toEqual(['Today', 'Compare with the period before']);
+    expect(periodHeight({ type: 'x', variant: 'bar' })).toBe(84);
+  });
+
+  it('picks a grain’s current span from its chips', async () => {
+    const { card, collection } = await bar(1400);
+    await tap(card, 'Week');
+    expect(iso(collection.periods.at(-1)!)).toEqual(iso(span('this_week')));
+    expect(root(card).querySelector('.ep-chips .fv-chip.is-active')?.textContent?.trim()).toBe(
+      'Week',
+    );
+  });
+});
+
 describe('its size', () => {
   it('declares 84, 60 and 136 on the 4 grid, the stacked row only with a grain to chip', () => {
     expect(periodHeight({ type: 'x' })).toBe(84);
@@ -323,9 +380,9 @@ describe('its size', () => {
     expect(FluvyEnergyPeriodCard.layoutHeight({ type: 'x', variant: 'stacked' })).toBe(136);
   });
 
-  it('takes the section’s width, half of it at least, and its stub is the dashboard’s own picker', () => {
+  it('takes its section’s whole width, half a section at least, and its stub is the dashboard’s own picker (#182)', () => {
     const card = document.createElement('fluvy-energy-period-card');
-    expect(card.getGridOptions()).toEqual({ columns: 12, rows: 'auto', min_columns: 6 });
+    expect(card.getGridOptions()).toEqual({ columns: 'full', rows: 'auto', min_columns: 6 });
     expect(FluvyEnergyPeriodCard.getStubConfig()).toEqual({
       type: 'custom:fluvy-energy-period-card',
     });

@@ -2122,6 +2122,7 @@
     "compare_help": "Önceki dönemle karşılaştır",
     "only_dashboard": "Yalnızca bir panoda",
     "variant_stacked": "Dönemlerle",
+    "variant_bar": "Bölüm boyunca",
     "editor_periods": "Dönemler",
     "editor_show_today": "Bugün düğmesini göster",
     "editor_show_compare": "Karşılaştır düğmesini göster"

@@ -1350,6 +1350,7 @@
     "compare_help": "Porównaj z poprzednim okresem",
     "only_dashboard": "Tylko na pulpicie",
     "variant_stacked": "Z okresami",
+    "variant_bar": "Na całą szerokość sekcji",
     "editor_periods": "Okresy",
     "editor_show_today": "Pokaż przycisk Dziś",
     "editor_show_compare": "Pokaż przycisk Porównaj"

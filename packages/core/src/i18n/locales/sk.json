@@ -1827,6 +1827,7 @@
     "compare_help": "Porovnať s predchádzajúcim obdobím",
     "only_dashboard": "Len na paneli",
     "variant_stacked": "S výberom období",
+    "variant_bar": "Na celú šírku sekcie",
     "editor_periods": "Obdobia",
     "editor_show_today": "Zobraziť tlačidlo Dnes",
     "editor_show_compare": "Zobraziť tlačidlo Porovnať"

@@ -1123,6 +1123,11 @@ own date card, hidden inside the strip, so the collection is made and fed by Hom
   sheet's), the span's grain lit, no wider than the capsule (136). Where the four do not hold one line (half a
   section) they keep it and scroll, content-sized, the tab rows' fades at a side with more behind it and the span's
   grain brought into view: the strip is 136 at every width.
+  `bar` (1.20, #182): the band across a wide section — the card asks its section's whole width (`columns: full`) — as
+  one row of 44 in the card's 20 (84): the capsule (360 at most, on its start), 8 after it the chips of its grains
+  in a row of their own, each as wide as the widest word and 16 a side (a finger's 44 at least), the span's grain lit,
+  and Today and Compare at the band's far end. The chips give way first (they hold beside the widest form or not at
+  all), then the row's own steps below; its height never changes with its width.
 - **What gives way** (measured, never a width threshold): Compare's words for its glyph (bars), Today's for its glyph
   (the clock), the span's short words ("24 Oct", "Sep", "Sep 25" for another year, "2026", a span's two dates in
   figures), Today, Compare, and last the arrows — the span's words alone, the long ones where they hold. The sheet

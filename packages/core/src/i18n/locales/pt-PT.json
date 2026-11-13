@@ -2122,6 +2122,7 @@
     "compare_help": "Comparar com o período anterior",
     "only_dashboard": "Só num painel",
     "variant_stacked": "Com os períodos",
+    "variant_bar": "Na largura da secção",
     "editor_periods": "Períodos",
     "editor_show_today": "Mostrar o botão Hoje",
     "editor_show_compare": "Mostrar o botão Comparar"

@@ -78,13 +78,16 @@ const flow = strings('energy-flow');
 /** The date grid's words: the pages' shared ones (core's). */
 const page = strings('page');
 
-export type PeriodVariant = 'row' | 'compact' | 'stacked';
-const VARIANTS: readonly PeriodVariant[] = ['row', 'compact', 'stacked'];
+export type PeriodVariant = 'row' | 'compact' | 'stacked' | 'bar';
+const VARIANTS: readonly PeriodVariant[] = ['row', 'compact', 'stacked', 'bar'];
 
 export interface EnergyPeriodCardConfig extends FluvyCardConfig {
   /** The date picker's key (`energy_…`); unset, the dashboard's own (`energy_<its url>`), as Home Assistant's cards take it. */
   collection_key?: string;
-  /** A row (the default), a compact pill row, or the row over the periods' chips. */
+  /**
+   * A row (the default), a compact pill row, the row over the periods' chips, or a bar across a wide section: the
+   * capsule, its periods' chips beside it, Today and Compare at its far end.
+   */
   variant?: PeriodVariant;
   /** The periods offered, in order: the stacked chips (custom stays in the sheet) and the sheet's presets. */
   periods?: readonly PeriodKey[];
@@ -138,6 +141,8 @@ const PILL_SIDES = 32;
 const CAP = 360;
 /** A scrolling row's fades, at a side with more behind it. */
 const FADE = 24;
+/** The bar's chips: each as wide as the widest word and 16 of air each side, a finger's 44 at least. */
+const CHIP_SIDES = 32;
 /** The sheet's presets for each period. */
 const PRESETS: Readonly<Record<PeriodKey, readonly (Preset | 'custom')[]>> = {
   day: ['today', 'yesterday'],
@@ -297,6 +302,19 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       .ep-grains.is-dragging .fv-chip {
         pointer-events: none;
       }
+      /* the bar: the periods' chips on the row beside the capsule, Today and Compare at its far end */
+      .ep-chips {
+        flex: none;
+      }
+      .ep-chips > .fv-chips {
+        margin-top: 0;
+      }
+      .ep-end {
+        display: flex;
+        flex: none;
+        gap: ${GAP}px;
+        margin-inline-start: auto;
+      }
       /* the sheet: a modal bottom sheet, as the cameras' */
       dialog {
         position: fixed;
@@ -448,6 +466,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
             { value: 'row', label: editorWord('option.row') },
             { value: 'compact', label: editorWord('option.compact') },
             { value: 'stacked', label: p(language, 'variant_stacked') },
+            { value: 'bar', label: p(language, 'variant_bar') },
           ],
         },
       },
@@ -531,8 +550,9 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
   override getCardSize(): number {
     return Math.ceil(periodHeight(this.config ?? { type: '' }) / 50);
   }
+  /** The whole width of its section: a band across a view's columns, as the automatic Energy dashboard lays it. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return { columns: 'full', rows: 'auto', min_columns: 6 };
   }
 
   protected override prepare(config: EnergyPeriodCardConfig): EnergyPeriodCardConfig {
@@ -743,8 +763,16 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
 
   /* ---------- render ---------- */
 
-  /** The strip's form for its column: the first of `FORMS` that holds it. */
-  private form(room: number, long: string, short: string): Form {
+  /**
+   * The strip's form for its column: the first of `FORMS` that holds it — and the bar's periods' chips (`chips` wide)
+   * beside the capsule where they hold with the widest form: they give way first, then the form steps down.
+   */
+  private form(
+    room: number,
+    long: string,
+    short: string,
+    chips = 0,
+  ): Form & { readonly chips: boolean } {
     const compact = this.variant === 'compact';
     // Today only away from today: on it, the capsule says so and its room is the capsule's
     const today = !compact && this.config?.show_today !== false && !this.onToday();
@@ -758,19 +786,28 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       today: today ? form.today : ('none' as const),
       compare: compare ? form.compare : ('none' as const),
     }));
-    return (
-      forms.find(
-        (form) =>
-          (form.arrows ? 2 * STEP : 0) +
-            Math.max(
-              STEP,
-              this.ruler.width(date, form.date === 'long' ? long : short) + 2 * DATE_SIDES,
-            ) +
-            beside(form.today, today, localize(this.hass, 'common.today')) +
-            beside(form.compare, compare, p(this.hass, 'compare')) <=
-          room,
-      ) ?? (forms.at(-1) as Form)
+    const need = (form: Form): number =>
+      (form.arrows ? 2 * STEP : 0) +
+      Math.max(STEP, this.ruler.width(date, form.date === 'long' ? long : short) + 2 * DATE_SIDES) +
+      beside(form.today, today, localize(this.hass, 'common.today')) +
+      beside(form.compare, compare, p(this.hass, 'compare'));
+    const widest = forms[0] as Form;
+    if (chips && need(widest) + GAP + chips <= room) return { ...widest, chips: true };
+    return {
+      ...(forms.find((form) => need(form) <= room) ?? (forms.at(-1) as Form)),
+      chips: false,
+    };
+  }
+
+  /** The bar's chips on one line: each as wide as the widest word and its air, the gaps between them. */
+  private chipsWidth(items: readonly ChipItem[]): number {
+    if (!items.length) return 0;
+    const word = Math.max(
+      ...items.map((item) =>
+        this.ruler.width('fv-chips fv-chips--fill > fv-chip > fv-chip__pill', item.label),
+      ),
     );
+    return items.length * Math.max(STEP, word + CHIP_SIDES) + (items.length - 1) * GAP;
   }
 
   protected renderCard(): TemplateResult {
@@ -784,7 +821,10 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
     const note = !ready && (this.helpless || !this.key()) ? p(hass, 'only_dashboard') : undefined;
     const long = note ?? rangeWords(hass, span, now);
     const short = note ?? shortWords(hass, span, grain, now);
-    const form = this.form(this.width - (compact ? 24 : 40), long, short);
+    const bar = this.variant === 'bar';
+    const grains = this.variant === 'stacked' || bar ? this.grainItems(grain, ready) : [];
+    const chipsWidth = bar ? this.chipsWidth(grains) : 0;
+    const form = this.form(this.width - (compact ? 24 : 40), long, short, chipsWidth);
     const tone = toneOf(this.config, 'accent');
     const comparing = this.comparing();
     const pill = (
@@ -825,6 +865,18 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
               ${word}
             </button>`;
     const today = localize(hass, 'common.today');
+    // Today and Compare: after the capsule, at the bar's far end
+    const ends = html`${pill(form.today, today, today, 'clock', true, () => this.pick('today'), false)}
+    ${pill(
+      form.compare,
+      p(hass, 'compare'),
+      p(hass, 'compare_help'),
+      'chart',
+      comparing,
+      () => this.setCompare(!comparing),
+      !ready,
+      comparing,
+    )}`;
     const owner = this.helper_
       ? html`<div class="ep-owner" aria-hidden="true">${this.helper_}</div>`
       : nothing;
@@ -877,42 +929,46 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
               : nothing
           }
         </div>
-        ${pill(form.today, today, today, 'clock', true, () => this.pick('today'), false)}
-        ${pill(
-          form.compare,
-          p(hass, 'compare'),
-          p(hass, 'compare_help'),
-          'chart',
-          comparing,
-          () => this.setCompare(!comparing),
-          !ready,
-          comparing,
-        )}
+        ${
+          form.chips
+            ? html`<div class="ep-chips" style="width:${chipsWidth}px">
+                ${chips(grains, this.selectGrain, '', true, grains.length)}
+              </div>`
+            : nothing
+        }
+        ${bar ? html`<div class="ep-end">${ends}</div>` : ends}
       </div>
-      ${this.variant === 'stacked' ? this.renderChips(grain, ready) : nothing} ${owner}
+      ${this.variant === 'stacked' ? this.renderChips(grains) : nothing} ${owner}
       ${this.renderDialog(span, now)}
     </article>`;
   }
 
-  /** The stacked strip's periods: a chip a grain (custom is the sheet's), the span's own lit. */
-  private renderChips(grain: PeriodKey, ready: boolean): TemplateResult | typeof nothing {
-    const grains = this.periods().filter((key): key is Grain => key !== 'custom');
-    if (!grains.length) return nothing;
+  /** The periods' chips of the stacked strip and the bar: a chip a grain (custom is the sheet's), the span's own lit. */
+  private grainItems(grain: PeriodKey, ready: boolean): ChipItem[] {
     const tone = toneOf(this.config, 'accent');
-    const items: ChipItem[] = grains.map((key) => ({
-      key,
-      label: periodWord(this.hass, key),
-      active: ready && key === grain,
-      tone,
-      disabled: !ready,
-    }));
-    const select = (key: string): void => this.pick(GRAIN_PRESET[key as Grain]);
+    return this.periods()
+      .filter((key): key is Grain => key !== 'custom')
+      .map((key) => ({
+        key,
+        label: periodWord(this.hass, key),
+        active: ready && key === grain,
+        tone,
+        disabled: !ready,
+      }));
+  }
+
+  /** A grain's chip picks its current span: today, this week, this month, this year. */
+  private readonly selectGrain = (key: string): void => this.pick(GRAIN_PRESET[key as Grain]);
+
+  /** The stacked strip's periods, under its row and no wider than its capsule. */
+  private renderChips(items: readonly ChipItem[]): TemplateResult | typeof nothing {
+    if (!items.length) return nothing;
     const fit = { ruler: this.ruler, width: Math.min(this.contentWidth, CAP) };
-    if (fitsOneRow(items, fit)) return chipRow(items, select, 'full', fit);
+    if (fitsOneRow(items, fit)) return chipRow(items, this.selectGrain, 'full', fit);
     // too narrow for them on one line (half a section): they keep it and scroll, the span's grain in view — the strip
     // keeps its height at every width
     return html`<div class="ep-grains" data-scroll-row @scroll=${() => this.settleGrains()}>
-      ${chips(items, select)}
+      ${chips(items, this.selectGrain)}
     </div>`;
   }
 
