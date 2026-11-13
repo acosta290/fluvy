@@ -87,6 +87,35 @@ function compactLiterals(): Plugin {
 }
 
 /**
+ * Core is what every page loads before it draws a card: it holds only what the entry reaches by its static imports.
+ * Every module no group names lands there, so a module that only the chunks fetched later reach (a helper two lazy
+ * families share) would weigh on every page for nothing: the build stops and names it. It belongs to a group in
+ * `groups.mjs`, its family's or `shared`.
+ */
+function coreHoldsWhatEveryPageRuns(): Plugin {
+  return {
+    name: 'fluvy-core-holds-what-every-page-runs',
+    generateBundle(_, bundle) {
+      const reached = new Set(
+        [...this.getModuleIds()].filter((id) => this.getModuleInfo(id)?.isEntry),
+      );
+      for (const id of reached)
+        for (const next of this.getModuleInfo(id)?.importedIds ?? []) reached.add(next);
+      const core = Object.values(bundle).find(
+        (file) => file.type === 'chunk' && file.name === 'core',
+      );
+      const stray = Object.keys(core?.type === 'chunk' ? core.modules : {}).filter(
+        (id) => !reached.has(id),
+      );
+      if (stray.length)
+        this.error(
+          `core holds what only the chunks fetched later reach; name it in a group (groups.mjs): ${stray.join(', ')}`,
+        );
+    },
+  };
+}
+
+/**
  * The build Home Assistant loads (the integration serves it from `custom_components/fluvy/frontend`, under a URL
  * named after the build) and what it shares with the pages loaded on demand. The entry keeps only its own code and
  * imports the rest from `chunks/core-<hash>.js`; the pages fetched on demand (Activity, History, the settings panel)
@@ -94,7 +123,7 @@ function compactLiterals(): Plugin {
  * go stale. Lit is bundled (pinned to Home Assistant's 3.3.3).
  */
 export default defineConfig({
-  plugins: [compactLiterals()],
+  plugins: [compactLiterals(), coreHoldsWhatEveryPageRuns()],
   define: { __FLUVY_VERSION__: JSON.stringify(version) },
   build: {
     target: 'es2022',

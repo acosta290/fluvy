@@ -66,7 +66,9 @@ what only the chunks fetched later share (the dates and the month grid, the tick
 plain letters: with the first chunk that needs them)
 and a language's catalogue (English's core part ships in core; a lazy family's English part travels with the family's
 chunk, registered as it lands). `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group
-names its English part, or core keeps it. Lit is bundled, pinned to Home Assistant's version. `finish.mjs` writes
+names its English part, or core keeps it, and every module no group names lands in core: the build stops
+(`vite.config.ts`) where core holds one that only the chunks fetched later reach. Lit is bundled, pinned to Home
+Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
 over **236 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
 budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
