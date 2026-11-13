@@ -20,7 +20,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { chosenLabel, dropdown, dropdownEnd, SELECTS } from '../shared/dropdown.js';
-import { type RowConfig } from '../lock/rows.js';
+import type { RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';

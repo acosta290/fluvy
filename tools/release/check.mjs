@@ -56,8 +56,9 @@ const BUDGETS = {
   'history-bars-readings': 8192,
   // the media family: the player and the now-playing strip
   media: 16_384,
-  // the devices family: the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times.
-  // 36 KB since 2026-10-22 (the Cameras card, #60: its tiles, its feeds, its lines and its editor): 32 before
+  // the devices family: the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times,
+  // and since 1.20 the rows the lock, the alarm and the camera are built on (they left core, 1.1 KB; measured at
+  // 30.9 KB). 36 KB since 2026-10-22 (the Cameras card, #60: its tiles, its feeds, its lines and its editor): 32 before
   devices: 36_864,
   // the cameras' sheet: fetched when a Cameras card's round opens it
   'cameras-sheet': 8192,

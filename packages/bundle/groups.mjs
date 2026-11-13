@@ -120,13 +120,15 @@ const ENERGY =
 const CAMERAS_SHEET = /\/packages\/cards\/src\/camera\/sheet\//;
 
 /**
- * The devices family (the lock, the alarm and its keypad, the camera and the cameras, the 3D printer, the job's times
- * the appliances share, the motion sensor a camera's device carries, and their English): fetched as the bundle starts
- * and defined as it lands, as the energy family is (`devices-family.ts` stays in core: the names, the heights; so do the
- * rows the lock shares with the entities card, `lock/rows.ts`).
+ * The devices family (the lock, the alarm and its keypad, the camera and the cameras, the 3D printer, the rows the
+ * lock, the alarm and the camera are built on, the job's times the appliances share, the motion sensor a camera's
+ * device carries, and their English): fetched as the bundle starts and defined as it lands, as the energy family is
+ * (`devices-family.ts` stays in core: the names, the heights). The Entities card reads only a row's type of
+ * `lock/rows.ts`, by an `import type` the build erases: an `import { type … }` it keeps, and every page would load
+ * this chunk.
  */
 const DEVICES =
-  /\/packages\/(cards\/src\/(devices-cards\.ts|devices\/|camera\/|alarm\/|lock\/lock-card\.ts|printer\/|shared\/(job-time|motion)\.ts)|core\/src\/i18n\/locales\/en\/(devices|job)\.json)/;
+  /\/packages\/(cards\/src\/(devices-cards\.ts|devices\/|camera\/|alarm\/|lock\/|printer\/|shared\/(job-time|motion)\.ts)|core\/src\/i18n\/locales\/en\/(devices|job)\.json)/;
 
 /** The appliances' pictures (one product drawing a kind): fetched by the first card that draws one, never at start. */
 const APPLIANCE_ART = /\/packages\/cards\/src\/appliance\/art\//;

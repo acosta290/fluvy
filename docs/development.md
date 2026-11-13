@@ -83,7 +83,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `energy` | 81 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
-| `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times |
+| `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times, the rows the lock, the alarm and the camera are built on |
 | `cameras-sheet` | 8 KB | the Cameras card's sheet |
 | `appliances` | 68 KB | the appliances family and its English |
 | `appliance-art` | 32 KB | the appliances' product drawings |
