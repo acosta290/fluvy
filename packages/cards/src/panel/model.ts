@@ -545,6 +545,7 @@ export function changeLines(ctx: PanelContext): string[] {
         lines.push(`${t(`scope.icons_${place}`)} · ${onOff(house.icons[place])}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
+  if (house.details !== undefined) lines.push(`${t('scope.details')} · ${onOff(house.details)}`);
   const device = ctx.deviceEdit;
   if (device.wall !== undefined)
     lines.push(`${t('tab.wall')} · ${t('wall.use')} · ${onOff(device.wall)}`);

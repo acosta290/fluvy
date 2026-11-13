@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expanderHeight } from '../expander-family.js';
 import { familiesDefined } from '../index.js';
 import { cardForm, drawEditor, nextConfig, shownNames } from '../shared/fixtures/editor.js';
@@ -141,6 +141,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
   document.body.replaceChildren();
 });
+
+// a fold's motion that a test began on real timers ends while the file's document is still there, never after it, on
+// a busy machine too
+afterAll(() => new Promise((done) => setTimeout(done, MOTION * 2)));
 
 describe('the config', () => {
   it('refuses cards that are no list, in words', () => {

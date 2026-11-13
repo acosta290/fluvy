@@ -2,9 +2,9 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
-import '../index.js';
+import { familiesDefined } from '../index.js';
 import { CAPS } from './caps.js';
 import { findEnergyRoles } from './energy-roles.js';
 import { generate } from './generate.js';
@@ -36,6 +36,9 @@ import {
   demoHass,
   type DemoEntity,
 } from '@fluvy/demo-home';
+
+// the families' chunks are fetched as the module loads: they land before the file's environment goes
+afterAll(() => familiesDefined);
 
 /** The demo home as a strategy sees it, with what a test adds on top. */
 function house(more: readonly DemoEntity[] = [], consumption?: readonly string[]) {

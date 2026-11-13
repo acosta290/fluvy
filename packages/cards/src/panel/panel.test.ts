@@ -1417,6 +1417,26 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house give Home Assistant’s history back in its details dialog, ours until then (1.20, #162)', async () => {
+    const { panel, root, row, button, handle, settle } = await mount();
+    await handle.store.saveHouse({ scope: 'everywhere' });
+    panel.tab = 'scope';
+    await settle();
+    const name = 'Our chart in the details dialog';
+    const ours = () => row(name)?.querySelector('.fv-switch');
+    expect(ours()?.getAttribute('aria-checked')).toBe('true');
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(ours()?.getAttribute('aria-checked')).toBe('false');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Our chart in the details dialog · Off',
+    );
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().details).toBe(false);
+    panel.remove();
+  });
+
   it('lets the house keep Home Assistant’s details dialog, Fluvy’s sheets until then (1.20, #162)', async () => {
     const { panel, root, row, button, handle, settle } = await mount();
     const name = 'Fluvy’s details sheets';

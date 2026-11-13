@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import type { HomeAssistant } from '@fluvy/core';
 import {
   DEMO_ENERGY_SOURCES,
@@ -17,11 +17,14 @@ import {
   tuyaKettle,
 } from '../appliance/fixtures/index.js';
 // the cards register their heights with core: the strategy lays columns out with them
-import '../index.js';
+import { familiesDefined } from '../index.js';
 import { editOf, partOf, pinned } from './edit.js';
 import { generateWith } from './generate.js';
 import { TEMPLATES, templateById } from './templates.js';
 import type { Card, FluvyStrategyConfig, MoreHost, TemplateId } from './types.js';
+
+// the families' chunks are fetched as the module loads: they land before the file's environment goes
+afterAll(() => familiesDefined);
 
 const entity = (
   id: string,

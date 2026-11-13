@@ -710,10 +710,10 @@ export function listRow(o: ListRowOptions): TemplateResult {
   return html`<div
     class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''} ${o.stack ? 'fv-row--stack' : ''} ${o.open ? 'is-open' : ''}"
     data-accent=${o.accent ?? nothing}
-    role=${o.onTap ? 'button' : nothing}
+    role=${o.onTap || o.onHold ? 'button' : nothing}
     aria-expanded=${o.open === undefined ? nothing : o.open ? 'true' : 'false'}
     aria-label=${o.label ?? nothing}
-    tabindex=${o.onTap ? 0 : nothing}
+    tabindex=${o.onTap || o.onHold ? 0 : nothing}
     .fvTap=${o.onHold ? o.onTap : undefined}
     .fvHold=${o.onHold}
     @pointerdown=${o.onHold ? startPress : nothing}
@@ -840,8 +840,8 @@ export function barRow(o: BarRowOptions): TemplateResult {
   return html`<div
     class="fv-row fv-row--bar ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''}"
     data-accent=${o.accent ?? nothing}
-    role=${o.onTap ? 'button' : nothing}
-    tabindex=${o.onTap ? 0 : nothing}
+    role=${o.onTap || o.onHold ? 'button' : nothing}
+    tabindex=${o.onTap || o.onHold ? 0 : nothing}
     .fvTap=${o.onHold ? o.onTap : undefined}
     .fvHold=${o.onHold}
     @pointerdown=${o.onHold ? startPress : nothing}
