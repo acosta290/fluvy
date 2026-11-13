@@ -953,7 +953,12 @@ Energie's prices, Solcast's forecast (its tenth and ninetieth percentiles a band
 moment and a value, a map of moments to values, or a day's values; quarters stay quarters and a negative price stays
 negative. `span` is the window: the house's (fluvy's settings → Charts: the last 12 hours from the factory, 24 before
 1.18) where it names none, or any `<N>h` or `<N>d` rolling to now (`4h`, `12h`, `24h`, `48h`, `7d`, `30d` offered),
-`today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. A series of the recorder's
+`today`, or `today+tomorrow`, which is today alone until tomorrow's prices are published. Given a `collection_key`
+(#181) the card follows that Energy date picker (Home Assistant's own, or the Energy period card) instead: it draws the
+picked range — a day, a week, a month, a year — its statistics in Home Assistant's grain (a meter's change by the hour,
+the day or the month, a measurement by five minutes, the hour or the day), its subtitle saying the range, and while
+the picker compares, the range before it as a quiet ghost behind its first series (one column a slot behind columns,
+a line behind a line); `span` waits, and the editor hides it. A series of the recorder's
 drawn as a line or an area runs through time as the sensor card's does, on `points` (an hour's statistics never finer
 than the hour). Bars, columns, a band and a stepped line stand on whole round periods of the house's clock (12:00,
 13:00 …, as many as the card's width holds calmly), each reading what Home Assistant says of its period: a bar at 12:00
@@ -998,6 +1003,16 @@ thresholds:
     value: 0.26
 highlight: both
 highlight_hours: 2
+```
+
+```yaml
+type: custom:fluvy-chart-card
+title: Water this month
+collection_key: energy_casa # follows the picker's range
+chart: bars
+series:
+  - entity: sensor.water_meter
+    source: statistics
 ```
 
 The measured temperature and the forecast after it, on one chart:
@@ -1407,7 +1422,7 @@ roles:
 | **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of stat tiles. | `title`, `subtitle`, `variant` (`full`, `compact`), `columns` (`auto`, `2`, `3`), `badge_entity`, `badge_label`, `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`, `unit`, `decimals`, `tap_action`, `hold_action`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`) | `entities` → `tiles` |
 | **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
 | **History bars** | `custom:fluvy-history-bars-card` | A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money. | `subtitle`, `variant` (`full`, `compact`, `mini`), `days`, `period` (`day`, `week`, `month`), `stat` (`change`, `state`, `mean`, `max`, `min`), `reset` (`auto`, `never`, `day`, `week`, `month`, `year`), `source` (`auto`, `history`), `date_format` (`date`, `weekday`, `short`), `negative_color`, `current_color`, `include_today`, `show_head`, `show_values`, `show_axis`, `show_grid`, `show_dates`, `show_facts`, `co2_factor`, `price`, `chart` (`classic`, `bars`, `columns`, `minimal`), `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`0`, `1`, `2`, `3`), `head` (a list: `kind`, `name`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`), `facts` (a list: `kind`, `name`, `icon`, `color`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`) | `title` → `name` |
-| **Chart** | `custom:fluvy-chart-card` | Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found. | `title`, `subtitle`, `span` (`4h`, `12h`, `24h`, `today`, `today+tomorrow`, `48h`, `7d`, `30d`), `variant` (`full`, `compact`, `tile`), `show_head`, `show_legend`, `highlight` (`none`, `min`, `max`, `both`), `highlight_hours`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`), `points` (`auto`, `5m`, `15m`, `30m`, `1h`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `show_now`, `animate`, `series` (a list: `entity`, `name`, `source`, `attribute`, `time_key`, `value_key`, `stat`, `period`, `kind`, `curve`, `fill`, `tone`, `color`, `unit`, `decimals`), `thresholds` (a list: `tone`, `value`) | — |
+| **Chart** | `custom:fluvy-chart-card` | Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found. | `title`, `subtitle`, `collection_key`, `span` (`4h`, `12h`, `24h`, `today`, `today+tomorrow`, `48h`, `7d`, `30d`), `variant` (`full`, `compact`, `tile`), `show_head`, `show_legend`, `highlight` (`none`, `min`, `max`, `both`), `highlight_hours`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`), `points` (`auto`, `5m`, `15m`, `30m`, `1h`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `show_now`, `animate`, `series` (a list: `entity`, `name`, `source`, `attribute`, `time_key`, `value_key`, `stat`, `period`, `kind`, `curve`, `fill`, `tone`, `color`, `unit`, `decimals`), `thresholds` (a list: `tone`, `value`) | — |
 | **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `show_rows_when`, `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`, `show_when`; between them `type: section`, `type: divider`) | `entities` → `rows` |
 | **Distribution** | `custom:fluvy-distribution-card` | One stacked bar and a legend: who draws what. | `title`, `subtitle`, `max_rows`, `variant` (`stack`, `rows`), `chart` (`classic`, `soft`), `total`, `empty_text`, `hide_empty`, `entities` (a list: `entity`, `name`, `tone`, `color`) | — |
 | **Humidity** | `custom:fluvy-humidity-card` | Humidity on a comfort band, with dew point and trend. | `subtitle`, `low`, `high`, `gauge` (`ticks`, `ruler`, `liquid`), `animate`, `temperature_entity`, `humidifier_entity`, `hours`, `show_trend` | `trend_hours` → `hours` |

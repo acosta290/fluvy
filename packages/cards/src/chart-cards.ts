@@ -1,4 +1,5 @@
-// the card's words first: they are here before it speaks
+// the words first: the energy family's (a date picker's, which the card follows as the energy cards do), then its own
+import './energy/english.js';
 import './chart/card-english.js';
 import { registerCard } from '@fluvy/core';
 import { CHART_FAMILY } from './chart-family.js';

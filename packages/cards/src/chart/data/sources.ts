@@ -51,7 +51,8 @@ export const statOf = (stateClass: unknown): Stat =>
 export const periodOf = (hours: number): Period => (hours <= 7 * 24 ? 'hour' : 'day');
 
 /** The length of a statistic's bucket, the reading's slot (a month is read as its 30 days). */
-export const PERIOD_MS: Readonly<Record<Period, number>> = {
+export const PERIOD_MS: Readonly<Record<StatPeriod, number>> = {
+  '5minute': 300_000,
   hour: 3_600_000,
   day: 86_400_000,
   week: 7 * 86_400_000,
@@ -104,7 +105,7 @@ export async function statisticsReadings(
   hass: HomeAssistant,
   id: string,
   window: { readonly start: number; readonly end: number },
-  period: Period,
+  period: StatPeriod,
   stat: Stat,
   band: boolean,
 ): Promise<Reading[]> {

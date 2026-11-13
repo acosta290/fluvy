@@ -29,11 +29,22 @@ import {
   css,
   html,
   nothing,
+  svg,
   type CSSResultGroup,
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
 import { chartHeight } from '../chart-family.js';
+import { CollectionFollower, collectionKeyOf } from '../energy-model/collection.js';
+import { fullDays, stepFor } from '../energy-model/period.js';
+import { rangeWords } from '../energy-model/range-words.js';
+import {
+  COLLECTION_LABEL,
+  collectionChoices,
+  collectionField,
+  collectionHelper,
+  following,
+} from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { axisHolds } from '../shared/axis.js';
 import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
@@ -57,7 +68,12 @@ import {
   showIconField,
   titleFields,
 } from '../shared/form.js';
-import type { EditorDefaults, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
+import type {
+  EditorChoices,
+  EditorDefaults,
+  FormHelper,
+  RowsListSpec,
+} from '../shared/rows-editor.js';
 import { decimalsOf, figure, precisionOf, scaleNamed, type Scale } from '../shared/units.js';
 import { attributeSeries, timedAttributes, type Day, type Reading } from './data/attribute.js';
 import {
@@ -72,7 +88,9 @@ import {
   statOf,
   type ForecastType,
   type Source,
+  type Stat,
 } from './data/sources.js';
+import type { StatPeriod } from './data/statistics.js';
 import { bucketGrid, roundGrid, roundStep, type Grid } from './data/slots.js';
 import {
   dayStart,
@@ -111,6 +129,9 @@ import {
 } from './config.js';
 import {
   acts,
+  airScale,
+  barGeometry,
+  barPath,
   chartKeysOf,
   chartDefaultsFor,
   chartSection,
@@ -120,6 +141,7 @@ import {
   isBars,
   leastGap,
   legend,
+  linePath,
   niceTicks,
   plotOf,
   quarterTicks,
@@ -134,6 +156,7 @@ import {
   slotTicks,
   tickText,
   timeLine,
+  yOf,
   type ChartFrame,
   type ChartSeries,
   type ChartSpec,
@@ -167,6 +190,11 @@ export interface ChartCardConfig extends FluvyCardConfig, HeadConfig, Omit<Chart
   series?: ReadonlyArray<string | ChartSeriesConfig>;
   /** `24h` (the default), `today`, `today+tomorrow`, `7d`, or any `<N>h` / `<N>d`. */
   span?: string;
+  /**
+   * An Energy date picker's key (`energy_…`): the chart draws the picker's range in Home Assistant's grain, its span
+   * set aside, and the range it compares with as a ghost while it compares.
+   */
+  collection_key?: string;
   thresholds?: readonly ThresholdConfig[];
   /** The windows marked, of what is to come: the cheapest (lowest), the dearest (highest), or both. */
   highlight?: Windows;
@@ -254,6 +282,8 @@ interface Drawn {
   readonly holding: Holding;
   /** Its readings on the window's slots, in its unit: the slots' (steps, bars) and the points between them (lines). */
   readonly slots: ReadonlyArray<number | null>;
+  /** Readings laid on the slots as its own are (the range a picker compares with, `whole`: none of it to come). */
+  readonly layOn: (readings: readonly Reading[], whole?: boolean) => Array<number | null>;
   readonly points: ReadonlyArray<number | null>;
   /**
    * A line of the recorder's through time (`timeLine`, the points in its place): drawn on the house's round times and
@@ -298,17 +328,33 @@ interface Answer {
   readonly readings: readonly Reading[];
 }
 
-/** What a series' history or statistics answer is for: its entity, its source and keys, and its span. */
-const answerId = (item: ChartSeriesConfig, source: Source, span: Span): string =>
+/** What a series' history or statistics answer is for: its entity, its source and keys, and its window's (`spanKey`). */
+const answerId = (item: ChartSeriesConfig, source: Source, span: string): string =>
   [
     item.entity,
     source,
     item.stat ?? '',
     item.period ?? '',
     item.kind === 'band' ? 'band' : '',
-    span.kind,
-    span.hours,
+    span,
   ].join('|');
+
+/** A followed picker's range in the chart's time: its end a midnight (Home Assistant ends a day on its last moment). */
+interface Picked {
+  readonly start: number;
+  readonly end: number;
+  /** The range it compares with, while it compares. */
+  readonly before?: { readonly start: number; readonly end: number };
+}
+
+/** A picker's moment as the chart reads it: its last moment of a day as the midnight after it. */
+const closing = (date: Date): number => {
+  const t = date.getTime();
+  return t % 1000 === 999 ? t + 1 : t;
+};
+
+/** The ghost of the range compared with: this much wider than its column, as the Energy usage card's. */
+const GHOST = 1.8;
 
 /** The decimals a series' readings carry (a price's three, a temperature's one), up to three; none where they say none. */
 function carried(readings: readonly Reading[] | undefined, state: string): number | undefined {
@@ -374,11 +420,28 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         display: block;
         overflow: visible;
       }
-      /* the lines over the columns: the same frame, drawn over them */
-      .ch-chart > svg + svg {
+      /* the lines over the columns: the same frame, drawn over them; the range a followed picker compares with under
+         everything */
+      .ch-chart > svg + svg,
+      .ch-chart > .ch-ghosts {
         position: absolute;
         top: 0;
         left: 0;
+      }
+      /* the range compared with: one quiet column a slot, or a quiet line through the slots */
+      .ch-ghost {
+        fill: color-mix(in srgb, var(--fluvy-text) 9%, transparent);
+      }
+      :host([dark]) .ch-ghost,
+      [data-mode='dark'] .ch-ghost {
+        fill: color-mix(in srgb, var(--fluvy-text) 14%, transparent);
+      }
+      .ch-ghost.is-line {
+        fill: none;
+        stroke: color-mix(in srgb, var(--fluvy-text) 24%, transparent);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
       .ch-chart > .fv-skeleton {
         height: 100%;
@@ -547,20 +610,25 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   static override properties = {
     ...Card.properties,
     answers_: { state: true },
+    ghost_: { state: true },
   };
 
   /** What each series' history or statistics answered, by its index: kept while a newer read is asked. */
   declare answers_: ReadonlyArray<Answer | undefined>;
-  /** What each series asked last, and when: asked again once the key moves or five minutes pass. */
+  /** What the first series' answered over the range a followed picker compares with. */
+  declare ghost_: Answer | undefined;
+  /** What each series asked last, and when: asked again once the key moves or five minutes pass (the ghost's last). */
   private readonly reads: Array<{ key: string; at: number } | undefined> = [];
   /** Where the chart is read (a fraction of its width); null: at rest. */
   private readonly scrubber = new ScrubController(this);
   private readonly forecasts = new ForecastFeed(this);
   private readonly headFit = new HeadFit(this);
+  private readonly follower = new CollectionFollower(this);
 
   constructor() {
     super();
     this.answers_ = [];
+    this.ghost_ = undefined;
   }
 
   /* ---------- the editor (on the class: the card's chunk is fetched as the bundle starts) ---------- */
@@ -583,6 +651,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     'subtitle',
     'series',
     'span',
+    'collection_key',
     'variant',
     'show_head',
     'show_legend',
@@ -613,6 +682,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     void _style;
     return {
       span: houseSpanValue(),
+      collection_key: '',
       variant: 'full',
       show_head: true,
       show_legend: true,
@@ -628,8 +698,11 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     // a legend names several series, on the full card alone (the compact one and the tile draw none)
     const legended = (data: Readonly<Record<string, unknown>>): boolean =>
       !lone(data) && (data['variant'] ?? 'full') === 'full';
-    const helper: FormHelper = (schema) =>
-      schema.name === 'span' ? s(editorLanguage(), 'editor.span_helper') : undefined;
+    const own = (data: Readonly<Record<string, unknown>>): boolean => !following(data);
+    const helper: FormHelper = (schema, localize, data) =>
+      schema.name === 'span'
+        ? s(editorLanguage(), 'editor.span_helper')
+        : collectionHelper(schema, localize, data);
     // the Chart section is the engine's, but for the highlight: this card marks its windows with it, in every style
     const section = chartSection(CHART_CAPS, capsIn);
     const chart = {
@@ -643,7 +716,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         ...colourFields(),
         // the lists are edited item by item (the rows editor takes these fields out of the form)
         { name: 'series', selector: { object: {} } },
-        fieldRow(spanField(), selectField('variant', ['full', 'compact', 'tile'])),
+        // its own window, or a date picker's range: Home Assistant's, or the Energy period card's
+        fieldRow(collectionField(), onlyWhen(own, spanField())),
+        selectField('variant', ['full', 'compact', 'tile']),
         fieldRow(boolField('show_head'), onlyWhen(legended, boolField('show_legend'))),
         fieldRow(
           onlyWhen(
@@ -661,19 +736,33 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         chart,
         actionFields(),
       ],
-      ...editorLabels(s, {
-        series: 'editor.series',
-        span: 'editor.span',
-        thresholds: 'editor.thresholds',
-        highlight_hours: 'editor.highlight_hours',
-        show_legend: 'editor.show_legend',
-        show_head: 'editor.show_head',
-      }),
+      ...editorLabels(
+        s,
+        {
+          series: 'editor.series',
+          span: 'editor.span',
+          thresholds: 'editor.thresholds',
+          highlight_hours: 'editor.highlight_hours',
+          show_legend: 'editor.show_legend',
+          show_head: 'editor.show_head',
+        },
+        COLLECTION_LABEL,
+      ),
       computeHelper: helper,
     };
   }
 
   /** A sensor that holds a list of moments and values (a price's), else the first sensor; a list's day and tomorrow. */
+  /** The date pickers on the dashboard, for the key. */
+  static override choices: EditorChoices = (_config, hass) => ({
+    collection_key: collectionChoices(hass),
+  });
+
+  protected override prepare(config: ChartCardConfig): ChartCardConfig {
+    collectionKeyOf(config, 'fluvy-chart-card');
+    return config;
+  }
+
   static getStubConfig(
     hass: HomeAssistant | undefined,
     entities: readonly string[],
@@ -726,6 +815,70 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     return spanOf(this.config?.span);
   }
 
+  /**
+   * A followed date picker's range once its collection is found, and the range it compares with while it compares:
+   * the window the chart draws in its span's place.
+   */
+  private picked(): Picked | undefined {
+    const range = this.follower.range();
+    if (!range) return undefined;
+    const start = range.start.getTime();
+    const end = range.end ? closing(range.end) : this.now().getTime();
+    const { startCompare, endCompare } = range;
+    return {
+      start,
+      end,
+      ...(range.compare && startCompare
+        ? {
+            before: {
+              start: startCompare.getTime(),
+              end: endCompare ? closing(endCompare) : startCompare.getTime() + end - start,
+            },
+          }
+        : {}),
+    };
+  }
+
+  /** The window at `now`: a followed picker's range, else the span's (`windowOf`). */
+  private windowAt(now: Date, latest?: number): Window {
+    const picked = this.picked();
+    return picked
+      ? { start: picked.start, end: picked.end, now: now.getTime() }
+      : windowOf(this.span, now, this.hass, latest);
+  }
+
+  /** What the window is, for the recorder's answers: a followed range's ends, else the span's kind and length. */
+  private spanKey(): string {
+    const picked = this.picked();
+    return picked ? `${picked.start}|${picked.end}` : `${this.span.kind}|${this.span.hours}`;
+  }
+
+  /** How far back the period the head compares with lies: as long as a followed range, else the span's (`previousOf`). */
+  private back(): number {
+    const picked = this.picked();
+    return picked ? picked.end - picked.start : previousOf(this.span);
+  }
+
+  /** What a series' statistics read by: its own stat, else a meter's change and any other sensor's mean. */
+  private statFor(item: ChartSeriesConfig): Stat {
+    return item.stat ?? statOf(this.entity(item.entity).attr('state_class'));
+  }
+
+  /**
+   * The bucket a series' statistics are read in: its own, else a followed range's as Home Assistant's Energy dashboard
+   * reads it (`getSuggestedPeriod`: a meter's change by the hour, the day or the month; a measurement finer, by five
+   * minutes up to eight days, the hour up to 64), else its span's.
+   */
+  private periodFor(item: ChartSeriesConfig): StatPeriod {
+    const picked = this.picked();
+    if (item.period || !picked) return item.period ?? periodOf(this.span.hours);
+    const range = { start: new Date(picked.start), end: new Date(picked.end - 1) };
+    const stat = this.statFor(item);
+    if (stat === 'change' || stat === 'sum') return stepFor(range);
+    const days = fullDays(range.start, range.end);
+    return days > 64 ? 'day' : days > 8 ? 'hour' : '5minute';
+  }
+
   /** Today and tomorrow as the house's calendar has them: what a plain list of a day's values counts from. */
   private days(now: Date): readonly [Day, Day] {
     const start = dayStart(this.hass, now);
@@ -738,7 +891,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
 
   /** What a forecast is subscribed as: by the hour through two days, by the day beyond. */
   private get forecastType(): ForecastType {
-    return this.span.hours > 48 ? 'daily' : 'hourly';
+    const window = this.windowAt(this.now(), Infinity);
+    return window.end - window.start > 48 * HOUR ? 'daily' : 'hourly';
   }
 
   /* ---------- the readings ---------- */
@@ -748,49 +902,84 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     return sourceOf(item, this.entity(item.entity).stateObj?.attributes);
   }
 
+  /** The recorder's readings of a series over a stretch: its statistics, by its stat and bucket, or its history. */
+  private recorded(
+    hass: HomeAssistant,
+    item: ChartSeriesConfig,
+    source: Source,
+    start: number,
+    end: number,
+  ): Promise<Reading[]> {
+    return (
+      source === 'statistics'
+        ? statisticsReadings(
+            hass,
+            item.entity,
+            { start, end },
+            this.periodFor(item),
+            this.statFor(item),
+            item.kind === 'band',
+          )
+        : historyReadings(hass, item.entity, start, end)
+    ).catch((): Reading[] => []);
+  }
+
   /**
-   * Each series that reads the recorder asks it once a key (its entity, source, keys and span, and its window's start
-   * to the five minutes) and again once five minutes have passed — the first series from as far before its window as
-   * the period it is compared with, for its change; the forecasts subscribed, as the weathers push them.
+   * Each series that reads the recorder asks it once a key (its entity, source, keys and window, and its window's
+   * start to the five minutes) and again once five minutes have passed — the first series from as far before its
+   * window as the period it is compared with, for its change, and over the range a followed picker compares with; the
+   * forecasts subscribed, as the weathers push them.
    */
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     const hass = this.hass;
     if (!hass) return;
+    this.follower.attach(hass, this.config?.collection_key || undefined);
     const now = this.now().getTime();
-    const span = this.span;
-    const window = windowOf(span, new Date(now), hass, Infinity);
+    const window = this.windowAt(new Date(now), Infinity);
+    const span = this.spanKey();
     const forecasts: Array<readonly [string, ForecastType]> = [];
-    seriesOf(this.config).forEach((item, index) => {
+    const ask = (
+      at: number,
+      key: string,
+      read: () => Promise<Reading[]>,
+      land: (readings: Reading[]) => void,
+    ): void => {
+      const last = this.reads[at];
+      if (last?.key === key && Date.now() - last.at < 300_000) return;
+      this.reads[at] = { key, at: Date.now() };
+      void read().then((readings) => {
+        if (this.reads[at]?.key === key) land(readings);
+      });
+    };
+    const items = seriesOf(this.config);
+    items.forEach((item, index) => {
       const source = this.sourceFor(item);
       if (source === 'forecast') forecasts.push([item.entity, this.forecastType]);
       if (source !== 'history' && source !== 'statistics') return;
       const id = answerId(item, source, span);
-      const from = window.start - (index === 0 ? previousOf(span) : 0);
-      const to = Math.min(window.end, now);
-      const key = `${id}|${Math.floor(from / 300_000)}`;
-      const read = this.reads[index];
-      if (read?.key === key && Date.now() - read.at < 300_000) return;
-      this.reads[index] = { key, at: Date.now() };
-      const asked =
-        source === 'statistics'
-          ? statisticsReadings(
-              hass,
-              item.entity,
-              { start: from, end: to },
-              item.period ?? periodOf(span.hours),
-              item.stat ?? statOf(this.entity(item.entity).attr('state_class')),
-              item.kind === 'band',
-            )
-          : historyReadings(hass, item.entity, from, to);
-      void asked
-        .catch((): Reading[] => [])
-        .then((readings) => {
-          if (this.reads[index]?.key !== key) return;
+      const from = window.start - (index === 0 ? this.back() : 0);
+      ask(
+        index,
+        `${id}|${Math.floor(from / 300_000)}`,
+        () => this.recorded(hass, item, source, from, Math.min(window.end, now)),
+        (readings) => {
           const next = [...this.answers_];
           next[index] = { id, readings };
           this.answers_ = next;
-        });
+        },
+      );
+      // the range a followed picker compares with, of the first series: its ghost
+      const before = index === 0 ? this.picked()?.before : undefined;
+      if (before) {
+        const ghost = `${id}|${before.start}`;
+        ask(
+          items.length,
+          ghost,
+          () => this.recorded(hass, item, source, before.start, before.end),
+          (readings) => (this.ghost_ = { id: ghost, readings }),
+        );
+      }
     });
     this.forecasts.sync(hass, forecasts);
   }
@@ -814,7 +1003,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       return forecastReadings(entries ?? [], item);
     }
     const answer = this.answers_[index];
-    return answer?.id === answerId(item, source, this.span) ? answer.readings : undefined;
+    return answer?.id === answerId(item, source, this.spanKey()) ? answer.readings : undefined;
   }
 
   /** The last moment a list or a forecast reads (what tomorrow's prices reach): the window runs to the day it falls in. */
@@ -853,7 +1042,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const statistics = items.map((item) => this.sourceFor(item) === 'statistics');
     const grains = items.map((item, index) => {
       const source = this.sourceFor(item);
-      if (source === 'statistics') return PERIOD_MS[item.period ?? periodOf(this.span.hours)];
+      if (source === 'statistics') return PERIOD_MS[this.periodFor(item)];
       if (source === 'history') return round ? 5 * 60_000 : Math.max(5 * 60_000, length / 48);
       const readings = this.readingsOf(item, index, source, this.entity(item.entity), days);
       return readings?.length ? stepOf(readings) : HOUR;
@@ -988,20 +1177,21 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
             : stat === 'min' || stat === 'max'
               ? stat
               : 'mean';
-      // a meter's history drawn as bars reads what it gained in each slot, not what it showed
+      // a meter's history drawn as bars reads what it gained in each slot, not what it showed; readings of a range
+      // that is over (`whole`, the one a picker compares with) are read to its end
       const meter = readingsOf(view.deviceClass, view.attr('state_class'), view.unit).rule;
-      const gained =
-        readings && source === 'history' && meter !== 'mean' && (bars || kind === 'columns')
+      const layOn = (laid: readonly Reading[], whole = false): Array<number | null> =>
+        source === 'history' && meter !== 'mean' && (bars || kind === 'columns')
           ? shown(
               gains(
-                readings,
+                laid,
                 grid.edges,
-                holding,
+                whole ? { hold: Infinity } : holding,
                 meter === 'increase',
-                window.running ? window.now : window.end,
+                window.running && !whole ? window.now : window.end,
               ),
             )
-          : null;
+          : shown(readSlots(laid, grid.edges, whole ? { hold: holding.hold } : holding, slotRule));
       // a line of the recorder's runs through time: on the house's round times, as calmly as the card draws it (or
       // every `points`), read where Home Assistant reads it
       const timed =
@@ -1016,9 +1206,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               readings,
               window,
               style,
-              source === 'statistics'
-                ? PERIOD_MS[item.period ?? periodOf(this.span.hours)]
-                : undefined,
+              source === 'statistics' ? PERIOD_MS[this.periodFor(item)] : undefined,
             )
           : null;
       // a slot's band: the lowest and the highest of what it holds, around its mean; a slot still running with nothing
@@ -1036,7 +1224,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               ? slotted(readings, { start: window.now, end: window.now + 1 }, 1, holding)[0]
               : null) ?? view.number);
       const curve = item.curve ?? style.curve;
-      const slots = gained ?? perSlot(slotRule);
+      const slots = readings ? layOn(readings) : [];
       const cover = (Math.min(window.end, window.now) - window.start) / (window.end - window.start);
       return {
         item,
@@ -1052,6 +1240,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         readings,
         holding,
         slots,
+        layOn,
         // bars are read and drawn by the slot: they have no line's points to read between
         points:
           kind === 'columns' || bars
@@ -1109,9 +1298,18 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
 
   /* ---------- the window's words ---------- */
 
-  /** What the window is, under the title: the last hours or days, today, today and tomorrow. */
+  /**
+   * What the window is, under the title: the last hours or days, today, today and tomorrow — a followed picker's range
+   * as the energy cards following it say it.
+   */
   private spanWords(window: Window): string {
     const span = this.span;
+    if (this.picked())
+      return rangeWords(
+        this.hass,
+        { start: new Date(window.start), end: new Date(window.end) },
+        this.now(),
+      );
     if (span.kind !== 'rolling')
       return window.end - window.start > DAY * 1.5
         ? s(this.hass, 'today_tomorrow')
@@ -1145,7 +1343,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const ruler = this.headFit.ruler;
     const time = (t: number): string => formatTime(this.hass, new Date(t));
     const weekday = (t: number): string => formatDate(this.hass, new Date(t), 'weekday');
-    if (span.kind === 'rolling') {
+    if (span.kind === 'rolling' && !this.picked()) {
       const clock = {
         hours: span.hours,
         time,
@@ -1169,7 +1367,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const length = window.end - window.start;
     const at = (fraction: number): number => window.start + fraction * length;
     const midnight = (t: number): boolean => dayStart(this.hass, new Date(t)) === t;
-    // a midnight between the ends says its day ("Fri 00:00"): a bare 00:00 could be either
+    // a midnight between the ends of a day or two says its day ("Fri 00:00"): a bare 00:00 could be either (a longer
+    // range, a followed picker's, says its days by their dates)
     const marks: Items = roundTicks({
       start: window.start,
       end: window.end,
@@ -1181,7 +1380,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       date: (t) => formatDate(this.hass, new Date(t), 'short'),
       dateYear: (t) => formatDate(this.hass, new Date(t), 'short'),
     }).map(([fraction, text], index, all) =>
-      index > 0 && index < all.length - 1 && midnight(at(fraction))
+      length <= 2 * DAY && index > 0 && index < all.length - 1 && midnight(at(fraction))
         ? [fraction, `${weekday(at(fraction))} ${time(at(fraction))}`]
         : [fraction, text],
     );
@@ -1262,7 +1461,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const readings = drawn.readings;
     if (!readings?.length || (drawn.source !== 'history' && drawn.source !== 'statistics'))
       return null;
-    const back = previousOf(this.span);
+    const back = this.back();
     const to = Math.min(window.now, window.end);
     const statistics = drawn.source === 'statistics';
     const stat = statistics ? (drawn.item.stat ?? statOf(drawn.view.attr('state_class'))) : null;
@@ -1296,9 +1495,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     if (!items.length) return this.renderEmpty();
     const now = this.now();
     const days = this.days(now);
-    const span = this.span;
     // the window as far as the readings reach (today and tomorrow is today until tomorrow is published)
-    const asked = windowOf(span, now, this.hass, this.latest(items, days));
+    const asked = this.windowAt(now, this.latest(items, days));
     // the windows it marks are its own: the style's lowest and highest marks stay off
     const style = resolveStyle(
       this.config?.chart,
@@ -1349,6 +1547,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const loading = drawn.some((d) => d.readings === undefined);
     const empty = !loading && drawn.every((d) => !d.slots.some((v) => v !== null));
     const marks = !several && !loading && !empty ? this.marked(lead, window, grid) : [];
+    const ghost = this.ghostOf(lead);
     const showHead = config?.show_head !== false;
     const legendShown = several && config?.show_legend !== false;
     // a legend of four or more under the axis in the columns that hold its items; two or three series', and one whose
@@ -1376,10 +1575,17 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const scaled =
       loading || empty
         ? null
-        : this.specs(drawn, window, style, marks, { width, height, headroom });
+        : this.specs(drawn, window, style, marks, { width, height, headroom }, ghost);
     const specs =
       scaled && width - plotOf(scaled.main).left < PLOT_MIN
-        ? this.specs(drawn, window, { ...style, axis: false }, marks, { width, height, headroom })
+        ? this.specs(
+            drawn,
+            window,
+            { ...style, axis: false },
+            marks,
+            { width, height, headroom },
+            ghost,
+          )
         : scaled;
     const fraction = this.scrubber.value;
     const read =
@@ -1427,7 +1633,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           loading
             ? html`<div class="fv-skeleton"></div>`
             : specs
-              ? this.drawCharts(specs, drawn, read, values, rowReads)
+              ? html`${ghost ? this.ghosts(specs.main, ghost, isBars(style.preset) || lead.kind === 'columns') : nothing}${this.drawCharts(specs, drawn, read, values, rowReads)}`
               : html`<div class="ch-empty" data-align="center">
                   ${ico(config?.icon ?? iconOf(view), 'neutral')}
                   <p class="fv-empty">${s(this.hass, 'empty')}</p>
@@ -1463,8 +1669,11 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     resolved: ResolvedStyle,
     marks: readonly Marked[],
     frame: ChartFrame,
+    ghost: ReadonlyArray<number | null> | null,
   ): Specs {
     const lead = drawn[0] as Drawn;
+    // the range a followed picker compares with stands on the same scale as the series
+    const ghostly = (ghost ?? []).filter((v): v is number => v !== null);
     // a step asked closer than the style's line reads draws every line thinner (`timeLine`)
     const style = {
       ...resolved,
@@ -1502,11 +1711,23 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     };
     const columned = bars ? drawn : drawn.filter((d) => d.kind === 'columns');
     const lined = bars ? [] : drawn.filter((d) => d.kind !== 'columns');
-    if (!columned.length)
+    if (!columned.length) {
+      const main: ChartSpec = {
+        ...common,
+        series: lined.map((d) => asSeries(d, false)),
+        style,
+        reach: ghostly,
+      };
+      // a nice scale reaches the ghost; any other is one the series of its unit share with it, a tenth of air round them
+      const shared =
+        ghost && !plotOf(main).ticks && drawn.every((d) => d.scale.unit === lead.scale.unit);
       return {
-        main: { ...common, series: lined.map((d) => asSeries(d, false)), style },
+        main: shared
+          ? { ...main, scale: airScale([...main.series.map((one) => one.values), ghost]) }
+          : main,
         over: null,
       };
+    }
     // the scale's ticks are the columns' (a column's height is its value on them): a line of their unit stands on them,
     // one of another unit on its own, its figure in the row, the legend and the bubble
     const unit = (columned[0] as Drawn).scale.unit;
@@ -1516,10 +1737,13 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       // now is marked once: on the end of the lines drawn over the columns, where they are (the columns to come hollow)
       style: lined.length ? { ...style, now: 'none' } : style,
       kind: 'bars',
-      reach: lined
-        .filter((d) => d.scale.unit === unit)
-        .flatMap((d) => [...d.points, ...(d.band ? [...d.band.low, ...d.band.high] : [])])
-        .filter((v): v is number => v !== null),
+      reach: [
+        ...lined
+          .filter((d) => d.scale.unit === unit)
+          .flatMap((d) => [...d.points, ...(d.band ? [...d.band.low, ...d.band.high] : [])])
+          .filter((v): v is number => v !== null),
+        ...ghostly,
+      ],
     };
     if (!lined.length) return { main, over: null };
     const plot = plotOf(main);
@@ -1538,6 +1762,73 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         id: 'ch-over',
       },
     };
+  }
+
+  /**
+   * The first series over the range a followed picker compares with, laid on this window's slots as its own readings
+   * are, moved on by the distance between the two ranges; none while the picker does not compare, or it is asked.
+   */
+  private ghostOf(lead: Drawn): Array<number | null> | null {
+    const picked = this.picked();
+    const before = picked?.before;
+    if (!picked || !before || (lead.source !== 'history' && lead.source !== 'statistics'))
+      return null;
+    const answer = this.ghost_;
+    if (answer?.id !== `${answerId(lead.item, lead.source, this.spanKey())}|${before.start}`)
+      return null;
+    const shift = picked.start - before.start;
+    return lead.layOn(
+      answer.readings.map((r) => ({
+        ...r,
+        t: r.t + shift,
+        ...(r.end === undefined ? {} : { end: r.end + shift }),
+      })),
+      true,
+    );
+  }
+
+  /**
+   * The range a followed picker compares with, behind the chart on its scale: one quiet column a slot where the first
+   * series is drawn in columns (1.8 × its bar, never wider than its slot less 2, the bars' ends), else a quiet line
+   * through its slots' middles.
+   */
+  private ghosts(
+    spec: ChartSpec,
+    values: ReadonlyArray<number | null>,
+    columns: boolean,
+  ): TemplateResult | typeof nothing {
+    const { frame } = spec;
+    const plot = plotOf(spec);
+    const scale = plot.ticks ?? (typeof spec.scale === 'object' ? spec.scale : null);
+    if (!scale) return nothing;
+    const box = { top: frame.headroom, bottom: frame.height - (frame.pad ?? 8) };
+    const count = values.length;
+    const slot = plot.width / Math.max(1, count);
+    const y = (v: number): number => yOf(v, scale, box);
+    const zero = y(0);
+    const { bar } = barGeometry(count, plot.width);
+    const wide = Math.max(2, Math.min(slot - 2, Math.round(bar * GHOST)));
+    const shapes = columns
+      ? values.map((v, i) => {
+          const tall = v === null ? 0 : Math.abs(zero - y(v));
+          if (v === null || tall < 1) return nothing;
+          const x = plot.left + i * slot + (slot - wide) / 2;
+          return svg`<path class="ch-ghost" d=${barPath(x, Math.min(zero, y(v)), wide, tall, Math.min(4, wide / 2), v < 0 ? 'bottom' : 'top')}></path>`;
+        })
+      : svg`<path class="ch-ghost is-line" d=${linePath(
+          values.map((v, i) =>
+            v === null ? null : ([plot.left + (i + 0.5) * slot, y(v)] as const),
+          ),
+          spec.style.curve,
+        )}></path>`;
+    return html`<svg
+      class="ch-ghosts"
+      width=${frame.width}
+      height=${frame.height}
+      aria-hidden="true"
+    >
+      ${shapes}
+    </svg>`;
   }
 
   /** Where the chart is read at a fraction of its plot: the cursor's x, when that was, and each series' value there. */

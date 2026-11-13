@@ -2,6 +2,8 @@
 import { CHART_DEFAULTS, setChartDefaults, type HassEntity, type HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { chartHeight } from '../chart-family.js';
+import type { EnergyCollectionLike, EnergyDataLike } from '../energy-model/collection.js';
+import { rangeWords } from '../energy-model/range-words.js';
 import { familiesDefined } from '../index.js';
 import { visibleFields } from '../shared/form.js';
 import { FluvyChartCard, legendColumns, type ChartCardConfig } from './chart-card.js';
@@ -1084,5 +1086,129 @@ describe('a series’ own colour', () => {
       '--tone-ink:var(--fluvy-state-energy-solar)',
       null,
     ]);
+  });
+});
+
+describe('following a date picker (#181)', () => {
+  /** A picker's collection on the week of the 14th (UTC), comparing with the week before or not. */
+  const picker = (compare: boolean): EnergyCollectionLike => {
+    const start = new Date('2026-09-14T00:00:00Z');
+    const end = new Date('2026-09-20T23:59:59.999Z');
+    const state: EnergyDataLike = {
+      start,
+      end,
+      prefs: { energy_sources: [] },
+      stats: {},
+      ...(compare
+        ? {
+            startCompare: new Date('2026-09-07T00:00:00Z'),
+            endCompare: new Date('2026-09-13T23:59:59.999Z'),
+          }
+        : {}),
+    };
+    return {
+      start,
+      end,
+      compare: compare ? 'previous' : '',
+      state,
+      subscribe: () => () => undefined,
+      setPeriod: () => undefined,
+      setCompare: () => undefined,
+      refresh: () => undefined,
+    };
+  };
+
+  /** A gas meter whose statistics answer each day asked up to now: 2 m³ a day, 1 the week before. */
+  function gas(asked: Array<Record<string, unknown>>, compare = false): HomeAssistant {
+    const base = house();
+    const week = Date.parse('2026-09-14T00:00:00Z');
+    return {
+      ...base,
+      states: {
+        ...base.states,
+        'sensor.gas': state('sensor.gas', '812.4', {
+          unit_of_measurement: 'm³',
+          state_class: 'total_increasing',
+        }),
+      },
+      connection: { ...base.connection, _energy_week: picker(compare) },
+      callWS: (message: Record<string, unknown>) => {
+        asked.push(message);
+        if (message['type'] !== 'recorder/statistics_during_period')
+          return base.callWS(message as never);
+        const start = Date.parse(String(message['start_time']));
+        const end = Date.parse(String(message['end_time']));
+        const rows = [];
+        for (let t = start; t < end && t < Date.parse(NOW); t += 24 * HOUR)
+          rows.push({ start: t, end: t + 24 * HOUR, change: t >= week ? 2 : 1, mean: 14 });
+        const id = (message['statistic_ids'] as string[])[0] as string;
+        return Promise.resolve({ [id]: rows });
+      },
+    } as HomeAssistant;
+  }
+
+  it('draws the picker’s range in Home Assistant’s grain and says it, its own window set aside', async () => {
+    const asked: Array<Record<string, unknown>> = [];
+    const hass = gas(asked);
+    const card = await draw(
+      {
+        collection_key: 'energy_week',
+        span: '24h',
+        chart: 'bars',
+        series: [{ entity: 'sensor.gas', source: 'statistics' }],
+      },
+      hass,
+    );
+    const statistics = asked.filter((m) => m['type'] === 'recorder/statistics_during_period');
+    // a meter over a week, by the day (Home Assistant's `getSuggestedPeriod`), from a week before it for the change
+    expect(statistics.map((m) => [m['period'], m['start_time']])).toEqual([
+      ['day', '2026-09-07T00:00:00.000Z'],
+    ]);
+    // the week's days that have happened, Monday to Thursday
+    expect(root(card).querySelectorAll('.fc-bar')).toHaveLength(4);
+    const range = {
+      start: new Date('2026-09-14T00:00:00Z'),
+      end: new Date('2026-09-21T00:00:00Z'),
+    };
+    expect(texts(card, '.fv-card__sub')).toEqual([rangeWords(hass, range, new Date(NOW))]);
+    expect(root(card).querySelector('.ch-ghosts')).toBeNull();
+    // a measurement over a week comes finer, by five minutes
+    const fine: Array<Record<string, unknown>> = [];
+    await draw(
+      {
+        collection_key: 'energy_week',
+        series: [{ entity: 'sensor.cellar', source: 'statistics' }],
+      },
+      gas(fine),
+    );
+    expect(fine.find((m) => m['type'] === 'recorder/statistics_during_period')?.['period']).toBe(
+      '5minute',
+    );
+  });
+
+  it('draws the range the picker compares with as ghosts behind the bars and behind a line', async () => {
+    const series = [{ entity: 'sensor.gas', source: 'statistics' as const }];
+    const bars = await draw(
+      { collection_key: 'energy_week', chart: 'bars', series },
+      gas([], true),
+    );
+    // the week before, every day of it, one quiet column a slot
+    expect(root(bars).querySelectorAll('.ch-ghosts .ch-ghost')).toHaveLength(7);
+    const line = await draw({ collection_key: 'energy_week', series }, gas([], true));
+    expect(root(line).querySelectorAll('.ch-ghosts .ch-ghost.is-line')).toHaveLength(1);
+  });
+
+  it('offers the picker in its editor, its own window only while it follows none', () => {
+    const offered = (config: Record<string, unknown>, name: string): boolean =>
+      JSON.stringify(visibleFields(FluvyChartCard.getConfigForm().schema, config)).includes(
+        `"name":"${name}"`,
+      );
+    expect(offered({ series: ['sensor.gas'] }, 'collection_key')).toBe(true);
+    expect(offered({ series: ['sensor.gas'] }, 'span')).toBe(true);
+    expect(offered({ series: ['sensor.gas'], collection_key: 'energy_week' }, 'span')).toBe(false);
+    const card = document.createElement('fluvy-chart-card') as Inner;
+    expect(() =>
+      card.setConfig({ type: 'custom:fluvy-chart-card', collection_key: 'week' }),
+    ).toThrow(/energy_/);
   });
 });

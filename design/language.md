@@ -1522,6 +1522,12 @@ forecast. It is the engine's (§ Charts) in its house's style or its own.
   (Thu · Fri · Sat).
 - **Heights** by variant and series count only: 320 (364 with a legend of four or more), 240, 168; loading (the
   skeleton), empty (the ring and "Nothing to chart in this window" on the page's fill) or out of reach, it keeps them.
+- **Following a date picker** (1.20, #181, `collection_key`). The window is the picked range, its subtitle the range
+  in the energy cards' words ("September"), its statistics in Home Assistant's grain (a meter's change by the hour,
+  the day or the month; a measurement by five minutes, the hour or the day), a range of days marked by its dates. While
+  the picker compares, the range before it lies behind the first series as a ghost, as the Energy usage card's: one
+  column a slot, 1.8 × the bar (never wider than its slot less 2), the text's ink at 9 % (14 in dark mode) behind
+  columns, a line of 2 in the text's ink at 24 % behind a line; the scale reaches it.
 - Its chunk is its own (`chart-card`, beside the engine's `chart`): every page carries only its name and height
   (`chart-family.ts`).
 
