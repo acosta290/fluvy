@@ -153,6 +153,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The settings panel's opacity and dim rulers take back what a drag showed when the drag is taken away.
 - The TV remote says a source named like a web address (bbc.co.uk) as it is, on a player whose integration names no app
   by its package.
+- A Tiles card of large tiles declares the section's own gap between its rows (16 px in Fluvy's theme), where it
+  counted 8, so a column of the automatic dashboards ends where it should; a Scenes card whose config names a scene too
+  long for half a tile declares one a row, as it draws it.
+- A row of any list with only a hold or a double tap is reached by the keyboard.
 
 ### Development
 
