@@ -142,6 +142,7 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
       prefSources(prefs).some((source) => source.type === 'grid') ||
       (prefSources(prefs).length > 0 && !gridPower && !gridPhases.length),
     prefsMeters: house.sources.some((s) => s.energyIn.length > 0 || s.energyOut.length > 0),
+    prefsMetered: (['water', 'gas'] as const).filter((kind) => house[kind].length > 0),
     meters: meters.length ? meters : [...volume('water'), ...volume('gas')].slice(0, 4),
     any: Boolean(
       arrays.length || gridPower || gridPhases.length || consumption.length || energies.length,

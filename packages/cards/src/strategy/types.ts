@@ -201,6 +201,8 @@ export interface EnergyRoles {
   readonly prefsPower: boolean;
   /** The energy dashboard meters its sources: a day's flow, where it went, the score, the house by source. */
   readonly prefsMeters: boolean;
+  /** What else the energy dashboard meters, in its order: water, gas (an imported statistic too), charted over a range. */
+  readonly prefsMetered: readonly ('water' | 'gas')[];
   /** Water and gas meters: the energy dashboard's, else the house's own. */
   readonly meters: readonly string[];
   readonly any: boolean;

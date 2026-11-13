@@ -65,6 +65,19 @@ export function todayCards(ctx: StrategyContext, collection?: string): Card[] {
   ]);
 }
 
+/**
+ * The picked range charted (#181): the house's electricity by its sources where the energy dashboard meters them,
+ * then its water and its gas by their meters, each following the date picker.
+ */
+function usageCards(ctx: StrategyContext, collection: string): Card[] {
+  const { energy } = ctx;
+  const follows = { collection_key: collection };
+  return [
+    ...when(energy.prefsMeters, () => [full('energy-usage', follows)]),
+    ...energy.prefsMetered.map((kind) => full('energy-usage', { kind, ...follows })),
+  ];
+}
+
 /** The energy dashboard's devices as rows, at the cap (`consumption`: eight here, `cap` on a view of their own). */
 export function consumptionRows(ctx: StrategyContext, cap?: number): Card[] {
   const { home, t } = ctx;
@@ -130,13 +143,15 @@ function nowView(ctx: StrategyContext): Section[] {
 }
 
 /**
- * Today in energy: the period strip across the view, then the day's flow, where it went, the score and the day's
- * balance following it — the dashboard's own date picker (`energy_<its url>`), so Home Assistant's energy cards on the
- * view would follow it too. A generated config is never stored: the key is the strip's default, said out loud here.
+ * Today in energy: the period bar across the view (its chips beside its capsule, Today and Compare at its far end,
+ * #182), then the day's flow, where it went, the score, the day's balance and the range's usage — the electricity's,
+ * the water's, the gas's — following it: the dashboard's own date picker (`energy_<its url>`), so Home Assistant's
+ * energy cards on the view would follow it too. A generated config is never stored: the key is the strip's default,
+ * said out loud here.
  */
 function todayView(ctx: StrategyContext): Section[] {
   const collection = `energy_${ctx.panelUrl}`;
-  const cards = todayCards(ctx, collection);
+  const cards = [...todayCards(ctx, collection), ...usageCards(ctx, collection)];
   return cards.length
     ? [
         {
@@ -144,7 +159,7 @@ function todayView(ctx: StrategyContext): Section[] {
           column_span: COLUMNS,
           cards: [
             {
-              ...full('energy-period', { collection_key: collection }),
+              ...full('energy-period', { collection_key: collection, variant: 'bar' }),
               grid_options: { columns: 'full' },
             },
           ],
@@ -211,7 +226,7 @@ export const ENERGY_VIEWS: readonly ViewSpec[] = [
     icon: 'fluvy:calendar',
     title: 'strategy.today',
     build: todayView,
-    when: ({ energy }) => energy.prefsMeters,
+    when: ({ energy }) => energy.prefsMeters || energy.prefsMetered.length > 0,
   },
   {
     key: 'production',

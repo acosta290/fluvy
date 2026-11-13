@@ -1296,3 +1296,102 @@ exports[`the dashboard templates > lay a room’s appliances across its subview,
   "type": "sections",
 }
 `;
+
+exports[`the dashboard templates > lead the Energy dashboard’s Today view with the period bar, its cards following it; Now stays live 1`] = `
+{
+  "icon": "fluvy:calendar",
+  "max_columns": 3,
+  "path": "today",
+  "sections": [
+    {
+      "cards": [
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": "full",
+          },
+          "type": "custom:fluvy-energy-period-card",
+          "variant": "bar",
+        },
+      ],
+      "column_span": 3,
+      "type": "grid",
+    },
+    {
+      "cards": [
+        {
+          "type": "custom:fluvy-hello-card",
+          "weather": "weather.home",
+        },
+        {
+          "badge": "self_powered",
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "period": "day",
+          "type": "custom:fluvy-energy-flow-card",
+        },
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "type": "custom:fluvy-energy-usage-card",
+        },
+      ],
+      "type": "grid",
+    },
+    {
+      "cards": [
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "type": "custom:fluvy-energy-sankey-card",
+        },
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "kind": "water",
+          "type": "custom:fluvy-energy-usage-card",
+        },
+      ],
+      "type": "grid",
+    },
+    {
+      "cards": [
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "type": "custom:fluvy-energy-score-card",
+        },
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "period": "day",
+          "type": "custom:fluvy-energy-balance-card",
+        },
+        {
+          "collection_key": "energy_fluvy-energy",
+          "grid_options": {
+            "columns": 12,
+          },
+          "kind": "gas",
+          "type": "custom:fluvy-energy-usage-card",
+        },
+      ],
+      "type": "grid",
+    },
+  ],
+  "title": "Today",
+  "type": "sections",
+}
+`;

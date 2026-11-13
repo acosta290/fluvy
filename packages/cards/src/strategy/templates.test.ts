@@ -225,9 +225,8 @@ describe('the dashboard templates', () => {
     // card is drawn by the appliances card, which lays the strategy's out whole (#47); a template card says what its
     // templates say, and only the person writes those (#59), as only the person knows a web page's address (#61); an
     // items card lists what a sensor's attribute holds, and only the person says what its items are (#66); a chart card
-    // draws the series the person names, in a list or a forecast only they know of (#68); the Energy usage card (#62)
-    // is the person's to place, the Energy dashboard's views keep the cards they had; so is the Slider card (#77), the
-    // dashboards setting a player's volume, a number and a fan on their own cards; and the Vehicle card (#84); and the
+    // draws the series the person names, in a list or a forecast only they know of (#68); so is the Slider card (#77),
+    // the dashboards setting a player's volume, a number and a fan on their own cards; and the Vehicle card (#84); and the
     // remote card (#143), whose television, remote entity and receiver are the person's to say; and one scene's tile,
     // the dashboards gathering the scenes on one Scenes card (#172)
     const byHand = new Set([
@@ -239,7 +238,6 @@ describe('the dashboard templates', () => {
       'custom:fluvy-web-card',
       'custom:fluvy-items-card',
       'custom:fluvy-chart-card',
-      'custom:fluvy-energy-usage-card',
       'custom:fluvy-slider-card',
       'custom:fluvy-vehicle-card',
     ]);
@@ -328,16 +326,18 @@ describe('the dashboard templates', () => {
     }
   });
 
-  it('lead the Energy dashboard’s Today view with the period strip, its cards following it; Now stays live', async () => {
+  it('lead the Energy dashboard’s Today view with the period bar, its cards following it; Now stays live', async () => {
     const hass = { ...(everything() as object), panelUrl: 'fluvy-energy' } as never;
     const { views } = await generate({ type: 'custom:fluvy-energy' }, hass);
     const today = views.find((view) => view.path === 'today')!;
     const [band, first] = today.sections;
     expect(band!.column_span).toBe(3);
+    // the bar across the view: its chips beside its capsule, Today and Compare at its far end (#182)
     expect(band!.cards).toEqual([
       {
         type: 'custom:fluvy-energy-period-card',
         collection_key: 'energy_fluvy-energy',
+        variant: 'bar',
         grid_options: { columns: 'full' },
       },
     ]);
@@ -351,8 +351,19 @@ describe('the dashboard templates', () => {
       'custom:fluvy-energy-flow-card',
       'custom:fluvy-energy-sankey-card',
       'custom:fluvy-energy-score-card',
+      'custom:fluvy-energy-usage-card',
+      'custom:fluvy-energy-usage-card',
+      'custom:fluvy-energy-usage-card',
     ]);
+    // the range charted: the electricity, then the Energy dashboard's water and gas (#181)
+    expect(
+      followers
+        .filter((card) => card.type === 'custom:fluvy-energy-usage-card')
+        .map((card) => card['kind'] ?? 'energy'),
+    ).toEqual(['energy', 'water', 'gas']);
     for (const card of followers) expect(card['collection_key']).toBe('energy_fluvy-energy');
+    // the view as it is drawn (golden file)
+    expect(today).toMatchSnapshot();
     // the live view and the home dashboard's energy keep their own periods
     const now = views.find((view) => view.path === 'now')!;
     expect(cardsOf([now]).some((card) => 'collection_key' in card)).toBe(false);

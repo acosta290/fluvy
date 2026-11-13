@@ -154,8 +154,9 @@ show_compare: true              # Compare: the period before beside the span, on
   way first, then the row's own steps above; the bar is 84 tall at every width, as the row is.
 - **Only on a dashboard.** The strip needs a dashboard around it to make a picker; anywhere else it says so, at its
   size, its buttons off.
-- **The automatic Energy dashboard.** Its Today view leads with the strip across the view, and the day's flow,
-  sankey, score and balance follow it (their chips are gone).
+- **The automatic Energy dashboard.** Its Today view leads with the bar across the view, and the day's flow,
+  sankey, score and balance follow it (their chips are gone), with the range's Energy usage beside them: the
+  electricity's, and the water's and the gas's where the Energy dashboard meters them.
 
 ## The cards
 

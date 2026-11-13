@@ -1145,8 +1145,9 @@ own date card, hidden inside the strip, so the collection is made and fed by Hom
   across the capsule, wrapping at its words) where no dashboard is there to make one, every button off, at its size.
   Home Assistant's date card on the same view moves it, and it moves that one; a preset is remembered where Home
   Assistant remembers its own.
-- **On the automatic Energy dashboard** the strip leads the Today view, across its columns before the first, and the
-  day's flow, sankey, score and balance follow it, their chips gone.
+- **On the automatic Energy dashboard** the bar leads the Today view, across its columns before the first, and the
+  day's flow, sankey, score and balance follow it, their chips gone, with the range's Energy usage: the electricity's,
+  then the water's and the gas's where the Energy dashboard meters them (1.20, #181).
 - Its chunk is its own (`energy-period`, with the Energy usage card): every page carries only their names and
   heights (`energy-family.ts`).
 
