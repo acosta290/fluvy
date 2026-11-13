@@ -20,6 +20,12 @@ import { mask } from './shared.js';
  * (`--app-safe-area-inset-*`, which it re-derives from wherever it writes a theme — a view's `theme:`
  * rewrites `--safe-area-inset-*` from it) and as the derived values themselves, with the sums HA
  * computes once at `<html>` (`-x`, `-y`, `--safe-width`, `--safe-height`).
+ *
+ * With the sidebar hidden (Home Assistant's drawer, `modal` on `home-assistant-main`: its "Always hide the sidebar", or
+ * this device's sidebar beside the page between asks), a page's header starts on the frame's corner, which Home
+ * Assistant pads by its 12 alone (the left inset only on a phone): `--fluvy-corner` steps its first button in to where
+ * the sidebar's own menu button stands (4 inside the inset), so the menu stays under the finger as the sidebar comes
+ * and goes (`cornerCss`, in `tables.ts`).
  */
 const GAP = '16px';
 /** On `<home-assistant>`: the house turned the frame off (fluvy's settings); the app then fills the window. */
@@ -42,6 +48,9 @@ ${SIDES.map(
     /* the frame itself, for what opens above the app (a drawer comes out of the frame, in its shape) */
     --fluvy-frame: ${GAP};
     --fluvy-frame-radius: var(--fluvy-radius-xl);
+  }
+  :host(:not([${NO_FRAME}])) home-assistant-main[modal] {
+    --fluvy-corner: calc(var(--safe-area-inset-left) - 8px);
   }
   :host(:not([${NO_FRAME}])) home-assistant-main::after {
     content: "";

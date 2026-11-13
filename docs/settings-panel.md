@@ -159,7 +159,8 @@ open), so the browser remembers the one it was left in, after the switch is turn
 less) keeps Home Assistant's drawer, and so do a kiosk, a wall and the companion app's own sidebar.
 
 While the sidebar is hidden, every page has a menu button to bring it back, Fluvy's own pages too (the settings panel,
-Activity, History).
+Activity, History). In the floating frame it stands where the sidebar's own menu button does, so the menu stays under
+the finger as the sidebar comes and goes.
 
 ## Lights
 

@@ -19,6 +19,7 @@ import {
   sidebarLogoCss,
   sidebarSeparatorsCss,
 } from '../../../packages/core/src/shell/css/chrome.js';
+import { watchSidebar } from '../../../packages/core/src/look/dock.js';
 import { startZoom } from '../../../packages/core/src/look/zoom.js';
 import { editBarCss } from '../../../packages/core/src/shell/css/dashboard.js';
 import { viewTabsCss } from '../../../packages/core/src/shell/css/tabs.js';
@@ -63,9 +64,15 @@ import { isPaletteName, type PaletteName } from '@fluvy/tokens/runtime';
  *   &frame=1      Home Assistant's sidebar beside the dashboard (wide) · the corner: &logo=1 Home Assistant's logo,
  *                 &flat=1 no hairlines, &header=page the header on the page's colour, &actions=menu one menu ·
  *                 &floating=1 the app in Fluvy's floating frame (the shell's `frame` sheet, 1024 wide or more) ·
- *                 &rail=1 the sidebar on its icons alone (Home Assistant's collapsed sidebar) · &counts=1 Settings and
- *                 the notifications with their counts (repairs and updates, notifications) · &apps=1 the panels
- *                 a house adds: the Marketplace, the File editor, ESPHome and Z-Wave JS (#175)
+ *                 &rail=1 the sidebar on its icons alone (Home Assistant's collapsed sidebar) · &hidden=1 the sidebar
+ *                 hidden (Home Assistant's "Always hide the sidebar": its drawer, the header's menu button shown) ·
+ *                 &counts=1 Settings and the notifications with their counts (repairs and updates, notifications) ·
+ *                 &apps=1 the panels a house adds: the Marketplace, the File editor, ESPHome and Z-Wave JS (#175)
+ *   &dock=1       this device's sidebar beside the page (#173, with &frame=1): the bundle's own `look/dock.ts`
+ *                 answers the menus, which ask as Home Assistant's do (the header's on a click, the sidebar's through
+ *                 its action handler: a touch whose end has its default prevented, a click, Enter or Space; a hold of
+ *                 500 ms is its edit, `__editSidebar`); `home-assistant-main` docks, folds, or opens its drawer
+ *                 (`__drawer`) as Home Assistant's does
  *   &zoom=125     this device's size, as the bundle reads it (`look/zoom.ts`: remembered, dropped from the address,
  *                 the view zoomed by the shell's `device-zoom` sheet; `&zoom=off` back to 100)
  *   &wall=1       the page a wall (main.ts mounts the real controller): the shell's wall sheets for `hui-root` fill as
@@ -116,6 +123,10 @@ export interface DashboardOptions {
   readonly floating: boolean;
   /** The sidebar on its icons alone, as Home Assistant collapses it. */
   readonly rail: boolean;
+  /** The sidebar hidden, Home Assistant's "Always hide the sidebar". */
+  readonly hidden: boolean;
+  /** This device's sidebar beside the page (#173): the bundle answers the menus. */
+  readonly dock: boolean;
   /** Settings and the notifications with their counts, as Home Assistant draws them when it has something to say. */
   readonly counts: boolean;
   /** The panels a house adds (apps, the Marketplace, a dashboard of its own) under Home Assistant's. */
@@ -190,6 +201,8 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
     frame: params.get('frame') === '1',
     floating: params.get('floating') === '1',
     rail: params.get('rail') === '1',
+    hidden: params.get('hidden') === '1',
+    dock: params.get('dock') === '1',
     counts: params.get('counts') === '1',
     apps: params.get('apps') === '1',
     views,
@@ -457,9 +470,12 @@ class MockViewBackground extends LitElement {
 class MockRoot extends LitElement {
   static override properties = {
     narrow: { type: Boolean },
+    sidebarHidden: { type: Boolean },
     current: { state: true },
   };
   declare narrow: boolean;
+  /** The sidebar hidden: Home Assistant's menu button shows on a wide screen too. */
+  declare sidebarHidden: boolean;
   declare current: number;
   options!: DashboardOptions;
   hass!: {
@@ -601,7 +617,9 @@ class MockRoot extends LitElement {
       ha-menu-button {
         display: none;
       }
-      .narrow ha-menu-button {
+      .narrow ha-menu-button,
+      .sidebar-hidden ha-menu-button,
+      ha-icon-button-arrow-prev {
         display: inline-flex;
       }
       .done {
@@ -647,6 +665,7 @@ class MockRoot extends LitElement {
   constructor() {
     super();
     this.narrow = false;
+    this.sidebarHidden = false;
     this.current = 0;
   }
 
@@ -693,16 +712,20 @@ class MockRoot extends LitElement {
           <div class="tab-bar">${this.tabs(views)}</div>`
       : subview
         ? html`<div class="toolbar">
-            ${this.button('chevron-left')}
+            <ha-icon-button-arrow-prev>${this.button('chevron-left')}</ha-icon-button-arrow-prev>
             <div class="main-title">Kitchen</div>
             <div class="action-items">${this.button('dots-vertical')}</div>
           </div>`
         : html`<div class="toolbar">
-            <ha-menu-button slot="navigationIcon">${this.button('menu')}</ha-menu-button>
+            <ha-menu-button slot="navigationIcon" @click=${this.toggleMenu}
+              >${this.button('menu')}</ha-menu-button
+            >
             ${shown.length > 1 ? this.tabs(views) : html`<div class="main-title">${title}</div>`}
             <div class="action-items">${this._renderActionItems()}</div>
           </div>`;
-    return html`<div class=${`${this.narrow ? 'narrow' : ''} ${edit ? 'edit-mode' : ''}`}>
+    return html`<div
+      class=${`${this.narrow ? 'narrow' : ''} ${this.sidebarHidden ? 'sidebar-hidden' : ''} ${edit ? 'edit-mode' : ''}`}
+    >
       <div class="header">${head}</div>
       <hui-view-container id="view"
         ><hui-view-background
@@ -724,6 +747,11 @@ class MockRoot extends LitElement {
         ></span>`
       : html`${this.button('plus')}${this.button('search')}${this.button('chat')}${this.button('pencil')}`;
   }
+
+  /** Home Assistant's menu button: a click asks for the menu. */
+  private toggleMenu = (): void => {
+    this.dispatchEvent(new CustomEvent('hass-toggle-menu', { bubbles: true, composed: true }));
+  };
 
   // what the shell's patch wraps (as Home Assistant's hui-root has one)
   protected override updated(changed: PropertyValues<this>): void {
@@ -826,6 +854,28 @@ class MockSidebar extends LitElement {
   counts = false;
   /** The panels a house adds, under Home Assistant's. */
   apps = false;
+  /** Whether the press on the head lasted the hold (500 ms, Home Assistant's). */
+  private held = false;
+  private holding: ReturnType<typeof setTimeout> | undefined;
+  private press = (): void => {
+    this.held = false;
+    this.holding = setTimeout(() => (this.held = true), 500);
+  };
+  /**
+   * The press's end, as Home Assistant's action handler ends it: a touch's end has its default prevented (no click
+   * follows), a hold opens the sidebar's edit, a tap of the menu button asks for the menu.
+   */
+  private release = (event: Event): void => {
+    if (event.type === 'keydown' && !['Enter', ' '].includes((event as KeyboardEvent).key)) return;
+    if (event.cancelable) event.preventDefault();
+    clearTimeout(this.holding);
+    if (this.held) {
+      const w = window as Window & { __editSidebar?: number };
+      w.__editSidebar = (w.__editSidebar ?? 0) + 1;
+    } else if ((event.target as Element).closest('ha-icon-button'))
+      this.dispatchEvent(new CustomEvent('hass-toggle-menu', { bubbles: true, composed: true }));
+    this.held = false;
+  };
   static override styles = [
     css`
       :host {
@@ -1018,8 +1068,15 @@ class MockSidebar extends LitElement {
           >${words}</span
         >${count ? html`<span class="badge" slot="end">${count}</span>` : nothing}</ha-list-item-button
       >`;
-    return html`<div class="menu">
-        <ha-icon-button><ha-icon .icon=${'fluvy:menu'}></ha-icon></ha-icon-button>
+    return html`<div
+        class="menu"
+        @touchstart=${this.press}
+        @mousedown=${this.press}
+        @touchend=${this.release}
+        @click=${this.release}
+        @keydown=${this.release}
+      >
+        <ha-icon-button tabindex="0"><ha-icon .icon=${'fluvy:menu'}></ha-icon></ha-icon-button>
         <div class="title">Home Assistant</div>
       </div>
       <div class="panels-list">
@@ -1051,13 +1108,29 @@ class MockSidebar extends LitElement {
   }
 }
 
+/** Home Assistant's word for the sidebar's state (`hass.dockedSidebar`). */
+type Docked = 'docked' | 'auto' | 'always_hidden';
+
 /**
  * `home-assistant`, the app's root, around `home-assistant-main` (the sidebar and the dashboard), with the shell's
  * `frame` sheet as the shell adopts it and the house's choice on the root (`fluvy-no-frame` when the frame is off).
  * On a screen 1024 wide or more the app then floats 16 inside the window: its insets tell the sidebar and the
- * dashboard where to stand, and the page is painted around a rounded opening.
+ * dashboard where to stand, and the page is painted around a rounded opening. It keeps the sidebar's state as Home
+ * Assistant's app does (`hass-dock-sidebar`), drawn as `home-assistant-main` draws it: docked, on its icons, or hidden
+ * in its drawer (`modal`, the header's menu button shown); and its menu is Home Assistant's: an ask docks the icons or
+ * folds the docked sidebar, and opens the drawer over the page while the sidebar is hidden (`__drawer` counts it; the
+ * mock draws no drawer).
  */
 class MockApp extends LitElement {
+  static override properties = { docked: { attribute: false } };
+  declare docked: Docked;
+  constructor() {
+    super();
+    this.docked = 'docked';
+    this.addEventListener('hass-dock-sidebar', (event) => {
+      this.docked = (event as CustomEvent<{ dock: Docked }>).detail.dock;
+    });
+  }
   static override styles = [
     css`
       :host {
@@ -1071,6 +1144,13 @@ class MockApp extends LitElement {
         );
         --ha-top-app-bar-width: calc(100% - var(--ha-sidebar-width));
       }
+      /* the sidebar hidden in Home Assistant's drawer: the page has the app's whole width */
+      home-assistant-main[modal] {
+        --ha-top-app-bar-width: 100%;
+      }
+      home-assistant-main[modal] ::slotted(ha-sidebar) {
+        display: none;
+      }
       ::slotted(hui-root) {
         flex: 1 1 auto;
         min-width: 0;
@@ -1078,8 +1158,27 @@ class MockApp extends LitElement {
     `,
     unsafeCSS(frameCss),
   ];
+  /** The sidebar and the dashboard beside it, in the app's light: the sidebar's width, its words, the header's menu. */
+  protected override willUpdate(): void {
+    this.style.setProperty('--mock-sidebar-width', this.docked === 'auto' ? '56px' : '256px');
+    this.querySelector('ha-sidebar')?.toggleAttribute('expanded', this.docked === 'docked');
+    const root = this.querySelector<MockRoot>('hui-root');
+    if (root) root.sidebarHidden = this.docked === 'always_hidden';
+  }
+  private toggle = (): void => {
+    if (this.docked !== 'always_hidden') this.docked = this.docked === 'auto' ? 'docked' : 'auto';
+    else {
+      const w = window as Window & { __drawer?: number };
+      w.__drawer = (w.__drawer ?? 0) + 1;
+    }
+  };
   override render() {
-    return html`<home-assistant-main><slot></slot></home-assistant-main>`;
+    return html`<home-assistant-main
+      ?modal=${this.docked === 'always_hidden'}
+      .hass=${{ dockedSidebar: this.docked }}
+      @hass-toggle-menu=${this.toggle}
+      ><slot></slot
+    ></home-assistant-main>`;
   }
 }
 
@@ -1172,18 +1271,19 @@ export function mountDashboard(
       ['ha-list-item-button', MockListItem],
     ] as const)
       if (!customElements.get(tag)) customElements.define(tag, element);
-    const app = document.createElement('home-assistant');
-    app.toggleAttribute(NO_FRAME, !options.floating);
     const sidebar = document.createElement('ha-sidebar') as MockSidebar;
-    sidebar.toggleAttribute('expanded', !options.rail);
     sidebar.counts = options.counts;
     sidebar.apps = options.apps;
-    if (options.rail) app.style.setProperty('--mock-sidebar-width', '56px');
     sidebar.chrome = options.chrome;
     sidebar.dashboard = { title: options.title, path: root.hass.panelUrl };
     sidebar.user = signedIn(hass);
+    const app = document.createElement('home-assistant') as MockApp;
+    app.docked = options.hidden ? 'always_hidden' : options.rail ? 'auto' : 'docked';
+    app.toggleAttribute(NO_FRAME, !options.floating);
     app.append(sidebar, root);
     stage.append(app);
+    // this device's sidebar beside the page: the bundle answers the menus before Home Assistant's main does
+    if (options.dock) watchSidebar(() => true);
   } else stage.append(root);
   return root;
 }

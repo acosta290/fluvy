@@ -38,6 +38,14 @@ ha-assist-chip { --md-assist-chip-container-height: 36px; --ha-assist-chip-conta
 .narrow-header-row { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 16px), transparent); }`;
 
 /**
+ * A page's first button in its header, the menu or the way back, while the sidebar is hidden in the floating frame:
+ * stepped in by the frame's `--fluvy-corner` (`chrome.ts`), off the corner to where the sidebar's own menu button
+ * stands. A dashboard's toolbar and a subpage's hold it, an app bar in its slot.
+ */
+const cornerCss =
+  ':is(.toolbar, .toolbar-content, slot) > :is(ha-menu-button, ha-icon-button-arrow-prev) { margin-inline-start: var(--fluvy-corner, 0px); }';
+
+/**
  * Tabbed subpages: the toolbar's hairline and the active tab's line drawn as shadows, so the tabs sit on
  * whole pixels; titles 600; the trailing slot always as wide as a button, so the centred tab strip does
  * not move between sibling pages with and without a help button; on the phone the back arrow and the
@@ -49,15 +57,23 @@ export const tabsSubpageCss = `.toolbar { border-bottom: 0; box-shadow: inset 0 
 :host(:not([narrow])) #toolbar-icon { min-width: 48px; }
 :host([narrow]) .toolbar-content { padding-inline: 12px; }
 #tabbar.bottom-bar > a { flex: 1 1 0; width: auto; max-width: none; }
-.main-title { line-height: 24px; }`;
+.main-title { line-height: 24px; }
+${cornerCss}`;
 
-/** A subpage's title: 600, and a 24 line, so a name that takes two lines on the phone stays inside the 56 bar. */
-export const subpageCss =
-  '.main-title { font-weight: 600; letter-spacing: -0.01em; line-height: 24px; }';
+/**
+ * A subpage's title (a dashboard's too): 600, and a 24 line, so a name that takes two lines on the phone stays inside
+ * the 56 bar; its first button off the frame's corner.
+ */
+export const subpageCss = `.main-title { font-weight: 600; letter-spacing: -0.01em; line-height: 24px; }
+${cornerCss}`;
 
 /** A tab: the active line as a shadow (the label stays on its line); the other tabs in the secondary ink, as the sidebar's items. */
 export const tabCss = `:host(:not([narrow])[active]) div { border-bottom: 0; box-shadow: inset 0 -2px 0 var(--primary-color); }
 :host(:not([active])) { color: var(--secondary-text-color); }`;
 
-/** Panel headers (Activity, History, Energy, Tools, the 2026 dashboards): 600, as every other page title (a dashboard's own title takes `subpageCss`). */
-export const pageTitleCss = '.title { font-weight: 600; letter-spacing: -0.01em; }';
+/**
+ * Panel headers (Activity, History, Energy, Tools, the 2026 dashboards): 600, as every other page title (a dashboard's
+ * own title takes `subpageCss`); the menu off the frame's corner.
+ */
+export const pageTitleCss = `.title { font-weight: 600; letter-spacing: -0.01em; }
+${cornerCss}`;
