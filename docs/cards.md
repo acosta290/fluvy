@@ -460,7 +460,9 @@ platforms with their logos. On Android TV Remote an app the player does not list
 `remote.turn_on`: by its platform's deep link where one is known, else by its application ID, which goes through the
 Play Store and has not opened many apps since a change of the Play Store's (August 2026). A deep link is the reliable
 way on Android TV (`netflix://`, `https://www.youtube.com`): `activity` gives an app one of your own, or an application
-ID, over its platform's. `apps_style: circles` draws 44 circles in equal cells with their names under them (names all or
+ID, over its platform's. A remote of another integration, or one Home Assistant's registry does not name, is sent no
+`activity` (a Harmony hub reads its own activities by that word): there, an app opens by its `source`, its `key` or its
+`tap_action`. `apps_style: circles` draws 44 circles in equal cells with their names under them (names all or
 none, as many as hold a finger's 50, wrapping by count), `chips` filled chips; `apps_tint: always` colours every app at
 rest, not only the open one. `custom` lists keys of your own, a key of the table or an action, as cells that fill the
 column. `variant: compact` is the head and one row of `keys` (back, home, play/pause, volume down and up by default);

@@ -1256,8 +1256,9 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     ): AppItem => {
       const source = own.source ?? sources.find((candidate) => pf && platformOf(candidate) === pf);
       const key = isKey(own.key) ? own.key : undefined;
-      // an app the player does not list opens on Android TV Remote by its deep link where it has one: a package goes
-      // through the Play Store, which no longer opens many apps
+      // an app the player does not list opens on Android TV Remote by its deep link where it has one (a package goes
+      // through the Play Store, which no longer opens many apps); a remote of another integration, or one the registry
+      // does not name, is sent none: Harmony's `activity` is one of its own
       const activity = appActivity(own, pf);
       const opens = own.tap_action
         ? () => this.tap(p.id, own.tap_action)
@@ -1265,7 +1266,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           ? () => this.press(key)
           : source
             ? () => this.call('media_player', 'select_source', { source }, p.id)
-            : activity && r && (integration === 'androidtv_remote' || integration === undefined)
+            : activity && r && integration === 'androidtv_remote'
               ? () => this.call('remote', 'turn_on', { activity }, r.id)
               : undefined;
       // its tap opens it, waiting for a second where a double tap is set; a hold where set (#179)

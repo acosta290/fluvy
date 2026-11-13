@@ -577,6 +577,23 @@ describe('the TV remote card (#143)', () => {
       expect(await tapAll(root, calls)).toEqual([]);
     });
 
+    it('a remote the registry does not name is sent no activity: Harmony’s would take it for its own', async () => {
+      // the house's states as Android TV Remote draws them, its registry naming neither entity
+      const { hass, calls } = house(SET_TOP);
+      const root = await draw(
+        {
+          entity: 'media_player.atv',
+          remote: 'remote.atv',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }, { app: 'jellyfin', activity: 'org.jellyfin.androidtv' }],
+        },
+        hass,
+      );
+      const circles = [...root.querySelectorAll<HTMLButtonElement>('.rm-app__circle')];
+      expect(circles.map((circle) => circle.disabled)).toEqual([true, true]);
+      expect(await tapAll(root, calls)).toEqual([]);
+    });
+
     it('the editor asks for an app’s activity only where the card names a remote to send it to', async () => {
       const itemFields = async (config: Record<string, unknown>): Promise<string[]> => {
         const drawn = await drawEditor(await FluvyRemoteCard.getConfigElement(), {
