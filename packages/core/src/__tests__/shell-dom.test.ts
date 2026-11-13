@@ -259,6 +259,43 @@ describe('the sidebar’s glyphs', () => {
     ]);
   });
 
+  /** Each rule of the sheet that masks an icon: what it selects, and the path of the glyph it draws. */
+  const masks = sidebarIconsCss
+    .split('\n')
+    .filter((rule) => rule.includes(' mask: '))
+    .map((rule) => ({
+      selector: rule.slice(0, rule.indexOf(' {')),
+      path: /<path d='([^']*)'/.exec(rule)?.[1],
+    }));
+
+  it('draw a glyph in every rule: none masks an icon with an empty path (#175)', () => {
+    expect(masks.length).toBeGreaterThan(40);
+    for (const { selector, path } of masks) expect(path, selector).toMatch(/^M/);
+  });
+
+  it('give an app its glyph by its slug after the underscore, and the stores theirs by their panels (#175)', () => {
+    /** The path an item's icon is drawn with (the last rule that selects it, as the cascade picks), if any. */
+    const worn = (id: string): string | undefined => {
+      const item = document.createElement('ha-list-item-button');
+      item.id = id;
+      const icon = item.appendChild(document.createElement('ha-icon'));
+      icon.slot = 'start';
+      document.body.append(item);
+      const path = masks.filter(({ selector }) => icon.matches(selector)).at(-1)?.path;
+      item.remove();
+      return path;
+    };
+    expect(worn('sidebar-panel-core_configurator')).toBe(ICON_PATHS['file-code']);
+    expect(worn('sidebar-panel-a0d7b954_ssh')).toBe(ICON_PATHS.terminal);
+    expect(worn('sidebar-panel-core_matter_server')).toBe(ICON_PATHS.hub);
+    expect(worn('sidebar-panel-45df7312_zigbee2mqtt_edge')).toBe(ICON_PATHS.zigbee);
+    expect(worn('sidebar-panel-marketplace')).toBe(ICON_PATHS.store);
+    expect(worn('sidebar-panel-hacs')).toBe(ICON_PATHS.store);
+    // a dashboard's id has no underscore: it keeps the icon its owner chose
+    expect(worn('sidebar-panel-dashboard-matter')).toBeUndefined();
+    expect(worn('sidebar-panel-esphome-devices')).toBeUndefined();
+  });
+
   it('stops waiting for Home Assistant once the one waiting has gone, as a stopped look does', async () => {
     let asked = 0;
     let live = true;

@@ -1,7 +1,8 @@
+import type { IconName } from '../../icons/generated.js';
 import { emptyState, headRow, mask, optionTiles } from './shared.js';
 
 /** Settings' pages (Settings, System) and the glyph each takes in our icons; a page not listed keeps its own icon. */
-export const CONFIG_GLYPHS: Readonly<Record<string, string>> = {
+export const CONFIG_GLYPHS: Readonly<Record<string, IconName>> = {
   '/config/cloud': 'cloud',
   '/config/integrations': 'devices',
   '/config/automation': 'automation',
@@ -30,7 +31,7 @@ export const CONFIG_GLYPHS: Readonly<Record<string, string>> = {
 };
 
 /** The glyph of the page an item opens (its path, or the path under which it sits). */
-export const configGlyph = (href: string): string | undefined =>
+export const configGlyph = (href: string): IconName | undefined =>
   CONFIG_GLYPHS[href.replace(/[?#].*$/, '').replace(/\/$/, '')];
 
 /**
@@ -250,7 +251,11 @@ export const appsGridCss =
  * 12/500 label on the page fill, the chosen one on the accent fill — instead of three radios hugging the
  * left edge.
  */
-const MODE_GLYPHS: Readonly<Record<string, string>> = { auto: 'auto', light: 'sun', dark: 'moon' };
+const MODE_GLYPHS: Readonly<Record<string, IconName>> = {
+  auto: 'auto',
+  light: 'sun',
+  dark: 'moon',
+};
 export const themeSettingsCss = `.inputs { margin: 4px 16px 8px; row-gap: 8px; } .color-pickers { gap: 8px; } ha-input { margin: 0; }
 ha-radio-group { flex: 1 1 100%; margin-inline-end: 0; }
 ha-radio-group::part(form-control-input) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }

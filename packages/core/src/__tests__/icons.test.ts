@@ -34,7 +34,8 @@ describe('fluvy icon set', () => {
   it('keeps in core what the shell draws, and the other part apart from it', async () => {
     for (const glyph of [...Object.values(MDI_GLYPHS), ...Object.values(CONFIG_GLYPHS)])
       expect(ICON_PATHS[glyph], glyph).toBeTypeOf('string');
-    for (const name of Object.keys(ON_DEMAND_PATHS)) expect(ICON_PATHS[name], name).toBeUndefined();
+    for (const name of Object.keys(ON_DEMAND_PATHS))
+      expect(Object.keys(ICON_PATHS), name).not.toContain(name);
     expect(Object.keys(ON_DEMAND_PATHS)).toEqual(
       expect.arrayContaining(['washer', 'gate', 'gate-open', 'garage-open', 'door-open', 'window']),
     );

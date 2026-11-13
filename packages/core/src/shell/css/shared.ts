@@ -1,4 +1,4 @@
-import { ICON_PATHS } from '../../icons/generated.js';
+import { ICON_PATHS, type IconName } from '../../icons/generated.js';
 
 /*
  * Pieces the shell's sheets share. Every sheet is filled only while a fluvy theme is the page's theme,
@@ -6,8 +6,8 @@ import { ICON_PATHS } from '../../icons/generated.js';
  */
 
 /** A glyph of the icon set as a CSS mask: `-webkit-mask: ${mask('check')} center / 20px 20px no-repeat`. */
-export const mask = (glyph: string): string =>
-  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='${ICON_PATHS[glyph] ?? ''}'/></svg>")`;
+export const mask = (glyph: IconName): string =>
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='${ICON_PATHS[glyph]}'/></svg>")`;
 
 /** The cards' field: a 12-radius box on the page fill, closed by a hairline. */
 export const FIELD =
@@ -28,7 +28,7 @@ export const LIFT = 'var(--fluvy-shadow-lift)';
  */
 export const emptyState = (
   selector: string,
-  glyph: string,
+  glyph: IconName,
 ): string => `:is(${selector}) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 120px; margin: var(--fluvy-empty-margin, 0); padding: 16px; box-sizing: border-box; border-radius: var(--fluvy-radius-lg); background: var(--fluvy-empty-surface, var(--fluvy-inset, var(--fluvy-page))); color: var(--secondary-text-color); font: 500 14px/20px var(--ha-font-family-body); letter-spacing: 0; text-align: center; white-space: normal; }
 :is(${selector})::before { content: ''; order: -2; flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--fluvy-card); box-shadow: inset 0 0 0 1px var(--fluvy-border-strong); }
 :is(${selector})::after { content: ''; order: -1; flex: none; width: 20px; height: 20px; margin: -40px 0 12px; background-color: currentColor; -webkit-mask: ${mask(glyph)} center / 20px 20px no-repeat; mask: ${mask(glyph)} center / 20px 20px no-repeat; }`;

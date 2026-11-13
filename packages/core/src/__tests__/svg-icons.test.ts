@@ -20,7 +20,7 @@ describe("Home Assistant's Material icons drawn as ours", () => {
       const path = (mdi as Record<string, string>)[name];
       expect(path, name).toBeTypeOf('string');
       expect(MDI_GLYPHS[pathKey(path!)], name).toBe(glyph);
-      expect(ICON_PATHS[glyph], glyph).toBeTypeOf('string');
+      expect(Object.keys(ICON_PATHS), glyph).toContain(glyph);
     }
   });
 

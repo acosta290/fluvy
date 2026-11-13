@@ -1,3 +1,4 @@
+import type { IconName } from '../../icons/generated.js';
 import { HA_LOGO_URL } from '../../icons/ha-logo.js';
 import { isPanelPath } from '../../look/tabs.js';
 import { mask } from './shared.js';
@@ -64,7 +65,7 @@ wa-drawer::part(dialog) { top: var(--fluvy-frame, 0px); bottom: var(--fluvy-fram
 :host([type="modal"]) wa-drawer::part(dialog) { box-shadow: 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)), var(--fluvy-shadow-lift); }`;
 
 /** Built-in panels (their sidebar ids) and the glyph each takes; a dashboard keeps the icon its owner chose. */
-const PANEL_GLYPHS: Readonly<Record<string, string>> = {
+const PANEL_GLYPHS: Readonly<Record<string, IconName>> = {
   lovelace: 'home',
   energy: 'bolt',
   map: 'map',
@@ -81,18 +82,20 @@ const PANEL_GLYPHS: Readonly<Record<string, string>> = {
   security: 'shield',
   climate: 'thermo',
   maintenance: 'wrench',
+  // the stores: Home Assistant's Marketplace (2026.11) and HACS's own panel
+  marketplace: 'store',
+  hacs: 'store',
 };
 
 /**
- * The apps people add most (a sidebar id carries the app's slug after its repository's prefix:
- * `5c53de3b_esphome`), each by a word of its slug, and the glyph it takes.
+ * The apps people add most (a sidebar id carries the app's slug after its repository's prefix and an underscore:
+ * `5c53de3b_esphome`, `core_configurator`), each by the start of its slug, and the glyph it takes.
  */
-const APP_GLYPHS: readonly (readonly [slug: string, glyph: string])[] = [
-  ['hacs', 'store'],
+const APP_GLYPHS: readonly (readonly [slug: string, glyph: IconName])[] = [
   ['esphome', 'chip'],
   ['vscode', 'code'],
-  ['configurator', 'fileCode'],
-  ['_ssh', 'terminal'],
+  ['configurator', 'file-code'],
+  ['ssh', 'terminal'],
   ['terminal', 'terminal'],
   ['zigbee2mqtt', 'zigbee'],
   ['zwave', 'zwave'],
@@ -119,7 +122,7 @@ const APP_GLYPHS: readonly (readonly [slug: string, glyph: string])[] = [
  * An item's glyph, on its icon alone: the start slot also holds the count of Settings and the notifications (`.badge`),
  * which keeps Home Assistant's figures on the accent.
  */
-const iconRule = (item: string, glyph: string): string =>
+const iconRule = (item: string, glyph: IconName): string =>
   `${item} > :is(ha-svg-icon, ha-icon)[slot="start"] { color: transparent; background-color: var(--sidebar-icon-color); -webkit-mask: ${mask(glyph)} center / 24px 24px no-repeat; mask: ${mask(glyph)} center / 24px 24px no-repeat; }
 ${item}.selected > :is(ha-svg-icon, ha-icon)[slot="start"] { background-color: var(--sidebar-selected-icon-color); }`;
 
@@ -162,12 +165,13 @@ export const sidebarSeparatorsCss = (paths: readonly string[]): string => {
 
 /**
  * The sidebar's icons (an icon choice of the house's): our glyphs on Home Assistant's own panels, the
- * notifications and the apps people add most. A dashboard keeps the icon its owner chose.
+ * notifications and the apps people add most, an app's by its slug after the underscore (a dashboard's id has none:
+ * `dashboard-matter` is not the Matter app's). A dashboard keeps the icon its owner chose.
  */
 export const sidebarIconsCss = [
   ...Object.entries(PANEL_GLYPHS).map(([panel, glyph]) =>
     iconRule(panel === 'config' ? '#sidebar-config' : `#sidebar-panel-${panel}`, glyph),
   ),
   iconRule('#sidebar-notifications', 'bell'),
-  ...APP_GLYPHS.map(([slug, glyph]) => iconRule(`[id^="sidebar-panel-"][id*="${slug}"]`, glyph)),
+  ...APP_GLYPHS.map(([slug, glyph]) => iconRule(`[id^="sidebar-panel-"][id*="_${slug}"]`, glyph)),
 ].join('\n');

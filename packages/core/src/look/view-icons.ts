@@ -1,4 +1,4 @@
-import { ICON_PATHS } from '../icons/generated.js';
+import { ICON_PATHS, type IconName } from '../icons/generated.js';
 import { plain } from '../plain.js';
 
 /*
@@ -14,7 +14,7 @@ import { plain } from '../plain.js';
  * found anywhere in the name, as Japanese writes no spaces between words, and may carry a lookahead of its own where
  * a word hides inside another (`電気(?!代|料金)`: the lights, not the electricity bill).
  */
-const TABLE: ReadonlyArray<readonly [icon: string, words: readonly string[]]> = [
+const TABLE: ReadonlyArray<readonly [icon: IconName, words: readonly string[]]> = [
   [
     'bulb',
     [
@@ -836,7 +836,7 @@ const read = (text: string): string =>
 /** A word in kana or kanji: found anywhere in the name, no word boundary either side. */
 const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー々]/u;
 
-const matchers: ReadonlyArray<readonly [string, RegExp]> = TABLE.map(([icon, words]) => {
+const matchers: ReadonlyArray<readonly [IconName, RegExp]> = TABLE.map(([icon, words]) => {
   const ending = words.filter((w) => w.startsWith('*')).map((w) => w.slice(1));
   const cjk = words.filter((w) => CJK.test(w));
   const rest = words.filter((w) => !w.startsWith('*') && !CJK.test(w));
@@ -853,7 +853,7 @@ const matchers: ReadonlyArray<readonly [string, RegExp]> = TABLE.map(([icon, wor
 });
 
 /** The icon a view's name (else its path) says, as a fluvy icon name; undefined when neither says one. */
-export function viewIconName(title: string, path = ''): string | undefined {
+export function viewIconName(title: string, path = ''): IconName | undefined {
   for (const text of [read(title), read(path)]) {
     if (!text) continue;
     const found = matchers.find(([, pattern]) => pattern.test(text));

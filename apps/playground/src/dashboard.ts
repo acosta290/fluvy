@@ -64,7 +64,8 @@ import { isPaletteName, type PaletteName } from '@fluvy/tokens/runtime';
  *                 &flat=1 no hairlines, &header=page the header on the page's colour, &actions=menu one menu ·
  *                 &floating=1 the app in Fluvy's floating frame (the shell's `frame` sheet, 1024 wide or more) ·
  *                 &rail=1 the sidebar on its icons alone (Home Assistant's collapsed sidebar) · &counts=1 Settings and
- *                 the notifications with their counts (repairs and updates, notifications)
+ *                 the notifications with their counts (repairs and updates, notifications) · &apps=1 the panels
+ *                 a house adds: the Marketplace, the File editor, ESPHome and Z-Wave JS (#175)
  *   &zoom=125     this device's size, as the bundle reads it (`look/zoom.ts`: remembered, dropped from the address,
  *                 the view zoomed by the shell's `device-zoom` sheet; `&zoom=off` back to 100)
  *   &wall=1       the page a wall (main.ts mounts the real controller): the shell's wall sheets for `hui-root` fill as
@@ -117,6 +118,8 @@ export interface DashboardOptions {
   readonly rail: boolean;
   /** Settings and the notifications with their counts, as Home Assistant draws them when it has something to say. */
   readonly counts: boolean;
+  /** The panels a house adds (apps, the Marketplace, a dashboard of its own) under Home Assistant's. */
+  readonly apps: boolean;
   readonly views: readonly View[];
   readonly edit: boolean;
   readonly subview: boolean;
@@ -188,6 +191,7 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
     floating: params.get('floating') === '1',
     rail: params.get('rail') === '1',
     counts: params.get('counts') === '1',
+    apps: params.get('apps') === '1',
     views,
     edit: params.get('edit') === '1',
     subview: params.get('subview') === '1',
@@ -215,6 +219,9 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
 
 /* ---------- Home Assistant's elements, as far as the header needs them ---------- */
 
+/** The fluvy set's core part by any name an icon asks for: one it does not hold has no path. */
+const fluvyPaths: Readonly<Record<string, string | undefined>> = ICON_PATHS;
+
 /**
  * `<ha-icon>` drawing the fluvy set (`fluvy:home`) and the mdi icons the sheets name (`ha-icons.ts`: a room's area
  * icon); any other icon is a neutral disc.
@@ -238,7 +245,7 @@ class MockIcon extends LitElement {
   `;
   override render() {
     const path = this.icon?.startsWith('fluvy:')
-      ? ICON_PATHS[this.icon.slice(6)]
+      ? fluvyPaths[this.icon.slice(6)]
       : mdiPath(this.icon);
     return path
       ? html`<svg viewBox="0 0 24 24"><path d=${path}></path></svg>`
@@ -774,6 +781,17 @@ const PANELS: ReadonlyArray<readonly [id: string, name: string]> = [
   ['todo', 'To-do lists'],
 ];
 
+/**
+ * The panels a house adds, by their ids as Home Assistant gives them: the Marketplace (2026.11), and apps under their
+ * repository's prefix and an underscore.
+ */
+const APPS: ReadonlyArray<readonly [id: string, name: string]> = [
+  ['marketplace', 'Marketplace'],
+  ['core_configurator', 'File editor'],
+  ['5c53de3b_esphome', 'ESPHome Builder'],
+  ['core_zwave_js', 'Z-Wave JS'],
+];
+
 /** The person signed in, as `ha-user-badge` draws them: the picture of the person they are, else their initials. */
 export interface SidebarUser {
   readonly name: string;
@@ -806,6 +824,8 @@ class MockSidebar extends LitElement {
   user!: SidebarUser;
   /** Settings and the notifications with their counts. */
   counts = false;
+  /** The panels a house adds, under Home Assistant's. */
+  apps = false;
   static override styles = [
     css`
       :host {
@@ -1011,7 +1031,9 @@ class MockSidebar extends LitElement {
                 >${this.dashboard.title}</span
               ></ha-list-item-button
             >
-            ${PANELS.map(([id, words]) => panel(`sidebar-panel-${id}`, words))}
+            ${[...PANELS, ...(this.apps ? APPS : [])].map(([id, words]) =>
+              panel(`sidebar-panel-${id}`, words),
+            )}
           </ha-list-nav>
         </div>
         <ha-list-nav>
@@ -1155,6 +1177,7 @@ export function mountDashboard(
     const sidebar = document.createElement('ha-sidebar') as MockSidebar;
     sidebar.toggleAttribute('expanded', !options.rail);
     sidebar.counts = options.counts;
+    sidebar.apps = options.apps;
     if (options.rail) app.style.setProperty('--mock-sidebar-width', '56px');
     sidebar.chrome = options.chrome;
     sidebar.dashboard = { title: options.title, path: root.hass.panelUrl };

@@ -18,6 +18,14 @@ const STROKE_ONLY = new Set([
   'tabsText',
   'tabsPills',
   'tabsNone',
+  // the remote's keys, the panel's choices of a background and of the wall's way out
+  'captions',
+  'forward',
+  'rewind',
+  'tv',
+  'gradient',
+  'image',
+  'hold',
 ]);
 
 /**

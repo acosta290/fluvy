@@ -22,6 +22,9 @@ const onDemand = (): Promise<Readonly<Record<string, string>>> =>
     () => ({}),
   );
 
+/** Core's part by any name Home Assistant asks for: one it does not hold has no path. */
+const corePaths: Readonly<Record<string, string | undefined>> = ICON_PATHS;
+
 /** The names Home Assistant lists for the set (both parts). */
 export const iconNames = async (): Promise<readonly string[]> => [
   ...Object.keys(ICON_PATHS),
@@ -43,7 +46,7 @@ export function registerIcons(): void {
   if (waiting && !waiting.handOver) return; // the real set is already there
   const set: CustomIconSet = {
     getIcon: async (name) => ({
-      path: ICON_PATHS[name] ?? (await onDemand())[name] ?? '',
+      path: corePaths[name] ?? (await onDemand())[name] ?? '',
       viewBox: '0 0 24 24',
     }),
     getIconList: async () =>
