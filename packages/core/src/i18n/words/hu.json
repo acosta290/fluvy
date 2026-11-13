@@ -37,7 +37,14 @@
   "charger": ["wallbox", "toltoallomas", "autotolto", "toltopont", "toltooszlop"],
   "home": ["haz", "lakas", "otthon", "osszfogyasztas", "hazfogyasztas"],
   "today": ["mai", "napi"],
-  "forecast": ["előrejelz", "elorejelz", "prognóz", "prognoz"],
+  "forecast": [
+    "előrejelz",
+    "elorejelz",
+    "prognóz",
+    "prognoz",
+    "(?<=\\p{L})előrejelz",
+    "(?<=\\p{L})elorejelz"
+  ],
   "not_appliance": [
     "szabadsag",
     "gyerekzar",

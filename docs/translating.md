@@ -53,8 +53,12 @@ language, so the card starts from Fluvy's.
   is `счетчик`, "Їдальня" is `ідальня` and "ＬＥＤ" is `led`; a Russian or Ukrainian й stays й, a letter of its own; a
   Ukrainian word with an apostrophe, written ', ’ or ʼ or left without one, is matched by a stem that stops before it,
   `подвір` for "Подвір’я", or carries every way, `з['’ʼ]?єднання`). A stem in Latin or Cyrillic letters is
-  matched as its category asks (a light's as a whole word, a place's noise as whole words, the rest as a substring);
-  a stem in Han or kana is always matched as a substring, since Chinese and Japanese write no spaces between words. The words
+  matched as its category asks (a light's as a whole word, a place's noise as whole words, a forecast's where a word
+  begins, so "predict" is never read in "unpredictable", the rest as a substring); a language that closes a compound
+  with a forecast's word says so with a stem of its own regex, matched as written (`(?<=\p{L})prognos`:
+  Solarprognose). A stem in Han or kana is always matched as a substring, since Chinese and Japanese write no spaces
+  between words; where its characters could end or begin another word, the stem says so (`(?<![干参])预计(?!算)`:
+  干预计划 is no forecast). The words
   that join a place's noise to the place (`place_joins`: an article, a preposition, the language's "and", an elision
   such as `d'`) are written as the language writes them, marks and all, since a mark makes another word (`és` is
   Hungarian's "and", "là" is no `la`); the dashboard takes one out of a place's name beside a sensor word or at the

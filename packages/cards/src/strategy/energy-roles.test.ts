@@ -117,6 +117,32 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     });
   });
 
+  it('reads a forecast’s word where a word begins, or closes a compound, never inside another word (#170)', () => {
+    // a word that holds a forecast's letters inside it is no forecast: the reading keeps its role
+    for (const name of [
+      'Unpredictable load house power',
+      'Consumo imprevisto casa',
+      'Непрогнозируемая нагрузка дома',
+      '干预计划 家庭用电功率',
+      '家庭负载 预报警功率',
+    ])
+      expect(roles([reading('sensor.house_load', name, '800', 'power')]).homePower, name).toBe(
+        'sensor.house_load',
+      );
+    // a forecast where its word begins, closes a compound or stands in Chinese takes none
+    for (const name of [
+      'House load forecast',
+      'Hausverbrauch Leistungsprognose',
+      'Verbruiksverwachting huis',
+      '家庭负载 预计功率',
+      '家庭负载 预测',
+    ])
+      expect(
+        roles([reading('sensor.house_load', name, '800', 'power')]).homePower,
+        name,
+      ).toBeUndefined();
+  });
+
   it('reads a day’s counter in Chinese and Japanese by its words, never yesterday’s nor a lifetime’s (#170)', () => {
     const day = (id: string, name: string) => reading(id, name, '18.6', 'energy');
     // an inverter's day beside its lifetime, as Chinese integrations name them

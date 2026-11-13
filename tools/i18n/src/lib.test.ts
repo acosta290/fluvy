@@ -301,6 +301,42 @@ describe('the generated patterns', () => {
     expect(pattern(['washer', '洗濯', '洗濯機'], 'substring')).toBe('(washer|洗濯機|洗濯)');
   });
 
+  it('match a stem that begins a word at a word’s start alone, one of its own regex as written (#170)', () => {
+    const stems = [
+      'forecast',
+      'predict',
+      'prognos',
+      'прогноз',
+      '(?<=\\p{L})prognos',
+      'previs',
+      '予想(?!外)',
+    ];
+    expect(pattern(stems, 'start')).toBe(
+      '(?<![\\p{Script=Latin}\\p{Script=Cyrillic}])(forecast|predict|prognos|прогноз|previs)|((?<=\\p{L})prognos)|(予想(?!外))',
+    );
+    const forecast = new RegExp(pattern(stems, 'start'), 'iu');
+    // after a space, a dash, a dot, an id's underscore or a figure: a word begins
+    for (const name of [
+      'sensor.forecast_today Forecast today',
+      'sensor.solcast_pv_forecast Solcast PV',
+      'sensor.x PV-Prognose',
+      'sensor.x Solarprognose heute',
+      'sensor.x Previsión solar',
+      'sensor.x Прогноз выработки',
+      'sensor.x 2predict',
+      'sensor.x 発電量予想',
+    ])
+      expect(forecast.test(name), name).toBe(true);
+    // inside a word of either alphabet, what it begins is no forecast's
+    for (const name of [
+      'sensor.x Unpredictable load',
+      'sensor.x Consumo imprevisto',
+      'sensor.x Непрогнозируемая нагрузка',
+      'sensor.x 予想外',
+    ])
+      expect(forecast.test(name), name).toBe(false);
+  });
+
   it('take a word that joins as written, and an elision before the word it leans on, in either apostrophe', async () => {
     const joins = new RegExp(pattern(['de', "d'", "dell'"], 'words'), 'giu');
     expect("Capteur d'humidité Salle de bain".match(joins)).toEqual(["d'", 'de']);

@@ -30,7 +30,7 @@
   "charger": ["wallbox", "ladestation", "ladepunkt", "ladesäule", "ladesaeule"],
   "home": ["haus", "wohnung", "gesamtverbrauch", "hausverbrauch"],
   "today": ["heute", "tages"],
-  "forecast": ["prognos", "vorhersage"],
+  "forecast": ["prognos", "vorhersage", "(?<=\\p{L})prognos", "(?<=\\p{L})vorhersag"],
   "not_appliance": [
     "urlaub",
     "kindersicherung",
