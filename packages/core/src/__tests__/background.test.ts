@@ -110,7 +110,10 @@ describe('a picture’s address, before it reaches CSS', () => {
       'http://10.0.0.5:8123/local/x.png',
       'HTTPS://example.com/X.PNG',
       'https://[2001:db8::1]/a.jpg',
-      'https://user@example.com/~me/a+b,c=d!$*.webp',
+      'https://example.com/~me/a+b,c=d!$*.webp',
+      // an at sign in the path is the path's
+      '/local/icons/sun@2x.png',
+      'https://example.com/a@2x.jpg?by=me@example.com',
     ])
       expect(imageAddress(address), address).toBe(address);
     expect(imageAddress('  /local/x.jpg \n')).toBe('/local/x.jpg');
@@ -135,8 +138,27 @@ describe('a picture’s address, before it reaches CSS', () => {
       '/local/a\u0000b.jpg',
       '/local/a\u007fb.jpg',
       '/local/x.jpg") ; background: red; x:url("',
+      // an invisible character: a zero-width space, a joiner, a direction mark or override, a byte-order mark, a soft
+      // hyphen
+      '/local/a\u200bb.jpg',
+      'https://example.com/a\u200d.jpg',
+      '/local/a\u200eb.jpg',
+      '/local/\u202egpj.exe',
+      '/local/a\ufeff.jpg',
+      'https://exam\u00adple.com/a.jpg',
     ])
       expect(imageAddress(address), JSON.stringify(address)).toBeUndefined();
+  });
+
+  it('refuses a name or a password before the host, which a browser will not send for a picture', () => {
+    for (const address of [
+      'https://user:pass@example.com/a.jpg',
+      'https://user@example.com/a.jpg',
+      'http://:secret@10.0.0.5:8123/local/x.png',
+      'https://user@example.com',
+      'https://example.com@ha.example/a.jpg',
+    ])
+      expect(imageAddress(address), address).toBeUndefined();
   });
 
   it('refuses every scheme but http and https, a host-less address, a path of another host and anything not text', () => {

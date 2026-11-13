@@ -36,8 +36,10 @@ tiles choose the kind, and under them only that kind's rows:
 The words that stand on the page — the greeting, a section's heading, the header when it is on the page's colour — take
 the light ink on a deep colour, as a filled tile's do; the cards keep their own. A picture's address is checked before it
 reaches the page: a path that starts with one `/`, or an `http` or `https` address, with no spaces, quotes, parentheses,
-backslashes, semicolons, braces or angle brackets (a file name with a space is written `%20`); `data:` and every other
-scheme are refused. One it cannot draw turns the field's words to the warning, and nothing is kept.
+backslashes, semicolons, braces, angle brackets or invisible characters such as a zero-width space (a file name with a
+space is written `%20`); `data:` and every other scheme are refused, and so is a name or a password before the host
+(`https://user:pass@…`), which a browser never sends for a picture. One it cannot draw turns the field's words to the
+warning, and nothing is kept.
 
 The header on the page's colour (Appearance › Corner) lets the background through, frosted (a colour's header is the
 colour itself); a header as a bar stays a bar. The background holds under the tabs, beside the sidebar and inside the
