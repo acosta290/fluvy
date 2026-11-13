@@ -1,8 +1,7 @@
 import { strings as words, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
-  actionField,
   actionFields,
   anyNumberField,
   boolField,
@@ -45,9 +44,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<BarsCardConfig>()([
@@ -84,6 +83,8 @@ export const lists: readonly RowsListSpec[] = [
       'color',
       'plain',
       'tap_action',
+      'hold_action',
+      'double_tap_action',
       'show_when',
     ],
     schema: [
@@ -94,7 +95,8 @@ export const lists: readonly RowsListSpec[] = [
       fieldRow(toneField(), accentField('color', { item: 'own' })),
       fieldRow(anyNumberField('min'), anyNumberField('max')),
       fieldRow(anyNumberField('low'), anyNumberField('high')),
-      fieldRow(boolField('plain'), actionField()),
+      boolField('plain'),
+      actionFields(),
       rowWhenField(),
     ],
     computeLabel: formLabels({ sub_entity: 'editor.sub_entity' }).computeLabel,
@@ -117,7 +119,7 @@ export function getConfigForm(): LovelaceConfigForm {
       whenField('show_rows_when'),
       fieldRow(textField('badge_ok'), textField('badge_warn')),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...idsOnly('rows'),
     ...editorLabels(strings, { rows: 'rows', badge_ok: 'badge_ok', badge_warn: 'badge_warn' }, {}),

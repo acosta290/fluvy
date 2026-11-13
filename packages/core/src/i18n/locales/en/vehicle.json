@@ -92,6 +92,7 @@
     "editor.power_decimals": "Power decimals",
     "editor.hero_tap_action": "Battery tap",
     "editor.hero_hold_action": "Battery hold",
+    "editor.hero_double_tap_action": "Battery double tap",
     "role.state": "Car state",
     "role.charging": "Charging state",
     "role.plugged": "Cable plugged in",

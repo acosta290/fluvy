@@ -15,7 +15,6 @@ import { HEAD_BASE } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
-  actionField,
   actionFields,
   choiceField,
   colourFields,
@@ -85,7 +84,8 @@ const APP_FIELDS: readonly HaFormSchemaItem[] = [
   accentField('color', { item: 'own' }),
   fieldRow(textField('source'), choiceField('key', keyChoices())),
   textField('activity'),
-  actionField('tap_action'),
+  // its tap opens it where none is chosen
+  actionFields({ tap: null, hold: 'none' }),
 ];
 const APP_FIELDS_NO_REMOTE = APP_FIELDS.filter((field) => field.name !== 'activity');
 
@@ -138,7 +138,19 @@ export const lists: readonly RowsListSpec[] = [
     picker: platformField(),
     schema: APP_FIELDS,
     schemaOf: (_item, card) => (card?.['remote'] ? APP_FIELDS : APP_FIELDS_NO_REMOTE),
-    keys: ['app', 'name', 'icon', 'image', 'color', 'source', 'key', 'activity', 'tap_action'],
+    keys: [
+      'app',
+      'name',
+      'icon',
+      'image',
+      'color',
+      'source',
+      'key',
+      'activity',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     when: draws('apps'),
     rowIcon: (item) => {
       const own = item['icon'];
@@ -156,9 +168,10 @@ export const lists: readonly RowsListSpec[] = [
     schema: [
       { ...textField('name'), required: true },
       fieldRow(iconField(), choiceField('key', keyChoices())),
-      actionField('tap_action'),
+      // its tap presses its key where none is chosen
+      actionFields({ tap: null, hold: 'none' }),
     ],
-    keys: ['name', 'icon', 'key', 'tap_action'],
+    keys: ['name', 'icon', 'key', 'tap_action', 'hold_action', 'double_tap_action'],
     when: draws('custom'),
   },
 ];
@@ -242,7 +255,7 @@ export function getConfigForm(): LovelaceConfigForm {
       // a key's command for this device, over the table's: edited as YAML (Home Assistant's object field)
       { name: 'commands', selector: { object: {} } },
       ...colourFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(s, {
       remote: 'editor.remote',

@@ -13,7 +13,6 @@ import {
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
-  actionField,
   actionFields,
   areaField,
   boolField,
@@ -35,7 +34,7 @@ import {
   tintField,
   toneField,
 } from '../shared/form.js';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { lists as tilesLists } from '../tiles/tiles-editor.js';
 import type { RoomCardConfig } from './room-card.js';
@@ -88,9 +87,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<RoomCardConfig>()([
@@ -128,7 +127,8 @@ const GROUP_ITEM: readonly HaFormSchemaItem[] = [
   groupField,
   fieldRow(textField('name'), iconField()),
   fieldRow(toneField(), accentField('color', { item: 'bulb' })),
-  actionFields(),
+  // a round turns on and off what switches, else opens
+  actionFields({ tap: null }),
 ];
 const ENTITY_ITEM: readonly HaFormSchemaItem[] = [
   groupField,
@@ -156,7 +156,17 @@ export const lists: readonly RowsListSpec[] = [
     idKey: 'group',
     also: ['entity'],
     title: 'room-editor.quick_actions',
-    keys: ['group', 'entity', 'name', 'icon', 'tone', 'color', 'tap_action', 'hold_action'],
+    keys: [
+      'group',
+      'entity',
+      'name',
+      'icon',
+      'tone',
+      'color',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     picker: groupField,
     computeLabel: (schema) =>
       schema.name === 'group' ? editorWord('room-editor.group') : undefined,
@@ -299,7 +309,8 @@ export function getConfigForm(): LovelaceConfigForm {
         onlyWhen((form) => drawsTiles(form) || form['variant'] === 'row', nameLinesField()),
       ),
       onlyWhen(drawsLights, lightColourFields()),
-      fieldRow(actionField('tap_action'), actionField('hold_action')),
+      // where the room opens, where none is chosen
+      actionFields({ icon: true, tap: null }),
     ],
     ...formLabels({
       temperature_entity: 'editor.temperature_entity',

@@ -11,7 +11,15 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { clickPress, ico, linesNeeded, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
+import {
+  clickPress,
+  holdKey,
+  ico,
+  linesNeeded,
+  preventMenu,
+  sheetStyles,
+  startPress,
+} from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -38,6 +46,9 @@ export interface SceneItemConfig {
   subtitle?: string;
   /** What a tap does instead of running the scene. */
   tap_action?: ActionConfig;
+  /** A still press and two taps on it: the card's where it names none (its details; a double tap none, #179). */
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
   /** The scene's own colour (a Home Assistant colour name or `#rrggbb`): its tile's when it is the last run. */
   color?: string;
 }
@@ -252,6 +263,16 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
           const meta = fitted(this.meta(item, view, at, now));
           // a coloured scene keeps its colour at rest when the card asks (the last run is on: its full fill)
           const tinted = this.config?.tint === 'always' && Boolean(item.color) && !active;
+          // a tap runs it, or is its own; a still press and two taps its own, else the card's (#179)
+          const { onTap, onHold } = this.pressOf(
+            {
+              hold_action: this.config?.hold_action,
+              double_tap_action: this.config?.double_tap_action,
+              ...item,
+            },
+            view.id,
+            () => this.run(view),
+          );
           return html`<button
             class="fv-tile am-scene fv-tile--tap ${active ? 'is-on fv-tile--accent' : ''} ${
               tinted ? 'is-tinted' : ''
@@ -260,11 +281,12 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
             data-target
             data-accent=${this.accents.item(item.color) ?? nothing}
             aria-pressed=${active ? 'true' : 'false'}
-            .fvTap=${() => (item.tap_action ? this.tap(view.id, item.tap_action) : this.run(view))}
-            .fvHold=${() => this.hold(view.id)}
+            .fvTap=${onTap}
+            .fvHold=${onHold}
             @pointerdown=${startPress}
             @contextmenu=${preventMenu}
             @click=${clickPress}
+            @keydown=${holdKey(onHold)}
           >
             ${ico(iconOf(view, item.icon), active || tinted ? 'accent' : 'neutral')}
             <span class="fv-row__text">

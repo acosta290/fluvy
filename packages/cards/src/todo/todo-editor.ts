@@ -43,7 +43,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       fieldRow(boolField('show_completed'), boolField('show_add')),
       boolField('show_due'),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...formLabels({}),
   };

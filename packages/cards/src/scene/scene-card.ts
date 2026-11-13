@@ -8,7 +8,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { clickPress, ico, icon, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
+import { clickPress, holdKey, ico, icon, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
@@ -226,16 +226,19 @@ export class FluvySceneCard extends Card<SceneCardConfig> {
     const line = done && meta ? s(this.hass, 'done') : typed ? meta : this.fitted(meta, isTight);
     const swap = this.swaps ? 'fv-swap' : '';
 
-    // the tile is the scene's button: a tap runs it, a still press is the hold action (its details by default)
+    // the tile is the scene's button: a tap runs it (or is its own tap), a still press is the hold action (its details
+    // by default), two taps the double tap where set (#179)
+    const { onTap, onHold } = this.pressOf(this.config, view.id, () => this.run(view));
     return html`<button
         class="fv-scene fv-tile--tap ${tight}"
         data-card
         data-target
-        .fvTap=${() => this.run(view)}
-        .fvHold=${() => this.hold(view.id)}
+        .fvTap=${onTap}
+        .fvHold=${onHold}
         @pointerdown=${startPress}
         @contextmenu=${preventMenu}
         @click=${clickPress}
+        @keydown=${holdKey(onHold)}
       >
         <span class="fv-ico fv-ico--${toneOf(this.config, 'accent')}" data-icon>
           ${keyed(done, html`<span class=${swap}>${icon(done ? 'check' : iconOf(view, this.config?.icon))}</span>`)}

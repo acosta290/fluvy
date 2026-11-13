@@ -34,7 +34,14 @@ import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } fro
 
 import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import {
+  ACTIONS_BASE,
+  Card,
+  ICON_ACTIONS_BASE,
+  MORE_INFO,
+  type BaseKey,
+  type HeadConfig,
+} from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import { spanText } from '../shared/duration.js';
@@ -43,6 +50,8 @@ import {
   accentField,
   actionField,
   actionFields,
+  doubleTapField,
+  optionalActions,
   boolField,
   choiceField,
   colourFields,
@@ -175,6 +184,7 @@ export interface ControlEntry {
   readonly confirm?: boolean;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 /** A row as a list names it: a reading of the car's, or any entity. */
@@ -186,6 +196,7 @@ export interface RowEntry {
   readonly color?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
@@ -219,9 +230,10 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   range_decimals?: number | string;
   power_unit?: 'auto' | 'W' | 'kW';
   power_decimals?: number | string;
-  /** What a tap and a still press on the battery do (its details by default). */
+  /** What a tap and a still press on the battery do (its details by default), and two taps (none, #179). */
   hero_tap_action?: ActionConfig;
   hero_hold_action?: ActionConfig;
+  hero_double_tap_action?: ActionConfig;
   /** Test hook: an ISO instant the card takes for "now". */
   _now?: string;
 }
@@ -786,9 +798,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<VehicleCardConfig>()([
     'device',
@@ -814,13 +826,23 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     'power_decimals',
     'hero_tap_action',
     'hero_hold_action',
+    'hero_double_tap_action',
   ]);
   static override lists: readonly RowsListSpec[] = [
     {
       key: 'controls',
       idKey: 'control',
       title: 'editor.controls',
-      keys: ['control', 'name', 'icon', 'color', 'confirm', 'tap_action', 'hold_action'],
+      keys: [
+        'control',
+        'name',
+        'icon',
+        'color',
+        'confirm',
+        'tap_action',
+        'hold_action',
+        'double_tap_action',
+      ],
       computeLabel: (schema) =>
         schema.name === 'control'
           ? editorWord('vehicle.editor.control')
@@ -833,8 +855,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         controlPicker(),
         fieldRow(textField('name'), iconField()),
         fieldRow(accentField('color', { item: 'card' }), boolField('confirm')),
-        actionField('tap_action'),
-        actionField('hold_action'),
+        // a control does what it does on the car where it names no tap of its own
+        actionFields({ tap: null }),
       ],
     },
     {
@@ -842,7 +864,16 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       idKey: 'row',
       also: ['entity'],
       title: 'editor.rows',
-      keys: ['row', 'entity', 'name', 'icon', 'color', 'tap_action', 'hold_action'],
+      keys: [
+        'row',
+        'entity',
+        'name',
+        'icon',
+        'color',
+        'tap_action',
+        'hold_action',
+        'double_tap_action',
+      ],
       computeLabel: (schema) => (schema.name === 'row' ? editorWord('editor.row') : undefined),
       picker: rowPicker(),
       when: (data) => data['show_rows'] !== false && (data['variant'] ?? 'full') === 'full',
@@ -851,8 +882,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         entityField(undefined, 'entity', false),
         nameIconFields(),
         accentField('color', { item: 'card' }),
-        actionField('tap_action'),
-        actionField('hold_action'),
+        actionFields({ hold: 'none' }),
       ],
     },
     {
@@ -921,11 +951,12 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         fieldRow(unitField('range_unit', ['km', 'mi']), selectField('range_decimals', decimals)),
         fieldRow(unitField('power_unit', ['W', 'kW']), selectField('power_decimals', decimals)),
         ...colourFields(),
-        actionFields(),
+        actionFields({ icon: true }),
         onlyWhen(
           notMini,
           fieldRow(actionField('hero_tap_action'), actionField('hero_hold_action')),
         ),
+        onlyWhen(notMini, optionalActions(doubleTapField('hero_double_tap_action'))),
       ],
       ...editorLabels(
         s,
@@ -946,6 +977,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
           power_decimals: 'editor.power_decimals',
           hero_tap_action: 'editor.hero_tap_action',
           hero_hold_action: 'editor.hero_hold_action',
+          hero_double_tap_action: 'editor.hero_double_tap_action',
         },
         {
           image: 'editor.picture',
@@ -1807,7 +1839,11 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       title=${label}
       aria-disabled=${view.disabled ? 'true' : nothing}
       ?disabled=${view.tone === 'off'}
-      .fvTap=${(() => this.press(view)) as PressTarget['fvTap']}
+      .fvTap=${this.tapper(
+        `control_${view.entry.control}`,
+        () => this.press(view),
+        this.runner(view.entry.double_tap_action, view.entity),
+      )}
       .fvHold=${onHold as PressTarget['fvHold']}
       @pointerdown=${startPress}
       @contextmenu=${preventMenu}
@@ -1950,8 +1986,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
           stack,
           unavailable: r.unavailable,
           accent,
-          onTap: () => this.tap(entity, entry.tap_action ?? { action: 'more-info' }),
-          ...(entry.hold_action ? { onHold: () => this.hold(entity, entry.hold_action) } : {}),
+          // its details by default; a hold and a double tap where it has them
+          ...this.pressOf(entry, entity, MORE_INFO, null),
         });
       })}
     </div>`;
@@ -2114,13 +2150,24 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     });
   }
 
-  /** The battery's own tap and hold (its details by default), over its value row and ruler. */
+  /**
+   * The battery's own tap, hold and double tap (its details by default, the hold and the double where set), over its
+   * value row and ruler.
+   */
   private heroCover(r: Reading): TemplateResult | typeof nothing {
-    const id = this.car().roles.battery;
-    const tap = this.config?.hero_tap_action ?? { action: 'more-info' as const };
-    const hold = this.config?.hero_hold_action;
+    const config = this.config;
+    const { onTap, onHold } = this.pressOf(
+      {
+        tap_action: config?.hero_tap_action,
+        hold_action: config?.hero_hold_action,
+        double_tap_action: config?.hero_double_tap_action,
+      },
+      this.car().roles.battery,
+      MORE_INFO,
+      null,
+    );
     const label = `${s(this.hass, 'battery')} · ${r.level === null ? '—' : `${this.figure(r.level, 0)} %`}`;
-    return pressCover(label, () => this.tap(id, tap), hold ? () => this.hold(id, hold) : undefined);
+    return pressCover(label, onTap, onHold);
   }
 
   /** The battery on the charge cards' ruler: its charge and its range over it, its limit marked. */

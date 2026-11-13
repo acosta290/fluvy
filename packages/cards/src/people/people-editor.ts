@@ -1,5 +1,5 @@
 import { strings, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionFields,
@@ -37,9 +37,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
   'show_icon',
+  ...ACTIONS_BASE,
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<PeopleCardConfig>()([
@@ -59,7 +59,16 @@ export const lists: readonly RowsListSpec[] = [
     alias: 'entities',
     title: 'editor.people',
     domains: ['person', 'device_tracker'],
-    keys: ['entity', 'name', 'battery', 'color', 'since', 'tap_action', 'hold_action'],
+    keys: [
+      'entity',
+      'name',
+      'battery',
+      'color',
+      'since',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     schema: [
       entityField(['person', 'device_tracker']),
       fieldRow(nameField(), entityField(['sensor'], 'battery', false)),
@@ -95,7 +104,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...cardSurfaceFields(),
       unavailableField(),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...editorLabels(s, { map_path: 'editor.map_path' }, {}),
   };

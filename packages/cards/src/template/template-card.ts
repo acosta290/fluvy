@@ -65,13 +65,12 @@ const keyword = (text: string): boolean => (KEYWORDS as readonly string[]).inclu
 
 /**
  * What a Mushroom template card says that Fluvy has no part for, let go once the editor saves: a tile fills its cell
- * already (`fill_container`) and keeps its line to one (`multiline_secondary`); a double tap is not one of its gestures;
- * Home Assistant knows the entities a template reads (`entity_id`).
+ * already (`fill_container`) and keeps its line to one (`multiline_secondary`); Home Assistant knows the entities a
+ * template reads (`entity_id`). Its double tap is the tile's own since 1.20 (#179).
  */
 const LET_GO: readonly string[] = [
   'fill_container',
   'multiline_secondary',
-  'double_tap_action',
   'entity_id',
   // Mushroom's later layout switch, once read (`true`, the mini tile) or saying nothing (`false`)
   'vertical',
@@ -200,8 +199,8 @@ export class FluvyTemplateCard extends FluvyTileCard {
       ...(tone ? { tone } : {}),
       ...(color ? { color } : {}),
       ...(this.size() === 'large' && config.readouts ? { readouts: config.readouts } : {}),
-      ...(config.tap_action ? { tap_action: config.tap_action } : {}),
-      ...(config.hold_action ? { hold_action: config.hold_action } : {}),
+      // what it answers, and its circle (#179), as written
+      ...Object.fromEntries(Object.entries(config).filter(([key]) => key.endsWith('_action'))),
     };
   }
 

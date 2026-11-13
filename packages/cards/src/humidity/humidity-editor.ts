@@ -67,7 +67,7 @@ export function getConfigForm(): LovelaceConfigForm {
         selector: { entity: { domain: ['humidifier', 'switch', 'fan', 'input_boolean'] } },
       },
       fieldRow(numberField('hours', 1, 48), boolField('show_trend')),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(
       strings,

@@ -11,9 +11,11 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import {
+  activateKey,
   batteryLevel,
   clickPress,
   head,
+  holdKey,
   preventMenu,
   round,
   sheetStyles,
@@ -48,6 +50,7 @@ export interface PersonItem {
   /** What a tap on them does (default: their details); a page of their own is `navigate`. */
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 export interface PeopleCardConfig extends FluvyCardConfig, EmptyList {
@@ -85,8 +88,6 @@ interface Person {
   readonly since: string;
   readonly picture: string;
 }
-
-const MORE_INFO: ActionConfig = { action: 'more-info' };
 
 /** Two moments on the same calendar day (a change today reads as its time, before that as how long ago). */
 const sameDay = (a: Date, b: Date): boolean =>
@@ -319,14 +320,6 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
     return batteryLevel(level, this.batteryFigure(person), person.charging);
   }
 
-  /** What a tap and a hold on a person do: their entry's actions, else their details. */
-  private actionsOf(person: Person): { tap: () => void; hold: () => void } {
-    return {
-      tap: () => this.tap(person.view.id, person.item.tap_action ?? MORE_INFO),
-      hold: () => this.hold(person.view.id, person.item.hold_action ?? MORE_INFO),
-    };
-  }
-
   /** The grid's columns: as many of the sheet's 96 (+ 16 gap) as the card holds, never more than there are people. */
   private gridColumns(people: readonly Person[]): { columns: number; column: number } {
     const columns = Math.max(
@@ -371,17 +364,19 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
         // a dash joins no detail: the detail alone, then, says where or since when
         const both = word === DASH ? detail : `${word} · ${detail}`;
         const line = detail && ruler.width('am-person__state', both) <= column ? both : word;
-        const { tap, hold } = this.actionsOf(person);
+        // what a tap, a hold and a double tap on them do: their entry's, else their details
+        const { onTap, onHold } = this.pressOf(person.item, person.view.id);
         return html`<button
           class="am-person"
           data-target
           data-accent=${this.accents.item(person.item.color) ?? nothing}
           aria-label=${`${person.name} · ${word === person.word ? line : person.word}`}
-          .fvTap=${tap}
-          .fvHold=${hold}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
+          @keydown=${holdKey(onHold)}
         >
           ${this.renderAvatar(person)}
           <span class="am-person__name">${person.name}</span>
@@ -412,13 +407,7 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
       );
     return html`<div class="am-rows">
       ${people.map((person) => {
-        const { tap, hold } = this.actionsOf(person);
-        const key = (event: KeyboardEvent): void => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            tap();
-          }
-        };
+        const { onTap, onHold } = this.pressOf(person.item, person.view.id);
         // the battery stays whole; its detail (the zone, the time) goes, whole, where the line cannot hold it (beside
         // the battery, both), never cut
         const battery = person.battery === undefined ? null : this.renderBattery(person);
@@ -444,12 +433,12 @@ export class FluvyPeopleCard extends Card<PeopleCardConfig> {
           tabindex="0"
           aria-label=${word === person.word ? nothing : `${person.name} · ${person.word}`}
           data-accent=${this.accents.item(person.item.color) ?? nothing}
-          .fvTap=${tap}
-          .fvHold=${hold}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${key}
+          @keydown=${activateKey(onTap, onHold)}
         >
           ${keep ? this.renderAvatar(person) : nothing}
           <span class="fv-row__text"

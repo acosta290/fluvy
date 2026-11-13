@@ -1,5 +1,5 @@
 import type { LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   actionFields,
   colourFields,
@@ -32,9 +32,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<ActionsCardConfig>()([
@@ -65,7 +65,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       entitiesField('entities', ACTION_DOMAINS, true),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...formLabels({}),
   };

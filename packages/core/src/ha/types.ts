@@ -216,7 +216,7 @@ export interface HaFormSchemaItem {
   selector?: HaFormSelector;
   required?: boolean;
   default?: unknown;
-  type?: 'grid' | 'expandable';
+  type?: 'grid' | 'expandable' | 'optional_actions';
   title?: string;
   flatten?: boolean;
   /** A grid's narrowest column, 100% to stack its fields. */

@@ -1,5 +1,4 @@
 import {
-  actionRuns,
   areaContents,
   areaIndex,
   areasInOrder,
@@ -31,6 +30,7 @@ import {
 import {
   emptyState,
   head,
+  ico,
   icon,
   listRow,
   pressCover,
@@ -54,7 +54,7 @@ import {
   type ReadoutsAsk,
   type StatLabels,
 } from '../shared/readouts.js';
-import type { CardEditor } from '../shared/base.js';
+import type { CardEditor, Press } from '../shared/base.js';
 import type { LightColours, Tint } from '../shared/colour.js';
 import { FluvyTileCard, type NameLines, type TileItem } from '../tile/tile-card.js';
 import type { QuickAction, QuickRounds } from './quick-actions.js';
@@ -471,16 +471,16 @@ export class FluvyRoomCard extends FluvyTileCard {
   }
 
   /**
-   * The room's tap and hold, on its photo, its row and its head: its `tap_action`, else where it opens (its path, the
-   * area's settings for an admin); its `hold_action`. Each where it can run — a surface that does nothing is no button.
+   * The room's tap, hold and double tap, on its photo, its row and its head: its `tap_action`, else where it opens (its
+   * path, the area's settings for an admin); its `hold_action`; its `double_tap_action` (#179). Each where it can run —
+   * a surface that does nothing is no button.
    */
-  private roomActions(): { readonly onTap?: () => void; readonly onHold?: () => void } {
-    const { tap_action: tap, hold_action: hold, entity } = this.config ?? {};
-    const taps = tap ? actionRuns(tap, entity) : this.destination() !== undefined;
-    return {
-      ...(taps ? { onTap: () => (tap ? this.tap() : this.open()) } : {}),
-      ...(actionRuns(hold, entity) ? { onHold: () => this.hold() } : {}),
-    };
+  private roomActions(): Press {
+    return this.pressOf(
+      this.config,
+      this.config?.entity,
+      this.destination() === undefined ? null : () => this.open(),
+    );
   }
 
   /**
@@ -504,6 +504,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         expect: (id, state) => this.expect(id, state),
         call: (domain, service, data) => this.call(domain, service, data, ''),
         run: (action, entity) => this.tap(entity, action),
+        tapper: (key, tap, double) => this.tapper(key, tap, double),
         accent: (colour) => this.accents.item(colour),
         destination: this.destination(),
       },
@@ -819,7 +820,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         class="fv-tile fv-tile--compact fv-tile--accent fv-tile--tap rm-tile ${twoLines(this.room) ? 'fv-tile--lines' : ''} ${on ? 'is-on' : ''}"
         data-card
       >
-        ${this.renderIco(glyph, on > 0)}
+        ${this.renderIco(glyph, on > 0, name)}
         <div class="fv-tile__text">
           <h3 class="fv-tile__name">${name}</h3>
           <p class="fv-tile__state">${line || s(this.hass, 'nothing')}</p>
@@ -856,6 +857,7 @@ export class FluvyRoomCard extends FluvyTileCard {
           // the head's line: its room is the column less the circle and its gap and what trails it
           sub: this.roomLine(this.contentWidth - (fitted.icon ? 56 : 0) - end, 'fv-card__sub'),
           // "opens" is the bare chevron the rows use, its ink on the column edge
+          ...this.iconActions(this.config?.entity),
           trailing: html`${quick.template}${
             to && this.arrows
               ? html`<button
@@ -880,9 +882,13 @@ export class FluvyRoomCard extends FluvyTileCard {
     </article>`;
   }
 
-  private renderIco(glyph: string, on: boolean): TemplateResult {
-    return html`<span class="fv-ico fv-ico--${on ? 'accent' : 'neutral'}" data-icon
-      >${icon(glyph)}</span
-    >`;
+  /** The room's circle: a button of its own where it answers of its own (#179), named after the room. */
+  private renderIco(glyph: string, on: boolean, name: string): TemplateResult {
+    const { onIconTap, onIconHold, iconLabel } = this.iconActions(this.config?.entity);
+    return ico(glyph, on ? 'accent' : 'neutral', {
+      onTap: onIconTap,
+      onHold: onIconHold,
+      label: iconLabel(name),
+    });
   }
 }

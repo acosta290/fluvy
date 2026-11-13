@@ -3,6 +3,10 @@ import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionField,
+  actionFields,
+  doubleTapField,
+  optionalActions,
+  sectionField,
   cardSurfaceFields,
   unavailableField,
   emptyFields,
@@ -24,7 +28,10 @@ import type { ScenesCardConfig } from './scenes-card.js';
 
 const DOMAINS: readonly string[] = ['scene', 'script', 'button', 'input_button', 'automation'];
 
-/** A grid of scenes has no entity of its own: its colour is the lit tile's, a hold on a tile is the base's. */
+/**
+ * A grid of scenes has no entity of its own: its colour is the lit tile's; a hold and a double tap on a tile are the
+ * base's where the tile names none.
+ */
 export const base: readonly BaseKey[] = [
   'entities',
   'color',
@@ -33,6 +40,7 @@ export const base: readonly BaseKey[] = [
   'card_border',
   'unavailable',
   'hold_action',
+  'double_tap_action',
 ];
 
 export const keys = configKeys<ScenesCardConfig>()([
@@ -49,13 +57,23 @@ export const lists: readonly RowsListSpec[] = [
     alias: 'entities',
     title: 'editor.scenes',
     domains: DOMAINS,
-    keys: ['entity', 'name', 'icon', 'subtitle', 'color', 'tap_action'],
+    keys: [
+      'entity',
+      'name',
+      'icon',
+      'subtitle',
+      'color',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     schema: [
       entityField(DOMAINS),
       nameIconFields(),
       textField('subtitle'),
       accentField('color', { item: 'card' }),
-      actionField(),
+      // a tap runs the scene where none is chosen; a hold and a double tap the card's
+      actionFields({ tap: null, hold: null }),
     ],
   },
 ];
@@ -68,15 +86,16 @@ export function getConfigForm(): LovelaceConfigForm {
     schema: [
       fieldRow(textField('title'), selectField('columns', ['auto', '1', '2'])),
       entitiesField('entities', DOMAINS, true),
-      fieldRow(
-        accentField(),
-        accentField('card_color', { none: true }),
-        actionField('hold_action'),
-      ),
+      fieldRow(accentField(), accentField('card_color', { none: true })),
       ...cardSurfaceFields(),
       unavailableField(),
       tintField(),
       emptyFields(),
+      // what a tile answers where it names none: a still press, its details; two taps, nothing until set
+      sectionField('editor.interactions', [
+        actionField('hold_action', 'more-info'),
+        optionalActions(doubleTapField()),
+      ]),
     ],
     ...formLabels({}),
   };

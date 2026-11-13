@@ -28,7 +28,7 @@ import {
   automationsMaxRows,
 } from '../automations-family.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
@@ -356,9 +356,9 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<AutomationsCardConfig>()([
     'title',
@@ -433,7 +433,7 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
           })),
         ),
         ...colourFields(),
-        actionFields(),
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         s,

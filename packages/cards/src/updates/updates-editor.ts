@@ -1,7 +1,7 @@
 import { strings, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
-  actionField,
+  actionFields,
   boolField,
   colourFields,
   editorLabels,
@@ -23,7 +23,7 @@ import type { UpdatesCardConfig } from './updates-card.js';
 
 const s = strings('updates');
 
-/** A card of many updates has no entity of its own: its head's icon, tone and colour, and a hold on the head. */
+/** A card of many updates has no entity of its own: its head's icon, tone and colour, and what its head answers. */
 export const base: readonly BaseKey[] = [
   'entities',
   'icon',
@@ -33,8 +33,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<UpdatesCardConfig>()([
@@ -62,7 +63,7 @@ export function getConfigForm(): LovelaceConfigForm {
         textField('toggle_secondary'),
       ),
       emptyFields(),
-      actionField('hold_action'),
+      actionFields({ icon: true, many: true }),
     ],
     // this card's own options are worded by its own strings
     ...editorLabels(

@@ -1,5 +1,5 @@
 import type { LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionFields,
@@ -17,7 +17,7 @@ import type { HelloCardConfig } from './hello-card.js';
 /** The hello card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
 /** The greeting names who it greets; its avatar answers a tap and a hold; its colour is its mark's. */
-export const base: readonly BaseKey[] = ['name', 'tap_action', 'hold_action', 'color'];
+export const base: readonly BaseKey[] = ['name', ...ACTIONS_BASE, 'color'];
 
 export const keys = configKeys<HelloCardConfig>()([
   'person',

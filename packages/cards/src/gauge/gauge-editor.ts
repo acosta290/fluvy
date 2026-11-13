@@ -133,7 +133,7 @@ export function getConfigForm(): LovelaceConfigForm {
         ),
       ),
       numberFields({ when: hasLadder }),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(
       strings,

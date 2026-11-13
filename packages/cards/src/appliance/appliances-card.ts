@@ -23,12 +23,17 @@ import {
   type ApplianceVariant,
 } from '../appliances-family.js';
 import { HeadFit } from '../energy/head.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import {
+  ACTIONS_BASE,
+  Card,
+  ICON_ACTIONS_BASE,
+  type BaseKey,
+  type HeadConfig,
+} from '../shared/base.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
-  actionField,
   actionFields,
   boolField,
   cardSurfaceFields,
@@ -123,6 +128,7 @@ export interface ApplianceItem {
   readonly kind?: ApplianceKind | 'auto';
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
   readonly variant?: ApplianceVariant;
   readonly [key: string]: unknown;
 }
@@ -384,9 +390,9 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<AppliancesCardConfig>()([
     'title',
@@ -409,7 +415,17 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
       idKey: 'device',
       also: ['entity'],
       title: 'appliance.editor_appliances',
-      keys: ['device', 'entity', 'name', 'icon', 'color', 'kind', 'tap_action', 'hold_action'],
+      keys: [
+        'device',
+        'entity',
+        'name',
+        'icon',
+        'color',
+        'kind',
+        'tap_action',
+        'hold_action',
+        'double_tap_action',
+      ],
       computeLabel: (schema) =>
         schema.name === 'device'
           ? editorWord('appliance.editor_device')
@@ -422,8 +438,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
         entityField(undefined, 'entity', false),
         nameIconFields(),
         fieldRow(accentField('color', { item: 'own' }), kindField()),
-        actionField('tap_action'),
-        actionField('hold_action'),
+        actionFields(),
       ],
     },
   ];
@@ -483,7 +498,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
         onlyWhen(headed, accentField('card_color', { none: true })),
         ...cardSurfaceFields(),
         unavailableField(),
-        onlyWhen(headed, actionFields()),
+        onlyWhen(headed, actionFields({ icon: true, many: true })),
       ],
       ...editorLabels(s, {
         show: 'editor_show',
@@ -754,10 +769,14 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     return busy(shown.status) ? (shown.clock.progress ?? 0) / 100 : 0;
   }
 
-  /** A row's tap and hold: the card's own for it, else its details. */
+  /** A row's tap, hold and double tap: the card's own for it, else its details (the double, none). */
   private actions(line: Line): { readonly tap: () => void; readonly hold: () => void } {
     return {
-      tap: () => this.tap(line.entity, line.item.tap_action ?? { action: 'more-info' }),
+      tap: this.tapper(
+        line.entity,
+        () => this.tap(line.entity, line.item.tap_action ?? { action: 'more-info' }),
+        this.runner(line.item.double_tap_action, line.entity),
+      ),
       hold: () => this.hold(line.entity, line.item.hold_action ?? { action: 'more-info' }),
     };
   }
@@ -856,7 +875,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(tap, hold)}
         >
           ${keep ? html`<span class="fv-ico fv-ico--${line.tone}" data-icon>${icon(line.item.icon ?? kindGlyph(line.r.kind))}</span>` : nothing}
           <span class="fv-row__text"
@@ -940,7 +959,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(tap, hold)}
         >
           ${
             picture && art

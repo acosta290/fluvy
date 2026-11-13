@@ -99,7 +99,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_fan'), selectField('fan_style', ['full', 'chips'])),
       whenOffField(),
       ...colourFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...formLabels({
       modes: 'editor.modes',

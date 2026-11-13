@@ -1,4 +1,4 @@
-import { clickPress, icon, preventMenu, startPress, type IconRef, type Tone } from '@fluvy/ui';
+import { clickOwn, icon, preventMenu, pressOwn, type IconRef, type Tone } from '@fluvy/ui';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 
 /** A round: the 44 circle (`lt-bulb`), 8 from the next. */
@@ -37,14 +37,6 @@ export interface LevelRound {
  */
 export function levelRound(round: LevelRound): TemplateResult {
   const tone: Tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
-  const down = (event: PointerEvent): void => {
-    event.stopPropagation();
-    startPress(event);
-  };
-  const click = (event: MouseEvent): void => {
-    event.stopPropagation();
-    clickPress(event);
-  };
   return html`<button
     class="lt-bulb fv-ico fv-ico--${tone} ${round.on ? 'is-on' : ''}"
     style=${round.place ?? nothing}
@@ -57,8 +49,8 @@ export function levelRound(round: LevelRound): TemplateResult {
     title=${round.name}
     .fvTap=${round.usable ? round.onTap : undefined}
     .fvHold=${round.onHold}
-    @pointerdown=${down}
-    @click=${click}
+    @pointerdown=${pressOwn}
+    @click=${clickOwn}
     @contextmenu=${preventMenu}
   >
     ${icon(round.glyph)}

@@ -19,7 +19,7 @@ import { keyed } from 'lit/directives/keyed.js';
 
 import { cameraRatio, PLATE_FLOOR, plateHeight } from '../devices-family.js';
 import { HeadFit } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
 import {
@@ -306,13 +306,13 @@ export class FluvyWebCard extends Card<WebCardConfig> {
   static override base: readonly BaseKey[] = [
     'icon',
     'show_icon',
+    ...ICON_ACTIONS_BASE,
     'tone',
     'color',
     'card_color',
     'card_opacity',
     'card_border',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
   ];
   static override keys = configKeys<WebCardConfig>()([
     'url',
@@ -391,7 +391,7 @@ export class FluvyWebCard extends Card<WebCardConfig> {
         boolField('show_reload'),
         // no card, no colours to wear; no head, no button for the actions
         ...colourFields({ unavailable: false }).map((field) => onlyWhen(notBare, field)),
-        onlyWhen(isPlate, actionFields()),
+        onlyWhen(isPlate, actionFields({ icon: true, many: true })),
       ],
       ...editorLabels(
         s,

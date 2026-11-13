@@ -66,7 +66,7 @@ import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
 import { costParts, scaled, scaleOf, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles, type Stat } from '../energy/stats.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import {
@@ -191,9 +191,9 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<GridCardConfig>()([
     'title',
@@ -246,7 +246,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
         onlyWhen((data) => !listed(data, 'readouts').length, collectionField()),
         ...colourFields(),
         numberFields({ units: WATT_LADDERS }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         g,

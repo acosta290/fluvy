@@ -11,7 +11,18 @@ import {
   type LovelaceCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, icon, stepper, type IconRef, type RulerChangeDetail, type Tone } from '@fluvy/ui';
+import {
+  clickPress,
+  head,
+  holdKey,
+  icon,
+  preventMenu,
+  startPress,
+  stepper,
+  type IconRef,
+  type RulerChangeDetail,
+  type Tone,
+} from '@fluvy/ui';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { Hold } from '../cover/common.js';
@@ -78,7 +89,10 @@ export interface RemoteApp {
    * (`netflix://`) or an application id.
    */
   activity?: string;
+  /** What it answers: its tap opens it where none is said; a hold and a double tap nothing until set (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 /** A key of the person's own: a key of the table, or any action. */
@@ -86,7 +100,10 @@ export interface RemoteCustom {
   name: string;
   icon?: string;
   key?: string;
+  /** Its tap presses its key where none is said; a hold and a double tap nothing until set (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 export interface RemoteCardConfig extends FluvyCardConfig {
@@ -175,6 +192,7 @@ interface AppItem {
   readonly colour: string | undefined;
   readonly active: boolean;
   readonly run: (() => void) | undefined;
+  readonly hold: (() => void) | undefined;
 }
 
 /** The keys a config names, each once, only names the card knows; the default where it names none. */
@@ -830,7 +848,8 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       primary?: boolean;
       glyph?: IconRef | string;
       label?: string;
-      run?: () => void;
+      run?: (() => void) | undefined;
+      hold?: (() => void) | undefined;
       still?: boolean;
     }>,
     width: number,
@@ -845,8 +864,10 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       ${items.map((item) => {
         const still = item.still ?? (!this.takes(item.key) || !this.alive(item.key));
         const label = item.label ?? this.keyLabel(item.key);
-        const handlers = item.run
-          ? { down: () => undefined, up: () => undefined, click: item.run }
+        // a key of the person's own is pressed as a surface is (its tap, its hold); a key of the table repeats
+        const own = item.run ?? item.hold;
+        const handlers = own
+          ? { down: startPress, up: () => undefined, click: clickPress }
           : this.repeating(item.key);
         return html`<button
           class="fv-action ${item.primary ? 'fv-action--accent' : ''}"
@@ -855,11 +876,15 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           aria-label=${label}
           title=${label}
           ?disabled=${still}
+          .fvTap=${item.run}
+          .fvHold=${item.hold}
           @pointerdown=${handlers.down}
           @pointerup=${handlers.up}
           @pointerleave=${handlers.up}
           @pointercancel=${handlers.up}
           @click=${handlers.click}
+          @contextmenu=${item.hold ? preventMenu : nothing}
+          @keydown=${holdKey(item.hold)}
         >
           ${icon(item.glyph ?? this.keyGlyph(item.key))}${item.word ? html`<span class="rm-cells__word">${item.word}</span>` : nothing}
         </button>`;
@@ -1234,7 +1259,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       // an app the player does not list opens on Android TV Remote by its deep link where it has one: a package goes
       // through the Play Store, which no longer opens many apps
       const activity = appActivity(own, pf);
-      const run = own.tap_action
+      const opens = own.tap_action
         ? () => this.tap(p.id, own.tap_action)
         : key
           ? () => this.press(key)
@@ -1243,6 +1268,9 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
             : activity && r && (integration === 'androidtv_remote' || integration === undefined)
               ? () => this.call('remote', 'turn_on', { activity }, r.id)
               : undefined;
+      // its tap opens it, waiting for a second where a double tap is set; a hold where set (#179)
+      const alive = this.alive('ok');
+      const run = this.tapper(`app_${id}`, opens, this.runner(own.double_tap_action, p.id));
       return {
         id,
         name: shortTitle(name, pf),
@@ -1256,7 +1284,8 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           this.usable() && ((pf && pf === currentPlatform) || (source && source === current)),
         ),
         // an app is a key of a kind: alive as the keys are (every key, or power alone, while the device is off)
-        run: run && this.alive('ok') ? () => (haptic(this, 'selection'), run()) : undefined,
+        run: run && alive ? () => (haptic(this, 'selection'), run()) : undefined,
+        hold: alive ? this.runner(own.hold_action, p.id) : undefined,
       };
     };
     const own = this.remote.apps;
@@ -1291,6 +1320,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
             ...(item.colour ? { accent: this.accents.item(item.colour) ?? '' } : {}),
             unavailable: !this.usable(),
             disabled: this.usable() && !item.run,
+            ...(item.hold ? { onHold: item.hold } : {}),
           })),
           (key) => items.find((item) => item.id === key)?.run?.(),
           'full',
@@ -1325,8 +1355,13 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
                     data-accent=${accent ?? nothing}
                     aria-label=${label}
                     title=${label}
-                    ?disabled=${!item.run}
-                    @click=${item.run ?? nothing}
+                    ?disabled=${!(item.run ?? item.hold)}
+                    .fvTap=${item.run}
+                    .fvHold=${item.hold}
+                    @pointerdown=${startPress}
+                    @click=${clickPress}
+                    @contextmenu=${item.hold ? preventMenu : nothing}
+                    @keydown=${holdKey(item.hold)}
                   >
                     ${icon(item.icon, 'grid')}
                   </button>
@@ -1351,11 +1386,16 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       ${this.cells(
         own.map((item) => {
           const key = isKey(item.key) ? item.key : undefined;
-          const run = item.tap_action
-            ? () => this.tap(p.id, item.tap_action)
-            : key
-              ? () => this.press(key)
-              : undefined;
+          // its tap: its own, else its key; a hold and a double tap where set (#179)
+          const run = this.tapper(
+            `custom_${item.name}`,
+            item.tap_action
+              ? () => this.tap(p.id, item.tap_action)
+              : key
+                ? () => this.press(key)
+                : undefined,
+            this.runner(item.double_tap_action, p.id),
+          );
           return {
             key: key ?? 'ok',
             glyph: item.icon ?? (key ? KEY_GLYPHS[key] : 'dots'),
@@ -1366,6 +1406,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
               !this.usable() ||
               (key !== undefined && (!this.takes(key) || !this.alive(key))),
             run: run ? () => (haptic(this, 'selection'), run()) : () => undefined,
+            hold: this.runner(item.hold_action, p.id),
           };
         }),
         width,

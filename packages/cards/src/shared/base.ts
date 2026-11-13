@@ -3,6 +3,7 @@ import {
   failedToLoad,
   FluvyCard,
   isEntityId,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -19,9 +20,15 @@ import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.
 import { ownLine, type OwnLine } from './secondary.js';
 import { isTemplate, TemplateTexts } from './templates.js';
 
-/** What a card with a head honours of its circle (`HeadFit` reads it through `Card.showIcon`). */
+/**
+ * What a card with a head honours of its circle: whether it shows (`HeadFit` reads it through `Card.showIcon`), and
+ * what it answers (#179) — none of it until one is set, the circle then a button of its own.
+ */
 export interface HeadConfig {
   show_icon?: ShowIcon;
+  icon_tap_action?: ActionConfig;
+  icon_hold_action?: ActionConfig;
+  icon_double_tap_action?: ActionConfig;
 }
 
 /** The base card's fields every editor may show; a card names the ones it honours. */
@@ -43,13 +50,22 @@ export const onPageStyles = css`
   }
 `;
 
-/** What a card of one entity honours of the base: the entity, its name and icon, both actions, its tone and colour. */
+/** What a card answers (#179): a tap, a still press, two taps. */
+export const ACTIONS_BASE: readonly BaseKey[] = ['tap_action', 'hold_action', 'double_tap_action'];
+
+/** What a card's circle answers besides, where it has one (#179). */
+export const ICON_ACTIONS_BASE: readonly BaseKey[] = [
+  'icon_tap_action',
+  'icon_hold_action',
+  'icon_double_tap_action',
+];
+
+/** What a card of one entity honours of the base: the entity, its name and icon, its actions, its tone and colour. */
 export const ENTITY_BASE: readonly BaseKey[] = [
   'entity',
   'name',
   'icon',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'tone',
   'color',
   'card_color',
@@ -58,18 +74,32 @@ export const ENTITY_BASE: readonly BaseKey[] = [
   'unavailable',
 ];
 
-/** The same for a card of one entity with a head: whether its circle shows too. */
-export const HEAD_BASE: readonly BaseKey[] = [...ENTITY_BASE, 'show_icon'];
+/** The same for a card of one entity with a head: whether its circle shows too, and what it answers. */
+export const HEAD_BASE: readonly BaseKey[] = [...ENTITY_BASE, 'show_icon', ...ICON_ACTIONS_BASE];
 
 /** What a card with a slider honours of the base besides (1.18, #144): the style its sliders are drawn in, and the words under a bar or a liquid. */
 export const SLIDER_BASE: readonly BaseKey[] = ['slider_style', 'slider_words'];
 
-/** A head's actions (`head()`'s `onTap`, `onHold` and `label`): the card's tap and hold, each where it can run. */
-export interface HeadActions {
-  readonly onTap?: () => void;
-  readonly onHold?: () => void;
-  readonly label?: string;
+/** What a surface answers: its tap (waiting for a second where a double tap is set) and its hold, each where it runs. */
+export interface Press {
+  readonly onTap?: (() => void) | undefined;
+  readonly onHold?: (() => void) | undefined;
 }
+
+/** What a head's circle answers of its own (#179), each where it can run, and what a reader hears for it. */
+export interface IconActions {
+  readonly onIconTap?: (() => void) | undefined;
+  readonly onIconHold?: (() => void) | undefined;
+  readonly iconLabel: (name: string) => string;
+}
+
+/** A head's actions (`head()`'s): the card's tap and hold, its circle's, each where it can run, and `label`. */
+export interface HeadActions extends Press, Partial<IconActions> {
+  readonly label?: string | undefined;
+}
+
+/** What a tap and a hold run where nothing else is said: the details. */
+export const MORE_INFO: ActionConfig = { action: 'more-info' };
 
 /**
  * What a control drawn by a module of its own needs from the card that draws it: the state to draw (the expected one
@@ -228,21 +258,64 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     return (this.config as HeadConfig | undefined)?.show_icon ?? 'auto';
   }
 
+  /** An action as a surface runs it for `entityId`, where it can (`actionRuns`): none where it is unset. */
+  protected runner(
+    action: ActionConfig | null | undefined,
+    entityId: string | undefined,
+  ): (() => void) | undefined {
+    return action && actionRuns(action, entityId) ? () => this.tap(entityId, action) : undefined;
+  }
+
   /**
-   * The head's tap and hold (the head is the card's button) from the card's `tap_action` and `hold_action`, run for
-   * `entityId` — the card's entity by default. One that cannot run is left out (`none`; more-info or a toggle with no
-   * entity to act on, as a card of many has none), so a head is never a button that does nothing. `label`: what a
-   * reader hears for the head's button where its title says less.
+   * What a surface answers from `own`'s actions (the card's config, an item's), run for `entityId`: its tap and its
+   * hold — where it names none, `tap` and `hold`: its details by default, `null` nothing, a tap what the card does of
+   * its own (a scene runs) — and its double tap (none), the tap waiting for a second where that is set (`tapper`, by
+   * the part and the entity it runs for, else by the double itself); each where it can run, so a surface is never a
+   * button that does nothing. `part` reads a part's own instead (`icon_`: its circle's).
+   */
+  protected pressOf(
+    own: object | undefined,
+    entityId: string | undefined,
+    tap: ActionConfig | (() => void) | null = MORE_INFO,
+    hold: ActionConfig | null = MORE_INFO,
+    part = '',
+  ): Press {
+    const action = (kind: string): ActionConfig | undefined =>
+      (own as Readonly<Record<string, ActionConfig | undefined>> | undefined)?.[
+        `${part}${kind}_action`
+      ];
+    const double = action('double_tap');
+    const first = action('tap') ?? tap;
+    return {
+      onTap: this.tapper(
+        entityId ? part + entityId : double,
+        typeof first === 'function' ? first : this.runner(first, entityId),
+        this.runner(double, entityId),
+      ),
+      onHold: this.runner(action('hold') ?? hold, entityId),
+    };
+  }
+
+  /**
+   * The head's tap, hold and double tap (the head is the card's button) from the card's actions, and its circle's
+   * (`icon_*_action`, #179), run for `entityId` — the card's entity by default (`pressOf`). One that cannot run is left
+   * out (`none`; more-info or a toggle with no entity to act on, as a card of many has none), so a head is never a
+   * button that does nothing. `label`: what a reader hears for the head's button where its title says less.
    */
   protected headActions(
     entityId: string | undefined = this.config?.entity,
     label?: string,
   ): HeadActions {
-    const config = this.config;
+    return { ...this.pressOf(this.config, entityId), ...this.iconActions(entityId), label };
+  }
+
+  /** What the head's circle answers of its own (`icon_*_action`, #179), run for `entityId`: nothing until set. */
+  protected iconActions(entityId: string | undefined): IconActions {
+    const { onTap, onHold } = this.pressOf(this.config, entityId, null, null, 'icon_');
     return {
-      ...(actionRuns(config?.tap_action, entityId) ? { onTap: () => this.tap(entityId) } : {}),
-      ...(actionRuns(config?.hold_action, entityId) ? { onHold: () => this.hold(entityId) } : {}),
-      ...(label ? { label } : {}),
+      onIconTap: onTap,
+      onIconHold: onHold,
+      iconLabel: (name) => this.t('common.icon_of', { name }),
     };
   }
 

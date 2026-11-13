@@ -147,7 +147,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
         boolField('show_rows'),
         entitiesField('rows'),
         ...colourFields(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(s, { refresh: 'refresh' }, {}),
     };

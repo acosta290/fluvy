@@ -6,7 +6,18 @@ import {
   type FluvyCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { icon, reducedMotion, sheetStyles, sideScroll, zoomOf, type IconRef } from '@fluvy/ui';
+import {
+  clickPress,
+  holdKey,
+  icon,
+  preventMenu,
+  reducedMotion,
+  sheetStyles,
+  sideScroll,
+  startPress,
+  zoomOf,
+  type IconRef,
+} from '@fluvy/ui';
 import {
   css,
   html,
@@ -16,7 +27,7 @@ import {
   type TemplateResult,
 } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY } from '../shared/heights.js';
 import { emptyPanel, listOf, type EmptyList } from '../shared/lists.js';
@@ -37,8 +48,11 @@ export interface ChipConfig {
   path?: string;
   /** Entity whose more-info opens on tap when there is no path. */
   entity?: string;
-  /** A full action; wins over `path` and `entity`. */
-  action?: ActionConfig;
+  /** Its tap (`action` reads as it too); wins over `path` and `entity` (#179). */
+  tap_action?: ActionConfig;
+  /** A still press and two taps on it: nothing until set (#179). */
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
   /**
    * The tab's own colour (a Home Assistant colour name or `#rrggbb`), or a template that gives one: its fill when it is
    * the open one.
@@ -201,7 +215,8 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
   }
   static override aliases: AliasSpec = {
     keys: [{ from: 'label', to: 'name' }],
-    items: { chips: ITEM_ALIASES },
+    // a tab's one `action` before 1.20 is its tap (#179)
+    items: { chips: [...ITEM_ALIASES, { from: 'action', to: 'tap_action' }] },
   };
 
   static getStubConfig(): ChipsCardConfig {
@@ -383,11 +398,10 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
 
   /* ---------- rendering ---------- */
 
-  private actionFor(chip: ChipConfig): ActionConfig {
-    if (chip.action) return chip.action;
-    if (chip.path) return { action: 'navigate', navigation_path: chip.path };
-    if (chip.entity) return { action: 'more-info', entity: chip.entity };
-    return { action: 'none' };
+  /** A tab's navigation, whichever of its actions asks for it, glides the row to the view it opens. */
+  protected override tap(entityId?: string, action?: ActionConfig): void {
+    this.tapped = action?.action === 'navigate';
+    super.tap(entityId, action);
   }
 
   protected renderCard(): TemplateResult {
@@ -417,6 +431,13 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
       >
         ${chips.map(({ chip, name, icon: glyph, color }, index) => {
           const accent = this.accents.item(color);
+          // its tap: its own, else its path, else its entity's details; a hold and a double tap where set (#179)
+          const { onTap, onHold } = this.pressOf(
+            chip,
+            chip.entity,
+            chip.path ? { action: 'navigate', navigation_path: chip.path } : MORE_INFO,
+            null,
+          );
           // a pill is fitted to its words (`fitPills`): one whose icon comes or goes is drawn afresh, so it is fitted again
           return keyed(
             Boolean(glyph),
@@ -426,11 +447,12 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
               data-fit="32"
               data-accent=${accent ?? nothing}
               aria-current=${index === active ? 'page' : nothing}
-              @click=${() => {
-                const action = this.actionFor(chip);
-                this.tapped = action.action === 'navigate';
-                this.tap(chip.entity, action);
-              }}
+              .fvTap=${onTap}
+              .fvHold=${onHold}
+              @pointerdown=${startPress}
+              @click=${clickPress}
+              @contextmenu=${onHold ? preventMenu : nothing}
+              @keydown=${holdKey(onHold)}
             >
               <span
                 class="fv-chip__pill ${

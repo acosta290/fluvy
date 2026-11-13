@@ -1,5 +1,5 @@
 import type { HaFormSchemaItem, LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   actionFields,
   colourFields,
@@ -38,9 +38,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
   'slider_style',
   'slider_words',
 ];
@@ -105,7 +105,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       entitiesField('entities', undefined, true),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     // a select row's `display` is the card's `options_style` said of one select: its options as chips or a dropdown
     ...formLabels({ options_style: 'editor.options_style', display: 'editor.options_style' }),

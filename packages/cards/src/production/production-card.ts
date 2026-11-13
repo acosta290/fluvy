@@ -341,7 +341,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         // the day's bars, or the arrays' stacks
         chartSection([DAY_CAPS, ARRAYS_CAPS], capsIn),
         numberFields({ when: hasLadder }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         strings,

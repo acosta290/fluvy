@@ -30,7 +30,13 @@ import {
 } from 'lit';
 import { HeadFit, ROW_NAME_MIN, type FittedHead } from '../energy/head.js';
 import { itemsHeight, itemsList, maxRows, TILE_GAP } from '../items-family.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import {
+  ACTIONS_BASE,
+  Card,
+  ICON_ACTIONS_BASE,
+  type BaseKey,
+  type HeadConfig,
+} from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import { lineCount } from '../shared/fit.js';
@@ -317,9 +323,9 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<ItemsCardConfig>()([
     'title',
@@ -420,7 +426,7 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
         ]),
         ...colourFields(),
         emptyFields(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(s, {
         attribute: 'editor.attribute',

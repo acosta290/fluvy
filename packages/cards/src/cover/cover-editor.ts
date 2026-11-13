@@ -75,7 +75,7 @@ export function getConfigForm(): LovelaceConfigForm {
         onlyWhen(({ variant }) => variant === undefined || variant === 'full', row),
       ),
       ...colourFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(coverStrings, { tilt_angle: 'tilt_angle' }, {}),
   };

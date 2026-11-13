@@ -2,7 +2,7 @@ import type { ActionConfig, HaFormSchemaItem } from '@fluvy/core';
 import type { GlyphName } from '@fluvy/ui';
 import {
   accentField,
-  actionField,
+  actionFields,
   byName,
   editorWord,
   entityField,
@@ -64,7 +64,10 @@ export interface FactItem {
   readonly of?: string;
   /** A template Home Assistant renders, for a fact of the person's own. */
   readonly template?: string;
+  /** What it answers (#179): a fact's tap its sensor's details by default, a readout's none; hold and double none. */
   readonly tap_action?: ActionConfig;
+  readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 /** The keys an item may carry, as the editor's contract checks them. */
@@ -79,6 +82,8 @@ export const FACT_KEYS = [
   'of',
   'template',
   'tap_action',
+  'hold_action',
+  'double_tap_action',
 ] as const;
 
 export const isFactKind = (value: unknown): value is FactKind =>
@@ -271,7 +276,7 @@ export const FACT_FIELDS: HaFormSchemaItem[] = [
   numberField('factor', 0, 100_000, 0.001),
   entityField(['sensor'], 'of', false),
   textField('template'),
-  actionField('tap_action'),
+  actionFields({ tap: null, hold: 'none' }),
 ];
 
 /** A head readout has no circle: the same fields without the icon and the colour. */
@@ -295,9 +300,10 @@ const KIND_FIELDS: Readonly<Record<FactKind, readonly string[]>> = {
   share: ['of'],
   template: ['template'],
 };
-const EVERY_FACT = new Set(['kind', 'name', 'icon', 'color', 'unit', 'decimals', 'tap_action']);
+const ACTIONS = ['tap_action', 'hold_action', 'double_tap_action'];
+const EVERY_FACT = new Set(['kind', 'name', 'icon', 'color', 'unit', 'decimals', ...ACTIONS]);
 /** A readout has no circle: no icon, no colour. */
-const EVERY_READOUT = new Set(['kind', 'name', 'unit', 'decimals', 'tap_action']);
+const EVERY_READOUT = new Set(['kind', 'name', 'unit', 'decimals', ...ACTIONS]);
 
 const forms = new Map<string, HaFormSchemaItem[]>();
 

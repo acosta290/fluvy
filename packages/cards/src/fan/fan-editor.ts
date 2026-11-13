@@ -57,7 +57,7 @@ export function getConfigForm(): LovelaceConfigForm {
       whenOffField(),
       ...sliderFields(),
       ...colourFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...formLabels({
       show_presets: 'fan.preset',

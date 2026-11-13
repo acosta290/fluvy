@@ -270,6 +270,7 @@ export interface MaintenanceEntry {
   readonly color?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 /** A compartment of the card's own: its setpoint (or its reading), and how it is named, drawn and answers. */
@@ -280,6 +281,7 @@ export interface ZoneEntry {
   readonly color?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 export interface ApplianceCardConfig extends FluvyCardConfig, HeadConfig {
@@ -970,7 +972,8 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         flex: 1 1 auto;
         min-width: 0;
       }
-      .ap-card--row > .fv-round {
+      .ap-card--row > .fv-round,
+      .ap-ring > .fv-ico--tap {
         position: relative;
         z-index: 1;
       }
@@ -1497,7 +1500,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
       key: 'maintenance',
       idKey: 'key',
       title: 'appliance.editor_maintenance',
-      keys: ['key', 'name', 'icon', 'color', 'tap_action', 'hold_action'],
+      keys: ['key', 'name', 'icon', 'color', 'tap_action', 'hold_action', 'double_tap_action'],
       computeLabel: (schema) =>
         schema.name === 'key' ? editorWord('appliance.editor_key') : undefined,
       picker: reminderPicker(),
@@ -1505,21 +1508,20 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         reminderPicker(),
         fieldRow(textField('name'), iconField()),
         accentField('color', { item: 'own' }),
-        actionField('tap_action'),
-        actionField('hold_action'),
+        // a reminder's hold resets it, after asking, where its integration lets a card
+        actionFields({ hold: null }),
       ],
     },
     {
       key: 'zones',
       title: 'appliance.editor_zones',
       domains: ['number', 'climate', 'select', 'sensor'],
-      keys: ['entity', 'name', 'icon', 'color', 'tap_action', 'hold_action'],
+      keys: ['entity', 'name', 'icon', 'color', 'tap_action', 'hold_action', 'double_tap_action'],
       schema: [
         entityField(undefined, 'entity'),
         nameIconFields(),
         accentField('color', { item: 'own' }),
-        actionField('tap_action'),
-        actionField('hold_action'),
+        actionFields(),
       ],
       own: OWN,
     },
@@ -1699,7 +1701,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         accentField('card_color', { none: true }),
         ...cardSurfaceFields(),
         unavailableField(),
-        actionFields(),
+        actionFields({ icon: true }),
         // drawn in the roles' section; `device: none` has no device to search
         onlyWhen(({ device }) => device !== NO_DEVICE, {
           ...boolField('scan'),
@@ -2847,7 +2849,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
             @pointerdown=${startPress}
             @click=${clickPress}
             @contextmenu=${preventMenu}
-            @keydown=${activateKey(cell.tap)}
+            @keydown=${activateKey(cell.tap, cell.hold)}
           >
             ${
               !circles
@@ -2908,20 +2910,19 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
       ${plates.map((id, index) => {
         const on = !view.unavailable && this.plateOn(id);
         const entry = this.zoneEntries().find((item) => item.entity === id);
-        const tap = (): void => this.tap(id, entry?.tap_action ?? { action: 'more-info' });
-        const hold = (): void => this.hold(id, entry?.hold_action ?? { action: 'more-info' });
+        const { onTap, onHold } = this.pressOf(entry, id);
         return html`<div
           class="ap-plate ${on ? 'is-on' : ''}"
           data-accent=${this.accents.item(entry?.color) ?? nothing}
           role="button"
           tabindex="0"
           aria-label=${`${names[index] ?? ''} · ${words[index] ?? ''}`}
-          .fvTap=${tap}
-          .fvHold=${hold}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(onTap, onHold)}
         >
           <span class="ap-plate__ring"></span>
           <span class="ap-plate__name">${names[index]}</span>
@@ -3095,7 +3096,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         glyph: item.glyph,
         tone: this.tileTone(view, item),
         accent: this.accents.item(item.entry?.color),
-        tap: () => this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' }),
+        tap: this.doubled(item.entity, item.entry, () =>
+          this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' }),
+        ),
         hold: () => {
           if (item.entry?.hold_action) this.hold(item.entity, item.entry.hold_action);
           else if (reset) reset();
@@ -3129,7 +3132,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
             @pointerdown=${startPress}
             @click=${clickPress}
             @contextmenu=${preventMenu}
-            @keydown=${activateKey(cell.tap)}
+            @keydown=${activateKey(cell.tap, cell.hold)}
           >
             ${readout({ label: cell.label, value: cell.value, unit: cell.unit, size: 'xs', name: true })}
           </div>`,
@@ -3578,8 +3581,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
           ruler.width('ap-item__text > ap-item__value', said(item)) > this.contentWidth);
     return html`<div class="ap-items ap-items--${style}">
       ${items.map((item) => {
-        const tap = (): void =>
-          this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' });
+        const tap = this.doubled(item.entity, item.entry, () =>
+          this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' }),
+        );
         const reset = item.reminder ? this.reminderActions(view, item.reminder).hold : undefined;
         const hold = (): void => {
           if (item.entry?.hold_action) this.hold(item.entity, item.entry.hold_action);
@@ -3599,7 +3603,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(tap, hold)}
         >
           ${
             circles
@@ -4118,12 +4122,23 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
     return optionWord(this.hass, this.hass?.states[zone.setpoint ?? ''], value);
   }
 
-  /** A compartment's tap and hold: the card's own for it, else its details. */
+  /** A compartment's tap, hold and double tap: the card's own for it, else its details (the double, none). */
   private zoneActions(zone: ZoneShown): { readonly tap: () => void; readonly hold: () => void } {
     return {
-      tap: () => this.tap(zone.entity, zone.entry?.tap_action ?? { action: 'more-info' }),
+      tap: this.doubled(zone.entity, zone.entry, () =>
+        this.tap(zone.entity, zone.entry?.tap_action ?? { action: 'more-info' }),
+      ),
       hold: () => this.hold(zone.entity, zone.entry?.hold_action ?? { action: 'more-info' }),
     };
+  }
+
+  /** An item's tap, waiting for a second where the item sets a double tap (#179). */
+  private doubled(
+    entity: string | undefined,
+    entry: { readonly double_tap_action?: ActionConfig } | undefined,
+    tap: () => void,
+  ): () => void {
+    return this.tapper(entity ?? entry, tap, this.runner(entry?.double_tap_action, entity));
   }
 
   /**
@@ -4178,7 +4193,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(tap, hold)}
         >
           ${circle ? ico(zone.entry?.icon ?? ZONE_GLYPH[zone.kind] ?? 'thermo', accent ? 'accent' : 'cool') : nothing}
           ${readout({ label: fit.label, value: this.zoneText(zone, value), unit: value === null ? '' : unit, size: fit.size })}
@@ -4759,7 +4774,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
   ): { readonly tap: () => void; readonly hold: () => void } {
     const reset = item.reset ? resetCall(view.r.platform, item.reset) : undefined;
     return {
-      tap: () => this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' }),
+      tap: this.doubled(item.entity, item.entry, () =>
+        this.tap(item.entity, item.entry?.tap_action ?? { action: 'more-info' }),
+      ),
       hold: () => {
         if (item.entry?.hold_action) this.hold(item.entity, item.entry.hold_action);
         else if (reset) this.ask(reset, s(this.hass, 'confirm_reset'));
@@ -4997,7 +5014,10 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
       width,
     );
     const length = 2 * Math.PI * ROW_RADIUS;
-    const { onTap, onHold } = this.headActions(view.entity, view.title);
+    const { onTap, onHold, onIconTap, onIconHold, iconLabel } = this.headActions(
+      view.entity,
+      view.title,
+    );
     return html`<article
       class="fv-card dv-card ap-card ap-card--row ${art ? 'ap-card--picture' : ''} ${view.unavailable ? 'is-unavailable is-off' : ''}"
       data-card
@@ -5017,7 +5037,11 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
                     ? svg`<svg viewBox="0 0 58 58" aria-hidden="true" data-measure="drawn"><circle class="ap-ring__track" cx="29" cy="29" r=${ROW_RADIUS} /><circle class="ap-ring__fill" cx="29" cy="29" r=${ROW_RADIUS} stroke-dasharray=${length.toFixed(2)} stroke-dashoffset=${(length * (1 - progress / 100)).toFixed(2)} /></svg>`
                     : nothing
                 }
-                ${ico(view.glyph as IconRef, view.headTone)}
+                ${ico(view.glyph as IconRef, view.headTone, {
+                  onTap: onIconTap,
+                  onHold: onIconHold,
+                  label: iconLabel?.(view.title),
+                })}
               </span>`
             : nothing
       }
@@ -5419,7 +5443,16 @@ function rowsList(key: 'rows' | 'tiles', title: MessageKey): RowsListSpec {
     idKey: 'key',
     also: ['entity'],
     title,
-    keys: ['key', 'entity', 'name', 'icon', 'color', 'tap_action', 'hold_action'],
+    keys: [
+      'key',
+      'entity',
+      'name',
+      'icon',
+      'color',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     computeLabel: (schema) =>
       schema.name === 'key' ? editorWord('appliance.editor_row') : undefined,
     picker: rowPicker(),
@@ -5433,8 +5466,8 @@ function rowsList(key: 'rows' | 'tiles', title: MessageKey): RowsListSpec {
       entityField(undefined, 'entity', false),
       nameIconFields(),
       accentField('color', { item: 'own' }),
-      actionField('tap_action'),
-      actionField('hold_action'),
+      // a reminder's hold resets it, after asking, where its integration lets a card
+      actionFields({ hold: null }),
     ],
   };
 }

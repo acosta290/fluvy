@@ -18,6 +18,7 @@ import {
 } from '@fluvy/core';
 
 import {
+  activateKey,
   axis,
   clickPress,
   firstFit,
@@ -673,13 +674,8 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   /* ---------- variants ---------- */
 
   private renderTile(view: EntityView): TemplateResult {
-    const open = (): void => this.tap(view.id);
-    const key = (event: KeyboardEvent): void => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        open();
-      }
-    };
+    // the tile is the card's button; its circle answers of its own where the card says so (#179)
+    const { onTap, onHold, onIconTap, onIconHold, iconLabel } = this.headActions(view.id);
     const name = this.nameFor(view, this.config?.name);
     const tone = this.toneOf(view);
     const parts = this.parts(view, view.number);
@@ -697,15 +693,19 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       data-card
       role="button"
       tabindex="0"
-      .fvTap=${open}
-      .fvHold=${() => this.hold(view.id)}
+      .fvTap=${onTap}
+      .fvHold=${onHold}
       @pointerdown=${startPress}
       @contextmenu=${preventMenu}
       @click=${clickPress}
-      @keydown=${key}
+      @keydown=${activateKey(onTap, onHold)}
     >
       <div class="fv-tile__head">
-        ${ico(iconOf(view, this.config?.icon), tone)}
+        ${ico(iconOf(view, this.config?.icon), tone, {
+          onTap: onIconTap,
+          onHold: onIconHold,
+          label: iconLabel?.(name),
+        })}
         ${trend ? html`<span class="fv-trend ${trend === 'down' ? 'fv-trend--down' : ''} am-tile__trend">${glyph(trend === 'down' ? 'trendDown' : 'trendUp')}</span>` : nothing}
       </div>
       ${readout({

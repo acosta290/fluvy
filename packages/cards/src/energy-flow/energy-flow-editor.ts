@@ -10,7 +10,7 @@ import {
   periodic,
 } from '../energy/collection-field.js';
 import { WATT_LADDERS } from '../energy/power.js';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
@@ -122,9 +122,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<EnergyFlowCardConfig>()([
@@ -233,7 +233,7 @@ export function getConfigForm(): LovelaceConfigForm {
       entitiesField('readouts', ['sensor']),
       ...colourFields(),
       numberFields({ units: WATT_LADDERS }),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...editorLabels(
       s,

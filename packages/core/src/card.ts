@@ -42,6 +42,7 @@ import {
  * What every card's config may carry. `tone` is the role a card's parts are drawn in (a palette tone); `color` is
  * the card's own colour — a Home Assistant colour name or `#rrggbb` — standing in for the palette's accent inside
  * it. `tap_action` answers the head (the card's button), `hold_action` a still press on it; both default to more-info.
+ * `double_tap_action` answers two taps within 250 ms (#179): none by default, and where it is set a tap waits them out.
  */
 export interface FluvyCardConfig extends LovelaceCardConfig {
   entity?: string;
@@ -66,7 +67,11 @@ export interface FluvyCardConfig extends LovelaceCardConfig {
   slider_words?: SliderWords;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
+
+/** Home Assistant's wait for a second tap (`DOUBLE_CLICK_TIME`): a tap waits this long only where a double tap is set. */
+const DOUBLE_TAP = 250;
 
 /** One `hass` per Home Assistant update, in the language fluvy's settings chose (shared by every card). */
 const inLanguage = new WeakMap<HomeAssistant, HomeAssistant>();
@@ -568,6 +573,8 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     this.resizeObserver = undefined;
     for (const entry of this.optimistic.values()) clearTimeout(entry.timer);
     this.optimistic.clear();
+    for (const timer of this.firstTaps.values()) clearTimeout(timer);
+    this.firstTaps.clear();
   }
 
   /** Entities whose changes re-render the card. Defaults to `entity` + `entities` of the config. */
@@ -828,6 +835,38 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     action: ActionConfig | undefined = this.config?.tap_action,
   ): void {
     if (this.hass) void runAction(this, this.hass, action, entityId);
+  }
+
+  /** The first taps waiting for a second, by the surface they fell on (`tapper`). */
+  private readonly firstTaps = new Map<unknown, number>();
+
+  /**
+   * A surface's tap where a double tap is set (#179): the first waits Home Assistant's 250 ms, and a second inside them,
+   * on the same surface (`key`, the same from one render to the next: the entity it acts on, its part), runs the double
+   * instead; a hold never comes here. Without a double, the tap as it was, at once — and with one, a surface whose tap
+   * does nothing is still a button.
+   */
+  protected tapper<T extends (() => void) | undefined>(
+    key: unknown,
+    tap: T,
+    double: (() => void) | undefined,
+  ): T | (() => void) {
+    return double
+      ? () => {
+          const first = this.firstTaps.get(key);
+          clearTimeout(first);
+          this.firstTaps.delete(key);
+          if (first) double();
+          else
+            this.firstTaps.set(
+              key,
+              window.setTimeout(() => {
+                this.firstTaps.delete(key);
+                tap?.();
+              }, DOUBLE_TAP),
+            );
+        }
+      : tap;
   }
 
   /** A still press of 500 ms on the head: the `hold_action` (more-info by default), as a tap is the `tap_action`. */

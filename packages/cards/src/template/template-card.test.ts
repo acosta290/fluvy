@@ -185,6 +185,8 @@ describe('a Mushroom template card pastes in', () => {
       icon: 'mdi:lamp',
       color: 'amber',
       variant: 'mini',
+      // its double tap is the tile's own since 1.20 (#179)
+      double_tap_action: { action: 'toggle' },
       // not drawn this cycle, and kept for when they are
       picture: '/local/lamp.png',
       badge_icon: 'mdi:alert',

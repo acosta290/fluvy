@@ -253,7 +253,8 @@
 }
 
 .lt-card--row .lt-bulbs,
-.lt-card--row > .lt-ruler {
+.lt-card--row > .lt-ruler,
+.lt-card--row > .fv-card__head > .fv-ico--tap {
   pointer-events: auto;
 }
 

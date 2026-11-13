@@ -29,7 +29,7 @@ import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
 import { modeRow } from '../energy/mode-row.js';
 import { valueRow, type Figure } from '../shared/value-row.js';
 import { deviceName, scaled, scaleOf, type Scale } from '../energy/power.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import {
@@ -127,9 +127,9 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<BatteriesCardConfig>()([
     'title',
@@ -182,7 +182,7 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
         entityField(['select', 'input_select'], 'mode', false),
         ...colourFields(),
         numberFields({ units: LADDERS.power }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(s, { reserve: 'editor_reserve', mode: 'editor_mode' }),
     };

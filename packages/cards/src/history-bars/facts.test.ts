@@ -193,6 +193,8 @@ describe('a fact in the editor', () => {
       'unit',
       'decimals',
       'tap_action',
+      'hold_action',
+      'double_tap_action',
     ]);
     expect(names(factSchema({ kind: 'co2' }))).toContain('factor');
     expect(names(factSchema({ kind: 'money' }))).toContain('factor');
@@ -211,6 +213,8 @@ describe('a fact in the editor', () => {
       'unit',
       'decimals',
       'tap_action',
+      'hold_action',
+      'double_tap_action',
     ]);
     expect(names(readoutSchema({ kind: 'share' }))).toContain('of');
     expect(readoutSchema({ kind: 'total' })).not.toBe(factSchema({ kind: 'total' }));

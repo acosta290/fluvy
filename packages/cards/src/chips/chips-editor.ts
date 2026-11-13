@@ -2,7 +2,7 @@ import type { LovelaceConfigForm } from '@fluvy/core';
 import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
-  actionField,
+  actionFields,
   emptyFields,
   entityField,
   fieldRow,
@@ -28,14 +28,24 @@ export const lists: readonly RowsListSpec[] = [
     key: 'chips',
     idKey: 'name',
     title: 'editor.tabs',
-    keys: ['name', 'icon', 'path', 'entity', 'action', 'color'],
+    keys: [
+      'name',
+      'icon',
+      'path',
+      'entity',
+      'color',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     schema: [
       // its words, or a template rendered live (a count, a state); its icon and colour take one in YAML
       { ...textField('name'), helper: 'editor.template_helper' },
       fieldRow(iconField(), textField('path')),
       entityField(undefined, 'entity', false),
       accentField('color', { item: 'card' }),
-      actionField('action'),
+      // its path or its entity's details where it names no tap of its own; a hold nothing until set
+      actionFields({ tap: null, hold: 'none' }),
     ],
   },
 ];

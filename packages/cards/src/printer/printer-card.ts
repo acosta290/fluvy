@@ -32,7 +32,7 @@ import type { StreamHolder } from '../camera/stream.js';
 import { sharedGap } from '../cover/common.js';
 import { CAMERA_RATIOS, cameraRatio, plateHeight, printerHeight } from '../devices-family.js';
 import { HeadFit } from '../energy/head.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
 import { durationText, spanText, widestDuration, withUnit } from '../shared/duration.js';
@@ -568,9 +568,9 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<PrinterCardConfig>()([
     'device',
@@ -645,7 +645,7 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
         accentField('card_color', { none: true }),
         ...cardSurfaceFields(),
         unavailableField(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         s,
@@ -1651,8 +1651,6 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
     );
     const radius = 26.5;
     const length = 2 * Math.PI * radius;
-    const tap = (): void => this.tap(roles.status);
-    const hold = (): void => this.hold(roles.status);
     const { onTap, onHold } = this.headActions(roles.status, r.title);
     if (!ring)
       return html`<article
@@ -1661,16 +1659,12 @@ export class FluvyPrinterCard extends Card<PrinterCardConfig> {
         role="button"
         tabindex="0"
         aria-label=${`${r.title} · ${line}`}
-        .fvTap=${tap}
-        .fvHold=${hold}
+        .fvTap=${onTap}
+        .fvHold=${onHold}
         @pointerdown=${startPress}
         @click=${clickPress}
         @contextmenu=${preventMenu}
-        @keydown=${(event: KeyboardEvent) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          tap();
-        }}
+        @keydown=${activateKey(onTap, onHold)}
       >
         <span class="fv-row__text"
           ><span class="fv-row__title" data-name>${r.title}</span

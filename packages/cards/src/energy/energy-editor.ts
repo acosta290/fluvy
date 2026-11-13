@@ -155,7 +155,7 @@ export function getConfigForm(): LovelaceConfigForm {
       // the line's styles, or a stacked chart's: what each variant draws
       chartSection([LINE_CAPS, STACK_CAPS], capsIn),
       numberFields({ when: hasLadder }),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(
       s,

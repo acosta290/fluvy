@@ -57,7 +57,7 @@ export function getConfigForm(): LovelaceConfigForm {
         selectField('suction_style', ['full', 'chips']),
       ),
       ...colourFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(
       vacuumStrings,

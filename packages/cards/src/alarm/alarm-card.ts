@@ -293,7 +293,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
         boolField('show_rows'),
         entitiesField('rows'),
         ...colourFields(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...formLabels({}),
     };

@@ -99,6 +99,7 @@
     "editor.admin_only": "Administrators only",
     "editor.row_action": "Row tap",
     "editor.row_hold_action": "Row hold",
+    "editor.row_double_tap_action": "Row double tap",
     "editor.row_button": "Row button",
     "editor.actions": "Buttons",
     "editor.conditions": "Only when",

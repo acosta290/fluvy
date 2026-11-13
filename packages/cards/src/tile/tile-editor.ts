@@ -24,14 +24,14 @@ import {
   switches,
   tintField,
 } from '../shared/form.js';
-import { ENTITY_BASE, SLIDER_BASE } from '../shared/base.js';
+import { ENTITY_BASE, ICON_ACTIONS_BASE, SLIDER_BASE } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
 import { ruled, TILE_SIZES, tintsAtRest, type TileCardConfig } from './tile-card.js';
 
 /** The tile card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
-export const base = [...ENTITY_BASE, ...SLIDER_BASE];
+export const base = [...ENTITY_BASE, ...SLIDER_BASE, ...ICON_ACTIONS_BASE];
 
 export const keys = configKeys<TileCardConfig>()([
   'size',
@@ -86,7 +86,8 @@ export function getConfigForm(): LovelaceConfigForm {
         (data, hass) => !largeRuled(data, hass) || askedSliderStyle(data) === 'fill',
         entitiesField('readouts', ['sensor']),
       ),
-      actionFields(),
+      // a small tile's tap toggles what toggles, a large one's opens; its circle may be its switch
+      actionFields({ icon: true, tap: null, iconTap: null }),
     ],
     ...formLabels({ readouts: 'editor.readouts' }),
   };

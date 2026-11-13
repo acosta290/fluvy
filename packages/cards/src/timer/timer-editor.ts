@@ -33,7 +33,7 @@ export function getConfigForm(): LovelaceConfigForm {
       showIconField(),
       ...colourFields(),
       fieldRow(boolField('show_gauge'), boolField('show_actions')),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(s, { show_gauge: 'elapsed' }, {}),
   };

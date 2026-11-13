@@ -69,7 +69,8 @@ const TILE_FIELDS = [
   sinceField(),
   unavailableField({ item: true }),
   showSwitchField({ item: true }),
-  actionFields(),
+  // a small tile's tap toggles what toggles, a large one's opens; its circle may be its switch
+  actionFields({ icon: true, tap: null, iconTap: null }),
 ];
 const TILE_FIELDS_NO_SWITCH = TILE_FIELDS.filter((field) => field.name !== 'show_switch');
 
@@ -90,6 +91,10 @@ export const lists: readonly RowsListSpec[] = [
       'show_switch',
       'tap_action',
       'hold_action',
+      'double_tap_action',
+      'icon_tap_action',
+      'icon_hold_action',
+      'icon_double_tap_action',
     ],
     schema: TILE_FIELDS,
     // a tile's own switch where it has one: a large tile's, of an entity that switches

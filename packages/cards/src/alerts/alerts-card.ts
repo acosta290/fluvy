@@ -38,7 +38,7 @@ import {
   type AlertsVariant,
 } from '../alerts-family.js';
 import { HeadFit, type FittedHead } from '../energy/head.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import { ACTIONS_BASE, Card, type BaseKey, type HeadConfig, type Press } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   actionFields,
@@ -306,8 +306,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
   ];
   static override keys = configKeys<AlertsCardConfig>()([
@@ -375,7 +374,8 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
         ),
         emptyFields(),
         ...colourFields(),
-        actionFields(),
+        // the overview of every alert where none is chosen
+        actionFields({ tap: null, hold: null }),
       ],
       ...cardLabels(),
     };
@@ -551,14 +551,25 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     return this.variant !== 'rows';
   }
 
-  /** An alert's tap: its own action, else (without a head) the card's, else its sheet. */
+  /**
+   * An alert's tap: its own action, else (without a head) the card's, else its sheet — waiting for a second where a
+   * double tap is set, its own or (without a head) the card's (#179).
+   */
   private tapOf(result: AlertResult): (() => void) | undefined {
-    const action =
-      result.definition.tapAction ?? (this.headless ? this.config?.tap_action : undefined);
-    if (!action) return () => void this.openSheet(result.key);
-    return actionRuns(action as ActionConfig, result.rows[0]?.id)
-      ? () => this.runFor(result, action as AlertAction)
-      : undefined;
+    const { tapAction, doubleTapAction } = result.definition;
+    const action = tapAction ?? (this.headless ? this.config?.tap_action : undefined);
+    const double = doubleTapAction ?? (this.headless ? this.config?.double_tap_action : undefined);
+    return this.tapper(
+      `alert_${result.key}`,
+      !action
+        ? () => void this.openSheet(result.key)
+        : actionRuns(action as ActionConfig, result.rows[0]?.id)
+          ? () => this.runFor(result, action as AlertAction)
+          : undefined,
+      double && actionRuns(double as ActionConfig, result.rows[0]?.id)
+        ? () => this.runFor(result, double as AlertAction)
+        : undefined,
+    );
   }
 
   /** An alert's hold: its own action, else (without a head) the card's, else the overview of every alert. */
@@ -604,6 +615,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     run: (action, entity) => {
       if (this.hass) void runAction(this, this.hass, action, entity);
     },
+    tapper: (key, tap, double) => this.tapper(key, tap, double),
     adopt: (root) => this.accents.adopt(root),
     closed: () => {
       this.sheetOpen_ = false;
@@ -1107,19 +1119,21 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     });
   }
 
-  /** The head's press (rows): the card's tap and hold, else the overview of every alert. */
-  private headPress(): { onTap?: () => void; onHold?: () => void } {
+  /**
+   * The head's press (rows): the card's tap and hold, else the overview of every alert; its double tap where set
+   * (#179).
+   */
+  private headPress(): Press {
     const press = (action: ActionConfig | undefined): (() => void) | undefined =>
-      !action
-        ? () => void this.openSheet()
-        : actionRuns(action)
-          ? () => {
-              if (this.hass) void runAction(this, this.hass, action);
-            }
-          : undefined;
-    const onTap = press(this.config?.tap_action);
-    const onHold = press(this.config?.hold_action);
-    return { ...(onTap ? { onTap } : {}), ...(onHold ? { onHold } : {}) };
+      !action ? () => void this.openSheet() : this.runner(action, undefined);
+    return {
+      onTap: this.tapper(
+        'head',
+        press(this.config?.tap_action),
+        this.runner(this.config?.double_tap_action, undefined),
+      ),
+      onHold: press(this.config?.hold_action),
+    };
   }
 
   /** Whether the banner turns by itself: asked to, more than one to show, motion allowed. */

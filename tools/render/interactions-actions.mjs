@@ -12,7 +12,12 @@
  * sensor tile's whole surface taps and holds; a tap to be asked about first goes to Home Assistant and moves nothing,
  * and a `fire-dom-event` reaches the page's listeners; a finger's long press on a head (a touch screen, Chromium)
  * holds, selects nothing and never taps; quiet out of reach, a person out of reach loses the dashed ring and one nobody
- * can place keeps it. `ENGINE=webkit` runs it in WebKit (the long press is Chromium's alone).
+ * can place keeps it. Double tap and the circle's own actions (#179), on the `taps` sheet: one tap on a tile, a row or
+ * a tab with a double tap set waits its 250 ms and runs the tap, two inside them run the double and never the tap, a
+ * hold is a hold; a tile's and a head's circle with actions of their own answer them beside the card's surface (a
+ * circle that is the tile's switch still flips it), named and reached by the keyboard; Enter twice is a double tap; a
+ * finger's two taps are one double tap, never a zoom. `ENGINE=webkit` runs it in WebKit (the long press is Chromium's
+ * alone; the finger's double tap is WebKit's own there).
  */
 import { holdForFine, mousePointer, rulerGeometry } from './lib/gestures.mjs';
 import {
@@ -528,6 +533,216 @@ if (ENGINE === 'chromium') {
     'a finger held on a head: the hold action, nothing selected, never the tap',
     went.join() === '/fluvy-auto/rooms' && selected === '' && (await calls(page)).length === 0,
     `${went.join(' ')} · "${selected}"`,
+  );
+  await context.close();
+}
+
+/* ---------- double tap and the circle's own actions (#179) ---------- */
+
+/** The centre of a part, where a pointer lands on whatever the browser hit-tests there. */
+async function centre(locator) {
+  await locator.scrollIntoViewIfNeeded();
+  const box = await locator.boundingBox();
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** What the cards asked for since the last look: the services, the details, the paths. */
+async function heard(page) {
+  const said = [
+    ...(await calls(page)).map((c) => c.s),
+    ...(await moreInfo(page)).map((id) => `details ${id}`),
+    ...(await navigations(page)),
+  ];
+  await reset(page);
+  return said.join(' ');
+}
+
+{
+  const page = await suite.sheet('taps');
+  await watchNavigation(page);
+  const tiles = frame(page, 'Double tap · tiles').locator('fluvy-tiles-card .fv-tile');
+  const lamp = await centre(tiles.nth(0).locator('.fv-tile__name'));
+  // one tap waits its 250 ms, then runs the tap
+  await page.mouse.click(lamp.x, lamp.y);
+  const early = await heard(page);
+  await settle(page, 350);
+  check(
+    'a tile with a double tap: one tap waits 250 ms, then opens its details',
+    early === '' && (await heard(page)) === 'details light.tp_desk',
+    early,
+  );
+  await page.mouse.dblclick(lamp.x, lamp.y);
+  await settle(page, 400);
+  const twice = await heard(page);
+  check(
+    'two taps inside them switch it, and never also open it',
+    twice === 'light.turn_off',
+    twice,
+  );
+  const kettle = tiles.nth(1);
+  await hold(page, kettle);
+  await settle(page, 400);
+  const held = await heard(page);
+  check('a hold on it is its hold, whatever its double tap', held === '/h/kettle', held);
+
+  // a row's own hold and double tap
+  const rows = frame(page, 'Rows').locator('fluvy-entities-card .fv-row--tap');
+  await hold(page, rows.nth(0));
+  await settle(page, 400);
+  const row = await heard(page);
+  check('a row holds on its own', row === '/h/office', row);
+  const humidity = await centre(rows.nth(1).locator('.fv-row__title'));
+  await page.mouse.dblclick(humidity.x, humidity.y);
+  await settle(page, 400);
+  const rowTwice = await heard(page);
+  check('a row’s two taps are its double tap', rowTwice === '/d/humidity', rowTwice);
+
+  // a tab: its path on a tap, its hold, its double tap
+  const chips = frame(page, 'Tabs').locator('fluvy-chips-card .fv-chip');
+  await chips.nth(0).click();
+  await settle(page, 200);
+  const home = await heard(page);
+  check('a tab without a double tap goes at once', home === '/t/home', home);
+  await hold(page, chips.nth(1));
+  await settle(page, 400);
+  const office = await heard(page);
+  // the lamp's toggle: whichever way the double tap above left it
+  check(
+    'a tab holds on its own, and never also goes',
+    /^light\.turn_(on|off)$/.test(office),
+    office,
+  );
+  const tab = await centre(chips.nth(2));
+  await page.mouse.dblclick(tab.x, tab.y);
+  await settle(page, 400);
+  const tabTwice = await heard(page);
+  check('a tab’s two taps are its double tap', tabTwice === 'switch.turn_on', tabTwice);
+
+  // a large tile's circle of its own, beside the tile's surface; a circle that is the switch still flips it
+  const large = frame(page, 'Circle · large').locator('fluvy-tiles-card .fv-tile');
+  const circle = large.nth(0).locator('.fv-tile__head .fv-ico--tap');
+  check(
+    'a tile’s circle with an action of its own is a button, named after the tile',
+    (await circle.count()) === 1 &&
+      (await circle.getAttribute('aria-label')) === 'Reading lamp icon',
+  );
+  await circle.click();
+  await settle(page, 200);
+  const own = await heard(page);
+  check('its tap is its own: the details', own === 'details light.tp_reading', own);
+  const reading = await centre(large.nth(0).locator('.fv-tile__name'));
+  await page.mouse.click(reading.x, reading.y);
+  await settle(page, 200);
+  const surface = await heard(page);
+  check('the tile’s surface keeps the tile’s tap', surface === '/t/reading', surface);
+  const flips = large.nth(1).locator('.fv-tile__head .fv-ico');
+  await flips.click();
+  await settle(page, 200);
+  const flipped = await heard(page);
+  check(
+    'a circle that is the tile’s switch still flips it, a switch to a reader',
+    flipped === 'switch.turn_off' && (await flips.getAttribute('role')) === 'switch',
+    flipped,
+  );
+  await hold(page, flips);
+  await settle(page, 400);
+  const flipsHeld = await heard(page);
+  check('and holds on its own', flipsHeld === '/h/heater', flipsHeld);
+
+  // a mini tile's circle: its own tap, its own double tap, above the tile's button
+  const mini = frame(page, 'Circle · compact and mini').locator('fluvy-tile-card').nth(1);
+  const miniCircle = await centre(mini.locator('.fv-ico--tap'));
+  await page.mouse.dblclick(miniCircle.x, miniCircle.y);
+  await settle(page, 400);
+  const miniTwice = await heard(page);
+  check('a mini tile’s circle double-taps on its own', miniTwice === '/d/kettle', miniTwice);
+  const miniName = await centre(mini.locator('.fv-tile__name'));
+  await page.mouse.click(miniName.x, miniName.y);
+  await settle(page, 200);
+  const miniTap = await heard(page);
+  // the kettle's toggle: whichever way its tab's double tap above left it
+  check('and the tile around it still toggles', /^switch\.turn_(on|off)$/.test(miniTap), miniTap);
+
+  // a head's circle: its own button over the head's, the head still the card's
+  const card = frame(page, 'Circle · head').locator('fluvy-light-card');
+  const headCircle = card.locator('.fv-card__head > .fv-ico--tap');
+  await tapHead(card, '.fv-card__head > .fv-ico--tap');
+  await settle(page, 200);
+  const headOwn = await heard(page);
+  check(
+    'a head’s circle with an action of its own answers it, named after the card',
+    headOwn === 'details light.tp_ceiling' &&
+      (await headCircle.getAttribute('aria-label')) === 'Living room ceiling icon',
+    headOwn,
+  );
+  await tapHead(card, 'title');
+  await settle(page, 200);
+  const headTap = await heard(page);
+  check('the head beside it is still the card’s button', headTap === 'light.turn_on', headTap);
+  await hold(page, headCircle);
+  await settle(page, 400);
+  const headHeld = await heard(page);
+  check(
+    'a hold on the circle is the circle’s, never the head’s',
+    headHeld === '/h/ceiling',
+    headHeld,
+  );
+
+  // the keyboard: the circle is in the tab order; Enter twice on a surface with a double tap is its double tap
+  await headCircle.focus();
+  await page.keyboard.press('Enter');
+  await settle(page, 200);
+  const keyed = await heard(page);
+  check(
+    'the circle takes the keyboard: Enter is its tap',
+    keyed === 'details light.tp_ceiling',
+    keyed,
+  );
+  await tiles.nth(0).locator('.fv-tile__tap').focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await settle(page, 400);
+  const keyedTwice = await heard(page);
+  check(
+    'Enter twice inside 250 ms is the double tap',
+    /^light\.turn_(on|off)$/.test(keyedTwice),
+    keyedTwice,
+  );
+  await page.keyboard.press('Shift+F10');
+  await settle(page, 200);
+  const keyHeld = await heard(page);
+  check('Shift+F10 holds', keyHeld === 'details light.tp_desk', keyHeld);
+  await page.close();
+}
+
+/* ---------- a finger's double tap: the double tap, never the page's zoom (WebKit's own under ENGINE=webkit) ---------- */
+{
+  const context = await suite.browser.newContext({
+    hasTouch: true,
+    isMobile: ENGINE !== 'firefox',
+    viewport: { width: 390, height: 844 },
+  });
+  const page = await context.newPage();
+  await page.goto(`${BASE}?sheet=taps&width=360`);
+  await page.waitForSelector('html[data-ready="1"]');
+  await page.waitForTimeout(900);
+  await watchNavigation(page);
+  const lamp = await centre(
+    frame(page, 'Double tap · tiles')
+      .locator('fluvy-tiles-card .fv-tile')
+      .nth(0)
+      .locator('.fv-tile__name'),
+  );
+  const zoom = () => page.evaluate(() => window.visualViewport?.scale ?? 1);
+  await page.touchscreen.tap(lamp.x, lamp.y);
+  await page.waitForTimeout(80);
+  await page.touchscreen.tap(lamp.x, lamp.y);
+  await settle(page, 500);
+  const said = (await calls(page)).map((c) => c.s).join(' ');
+  check(
+    `${ENGINE}: a finger’s two taps on a tile are its double tap, and the page never zooms`,
+    said === 'light.turn_off' && (await zoom()) === 1,
+    `${said} · zoom ${await zoom()}`,
   );
   await context.close();
 }

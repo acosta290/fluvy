@@ -24,8 +24,14 @@ import {
 
 import { CAMERA_RATIOS, camerasHeight, cameraRatio, plateHeight } from '../devices-family.js';
 import { HeadFit } from '../energy/head.js';
-import { DETAILS } from '../lock/rows.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import {
+  ACTIONS_BASE,
+  Card,
+  ICON_ACTIONS_BASE,
+  MORE_INFO,
+  type BaseKey,
+  type HeadConfig,
+} from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import {
   columnsOf,
@@ -94,9 +100,10 @@ export interface CameraItem {
   /** The circle's tone and colour while it sees someone (neutral where it asks neither). */
   readonly tone?: Tone;
   readonly color?: string;
-  /** What a tap on its picture does (default: its details); a still press, where it says. */
+  /** What a tap on its picture does (default: its details); a still press and two taps, where it says. */
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 export interface CamerasCardConfig extends FluvyCardConfig, HeadConfig, EmptyList {
@@ -298,9 +305,9 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<CamerasCardConfig>()([
     'title',
@@ -339,6 +346,7 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
         'color',
         'tap_action',
         'hold_action',
+        'double_tap_action',
       ],
       schema: [
         entityField(['camera']),
@@ -353,7 +361,8 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
         ),
         selectField('fit_mode', ['cover', 'contain']),
         fieldRow(toneField(), accentField('color', { item: 'own' })),
-        actionFields(),
+        // its hold the card's where it names none
+        actionFields({ hold: null }),
       ],
     },
   ];
@@ -426,7 +435,8 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
         ),
         ...colourFields(),
         emptyFields(),
-        actionFields(),
+        // a card of many: its head goes only where its tap says; its hold is its round's
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         s,
@@ -583,10 +593,10 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
     }
     const plate = this.renderRoot.querySelector<HTMLElement>(`[data-cam="${i}"] .dv-cam`);
     if (!plate || typeof plate.requestFullscreen !== 'function') {
-      this.tap(item.entity, DETAILS);
+      this.tap(item.entity, MORE_INFO);
       return;
     } // iPhone: Home Assistant's dialog has the player
-    plate.requestFullscreen().catch(() => this.tap(item.entity, DETAILS));
+    plate.requestFullscreen().catch(() => this.tap(item.entity, MORE_INFO));
   }
 
   /* ---------- the head's round and the sheet ---------- */
@@ -635,7 +645,7 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
     setLive: (on) => {
       this.live_ = on;
     },
-    open: (entity) => this.tap(entity, DETAILS),
+    open: (entity) => this.tap(entity, MORE_INFO),
     adopt: (root) => this.accents.adopt(root),
   };
 
@@ -717,16 +727,19 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
     return (line) => renderStatus(line, fit(line));
   }
 
-  /** What a press on a camera does: its tap (its details by default) and its hold where it has one. */
+  /**
+   * What a press on a camera does: its tap (its details by default), its hold (the card's, else its details) and its
+   * double tap where it has one.
+   */
   private press(shown: Shown, label: string): TemplateResult {
     const { item, view } = shown;
-    return pressCover(
-      label,
-      () => this.tap(view.id, item.tap_action ?? DETAILS),
-      actionRuns(item.hold_action, view.id)
-        ? () => this.hold(view.id, item.hold_action)
-        : undefined,
+    const { onTap, onHold } = this.pressOf(
+      item,
+      view.id,
+      MORE_INFO,
+      this.config?.hold_action ?? MORE_INFO,
     );
+    return pressCover(label, onTap, onHold);
   }
 
   /**
@@ -940,8 +953,9 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
       shorter: [''],
       trailing: roundFits ? 44 : 0,
     });
-    // a card of many has no entity to open: its head is a button only where its tap goes somewhere
-    const tap = actionRuns(config?.tap_action) ? { onTap: () => this.tap(undefined) } : {};
+    // a card of many has no entity to open: its head is a button only where its tap goes somewhere (its hold is its
+    // round's), its circle where it answers of its own
+    const { onTap } = this.pressOf(config, undefined, null, null);
     // out of reach, each camera keeps its tile; the card wears the off skin only when every one is
     const gone = shown.length > 0 && shown.every(({ view }) => !isUsable(view));
     const variant = config?.variant ?? 'grid';
@@ -958,7 +972,8 @@ export class FluvyCamerasCard extends Card<CamerasCardConfig> {
         sub: fitted.sub,
         trailing: roundFits ? round('dots', 'quiet', this.moreLabel(), () => this.more()) : nothing,
         cut: fitted.cut,
-        ...tap,
+        onTap,
+        ...this.iconActions(undefined),
       })}
       ${
         !shown.length

@@ -75,6 +75,8 @@ export interface SheetHost {
   memory(): AlertMemory;
   /** Runs an action as the card would (Home Assistant's own, its confirmation handed to it). */
   run(action: ActionConfig, entity?: string): void;
+  /** A tap that waits for a second where a double tap is set (the card's `tapper`, #179). */
+  tapper(key: unknown, tap: () => void, double: (() => void) | undefined): () => void;
   /** The card's colours, adopted into the sheet's own root. */
   adopt(root: ShadowRoot): void;
   /** The sheet is closed: the card may step aside now if all is clear. */
@@ -529,12 +531,15 @@ export class FluvyAlertsSheet extends LitElement {
   }
 
   /**
-   * A row's tap and hold: its alert's row actions, else — for an administrator — the device's page on a hold, or on a
-   * tap where the row is a device of several entities; else the entity's details.
+   * A row's tap and hold: its alert's row actions (`own`: its double tap), else — for an administrator — the device's
+   * page on a hold, or on a tap where the row is a device of several entities; else the entity's details.
    */
-  private rowTap(result: AlertResult, group: RowGroup, hold: boolean): void {
-    const { definition } = result;
-    const own = hold ? definition.rowHoldAction : definition.rowAction;
+  private rowTap(
+    result: AlertResult,
+    group: RowGroup,
+    hold: boolean,
+    own = hold ? result.definition.rowHoldAction : result.definition.rowAction,
+  ): void {
     const page: AlertAction | undefined =
       this.hass?.user?.is_admin === true && group.device && (hold || group.rows.length > 1)
         ? { action: 'navigate', navigation_path: `/config/devices/device/${group.device}` }
@@ -547,6 +552,17 @@ export class FluvyAlertsSheet extends LitElement {
       row: group.lead.id,
     });
     if (bound) this.run(bound, group.lead.state ? group.lead.id : undefined);
+  }
+
+  /** A row's tap, waiting for a second where its alert sets a row's double tap (#179). */
+  private tapped(result: AlertResult, group: RowGroup): (() => void) | undefined {
+    const double = result.definition.rowDoubleTapAction;
+    const tap = (): void => this.rowTap(result, group, false);
+    return this.card?.tapper(
+      `row_${group.lead.id}`,
+      tap,
+      double && (() => this.rowTap(result, group, false, double)),
+    );
   }
 
   private async snooze(result: AlertResult, choice: SnoozeChoice): Promise<void> {
@@ -723,7 +739,7 @@ export class FluvyAlertsSheet extends LitElement {
       ${value ? html`<span class="fv-row__value as-value fv-tone--${valueTone}">${value}</span>` : nothing}
       ${pressCover(
         [name, message, sub || state].filter(Boolean).join(' · '),
-        () => this.rowTap(result, group, false),
+        this.tapped(result, group),
         () => this.rowTap(result, group, true),
       )}
       ${

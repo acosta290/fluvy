@@ -83,6 +83,7 @@ export interface RowEntry {
   readonly color?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
 }
 
 /**

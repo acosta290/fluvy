@@ -20,6 +20,7 @@
     "previous": "Previous",
     "next": "Next",
     "no_entity": "Choose an entity",
+    "icon_of": "{name} icon",
     "events": "{count} events",
     "events_one": "1 event",
     "no_events": "No events",

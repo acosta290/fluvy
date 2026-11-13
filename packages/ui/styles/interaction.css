@@ -5,9 +5,11 @@
  * transition.
  */
 
+/* two taps on a card are its double tap where one is set (#179), never the browser's zoom */
 :host {
   display: block;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   --fv-fast: 120ms;
   --fv-base: 180ms;
   --fv-slow: 320ms;
@@ -114,6 +116,11 @@
    a row's do; the ring of the keyboard's focus goes round the whole row */
 .fv-card__head--tap:has(.fv-card__tap:active) > .fv-ico {
   scale: 0.94;
+}
+
+/* a circle with actions of its own (#179) is a button over the head's overlay, which lies over what comes before it */
+.fv-card__head--tap > .fv-ico--tap {
+  z-index: 1;
 }
 
 .fv-card__head--tap:has(.fv-card__tap:active) > .fv-card__titles {

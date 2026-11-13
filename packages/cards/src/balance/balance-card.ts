@@ -76,7 +76,7 @@ import { phaseBlock, phaseStyles, phaseWatts } from '../energy/phases.js';
 import { scaled, scaleOf, sourceNames, WATT_LADDERS, type Scale } from '../energy/power.js';
 import { kindField, MEASURE_WORDS, measureFields, PHASES_ALIAS } from '../energy/sources-editor.js';
 import { statsCols, statsStyles } from '../energy/stats.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, type AliasSpec } from '../shared/config.js';
@@ -219,9 +219,9 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<EnergyBalanceCardConfig>()([
     'title',
@@ -278,7 +278,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
         fieldRow(boolField('show_phases'), boolField('show_cost')),
         ...colourFields(),
         numberFields({ units: WATT_LADDERS }),
-        actionFields(),
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         s,

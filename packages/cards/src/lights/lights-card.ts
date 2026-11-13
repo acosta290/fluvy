@@ -1,6 +1,5 @@
 import type { Tint } from '../shared/colour.js';
 import {
-  actionRuns,
   areaEntities,
   areasInOrder,
   entriesOf,
@@ -24,6 +23,7 @@ import {
   chips,
   clickPress,
   head,
+  holdKey,
   listRow,
   preventMenu,
   round,
@@ -44,7 +44,7 @@ import {
   type TemplateResult,
 } from 'lit';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
-import type { CardEditor } from '../shared/base.js';
+import type { CardEditor, Press } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { onOfShort } from '../shared/counted.js';
@@ -483,8 +483,8 @@ export class FluvyLightsCard extends FluvyTileCard {
         sub: fitted.sub,
         trailing: roundInHead ? html`${this.colourRound(name, dead)}${roomSwitch}` : roomSwitch,
         cut: fitted.cut,
-        ...(this.roomActs(dead) ? { onTap: () => this.roomTap(lamps) } : {}),
-        ...(actionRuns(this.config?.hold_action) ? { onHold: () => this.hold(undefined) } : {}),
+        ...this.roomPress(lamps, dead),
+        ...this.iconActions(undefined),
       })}
       ${this.room?.show_brightness ? this.renderRuler(lamps, name, w) : nothing}
       ${this.variant === 'tiles' ? this.renderTiles(lamps) : this.renderChips(lamps, w)}
@@ -628,16 +628,12 @@ export class FluvyLightsCard extends FluvyTileCard {
     }
   }
 
-  /** The card's tap: its own action when it has one, else the whole room on or off. */
-  private roomTap(lamps: readonly Lamp[]): void {
-    if (this.config?.tap_action) this.tap(undefined);
-    else this.flipRoom(lamps);
-  }
-
-  /** Whether the card's tap can run: its own action when it has one, else while a light of the room can be switched. */
-  private roomActs(dead: boolean): boolean {
-    const own = this.config?.tap_action;
-    return own ? actionRuns(own) : !dead;
+  /**
+   * What the card answers: its own tap where it has one, else the whole room on or off while a light of it can be
+   * switched; its hold and its double tap where set (#179).
+   */
+  private roomPress(lamps: readonly Lamp[], dead: boolean): Press {
+    return this.pressOf(this.config, undefined, dead ? null : () => this.flipRoom(lamps), null);
   }
 
   /**
@@ -672,7 +668,7 @@ export class FluvyLightsCard extends FluvyTileCard {
       ...(inline ? { trailing: rounds + colourWidth } : roundInHead ? { trailing: ROUND } : {}),
     });
     const dead = tone === 'off';
-    const acts = this.roomActs(dead);
+    const { onTap, onHold } = this.roomPress(lamps, dead);
     const colourRound = roundInHead ? this.colourRound(name, dead) : nothing;
     const bulbs = inline
       ? html`<div class="lt-bulbs">${lamps.map((lamp) => this.renderBulb(lamp))}</div>`
@@ -686,12 +682,13 @@ export class FluvyLightsCard extends FluvyTileCard {
       <button
         class="lt-room"
         aria-label=${`${name} · ${sub}`}
-        ?disabled=${!acts}
-        .fvTap=${() => this.roomTap(lamps)}
-        .fvHold=${actionRuns(this.config?.hold_action) ? () => this.hold(undefined) : undefined}
+        ?disabled=${!(onTap ?? onHold)}
+        .fvTap=${onTap}
+        .fvHold=${onHold}
         @pointerdown=${startPress}
         @click=${clickPress}
         @contextmenu=${preventMenu}
+        @keydown=${holdKey(onHold)}
       ></button>
       ${head({
         icon: fitted.icon ? glyph : null,
@@ -705,6 +702,7 @@ export class FluvyLightsCard extends FluvyTileCard {
             ? html`<div class="lt-trail">${colourRound}${bulbs}</div>`
             : bulbs
           : colourRound,
+        ...this.iconActions(undefined),
       })}
       ${inline ? nothing : bulbs}
       ${this.room?.show_brightness ? this.renderRuler(lamps, name, w) : nothing}

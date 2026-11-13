@@ -47,7 +47,7 @@ import {
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { scaled, scaleOf } from '../energy/power.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
@@ -179,9 +179,9 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<EnergyScoreCardConfig>()([
     'title',
@@ -217,7 +217,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
         entityField(['sensor'], 'co2', false),
         ...colourFields(),
         numberFields({ units: ['kWh', 'MWh'] }),
-        actionFields(),
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         s,

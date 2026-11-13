@@ -94,33 +94,53 @@ export interface IcoOptions {
   readonly hero?: boolean;
   /** The head's smaller circle (a compact row's 40, a 16 glyph): a name must keep its floor beside it and its control. */
   readonly small?: boolean;
-  readonly onTap?: ((event: Event) => void) | undefined;
+  readonly onTap?: (() => void) | undefined;
   /** A still press of 500 ms on the circle (a card's hold action); the click that follows is swallowed. */
   readonly onHold?: (() => void) | undefined;
-  readonly label?: string;
+  readonly label?: string | undefined;
   /** The circle is itself a switch in this state (a tile too narrow for one beside it): role switch, aria-checked. */
-  readonly checked?: boolean;
+  readonly checked?: boolean | undefined;
 }
 
+/**
+ * A press on a control inside a surface that is pressed too (a head's circle in a head that is the card's button, a
+ * room's round): the control's own, never the surface's under it.
+ */
+export const pressOwn = (event: PointerEvent): void => {
+  event.stopPropagation();
+  startPress(event);
+};
+export const clickOwn = (event: MouseEvent): void => {
+  event.stopPropagation();
+  clickPress(event);
+};
+
+/**
+ * A circle; with a tap or a hold, a button of its own (#179: a tile's or a head's circle with actions of its own, a
+ * tile's that is its switch), pressed as a surface is — a hold, or the keyboard's menu key, never also taps — and over
+ * whatever surface holds it.
+ */
 export function ico(
   ref: IconRef | string | undefined,
   tone: Tone = 'accent',
   options: IcoOptions = {},
 ): TemplateResult {
-  const cls = `fv-ico fv-ico--${tone}${options.hero ? ' fv-ico--hero' : ''}${options.small ? ' fv-ico--small' : ''}${options.onTap ? ' fv-ico--tap' : ''}`;
-  if (options.onTap)
+  const { onTap, onHold, checked } = options;
+  const cls = `fv-ico fv-ico--${tone}${options.hero ? ' fv-ico--hero' : ''}${options.small ? ' fv-ico--small' : ''}`;
+  if (onTap || onHold)
     return html`<button
-      class=${cls}
+      class="${cls} fv-ico--tap"
       data-icon
       data-target
-      role=${options.checked === undefined ? nothing : 'switch'}
-      aria-checked=${options.checked === undefined ? nothing : String(options.checked)}
+      role=${checked === undefined ? nothing : 'switch'}
+      aria-checked=${checked === undefined ? nothing : String(checked)}
       aria-label=${options.label ?? nothing}
-      .fvTap=${(options.onHold ? options.onTap : undefined) as PressTarget['fvTap']}
-      .fvHold=${options.onHold as PressTarget['fvHold']}
-      @pointerdown=${options.onHold ? startPress : nothing}
-      @contextmenu=${options.onHold ? preventMenu : nothing}
-      @click=${options.onHold ? clickPress : options.onTap}
+      .fvTap=${onTap}
+      .fvHold=${onHold}
+      @pointerdown=${pressOwn}
+      @click=${clickOwn}
+      @contextmenu=${onHold ? preventMenu : nothing}
+      @keydown=${holdKey(onHold)}
     >
       ${icon(ref)}
     </button>`;
@@ -158,6 +178,11 @@ export interface HeadOptions {
   readonly wrap?: boolean;
   /** A still press of 500 ms anywhere on the head (a card's hold action); the click that follows is swallowed. */
   readonly onHold?: (() => void) | undefined;
+  /** The circle's own tap and hold (#179): it is then a button of its own, over the head's, named by `iconLabel`. */
+  readonly onIconTap?: (() => void) | undefined;
+  readonly onIconHold?: (() => void) | undefined;
+  /** What a reader hears for the circle's button, of the head's title ("Desk lamp icon"). */
+  readonly iconLabel?: ((name: string) => string) | undefined;
 }
 
 /** The click of a pressed head, seen before its button's own: a hold, or a mouse's drag, never also taps. */
@@ -203,7 +228,12 @@ export function head(o: HeadOptions): TemplateResult {
           ? html`<span class="fv-ico fv-ico--picture ${o.small ? 'fv-ico--small' : ''}" data-icon
               ><img src=${o.picture} alt="" @error=${o.pictureFailed ?? nothing}
             /></span>`
-          : ico(o.icon, o.tone ?? 'accent', { small: o.small ?? false }))
+          : ico(o.icon, o.tone ?? 'accent', {
+              small: o.small ?? false,
+              onTap: o.onIconTap,
+              onHold: o.onIconHold,
+              label: o.iconLabel?.(o.title),
+            }))
     }
     <div class="fv-card__titles">
       <h3 class=${titleClass} data-name=${o.name ? '' : nothing}>${title}</h3>
@@ -689,7 +719,7 @@ export function listRow(o: ListRowOptions): TemplateResult {
     @pointerdown=${o.onHold ? startPress : nothing}
     @contextmenu=${o.onHold ? preventMenu : nothing}
     @click=${o.onHold ? clickPress : (o.onTap ?? nothing)}
-    @keydown=${activateKey(o.onTap)}
+    @keydown=${activateKey(o.onTap, o.onHold)}
   >
     ${rowIcon(o.icon, o.tone)}
     <span class="fv-row__text"
@@ -760,24 +790,26 @@ export interface BarRowOptions {
   /** What it measures cannot be read: the row fades, its circle the dashed ring (`tone: 'off'`). */
   readonly unavailable?: boolean;
   readonly onTap?: (() => void) | undefined;
+  /** A still press of 500 ms on the row (#179); the click that follows is swallowed. */
+  readonly onHold?: (() => void) | undefined;
   /** The 48 row: a 40 circle, the title and the value on one line (no sub), the bar 4 under the title. */
   readonly compact?: boolean;
   /** The sub is the owner's own words ("Watered 3 days ago"), a name that may end in its ellipsis. */
   readonly subName?: boolean;
 }
 
-/** Enter / Space on an element that plays a button (`role="button"`), ignoring keys bubbling up from a control inside it. */
+/**
+ * Enter / Space on an element that plays a button (`role="button"`) runs it, and the menu key or Shift+F10 holds it
+ * (`holdKey`), ignoring keys bubbling up from a control inside it.
+ */
 export const activateKey =
-  (run: (() => void) | undefined) =>
+  (run: (() => void) | undefined, hold?: (() => void) | undefined) =>
   (event: KeyboardEvent): void => {
-    if (
-      run &&
-      (event.key === 'Enter' || event.key === ' ') &&
-      event.target === event.currentTarget
-    ) {
+    if (event.target !== event.currentTarget) return;
+    if (run && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
       run();
-    }
+    } else holdKey(hold)(event);
   };
 
 /**
@@ -810,8 +842,12 @@ export function barRow(o: BarRowOptions): TemplateResult {
     data-accent=${o.accent ?? nothing}
     role=${o.onTap ? 'button' : nothing}
     tabindex=${o.onTap ? 0 : nothing}
-    @click=${o.onTap ?? nothing}
-    @keydown=${activateKey(o.onTap)}
+    .fvTap=${o.onHold ? o.onTap : undefined}
+    .fvHold=${o.onHold}
+    @pointerdown=${o.onHold ? startPress : nothing}
+    @contextmenu=${o.onHold ? preventMenu : nothing}
+    @click=${o.onHold ? clickPress : (o.onTap ?? nothing)}
+    @keydown=${activateKey(o.onTap, o.onHold)}
   >
     ${rowIcon(o.icon, o.tone)}
     <span class="fv-row__text"

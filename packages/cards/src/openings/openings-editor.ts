@@ -1,8 +1,7 @@
 import { strings, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
-  actionField,
   actionFields,
   boolField,
   colourFields,
@@ -41,9 +40,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<OpeningsCardConfig>()([
@@ -97,6 +96,7 @@ export const lists: readonly RowsListSpec[] = [
       'since',
       'tap_action',
       'hold_action',
+      'double_tap_action',
     ],
     schema: [
       entityField(['binary_sensor', 'cover', 'lock']),
@@ -107,7 +107,7 @@ export const lists: readonly RowsListSpec[] = [
       ),
       { name: 'states', selector: { object: {} } },
       sinceField(),
-      fieldRow(actionField('tap_action'), actionField('hold_action')),
+      actionFields(),
     ],
     // a row's `since` offers the house's timestamp sensors, its class Home Assistant's classes in its own words
     choices: (item, hass) => ({
@@ -149,7 +149,7 @@ export function getConfigForm(): LovelaceConfigForm {
         helper: 'editor.since_pattern_help',
       }),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...editorLabels(s, { max_rows: 'editor.max_rows' }, {}),
   };

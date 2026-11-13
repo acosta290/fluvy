@@ -52,6 +52,7 @@ export interface OpeningItem {
   readonly since?: string;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
+  readonly double_tap_action?: ActionConfig;
   /**
    * The class it is read as, in place of its own or none (#102): its words, its icon, and whether its on is something
    * to act on (a window's counts as open, a leak's as an alert).
@@ -328,8 +329,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
           timedLine && this.headFit.ruler.width(TILE_STATE, timedLine) <= room
             ? this.when(item, view, warn, now)
             : '';
-        const tap = (): void => this.tap(view.id, item.tap_action ?? { action: 'more-info' });
-        const hold = (): void => this.hold(view.id, item.hold_action ?? { action: 'more-info' });
+        const { onTap, onHold } = this.pressOf(item, view.id);
         return html`<article
           class="fv-tile fv-tile--compact fv-tile--inner fv-tile--tap ${
             warn ? `is-on fv-tile--${tone}` : item.color && !dead ? 'is-tinted' : ''
@@ -338,12 +338,12 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
           role="button"
           tabindex="0"
           aria-label=${`${name} · ${view.status === 'ok' ? value : stateText(this.hass, view)}`}
-          .fvTap=${tap}
-          .fvHold=${hold}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
           @pointerdown=${startPress}
           @click=${clickPress}
           @contextmenu=${preventMenu}
-          @keydown=${activateKey(tap)}
+          @keydown=${activateKey(onTap, onHold)}
         >
           ${
             bare
@@ -571,8 +571,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
                   valueTone: warn ? 'warning' : '',
                   unavailable: dead,
                   ...(dead ? { label: `${title} · ${stateText(this.hass, view)}` } : {}),
-                  onTap: () => this.tap(view.id, item.tap_action ?? { action: 'more-info' }),
-                  onHold: () => this.hold(view.id, item.hold_action ?? { action: 'more-info' }),
+                  ...this.pressOf(item, view.id),
                 });
               })}
               ${collapsible ? this.renderMore(compact, views.length - max, variant === 'tiles' || keep, hidden) : nothing}

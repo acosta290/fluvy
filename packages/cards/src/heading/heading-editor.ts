@@ -2,6 +2,7 @@ import type { LovelaceConfigForm } from '@fluvy/core';
 import type { BaseKey } from '../shared/base.js';
 import {
   actionField,
+  sectionField,
   entitiesField,
   fieldRow,
   formLabels,
@@ -39,7 +40,8 @@ export function getConfigForm(): LovelaceConfigForm {
       ),
       fieldRow(textField('subtitle'), textField('path')),
       entitiesField('entities'),
-      actionField(),
+      // a tap alone, as Home Assistant's own heading: its path's where none is chosen
+      sectionField('editor.interactions', [actionField()]),
     ],
     ...formLabels({}),
   };

@@ -25,13 +25,12 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
 import {
   accentField,
-  actionField,
   actionFields,
   boolField,
   colourFields,
@@ -114,7 +113,10 @@ export interface DeviceRowConfig extends NumberKeys {
   cost_entity?: string;
   tone?: Tone;
   color?: string;
+  /** What the row answers: its sensor's details where none is said; a double tap none (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 export interface EnergyDevicesCardConfig extends FluvyCardConfig, NumberKeys {
@@ -199,9 +201,9 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<EnergyDevicesCardConfig>()([
     'title',
@@ -231,6 +233,8 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         'unit',
         'decimals',
         'tap_action',
+        'hold_action',
+        'double_tap_action',
       ],
       schema: [
         entityField(['sensor']),
@@ -241,7 +245,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         ),
         fieldRow(toneField(), accentField('color', { item: 'own' })),
         numberFields({ units: WATT_LADDERS }),
-        actionField(),
+        actionFields(),
       ],
       computeLabel: formLabels({
         cost_entity: 'energy.cost',
@@ -274,7 +278,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
         ),
         fieldRow(boolField('sort'), numberField('max_rows', 1, 20)),
         numberFields({ units: WATT_LADDERS }),
-        actionFields(),
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         s,
@@ -615,7 +619,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       value: c.figure(row.value, row.config),
       fraction: barOf(row.value, c.tree.scale),
       barTone: row.config.color ? 'accent' : own && BAR_TONES.has(rowTone) ? rowTone : 'ink',
-      onTap: (): void => this.tap(row.view.id, row.config.tap_action),
+      ...this.pressOf(row.config, row.view.id),
     });
   }
 
@@ -635,7 +639,8 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       readonly value: string;
       readonly fraction: number;
       readonly barTone: Tone | 'ink';
-      readonly onTap?: () => void;
+      readonly onTap?: (() => void) | undefined;
+      readonly onHold?: (() => void) | undefined;
     },
   ): TemplateResult {
     const width = c.width - depth * (c.bare ? INDENT_BARE : INDENT);
@@ -657,7 +662,8 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       value,
       fraction: o.fraction,
       barTone: o.barTone,
-      ...(o.onTap ? { onTap: o.onTap } : {}),
+      onTap: o.onTap,
+      onHold: o.onHold,
     });
   }
 
@@ -751,7 +757,7 @@ export class FluvyEnergyDevicesCard extends Card<EnergyDevicesCardConfig> {
       ),
       trailing: 'value',
       value,
-      onTap: () => this.tap(row.view.id, row.config.tap_action),
+      ...this.pressOf(row.config, row.view.id),
     });
   }
 }

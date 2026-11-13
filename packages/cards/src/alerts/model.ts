@@ -186,8 +186,11 @@ export interface AlertConfig extends MatchConfig {
   readonly admin_only?: boolean;
   readonly tap_action?: AlertAction;
   readonly hold_action?: AlertAction;
+  /** Two taps on the alert, and on a row of its sheet: nothing until set (#179). */
+  readonly double_tap_action?: AlertAction;
   readonly row_action?: AlertAction;
   readonly row_hold_action?: AlertAction;
+  readonly row_double_tap_action?: AlertAction;
   /** A button on each row; `false` takes a preset's away. */
   readonly row_button?: AlertButton | false;
   readonly actions?: readonly AlertButton[];
@@ -278,8 +281,10 @@ export interface AlertDefinition {
   readonly actions: readonly AlertButton[];
   readonly tapAction: AlertAction | undefined;
   readonly holdAction: AlertAction | undefined;
+  readonly doubleTapAction: AlertAction | undefined;
   readonly rowAction: AlertAction | undefined;
   readonly rowHoldAction: AlertAction | undefined;
+  readonly rowDoubleTapAction: AlertAction | undefined;
 }
 
 const COUNT_BY: readonly CountBy[] = ['entity', 'device'];
@@ -465,8 +470,10 @@ const ALERT_KEYS: Readonly<Record<Exclude<keyof AlertConfig, keyof MatchConfig>,
   admin_only: 1,
   tap_action: 1,
   hold_action: 1,
+  double_tap_action: 1,
   row_action: 1,
   row_hold_action: 1,
+  row_double_tap_action: 1,
   row_button: 1,
   actions: 1,
   name_by: 1,
@@ -599,8 +606,10 @@ export function definitionOf(raw: unknown, index: number, card: string): AlertDe
     actions: config.actions ?? defaults.actions ?? [],
     tapAction: config.tap_action ?? defaults.tap_action,
     holdAction: config.hold_action ?? defaults.hold_action,
+    doubleTapAction: config.double_tap_action,
     rowAction: config.row_action ?? defaults.row_action,
     rowHoldAction: config.row_hold_action ?? defaults.row_hold_action,
+    rowDoubleTapAction: config.row_double_tap_action,
   };
 }
 

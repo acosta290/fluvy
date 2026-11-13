@@ -1,7 +1,7 @@
 import type { LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
-  actionField,
+  actionFields,
   boolField,
   colourFields,
   entityField,
@@ -16,7 +16,10 @@ import { DOMAINS, type SceneCardConfig } from './scene-card.js';
 
 /** The scene card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
-/** A tap on the tile runs the scene: of the base it honours the entity, its name and icon, its colours and a hold. */
+/**
+ * A tap on the tile runs the scene, where it names no tap of its own: of the base it honours the entity, its name and
+ * icon, its colours and what it answers.
+ */
 export const base: readonly BaseKey[] = [
   'entity',
   'name',
@@ -27,7 +30,7 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'hold_action',
+  ...ACTIONS_BASE,
 ];
 
 export const keys = configKeys<SceneCardConfig>()(['subtitle', 'show_subtitle']);
@@ -42,7 +45,8 @@ export function getConfigForm(): LovelaceConfigForm {
       nameIconFields(),
       fieldRow(textField('subtitle'), boolField('show_subtitle')),
       ...colourFields(),
-      actionField('hold_action'),
+      // a tap runs the scene where none is chosen
+      actionFields({ tap: null }),
     ],
     ...formLabels({}),
   };

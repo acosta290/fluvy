@@ -4,6 +4,7 @@ import {
   idsOf,
   localize,
   resolveEntity,
+  type ActionConfig,
   type HaFormSchemaItem,
   type HomeAssistant,
   type KeyOf,
@@ -278,14 +279,73 @@ export const orderedField = (
   },
 });
 
-export const actionField = (name = 'tap_action'): HaFormSchemaItem => ({
+/** An action, in Home Assistant's own picker, saying what the card does while none is chosen where it is said (`fallback`). */
+export const actionField = (
+  name = 'tap_action',
+  fallback?: ActionConfig['action'],
+): HaFormSchemaItem => ({
   name,
-  selector: { ui_action: {} },
+  selector: { ui_action: fallback ? { default_action: fallback } : {} },
 });
 
-/** What a card answers a tap and a still press with, on one row. */
-export const actionFields = (): HaFormSchemaItem =>
-  fieldRow(actionField('tap_action'), actionField('hold_action'));
+/** A double tap (`double_tap_action`, a circle's): nothing until one is set, the word under it saying what it costs a tap. */
+export const doubleTapField = (name = 'double_tap_action'): HaFormSchemaItem => ({
+  ...actionField(name, 'none'),
+  helper: 'editor.double_tap_helper',
+});
+
+/**
+ * Actions not shown until one is added, as Home Assistant's own editors add them ("Add interaction"): a double tap,
+ * a circle's. Each stands as a field of its own once it holds one.
+ */
+export const optionalActions = (...schema: HaFormSchemaItem[]): HaFormSchemaItem => ({
+  type: 'optional_actions',
+  name: '',
+  flatten: true,
+  schema,
+});
+
+/** What an action does where none is chosen, as its picker says it; `null`: what the card does of its own, unsaid. */
+type Fallback = ActionConfig['action'] | null;
+
+/**
+ * What a card, or an item, answers, in its Interactions section (#179): a tap and a still press — the details where
+ * none is chosen, nothing on a card of many (`many`: no entity of its own to open), each its own where the card says
+ * (`tap`, `hold`) — then, added as Home Assistant's own editors add them, a double tap and, where it has a circle that
+ * may answer on its own (`icon`), the circle's tap, hold and double tap: nothing until set (a tile's circle that is its
+ * switch flips it: `iconTap`).
+ */
+export const actionFields = ({
+  icon = false,
+  many = false,
+  tap,
+  hold,
+  iconTap = 'none',
+}: {
+  icon?: boolean;
+  many?: boolean;
+  tap?: Fallback;
+  hold?: Fallback;
+  iconTap?: Fallback;
+} = {}): HaFormSchemaItem => {
+  const fallback = many ? 'none' : 'more-info';
+  const said = (own: Fallback | undefined): ActionConfig['action'] | undefined =>
+    own === null ? undefined : (own ?? fallback);
+  return sectionField('editor.interactions', [
+    actionField('tap_action', said(tap)),
+    actionField('hold_action', said(hold)),
+    optionalActions(
+      doubleTapField(),
+      ...(icon
+        ? [
+            actionField('icon_tap_action', iconTap ?? undefined),
+            actionField('icon_hold_action', 'none'),
+            doubleTapField('icon_double_tap_action'),
+          ]
+        : []),
+    ),
+  ]);
+};
 
 /** The palette's tones as a dropdown, each by its word. */
 export const toneSelector = (language: Pick<HomeAssistant, 'language'> = editorLanguage()) => ({
@@ -634,13 +694,15 @@ const ROW_KEYS = [
   'options',
   'labels',
   'tap_action',
+  'hold_action',
+  'double_tap_action',
   'tone',
   'color',
 ] as const;
 
 /**
  * A row's form: the entity, its name and icon, what it says, a select's (`select`: what its dropdown offers, its
- * words), its colours, its tap, and when it shows on a card whose rows show on a condition (`shows`). Its colour has
+ * words), its colours, what it answers, and when it shows on a card whose rows show on a condition (`shows`). Its colour has
  * none chosen by default: a light wears its bulb's on a card that shows them (`bulb`), the row the card's otherwise.
  */
 const rowSchema = (
@@ -654,7 +716,7 @@ const rowSchema = (
   sinceField(),
   ...select,
   fieldRow(toneField(), accentField('color', { item: bulb ? 'bulb' : 'card' })),
-  actionField(),
+  actionFields(),
   ...(shows ? [rowWhenField()] : []),
 ];
 

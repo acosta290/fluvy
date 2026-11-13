@@ -19,7 +19,7 @@ import type { Segment } from '../shared/fit.js';
 
 import { baseOf, figureText, scaleFor } from '../gauge/units.js';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { iconOf } from '../shared/domain.js';
@@ -312,7 +312,8 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
                     trailing: 'value',
                     value: text(part.value),
                     unavailable: part.value === null,
-                    ...(part.entity ? { onTap: () => this.tap(part.entity) } : {}),
+                    // the card's tap answers a part (its details by default), its hold and double tap where set
+                    ...(part.entity ? this.pressOf(this.config, part.entity, MORE_INFO, null) : {}),
                   });
                 },
               )}

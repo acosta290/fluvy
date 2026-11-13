@@ -1,5 +1,5 @@
 import type { LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   actionFields,
@@ -32,9 +32,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<MapCardConfig>()([
@@ -86,7 +86,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_distance'), textField('map_path')),
       ...colourFields(),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...formLabels({ hours_to_show: 'editor.hours', map_path: 'editor.map_path' }),
   };

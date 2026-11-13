@@ -43,7 +43,10 @@ export interface RowConfig extends SelectRowConfig {
   secondary?: Secondary;
   /** Where its last change is read from (#67): a timestamp sensor, or `attribute:<name>` of its own; else Home Assistant's. */
   since?: string;
+  /** What the row answers (its entity's details where none is said, never the card's); a double tap none (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
   tone?: Tone;
   color?: string;
 }
@@ -55,9 +58,6 @@ export interface RowsCardConfig extends FluvyCardConfig {
 }
 
 const s = strings('lock');
-
-/** What a row opens where it names no tap of its own: its entity's details, never the card's own tap. */
-export const DETAILS: ActionConfig = { action: 'more-info' };
 
 /** A row switch is only for what is harmless to flip by accident — never a lock, a garage door or a valve. */
 const NEVER_A_SWITCH = new Set([
@@ -353,7 +353,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       unavailable: !usable,
       accent: this.accents.item(row.color),
       // a dropdown's row is no button of its own: its value is; out of reach, the row opens its details
-      onTap: menu && usable ? undefined : () => this.tap(view.id, row.tap_action ?? DETAILS),
+      ...(menu && usable ? {} : this.pressOf(row, view.id)),
       onToggle: (next) => {
         if (!this.hass) return;
         this.expect(view.id, next ? 'on' : 'off');

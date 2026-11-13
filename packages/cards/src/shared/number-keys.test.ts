@@ -53,10 +53,10 @@ describe('the cards whose figures take a unit and decimals', () => {
       const unit = shown.indexOf('unit');
       expect(unit).toBeGreaterThan(-1);
       expect(shown[unit + 1]).toBe('decimals');
-      // what follows the row is the card's actions, or nothing
+      // what follows the row is the card's actions (its Interactions, #179), or nothing
       const after = shown.slice(unit + 2);
       expect(
-        after.every((name) => name === 'tap_action' || name === 'hold_action'),
+        after.every((name) => /^(icon_)?(tap|hold|double_tap)_action$/.test(name)),
         after.join(),
       ).toBe(true);
       const defaults = editor.defaults?.({ type: 'custom:x' }, undefined) ?? {};

@@ -5,7 +5,15 @@ import {
   type FluvyCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { isoWeek, sheetStyles, type Tone } from '@fluvy/ui';
+import {
+  activateKey,
+  clickPress,
+  isoWeek,
+  preventMenu,
+  sheetStyles,
+  startPress,
+  type Tone,
+} from '@fluvy/ui';
 import {
   css,
   html,
@@ -14,7 +22,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { TextRuler } from '../shared/fit.js';
 import { heroAnalog, heroDigital, side, tile, type ClockModel } from './layouts.js';
@@ -293,11 +301,6 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
     return this.config?.weather && this.config.show_forecast !== false ? this.config.weather : '';
   }
 
-  private get tappable(): boolean {
-    const action = this.config?.tap_action;
-    return action ? action.action !== 'none' : Boolean(this.config?.weather); // a weather clock opens its weather
-  }
-
   /* ---------- render ---------- */
 
   /**
@@ -398,30 +401,28 @@ export class FluvyClockCard extends Card<ClockCardConfig> {
           : m.analog
             ? heroAnalog(m)
             : heroDigital(m);
-    const tappable = this.tappable;
+    // its tap (a weather clock opens its weather), and a hold and a double tap where set (#179)
+    const { onTap, onHold } = this.pressOf(this.config, this.config?.weather, MORE_INFO, null);
+    const tappable = Boolean(onTap ?? onHold);
     const surface =
       look === 'tile'
         ? `fv-tile ck-tile${m.analog ? ' ck-tile--analog' : ''}${tappable ? ' fv-tile--tap' : ''}`
         : `fv-card ck-card${tappable ? ' ck-card--tap' : ''}`;
-    // A clock is a read-out: it is a button only when a tap does something, and then the keyboard reaches it too.
+    // A clock is a read-out: it is a button only when it answers something, and then the keyboard reaches it too.
     return html`<article
       class=${surface}
       data-card
       role=${tappable ? 'button' : nothing}
       tabindex=${tappable ? 0 : nothing}
       aria-label=${tappable ? [m.title, spoken, m.date?.full, m.sky?.text].filter(Boolean).join(', ') : nothing}
-      @click=${tappable ? this.onTap : nothing}
-      @keydown=${tappable ? this.onKey : nothing}
+      .fvTap=${onTap}
+      .fvHold=${onHold}
+      @pointerdown=${tappable ? startPress : nothing}
+      @click=${tappable ? clickPress : nothing}
+      @contextmenu=${onHold ? preventMenu : nothing}
+      @keydown=${activateKey(onTap, onHold)}
     >
       ${body}
     </article>`;
   }
-
-  private readonly onTap = (): void => this.tap(this.config?.weather);
-
-  private readonly onKey = (event: KeyboardEvent): void => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    this.onTap();
-  };
 }

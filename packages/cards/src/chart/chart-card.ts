@@ -14,6 +14,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import {
+  activateKey,
   axis,
   clickPress,
   glyph,
@@ -47,7 +48,13 @@ import {
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
 import { axisHolds } from '../shared/axis.js';
-import { Card, type BaseKey, type HeadConfig } from '../shared/base.js';
+import {
+  ACTIONS_BASE,
+  Card,
+  ICON_ACTIONS_BASE,
+  type BaseKey,
+  type HeadConfig,
+} from '../shared/base.js';
 import type { ChartKeys, Curve } from '../shared/chart-config.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys } from '../shared/config.js';
@@ -642,9 +649,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<ChartCardConfig>()([
     'title',
@@ -734,7 +741,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         ),
         { name: 'thresholds', selector: { object: {} } },
         chart,
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         s,
@@ -2117,27 +2124,26 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           ]
         : [],
     );
-    const open = (): void => this.tap(view.id);
-    const key = (event: KeyboardEvent): void => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        open();
-      }
-    };
+    // the tile is the card's button; its circle answers of its own where the card says so (#179)
+    const { onTap, onHold, onIconTap, onIconHold, iconLabel } = this.headActions(view.id);
     return html`<article
       class="fv-tile fv-tile--tap ${usable ? '' : 'is-unavailable is-off'}"
       data-card
       role="button"
       tabindex="0"
-      .fvTap=${open}
-      .fvHold=${() => this.hold(view.id)}
+      .fvTap=${onTap}
+      .fvHold=${onHold}
       @pointerdown=${startPress}
       @contextmenu=${preventMenu}
       @click=${clickPress}
-      @keydown=${key}
+      @keydown=${activateKey(onTap, onHold)}
     >
       <div class="fv-tile__head">
-        ${ico(this.config?.icon ?? iconOf(view), tone)}
+        ${ico(this.config?.icon ?? iconOf(view), tone, {
+          onTap: onIconTap,
+          onHold: onIconHold,
+          label: iconLabel?.(this.nameFor(view, this.config?.name)),
+        })}
         ${
           change !== null && Math.abs(change) >= 1
             ? html`<span class="fv-trend ${change < 0 ? 'fv-trend--down' : ''}"

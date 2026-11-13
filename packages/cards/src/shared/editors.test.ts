@@ -372,3 +372,90 @@ describe('the editors’ contract', () => {
     },
   );
 });
+
+/** A card's or an item's own actions, as Home Assistant names them (#179). */
+const ACTIONS = new Set([
+  'tap_action',
+  'hold_action',
+  'double_tap_action',
+  'icon_tap_action',
+  'icon_hold_action',
+  'icon_double_tap_action',
+]);
+/** Those not shown until one is added: a double tap, a circle's. */
+const ADDED = new Set(
+  [...ACTIONS].filter((name) => name !== 'tap_action' && name !== 'hold_action'),
+);
+
+/** Each action a schema shows, with the section and the optional group it stands in (`''` for none). */
+const placed = (
+  schema: readonly HaFormSchemaItem[],
+  section = '',
+  added = false,
+): { readonly name: string; readonly section: string; readonly added: boolean }[] =>
+  schema.flatMap((item) =>
+    item.schema
+      ? placed(
+          item.schema,
+          item.type === 'expandable' ? (item.title ?? '') : section,
+          added || item.type === 'optional_actions',
+        )
+      : ACTIONS.has(item.name)
+        ? [{ name: item.name, section, added }]
+        : [],
+  );
+
+/** A heading answers a tap alone, as Home Assistant's own heading does. */
+const TAP_ALONE = new Set(['fluvy-heading-card']);
+
+describe('what a card answers (#179)', () => {
+  /** Every list of a card, by its key, with its form. */
+  const forms = cards.flatMap(({ tag, editor, lists }) => [
+    { where: tag, keys: editor.base, schema: editor.getConfigForm().schema },
+    ...lists.map((list) => ({
+      where: `${tag} ${list.key}`,
+      keys: list.keys ?? names(list.schema),
+      schema: list.schema,
+    })),
+  ]);
+
+  it.each(forms)(
+    '$where: a double tap beside every hold, and a hold and a double tap beside every tap',
+    ({ where, keys }) => {
+      if (keys.includes('hold_action')) expect(keys).toContain('double_tap_action');
+      if (keys.includes('tap_action') && !TAP_ALONE.has(where)) {
+        expect(keys).toContain('hold_action');
+        expect(keys).toContain('double_tap_action');
+      }
+      // a circle answers all three, or none
+      const icon = keys.filter((key) => key.startsWith('icon_') && key.endsWith('_action'));
+      expect([0, 3]).toContain(icon.length);
+    },
+  );
+
+  it.each(forms)(
+    '$where: its actions stand in its Interactions section, a double tap and a circle’s added as Home Assistant adds them',
+    ({ schema }) => {
+      const interactions = 'Interactions';
+      for (const { name, section, added } of placed(schema)) {
+        expect(section, name).toBe(interactions);
+        expect(added, name).toBe(ADDED.has(name));
+      }
+    },
+  );
+
+  it('says under a double tap what it costs a tap, and shows what a tap does while none is chosen', () => {
+    const tile = cards.find((c) => c.tag === 'fluvy-light-card')!.editor.getConfigForm();
+    const shown = fields(tile.schema);
+    const field = (name: string) => shown.find((item) => item.name === name);
+    expect(field('double_tap_action')?.helper).toBe('editor.double_tap_helper');
+    expect(field('icon_double_tap_action')?.helper).toBe('editor.double_tap_helper');
+    expect(field('tap_action')?.selector).toEqual({ ui_action: { default_action: 'more-info' } });
+    expect(field('icon_tap_action')?.selector).toEqual({ ui_action: { default_action: 'none' } });
+    // a card of many has no details of its own to open
+    const bars = cards.find((c) => c.tag === 'fluvy-bars-card')!.editor.getConfigForm();
+    expect(fields(bars.schema).find((item) => item.name === 'tap_action')?.selector).toEqual({
+      ui_action: { default_action: 'none' },
+    });
+  });
+});

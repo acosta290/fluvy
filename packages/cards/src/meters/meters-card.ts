@@ -39,7 +39,7 @@ import {
 } from '../energy/collection-field.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { shortName } from '../energy/power.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { iconOf, stateWord } from '../shared/domain.js';
@@ -225,9 +225,9 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<MetersCardConfig>()([
     'title',
@@ -288,7 +288,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
         fieldRow(showIconField(), collectionField()),
         ...colourFields(),
         numberFields({ units: LADDERS.volume }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(s, {}, COLLECTION_LABEL),
       computeHelper: collectionHelper,

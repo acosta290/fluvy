@@ -71,7 +71,10 @@ export interface BarRowConfig {
   color?: string;
   /** Shown while it holds (a battery only below a number, #157); the card's `show_rows_when` where it names none. */
   show_when?: ShowWhen;
+  /** What the row answers: its entity's details where none is said, never the card's; a double tap none (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 /**
@@ -345,7 +348,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         valueTone,
         compact,
         unavailable: !usable,
-        onTap: (): void => this.tap(row.entity, row.tap_action),
+        ...this.pressOf(row, row.entity),
       };
       return row.plain
         ? listRow({ ...shared, trailing: 'value' })

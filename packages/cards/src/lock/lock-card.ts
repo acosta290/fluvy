@@ -220,7 +220,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         onlyWhen(drawsRows, boolField('show_rows')),
         entitiesField('rows'),
         ...colourFields(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...formLabels({}),
     };

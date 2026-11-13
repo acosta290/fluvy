@@ -138,7 +138,7 @@ export class FluvyEvChargerCard extends Card<EvChargerCardConfig> {
         fieldRow(textField('vehicle'), entityField(['select', 'input_select'], 'mode', false)),
         ...colourFields(),
         numberFields({ when: hasLadder }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(s, {
         entity: 'editor_entity',

@@ -1,5 +1,5 @@
 import { strings as words, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
   actionFields,
@@ -39,9 +39,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<DistributionCardConfig>()([
@@ -86,7 +86,7 @@ export function getConfigForm(): LovelaceConfigForm {
       onlyWhen((data) => data['variant'] !== 'rows', selectField('chart', ['classic', 'soft'])),
       entityField(['sensor'], 'total', false),
       emptyFields(),
-      actionFields(),
+      actionFields({ icon: true, many: true }),
     ],
     ...idsOnly('entities'),
     ...editorLabels(strings, { max_rows: 'max_rows', total: 'editor_total' }, {}),

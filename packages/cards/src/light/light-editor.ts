@@ -249,7 +249,7 @@ export function getConfigForm(): LovelaceConfigForm {
           (bulbWarms(data, hass) || bulbColours(data, hass)),
         selectField('light_whites', ['palette', 'temperature']),
       ),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...formLabels({
       show_temperature: 'light.temperature',

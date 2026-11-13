@@ -92,7 +92,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...sliderFields(tile),
       ...colourFields(),
       tintField(['off', 'on', 'always']),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(s, { control: 'editor.control', toggle_entity: 'editor.toggle_entity' }),
     computeHelper: (schema) =>

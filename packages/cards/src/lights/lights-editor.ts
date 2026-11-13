@@ -6,7 +6,7 @@ import {
   type HomeAssistant,
   type LovelaceConfigForm,
 } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
@@ -50,9 +50,9 @@ export const base: readonly BaseKey[] = [
   'card_opacity',
   'card_border',
   'unavailable',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'show_icon',
+  ...ICON_ACTIONS_BASE,
   'slider_style',
   'slider_words',
 ];
@@ -180,7 +180,8 @@ export function getConfigForm(): LovelaceConfigForm {
       // the tiles' colour at rest and their names' lines: the row and the chips have no surface to wash, no tile
       onlyWhen(({ variant }) => variant === 'tiles', fieldRow(tintField(), nameLinesField())),
       emptyFields(),
-      actionFields(),
+      // the room on or off where it names no tap of its own
+      actionFields({ icon: true, many: true, tap: null }),
     ],
     ...formLabels({
       show_level: 'lights.editor_show_level',

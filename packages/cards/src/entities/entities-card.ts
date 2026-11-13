@@ -20,7 +20,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { chosenLabel, dropdown, dropdownEnd, SELECTS } from '../shared/dropdown.js';
-import { DETAILS, type RowConfig } from '../lock/rows.js';
+import { type RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
@@ -293,6 +293,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             title,
             sub: fitted.sub,
             trailing: fitted.badge,
+            // a card of many: its head answers only what its config says (a page to open, #179)
+            ...this.headActions(),
           })
         : nothing;
 
@@ -475,7 +477,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             valueTone: warn ? 'warning' : '',
             unavailable: !usable,
             // a dropdown's row is no button of its own: its value is; out of reach, the row opens its details
-            onTap: menu && usable ? undefined : () => this.tap(view.id, row.tap_action ?? DETAILS),
+            ...(menu && usable ? {} : this.pressOf(row, view.id)),
             onToggle: (next) => {
               if (!this.hass) return;
               this.expect(

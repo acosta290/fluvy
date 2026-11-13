@@ -8,7 +8,7 @@ import {
   type HomeAssistant,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { glyph, sheetStyles } from '@fluvy/ui';
+import { activateKey, clickPress, glyph, preventMenu, sheetStyles, startPress } from '@fluvy/ui';
 import {
   css,
   html,
@@ -30,7 +30,10 @@ const s = strings('readouts');
 export interface ReadoutConfig extends NumberKeys {
   entity: string;
   name?: EntityName;
+  /** What the readout answers: its entity's details where none is said; a double tap none (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 export interface ReadoutsCardConfig extends FluvyCardConfig, EmptyList, NumberKeys {
@@ -308,21 +311,19 @@ export class FluvyReadoutsCard extends Card<ReadoutsCardConfig> {
           view.status === 'ok'
             ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
             : stateText(this.hass, view);
-        const open = (): void => this.tap(item.entity, item.tap_action);
-        const key = (event: KeyboardEvent): void => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            open();
-          }
-        };
+        const { onTap, onHold } = this.pressOf(item, item.entity);
         return html`<div
           class="fv-readout hm-stat ${view.status === 'ok' ? '' : 'is-off'} ${orphan === item ? 'is-orphan' : ''}"
           role="button"
           tabindex="0"
           data-target
           aria-label=${`${label}: ${said}${trend ? `, ${s(this.hass, trend === 'up' ? 'rising' : 'falling')}` : ''}`}
-          @click=${open}
-          @keydown=${key}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
+          @pointerdown=${startPress}
+          @click=${clickPress}
+          @contextmenu=${onHold ? preventMenu : nothing}
+          @keydown=${activateKey(onTap, onHold)}
         >
           <p class="fv-readout__label">${label}</p>
           <p class="fv-readout__value">

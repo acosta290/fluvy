@@ -1,6 +1,6 @@
 import { strings, type LovelaceConfigForm } from '@fluvy/core';
 import { tintsAtRest } from '../tile/tile-card.js';
-import { ENTITY_BASE } from '../shared/base.js';
+import { ENTITY_BASE, ICON_ACTIONS_BASE } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import {
   actionFields,
@@ -38,7 +38,7 @@ const HELPERS: Readonly<Record<string, () => string>> = {
   color: () => s(editorLanguage(), 'editor.color_helper'),
 };
 
-export const base = ENTITY_BASE;
+export const base = [...ENTITY_BASE, ...ICON_ACTIONS_BASE];
 
 export const keys = configKeys<TemplateCardConfig>()([
   'secondary',
@@ -88,7 +88,8 @@ export function getConfigForm(): LovelaceConfigForm {
       // a large tile's foot
       onlyWhen((data, hass) => data['active'] !== 'always' && tintsAtRest(data, hass), tintField()),
       onlyWhen((data) => data['variant'] === 'large', entitiesField('readouts', ['sensor'])),
-      actionFields(),
+      // a small tile's tap toggles what toggles, a large one's opens; its circle may be its switch
+      actionFields({ icon: true, tap: null, iconTap: null }),
     ],
     ...editorLabels(s, { active: 'editor.active' }, { readouts: 'editor.readouts' }),
     computeHelper: (schema) => HELPERS[schema.name]?.(),

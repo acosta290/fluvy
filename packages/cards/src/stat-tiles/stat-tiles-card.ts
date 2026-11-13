@@ -1,5 +1,4 @@
 import {
-  actionRuns,
   isUsable,
   stateText,
   strings as words,
@@ -36,9 +35,8 @@ import {
   type NumberKeys,
 } from '../shared/units.js';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 
-import { DETAILS } from '../lock/rows.js';
 import { iconOf, stateWord } from '../shared/domain.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
@@ -80,6 +78,7 @@ export interface StatTileConfig extends NumberKeys {
   tap_action?: ActionConfig;
   /** A still press on the tile: nothing by default. */
   hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 export interface StatRowConfig {
@@ -90,7 +89,10 @@ export interface StatRowConfig {
   secondary?: string;
   tone?: Tone;
   color?: string;
+  /** What the row answers: its entity's details where none is said, never the card's; a double tap none (#179). */
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 export interface StatTilesCardConfig extends FluvyCardConfig, EmptyList, NumberKeys {
@@ -338,15 +340,9 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         tone: tile.tone ?? tone,
         active: !gone(view) && (tile.highlight ?? false),
         unavailable: gone(view),
-        // its own tap (its details by default) and hold (none by default), each where it runs; a figure that cannot
-        // be read has neither (`options()`)
-        onTap: actionRuns(tile.tap_action, view.id)
-          ? () => this.tap(view.id, tile.tap_action ?? DETAILS)
-          : undefined,
-        onHold:
-          tile.hold_action && actionRuns(tile.hold_action, view.id)
-            ? () => this.hold(view.id, tile.hold_action)
-            : undefined,
+        // its own tap (its details by default), hold and double tap (none by default), each where it runs; a figure
+        // that cannot be read has none of them (`options()`)
+        ...this.pressOf(tile, view.id, MORE_INFO, null),
       };
     });
 
@@ -436,7 +432,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
                   value,
                   compact,
                   unavailable: !usable,
-                  onTap: () => this.tap(view.id, row.tap_action),
+                  ...this.pressOf(row, view.id),
                 });
               })}
             </div>`

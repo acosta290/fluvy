@@ -34,7 +34,7 @@ import {
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { DIMMABLE, lightLook, litColour, withMembers } from '../shared/light.js';
@@ -90,6 +90,14 @@ export interface TileItem {
   show_switch?: ShowSwitch;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
+  /**
+   * What its circle answers (#179): a button of its own then, over the tile's; unset, the circle as the tile draws it —
+   * its switch where it is one, else part of the tile.
+   */
+  icon_tap_action?: ActionConfig;
+  icon_hold_action?: ActionConfig;
+  icon_double_tap_action?: ActionConfig;
 }
 
 export interface TileCardConfig extends FluvyCardConfig, LightColours, Omit<TileItem, 'entity'> {
@@ -135,7 +143,6 @@ export interface TileLook {
 
 const COVER_SET_POSITION = 4;
 const FAN_SET_SPEED = 1;
-const MORE_INFO: ActionConfig = { action: 'more-info' };
 const TOGGLE: ActionConfig = { action: 'toggle' };
 /** A head's circle and the 8 of air before what ends it: its switch, a reading, a level's figure. */
 const HEAD_LEAD = 44 + 8;
@@ -675,16 +682,39 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       ? `fv-tile fv-tile--${tone} fv-tile--tap${sizeClass}${tinted} ${on ? 'is-on' : ''}`
       : `fv-tile fv-tile--off fv-tile--tap${sizeClass}`;
     // what cannot be read cannot be switched: its tap opens the details, its toggle (if asked) goes to Home Assistant
-    const run = (action: ActionConfig): void =>
-      usable ? this.act(view, lit, action) : this.tap(view.id, action);
-    const holdAction = item.hold_action ?? MORE_INFO;
-    const holdNow = actionRuns(holdAction, view.id) ? () => run(holdAction) : undefined;
+    const runs = (action: ActionConfig | undefined): (() => void) | undefined =>
+      action && actionRuns(action, view.id)
+        ? () => (usable ? this.act(view, lit, action) : this.tap(view.id, action))
+        : undefined;
+    const holdNow = runs(item.hold_action ?? MORE_INFO);
+    const doubleNow = runs(item.double_tap_action);
+    // its circle answers what the tile says of it (#179), a button of its own then; else, where it is the tile's switch
+    // (`flips`), it flips it, as it did
+    const circle = (flips: boolean): TemplateResult => {
+      const isSwitch = flips && !item.icon_tap_action;
+      const { onTap, onHold } = this.pressOf(
+        item,
+        view.id,
+        flips ? () => this.flip(view, !lit) : null,
+        null,
+        'icon_',
+      );
+      return ico(usable || quiet ? icon : 'ban', usable || quiet ? iconTone : 'off', {
+        onTap,
+        onHold,
+        label: isSwitch ? label : this.t('common.icon_of', { name: label }),
+        checked: isSwitch ? lit : undefined,
+      });
+    };
 
     if (small) {
       // the whole tile is the button (laid over it) where it has something to run: tap toggles what toggles (opens
-      // what does not), hold opens the details
-      const tapAction = item.tap_action ?? (usable && canToggle ? TOGGLE : MORE_INFO);
-      const tapNow = actionRuns(tapAction, view.id) ? () => run(tapAction) : undefined;
+      // what does not), hold opens the details; a tap waits for a second where a double tap is set (#179)
+      const tapNow = this.tapper(
+        view.id,
+        runs(item.tap_action ?? (usable && canToggle ? TOGGLE : MORE_INFO)),
+        doubleNow,
+      );
       let line = this.tileLine(item, view, lit, level, false, true);
       const reading = usable ? this.readoutText(item) : '';
       if (reading) line = `${line} · ${reading}`;
@@ -696,7 +726,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         data-surface=${surface}
         data-unavailable=${quiet ? 'quiet' : nothing}
       >
-        ${usable || quiet ? ico(icon, iconTone) : ico('ban', 'off')}
+        ${circle(false)}
         <div class="fv-tile__text">
           <h3 class="fv-tile__name">${name}</h3>
           <p class="fv-tile__state" data-name=${words ? '' : nothing}>${line}</p>
@@ -721,15 +751,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const switches = control === undefined && canToggle;
     const shows = switchOf(item, this.config);
     const switchApart = switches && shows === true && inner >= HEAD_ROOM;
-    const flip = (event: Event): void => {
-      event.stopPropagation();
-      this.flip(view, !lit);
-    };
-    const lead = !usable
-      ? ico(quiet ? icon : 'ban', quiet ? iconTone : 'off')
-      : switches && !switchApart
-        ? ico(icon, iconTone, { onTap: flip, label, checked: lit })
-        : ico(icon, iconTone);
+    const lead = circle(usable && switches && !switchApart);
     const line = this.tileLine(item, view, lit, level, valueInHead);
     // its level's figure in the switch's place (`show_switch: value`): the one its line ends in ("On · 70 %") goes up
     // to the head's end, as a sensor's reading stands there, and the line keeps the state alone — where the scale's
@@ -754,9 +776,12 @@ export class FluvyTileCard extends Card<TileCardConfig> {
               : nothing;
 
     // the tile's button is laid over it, under its controls (the switch, a circle that is one, the ruler): a tap runs
-    // the tap action, a still press the hold action — never a switch inside a button
-    const tapAction = item.tap_action ?? MORE_INFO;
-    const tapNow = actionRuns(tapAction, view.id) ? () => this.tap(view.id, tapAction) : undefined;
+    // the tap action, a still press the hold action, two taps the double tap — never a switch inside a button
+    const tapNow = this.tapper(
+      view.id,
+      this.runner(item.tap_action ?? MORE_INFO, view.id),
+      doubleNow,
+    );
 
     // the slider's style (1.18, #144): the ruler at the foot (knob 28), a bar or a liquid drawing the foot's 40 of the
     // finger's 44 band, or the fill — the tile itself, its ruler covering it and drawing the wash to the level under

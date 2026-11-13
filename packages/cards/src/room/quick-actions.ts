@@ -60,6 +60,8 @@ export interface QuickAction {
   tap_action?: ActionConfig;
   /** Default: its details (a set of several: where the room opens). */
   hold_action?: ActionConfig;
+  /** Default: none; where set, a tap waits a moment to tell it from one (#179). */
+  double_tap_action?: ActionConfig;
 }
 
 /** A config's entry as a round: a set's word, an entity's id, or an entry; anything else none. */
@@ -85,6 +87,12 @@ export interface QuickHost {
   expect(entityId: string, state: string): void;
   call(domain: string, service: string, data: Record<string, unknown>): void;
   run(action: ActionConfig, entityId: string | undefined): void;
+  /** A tap that waits for a second where a double tap is set (the card's `tapper`). */
+  tapper(
+    key: unknown,
+    tap: (() => void) | undefined,
+    double: (() => void) | undefined,
+  ): (() => void) | undefined;
   /** A colour as the card's sheet gives it (`data-accent`). */
   accent(colour: unknown): string | undefined;
   /** Where the room opens, where it opens anywhere. */
@@ -400,12 +408,16 @@ function roundOf(host: QuickHost, item: QuickAction): LevelRound {
     tone,
     accent: host.accent(colour),
     switches: flip !== undefined,
-    // a set none of whose members takes its call reads as it is and takes no tap
-    onTap: flip
-      ? flip.calls.length > 0
-        ? () => runFlip(host, flip, tap.confirmation, name)
-        : undefined
-      : runs(tap),
+    // a set none of whose members takes its call reads as it is and takes no tap; two taps its double where set
+    onTap: host.tapper(
+      `quick_${own ?? group}`,
+      flip
+        ? flip.calls.length > 0
+          ? () => runFlip(host, flip, tap.confirmation, name)
+          : undefined
+        : runs(tap),
+      item.double_tap_action && runs(item.double_tap_action),
+    ),
     onHold: runs(item.hold_action ?? MORE_INFO),
   };
 }

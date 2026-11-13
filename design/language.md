@@ -212,6 +212,18 @@ key hold.
   place, in the circle's box (44, the smaller 40), whole on no fill with a control's corners; it gives way where the
   circle would, and out of reach it greys and fades with the card (the dashed ring is the circle's alone). An address
   is loaded only from the web, a path or `data:image/` (`shared/picture.ts`), else the circle stays.
+- **A double tap (1.20, #179)**, as Home Assistant's: `double_tap_action` beside every tap (the head, a tile, a row, a
+  tab, an item), nothing until set. Where one is set, a tap waits Home Assistant's 250 ms for a second before it runs
+  (`tapper` on the card base, by the surface: its entity and part), and two inside them run the double, never the tap;
+  without one, a tap runs at once, as before. A hold is a hold whatever came before it; Enter twice is a double tap;
+  a surface whose tap is `none` but has a double is still a button. A card's host takes `touch-action: manipulation`,
+  so two taps are never the browser's zoom (Safari's included).
+- **The circle's own actions (1.20, #179):** `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action` on every
+  head and every tile (and its items). Unset, the circle is the head's as above (a tile's that is its switch still
+  flips it); set, it is a button of its own — the same circle, nothing drawn differently, raised over the head's
+  overlay (`z-index` 1) and over a tile's cover, its press never reaching the surface under it (`pressOwn`,
+  `clickOwn`, as a room's rounds), one tab stop named "<name> icon", giving under the finger and rising under a pointer
+  as the circle that was the button did.
 - **A round in the head, and a short title (1.9):** the people and map cards' head keeps the short title where the
   long one would not hold beside the circle and the round (the map card has one too: "Everyone", `map.title_short`),
   and where not even the short one holds beside the round (half a phone's column, 152) the round gives way to a "Map"
@@ -2400,8 +2412,8 @@ the tile card's tile of the same entity, byte for byte.
   last ` · ` parts first, as a state line does, then what is left ends in an ellipsis as a name does (`data-name`),
   never left out. An entity that cannot be read says so on its line, whatever was asked.
 - **Mushroom pastes in:** `primary` → `name`, `icon_color` → `color`, `layout: vertical` and its later `vertical: true`
-  → mini (`horizontal`, `default` → compact); `fill_container`, `multiline_secondary`, `double_tap_action`, `entity_id`
-  let go when the editor saves; `picture` and `badge_*` kept, not drawn (a follow-up). Its actions are the tile's, not
+  → mini (`horizontal`, `default` → compact), its `double_tap_action` the tile's own (1.20); `fill_container`,
+  `multiline_secondary`, `entity_id` let go when the editor saves; `picture` and `badge_*` kept, not drawn (a follow-up). Its actions are the tile's, not
   Mushroom's: Mushroom's do nothing unless given one, the tile toggles what toggles on a tap and opens its details on a
   hold; `tap_action: { action: none }` keeps a pasted card still (the docs' paste paragraph says so).
 - **Editor:** entity (not required), name and icon, the line (a keyword or a template), style and *Shows as on* on one

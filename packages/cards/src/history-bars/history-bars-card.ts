@@ -18,7 +18,18 @@ import {
   type MessageKey,
 } from '@fluvy/core';
 
-import { head, ico, icon, readout, type IconRef, type Tone } from '@fluvy/ui';
+import {
+  activateKey,
+  clickPress,
+  head,
+  ico,
+  icon,
+  preventMenu,
+  readout,
+  startPress,
+  type IconRef,
+  type Tone,
+} from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 
 import {
@@ -59,7 +70,7 @@ import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { currencySymbol } from '../energy-model/costs.js';
 import { PERIODS, type Period } from '../energy-model/period.js';
 import { RecordedSensors } from '../energy-model/recorded.js';
-import { Card, HEAD_BASE, type BaseKey } from '../shared/base.js';
+import { Card, HEAD_BASE, MORE_INFO, type BaseKey } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import {
@@ -863,7 +874,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         chartSection([BARS_CAPS, MINI_CAPS], capsIn),
         // the figures' unit and decimals: one decimal by default, so a column of bars reads evenly
         numberFields({ when: hasLadder, decimals: ['0', '1', '2', '3'] }),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         strings,
@@ -1625,23 +1636,20 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // folded into columns, the readouts take the size the widest figure fits at (the sensor card's rule)
     const size = line ? 's' : statsSize(this.ruler, width, resting, columns);
     const cells = shown.map((text, i) => {
-      const item = resting[i]?.item;
-      const tap = item?.tap_action
-        ? (): void => this.tap(resting[i]?.entity, item.tap_action)
-        : null;
-      const key = (event: KeyboardEvent): void => {
-        if (tap && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault();
-          tap();
-        }
-      };
+      // a readout answers only what it says (#179): nothing by default
+      const { onTap, onHold } = this.pressOf(resting[i]?.item, resting[i]?.entity, null, null);
+      const press = onTap ?? onHold;
       return html`<div
-        class="hb-readout ${tap ? 'hb-readout--tap' : ''}"
-        role=${tap ? 'button' : nothing}
-        tabindex=${tap ? '0' : nothing}
-        data-target=${tap ? '' : nothing}
-        @click=${tap ?? nothing}
-        @keydown=${tap ? key : nothing}
+        class="hb-readout ${press ? 'hb-readout--tap' : ''}"
+        role=${press ? 'button' : nothing}
+        tabindex=${press ? '0' : nothing}
+        data-target=${press ? '' : nothing}
+        .fvTap=${onTap}
+        .fvHold=${onHold}
+        @pointerdown=${press ? startPress : nothing}
+        @click=${press ? clickPress : nothing}
+        @contextmenu=${onHold ? preventMenu : nothing}
+        @keydown=${activateKey(onTap, onHold)}
       >
         ${readout({ label: text.label, value: text.value, unit: text.unit ?? '', size })}
       </div>`;
@@ -1781,8 +1789,13 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const press = this.press;
     this.press = null;
     if (press && (press.moved || event.timeStamp - press.at > TAP)) return;
-    this.tap();
+    this.tapChart();
   };
+
+  /** The card's tap from a chart that is its button, waiting for a second where a double tap is set (#179). */
+  private tapChart(): void {
+    this.pressOf(this.config, this.actsOn(this.entity())).onTap?.();
+  }
 
   /**
    * The keys that read the chart without a pointer, the engine's (← → a bar, Shift five, Home and End its ends,
@@ -1791,7 +1804,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   private readonly onKey = (event: KeyboardEvent): void => {
     if ((event.key === 'Enter' || event.key === ' ') && this.chartIsButton) {
       event.preventDefault();
-      this.tap();
+      this.tapChart();
     } else if (this.plot.count) this.scrubber.key(event, this.plot.slot / this.contentWidth);
   };
 
@@ -2035,13 +2048,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       style="grid-template-columns:repeat(${columns}, minmax(0, 1fr))"
     >
       ${facts.map((fact, i) => {
-        const tap = (): void => this.tap(fact.entity, fact.item.tap_action);
-        const key = (event: KeyboardEvent): void => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            tap();
-          }
-        };
+        // a fact's tap is its own, else its sensor's details; a hold and a double tap where set (#179)
+        const { onTap, onHold } = this.pressOf(fact.item, fact.entity, MORE_INFO, null);
         return html`<div
           class="hb-fact hb-fact--tap ${i % columns ? 'has-divider' : ''}"
           role="button"
@@ -2049,8 +2057,12 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
           data-target
           data-accent=${fact.accent ?? nothing}
           aria-label=${`${fact.label}: ${fact.value}${fact.unit ? ` ${fact.unit}` : ''}`}
-          @click=${tap}
-          @keydown=${key}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
+          @pointerdown=${startPress}
+          @click=${clickPress}
+          @contextmenu=${onHold ? preventMenu : nothing}
+          @keydown=${activateKey(onTap, onHold)}
         >
           ${
             circles

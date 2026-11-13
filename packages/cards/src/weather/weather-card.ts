@@ -33,7 +33,7 @@ import {
   type TemplateResult,
 } from 'lit';
 
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { stateWord } from '../shared/domain.js';
 import { fitLine } from '../shared/fit.js';
 
@@ -309,9 +309,9 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<WeatherCardConfig>()([
     'variant',
@@ -357,7 +357,7 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
         accentField('card_color', { none: true }),
         ...cardSurfaceFields(),
         unavailableField(),
-        actionFields(),
+        actionFields({ icon: true }),
       ],
       ...editorLabels(
         s,

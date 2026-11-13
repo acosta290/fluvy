@@ -2,7 +2,7 @@ import type { LovelaceConfigForm } from '@fluvy/core';
 import type { BaseKey } from '../shared/base.js';
 import {
   accentField,
-  actionField,
+  actionFields,
   cardSurfaceFields,
   unavailableField,
   emptyFields,
@@ -50,8 +50,8 @@ export const lists: readonly RowsListSpec[] = [
     alias: 'entities',
     title: 'editor.rows',
     domains: DOMAINS,
-    keys: ['entity', 'name', 'unit', 'decimals', 'tap_action'],
-    schema: [entityField(DOMAINS), nameField(), numberFields(), actionField()],
+    keys: ['entity', 'name', 'unit', 'decimals', 'tap_action', 'hold_action', 'double_tap_action'],
+    schema: [entityField(DOMAINS), nameField(), numberFields(), actionFields()],
   },
 ];
 

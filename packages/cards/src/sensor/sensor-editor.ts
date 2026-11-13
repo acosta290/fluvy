@@ -1,5 +1,5 @@
 import { chartDefaults, strings, type HomeAssistant, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import type { ChartCaps } from '../shared/chart-config.js';
 import { chartEngine } from '../shared/chart-load.js';
 import {
@@ -62,8 +62,7 @@ export const base: readonly BaseKey[] = [
   'entities',
   'name',
   'icon',
-  'tap_action',
-  'hold_action',
+  ...ACTIONS_BASE,
   'tone',
   'color',
   'card_color',
@@ -71,6 +70,7 @@ export const base: readonly BaseKey[] = [
   'card_border',
   'unavailable',
   'show_icon',
+  ...ICON_ACTIONS_BASE,
 ];
 
 export const keys = configKeys<SensorCardConfig>()([
@@ -136,7 +136,7 @@ export function getConfigForm(): LovelaceConfigForm {
       textField('label'),
       ...(chart ? [chart] : []),
       numberFields({ when: hasLadder }),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...editorLabels(s, { show_stats: 'editor.show_stats' }, { label: 'editor.chart_label' }),
     computeHelper: (schema) =>

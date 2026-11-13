@@ -1,8 +1,8 @@
 import { strings, type LovelaceConfigForm } from '@fluvy/core';
-import type { BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   accentField,
-  actionField,
+  actionFields,
   boolField,
   cardSurfaceFields,
   onlyWhen,
@@ -36,9 +36,9 @@ const OWN_LABELS = {
 
 const isOwnLabel = (name: string): name is keyof typeof OWN_LABELS => name in OWN_LABELS;
 
-/** A clock has no entity: it honours a tap and the card's colour (the face's accent). */
+/** A clock has no entity: it honours what it answers and the card's colour (the face's accent). */
 export const base: readonly BaseKey[] = [
-  'tap_action',
+  ...ACTIONS_BASE,
   'color',
   'card_color',
   'card_opacity',
@@ -96,7 +96,8 @@ export function getConfigForm(): LovelaceConfigForm {
       ...cardSurfaceFields(),
       // what is out of reach on a clock is its weather
       onlyWhen(({ weather }) => Boolean(weather), unavailableField()),
-      actionField(),
+      // a weather clock's tap opens its weather; a hold nothing until set
+      actionFields({ tap: null, hold: 'none' }),
     ],
     computeLabel: (schema, localize) =>
       core.computeLabel?.(schema, localize) ??

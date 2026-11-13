@@ -90,7 +90,7 @@ import {
   type Grain as Period,
 } from '../energy-period/picker.js';
 import { axisHolds } from '../shared/axis.js';
-import { Card, type BaseKey } from '../shared/base.js';
+import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import type { ChartCaps, ChartKeys } from '../shared/chart-config.js';
 import { chipRow } from '../shared/chips.js';
 import { toneOf } from '../shared/colour.js';
@@ -542,9 +542,9 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     'card_opacity',
     'card_border',
     'unavailable',
-    'tap_action',
-    'hold_action',
+    ...ACTIONS_BASE,
     'show_icon',
+    ...ICON_ACTIONS_BASE,
   ];
   static override keys = configKeys<EnergyUsageCardConfig>()([
     'kind',
@@ -675,7 +675,7 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
         chartSection([CAPS, STRIP_CAPS], capsIn),
         ...colourFields(),
         numberFields({ units: ['Wh', 'kWh', 'MWh'] }),
-        actionFields(),
+        actionFields({ icon: true, many: true }),
       ],
       ...editorLabels(
         u,

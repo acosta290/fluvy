@@ -2,7 +2,6 @@ import { strings as words, type LovelaceConfigForm } from '@fluvy/core';
 import { HEAD_BASE } from '../shared/base.js';
 import {
   accentField,
-  actionField,
   actionFields,
   boolField,
   colourFields,
@@ -66,25 +65,36 @@ export const lists: readonly RowsListSpec[] = [
       'decimals',
       'tap_action',
       'hold_action',
+      'double_tap_action',
     ],
     schema: [
       entityField(),
       nameIconFields(),
       fieldRow(toneField(), boolField('highlight')),
       numberFields(),
-      actionFields(),
+      actionFields({ hold: 'none' }),
     ],
   },
   {
     key: 'rows',
     title: 'editor.rows',
-    keys: ['entity', 'name', 'icon', 'secondary', 'tone', 'color', 'tap_action'],
+    keys: [
+      'entity',
+      'name',
+      'icon',
+      'secondary',
+      'tone',
+      'color',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
     schema: [
       entityField(),
       nameIconFields(),
       textField('secondary'),
       fieldRow(toneField(), accentField('color', { item: 'own' })),
-      actionField(),
+      actionFields(),
     ],
   },
 ];
@@ -109,7 +119,7 @@ export function getConfigForm(): LovelaceConfigForm {
       entitiesField('rows'),
       emptyFields(),
       numberFields(),
-      actionFields(),
+      actionFields({ icon: true }),
     ],
     ...idsOnly('tiles', 'rows'),
     ...editorLabels(

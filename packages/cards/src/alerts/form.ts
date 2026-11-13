@@ -2,6 +2,9 @@ import { strings, type HaFormSchemaItem, type MessageKey } from '@fluvy/core';
 import {
   accentField,
   actionField,
+  actionFields,
+  doubleTapField,
+  optionalActions,
   boolField,
   byName,
   choiceField,
@@ -124,9 +127,10 @@ const FIELDS: readonly HaFormSchemaItem[] = [
   ),
   fieldRow(boolField('split'), boolField('snooze')),
   boolField('admin_only'),
-  // what a tap does
-  fieldRow(actionField('tap_action'), actionField('hold_action')),
+  // what a tap does: its own, else the card's, else its sheet; a row's, else its details (#179: a double tap of each)
+  actionFields({ tap: null, hold: null }),
   fieldRow(actionField('row_action'), actionField('row_hold_action')),
+  optionalActions(doubleTapField('row_double_tap_action')),
   objectField('row_button'),
   objectField('actions'),
   // when it applies, when it grows graver, a matcher of several clauses, its memory's key
@@ -149,8 +153,10 @@ const EVERY = [
   'admin_only',
   'tap_action',
   'hold_action',
+  'double_tap_action',
   'row_action',
   'row_hold_action',
+  'row_double_tap_action',
   'row_button',
   'actions',
   'conditions',
@@ -270,6 +276,7 @@ const ITEM_WORDS: Readonly<Record<string, MessageKey>> = {
   admin_only: 'alerts.editor.admin_only',
   row_action: 'alerts.editor.row_action',
   row_hold_action: 'alerts.editor.row_hold_action',
+  row_double_tap_action: 'alerts.editor.row_double_tap_action',
   row_button: 'alerts.editor.row_button',
   actions: 'alerts.editor.actions',
   conditions: 'alerts.editor.conditions',
