@@ -50,7 +50,13 @@
   "battery": ["电池", "储能", "battery", "storage"],
   "charger": ["充电桩", "随车充", "charger", "wallbox", "evse", "ev_charg", "charge_point"],
   "home": ["家庭", "全屋", "总负载", "总用电", "house", "home", "load"],
-  "today": ["今日", "今天", "当日", "daily"],
+  "today": [
+    "今日",
+    "今天",
+    "当日",
+    "daily",
+    "(?<![昨前明次])日(?=总?(?:[发用充放购售耗产]电|电量|上网|下网|馈网))"
+  ],
   "forecast": ["预测", "预报", "预计", "预估"],
   "not_appliance": [
     "模式",

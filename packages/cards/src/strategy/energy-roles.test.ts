@@ -117,6 +117,31 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     });
   });
 
+  it('reads a day’s counter in Chinese and Japanese by its words, never yesterday’s nor a lifetime’s (#170)', () => {
+    const day = (id: string, name: string) => reading(id, name, '18.6', 'energy');
+    // an inverter's day beside its lifetime, as Chinese integrations name them
+    expect(
+      roles([
+        day('sensor.inverter_e1_leiji', '逆变器 E1 累计发电量'),
+        day('sensor.inverter_e1_ri', '逆变器 E1 日发电总量'),
+      ]).solarToday,
+    ).toBe('sensor.inverter_e1_ri');
+    for (const name of ['光伏日发电量', '逆变器 日总发电量', '太阳能 每日发电量'])
+      expect(roles([day('sensor.pv_ri', name)]).solarToday, name).toBe('sensor.pv_ri');
+    for (const name of [
+      '逆变器 昨日发电量',
+      '逆变器 累计发电量',
+      '光伏 月发电量',
+      '逆变器 明日发电量',
+    ])
+      expect(roles([day('sensor.pv_ri', name)]).solarToday, name).toBeUndefined();
+    // and as Japanese ones do
+    for (const name of ['太陽光 日発電量', 'パワコン 日間発電量'])
+      expect(roles([day('sensor.pv_hi', name)]).solarToday, name).toBe('sensor.pv_hi');
+    for (const name of ['太陽光 前日発電量', '太陽光 昨日発電量', '太陽光 積算発電量'])
+      expect(roles([day('sensor.pv_hi', name)]).solarToday, name).toBeUndefined();
+  });
+
   it('takes the energy dashboard’s solar meter for today’s production first, then the day’s counter', () => {
     const house = [
       reading('sensor.inverter_total_yield', 'Inverter total yield', '9120', 'energy'),
