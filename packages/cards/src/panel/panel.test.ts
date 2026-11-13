@@ -1105,6 +1105,54 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('takes back what a ruler’s drag showed when the drag is taken away: the opacity and the dim as they began', async () => {
+    const { panel, root, row, previews, settle } = await mount();
+    (panel as unknown as { content: number }).content = 400;
+    await settle();
+    const card = (title: string) =>
+      [...root.querySelectorAll<HTMLElement>('.pn-card')].find(
+        (c) => c.querySelector('.fv-card__title')?.textContent?.trim() === title,
+      )!;
+    const ruler = (title: string) => card(title).querySelector('fluvy-ruler')!;
+    const say = async (type: string, value?: number) => {
+      ruler('Cards').dispatchEvent(
+        new CustomEvent(type, value === undefined ? {} : { detail: { value } }),
+      );
+      await settle();
+    };
+    const opacity = () => row('Opacity')?.querySelector('.fv-row__value')?.textContent?.trim();
+    // a drag shows what it reaches as it moves; taken away, the cards are as they were, nothing to save
+    await say('fluvy-input', 70);
+    await say('fluvy-input', 60);
+    expect(opacity()).toBe('60 %');
+    await say('fluvy-cancel');
+    expect(opacity()).toBe('100 %');
+    expect(previews.at(-1)).not.toEqual(expect.objectContaining({ cards: expect.anything() }));
+    // a release keeps where it stopped; the next drag taken away goes back there
+    await say('fluvy-input', 80);
+    await say('fluvy-change', 80);
+    await say('fluvy-input', 40);
+    await say('fluvy-cancel');
+    expect(opacity()).toBe('80 %');
+    // a cancel with no drag before it changes nothing
+    await say('fluvy-cancel');
+    expect(opacity()).toBe('80 %');
+    // the picture's dim the same way
+    [...card('Background').querySelectorAll<HTMLElement>('.fv-option')]
+      .find((tile) => tile.querySelector('.fv-option__value')?.textContent?.trim() === 'Image')!
+      .click();
+    await settle();
+    const dim = () => row('Dim')?.querySelector('.fv-row__value')?.textContent?.trim();
+    expect(dim()).toBe('40 %');
+    ruler('Background').dispatchEvent(new CustomEvent('fluvy-input', { detail: { value: 70 } }));
+    await settle();
+    expect(dim()).toBe('70 %');
+    ruler('Background').dispatchEvent(new CustomEvent('fluvy-cancel'));
+    await settle();
+    expect(dim()).toBe('40 %');
+    panel.remove();
+  });
+
   it('lets the house choose the style every slider is drawn in, the ruler until chosen (1.18, #144)', async () => {
     const { panel, root, button, handle, previews, settle } = await mount();
     const card = () =>

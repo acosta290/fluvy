@@ -788,6 +788,33 @@ const SECOND_COLOR: Hex = '#a9c2a4';
 /** The dim's figures under its ruler. */
 const DIM_MARKS = [0, 20, 40, 60, 80] as const;
 
+/** Each ruler's value as its drag began, while the drag lasts: what a drag taken away goes back to. */
+const dragged = new WeakMap<EventTarget, number>();
+
+/**
+ * A ruler of the panel's, its drag an edit the preview shows as it moves (`value`: what it shows now): its release
+ * keeps where it stopped; a drag taken away (the page's scroll, the system: `fluvy-cancel`) goes back to the value it
+ * began from, as nothing was chosen.
+ */
+function rulerEdit(value: number, edit: (value: number) => void) {
+  return {
+    input: ({ currentTarget, detail }: CustomEvent<RulerChangeDetail>): void => {
+      if (currentTarget && !dragged.has(currentTarget)) dragged.set(currentTarget, value);
+      edit(detail.value);
+    },
+    change: ({ currentTarget, detail }: CustomEvent<RulerChangeDetail>): void => {
+      if (currentTarget) dragged.delete(currentTarget);
+      edit(detail.value);
+    },
+    cancel: ({ currentTarget }: Event): void => {
+      const began = currentTarget ? dragged.get(currentTarget) : undefined;
+      if (began === undefined) return;
+      dragged.delete(currentTarget!);
+      edit(began);
+    },
+  };
+}
+
 /**
  * A background to choose (1.19, #155): its four kinds as tiles, as the sliders' are — plain, the palette's gradient, a
  * colour, a picture — and under them only the chosen kind's own rows: the colour's field, the switch to a second one
@@ -804,7 +831,7 @@ function backgroundChoice(
   const width = ctx.fit?.width ?? 0;
   // a parsed background holds one colour at least
   const [first, second] = background.colors as readonly [Hex, Hex?];
-  const dim = (event: CustomEvent<RulerChangeDetail>): void => edit?.({ dim: event.detail.value });
+  const dim = rulerEdit(background.dim, (value) => edit?.({ dim: value }));
   const rows =
     background.type === 'color'
       ? html`<p class="fv-label pn-label">${ctx.t('background.color')}</p>
@@ -887,8 +914,9 @@ function backgroundChoice(
                       unit="%"
                       .label=${ctx.t('background.dim')}
                       ?readonly=${!edit}
-                      @fluvy-input=${dim}
-                      @fluvy-change=${dim}
+                      @fluvy-input=${dim.input}
+                      @fluvy-change=${dim.change}
+                      @fluvy-cancel=${dim.cancel}
                     ></fluvy-ruler>
                     ${rulerLabels(DIM_MARKS.map((mark) => [mark / BACKGROUND_DIM_MAX, String(mark)]))}`
                 : nothing
@@ -945,8 +973,9 @@ function cardsCard(ctx: PanelContext): TemplateResult {
   const { shown, admin } = ctx;
   const { opacity } = shown.cards;
   const width = ctx.fit?.width ?? 0;
-  const set = (event: CustomEvent<RulerChangeDetail>): void =>
-    ctx.editHouse({ cards: { ...shown.cards, opacity: event.detail.value } });
+  const set = rulerEdit(opacity, (value) =>
+    ctx.editHouse({ cards: { ...shown.cards, opacity: value } }),
+  );
   return html`<section class="fv-card pn-card">
     ${head({ icon: 'grid', title: ctx.t('cards.title'), sub: ctx.t(admin ? 'cards.sub' : 'scope.admin_only') })}
     <div class="pn-rows">
@@ -973,8 +1002,9 @@ function cardsCard(ctx: PanelContext): TemplateResult {
               unit="%"
               .label=${ctx.t('cards.opacity')}
               ?readonly=${!admin}
-              @fluvy-input=${set}
-              @fluvy-change=${set}
+              @fluvy-input=${set.input}
+              @fluvy-change=${set.change}
+              @fluvy-cancel=${set.cancel}
             ></fluvy-ruler>
             ${rulerLabels(OPACITY_MARKS.map((mark) => [mark / 100, String(mark)]))}`
         : nothing
