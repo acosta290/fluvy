@@ -233,6 +233,17 @@ describe('bars', () => {
     expect(bars).toEqual([...Array(5).fill('quiet'), 'lit', ...Array(5).fill('hollow')]);
   });
 
+  it('are all to come where now stands before them (a day still ahead): every one hollow, no now marked', () => {
+    for (const preset of ['bars', 'soft'] as const) {
+      const drawing = host(drawChart({ ...spec(preset), kind: 'bars', now: -1 }));
+      expect(drawing.querySelectorAll('.fc-bar--hollow').length).toBe(DAY.length);
+      expect(drawing.querySelector('.fc-now')).toBeNull();
+    }
+    // at the series' very start the first slot is the one running, as it was
+    const started = host(drawChart(spec('bars', { now: 0 })));
+    expect(started.querySelectorAll('.fc-bar--hollow').length).toBe(DAY.length - 1);
+  });
+
   it('light the highest in the soft style and quiet the rest, its value over it', () => {
     const style = resolveStyle('soft', {}, caps);
     const drawing = host(

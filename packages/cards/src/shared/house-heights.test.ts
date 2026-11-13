@@ -651,6 +651,19 @@ describe('the energy family and the lists', () => {
       ),
     ).toBe(416);
     expect(productionHeight({ type: 'x', entity: 'sensor.p' })).toBe(344);
+    // a forecast day draws no arrays: one meter's card, whatever the config lists (#183)
+    const arrays = ['sensor.east_a', 'sensor.west_a'];
+    for (const day of ['tomorrow', 'ahead']) {
+      expect(productionHeight({ type: 'x', entity: 'sensor.p', arrays, day }, hass)).toBe(344);
+      expect(
+        productionHeight({ type: 'x', entity: 'sensor.p', arrays, day, variant: 'compact' }, hass),
+      ).toBe(204);
+    }
+    expect(productionHeight({ type: 'x', entity: 'sensor.p', arrays, day: 'today' }, hass)).toBe(
+      368,
+    );
+    // the compact card is its head, its bars and their axis: 204, where it declared 32 more than it drew
+    expect(productionHeight({ type: 'x', entity: 'sensor.p', variant: 'compact' })).toBe(204);
   });
 
   it('devices: a bar row each, one more under a parent, one for the rest of the house', () => {

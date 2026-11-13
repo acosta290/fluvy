@@ -269,6 +269,35 @@ show_compare: true              # Compare: the period before beside the span, on
   ("So far today", the hour under a finger, the badge against the forecast) is the arrays' together; a meter of its
   own (a whole-house counter) keeps its own figure. The automatic dashboards write it so for a house with several
   arrays in the Energy dashboard.
+
+  **The forecast** (1.20, #183) stands behind the day's bars, and the head says how the day is doing against it. It
+  comes from one of two places:
+  - `forecast_entity`, a forecast sensor: its state is the day's total and its attributes may carry the hours
+    (Solcast's `detailedHourly`, Open-Meteo's and Forecast.Solar's `wh_period` / `wh_hours`, a template's list of 24
+    numbers). A sensor that is named always wins.
+  - With none named, **Home Assistant's own solar forecast**: the one the Energy dashboard links to your panels
+    (*Settings › Dashboards › Energy › Solar panels › Forecast production*: Forecast.Solar, Solcast, Open-Meteo Solar
+    Forecast). The card reads the forecast of the arrays it shows — the Energy dashboard's array whose meter (or
+    power sensor) is its `entity` or one of its `arrays`, else the one on the same device (an inverter's day counter
+    beside the lifetime meter the dashboard reads). A forecast for the whole site linked to several arrays (Solcast)
+    is counted once; one a plane (Forecast.Solar) adds up. A meter the Energy dashboard does not know draws no
+    forecast today. It is asked once an hour, for every card together.
+
+  `show_forecast: false` draws none. While an hour is read under the pointer, the forecast's figure is that hour's.
+
+  **`day`** makes the card a forecast day, the same anatomy with nothing made in it yet:
+  - `day: tomorrow` — tomorrow's hours, the day's total with today's forecast beside it, its best hour, when, and its
+    hours of sun.
+  - `day: ahead` — a bar a day for the days the forecast holds after today (tomorrow alone from Forecast.Solar, a week
+    from Solcast, Open-Meteo's days: never a day it does not hold, and a last day the forecast only begins is left
+    out), their total, the daily average, the best and the lowest day; `days: 5` draws five at most (2 to 14).
+
+  A forecast day reads the forecast alone, so it needs no meter in reach: a forecast sensor that carries the days
+  asked (a template with `wh_hours` for both days) comes first, then Home Assistant's own for the card's arrays, and
+  for a meter the Energy dashboard does not know the house's whole forecast. With none, the card keeps its size and
+  says "No forecast". Every bar is the forecast's in the card's style: a lighter step of the card's colour in
+  `classic`, hollow in `soft` and `columns`. `show_peak: false` leaves the best hour (or the best and lowest day) out; `variant: compact` keeps the
+  head, with the total as its badge, and the bars.
 - **History bars** — a sensor's last `days` days (or weeks, or months: `period`) as bars from its long-term
   statistics, the value over each bar, the total and the average beside the title, and a strip of facts under the
   chart: the highest, the lowest and the average, or `co2`, `trees`, `km`, `money`, a `share` of another sensor and
@@ -293,7 +322,8 @@ show_compare: true              # Compare: the period before beside the span, on
 - the history bars `classic`, `bars` (the ink, flat, rounded as the house's bars are; `highlight` lights the highest,
   the lowest or the bar in progress and quiets the rest) or `columns`; the mini row's sparkline `classic` or `minimal`;
 - production `classic`, `soft` (one meter's day an hour a bar, the best hour in the ink and the rest quiet, the hours
-  to come the forecast's, hollow, now marked) or `columns` (the arrays stacked in the series' colours).
+  to come the forecast's, hollow, now marked) or `columns` (the arrays stacked in the series' colours); a forecast
+  day (`day`) is all to come: lighter bars in `classic`, hollow ones in `soft` and `columns`, no now.
 
 The fine keys of [the cards](cards.md) change one thing of a style where it draws it, and `animate: false` draws the
 chart still. A gauge's `gauge` is `ticks` (its ring as before), `dial` or `ring`, or a gauge that moves with what it
@@ -429,6 +459,20 @@ type: custom:fluvy-history-bars-card
 entity: sensor.east_array_energy
 name: Solar
 entities: [sensor.east_array_energy, sensor.west_array_energy]   # each bar both arrays' day
+```
+
+```yaml
+type: custom:fluvy-production-card
+entity: sensor.solar_energy_today
+day: tomorrow                  # today (default), tomorrow, or ahead
+```
+
+```yaml
+type: custom:fluvy-production-card
+entity: sensor.solar_energy_today
+day: ahead
+days: 5                        # at most five bars; without it, every day the forecast holds
+forecast_entity: sensor.solar_forecast   # optional: a sensor that carries the days; else Home Assistant's forecast
 ```
 
 ```yaml

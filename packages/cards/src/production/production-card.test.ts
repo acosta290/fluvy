@@ -263,3 +263,256 @@ describe('the production card’s several arrays (#183)', () => {
     expect(head(own)).toBe('13.4kWh');
   });
 });
+
+/** An hour of the house's day, `days` after today, as an integration writes it. */
+const hourAt = (days: number, hour: number): string =>
+  new Date(MIDNIGHT + (days * 24 + hour) * HOUR).toISOString();
+/** A clear day's forecast in Wh, 06:00 to 19:00: 18,400 in all. */
+const CLEAR = [100, 400, 900, 1500, 2000, 2400, 2600, 2500, 2200, 1700, 1200, 600, 250, 50];
+/** A forecast from today on, each day a share of a clear one. */
+const forecastOf = (days: readonly number[]): Record<string, number> =>
+  Object.fromEntries(
+    days.flatMap((share, day) => CLEAR.map((wh, i) => [hourAt(day, 6 + i), wh * share])),
+  );
+
+/**
+ * A house whose Energy dashboard links forecasts to the meter (each entry's Wh by the hour), which keeps what it was
+ * asked.
+ */
+const forecastHouse = (
+  entries: Record<string, Record<string, number>>,
+  asked: string[] = [],
+): HomeAssistant => {
+  const hass = house();
+  const statistics = hass.callWS.bind(hass);
+  hass.callWS = (async (message: { type: string; [key: string]: unknown }) => {
+    asked.push(message.type);
+    if (message.type === 'energy/get_prefs')
+      return {
+        energy_sources: [
+          {
+            type: 'solar',
+            stat_energy_from: 'sensor.pv',
+            config_entry_solar_forecast: Object.keys(entries),
+          },
+        ],
+      };
+    if (message.type === 'energy/solar_forecast')
+      return Object.fromEntries(
+        Object.entries(entries).map(([id, hours]) => [id, { wh_hours: hours }]),
+      );
+    return statistics(message);
+  }) as HomeAssistant['callWS'];
+  return hass;
+};
+
+async function mountIn(
+  hass: HomeAssistant,
+  config: Partial<ProductionCardConfig>,
+): Promise<FluvyProductionCard> {
+  const card = document.createElement('fluvy-production-card') as FluvyProductionCard;
+  card.setConfig({
+    type: 'custom:fluvy-production-card',
+    entity: 'sensor.pv',
+    _now: NOW,
+    ...config,
+  });
+  card.hass = hass;
+  document.body.append(card);
+  await settle(card);
+  return card;
+}
+
+/** Reads the chart at a bar, as a pointer over it does. */
+const readAt = async (card: FluvyProductionCard, bar: number | null): Promise<void> => {
+  (card as unknown as { scrubber: { value: number | null } }).scrubber.value = bar;
+  card.requestUpdate();
+  await settle(card);
+};
+const text = (root: ShadowRoot, selector: string): string[] =>
+  [...root.querySelectorAll(selector)].map((el) =>
+    (el.textContent ?? '').replace(/\s+/g, ' ').trim(),
+  );
+
+describe('the production card reads Home Assistant’s solar forecast', () => {
+  it('draws today’s forecast behind the day where no sensor is named, its figure the hour’s while one is read', async () => {
+    const asked: string[] = [];
+    const card = await mountIn(forecastHouse({ solcast: forecastOf([1, 1.2]) }, asked), {});
+    const root = card.shadowRoot!;
+    expect(root.querySelectorAll('.so-bar__forecast').length).toBe(13); // 06:00's 100 Wh is under half a step
+    expect(text(root, '.fv-card__sub')).toEqual(['Today · vs forecast']);
+    expect(text(root, '.so-top__side .fv-readout__value')).toEqual(['18.4kWh']);
+    expect(asked.filter((type) => type === 'energy/solar_forecast')).toHaveLength(1);
+    await readAt(card, 12);
+    expect(text(root, '.so-top__side .fv-readout__value')).toEqual(['2.6kWh']);
+    await readAt(card, null);
+    expect(text(root, '.so-top__side .fv-readout__value')).toEqual(['18.4kWh']);
+  });
+
+  it('adds two entries, lets a named sensor win, and asks for nothing where the forecast is turned off', async () => {
+    const planes = await mountIn(
+      forecastHouse({ east: forecastOf([0.5]), west: forecastOf([0.25]) }),
+      {},
+    );
+    expect(text(planes.shadowRoot!, '.so-top__side .fv-readout__value')).toEqual(['13.8kWh']);
+
+    const named: string[] = [];
+    const hass = forecastHouse({ solcast: forecastOf([1]) }, named);
+    hass.states['sensor.expected'] = meter('sensor.expected', 20);
+    const sensor = await mountIn(hass, { forecast_entity: 'sensor.expected' });
+    expect(text(sensor.shadowRoot!, '.so-top__side .fv-readout__value')).toEqual(['20.0kWh']);
+    expect(sensor.shadowRoot!.querySelector('.so-bar__forecast')).toBeNull();
+    expect(named).not.toContain('energy/solar_forecast');
+
+    const off: string[] = [];
+    const quiet = await mountIn(forecastHouse({ solcast: forecastOf([1]) }, off), {
+      show_forecast: false,
+    });
+    expect(quiet.shadowRoot!.querySelector('.so-top__side')).toBeNull();
+    expect(off).not.toContain('energy/get_prefs');
+  });
+
+  it('shows tomorrow as its forecast alone: every hour quiet, the day’s total beside today’s, its best hour', async () => {
+    const asked: string[] = [];
+    const card = await mountIn(forecastHouse({ solcast: forecastOf([1, 1.5]) }, asked), {
+      day: 'tomorrow',
+    });
+    const root = card.shadowRoot!;
+    expect(root.querySelectorAll('.so-bar').length).toBe(24);
+    expect(root.querySelectorAll('.so-bar__forecast').length).toBe(13);
+    expect(root.querySelector('.so-bar__fill')).toBeNull();
+    expect(text(root, '.fv-card__sub')).toEqual(['Tomorrow · forecast']);
+    expect(root.querySelector('.fv-badge')).toBeNull();
+    expect(text(root, '.so-top .fv-readout__label')).toEqual(['Tomorrow', 'Today']);
+    expect(text(root, '.so-top .fv-readout__value')).toEqual(['27.6kWh', '18.4kWh']);
+    expect(text(root, '.so-cols .fv-readout__value')).toEqual(['3.9kWh', '12:00', '13h']);
+    // the meter is not read
+    expect(asked).not.toContain('recorder/statistics_during_period');
+    await readAt(card, 12);
+    expect(text(root, '.so-top .fv-readout__label')).toEqual(['12:00 – 13:00', 'Today']);
+    expect(text(root, '.so-top .fv-readout__value')).toEqual(['3.9kWh', '2.6kWh']);
+  });
+
+  it('draws a forecast day in a style as bars to come: hollow, no now', async () => {
+    const card = await mountIn(forecastHouse({ solcast: forecastOf([1, 1.5]) }), {
+      day: 'tomorrow',
+      chart: 'soft',
+    });
+    const root = card.shadowRoot!;
+    expect(root.querySelectorAll('.pr-chart .fc-bar').length).toBe(14);
+    expect(root.querySelectorAll('.pr-chart .fc-bar--hollow').length).toBe(14);
+    expect(root.querySelector('.pr-chart .fc-now')).toBeNull();
+  });
+
+  it('shows the days ahead a bar a day, the last one left out where it is cut short, and reads each by its name', async () => {
+    const week = forecastOf([1, 1.5, 0.5, 1.25]);
+    // the forecast's reach ends in the morning of the day after
+    Object.assign(week, { [hourAt(4, 6)]: 100, [hourAt(4, 7)]: 400 });
+    const card = await mountIn(forecastHouse({ solcast: week }), { day: 'ahead' });
+    const root = card.shadowRoot!;
+    expect(root.querySelectorAll('.pr-days .so-bar').length).toBe(3);
+    expect(text(root, '.fv-card__sub')).toEqual(['Next 3 days · forecast']);
+    expect(text(root, '.fv-axis span')).toEqual(['Fri', 'Sat', 'Sun']);
+    expect(text(root, '.so-top .fv-readout__label')).toEqual(['Total']);
+    expect(text(root, '.so-top .fv-readout__value')).toEqual(['59.8kWh']);
+    expect(text(root, '.so-cols .fv-readout__label')).toEqual([
+      'Average',
+      'Best day',
+      'Lowest day',
+    ]);
+    expect(text(root, '.so-cols .fv-readout__value')).toEqual(['19.9kWh', 'Fri', 'Sat']);
+    await readAt(card, 1);
+    expect(text(root, '.so-top .fv-readout__value')).toEqual(['9.2kWh']);
+    expect(text(root, '.so-top .fv-readout__label')[0]).toMatch(/^Sat/);
+
+    const capped = await mountIn(forecastHouse({ solcast: week }), {
+      day: 'ahead',
+      days: 2,
+      show_peak: false,
+      variant: 'compact',
+    });
+    expect(capped.shadowRoot!.querySelectorAll('.pr-days .so-bar').length).toBe(2);
+    expect(text(capped.shadowRoot!, '.fv-badge')).toEqual(['36.8 kWh']);
+    expect(capped.shadowRoot!.querySelector('.so-cols')).toBeNull();
+  });
+
+  it('keeps a forecast day’s size with a quiet panel where there is no forecast', async () => {
+    for (const [config, height] of [
+      [{ day: 'tomorrow' }, 244],
+      [{ day: 'ahead', variant: 'compact' }, 104],
+      // arrays are today's: a forecast day draws none, and is as tall as one meter's
+      [{ day: 'tomorrow', arrays: ['sensor.east', 'sensor.west'] }, 244],
+    ] as const) {
+      const card = await mountIn(forecastHouse({}), config);
+      const root = card.shadowRoot!;
+      expect(FluvyProductionCard.layoutHeight(card.config!) - 100).toBe(height);
+      expect(root.querySelector('.pr-none')?.getAttribute('style')).toBe(`min-height:${height}px`);
+      expect(text(root, '.fv-empty-state__text')).toEqual(['No forecast']);
+      expect(root.querySelector('.so-bars')).toBeNull();
+      expect(root.querySelector('.is-unavailable')).toBeNull();
+    }
+  });
+
+  it('reads a forecast day from a sensor that carries it, before Home Assistant’s own', async () => {
+    const hass = forecastHouse({ solcast: forecastOf([1, 1.5]) });
+    hass.states['sensor.both_days'] = {
+      ...meter('sensor.both_days', 18.4),
+      attributes: { unit_of_measurement: 'kWh', wh_hours: forecastOf([1, 0.5]) },
+    };
+    const own = await mountIn(hass, { day: 'tomorrow', forecast_entity: 'sensor.both_days' });
+    expect(text(own.shadowRoot!, '.so-top .fv-readout__value')).toEqual(['9.2kWh', '18.4kWh']);
+    // a sensor of today's total says nothing of tomorrow: Home Assistant's forecast stands
+    hass.states['sensor.expected'] = meter('sensor.expected', 20);
+    const fallback = await mountIn(hass, { day: 'tomorrow', forecast_entity: 'sensor.expected' });
+    expect(text(fallback.shadowRoot!, '.so-top .fv-readout__value')[0]).toBe('27.6kWh');
+  });
+});
+
+describe('the production card’s editor, by the day it shows', () => {
+  const schema = FluvyProductionCard.getConfigForm().schema as HaFormSchemaItem[];
+  const names = (items: readonly HaFormSchemaItem[], data: Record<string, unknown>): string[] =>
+    items
+      .filter((item) => !item.when || item.when(data))
+      .flatMap((item) => (item.schema ? names(item.schema, data) : [item.name]));
+
+  it('offers the day as a choice of three, and only the fields that act on it', () => {
+    const day = schema.find((item) => item.name === 'day');
+    expect(day?.selector).toEqual({
+      select: {
+        mode: 'dropdown',
+        options: [
+          { value: 'today', label: 'Today' },
+          { value: 'tomorrow', label: 'Tomorrow' },
+          { value: 'ahead', label: 'Days ahead' },
+        ],
+      },
+    });
+    const only = (data: Record<string, unknown>): string[] =>
+      [
+        'days',
+        'forecast_entity',
+        'peak_entity',
+        'show_forecast',
+        'show_peak',
+        'collection_key',
+      ].filter((name) => names(schema, data).includes(name));
+    expect(only({ day: 'today' })).toEqual([
+      'forecast_entity',
+      'peak_entity',
+      'show_forecast',
+      'show_peak',
+      'collection_key',
+    ]);
+    expect(only({ day: 'tomorrow' })).toEqual(['forecast_entity', 'show_peak']);
+    expect(only({ day: 'ahead' })).toEqual(['days', 'forecast_entity', 'show_peak']);
+    // a forecast day has no now to mark and no bar to light
+    expect(
+      names(schema, { day: 'ahead', chart: 'soft' }).filter((name) =>
+        ['show_now', 'highlight', 'animate'].includes(name),
+      ),
+    ).toEqual(['animate']);
+    expect(FluvyProductionCard.defaults?.({ type: 'x' }, undefined)).toMatchObject({
+      day: 'today',
+    });
+  });
+});

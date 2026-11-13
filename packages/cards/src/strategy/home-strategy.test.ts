@@ -1413,6 +1413,45 @@ describe('custom:fluvy-home strategy', () => {
     });
   });
 
+  it('follows today’s production with tomorrow’s forecast where the energy dashboard links one to an array (#183)', async () => {
+    const meter = 'sensor.solar_inverter_daily_yield';
+    const productions = async (
+      type: 'custom:fluvy-home' | 'custom:fluvy-energy',
+      path: string,
+      forecast: readonly string[],
+    ): Promise<Record<string, unknown>[]> => {
+      const hass = demoHass({
+        sources: [
+          { type: 'grid', stat_energy_from: 'sensor.grid_energy_today' },
+          { type: 'solar', stat_energy_from: meter, config_entry_solar_forecast: forecast },
+        ],
+      }) as never;
+      const { views } = await generate({ type }, hass);
+      // the cards of the one column that holds production, in its order
+      return views
+        .find((v) => v.path === path)!
+        .sections.map((s) => s.cards.filter((c) => c.type === 'custom:fluvy-production-card'))
+        .filter((cards) => cards.length)
+        .flat();
+    };
+    const today = {
+      type: 'custom:fluvy-production-card',
+      entity: meter,
+      grid_options: { columns: 12 },
+    };
+    for (const [type, path] of [
+      ['custom:fluvy-home', 'energy'],
+      ['custom:fluvy-energy', 'production'],
+    ] as const) {
+      expect(await productions(type, path, ['forecast_solar'])).toEqual([
+        today,
+        { ...today, day: 'tomorrow' },
+      ]);
+      // a house with no forecast keeps its one card
+      expect(await productions(type, path, [])).toEqual([today]);
+    }
+  });
+
   it('reads an export meter as the grid’s second sensor, never as the grid', async () => {
     const hass = house([
       entity('sensor.grid_import_power', '1900', {

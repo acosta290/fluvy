@@ -1009,6 +1009,34 @@ chip chosen in half a column takes the same tone as its tile (the sun's for a so
 at 45 %), so no array is mistaken for hours to come. A legend of arrays folds by the legend rule, names and figures
 measured.
 
+**Forecast days (1.20, #183).** Production's `day: tomorrow` and `day: ahead` are today's card with nothing made in
+it yet: the same head, value row, 80 px of bars, axis row and three readouts, at the same height (344, compact 204; a
+forecast day draws no arrays). Every bar is the forecast's in the card's style and nothing else — in classic the ink
+at the ramp's light step (45 % toward the card, what the arrays' forecast wears: the bars are the day itself, not a
+ground behind what was made, and the page's other fill would sink into a dark card), in a style the hollow bar (the
+engine's bars to come: now stands before them all, so none is lit and no now is marked). Figures and words stay ink;
+nothing but the bars says "forecast" in colour.
+- **The head** leads with the day and says what it is after it — "Tomorrow · forecast", "Next 7 days · forecast" —
+  as today's says "Today · vs forecast": a column that lets the sub's last segment go keeps the day. No badge; a
+  compact card, which writes no figure under its head, wears the total as its badge.
+- **Tomorrow**: 24 bars as today's. The value row reads "Tomorrow" with today's forecast at its side ("Today"), both
+  the hour's while one is read; the readouts are the best hour, when, and the hours of sun (the hours that draw a
+  bar).
+- **The days ahead**: a bar a day, 40 % of its slot (2 to 40 wide, corners min(4, w/2)), centred in it; its weekday
+  under it ("Sat") in the axis row, centred on the bar and kept inside the column, every one where they stand 12
+  apart, else every second, third … counted from the first (tomorrow is the day people look for). The value row is
+  the total, or the day read, by its name in the longest form the column holds ("Saturday, Nov 14" → "Sat, Nov 14" →
+  "Sat"); the readouts the daily average, the best day and the lowest day by their weekday (with the day of the month
+  where the bars run past a week). A style's hairlines at the quarters are a day's hours: a row of days draws none.
+  Only the days the forecast holds, and never a last day it only begins (one that stops more than an hour earlier in
+  its day than the day before it).
+- **Narrow.** Classic's hourly bars are 8 across and thinner where 24 of them would not stand 2 apart (half a
+  section), today's as well; the axis keeps its ends and noon.
+- **No forecast.** The head stays and the empty panel — the sun's ring over "No forecast", the way out as its hint
+  where the panel holds it — stands for everything under it, at the card's height (244 under a full card, its words
+  on 24 px lines so the ring stays on the 4 grid however they wrap; 104 under a compact one: the ring and one line).
+  Never the off tone: nothing failed. A meter out of reach changes nothing, as a forecast day does not read it.
+
 **By source (1.5).** The house's power today: its use stacked by origin above the line (the sun first, the grid
 last); under the line, from it down, what went into the battery (the battery's ink) and out to the grid (the grid's
 ink), both at 60 % — Home Assistant's "Power sources" convention, where a sink sits below zero. Drawn from the power
@@ -1493,7 +1521,8 @@ breeze under 30, 0.9 s strong wind) and `sun` (what the sun gives: rays that len
   sparkline classic or minimal (a thin line through the bars' values, its dot at the end).
 - **Production**: classic (1.10's bars over the forecast, the arrays in the ink's ramp), soft for one meter (an hour a
   bar, the best hour in the ink, the rest quiet, the hours to come the forecast's hollow, now marked), columns (the
-  arrays stacked in the series' colours, the legend's squares in them).
+  arrays stacked in the series' colours, the legend's squares in them); a forecast day in each is all to come
+  (§ Energy → Forecast days).
 - **The gauge card's ring**: ticks (1.10's dial), dial, ring — in the dial's room (its box wide, as tall as the dial
   down to its range's labels: `dialLabelTop`), so the card keeps its height — or a moving gauge that reads its sensor;
   the bar and the signed ring have one look each. **The humidity's ruler**: ticks (its marker, the classic), ruler

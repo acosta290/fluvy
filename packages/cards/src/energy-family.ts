@@ -206,12 +206,15 @@ export function legendRows(names: readonly string[], width = COLUMN): number {
 
 /**
  * Production at a 360 column; several arrays draw a taller chart (112) and their legend (a row of 40, 16 under the
- * axis, one a row where a name runs long) instead of the figures. The names are the config's, else the house's
- * (`nameOf`, read by `house-heights.ts`).
+ * axis, one a row where a name runs long) instead of the figures — today: a forecast day (`day`) draws none. The
+ * names are the config's, else the house's (`nameOf`, read by `house-heights.ts`).
  */
 export function productionHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
-  const arrays = Array.isArray(config['arrays']) ? (config['arrays'] as unknown[]).slice(0, 4) : [];
-  if (config['variant'] === 'compact') return arrays.length ? 288 : 236;
+  const arrays =
+    Array.isArray(config['arrays']) && !['tomorrow', 'ahead'].includes(config['day'] as string)
+      ? (config['arrays'] as unknown[]).slice(0, 4)
+      : [];
+  if (config['variant'] === 'compact') return arrays.length ? 288 : 204;
   if (!arrays.length) return 344;
   const names = arrays.map((item) => {
     const entry = (typeof item === 'string' ? { entity: item } : (item ?? {})) as Record<

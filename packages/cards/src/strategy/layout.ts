@@ -150,25 +150,34 @@ export const solarGauges = (e: EnergyRoles): Card[] =>
   e.solarPowers.map((p) => full('gauge', { entity: p.id }));
 
 /**
- * What the sun made today and its last days, Production and History bars: its meter's — or, with several arrays in the
- * energy dashboard, all of theirs together under the sun's word, each array named as the house calls it, by its
- * device where two read alike (as the flow names them, #170), where the first alone was read (#183).
+ * What the sun made today and its last days, Production and History bars: its meter's, or with several arrays in the
+ * energy dashboard all of theirs together under the sun's word, each array named as the house calls it, by its device
+ * where two read alike (as the flow names them, #170), where the first alone was read (#183); and where the Energy
+ * dashboard links a forecast to an array, what it is expected to make tomorrow, the same card a day on, under today's
+ * in its column (one block).
  */
-export function productionCards({ energy, home, t }: StrategyContext): Card[] {
+export function productionCards({ energy, home, t }: StrategyContext): Loose[] {
   const { solarToday: entity, solarMeters: meters } = energy;
   if (!entity) return [];
-  if (meters.length < 2)
-    return [full('production', { entity }), full('history-bars', { entity, color: 'amber' })];
-  const names = meters.map((id) => home.displayName(id));
-  const arrays = meters.map((id, i) => {
-    const name = names[i] as string;
-    const alike = names.filter((other) => other === name).length > 1;
-    return { entity: id, ...home.named(id, (alike && home.deviceName(id)) || name) };
-  });
-  const name = t('energy.solar');
+  let today: Record<string, unknown> = { entity };
+  let bars: Record<string, unknown> = { entity, color: 'amber' };
+  if (meters.length > 1) {
+    const names = meters.map((id) => home.displayName(id));
+    const arrays = meters.map((id, i) => {
+      const name = names[i] as string;
+      const alike = names.filter((other) => other === name).length > 1;
+      return { entity: id, ...home.named(id, (alike && home.deviceName(id)) || name) };
+    });
+    const name = t('energy.solar');
+    today = { entity, name, arrays };
+    bars = { entity, name, entities: [...meters], color: 'amber' };
+  }
   return [
-    full('production', { entity, name, arrays }),
-    full('history-bars', { entity, name, entities: [...meters], color: 'amber' }),
+    [
+      full('production', today),
+      ...when(energy.solarForecast, () => [full('production', { ...today, day: 'tomorrow' })]),
+    ],
+    full('history-bars', bars),
   ];
 }
 

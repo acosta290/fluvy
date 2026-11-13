@@ -170,7 +170,7 @@ function todayView(ctx: StrategyContext): Section[] {
     : [];
 }
 
-/** What the sun makes: today's production, its last days as bars, each inverter's gauge and its day. */
+/** What the sun makes: today's production, tomorrow's forecast, its last days as bars, each inverter's gauge and its day. */
 function productionView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
   return balanced(ctx, [

@@ -73,7 +73,10 @@ export interface ChartSpec {
   readonly ticks?: Ticks;
   /** The fraction of the plot's width the series covers: a day's axis at 21:47 → 0.908. */
   readonly extent?: number;
-  /** Where now falls, as a fraction of the series: beyond it the forecast is drawn as the style says, now marked. */
+  /**
+   * Where now falls, as a fraction of the series: beyond it the forecast is drawn as the style says, now marked. Under
+   * zero, now stands before the series (a day still to come): all of it is the forecast, and no now is marked.
+   */
   readonly now?: number | null | undefined;
   /** Where the chart is read (a fraction of the plot's width); none: at the end of what has happened. */
   readonly cursor?: number | null | undefined;
@@ -279,13 +282,15 @@ function layout(spec: ChartSpec, cursor: number | null | undefined): Laid {
       });
   const f = spec.now;
   const until = given(f) ? clamp01(f) : 1;
-  // now among evenly spaced readings: the slot that holds it, else the point nearest it
+  // now among evenly spaced readings: the slot that holds it, else the point nearest it; before them all, none (-1)
   const evenly = (stepped: boolean, length: number): number | null =>
     !given(f)
       ? null
-      : stepped
-        ? Math.min(length - 1, Math.max(0, Math.ceil(until * length) - 1))
-        : Math.round(until * Math.max(0, length - 1));
+      : f < 0
+        ? -1
+        : stepped
+          ? Math.min(length - 1, Math.max(0, Math.ceil(until * length) - 1))
+          : Math.round(until * Math.max(0, length - 1));
   // a series at its own times stands only as far as its readings go (a line through time ends at now), so its length
   // says nothing of now: what has happened ends on its last reading at or before now (-1: none has happened)
   const lastOf = (series: ChartSeries): number => {
@@ -704,7 +709,8 @@ export function drawChart(spec: ChartSpec): TemplateResult {
       })
     : [];
   // now: a hairline over the plot, the knob on the first line where the style has one (and the line's end under it)
-  const nowX = laid.nowIndex === null || style.now === 'none' ? null : laid.restX;
+  const nowX =
+    laid.nowIndex === null || laid.nowIndex < 0 || style.now === 'none' ? null : laid.restX;
   const nowY = nowX === null || laid.bars ? null : (ys[0] ?? null);
   const knobAtNow = !scrubbed && style.now === 'knob' && nowY !== null;
   // the cursor hangs from the highest mark: under a lone dot (its stroke is the card's), from the marks of several

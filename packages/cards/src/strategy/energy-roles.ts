@@ -142,6 +142,7 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
     gridSigned: gridPref !== undefined || gridPhases.length > 0,
     solarToday,
     solarMeters,
+    solarForecast: house.sources.some((s) => s.kind === 'solar' && s.forecast),
     consumption,
     consumptionPowers,
     // the cards read the energy dashboard themselves when it carries the grid's power (or the house has no grid to

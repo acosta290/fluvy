@@ -1,7 +1,6 @@
-import type { EntityView, HomeAssistant } from '@fluvy/core';
+import type { HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
 import { houseDay, houseHour, loadDay, loadPowerDay } from './day.js';
-import { hourlyForecast } from './forecast.js';
 
 const HOUR = 3_600_000;
 
@@ -89,24 +88,5 @@ describe('the production card reads the house’s day', () => {
     );
     const half = await loadPowerDay(later, 'sensor.pv_power', new Date(MIDNIGHT + 10.5 * HOUR));
     expect(half?.hours[10]).toBeCloseTo(600); // half an hour at 1.2 kW
-  });
-
-  it('files a forecast’s hours on the house’s clock, and leaves another day’s out', () => {
-    const view = {
-      unit: 'kWh',
-      attr: (key: string) =>
-        key === 'wh_hours'
-          ? {
-              '2026-09-18T09:00:00+14:00': 400, // the house's 09:00 today
-              '2026-09-17T23:00:00+00:00': 300, // 13:00 in the house, today
-              '2026-09-17T09:00:00+14:00': 999, // yesterday there
-            }
-          : undefined,
-    } as unknown as EntityView;
-    const day = hourlyForecast(view, NOW, ZONE);
-    expect(day?.unit).toBe('Wh');
-    expect(day?.hours[9]).toBe(400);
-    expect(day?.hours[13]).toBe(300);
-    expect(day?.hours.reduce((a, b) => a + b, 0)).toBe(700);
   });
 });

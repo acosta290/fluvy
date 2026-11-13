@@ -132,7 +132,9 @@ small) and lead to every appliance.
   *charger*, *ladestation*, *cargador*…); water and gas are the Energy dashboard's meters, else the house's own. Today's
   production is the Energy dashboard's solar meter, else a day's counter named for the sun (*today*, *heute*,
   今日, 日发电量, 日発電量…); with several arrays there, Production and History bars read them all together, each array in
-  Production's legend named as the house calls it (by its device where two meters read alike). A forecast is never a
+  Production's legend named as the house calls it (by its device where two meters read alike); where the Energy
+  dashboard links a solar forecast to your panels, Production draws it and a second Production card under it shows
+  tomorrow's (`day: tomorrow`). A forecast is never a
   reading: one named so in any language (*forecast*, *Prognose*, *previsión*, 预测…) or of a forecasting integration
   (Forecast.Solar, Solcast) takes no role, is neither a meter of the Meters view nor one of the day's tiles, and no room
   or Climate view counts it.

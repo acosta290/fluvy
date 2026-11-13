@@ -80,38 +80,6 @@ second line where one would cut it — on the tile and tiles cards, the template
 room card's tiles and row. The tile is then a line taller whatever its name says (a compact one 88 instead of 76, 96
 inside a card, a mini 124 instead of 108), so a row of tiles stays level.
 
-A large tile ends its head in its switch. `show_switch: false` takes it away (the tile's circle is then its switch,
-and a tap on the tile opens its details) and `show_switch: value` puts its level's figure there ("70 %").
-`switch_style: rocker` draws the switch as the one on the wall: a small plate standing on end, its raised half the one
-you press next (the upper one while off, the lower one while on), its bar lit while the entity is on. A rocker's tile
-switches and nothing more, for the lights you only ever turn on and off: a light that dims has no ruler at its foot
-and no level on its line, its foot is free for `readouts`, and a tap on the tile opens its details. Anything a tile
-switches takes it (a light, a switch, a helper, a fan, a siren, a humidifier, an automation, a remote, a lock); a
-cover or a valve opens and closes by it, its bar breathing while it travels, when a tap stops it there and the next
-one sends it back the way it came. A large tile holds its plate down to 116 px wide (under that its circle is the
-switch, as with the toggle); a compact tile draws it at its row's end from 132 px, giving its circle to its words
-under 228 px; a mini tile keeps its circle. It is an option of the tile card, the tiles card (for the group, and each
-tile may say its own), the template card, the room card's tiles (`controls: tiles`) and the room lights card's
-(`variant: tiles`); the automatic dashboards take it as `tile_switch: rocker`.
-
-```yaml
-type: custom:fluvy-tile-card
-entity: light.porch
-switch_style: rocker
-```
-
-```yaml
-type: custom:fluvy-tiles-card
-size: large
-switch_style: rocker
-tiles:
-  - light.porch
-  - light.garden
-  - cover.awning
-  - entity: light.dining_table
-    switch_style: toggle # this one keeps its toggle and its ruler
-```
-
 A sensor card's readouts are named by their measure when nothing is set ("Temperature", "Humidity"); `label` names
 the card's own sensor, an entry's `name` names that entry, and each entry may take its own `color`:
 
@@ -1396,7 +1364,7 @@ roles:
 | **Water & gas** | `custom:fluvy-meters-card` | Today’s water and gas against a typical day, what flows right now, and a leak sensor or a valve beside them. | `title`, `subtitle`, `variant` (`full`, `rows`), `collection_key`, `unit` (`auto`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `meters` (a list: `entity`, `rate`, `typical`, `name`, `icon`, `kind`, `unit`, `decimals`), `rows` (a list: `entity`, `name`, `icon`) | — |
 | **Gauge** | `custom:fluvy-gauge-card` | A ring gauge for any numeric sensor with min, max and average, or centred on zero for a meter that runs both ways. | `subtitle`, `variant` (`ring`, `bar`, `signed`), `gauge` (`ticks`, `dial`, `ring`, `liquid`, `thermo`, `tank`, `battery`, `pulse`, `air`, `sun`), `animate`, `min`, `max`, `max_entity`, `label`, `badge`, `show_stats`, `hours`, `stats` (`min`, `max`, `average`), `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`) | — |
 | **Stat tiles** | `custom:fluvy-stat-tiles-card` | A headline value and a grid of stat tiles. | `title`, `subtitle`, `variant` (`full`, `compact`), `columns` (`auto`, `2`, `3`), `badge_entity`, `badge_label`, `empty_text`, `hide_empty`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `highlight`, `unit`, `decimals`, `tap_action`, `hold_action`, `double_tap_action`), `rows` (a list: `entity`, `name`, `icon`, `secondary`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `entities` → `tiles` |
-| **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
+| **Production** | `custom:fluvy-production-card` | Hourly production bars with the forecast behind, stacked per array when there are several. | `subtitle`, `day` (`today`, `tomorrow`, `ahead`), `days`, `forecast_entity`, `peak_entity`, `show_forecast`, `show_peak`, `variant` (`full`, `compact`), `collection_key`, `chart` (`classic`, `soft`, `columns`), `show_now`, `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`auto`, `0`, `1`, `2`, `3`), `arrays` (a list: `entity`, `name`) | `title` → `name` |
 | **History bars** | `custom:fluvy-history-bars-card` | A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money. | `subtitle`, `variant` (`full`, `compact`, `mini`), `days`, `period` (`day`, `week`, `month`), `stat` (`change`, `state`, `mean`, `max`, `min`), `reset` (`auto`, `never`, `day`, `week`, `month`, `year`), `source` (`auto`, `history`), `date_format` (`date`, `weekday`, `short`), `negative_color`, `current_color`, `include_today`, `show_head`, `show_values`, `show_axis`, `show_grid`, `show_dates`, `show_facts`, `co2_factor`, `price`, `chart` (`classic`, `bars`, `columns`, `minimal`), `highlight` (`none`, `min`, `max`, `both`, `current`), `animate`, `unit` (`auto`, `W`, `kW`, `MW`, `Wh`, `kWh`, `MWh`, `L`, `m³`, `gal`, `ft³`), `decimals` (`0`, `1`, `2`, `3`), `entities` (a list: `entity`), `head` (a list: `kind`, `name`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`, `hold_action`, `double_tap_action`), `facts` (a list: `kind`, `name`, `icon`, `color`, `unit`, `decimals`, `factor`, `of`, `template`, `tap_action`, `hold_action`, `double_tap_action`) | `title` → `name` |
 | **Chart** | `custom:fluvy-chart-card` | Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found. | `title`, `subtitle`, `collection_key`, `span` (`4h`, `12h`, `24h`, `today`, `today+tomorrow`, `48h`, `7d`, `30d`), `variant` (`full`, `compact`, `tile`), `show_head`, `show_legend`, `highlight` (`none`, `min`, `max`, `both`), `highlight_hours`, `chart` (`classic`, `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `band`), `points` (`auto`, `5m`, `15m`, `30m`, `1h`), `curve` (`smooth`, `straight`, `step`), `fill` (`gradient`, `flat`, `none`), `line_width` (`thin`, `regular`, `bold`), `glow`, `show_points` (`none`, `end`, `all`), `show_grid` (`auto`, `none`, `x`, `y`, `both`), `show_axis`, `show_now`, `animate`, `series` (a list: `entity`, `name`, `source`, `attribute`, `time_key`, `value_key`, `stat`, `period`, `kind`, `curve`, `fill`, `tone`, `color`, `unit`, `decimals`), `thresholds` (a list: `tone`, `value`) | — |
 | **Bars** | `custom:fluvy-bars-card` | Rows with a bar each: plants, batteries, strings, levels. | `title`, `subtitle`, `variant` (`full`, `compact`), `chart` (`classic`, `soft`), `show_rows_when`, `badge_ok`, `badge_warn`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `sub_entity`, `tone`, `color`, `min`, `max`, `low`, `high`, `plain`, `tap_action`, `hold_action`, `double_tap_action`, `show_when`; between them `type: section`, `type: divider`) | `entities` → `rows` |

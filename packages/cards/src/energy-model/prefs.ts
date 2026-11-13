@@ -37,6 +37,8 @@ export interface EnergySourcePref extends PowerPref {
   readonly capacity?: number;
   readonly stat_cost?: string | null;
   readonly stat_compensation?: string | null;
+  /** The config entries that forecast a solar source (Forecast.Solar, Solcast, Open-Meteo): `energy/solar_forecast` answers by them. */
+  readonly config_entry_solar_forecast?: readonly string[] | null;
 }
 
 export interface DeviceConsumptionPref {
@@ -79,6 +81,8 @@ export interface PrefSource {
   readonly capacity?: number;
   readonly cost?: string;
   readonly compensation?: string;
+  /** The config entries that forecast an array. */
+  readonly forecast?: readonly string[];
 }
 
 export interface PrefDevice {
@@ -156,6 +160,9 @@ export function readPrefs(prefs: EnergyPrefs | null | undefined): HouseEnergy {
           measure: nonEmpty(entry.stat_rate) ? { power: [entry.stat_rate] } : null,
           energyIn: [entry.stat_energy_from].filter(nonEmpty),
           energyOut: [],
+          ...(entry.config_entry_solar_forecast?.length
+            ? { forecast: entry.config_entry_solar_forecast }
+            : {}),
         });
         break;
       case 'battery':

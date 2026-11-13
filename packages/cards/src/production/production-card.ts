@@ -5,6 +5,7 @@ import {
   formatNumber,
   houseZone,
   isUsable,
+  plural,
   strings as words,
   wallClock,
   type EntityName,
@@ -17,14 +18,17 @@ import {
 
 import { axis, head, readout, sheetStyles, type Tone } from '@fluvy/ui';
 import {
+  barGeometry,
   chartDefaultsFor,
   chartSection,
   chartStyles,
   drawChart,
+  labelsApart,
   styleOf,
   scrub,
   ScrubController,
   seriesPaint,
+  thinStep,
   type ChartSeries,
   type SeriesColour,
   type ResolvedStyle,
@@ -71,6 +75,7 @@ import { stateWord } from '../shared/domain.js';
 import {
   actionFields,
   boolField,
+  choiceField,
   colourFields,
   editorLabels,
   entityField,
@@ -79,7 +84,9 @@ import {
   iconField,
   nameField,
   NUMBER_DEFAULTS,
+  numberField,
   numberFields,
+  onlyWhen,
   selectField,
   showIconField,
   textField,
@@ -89,13 +96,24 @@ import { Refresher } from '../shared/refresh.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { dayHours, houseDay, loadDay, loadPowerDay, type DayRecord } from './day.js';
 
-import { hourlyForecast } from './forecast.js';
+import {
+  dayOf,
+  daysAhead,
+  houseForecast,
+  sensorForecast,
+  tomorrowOf,
+  type Forecast,
+  type ForecastDay,
+} from './forecast.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
-import { sideStacked } from '../shared/value-row.js';
+import { Ticker } from '../shared/ticker.js';
+import { sideStacked, type Figure } from '../shared/value-row.js';
 
 const strings = words('production');
+/** The word the days ahead share with the history bars: a bar a day, and their total. */
+const bars = words('history-bars');
 
 /** One array of panels: its own power or energy sensor, and its name in the legend. */
 export interface ProductionArray {
@@ -129,16 +147,38 @@ export interface ProductionCardConfig
   arrays?: ReadonlyArray<string | ProductionArray>;
   /** An Energy date picker's key (`energy_…`): the card draws the last day of its range (the day so far while it holds today). */
   collection_key?: string;
+  /**
+   * The day the card shows: `today` (default) — what the meter made, hour by hour, over its forecast —, `tomorrow` —
+   * the forecast's hours — or `ahead`: the days the forecast holds after today, a bar a day.
+   */
+  day?: 'today' | 'tomorrow' | 'ahead';
+  /** The most days `ahead` draws (2 to 14); without it, every day the forecast holds. */
+  days?: number;
   /** Test hook, as in the clock cards: an ISO instant the card takes for "now". */
   _now?: string;
 }
 
+type Day = NonNullable<ProductionCardConfig['day']>;
+/** The day a config shows: today, unless it names a forecast day. */
+const dayIn = (data: Readonly<Record<string, unknown>>): Day =>
+  data['day'] === 'tomorrow' || data['day'] === 'ahead' ? data['day'] : 'today';
+/** Whether a field acts on the day a form holds: a field of today's meter has nothing to do on a forecast day. */
+const onDay =
+  (...days: readonly Day[]) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    days.includes(dayIn(data));
+
 const HOURS = 24;
+const HOUR = 3_600_000;
 const BAR_HEIGHT = 80;
+/** The most days ahead a card may be capped to: two weeks. */
+const MAX_DAYS = 14;
 /** The arrays' chart: 112 tall, an 8 bar centred in each hour's slot, 2 between an hour's arrays. */
 const CHART_HEIGHT = 112;
 const BAR = 8;
 const STACK_GAP = 2;
+/** The least classic's hourly bars stand apart: below it they draw thinner. */
+const BAR_APART = 2;
 /**
  * An array's step on the solar ink's ramp, toward the card: the first array is the ink itself, the second 45 % of it
  * (the approved pair); a third and a fourth take two more steps of the same ramp, 72 % and 30 % — alternating dark
@@ -152,10 +192,25 @@ const NARROW = 200;
 const AXIS_FULL = 240;
 /** Between the legend's columns (the gap its CSS sets). */
 const LEGEND_GAP = 12;
+/** Round the panel a forecast day without a forecast draws: the card's padding (40), its head (44), the 16 under it. */
+const NONE_FRAME = 100;
 /** A finished hour is compiled a few seconds after it ends; asking again picks it up, and keeps a long-lived dashboard honest. */
 
 const sum = (values: readonly number[]): number =>
   values.reduce((total, value) => total + value, 0);
+
+/** A bar's height on the sheet: 80 px under a round `ceiling`, in 4 px steps — one below half a step draws nothing. */
+const stepOn =
+  (ceiling: number) =>
+  (raw: number): number =>
+    ceiling > 0 ? Math.round(((Math.max(0, raw) / ceiling) * BAR_HEIGHT) / 4) * 4 : 0;
+
+/** How a day ahead is said where it is read, longest first: the first the column holds is written. */
+const DAY_FORMS: readonly Intl.DateTimeFormatOptions[] = [
+  { weekday: 'long', day: 'numeric', month: 'short' },
+  { weekday: 'short', day: 'numeric', month: 'short' },
+  { weekday: 'short' },
+];
 
 /**
  * What the day's bars are drawn in: classic (1.10's: the sheet's bars over the forecast, the arrays stacked in the
@@ -175,15 +230,27 @@ const ARRAYS_CAPS: ChartCaps = {
   styles: ['classic', 'columns'],
   keys: ['show_now', 'animate'],
 };
+/** A forecast day: every bar is to come, so none is lit and no now is marked. */
+const FORECAST_CAPS: ChartCaps = {
+  bars: true,
+  styles: ['classic', 'soft', 'columns'],
+  keys: ['animate'],
+};
 const capsIn = (data: Readonly<Record<string, unknown>>): ChartCaps =>
-  Array.isArray(data['arrays']) && data['arrays'].length ? ARRAYS_CAPS : DAY_CAPS;
+  dayIn(data) !== 'today'
+    ? FORECAST_CAPS
+    : Array.isArray(data['arrays']) && data['arrays'].length
+      ? ARRAYS_CAPS
+      : DAY_CAPS;
 
 /**
  * A growing meter's day, hour by hour: the recorded hours as solid bars, the hour in progress read
  * live from the sensor, the forecast standing behind them and carrying on past "now", the day's
  * figures above and its peak below. With several arrays, each hour's bar is stacked per array — the
  * future hours the forecast, faint — over a legend of what each array made. "Today" is the house's:
- * it begins at the midnight Home Assistant shows, in the house's zone.
+ * it begins at the midnight Home Assistant shows, in the house's zone. The forecast is a sensor's
+ * (`forecast_entity`), else Home Assistant's own for the card's meter and arrays; on a forecast day
+ * (`day`) the card is the forecast alone: tomorrow's hours, or the days ahead.
  */
 export class FluvyProductionCard extends Card<ProductionCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -242,6 +309,43 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       .pr-chart.is-scrub .pr-hour:not(.is-hover) {
         opacity: 0.4;
       }
+      /* classic's bars as wide as the column lets them be: an hour's 8 (thinner where 24 of them would touch), a
+         day's 40 % of its slot, centred in it */
+      .so-bar,
+      .so-bar__fill,
+      .so-bar__forecast {
+        width: var(--pr-bar, 8px);
+      }
+      .pr-days {
+        justify-content: space-around;
+      }
+      .pr-days .so-bar__forecast {
+        border-radius: min(4px, var(--pr-bar) / 2);
+      }
+      /* a forecast day's bars are the day itself, not a ground behind what was made: the ink at the ramp's light
+         step (45 %, what the arrays' forecast wears), which reads on a dark card too */
+      .pr-ahead .so-bar__forecast {
+        background: color-mix(
+          in srgb,
+          var(--tone-ink, var(--fluvy-state-energy-solar)) 45%,
+          var(--fluvy-card)
+        );
+      }
+      /* a forecast day with no forecast: the panel stands for everything under the head, as tall as it (a compact
+         card's holds its ring and its line and no more: taller only where a narrow column breaks the line) */
+      .pr-none {
+        display: grid;
+        margin-top: 16px;
+      }
+      .pr-none .fv-empty-state {
+        min-height: 0;
+      }
+      /* under a full card the panel is 244 tall and its ring and words are centred in it: their lines are 24, so
+         however many they wrap to, what is left over halves onto the 4 grid */
+      .pr-none--full .fv-empty-state__text,
+      .pr-none--full .fv-empty-state__hint {
+        line-height: 24px;
+      }
     `,
   ];
 
@@ -249,20 +353,28 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     ...Card.properties,
     day_: { state: true },
     arrays_: { state: true },
+    forecast_: { state: true },
   };
 
-  /** The hour under the pointer (0–23); null: the day's total. */
+  /** The bars the chart holds: a day's hours, or the days ahead. */
+  private slots = HOURS;
+  /** The bar under the pointer (an hour, 0–23, or a day ahead); null: the whole chart's total. */
   private readonly scrubber = new ScrubController(this, (fraction) =>
-    Math.min(HOURS - 1, Math.floor(fraction * HOURS)),
+    Math.min(this.slots - 1, Math.floor(fraction * this.slots)),
   );
 
   /** undefined while the day loads, null when the recorder knows nothing about the sensor. */
   declare day_: DayRecord | null | undefined;
   /** Each array's day (same), undefined while they load. */
   declare arrays_: ReadonlyArray<DayRecord | null> | undefined;
+  /** Home Assistant's own forecast for the card's sensors: undefined while it loads, null where none is linked to them. */
+  declare forecast_: Forecast | null | undefined;
 
   private readonly history = new Refresher<DayRecord | null>();
   private readonly arrayHistory = new Refresher<ReadonlyArray<DayRecord | null>>();
+  private readonly linked = new Refresher<Forecast | null>();
+  /** The hour of the clock the card was last drawn in: the next one draws it again. */
+  private hour = -1;
   private readonly head = new HeadFit(this);
   private readonly follower = new CollectionFollower(this);
   /** The card's meter while it is missing from the house: as the recorder describes it (its unit). */
@@ -278,6 +390,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     super();
     this.day_ = undefined;
     this.arrays_ = undefined;
+    this.forecast_ = undefined;
+    // an hour that ends asks for the forecast again, and midnight turns the day, whatever the meter does meanwhile
+    new Ticker(this, () => Math.floor(Date.now() / HOUR) !== this.hour);
   }
 
   static override base = HEAD_BASE;
@@ -290,6 +405,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     'variant',
     'arrays',
     'collection_key',
+    'day',
+    'days',
     'unit',
     'decimals',
     'chart',
@@ -314,6 +431,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
   /** What the editor shows where the config says nothing: what the card does then. */
   static override defaults: EditorDefaults = (config) => ({
     variant: 'full',
+    day: 'today',
     show_forecast: true,
     show_peak: true,
     collection_key: '',
@@ -332,21 +450,34 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         fieldRow(nameField(), textField('subtitle')),
         fieldRow(iconField(), showIconField()),
         ...colourFields(),
+        choiceField('day', [
+          ['today', 'common.today'],
+          ['tomorrow', 'common.tomorrow'],
+          ['ahead', 'editor.days'],
+        ]),
+        onlyWhen(onDay('ahead'), numberField('days', 2, MAX_DAYS)),
+        // a forecast day reads no meter: its peak sensor, its forecast's switch and a date picker have nothing to do
         fieldRow(
           { name: 'forecast_entity', selector: { entity: { domain: ['sensor'] } } },
-          { name: 'peak_entity', selector: { entity: { domain: ['sensor'] } } },
+          onlyWhen(onDay('today'), {
+            name: 'peak_entity',
+            selector: { entity: { domain: ['sensor'] } },
+          }),
         ),
-        fieldRow(boolField('show_forecast'), boolField('show_peak')),
-        fieldRow(selectField('variant', ['full', 'compact']), collectionField()),
-        // the day's bars, or the arrays' stacks
-        chartSection([DAY_CAPS, ARRAYS_CAPS], capsIn),
+        fieldRow(onlyWhen(onDay('today'), boolField('show_forecast')), boolField('show_peak')),
+        fieldRow(
+          selectField('variant', ['full', 'compact']),
+          onlyWhen(onDay('today'), collectionField()),
+        ),
+        // the day's bars, the arrays' stacks, or a forecast day's
+        chartSection([DAY_CAPS, ARRAYS_CAPS, FORECAST_CAPS], capsIn),
         numberFields({ when: hasLadder }),
         actionFields({ icon: true }),
       ],
       ...editorLabels(
         strings,
         { forecast_entity: 'forecast_entity', peak_entity: 'peak_entity' },
-        COLLECTION_LABEL,
+        { ...COLLECTION_LABEL, day: 'energy-flow.editor_period', days: 'editor.days' },
       ),
       computeHelper: collectionHelper,
     };
@@ -383,6 +514,11 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
   private get compact(): boolean {
     return this.config?.variant === 'compact';
+  }
+
+  /** The day the card shows. */
+  private get day(): Day {
+    return dayIn(this.config ?? {});
   }
 
   /** The arrays, at most four (the ramp has four steps). */
@@ -438,8 +574,55 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
-    this.follower.attach(this.hass, this.config?.collection_key || undefined);
-    this.loadHours();
+    this.hour = Math.floor(Date.now() / HOUR);
+    const today = this.day === 'today';
+    // a forecast day follows no date picker and reads no meter
+    this.follower.attach(this.hass, (today && this.config?.collection_key) || undefined);
+    if (today) this.loadHours();
+    this.loadForecast();
+  }
+
+  /**
+   * Home Assistant's own forecast for the card's meter and arrays, where the card reads it: on a forecast day always
+   * (after its sensor's days, where one carries them, and the house's whole forecast for a meter the Energy dashboard
+   * does not know), today where no sensor is named and the forecast is not turned off. Asked once an hour of the clock.
+   */
+  private loadForecast(): void {
+    const hass = this.hass;
+    const config = this.config;
+    if (!hass || !config) return;
+    const ahead = this.day !== 'today';
+    if (!ahead && (config.forecast_entity || config.show_forecast === false)) return;
+    const ids = [config.entity ?? '', ...this.arrayList().map((a) => a.entity)].filter(Boolean);
+    const key = `${ids.join(',')}|${ahead}`;
+    const previous = this.linked.request(
+      `${key}|${this.hour}`,
+      () => houseForecast(hass, ids, ahead, this.clock()),
+      (forecast) => (this.forecast_ = forecast),
+    );
+    if (previous !== null && !previous.startsWith(`${key}|`)) this.forecast_ = undefined;
+  }
+
+  /**
+   * The card's forecast by day, in its base unit: its sensor's where that carries `day`, else Home Assistant's own —
+   * today a sensor that is named wins, whatever it carries. None where neither holds one, or where it counts
+   * something else than `unit` (the meter's).
+   */
+  private forecastIn(day: Date, unit?: string): Forecast | null {
+    const id = this.config?.forecast_entity;
+    const view = id ? this.entity(id) : null;
+    const own = view?.status === 'ok' ? sensorForecast(view, day, houseZone(this.hass)) : null;
+    const forecast = own ?? (id && this.day === 'today' ? null : this.forecast_);
+    if (!forecast) return null;
+    const base = toBase(1, forecast.unit || this.entity().unit);
+    if (unit !== undefined && base.unit !== unit) return null;
+    return {
+      unit: base.unit,
+      days: forecast.days.map((filed) => ({
+        ...filed,
+        hours: filed.hours.map((amount) => amount * base.value),
+      })),
+    };
   }
 
   /** Once per entity and hour, and again when the answer has gone stale; the bars on screen stay until the new day arrives. */
@@ -496,6 +679,52 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     );
   }
 
+  /** An hour as the bars are read: "10:00 – 11:00". */
+  private hourSpan(hour: number): string {
+    return `${this.hourLabel(hour)} – ${this.hourLabel(hour + 1)}`;
+  }
+
+  /** A day by its date on the house's clock: "Sat" under its bar, "Saturday, Nov 14" where it is read. */
+  private dayLabel(at: number, form: Intl.DateTimeFormatOptions): string {
+    const zone = houseZone(this.hass);
+    return dateFormat(this.hass?.language ?? 'en', {
+      ...form,
+      ...(zone ? { timeZone: zone } : {}),
+    }).format(new Date(at));
+  }
+
+  /** Classic's bar in the column: 8 across, thinner where 24 of them would not stand 2 apart. */
+  private get hourBar(): number {
+    return Math.max(
+      2,
+      Math.min(BAR, Math.floor((this.contentWidth - (HOURS - 1) * BAR_APART) / HOURS)),
+    );
+  }
+
+  /**
+   * The day's quarters under its bars, the ends and noon alone in a narrow column. Classic's bars are spread from edge
+   * to edge (`spread`): the boundary between hour h−1 and h is where the label for h belongs; the arrays' chart and a
+   * style centre a bar in each hour's slot, whose boundary is h / 24.
+   */
+  private hourAxis(spread: boolean): TemplateResult {
+    const bar = this.hourBar;
+    const pitch = (this.contentWidth - bar) / (HOURS - 1);
+    const at = (hour: number): number =>
+      spread ? (hour * pitch - (pitch - bar) / 2) / this.contentWidth : hour / HOURS;
+    const ticks: [number, string][] = [
+      [0, this.hourLabel(0)],
+      [at(6), this.hourLabel(6)],
+      [0.5, this.hourLabel(12)],
+      [at(18), this.hourLabel(18)],
+      [1, this.hour12 ? this.hourLabel(24) : '24:00'],
+    ];
+    return axis(
+      this.contentWidth < AXIS_FULL
+        ? [ticks[0], ticks[2], ticks[4]].filter((tick) => !!tick)
+        : ticks,
+    );
+  }
+
   /**
    * An array's Wh in each hour of the day: its recorded hours, and — for an energy meter — the hour in progress read
    * live from it. `null` while it loads or when it cannot be read (no statistics, a unit that is neither power nor
@@ -529,6 +758,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
+    if (this.day !== 'today') return this.renderForecast();
+    this.slots = HOURS;
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
     const arrays = this.arrayList();
@@ -561,17 +792,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const total = sum(produced);
 
     // today's forecast and today's peak are not another day's
+    const forecasting = this.config?.show_forecast !== false && !closed;
     const forecastView =
-      this.config?.forecast_entity && this.config.show_forecast !== false && !closed
-        ? this.entity(this.config.forecast_entity)
-        : null;
-    const hourly =
-      forecastView && forecastView.status === 'ok' ? hourlyForecast(forecastView, now, zone) : null;
-    const hourlyBase = hourly ? toBase(1, hourly.unit || view.unit) : null;
-    const forecast =
-      hourly && hourlyBase && hourlyBase.unit === base.unit
-        ? hourly.hours.map((value) => value * hourlyBase.value)
-        : null;
+      this.config?.forecast_entity && forecasting ? this.entity(this.config.forecast_entity) : null;
+    // the hours a sensor carries where one is named, else Home Assistant's own for the meter and its arrays
+    const today = dayOf(now, zone);
+    const forecast = forecasting
+      ? (this.forecastIn(now, base.unit)?.days.find((filed) => filed.day === today)?.hours ?? null)
+      : null;
     const forecastState = forecastView ? baseOf(forecastView) : null;
     const forecastTotal =
       forecastState && forecastState.unit === base.unit
@@ -617,10 +845,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         ? { value: shown(peakValue), unit: scale.unit }
         : { value: '—', unit: '' };
 
-    // the sheet's bars: 80 px under a round ceiling, in 4 px steps — an hour below half a step draws nothing and is no sun hour
+    // the sheet's bars: an hour below half a step draws nothing and is no sun hour
     const ceiling = ceilingFor(Math.max(...produced, ...(forecast ?? [])));
-    const step = (raw: number): number =>
-      ceiling > 0 ? Math.round(((Math.max(0, raw) / ceiling) * BAR_HEIGHT) / 4) * 4 : 0;
+    const step = stepOn(ceiling);
     // finished hours that produced, plus the elapsed part of the hour in progress: "7.4 h", not a count that jumps at the hour
     const sunHours = produced.reduce(
       (total, value, hour) => total + (step(value) > 0 ? (hour === hourNow ? minutes / 60 : 1) : 0),
@@ -651,20 +878,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     if (forecastTotal !== null && fitted.badge === nothing && !forecastShown)
       fitted = fit(false, false);
 
-    // 24 bars of 8 spread over the column: the boundary between hour h−1 and h is where the label for h belongs
-    const pitch = (this.contentWidth - 8) / 23;
-    const boundary = (hour: number): number => (hour * pitch - (pitch - 8) / 2) / this.contentWidth;
-    // the arrays' chart and a style centre a bar in each hour's slot: the boundary of hour h is h / 24
     const style = styleOf(this.config, arrays.length ? ARRAYS_CAPS : DAY_CAPS);
     const classic = style.preset === 'classic';
-    const at = (hour: number): number =>
-      arrays.length || !classic ? hour / HOURS : boundary(hour);
     const top = narrow ? 'm' : 'l';
     // the day's figure with the forecast beside it, in the longest of its words that leaves the forecast its room
     // ("So far" where "So far today" would wrap); else the forecast under it, and the longest the column holds:
     // measured at the day's widest figure and on what an hour of the bars says, so reading them never moves the row
     const widest = { value: shown(Math.max(total, forecastTotal ?? 0)), unit: scale.unit };
-    const hour = { label: `${this.hourLabel(10)} – ${this.hourLabel(11)}`, ...widest };
+    const hour = { label: this.hourSpan(10), ...widest };
     const side =
       forecastShown && forecastTotal !== null
         ? [{ label: strings(this.hass, 'forecast'), value: shown(forecastTotal), unit: scale.unit }]
@@ -684,13 +905,6 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
           this.head.ruler.width('fv-readout > fv-readout__label', label) <= this.contentWidth,
       ) ??
       labels[1];
-    const ticks: [number, string][] = [
-      [0, this.hourLabel(0)],
-      [at(6), this.hourLabel(6)],
-      [0.5, this.hourLabel(12)],
-      [at(18), this.hourLabel(18)],
-      [1, this.hour12 ? this.hourLabel(24) : '24:00'],
-    ];
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
@@ -712,7 +926,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
               ${
                 hovered !== null
                   ? readout({
-                      label: `${this.hourLabel(hovered)} – ${this.hourLabel(hovered + 1)}`,
+                      label: this.hourSpan(hovered),
                       value: shown(produced[hovered] ?? 0),
                       unit: scale.unit,
                       size: top,
@@ -727,7 +941,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
               ${
                 forecastShown && forecastTotal !== null
                   ? html`<div class="so-top__side">
-                      ${readout({ label: strings(this.hass, 'forecast'), value: shown(forecastTotal), unit: scale.unit, size: 's' })}
+                      ${readout({ label: strings(this.hass, 'forecast'), value: shown(hovered !== null && forecast ? (forecast[hovered] ?? 0) : forecastTotal), unit: scale.unit, size: 's' })}
                     </div>`
                   : nothing
               }
@@ -751,43 +965,323 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
                   ],
                   { now: closed ? null : hourNow, unusable, tone, name, hovered },
                 )
-              : html`<div
-                  class="so-bars fv-tone--${unusable ? 'neutral' : tone} ${hovered !== null ? 'is-scrub' : ''}"
-                  role="img"
-                  aria-label=${known ? `${strings(this.hass, 'so_far')}: ${shown(total)} ${scale.unit}` : name}
-                  ${scrub(this.scrubber)}
-                >
-                  ${produced.map((value, hour) => {
-                    const ahead = step(forecast?.[hour] ?? 0);
-                    const done = step(value);
-                    // a day with nothing in it still draws its baseline: one quiet stub per hour
-                    return html`<span
-                      class="so-bar ${hovered === hour ? 'is-hover' : ''}"
-                      style="--bar-delay:${hour * 18}ms"
-                    >
-                      ${ahead > 0 || ceiling === 0 ? html`<span class="so-bar__forecast" data-measure="value" style="height:${ahead || 4}px"></span>` : nothing}
-                      ${done > 0 ? html`<span class="so-bar__fill" data-measure="value" style="height:${done}px"></span>` : nothing}
-                    </span>`;
-                  })}
-                </div>`
+              : this.renderHours(produced, forecast, ceiling, {
+                  tone: unusable ? 'neutral' : tone,
+                  hovered,
+                  label: known
+                    ? `${strings(this.hass, 'so_far')}: ${shown(total)} ${scale.unit}`
+                    : name,
+                })
       }
-      ${axis(this.contentWidth < AXIS_FULL ? [ticks[0], ticks[2], ticks[4]].filter((tick) => !!tick) : ticks)}
+      ${this.hourAxis(classic && !arrays.length)}
       ${arrays.length ? this.renderLegend(arrays, hourNow, hovered, unusable ? 'neutral' : tone, !classic) : nothing}
       ${compact || arrays.length ? nothing : this.renderStats(peak, known && peakValue > 0 ? this.hourLabel(peakHour) : '—', known ? formatNumber(this.hass, sunHours, { digits: 1 }) : null)}
     </article>`;
   }
 
   /**
-   * The day's statistics under the bars — the peak and its hour (unless asked away) and the sun hours — in three
-   * columns while every label and figure holds in its third, else fewer, a shorter last row taking the whole row; the
-   * figures at the size the widest still fits.
+   * Classic's day: 24 bars of 8 across the column on the sheet's 4 px steps, each hour's forecast quiet behind what
+   * it made (`ceiling`: the round top they are drawn under).
    */
+  private renderHours(
+    produced: readonly number[],
+    forecast: readonly number[] | null,
+    ceiling: number,
+    o: {
+      readonly tone: Tone;
+      readonly hovered: number | null;
+      readonly label: string;
+      /** A forecast day: the forecast is the day itself. */
+      readonly ahead?: boolean;
+    },
+  ): TemplateResult {
+    const step = stepOn(ceiling);
+    return html`<div
+      class="so-bars fv-tone--${o.tone} ${o.ahead ? 'pr-ahead' : ''} ${o.hovered !== null ? 'is-scrub' : ''}"
+      style="--pr-bar:${this.hourBar}px"
+      role="img"
+      aria-label=${o.label}
+      ${scrub(this.scrubber)}
+    >
+      ${produced.map((value, hour) => {
+        const ahead = step(forecast?.[hour] ?? 0);
+        const done = step(value);
+        // a day with nothing in it still draws its baseline: one quiet stub per hour
+        return html`<span
+          class="so-bar ${o.hovered === hour ? 'is-hover' : ''}"
+          style="--bar-delay:${hour * 18}ms"
+        >
+          ${ahead > 0 || ceiling === 0 ? html`<span class="so-bar__forecast" data-measure="value" style="height:${ahead || 4}px"></span>` : nothing}
+          ${done > 0 ? html`<span class="so-bar__fill" data-measure="value" style="height:${done}px"></span>` : nothing}
+        </span>`;
+      })}
+    </div>`;
+  }
+
+  /**
+   * A forecast day (`tomorrow`, `ahead`): today's anatomy with nothing made in it yet. Tomorrow is its hours — the
+   * day's total with today's forecast beside it, its best hour, when, and its hours of sun; the days ahead are a bar a
+   * day — their total, the average, the best and the lowest day. Every bar is the forecast's in the card's style
+   * (classic's ink at its light step, a style's hollow bar) and reads under the pointer. The meter is not read: out of reach, the
+   * card still says what the forecast says. With no forecast for the day, a quiet panel keeps the card's size.
+   */
+  private renderForecast(): TemplateResult {
+    const hass = this.hass;
+    const view = this.entity();
+    const name = this.nameFor(view, this.config?.name);
+    const tone = toneOf(this.config, 'solar');
+    const compact = this.compact;
+    const daily = this.day === 'ahead';
+    const now = this.clock();
+    const zone = houseZone(hass);
+    const today = dayOf(now, zone);
+    const next = tomorrowOf(hass, now);
+    const tomorrow = dayOf(next, zone);
+    const forecast = this.forecastIn(next);
+    const ahead = forecast ? daysAhead(forecast.days, today) : [];
+    // the days ahead, every one the forecast holds or as many as asked for, or tomorrow alone
+    const cap = Number(this.config?.days);
+    const days = daily
+      ? ahead.slice(0, cap >= 1 ? Math.round(cap) : undefined)
+      : ahead.filter((filed) => filed.day === tomorrow);
+    const values = daily ? days.map((filed) => sum(filed.hours)) : [...(days[0]?.hours ?? [])];
+    const known = values.length > 0;
+    const loading = !forecast && this.forecast_ === undefined;
+    this.slots = known ? values.length : HOURS;
+    const hovered = known ? this.scrubber.value : null;
+    const total = sum(values);
+    // tomorrow reads beside today's forecast, where the forecast holds today too
+    const todays = daily ? undefined : forecast?.days.find((filed) => filed.day === today)?.hours;
+    const scale = figuresOf(
+      hass,
+      this.config,
+      forecast?.unit ?? 'Wh',
+      daily ? Math.max(0, ...values) : Math.max(total, todays ? sum(todays) : 0),
+      view,
+    );
+    const shown = (raw: number): string => writeFigure(hass, raw, scale);
+    const figure = (raw: number): { value: string; unit: string } =>
+      known ? { value: shown(raw), unit: scale.unit } : { value: '—', unit: '' };
+    const count = days.length;
+    const fitted = this.head.fit({
+      width: this.contentWidth,
+      title: name,
+      sub:
+        this.config?.subtitle ??
+        (!daily || count === 1
+          ? strings(hass, 'forecast_tomorrow')
+          : count
+            ? plural(hass, 'production.forecast_days', count, { count })
+            : strings(hass, 'forecast')),
+      // a column that does not hold the day says what the card is
+      shorter: [strings(hass, 'forecast')],
+      // a compact card writes no figure under its head: the day's total, or the days', is its badge
+      badge: compact && known ? { text: `${shown(total)} ${scale.unit}`, tone } : null,
+    });
+    const chrome = head({
+      icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
+      tone,
+      title: name,
+      sub: fitted.sub,
+      trailing: fitted.badge,
+      cut: fitted.cut,
+      ...this.headActions(view.id),
+      name: true,
+    });
+    if (!known && !loading)
+      return html`<article class="fv-card so-card" data-card>
+        ${chrome}
+        <div
+          class="pr-none ${compact ? '' : 'pr-none--full'}"
+          style="min-height:${FluvyProductionCard.layoutHeight(this.config ?? { type: '' }) - NONE_FRAME}px"
+        >
+          ${this.head.empty(
+            'sun',
+            strings(hass, 'no_forecast'),
+            // a compact card's panel holds its ring and its line, no more
+            compact ? '' : strings(hass, 'no_forecast_hint'),
+            this.contentWidth,
+          )}
+        </div>
+      </article>`;
+
+    // the day as it is read: an hour's span, or a day by its name in the longest form the column holds
+    const read = (index: number): string => {
+      if (!daily) return this.hourSpan(index);
+      const forms = DAY_FORMS.map((form) => this.dayLabel(days[index]?.at ?? 0, form));
+      return (
+        forms.find(
+          (label) =>
+            this.head.ruler.width('fv-readout > fv-readout__label', label) <= this.contentWidth,
+        ) ?? (forms[forms.length - 1] as string)
+      );
+    };
+    const narrow = this.contentWidth < NARROW;
+    const rest = daily ? bars(hass, 'kind_total') : this.t('common.tomorrow');
+    const widest = shown(Math.max(total, todays ? sum(todays) : 0));
+    const beside: Figure[] =
+      todays && known && !narrow
+        ? [{ label: this.t('common.today'), value: widest, unit: scale.unit }]
+        : [];
+    // laid out for what the row says at rest and while an hour is read, at its widest figure: reading never moves it
+    const stacked = sideStacked(
+      this.head.ruler,
+      this.contentWidth,
+      [rest, this.hourSpan(10)].map((label) => ({ label, value: widest, unit: scale.unit })),
+      beside,
+    );
+    const asked = styleOf(this.config, FORECAST_CAPS);
+    // a style's hairlines at the quarters are a day's hours: a row of days draws none
+    const axes = asked.grid.axes;
+    const style: ResolvedStyle = daily
+      ? {
+          ...asked,
+          grid: { ...asked.grid, axes: axes === 'both' ? 'y' : axes === 'x' ? 'none' : axes },
+        }
+      : asked;
+    const label = known ? `${rest}: ${shown(total)} ${scale.unit}` : name;
+    const best = values.indexOf(Math.max(...values));
+    const ceiling = ceilingFor(Math.max(0, ...values));
+    const step = stepOn(ceiling);
+    return html`<article class="fv-card so-card" data-card>
+      ${chrome}
+      ${
+        compact
+          ? nothing
+          : html`<div class="so-top fv-value-row ${stacked ? 'is-stacked' : ''}">
+              ${readout({
+                label: hovered !== null ? read(hovered) : rest,
+                ...figure(hovered !== null ? (values[hovered] ?? 0) : total),
+                size: narrow ? 'm' : 'l',
+              })}
+              ${
+                beside.length && todays
+                  ? html`<div class="so-top__side">
+                      ${readout({
+                        label: this.t('common.today'),
+                        value: shown(hovered !== null ? (todays[hovered] ?? 0) : sum(todays)),
+                        unit: scale.unit,
+                        size: 's',
+                      })}
+                    </div>`
+                  : nothing
+              }
+            </div>`
+      }
+      ${
+        loading
+          ? html`<div class="fv-skeleton so-skeleton"></div>`
+          : style.preset !== 'classic'
+            ? this.renderStyled(style, [{ values }], {
+                now: -1,
+                unusable: false,
+                tone,
+                name: label,
+                hovered,
+              })
+            : daily
+              ? this.renderDays(values, step, { tone, hovered, label })
+              : this.renderHours(new Array<number>(HOURS).fill(0), values, ceiling, {
+                  tone,
+                  hovered,
+                  label,
+                  ahead: true,
+                })
+      }
+      ${daily ? this.dayAxis(days) : this.hourAxis(style.preset === 'classic')}
+      ${
+        compact
+          ? nothing
+          : daily
+            ? this.renderRow([
+                { label: this.t('common.average'), ...figure(count ? total / count : 0) },
+                ...(this.config?.show_peak === false
+                  ? []
+                  : (['best_day', 'lowest_day'] as const).map((key, lowest) => ({
+                      label: strings(hass, key),
+                      value: known
+                        ? this.dayLabel(
+                            days[lowest ? values.indexOf(Math.min(...values)) : best]?.at ?? 0,
+                            count > 7 ? { weekday: 'short', day: 'numeric' } : { weekday: 'short' },
+                          )
+                        : '—',
+                    }))),
+              ])
+            : this.renderStats(
+                figure(values[best] ?? 0),
+                known && (values[best] ?? 0) > 0 ? this.hourLabel(best) : '—',
+                known
+                  ? formatNumber(hass, values.filter((amount) => step(amount) > 0).length, {
+                      digits: 0,
+                    })
+                  : null,
+              )
+      }
+    </article>`;
+  }
+
+  /**
+   * Classic's days ahead: a bar a day centred in its slot (the engine's width: 40 % of it), the ink at its light
+   * step, on the sheet's 4 px steps.
+   */
+  private renderDays(
+    values: readonly number[],
+    step: (raw: number) => number,
+    o: { readonly tone: Tone; readonly hovered: number | null; readonly label: string },
+  ): TemplateResult {
+    return html`<div
+      class="so-bars pr-days pr-ahead fv-tone--${o.tone} ${o.hovered !== null ? 'is-scrub' : ''}"
+      style="--pr-bar:${barGeometry(values.length, this.contentWidth).bar}px"
+      role="img"
+      aria-label=${o.label}
+      ${scrub(this.scrubber)}
+    >
+      ${values.map(
+        (value, day) =>
+          html`<span
+            class="so-bar ${o.hovered === day ? 'is-hover' : ''}"
+            style="--bar-delay:${day * 18}ms"
+          >
+            ${step(value) > 0 ? html`<span class="so-bar__forecast" data-measure="value" style="height:${step(value)}px"></span>` : nothing}
+          </span>`,
+      )}
+    </div>`;
+  }
+
+  /**
+   * The days' names under their bars ("Sat"), each centred on its bar and kept inside the column: every one where
+   * they stand 12 apart, else every second, third … from the first, the day people look for.
+   */
+  private dayAxis(days: readonly ForecastDay[]): TemplateResult {
+    const width = this.contentWidth;
+    const slot = width / Math.max(1, days.length);
+    const names = days.map((filed) => {
+      const text = this.dayLabel(filed.at, { weekday: 'short' });
+      return { text, width: this.head.ruler.width('fv-axis', text) };
+    });
+    const placed = (every: number) =>
+      names.flatMap((name, i) => {
+        if (i % every) return [];
+        const x = Math.min(width - name.width / 2, Math.max(name.width / 2, (i + 0.5) * slot));
+        return [{ ...name, x }];
+      });
+    let every = thinStep(Math.max(0, ...names.map((name) => name.width)), slot);
+    while (every < days.length && !labelsApart(placed(every))) every += 1;
+    return axis(
+      placed(every).map(({ text, x, width: wide }) => [
+        x - wide / 2 <= 0 ? 0 : x + wide / 2 >= width ? 1 : x / width,
+        text,
+      ]),
+    );
+  }
+
+  /** The day's statistics under the bars: the peak and its hour (unless asked away) and the sun hours. */
   private renderStats(
     peak: { readonly value: string; readonly unit: string },
     peakAt: string,
     sunHours: string | null,
   ): TemplateResult {
-    const stats: StatText[] = [
+    return this.renderRow([
       ...(this.config?.show_peak === false
         ? []
         : [
@@ -799,7 +1293,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         value: sunHours ?? '—',
         unit: sunHours === null ? '' : strings(this.hass, 'hour'),
       },
-    ];
+    ]);
+  }
+
+  /**
+   * A row of statistics under the bars, in three columns while every label and figure holds in its third, else fewer,
+   * a shorter last row taking the whole row; the figures at the size the widest still fits.
+   */
+  private renderRow(stats: readonly StatText[]): TemplateResult {
     const row = statsRow(this.head.ruler, this.contentWidth, stats);
     return html`<div
       class="so-cols fv-cols ${row.odd ? 'fv-cols--odd' : ''}"
@@ -903,13 +1404,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
   }
 
   /**
-   * The day in a style, drawn by the engine: an hour a bar across the column, on a scale from zero (the arrays
-   * stacked), the hours to come hollow and now marked where the style marks it, read by the hour under the pointer.
+   * The day in a style, drawn by the engine: an hour a bar across the column (a day a bar, of the days ahead), on a
+   * scale from zero (the arrays stacked), the bars to come hollow and now marked where the style marks it, read by
+   * the bar under the pointer.
    */
   private renderStyled(
     style: ResolvedStyle,
     series: ChartSeries[],
     o: {
+      /** The last bar that has happened; -1: none has (a forecast day); null: a day that is over. */
       readonly now: number | null;
       readonly unusable: boolean;
       readonly tone: Tone;
@@ -929,8 +1432,8 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         series,
         style,
         kind: 'bars',
-        now: o.now === null ? null : (o.now + 1) / HOURS,
-        cursor: o.hovered === null ? null : (o.hovered + 0.5) / HOURS,
+        now: o.now === null ? null : o.now < 0 ? -1 : (o.now + 1) / this.slots,
+        cursor: o.hovered === null ? null : (o.hovered + 0.5) / this.slots,
         id: 'pr',
       })}
     </div>`;

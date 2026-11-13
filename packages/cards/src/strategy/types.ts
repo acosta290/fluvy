@@ -197,6 +197,8 @@ export interface EnergyRoles {
   readonly solarToday: string | undefined;
   /** Every array's meter in the energy dashboard, in its order: today's production is theirs together (#183). */
   readonly solarMeters: readonly string[];
+  /** The Energy dashboard links a forecast to an array: Production draws it, and tomorrow has a card of its own. */
+  readonly solarForecast: boolean;
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];

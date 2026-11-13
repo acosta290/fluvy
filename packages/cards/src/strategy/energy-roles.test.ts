@@ -211,4 +211,24 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     };
     expect(roles([], prefs).meters).toEqual([{ entity: 'opower:pge_gas', kind: 'gas' }]);
   });
+
+  it('knows a forecast where the energy dashboard links one to an array, and none by a sensor’s words (#183)', () => {
+    const house = [
+      reading('sensor.inverter_total_yield', 'Inverter total yield', '9120', 'energy'),
+      reading('sensor.solcast_today', 'Solcast forecast today', '21.4', 'energy', 'solcast_solar'),
+    ];
+    const linked = (entries: readonly string[] | null): EnergyPrefs => ({
+      energy_sources: [
+        {
+          type: 'solar',
+          stat_energy_from: 'sensor.inverter_total_yield',
+          config_entry_solar_forecast: entries,
+        },
+      ],
+    });
+    expect(roles(house, linked(['solcast'])).solarForecast).toBe(true);
+    expect(roles(house, linked([])).solarForecast).toBe(false);
+    expect(roles(house, linked(null)).solarForecast).toBe(false);
+    expect(roles(house).solarForecast).toBe(false);
+  });
 });
