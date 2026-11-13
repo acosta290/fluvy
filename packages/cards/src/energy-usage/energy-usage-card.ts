@@ -624,13 +624,12 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     const full = (data: Readonly<Record<string, unknown>>): boolean =>
       (data['variant'] ?? 'full') === 'full';
     const own = (data: Readonly<Record<string, unknown>>): boolean => !following(data);
-    // what it charts, first: Home Assistant's tiles, each its kind's word
+    // what it charts, first: a choice of its kind's words, as the editor's other choices are
     const kind: HaFormSchemaItem = {
       name: 'kind',
       selector: {
         select: {
-          mode: 'box',
-          box_max_columns: 3,
+          mode: 'dropdown',
           options: CHARTED.map((value) => ({
             value,
             label:

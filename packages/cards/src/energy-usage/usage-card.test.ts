@@ -706,12 +706,12 @@ describe('water and gas (#181)', () => {
     expect(root(card).querySelectorAll('.eu-ghost').length).toBe(4);
   });
 
-  it('offers what it charts first, as tiles; the electricity’s keys only for electricity, the meters for water and gas', () => {
+  it('offers what it charts first; the electricity’s keys only for electricity, the meters for water and gas', () => {
     const form = FluvyEnergyUsageCard.getConfigForm();
     const kind = form.schema[0] as HaFormSchemaItem;
     expect(kind.name).toBe('kind');
     const select = kind.selector?.['select'] as { mode: string; options: { label: string }[] };
-    expect(select.mode).toBe('box');
+    expect(select.mode).toBe('dropdown');
     expect(select.options.map((option) => option.label)).toEqual(['Electricity', 'Water', 'Gas']);
     const flat = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
       schema.flatMap((item) => (item.schema ? flat(item.schema) : [item]));
