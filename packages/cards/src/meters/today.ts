@@ -1,6 +1,6 @@
 import { formatNumber, type HomeAssistant } from '@fluvy/core';
 import { houseMidnight } from '../energy-model/period.js';
-import { stepGain } from '../history-bars/gain.js';
+import { usedSince } from '../history-bars/gain.js';
 import { unitClass, unitsFor } from '../history-bars/units.js';
 
 /**
@@ -39,9 +39,10 @@ const finite = (raw: unknown): number | null =>
 /**
  * Today's use: every finished hour since midnight (the statistics' change), plus what the meter has gained since the
  * last of them was compiled (its reading now, against the reading that hour ended on), by Home Assistant's own rule
- * (`stepGain`): a meter that reads below 90 % of that has been reset and counts from zero; a smaller dip is a dip.
- * `null` when it cannot be known: no statistics, or no reading now — the hour in progress would be missing, and a day
- * without it is not today. A day that is over (`closed`: one a date picker holds) is its hours alone.
+ * (`usedSince`): a meter that reads below 90 % of that has been reset and counts from zero; a smaller dip is no use,
+ * as a finished hour's fall is none (#181). `null` when it cannot be known: no statistics, or no reading now — the
+ * hour in progress would be missing, and a day without it is not today. A day that is over (`closed`: one a date
+ * picker holds) is its hours alone.
  */
 export function todayOf(
   rows: readonly StatRow[],
@@ -58,7 +59,7 @@ export function todayOf(
   }
   if (closed) return finished;
   if (baseline === null || live === null) return null;
-  return finished + stepGain(baseline, live);
+  return finished + usedSince(baseline, live);
 }
 
 /** A typical day: the mean of the full days the statistics know (of the last seven). `null` with none. */
@@ -75,15 +76,19 @@ export function fractionOf(today: number | null, typical: number | null): number
   return Math.min(1, Math.max(0, today / typical));
 }
 
-/** A meter's figure: "84" L, "2.7" m³, "3.0" m³, "0.04" m³ — the decimal kept so a live figure keeps its width. */
+/**
+ * A meter's figure: "84" L, "2.7" m³, "3.0" m³, "0.04" m³ — the decimal kept so a live figure keeps its width. One
+ * that rounds to nothing is "0" (in the decimals a card asks for, "0.00"), never "-0.00" (#181).
+ */
 export function meterFigure(
   hass: HomeAssistant | undefined,
   value: number,
   decimals?: number,
 ): string {
   const abs = Math.abs(value);
-  if (decimals === undefined && abs === 0) return formatNumber(hass, 0, { digits: 0 });
   const digits = decimals ?? (abs >= 10 ? 0 : abs >= 0.095 ? 1 : 2);
+  if (Math.round(abs * 10 ** digits) === 0)
+    return formatNumber(hass, 0, { digits: decimals ?? 0, minDigits: decimals ?? 0 });
   return formatNumber(hass, value, { digits, minDigits: digits });
 }
 

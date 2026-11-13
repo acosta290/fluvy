@@ -43,9 +43,11 @@ describe('todayOf', () => {
     expect(todayOf(rows(900, [5, 5]), MIDNIGHT, 3)).toBe(13);
   });
 
-  it('reads a small dip as a dip, as Home Assistant does: only a fall below 90 % is a reset', () => {
-    // 910 at the last hour, 905 now: 5 less, not 905 more
-    expect(todayOf(rows(900, [5, 5]), MIDNIGHT, 905)).toBe(5);
+  it('reads a small dip as no reset, as Home Assistant does, and never as use below nothing (#181)', () => {
+    // 910 at the last hour, 905 now: not 905 more (only a fall below 90 % is a reset), and not 5 less
+    expect(todayOf(rows(900, [5, 5]), MIDNIGHT, 905)).toBe(10);
+    // nothing used since midnight, the meter 0.003 gal under the hour's reading: 0, not −0.003
+    expect(todayOf(rows(12_345.678, [0]), MIDNIGHT, 12_345.675)).toBe(0);
   });
 
   it('says nothing it cannot know: no statistics, or no reading now', () => {
@@ -102,6 +104,16 @@ describe('units and kinds', () => {
     expect(meterFigure(undefined, 3)).toBe('3.0');
     expect(meterFigure(undefined, 0.04)).toBe('0.04');
     expect(meterFigure(undefined, 0)).toBe('0');
+  });
+
+  it('writes a figure that rounds to nothing as 0, never "0.00" nor "-0.00" (#181)', () => {
+    expect(meterFigure(undefined, 0.003)).toBe('0');
+    expect(meterFigure(undefined, -0.003)).toBe('0');
+    expect(meterFigure(undefined, -0)).toBe('0');
+    expect(meterFigure(undefined, 0.006)).toBe('0.01');
+    // the decimals a card asks for are kept, the sign is not
+    expect(meterFigure(undefined, -0.001, 2)).toBe('0.00');
+    expect(meterFigure(undefined, -0.4, 0)).toBe('0');
   });
 });
 

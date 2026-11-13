@@ -2,7 +2,7 @@
  * What a counter gained between two of its readings, by Home Assistant's own rule — a reading below 90 % of the one
  * before is a meter that started again (`reset_detected` in its sensor recorder), a smaller dip is a dip and comes
  * back on the recovery — plus what a counter that is known to start again adds to it. Shared by the history bars'
- * readings and live bucket and the meters' day, so every counter in Fluvy is read one way.
+ * readings and live bucket, the meters' day and Production's, so every counter in Fluvy is read one way.
  */
 
 /** Below this share of the reading before, a reading is a meter that started again (Home Assistant's 10 %). */
@@ -28,6 +28,13 @@ export function stepGain(p: number, r: number, rules: StepRules = {}): number {
   if (r < p && (rules.boundary || (p > 0 && r < RESET_FALL * p))) return r;
   return r - p;
 }
+
+/**
+ * What a meter has gained since its last compiled hour, for a day's figure of use: `stepGain`, where a fall that is no
+ * reset is no use, never below nothing, and never the meter's whole reading (a lifetime meter a hair under its last
+ * hour is no reset).
+ */
+export const usedSince = (p: number, r: number): number => Math.max(0, stepGain(p, r));
 
 /**
  * The live step of a counter as Home Assistant counts it, by its state class: a `total_increasing` by the 10 % rule;
