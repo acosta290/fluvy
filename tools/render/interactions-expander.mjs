@@ -8,9 +8,12 @@
  * reduced motion; folded again its cards leave the page; the keyboard opens and folds it; a head with a tap of its
  * own leaves the fold to a round; it opens by itself with its condition and folds with it; it hides while every
  * card it holds is hidden; it stands as it was left after a reload; its columns hold on a desktop and give way on a
- * phone; a held card draws what it declares; see-through, its surface blurs what shows through and what it holds
- * does not blur again (#186). Real cards on the playground's simulated hass, Home Assistant's card wrapper stood in
- * for (`apps/playground/src/hui-card.ts`). Exit code 1 on any failure.
+ * phone; a held card draws what it declares. Since #186: cards for a head (a clock, there while it is folded, the
+ * chevron a round beside it), the chevron at the foot ("Show more", "Show less", the head brought back into view as
+ * it folds) and larger, a tile and a head's card that open it by asking, the round giving way in half a section;
+ * and, see-through, its surface blurs what shows through and what it holds does not blur again. Real cards on the
+ * playground's simulated hass, Home Assistant's card wrapper stood in for (`apps/playground/src/hui-card.ts`). Exit
+ * code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5217/ node interactions-expander.mjs
  */
 import { frame, settle, startSuite, tapHead } from './lib/suite.mjs';
@@ -414,6 +417,269 @@ const transparent = (colour) => colour === 'rgba(0, 0, 0, 0)' || colour === 'tra
     JSON.stringify({ open: open.height, whole: whole.height, folded: folded.held.length }),
   );
   await page.close();
+}
+
+/* ---------- cards for a head (#186) ---------- */
+{
+  /** What an expander with cards for a head shows: its head's cards, what folds it, and where they stand. */
+  const headed = (locator) =>
+    locator.evaluate((el) => {
+      const root = el.shadowRoot;
+      const surface = root.querySelector('[data-card]');
+      const box = surface.getBoundingClientRect();
+      const group = root.querySelector('.ex-heads');
+      const round = root.querySelector('button.fv-round');
+      const foot = root.querySelector('button.ex-foot');
+      const place = (node) => {
+        const own = node.getBoundingClientRect();
+        return [
+          Math.round(own.left - box.left),
+          Math.round(own.top - box.top),
+          Math.round(own.width),
+          Math.round(own.height),
+        ];
+      };
+      return {
+        open: surface.classList.contains('is-open'),
+        height: Math.round(box.height),
+        declared: el.constructor.layoutHeight(el.config),
+        group: group ? [group.getAttribute('role'), group.getAttribute('aria-label')] : null,
+        words: Boolean(root.querySelector('.ex-head')),
+        heads: [...el.children]
+          .filter((child) => child.slot === 'head')
+          .map((child) => [
+            child.firstElementChild?.localName,
+            ...place(child.firstElementChild ?? child),
+          ]),
+        under: [...el.children].filter((child) => child.slot !== 'head').length,
+        round: round
+          ? {
+              says: round.getAttribute('aria-label'),
+              expanded: round.getAttribute('aria-expanded'),
+              controls: round.getAttribute('aria-controls'),
+              at: place(round),
+            }
+          : null,
+        foot: foot
+          ? {
+              says: foot.textContent.trim(),
+              expanded: foot.getAttribute('aria-expanded'),
+              at: place(foot),
+              rule: getComputedStyle(foot, '::before').content !== 'none',
+            }
+          : null,
+        buttons: root.querySelectorAll('button').length,
+      };
+    });
+
+  const page = await suite.sheet('expander');
+  const clock = card(page, 'Clock head · folded');
+  const folded = await headed(clock);
+  check(
+    'a clock for a head: there while it is folded, in the head’s column, the card as tall as it declares (136)',
+    !folded.open &&
+      !folded.words &&
+      folded.group.join() === 'group,Today' &&
+      folded.heads.length === 1 &&
+      folded.heads[0][0] === 'fluvy-clock-card' &&
+      // turned out by its padding: its box the surface's from its top to the round's column
+      folded.heads[0].slice(1).join() === '0,0,304,136' &&
+      folded.under === 0 &&
+      folded.height === 136 &&
+      folded.declared === 136,
+    JSON.stringify(folded),
+  );
+  check(
+    'what folds it is a round of 44 after the clock, on the line a card’s head stands on, which says what it does',
+    folded.buttons === 1 &&
+      folded.round.says === 'Open Today' &&
+      folded.round.expanded === 'false' &&
+      folded.round.controls === 'cards' &&
+      folded.round.at.join() === '296,20,44,44',
+    JSON.stringify(folded.round),
+  );
+  await clock.locator('button.fv-round').click();
+  await settle(page, REST);
+  const opened = await headed(clock);
+  check(
+    'the round opens it: the forecast and the days ahead built under the clock, which stays',
+    opened.open &&
+      opened.heads.length === 1 &&
+      opened.under === 2 &&
+      opened.round.says === 'Close Today' &&
+      opened.round.expanded === 'true' &&
+      opened.height > 136,
+    JSON.stringify(opened),
+  );
+  const laid = await column(card(page, 'Clock head · open'));
+  check(
+    'a hairline stands over each card it holds, and none over its head’s',
+    laid.cards.length === 3 && laid.cards.map((held) => held.rule).join() === 'false,true,true',
+    JSON.stringify(laid.cards.map((held) => held.rule)),
+  );
+
+  /* ---------- the foot ---------- */
+  const more = card(page, 'Clock head · Show more');
+  const below = await headed(more);
+  check(
+    'the chevron at the foot: the clock has the head’s whole width, and a row of 44 under a hairline says Show more',
+    below.round === null &&
+      below.heads[0].slice(1).join() === '0,0,360,136' &&
+      below.foot.says === 'Show more' &&
+      below.foot.expanded === 'false' &&
+      below.foot.at.join() === '20,136,320,44' &&
+      below.foot.rule &&
+      below.height === 180 &&
+      below.declared === 180,
+    JSON.stringify(below),
+  );
+  await more.locator('button.ex-foot').click();
+  await settle(page, REST);
+  const less = await headed(more);
+  check(
+    'the foot opens it and says Show less, under what it holds',
+    less.open && less.under === 2 && less.foot.says === 'Show less' && less.foot.at[1] > 400,
+    JSON.stringify(less.foot),
+  );
+  await more.locator('button.ex-foot').focus();
+  await page.keyboard.press('Enter');
+  await settle(page, REST);
+  check(
+    'and the keyboard folds it from there',
+    !(await headed(more)).open && (await headed(more)).foot.says === 'Show more',
+  );
+  const feet = await Promise.all([0, 1, 2].map((n) => headed(card(page, 'A foot', n))));
+  check(
+    'under a head of words the foot stands at the surface’s end (128), 8 under a head on the page (96), and after what an open one holds',
+    feet[0].height === 128 &&
+      feet[0].declared === 128 &&
+      feet[0].foot.at.join() === '20,84,320,44' &&
+      feet[1].height === 96 &&
+      feet[1].declared === 96 &&
+      feet[1].foot.at.join() === '0,52,360,44' &&
+      !feet[1].foot.rule &&
+      feet[2].open &&
+      feet[2].foot.says === 'Show less',
+    JSON.stringify(feet.map((own) => [own.height, own.declared, own.foot])),
+  );
+
+  /* ---------- larger ---------- */
+  const large = (n) =>
+    card(page, 'Large chevron', n).evaluate((el) => {
+      const root = el.shadowRoot;
+      const size = (selector) => {
+        const node = root.querySelector(selector);
+        return node ? Math.round(node.getBoundingClientRect().width) : null;
+      };
+      const tall = (selector) => {
+        const node = root.querySelector(selector);
+        return node ? Math.round(node.getBoundingClientRect().height) : null;
+      };
+      return {
+        mark: size('.ex-chevron svg'),
+        box: size('.ex-chevron'),
+        round: size('button.fv-round'),
+        glyph: size('button.fv-round svg'),
+        foot: tall('button.ex-foot'),
+        words: root.querySelector('.ex-foot__words')
+          ? parseFloat(getComputedStyle(root.querySelector('.ex-foot__words')).fontSize)
+          : null,
+        height: Math.round(root.querySelector('[data-card]').getBoundingClientRect().height),
+        declared: el.constructor.layoutHeight(el.config),
+      };
+    });
+  const [mark, start, own, row] = await Promise.all([0, 1, 2, 3].map(large));
+  check(
+    'a larger chevron: the mark’s glyph 28 in its box of 44, the round 56 with a glyph of 24, the foot’s row 56 at 15; the head as tall as before',
+    mark.mark === 28 &&
+      mark.box === 44 &&
+      start.mark === 28 &&
+      own.round === 56 &&
+      own.glyph === 24 &&
+      row.foot === 56 &&
+      row.words === 15 &&
+      [mark, start, own].every((card) => card.height === 84 && card.declared === 84) &&
+      row.height === 140 &&
+      row.declared === 140,
+    JSON.stringify({ mark, start, own, row }),
+  );
+
+  /* ---------- opened from another card ---------- */
+  const tile = frame(page, 'Opened from another card').locator(':scope > fluvy-template-card');
+  const named = card(page, 'Opened from another card');
+  const quiet = await headed(named);
+  await tile.click();
+  await settle(page, REST);
+  const asked = await headed(named);
+  await tile.click();
+  await settle(page, REST);
+  const again = await headed(named);
+  check(
+    'a tile elsewhere opens the expander it names, and folds it again; the expander shows no button of its own',
+    quiet.buttons === 0 && !quiet.open && asked.open && asked.under === 1 && !again.open,
+    JSON.stringify({ quiet: quiet.open, asked: asked.open, again: again.open }),
+  );
+  // the clock is its head, and asks the expander that holds it
+  await named.locator(':scope > [slot="head"]').click();
+  await settle(page, REST);
+  const byClock = await headed(named);
+  check('a tap on the clock that is its head opens it', byClock.open, JSON.stringify(byClock));
+  // what the expander-card's buttons say, from anywhere in the page
+  await page.evaluate(() =>
+    document.body.dispatchEvent(
+      new CustomEvent('ll-custom', {
+        detail: {
+          action: 'fire-dom-event',
+          'expander-card': { data: { 'expander-card-id': 'forecast', action: 'close' } },
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    ),
+  );
+  await settle(page, REST);
+  check(
+    'and the expander-card’s own action folds it',
+    !(await headed(named)).open,
+    JSON.stringify(await headed(named)),
+  );
+  await page.close();
+
+  /* ---------- half a section: the round gives way to the foot ---------- */
+  const narrow = await suite.sheet('expander', { width: 172 });
+  const half = await headed(card(narrow, 'Clock head · folded'));
+  check(
+    'in half a section the clock keeps its width: the round gives way to the foot',
+    half.round === null &&
+      half.foot !== null &&
+      // the surface's whole width: its column, where the foot stands, and the padding the clock turns out
+      half.heads[0][3] === half.foot.at[2] + 40,
+    JSON.stringify(half),
+  );
+  await narrow.close();
+
+  /* ---------- folding from the foot brings the head back ---------- */
+  const small = await suite.page('sheet=expander&width=360', {
+    viewport: { width: 1400, height: 560 },
+    reducedMotion: 'reduce',
+  });
+  const tall = card(small, 'Clock head · Show less');
+  const button = tall.locator('button.ex-foot');
+  await button.evaluate((el) => el.scrollIntoView({ block: 'end' }));
+  const top = () =>
+    tall.evaluate((el) =>
+      Math.round(el.shadowRoot.querySelector('.ex-heads').getBoundingClientRect().top),
+    );
+  const before = await top();
+  await button.click();
+  await settle(small, REST);
+  const after = await top();
+  check(
+    'folded from the foot, its head is brought back into view, under where Home Assistant’s header stands',
+    before < 0 && after >= 56 && after < 200,
+    `${before} → ${after}`,
+  );
+  await small.close();
 }
 
 /* ---------- see-through: the surface blurs once (#186) ---------- */

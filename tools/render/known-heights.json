@@ -241,10 +241,32 @@
       "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
     },
     {
+      "frame": "expander/A foot",
+      "tag": "fluvy-expander-card",
+      "n": 3,
+      "declared": 128,
+      "drawn": 328,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
       "frame": "expander/A group in its colour",
       "tag": "fluvy-expander-card",
       "declared": 84,
       "drawn": 372,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Clock head · Show less",
+      "tag": "fluvy-expander-card",
+      "declared": 180,
+      "drawn": 604,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
+      "frame": "expander/Clock head · open",
+      "tag": "fluvy-expander-card",
+      "declared": 136,
+      "drawn": 900,
       "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
     },
     {

@@ -2918,10 +2918,12 @@ may say its own (`details`).
 - **Focus.** It opens on Close; Tab walks the sheet and nothing behind it; Escape, Close and a tap on the scrim close
   it and give the focus back to what was tapped; leaving the page closes it too.
 
-## Expander (1.20)
+## Expander (1.20, 1.21)
 
 The Expander card (#180) folds any cards away under a head: what is seldom used stays one row until it is asked for.
 It is a head card whose body is other cards, and it adds nothing of its own between them but room and a hairline.
+Since 1.21 (#186) its head may be cards too, its chevron may stand at the foot or be larger, and another card may
+open it by its name: each a key, and a config without them draws as it did.
 
 - **The head** is the card's button, as every head (§ Header pattern): the 44 circle (the `grid` glyph until it is
   given an icon), the title 16/600 — the person's own, a name that may end in its ellipsis and is read whole under
@@ -2940,7 +2942,43 @@ It is a head card whose body is other cards, and it adds nothing of its own betw
   stands before the circle, its ink on the column's start, 16 from the circle. A head with a tap of its own
   (`tap_action`: a page to go to) leaves the fold to the chevron, which is then a round of its own (44, quiet on the
   card, the card's fill and hairline on the page), raised over the head's button, named "Open Garden"; a tap of
-  `none` leaves the head no button at all, and the round still folds.
+  `none` leaves the head no button at all, and the round still folds. `show_chevron: false` draws none: with a head
+  that is no button either, nothing on the card folds it, and it opens from elsewhere.
+- **Larger (`chevron_size: large`)**, for a hand at a wall: the mark's glyph is 28 in the same 44 box, so the head
+  keeps its fit; the round is 56 (a control's next height) with a 24 glyph, about the line the 44 stood on; the
+  foot's row is 56, its words 15/600 and its glyph 24. The head is no taller for it.
+- **The foot (`chevron_position: bottom`)** is the fold's button after what it holds, for a group long enough that
+  its reading ends far from its head: a row of 44 the column wide, its words 13/600 and a 20 chevron 4 after them,
+  centred, in the secondary ink (the text's under the pointer; dimmed while pressed, as a head's words are — a row
+  the card's width does not shrink under the finger). It says what a tap will do, "Show more" while folded and
+  "Show less" while open, the chevron down and up with them; where the column holds neither word beside the chevron
+  (half a section, in the longer languages) the chevron alone says it, the words its accessible name, fitted for
+  both words so opening it never changes its form. On the surface it is the card's last row, under a hairline in the
+  column like each card's — folded, the head, the hairline 20 under it, the foot: 128; open, 20 under the last card.
+  On the page (`plain`) it stands 8 under what is over it, in the page's ink, with no hairline: 96 folded. The head
+  of words stays the button it was, so the fold has two stops; folding from the foot brings the head back into view
+  (`scrollIntoView`, nearest, smooth unless motion is reduced), clear of Home Assistant's header.
+- **Cards for a head (`head_cards`)** stand where the words would: a clock, a weather tile, a player — no circle, no
+  title, no line, no count. They are in the page while the card is, folded or not, in the columns and the room of
+  the cards under them, held as those are: on the surface without one of their own, turned out by their padding, a
+  hairline over each but the first row (the surface's edge is over that one) and one between the head and what it
+  holds; on the page with their own surfaces, 16 apart. The group is named by the `title` (`role="group"`) and is no
+  button: each card keeps its taps. What folds it is the chevron as a round of its own, in a column of its own (44
+  and the head's 12) after the cards or before them, on the line a card's head stands on — the surface's 20, a card's
+  own 20 on the page; the larger one 4 over that line, on the 4 grid — named "Open Today" and "Close Today"; or the
+  foot; or, with no chevron, a card that asks (below). Where the round's column would leave a card less than its
+  least width (148: half a section), the chevron stands at the foot by itself, so a clock keeps the width it was
+  drawn for. While every card of the head is hidden and nothing under them shows, the expander hides.
+- **Opened by another card (`id`).** Any card's `fire-dom-event` action that carries `fluvy_expander: { id, action }`
+  opens, folds or toggles (the default) every expander in the page with that name — the same view, a subview, a
+  popup — as a group: a toggle opens them all while any is folded. It is heard as Home Assistant sends it
+  (`ll-custom`, from Fluvy's cards and its own) by one listener on the window, there with the first named expander in
+  the page and gone with the last; the expander-card's own payload (`expander-card: { data: { expander-card-id,
+  action } }`) is answered too, so a dashboard that comes from it keeps its buttons. A card the expander holds, in
+  its head or under it, asks without a name (`fluvy_expander: toggle`): the expander that holds it answers and the
+  ask goes no further, so the clock that is a head can be its button. A name is only ever compared, never put in a
+  selector. An ask is the person's doing: remembered, by the view and the name alone where it has one, no longer its
+  condition's to fold, and its clock starts. The editor's preview answers none.
 - **One surface (`style: card`, the default).** The head stands in the card's 20: folded, the card is the head
   (84). Open, the fold reaches the surface's edges and the cards stand in the head's column, the first 40 under the
   head and each 40 under the last (`gap`), a hairline in the middle of that room, in the column: the first where the
@@ -2974,8 +3012,13 @@ It is a head card whose body is other cards, and it adds nothing of its own betw
   of the cards of Fluvy's it holds that name none, so a group can have a colour; `icon_color` is the circle's alone.
   `card_color` washes the surface, and what it holds stands on the wash.
 - **Heights** are the config's alone: the card declares its head (84, 44 plain), whatever it holds and however it
-  was left; a masonry view counts one row folded and one more than its cards open; a section gives it all twelve
-  columns, three at least.
+  was left, and under it its foot's row where the chevron stands there (44, 56 large; 8 more on the page). With
+  cards for a head it declares what they declare (`layoutHeightOf`), row by row in the columns a 360 section holds
+  beside the round, each row as tall as its tallest: on the surface a row's own padding is the surface's and the
+  hairline's room, so one clock of 136 is a card of 136; a card of another maker counts as the head it stands for.
+  What stands on the page keeps the surface's padding round it (a tile for a head on a surface is 40 taller than
+  declared): the one drift a config cannot say. A masonry view counts its head's rows folded (one for words) and its
+  cards' more open; a section gives it all twelve columns, three at least.
 - **Hidden, previewed, empty.** While every card it holds is hidden — by its own `visibility`, or by itself — the
   open expander hides too, as a stack does, and comes back with the first that shows; folded, it cannot know, and
   shows its head. In the editor's preview it is always open. With no cards yet, the open fold says so in one quiet
@@ -2985,12 +3028,17 @@ It is a head card whose body is other cards, and it adds nothing of its own betw
   hold and folds it again when it no longer does, unless a person touched it meanwhile; `close_after` folds it after
   so many minutes, leaving it to its condition while that still holds.
 - **Editor.** Fluvy's form for the head and the options, with `when`: the count's switch with entities to count,
-  the chevron's place with a chevron, the surface's wash, opacity and border on a surface. Under it the cards, in
-  Home Assistant's own stack editor (a tab a card, its picker, copy, cut, move, delete, its code view), its own Title
-  field left out; where that editor is not to be had, or refuses the cards, the form's code field edits them.
-- Its chunk is its own (`expander`, 5.3 KB of 8), its editor's too (`expander-editor`, fetched when one is edited):
-  every page carries only its name and height (`expander-family.ts`) and the two rules a held card reads
-  (`fluvy/surfaces.css`).
+  the chevron's place and size with a chevron, the surface's wash, opacity and border on a surface, and what is a
+  head of words' alone (its icon, its line, the entities it counts, its circle's tone and colour, its actions) only
+  while no cards stand as the head. The `id` says under itself the action another card opens it with, as one line of
+  YAML with the name as typed. Under the form the cards, each list in Home Assistant's own stack editor (a tab a
+  card, its picker, copy, cut, move, delete, its code view), its own Title field left out: "Cards in the head", then
+  "Cards". The head's is one quiet Add button until it has a card or one is asked for — a head of cards is a thing
+  to turn on, and an empty stack editor is a whole card picker; emptied, its key leaves the config. Where that editor
+  is not to be had, or refuses a list, the form's code field edits it.
+- Its chunk is its own (`expander`), its editor's too (`expander-editor`, fetched when one is edited): every page
+  carries only its name, its height and the three figures of its layout that height is counted with
+  (`expander-family.ts`), and the two rules a held card reads (`fluvy/surfaces.css`).
 
 ## Value row (1.9)
 

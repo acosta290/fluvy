@@ -119,8 +119,9 @@ describe('the expander’s editor with Home Assistant’s stack editor', () => {
   it('edits the cards in it, under the form, which lets its code field go', async () => {
     const { editor, stack } = await edited({ title: 'Garden', cards: CARDS });
     expect(stack()).not.toBeNull();
-    expect(listTitles(editor)).toEqual(['Cards']);
+    expect(listTitles(editor)).toEqual(['Cards in the head', 'Cards']);
     expect(shownNames(cardForm(editor).schema)).not.toContain('cards');
+    expect(shownNames(cardForm(editor).schema)).not.toContain('head_cards');
     expect(stack()?.config).toEqual({ type: 'vertical-stack', title: 'Garden', cards: CARDS });
     expect(stack()?.hass).toBe(HOUSE);
     expect(stack()?.lovelace).toEqual({ views: [] });
@@ -175,14 +176,90 @@ describe('the expander’s editor with Home Assistant’s stack editor', () => {
   it('gives the cards back to the code field where the stack editor refuses them, until they are mended', async () => {
     const { editor, stack } = await edited({ cards: [null] });
     expect(stack()).toBeNull();
-    expect(listTitles(editor)).toEqual([]);
+    // the head's list is another: its stack editor took it
+    expect(listTitles(editor)).toEqual(['Cards in the head']);
     expect(shownNames(cardForm(editor).schema)).toContain('cards');
+    expect(shownNames(cardForm(editor).schema)).not.toContain('head_cards');
 
     const written = nextConfig(editor);
     cardForm(editor).change('cards', CARDS);
     expect((await written)['cards']).toEqual(CARDS);
     await editor.updateComplete;
     expect(stack()?.config?.['cards']).toEqual(CARDS);
+    expect(shownNames(cardForm(editor).schema)).not.toContain('cards');
+  });
+});
+
+describe('the cards of its head, in a stack editor of their own (#186)', () => {
+  const CLOCK: LovelaceCardConfig = { type: 'custom:fluvy-clock-card', face: 'digital' };
+  const stacks = (editor: FluvyExpanderEditor): StackEditor[] => [
+    ...editor.shadowRoot!.querySelectorAll<StackEditor>('hui-stack-card-editor'),
+  ];
+  const add = (editor: FluvyExpanderEditor): HTMLButtonElement | null =>
+    editor.shadowRoot!.querySelector<HTMLButtonElement>('.list .more button');
+
+  it('keeps its card picker behind a button until a head of cards is asked for', async () => {
+    const { editor } = await edited({ title: 'Garden', cards: CARDS });
+    // one stack editor in the page, the cards'; the head's list says what it is for, and offers to add
+    expect(stacks(editor)).toHaveLength(1);
+    expect(stacks(editor)[0]?.config?.['cards']).toEqual(CARDS);
+    expect(editor.shadowRoot!.querySelector('.list .list__helper')?.textContent).toBe(
+      'They take the place of the title and stay while it is folded',
+    );
+    expect(add(editor)?.textContent?.trim()).toBe('Add');
+
+    add(editor)?.click();
+    await editor.updateComplete;
+    expect(add(editor)).toBeNull();
+    expect(stacks(editor)).toHaveLength(2);
+    expect(stacks(editor)[0]?.config).toEqual({
+      type: 'vertical-stack',
+      title: 'Garden',
+      cards: [],
+    });
+    // asked for, it has changed nothing yet
+    expect(editor.config).toEqual({ type: TYPE, title: 'Garden', cards: CARDS });
+  });
+
+  it('writes what its stack editor changes into head_cards, and takes the key away with the last card', async () => {
+    const { editor } = await edited({ title: 'Garden', cards: CARDS });
+    add(editor)?.click();
+    await editor.updateComplete;
+    const [head] = stacks(editor);
+    const written = nextConfig(editor);
+    head?.change({ cards: [CLOCK] });
+    expect(await written).toEqual({
+      type: TYPE,
+      title: 'Garden',
+      cards: CARDS,
+      head_cards: [CLOCK],
+    });
+    await editor.updateComplete;
+    expect(stacks(editor).map((stack) => stack.config?.['cards'])).toEqual([[CLOCK], CARDS]);
+
+    const emptied = nextConfig(editor);
+    stacks(editor)[0]?.change({ cards: [] });
+    expect(await emptied).toEqual({ type: TYPE, title: 'Garden', cards: CARDS });
+  });
+
+  it('opens on its stack editor where the config has cards for a head, each list in its own', async () => {
+    const { editor } = await edited({ head_cards: [CLOCK], cards: CARDS });
+    expect(add(editor)).toBeNull();
+    expect(listTitles(editor)).toEqual(['Cards in the head', 'Cards']);
+    expect(stacks(editor).map((stack) => stack.config?.['cards'])).toEqual([[CLOCK], CARDS]);
+    // what the cards' own changes leaves the head's alone
+    const written = nextConfig(editor);
+    stacks(editor)[1]?.change({ cards: [CARDS[0]] });
+    expect(await written).toEqual({ type: TYPE, head_cards: [CLOCK], cards: [CARDS[0]] });
+    // each leaves its own Title field out
+    for (const stack of stacks(editor))
+      expect(stack.shadowRoot?.adoptedStyleSheets).toHaveLength(1);
+  });
+
+  it('gives the head’s cards back to their code field where the stack editor refuses them', async () => {
+    const { editor } = await edited({ head_cards: [null], cards: CARDS });
+    expect(listTitles(editor)).toEqual(['Cards']);
+    expect(shownNames(cardForm(editor).schema)).toContain('head_cards');
     expect(shownNames(cardForm(editor).schema)).not.toContain('cards');
   });
 });

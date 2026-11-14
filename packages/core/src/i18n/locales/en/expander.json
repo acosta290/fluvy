@@ -4,7 +4,11 @@
     "open": "Open {name}",
     "close": "Close {name}",
     "empty": "No cards yet",
+    "more": "Show more",
+    "less": "Show less",
     "editor.cards": "Cards",
+    "editor.head_cards": "Cards in the head",
+    "editor.head_cards_helper": "They take the place of the title and stay while it is folded",
     "editor.style": "Style",
     "editor.o_card": "One card",
     "editor.gap": "Room between cards (px)",
@@ -13,6 +17,10 @@
     "editor.show_chevron": "Show the chevron",
     "editor.chevron_position": "Chevron",
     "editor.o_start": "At the start",
+    "editor.o_bottom": "At the foot",
+    "editor.chevron_size": "Chevron size",
+    "editor.o_regular": "Regular",
+    "editor.o_large": "Large",
     "editor.expanded": "Open at first",
     "editor.remember": "Remember how it was left",
     "editor.o_device": "On this device",
@@ -20,6 +28,8 @@
     "editor.open_when": "Open by itself",
     "editor.open_when_helper": "It opens when this starts to hold, and folds again when it no longer does",
     "editor.close_after": "Fold again after (minutes)",
+    "editor.id": "ID",
+    "editor.id_helper": "Another card opens, folds or toggles it with this action in its YAML: {action}",
     "editor.icon_color": "Icon colour"
   }
 }

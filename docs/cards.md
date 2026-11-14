@@ -1047,9 +1047,9 @@ it is folded, so a folded expander costs the page nothing.
 in the head's column, a hairline between them, so a group reads as one card. Home Assistant's own cards stand there
 by what each pads its content by: most by its 16, a calendar, a gauge and a heading by theirs, a picture, a map and a
 stack as they are, and a tile, a button or an area card as a tile, on a surface of its own. `plain` leaves the head on
-the page and each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width holds (two
-on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the hairline),
-16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
+the page and each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width
+holds (two on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the
+hairline), 16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
 Fluvy's it holds that name none of their own, so a group can have a colour; `icon_color` colours the circle alone.
 `card_color`, `card_opacity` and `card_border` are the surface's.
 
@@ -1133,6 +1133,127 @@ cards:
       - switch.lawn_sprinklers
       - switch.flower_beds
 ```
+
+`head_cards` puts cards where the head's words would stand: a clock, a weather tile, a player. They take the place of
+the circle, the title and its line, are laid out in the same `columns` and `gap` as the cards under them, and stay in
+the page while the expander is folded. Each keeps its own taps, so the head is no longer one button: what folds it is
+the chevron, a round button beside the cards (after them, or before them with `chevron_position: start`), or the foot.
+`title` is then what that button is called ("Open Today"). On one surface (`style: card`) the head's cards are held
+as the others are, a hairline between the head and what it holds; `plain` leaves them their surfaces. In half a
+section, where a card would not keep its width beside the round, the chevron stands at the foot by itself. The
+expander's height is what the cards of its head declare, so a dashboard plans it as it will draw. In the editor they
+have a list of their own, "Cards in the head", over the cards it holds.
+
+```yaml
+type: custom:fluvy-expander-card
+title: Today
+head_cards:
+  - type: custom:fluvy-clock-card
+    face: digital
+    weather: weather.home
+    show_forecast: false
+cards:
+  - type: custom:fluvy-weather-card
+    entity: weather.home
+    forecast: both
+    days: 3
+  - type: custom:fluvy-calendar-card
+    view: upcoming
+    entities:
+      - calendar.family
+```
+
+`chevron_position: bottom` stands the chevron at the foot: a row under what the expander holds that says "Show more"
+and, once it is open, "Show less", so a long group folds from where its reading ends, and folding from there brings
+the head back into view. A head of words is still the button it was. `chevron_size: large` draws a larger chevron for
+a hand at a wall tablet: the round and the foot's row are 56 where they were 44.
+
+```yaml
+type: custom:fluvy-expander-card
+title: Today
+chevron_position: bottom
+chevron_size: large
+head_cards:
+  - type: custom:fluvy-clock-card
+    face: digital
+cards:
+  - type: custom:fluvy-weather-card
+    entity: weather.home
+```
+
+To hide it for good, write `show_chevron: false`. With a head that is no button either (`tap_action` of `none`, or
+cards for a head), nothing on the card folds it: it opens from another card, by its condition (`open_when`) or as its
+config says (`expanded`).
+
+```yaml
+type: custom:fluvy-expander-card
+id: forecast
+title: Forecast
+show_chevron: false
+tap_action:
+  action: none
+cards:
+  - type: custom:fluvy-weather-card
+    entity: weather.home
+```
+
+Give the expander an `id`, and any card's `fire-dom-event` action opens, folds or toggles it: Fluvy's cards and Home
+Assistant's own both send it, from the same view, a subview or a popup. The action names the expander and says what
+to do: `toggle` (the default), `open` or `close`.
+
+```yaml
+type: custom:fluvy-template-card
+name: Forecast
+icon: mdi:weather-partly-cloudy
+tap_action:
+  action: fire-dom-event
+  fluvy_expander:
+    id: forecast
+    action: toggle
+```
+
+Home Assistant's action picker does not offer `fire-dom-event`, so it is written in YAML (a card of Home Assistant's
+own that carries it is edited as YAML from then on); the expander's editor shows the line to copy under its ID.
+Several expanders with one `id` are a group: they open and fold together, and a toggle opens them all while any of
+them is folded. A card the expander holds, in its head or under it, need not name it: `fluvy_expander: toggle` (or
+`open`, `close`) asks the expander that holds the card, so a clock for a head can be the button that opens it:
+
+```yaml
+type: custom:fluvy-expander-card
+title: Today
+show_chevron: false
+head_cards:
+  - type: custom:fluvy-clock-card
+    face: digital
+    tap_action:
+      action: fire-dom-event
+      fluvy_expander: toggle
+cards:
+  - type: custom:fluvy-weather-card
+    entity: weather.home
+```
+
+Opening it this way is your doing, as a tap on its head is: it is remembered (`remember`; an expander with an `id` is
+remembered by its view and its `id`, whatever else of it changes), `open_when` no longer folds it afterwards, and
+`close_after` counts from then. An expander inside a folded one is not in the page, and hears nothing until the outer
+one is open.
+
+Coming from expander-card, the buttons that open one go on working: Fluvy answers its action as it is written
+(`expander-card: {data: {expander-card-id, action}}`), so only the cards themselves are rewritten.
+
+| expander-card                                    | Fluvy's Expander                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `type: custom:expander-card`                     | `type: custom:fluvy-expander-card`                                                      |
+| `title`, `cards`, `expanded`                     | the same                                                                                |
+| `title-card`                                     | `head_cards`, a list: one card or several                                               |
+| `title-card-button-overlay`, `overlay-margin`    | the chevron stands beside the head's cards, or at the foot (`chevron_position: bottom`) |
+| `title-card-clickable`                           | `tap_action: {action: fire-dom-event, fluvy_expander: toggle}` on the head's card       |
+| `expander-card-id`                               | `id`                                                                                    |
+| `storage-id`                                     | `remember` (`device` by default: nothing to write)                                      |
+| `clear`, `clear-children`                        | `style`: `card` holds the cards on one surface, `plain` leaves each its own             |
+| `expanded-gap`                                   | `gap`, in px                                                                            |
+| `show-button-users`                              | `show_chevron: false` hides it for everybody                                            |
+| `expander-card: {data: {expander-card-id, ...}}` | works as it is; Fluvy's own is `fluvy_expander: {id, action}`                           |
 
 ## Chart
 
@@ -1571,7 +1692,7 @@ roles:
 | **Hello** | `custom:fluvy-hello-card` | The greeting: name, date, weather and avatar. | `person`, `weather`, `show_weather`, `show_date`, `show_avatar` | — |
 | **Chips** | `custom:fluvy-chips-card` | A row of chips that navigate between views or open entities. | `tint` (`on`, `always`), `empty_text`, `hide_empty`, `chips` (a list: `name`, `icon`, `path`, `entity`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `label` → `name` |
 | **Heading** | `custom:fluvy-heading-card` | A section title with its count and a link. | `title`, `heading_style` (`title`, `subtitle`), `variant` (`bar`, `plain`), `subtitle`, `path` | `meta` → `subtitle` |
-| **Expander** | `custom:fluvy-expander-card` | Any cards folded away under a head: a tap opens them, on one surface or each on its own. | `title`, `subtitle`, `show_summary`, `style` (`card`, `plain`), `columns` (`1`, `2`, `3`, `4`), `gap`, `show_chevron`, `chevron_position` (`end`, `start`), `expanded`, `remember` (`device`, `user`, `off`), `open_when`, `close_after`, `icon_color`, `cards` | — |
+| **Expander** | `custom:fluvy-expander-card` | Any cards folded away under a head: a tap opens them, on one surface or each on its own. | `title`, `subtitle`, `show_summary`, `style` (`card`, `plain`), `columns` (`1`, `2`, `3`, `4`), `gap`, `show_chevron`, `chevron_position` (`end`, `start`, `bottom`), `chevron_size` (`regular`, `large`), `expanded`, `remember` (`device`, `user`, `off`), `open_when`, `close_after`, `id`, `icon_color`, `head_cards`, `cards` | — |
 | **Web page** | `custom:fluvy-web-card` | A web page on a plate — a map, a chart, a site of your own — under a head, in a frame or bare; sandboxed as Home Assistant’s iframe card is. | `url`, `variant` (`plate`, `frame`, `bare`), `title`, `subtitle`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `fill`), `height`, `scale`, `refresh`, `look` (`page`, `dark`, `auto`), `sandbox` (`standard`, `strict`, `off`), `allow_open_top_navigation`, `allow`, `show_open`, `show_fullscreen`, `show_reload` | `hide_background` → `variant`, `disable_sandbox` → `sandbox` |
 
 ## Scenes, actions and helpers

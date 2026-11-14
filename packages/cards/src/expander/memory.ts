@@ -56,15 +56,29 @@ function hash(text: string): string {
 
 /**
  * The key a card is remembered by: the view it stands on (the page's path), its head (its title and icon) and the
- * kinds of card it holds — so the same card on another view keeps its own, a card given another title starts afresh,
- * and two cards of one view told apart by neither share theirs.
+ * kinds of card it holds, and of those that stand as its head — so the same card on another view keeps its own, a
+ * card given another title starts afresh, and two cards of one view told apart by neither share theirs. A card with
+ * a name (`id`, #186) is remembered by the view and the name alone: whatever else of it changes it keeps its memory,
+ * and the cards of one name, which open together, are remembered together.
  */
-export function expanderKey(config: LovelaceCardConfig, path: string): string {
-  const cards: unknown = config['cards'];
-  const kinds = Array.isArray(cards)
-    ? cards.map((card: unknown) => String((card as LovelaceCardConfig | null)?.type))
-    : [];
-  return hash(JSON.stringify([path, config['title'], config['icon'], kinds]));
+export function expanderKey(config: LovelaceCardConfig, path: string, name = ''): string {
+  if (name) return hash(JSON.stringify([path, name]));
+  const kinds = (key: string): string[] => {
+    const cards: unknown = config[key];
+    return Array.isArray(cards)
+      ? cards.map((card: unknown) => String((card as LovelaceCardConfig | null)?.type))
+      : [];
+  };
+  const heads = kinds('head_cards');
+  return hash(
+    JSON.stringify([
+      path,
+      config['title'],
+      config['icon'],
+      kinds('cards'),
+      ...(heads.length ? [heads] : []),
+    ]),
+  );
 }
 
 /** What Home Assistant keeps for the person, read once a connection and kept as this page last wrote it. */

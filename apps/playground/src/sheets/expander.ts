@@ -1,8 +1,11 @@
 import { FluvyExpanderCard } from '../../../../packages/cards/src/expander/expander-card.js';
 import { FluvyMediaCard } from '../../../../packages/cards/src/media/media-card.js';
+import { FluvyTemplateCard } from '../../../../packages/cards/src/template/template-card.js';
 import type { StateSeed } from '../hass.js';
 import { defineCardWrapper } from '../hui-card.js';
 import type { SheetSpec } from '../scenes.js';
+import { sheet as ambient } from './ambient.js';
+import { sheet as calendar } from './calendar.js';
 
 // its chunk lands after the page has drawn: the sheet defines the card from its module, as the web sheet does; the
 // cards it holds are Home Assistant's to build, whose wrapper is not here: the playground's stands in
@@ -10,6 +13,8 @@ if (!customElements.get('fluvy-expander-card'))
   customElements.define('fluvy-expander-card', FluvyExpanderCard);
 if (!customElements.get('fluvy-media-card'))
   customElements.define('fluvy-media-card', FluvyMediaCard);
+if (!customElements.get('fluvy-template-card'))
+  customElements.define('fluvy-template-card', FluvyTemplateCard);
 defineCardWrapper();
 
 const EXPANDER = 'custom:fluvy-expander-card';
@@ -115,6 +120,47 @@ const SOIL = {
 };
 const GARDEN_CARDS = [LIGHT, SPRINKLERS, SOIL];
 
+/**
+ * The evening the sheets share, Thursday 17 September 2026 at 21:47, on the cards that tell it: a clock with the
+ * weather beside its date, the forecast (the ambient sheet's) and the days ahead (the calendar sheet's).
+ */
+const CLOCK = {
+  type: 'custom:fluvy-clock-card',
+  face: 'digital',
+  weather: 'weather.am_home',
+  show_forecast: false,
+  _now: '2026-09-17T21:47:12',
+};
+/** The card of another sheet's frame, by the frame's title. */
+const cardOf = (sheet: SheetSpec, title: string): SheetSpec['frames'][number]['cards'][number] => {
+  const card = sheet.frames.find((frame) => frame.title === title)?.cards[0];
+  if (!card) throw new Error(`expander: no frame "${title}"`);
+  return card;
+};
+const FORECAST = cardOf(ambient, 'Weather');
+const AGENDA = cardOf(calendar, 'Upcoming');
+/** What the evening's cards read: the weather and its sun, the household's calendars. */
+const EVENING: readonly StateSeed[] = [
+  ...ambient.states.filter(([id]) => id === 'weather.am_home' || id === 'sun.sun'),
+  ...calendar.states.filter(([id]) => /^calendar\.(chores|family|ona|personal|services)$/.test(id)),
+];
+
+/**
+ * The day at a glance (#186): a clock for a head, the forecast and the days ahead under it. `title` names the button
+ * that folds it.
+ */
+const today = (extra: Record<string, unknown> = {}) => ({
+  type: EXPANDER,
+  title: 'Today',
+  head_cards: [CLOCK],
+  remember: 'off',
+  cards: [FORECAST, AGENDA],
+  ...extra,
+});
+
+/** What a card asks of an expander: Home Assistant's `fire-dom-event`, with whom it asks and what. */
+const ask = (fluvy_expander: unknown) => ({ action: 'fire-dom-event', fluvy_expander });
+
 /** A view's background behind see-through cards: dusk over the garden. */
 const DUSK = 'linear-gradient(160deg, #1f2f4f 0%, #6f5a86 52%, #e39a72 100%)';
 
@@ -170,11 +216,15 @@ const media = (extra: Record<string, unknown> = {}) => ({
  * of their own (Fluvy's, and Home Assistant's through its `--ha-card-*`), or each on its own under a head that stands
  * on the page; folded and open, in columns, nested, at a phone's column, in half a section and across a desktop;
  * the head's count, its chevron at either end, a head that runs another thing and leaves the fold to a round, a
- * condition that opens it, a card it cannot build, and no cards yet; Home Assistant's cards that pad their own way,
- * and see-through over a view's background (#186).
+ * condition that opens it, a card it cannot build, and no cards yet. Since #186: cards for a head (a clock, folded
+ * and open, the chevron beside it, at the foot, larger, on the page), the foot under a head of words, a card that
+ * opens another by its name, Home Assistant's cards that pad their own way, and see-through over a view's
+ * background.
  */
 export const sheet: SheetSpec = {
-  states: STATES,
+  states: [...STATES, ...EVENING],
+  ...(ambient.ws ? { ws: ambient.ws } : {}),
+  ...(calendar.api ? { api: calendar.api } : {}),
   frames: [
     { title: 'Garden · folded', cards: [garden()] },
     { title: 'Garden · open', cards: [garden({ expanded: true })] },
@@ -391,6 +441,98 @@ export const sheet: SheetSpec = {
     },
     // as the person left it, on this device: what the other frames switch off, so two looks at the sheet agree
     { title: 'Remembers', cards: [seldom({ title: 'Left open', remember: 'device' })] },
+    // cards for a head (#186): a clock where the title would stand, there while it is folded; the chevron a round
+    // of its own beside it
+    { title: 'Clock head · folded', cards: [today()] },
+    { title: 'Clock head · open', cards: [today({ expanded: true })] },
+    // the chevron at the foot: the clock has the head's whole width, and what folds it says so
+    {
+      title: 'Clock head · Show more',
+      cards: [today({ chevron_position: 'bottom' })],
+    },
+    {
+      title: 'Clock head · Show less',
+      cards: [today({ chevron_position: 'bottom', expanded: true, cards: [FORECAST] })],
+    },
+    // on a wall: the forecast and the days ahead side by side under the clock, the round a hand finds
+    {
+      title: 'Clock head · wall',
+      width: 760,
+      cards: [today({ expanded: true, columns: 2, chevron_size: 'large' })],
+    },
+    // no surface: the clock keeps its own, the round stands beside it on the page
+    {
+      title: 'Clock head · plain',
+      cards: [today({ style: 'plain' }), today({ style: 'plain', chevron_position: 'bottom' })],
+    },
+    // two tiles for a head, each on its own surface, and what folds them under them
+    {
+      title: 'Two tiles for a head',
+      cards: [
+        today({
+          style: 'plain',
+          columns: 2,
+          chevron_position: 'bottom',
+          head_cards: [
+            { ...CLOCK, variant: 'tile', weather: undefined },
+            { ...CLOCK, variant: 'tile' },
+          ],
+          cards: [FORECAST],
+        }),
+      ],
+    },
+    // the foot under a head of words, on its surface and on the page; open, it follows what it holds
+    {
+      title: 'A foot',
+      cards: [
+        garden({ chevron_position: 'bottom' }),
+        garden({ chevron_position: 'bottom', style: 'plain' }),
+        seldom({ chevron_position: 'bottom', expanded: true }),
+      ],
+    },
+    // in a section's halves the foot keeps its words while the column holds either of them, and its chevron alone
+    // says the same where it does not
+    {
+      title: 'Half pairs · foot',
+      heights: [152, 172],
+      cards: [
+        { ...garden({ chevron_position: 'bottom' }), cols: 6 },
+        { ...seldom({ chevron_position: 'bottom', chevron_size: 'large' }), cols: 6 },
+      ],
+    },
+    // a larger chevron, for a hand at a wall: the mark at either end, the round, the foot
+    {
+      title: 'Large chevron',
+      cards: [
+        garden({ chevron_size: 'large' }),
+        garden({ chevron_size: 'large', chevron_position: 'start' }),
+        garden({
+          chevron_size: 'large',
+          tap_action: { action: 'navigate', navigation_path: '/lovelace/garden' },
+        }),
+        garden({ chevron_size: 'large', chevron_position: 'bottom' }),
+      ],
+    },
+    // opened from another card: a tile that asks for it by its name, and the clock itself, which asks the expander
+    // that holds it; no chevron at all
+    {
+      title: 'Opened from another card',
+      cards: [
+        {
+          type: 'custom:fluvy-template-card',
+          name: 'Forecast',
+          secondary: 'Open it under the clock',
+          icon: 'cloudSun',
+          tap_action: ask({ id: 'forecast', action: 'toggle' }),
+        },
+        today({
+          id: 'forecast',
+          show_chevron: false,
+          head_cards: [{ ...CLOCK, tap_action: ask('toggle') }],
+          cards: [FORECAST],
+        }),
+      ],
+    },
     // Home Assistant's cards that do not pad by its 16 (#186): a heading's words and a picture in the column, a tile
     // in it on its own surface, as a tile of Fluvy's
     {

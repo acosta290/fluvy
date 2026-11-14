@@ -31,7 +31,13 @@ import {
 } from 'lit';
 
 import { HeadFit, NAME_FLOOR, type FittedHead } from '../energy/head.js';
-import { expanderHeight } from '../expander-family.js';
+import {
+  EXPANDER_COLUMN,
+  expanderColumns,
+  expanderGap,
+  expanderHeight,
+  expanderRound,
+} from '../expander-family.js';
 import { Card, type CardEditor } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { counted, onOfShort } from '../shared/counted.js';
@@ -43,8 +49,13 @@ const s = strings('expander');
 
 /** `card` (the default): one surface holds the head and the cards. `plain`: no surface, the cards keep theirs. */
 export type ExpanderStyle = 'card' | 'plain';
-/** Where the chevron stands in the head: at its end (the default), or at its start, before the circle. */
-export type ChevronPosition = 'end' | 'start';
+/**
+ * Where the chevron stands: at the head's end (the default), at its start, before the circle, or at the foot — a row
+ * under what it holds that says "Show more" and "Show less".
+ */
+export type ChevronPosition = 'end' | 'start' | 'bottom';
+/** The chevron as it is, or a larger one for a hand at a wall. */
+export type ChevronSize = 'regular' | 'large';
 
 export interface ExpanderCardConfig extends FluvyCardConfig {
   /** The head's title ("Expander" where none is written). */
@@ -53,6 +64,12 @@ export interface ExpanderCardConfig extends FluvyCardConfig {
   subtitle?: string;
   /** The cards it holds, as a stack's: any card, Fluvy's or not. */
   cards?: readonly LovelaceCardConfig[];
+  /**
+   * Cards that stand as its head (#186: a clock, a weather tile), in place of its circle, its title and its line:
+   * they stay while it is folded, each keeps its own taps, and what folds it is its chevron, a button beside them or
+   * the foot. `title` is then what that button is called.
+   */
+  head_cards?: readonly LovelaceCardConfig[];
   /** Open as the page loads (false: folded), until the person folds it or what was remembered says otherwise. */
   expanded?: boolean;
   /** Where the way a person left it is kept: this device (the default), the person on every device, or nowhere. */
@@ -66,6 +83,12 @@ export interface ExpanderCardConfig extends FluvyCardConfig {
   show_summary?: boolean;
   show_chevron?: boolean;
   chevron_position?: ChevronPosition;
+  chevron_size?: ChevronSize;
+  /**
+   * A name other cards open it by (#186): any card's `fire-dom-event` action that carries `fluvy_expander: { id,
+   * action }` opens, folds or toggles every expander in the page with that name.
+   */
+  id?: string;
   /**
    * Opens by itself when this starts to hold (a door open: `{ entity, state: on }`), and folds again when it no longer
    * does, unless a person touched it meanwhile.
@@ -81,29 +104,54 @@ export interface ExpanderCardConfig extends FluvyCardConfig {
 }
 
 export const STYLES: readonly ExpanderStyle[] = ['card', 'plain'];
-export const POSITIONS: readonly ChevronPosition[] = ['end', 'start'];
+export const POSITIONS: readonly ChevronPosition[] = ['end', 'start', 'bottom'];
+export const SIZES: readonly ChevronSize[] = ['regular', 'large'];
 
 /** The fold's motion and the chevron's turn, in ms: what the cards wait for before they leave the page. */
 const MOTION = 240;
 /** A card's padding: what one held by the surface turns out, so its column is the head's (`--fv-held-bleed`). */
 const PADDING = 20;
-/**
- * The room between the cards where the config says none: on the surface a card's own 20 and 20, a hairline between;
- * without one, a section's 16.
- */
-const GAP: Readonly<Record<ExpanderStyle, number>> = { card: 2 * PADDING, plain: 16 };
-/** The widest gap a config may ask for. */
-const GAP_MAX = 64;
-/** The narrowest a card stands beside another: half a phone's section, less what a narrow phone takes off it. */
-const COLUMN_MIN = 148;
 /** What the chevron takes of the head beside the titles: its 44 box less what it stands out of the column by. */
-const CHEVRON: Readonly<Record<ChevronPosition, number>> = { end: 36, start: 16 };
-/** The same as a round of its own, where the head's tap is another thing. */
-const ROUND = 44;
+const CHEVRON: Readonly<Record<'end' | 'start', number>> = { end: 36, start: 16 };
 /** The head's geometry (fluvy.css): its circle and the 12 after it (the smaller circle's 40), the 12 before what ends it. */
 const CIRCLE = 56;
 const CIRCLE_SMALL = 52;
 const HEAD_GAP = 12;
+
+/** The foot's chevron (20, 24 large) and the 4 between it and the words. */
+const FOOT_GLYPH: Readonly<Record<ChevronSize, number>> = { regular: 24, large: 28 };
+
+/** The event Home Assistant's `fire-dom-event` action sends, from any card: its detail is the action. */
+const ASK_EVENT = 'll-custom';
+
+/** What an action asks of an expander: which one (none: the one that holds the card), and what of it. */
+interface Ask {
+  readonly id: string;
+  readonly action: unknown;
+}
+
+const record = (value: unknown): Readonly<Record<string, unknown>> | undefined =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
+
+/** A name as a config or an action says it: a word or a number, trimmed; anything else names nothing. */
+const nameOf = (value: unknown): string =>
+  typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+
+/**
+ * What a `fire-dom-event` action asks of an expander, if anything: Fluvy's own `fluvy_expander: { id, action }` (or
+ * the action's word alone, `fluvy_expander: toggle`), or the expander-card's `expander-card: { data: {
+ * expander-card-id, action } }`, so the buttons of a dashboard that comes from it go on working.
+ */
+function askOf(detail: unknown): Ask | undefined {
+  const action = record(detail);
+  const own = action?.['fluvy_expander'];
+  // a word alone is what is asked of the expander that holds the card
+  if (typeof own === 'string') return { id: '', action: own };
+  const asked = record(own);
+  if (asked) return { id: nameOf(asked['id']), action: asked['action'] };
+  const theirs = record(record(action?.['expander-card'])?.['data']);
+  return theirs && { id: nameOf(theirs['expander-card-id']), action: theirs['action'] };
+}
 
 /** Whether a condition asks anything of the entity it names: one that asks nothing opens nothing. */
 const asks = (when: ShowWhen | undefined): when is ShowWhen =>
@@ -126,9 +174,14 @@ const asks = (when: ShowWhen | undefined): when is ShowWhen =>
  * over them, and are told nothing of the house until it opens again. How a person left it is remembered (`remember`:
  * this device, the person, or not at all); a condition may open it (`open_when`) and a clock fold it (`close_after`).
  * Every card hidden, it hides itself, as a stack does. In the editor's preview it is always open.
+ *
+ * Its head may be cards (`head_cards`, #186: a clock, a weather tile), in the page while it is and each with its own
+ * taps, the chevron a button beside them; the chevron may stand at the foot, a row that says "Show more" under what
+ * it holds (`chevron_position: bottom`), and be larger (`chevron_size`); and a card anywhere in the page opens, folds
+ * or toggles it by its name (`id`: `askOf`), a card it holds without one.
  */
 export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns: folded, its head. */
+  /** The card's height at a 360 column, for the automatic dashboard's columns: folded, its head and its foot. */
   static override layoutHeight(config: LovelaceCardConfig): number {
     return expanderHeight(config);
   }
@@ -145,8 +198,14 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
       .ex-card {
         padding-bottom: 0;
       }
-      .ex-card > .ex-head {
+      .ex-card > :is(.ex-head, .ex-heads) {
         margin-bottom: ${PADDING}px;
+      }
+      /* folding from the foot brings the head back under Home Assistant's header, its 16 of air over the surface */
+      :is(.ex-head, .ex-heads) {
+        scroll-margin-top: calc(
+          var(--header-height, 56px) + var(--safe-area-inset-top, 0px) + ${PADDING + 16}px
+        );
       }
       /* on its surface the head's button reaches the card's edges round the head: folded, the whole card is the tap,
          and a card a quarter of a section wide keeps its 44 */
@@ -154,8 +213,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         inset: -${PADDING}px;
         border-radius: var(--fluvy-radius-card);
       }
-      /* open, it ends square on the hairline its cards start under */
-      .ex-card.is-open > .ex-head .fv-card__tap::after {
+      /* open, it ends square on the hairline its cards start under; with a foot, on the foot's */
+      .ex-card:is(.is-open, .has-foot) > .ex-head .fv-card__tap::after {
         border-radius: var(--fluvy-radius-card) var(--fluvy-radius-card) 0 0;
       }
       /* no surface: the head on the page, in the ink the page's background asks for; what it holds keeps its own */
@@ -192,18 +251,55 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         width: 20px;
         height: 20px;
       }
-      /* down while folded, up while open: half a turn with the fold, as a mark or as a round of its own */
+      /* a larger one, for a hand at a wall: the mark's glyph 28 in the same box; the round 56 (a control's next
+         height) about the line the 44 stood on, its glyph 24 */
+      .ex-chevron--large svg {
+        width: 28px;
+        height: 28px;
+      }
+      .ex-round--large {
+        width: 56px;
+        height: 56px;
+        margin: -6px 0;
+      }
+      .ex-round--large svg {
+        width: 24px;
+        height: 24px;
+      }
+      /* down while folded, up while open: half a turn with the fold, as a mark, a round of its own or the foot's */
       .ex-turn svg {
         transform: rotate(90deg);
         transition: transform ${MOTION}ms var(--fv-ease);
       }
-      .is-open > .ex-head > .ex-turn svg {
+      .is-open .ex-turn svg {
         transform: rotate(-90deg);
       }
       @media (hover: hover) {
         .ex-head:has(.fv-card__tap:hover) > .ex-chevron {
           color: var(--fluvy-text);
         }
+      }
+      /* cards for a head: where its words would stand, in the columns and the room of the cards under them; what
+         folds it is a round beside them, on the line a card's head stands on (a card on the page keeps that its
+         padding under its edge), or the foot */
+      .ex-heads {
+        display: flex;
+        align-items: flex-start;
+        gap: ${HEAD_GAP}px;
+      }
+      .ex-heads > .ex-cards {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .ex-plain > .ex-heads > .fv-round {
+        margin-top: ${PADDING}px;
+      }
+      /* the larger round keeps to the 4 grid beside them: 4 over that line, and no taller a head for it */
+      .ex-heads > .ex-round--large {
+        margin: -4px 0 -8px;
+      }
+      .ex-plain > .ex-heads > .ex-round--large {
+        margin-top: ${PADDING - 4}px;
       }
       /* the fold: a row that grows from nothing to what it holds, clipped while it moves */
       .ex-body {
@@ -227,7 +323,7 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         grid-template-columns: repeat(var(--ex-columns), minmax(0, 1fr));
         gap: var(--ex-gap);
       }
-      .ex-plain .ex-cards {
+      .ex-plain .ex-clip > .ex-cards {
         padding-top: var(--ex-gap);
       }
       /* on the surface the fold reaches its edges, and what it holds stands in the head's column: a card of Fluvy's
@@ -236,8 +332,10 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
       .ex-card > .ex-body {
         margin: 0 -${PADDING}px;
       }
-      .ex-card .ex-cards {
+      .ex-card .ex-clip > .ex-cards {
         padding: calc(var(--ex-gap) / 2) ${PADDING}px ${PADDING}px;
+      }
+      .ex-card .ex-cards {
         --fv-held: none;
         --fv-held-bleed: -1;
         --ha-card-background: transparent;
@@ -248,7 +346,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         --fluvy-page-ink: initial;
         --fluvy-page-ink-2: initial;
       }
-      /* a hairline over each card, in the middle of the room above it: under the head, and between the cards */
+      /* a hairline over each card, in the middle of the room above it: under the head, and between the cards; none
+         over the first row of a head's cards, which the surface's edge is over */
       .ex-card ::slotted(*) {
         position: relative;
       }
@@ -260,6 +359,9 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         right: 0;
         height: 1px;
         background: var(--fluvy-border);
+      }
+      .ex-card ::slotted(.ex-first)::before {
+        content: none;
       }
       /* a card that is not Fluvy's keeps its own padding: turned out as far as that — Home Assistant's 16, as most
          have it, less above and below, where a header has less to give; what one of its own cards pads its content
@@ -284,6 +386,61 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
       .ex-empty {
         grid-column: 1 / -1;
         line-height: 20px;
+      }
+      /* the foot: what folds it, under what it holds — its words and the chevron, centred in a row of 44 (56 large)
+         in the secondary ink, the text's under the pointer; the surface's last row, under a hairline as each card's
+         (where the folded card's foot was); 8 under what stands on the page, in the page's ink */
+      .ex-foot {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        height: 44px;
+        border-radius: var(--fluvy-radius-control);
+        color: var(--fluvy-text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 20px;
+      }
+      .ex-foot svg {
+        width: 20px;
+        height: 20px;
+      }
+      .ex-foot--large {
+        height: 56px;
+        font-size: 15px;
+      }
+      .ex-foot--large svg {
+        width: 24px;
+        height: 24px;
+      }
+      .ex-card > .ex-foot::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--fluvy-border);
+      }
+      .ex-plain > .ex-foot {
+        margin-top: 8px;
+        color: var(--fluvy-page-ink-2, var(--fv-page-text-secondary));
+      }
+      /* pressed, its words dim as a head's do: a row the card's width does not shrink under the finger */
+      .ex-foot:active {
+        transform: none;
+        opacity: 0.7;
+      }
+      @media (hover: hover) {
+        .ex-foot:hover {
+          color: var(--fluvy-text);
+        }
+        .ex-plain > .ex-foot:hover {
+          color: var(--fluvy-page-ink, var(--fv-page-text));
+        }
       }
     `,
   ];
@@ -333,11 +490,34 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     };
   }
 
+  /** The expanders in the page that have a name: who the window's listener asks. */
+  private static readonly named = new Set<FluvyExpanderCard>();
+
+  /**
+   * A card somewhere in the page asks for an expander by its name: every one in the page with that name answers,
+   * as one — a toggle opens them all while any is folded. One listener on the window, where every card's event
+   * ends, there with the first named expander in the page and gone with the last. A name is only ever compared.
+   */
+  private static readonly onAsk = (event: Event): void => {
+    const ask = askOf((event as CustomEvent<unknown>).detail);
+    if (!ask?.id) return;
+    const group = [...FluvyExpanderCard.named].filter(
+      (card) => card.name === ask.id && !card.preview,
+    );
+    const folded = group.some((card) => !card.open_);
+    for (const card of group) card.answer(ask.action, folded);
+  };
+
   private readonly head = new HeadFit(this);
-  /** The cards as its config lists them, each one a card's config. */
+  /** The cards as its config lists them, each one a card's config: what it holds, and what stands as its head. */
   private cards: readonly LovelaceCardConfig[] = [];
+  private heads: readonly LovelaceCardConfig[] = [];
   /** The cards built, by the first opening; kept while it is folded, built anew when the config lists others. */
   private held: Held[] | undefined;
+  /** Its head's cards built, with the card: in the page while it is. */
+  private headed: Held[] | undefined;
+  /** The name other cards ask for it by (`id`); none: only the cards it holds can ask. */
+  private name = '';
   /** What it is remembered by, and how its config last said it starts (open or folded, and where that is kept). */
   private key = '';
   private stated = '';
@@ -353,8 +533,9 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
   private unfolding: number | undefined;
   private settling: number | undefined;
   private closing: number | undefined;
-  /** Its cards' rows in a masonry view, as they last said. */
+  /** Its rows in a masonry view, as its cards last said: what it holds, and its head (one, where that is words). */
   private rows = 0;
+  private headRows = 1;
 
   constructor() {
     super();
@@ -373,6 +554,7 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
   /** The house, handed on to the cards while they are in the page: every change, not only what the head watches. */
   override set hass(value: HomeAssistant | undefined) {
     super.hass = value;
+    for (const card of this.headed ?? []) card.hass(value);
     if (this.mounted_) for (const card of this.held ?? []) card.hass(value);
   }
 
@@ -385,16 +567,27 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
   /* ---------- the config ---------- */
 
   protected override prepare(config: ExpanderCardConfig): ExpanderCardConfig {
-    const { cards } = config;
-    if (cards !== undefined && !Array.isArray(cards))
-      throw new Error('fluvy-expander-card: "cards" must be a list of cards');
+    const { cards, head_cards: heads, id } = config;
+    for (const [key, list] of Object.entries({ cards, head_cards: heads }))
+      if (list !== undefined && !Array.isArray(list))
+        throw new Error(`fluvy-expander-card: "${key}" must be a list of cards`);
+    if (id != null && typeof id !== 'string' && typeof id !== 'number')
+      throw new Error('fluvy-expander-card: "id" must be a name');
     // other cards: those built leave, and the next opening (or this one, open) builds them
     if (JSON.stringify(cards ?? []) !== JSON.stringify(this.cards)) {
       this.cards = cards ?? [];
       this.leave();
       this.held = undefined;
     }
-    this.key = expanderKey(config, location.pathname);
+    // other cards for its head: those built leave, and the next frame builds them
+    if (JSON.stringify(heads ?? []) !== JSON.stringify(this.heads)) {
+      this.heads = heads ?? [];
+      for (const { element } of this.headed ?? []) element.remove();
+      this.headed = undefined;
+    }
+    this.name = nameOf(id);
+    this.list();
+    this.key = expanderKey(config, location.pathname, this.name);
     // how it starts: said anew by a config that starts it another way; any other change leaves it as it stands
     const stated = JSON.stringify([config.expanded === true, this.scope(config)]);
     if (stated !== this.stated) {
@@ -446,26 +639,35 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     return !this.plain;
   }
 
-  /** The room between its cards: the config's, on the 4 grid, else its style's. */
-  private gap(): number {
-    const asked = Number(this.config?.gap);
-    return Number.isFinite(asked) && this.config?.gap !== undefined
-      ? Math.min(GAP_MAX, Math.max(0, Math.round(asked / 4) * 4))
-      : GAP[this.plain ? 'plain' : 'card'];
+  /**
+   * Where its chevron stands, and whether it is the larger one. Beside cards for a head it is a round with a column of
+   * its own: where that would leave them less than a card's least width (half a section), it stands at the foot.
+   */
+  private get place(): ChevronPosition {
+    const config = this.config;
+    const asked = config?.chevron_position;
+    const narrow =
+      config !== undefined &&
+      this.heads.length > 0 &&
+      this.width - expanderRound(config) - HEAD_GAP < EXPANDER_COLUMN;
+    return asked === 'bottom' || narrow ? 'bottom' : asked === 'start' ? 'start' : 'end';
   }
 
-  /**
-   * Its cards side by side: as many as asked for while each stands `COLUMN_MIN` wide at least — on the surface, its
-   * column and the padding it turns out.
-   */
-  private columns(): number {
-    const asked = Math.min(4, Math.max(1, Math.round(Number(this.config?.columns)) || 1));
-    const gap = this.gap();
-    const out = this.plain ? 0 : 2 * PADDING;
-    const room = this.width - out;
-    let columns = asked;
-    while (columns > 1 && (room - (columns - 1) * gap) / columns + out < COLUMN_MIN) columns--;
-    return columns;
+  private get large(): boolean {
+    return this.config?.chevron_size === 'large';
+  }
+
+  /** The round that folds it beside the cards of its head, and the 12 before them: what their columns do not have. */
+  private get beside(): number {
+    const config = this.config;
+    return config && config.show_chevron !== false && this.place !== 'bottom'
+      ? expanderRound(config) + HEAD_GAP
+      : 0;
+  }
+
+  /** Its cards side by side, as many as its width holds (`expanderColumns`), less what stands `beside` them. */
+  private columns(beside = 0): number {
+    return this.config ? expanderColumns(this.config, this.width - beside) : 1;
   }
 
   /* ---------- open and folded ---------- */
@@ -502,6 +704,50 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     haptic(this, 'light');
     this.set(!this.open_, 'person');
   };
+
+  /**
+   * The foot folds it from under what it holds: its head is brought back into view, where the fold would leave the
+   * person looking at what came after the card.
+   */
+  private readonly toggleFoot = (): void => {
+    const fold = this.open_ && !this.preview;
+    this.toggle();
+    if (fold)
+      this.renderRoot
+        .querySelector('.ex-head, .ex-heads')
+        ?.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  };
+
+  /**
+   * What a card asks of it (`askOf`): to open, to fold, or — `toggle`, and any other word — to turn over from how it
+   * stands, or how its group does. It is the person's doing: remembered, and no longer its condition's to fold.
+   */
+  private answer(action: unknown, folded = !this.open_): void {
+    this.set(action === 'open' || (action !== 'close' && folded), 'person');
+  }
+
+  /**
+   * A card it holds asks without a name: it means the expander that holds it. Heard here and no further, so an
+   * expander round this one, and the window, hear nothing of it; an ask by name goes on to the window.
+   */
+  private readonly onOwnAsk = (event: Event): void => {
+    const ask = askOf((event as CustomEvent<unknown>).detail);
+    if (!ask || ask.id) return;
+    event.stopPropagation();
+    if (this.preview) return;
+    haptic(this, 'light');
+    this.answer(ask.action);
+  };
+
+  /** Listed by its name while it is in the page: the window's listener comes with the first, and goes with the last. */
+  private list(): void {
+    const named = FluvyExpanderCard.named;
+    if (this.isConnected && this.name) {
+      if (!named.size) window.addEventListener(ASK_EVENT, FluvyExpanderCard.onAsk);
+      named.add(this);
+    } else if (named.delete(this) && !named.size)
+      window.removeEventListener(ASK_EVENT, FluvyExpanderCard.onAsk);
+  }
 
   /** Its condition, asked as the house changes: it opens the card as it starts to hold, and folds what it opened. */
   private follow(): void {
@@ -559,24 +805,33 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
-    if (changed.has('preview')) for (const card of this.held ?? []) card.preview(this.preview);
+    if (changed.has('preview'))
+      for (const card of [...(this.headed ?? []), ...(this.held ?? [])]) card.preview(this.preview);
     if (changed.has('mounted_') || changed.has('config')) this.stand();
+    else if (changed.has('width')) this.rule();
     if (changed.has('open_') || changed.has('config') || changed.has('preview')) this.wind();
   }
 
-  /** Its cards into the page (built by the first opening, told the house as it is now), or out of it. */
+  /**
+   * Its cards into the page, each told the house as it is now: those of its head with the card, what it holds built
+   * by the first opening, and out of the page again while it is folded.
+   */
   private stand(): void {
-    if (!this.mounted_) {
-      this.leave();
-      return;
-    }
-    this.held ??= this.cards.map((config) => hold(config, this.rawHass, this.preview));
-    for (const card of this.held)
+    this.headed ??= this.heads.map((config) => {
+      const card = hold(config, this.rawHass, this.preview);
+      card.element.slot = 'head';
+      return card;
+    });
+    const held = this.mounted_
+      ? (this.held ??= this.cards.map((config) => hold(config, this.rawHass, this.preview)))
+      : [];
+    for (const card of [...this.headed, ...held])
       if (card.element.parentElement !== this) {
         card.hass(this.rawHass);
         this.append(card.element);
       }
-    this.gauge();
+    if (this.mounted_) this.gauge();
+    else this.leave();
   }
 
   private leave(): void {
@@ -586,11 +841,15 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
 
   /**
    * What follows from which cards show: every one hidden (by its conditions, or by itself), the card hides too, as a
-   * stack does — folded, they are not there to say, and the head shows; and their rows, for a masonry view.
+   * stack does — folded, they are not there to say, and the head shows, unless it is cards and they are all hidden;
+   * and their rows, for a masonry view.
    */
   private gauge(): void {
+    const heads = this.headed ?? [];
     const held = this.mounted_ ? (this.held ?? []) : [];
-    selfHide(this, held.length > 0 && held.every(({ element }) => element.hidden));
+    const gone = (cards: readonly Held[]): boolean => cards.every(({ element }) => element.hidden);
+    selfHide(this, heads.length ? gone(heads) && gone(held) : held.length > 0 && gone(held));
+    this.rule();
     // a card that cannot say its size is one row, as Home Assistant counts it
     const size = async (card: Held): Promise<number> => {
       try {
@@ -599,9 +858,19 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         return 1;
       }
     };
-    void Promise.all(held.map(size)).then((sizes) => {
-      this.rows = Math.ceil(sizes.reduce((sum, rows) => sum + rows, 0) / this.columns());
-    });
+    const rows = async (cards: readonly Held[], columns: number): Promise<number> =>
+      Math.ceil((await Promise.all(cards.map(size))).reduce((sum, own) => sum + own, 0) / columns);
+    void rows(held, this.columns()).then((own) => (this.rows = own));
+    if (heads.length)
+      void rows(heads, this.columns(this.beside)).then((own) => (this.headRows = own));
+    else this.headRows = 1;
+  }
+
+  /** The first row of its head's cards that show is marked: no hairline stands over it (the surface's edge does). */
+  private rule(): void {
+    let first = this.columns(this.beside);
+    for (const { element } of this.headed ?? [])
+      element.classList.toggle('ex-first', !element.hidden && first-- > 0);
   }
 
   /** A card it holds hid or showed itself: heard here, and said no further (the card says its own). */
@@ -614,12 +883,16 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener(VISIBILITY_EVENT, this.onVisibility);
+    this.addEventListener(ASK_EVENT, this.onOwnAsk);
+    this.list();
     if (this.hasUpdated) this.wind();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener(VISIBILITY_EVENT, this.onVisibility);
+    this.removeEventListener(ASK_EVENT, this.onOwnAsk);
+    this.list();
     window.clearTimeout(this.closing);
     this.closing = undefined;
     // a fold caught moving comes to rest at once: nothing waits on a card that left the page
@@ -636,7 +909,7 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
 
   /** A masonry view's rows: the head folded, the head and what it holds open. */
   override getCardSize(): number {
-    return 1 + (this.open ? this.rows : 0);
+    return this.headRows + (this.open ? this.rows : 0);
   }
 
   override getGridOptions(): LovelaceGridOptions {
@@ -646,14 +919,33 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
   /* ---------- render ---------- */
 
   /**
-   * The head: the card's button. A tap folds and unfolds (the default, and a toggle with nothing of its own to
-   * toggle); a tap that runs something else leaves the fold to the chevron, a button of its own then. A hold and a
-   * double tap are the person's to give, the tap waiting for a second only where a double tap is set (#179).
+   * The chevron as a button of its own, where the head is not the fold's: a round (44, 56 large; quiet on the card,
+   * the card's fill and hairline on the page) that says what it does and what it folds.
    */
-  private renderHead(open: boolean): TemplateResult {
+  private renderRound(open: boolean, said: string): TemplateResult {
+    return html`<button
+      class="fv-round fv-round--${this.plain ? 'on-page' : 'quiet'} ex-turn ${this.large ? 'ex-round--large' : ''}"
+      data-control
+      data-target
+      aria-label=${said}
+      aria-expanded=${open ? 'true' : 'false'}
+      aria-controls="cards"
+      title=${said}
+      @click=${this.toggle}
+    >
+      ${glyph('chevron')}
+    </button>`;
+  }
+
+  /**
+   * The head: the card's button. A tap folds and unfolds (the default, and a toggle with nothing of its own to
+   * toggle); a tap that runs something else leaves the fold to the chevron, a button of its own then (or to the
+   * foot). A hold and a double tap are the person's to give, the tap waiting for a second only where a double tap is
+   * set (#179).
+   */
+  private renderHead(open: boolean, title: string, said: string): TemplateResult {
     const config = this.config as ExpanderCardConfig;
     const hass = this.hass;
-    const title = config.title ?? s(hass, 'card');
     const tap = config.tap_action;
     const runs = tap !== undefined && actionRuns(tap);
     const folds = !runs && tap?.action !== 'none';
@@ -665,7 +957,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     );
     const onHold = actionRuns(config.hold_action) ? () => this.hold(undefined) : undefined;
     const press = Boolean(onTap ?? onHold);
-    const position: ChevronPosition = config.chevron_position === 'start' ? 'start' : 'end';
+    const place = this.place;
+    const start = place === 'start';
 
     // the line: the person's own words, then the count; a column too narrow lets the count go first, then shortens it
     const ids = config.show_summary === false ? [] : idsOf(config.entities);
@@ -683,9 +976,9 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         trailing,
       });
     // the chevron, a mark, gives way where the name would not keep its floor beside it (a quarter of a section): the
-    // name is what the head is; a round of its own is a control, and stays
-    const beside = folds ? CHEVRON[position] : ROUND;
-    let chevron = config.show_chevron !== false;
+    // name is what the head is; a round of its own is a control, and stays; at the foot it is no part of the head
+    const beside = place === 'bottom' ? 0 : folds ? CHEVRON[place] : expanderRound(config);
+    let chevron = config.show_chevron !== false && place !== 'bottom';
     let fitted = fit(chevron ? beside : 0);
     if (chevron && folds) {
       const circle = fitted.icon ? (fitted.small ? CIRCLE_SMALL : CIRCLE) : 0;
@@ -696,32 +989,24 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
       }
     }
 
-    const said = s(hass, open ? 'close' : 'open', { name: title });
     const mark = !chevron
       ? nothing
       : folds
-        ? html`<span class="ex-chevron ex-turn" aria-hidden="true">${glyph('chevron')}</span>`
-        : html`<button
-            class="fv-round fv-round--${this.plain ? 'on-page' : 'quiet'} ex-turn"
-            data-control
-            data-target
-            aria-label=${said}
-            aria-expanded=${open ? 'true' : 'false'}
-            aria-controls="cards"
-            title=${said}
-            @click=${this.toggle}
-          >
-            ${glyph('chevron')}
-          </button>`;
+        ? html`<span
+            class="ex-chevron ex-turn ${this.large ? 'ex-chevron--large' : ''}"
+            aria-hidden="true"
+            >${glyph('chevron')}</span
+          >`
+        : this.renderRound(open, said);
     return html`<div
-      class="fv-card__head ex-head ${onTap ? 'fv-card__head--tap' : ''} ${onHold ? 'fv-card__head--hold' : ''} ${position === 'start' ? 'ex-head--start' : ''}"
+      class="fv-card__head ex-head ${onTap ? 'fv-card__head--tap' : ''} ${onHold ? 'fv-card__head--hold' : ''} ${start ? 'ex-head--start' : ''}"
       data-accent=${this.accents.item(config.icon_color) ?? nothing}
       .fvHold=${onHold as PressTarget['fvHold']}
       @pointerdown=${press ? startPress : nothing}
       @contextmenu=${onHold ? preventMenu : nothing}
       @click=${press ? clickHead : nothing}
     >
-      ${position === 'start' ? mark : nothing}
+      ${start ? mark : nothing}
       ${
         fitted.icon
           ? ico(
@@ -756,22 +1041,81 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
             : nothing
         }
       </div>
-      ${position === 'end' ? mark : nothing}
+      ${start ? nothing : mark}
     </div>`;
   }
 
+  /**
+   * Cards for a head (`head_cards`): a group named by the title, in the columns and the room of the cards under it.
+   * It is no button — each card keeps its taps — so what folds it is the chevron as a round of its own, before the
+   * cards or after them, or the foot; with no chevron, a card that asks for it (`askOf`).
+   */
+  private renderHeadCards(open: boolean, title: string, said: string): TemplateResult {
+    const config = this.config as ExpanderCardConfig;
+    const beside = this.beside;
+    const round = beside ? this.renderRound(open, said) : nothing;
+    const start = this.place === 'start';
+    return html`<div class="ex-heads" role="group" aria-label=${title}>
+      ${start ? round : nothing}
+      <div
+        class="ex-cards"
+        style="--ex-columns:${this.columns(beside)};--ex-gap:${expanderGap(config)}px"
+      >
+        <slot name="head"></slot>
+      </div>
+      ${start ? nothing : round}
+    </div>`;
+  }
+
+  /**
+   * The foot (`chevron_position: bottom`): a second button of the fold under what it holds, which says what a tap
+   * will do — "Show more", "Show less" — beside the chevron. Where the column holds neither word beside it, the
+   * chevron alone says the same.
+   */
+  private renderFoot(open: boolean): TemplateResult {
+    const hass = this.hass;
+    const size: ChevronSize = this.large ? 'large' : 'regular';
+    const look = `ex-foot ${this.large ? 'ex-foot--large' : ''}`.trim();
+    const words = (key: 'more' | 'less'): number =>
+      this.head.ruler.width(`${look} > ex-foot__words`, s(hass, key));
+    const fits =
+      Math.max(words('more'), words('less')) + FOOT_GLYPH[size] <=
+      (this.plain ? this.width : this.contentWidth);
+    const said = s(hass, open ? 'less' : 'more');
+    return html`<button
+      class="${look} ex-turn"
+      data-control
+      data-target
+      aria-label=${fits ? nothing : said}
+      aria-expanded=${open ? 'true' : 'false'}
+      aria-controls="cards"
+      title=${fits ? nothing : said}
+      @click=${this.toggleFoot}
+    >
+      ${fits ? html`<span class="ex-foot__words">${said}</span>` : nothing}${glyph('chevron')}
+    </button>`;
+  }
+
   protected renderCard(): TemplateResult | typeof nothing {
-    if (!this.config) return nothing;
+    const config = this.config;
+    if (!config) return nothing;
     const open = this.open;
-    const state = `${this.unfolded_ ? 'is-open' : ''} ${this.rest_ ? 'is-rest' : ''}`;
-    const body = html`${this.renderHead(open)}
+    const title = config.title ?? s(this.hass, 'card');
+    const said = s(this.hass, open ? 'close' : 'open', { name: title });
+    const foot = config.show_chevron !== false && this.place === 'bottom';
+    const state = `${this.unfolded_ ? 'is-open' : ''} ${this.rest_ ? 'is-rest' : ''} ${foot ? 'has-foot' : ''}`;
+    const body = html`${
+        this.heads.length
+          ? this.renderHeadCards(open, title, said)
+          : this.renderHead(open, title, said)
+      }
       <div class="ex-body">
         <div class="ex-clip" id="cards" ?inert=${!open}>
           ${
             this.mounted_
               ? html`<div
                   class="ex-cards"
-                  style="--ex-columns:${this.columns()};--ex-gap:${this.gap()}px"
+                  style="--ex-columns:${this.columns()};--ex-gap:${expanderGap(config)}px"
                 >
                   <slot></slot>
                   ${
@@ -783,7 +1127,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
               : nothing
           }
         </div>
-      </div>`;
+      </div>
+      ${foot ? this.renderFoot(open) : nothing}`;
     return this.plain
       ? html`<div class="ex-plain ${state}" data-card>${body}</div>`
       : html`<article class="fv-card ex-card ${state}" data-card>${body}</article>`;
