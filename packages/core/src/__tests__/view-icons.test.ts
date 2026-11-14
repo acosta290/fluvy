@@ -231,6 +231,21 @@ describe('the icon a view’s name says', () => {
       ['Садівник Іван', undefined],
     ];
     expect(ukrainian.map(([t]) => named(t))).toEqual(ukrainian.map(([, icon]) => icon));
+    // a stem under four letters is a whole word: the hall (хол, зал) and the home (дім, дом) never inside a longer one
+    const short: ReadonlyArray<readonly [string, string | undefined]> = [
+      ['Хол', 'rooms'],
+      ['Хол 2', 'rooms'],
+      ['Хол_1', 'rooms'],
+      ['Холодильник', undefined],
+      ['Холостий хід', undefined],
+      ['Зал', 'rooms'],
+      ['Залізниця', undefined],
+      ['Дім', 'home'],
+      ['Дімка', undefined],
+      ['Дом', 'home'],
+      ['Доміно', undefined],
+    ];
+    expect(short.map(([t]) => named(t))).toEqual(short.map(([, icon]) => icon));
     // a name it does not know reads its path
     expect(named('Mi sitio', 'fotovoltaica')).toBe('sun');
     expect(named('Xyzzy', 'qwerty')).toBeUndefined();
