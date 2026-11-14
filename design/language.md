@@ -1027,11 +1027,14 @@ them.
 Charged · Exported, so no ribbon crosses another; the house's own ribbons leave 56 px under its bar, under its words,
 at 24 %; labels packed by their measured width (at the bar's start, else its end, else a second tier), 16 px apart.
 Since 1.21 (#190) the words keep their bars' order in every row: one tier where each stands at its bar's start or end;
-else the fewest tiers that keep each over its own bar (8 px of the bar under its words at least), filled left to
-right, each word at its bar's start, pushed right by the one before it and pulled left by what follows it on its tier,
-right-aligned where that leaves its bar on its right (a tier's last then ends where the column does), so a word never
-stands at the column's end over another's bar. A word under the pointer or the focus (every word is reached by the
-keyboard) lifts its bar and ribbons; the rest of the diagram rests at 45 % (200 ms, none under reduced motion).
+else the fewest tiers that keep each over its own bar (8 px of the bar under its words at least: each word a room, from
+its end 8 into its bar to its start 8 before the bar's end), each tier the longest run of words that fits its rooms,
+16 apart. In its tier a word stands at its bar's start, pushed right by the one before it and pulled left by what
+follows it; where that leaves one outside its room, the tier settles from the right, each word as near its bar's
+start as the next allows. A word pulled left of its bar is right-aligned toward it (a tier's last then ends where the
+column does), so a word never stands at the column's end over another's bar. A word under the pointer or the focus
+(every word is reached by the keyboard) lifts its bar and ribbons; the rest of the diagram rests at 45 % (200 ms,
+none under reduced motion).
 
 **Glyphs.** `tower` is the grid in every state (the head keeps the bolt), `generator` a fuel can, `swap` two opposed
 arrows (the balance), `oven`.

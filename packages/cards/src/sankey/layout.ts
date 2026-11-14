@@ -89,15 +89,18 @@ const down4 = (v: number): number => Math.floor(v / 4) * 4;
 const up4 = (v: number): number => Math.ceil(v / 4) * 4;
 
 /**
- * Packs a row's words in their bars' order, each leaning to its bar. One tier holds them where each stands at its
- * bar's start (on the 4 grid) or, right-aligned, at its end, 16 after the one before it; else they take the fewest
- * lines that keep every word over its bar (8 of the bar under its box, so none reads as a neighbour's), filled in
- * order, 16 apart: a word stands at its bar's start, pushed right by the one before it, pulled left by what follows it
- * on its line — and then right-aligned, toward its bar, where its box ends on the bar or is the line's last (which ends
- * where the column does). A word alone on its line stands as near its bar as the column lets it; a box wider than the
- * column is the column, read from its start (its name ends in an ellipsis). Half a column (`NARROW`) leans its words
- * to the column's start and end instead: a line's first at the start, its second at the end, a word alone at the end
- * where its bar stands in the right half.
+ * Packs a row's words in their bars' order, each leaning to its bar, on the 4 grid. One tier holds them where each
+ * stands at its bar's start or, right-aligned, at its end, 16 after the one before it. Else they take the fewest tiers
+ * that keep every word over its bar: each word has its room, from its end 8 into its bar to its start 8 before the
+ * bar's end (half of a bar narrower than 16), inside the column; a tier takes the longest run of words that fit their
+ * rooms placed leftmost, 16 apart (so the fewest tiers in order). In its tier a word stands at its bar's start, pushed
+ * right by the one before it and pulled left by what follows it, where that keeps every word in its room; else the
+ * tier settles from the right, each word as near its bar's start as the next one lets it. A word pulled left of its bar
+ * is right-aligned, toward it, where its box ends on the bar or it is the tier's last (which ends where the column
+ * does). A box wider than the column is the column, read from its start (its name ends in an ellipsis). Half a column
+ * (`NARROW`) leans its words to the column's start and end instead: two
+ * a tier at most, the first at the start, the second at the end, a word alone at the end where its bar stands in the
+ * right half.
  */
 export function packLabels(
   row: readonly LaidNode[],
@@ -126,50 +129,79 @@ export function packLabels(
   }
   if (tier.length === row.length) return tier;
 
-  /** A line's boxes, and whether they all stand inside the column, each over its bar (in half a column, two at most). */
-  const lay = (line: readonly number[], t: number) => {
-    // what a word and those after it on its line take: each box on the grid and 16 after the one before
-    let rest = line.reduce(
-      (sum, i, k) => sum + (k < line.length - 1 ? up4(lw[i] as number) + APART : (lw[i] as number)),
-      0,
-    );
-    let cursor = 0;
-    let over = !narrow || line.length < 3;
-    const boxes = line.map((i, k) => {
+  /** A word at `x` on tier `t`; one right-aligned that is its tier's last ends where the column does. */
+  const label = (i: number, x: number, t: number, end: boolean, last: boolean) => {
+    const w = lw[i] as number;
+    return { key: (row[i] as LaidNode).key, x, w: end && last ? width - x : w, tier: t, end };
+  };
+  const out: Omit<LaidLabel, 'y'>[] = [];
+  if (narrow) {
+    for (let i = 0, t = 0; i < row.length; t++) {
       const n = row[i] as LaidNode;
       const w = lw[i] as number;
-      const lean = narrow
-        ? k || (line.length < 2 && n.x + n.w / 2 > width / 2)
-          ? width
-          : 0
-        : down4(n.x);
-      const x = Math.max(cursor, Math.min(lean, down4(width - rest)));
-      const last = k === line.length - 1;
-      // over its bar: 8 of it under the box at least (half of a bar narrower than 16)
-      over &&=
-        x + w <= width &&
-        (narrow || Math.min(x + w, n.x + n.w) - Math.max(x, n.x) >= Math.min(8, n.w / 2));
-      cursor = x + up4(w) + APART;
-      rest -= up4(w) + APART;
-      // right-aligned where it was pulled left of its bar: toward it, where its box ends on the bar or the column's end
-      const end = w < width && (narrow ? lean > 0 : x < lean && (last || x + w <= n.x + n.w));
-      return {
-        key: n.key,
-        x,
-        w: end && last ? width - x : w,
-        tier: t,
-        end,
+      const atEnd = (k: number): Omit<LaidLabel, 'y'> => {
+        const x = Math.max(0, down4(width - (lw[k] as number)));
+        return label(k, x, t, x > 0, true);
       };
-    });
-    return { boxes, over };
-  };
-  const lines: number[][] = [];
-  for (const i of row.keys()) {
-    const line = lines.at(-1);
-    if (line && lay([...line, i], 0).over) line.push(i);
-    else lines.push([i]);
+      if (i + 1 < row.length && up4(w) + APART + (lw[i + 1] as number) <= width) {
+        out.push(label(i, 0, t, false, false), atEnd(i + 1));
+        i += 2;
+      } else {
+        out.push(n.x + n.w / 2 > width / 2 ? atEnd(i) : label(i, 0, t, false, true));
+        i += 1;
+      }
+    }
+    return out;
   }
-  return lines.flatMap((line, t) => lay(line, t).boxes);
+  // each word's room on the grid: 8 of its bar under its box at least, inside the column
+  const hi = row.map((n, i) =>
+    Math.max(0, down4(Math.min(n.x + n.w - Math.min(8, n.w / 2), width - (lw[i] as number)))),
+  );
+  const lo = row.map((n, i) =>
+    Math.min(up4(Math.max(0, n.x + Math.min(8, n.w / 2) - (lw[i] as number))), hi[i] as number),
+  );
+  for (let i = 0, t = 0; i < row.length; t++) {
+    // the longest run that fits its rooms, each word placed leftmost
+    const left = [lo[i] as number];
+    let j = i + 1;
+    for (; j < row.length; j++) {
+      const x = Math.max(
+        lo[j] as number,
+        (left.at(-1) as number) + up4(lw[j - 1] as number) + APART,
+      );
+      if (x > (hi[j] as number)) break;
+      left.push(x);
+    }
+    // each at its bar's start, pushed right by the one before it and pulled left by what follows it on its tier
+    // (what a word and those after it take: each box on the grid and 16 after the one before) ...
+    const placed: number[] = [];
+    let rest = lw[j - 1] as number;
+    for (let k = i; k < j - 1; k++) rest += up4(lw[k] as number) + APART;
+    for (let k = i, cursor = 0; k < j; k++) {
+      const x = Math.max(cursor, Math.min(down4((row[k] as LaidNode).x), down4(width - rest)));
+      placed.push(x);
+      cursor = x + up4(lw[k] as number) + APART;
+      rest -= up4(lw[k] as number) + APART;
+    }
+    // ... a tier that fits its rooms so stands so; else its words settle from the right, each as near its bar's start
+    // as the next one lets it, never left of where the run fits
+    const fits = placed.every((x, k) => x >= (lo[i + k] as number) && x <= (hi[i + k] as number));
+    let next = Infinity;
+    for (let k = j - 1; k >= i; k--) {
+      const n = row[k] as LaidNode;
+      const w = lw[k] as number;
+      const lean = down4(n.x);
+      const x = Math.max(
+        left[k - i] as number,
+        Math.min(fits ? (placed[k - i] as number) : lean, hi[k] as number, next - APART - up4(w)),
+      );
+      const last = k === j - 1;
+      out[k] = label(k, x, t, w < width && x < lean && (last || x + w <= n.x + n.w), last);
+      next = x;
+    }
+    i = j;
+  }
+  return out;
 }
 
 const tiersOf = (labels: readonly Omit<LaidLabel, 'y'>[]): number =>

@@ -379,19 +379,37 @@ describe('the words in their bars’ order, leaning to their bars (#190)', () =>
     const words = (key: string): number =>
       ({ 'device:0': 54, 'device:1': 86, 'device:2': 55, 'device:3': 86, unmeasured: 100 })[key] ??
       measure(key);
+    /** The devices' tiers at a column, each word with 8 of its bar under it. */
+    const at = (width: number): string[][] => {
+      const g = layoutSankey(rooms, width, words);
+      inOrder(g);
+      for (const l of g.labels.filter((label) => label.key.startsWith('device:'))) {
+        const bar = g.kids.find((n) => n.key === l.key) as LaidNode;
+        if (width >= 200)
+          expect(
+            Math.min(l.x + l.w, bar.x + bar.w) - Math.max(l.x, bar.x),
+            l.key,
+          ).toBeGreaterThanOrEqual(8);
+      }
+      return tiers(g, g.kids);
+    };
+    // 1.20 drew North room at the column's end, right of Studio, and three tiers read as a pile; here Studio stands
+    // right-aligned to its bar and South room beside it
+    expect(at(272)).toEqual([['device:0', 'device:1'], ['device:2', 'device:3'], ['unmeasured']]);
     const g = layoutSankey(rooms, 272, words);
-    inOrder(g);
-    // 1.20 drew North room at the column's end, right of Studio, and three tiers read as a pile
-    expect(tiers(g, g.kids)).toEqual([
-      ['device:0', 'device:1'],
+    expect(g.labels.find((l) => l.key === 'device:2')).toMatchObject({ x: 76, end: true });
+    // at 125 % Boiler and North room cannot share a tier: North room must start by 68 (8 before its bar's end at 78.7,
+    // on the grid) and after Boiler by 72 (56 and 16); North room and Studio neither (Studio by 96, after North room by
+    // 104): four tiers, the fewest the rule allows
+    expect(at(200)).toEqual([['device:0'], ['device:1'], ['device:2', 'device:3'], ['unmeasured']]);
+    // at 150 % no two neighbours fit 152 side by side, 16 apart (56 + 16 + 86, 88 + 16 + 55, 56 + 16 + 86, 88 + 16 + 100)
+    expect(at(152)).toEqual([
+      ['device:0'],
+      ['device:1'],
       ['device:2'],
       ['device:3'],
       ['unmeasured'],
     ]);
-    for (const l of g.labels.filter((label) => label.key.startsWith('device:'))) {
-      const bar = g.kids.find((n) => n.key === l.key) as LaidNode;
-      expect(l.x <= bar.x + bar.w && l.x + l.w >= bar.x, l.key).toBe(true);
-    }
   });
 
   it('125 % (200) and 150 % (152) take the fewest tiers that keep each word over its bar', () => {
