@@ -709,10 +709,37 @@ describe('Customise (#170)', () => {
     const row = await m.unfold(taken);
     expect(
       [...row.querySelectorAll('.fv-action')].map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Move to the top', 'Move up', 'Move down', 'Move to the bottom', 'Remove']);
+    ).toEqual([
+      'Move to the top',
+      'Move up',
+      'Move down',
+      'Move to the bottom',
+      'Options',
+      'Remove',
+    ]);
     await m.act(row, 'Move to the top');
     expect(m.parts()[0]).toBe(taken);
     expect(m.edit()!['cards']).toEqual({ [taken]: { order: 0 } });
+    // its options here are its own: a name on this view, the room's card on the Rooms view as it was
+    await m.act(m.part(taken)!, 'Options');
+    await m.until(() => m.root.querySelector('dialog.cz-dialog fluvy-rows-editor'));
+    const editor = m.root.querySelector('dialog.cz-dialog fluvy-rows-editor') as FluvyRowsEditor;
+    await m.until(() => editor.shadowRoot?.querySelector('ha-form'));
+    expect(cardForm(editor).data['area']).toBe('kitchen');
+    cardForm(editor).change('name', 'Cook here');
+    await m.settle(2);
+    expect(m.edit()!['cards']).toEqual({ [taken]: { order: 0, options: { name: 'Cook here' } } });
+    expect(text(taken, 'fv-row__sub')).toBe('Edited · From Rooms');
+    // the sheet's Reset takes them away again, its place stays
+    [...m.root.querySelectorAll<HTMLButtonElement>('dialog.cz-dialog .cz-pair .fv-btn')]
+      .find((button) => button.textContent?.trim() === 'Reset')!
+      .click();
+    await m.settle(2);
+    expect(m.edit()!['cards']).toEqual({ [taken]: { order: 0 } });
+    [...m.root.querySelectorAll<HTMLButtonElement>('dialog.cz-dialog .cz-pair .fv-btn')]
+      .find((button) => button.textContent?.trim() === 'Done')!
+      .click();
+    await m.until(() => !m.root.querySelector('dialog.cz-dialog'));
     // offered once: what is shown here is not offered again
     const b = await adding(m);
     await b.search('kitchen');

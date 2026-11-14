@@ -167,7 +167,8 @@ export const customiseStyles = css`
   .sortable-chosen > .fv-row--tap:active {
     opacity: 1;
   }
-  .sortable-chosen::before,
+  .cz-part.sortable-chosen::before,
+  .cz-item.sortable-chosen::before,
   .sortable-chosen + .cz-part::before,
   .sortable-chosen + .cz-item::before {
     content: none;

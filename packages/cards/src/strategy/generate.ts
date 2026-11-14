@@ -4,7 +4,7 @@ import type { HomeAssistant } from '@fluvy/core';
 import { APPLIANCES_PATH, applianceSections, appliancesView } from './appliances.js';
 import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
-import { arranged, editOf, pinned } from './edit.js';
+import { arranged, editOf, pinned, tuned } from './edit.js';
 import { roomSections, roomView } from './rooms.js';
 import { HOME_TEMPLATE, templateOf, viewsOf, type Template } from './templates.js';
 import type {
@@ -95,17 +95,19 @@ export async function generateWith(
   /**
    * The parts of other views a view shows as well (`edit.views.<path>.also`), each under its id there (`also:<id>`):
    * its own view is built again on a host of its own, where the part shows whatever the person did with it there,
-   * and its cards are taken from that. One the dashboard does not have (a room that was deleted, an id of the view
-   * itself) is a part without cards: it keeps its place and draws nothing.
+   * and its cards are taken from that, with the options the person gave it here over them (a title of its own on
+   * this view). One the dashboard does not have (a room that was deleted, an id of the view itself) is a part without
+   * cards: it keeps its place and draws nothing.
    */
   const takenBy = (path: string, title: string, icon: string): Part[] => {
     const also = edit.views?.[path]?.also;
     const ids = Array.isArray(also) ? also.filter((id) => typeof id === 'string') : [];
     return [...new Set<string>(ids)].map((id) => {
+      const part = `also:${id}`;
       const cut = id.indexOf('/');
       const from = id.slice(0, cut);
       const source = from === path ? undefined : (sources ??= sourcesOf(template, ctx)).get(from);
-      if (!source) return { id: `also:${id}`, cards: [] };
+      if (!source) return { id: part, cards: [] };
       const more = moreHost(from, source.title, source.icon, template.columns, showing(edit, id), {
         on: { path, title, icon },
       });
@@ -116,7 +118,8 @@ export async function generateWith(
           cards.some((card) => card['more_path'] === `${ctx.base}/${view.path}`),
         ),
       );
-      return { id: `also:${id}`, cards };
+      const own = edit.cards?.[`${path}/${part}`]?.options;
+      return { id: part, cards: cards.map((card) => tuned(cards, card, own)) };
     });
   };
   /** A view's host: what it is built on, kept for whoever asked for them. */

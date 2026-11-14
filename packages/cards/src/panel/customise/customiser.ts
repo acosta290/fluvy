@@ -1083,10 +1083,12 @@ export class Customiser {
     const added = own || part.kind === 'also';
     const said = taken?.part ?? part;
     const hidden = !added && hiddenBy(edit.cards?.[part.id], part.off);
-    const changed =
-      !added &&
-      (Object.keys(edit.cards ?? {}).some((id) => id === part.id || id.startsWith(`${part.id}:`)) ||
-        edit.entities?.[part.id] !== undefined);
+    // one taken from another view is edited once it has options of its own here; its place alone is no edit of it
+    const changed = added
+      ? edit.cards?.[part.id]?.options !== undefined
+      : Object.keys(edit.cards ?? {}).some(
+          (id) => id === part.id || id.startsWith(`${part.id}:`),
+        ) || edit.entities?.[part.id] !== undefined;
     const { title, kind, name } = this.wordsOf(said, ctx);
     const symbol = iconOf(said, ctx.hass);
     const list = part.list;
@@ -1111,13 +1113,17 @@ export class Customiser {
       .join(' · ');
     const open = this.openPart === part.id;
     const at = seen.indexOf(part.id);
-    const { card } = part;
-    // a card's own form: the house's parts but a list no key of its card holds; of the person's own, Fluvy's cards
+    // the card its form opens on: one taken from another view as that view shows it, with its options there
+    const card =
+      taken && part.card ? withOptions(part.card, edit.cards?.[taken.part.id]?.options) : part.card;
+    // a card's own form: the house's parts but a list no key of its card holds (the list is its own view's to
+    // edit); of the person's own, Fluvy's cards
+    const held = said.list;
     const tunes =
       card !== undefined &&
       (own
         ? /^custom:fluvy-/.test(card.type) && customElements.get(card.type.slice(7)) !== undefined
-        : !taken && (!list || listKey(card, list) !== undefined));
+        : !held || listKey(card, held) !== undefined);
     const armed = this.armed === part.id;
     const items: ActionItem[] = [
       ...this.moves(ctx, at, seen.length),
@@ -1139,7 +1145,7 @@ export class Customiser {
         this.moved = { part: part.id, at: MOVES.indexOf(key) };
         place(part.id, placeOf(key, at, seen.length));
       } else if (key === 'options' && card) {
-        const key = listKey(card, list);
+        const key = listKey(card, held);
         if (own) this.openOwn(view, Number(part.id.split(':').pop()), card, symbol);
         else this.openOptions(part.id, title, symbol, card, key ? [key] : []);
       } else if (key === 'remove') {

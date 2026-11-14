@@ -77,6 +77,16 @@ export function withOptions(card: Card, options: unknown): Card {
 }
 
 /**
+ * One of a part's cards (`cards`: all of them) with the part's options over it, where it is one of the part's own:
+ * a heading and a "N more" row that ride with them are of another type than the first card that is no heading, and
+ * stay as they are.
+ */
+export function tuned(cards: readonly Card[], card: Card, options: unknown): Card {
+  const main = (cards.find((other) => other.type !== HEADING) ?? cards[0])?.type;
+  return card.type === main ? withOptions(card, options) : card;
+}
+
+/**
  * The cards of one part of the view being built, under its id: none while the person hides it — or, for a part that
  * starts hidden (`off`), until they show it — else each with their options — the part's over its own cards (all but a
  * heading and a "N more" row that ride with them), then a card's own where it draws one entity, room or device of a
@@ -98,11 +108,10 @@ export function part<T extends Card | readonly Card[]>(
     return [];
   }
   const cards = pieces.flat() as Card[];
-  const main = (cards.find((card) => card.type !== HEADING) ?? cards[0])?.type;
   const dressed = (card: Card): Card => {
     const subject = card['entity'] ?? card['area'] ?? card['device'];
     const next = withOptions(
-      card.type === main ? withOptions(card, own?.options) : card,
+      tuned(cards, card, own?.options),
       typeof subject === 'string' ? cardEdit(host, `${id}:${subject}`)?.options : undefined,
     );
     PARTS.set(next, id);

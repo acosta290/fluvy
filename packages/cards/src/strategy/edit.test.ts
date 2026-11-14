@@ -666,6 +666,32 @@ describe('a dashboard’s `edit` (#170)', () => {
       expect(card!['title']).toBe('Cook');
       expect(card!['scenes']).toHaveLength(3);
       expect(of('room-kitchen', 'scenes')).toEqual([card]);
+      // options of its own where it was taken: over its own view's, and never on its own view
+      const named = await built(
+        'home',
+        {
+          views: { home: { also: [KITCHEN, BEDROOM] } },
+          cards: {
+            [KITCHEN]: { options: { title: 'Cook', columns: 3 } },
+            [`home/also:${KITCHEN}`]: { options: { title: 'Kitchen', type: 'custom:other' } },
+            [`home/also:${BEDROOM}`]: { options: { title: 'Upstairs' } },
+          },
+        },
+        more,
+      );
+      expect(named.of('home', `also:${KITCHEN}`)[0]).toEqual({
+        ...card,
+        title: 'Kitchen',
+        columns: 3,
+      });
+      expect(named.of('room-kitchen', 'scenes')[0]!['title']).toBe('Cook');
+      // a list's own cards take them, the heading that rides with them does not
+      const lights = named.of('home', `also:${BEDROOM}`);
+      const [heading, ...own] = lights;
+      expect(heading!['type']).toBe('custom:fluvy-heading-card');
+      expect(heading!['title']).not.toBe('Upstairs');
+      expect(own[0]!['title']).toBe('Upstairs');
+      expect(named.of('room-bedroom', 'lights').some((c) => c['title'] === 'Upstairs')).toBe(false);
     });
 
     it('moves it: hidden on its own view, it shows where it was taken', async () => {

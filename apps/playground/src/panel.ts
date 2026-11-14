@@ -379,13 +379,13 @@ const PENDING_EDIT = {
 
 /**
  * A command centre on Home (#188): the kitchen's and the living room's scenes shown there as well, read first and
- * second, each still its room's own card.
+ * second, each still its room's own card and titled here after its room.
  */
 const CENTRE_EDIT = {
   views: { home: { also: ['room-kitchen/scenes', 'room-living_room/scenes'] } },
   cards: {
-    'home/also:room-kitchen/scenes': { order: 0 },
-    'home/also:room-living_room/scenes': { order: 1 },
+    'home/also:room-kitchen/scenes': { order: 0, options: { title: 'Kitchen' } },
+    'home/also:room-living_room/scenes': { order: 1, options: { title: 'Living room' } },
   },
 };
 
