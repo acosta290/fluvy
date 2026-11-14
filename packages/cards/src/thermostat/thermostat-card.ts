@@ -20,7 +20,6 @@ import {
   options,
   readout,
   rulerLabels,
-  sheetStyles,
   stepper,
   type DialArc,
   type DialChangeDetail,
@@ -30,7 +29,11 @@ import {
   type Tone,
 } from '@fluvy/ui';
 
+import { climateStyles } from '@fluvy/ui/styles/climate';
+
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
+
+import { DEFAULT_MODES, SHOWN, thermostatHeight } from '../climate-family.js';
 
 import { Card, type CardEditor, type ControlHost } from '../shared/base.js';
 
@@ -42,7 +45,6 @@ import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import type { WhenOff } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
-import { chipBlock, chipRows, optionBlock, optionRows } from '../shared/heights.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
@@ -138,10 +140,6 @@ const MODE_TONE: Record<string, Tone> = {
 };
 /** A climate's modes, in Home Assistant's order: the card draws them so, and has a word for each. */
 export const MODE_ORDER = ['off', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'];
-/** Unless the config lists its own, a water heater shows its first six operations, a humidifier Off and five modes. */
-const SHOWN = 6;
-/** The modes a thermostat is counted with where the house is not there to say (a missing one draws these). */
-const DEFAULT_MODES = ['off', 'heat', 'cool'];
 /** A climate's `supported_features` bit for a low and a high end. */
 const TARGET_RANGE = 2;
 
@@ -182,59 +180,6 @@ export function modeOrder(view: EntityView): string[] {
 /** The modes drawn where the config lists none: a climate's all, a water heater's and a humidifier's first six. */
 export const defaultModes = <T>(climate: boolean, modes: readonly T[]): T[] =>
   climate ? [...modes] : modes.slice(0, SHOWN);
-
-/** What a thermostat offers as the house describes it: its modes, presets and fan speeds, a range (a low, a high). */
-export interface ThermostatOffers {
-  readonly modes: readonly string[];
-  readonly presets: readonly string[];
-  readonly fans: readonly string[];
-  readonly range: boolean;
-}
-/** Where the house is not there to say, or has not described the entity: Off · Heat · Cool, nothing more. */
-const UNDESCRIBED: ThermostatOffers = { modes: DEFAULT_MODES, presets: [], fans: [], range: false };
-
-/**
- * The card's height at a 360 column, for the automatic dashboard's columns: the head and the dial (a dial without
- * its stepper is 56 shorter), the readout and its ruler (two rulers for a range), then the modes under their label —
- * tiles in rows of 84 (three a row, two where a word is long: `optionRows`), chips in rows of 44 — and the presets and
- * the fan speeds as rows of chips, each under its label. The modes are the config's, else what the entity offers as
- * the house describes it (`house-heights.ts`); the presets and the fan speeds are the entity's. A card that keeps to
- * the essentials while off is reserved its height when on.
- */
-export function thermostatHeight(
-  config: ThermostatCardConfig,
-  offers: ThermostatOffers = UNDESCRIBED,
-): number {
-  const id = config.entity;
-  const domain = typeof id === 'string' ? id.slice(0, id.indexOf('.')) : 'climate';
-  // a range (its low and its high) draws the ruler twice: 96 more (the bubble row goes, each ruler keeps its label)
-  const height =
-    config.variant === 'compact'
-      ? 164
-      : config.variant === 'ruler'
-        ? 268 + (offers.range ? 96 : 0)
-        : config.show_stepper === false
-          ? 300
-          : 356;
-  const shown = config.modes?.length
-    ? config.modes.filter((m) => offers.modes.includes(m === '__off' ? 'off' : m))
-    : domain === 'climate'
-      ? offers.modes
-      : offers.modes.slice(0, SHOWN);
-  const words = shown.map((m) => pretty(m.replace('_', '/')));
-  const chips = (items: readonly string[], style: string | undefined): number =>
-    chipBlock(chipRows(items, style === 'chips' ? 'chips' : 'full'), style);
-  const modes =
-    config.show_modes === false || !shown.length
-      ? 0
-      : (config.modes_style ?? 'tiles') === 'tiles'
-        ? optionBlock(optionRows(words))
-        : chips(words, config.modes_style);
-  const presets =
-    config.show_presets === false ? 0 : chips(offers.presets.map(pretty), config.preset_style);
-  const fans = config.show_fan === false ? 0 : chips(offers.fans.map(pretty), config.fan_style);
-  return height + modes + presets + fans;
-}
 
 /**
  * A mode's word, the same on the card and in its editor: Fluvy's for a climate's seven and for Off; else Home
@@ -314,7 +259,7 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
   const modes =
     offered.length || view.stateObj || view.domain !== 'climate'
       ? offered
-      : (host.modes ?? ['off', 'heat', 'cool']);
+      : (host.modes ?? DEFAULT_MODES);
   const word = (m: string): string => modeLabel(host.rawHass, view, m);
   // a mode's setpoint from when it last ran ("Cool · 24°"), while the device can be read
   const recall = (m: string): string => (view.status === 'ok' ? recallSetpoint(view.id, m) : '');
@@ -547,7 +492,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
-    sheetStyles.climate,
+    climateStyles,
     css`
       .fv-options {
         row-gap: 4px;

@@ -122,6 +122,9 @@ const BUDGETS = {
   'vacuum-drive': 8192,
   // the ring (1.20): the disc of four arrows round a middle key the TV remote and the drive pad both draw
   ring: 4096,
+  // the Thermostat card (1.21, 2026-11-14: it left core, 4.9 KB of what every page loads): the climate's, the water
+  // heater's and the humidifier's card and its rules; measured at 5.6 KB
+  climate: 8192,
   // the TV remote card (1.18, #143): the card, its keys and the integrations' commands for them, the platforms it
   // knows by name, its English; its editor goes with the forms. Measured at 11.2 KB
   remote: 16_384,
@@ -182,7 +185,9 @@ const BUDGETS = {
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
   // what only the chunks fetched later share (1.20: it left core, 1.9 KB of what every page loads): the local dates
-  // and the month grid, the ticker, a sheet's laid width, a name's plain letters; measured at 2.3 KB
+  // and the month grid, the ticker, a sheet's laid width, a name's plain letters, and since 1.21 a person's own
+  // picture in a head's circle (the Thermostat card left core, and nothing every page runs reads one); measured at
+  // 2.9 KB
   shared: 4096,
   // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,
   // sources, layers, CSV and chrome's sheet. 12 KB since 1.10 (those left core, 2.3 KB; the sources in 1.13): 8 before

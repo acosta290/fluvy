@@ -10,6 +10,7 @@ import {
 } from '@fluvy/core';
 import { applianceHouseHeight } from './appliance/appliance-card.js';
 import { appliancesHouseHeight } from './appliance/appliances-card.js';
+import { thermostatHeight } from './climate-family.js';
 import { clockHeight, type ClockCardConfig } from './clock/clock-card.js';
 import { offersDaily } from './clock/sky.js';
 import { coverHeight, type CoverCardConfig } from './cover/cover-card.js';
@@ -35,7 +36,7 @@ import { normaliseExtras } from './sensor/series.js';
 import { COLOURED, dims } from './shared/light.js';
 import type { NameOf } from './shared/heights.js';
 import { statTilesHeight, type StatTilesCardConfig } from './stat-tiles/stat-tiles-card.js';
-import { thermostatHeight, type ThermostatCardConfig } from './thermostat/thermostat-card.js';
+import type { ThermostatCardConfig } from './thermostat/thermostat-card.js';
 import { updatesHeight, type UpdatesCardConfig } from './updates/updates-card.js';
 import { vacuumHeight } from './vacuum-family.js';
 import type { VacuumCardConfig } from './vacuum/vacuum-card.js';

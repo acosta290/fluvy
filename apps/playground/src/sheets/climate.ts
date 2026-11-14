@@ -1,5 +1,10 @@
+import { FluvyThermostatCard } from '../../../../packages/cards/src/thermostat/thermostat-card.js';
 import { CLIMATE, speakingAttributes } from '../attribute-words.js';
 import type { SheetSpec } from '../scenes.js';
+
+// its chunk lands after the page has drawn: the sheet defines the card from its module, as the vacuum sheet does
+if (!customElements.get('fluvy-thermostat-card'))
+  customElements.define('fluvy-thermostat-card', FluvyThermostatCard);
 
 const THERMO = {
   min_temp: 15,

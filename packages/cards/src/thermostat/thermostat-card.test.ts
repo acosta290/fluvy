@@ -7,7 +7,7 @@ import {
   type HomeAssistant,
   type LovelaceCardConfig,
 } from '@fluvy/core';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import {
   FluvyThermostatCard,
@@ -18,8 +18,8 @@ import {
 } from './thermostat-card.js';
 import * as thermostatEditor from './thermostat-editor.js';
 
-// the index fetches the families: they land before this file's page goes
-afterAll(() => familiesDefined);
+// the index fetches the lazy families, this card's among them: they land before this file's page goes
+beforeAll(() => familiesDefined);
 
 const entity = (
   entity_id: string,

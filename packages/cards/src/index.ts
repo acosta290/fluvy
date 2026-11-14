@@ -21,7 +21,6 @@ import { FluvySceneCard } from './scene/scene-card.js';
 import { FluvyScenesCard } from './scenes/scenes-card.js';
 import { FluvySensorCard } from './sensor/sensor-card.js';
 import { FluvyStatTilesCard } from './stat-tiles/stat-tiles-card.js';
-import { FluvyThermostatCard } from './thermostat/thermostat-card.js';
 import { FluvyTileCard } from './tile/tile-card.js';
 import { FluvyTilesCard } from './tiles/tiles-card.js';
 import { FluvyTimerCard } from './timer/timer-card.js';
@@ -36,6 +35,7 @@ import { APPLIANCES_FAMILY } from './appliances-family.js';
 import { AUTOMATIONS_FAMILY } from './automations-family.js';
 import { CALENDAR_FAMILY } from './calendar-family.js';
 import { CHART_FAMILY } from './chart-family.js';
+import { CLIMATE_FAMILY } from './climate-family.js';
 import { detailsSheets } from './details-family.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
@@ -89,12 +89,6 @@ const CATALOGUE: readonly CatalogueEntry[] = [
     FluvyLightsCard,
     'Fluvy · Room lights',
     'A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour.',
-  ],
-  [
-    'fluvy-thermostat-card',
-    FluvyThermostatCard,
-    'Fluvy · Thermostat',
-    'Climate, water heater or humidifier on a dial, with modes, presets and fan speeds.',
   ],
   [
     'fluvy-entities-card',
@@ -251,8 +245,8 @@ type Family = readonly [
 ];
 
 /**
- * The weather, calendar, template, web page, Expander, Slider, Vacuum, remote, items and chart cards, the Energy period
- * and Energy usage cards, and the media, energy, devices, automations, appliances and alerts families.
+ * The weather, calendar, template, web page, Expander, Slider, Vacuum, Thermostat, remote, items and chart cards, the
+ * Energy period and Energy usage cards, and the media, energy, devices, automations, appliances and alerts families.
  */
 const FAMILIES: readonly Family[] = [
   [WEATHER_FAMILY, () => import('./weather-cards.js')],
@@ -270,6 +264,7 @@ const FAMILIES: readonly Family[] = [
   [EXPANDER_FAMILY, () => import('./expander-cards.js')],
   [SLIDER_FAMILY, () => import('./slider-cards.js')],
   [VACUUM_FAMILY, () => import('./vacuum-cards.js')],
+  [CLIMATE_FAMILY, () => import('./climate-cards.js')],
   [VEHICLE_FAMILY, () => import('./vehicle-cards.js')],
   [ITEMS_FAMILY, () => import('./items-cards.js')],
   [CHART_FAMILY, () => import('./chart-cards.js')],
@@ -334,7 +329,6 @@ export {
   FluvyScenesCard,
   FluvySensorCard,
   FluvyStatTilesCard,
-  FluvyThermostatCard,
   FluvyTileCard,
   FluvyTilesCard,
   FluvyTimerCard,

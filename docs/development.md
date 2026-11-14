@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised), what they
 share (the date picker; the pages'
@@ -51,7 +51,7 @@ counts with the house (what an entity's capabilities draw, what a room holds; ev
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
 card import it from their own chunks), a room's quick actions (fetched as the bundle starts too: the room card in
-core reaches them through `loadQuickActions`), the weather, calendar, template, Energy period and usage, web page, Expander, Slider, Vacuum, remote, Vehicle, items and
+core reaches them through `loadQuickActions`), the weather, calendar, template, Energy period and usage, web page, Expander, Slider, Vacuum, Thermostat, remote, Vehicle, items and
 chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
 their cards are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
@@ -64,7 +64,8 @@ light card's colour controls (the first colour bulb), the cards' visual editor, 
 are see-through), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
 one), the page's background (the first dashboard that wears one), the icon set's other part (the first time Home Assistant asks for one of its icons),
 what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, where a
-modal sheet stands on a phone, a name's plain letters: with the first chunk that needs them)
+modal sheet stands on a phone, a name's plain letters, a person's own picture in a head's circle: with the first
+chunk that needs them)
 and a language's catalogue (English's core part ships in core; a lazy family's English part travels with the family's
 chunk, registered as it lands). `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group
 names its English part, or core keeps it, and every module no group names lands in core: the build stops
@@ -105,6 +106,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `vacuum` | 8 KB | the Vacuum card: the robot's and the mower's (1.20: it left core), which robots a hand can drive and how (#178), the drive pad's English |
 | `vacuum-drive` | 8 KB | the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop, its sheet; fetched by the first Vacuum card that draws a Drive command |
 | `ring` | 4 KB | the ring (1.20): the disc of four arrows round a middle key the TV remote's D-pad and the drive pad both draw |
+| `climate` | 8 KB | the Thermostat card: the climate's, the water heater's and the humidifier's (1.21: it left core), its rules |
 | `remote` | 16 KB | the TV remote card: its keys and the integrations' commands for them, the platforms it knows by name, its English |
 | `app-logos` | 24 KB | the platforms' logos (Simple Icons, Material Design Icons, Fluvy's monograms), fetched by the first remote card that draws an app |
 | `vehicle` | 24 KB | the Vehicle card: what finds a car's entities and folds its integration's words, its glyphs, its English |
@@ -118,7 +120,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 8 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 15 KB | the editors of the cards every page carries and of the template, Slider, Vacuum and remote cards: their forms, lists and defaults |
+| `forms` | 15 KB | the editors of the cards every page carries and of the template, Slider, Vacuum, Thermostat and remote cards: their forms, lists and defaults |
 | `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
@@ -127,7 +129,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
-| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters |
+| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
