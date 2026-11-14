@@ -1,0 +1,10 @@
+{
+  "sidebar": {
+    "label": "Sidebar",
+    "pages": "Pages",
+    "open": "Open the sidebar",
+    "close": "Close the sidebar",
+    "collapse": "Fold the sidebar",
+    "expand": "Unfold the sidebar"
+  }
+}

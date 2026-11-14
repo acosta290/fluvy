@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Leicht: keine Unschärfe hinter durchscheinenden Karten, kein Einblenden, Anzeigen und Flüssigkeiten ruhen",
     "pref.dock": "Seitenleiste neben der Seite",
     "pref.dock_sub": "Auf einem breiten Bildschirm verborgen, bis das Menü sie öffnet",
+    "pref.sidebars": "Dashboard-Seitenleisten ausblenden",
+    "pref.sidebars_sub": "Die eigene Seitenleiste eines Dashboards wird auf diesem Bildschirm nicht gezeigt",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Verwendeter Look",
@@ -3268,5 +3270,13 @@
     "window": "Fenster",
     "door": "Tür",
     "battery": "Batterie"
+  },
+  "sidebar": {
+    "label": "Seitenleiste",
+    "pages": "Seiten",
+    "open": "Seitenleiste öffnen",
+    "close": "Seitenleiste schließen",
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen"
   }
 }

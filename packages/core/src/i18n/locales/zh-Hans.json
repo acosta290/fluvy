@@ -2507,6 +2507,8 @@
     "pref.performance_sub": "轻量：半透明卡片后不模糊，卡片无入场动画，仪表与液体保持静止",
     "pref.dock": "侧边栏置于页面旁",
     "pref.dock_sub": "宽屏上先隐藏，由菜单打开",
+    "pref.sidebars": "隐藏仪表盘的侧边栏",
+    "pref.sidebars_sub": "此屏幕不显示仪表盘自带的侧边栏",
     "about.title": "Fluvy",
     "about.version": "版本 {version}",
     "about.look": "当前风格",
@@ -3268,5 +3270,13 @@
     "window": "窗户",
     "door": "门",
     "battery": "电池"
+  },
+  "sidebar": {
+    "label": "侧边栏",
+    "pages": "页面",
+    "open": "打开侧边栏",
+    "close": "关闭侧边栏",
+    "collapse": "收起侧边栏",
+    "expand": "展开侧边栏"
   }
 }

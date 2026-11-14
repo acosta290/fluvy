@@ -200,6 +200,13 @@ const EXPANDER =
   /\/packages\/(cards\/src\/(expander-cards\.ts|expander\/)|core\/src\/i18n\/locales\/en\/expander\.json)/;
 
 /**
+ * A dashboard's own sidebar (1.21, #187: the element beside the views, what reads `fluvy_sidebar:`, what puts it in
+ * Home Assistant's view row, and its English): fetched by the first dashboard whose configuration asks for one, never
+ * by a dashboard without the key. It builds its cards as the Expander does, with the Expander's chunk.
+ */
+const SIDEBAR = /\/packages\/(cards\/src\/sidebar\/|core\/src\/i18n\/locales\/en\/sidebar\.json)/;
+
+/**
  * The Slider card (its card on the tile's and its English; its editor goes with the forms; the ruler, the head, the
  * value row and the scales it reads with are core's, the light card's and the tile's): fetched as the bundle starts and
  * defined as it lands, as the web page card is (`slider-family.ts` stays in core: the name, the height).
@@ -354,10 +361,11 @@ const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
  * 1.21), a name's plain letters (the appliances, the strategy, the view icons) and, since the Thermostat card left
  * core (1.21), a person's own picture in a head's circle (the thermostat, the player, the appliances, the Vehicle
  * card). Nothing every page runs reaches them: in core every page waited on them, here they come with the first chunk
- * that needs them — as the bundle starts, beside the editors' fields the families fetch too.
+ * that needs them — as the bundle starts, beside the editors' fields the families fetch too. And the dashboard
+ * sidebar's glyph (1.21, #187), which the sidebar and the settings panel both draw.
  */
 const SHARED =
-  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture)|core\/src\/plain)\.ts/;
+  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture|side-glyph)|core\/src\/plain)\.ts/;
 
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
@@ -391,7 +399,7 @@ const FORMS =
  * every page carries, the weather card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy
  * (the history bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the
- * Expander card (its editor on its own, before the forms), the Slider card, the ring, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
+ * Expander card (its editor on its own, before the forms), a dashboard's own sidebar, the Slider card, the ring, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
  * styles, the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
@@ -428,6 +436,7 @@ export const GROUPS = [
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
   { name: 'expander', test: EXPANDER },
+  { name: 'sidebar', test: SIDEBAR },
   { name: 'slider', test: SLIDER },
   { name: 'ring', test: RING },
   { name: 'vacuum-drive', test: VACUUM_DRIVE },

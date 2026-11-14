@@ -40,6 +40,11 @@ export interface DeviceSettings {
    * as its cards. Off, it keeps 100 %, as the corner, the toast and the way back always do.
    */
   readonly screensaverZoom: boolean;
+  /**
+   * No dashboard draws its own sidebar on this device (1.21, #187: `fluvy_sidebar:`): a phone, or a small tablet,
+   * keeps the whole screen for the views whatever the dashboard asks for.
+   */
+  readonly hideSidebars: boolean;
 }
 
 /** What a device may change about itself (the version is never written). */
@@ -52,6 +57,7 @@ export const DEVICE_DEFAULTS: DeviceSettings = {
   performance: 'auto',
   dock: false,
   screensaverZoom: false,
+  hideSidebars: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -73,6 +79,7 @@ export function parseDevice(raw: unknown): DeviceSettings {
       : DEVICE_DEFAULTS.performance,
     dock: value['dock'] === true,
     screensaverZoom: value['screensaverZoom'] === true,
+    hideSidebars: value['hideSidebars'] === true,
   };
 }
 

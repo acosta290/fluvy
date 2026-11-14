@@ -331,7 +331,7 @@ const compare = (params.get('compare') ?? '').split(',').filter(isPaletteName);
 const shape = params.get('shape');
 /** Where the frames go: the stage, or one column per compared palette with its look scoped to it. */
 const columns = dashboard
-  ? [mountDashboard(stage, dashboardOptions(params), mock.hass())]
+  ? [mountDashboard(stage, dashboardOptions(params), mock)]
   : compare.length
     ? compare.map((palette) => {
         const column = document.createElement('div');

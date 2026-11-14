@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Leggera: niente sfocatura dietro le schede trasparenti, niente entrata, indicatori e liquidi fermi",
     "pref.dock": "Barra laterale accanto alla pagina",
     "pref.dock_sub": "Su uno schermo largo, nascosta finché il menu non la apre",
+    "pref.sidebars": "Nascondi le barre laterali delle dashboard",
+    "pref.sidebars_sub": "La barra laterale propria di una dashboard non viene mostrata su questo schermo",
     "about.title": "Fluvy",
     "about.version": "Versione {version}",
     "about.look": "Look in uso",
@@ -3268,5 +3270,13 @@
     "window": "Finestra",
     "door": "Porta",
     "battery": "Batteria"
+  },
+  "sidebar": {
+    "label": "Barra laterale",
+    "pages": "Pagine",
+    "open": "Apri la barra laterale",
+    "close": "Chiudi la barra laterale",
+    "collapse": "Comprimi la barra laterale",
+    "expand": "Espandi la barra laterale"
   }
 }

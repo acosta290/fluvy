@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Ligero: sin desenfoque tras las tarjetas translúcidas, sin entrada, medidores y líquidos quietos",
     "pref.dock": "Barra lateral junto a la página",
     "pref.dock_sub": "En una pantalla ancha, oculta hasta que el menú la abre",
+    "pref.sidebars": "Ocultar las barras laterales de los paneles",
+    "pref.sidebars_sub": "La barra lateral propia de un panel no se muestra en esta pantalla",
     "about.title": "Fluvy",
     "about.version": "Versión {version}",
     "about.look": "Aspecto en uso",
@@ -3268,5 +3270,13 @@
     "window": "Ventana",
     "door": "Puerta",
     "battery": "Batería"
+  },
+  "sidebar": {
+    "label": "Barra lateral",
+    "pages": "Páginas",
+    "open": "Abrir la barra lateral",
+    "close": "Cerrar la barra lateral",
+    "collapse": "Plegar la barra lateral",
+    "expand": "Desplegar la barra lateral"
   }
 }

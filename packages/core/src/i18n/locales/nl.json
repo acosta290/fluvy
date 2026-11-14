@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Licht: geen vervaging achter doorschijnende kaarten, geen intro, meters en vloeistoffen stil",
     "pref.dock": "Zijbalk naast de pagina",
     "pref.dock_sub": "Op een breed scherm verborgen tot het menu hem opent",
+    "pref.sidebars": "Zijbalken van dashboards verbergen",
+    "pref.sidebars_sub": "De eigen zijbalk van een dashboard wordt op dit scherm niet getoond",
     "about.title": "Fluvy",
     "about.version": "Versie {version}",
     "about.look": "Gebruikte look",
@@ -3268,5 +3270,13 @@
     "window": "Raam",
     "door": "Deur",
     "battery": "Batterij"
+  },
+  "sidebar": {
+    "label": "Zijbalk",
+    "pages": "Pagina’s",
+    "open": "Zijbalk openen",
+    "close": "Zijbalk sluiten",
+    "collapse": "Zijbalk inklappen",
+    "expand": "Zijbalk uitklappen"
   }
 }

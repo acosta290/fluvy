@@ -1,4 +1,4 @@
-import { announceCard, lookHandle, registerCard, setDetailsSheets } from '@fluvy/core';
+import { announceCard, lookHandle, registerCard, setDetailsSheets, setSidebar } from '@fluvy/core';
 import '@fluvy/ui';
 import { FluvyActionsCard } from './actions/actions-card.js';
 import { FluvyBarsCard } from './bars/bars-card.js';
@@ -300,6 +300,9 @@ defineStrategies();
 
 // Fluvy's own details sheets (1.20, #162) where the house asks for them, fetched the first time one opens
 setDetailsSheets(detailsSheets(() => lookHandle()?.settings().sheets));
+
+// a dashboard's own sidebar (1.21, #187), fetched by the first dashboard whose configuration asks for one
+setSidebar(() => import('./sidebar/index.js'));
 
 // fluvy's settings: the element of the `panel_custom` Home Assistant shows in the sidebar
 

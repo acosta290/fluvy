@@ -48,6 +48,8 @@ import {
   type WallBackground,
 } from '../../../packages/core/src/settings/schema.js';
 import { isPaletteName, type PaletteName } from '@fluvy/tokens/runtime';
+import type { MockHouse } from './hass.js';
+import { sidebarFor } from './side.js';
 
 /*
  * A dashboard's frame outside Home Assistant, `?dashboard=<sheet>`: `hui-root` with its header and view tabs as Home
@@ -86,6 +88,11 @@ import { isPaletteName, type PaletteName } from '@fluvy/tokens/runtime';
  *                 (&pageimage=/backgrounds/dunes.svg, the design's picture by default; &pagedim=40 &pageblur=1);
  *                 &own={"type":"color","colors":["#1d4ed8"]} the dashboard's own in its strategy; on a wall
  *                 (&wall=1) the wall's own wins unless &bg=dashboard lets the dashboard's through
+ *   &side=menu    the dashboard's own sidebar (1.21, #187): `fluvy_sidebar:` in its configuration, as `side.ts` writes
+ *                 it for the page (menu | long | cards | drawer | pages, and what follows them there), drawn by the
+ *                 bundle's own file, fetched as the root first updates with the key. The root is then handed the whole
+ *                 house on every change, as Home Assistant's is, and follows the address as Home Assistant's does: a
+ *                 view's path opens it (`/fluvy-home/rooms`), a subview's too
  */
 
 interface View {
@@ -146,6 +153,8 @@ export interface DashboardOptions {
   /** The look the page wears and its mode: what the background's colours are drawn in. */
   readonly look: Look;
   readonly dark: boolean;
+  /** The dashboard's own sidebar (`fluvy_sidebar:`, #187), as its configuration writes it; undefined: none. */
+  readonly side: unknown;
 }
 
 /** A JSON parameter, nothing where it is not one. */
@@ -228,6 +237,7 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
       pills: 'round',
     },
     dark: params.get('mode') === 'dark',
+    side: sidebarFor(params),
   };
 }
 
@@ -486,8 +496,27 @@ class MockRoot extends LitElement {
   };
   lovelace!: {
     editMode: boolean;
-    config: { title?: string; views?: ReadonlyArray<{ title: string; subview?: boolean }> };
+    config: {
+      title?: string;
+      views?: ReadonlyArray<{ title: string; path: string; icon?: string; subview?: boolean }>;
+      fluvy_sidebar?: unknown;
+    };
     rawConfig?: { strategy?: unknown };
+  };
+
+  /**
+   * The view the address names, as Home Assistant's root reads its route: `/<dashboard>/<view's path>` opens that view,
+   * a subview's its subview. Listened to where the page asks for a sidebar, whose menu leads there.
+   */
+  readonly route = (): void => {
+    const [, dashboard, path] = location.pathname.split('/');
+    if (dashboard !== this.hass.panelUrl) return;
+    const index = this.options.views.findIndex((view) => view.path === path);
+    if (index < 0) return;
+    const subview = this.options.views[index]?.subview === true;
+    if (subview !== this.options.subview) this.options = { ...this.options, subview };
+    if (!subview) this.current = index;
+    this.requestUpdate();
   };
 
   /** The view shown, as Home Assistant's root keeps it (its index in the configuration). */
@@ -646,7 +675,15 @@ class MockRoot extends LitElement {
           var(--header-height) + var(--tab-bar-height, 56px) - 2px + var(--safe-area-inset-top, 0px)
         );
       }
+      /* as hui-root lays whatever stands in the row: what a sidebar of ours has to answer */
+      hui-view-container > * {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
       hui-view {
+        flex-direction: row;
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
@@ -685,7 +722,13 @@ class MockRoot extends LitElement {
             ?active=${index === this.current}
             ?disabled=${view.subview && !edit}
             @click=${() => {
-              if (!view.subview) this.current = index;
+              if (view.subview) return;
+              this.current = index;
+              // beside a sidebar a tab goes by the address, as Home Assistant's does: its menu reads the page from it
+              if (this.options.side !== undefined) {
+                history.pushState(null, '', `/${this.hass.panelUrl}/${view.path}`);
+                dispatchEvent(new Event('location-changed'));
+              }
             }}
             >${
               view.icon
@@ -1193,8 +1236,9 @@ const NARROW = 870;
 export function mountDashboard(
   stage: HTMLElement,
   options: DashboardOptions,
-  hass: HomeAssistant,
+  house: Pick<MockHouse, 'hass' | 'subscribe'>,
 ): HTMLElement {
+  const hass = house.hass();
   for (const [tag, element] of [
     ['ha-icon', MockIcon],
     ['ha-tab-group', MockTabGroup],
@@ -1226,7 +1270,15 @@ export function mountDashboard(
   };
   root.lovelace = {
     editMode: options.edit,
-    config: { views: options.views.map((v) => ({ title: v.title, subview: v.subview === true })) },
+    config: {
+      views: options.views.map(({ title, path, icon, subview }) => ({
+        title,
+        path,
+        ...(icon ? { icon } : {}),
+        subview: subview === true,
+      })),
+      ...(options.side === undefined ? {} : { fluvy_sidebar: options.side }),
+    },
     // the strategy as the dashboard saved it: its own background, where the page names one
     rawConfig: {
       strategy: {
@@ -1235,6 +1287,19 @@ export function mountDashboard(
       },
     },
   };
+  // a dashboard with a sidebar of its own: its root holds the house, every change of it, and follows the address
+  if (options.side !== undefined) {
+    const { panelUrl, panels } = root.hass;
+    const held = (next: HomeAssistant): MockRoot['hass'] =>
+      ({ ...next, panelUrl, panels }) as unknown as MockRoot['hass'];
+    root.hass = held(hass);
+    house.subscribe((next) => {
+      root.hass = held(next);
+      root.requestUpdate();
+    });
+    addEventListener('location-changed', root.route);
+    addEventListener('popstate', root.route);
+  }
   // a wall's sheets for `hui-root`, filled as the shell fills them on <html>'s marks
   const wallSheet = new CSSStyleSheet();
   const syncWall = (): void => {

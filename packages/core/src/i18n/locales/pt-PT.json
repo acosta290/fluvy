@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Leve: sem desfocagem atrás dos cartões translúcidos, sem entrada, medidores e líquidos parados",
     "pref.dock": "Barra lateral ao lado da página",
     "pref.dock_sub": "Num ecrã largo, oculta até o menu a abrir",
+    "pref.sidebars": "Ocultar as barras laterais dos painéis",
+    "pref.sidebars_sub": "A barra lateral própria de um painel não é mostrada neste ecrã",
     "about.title": "Fluvy",
     "about.version": "Versão {version}",
     "about.look": "Aspeto atual",
@@ -3268,5 +3270,13 @@
     "window": "Janela",
     "door": "Porta",
     "battery": "Bateria"
+  },
+  "sidebar": {
+    "label": "Barra lateral",
+    "pages": "Páginas",
+    "open": "Abrir a barra lateral",
+    "close": "Fechar a barra lateral",
+    "collapse": "Recolher a barra lateral",
+    "expand": "Expandir a barra lateral"
   }
 }

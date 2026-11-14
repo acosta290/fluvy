@@ -2575,6 +2575,8 @@
     "pref.performance_sub": "Könnyű: nincs elmosás az áttetsző kártyák mögött, nincs beúszás, a mérők és a folyadékok nyugalomban",
     "pref.dock": "Oldalsáv az oldal mellett",
     "pref.dock_sub": "Széles képernyőn rejtve, amíg a menü meg nem nyitja",
+    "pref.sidebars": "Vezérlőpultok oldalsávjainak elrejtése",
+    "pref.sidebars_sub": "A vezérlőpult saját oldalsávja ezen a képernyőn nem jelenik meg",
     "about.title": "Fluvy",
     "about.version": "Verzió: {version}",
     "about.look": "Használt kinézet",
@@ -3268,5 +3270,13 @@
     "window": "Ablak",
     "door": "Ajtó",
     "battery": "Elem"
+  },
+  "sidebar": {
+    "label": "Oldalsáv",
+    "pages": "Oldalak",
+    "open": "Oldalsáv megnyitása",
+    "close": "Oldalsáv bezárása",
+    "collapse": "Oldalsáv összecsukása",
+    "expand": "Oldalsáv kinyitása"
   }
 }

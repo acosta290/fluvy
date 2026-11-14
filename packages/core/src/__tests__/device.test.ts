@@ -14,7 +14,10 @@ import {
 } from '../settings/device.js';
 import { HOUSE_DEFAULTS, PERSONAL_DEFAULTS, resolveSettings } from '../settings/schema.js';
 
-/** A device as it is from the factory: no wall, at 100 %, Auto, Home Assistant's own sidebar, a screensaver at 100 %. */
+/**
+ * A device as it is from the factory: no wall, at 100 %, Auto, Home Assistant's own sidebar, a screensaver at 100 %,
+ * the dashboards' own sidebars shown.
+ */
 const FACTORY = {
   version: 1,
   wall: false,
@@ -22,6 +25,7 @@ const FACTORY = {
   performance: 'auto',
   dock: false,
   screensaverZoom: false,
+  hideSidebars: false,
 } as const;
 
 describe('what this device is', () => {
@@ -139,6 +143,21 @@ describe('how hard this device works (Lite, #165)', () => {
     expect(writeDevice({ zoom: 150 }).screensaverZoom).toBe(true);
     expect(parseDevice({ screensaverZoom: 'yes' }).screensaverZoom).toBe(false);
     expect(writeDevice({ screensaverZoom: false }).screensaverZoom).toBe(false);
+  });
+
+  it('hides the dashboards’ own sidebars as its own choice (#187), shown where a 1.20 device stored none', () => {
+    localStorage.setItem(DEVICE_KEY, '{"version":1,"wall":false,"zoom":110,"dock":true}');
+    expect(readDevice()).toEqual({ ...FACTORY, zoom: 110, dock: true });
+    expect(writeDevice({ hideSidebars: true })).toEqual({
+      ...FACTORY,
+      zoom: 110,
+      dock: true,
+      hideSidebars: true,
+    });
+    expect(readDevice().hideSidebars).toBe(true);
+    // a word that is no switch reads as off
+    expect(parseDevice({ hideSidebars: 'yes' }).hideSidebars).toBe(false);
+    expect(writeDevice({ hideSidebars: false }).hideSidebars).toBe(false);
   });
 
   it('draws Lite where the device chose it, never where it chose Full, and for Auto where the system asks for less motion or memory is short', () => {

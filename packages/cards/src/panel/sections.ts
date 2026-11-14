@@ -2373,6 +2373,14 @@ export function preferences(ctx: PanelContext): TemplateResult {
           on: ctx.deviceEdit.dock ?? ctx.device.dock,
           onToggle: (on) => ctx.editDevice({ dock: on }),
         })}
+        ${listRow({
+          icon: 'eye',
+          title: ctx.t('pref.sidebars'),
+          sub: ctx.t('pref.sidebars_sub'),
+          trailing: 'switch',
+          on: ctx.deviceEdit.hideSidebars ?? ctx.device.hideSidebars,
+          onToggle: (on) => ctx.editDevice({ hideSidebars: on }),
+        })}
       </div>
       ${deviceSize(ctx)}
       <p class="pn-hint pn-hint--after">${ctx.t('pref.size_sub')}</p>

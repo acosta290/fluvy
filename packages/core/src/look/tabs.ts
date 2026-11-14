@@ -1,5 +1,5 @@
 import { walkShadow } from '../shell/dom.js';
-import { always, guard, inUse, wrap } from '../shell/patches.js';
+import { always, guard, inUse, stepAside, wrap } from '../shell/patches.js';
 import { markView, SUBVIEW_ATTRIBUTE } from './view.js';
 
 /**
@@ -133,8 +133,19 @@ export type RootElement = HTMLElement & {
       title?: string;
       /** The dashboard's own background, in Home Assistant's key (a view's own is under it). */
       background?: unknown;
+      /** The dashboard's own sidebar (1.21, #187), beside `views:` or `strategy:`: read by its own file. */
+      fluvy_sidebar?: unknown;
       views?: ReadonlyArray<
-        { subview?: boolean; back_path?: string; title?: string; background?: unknown } | undefined
+        | {
+            subview?: boolean;
+            back_path?: string;
+            title?: string;
+            background?: unknown;
+            path?: string;
+            icon?: string;
+            visible?: unknown;
+          }
+        | undefined
       >;
     };
     /** The configuration as saved: a strategy's own options (`strategy`) where a strategy builds the dashboard. */
@@ -320,6 +331,45 @@ export function markRoot(root: RootElement, marks: Marks | null): boolean {
   return true;
 }
 
+/**
+ * Who draws a dashboard's own sidebar (1.21, #187: `fluvy_sidebar:` in its configuration): a file of its own
+ * (`cards/src/sidebar/`), fetched by the first dashboard that asks for one, whose `sync` is then told of every root as
+ * it updates — it puts the sidebar there, follows the view and takes it away. A dashboard without the key fetches
+ * nothing.
+ */
+export type SidebarLoader = () => Promise<{ readonly sync: (root: RootElement) => void }>;
+
+/** The sidebar's patch by name (`guard`): what its part throws steps it aside alone, and the header keeps its marks. */
+export const SIDEBAR_PATCH = 'dashboardSidebar';
+
+let loadSidebar: SidebarLoader | undefined;
+/** The sidebar's `sync`, once its file has landed. */
+let drawSidebar: ((root: RootElement) => void) | undefined;
+/** Whether its file was asked for: once a page, landed or not. */
+let askedSidebar = false;
+
+/** The cards' package says where the sidebar's file is. */
+export const setSidebar = (load: SidebarLoader | undefined): void => {
+  loadSidebar = load;
+  drawSidebar = undefined;
+  askedSidebar = false;
+};
+
+/** A root's update, told to who draws its dashboard's sidebar: fetched by the first one whose configuration has the key. */
+function sidebar(root: RootElement): void {
+  if (drawSidebar) guard(SIDEBAR_PATCH, () => drawSidebar?.(root), root.ownerDocument);
+  else if (loadSidebar && !askedSidebar && root.lovelace?.config?.fluvy_sidebar) {
+    askedSidebar = true;
+    void loadSidebar().then(
+      ({ sync }) => {
+        drawSidebar = sync;
+        sidebar(root);
+      },
+      (error: unknown) => stepAside(SIDEBAR_PATCH, error, root.ownerDocument),
+    );
+  }
+}
+
 interface RootPrototype {
   _renderActionItems?: (...args: unknown[]) => unknown;
   /** The actions' render is wrapped (the update's wrap knows its own). */
@@ -347,7 +397,8 @@ function lendNarrow(root: NarrowRoot): boolean {
  * menu. Home Assistant's update runs first and always, ours caught (`patches.ts`); its actions' render always runs,
  * once, lent `narrow` before it only on our mark (`lendNarrow`, caught too). False if Home Assistant reshaped the
  * element: its header then stays its own (the sheet only styles marked roots). `paint` puts the page's background on
- * the root as its view or its dashboard changes (`background.ts`).
+ * the root as its view or its dashboard changes (`background.ts`); a dashboard that asks for a sidebar of its own is
+ * handed to who draws it (`setSidebar`).
  */
 export async function patchViewRoots(
   registry: CustomElementRegistry,
@@ -366,6 +417,7 @@ export async function patchViewRoots(
       // whether it shows a subview, wherever Fluvy is in use: a wall draws its way back from it
       if (inUse(root.ownerDocument)) markView(root);
       else root.removeAttribute(SUBVIEW_ATTRIBUTE);
+      sidebar(root);
     },
     always,
   );

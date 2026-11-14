@@ -20,7 +20,8 @@ Settings are never walls, so a tablet can always be administered from itself.
 
 - The sidebar and the dashboard header are gone, and the dashboard fills the screen inside the tablet's safe area.
   The header's tabs go with it, so a wall moves between its views with what the dashboard itself holds (chips,
-  headings, buttons that navigate). There is no swipe between views and no gesture of Fluvy's.
+  headings, buttons that navigate), or with the menu of [the dashboard's own sidebar](sidebar.md), which a wall
+  draws from the top of the screen. There is no swipe between views and no gesture of Fluvy's.
 - **Subviews**: Home Assistant shows its back arrow in the header, which a wall does not have. The house chooses the
   way back in the *Wall* tab (*Back from a subview*):
   - **Back button** (the default): a pill at the top left with a chevron and the subview's name. It sits on the line of the

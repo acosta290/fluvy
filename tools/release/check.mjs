@@ -112,6 +112,10 @@ const BUDGETS = {
   expander: 8192,
   // the Expander card's editor: its form, and Home Assistant's stack editor set under it; fetched when one is edited
   'expander-editor': 4096,
+  // a dashboard's own sidebar (1.21, #187): the element beside the views, what reads `fluvy_sidebar:` and puts it in
+  // Home Assistant's view row, its three ways of standing (beside the views, above them, a drawer), its English;
+  // fetched by the first dashboard that asks for one. Measured at 7.6 KB
+  sidebar: 10_240,
   // the Slider card: its card on the tile's and its English, its editor with the forms (1.11.1, #77)
   slider: 8192,
   // the Vacuum card (1.20: it left core, 1.4 KB of what every page loads): the robot's and the mower's card, which

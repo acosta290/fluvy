@@ -10,7 +10,7 @@ everyone else reads it, and changes their own (a palette of their own, their pre
 | **Scope** | dashboards only or everywhere; which dashboards when "only"; the frame, our icons in the sidebar and in Settings (a switch each — see [Our icons](#our-icons)), the Activity page, the History page, our chart in the details dialog (see [the details dialog](pages.md#the-details-dialog)) | the house |
 | **Dashboards** | the five automatic dashboards: create any with one tap, open it, **Customise** it (its views and cards hidden, moved and tuned, its lists thinned out and added to, cards of your own: see [Customise](automatic-dashboard.md#customise)), its options (its background among them: the house's, or its own), its sidebar entry, recreate it | the house |
 | **Wall** | what this device is (a wall panel or not, said for this browser, its size and, where the size is not 100 %, whether its screensaver follows it, and its address to open on the tablet), which dashboards are walls, the screensaver (with a preview of it), the way out (a × in the corner, or a long press), the way back from a subview (a button with its name, or Home Assistant's header), day and night, the background (plain, the wall mesh, or the dashboard's own: the house's page background or the wall dashboard's); the preview shows the wall as it would be now, in its night when it is night — see [wall mode](wall.md) | the house; *this device* is the tablet's own |
-| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *This device · Sidebar beside the page* (see [below](#sidebar-beside-the-page)); *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
+| **Preferences** | language of the cards (a dropdown: *Automatic* follows Home Assistant, or one of Fluvy's), motion, hold to slide (see [Sliders](#sliders)), haptics, a link to improving a translation; *This device · Size*: how large this screen reads its dashboards (90 to 150 %, the view alone — see [wall mode](wall.md)); *This device · Performance*: Auto, Full or Lite (see [Lite](#lite)); *This device · Sidebar beside the page* (see [below](#sidebar-beside-the-page)); *This device · Hide dashboard sidebars*: no dashboard draws [its own sidebar](sidebar.md) on this screen; *Fluvy*: the version, the shell's health, export and import of the settings, the house's reset | each person; *this device* is the screen's own; import and reset are an administrator's |
 
 ## House and person
 
@@ -332,8 +332,8 @@ own series colours, and which of Home Assistant's pages and its details dialog's
 *Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic
 dashboard — and *Import* (an administrator's) reads it back on another house; a file from an earlier version brings
 what it holds and leaves the rest at its defaults. What a screen keeps for itself (*This device · Size*,
-*Performance* and *Sidebar beside the page*, a device's wall and its *Screensaver too*) stays in that browser and
-travels with neither. A card's own choices (its `chart`, its colours) are part of the
+*Performance*, *Sidebar beside the page* and *Hide dashboard sidebars*, a device's wall and its *Screensaver too*)
+stays in that browser and travels with neither. A card's own choices (its `chart`, its colours) are part of the
 dashboard's configuration, which Home Assistant's backups keep as well; so is what *Customise* changed on an automatic
 dashboard (its `edit`), which the settings file leaves where it is.
 

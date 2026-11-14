@@ -2463,6 +2463,8 @@
     "pref.performance_sub": "ライト：透けるカードの背景をぼかさず、カードの登場なし、メーターと液体は静止",
     "pref.dock": "サイドバーをページの横に",
     "pref.dock_sub": "ワイド画面では、メニューで開くまで隠れています",
+    "pref.sidebars": "ダッシュボードのサイドバーを隠す",
+    "pref.sidebars_sub": "ダッシュボード独自のサイドバーはこの画面に表示されません",
     "about.title": "Fluvy",
     "about.version": "バージョン{version}",
     "about.look": "使用中の見た目",
@@ -3268,5 +3270,13 @@
     "window": "窓",
     "door": "ドア",
     "battery": "バッテリー"
+  },
+  "sidebar": {
+    "label": "サイドバー",
+    "pages": "ページ",
+    "open": "サイドバーを開く",
+    "close": "サイドバーを閉じる",
+    "collapse": "サイドバーを折りたたむ",
+    "expand": "サイドバーを広げる"
   }
 }

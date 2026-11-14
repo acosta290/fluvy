@@ -9,6 +9,7 @@
 | [The cards](cards.md) | every card with its purpose, a minimal configuration and its options |
 | [Energy](energy.md) | how the energy cards read a house (the Energy dashboard, or your sources: one sensor, two, per phase), and every case |
 | [The automatic dashboards](automatic-dashboard.md) | the five templates (`custom:fluvy-home`, rooms, energy, security, wall), what they build from your home, and their options |
+| [A dashboard's sidebar](sidebar.md) | a panel beside a dashboard's views, the same on every view: `fluvy_sidebar:`, its head, menu, cards and foot, its styles, phones, coming from sidebar-card |
 | [Wall mode](wall.md) | a tablet on the wall: no sidebar or header, the screensaver, day and night, how to leave it |
 | [Activity, History and the details dialog](pages.md) | the two pages that stand in for the logbook and the history, and the history in Home Assistant's details dialog |
 | [Everywhere](shell.md) | what the shell restyles, how to switch pieces off, what to expect after a Home Assistant release |

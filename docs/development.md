@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,sidebar,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised), what they
 share (the date picker; the pages'
@@ -63,7 +63,8 @@ own details sheets (the first time a card opens one), the
 light card's colour controls (the first colour bulb), the cards' visual editor, the fields every editor is built of
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
 are see-through), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
-one), the page's background (the first dashboard that wears one), the icon set's other part (the first time Home Assistant asks for one of its icons),
+one), the page's background (the first dashboard that wears one), a dashboard's own sidebar (the first dashboard whose
+configuration holds `fluvy_sidebar:`), the icon set's other part (the first time Home Assistant asks for one of its icons),
 what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, where a
 modal sheet stands on a phone, a name's plain letters, a person's own picture in a head's circle: with the first
 chunk that needs them)
@@ -103,6 +104,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
 | `expander` | 8 KB | the Expander card, what holds the cards it folds, what remembers how it was left, its English |
 | `expander-editor` | 4 KB | the Expander card's editor: its form, Home Assistant's stack editor under it |
+| `sidebar` | 10 KB | a dashboard's own sidebar (1.21, #187): the element beside the views, what reads `fluvy_sidebar:` and puts it in Home Assistant's view row, its English; fetched by the first dashboard whose configuration asks for one |
 | `slider` | 8 KB | the Slider card on the tile's, its English |
 | `vacuum` | 8 KB | the Vacuum card: the robot's and the mower's (1.20: it left core), which robots a hand can drive and how (#178), the drive pad's English |
 | `vacuum-drive` | 8 KB | the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop, its sheet; fetched by the first Vacuum card that draws a Drive command |

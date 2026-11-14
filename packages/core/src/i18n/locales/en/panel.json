@@ -191,6 +191,8 @@
     "pref.performance_sub": "Lite: no blur behind see-through cards, no entrance, gauges and liquids at rest",
     "pref.dock": "Sidebar beside the page",
     "pref.dock_sub": "On a wide screen, hidden until the menu opens it",
+    "pref.sidebars": "Hide dashboard sidebars",
+    "pref.sidebars_sub": "A dashboard’s own sidebar is not drawn on this screen",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Look in use",

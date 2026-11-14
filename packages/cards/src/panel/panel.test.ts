@@ -2361,6 +2361,39 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
   });
 
+  it('hides the dashboards’ own sidebars on this device from Preferences: shown from the factory, saved to the device alone (#187)', async () => {
+    localStorage.removeItem('fluvy:device');
+    const { panel, root, row, button, written, settle } = await mount(false); // everyone's, not an administrator's
+    panel.tab = 'preferences';
+    await settle();
+    const device = [...root.querySelectorAll('.pn-card')].find(
+      (card) => card.querySelector('.fv-card__title')?.textContent?.trim() === 'This device',
+    )!;
+    const hide = row('Hide dashboard sidebars')!;
+    expect(device.contains(hide)).toBe(true);
+    expect(hide.querySelector('.fv-row__sub')?.textContent?.trim()).toBe(
+      'A dashboard’s own sidebar is not drawn on this screen',
+    );
+    const toggle = hide.querySelector<HTMLElement>('[role="switch"]')!;
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    toggle.click();
+    await settle();
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Hide dashboard sidebars · On',
+    );
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    // nothing of it goes to Home Assistant: the device keeps it
+    expect(written).toEqual([]);
+    expect(readDevice().hideSidebars).toBe(true);
+    expect(
+      row('Hide dashboard sidebars')!.querySelector('.fv-switch')?.getAttribute('aria-checked'),
+    ).toBe('true');
+    panel.remove();
+    localStorage.removeItem('fluvy:device');
+  });
+
   it('says why only on dashboards cannot hold while the profile wears the Fluvy theme', async () => {
     const { panel, root, settle } = await mount(true, {
       selectedTheme: { theme: 'Fluvy' },

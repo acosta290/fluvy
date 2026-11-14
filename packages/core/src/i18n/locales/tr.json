@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Hafif: yarı saydam kartların arkasında bulanıklık yok, giriş yok, göstergeler ve sıvılar durgun",
     "pref.dock": "Sayfanın yanında kenar çubuğu",
     "pref.dock_sub": "Geniş ekranda menü açana kadar gizli",
+    "pref.sidebars": "Panel kenar çubuklarını gizle",
+    "pref.sidebars_sub": "Bir panelin kendi kenar çubuğu bu ekranda gösterilmez",
     "about.title": "Fluvy",
     "about.version": "Sürüm {version}",
     "about.look": "Kullanılan görünüm",
@@ -3268,5 +3270,13 @@
     "window": "Pencere",
     "door": "Kapı",
     "battery": "Pil"
+  },
+  "sidebar": {
+    "label": "Kenar çubuğu",
+    "pages": "Sayfalar",
+    "open": "Kenar çubuğunu aç",
+    "close": "Kenar çubuğunu kapat",
+    "collapse": "Kenar çubuğunu daralt",
+    "expand": "Kenar çubuğunu genişlet"
   }
 }

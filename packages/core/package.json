@@ -28,6 +28,7 @@
     "./history": "./src/history/index.ts",
     "./sources": "./src/sources.ts",
     "./background": "./src/look/background-layer.ts",
+    "./view-icons": "./src/look/view-icons.ts",
     "./locales/en/*.json": "./src/i18n/locales/en/*.json"
   },
   "scripts": {

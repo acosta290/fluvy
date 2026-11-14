@@ -571,6 +571,8 @@ export function changeLines(ctx: PanelContext): string[] {
   if (device.dock !== undefined) lines.push(`${t('pref.dock')} · ${onOff(device.dock)}`);
   if (device.screensaverZoom !== undefined)
     lines.push(`${t('tab.wall')} · ${t('wall.saver_size')} · ${onOff(device.screensaverZoom)}`);
+  if (device.hideSidebars !== undefined)
+    lines.push(`${t('pref.sidebars')} · ${onOff(device.hideSidebars)}`);
   if (house.wall)
     for (const [key, label] of WALL_LABELS)
       if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))

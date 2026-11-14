@@ -1299,6 +1299,8 @@
     "pref.performance_sub": "Léger : pas de flou derrière les cartes translucides, pas d’entrée, jauges et liquides immobiles",
     "pref.dock": "Barre latérale à côté de la page",
     "pref.dock_sub": "Sur un écran large, masquée jusqu’à ce que le menu l’ouvre",
+    "pref.sidebars": "Masquer les barres latérales des tableaux de bord",
+    "pref.sidebars_sub": "La barre latérale propre à un tableau de bord n’est pas affichée sur cet écran",
     "about.title": "Fluvy",
     "about.version": "Version {version}",
     "about.look": "Look en cours",
@@ -3268,5 +3270,13 @@
     "window": "Fenêtre",
     "door": "Porte",
     "battery": "Batterie"
+  },
+  "sidebar": {
+    "label": "Barre latérale",
+    "pages": "Pages",
+    "open": "Ouvrir la barre latérale",
+    "close": "Fermer la barre latérale",
+    "collapse": "Replier la barre latérale",
+    "expand": "Déplier la barre latérale"
   }
 }

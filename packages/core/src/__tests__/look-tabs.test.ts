@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { setWorn } from '../shell/patches.js';
+import { asidesOf, setWorn } from '../shell/patches.js';
 import { SUBVIEW_ATTRIBUTE, VIEW_EVENT } from '../look/view.js';
 import {
   CHROME_DEFAULTS,
@@ -11,6 +11,8 @@ import {
   markRoots,
   marksFor,
   patchViewRoots,
+  setSidebar,
+  SIDEBAR_PATCH,
   TAB_CONTENT_ATTRIBUTE,
   TAB_TITLE_ATTRIBUTE,
   TABS_ATTRIBUTE,
@@ -234,6 +236,64 @@ describe('hui-root’s wraps', () => {
     expect(el.hasAttribute(SUBVIEW_ATTRIBUTE)).toBe(false);
     expect(told).toHaveLength(1);
     expect([...el.attributes].filter((a) => a.name.startsWith('fluvy'))).toEqual([]);
+  });
+
+  it('fetch who draws a dashboard’s own sidebar with the first root whose configuration asks for one, and tell it of every update (#187)', async () => {
+    const Root = rootClass();
+    await patchViewRoots(registryOf(Root, 'test-root-3'), () => null);
+    const told: RootElement[] = [];
+    const load = vi.fn(async () => ({ sync: (root: RootElement) => void told.push(root) }));
+    setSidebar(load);
+    const el = document.body.appendChild(new Root()) as Root;
+    el.hass = { panelUrl: 'fluvy-home' };
+    // a dashboard without the key fetches nothing, however often it updates
+    el.lovelace = { editMode: false, config: { views: [] } };
+    el.updated();
+    el.updated();
+    expect(load).not.toHaveBeenCalled();
+    // the key is there: fetched once, and told of that update as the file lands
+    el.lovelace = { editMode: false, config: { fluvy_sidebar: { menu: 'views' } } };
+    el.updated();
+    el.updated();
+    expect(load).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(told).toEqual([el]);
+    // once landed, every update: the next dashboard's too, which has none, so its sidebar can go
+    el.lovelace = { editMode: false, config: {} };
+    el.updated();
+    expect(told).toEqual([el, el]);
+    expect(load).toHaveBeenCalledTimes(1);
+    setSidebar(undefined);
+  });
+
+  it('step the sidebar aside alone when it throws or cannot be fetched: the header keeps its marks', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const Root = rootClass();
+    const tabsFor: TabsFor = () => ({ tabs: TABS_DEFAULTS, chrome: CHROME_DEFAULTS });
+    await patchViewRoots(registryOf(Root, 'test-root-4'), tabsFor);
+    const sync = vi.fn(() => {
+      throw new TypeError('reshaped');
+    });
+    setSidebar(async () => ({ sync }));
+    const el = document.body.appendChild(new Root()) as Root;
+    Object.assign(el, {
+      hass: { panelUrl: 'fluvy-home' },
+      lovelace: { editMode: false, config: { fluvy_sidebar: {} } },
+    });
+    el.updated();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    el.updated();
+    el.updated();
+    // asked once, never again; Home Assistant's update ran each time and the tabs are marked
+    expect(sync).toHaveBeenCalledTimes(1);
+    expect(el.updates).toBe(3);
+    expect(el.getAttribute(TABS_ATTRIBUTE)).toBe('fluvy');
+    expect(asidesOf(document)).toHaveProperty(SIDEBAR_PATCH);
+    expect(warn.mock.calls.map(([text]) => String(text).split(':')[0])).toEqual([
+      '[fluvy] dashboardSidebar stepped aside',
+    ]);
+    warn.mockRestore();
+    setSidebar(undefined);
   });
 
   // last in the file: a patch that stepped aside stays aside for the session

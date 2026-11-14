@@ -1016,6 +1016,53 @@ form for a line that holds no more.
   its plates, chips and tiles take by their words); without the house, the family's from the config alone. The
   appliances card's whole cards are each theirs, one a row 16 apart.
 
+## Dashboard sidebar (1.21, #187)
+
+A dashboard may keep a column beside its views that is the same on every view (`fluvy_sidebar:` in its configuration,
+beside `views:` or `strategy:`): what belongs to the whole dashboard and to no one view — the time, the weather, its
+pages, what needs a look. It is the dashboard's own chrome, as the header is, and it must read as if Home Assistant
+had always had it: it stands in Home Assistant's view row, under the header, and the views keep the rest.
+
+- **Three parts.** A head and a foot that stay, a middle that scrolls between them when it holds more than the
+  window: the one place where a column scrolls beside the page, because a clock and an alert must stay in sight. The
+  middle shows no scrollbar; it fades 24 px only where it goes on, under the head once scrolled and over the foot
+  while there is more. A hairline in the column parts what stays from what scrolls, 20 from each.
+- **Panel** (the default): the card's fill from edge to edge, from the header's foot to the window's, square, closed
+  by one hairline laid over its inner edge (`--fluvy-edge`, else the border) — the header's bar and Home Assistant's
+  own sidebar turned the corner. Its column is 20 in: 240 in a tablet's 280, 280 in a desktop's 320.
+- **Card**: one card (radius 20, the hairline), the view's own gaps above, under and before it (the sections' 24 in
+  Fluvy's theme) and none after it, where the view brings its own.
+- **Plain**: no surface. The cards keep theirs, a section's 16 apart, and the menu stands on the page: its names in
+  the ink the page's background asks for, a resting circle on the card's fill with the hairline, as a round on the
+  page.
+- **Cards on a surface** (panel, card) are held as the Expander holds them: a card of Fluvy's draws no surface and
+  turns its padding out, so its circle stands under the menu's; a tile, a chip or a title keeps its own; one of Home
+  Assistant's wears none. They stand 40 apart with a hairline in the middle of that room, over every card that has
+  something above it in its list, never over a list's first.
+- **The menu**: rows 44 tall, 8 apart: the 44 circle with its 20 glyph, 12, the name at 14/600, a name that may end
+  in its ellipsis. At rest the circle is neutral and the name in the secondary ink; the open page has the accent's
+  circle and the text's ink, and says `aria-current="page"`; under the pointer a name takes the text's ink, under the
+  finger the circle gives (0.94), and the keyboard's ring goes round the row (radius 22). Each row is a link, so a new
+  tab is the browser's. A view with no icon takes the one its name says (the tabs' table), else the grid.
+- **Folded** (`collapsible`): a rail of the menu's circles, 60 wide (44 between 8 a side; the view's gap more as a
+  card or plain), each read out by its page; its cards leave the page. A quiet round at its foot, on a row of its own
+  at the inner side, folds it and unfolds it: the chevron points to the edge it folds to, away from it folded. Nothing
+  slides: the view is laid out once.
+- **A phone** has none unless asked. *Above the view*: the head's cards on their own surfaces in the phone's 16
+  gutters, then the menu as one row of pills 44 tall (the glyph, the name, 16 after it; the card's fill and
+  hairline, 8 apart) that scrolls sideways to the window's edges; the open page's glyph in the accent's circle.
+  *Drawer*: a 44 round floats at the side's foot, 16 from the window's edges above the safe area, on the card's fill
+  at 88 % with the hairline and the knob's drop (the wall corner's disc), the sidebar's glyph in the secondary ink.
+  The drawer is the sidebar on the card's fill, 320 wide (never nearer than 56 to the far edge), as tall as the
+  window, its inner corners 24, over a scrim (`neutral-05` at 48 %); it comes from its side in 320 ms and leaves in
+  200, at once where motion is reduced. Its close round stands exactly where the round that opened it was. It is a
+  dialog in the top layer: the focus stays inside it, and Escape, a tap beside it or a page chosen close it. It is
+  always solid, as a sheet is.
+- **See-through.** Beside the views its surface is a card's: the house's opacity, or its own (`card_opacity`),
+  blurred as the house blurs.
+- **Never in the way.** The edit mode has none. A wall has it from the top of the screen. It stands inside the
+  floating frame and after Home Assistant's own sidebar, grows with the device's size, and wears a view's theme.
+
 ## Palettes that travel
 
 - Two more gallery lines after Electric: *Yours* (the house's saved palettes) and *Community* (the shipped ones, six

@@ -2564,6 +2564,8 @@
     "pref.performance_sub": "Ľahký: bez rozmazania za priesvitnými kartami, bez animácie príchodu, ukazovatele a kvapaliny v pokoji",
     "pref.dock": "Bočný panel vedľa stránky",
     "pref.dock_sub": "Na širokej obrazovke skrytý, kým ho neotvorí ponuka",
+    "pref.sidebars": "Skryť bočné panely",
+    "pref.sidebars_sub": "Vlastný bočný panel panela sa na tejto obrazovke nezobrazuje",
     "about.title": "Fluvy",
     "about.version": "Verzia {version}",
     "about.look": "Aktuálny vzhľad",
@@ -3327,5 +3329,13 @@
     "window": "Okno",
     "door": "Dvere",
     "battery": "Batéria"
+  },
+  "sidebar": {
+    "label": "Bočný panel",
+    "pages": "Stránky",
+    "open": "Otvoriť bočný panel",
+    "close": "Zavrieť bočný panel",
+    "collapse": "Zbaliť bočný panel",
+    "expand": "Rozbaliť bočný panel"
   }
 }

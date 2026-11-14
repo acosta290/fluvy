@@ -2316,6 +2316,8 @@
     "pref.performance_sub": "Lekki: bez rozmycia za przezroczystymi kartami, bez animacji wejścia, wskaźniki i ciecze w spoczynku",
     "pref.dock": "Pasek boczny obok strony",
     "pref.dock_sub": "Na szerokim ekranie ukryty, dopóki menu go nie otworzy",
+    "pref.sidebars": "Ukryj paski boczne pulpitów",
+    "pref.sidebars_sub": "Własny pasek boczny pulpitu nie jest wyświetlany na tym ekranie",
     "about.title": "Fluvy",
     "about.version": "Wersja {version}",
     "about.look": "Używany wygląd",
@@ -3391,5 +3393,13 @@
     "window": "Okno",
     "door": "Drzwi",
     "battery": "Bateria"
+  },
+  "sidebar": {
+    "label": "Pasek boczny",
+    "pages": "Strony",
+    "open": "Otwórz pasek boczny",
+    "close": "Zamknij pasek boczny",
+    "collapse": "Zwiń pasek boczny",
+    "expand": "Rozwiń pasek boczny"
   }
 }
