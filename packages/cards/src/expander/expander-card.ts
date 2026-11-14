@@ -648,6 +648,7 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     const runs = tap !== undefined && actionRuns(tap);
     const folds = !runs && tap?.action !== 'none';
     const onTap = this.tapper(
+      config.double_tap_action,
       'head',
       folds ? this.toggle : runs ? () => this.tap(undefined) : undefined,
       this.runner(config.double_tap_action, undefined),

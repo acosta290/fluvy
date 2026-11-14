@@ -573,8 +573,8 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     this.resizeObserver = undefined;
     for (const entry of this.optimistic.values()) clearTimeout(entry.timer);
     this.optimistic.clear();
-    for (const timer of this.firstTaps.values()) clearTimeout(timer);
-    this.firstTaps.clear();
+    for (const { timer } of this.firstTaps) clearTimeout(timer);
+    this.firstTaps = [];
   }
 
   /** Entities whose changes re-render the card. Defaults to `entity` + `entities` of the config. */
@@ -837,34 +837,40 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     if (this.hass) void runAction(this, this.hass, action, entityId);
   }
 
-  /** The first taps waiting for a second, by the surface they fell on (`tapper`). */
-  private readonly firstTaps = new Map<unknown, number>();
+  /** The first taps waiting for a second (`tapper`): the double each waits for, the surface it fell on, its wait. */
+  private firstTaps: { readonly of: unknown; readonly at: string; readonly timer: number }[] = [];
 
   /**
    * A surface's tap where a double tap is set (#179): the first waits Home Assistant's 250 ms, and a second inside them,
-   * on the same surface (`key`, the same from one render to the next: the entity it acts on, its part), runs the double
-   * instead; a hold never comes here. Without a double, the tap as it was, at once — and with one, a surface whose tap
-   * does nothing is still a button.
+   * on the same surface, runs the double instead; a hold never comes here. A surface is told by its double as its config
+   * sets it (`of`: a row's, a tile's, the card's own object, which stays the same from one render to the next, as the
+   * objects a card makes in a render do not) and by its place among the surfaces that share it (`at`: its part, the
+   * entity it acts on), so two rows or tiles of one entity never pair their taps. Without a double, the tap as it was,
+   * at once — and with one, a surface whose tap does nothing is still a button.
    */
   protected tapper<T extends (() => void) | undefined>(
-    key: unknown,
+    of: unknown,
+    at: string,
     tap: T,
     double: (() => void) | undefined,
   ): T | (() => void) {
     return double
       ? () => {
-          const first = this.firstTaps.get(key);
-          clearTimeout(first);
-          this.firstTaps.delete(key);
+          const first = this.firstTaps.find((one) => one.of === of && one.at === at);
+          this.firstTaps = this.firstTaps.filter((one) => one !== first);
+          clearTimeout(first?.timer);
           if (first) double();
-          else
-            this.firstTaps.set(
-              key,
-              window.setTimeout(() => {
-                this.firstTaps.delete(key);
+          else {
+            const wait = {
+              of,
+              at,
+              timer: window.setTimeout(() => {
+                this.firstTaps = this.firstTaps.filter((one) => one !== wait);
                 tap?.();
               }, DOUBLE_TAP),
-            );
+            };
+            this.firstTaps.push(wait);
+          }
         }
       : tap;
   }

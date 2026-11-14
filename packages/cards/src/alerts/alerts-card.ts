@@ -560,6 +560,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     const action = tapAction ?? (this.headless ? this.config?.tap_action : undefined);
     const double = doubleTapAction ?? (this.headless ? this.config?.double_tap_action : undefined);
     return this.tapper(
+      double,
       `alert_${result.key}`,
       !action
         ? () => void this.openSheet(result.key)
@@ -615,7 +616,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     run: (action, entity) => {
       if (this.hass) void runAction(this, this.hass, action, entity);
     },
-    tapper: (key, tap, double) => this.tapper(key, tap, double),
+    tapper: (of, at, tap, double) => this.tapper(of, at, tap, double),
     adopt: (root) => this.accents.adopt(root),
     closed: () => {
       this.sheetOpen_ = false;
@@ -1128,6 +1129,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
       !action ? () => void this.openSheet() : this.runner(action, undefined);
     return {
       onTap: this.tapper(
+        this.config?.double_tap_action,
         'head',
         press(this.config?.tap_action),
         this.runner(this.config?.double_tap_action, undefined),

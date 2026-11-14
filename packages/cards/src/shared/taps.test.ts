@@ -202,6 +202,48 @@ describe('a double tap (#179)', () => {
     expect(heard).toEqual(['switch.turn_on', 'light.turn_off']);
   });
 
+  it('keeps two rows of one entity to their own: a tap on each is two taps, two on one its double', async () => {
+    const { root, heard } = await drawn({
+      type: 'custom:fluvy-entities-card',
+      rows: [
+        { entity: 'sensor.office', double_tap_action: { action: 'fire-dom-event' } },
+        {
+          entity: 'sensor.office',
+          name: 'Office desk',
+          double_tap_action: { action: 'fire-dom-event' },
+        },
+      ],
+    });
+    const [first, second] = root.querySelectorAll('.fv-row--tap');
+    tap(first!);
+    tap(second!);
+    vi.advanceTimersByTime(300);
+    expect(heard).toEqual(['details sensor.office', 'details sensor.office']);
+    tap(second!);
+    tap(second!);
+    expect(heard.at(-1)).toBe('dom event');
+  });
+
+  it('keeps two tiles of one entity to their own', async () => {
+    const { root, heard } = await drawn({
+      type: 'custom:fluvy-tiles-card',
+      size: 'compact',
+      tiles: [
+        { entity: 'switch.kettle', double_tap_action: { action: 'fire-dom-event' } },
+        {
+          entity: 'switch.kettle',
+          name: 'Kettle too',
+          double_tap_action: { action: 'fire-dom-event' },
+        },
+      ],
+    });
+    const [one, other] = root.querySelectorAll('.fv-tile__tap');
+    tap(one!);
+    tap(other!);
+    vi.advanceTimersByTime(300);
+    expect(heard).toEqual(['switch.turn_on', 'switch.turn_on']);
+  });
+
   it('a tap still waiting is let go when the card leaves the page', async () => {
     const { card, root, heard } = await drawn(TILE);
     tap(root.querySelector('.fv-tile__tap')!);

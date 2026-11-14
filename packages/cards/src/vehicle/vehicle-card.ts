@@ -1844,6 +1844,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       aria-disabled=${view.disabled ? 'true' : nothing}
       ?disabled=${view.tone === 'off'}
       .fvTap=${this.tapper(
+        view.entry.double_tap_action,
         `control_${view.entry.control}`,
         () => this.press(view),
         this.runner(view.entry.double_tap_action, view.entity),

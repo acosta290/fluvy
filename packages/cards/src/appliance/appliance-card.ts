@@ -4142,7 +4142,12 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
     entry: { readonly double_tap_action?: ActionConfig } | undefined,
     tap: () => void,
   ): () => void {
-    return this.tapper(entity ?? entry, tap, this.runner(entry?.double_tap_action, entity));
+    return this.tapper(
+      entry?.double_tap_action,
+      entity ?? '',
+      tap,
+      this.runner(entry?.double_tap_action, entity),
+    );
   }
 
   /**

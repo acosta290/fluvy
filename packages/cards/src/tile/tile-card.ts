@@ -787,6 +787,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       // what does not, and a tile whose rocker is its switch, as a large tile), hold opens the details; a tap waits for
       // a second where a double tap is set (#179)
       const tapNow = this.tapper(
+        item.double_tap_action,
         view.id,
         runs(item.tap_action ?? (usable && canToggle && !plated ? TOGGLE : MORE_INFO)),
         doubleNow,
@@ -858,6 +859,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // the tile's button is laid over it, under its controls (the switch, a circle that is one, the ruler): a tap runs
     // the tap action, a still press the hold action, two taps the double tap — never a switch inside a button
     const tapNow = this.tapper(
+      item.double_tap_action,
       view.id,
       this.runner(item.tap_action ?? MORE_INFO, view.id),
       doubleNow,

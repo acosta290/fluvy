@@ -538,7 +538,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         expect: (id, state) => this.expect(id, state),
         call: (domain, service, data) => this.call(domain, service, data, ''),
         run: (action, entity) => this.tap(entity, action),
-        tapper: (key, tap, double) => this.tapper(key, tap, double),
+        tapper: (of, at, tap, double) => this.tapper(of, at, tap, double),
         accent: (colour) => this.accents.item(colour),
         destination: this.destination(),
       },

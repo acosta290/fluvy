@@ -773,7 +773,8 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
   private actions(line: Line): { readonly tap: () => void; readonly hold: () => void } {
     return {
       tap: this.tapper(
-        line.entity,
+        line.item.double_tap_action,
+        line.entity ?? '',
         () => this.tap(line.entity, line.item.tap_action ?? { action: 'more-info' }),
         this.runner(line.item.double_tap_action, line.entity),
       ),

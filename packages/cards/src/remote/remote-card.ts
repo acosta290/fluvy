@@ -1164,7 +1164,12 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
               : undefined;
       // its tap opens it, waiting for a second where a double tap is set; a hold where set (#179)
       const alive = this.alive('ok');
-      const run = this.tapper(`app_${id}`, opens, this.runner(own.double_tap_action, p.id));
+      const run = this.tapper(
+        own.double_tap_action,
+        `app_${id}`,
+        opens,
+        this.runner(own.double_tap_action, p.id),
+      );
       return {
         id,
         name: shortTitle(name, pf),
@@ -1282,6 +1287,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           const key = isKey(item.key) ? item.key : undefined;
           // its tap: its own, else its key; a hold and a double tap where set (#179)
           const run = this.tapper(
+            item.double_tap_action,
             `custom_${item.name}`,
             item.tap_action
               ? () => this.tap(p.id, item.tap_action)

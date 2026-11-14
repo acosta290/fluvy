@@ -91,7 +91,8 @@ export interface QuickHost {
   run(action: ActionConfig, entityId: string | undefined): void;
   /** A tap that waits for a second where a double tap is set (the card's `tapper`). */
   tapper(
-    key: unknown,
+    of: unknown,
+    at: string,
     tap: (() => void) | undefined,
     double: (() => void) | undefined,
   ): (() => void) | undefined;
@@ -421,6 +422,7 @@ function roundOf(host: QuickHost, item: QuickAction): LevelRound {
     switches: flip !== undefined,
     // a set none of whose members takes its call reads as it is and takes no tap; two taps its double where set
     onTap: host.tapper(
+      item.double_tap_action,
       `quick_${own ?? group}`,
       flip
         ? flip.calls.length > 0

@@ -76,7 +76,7 @@ export interface SheetHost {
   /** Runs an action as the card would (Home Assistant's own, its confirmation handed to it). */
   run(action: ActionConfig, entity?: string): void;
   /** A tap that waits for a second where a double tap is set (the card's `tapper`, #179). */
-  tapper(key: unknown, tap: () => void, double: (() => void) | undefined): () => void;
+  tapper(of: unknown, at: string, tap: () => void, double: (() => void) | undefined): () => void;
   /** The card's colours, adopted into the sheet's own root. */
   adopt(root: ShadowRoot): void;
   /** The sheet is closed: the card may step aside now if all is clear. */
@@ -559,6 +559,7 @@ export class FluvyAlertsSheet extends LitElement {
     const double = result.definition.rowDoubleTapAction;
     const tap = (): void => this.rowTap(result, group, false);
     return this.card?.tapper(
+      double,
       `row_${group.lead.id}`,
       tap,
       double && (() => this.rowTap(result, group, false, double)),
