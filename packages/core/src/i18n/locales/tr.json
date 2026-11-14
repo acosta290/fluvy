@@ -90,7 +90,10 @@
     "preset": "Ön ayar",
     "fan": "Fan",
     "low": "Düşük",
-    "high": "Yüksek"
+    "high": "Yüksek",
+    "action.preheating": "Ön ısıtıyor",
+    "action.defrosting": "Buz çözüyor",
+    "action.humidifying": "Nemlendiriyor"
   },
   "cover": {
     "position": "Konum",

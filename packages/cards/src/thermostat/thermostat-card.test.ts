@@ -401,3 +401,156 @@ describe('the fan speeds and presets, in the page’s words (#142)', () => {
     expect(await chips()).toEqual(['Eco', 'Boost', 'Auto', 'Low', 'Mid', 'High', 'Quiet']);
   });
 });
+
+describe('what it is doing, in the head (#185)', () => {
+  /** A ruler of 8 a letter, a badge its words and its sides: the widths a head is fitted by. */
+  const RULER = {
+    width: (_cls: string, text: string) => text.length * 8,
+    pill: (_cls: string, text: string, sides: number) => text.length * 8 + sides,
+    clear() {},
+  };
+  const draw = async (
+    state: HassEntity,
+    width = 360,
+    more: Partial<ThermostatCardConfig> = {},
+    says: Partial<HomeAssistant> = {},
+  ): Promise<FluvyThermostatCard> => {
+    const card = document.createElement('fluvy-thermostat-card') as FluvyThermostatCard;
+    Object.assign((card as unknown as { head: object }).head, { ruler: RULER });
+    card.setConfig(config({ entity: state.entity_id, ...more }) as LovelaceCardConfig);
+    card.hass = { ...house(state), ...says } as HomeAssistant;
+    card.width = width;
+    document.body.append(card);
+    await card.updateComplete;
+    return card;
+  };
+  /** The head's badge: its word and its tone; none where it gave way. */
+  const badge = (card: FluvyThermostatCard): [word: string, tone: string] | null => {
+    const pill = card.renderRoot.querySelector('.fv-card__head .fv-badge');
+    return pill
+      ? [pill.textContent?.trim() ?? '', /fv-badge--(\w+)/.exec(pill.className)?.[1] ?? '']
+      : null;
+  };
+  const line = (card: FluvyThermostatCard): string =>
+    card.renderRoot.querySelector('.fv-card__sub')?.textContent?.trim() ?? '';
+  const said = async (
+    state: string,
+    attributes: Record<string, unknown>,
+    id = 'climate.garderobe',
+  ): Promise<ReturnType<typeof badge>> => {
+    const card = await draw(entity(id, state, { ...homematic.attributes, ...attributes }));
+    const found = badge(card);
+    card.remove();
+    return found;
+  };
+
+  afterAll(() => setLanguageOverride(undefined));
+
+  it('wears its action’s tone: idle and off quiet, whatever the mode, which the circle and the dial keep', async () => {
+    expect(await said('heat', { hvac_action: 'heating' })).toEqual(['Heating', 'heat']);
+    // Idle wore the heating tone, and read as heating
+    expect(await said('heat', { hvac_action: 'idle' })).toEqual(['Idle', 'neutral']);
+    expect(await said('heat', { hvac_action: 'off' })).toEqual(['Off', 'neutral']);
+    expect(await said('cool', { hvac_action: 'cooling' })).toEqual(['Cooling', 'cool']);
+    expect(await said('cool', { hvac_action: 'idle' })).toEqual(['Idle', 'neutral']);
+    expect(await said('dry', { hvac_action: 'drying' })).toEqual(['Drying', 'dry']);
+    expect(await said('fan_only', { hvac_action: 'fan' })).toEqual(['Fan', 'fan']);
+    const card = await draw(
+      entity('climate.garderobe', 'heat', { ...homematic.attributes, hvac_action: 'idle' }),
+    );
+    expect(card.renderRoot.querySelector('.fv-card__head .fv-ico--heat')).not.toBeNull();
+    expect(card.renderRoot.querySelector('fluvy-dial')?.tone).toBe('heat');
+    card.remove();
+  });
+
+  it('says every action Home Assistant knows, preheating and defrosting too, in the heating tone', async () => {
+    expect(await said('heat', { hvac_action: 'preheating' })).toEqual(['Preheating', 'heat']);
+    expect(await said('heat', { hvac_action: 'defrosting' })).toEqual(['Defrosting', 'heat']);
+    // one that is none of Home Assistant's is said as it is sent, tidied, in its mode's tone
+    expect(await said('cool', { hvac_action: 'self_cleaning' })).toEqual(['Self cleaning', 'cool']);
+  });
+
+  it('says the mode where the entity says no action, in the mode’s tone, and Off quiet', async () => {
+    expect(await said('heat', {})).toEqual(['Heat', 'heat']);
+    expect(await said('cool', { hvac_action: null })).toEqual(['Cool', 'cool']);
+    expect(await said('off', {})).toEqual(['Off', 'neutral']);
+  });
+
+  it('says a humidifier’s action, and a water heater or a humidifier that is off quiet', async () => {
+    const humid = (state: string, action?: string): ReturnType<typeof said> =>
+      said(
+        state,
+        { ...humidifier.attributes, ...(action ? { action } : {}) },
+        'humidifier.bedroom',
+      );
+    expect(await humid('on', 'humidifying')).toEqual(['Humidifying', 'water']);
+    expect(await humid('on', 'idle')).toEqual(['Idle', 'neutral']);
+    expect(await humid('on')).toEqual(['On', 'water']);
+    expect(await humid('off')).toEqual(['Off', 'neutral']);
+    expect(await said('eco', tank.attributes, 'water_heater.tank')).toEqual(['Eco', 'heat']);
+    expect(await said('off', tank.attributes, 'water_heater.tank')).toEqual(['Off', 'neutral']);
+  });
+
+  /** Home Assistant's own German for an action, as its formatter says an attribute's value. */
+  const german = {
+    language: 'de',
+    locale: { language: 'de', number_format: 'language', time_format: '24' },
+    formatEntityAttributeValue: (_: HassEntity, attribute: string, value: unknown) =>
+      attribute === 'hvac_action' && value === 'idle' ? 'Leerlauf' : String(value),
+  } as unknown as Partial<HomeAssistant>;
+  const idle = entity('climate.garderobe', 'heat', {
+    ...homematic.attributes,
+    hvac_action: 'idle',
+    current_humidity: 46,
+  });
+
+  it('says Home Assistant’s own word for the action, Fluvy’s where it has none or the person chose a language', async () => {
+    await ensureLanguage('de');
+    let card = await draw(idle, 360, {}, german);
+    expect(badge(card)).toEqual(['Leerlauf', 'neutral']);
+    card.remove();
+    // Home Assistant has no word of its own here: its formatter hands the value back, and Fluvy's stands
+    const heating = { ...idle, attributes: { ...idle.attributes, hvac_action: 'heating' } };
+    card = await draw(heating, 360, {}, german);
+    expect(badge(card)).toEqual(['Heizt', 'heat']);
+    card.remove();
+    setLanguageOverride('en');
+    card = await draw(idle, 360, {}, german);
+    expect(badge(card)).toEqual(['Idle', 'neutral']);
+    card.remove();
+    setLanguageOverride(undefined);
+  });
+
+  it('is never lost: where its badge cannot stand beside the name it leads the line, the rest giving way after it', async () => {
+    // a phone's column: the badge beside the name, the humidity under it
+    let card = await draw(idle);
+    expect([badge(card), line(card)]).toEqual([['Idle', 'neutral'], '46 % RH']);
+    card.remove();
+    // 300 of content: "Idle · 46 % RH" (112) holds the line whole where the name left its badge no room
+    card = await draw(idle, 340, { name: 'The thermostat of the cloakroom' });
+    expect([badge(card), line(card)]).toEqual([null, 'Idle · 46 % RH']);
+    card.remove();
+    // half a section: the word alone, where it vanished and nothing said the action
+    card = await draw(idle, 172);
+    expect([badge(card), line(card)]).toEqual([null, 'Idle']);
+    card.remove();
+    // the person's own line comes after it, and out of reach the word is the state's
+    card = await draw(idle, 340, { name: 'The thermostat of the cloakroom', subtitle: 'Upstairs' });
+    expect(line(card)).toBe('Idle · Upstairs');
+    card.remove();
+    card = await draw({ ...idle, state: 'unavailable' }, 172);
+    expect([badge(card), line(card)]).toEqual([null, 'Unavailable']);
+    card.remove();
+  });
+
+  it('gives Home Assistant’s word way to Fluvy’s own where even alone the line would not hold it', async () => {
+    const long = {
+      ...german,
+      formatEntityAttributeValue: () => 'Im Leerlauf und wartet',
+    } as unknown as Partial<HomeAssistant>;
+    // 132 of content: Home Assistant's 22 letters (176) hold no line; Fluvy's "Bereit" does
+    const card = await draw(idle, 172, {}, long);
+    expect([badge(card), line(card)]).toEqual([null, 'Bereit']);
+    card.remove();
+  });
+});

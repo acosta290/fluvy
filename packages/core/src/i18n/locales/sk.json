@@ -806,7 +806,10 @@
     "preset": "Predvoľba",
     "fan": "Ventilátor",
     "low": "Nízka",
-    "high": "Vysoká"
+    "high": "Vysoká",
+    "action.preheating": "Predhrieva",
+    "action.defrosting": "Odmrazuje",
+    "action.humidifying": "Zvlhčuje"
   },
   "cover": {
     "position": "Poloha",

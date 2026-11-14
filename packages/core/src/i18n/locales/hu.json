@@ -90,7 +90,10 @@
     "preset": "Előbeállítás",
     "fan": "Ventilátor",
     "low": "Alacsony",
-    "high": "Magas"
+    "high": "Magas",
+    "action.preheating": "Előfűtés",
+    "action.defrosting": "Leolvasztás",
+    "action.humidifying": "Párásítás"
   },
   "cover": {
     "position": "Pozíció",

@@ -96,7 +96,10 @@
     "preset": "Пресет",
     "fan": "Вентилятор",
     "low": "Мін.",
-    "high": "Макс."
+    "high": "Макс.",
+    "action.preheating": "Прогрівання",
+    "action.defrosting": "Розморожування",
+    "action.humidifying": "Зволоження"
   },
   "cover": {
     "position": "Положення",

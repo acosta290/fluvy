@@ -96,7 +96,10 @@
     "preset": "Предустановка",
     "fan": "Вентилятор",
     "low": "Мин.",
-    "high": "Макс."
+    "high": "Макс.",
+    "action.preheating": "Прогрев",
+    "action.defrosting": "Размораживание",
+    "action.humidifying": "Увлажнение"
   },
   "cover": {
     "position": "Положение",

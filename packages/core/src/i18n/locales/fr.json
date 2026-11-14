@@ -90,7 +90,10 @@
     "preset": "Préréglage",
     "fan": "Ventilation",
     "low": "Bas",
-    "high": "Haut"
+    "high": "Haut",
+    "action.preheating": "Préchauffe",
+    "action.defrosting": "Dégivre",
+    "action.humidifying": "Humidifie"
   },
   "cover": {
     "position": "Position",

@@ -911,7 +911,10 @@
     "preset": "Ustawienie",
     "fan": "Wentylator",
     "low": "Min.",
-    "high": "Maks."
+    "high": "Maks.",
+    "action.preheating": "Nagrzewanie",
+    "action.defrosting": "Rozmrażanie",
+    "action.humidifying": "Nawilżanie"
   },
   "clock": {
     "week": "Tydzień {week}",

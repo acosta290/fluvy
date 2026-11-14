@@ -90,7 +90,10 @@
     "preset": "Preset",
     "fan": "Fan",
     "low": "Low",
-    "high": "High"
+    "high": "High",
+    "action.preheating": "Preheating",
+    "action.defrosting": "Defrosting",
+    "action.humidifying": "Humidifying"
   },
   "cover": {
     "position": "Position",

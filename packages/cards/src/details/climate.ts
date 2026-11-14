@@ -110,7 +110,7 @@ export class FluvyDetailsClimate extends DetailsSheet {
     const humidity = view.attr<number | null>('current_humidity');
     return {
       parts: [
-        m.badgeText,
+        m.doing.text,
         m.kind === 'climate' && typeof humidity === 'number'
           ? `${formatNumber(this.hass, humidity, { digits: 0 })} % RH`
           : '',

@@ -785,7 +785,10 @@
     "preset": "预设",
     "fan": "风速",
     "low": "低",
-    "high": "高"
+    "high": "高",
+    "action.preheating": "预热中",
+    "action.defrosting": "除霜中",
+    "action.humidifying": "加湿中"
   },
   "cover": {
     "position": "位置",

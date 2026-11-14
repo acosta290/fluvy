@@ -90,7 +90,10 @@
     "preset": "Predefinição",
     "fan": "Ventilador",
     "low": "Baixa",
-    "high": "Alta"
+    "high": "Alta",
+    "action.preheating": "Pré-aquecendo",
+    "action.defrosting": "Descongelando",
+    "action.humidifying": "Umidificando"
   },
   "cover": {
     "position": "Posição",

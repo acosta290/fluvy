@@ -90,7 +90,10 @@
     "preset": "Preimpostazione",
     "fan": "Ventola",
     "low": "Bassa",
-    "high": "Alta"
+    "high": "Alta",
+    "action.preheating": "Preriscaldando",
+    "action.defrosting": "Sbrinando",
+    "action.humidifying": "Umidificando"
   },
   "cover": {
     "position": "Apertura",

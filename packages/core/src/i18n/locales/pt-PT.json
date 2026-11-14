@@ -90,7 +90,10 @@
     "preset": "Predefinição",
     "fan": "Ventoinha",
     "low": "Baixa",
-    "high": "Alta"
+    "high": "Alta",
+    "action.preheating": "A pré-aquecer",
+    "action.defrosting": "A descongelar",
+    "action.humidifying": "A humidificar"
   },
   "cover": {
     "position": "Posição",
