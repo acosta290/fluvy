@@ -2868,6 +2868,7 @@
     "kind.gauges": "Napelemmérő",
     "kind.production": "Termelés",
     "kind.tomorrow": "Holnap · előrejelzés",
+    "kind.ahead": "Következő napok · előrejelzés",
     "kind.history": "Elmúlt napok",
     "kind.water": "Víz és gáz",
     "kind.period": "Időszak",

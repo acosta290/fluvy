@@ -186,17 +186,23 @@ const audit = (page) =>
               `${name}: the bubble ${r.left.toFixed(1)}…${r.right.toFixed(1)} leaves ${from.toFixed(1)}…${to.toFixed(1)}`,
             );
         }
-        // the axis under it: the first label on the plot's start, the last ending on its end
+        // the axis under it: the first label on the plot's start, the last ending on its end — where they are its
+        // ends (`is-first`, `is-last`: an hour's axis); a day's name centred under its bar is no end (the days ahead)
         const axis = wrapper.parentElement?.querySelector(':scope .fv-axis');
         if (axis && axis.children.length) {
           const a = axis.getBoundingClientRect();
-          const first = axis.firstElementChild.getBoundingClientRect();
-          const last = axis.lastElementChild.getBoundingClientRect();
+          const first = axis.firstElementChild;
+          const last = axis.lastElementChild;
           if (Math.abs(a.left - (box.left + left)) > 0.75)
             wrong.push(
               `${name}: the axis starts at ${a.left.toFixed(1)}, the plot at ${(box.left + left).toFixed(1)}`,
             );
-          if (Math.abs(first.left - a.left) > 0.75 || Math.abs(last.right - a.right) > 0.75)
+          if (
+            (first.classList.contains('is-first') &&
+              Math.abs(first.getBoundingClientRect().left - a.left) > 0.75) ||
+            (last.classList.contains('is-last') &&
+              Math.abs(last.getBoundingClientRect().right - a.right) > 0.75)
+          )
             wrong.push(`${name}: the axis's ends are not flush`);
         }
       }

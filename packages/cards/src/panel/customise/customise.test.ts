@@ -538,6 +538,48 @@ describe('Customise (#170)', () => {
     expect(text('production/production', 'fv-row__sub')).toBe('Production');
   });
 
+  it('offers the week ahead hidden, and keeps only that a person shows it (#190)', async () => {
+    // the array's forecast is Solcast's (its device says so): it holds a week
+    const sources = DEMO_ENERGY_SOURCES.map((source) =>
+      source['type'] === 'solar' ? { ...source, config_entry_solar_forecast: ['solcast'] } : source,
+    );
+    const m = await mount(true, { type: 'custom:fluvy-energy' }, sources);
+    Object.assign(m.hass.devices ?? {}, {
+      solcast: {
+        id: 'solcast',
+        config_entries: ['solcast'],
+        identifiers: [['solcast_solar', 'x']],
+      },
+    });
+    await m.open();
+    [...m.root.querySelectorAll<HTMLElement>('.cz-top .fv-chip')]
+      .find((c) => c.textContent?.trim() === 'Production')!
+      .click();
+    await m.settle(2);
+    const text = (cls: string) =>
+      m.root.querySelector(`.cz-part[data-part="production/ahead"] .${cls}`)?.textContent?.trim();
+    const shown = () => m.root.querySelector('.cz-view .fv-card__sub')?.textContent?.trim();
+    expect(m.parts().slice(0, 4)).toEqual([
+      'production/production',
+      'production/tomorrow',
+      'production/history',
+      'production/ahead',
+    ]);
+    // a row like any hidden one: what it is, that it is hidden, its switch off; nothing written
+    expect(text('fv-row__sub')).toBe('Hidden · Next days · forecast');
+    expect(m.part('production/ahead')!.classList.contains('is-off')).toBe(true);
+    const count = shown();
+    expect(m.edit()).toBeUndefined();
+    await m.flip(m.part('production/ahead')!);
+    expect(m.edit()).toEqual({ cards: { 'production/ahead': { hidden: false } } });
+    expect(text('fv-row__sub')).toBe('Edited · Next days · forecast');
+    expect(shown()).not.toBe(count);
+    // hidden again, the edit is gone: the dashboard is the house's again
+    await m.flip(m.part('production/ahead')!);
+    expect(m.edit()).toBeUndefined();
+    expect(shown()).toBe(count);
+  });
+
   it('opens on the dashboard its address names', async () => {
     const m = await mount();
     m.panel.route = { prefix: '/fluvy', path: '/dashboard/fluvy-auto' };

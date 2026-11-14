@@ -1594,6 +1594,7 @@
     "kind.gauges": "Indicatore solare",
     "kind.production": "Produzione",
     "kind.tomorrow": "Domani · previsione",
+    "kind.ahead": "Prossimi giorni · previsione",
     "kind.history": "Ultimi giorni",
     "kind.water": "Acqua e gas",
     "kind.period": "Periodo",

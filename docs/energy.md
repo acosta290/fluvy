@@ -291,7 +291,17 @@ show_compare: true              # Compare: the period before beside the span, on
     hours of sun.
   - `day: ahead` — a bar a day for the days the forecast holds after today (tomorrow alone from Forecast.Solar, a week
     from Solcast, Open-Meteo's days: never a day it does not hold, and a last day the forecast only begins is left
-    out), their total, the daily average, the best and the lowest day; `days: 5` draws five at most (2 to 14).
+    out), their total, the daily average, the best and the lowest day; `days: 5` draws five at most (2 to 14). The
+    automatic dashboards offer it (1.21, #190) where every forecast the Energy dashboard links to your panels holds a
+    week (Solcast, Open-Meteo Solar Forecast): `days: 7` under History bars, hidden until you show it in Customise
+    (*Next days · forecast*).
+
+    ```yaml
+    type: custom:fluvy-production-card
+    entity: sensor.solar_energy_today
+    day: ahead
+    days: 7
+    ```
 
   A forecast day reads the forecast alone, so it needs no meter in reach: a forecast sensor that carries the days
   asked (a template with `wh_hours` for both days) comes first, then Home Assistant's own for the card's arrays, and

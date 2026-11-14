@@ -2923,6 +2923,7 @@
     "kind.gauges": "Солнечный индикатор",
     "kind.production": "Генерация",
     "kind.tomorrow": "Завтра · прогноз",
+    "kind.ahead": "Ближайшие дни · прогноз",
     "kind.history": "Последние дни",
     "kind.water": "Вода и газ",
     "kind.period": "Период",

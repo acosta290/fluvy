@@ -17,6 +17,8 @@ export interface PartOutline {
   readonly kind: string;
   /** Its cards as the house builds them: none while the house has nothing for it (it keeps its place all the same). */
   readonly cards: readonly Card[];
+  /** It starts hidden, a function a person turns on: hidden until the dashboard's `edit` shows it (`hiddenBy`). */
+  readonly off: boolean;
   /** The card its options are edited on: its first that is no heading. */
   readonly card: Card | undefined;
   /** The list it draws, where it draws one. */
@@ -59,13 +61,18 @@ export async function outlineOf(
         title: host.title,
         icon: host.icon,
         tab: !view.subview,
-        parts: host.parts.map(({ id, cards }) => ({
-          id: `${host.path}/${id}`,
-          kind: id.split(':')[0] as string,
-          cards,
-          card: cards.find((card) => card.type !== HEADING) ?? cards[0],
-          list: host.lists.get(id),
-        })),
+        parts: host.parts.map(({ id, cards, off }) => {
+          // one that starts hidden is built hidden here too: its cards are the ones it draws once shown
+          const own = off ?? cards;
+          return {
+            id: `${host.path}/${id}`,
+            kind: id.split(':')[0] as string,
+            cards: own,
+            off: off !== undefined,
+            card: own.find((card) => card.type !== HEADING) ?? own[0],
+            list: host.lists.get(id),
+          };
+        }),
       },
     ];
   });
@@ -130,6 +137,7 @@ const GLYPHS: Readonly<Record<string, string>> = {
   gauges: 'sun',
   production: 'sun',
   tomorrow: 'sun',
+  ahead: 'sun',
   history: 'chart',
   distribution: 'chart',
   water: 'drop',

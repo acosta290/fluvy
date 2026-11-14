@@ -55,6 +55,13 @@ const cardEdit = (host: MoreHost, id: string): CardEdit | undefined =>
 export const hiddenPart = (ctx: Hosted, id: string): boolean =>
   ctx.more !== undefined && cardEdit(ctx.more, id)?.hidden === true;
 
+/**
+ * Whether a part is hidden by its edit: the person hid it, or it starts hidden (`off`: a function a person turns on)
+ * and they have not shown it (`hidden: false`, the only thing kept of it).
+ */
+export const hiddenBy = (own: CardEdit | undefined, off: boolean): boolean =>
+  own?.hidden === true || (off && own?.hidden !== false);
+
 /** The part each card stands in, by the card: its id inside its view. */
 const PARTS = new WeakMap<Card, string>();
 export const partOf = (card: Card): string | undefined => PARTS.get(card);
@@ -70,20 +77,23 @@ export function withOptions(card: Card, options: unknown): Card {
 }
 
 /**
- * The cards of one part of the view being built, under its id: none while the person hides it, else each with their
- * options — the part's over its own cards (all but a heading and a "N more" row that ride with them), then a card's
- * own where it draws one entity, room or device of a list (`home/lights:light.sofa`). Blocks and cards kept together
- * stay as they were handed.
+ * The cards of one part of the view being built, under its id: none while the person hides it — or, for a part that
+ * starts hidden (`off`), until they show it — else each with their options — the part's over its own cards (all but a
+ * heading and a "N more" row that ride with them), then a card's own where it draws one entity, room or device of a
+ * list (`home/lights:light.sofa`). Blocks and cards kept together stay as they were handed. A part that starts hidden
+ * keeps the cards it would draw on the view's part (`off`), for Customise to offer.
  */
 export function part<T extends Card | readonly Card[]>(
   ctx: Hosted,
   id: string,
   pieces: readonly T[],
+  off = false,
 ): T[] {
   const host = ctx.more;
-  if (!host) return [...pieces];
+  if (!host) return off ? [] : [...pieces];
   const own = cardEdit(host, id);
-  if (own?.hidden === true) {
+  const hidden = hiddenBy(own, off);
+  if (hidden && !off) {
     host.parts.push({ id, cards: [] });
     return [];
   }
@@ -101,8 +111,9 @@ export function part<T extends Card | readonly Card[]>(
   const built = pieces.map((piece) =>
     Array.isArray(piece) ? (piece as readonly Card[]).map(dressed) : dressed(piece as Card),
   ) as T[];
-  host.parts.push({ id, cards: built.flat() as Card[] });
-  return built;
+  const drawn = built.flat() as Card[];
+  host.parts.push({ id, cards: hidden ? [] : drawn, ...(off ? { off: drawn } : {}) });
+  return hidden ? [] : built;
 }
 
 /**

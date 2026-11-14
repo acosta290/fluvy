@@ -134,7 +134,10 @@ small) and lead to every appliance.
   今日, 日发电量, 日発電量…); with several arrays there, Production and History bars read them all together, each array in
   Production's legend named as the house calls it (by its device where two meters read alike); where the Energy
   dashboard links a solar forecast to your panels, Production draws it and a second Production card under it shows
-  tomorrow's (`day: tomorrow`). A forecast is never a
+  tomorrow's (`day: tomorrow`). Where every forecast linked there holds a week (Solcast's, Open-Meteo Solar
+  Forecast's; Forecast.Solar's holds two days), the next seven days (`day: ahead`, `days: 7`) can stand under History
+  bars, the last days and the next in one column: a card that starts hidden, shown from [Customise](#customise)
+  (*Next days · forecast*, `production/ahead` on the Energy dashboard, `energy/ahead` on Home's). A forecast is never a
   reading: one named so in any language (*forecast*, *Prognose*, *previsión*, 预测…) or of a forecasting integration
   (Forecast.Solar, Solcast) takes no role, is neither a meter of the Meters view nor one of the day's tiles, and no room
   or Climate view counts it.
@@ -225,7 +228,8 @@ rooms' pages after them, and the open view's cards as rows, in the order they ar
   place it among the tabs, so any view can lead.
 - **A card**: its switch hides it. A tap on its row unfolds its buttons: move up, move down, *Options* and reset.
   *Options* opens the card's own form in a sheet; only what you change there is kept, so the rest of the card stays
-  as the house builds it.
+  as the house builds it. A few cards are offered hidden, as something you turn on (the Production view's *Next days ·
+  forecast*, 1.21): their row says *Hidden* until its switch shows them, and `hidden: false` is all that is kept.
 - **A list** (the lights of the Home view, a view's thermostats, the rows of the Security card): its entities are
   rows of their own under it. Each has a switch that leaves it out; a tap on one unfolds its own buttons (move up,
   move down, and *Options* where the entity is a card of its own, such as a light's tile); *Add an entity* adds one
@@ -253,6 +257,7 @@ strategy:
             content: Filters are due in March
     cards:
       home/weather: { hidden: true }     # a card left out
+      energy/ahead: { hidden: false }    # a card offered hidden, shown (the week's solar forecast)
       home/flow: { order: 1 }            # read second on its view
       home/clock:
         options: { face: analog }        # keys laid over the generated card
@@ -269,7 +274,7 @@ strategy:
 | Key | What it holds |
 | --- | --- |
 | `views.<view>` | `hidden` (any view but the template's first), `order` (its place among the tabs) and `add` (card configs laid after the view's own, each the part `<view>/own:<its place in the list>`) |
-| `cards.<id>` | `hidden`, `order` (its place among its view's parts) and `options`: keys laid over the generated config (a variant, a title, a colour, the entity itself), `null` to take one away; a card's `type` is never changed |
+| `cards.<id>` | `hidden` (`true` leaves a card out, `false` shows one offered hidden), `order` (its place among its view's parts) and `options`: keys laid over the generated config (a variant, a title, a colour, the entity itself), `null` to take one away; a card's `type` is never changed |
 | `entities.<id>` | `drop` (entities left out), `add` (entities shown besides: each one the house has, of a domain the list takes) and `order` (the entities read first, the others after them in the house's order) |
 
 **Ids.** A view is named by its path (`home`, `climate`, `room-kitchen`). Every card stands in a part with an id of its

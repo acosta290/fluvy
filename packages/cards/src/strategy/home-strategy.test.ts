@@ -1457,6 +1457,59 @@ describe('custom:fluvy-home strategy', () => {
     }
   });
 
+  it('offers the week ahead beside the last days where every forecast holds one, hidden until a person shows it (#190)', async () => {
+    const meter = 'sensor.solar_inverter_daily_yield';
+    /** A house whose array's forecast is of `domain`, and the column its last days stand in. */
+    const column = async (
+      type: 'custom:fluvy-home' | 'custom:fluvy-energy',
+      path: string,
+      domain: string,
+      edit?: Record<string, unknown>,
+    ): Promise<Record<string, unknown>[]> => {
+      const hass = demoHass({
+        sources: [
+          { type: 'grid', stat_energy_from: 'sensor.grid_energy_today' },
+          { type: 'solar', stat_energy_from: meter, config_entry_solar_forecast: ['forecast'] },
+        ],
+      }) as unknown as HomeAssistant;
+      hass.devices = {
+        ...hass.devices,
+        forecast: { id: 'forecast', config_entries: ['forecast'], identifiers: [[domain, 'x']] },
+      } as unknown as HomeAssistant['devices'];
+      const { views } = await generate({ type, ...(edit ? { edit } : {}) }, hass);
+      const cards = views.find((v) => v.path === path)!.sections.map((s) => s.cards);
+      const at = cards.find((s) => s.some((c) => c.type === 'custom:fluvy-history-bars-card'))!;
+      return at.slice(at.findIndex((c) => c.type === 'custom:fluvy-history-bars-card'));
+    };
+    const shown = (path: string) => ({ cards: { [`${path}/ahead`]: { hidden: false } } });
+    for (const [type, path] of [
+      ['custom:fluvy-home', 'energy'],
+      ['custom:fluvy-energy', 'production'],
+    ] as const) {
+      // as 1.20 drew it: the last days, and after them whatever the column held then
+      const before = await column(type, path, 'solcast_solar');
+      expect(before.some((c) => c['day'] === 'ahead')).toBe(false);
+      const after = await column(type, path, 'solcast_solar', shown(path));
+      expect(after.slice(0, 2)).toEqual([
+        before[0],
+        {
+          type: 'custom:fluvy-production-card',
+          entity: meter,
+          day: 'ahead',
+          days: 7,
+          grid_options: { columns: 12 },
+        },
+      ]);
+      // Open-Meteo holds sixteen days; Forecast.Solar two: its row is not offered, shown or not
+      expect((await column(type, path, 'open_meteo_solar_forecast', shown(path)))[1]).toEqual(
+        after[1],
+      );
+      expect(
+        (await column(type, path, 'forecast_solar', shown(path))).some((c) => c['day'] === 'ahead'),
+      ).toBe(false);
+    }
+  });
+
   it('reads an export meter as the grid’s second sensor, never as the grid', async () => {
     const hass = house([
       entity('sensor.grid_import_power', '1900', {

@@ -36,6 +36,30 @@ const ROLE_WORDS: Rules<Role> = [
   ['home', HOME_POWER],
 ];
 
+/**
+ * The integrations whose solar forecast holds a week ahead: Solcast's (seven days) and Open-Meteo Solar Forecast's
+ * (sixteen); Forecast.Solar's holds today and tomorrow.
+ */
+const WEEK = ['solcast_solar', 'open_meteo_solar_forecast'];
+
+/**
+ * Whether every forecast linked to the arrays (`entries`, config entries) holds a week: each is told by its devices,
+ * which its integration knows by its own name (`identifiers`); an entry with no device is not known, and holds none.
+ */
+function holdsWeek(home: HomeRegistry, entries: readonly string[]): boolean {
+  const devices = Object.values(home.registries.devices ?? {});
+  return (
+    entries.length > 0 &&
+    entries.every((entry) =>
+      devices.some(
+        (device) =>
+          device.config_entries?.includes(entry) &&
+          device.identifiers?.some(([domain]) => WEEK.includes(domain)),
+      ),
+    )
+  );
+}
+
 /** A grid meter named by its phase: `grid_power_l1`, "Phase A", `fase_2`, `faz 3`. */
 const PHASE =
   /(^|[\s_.-])(l[1-3]|phase[\s_-]?[1-3abc]|fase[\s_-]?[1-3]|faz[\s_-]?[1-3])([\s_.-]|$)/i;
@@ -143,6 +167,10 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
     solarToday,
     solarMeters,
     solarForecast: house.sources.some((s) => s.kind === 'solar' && s.forecast),
+    solarWeek: holdsWeek(
+      home,
+      house.sources.flatMap((s) => (s.kind === 'solar' ? (s.forecast ?? []) : [])),
+    ),
     consumption,
     consumptionPowers,
     // the cards read the energy dashboard themselves when it carries the grid's power (or the house has no grid to

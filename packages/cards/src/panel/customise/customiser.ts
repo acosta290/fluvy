@@ -19,7 +19,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import type { Card as CardClass } from '../../shared/base.js';
 import { loadChartEngine } from '../../shared/chart-load.js';
 import { COMMON_ALIASES, normaliseConfig } from '../../shared/config.js';
-import { edited, editOf, pinned, withOptions } from '../../strategy/edit.js';
+import { edited, editOf, hiddenBy, pinned, withOptions } from '../../strategy/edit.js';
 import { generateWith } from '../../strategy/generate.js';
 import type { Card, DashboardEdit, FluvyStrategyConfig, ListEdit } from '../../strategy/types.js';
 import type { DashboardInfo, PanelContext } from '../model.js';
@@ -120,6 +120,7 @@ const KINDS = [
   'gauges',
   'production',
   'tomorrow',
+  'ahead',
   'history',
   'water',
   'period',
@@ -268,7 +269,16 @@ export class Customiser {
       // each by its place in the list, as the dashboard names it; what names no type is no card
       ...(Array.isArray(own) ? own : []).flatMap((card: unknown, index): PartOutline[] =>
         isCard(card)
-          ? [{ id: `${view.id}/own:${index}`, kind: 'own', cards: [card], card, list: undefined }]
+          ? [
+              {
+                id: `${view.id}/own:${index}`,
+                kind: 'own',
+                cards: [card],
+                off: false,
+                card,
+                list: undefined,
+              },
+            ]
           : [],
       ),
     ];
@@ -596,7 +606,7 @@ export class Customiser {
   ): TemplateResult {
     const edit = this.edit;
     const own = part.kind === 'own';
-    const hidden = edit.cards?.[part.id]?.hidden === true;
+    const hidden = hiddenBy(edit.cards?.[part.id], part.off);
     const changed =
       !own &&
       (Object.keys(edit.cards ?? {}).some((id) => id === part.id || id.startsWith(`${part.id}:`)) ||
@@ -681,7 +691,10 @@ export class Customiser {
                 'accent',
                 (on) =>
                   this.change(
-                    patched(this.edit, 'cards', part.id, { hidden: on ? undefined : true }),
+                    // a part that starts hidden keeps its being shown; any other its being hidden
+                    patched(this.edit, 'cards', part.id, {
+                      hidden: on === part.off ? !on : undefined,
+                    }),
                   ),
                 title,
               )}`,
@@ -938,7 +951,7 @@ export class Customiser {
     const order = pinned(all, (part) => edit.cards?.[part.id]?.order).filter(
       (part) => part.cards.length,
     );
-    const hidden = order.filter((part) => edit.cards?.[part.id]?.hidden === true).length;
+    const hidden = order.filter((part) => hiddenBy(edit.cards?.[part.id], part.off)).length;
     const own = edit.views?.[view.id];
     const changed =
       own !== undefined ||

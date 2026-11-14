@@ -57,6 +57,9 @@ export interface DeviceRegistryEntry {
   via_device_id?: string | null;
   /** The device this one is part of, whose area it is in where it has none of its own. */
   parent_device_id?: string | null;
+  /** The config entries it belongs to, and how its integrations know it (`[domain, id]`): which integration it is of. */
+  config_entries?: string[];
+  identifiers?: [string, string][];
 }
 
 export interface AreaRegistryEntry {

@@ -155,7 +155,8 @@ export const solarGauges = (e: EnergyRoles): Card[] =>
  * energy dashboard all of theirs together under the sun's word, each array named as the house calls it, by its device
  * where two read alike (as the flow names them, #170), where the first alone was read (#183); and where the Energy
  * dashboard links a forecast to an array, what it is expected to make tomorrow, the same card a day on, under today's
- * in its column (one block). Each is a part of its view (#170): `production`, `tomorrow`, `history`.
+ * in its column (one block); where every such forecast holds a week, the next seven days under the last days, a part
+ * that starts hidden. Each is a part of its view (#170): `production`, `tomorrow`, `history`, `ahead`.
  */
 export function productionCards(ctx: StrategyContext): Loose[] {
   const { energy, home, t } = ctx;
@@ -187,14 +188,27 @@ export function productionCards(ctx: StrategyContext): Loose[] {
       ]),
     ),
   ];
-  return [
-    // today's and tomorrow's in one column, whichever of them a person keeps
-    ...when(block.length, () => [block]),
+  const days = [
     ...part(
       ctx,
       'history',
       when(entity, () => [full('history-bars', bars)]),
     ),
+    // the week ahead beside the last days, where every forecast the arrays have holds one (1.21, #190): off until a
+    // person shows it in Customise
+    ...part(
+      ctx,
+      'ahead',
+      when(entity && energy.solarWeek, () => [
+        full('production', { ...today, day: 'ahead', days: 7 }),
+      ]),
+      true,
+    ),
+  ];
+  return [
+    // today's and tomorrow's in one column, whichever of them a person keeps; the last days and the next in another
+    ...when(block.length, () => [block]),
+    ...(days.length > 1 ? [days] : days),
   ];
 }
 

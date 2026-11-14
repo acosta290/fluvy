@@ -241,6 +241,8 @@ export interface EnergyRoles {
   readonly solarMeters: readonly string[];
   /** The Energy dashboard links a forecast to an array: Production draws it, and tomorrow has a card of its own. */
   readonly solarForecast: boolean;
+  /** Every forecast linked to an array holds a week ahead (Solcast, Open-Meteo Solar Forecast): the days ahead can be drawn. */
+  readonly solarWeek: boolean;
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];
@@ -303,6 +305,8 @@ export interface Part {
   /** Its id inside its view (`flow`, `lights`, `room:kitchen`); the dashboard's `edit` names it after the view's path. */
   readonly id: string;
   readonly cards: readonly Card[];
+  /** A part that starts hidden, a function a person turns on in Customise: the cards it draws once they show it. */
+  readonly off?: readonly Card[];
 }
 
 /** A list a part draws: every entity the house gives it (before its cap), and what it takes besides. */

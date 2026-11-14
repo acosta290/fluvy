@@ -2801,6 +2801,7 @@
     "kind.gauges": "光伏仪表",
     "kind.production": "发电量",
     "kind.tomorrow": "明天 · 预报",
+    "kind.ahead": "未来几天 · 预报",
     "kind.history": "最近几天",
     "kind.water": "水与燃气",
     "kind.period": "时段",

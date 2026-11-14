@@ -1594,6 +1594,7 @@
     "kind.gauges": "Güneş göstergesi",
     "kind.production": "Üretim",
     "kind.tomorrow": "Yarın · tahmin",
+    "kind.ahead": "Sonraki günler · tahmin",
     "kind.history": "Son günler",
     "kind.water": "Su ve gaz",
     "kind.period": "Dönem",

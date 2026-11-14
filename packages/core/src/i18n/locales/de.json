@@ -1594,6 +1594,7 @@
     "kind.gauges": "Solaranzeige",
     "kind.production": "Erzeugung",
     "kind.tomorrow": "Morgen · Vorhersage",
+    "kind.ahead": "Nächste Tage · Vorhersage",
     "kind.history": "Letzte Tage",
     "kind.water": "Wasser & Gas",
     "kind.period": "Zeitraum",

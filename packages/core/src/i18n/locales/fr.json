@@ -1594,6 +1594,7 @@
     "kind.gauges": "Jauge solaire",
     "kind.production": "Production",
     "kind.tomorrow": "Demain · prévision",
+    "kind.ahead": "Prochains jours · prévision",
     "kind.history": "Derniers jours",
     "kind.water": "Eau et gaz",
     "kind.period": "Période",

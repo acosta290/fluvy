@@ -12,8 +12,15 @@ const reading = (
   platform?: string,
 ) => ({ id, friendly_name, state, device_class, platform });
 
-/** A house of those readings, nothing else, with the energy dashboard's preferences where it has them. */
-function roles(readings: readonly ReturnType<typeof reading>[], prefs: EnergyPrefs | null = null) {
+/**
+ * A house of those readings, nothing else, with the energy dashboard's preferences where it has them, and its devices
+ * where they matter.
+ */
+function roles(
+  readings: readonly ReturnType<typeof reading>[],
+  prefs: EnergyPrefs | null = null,
+  devices: Record<string, unknown> = {},
+) {
   const home = new HomeRegistry({
     states: Object.fromEntries(
       readings.map(({ id, friendly_name, state, device_class }) => [
@@ -39,7 +46,7 @@ function roles(readings: readonly ReturnType<typeof reading>[], prefs: EnergyPre
         { entity_id: id, ...(platform ? { platform } : {}) },
       ]),
     ),
-    devices: {},
+    devices,
     areas: {},
     language: 'en',
   } as never);
@@ -230,5 +237,40 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     expect(roles(house, linked([])).solarForecast).toBe(false);
     expect(roles(house, linked(null)).solarForecast).toBe(false);
     expect(roles(house).solarForecast).toBe(false);
+  });
+
+  it('knows a week ahead where every linked forecast is Solcast’s or Open-Meteo’s, by its devices (#190)', () => {
+    const house = [
+      reading('sensor.inverter_total_yield', 'Inverter total yield', '9120', 'energy'),
+    ];
+    const linked = (...entries: string[]): EnergyPrefs => ({
+      energy_sources: entries.map((entry, i) => ({
+        type: 'solar',
+        stat_energy_from: i ? `sensor.array_${i}` : 'sensor.inverter_total_yield',
+        config_entry_solar_forecast: [entry],
+      })),
+    });
+    // each integration knows its device by its own name and the entry's id
+    const devices = Object.fromEntries(
+      [
+        ['solcast', 'solcast_solar'],
+        ['meteo', 'open_meteo_solar_forecast'],
+        ['plane', 'forecast_solar'],
+      ].map(([entry, domain]) => [
+        `device_${entry}`,
+        { id: `device_${entry}`, config_entries: [entry], identifiers: [[domain, entry]] },
+      ]),
+    );
+    const week = (prefs: EnergyPrefs) => roles(house, prefs, devices).solarWeek;
+    expect(week(linked('solcast'))).toBe(true);
+    expect(week(linked('meteo'))).toBe(true);
+    expect(week(linked('solcast', 'meteo'))).toBe(true);
+    // Forecast.Solar holds today and tomorrow: never a week, nor a house that adds it to a week's
+    expect(week(linked('plane'))).toBe(false);
+    expect(week(linked('solcast', 'plane'))).toBe(false);
+    // an entry no device tells is not known
+    expect(week(linked('solcast', 'nowhere'))).toBe(false);
+    expect(roles(house, linked('solcast')).solarWeek).toBe(false);
+    expect(week({ energy_sources: [] })).toBe(false);
   });
 });

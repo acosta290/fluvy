@@ -2610,6 +2610,7 @@
     "kind.gauges": "Wskaźnik solarny",
     "kind.production": "Produkcja",
     "kind.tomorrow": "Jutro · prognoza",
+    "kind.ahead": "Następne dni · prognoza",
     "kind.history": "Ostatnie dni",
     "kind.water": "Woda i gaz",
     "kind.period": "Okres",

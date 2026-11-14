@@ -57,6 +57,7 @@
     "kind.gauges": "Solar gauge",
     "kind.production": "Production",
     "kind.tomorrow": "Tomorrow · forecast",
+    "kind.ahead": "Next days · forecast",
     "kind.history": "Last days",
     "kind.water": "Water & gas",
     "kind.period": "Period",

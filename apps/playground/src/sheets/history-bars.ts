@@ -1,8 +1,12 @@
 import { FluvyHistoryBarsCard } from '../../../../packages/cards/src/history-bars/history-bars-card.js';
+import { FluvyProductionCard } from '../../../../packages/cards/src/production/production-card.js';
+import { house as houseOf } from '../houses.js';
 import type { SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-history-bars-card'))
   customElements.define('fluvy-history-bars-card', FluvyHistoryBarsCard);
+if (!customElements.get('fluvy-production-card'))
+  customElements.define('fluvy-production-card', FluvyProductionCard);
 
 /**
  * The history bars (1.8, issue #38): the mock-up's four cards with their very numbers — solar production, the
@@ -278,6 +282,35 @@ const TANK: ReadonlyArray<readonly [number, number]> = [
   [at(9, 9, 18), 401],
   [at(9, 10, 8), 396],
 ];
+
+/** An October day's hours on the roof, 08:00 to 18:00 (Wh), and today's and each next day's weather against it. */
+const OCTOBER = [300, 1200, 2600, 4000, 5000, 5400, 5000, 4000, 2600, 1200, 300];
+const WEEK = [1, 1.12, 0.48, 0.86, 1.18, 1.05, 0.62, 0.95];
+/** Solcast's week for the roof, linked to it in the Energy dashboard (#190): today and the seven days after it. */
+const solcastWeek = houseOf({
+  'energy/get_prefs': () => ({
+    energy_sources: [
+      {
+        type: 'solar',
+        stat_energy_from: 'sensor.hb_solar',
+        config_entry_solar_forecast: ['solcast'],
+      },
+    ],
+    device_consumption: [],
+  }),
+  'energy/solar_forecast': () => ({
+    solcast: {
+      wh_hours: Object.fromEntries(
+        WEEK.flatMap((share, day) =>
+          OCTOBER.map((wh, i) => [
+            new Date(2026, 9, 10 + day, 8 + i).toISOString(),
+            Math.round(wh * share),
+          ]),
+        ),
+      ),
+    },
+  }),
+});
 
 /** The solar meter with the card's default colour (the palette's accent): what the other frames are drawn with. */
 const plain = {
@@ -619,6 +652,22 @@ export const sheet: SheetSpec = {
           entities: ['sensor.hb_north', 'sensor.hb_south'],
           color: 'amber',
           include_today: true,
+          _now: NOW,
+        },
+      ],
+    },
+    // 1.21, #190: the automatic dashboards' Production view where Solcast forecasts the roof, the week ahead shown in
+    // Customise: the last days and the next in one column, as the strategy writes them
+    {
+      title: 'The last days and the next',
+      hass: solcastWeek,
+      cards: [
+        { type: plain.type, entity: 'sensor.hb_solar', color: 'amber', _now: NOW },
+        {
+          type: 'custom:fluvy-production-card',
+          entity: 'sensor.hb_solar',
+          day: 'ahead',
+          days: 7,
           _now: NOW,
         },
       ],

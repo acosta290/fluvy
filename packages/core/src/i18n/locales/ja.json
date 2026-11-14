@@ -2756,6 +2756,7 @@
     "kind.gauges": "太陽光ゲージ",
     "kind.production": "発電",
     "kind.tomorrow": "明日 · 予測",
+    "kind.ahead": "今後数日 · 予測",
     "kind.history": "過去数日",
     "kind.water": "水道・ガス",
     "kind.period": "期間",

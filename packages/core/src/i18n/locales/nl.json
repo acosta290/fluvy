@@ -1594,6 +1594,7 @@
     "kind.gauges": "Zonnemeter",
     "kind.production": "Opwek",
     "kind.tomorrow": "Morgen · verwachting",
+    "kind.ahead": "Komende dagen · verwachting",
     "kind.history": "Afgelopen dagen",
     "kind.water": "Water & gas",
     "kind.period": "Periode",
