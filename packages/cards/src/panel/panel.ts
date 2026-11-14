@@ -52,6 +52,7 @@ import { knownPalettes, matchOf } from './palettes.js';
 
 import {
   changeLines,
+  configWith,
   sameLook,
   TABS,
   unsaved,
@@ -604,14 +605,15 @@ export class FluvyPanel extends LitElement {
           ...(entry ? { id: entry.id, inSidebar: entry.show_in_sidebar } : {}),
         };
         const config = await hass
-          .callWS<{ strategy?: Record<string, unknown> }>({
+          .callWS<{ strategy?: Record<string, unknown> } & Record<string, unknown>>({
             type: 'lovelace/config',
             url_path: panel.url_path === 'lovelace' ? null : panel.url_path,
           })
           .catch(() => undefined);
-        const strategy = config?.strategy;
+        // the strategy is the panel's to edit; what stands beside it is kept as it is, for every save
+        const { strategy, ...rest } = config ?? {};
         const template = templateOf(strategy?.['type']);
-        return strategy && template ? { ...info, strategy, template } : info;
+        return strategy && template ? { ...info, strategy, template, rest } : info;
       }),
     );
     // the edits that still change something, dashboard by dashboard
@@ -826,12 +828,13 @@ export class FluvyPanel extends LitElement {
     if (Object.keys(this.personalEdit).length) await store.savePersonal(this.personalEdit);
     let written = false;
     for (const [urlPath, edit] of Object.entries(this.strategyEdits)) {
-      const saved = this.dashboards.find((d) => d.urlPath === urlPath)?.strategy;
+      const dashboard = this.dashboards.find((d) => d.urlPath === urlPath);
+      const saved = dashboard?.strategy;
       if (!saved || !Object.keys(edit).length) continue;
       await this.hass?.callWS({
         type: 'lovelace/config/save',
         url_path: urlPath,
-        config: { strategy: withEdit(saved, edit) },
+        config: configWith(dashboard, withEdit(saved, edit)),
       });
       written = true;
     }

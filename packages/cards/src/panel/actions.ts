@@ -2,7 +2,7 @@
 import { HOUSE_DEFAULTS, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
 import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
-import type { PanelContext } from './model.js';
+import { configWith, type PanelContext } from './model.js';
 import { withoutPalette, withPalette } from './palettes.js';
 import type { FluvyPanel } from './panel.js';
 import { setOf, withoutSet, withSet, type SeriesDraft } from './series.js';
@@ -40,9 +40,10 @@ export function createDashboard(panel: FluvyPanel, ctx: PanelContext, template: 
 }
 
 /**
- * Two taps within four seconds recreate a dashboard: its configuration becomes the bare strategy again (every
- * option back to its default; the dashboard itself, its url and its sidebar entry stay). The first tap arms the
- * row (it says so, in the warning tone), the second does it.
+ * Two taps within four seconds recreate a dashboard: its strategy becomes the bare one again (every option back to
+ * its default; the dashboard itself, its url and its sidebar entry stay). What a person changed on its views and cards
+ * stays (`edit`, #170: Customise has its own way back to automatic), and so does what its configuration holds beside
+ * the strategy. The first tap arms the row (it says so, in the warning tone), the second does it.
  */
 export function recreateDashboard(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
   const dashboard = panel.dashboards.find((d) => d.urlPath === urlPath);
@@ -56,11 +57,12 @@ export function recreateDashboard(panel: FluvyPanel, ctx: PanelContext, urlPath:
   clearTimeout(panel.recreateTimer);
   panel.recreateArmed = '';
   const { type } = dashboard.template;
+  const edit = dashboard.strategy?.['edit'];
   panel.run(async () => {
     await ctx.hass.callWS({
       type: 'lovelace/config/save',
       url_path: urlPath,
-      config: { strategy: { type } },
+      config: configWith(dashboard, { type, ...(edit === undefined ? {} : { edit }) }),
     });
     await panel.loadDashboards();
   }, 'dashboard.recreated');
@@ -151,13 +153,11 @@ export function importSettings(panel: FluvyPanel, file: File): void {
       await panel.hass?.callWS({
         type: 'lovelace/config/save',
         url_path: urlPath,
-        config: {
-          strategy: {
-            type: template.type,
-            ...strategyOptions(options, template),
-            ...(edit === undefined ? {} : { edit }),
-          },
-        },
+        config: configWith(dashboard, {
+          type: template.type,
+          ...strategyOptions(options, template),
+          ...(edit === undefined ? {} : { edit }),
+        }),
       });
       written = true;
     }

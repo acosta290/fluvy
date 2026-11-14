@@ -145,8 +145,9 @@ small) and lead to every appliance.
 ## Options
 
 In a dashboard's raw configuration, or in the panel's *Dashboards* tab (each dashboard has its own card of options
-there; *Recreate* takes them all back to their defaults). What goes past an option, one card hidden, moved or tuned,
-is [Customise](#customise):
+there; *Recreate* takes them all back to their defaults). The panel writes the strategy alone: whatever else the raw
+configuration holds beside `strategy:` (Home Assistant's `background:`, a `kiosk_mode:`) stays as you wrote it. What
+goes past an option, one card hidden, moved or tuned, is [Customise](#customise):
 
 | Option | Values | Templates | What it does |
 | --- | --- | --- | --- |
@@ -365,7 +366,8 @@ back, and a reset takes it away.
 The dashboard's other options keep working beside `edit`: `hide`, `exclude`, `areas`, `caps` and the rest are read
 first, and `edit` is laid over what they leave. A list's cap counts what the list shows after the edit, so an entity
 left out makes room for the next. The settings file never carries `edit` (it names this house's own entities) and
-importing one leaves it where it is; *Recreate* takes it away with the other options.
+importing one leaves it where it is; *Recreate* keeps it too, taking only the options back to their defaults
+(*Back to automatic*, in Customise, is what takes it away).
 
 ## Limits
 

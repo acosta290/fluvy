@@ -206,6 +206,11 @@ export interface DashboardInfo {
   /** Its strategy as saved (`type` and the options), and the template that type names, when it is one of ours. */
   readonly strategy?: Record<string, unknown>;
   readonly template?: Template;
+  /**
+   * What its configuration holds beside `strategy:` (Home Assistant's `background:`, a `kiosk_mode:`, anything a
+   * person wrote there): the panel reads none of it, and every save of the strategy keeps it (`configWith`).
+   */
+  readonly rest?: Readonly<Record<string, unknown>>;
   /** Its id in the dashboards collection and whether the sidebar lists it: what an administrator's list says. */
   readonly id?: string;
   readonly inSidebar?: boolean;
@@ -344,6 +349,15 @@ export function editChanges(saved: unknown, draft: unknown): number {
   }
   return Math.max(1, count);
 }
+
+/**
+ * A dashboard's configuration with this strategy: whatever else it holds beside `strategy:` stays as it was read, where
+ * a save of the strategy alone took it away.
+ */
+export const configWith = (
+  dashboard: Pick<DashboardInfo, 'rest'> | undefined,
+  strategy: Readonly<Record<string, unknown>>,
+): Record<string, unknown> => ({ ...dashboard?.rest, strategy });
 
 /** A strategy with its edits on top (an `undefined` edit takes the key away). */
 export function withEdit(

@@ -411,6 +411,79 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('keeps what a dashboard’s configuration holds beside its strategy: saving its options, Recreate and an imported file each write it back, and Recreate keeps what Customise changed', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    // what a person wrote beside `strategy:` in the raw configuration, none of it the panel's
+    const beside = {
+      kiosk_mode: { hide_header: true },
+      background: { image: '/local/garden.jpg', opacity: 60 },
+      title: 'Home',
+    };
+    const edit = { cards: { 'home/weather': { hidden: true } } };
+    let config: Record<string, unknown> = {
+      ...beside,
+      strategy: { type: 'custom:fluvy-home', tile_size: 'compact', edit },
+    };
+    const { panel, row, chip, button, settle } = await mount(true, {
+      callWS: async (message: {
+        type: string;
+        url_path?: string | null;
+        config?: Record<string, unknown>;
+      }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          config = message.config!;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? config
+          : { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    // an option saved from the bar: the strategy changes, the rest is written back as it was read
+    chip('Ruler')!.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({
+      ...beside,
+      strategy: {
+        type: 'custom:fluvy-home',
+        tile_size: 'compact',
+        thermostat_variant: 'ruler',
+        edit,
+      },
+    });
+    // Recreate: every option back to its default; the views and cards a person changed and the rest stay
+    row('Start over')!.click();
+    await settle();
+    row('Tap again')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({
+      ...beside,
+      strategy: { type: 'custom:fluvy-home', edit },
+    });
+    // a settings file brings its options: they land in the strategy, beside what was there
+    importSettings(
+      panel as unknown as FluvyPanel,
+      new File(
+        [JSON.stringify({ fluvy: 1, dashboards: { 'fluvy-auto': { flow_style: 'legs' } } })],
+        'fluvy-settings.json',
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(saved.at(-1)?.config).toEqual({
+      ...beside,
+      strategy: { type: 'custom:fluvy-home', flow_style: 'legs', edit },
+    });
+    panel.remove();
+  });
+
   it('offers what is a room’s photo’s alone — its name’s place, its readouts’ row and labels — while the rooms may be photos (#159)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     const { panel, chip, button, settle } = await mount(true, {
