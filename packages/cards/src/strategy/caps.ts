@@ -214,8 +214,8 @@ export function looseAfter(cards: readonly Card[], list: Capped): Loose[] {
 
 /**
  * Every one of a list, a card a room (`block` draws a room's: its card, or a heading and its card; it is told the room's
- * id, none for those in no room), the biggest first, as the Security dashboard's Openings view lays its openings; those
- * in no room under the list's own name.
+ * id, none for those in no room), in the house's order of its rooms (`byRoom`: the biggest first where it names none),
+ * as the Security dashboard's Openings view lays its openings; those in no room under the list's own name.
  */
 export function byArea(
   ctx: StrategyContext,
@@ -224,13 +224,8 @@ export function byArea(
   block: (title: string, ids: readonly string[], area: string | undefined) => readonly Card[],
 ): Card[][] {
   const { home } = ctx;
-  const groups = new Map<string, string[]>();
-  for (const id of ids) {
-    const key = home.areaName(home.areaOf(id)) ?? title;
-    groups.set(key, [...(groups.get(key) ?? []), id]);
-  }
-  return [...groups.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
+  return home
+    .byRoom(ids, () => title)
     .map(([name, group]) => [...block(name, group, home.areaOf(group[0] as string))]);
 }
 

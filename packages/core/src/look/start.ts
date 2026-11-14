@@ -7,6 +7,7 @@ import {
   setCardDefaults,
   setChartDefaults,
   setLightDefaults,
+  setRoomDefaults,
   setSliderDefaults,
 } from '../card.js';
 import { ensureFonts } from '../fonts.js';
@@ -57,8 +58,8 @@ import { safeStorage } from '../storage.js';
 
 /**
  * What the panel can show on its page before it is saved: the look and the house's status colours, where it applies
- * (scope, dashboards, the frame, the menus' icons, our Activity page), the lights', the charts' and the cards' defaults
- * and a person's preferences (language, motion, haptics, hold to slide).
+ * (scope, dashboards, the frame, the menus' icons, our Activity page), the lights', the charts' and the cards'
+ * defaults, the order of its rooms, and a person's preferences (language, motion, haptics, hold to slide).
  */
 export type LookPreview = Partial<
   Pick<
@@ -80,6 +81,7 @@ export type LookPreview = Partial<
     | 'charts'
     | 'chartSets'
     | 'cards'
+    | 'rooms'
   >
 >;
 
@@ -235,11 +237,13 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ORIGINAL_DETAILS, !now.details);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
-    // the lights', the charts', the cards' and the sliders' defaults: every card that leaves them to the house draws again
+    // the lights', the charts', the cards' and the sliders' defaults, and the house's order of its rooms: every card
+    // that leaves them to the house draws again
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });
     setChartDefaults({ settings: now.charts, sets: now.chartSets });
     setCardDefaults(now.cards);
     setSliderDefaults(now.sliders);
+    setRoomDefaults(now.rooms);
     // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);

@@ -424,6 +424,48 @@ export const panelStyles = css`
     display: flex;
     flex-direction: column;
   }
+  /* the house's rooms in an order of its own (#189): a row a room, dragged by its circle (Home Assistant's
+     ha-sortable), its two arrows 44 each at its end; the hairline is the room's, so it stands between two rooms
+     wherever they are dragged */
+  .pn-room {
+    position: relative;
+  }
+  .pn-room + .pn-room::before {
+    content: '';
+    position: absolute;
+    left: 56px;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--fluvy-border);
+  }
+  .pn-room .fv-ico {
+    cursor: grab;
+    touch-action: none;
+  }
+  .pn-room__moves {
+    display: flex;
+    flex: 0 0 auto;
+    color: var(--fluvy-text-secondary);
+  }
+  /* the room in the hand: its card lifted, the place it left dimmed; the copy Sortable makes for a browser without
+     drag and drop stays out of sight */
+  .pn-room.sortable-drag {
+    border-radius: var(--fluvy-radius-control);
+    background: var(--fluvy-card);
+    box-shadow:
+      0 0 0 1px var(--fluvy-edge, var(--fluvy-border)),
+      var(--fluvy-shadow-lift);
+  }
+  .pn-room.sortable-drag::before {
+    content: none;
+  }
+  .pn-room.sortable-ghost {
+    opacity: 0.4;
+  }
+  .pn-room.sortable-fallback {
+    display: none !important;
+  }
   /* the dashboards' view tabs as a header shows them: the header's colour and hairline, its 56 line, the name at
      its weight; the tabs at their real size (a row longer than the card fades out at its end, as on a phone) */
   .pn-tabsmock {

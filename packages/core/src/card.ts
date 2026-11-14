@@ -2,6 +2,7 @@ import { LitElement, html, nothing, type PropertyValues, type TemplateResult } f
 import { MODE_TOKEN, PALETTE_TOKEN, THEME_SENTINEL } from '@fluvy/tokens/config';
 import { fetchSliderStyles, motionPreference, type Tone } from '@fluvy/ui';
 import { runAction, type ActionConfig } from './actions.js';
+import { roomOrder, setRoomOrder, type RoomOrder } from './areas.js';
 import { resolveEntity, type EntityView } from './entity.js';
 import { ensureFonts } from './fonts.js';
 import type {
@@ -192,6 +193,13 @@ export function setCardDefaults(next: CardSurface): void {
   if (next.opacity < 100) void fetchGlass();
   if (next.unavailable === 'quiet') void fetchQuiet();
   wearSurfaces();
+}
+
+/** The house's order of its rooms changed (saved, or previewed in the panel): every card that lists by room draws again. */
+export function setRoomDefaults(next: RoomOrder): void {
+  if (JSON.stringify(next) === JSON.stringify(roomOrder())) return;
+  setRoomOrder(next);
+  for (const card of live) card.requestUpdate();
 }
 
 /**

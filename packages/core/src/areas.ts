@@ -14,9 +14,12 @@ import { registryText, withTextName } from './registry.js';
  * tune it (`RoomTuning`).
  */
 
-/** The registries this module reads; `floors` is absent on a Home Assistant without them. */
+/**
+ * The registries this module reads; `floors` is absent on a Home Assistant without them, and `language` where a
+ * reader has none to sort names by.
+ */
 export type Registries = Pick<HomeAssistant, 'states' | 'entities' | 'devices' | 'areas'> &
-  Partial<Pick<HomeAssistant, 'floors'>>;
+  Partial<Pick<HomeAssistant, 'floors' | 'language'>>;
 
 /** The domain of an entity id (`light` of `light.sofa`). */
 const domainOf = (id: string): string => id.slice(0, id.indexOf('.'));
@@ -417,25 +420,94 @@ export const holdsSomething = ({
 
 const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name);
 
-/** The floors by level (the ground first), the unnumbered ones after, each group by name. */
-export function floorsInOrder(hass: Registries): FloorRegistryEntry[] {
-  return Object.values(hass.floors ?? {})
-    .map(withTextName)
-    .sort((a, b) => {
-      const la = typeof a.level === 'number' ? a.level : Number.POSITIVE_INFINITY;
-      const lb = typeof b.level === 'number' ? b.level : Number.POSITIVE_INFINITY;
-      return la - lb || byName(a, b);
-    });
+/* ---------- the house's order of its rooms (1.21, #189) ---------- */
+
+/**
+ * How the house sorts its rooms: `auto`, each list as it always did (the rooms floor by floor and A to Z, a list by
+ * room its biggest room first); `home_assistant`, as Home Assistant orders its areas and floors (Settings › Areas ›
+ * Reorder); `name`, A to Z in the person's language.
+ */
+export const ROOM_SORTS = ['auto', 'home_assistant', 'name'] as const;
+export type RoomSort = (typeof ROOM_SORTS)[number];
+
+/** The house's order of its rooms: how they sort, and the rooms that come first whatever that says, in this order. */
+export interface RoomOrder {
+  readonly sort: RoomSort;
+  readonly order: readonly string[];
 }
 
-/** The areas floor by floor (in the floors' order), the ones on no floor last, each group by name. */
+let houseRooms: RoomOrder = { sort: 'auto', order: [] };
+
+/** An area's floor among `floors` (their ids in order): its place there, the areas on no floor of them last. */
+const floorPlace = (floors: readonly string[], area: AreaRegistryEntry): number => {
+  const index = area.floor_id ? floors.indexOf(area.floor_id) : -1;
+  return index === -1 ? floors.length : index;
+};
+
+/** The house's order of its rooms, as the settings last said (fluvy's settings → Dashboards › Rooms in order). */
+export const roomOrder = (): RoomOrder => houseRooms;
+
+/** The house's order of its rooms changed (`setRoomDefaults` draws the cards again). */
+export function setRoomOrder(next: RoomOrder): void {
+  houseRooms = next;
+}
+
+/**
+ * Each room's place in the house's order, by its area's id: the rooms the house puts first (`order`), then the rest
+ * as it sorts them — Home Assistant's own order floor by floor, the areas on no floor last, or A to Z. Rooms it places
+ * alike (every one while it is `auto`, and what is in no room, last) keep the order of the list that asks: one rule for
+ * every list by room, each sorting by it first and by its own after.
+ */
+export function roomRank(
+  hass: Registries,
+  { sort, order }: RoomOrder = houseRooms,
+): (areaId: string | undefined) => number {
+  // the registries arrive in Home Assistant's order: its floors, and each one's areas among them
+  const floors = Object.keys(hass.floors ?? {});
+  const sorted =
+    sort === 'auto'
+      ? []
+      : Object.values(hass.areas ?? {})
+          .map(withTextName)
+          .sort((a, b) =>
+            sort === 'name'
+              ? a.name.localeCompare(b.name, hass.language)
+              : floorPlace(floors, a) - floorPlace(floors, b),
+          );
+  const places = new Map<string, number>();
+  for (const id of [...order, ...sorted.map((area) => area.area_id)])
+    if (!places.has(id)) places.set(id, places.size);
+  return (areaId) => places.get(areaId ?? '') ?? places.size;
+}
+
+/**
+ * The floors by level (the ground first), the unnumbered ones after, each group by name; in Home Assistant's own
+ * order where the house's rooms follow it.
+ */
+export function floorsInOrder(hass: Registries): FloorRegistryEntry[] {
+  const floors = Object.values(hass.floors ?? {}).map(withTextName);
+  return houseRooms.sort === 'home_assistant'
+    ? floors
+    : floors.sort((a, b) => {
+        const la = typeof a.level === 'number' ? a.level : Number.POSITIVE_INFINITY;
+        const lb = typeof b.level === 'number' ? b.level : Number.POSITIVE_INFINITY;
+        return la - lb || byName(a, b);
+      });
+}
+
+/**
+ * The areas in the house's order (`roomRank`); those it places alike floor by floor (in the floors' order), the ones
+ * on no floor last, each group by name.
+ */
 export function areasInOrder(hass: Registries): AreaRegistryEntry[] {
   const floors = floorsInOrder(hass).map((floor) => floor.floor_id);
-  const rank = (area: AreaRegistryEntry): number => {
-    const index = area.floor_id ? floors.indexOf(area.floor_id) : -1;
-    return index === -1 ? floors.length : index;
-  };
+  const rank = roomRank(hass);
   return Object.values(hass.areas ?? {})
     .map(withTextName)
-    .sort((a, b) => rank(a) - rank(b) || byName(a, b));
+    .sort(
+      (a, b) =>
+        rank(a.area_id) - rank(b.area_id) ||
+        floorPlace(floors, a) - floorPlace(floors, b) ||
+        byName(a, b),
+    );
 }

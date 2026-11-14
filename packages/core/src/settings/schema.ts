@@ -34,6 +34,7 @@ import {
 } from './charts.js';
 import { parseSliderSettings, SLIDER_DEFAULTS, type SliderSettings } from './sliders.js';
 import { BACKGROUND_DEFAULTS, parseBackground, type PageBackground } from './background.js';
+import { ROOM_SORTS, type RoomOrder } from '../areas.js';
 
 /**
  * fluvy's settings, kept where Home Assistant keeps its own frontend settings: the house's in its system
@@ -49,6 +50,8 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 6 since 1.21: the house keeps the order of its rooms (`rooms`, #189): `auto` where a 5 stored none, each list by room
+ * sorting as it did, so nothing changes on upgrade (a 1.20 bundle reads a 6's as its own, and keeps the field on a save).
  * 5 since 1.20: the house's `details` (our chart in Home Assistant's details dialog, #162) is on where a 4 stored none:
  * it is what the theme promises, so its block changes on upgrade; and the house says whose details a Fluvy card opens
  * (`sheets`, #162): Fluvy's own sheets for the kinds that have one, where a 4 stored nothing and every card opened Home
@@ -68,7 +71,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 5;
+export const SETTINGS_VERSION = 6;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -201,6 +204,8 @@ export interface HouseSettings {
   readonly background: PageBackground;
   /** Whose details a Fluvy card opens where its action says none of its own (1.20, #162). */
   readonly sheets: Sheets;
+  /** The order every list by room reads the house's rooms in (1.21, #189). */
+  readonly rooms: RoomOrder;
 }
 
 /** What each person may choose for themselves. */
@@ -250,6 +255,7 @@ export interface EffectiveSettings {
   readonly sliders: SliderSettings;
   readonly background: PageBackground;
   readonly sheets: Sheets;
+  readonly rooms: RoomOrder;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -298,6 +304,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   background: BACKGROUND_DEFAULTS,
   // Fluvy's own details sheets from 1.20 on, where Home Assistant's dialog opened before
   sheets: 'fluvy',
+  // every list by room in its own order, as before 1.21
+  rooms: { sort: 'auto', order: [] },
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -390,6 +398,18 @@ export function parseIcons(raw: unknown): MenuIcons {
   };
 }
 
+/** The house's order of its rooms: a sort it knows, and the area ids that come first, each once. */
+export function parseRooms(raw: unknown): RoomOrder {
+  const value = isRecord(raw) ? raw : {};
+  const order: unknown = value['order'];
+  return {
+    sort: oneOf(value['sort'], ROOM_SORTS) ? value['sort'] : HOUSE_DEFAULTS.rooms.sort,
+    order: Array.isArray(order)
+      ? [...new Set(order.filter((id): id is string => typeof id === 'string' && id !== ''))]
+      : [],
+  };
+}
+
 export function parseHouse(raw: unknown): HouseSettings {
   const value = isRecord(raw) ? raw : {};
   const d = HOUSE_DEFAULTS;
@@ -420,6 +440,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     sliders: parseSliderSettings(value['sliders']),
     background: parseBackground(value['background']),
     sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
+    rooms: parseRooms(value['rooms']),
   };
 }
 
@@ -482,6 +503,7 @@ export function resolveSettings(
     sliders: house.sliders,
     background: house.background,
     sheets: house.sheets,
+    rooms: house.rooms,
   };
 }
 

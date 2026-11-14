@@ -1,4 +1,5 @@
 import {
+  type AreaRegistryEntry,
   type CardLanguage,
   areaOf,
   BACKGROUND_DIM_MAX,
@@ -22,6 +23,9 @@ import {
   parsePalette,
   registryText,
   resolveLanguage,
+  ROOM_SORTS,
+  roomRank,
+  type RoomOrder,
   type Scope,
   chromeOf,
   HA_LOGO_URL,
@@ -51,6 +55,7 @@ import {
   icon,
   listRow,
   options,
+  round,
   rulerLabels,
   type RulerChangeDetail,
 } from '@fluvy/ui';
@@ -86,6 +91,7 @@ import {
   type SurfaceStyle,
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { defaultColumns, fittedColumns } from '../shared/chips.js';
 import {
   optionalViews,
@@ -1594,11 +1600,12 @@ function optionChoice(
   );
 }
 
-/** Which rooms a dashboard shows, a chip a room; every room chosen (the default) writes nothing. */
+/**
+ * Which rooms a dashboard shows, a chip a room, in the house's order of its rooms (A to Z where it names none); every
+ * room chosen (the default) writes nothing.
+ */
 function areasChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
-  const rooms = Object.values(ctx.hass.areas ?? {})
-    .map(withTextName)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const rooms = roomsListed(ctx);
   const chosen = Array.isArray(current) ? new Set(current as readonly string[]) : null;
   return choice(
     ctx,
@@ -1821,9 +1828,126 @@ function dashboardOptions(
   </section>`;
 }
 
+/* ---------- the house's rooms, in order (1.21, #189) ---------- */
+
+/**
+ * The house's rooms as the panel lists them: in the house's order of its rooms as the page shows it (an edit not saved
+ * yet too), A to Z where it places them alike.
+ */
+function roomsListed(ctx: PanelContext): AreaRegistryEntry[] {
+  const rank = roomRank(ctx.hass, ctx.shown.rooms);
+  return Object.values(ctx.hass.areas ?? {})
+    .map(withTextName)
+    .sort((a, b) => rank(a.area_id) - rank(b.area_id) || a.name.localeCompare(b.name));
+}
+
+/** A room's arrows by the way they move it: what finds the one pressed again once its row has moved. */
+const MOVES = { [-1]: 'pn-room__up', 1: 'pn-room__down' } as const;
+
+/**
+ * The order every list by room reads the house's rooms in (`roomRank`): each list's own (Automatic, which writes
+ * nothing), Home Assistant's, A to Z, or the person's — then the rooms are rows to drag by their circles (Home
+ * Assistant's `ha-sortable`), each with its two arrows for the keyboard, which keep the focus on the room they moved.
+ * Their own order names every room the house has now; one added later follows them as the house sorts the rest. The
+ * house's, an administrator's to set; a house of one room has no order to choose.
+ */
+function roomsCard(ctx: PanelContext): TemplateResult | typeof nothing {
+  const rooms = roomsListed(ctx);
+  if (rooms.length < 2) return nothing;
+  const { shown, admin } = ctx;
+  const { sort } = shown.rooms;
+  const own = shown.rooms.order.length > 0;
+  const set = (next: RoomOrder): void => ctx.editHouse({ rooms: next });
+  const ids = rooms.map((room) => room.area_id);
+  const move = (from: number, to: number): void => {
+    const order = [...ids];
+    order.splice(to, 0, ...order.splice(from, 1));
+    set({ sort, order });
+  };
+  /** An arrow's press: the room a place up or down, and the focus on its arrow again once the rows are drawn. */
+  const step = (event: Event, at: number, by: -1 | 1): void => {
+    const root = (event.currentTarget as Element).getRootNode() as ParentNode;
+    const row = `.pn-room[data-room="${CSS.escape(ids[at] ?? '')}"]`;
+    move(at, at + by);
+    requestAnimationFrame(() =>
+      (
+        root.querySelector<HTMLElement>(`${row} .${MOVES[by]}:not([disabled])`) ??
+        root.querySelector<HTMLElement>(`${row} .fv-round:not([disabled])`)
+      )?.focus(),
+    );
+  };
+  const floorName = (room: AreaRegistryEntry): string | undefined =>
+    registryText(ctx.hass.floors?.[room.floor_id ?? '']?.name);
+  return html`<section class="fv-card pn-card">
+    ${head({ icon: 'rooms', title: ctx.t('rooms.title'), sub: ctx.t(admin ? 'rooms.sub' : 'scope.admin_only') })}
+    ${choice(
+      ctx,
+      [
+        ...ROOM_SORTS.map((key) => ({
+          key,
+          label: ctx.t(`rooms.${key}`),
+          active: !own && sort === key,
+        })),
+        { key: 'own', label: ctx.t('rooms.own'), active: own },
+      ],
+      admin
+        ? (key) =>
+            set(
+              key === 'own' ? { sort, order: ids } : { sort: key as RoomOrder['sort'], order: [] },
+            )
+        : null,
+    )}
+    ${
+      own
+        ? html`${admin ? html`<p class="pn-hint pn-hint--after">${ctx.t('rooms.hint')}</p>` : nothing}
+            <ha-sortable
+              no-style
+              draggable-selector=".pn-room"
+              handle-selector=".fv-ico"
+              ?disabled=${!admin}
+              @item-moved=${(event: CustomEvent<{ oldIndex: number; newIndex: number }>) =>
+                move(event.detail.oldIndex, event.detail.newIndex)}
+            >
+              <div class="pn-rows">
+                ${repeat(
+                  rooms,
+                  (room) => room.area_id,
+                  (room, at) =>
+                    html`<div class="pn-room" data-room=${room.area_id}>
+                      ${listRow({
+                        icon: admin ? 'updown' : (room.icon ?? 'home'),
+                        title: room.name,
+                        name: true,
+                        ...(floorName(room)
+                          ? { sub: floorName(room) as string, subName: true }
+                          : {}),
+                        trailing: admin
+                          ? html`<span class="pn-room__moves">
+                              ${([-1, 1] as const).map((by) =>
+                                round(
+                                  by < 0 ? 'up' : 'down',
+                                  'bare',
+                                  ctx.t(by < 0 ? 'rooms.up' : 'rooms.down', { room: room.name }),
+                                  (event) => step(event, at, by),
+                                  at + by < 0 || at + by >= rooms.length,
+                                  MOVES[by],
+                                ),
+                              )}
+                            </span>`
+                          : 'none',
+                      })}
+                    </div>`,
+                )}
+              </div>
+            </ha-sortable>`
+        : nothing
+    }
+  </section>`;
+}
+
 /**
  * The Dashboards tab: the five templates as rows (a created one opens; an administrator creates the others with
- * one tap), then a card of options per dashboard the house has.
+ * one tap), the house's order of its rooms, then a card of options per dashboard the house has.
  */
 export function dashboards(ctx: PanelContext, actions: DashboardActions): TemplateResult {
   return html`<section class="fv-card pn-card">
@@ -1862,6 +1986,7 @@ export function dashboards(ctx: PanelContext, actions: DashboardActions): Templa
         })}
       </div>
     </section>
+    ${roomsCard(ctx)}
     ${ctx.dashboards
       .filter((dashboard) => dashboard.template)
       .map((dashboard) => dashboardOptions(ctx, dashboard, actions))}`;

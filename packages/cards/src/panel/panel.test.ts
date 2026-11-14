@@ -1487,6 +1487,117 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('lets the house order its rooms: each list’s own until it says, Home Assistant’s, A to Z, or its own by drag and by arrows (1.21, #189)', async () => {
+    const house = {
+      areas: {
+        living: { area_id: 'living', name: 'Living room', floor_id: 'ground' },
+        kitchen: { area_id: 'kitchen', name: 'Kitchen', floor_id: 'ground' },
+        attic: { area_id: 'attic', name: 'Attic' },
+      },
+      floors: { ground: { floor_id: 'ground', name: 'Ground floor', level: 0 } },
+    };
+    const { panel, root, chip, button, handle, settle } = await mount(true, house);
+    panel.tab = 'dashboard';
+    await settle();
+    const bar = () => root.querySelector('.pn-bar__text')?.textContent?.trim();
+    const chosen = () =>
+      ['Automatic', 'As in Home Assistant', 'A to Z', 'Your own'].filter((word) =>
+        chip(word)?.classList.contains('is-active'),
+      );
+    const rooms = () =>
+      [...root.querySelectorAll('.pn-room .fv-row__title')].map((title) =>
+        title.textContent?.trim(),
+      );
+    const arrow = (room: string, way: 'up' | 'down') =>
+      root.querySelector<HTMLButtonElement>(`.pn-room[data-room="${room}"] .pn-room__${way}`)!;
+    const save = async () => {
+      button('Save')!.click();
+      await settle();
+    };
+    // each list's own order, as before: nothing to save, and no list of rooms
+    expect(chosen()).toEqual(['Automatic']);
+    expect(rooms()).toEqual([]);
+    expect(bar()).toBeUndefined();
+    chip('A to Z')!.click();
+    await settle();
+    expect(chosen()).toEqual(['A to Z']);
+    expect(bar()).toBe('Rooms in order · A to Z');
+    await save();
+    expect(handle.settings().rooms).toEqual({ sort: 'name', order: [] });
+    // their own: every room as a row, in the order they stood, each with its floor and its two arrows
+    chip('Your own')!.click();
+    await settle();
+    expect(chosen()).toEqual(['Your own']);
+    expect(rooms()).toEqual(['Attic', 'Kitchen', 'Living room']);
+    expect(root.querySelector('.pn-room[data-room="kitchen"] .fv-row__sub')?.textContent).toBe(
+      'Ground floor',
+    );
+    expect(root.querySelector('.pn-room[data-room="attic"] .fv-row__sub')).toBeNull();
+    expect(root.querySelector('.pn-hint')?.textContent).toContain('Drag a room by its circle');
+    expect(arrow('kitchen', 'up').getAttribute('aria-label')).toBe('Move Kitchen up');
+    expect(arrow('kitchen', 'down').getAttribute('aria-label')).toBe('Move Kitchen down');
+    // the first goes no higher, the last no lower
+    expect(arrow('attic', 'up').disabled).toBe(true);
+    expect(arrow('living', 'down').disabled).toBe(true);
+    // an arrow moves its room a place, and the keyboard stays on it
+    arrow('living', 'up').click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await settle();
+    expect(rooms()).toEqual(['Attic', 'Living room', 'Kitchen']);
+    expect(root.activeElement).toBe(arrow('living', 'up'));
+    // at the top its arrow up is gone: the other takes the focus
+    arrow('living', 'up').click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await settle();
+    expect(rooms()).toEqual(['Living room', 'Attic', 'Kitchen']);
+    expect(root.activeElement).toBe(arrow('living', 'down'));
+    // a drag is Home Assistant's own sortable's: it says where the room went
+    root
+      .querySelector('ha-sortable')!
+      .dispatchEvent(new CustomEvent('item-moved', { detail: { oldIndex: 2, newIndex: 0 } }));
+    await settle();
+    expect(rooms()).toEqual(['Kitchen', 'Living room', 'Attic']);
+    expect(bar()).toBe('Rooms in order · Your own');
+    await save();
+    // every room named, the rest of the house's sort kept for a room added later
+    expect(handle.settings().rooms).toEqual({
+      sort: 'name',
+      order: ['kitchen', 'living', 'attic'],
+    });
+    // Home Assistant's order drops theirs
+    chip('As in Home Assistant')!.click();
+    await settle();
+    expect(rooms()).toEqual([]);
+    await save();
+    expect(handle.settings().rooms).toEqual({ sort: 'home_assistant', order: [] });
+    chip('Automatic')!.click();
+    await settle();
+    await save();
+    expect(handle.settings().rooms).toEqual({ sort: 'auto', order: [] });
+    panel.remove();
+    // someone who is not an administrator reads the house's order and moves nothing
+    const guest = await mount(false, house);
+    await guest.handle.store.saveHouse({ rooms: { sort: 'auto', order: ['kitchen', 'attic'] } });
+    guest.panel.tab = 'dashboard';
+    await guest.settle();
+    expect(
+      [...guest.root.querySelectorAll('.pn-room .fv-row__title')].map((title) =>
+        title.textContent?.trim(),
+      ),
+    ).toEqual(['Kitchen', 'Attic', 'Living room']);
+    expect(guest.root.querySelector('.pn-room .fv-round')).toBeNull();
+    guest.chip('A to Z')!.click();
+    await guest.settle();
+    expect(guest.root.querySelector('.pn-bar')).toBeNull();
+    guest.panel.remove();
+    // a house of one room has no order to choose
+    const one = await mount(true, { areas: { hall: { area_id: 'hall', name: 'Hall' } } });
+    one.panel.tab = 'dashboard';
+    await one.settle();
+    expect(one.chip('A to Z')).toBeUndefined();
+    one.panel.remove();
+  });
+
   it('lets the house keep Home Assistant’s details dialog, Fluvy’s sheets until then (1.20, #162)', async () => {
     const { panel, root, row, button, handle, settle } = await mount();
     const name = 'Fluvy’s details sheets';
@@ -2297,7 +2408,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20), the order of the house’s rooms (1.21)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -2384,6 +2495,8 @@ describe('the settings panel', () => {
       background,
       // whose details a card opens (1.20, #162)
       sheets: 'home-assistant',
+      // the order every list by room reads the rooms in (1.21, #189)
+      rooms: { sort: 'home_assistant', order: ['kitchen', 'hall'] },
     });
     // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
     await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
@@ -2426,6 +2539,7 @@ describe('the settings panel', () => {
       sliders: { style: 'bar', words: 'none' },
       background,
       sheets: 'home-assistant',
+      rooms: { sort: 'home_assistant', order: ['kitchen', 'hall'] },
     });
     expect(exported['personal']).toMatchObject({
       version: SETTINGS_VERSION,
@@ -2456,6 +2570,7 @@ describe('the settings panel', () => {
       sliders: { style: 'ruler', words: 'ends' },
       background: BACKGROUND_DEFAULTS,
       sheets: 'fluvy',
+      rooms: { sort: 'auto', order: [] },
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
@@ -2489,6 +2604,7 @@ describe('the settings panel', () => {
     expect(readDevice()).toMatchObject({ dock: true, zoom: 125 });
     localStorage.removeItem('fluvy:device');
     expect(handle.settings().sheets).toBe('home-assistant');
+    expect(handle.settings().rooms).toEqual({ sort: 'home_assistant', order: ['kitchen', 'hall'] });
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',

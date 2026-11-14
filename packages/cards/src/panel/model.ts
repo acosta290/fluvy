@@ -109,6 +109,7 @@ export type HouseEdit = Partial<
     | 'lightColors'
     | 'statuses'
     | 'sheets'
+    | 'rooms'
   >
 >;
 /** A person's preferences, their own to save. */
@@ -560,6 +561,10 @@ export function changeLines(ctx: PanelContext): string[] {
     for (const [key, label] of WALL_LABELS)
       if (JSON.stringify(house.wall[key]) !== JSON.stringify(ctx.settings.wall[key]))
         lines.push(`${t('tab.wall')} · ${t(label)}`);
+  if (house.rooms)
+    lines.push(
+      `${t('rooms.title')} · ${t(house.rooms.order.length ? 'rooms.own' : `rooms.${house.rooms.sort}`)}`,
+    );
   for (const [urlPath, edit] of Object.entries(ctx.strategyEdits)) {
     const dashboard = ctx.dashboards.find((d) => d.urlPath === urlPath);
     for (const key of Object.keys(edit)) {

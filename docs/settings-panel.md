@@ -183,6 +183,24 @@ How a white shows in its bulb's colour is each card's own (`light_whites`, 1.10)
 neutral daylight and a cool white, unless the card asks for the palette's lit light (`palette`); there is no house
 setting for it.
 
+## Rooms in order
+
+The house keeps one order of its rooms (1.21), in the *Dashboards* tab, and every list by room reads it: the automatic
+dashboards' Rooms view, the Lights view's groups, the lists a "N more" page splits by room, Home's lights and scenes
+by room, a wall's rooms and its room picker, and the Tiles and Scenes cards that group by area
+([Groups by room](cards.md#groups-by-room)).
+
+| Choice | What it does |
+| --- | --- |
+| **Automatic** | each list as it always sorted: the rooms floor by floor and A to Z, a list by room its biggest room first. The default: nothing changes until another is chosen |
+| **As in Home Assistant** | the order of Home Assistant's own areas and floors (*Settings › Areas, labels & zones › Reorder*): its floors as it lists them, each one's areas, those on no floor last |
+| **A to Z** | by name, in the person's language; the floors keep their own order |
+| **Your own** | the rooms as rows: drag one by its circle, or move it with its two arrows (the keyboard's way). A room added to the house later follows them |
+
+Floors keep their order: by level, or Home Assistant's own where the rooms follow it. The card shows from two rooms
+on. It is the house's setting, an administrator's to save from the bar; a backup and the settings file carry it
+(`rooms`: its `sort` and, for an order of its own, the area ids in `order`).
+
 ## Status colours
 
 Four of the house's settings (1.9) colour what a card says about the state of things, over every palette — a person's
@@ -308,7 +326,7 @@ the browser (`localStorage`, `fluvy:look`) only so that the page paints in the r
 answers.
 
 **Backups.** Because both live in Home Assistant's frontend data, a Home Assistant backup keeps every setting of
-Fluvy's and a restore brings them back: the look and the saved palettes, the cards' opacity and blur, the sliders' style, the statuses' colours, the lights' defaults,
+Fluvy's and a restore brings them back: the look and the saved palettes, the cards' opacity and blur, the sliders' style, the statuses' colours, the lights' defaults, the order of the rooms,
 the wall, the Charts tab (the style, the gauge, every detail, motion, the time shown and the points), the house's
 own series colours, and which of Home Assistant's pages and its details dialog's history are Fluvy's. The panel's
 *Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic

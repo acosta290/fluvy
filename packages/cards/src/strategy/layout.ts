@@ -468,10 +468,11 @@ export function headed(head: Card, rows: readonly Card[][]): Card[][] {
 }
 
 /**
- * Lights by area (indoor and outdoor where they have none), the biggest group first: a room of two lights or more
- * starts with all of them on one card (the room in one tap, a round a light); a dimmable light is a full card (a row of
- * its own); the switches after it are tiles, two a row. On the lights' own view each group is a part (`parts`, #170:
- * `lights:<area id>`, a list of its own); in a subview of every light they are cards alone.
+ * Lights by area (indoor and outdoor where they have none), in the house's order of its rooms (`byRoom`: the biggest
+ * group first where it names none): a room of two lights or more starts with all of them on one card (the room in one
+ * tap, a round a light); a dimmable light is a full card (a row of its own); the switches after it are tiles, two a
+ * row. On the lights' own view each group is a part (`parts`, #170: `lights:<area id>`, a list of its own); in a
+ * subview of every light they are cards alone.
  */
 export function lightGroups(
   ctx: Pick<StrategyContext, 'home' | 't' | 'style'> & Partial<Pick<StrategyContext, 'more'>>,
@@ -479,13 +480,6 @@ export function lightGroups(
   parts = false,
 ): Card[][] {
   const { home, t } = ctx;
-  const groups = new Map<string, string[]>();
-  for (const id of ids) {
-    const key =
-      home.areaName(home.areaOf(id)) ??
-      (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor'));
-    groups.set(key, [...(groups.get(key) ?? []), id]);
-  }
   const blocks = (name: string, group: readonly string[]): Card[][] => {
     // a group's cards and tiles stand together under its heading: two alike are told apart
     const named = namesOf(home, group);
@@ -499,8 +493,8 @@ export function lightGroups(
       ),
     ]);
   };
-  return [...groups.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
+  return home
+    .byRoom(ids, (id) => (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor')))
     .flatMap(([name, group]) => {
       if (!parts) return blocks(name, group);
       const [first = ''] = group;

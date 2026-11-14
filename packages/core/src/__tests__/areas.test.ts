@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   areaClimate,
   areaContents,
@@ -11,8 +11,12 @@ import {
   holdsSomething,
   isLoad,
   isRoomDevice,
+  roomOrder,
+  roomRank,
+  setRoomOrder,
   usableEntity,
   type Registries,
+  type RoomOrder,
 } from '../areas.js';
 
 const state = (id: string, value: string, attributes: Record<string, unknown> = {}) => [
@@ -626,5 +630,85 @@ describe('the house by its rooms', () => {
     expect(areasInOrder(hass).map((area) => area.name)).toEqual(['10', '9', 'Office', 'Attic']);
     // an entry whose name is text already is the registry's own
     expect(areasInOrder(hass)).toContain(hass.areas['office']);
+  });
+});
+
+describe('the house’s order of its rooms (#189)', () => {
+  afterEach(() => setRoomOrder({ sort: 'auto', order: [] }));
+
+  /** The floors and the areas as the house reads them under an order of its rooms. */
+  const read = (rooms: RoomOrder) => {
+    setRoomOrder(rooms);
+    const hass = { ...house(), language: 'en' };
+    return {
+      floors: floorsInOrder(hass).map((floor) => floor.floor_id),
+      areas: areasInOrder(hass).map((area) => area.area_id),
+    };
+  };
+
+  it('sorts by itself until the house says: the floors by level, the areas floor by floor and A to Z', () => {
+    expect(roomOrder()).toEqual({ sort: 'auto', order: [] });
+    expect(read({ sort: 'auto', order: [] })).toEqual({
+      floors: ['ground', 'upstairs', 'roof'],
+      areas: ['hall', 'living', 'office', 'attic'],
+    });
+    // every room is placed alike: a list by room keeps its own order
+    const rank = roomRank(house());
+    expect(['living', 'office', 'hall', 'attic', undefined].map(rank)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('follows Home Assistant’s own order: its floors as it lists them, each one’s areas, the ones on no floor last', () => {
+    // the registries arrive in Home Assistant's order (Settings › Areas › Reorder)
+    expect(read({ sort: 'home_assistant', order: [] })).toEqual({
+      floors: ['upstairs', 'ground', 'roof'],
+      areas: ['office', 'living', 'hall', 'attic'],
+    });
+    const rank = roomRank(house(), { sort: 'home_assistant', order: [] });
+    expect(['office', 'living', 'hall', 'attic'].map(rank)).toEqual([0, 1, 2, 3]);
+    // what is in no room, or in one the house no longer has, comes last
+    expect(rank(undefined)).toBe(4);
+    expect(rank('cellar')).toBe(4);
+  });
+
+  it('sorts A to Z in the person’s language, the floors keeping their own order', () => {
+    expect(read({ sort: 'name', order: [] })).toEqual({
+      floors: ['ground', 'upstairs', 'roof'],
+      areas: ['attic', 'hall', 'living', 'office'],
+    });
+    // Swedish files å after z, where the browser's own language would not
+    const hass: Registries = {
+      ...house(),
+      language: 'sv',
+      areas: {
+        zebra: { area_id: 'zebra', name: 'Zebra' },
+        angen: { area_id: 'angen', name: 'Ängen' },
+        alfa: { area_id: 'alfa', name: 'Alfa' },
+      },
+    };
+    const rank = roomRank(hass, { sort: 'name', order: [] });
+    expect(['alfa', 'zebra', 'angen'].map(rank)).toEqual([0, 1, 2]);
+  });
+
+  it('puts the house’s own rooms first, in its order, and the rest as it sorts them', () => {
+    // the rest floor by floor and A to Z, as a house that sorts by itself reads them
+    expect(read({ sort: 'auto', order: ['office', 'attic'] }).areas).toEqual([
+      'office',
+      'attic',
+      'hall',
+      'living',
+    ]);
+    expect(read({ sort: 'name', order: ['office'] }).areas).toEqual([
+      'office',
+      'attic',
+      'hall',
+      'living',
+    ]);
+    expect(read({ sort: 'home_assistant', order: ['hall', 'cellar'] })).toEqual({
+      floors: ['upstairs', 'ground', 'roof'],
+      areas: ['hall', 'office', 'living', 'attic'],
+    });
+    // a room named twice keeps its first place
+    const rank = roomRank(house(), { sort: 'name', order: ['office', 'hall', 'office'] });
+    expect(['office', 'hall', 'attic', 'living'].map(rank)).toEqual([0, 1, 2, 3]);
   });
 });

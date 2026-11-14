@@ -20,6 +20,7 @@ import {
   localize,
   plain,
   registryText,
+  roomRank,
   usableEntity,
   type AreaContents,
   type AreaRegistryEntry,
@@ -478,6 +479,24 @@ export class HomeRegistry {
   }
   areaName(areaId: string | undefined): string | undefined {
     return areaId ? registryText(this.hass.areas?.[areaId]?.name) : undefined;
+  }
+  /**
+   * Entities by the room they are in, each group under its room's name — what is in none under what `none` says of
+   * it — in the house's order of its rooms (`roomRank`: a group is placed by its first entity's room); those the house
+   * places alike, every one while each list sorts by itself, the biggest first, as these lists always stood.
+   */
+  byRoom(
+    ids: readonly string[],
+    none: (id: string) => string,
+  ): (readonly [name: string, ids: string[]])[] {
+    const groups = new Map<string, string[]>();
+    for (const id of ids) {
+      const name = this.areaName(this.areaOf(id)) ?? none(id);
+      groups.set(name, [...(groups.get(name) ?? []), id]);
+    }
+    const rank = this.memo('rank', () => roomRank(this.hass));
+    const place = (group: readonly string[]): number => rank(this.areaOf(group[0] ?? ''));
+    return [...groups].sort((a, b) => place(a[1]) - place(b[1]) || b[1].length - a[1].length);
   }
 
   /** An entity a dashboard should show: known, not hidden, not a config or diagnostic entity unless asked for. */

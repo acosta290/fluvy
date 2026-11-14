@@ -40,7 +40,6 @@ describe('the page’s background setting (1.19, #155)', () => {
     const upgraded = parseHouse({ version: 3, palette: 'volt' });
     expect(upgraded.background).toEqual(BACKGROUND_DEFAULTS);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(5);
     expect(drawsNothing(upgraded.background)).toBe(true);
     expect(resolveSettings(upgraded, PERSONAL_DEFAULTS).background).toEqual(BACKGROUND_DEFAULTS);
   });

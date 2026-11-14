@@ -11,6 +11,7 @@ import {
   parseIcons,
   parsePalette,
   parsePersonal,
+  parseRooms,
   parseSavedPalettes,
   parseSliderSettings,
   parseWall,
@@ -80,6 +81,8 @@ describe('parsing stored settings', () => {
         statuses: { warning: '#DC630B', danger: 'red' },
         cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
         sheets: 'home-assistant',
+        // an area's id once, nothing that is not one
+        rooms: { sort: 'name', order: ['kitchen', 'kitchen', 3, '', 'hall'] },
         extra: true,
       }),
     ).toEqual({
@@ -113,14 +116,33 @@ describe('parsing stored settings', () => {
       sliders: SLIDER_DEFAULTS,
       background: BACKGROUND_DEFAULTS,
       sheets: 'home-assistant',
+      rooms: { sort: 'name', order: ['kitchen', 'hall'] },
     });
   });
 
+  it('reads the house’s order of its rooms: each list’s own until the house chooses one (1.21, #189: nothing changes on upgrade)', () => {
+    // a 1.20 house stored none: every list by room sorts as it did, read in this version
+    const upgraded = parseHouse({ version: 5, palette: 'volt' });
+    expect(upgraded.rooms).toEqual({ sort: 'auto', order: [] });
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(6);
+    expect(HOUSE_DEFAULTS.rooms).toEqual({ sort: 'auto', order: [] });
+    expect(parseRooms({ sort: 'home_assistant' })).toEqual({ sort: 'home_assistant', order: [] });
+    expect(parseRooms({ order: ['living'] })).toEqual({ sort: 'auto', order: ['living'] });
+    // a sort it does not know, a list that is none, or nothing at all: the default
+    for (const broken of [{ sort: 'size', order: 'kitchen' }, 'name', null, ['kitchen'], 3])
+      expect(parseRooms(broken)).toEqual({ sort: 'auto', order: [] });
+    // the house's, whoever looks
+    expect(
+      resolveSettings(parseHouse({ rooms: { sort: 'name' } }), PERSONAL_DEFAULTS).rooms,
+    ).toEqual({ sort: 'name', order: [] });
+  });
+
   it('reads whose details a card opens: Fluvy’s own sheets until the house keeps Home Assistant’s dialog (1.20, #162)', () => {
-    // a 1.19 house stored none: Fluvy's sheets from this version on, said on upgrade; version 5
+    // a 1.19 house stored none: Fluvy's sheets from version 5 on, said on upgrade
     const upgraded = parseHouse({ version: 4, palette: 'volt' });
     expect(upgraded.sheets).toBe('fluvy');
-    expect(upgraded.version).toBe(5);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(HOUSE_DEFAULTS.sheets).toBe('fluvy');
     expect(parseHouse({ sheets: 'home-assistant' }).sheets).toBe('home-assistant');
     // a word it does not know, another case, or not a word: the default
@@ -658,7 +680,7 @@ describe('the settings store', () => {
     // a 1.19 house stored none: our chart in Home Assistant's details dialog, read in this version
     const upgraded = parseHouse({ version: 4, palette: 'volt' });
     expect(upgraded.details).toBe(true);
-    expect(upgraded.version).toBe(5);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
     expect(HOUSE_DEFAULTS.details).toBe(true);
     // the house keeps Home Assistant's block; anything that is not a switch is the default
     expect(parseHouse({ details: false }).details).toBe(false);
@@ -672,7 +694,7 @@ describe('the settings store', () => {
     const store = new SettingsStore(() => hass, undefined);
     store.start(() => undefined);
     listeners.get('frontend/subscribe_system_data')?.({
-      value: { version: 3, palette: 'volt', rooms: { order: ['kitchen'] }, wall: { after: 5 } },
+      value: { version: 3, palette: 'volt', garden: { beds: ['herbs'] }, wall: { after: 5 } },
     });
     await store.saveHouse({ shape: 'round' });
     expect(sent[0]?.value).toEqual({
@@ -680,7 +702,7 @@ describe('the settings store', () => {
       palette: 'volt',
       shape: 'round',
       wall: { ...WALL_DEFAULTS, after: 5 },
-      rooms: { order: ['kitchen'] },
+      garden: { beds: ['herbs'] },
     });
   });
 });
