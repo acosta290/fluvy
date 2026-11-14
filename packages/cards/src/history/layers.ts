@@ -45,7 +45,7 @@ export const renderDates = (page: FluvyHistory): TemplateResult =>
     close: page.t('close'),
     leaving: page.layers.leaving === 'picking',
     grabber: true,
-    variant: 'hs-dates',
+    variant: 'fv-drawer--dates',
     autofocus: 'picking',
     body: dates(page),
     onDismiss: () => page.layers.dismiss('picking'),

@@ -308,7 +308,7 @@ export function renderPickerSheet(page: FluvyActivity): TemplateResult {
     close: page.t('close'),
     leaving: page.leaving === 'picking',
     grabber: true,
-    variant: 'av-dates',
+    variant: 'fv-drawer--dates',
     autofocus: 'picking',
     body: renderPickerBody(page),
     onDismiss: () => page.dismiss('picking'),

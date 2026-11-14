@@ -3,12 +3,13 @@
  * Every Fluvy sheet on a phone (#190): a light's details, an alert's, the cameras', an item's, a schedule's, the room
  * lights' colours, the robot's drive, the keypad and the Energy period's, each opened by a finger from its card on the
  * dashboard mock at 360 × 780, at 100, 125 and 150 %, in a page the Companion app insets (`&insets=44,34`: a status
- * bar of 44 and a system bar of 34 over an edge-to-edge page), and Customise's options sheet in the settings panel.
+ * bar of 44 and a system bar of 34 over an edge-to-edge page), Customise's options sheet in the settings panel, and
+ * the History's and the Activity's dates on a phone.
  * What it proves of each: the dialog covers the screen and the sheet stands inside it; a tall one leaves the status
  * bar's 44 of scrim above it, never less, and its body scrolls under a real finger (the browser's own touches,
  * `Input.dispatchTouchEvent`) to its foot; the foot keeps the system bar's 34 under its last control, in the screen's
- * pixels whatever the size; the details sheet reads at its card's size; Escape closes it, and so does a tap on the
- * scrim above it. Exit code 1 on any failure.
+ * pixels whatever the size; the details sheet reads at its card's size (and, on a tablet, is a dialog only where the
+ * screen holds 600 of it); Escape closes it, and so does a tap on the scrim above it. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-sheets.mjs            (ENGINE=webkit: the finger is a tap,
  *                                                                              the scroll the page's own)
  */
@@ -362,6 +363,43 @@ for (const [size, wide] of [
   await page.touchscreen.tap(PHONE.width / 2, TOP / 2);
   await settle(page, 500);
   check('Customise: a tap on the scrim above it closes it', await closed(page));
+  await page.close();
+}
+
+/* ---------- the History's and the Activity's dates on a phone: Show over the system bar ---------- */
+for (const which of ['history', 'activity']) {
+  const page = await suite.page(
+    `${which}=1&moment=dates&insets=${TOP},${BOTTOM}&lang=en&at=2026-09-17T19:50:00Z`,
+    { viewport: PHONE, touch: true, reducedMotion: 'reduce', wait: 2000 },
+  );
+  const drawn = await page.evaluate(() => {
+    const find = (root, test) => {
+      for (const el of root.querySelectorAll('*')) {
+        if (test(el)) return el;
+        const inner = el.shadowRoot && find(el.shadowRoot, test);
+        if (inner) return inner;
+      }
+      return null;
+    };
+    const drawer = find(document, (el) => el.classList.contains('fv-drawer'));
+    if (!drawer) return null;
+    const body = drawer.querySelector('.fv-drawer__body');
+    body.scrollTop = body.scrollHeight;
+    // the lowest control of the sheet, its picker's own included
+    const lowest = (root) =>
+      [...root.querySelectorAll('*')].reduce((low, el) => {
+        const own = el.matches('button') ? el.getBoundingClientRect().bottom : 0;
+        return Math.max(low, own, el.shadowRoot ? lowest(el.shadowRoot) : 0);
+      }, 0);
+    return { bottom: drawer.getBoundingClientRect().bottom, last: lowest(drawer) };
+  });
+  check(
+    `the ${which === 'history' ? 'History' : 'Activity'}'s dates on a phone keep the system bar's ${BOTTOM} and 24 more under Show`,
+    drawn !== null &&
+      near(drawn.bottom, PHONE.height) &&
+      near(drawn.last, PHONE.height - BOTTOM - 24),
+    JSON.stringify(drawn),
+  );
   await page.close();
 }
 
