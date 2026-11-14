@@ -4,8 +4,10 @@ import { DEMO_ROOMS, demoHass, type DemoEntity } from '@fluvy/demo-home';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 // the cards register their heights with core: the strategy lays columns out with them
 import { familiesDefined } from '../index.js';
+import { buildContext } from './context.js';
 import { generate } from './generate.js';
 import { HomeRegistry } from './home-registry.js';
+import { lightRows } from './layout.js';
 import { strategyOptions, templateById } from './templates.js';
 import type { Card, FluvyStrategyConfig, View } from './types.js';
 
@@ -222,6 +224,28 @@ describe('Home by room, an option a person turns on (#189)', () => {
       title: 'Kitchen',
       heading_style: 'label',
     });
+  });
+
+  it('keeps a room’s lights together under its label: one block a room, so the columns never part one', async () => {
+    const ctx = await buildContext({ type: 'custom:fluvy-home', group_by: 'room' }, house());
+    const blocks = lightRows(ctx, [
+      'light.kitchen_counter',
+      'light.kitchen_island',
+      'light.kitchen_pendant',
+      'light.bedroom_bedside',
+      'light.bedroom_ceiling',
+    ]);
+    // a block is what the layout keeps in one column: the label and every light of its room, the odd one across
+    expect(blocks.map((block) => block.map(said))).toEqual([
+      [
+        '# Kitchen',
+        'light.kitchen_counter "Counter"',
+        'light.kitchen_island "Island"',
+        'light.kitchen_pendant "Pendant"',
+      ],
+      ['# Bedroom', 'light.bedroom_bedside', 'light.bedroom_ceiling "Ceiling"'],
+    ]);
+    expect(blocks[0]?.at(-1)?.['grid_options']).toEqual({ columns: 12 });
   });
 
   it('keeps a name a person gave a light whole, and their own order inside its room', async () => {

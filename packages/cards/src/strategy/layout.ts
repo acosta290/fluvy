@@ -393,8 +393,8 @@ export const lightRooms = (
 
 /**
  * Lights shown together as rows of tiles (`tileRows`); where the dashboard groups by room (#189), each room's under
- * its quiet label, which rides with its first row, their names short under it (`shortNames`: two alike in a room told
- * apart first).
+ * its quiet label as one block, so a room is never shared out over two columns with half of it under no label, their
+ * names short under it (`shortNames`: two alike in a room told apart first).
  */
 export function lightRows(
   ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
@@ -402,13 +402,11 @@ export function lightRows(
 ): Card[][] {
   const { home, style } = ctx;
   if (!style.byRoom) return tileRows(lightTiles(home, ids, style));
-  return lightRooms(ctx, ids).flatMap(([name, group]) => {
+  return lightRooms(ctx, ids).map(([name, group]) => {
     const said = home.apart(group, (id) => home.displayName(id));
     const short = shortNames(name, group.map(said));
-    const [first = [], ...rest] = tileRows(
-      group.map((id, at) => sizedTile(id, home.named(id, short[at]), style)),
-    );
-    return [[label(name), ...first], ...rest];
+    const rows = tileRows(group.map((id, at) => sizedTile(id, home.named(id, short[at]), style)));
+    return [label(name), ...rows.flat()];
   });
 }
 
