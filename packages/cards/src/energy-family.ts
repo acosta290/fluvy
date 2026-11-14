@@ -212,16 +212,18 @@ export function legendRows(names: readonly string[], width = COLUMN): number {
 export function productionHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const arrays =
     Array.isArray(config['arrays']) && !['tomorrow', 'ahead'].includes(config['day'] as string)
-      ? (config['arrays'] as unknown[]).slice(0, 4)
+      ? (config['arrays'] as unknown[])
       : [];
   if (config['variant'] === 'compact') return arrays.length ? 288 : 204;
   if (!arrays.length) return 344;
-  const names = arrays.map((item) => {
+  const names = arrays.slice(0, 4).map((item, i) => {
     const entry = (typeof item === 'string' ? { entity: item } : (item ?? {})) as Record<
       string,
       unknown
     >;
-    const name = entry['name'] ?? nameOf?.(entry['entity']);
+    // past four arrays the fourth item is the rest's, "Other"
+    const name =
+      i === 3 && arrays.length > 4 ? 'Other' : (entry['name'] ?? nameOf?.(entry['entity']));
     return typeof name === 'string' ? name : '';
   });
   const rows = legendRows(names);

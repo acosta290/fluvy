@@ -93,6 +93,8 @@ const METERS: Record<string, readonly number[]> = {
   'sensor.ar_east_b': part(EAST, 0.4),
   'sensor.ar_west_a': part(WEST, 0.7),
   'sensor.ar_west_b': part(WEST, 0.3),
+  'sensor.ar_carport': part(WEST, 0.2),
+  'sensor.ar_shed': part(EAST, 0.15),
 };
 const POWER: Record<string, readonly [readonly number[], number]> = {
   'sensor.ar_east_power': [EAST, EAST_NOW],
@@ -111,6 +113,8 @@ export const sheet: SheetSpec = {
     ['sensor.ar_east_b', reading(part(EAST, 0.4), EAST_NOW * 0.4), energy('East, lower')],
     ['sensor.ar_west_a', reading(part(WEST, 0.7), WEST_NOW * 0.7), energy('West, upper')],
     ['sensor.ar_west_b', reading(part(WEST, 0.3), WEST_NOW * 0.3), energy('Garage roof')],
+    ['sensor.ar_carport', reading(part(WEST, 0.2), WEST_NOW * 0.2), energy('Carport')],
+    ['sensor.ar_shed', reading(part(EAST, 0.15), EAST_NOW * 0.15), energy('Garden shed')],
     ['sensor.ar_east_power', '450', power('East roof power')],
     ['sensor.ar_west_power', '1200', power('West roof power')],
     ['sensor.ar_dead', 'unavailable', energy('Carport roof energy')],
@@ -173,6 +177,27 @@ export const sheet: SheetSpec = {
           entity: 'sensor.ar_total',
           name: 'Production',
           arrays: ['sensor.ar_east_a', 'sensor.ar_east_b', 'sensor.ar_west_a', 'sensor.ar_west_b'],
+          _now: NOW,
+        },
+      ],
+    },
+    {
+      // six arrays, the card's meter one of them (as the automatic dashboards write a house's every array): the day
+      // is all six together, the chart and the legend draw four, the fourth the last three as "Other" (1.21)
+      title: 'Six arrays',
+      cards: [
+        {
+          type: 'custom:fluvy-production-card',
+          entity: 'sensor.ar_east_a',
+          name: 'Production',
+          arrays: [
+            'sensor.ar_east_a',
+            'sensor.ar_east_b',
+            'sensor.ar_west_a',
+            'sensor.ar_west_b',
+            'sensor.ar_carport',
+            'sensor.ar_shed',
+          ],
           _now: NOW,
         },
       ],

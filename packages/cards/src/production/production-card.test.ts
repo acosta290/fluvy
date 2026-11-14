@@ -262,6 +262,45 @@ describe('the production card’s several arrays (#183)', () => {
     const own = await mount(ARRAYS);
     expect(head(own)).toBe('13.4kWh');
   });
+
+  it('counts every array in its day past four, and draws four stacks: the fourth is the rest’s, “Other”', async () => {
+    // six arrays of 13.3 kWh each (the strategy writes every solar meter): 1.20 counted the first four
+    const ids = ['sensor.a', 'sensor.b', 'sensor.c', 'sensor.d', 'sensor.e', 'sensor.f'];
+    const card = document.createElement('fluvy-production-card') as FluvyProductionCard;
+    card.setConfig({
+      type: 'custom:fluvy-production-card',
+      entity: 'sensor.a',
+      arrays: ids,
+      _now: NOW,
+    });
+    const hass = house();
+    card.hass = {
+      ...hass,
+      states: { ...hass.states, ...Object.fromEntries(ids.map((id) => [id, meter(id, 103.3)])) },
+    } as HomeAssistant;
+    document.body.append(card);
+    await settle(card);
+    expect(head(card)).toBe('79.8kWh');
+    expect(legend(card)).toEqual(['13.3kWh', '13.3kWh', '13.3kWh', '39.9kWh']);
+    const names = [...card.shadowRoot!.querySelectorAll('.pr-legend .en-legend__text')].map(
+      (n) => n.textContent,
+    );
+    expect(names).toEqual(['sensor.a', 'sensor.b', 'sensor.c', 'Other']);
+    // four stacks an hour: the ramp's four steps
+    const steps = new Set(
+      [...card.shadowRoot!.querySelectorAll('.pr-chart rect.en-bar')].map((r) => r.classList[1]),
+    );
+    expect([...steps].sort()).toEqual(['is-fourth', 'is-second', 'is-third', undefined].sort());
+    // and it declares the legend it draws: a fourth array's long name folds four into two by two, "Other" does not
+    const garage = { entity: 'sensor.d', name: 'The garage roof over the street' };
+    const four = ['sensor.a', 'sensor.b', 'sensor.c', garage];
+    const height = (arrays: NonNullable<ProductionCardConfig['arrays']>) =>
+      FluvyProductionCard.layoutHeight({ type: '', arrays });
+    expect(height(four)).toBeGreaterThan(height(four.slice(0, 3)));
+    expect(height([...four, 'sensor.e'])).toBe(
+      height([...four.slice(0, 3), { entity: 'sensor.e', name: 'Other' }]),
+    );
+  });
 });
 
 /** An hour of the house's day, `days` after today, as an integration writes it. */

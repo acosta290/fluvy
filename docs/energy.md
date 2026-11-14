@@ -268,7 +268,8 @@ show_compare: true              # Compare: the period before beside the span, on
 - **Production** — `arrays` stacks each array's hourly bars. Where `entity` is one of the arrays, the day's figure
   ("So far today", the hour under a finger, the badge against the forecast) is the arrays' together; a meter of its
   own (a whole-house counter) keeps its own figure. The automatic dashboards write it so for a house with several
-  arrays in the Energy dashboard.
+  arrays in the Energy dashboard. Every array counts in the day's figure; the chart and its legend draw four, and past
+  four the fourth is the rest of them together, "Other" (1.21).
 
   **The forecast** (1.20, #183) stands behind the day's bars, and the head says how the day is doing against it. It
   comes from one of two places:

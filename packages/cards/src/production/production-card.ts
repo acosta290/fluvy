@@ -199,6 +199,20 @@ const NONE_FRAME = 100;
 const sum = (values: readonly number[]): number =>
   values.reduce((total, value) => total + value, 0);
 
+/** An array as the chart and the legend draw it: its name and its Wh an hour (null: it cannot be read). */
+interface Stack {
+  readonly name: string;
+  readonly hours: number[] | null;
+}
+
+/** Days added hour by hour, those that cannot be read counting as nothing; null where none can. */
+const added = (days: ReadonlyArray<readonly number[] | null>): number[] | null => {
+  const read = days.filter((hours): hours is readonly number[] => hours !== null);
+  return read.length
+    ? Array.from({ length: HOURS }, (_u, hour) => sum(read.map((hours) => hours[hour] ?? 0)))
+    : null;
+};
+
 /** A bar's height on the sheet: 80 px under a round `ceiling`, in 4 px steps — one below half a step draws nothing. */
 const stepOn =
   (ceiling: number) =>
@@ -521,12 +535,30 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return dayIn(this.config ?? {});
   }
 
-  /** The arrays, at most four (the ramp has four steps). */
+  /** The arrays, every one: the day is all of theirs, four of them drawn (`stacks`). */
   private arrayList(): ProductionArray[] {
     return (this.config?.arrays ?? [])
       .map((a) => (typeof a === 'string' ? { entity: a } : a))
-      .filter((a) => typeof a.entity === 'string' && a.entity !== '')
-      .slice(0, MAX_ARRAYS);
+      .filter((a) => typeof a.entity === 'string' && a.entity !== '');
+  }
+
+  /**
+   * The arrays as their chart and legend draw them, each with its name and its hours (null: it cannot be read): four
+   * at most, as the ramp has four steps, the fourth "Other" past four, the rest's hours added (null where none reads).
+   */
+  private stacks(arrays: readonly ProductionArray[], hourNow: number): Stack[] {
+    const each = arrays.map((a, i) => {
+      const view = this.entity(a.entity);
+      return { name: this.nameFor(view, a.name), hours: this.arrayHours(i, view, hourNow) };
+    });
+    if (each.length <= MAX_ARRAYS) return each;
+    return [
+      ...each.slice(0, MAX_ARRAYS - 1),
+      {
+        name: this.t('distribution.other'),
+        hours: added(each.slice(MAX_ARRAYS - 1).map((stack) => stack.hours)),
+      },
+    ];
   }
 
   /** The arrays stand for the whole day: the card's meter is one of them (several arrays, #183). */
@@ -741,20 +773,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
   }
 
   /**
-   * The arrays' day together, in Wh an hour: an array that cannot be read counts as nothing while another reads; null
-   * where none can, undefined while they load.
+   * The arrays' day together, every one of them, in Wh an hour: an array that cannot be read counts as nothing while
+   * another reads; null where none can, undefined while they load.
    */
   private arraysDay(
     arrays: readonly ProductionArray[],
     hourNow: number,
   ): number[] | null | undefined {
     if (this.arrays_ === undefined) return undefined;
-    const days = arrays
-      .map((a, i) => this.arrayHours(i, this.entity(a.entity), hourNow))
-      .filter((hours): hours is number[] => hours !== null);
-    return days.length
-      ? Array.from({ length: HOURS }, (_u, hour) => sum(days.map((hours) => hours[hour] ?? 0)))
-      : null;
+    return added(arrays.map((a, i) => this.arrayHours(i, this.entity(a.entity), hourNow)));
   }
 
   protected renderCard(): TemplateResult {
@@ -779,6 +806,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const minutes = wall.minute;
     const base = summed ? { unit: 'Wh', value: 1 } : toBase(1, view.unit);
     const record = this.day_;
+    const stacks = this.stacks(arrays, hourNow);
 
     // finished hours from the recorder, the hour in progress from the meter itself
     const closed = this.closed;
@@ -949,7 +977,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       }
       ${
         arrays.length
-          ? this.renderArrays(arrays, { hourNow, forecast, unusable, tone, name, hovered, style })
+          ? this.renderArrays(stacks, {
+              hourNow,
+              forecast,
+              unusable,
+              tone,
+              name,
+              hovered,
+              style,
+            })
           : loading
             ? html`<div class="fv-skeleton so-skeleton"></div>`
             : !classic
@@ -974,7 +1010,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
                 })
       }
       ${this.hourAxis(classic && !arrays.length)}
-      ${arrays.length ? this.renderLegend(arrays, hourNow, hovered, unusable ? 'neutral' : tone, !classic) : nothing}
+      ${arrays.length ? this.renderLegend(stacks, hovered, unusable ? 'neutral' : tone, !classic) : nothing}
       ${compact || arrays.length ? nothing : this.renderStats(peak, known && peakValue > 0 ? this.hourLabel(peakHour) : '—', known ? formatNumber(this.hass, sunHours, { digits: 1 }) : null)}
     </article>`;
   }
@@ -1315,7 +1351,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
    * down the ramp), the hours still to come the forecast, faint.
    */
   private renderArrays(
-    arrays: readonly ProductionArray[],
+    stacks: readonly Stack[],
     o: {
       readonly hourNow: number;
       readonly forecast: readonly number[] | null;
@@ -1329,7 +1365,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     if (this.arrays_ === undefined)
       return html`<div class="en-chart pr-chart"><div class="fv-skeleton so-skeleton"></div></div>`;
     const w = this.contentWidth;
-    const series = arrays.map((a, i) => this.arrayHours(i, this.entity(a.entity), o.hourNow));
+    const series = stacks.map((s) => s.hours);
     // columns: each array in its series' colour, the forecast after now hollow on the first
     if (o.style.preset !== 'classic')
       return this.renderStyled(
@@ -1348,7 +1384,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       Math.max(0, ...Array.from({ length: HOURS }, (_u, h) => Math.max(stack(h), future(h)))),
     );
     // the gaps between an hour's arrays come out of the chart's height, so a full stack still fits it
-    const room = CHART_HEIGHT - STACK_GAP * (arrays.length - 1);
+    const room = CHART_HEIGHT - STACK_GAP * (stacks.length - 1);
     const px = (v: number): number => (ceiling > 0 ? (Math.max(0, v) / ceiling) * room : 0);
     const slot = w / HOURS;
     // an 8 bar in each hour's slot; a column too narrow for 24 of them draws them thinner, never touching
@@ -1360,7 +1396,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       if (hour <= o.hourNow) {
         // from the bottom up: the last array first, the first on top
         let y = CHART_HEIGHT;
-        for (let i = arrays.length - 1; i >= 0; i--) {
+        for (let i = stacks.length - 1; i >= 0; i--) {
           const h = px(series[i]?.[hour] ?? 0);
           if (h < 1) continue;
           y -= h;
@@ -1444,17 +1480,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
    * array's square in the ink's ramp — or in its series' colour, as a style's columns are (`series`).
    */
   private renderLegend(
-    arrays: readonly ProductionArray[],
-    hourNow: number,
+    stacks: readonly Stack[],
     hovered: number | null,
     tone: Tone,
     series: boolean,
   ): TemplateResult {
-    const views = arrays.map((a) => this.entity(a.entity));
-    const figures = arrays.map((_a, i) => {
-      const hours = this.arrayHours(i, views[i] as EntityView, hourNow);
-      return hours ? (hovered !== null ? (hours[hovered] ?? 0) : sum(hours)) : null;
-    });
+    const figures = stacks.map(({ hours }) =>
+      hours ? (hovered !== null ? (hours[hovered] ?? 0) : sum(hours)) : null,
+    );
     // one unit for the set, its decimal kept: "5.2 kWh" beside "6.0 kWh"
     const scale = scaleOf(figures, 'Wh', this.config);
     const values = figures.map((v) => (v === null ? '—' : scaled(this.hass, v, scale)));
@@ -1470,14 +1503,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       ),
     );
     const w = this.contentWidth;
-    const names = arrays.map((a, i) => this.nameFor(views[i] as EntityView, a.name));
+    const names = stacks.map((s) => s.name);
     // the energy legend's rule: a name or a figure that does not fit its column folds the row, never cuts it
     const columns = legendColumns(names, w, this.head.ruler, widest, LEGEND_GAP);
     return html`<div
       class="en-legend pr-legend fv-tone--${tone}"
-      style=${columns < arrays.length ? `grid-template-columns:repeat(${columns},minmax(0,1fr));grid-auto-flow:row;row-gap:8px` : nothing}
+      style=${columns < stacks.length ? `grid-template-columns:repeat(${columns},minmax(0,1fr));grid-auto-flow:row;row-gap:8px` : nothing}
     >
-      ${arrays.map((_a, i) => {
+      ${stacks.map((_s, i) => {
         const v = figures[i] ?? null;
         // a square in its series' colour, as the columns wear it (the house's set's in the mode's), or a step of the ink
         const paint = series ? seriesPaint(`series-${i + 1}` as SeriesColour) : undefined;
