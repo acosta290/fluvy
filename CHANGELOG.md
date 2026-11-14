@@ -5,6 +5,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+- German reads as German and in Home Assistant's own words: an unavailable entity says "Nicht verfügbar", a lock's
+  buttons "Verriegeln" and "Entriegeln", tap and hold "Verhalten bei Antippen" and "Verhalten bei Festhalten", idle
+  energy "Leerlauf", phones "Smartphones", and the settings' tabs "Erscheinungsbild" and "Anwendungsbereich"; editor
+  switches say "… anzeigen", and phrases translated word for word read as a German speaker says them.
+
 ### Development
 
 - The settings panel's tests wait for what they wait on (a section's own file landing, a save's writes done, the apply
