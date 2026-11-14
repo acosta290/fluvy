@@ -75,22 +75,22 @@ describe('the form Home Assistant’s pencil opens on an automatic dashboard (#1
     expect(fields().schema.map((field) => field.name)).toEqual([
       'views',
       'thermostat_variant',
+      'thermostat_state',
       'tile_size',
-      'tile_switch',
     ]);
     expect(fields().data).toEqual({
       views: ['rooms', 'lights', 'climate', 'energy', 'security', 'sensors'],
       thermostat_variant: 'dial',
+      thermostat_state: 'brief',
       tile_size: 'compact',
-      tile_switch: 'show',
     });
     // each field is named as the panel's Dashboards tab names it, its values by their words
     const label = (form as unknown as { label(field: { name: string }): string }).label;
     expect(fields().schema.map((field) => label(field))).toEqual([
       'Views',
       'Thermostats',
+      'Thermostat state',
       'Lights',
-      'Tile switches',
     ]);
     const select = (name: string) =>
       (
@@ -163,6 +163,7 @@ describe('the form Home Assistant’s pencil opens on an automatic dashboard (#1
     const wall = await editorOf('wall', { type: 'custom:fluvy-wall' });
     expect(wall.fields().schema.map((field) => field.name)).toEqual([
       'thermostat_variant',
+      'thermostat_state',
       'scenes_max',
     ]);
     expect(wall.fields().data['scenes_max']).toBe('4');
@@ -180,8 +181,8 @@ describe('the form Home Assistant’s pencil opens on an automatic dashboard (#1
     expect(rooms.fields().schema.map((field) => field.name)).toEqual([
       'room_variant',
       'thermostat_variant',
+      'thermostat_state',
       'tile_size',
-      'tile_switch',
     ]);
   });
 
