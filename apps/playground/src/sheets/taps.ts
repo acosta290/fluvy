@@ -172,5 +172,29 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // one lamp in two rows, each with its own double tap: a tap on each is two taps, never the second's double
+    {
+      title: 'Double tap · one lamp in two rows',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Reading corner',
+          rows: [
+            {
+              entity: 'light.tp_reading',
+              name: 'Reading lamp',
+              secondary: 'none',
+              double_tap_action: { action: 'toggle' },
+            },
+            {
+              entity: 'light.tp_reading',
+              name: 'Reading lamp · night',
+              secondary: 'none',
+              double_tap_action: { action: 'navigate', navigation_path: '/d/night' },
+            },
+          ],
+        },
+      ],
+    },
   ],
 };

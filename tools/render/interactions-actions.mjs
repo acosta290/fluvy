@@ -712,6 +712,26 @@ async function heard(page) {
   await settle(page, 200);
   const keyHeld = await heard(page);
   check('Shift+F10 holds', keyHeld === 'details light.tp_desk', keyHeld);
+
+  // one lamp in two rows: a tap on each is two taps, each its own; two on the second are its double
+  const lampRows = frame(page, 'Double tap · one lamp in two rows').locator(
+    'fluvy-entities-card .fv-row--tap',
+  );
+  const first = await centre(lampRows.nth(0).locator('.fv-row__title'));
+  const second = await centre(lampRows.nth(1).locator('.fv-row__title'));
+  await page.mouse.click(first.x, first.y);
+  await page.mouse.click(second.x, second.y);
+  await settle(page, 400);
+  const across = await heard(page);
+  check(
+    'a tap on each of two rows of one lamp is two taps, never the second’s double',
+    across === 'details light.tp_reading details light.tp_reading',
+    across,
+  );
+  await page.mouse.dblclick(second.x, second.y);
+  await settle(page, 400);
+  const secondTwice = await heard(page);
+  check('two taps on the second are its own double', secondTwice === '/d/night', secondTwice);
   await page.close();
 }
 
