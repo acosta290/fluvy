@@ -548,28 +548,182 @@ describe('Customise (#170)', () => {
     expect(m.edit()).toBeUndefined();
   });
 
-  it('adds a card of the person’s own to a view, and takes it out again', async () => {
-    const m = await mount();
-    await m.open();
+  /** The sheet "Add a card" opens, and what is tapped and read in it. */
+  const adding = async (m: Awaited<ReturnType<typeof mount>>) => {
     m.row('Add a card')!.click();
     await m.settle(2);
-    const yaml = () => m.root.querySelector('ha-selector.cz-yaml')!;
-    const add = () =>
-      [...m.root.querySelectorAll<HTMLButtonElement>('.cz-pair .fv-btn')].find(
-        (b) => b.textContent?.trim() === 'Add',
-      )!;
+    const sheet = () => m.root.querySelector<HTMLElement>('dialog.cz-dialog .cz-sheet');
+    const texts = (selector: string) =>
+      [...(sheet()?.querySelectorAll(selector) ?? [])].map((node) => node.textContent?.trim());
+    const tap = async (selector: string, text: string) => {
+      [...sheet()!.querySelectorAll<HTMLElement>(selector)]
+        .find((node) => node.textContent?.trim() === text)!
+        .click();
+      await m.settle(2);
+    };
+    return {
+      sheet,
+      /** The ways as chips, the open one first told. */
+      ways: () => texts('.fv-chip'),
+      way: (name: string) => tap('.fv-chip', name),
+      /** The rows offered, by their titles; the views they are listed under. */
+      rows: () => texts('.fv-row__title'),
+      groups: () => texts('.cz-label'),
+      /** A tap on a row, by its title (the first of that name). */
+      row: (title: string) => tap('.fv-row__title', title),
+      button: (text: string) =>
+        [...sheet()!.querySelectorAll<HTMLButtonElement>('.fv-btn')].find(
+          (button) => button.textContent?.trim() === text,
+        )!,
+      search: async (query: string) => {
+        const input = sheet()!.querySelector<HTMLInputElement>('.cz-search input')!;
+        input.value = query;
+        input.dispatchEvent(new Event('input'));
+        await m.settle(2);
+      },
+      /** The sheet has left the page. */
+      closed: () => m.until(() => !sheet()),
+    };
+  };
+
+  it('adds a card of the person’s own to a view as YAML, and takes it out again', async () => {
+    const m = await mount();
+    await m.open();
+    const a = await adding(m);
+    // three ways in, the dashboard's own cards first
+    expect(a.ways()).toEqual(['This dashboard', 'Fluvy’s cards', 'YAML']);
+    await a.way('YAML');
+    const yaml = () => a.sheet()!.querySelector('ha-selector.cz-yaml')!;
     // nothing to add until the YAML names a card's type
-    expect(add().disabled).toBe(true);
+    expect(a.button('Add').disabled).toBe(true);
     const note = { type: 'markdown', content: 'Bins on Tuesday' };
     yaml().dispatchEvent(new CustomEvent('value-changed', { detail: { value: note } }));
     await m.settle(2);
-    add().click();
-    await m.settle(2);
+    a.button('Add').click();
+    await a.closed();
     expect(m.edit()).toEqual({ views: { home: { add: [note] } } });
     expect(m.parts().at(-1)).toBe('home/own:0');
+    // a card of Home Assistant's own has no form of ours: its row has no Options, its YAML stands under its buttons
     const own = await m.unfold('home/own:0');
+    expect(
+      [...own.querySelectorAll('.fv-action')].map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Move to the top', 'Move up', 'Move down', 'Move to the bottom', 'Remove']);
+    expect(own.querySelector('ha-selector.cz-yaml')).not.toBeNull();
     await m.act(own, 'Remove');
     expect(m.edit()).toBeUndefined();
+    // the sheet opens again on the way that was last taken
+    const again = await adding(m);
+    expect(again.sheet()!.querySelector('ha-selector.cz-yaml')).not.toBeNull();
+  });
+
+  it('shows a card of another view on a view as well, or moves it there, and takes it away again (#188)', async () => {
+    const m = await mount();
+    await m.open();
+    const a = await adding(m);
+    // the cards of every other view and page, under their views: never this view's own, never a heading
+    expect(a.groups().slice(0, 2)).toEqual(['Rooms', 'Lights']);
+    expect(a.groups()).toEqual(expect.arrayContaining(['Kitchen', 'Bedroom']));
+    expect(a.groups()).not.toContain('Home');
+    expect(a.rows()).not.toContain('Ground floor');
+    expect([a.button('Show here too').disabled, a.button('Move here').disabled]).toEqual([
+      true,
+      true,
+    ]);
+    // what is typed narrows them, by a view's name or a card's, whatever its accents
+    await a.search('KÍTCH');
+    expect(a.groups()).toEqual(['Rooms', 'Lights', 'Kitchen']);
+    expect(a.rows().slice(0, 2)).toEqual(['Kitchen', 'Kitchen']);
+    await a.search('nothing like it');
+    expect(a.rows()).toEqual([]);
+    expect(a.sheet()!.querySelector('.fv-empty-state')?.textContent).toContain('Nothing matches');
+    await a.search('kitchen');
+    // the room's card, picked by its row: its switch says so, and the buttons can act
+    await a.row('Kitchen');
+    expect(a.sheet()!.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('true');
+    a.button('Show here too').click();
+    await a.closed();
+    const taken = 'home/also:rooms/room:kitchen';
+    expect(m.edit()).toEqual({ views: { home: { also: ['rooms/room:kitchen'] } } });
+    expect(m.parts().at(-1)).toBe(taken);
+    const text = (id: string, cls: string) =>
+      m.root.querySelector(`.cz-part[data-part="${id}"] .${cls}`)?.textContent?.trim();
+    // its row says what it is and where it comes from, and is taken away, never hidden
+    expect([text(taken, 'fv-row__title'), text(taken, 'fv-row__sub')]).toEqual([
+      'Kitchen',
+      'From Rooms',
+    ]);
+    expect(m.part(taken)!.querySelector('.fv-hit')).toBeNull();
+    const row = await m.unfold(taken);
+    expect(
+      [...row.querySelectorAll('.fv-action')].map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Move to the top', 'Move up', 'Move down', 'Move to the bottom', 'Remove']);
+    await m.act(row, 'Move to the top');
+    expect(m.parts()[0]).toBe(taken);
+    expect(m.edit()!['cards']).toEqual({ [taken]: { order: 0 } });
+    // offered once: what is shown here is not offered again
+    const b = await adding(m);
+    await b.search('kitchen');
+    expect(b.groups()).toEqual(['Lights', 'Kitchen']);
+    // moved: shown here, hidden where it was
+    await b.row('Kitchen');
+    b.button('Move here').click();
+    await b.closed();
+    expect(m.edit()).toEqual({
+      views: { home: { also: ['rooms/room:kitchen', 'lights/lights:kitchen'] } },
+      cards: { [taken]: { order: 0 }, 'lights/lights:kitchen': { hidden: true } },
+    });
+    // taken away, each leaves nothing behind: the one that was moved goes back to its view
+    await m.act(await m.unfold('home/also:lights/lights:kitchen'), 'Remove');
+    await m.act(await m.unfold(taken), 'Remove');
+    expect(m.edit()).toBeUndefined();
+  });
+
+  it('makes one of Fluvy’s cards in its own form, drawn as it will be, and adds it once the card takes it (#188)', async () => {
+    const m = await mount();
+    await m.open();
+    const a = await adding(m);
+    await a.way('Fluvy’s cards');
+    // Fluvy's cards as the card picker names them, without Fluvy's mark; nobody else's
+    expect(a.rows().slice(0, 3)).toEqual(['Tile', 'Tiles', 'Light']);
+    await a.search('dimmer');
+    expect(a.rows()).toEqual(['Light']);
+    await a.row('Light');
+    await m.until(() => a.sheet()!.querySelector('fluvy-rows-editor'));
+    expect(a.sheet()!.querySelector('.fv-card__title')?.textContent?.trim()).toBe('Light');
+    expect(a.sheet()!.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('Add a card');
+    const editor = a.sheet()!.querySelector('fluvy-rows-editor') as FluvyRowsEditor;
+    await m.until(() => editor.shadowRoot?.querySelector('ha-form'));
+    // the form opens on what the card suggests for this house, and the card is drawn over it
+    const entity = cardForm(editor).data['entity'] as string;
+    expect(entity).toMatch(/^light\./);
+    expect(a.sheet()!.querySelector('.cz-sheet__card fluvy-light-card')).not.toBeNull();
+    // a config the card refuses: its own words in the card's place, and nothing to add
+    cardForm(editor).change('entity', '');
+    await m.settle(2);
+    expect(a.sheet()!.querySelector('.cz-sheet__card')).toBeNull();
+    expect(a.sheet()!.querySelector('.cz-armed')?.textContent).toContain('"entity" is required');
+    expect(a.button('Add').disabled).toBe(true);
+    await editor.updateComplete;
+    cardForm(editor).change('entity', entity);
+    await m.settle(2);
+    await editor.updateComplete;
+    cardForm(editor).change('name', 'Reading lamp');
+    await m.settle(2);
+    // nothing is the dashboard's until it is added
+    expect(m.edit()).toBeUndefined();
+    a.button('Add').click();
+    await a.closed();
+    const card = { type: 'custom:fluvy-light-card', entity, name: 'Reading lamp' };
+    expect(m.edit()).toEqual({ views: { home: { add: [card] } } });
+    expect(m.parts().at(-1)).toBe('home/own:0');
+    // one of Fluvy's is tuned in its form afterwards too: what the form says is the card
+    await m.act(await m.unfold('home/own:0'), 'Options');
+    await m.until(() => m.root.querySelector('dialog.cz-dialog fluvy-rows-editor'));
+    const form = m.root.querySelector('dialog.cz-dialog fluvy-rows-editor') as FluvyRowsEditor;
+    await m.until(() => form.shadowRoot?.querySelector('ha-form'));
+    cardForm(form).change('name', 'Sofa');
+    await m.settle(2);
+    expect(m.edit()).toEqual({ views: { home: { add: [{ ...card, name: 'Sofa' }] } } });
   });
 
   it('lists what the Energy dashboard charts and forecasts, each by its card’s own words', async () => {

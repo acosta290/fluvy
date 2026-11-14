@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { edited, pinned } from '../../strategy/edit.js';
 import type { DashboardEdit } from '../../strategy/types.js';
 import {
+  alsoOf,
   leading,
   moved,
   optionsOf,
   patched,
   pinsFor,
+  withAlso,
+  withoutAlso,
   withoutOwn,
   withoutPart,
   withoutView,
@@ -106,6 +109,71 @@ describe('a dashboard’s edit as Customise changes it (#170)', () => {
       cards: { 'home/own:1': { order: 0 }, 'home/clock': { order: 1 } },
     });
     expect(withoutOwn({ views: { home: { add: [a] } } }, 'home', 0)).toEqual({});
+  });
+
+  it('shows a part of another view on a view as well, once, and moves it by hiding it where it was (#188)', () => {
+    const scenes = 'room-kitchen/scenes';
+    const shown = withAlso(saved, 'home', [scenes, 'lights/lights:bedroom', scenes]);
+    expect(shown.views).toEqual({
+      ...saved.views,
+      home: { also: [scenes, 'lights/lights:bedroom'] },
+    });
+    expect(shown.cards).toBe(saved.cards);
+    // named again, it is there once; what was there stays, in its order
+    expect(withAlso(shown, 'home', [scenes, 'media/media']).views?.['home']?.also).toEqual([
+      scenes,
+      'lights/lights:bedroom',
+      'media/media',
+    ]);
+    const moved = withAlso(saved, 'home', [scenes], true);
+    expect(moved.views?.['home']).toEqual({ also: [scenes] });
+    expect(moved.cards).toEqual({ ...saved.cards, [scenes]: { hidden: true } });
+    // a list written by hand is read as the dashboard reads it: its strings, each once
+    const odd = { views: { home: { also: [scenes, 5, scenes] } } } as unknown as DashboardEdit;
+    expect(alsoOf(odd, 'home')).toEqual([scenes]);
+    expect(
+      alsoOf({ views: { home: { also: scenes } } } as unknown as DashboardEdit, 'home'),
+    ).toEqual([]);
+    expect(alsoOf(saved, 'home')).toEqual([]);
+  });
+
+  it('takes a part of another view away with its place, and puts one that was moved back on its view', () => {
+    const scenes = 'room-kitchen/scenes';
+    const edit: DashboardEdit = {
+      views: {
+        home: { also: [scenes, 'media/media'], order: 1 },
+        climate: { also: ['media/media'] },
+      },
+      cards: {
+        [`home/also:${scenes}`]: { order: 0 },
+        [scenes]: { hidden: true, options: { title: 'Cook' } },
+        'media/media': { hidden: true },
+      },
+    };
+    // the one shown nowhere else goes back to its view, its options kept
+    expect(withoutAlso(edit, 'home', scenes)).toEqual({
+      views: { home: { also: ['media/media'], order: 1 }, climate: { also: ['media/media'] } },
+      cards: { [scenes]: { options: { title: 'Cook' } }, 'media/media': { hidden: true } },
+    });
+    // one another view still shows stays hidden on its own
+    expect(withoutAlso(edit, 'home', 'media/media').cards?.['media/media']).toEqual({
+      hidden: true,
+    });
+    expect(
+      withoutAlso(withoutAlso(edit, 'home', 'media/media'), 'climate', 'media/media').cards,
+    ).toEqual({
+      [`home/also:${scenes}`]: { order: 0 },
+      [scenes]: { hidden: true, options: { title: 'Cook' } },
+    });
+    // the last one leaves no list, and a view's reset takes them all with their places
+    expect(withoutAlso({ views: { home: { also: [scenes] } } }, 'home', scenes)).toEqual({});
+    expect(withoutView(edit, 'home')).toEqual({
+      views: { climate: { also: ['media/media'] } },
+      cards: {
+        [scenes]: { hidden: true, options: { title: 'Cook' } },
+        'media/media': { hidden: true },
+      },
+    });
   });
 });
 

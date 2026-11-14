@@ -1,13 +1,20 @@
 // the dashboards' words first: they are here before anything in the strategy's chunk says them
 import './english.js';
 import type { HomeAssistant } from '@fluvy/core';
-import { appliancesView } from './appliances.js';
+import { APPLIANCES_PATH, applianceSections, appliancesView } from './appliances.js';
 import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
 import { arranged, editOf, pinned } from './edit.js';
-import { roomView } from './rooms.js';
+import { roomSections, roomView } from './rooms.js';
 import { HOME_TEMPLATE, templateOf, viewsOf, type Template } from './templates.js';
-import type { FluvyStrategyConfig, MoreHost, View } from './types.js';
+import type {
+  DashboardEdit,
+  FluvyStrategyConfig,
+  MoreHost,
+  Part,
+  StrategyContext,
+  View,
+} from './types.js';
 
 /** An automatic dashboard: the template its type names, built from the house. Fetched when a dashboard asks. */
 export async function generate(
@@ -17,13 +24,54 @@ export async function generate(
   return generateWith(templateOf(config.type) ?? HOME_TEMPLATE, config, hass);
 }
 
+/** A view a part can be taken from: what its lists' way back says of it, and what builds its parts on a host. */
+interface Source {
+  readonly title: string;
+  readonly icon: string;
+  readonly build: (ctx: StrategyContext) => unknown;
+}
+
+/** The views of a template's dashboard a part can be taken from, by their paths: its tabs, its rooms' pages, every appliance's. */
+function sourcesOf(template: Template, ctx: StrategyContext): Map<string, Source> {
+  const specs = viewsOf(template, ctx);
+  const sources = new Map<string, Source>();
+  for (const spec of specs)
+    sources.set(spec.key, {
+      title: spec.name ?? ctx.t(spec.title),
+      icon: spec.icon,
+      build: spec.build,
+    });
+  // every room the template opens, whichever of its tabs the dashboard keeps
+  const tabs = specs.map((spec) => spec.key);
+  for (const { area, back } of template.rooms?.(ctx, tabs) ?? [])
+    sources.set(`room-${area.area_id}`, {
+      title: area.name,
+      icon: area.icon ?? 'fluvy:home',
+      build: (on) => roomSections(on, area, back, template.columns),
+    });
+  if (template.appliances)
+    sources.set(APPLIANCES_PATH, {
+      title: ctx.t('strategy.appliances'),
+      icon: 'fluvy:washer',
+      build: (on) => applianceSections(on, on.home.applianceDevices, template.columns),
+    });
+  return sources;
+}
+
+/** A dashboard's `edit` with one part shown, whatever the person did with it on its own view. */
+const showing = (edit: DashboardEdit, id: string): DashboardEdit => ({
+  ...edit,
+  cards: { ...edit.cards, [id]: { ...edit.cards?.[id], hidden: false } },
+});
+
 /**
  * A template's dashboard: its views built from the house (the first always, the others when the house has what they
  * show and the configuration keeps them), each framed; then a subview per room the template opens, the one of every
  * appliance its Home leads to, and the ones the views' capped lists open (#78), each under the view it leads back to.
  * What a person changed on it (`edit`, #170) is laid over it as it is built: a view hidden or moved among the tabs, a
- * view's parts in their order, their own cards after them. `built` gathers the views as they were built, each with its
- * parts (Customise lists them).
+ * view's parts in their order, their own cards after them, and after those the parts of other views it shows as well
+ * (`also`, #188), each built a second time on its own view. `built` gathers the views as they were built, each with
+ * its parts (Customise lists them).
  */
 export async function generateWith(
   template: Template,
@@ -40,9 +88,42 @@ export async function generateWith(
     ...(config.hide ?? []),
     ...Object.keys(edit.views ?? {}).filter((path) => edit.views?.[path]?.hidden === true),
   ]);
+  /** The views a part can be taken from: read the first time a view takes one. */
+  let sources: Map<string, Source> | undefined;
+  /** The subviews the lists among the parts taken open, each from the view that shows it. */
+  const opened: View[] = [];
+  /**
+   * The parts of other views a view shows as well (`edit.views.<path>.also`), each under its id there (`also:<id>`):
+   * its own view is built again on a host of its own, where the part shows whatever the person did with it there,
+   * and its cards are taken from that. One the dashboard does not have (a room that was deleted, an id of the view
+   * itself) is a part without cards: it keeps its place and draws nothing.
+   */
+  const takenBy = (path: string, title: string, icon: string): Part[] => {
+    const also = edit.views?.[path]?.also;
+    const ids = Array.isArray(also) ? also.filter((id) => typeof id === 'string') : [];
+    return [...new Set<string>(ids)].map((id) => {
+      const cut = id.indexOf('/');
+      const from = id.slice(0, cut);
+      const source = from === path ? undefined : (sources ??= sourcesOf(template, ctx)).get(from);
+      if (!source) return { id: `also:${id}`, cards: [] };
+      const more = moreHost(from, source.title, source.icon, template.columns, showing(edit, id), {
+        on: { path, title, icon },
+      });
+      source.build({ ...ctx, more });
+      const cards = more.parts.find((p) => p.id === id.slice(cut + 1))?.cards ?? [];
+      opened.push(
+        ...more.views.filter((view) =>
+          cards.some((card) => card['more_path'] === `${ctx.base}/${view.path}`),
+        ),
+      );
+      return { id: `also:${id}`, cards };
+    });
+  };
   /** A view's host: what it is built on, kept for whoever asked for them. */
   const hostOf = (path: string, title: string, icon: string): MoreHost => {
-    const more = moreHost(path, title, icon, template.columns, edit);
+    const more = moreHost(path, title, icon, template.columns, edit, {
+      taken: takenBy(path, title, icon),
+    });
     built?.push(more);
     return more;
   };
@@ -88,7 +169,7 @@ export async function generateWith(
     template.appliances && ctx.home.applianceDevices.length
       ? [framed(appliancesView(ctx, template.columns, hostOf), ctx, views, template)]
       : [];
-  const lists = [...kept, ...rooms].flatMap(({ more }) => more.views);
+  const lists = [...[...kept, ...rooms].flatMap(({ more }) => more.views), ...opened];
   return {
     views: [
       ...framedViews,

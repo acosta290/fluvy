@@ -79,6 +79,43 @@ export function withoutOwn(edit: DashboardEdit, view: string, index: number): Da
   return next;
 }
 
+/** The parts of other views a view shows as well (`edit.views.<view>.also`), each once; anything else is none. */
+export function alsoOf(edit: DashboardEdit, view: string): string[] {
+  const also: unknown = edit.views?.[view]?.also;
+  return Array.isArray(also)
+    ? [...new Set(also.filter((id): id is string => typeof id === 'string'))]
+    : [];
+}
+
+/**
+ * An edit with parts of other views shown on a view as well (`also`, #188), each still automatic and named once;
+ * `move`: and hidden on their own views, so they show here alone.
+ */
+export function withAlso(
+  edit: DashboardEdit,
+  view: string,
+  ids: readonly string[],
+  move = false,
+): DashboardEdit {
+  let next = patched(edit, 'views', view, { also: [...new Set([...alsoOf(edit, view), ...ids])] });
+  if (move) for (const id of ids) next = patched(next, 'cards', id, { hidden: true });
+  return next;
+}
+
+/**
+ * An edit without a part of another view shown on a view: gone from the view's `also`, with the place it had there.
+ * One that was moved (hidden on its own view, and shown on no other) goes back to its own: it would be nowhere.
+ */
+export function withoutAlso(edit: DashboardEdit, view: string, id: string): DashboardEdit {
+  const part = `${view}/also:${id}`;
+  let next = patched(edit, 'views', view, {
+    also: alsoOf(edit, view).filter((other) => other !== id),
+  });
+  next = patched(next, 'cards', part, clearing(next.cards?.[part]));
+  const elsewhere = Object.keys(next.views ?? {}).some((other) => alsoOf(next, other).includes(id));
+  return elsewhere ? next : patched(next, 'cards', id, { hidden: undefined });
+}
+
 /**
  * The fewest places that put `ids` (the house's order) in the order a person asked for: what already reads in the
  * house's order among them is left alone (the longest such run), and each of the others is pinned where it stands —

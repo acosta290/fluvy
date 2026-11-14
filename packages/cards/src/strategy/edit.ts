@@ -194,23 +194,29 @@ export function pinned<T>(items: readonly T[], order: (item: T) => unknown): T[]
 }
 
 /**
- * A view's sections with its parts in the person's order (`edit.cards.<id>.order`) and their own cards after them
- * (`edit.views.<path>.add`, each a part `own:<index>`). A part they moved joins the section of the part it now follows
+ * A view's sections with its parts in the person's order (`edit.cards.<id>.order`), their own cards after them
+ * (`edit.views.<path>.add`, each a part `own:<index>`) and then the parts of other views it shows as well (`also`,
+ * each a part `also:<id>`, its cards kept together). A part they moved joins the section of the part it now follows
  * (of the one it leads, when it is first), and among the view's columns it is laid as that one is — a block where
  * blocks are read, a card at the columns' feet among those — and the columns are cut again, level at the foot. A view
- * nobody ordered comes back as it was built.
+ * nobody ordered or added to comes back as it was built.
  */
 export function arranged(host: MoreHost, sections: readonly Section[]): Section[] {
   const own = host.edit.views?.[host.path]?.add;
-  // each by its place in the list, whatever stands beside it: one that names no type is no card
-  const added: Part[] = (Array.isArray(own) ? own : []).flatMap((card: unknown, index) => {
-    if (!isRecord(card) || typeof card['type'] !== 'string' || !card['type']) return [];
-    PARTS.set(card as Card, `own:${index}`);
-    return [{ id: `own:${index}`, cards: [card as Card] }];
-  });
+  const added: Part[] = [
+    // each by its place in the list, whatever stands beside it: one that names no type is no card
+    ...(Array.isArray(own) ? own : []).flatMap((card: unknown, index): Part[] =>
+      isRecord(card) && typeof card['type'] === 'string' && card['type']
+        ? [{ id: `own:${index}`, cards: [card as Card] }]
+        : [],
+    ),
+    ...(host.taken ?? []),
+  ];
+  for (const p of added) for (const card of p.cards) PARTS.set(card, p.id);
   host.parts.push(...added);
   const moved = new Set(host.parts.filter((p) => Number.isInteger(cardEdit(host, p.id)?.order)));
-  if (!moved.size && !added.length) return [...sections];
+  // one taken from a view the dashboard no longer has draws nothing: it is no reason to lay the view out again
+  if (!moved.size && !added.some((p) => p.cards.length)) return [...sections];
 
   const { flow } = host;
   const flowing = new Set(flow?.sections);
@@ -223,10 +229,11 @@ export function arranged(host: MoreHost, sections: readonly Section[]): Section[
   for (const piece of [...(flow?.blocks ?? []), ...(flow?.loose ?? [])])
     for (const card of Array.isArray(piece) ? (piece as readonly Card[]) : [piece as Card])
       places.set(card, { at: undefined, piece });
-  // the person's own cards: among the columns' loose cards, else in the last section that is not a band
+  // what the person added: among the columns' loose cards, a part's cards together, else in the last section that
+  // is not a band
   const last = sections.filter((section) => !section.column_span).at(-1) ?? sections.at(-1);
-  for (const { cards } of added)
-    for (const card of cards) places.set(card, { at: flow ? undefined : last, piece: card });
+  for (const p of added)
+    for (const card of p.cards) places.set(card, { at: flow ? undefined : last, piece: p });
 
   // every part has its place, drawn or not: hiding one never moves the others
   const order = pinned(host.parts, (p) => cardEdit(host, p.id)?.order).filter(

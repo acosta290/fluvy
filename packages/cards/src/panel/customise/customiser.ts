@@ -1,6 +1,6 @@
 // Customise's words first: they are here before anything in its chunk says them
 import './english.js';
-import { domainOf, type HomeAssistant, localize, strings } from '@fluvy/core';
+import { domainOf, type HomeAssistant, localize, plain, strings } from '@fluvy/core';
 import {
   actions,
   type ActionItem,
@@ -29,11 +29,14 @@ import type { Card, DashboardEdit, FluvyStrategyConfig, ListEdit } from '../../s
 import type { DashboardInfo, PanelContext } from '../model.js';
 import { choice } from '../sections.js';
 import {
+  alsoOf,
   leading,
   moved,
   optionsOf,
   patched,
   pinsFor,
+  withAlso,
+  withoutAlso,
   withoutOwn,
   withoutPart,
   withoutView,
@@ -46,6 +49,7 @@ import {
   listKey,
   nameOf,
   outlineOf,
+  portable,
   subjectOf,
   type PartOutline,
   type ViewOutline,
@@ -78,31 +82,82 @@ interface Outline {
   failed?: boolean;
 }
 
-/** A card's options being edited in the sheet. */
-interface Sheet {
-  /** The entry of `edit.cards` its options are kept under. */
-  readonly id: string;
-  readonly title: string;
-  readonly icon: string;
-  /** The card as the house builds it: what the options are told apart from. */
-  readonly generated: Card;
-  /** The keys Customise edits itself, never the form. */
-  readonly omit: ReadonlySet<string>;
-  /** The card's own form, once its editor has landed. */
-  editor?: HTMLElement & { hass?: HomeAssistant; setConfig(config: Card): void };
-  leaving: boolean;
-}
-
 /** A card of the preview: the element that draws it, kept while its config stays the same. */
 interface Drawn {
   readonly key: string;
   readonly element: HTMLElement & { hass?: HomeAssistant };
 }
 
+/** A card's own form in the sheet: a part's options, or a card of the person's own (one being made, or one of the view's). */
+interface FormSheet {
+  readonly kind: 'form';
+  readonly title: string;
+  readonly icon: string;
+  /** What the form is of, under its title. */
+  sub(ctx: PanelContext): string;
+  /** What stays of it, in a line over the form: said of a part's options alone. */
+  hint?(ctx: PanelContext): string;
+  /** The card the form opens on: what a change is told apart from. */
+  readonly card: Card;
+  /** The keys Customise edits itself, never the form. */
+  readonly omit: ReadonlySet<string>;
+  /** The card as the form holds it now, with what the person changed so far. */
+  shown(): Card;
+  /** Keeps what the form says (`said`: all but what the card does by itself); `read` is the card as its form reads it. */
+  keep(said: Readonly<Record<string, unknown>>, read: Card): void;
+  /** The buttons at the sheet's foot. */
+  foot(ctx: PanelContext): TemplateResult;
+  /**
+   * A card being made is drawn over its form as it will be: the element that draws it, and what the card says of a
+   * config it refuses ('' once it takes it).
+   */
+  drawing?: {
+    readonly element: Drawn['element'] & { setConfig(config: Card): void };
+    readonly refused: string;
+  };
+  /** The card's own form, once its editor has landed. */
+  editor?: HTMLElement & { hass?: HomeAssistant; setConfig(config: Card): void };
+  leaving: boolean;
+}
+
+/** The ways a card is added to a view: one of the dashboard's other views', one of Fluvy's, or YAML. */
+const WAYS = ['dashboard', 'fluvy', 'yaml'] as const;
+type Way = (typeof WAYS)[number];
+
+/** A card being added to a view, in the sheet: the way chosen, and what was searched for, picked or written so far. */
+interface AddSheet {
+  readonly kind: 'add';
+  readonly view: ViewOutline;
+  way: Way;
+  query: string;
+  /** The parts of other views picked to be shown on this one, by their ids. */
+  picked: readonly string[];
+  /** The card being written as YAML. */
+  yaml: unknown;
+  leaving: boolean;
+}
+
+type Sheet = FormSheet | AddSheet;
+
+/** What a card suggests for a house, as Home Assistant's card picker asks it: its type's keys, its first entities. */
+type Stub = (
+  hass: HomeAssistant | undefined,
+  entities: readonly string[],
+  fallback: readonly string[],
+) => Record<string, unknown> | Promise<Record<string, unknown>>;
+
 /** How long a reset stays armed, a sheet takes to leave, and the preview waits for the edit to rest. */
 const ARMED_MS = 4000;
 const LEAVE_MS = 200;
 const PREVIEW_MS = 160;
+/** The sheet's width at most, as its style draws it: its rows of chips are fitted to it. */
+const SHEET_WIDTH = 480;
+
+/** Whether what was typed is found in one of a row's words, read by their plain letters ("kuche" finds "Küche"). */
+const found = (query: string, ...words: readonly string[]): boolean => {
+  const asked = plain(query.trim());
+  return !asked || words.some((word) => plain(word).includes(asked));
+};
 
 /** The part kinds the catalogue has a word for (`customise.kind.*`). */
 const KINDS = [
@@ -225,8 +280,8 @@ export class Customiser {
   private armTimer = 0;
   private sheet: Sheet | undefined;
   private leaveTimer = 0;
-  /** The card of their own a person is writing (undefined: none). */
-  private adding: unknown;
+  /** The way a card was last added: the sheet opens on it again. */
+  private way: Way = 'dashboard';
   /** Counts the entities added: the picker starts empty again after each. */
   private picked = 0;
   /** The open view's cards as the dashboard will draw them, and what they were drawn for. */
@@ -321,8 +376,16 @@ export class Customiser {
     return { outline, tabs, pages, placed, view };
   }
 
-  /** A view's parts as the dashboard's `edit` names them: the house's, then the person's own cards. */
-  private partsOf(view: ViewOutline, edit: DashboardEdit): PartOutline[] {
+  /**
+   * A view's parts as the dashboard's `edit` names them: the house's, then the person's own cards, then the parts
+   * of the dashboard's other views (`views`) it shows as well, each as its own view builds it — one the dashboard no
+   * longer has keeps its place among them and has no row.
+   */
+  private partsOf(
+    view: ViewOutline,
+    edit: DashboardEdit,
+    views: readonly ViewOutline[],
+  ): PartOutline[] {
     const own = edit.views?.[view.id]?.add;
     return [
       ...view.parts,
@@ -341,6 +404,19 @@ export class Customiser {
             ]
           : [],
       ),
+      ...alsoOf(edit, view.id).map((id): PartOutline => {
+        const from = views.find((other) => other !== view && id.startsWith(`${other.id}/`));
+        const part = from?.parts.find((other) => other.id === id);
+        return {
+          id: `${view.id}/also:${id}`,
+          kind: 'also',
+          cards: part?.cards ?? [],
+          off: false,
+          card: part?.card,
+          list: undefined,
+          ...(from && part ? { taken: { view: from, part } } : {}),
+        };
+      }),
     ];
   }
 
@@ -365,7 +441,6 @@ export class Customiser {
     this.viewId = view;
     this.openPart = '';
     this.openItem = '';
-    this.adding = undefined;
     this.host.requestUpdate();
   }
 
@@ -417,21 +492,25 @@ export class Customiser {
     else this.host.requestUpdate();
   }
 
-  /* ---------- the options' sheet ---------- */
+  /* ---------- the sheet ---------- */
 
-  private openSheet(
-    id: string,
-    title: string,
-    icon: string,
-    generated: Card,
-    omit: string[],
-  ): void {
+  /** Opens a sheet over the page; the one that was there gives way to it. */
+  private open<S extends Sheet>(sheet: S): S {
     clearTimeout(this.leaveTimer);
-    const sheet: Sheet = { id, title, icon, generated, omit: new Set(omit), leaving: false };
     this.sheet = sheet;
     this.host.requestUpdate();
-    const tag = generated.type.replace(/^custom:/, '');
-    // the card's own editor, fetched as Home Assistant's dialog fetches it (a card of a family may still be landing)
+    return sheet;
+  }
+
+  /**
+   * Opens a card's own form in the sheet: its editor, fetched as Home Assistant's dialog fetches it (a card of a
+   * family may still be landing), without the fields Customise edits itself. What the form says is kept without the
+   * keys put back to what the card does by itself: they say nothing the card did not.
+   */
+  private openForm(spec: Omit<FormSheet, 'kind' | 'leaving' | 'editor'>): FormSheet {
+    const sheet = this.open<FormSheet>({ ...spec, kind: 'form', leaving: false });
+    const { card, omit } = sheet;
+    const tag = card.type.replace(/^custom:/, '');
     void customElements
       .whenDefined(tag)
       .then(async () => {
@@ -445,38 +524,154 @@ export class Customiser {
         const form = editor.getConfigForm();
         const aliases = [...(element.aliases ? [element.aliases] : []), COMMON_ALIASES];
         const made = listsEditor(
-          { ...form, schema: withoutLists(form.schema, sheet.omit) },
-          (editor.lists ?? []).filter((list) => !sheet.omit.has(list.key)),
+          { ...form, schema: withoutLists(form.schema, omit) },
+          (editor.lists ?? []).filter((list) => !omit.has(list.key)),
           editor.defaults,
           aliases,
           editor.choices,
-        ) as NonNullable<Sheet['editor']>;
-        made.setConfig(withOptions(generated, this.edit.cards?.[id]?.options));
+        ) as NonNullable<FormSheet['editor']>;
+        made.setConfig(sheet.shown());
         // the card as its form reads it (an older name the house wrote, under its newer one): what a change is told from
-        const read = normaliseConfig(generated, ...aliases) as Card;
+        const read = normaliseConfig(card, ...aliases) as Card;
         const defaults = editorDefaults(form, editor.defaults);
         made.addEventListener('config-changed', (event) => {
           event.stopPropagation();
           const { config } = (event as CustomEvent<{ config: Card }>).detail;
-          // a key put back to what the card does by itself says nothing the generated card did not
           const own = defaults?.(config, this.ctx?.hass) ?? {};
-          const said = Object.fromEntries(
-            Object.entries(config).filter(
-              ([key, value]) => key in read || JSON.stringify(value) !== JSON.stringify(own[key]),
+          sheet.keep(
+            Object.fromEntries(
+              Object.entries(config).filter(
+                ([key, value]) => key in read || JSON.stringify(value) !== JSON.stringify(own[key]),
+              ),
             ),
-          );
-          this.change(
-            patched(this.edit, 'cards', id, {
-              // nothing changed, no options; else what leaves the generated card as the form holds it
-              options: optionsOf(read, said, sheet.omit) && optionsOf(generated, said, sheet.omit),
-            }),
+            read,
           );
         });
         sheet.editor = made;
         this.host.requestUpdate();
       })
-      // an editor that cannot be fetched (the page outlived an update) leaves the sheet waiting: Done closes it
+      // an editor that cannot be fetched (the page outlived an update) leaves the sheet waiting: its buttons close it
       .catch(() => undefined);
+    return sheet;
+  }
+
+  /** A part's options: its card's form, of which only what leaves the card the house builds is kept. */
+  private openOptions(
+    id: string,
+    title: string,
+    icon: string,
+    generated: Card,
+    omit: string[],
+  ): void {
+    const kept = new Set(omit);
+    const sheet = this.openForm({
+      title,
+      icon,
+      sub: (ctx) => say(ctx.hass, 'options'),
+      hint: (ctx) => say(ctx.hass, 'options_hint'),
+      card: generated,
+      omit: kept,
+      shown: () => withOptions(generated, this.edit.cards?.[id]?.options),
+      keep: (said, read) =>
+        this.change(
+          patched(this.edit, 'cards', id, {
+            // nothing changed, no options; else what leaves the generated card as the form holds it
+            options: optionsOf(read, said, kept) && optionsOf(generated, said, kept),
+          }),
+        ),
+      foot: (ctx) =>
+        html`<div class="cz-pair" data-fill-row>
+          ${button(
+            ctx.t('about.reset_btn'),
+            'quiet',
+            () => {
+              this.change(patched(this.edit, 'cards', id, { options: undefined }));
+              sheet.editor?.setConfig(generated);
+            },
+            true,
+            this.edit.cards?.[id]?.options === undefined,
+          )}
+          ${button(localize(ctx.hass, 'page.done'), 'accent', () => this.closeSheet(), true)}
+        </div>`,
+    });
+  }
+
+  /**
+   * A card of Fluvy's being made for a view: its own form on what the card suggests for this house (its stub, as
+   * Home Assistant's card picker asks for it), the card drawn over the form as it will be — the real one on the real
+   * house, looked at and never touched — and added to the view's own once it takes what the form holds.
+   */
+  private async openNew(view: ViewOutline, tag: string): Promise<void> {
+    const hass = this.ctx?.hass;
+    const type = `custom:${tag}`;
+    const entities = Object.keys(hass?.states ?? {});
+    let stub: Record<string, unknown> | undefined;
+    try {
+      stub = await (
+        customElements.get(tag) as { getStubConfig?: Stub } | undefined
+      )?.getStubConfig?.(hass, entities, entities);
+    } catch {
+      // a card that fails to suggest anything opens on its type alone
+    }
+    let draft: Card = { ...stub, type };
+    const element = document.createElement(tag) as NonNullable<FormSheet['drawing']>['element'];
+    /** The card takes the draft, or says why not: until it does there is nothing to add. */
+    const take = (): string => {
+      try {
+        element.setConfig(draft);
+        return '';
+      } catch (error) {
+        return error instanceof Error ? error.message : String(error);
+      }
+    };
+    const sheet = this.openForm({
+      title: typeName(type),
+      icon: 'plus',
+      sub: (ctx) => say(ctx.hass, 'add_card'),
+      card: draft,
+      omit: new Set(),
+      shown: () => draft,
+      keep: (said) => {
+        draft = { ...said, type };
+        sheet.drawing = { element, refused: take() };
+        this.host.requestUpdate();
+      },
+      foot: (ctx) =>
+        html`<div class="cz-pair" data-fill-row>
+          ${button(ctx.t('charts.cancel'), 'quiet', () => this.closeSheet(), true)}
+          ${button(
+            say(ctx.hass, 'add'),
+            'accent',
+            () => {
+              const cards = [...(this.edit.views?.[view.id]?.add ?? []), draft];
+              this.change(patched(this.edit, 'views', view.id, { add: cards }));
+              this.closeSheet();
+            },
+            true,
+            sheet.drawing?.refused !== '',
+          )}
+        </div>`,
+    });
+    sheet.drawing = { element, refused: take() };
+  }
+
+  /** One of the view's own cards that is Fluvy's, in its own form: what the form says is the card, as its YAML is. */
+  private openOwn(view: ViewOutline, index: number, card: Card, icon: string): void {
+    this.openForm({
+      title: typeName(card.type),
+      icon,
+      sub: (ctx) => say(ctx.hass, 'kind.own'),
+      card,
+      omit: new Set(),
+      shown: () => this.edit.views?.[view.id]?.add?.[index] ?? card,
+      keep: (said) => {
+        const cards = [...(this.edit.views?.[view.id]?.add ?? [])];
+        cards[index] = { ...said, type: card.type };
+        this.change(patched(this.edit, 'views', view.id, { add: cards }));
+      },
+      foot: (ctx) =>
+        button(localize(ctx.hass, 'page.done'), 'accent', () => this.closeSheet(), true),
+    });
   }
 
   private closeSheet(): void {
@@ -492,14 +687,44 @@ export class Customiser {
     this.host.requestUpdate();
   }
 
-  private sheetLayer(ctx: PanelContext): TemplateResult | typeof nothing {
+  /** A card's form as the sheet holds it: the card being made over it where there is one, then the form, then its buttons. */
+  private formSheet(ctx: PanelContext, sheet: FormSheet): TemplateResult {
+    if (sheet.editor) sheet.editor.hass = ctx.hass;
+    const { drawing } = sheet;
+    if (drawing) drawing.element.hass = ctx.hass;
+    return html`<div class="cz-sheet__body">
+        ${sheet.hint ? html`<p class="pn-hint cz-sheet__hint">${sheet.hint(ctx)}</p>` : nothing}
+        ${
+          // the card is the dashboard's own, measured on its sheet: here it is only looked at
+          drawing && !drawing.refused
+            ? html`<div class="cz-preview cz-sheet__card" inert data-measure="skip">
+                ${drawing.element}
+              </div>`
+            : nothing
+        }
+        ${
+          // what the card says of a config it refuses, in its own words: there is nothing to add until it takes it
+          drawing?.refused
+            ? html`<p class="pn-hint cz-armed" role="status" data-name>${drawing.refused}</p>`
+            : nothing
+        }
+        ${sheet.editor ?? html`<div class="cz-wait" aria-busy="true"></div>`}
+      </div>
+      ${sheet.foot(ctx)}`;
+  }
+
+  /** The house's bottom sheet over the page, in the top layer: a card's form, or the ways to add a card. */
+  private sheetLayer(
+    ctx: PanelContext,
+    views: readonly ViewOutline[],
+  ): TemplateResult | typeof nothing {
     const sheet = this.sheet;
     if (!sheet) return nothing;
-    if (sheet.editor) sheet.editor.hass = ctx.hass;
-    const tuned = this.edit.cards?.[sheet.id]?.options !== undefined;
+    const adding = sheet.kind === 'add';
+    const title = adding ? say(ctx.hass, 'add_card') : sheet.title;
     return html`<dialog
       class="cz-dialog ${sheet.leaving ? 'is-leaving' : ''}"
-      aria-label=${sheet.title}
+      aria-label=${title}
       @cancel=${(event: Event) => {
         event.preventDefault();
         this.closeSheet();
@@ -512,33 +737,193 @@ export class Customiser {
       <div class="fv-sheet cz-sheet" data-card tabindex="-1" autofocus>
         <div class="fv-sheet__grabber"><span></span></div>
         ${head({
-          icon: sheet.icon,
-          title: sheet.title,
-          sub: say(ctx.hass, 'options'),
-          name: true,
+          icon: adding ? 'plus' : sheet.icon,
+          title,
+          sub: adding ? sheet.view.title : sheet.sub(ctx),
+          name: !adding,
           trailing: round('close', 'bare', localize(ctx.hass, 'page.done'), () =>
             this.closeSheet(),
           ),
         })}
+        ${adding ? this.addSheet(ctx, sheet, views) : this.formSheet(ctx, sheet)}
+      </div>
+    </dialog>`;
+  }
+
+  /* ---------- a card added ---------- */
+
+  /** A search field: what is typed narrows the rows under it. */
+  private search(ctx: PanelContext, query: string, typed: (query: string) => void): TemplateResult {
+    const label = say(ctx.hass, 'search');
+    return html`<label class="fv-field cz-search"
+      >${glyph('search')}<input
+        class="fv-field__input"
+        type="text"
+        inputmode="search"
+        enterkeyhint="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder=${label}
+        aria-label=${label}
+        .value=${query}
+        @input=${(event: Event) => typed((event.target as HTMLInputElement).value)}
+    /></label>`;
+  }
+
+  /**
+   * The ways to add a card to a view, as chips, and the chosen one under them: the cards of the dashboard's other
+   * views to show here as well (picked by their switches, then shown here too or moved here), Fluvy's cards to make
+   * one of in its own form, or a card's YAML.
+   */
+  private addSheet(
+    ctx: PanelContext,
+    sheet: AddSheet,
+    views: readonly ViewOutline[],
+  ): TemplateResult {
+    const set = (patch: Partial<Pick<AddSheet, 'way' | 'query' | 'picked' | 'yaml'>>): void => {
+      Object.assign(sheet, patch);
+      this.host.requestUpdate();
+    };
+    // the chips are fitted to the sheet's own column, not to the panel's
+    const fit = ctx.fit && { ...ctx.fit, width: Math.min(SHEET_WIDTH, window.innerWidth) - 32 };
+    const ways = choice(
+      { ...ctx, fit },
+      WAYS.map((way) => ({
+        key: way,
+        label: way === 'yaml' ? 'YAML' : say(ctx.hass, `way_${way}`),
+        active: sheet.way === way,
+      })),
+      (key) => {
+        this.way = key as Way;
+        set({ way: this.way, query: '' });
+      },
+    );
+    const none = emptyState('search', say(ctx.hass, 'no_match'));
+    if (sheet.way === 'dashboard') {
+      const here = new Set(alsoOf(this.edit, sheet.view.id));
+      const groups = views.flatMap((view) => {
+        const rows =
+          view === sheet.view
+            ? []
+            : view.parts.flatMap((part) => {
+                // what a view has nothing for, its headings, and what is already shown here are not offered
+                if (!portable(part) || here.has(part.id)) return [];
+                const words = this.wordsOf(part, ctx);
+                return found(sheet.query, view.title, words.title, words.kind)
+                  ? [{ part, words }]
+                  : [];
+              });
+        return rows.length ? [{ view, rows }] : [];
+      });
+      const bring = (move: boolean): void => {
+        this.change(withAlso(this.edit, sheet.view.id, sheet.picked, move));
+        this.closeSheet();
+      };
+      return html`${ways}
         <div class="cz-sheet__body">
-          <p class="pn-hint cz-sheet__hint">${say(ctx.hass, 'options_hint')}</p>
-          ${sheet.editor ?? html`<div class="cz-wait" aria-busy="true"></div>`}
+          <p class="pn-hint cz-sheet__hint">${say(ctx.hass, 'way_dashboard_hint')}</p>
+          ${this.search(ctx, sheet.query, (query) => set({ query }))}
+          ${
+            groups.length
+              ? groups.map(
+                  ({ view, rows }) =>
+                    html`<p class="fv-label cz-label" data-name>${view.title}</p>
+                      <div class="pn-rows">
+                        ${repeat(
+                          rows,
+                          ({ part }) => part.id,
+                          ({ part, words }) => {
+                            const picked = sheet.picked.includes(part.id);
+                            const pick = (on: boolean): void =>
+                              set({
+                                picked: on
+                                  ? [...sheet.picked, part.id]
+                                  : sheet.picked.filter((id) => id !== part.id),
+                              });
+                            return listRow({
+                              icon: iconOf(part, ctx.hass),
+                              tone: picked ? 'accent' : 'neutral',
+                              title: words.title,
+                              name: words.name,
+                              ...(words.kind ? { sub: words.kind } : {}),
+                              trailing: toggle(picked, 'accent', pick, words.title),
+                              onTap: () => pick(!picked),
+                            });
+                          },
+                        )}
+                      </div>`,
+                )
+              : none
+          }
         </div>
         <div class="cz-pair" data-fill-row>
           ${button(
-            ctx.t('about.reset_btn'),
+            say(ctx.hass, 'move_here'),
             'quiet',
-            () => {
-              this.change(patched(this.edit, 'cards', sheet.id, { options: undefined }));
-              sheet.editor?.setConfig(sheet.generated);
-            },
+            () => bring(true),
             true,
-            !tuned,
+            !sheet.picked.length,
           )}
-          ${button(localize(ctx.hass, 'page.done'), 'accent', () => this.closeSheet(), true)}
-        </div>
+          ${button(
+            say(ctx.hass, 'show_too'),
+            'accent',
+            () => bring(false),
+            true,
+            !sheet.picked.length,
+          )}
+        </div>`;
+    }
+    if (sheet.way === 'fluvy') {
+      // Fluvy's own cards as the card picker lists them, each once its element has landed
+      const cards = (window.customCards ?? []).filter(
+        (card) =>
+          card.type.startsWith('fluvy-') &&
+          customElements.get(card.type) &&
+          found(sheet.query, card.name ?? '', card.description ?? ''),
+      );
+      return html`${ways}
+        <div class="cz-sheet__body">
+          ${this.search(ctx, sheet.query, (query) => set({ query }))}
+          ${
+            cards.length
+              ? html`<div class="pn-rows">
+                  ${repeat(
+                    cards,
+                    (card) => card.type,
+                    (card) =>
+                      listRow({
+                        icon: null,
+                        title: typeName(card.type),
+                        ...(card.description ? { sub: card.description } : {}),
+                        onTap: () => void this.openNew(sheet.view, card.type),
+                      }),
+                  )}
+                </div>`
+              : none
+          }
+        </div>`;
+    }
+    return html`${ways}
+      <div class="cz-sheet__body">
+        <p class="pn-hint cz-sheet__hint">${say(ctx.hass, 'add_card_hint')}</p>
+        ${this.yaml(ctx, sheet.yaml, (value) => set({ yaml: value ?? { type: '' } }))}
       </div>
-    </dialog>`;
+      <div class="cz-pair" data-fill-row>
+        ${button(ctx.t('charts.cancel'), 'quiet', () => this.closeSheet(), true)}
+        ${button(
+          say(ctx.hass, 'add'),
+          'accent',
+          () => {
+            const { yaml } = sheet;
+            if (!isCard(yaml)) return;
+            const cards = [...(this.edit.views?.[sheet.view.id]?.add ?? []), yaml];
+            this.change(patched(this.edit, 'views', sheet.view.id, { add: cards }));
+            this.closeSheet();
+          },
+          true,
+          !isCard(sheet.yaml),
+        )}
+      </div>`;
   }
 
   /* ---------- the view as it will be drawn ---------- */
@@ -687,37 +1072,52 @@ export class Customiser {
   ): TemplateResult {
     const edit = this.edit;
     const own = part.kind === 'own';
-    const hidden = hiddenBy(edit.cards?.[part.id], part.off);
+    const { taken } = part;
+    // what the person put on the view (a card of their own, a part of another view) is taken away again, never
+    // hidden nor reset; one taken from another view is named as it is there
+    const added = own || part.kind === 'also';
+    const said = taken?.part ?? part;
+    const hidden = !added && hiddenBy(edit.cards?.[part.id], part.off);
     const changed =
-      !own &&
+      !added &&
       (Object.keys(edit.cards ?? {}).some((id) => id === part.id || id.startsWith(`${part.id}:`)) ||
         edit.entities?.[part.id] !== undefined);
-    const { title, kind, name } = this.wordsOf(part, ctx);
+    const { title, kind, name } = this.wordsOf(said, ctx);
+    const symbol = iconOf(said, ctx.hass);
     const list = part.list;
     const shown = list ? this.itemsOf(ctx, part) : [];
-    // what it is, or how much of its list shows; before it, that it is hidden or that a person changed it
+    // what it is, where it comes from, or how much of its list shows; before it, that it is hidden or that a person
+    // changed it
     const sub = [
       hidden ? say(ctx.hass, 'hidden') : changed ? say(ctx.hass, 'edited') : '',
-      !list
-        ? kind
-        : hidden
-          ? ''
-          : say(ctx.hass, 'shown', {
-              shown: shown.length,
-              // of the house's and what the person added
-              count: new Set([...list.items, ...shown]).size,
-            }),
+      taken
+        ? say(ctx.hass, 'from_view', { view: taken.view.title })
+        : !list
+          ? kind
+          : hidden
+            ? ''
+            : say(ctx.hass, 'shown', {
+                shown: shown.length,
+                // of the house's and what the person added
+                count: new Set([...list.items, ...shown]).size,
+              }),
     ]
       .filter(Boolean)
       .join(' · ');
     const open = this.openPart === part.id;
     const at = seen.indexOf(part.id);
-    const tunes = !own && part.card && (!list || listKey(part.card, list) !== undefined);
+    const { card } = part;
+    // a card's own form: the house's parts but a list no key of its card holds; of the person's own, Fluvy's cards
+    const tunes =
+      card !== undefined &&
+      (own
+        ? /^custom:fluvy-/.test(card.type) && customElements.get(card.type.slice(7)) !== undefined
+        : !taken && (!list || listKey(card, list) !== undefined));
     const armed = this.armed === part.id;
     const items: ActionItem[] = [
       ...this.moves(ctx, at, seen.length),
       ...(tunes ? [{ key: 'options', glyph: 'sliders', label: say(ctx.hass, 'options') }] : []),
-      ...(own
+      ...(added
         ? [{ key: 'remove', glyph: 'trash', label: say(ctx.hass, 'remove') }]
         : [
             {
@@ -733,12 +1133,17 @@ export class Customiser {
       if (isMove(key)) {
         this.moved = { part: part.id, at: MOVES.indexOf(key) };
         place(part.id, placeOf(key, at, seen.length));
-      } else if (key === 'options' && part.card) {
-        const key = listKey(part.card, list);
-        this.openSheet(part.id, title, iconOf(part, ctx.hass), part.card, key ? [key] : []);
+      } else if (key === 'options' && card) {
+        const key = listKey(card, list);
+        if (own) this.openOwn(view, Number(part.id.split(':').pop()), card, symbol);
+        else this.openOptions(part.id, title, symbol, card, key ? [key] : []);
       } else if (key === 'remove') {
         this.openPart = '';
-        this.change(withoutOwn(edit, view.id, Number(part.id.split(':').pop())));
+        this.change(
+          own
+            ? withoutOwn(edit, view.id, Number(part.id.split(':').pop()))
+            : withoutAlso(edit, view.id, said.id),
+        );
       } else if (key === 'reset')
         this.arm(part.id, () => this.change(withoutPart(this.edit, part.id)));
     };
@@ -747,11 +1152,11 @@ export class Customiser {
       data-part=${part.id}
     >
       ${listRow({
-        icon: gripped(iconOf(part, ctx.hass), hidden ? 'neutral' : 'accent'),
+        icon: gripped(symbol, hidden ? 'neutral' : 'accent'),
         title,
         name,
         ...(sub ? { sub } : {}),
-        trailing: own
+        trailing: added
           ? 'chevron'
           : html`<span class="cz-caret" aria-hidden="true">${glyph('chevron')}</span>${toggle(
                 !hidden,
@@ -870,7 +1275,7 @@ export class Customiser {
                     this.moved = { part: part.id, item, at: MOVES.indexOf(key) };
                     place(item, placeOf(key, at, shown.length));
                   } else if (card)
-                    this.openSheet(`${part.id}:${item}`, name, iconOf(part, ctx.hass), card, [
+                    this.openOptions(`${part.id}:${item}`, name, iconOf(part, ctx.hass), card, [
                       'entity',
                       'area',
                       'device',
@@ -955,53 +1360,29 @@ export class Customiser {
     });
   }
 
+  /** What a person adds to a view, laid after its own: a row that opens the ways to add a card, in the sheet. */
   private ownBlock(ctx: PanelContext, view: ViewOutline): TemplateResult {
-    const adding = this.adding;
     return html`<p class="fv-label pn-label">${say(ctx.hass, 'own')}</p>
       <p class="pn-hint">${say(ctx.hass, 'own_hint')}</p>
-      ${
-        adding === undefined
-          ? html`<div class="pn-rows">
-              ${listRow({
-                icon: 'plus',
-                title: say(ctx.hass, 'add_card'),
-                sub: say(ctx.hass, 'add_card_hint'),
-                trailing: 'button',
-                button: say(ctx.hass, 'add'),
-                onTap: () => {
-                  this.adding = { type: '' };
-                  this.host.requestUpdate();
-                },
-              })}
-            </div>`
-          : html`${this.yaml(ctx, adding, (value) => {
-                this.adding = value ?? { type: '' };
-                this.host.requestUpdate();
-              })}
-              <div class="cz-pair" data-fill-row>
-                ${button(
-                  ctx.t('charts.cancel'),
-                  'quiet',
-                  () => {
-                    this.adding = undefined;
-                    this.host.requestUpdate();
-                  },
-                  true,
-                )}
-                ${button(
-                  say(ctx.hass, 'add'),
-                  'accent',
-                  () => {
-                    if (!isCard(adding)) return;
-                    const cards = [...(this.edit.views?.[view.id]?.add ?? []), adding];
-                    this.adding = undefined;
-                    this.change(patched(this.edit, 'views', view.id, { add: cards }));
-                  },
-                  true,
-                  !isCard(adding),
-                )}
-              </div>`
-      }`;
+      <div class="pn-rows">
+        ${listRow({
+          icon: 'plus',
+          title: say(ctx.hass, 'add_card'),
+          sub: say(ctx.hass, 'add_card_ways'),
+          trailing: 'button',
+          button: say(ctx.hass, 'add'),
+          onTap: () =>
+            this.open<AddSheet>({
+              kind: 'add',
+              view,
+              way: this.way,
+              query: '',
+              picked: [],
+              yaml: { type: '' },
+              leaving: false,
+            }),
+        })}
+      </div>`;
   }
 
   /* ---------- a view ---------- */
@@ -1049,14 +1430,16 @@ export class Customiser {
       )}`;
   }
 
+  /** The open view's card: what it is, its place among the tabs (`views`: the dashboard's, its tabs first), and its parts as rows. */
   private viewCard(
     ctx: PanelContext,
     view: ViewOutline,
-    tabs: readonly ViewOutline[],
-    first: ViewOutline | undefined,
+    views: readonly ViewOutline[],
   ): TemplateResult {
     const edit = this.edit;
-    const all = this.partsOf(view, edit);
+    const tabs = views.filter((other) => other.tab);
+    const [first] = tabs;
+    const all = this.partsOf(view, edit, views);
     const ids = all.map((part) => part.id);
     const order = pinned(all, (part) => edit.cards?.[part.id]?.order).filter(
       (part) => part.cards.length,
@@ -1208,7 +1591,7 @@ export class Customiser {
       this.openPart = '';
       this.openItem = '';
       this.openTabs = false;
-      this.adding = undefined;
+      this.sheet = undefined;
       this.drawn = undefined;
     }
     const dashboard = ctx.dashboards.find(
@@ -1253,7 +1636,7 @@ export class Customiser {
       </section>
       ${
         view
-          ? this.viewCard(ctx, view, tabs, tabs[0])
+          ? this.viewCard(ctx, view, outline.views ?? [])
           : html`<section class="fv-card pn-card">
               ${emptyState('grid', say(ctx.hass, outline.failed ? 'failed' : 'loading'))}
             </section>`
@@ -1273,7 +1656,7 @@ export class Customiser {
             </section>`
           : nothing
       }
-      ${this.sheetLayer(ctx)}`;
+      ${this.sheetLayer(ctx, outline.views ?? [])}`;
   }
 }
 

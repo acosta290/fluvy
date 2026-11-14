@@ -593,6 +593,162 @@ describe('a dashboard’s `edit` (#170)', () => {
     expect(partOf(wall.view('wall').sections.at(-1)!.cards.at(-1)!)).toBe('own:0');
   });
 
+  describe('a part of another view shown on a view as well (`also`, #188)', () => {
+    /** Two scenes of the kitchen: its page has a Scenes card. */
+    const cooking = [
+      entity(
+        'scene.kitchen_cooking',
+        'unknown',
+        { friendly_name: 'Cooking' },
+        { area_id: 'kitchen' },
+      ),
+      entity(
+        'scene.kitchen_dinner',
+        'unknown',
+        { friendly_name: 'Dinner' },
+        { area_id: 'kitchen' },
+      ),
+    ];
+    const KITCHEN = 'room-kitchen/scenes';
+    const BEDROOM = 'room-bedroom/lights';
+
+    it('lays it after the view’s own, its cards together, and leaves it where it was', async () => {
+      const plain = await built('home', undefined, cooking);
+      const scenes = plain.of('room-kitchen', 'scenes');
+      const lights = plain.of('room-bedroom', 'lights');
+      expect(scenes).toHaveLength(1);
+      expect(lights.length).toBeGreaterThan(1);
+      const note = { type: 'markdown', content: 'Bins on Tuesday' };
+      const shown = await built(
+        'home',
+        { views: { home: { also: [KITCHEN, BEDROOM], add: [note] } } },
+        cooking,
+      );
+      // parts of their own, after the house's and the person's own cards
+      expect(shown.ids('home').slice(-3)).toEqual(['own:0', `also:${KITCHEN}`, `also:${BEDROOM}`]);
+      expect(shown.of('home', `also:${KITCHEN}`)).toEqual(scenes);
+      expect(shown.of('home', `also:${BEDROOM}`)).toEqual(lights);
+      // the room's page shows them still, and every card of Home is where it was
+      expect(shown.of('room-kitchen', 'scenes')).toEqual(scenes);
+      expect(shown.laid('home').filter((id) => !/^(own|also):/.test(id))).toEqual(
+        expect.arrayContaining(plain.laid('home')),
+      );
+      // a part's cards stand together: a heading never parts from its tiles across two columns
+      const column = shown
+        .view('home')
+        .sections.find((section) => section.cards.some((c) => partOf(c) === `also:${BEDROOM}`))!;
+      const taken = column.cards.map((c) => partOf(c));
+      expect(taken.filter((id) => id === `also:${BEDROOM}`)).toHaveLength(lights.length);
+      expect(taken.lastIndexOf(`also:${BEDROOM}`) - taken.indexOf(`also:${BEDROOM}`)).toBe(
+        lights.length - 1,
+      );
+    });
+
+    it('stays automatic: what the house adds to it arrives on both views, with the person’s options', async () => {
+      const more = [
+        ...cooking,
+        entity(
+          'scene.kitchen_cleaning',
+          'unknown',
+          { friendly_name: 'Cleaning' },
+          { area_id: 'kitchen' },
+        ),
+      ];
+      const { of } = await built(
+        'home',
+        {
+          views: { home: { also: [KITCHEN] } },
+          cards: { [KITCHEN]: { options: { title: 'Cook' } } },
+        },
+        more,
+      );
+      const [card] = of('home', `also:${KITCHEN}`);
+      expect(card!['title']).toBe('Cook');
+      expect(card!['scenes']).toHaveLength(3);
+      expect(of('room-kitchen', 'scenes')).toEqual([card]);
+    });
+
+    it('moves it: hidden on its own view, it shows where it was taken', async () => {
+      const plain = await built('home', undefined, cooking);
+      const moved = await built(
+        'home',
+        { views: { home: { also: [KITCHEN] } }, cards: { [KITCHEN]: { hidden: true } } },
+        cooking,
+      );
+      expect(moved.of('room-kitchen', 'scenes')).toEqual([]);
+      expect(moved.of('home', `also:${KITCHEN}`)).toEqual(plain.of('room-kitchen', 'scenes'));
+      // the page of a view that is hidden gives its parts all the same
+      const media = await built('home', {
+        views: { media: { hidden: true }, home: { also: ['media/media'] } },
+      });
+      expect(media.views.some((v) => v.path === 'media')).toBe(false);
+      expect(media.of('home', 'also:media/media').length).toBeGreaterThan(0);
+    });
+
+    it('takes its place among the view’s parts, first with one place', async () => {
+      const { laid, view } = await built(
+        'home',
+        {
+          views: { home: { also: [KITCHEN] } },
+          cards: { [`home/also:${KITCHEN}`]: { order: 0 } },
+        },
+        cooking,
+      );
+      expect(laid('home')[0]).toBe(`also:${KITCHEN}`);
+      // under the greeting, in the first column
+      expect(partOf(view('home').sections[0]!.cards[1]!)).toBe(`also:${KITCHEN}`);
+      // on a wall, whose columns are its own, it closes the last one
+      const wall = await built('wall', { views: { wall: { also: [KITCHEN] } } }, cooking);
+      expect(partOf(wall.view('wall').sections.at(-1)!.cards.at(-1)!)).toBe(`also:${KITCHEN}`);
+    });
+
+    it('opens a list’s "N more" from the view that shows it, and comes back there', async () => {
+      const edit = { views: { home: { also: [BEDROOM] } } };
+      // four lights in the bedroom, its list capped at one: three wait behind its "3 more" row
+      const lamps = ['reading', 'wardrobe'].map((name) =>
+        entity(`light.bedroom_${name}`, 'off', { friendly_name: name }, { area_id: 'bedroom' }),
+      );
+      const { of, views } = await built('home', edit, lamps, { caps: { lights: 1 } });
+      const more = of('home', `also:${BEDROOM}`).find((card) => card['more_path']);
+      expect(more!['more_path']).toBe('/fluvy-test/home-room-bedroom-lights');
+      const subview = views.find((v) => v.path === 'home-room-bedroom-lights')!;
+      expect(subview.back_path).toBe('/fluvy-test/home');
+      expect(subview.subview).toBe(true);
+      // the room's own list still opens its own, back to the room
+      const own = of('room-bedroom', 'lights').find((card) => card['more_path']);
+      expect(own!['more_path']).toBe('/fluvy-test/room-bedroom-lights');
+      expect(views.find((v) => v.path === 'room-bedroom-lights')!.back_path).toBe(
+        '/fluvy-test/room-bedroom',
+      );
+      // one subview a list taken, whatever else its view caps
+      expect(views.filter((v) => v.path.startsWith('home-room-'))).toHaveLength(1);
+    });
+
+    it('ignores what the dashboard does not have: a room deleted, the view’s own, anything malformed', async () => {
+      const plain = await built('home', undefined, cooking);
+      for (const also of [
+        ['room-gone/scenes'],
+        ['room-kitchen/nothing', 'home/clock', 'scenes', '', 5, null, { id: KITCHEN }],
+        KITCHEN,
+        { 0: KITCHEN },
+      ]) {
+        const odd = await built('home', { views: { home: { also } } }, cooking);
+        expect(odd.views, JSON.stringify(also)).toEqual(plain.views);
+      }
+      // each keeps its place among the view's parts: the others stay where their places put them
+      const kept = await built(
+        'home',
+        { views: { home: { also: ['room-gone/scenes', KITCHEN] } } },
+        cooking,
+      );
+      expect(kept.ids('home').slice(-2)).toEqual(['also:room-gone/scenes', `also:${KITCHEN}`]);
+      expect(kept.host('home').parts.at(-2)!.cards).toEqual([]);
+      // named twice, it is shown once
+      const twice = await built('home', { views: { home: { also: [KITCHEN, KITCHEN] } } }, cooking);
+      expect(twice.of('home', `also:${KITCHEN}`)).toHaveLength(1);
+    });
+  });
+
   it('keeps the dashboard’s other options working beside it', async () => {
     const { views, cards } = await built(
       'home',

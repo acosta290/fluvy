@@ -165,6 +165,11 @@ export interface ViewEdit {
   readonly order?: number;
   /** Cards of the person's own, laid out after the view's (each a part: `<view>/own:<index>`). */
   readonly add?: readonly Card[];
+  /**
+   * Parts of the dashboard's other views shown here as well (#188), each by its id (`room-kitchen/scenes`) and still
+   * automatic, laid out after the view's and the person's own (each a part: `<view>/also:<id>`).
+   */
+  readonly also?: readonly string[];
 }
 
 /** A part's own changes, by its id (`home/flow`, `rooms/room:kitchen`; a list's card of one entity, `home/lights:light.sofa`). */
@@ -375,6 +380,13 @@ export interface MoreHost {
   readonly parts: Part[];
   /** The lists its parts draw, by the part's id. */
   readonly lists: Map<string, PartList>;
+  /** The parts of other views it shows as well (`edit.views.<path>.also`), each under its id here (`also:<id>`). */
+  readonly taken?: readonly Part[];
+  /**
+   * The view its parts are built for where that is another (one of them is shown there, `also`): a list's subview is
+   * named after that view too, and leads back to it.
+   */
+  readonly on?: Pick<MoreHost, 'path' | 'title' | 'icon'>;
   /** Its columns, once `flowed` has cut them. */
   flow?: Flow;
 }

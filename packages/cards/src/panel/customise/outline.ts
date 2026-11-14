@@ -23,6 +23,8 @@ export interface PartOutline {
   readonly card: Card | undefined;
   /** The list it draws, where it draws one. */
   readonly list: PartList | undefined;
+  /** The part of another view it shows here as well (`also`, #188), and that view. */
+  readonly taken?: { readonly view: ViewOutline; readonly part: PartOutline };
 }
 
 export interface ViewOutline {
@@ -77,6 +79,13 @@ export async function outlineOf(
     ];
   });
 }
+
+/**
+ * Whether a part can be shown on another view (`also`, #188): it draws something besides headings — a way back and a
+ * floor's name are their own view's alone.
+ */
+export const portable = (part: PartOutline): boolean =>
+  part.cards.some((card) => card.type !== HEADING);
 
 /** What a card is about: the entity, the room or the device it draws, where it draws one. */
 export const subjectOf = (card: Card | undefined): string | undefined => {
@@ -150,6 +159,7 @@ const GLYPHS: Readonly<Record<string, string>> = {
   openings: 'door',
   camera: 'camera',
   hello: 'person',
+  lights: 'bulb',
   scenes: 'sparkle',
   automations: 'automation',
   own: 'code',

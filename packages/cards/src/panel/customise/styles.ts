@@ -330,6 +330,19 @@ export const customiseStyles = css`
   .cz-sheet__hint {
     margin: 0;
   }
+  /* a search field over the rows it narrows: the house's field, its glyph before the words */
+  .cz-search {
+    flex: 0 0 auto;
+  }
+  /* a card being made, over its form: drawn as the dashboard will draw it, a section wide */
+  .cz-sheet__card {
+    flex: 0 0 auto;
+  }
+  /* the ways to add a card, and a sheet's one button: they stay while the rows between them scroll */
+  .cz-sheet > .fv-chips,
+  .cz-sheet > .fv-btn {
+    flex: 0 0 auto;
+  }
   /* the card's form while its editor lands */
   .cz-wait {
     height: 168px;

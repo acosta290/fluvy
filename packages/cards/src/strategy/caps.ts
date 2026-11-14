@@ -126,8 +126,9 @@ export interface Capped {
 }
 
 /**
- * A view to build on: its path, its title and icon for the way back, the template's columns, and what a person changed
- * on its dashboard.
+ * A view to build on: its path, its title and icon for the way back, the template's columns, what a person changed
+ * on its dashboard, and what it has to do with the dashboard's other views (`more`: the parts it takes from them, or
+ * the one its own are built for).
  */
 export const moreHost = (
   path: string,
@@ -135,7 +136,18 @@ export const moreHost = (
   icon: string,
   columns: number,
   edit: DashboardEdit = {},
-): MoreHost => ({ path, title, icon, columns, views: [], edit, parts: [], lists: new Map() });
+  more: Pick<MoreHost, 'taken' | 'on'> = {},
+): MoreHost => ({
+  path,
+  title,
+  icon,
+  columns,
+  views: [],
+  edit,
+  parts: [],
+  lists: new Map(),
+  ...more,
+});
 
 /**
  * A list at its cap: its first `cap` items, and past them the subview of every one (`every` lays them out in blocks,
@@ -160,8 +172,10 @@ export function capped(
   if (items.length <= cap || (ROWS.has(list.key) && items.length === cap + 1))
     return { shown: items, all: items, rest: 0, path: undefined };
   const host = ctx.more;
-  const path = `${host.path}-${list.key}`;
-  const back = `${ctx.base}/${host.path}`;
+  // a list shown on another view (`also`, #188) opens a subview of its own from there, back to where it was opened
+  const on = host.on ?? host;
+  const path = `${on === host ? '' : `${on.path}-`}${host.path}-${list.key}`;
+  const back = `${ctx.base}/${on.path}`;
   if (!host.views.some((view) => view.path === path))
     host.views.push({
       title: ctx.t(list.title),
@@ -175,7 +189,7 @@ export function capped(
       sections: flowed(
         { header: ctx.header, hass: ctx.hass },
         headed(
-          heading(host.title, host.icon, [], back),
+          heading(on.title, on.icon, [], back),
           every(items).map((block) => [...block]),
         ),
         [],
