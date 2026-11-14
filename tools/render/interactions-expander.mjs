@@ -7,8 +7,9 @@
  * reduced motion; folded again its cards leave the page; the keyboard opens and folds it; a head with a tap of its
  * own leaves the fold to a round; it opens by itself with its condition and folds with it; it hides while every
  * card it holds is hidden; it stands as it was left after a reload; its columns hold on a desktop and give way on a
- * phone; a held card draws what it declares. Real cards on the playground's simulated hass, Home Assistant's card
- * wrapper stood in for (`apps/playground/src/hui-card.ts`). Exit code 1 on any failure.
+ * phone; a held card draws what it declares; see-through, its surface blurs what shows through and what it holds
+ * does not blur again (#186). Real cards on the playground's simulated hass, Home Assistant's card wrapper stood in
+ * for (`apps/playground/src/hui-card.ts`). Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5217/ node interactions-expander.mjs
  */
 import { frame, settle, startSuite, tapHead } from './lib/suite.mjs';
@@ -398,6 +399,53 @@ const transparent = (colour) => colour === 'rgba(0, 0, 0, 0)' || colour === 'tra
     JSON.stringify({ open: open.height, whole: whole.height, folded: folded.held.length }),
   );
   await page.close();
+}
+
+/* ---------- see-through: the surface blurs once (#186) ---------- */
+{
+  /** What blurs what shows through: the expander's surface, and each surface the cards it holds draw. */
+  const blurs = (locator) =>
+    locator.evaluate((el) => {
+      const blur = (node) => getComputedStyle(node).backdropFilter;
+      return {
+        surface: blur(el.shadowRoot.querySelector('[data-card]')),
+        glass: [...el.children].map((wrapper) => wrapper.firstElementChild?.getAttribute('glass')),
+        held: [...el.children].flatMap((wrapper) =>
+          [
+            ...(wrapper.firstElementChild?.shadowRoot?.querySelectorAll('.fv-card, .fv-tile') ??
+              []),
+          ].map(blur),
+        ),
+        rule: getComputedStyle(el.children[0], '::before').backgroundColor,
+      };
+    });
+  const clear = ({ surface, glass, held, rule }) =>
+    surface === 'blur(16px)' &&
+    glass.every((mark) => mark === 'blur') &&
+    held.length >= 6 &&
+    held.every((filter) => filter === 'none') &&
+    !transparent(rule);
+  // each card see-through by its own config, over a view's background
+  const page = await suite.sheet('expander');
+  const own = await blurs(card(page, 'See-through'));
+  check(
+    'see-through, its surface blurs what shows through and no card it holds blurs again: no box in the card',
+    clear(own),
+    JSON.stringify(own),
+  );
+  await page.close();
+  // every card see-through by the house's setting
+  const house = await suite.sheet('expander', { extra: '&opacity=70' });
+  const all = await blurs(card(house, 'Garden · open'));
+  check('…nor where the house makes every card see-through', clear(all), JSON.stringify(all));
+  const bare = await blurs(card(house, 'Plain · open'));
+  // the lit tile lets nothing through, held or not
+  check(
+    'without a surface the cards it holds are the outermost, and blur as on the page',
+    bare.held.filter((filter) => filter === 'blur(16px)').length === bare.held.length - 1,
+    JSON.stringify(bare.held),
+  );
+  await house.close();
 }
 
 await suite.finish();

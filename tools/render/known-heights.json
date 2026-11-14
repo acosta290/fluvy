@@ -305,6 +305,13 @@
       "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
     },
     {
+      "frame": "expander/See-through",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 640,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
       "frame": "expander/Seldom used · folded and open",
       "tag": "fluvy-expander-card",
       "n": 2,

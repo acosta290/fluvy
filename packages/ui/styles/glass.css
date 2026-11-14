@@ -83,13 +83,15 @@
 /* blurred, what shows through goes soft under the words: on each outermost surface that lets it through (a lit one does
    not), the surface itself — a layer beneath its content would blur the card's own colour alone, for the card's
    entrance holds an opacity that cuts what is inside it off from the page (a Backdrop Root); what opens from a card
-   (menus, sheets, the keypad) lives in the top layer, so a blurred card still leaves it the page */
+   (menus, sheets, the keypad) lives in the top layer, so a blurred card still leaves it the page. A card held by
+   another's surface (the Expander's: `--fv-held`, across the shadow boundary `:not()` cannot see) is not the outermost:
+   the surface that holds it blurs, and a second blur inside it would draw the holder's fill again, a box in the card */
 :host([glass='blur'])
   :is(.fv-card, .fv-tile, .fv-scene, .fv-chip__pill, .fv-empty-state):not(
     :is(.fv-card, .fv-tile) *,
     .fv-tile.is-on,
     .fv-card.is-lit
   ) {
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: var(--fv-held, blur(16px));
+  backdrop-filter: var(--fv-held, blur(16px));
 }

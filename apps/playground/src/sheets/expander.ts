@@ -115,6 +115,9 @@ const SOIL = {
 };
 const GARDEN_CARDS = [LIGHT, SPRINKLERS, SOIL];
 
+/** A view's background behind see-through cards: dusk over the garden. */
+const DUSK = 'linear-gradient(160deg, #1f2f4f 0%, #6f5a86 52%, #e39a72 100%)';
+
 /** A garden on one surface: folded unless told otherwise, and nothing kept between two looks at the sheet. */
 const garden = (extra: Record<string, unknown> = {}) => ({
   type: EXPANDER,
@@ -167,7 +170,7 @@ const media = (extra: Record<string, unknown> = {}) => ({
  * of their own (Fluvy's, and Home Assistant's through its `--ha-card-*`), or each on its own under a head that stands
  * on the page; folded and open, in columns, nested, at a phone's column, in half a section and across a desktop;
  * the head's count, its chevron at either end, a head that runs another thing and leaves the fold to a round, a
- * condition that opens it, a card it cannot build, and no cards yet.
+ * condition that opens it, a card it cannot build, and no cards yet; see-through over a view's background (#186).
  */
 export const sheet: SheetSpec = {
   states: STATES,
@@ -387,5 +390,18 @@ export const sheet: SheetSpec = {
     },
     // as the person left it, on this device: what the other frames switch off, so two looks at the sheet agree
     { title: 'Remembers', cards: [seldom({ title: 'Left open', remember: 'device' })] },
+    // see-through, over a view's background (#186): the surface blurs what shows through, once; what it holds draws
+    // no box of its own in it, and the hairline under the head stays
+    {
+      title: 'See-through',
+      backdrop: DUSK,
+      cards: [
+        garden({
+          expanded: true,
+          card_opacity: 60,
+          cards: GARDEN_CARDS.map((card) => ({ ...card, card_opacity: 60 })),
+        }),
+      ],
+    },
   ],
 };
