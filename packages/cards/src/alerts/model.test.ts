@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { alertKey, definitionOf, definitionsOf, type AlertConfig } from './model.js';
+import {
+  alertKey,
+  definitionOf,
+  definitionsOf,
+  type AlertConfig,
+  type MatchConfig,
+} from './model.js';
 import { PRESET_NAMES, PRESETS } from './presets.js';
 import { lookOf, severityIn, SEVERITY_TONE } from './severity.js';
 import { clockSeconds, durationMs, instantAt, wallNow } from './time.js';
@@ -188,6 +194,72 @@ describe('an alert definition', () => {
     // every key an alert takes is known, whatever it says
     read({ preset: 'open', secondary: 'x', since: 'attribute:at', phones: true, snooze: false }, 8);
     expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('says nothing of a key an alert or a clause takes, every one of them set: only a slip is one', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const clause = {
+      entity: 'binary_sensor.patio_door',
+      entities: ['binary_sensor.back_door'],
+      entity_id: 'binary_sensor.*_door',
+      domain: 'binary_sensor',
+      device_class: 'door',
+      integration: 'zha',
+      area: 'hall',
+      floor: 'ground',
+      label: 'doors',
+      device: 'Patio door',
+      exclude: ['binary_sensor.garage_door', { area: 'garage' }],
+      hidden: true,
+      diagnostic: false,
+      state: 'on',
+      not_state: 'off',
+      above: 1,
+      below: 90,
+      attribute: 'battery',
+      attributes: { severity: ['error', 'warning'] },
+      for: { minutes: 5 },
+      unchanged_for: { hours: 6 },
+      include_unavailable: true,
+    } satisfies Required<MatchConfig>;
+    const button = { name: 'Close', tap_action: { action: 'toggle' } } as const;
+    const action = { action: 'more-info' } as const;
+    // a value for each key of an alert's own, beside the clause's
+    const own = {
+      ...clause,
+      name: 'Doors open',
+      icon: 'mdi:door-open',
+      secondary: 'attribute:message',
+      severity: 'critical',
+      tone: 'warning',
+      color: 'orange',
+      phones: true,
+      acknowledged: true,
+      since: 'attribute:start',
+      count_by: 'device',
+      min_count: 2,
+      name_by: 'area',
+      sort_rows: 'name',
+      split: true,
+      snooze: false,
+      admin_only: true,
+      tap_action: action,
+      hold_action: action,
+      double_tap_action: action,
+      row_action: action,
+      row_hold_action: action,
+      row_double_tap_action: action,
+      row_button: button,
+      actions: [button],
+      conditions: [{ condition: 'user', users: ['u'] }],
+      escalate: { count: 3 },
+      match: [clause],
+      id: 'doors',
+    } satisfies Required<Omit<AlertConfig, 'preset'>>;
+    read(own, 9);
+    read({ preset: 'low_battery', below: 15, phones: true }, 10);
+    expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
 
