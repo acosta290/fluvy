@@ -683,7 +683,7 @@ const carry = async (page, from, to, { hold } = {}) => {
     .evaluateAll((nodes) => nodes.map((node) => node.dataset.field));
   check(
     'under it, the dashboard’s most used options: its views and its first three choices',
-    same(fields, ['views', 'thermostat_variant', 'tile_size', 'tile_switch']),
+    same(fields, ['views', 'thermostat_variant', 'thermostat_state', 'tile_size']),
     fields.join(' '),
   );
   const held = () => page.evaluate(() => window.fluvyPencil.config);
