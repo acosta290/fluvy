@@ -262,6 +262,13 @@
       "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
     },
     {
+      "frame": "expander/Home Assistant’s heading, tile and picture",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 464,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
       "frame": "expander/Media · Home Assistant’s cards",
       "tag": "fluvy-expander-card",
       "declared": 84,

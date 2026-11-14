@@ -2953,7 +2953,12 @@ It is a head card whose body is other cards, and it adds nothing of its own betw
     in the column, with its own surface and the card's inks;
   - a card of Home Assistant's wears none through `--ha-card-background`, `-border-width`, `-box-shadow` and
     `-backdrop-filter`, its corners a control's 12 (`--ha-card-border-radius`: what clips a picture), and is turned
-    out by Home Assistant's own 16 (12 above and below, where a picture has none to give);
+    out by what it pads its content by, so that stands in the column (`held.ts`, by the card's type): Home
+    Assistant's own 16 as most have it (12 above and below, a header's), a calendar's 8, a gauge's 12, a heading's
+    4. A picture, a map and a web page fill their card and stay in their place, and so does a card that holds
+    others (a stack, a grid, a condition): what it holds stands out by itself. What Home Assistant draws as a tile
+    (its tile, button and area cards, a player) stays in its place on a surface of its own, a tile of Fluvy's: the
+    card's fill, the hairline, a tile's corners;
   - an expander inside is held as any card: a head in the column, its fold a part of the outer one's.
 - **No surface (`style: plain`).** The head stands on the page, in the ink the page's background asks for
   (`--fluvy-page-ink`), 44 tall; the cards keep their surfaces, 16 under the head and 16 apart, as a section's.

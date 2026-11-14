@@ -112,6 +112,42 @@ describe('a card held without Home Assistant’s wrapper', () => {
     document.body.removeEventListener('ll-rebuild', outside);
   });
 
+  it('marks a card of Home Assistant’s own by how it pads its content, for the expander’s surface', () => {
+    helpers();
+    const marks = (type: string): [string, string, string] => {
+      const { element } = hold({ type }, HOUSE, false);
+      return [
+        element.className,
+        element.style.getPropertyValue('--ex-y'),
+        element.style.getPropertyValue('--ex-x'),
+      ];
+    };
+    // Home Assistant's 16, 12 above and below: the surface's own rule, nothing said on the card
+    for (const type of [
+      'entities',
+      'markdown',
+      'glance',
+      'weather-forecast',
+      'custom:mushroom-card',
+    ])
+      expect(marks(type)).toEqual(['ex-other', '', '']);
+    // what pads its content by less is turned out by that
+    expect(marks('calendar')).toEqual(['ex-other', '12px', '8px']);
+    expect(marks('gauge')).toEqual(['ex-other', '12px', '12px']);
+    expect(marks('heading')).toEqual(['ex-other', '0px', '4px']);
+    // a picture has none to give, and a card that holds others leaves them to stand out by themselves
+    for (const type of ['picture', 'picture-entity', 'picture-glance', 'map', 'iframe'])
+      expect(marks(type)).toEqual(['ex-other', '0px', '0px']);
+    for (const type of ['vertical-stack', 'horizontal-stack', 'grid', 'conditional'])
+      expect(marks(type)).toEqual(['ex-other', '0px', '0px']);
+    // a tile stays in its place and keeps its surface
+    for (const type of ['tile', 'button', 'area', 'media-control'])
+      expect(marks(type)).toEqual(['ex-other ex-tile', '0px', '0px']);
+    // a card of Fluvy's turns its own padding out, and a type that is a word of every object is no card of the table
+    expect(marks('custom:fluvy-tile-card')).toEqual(['', '', '']);
+    expect(marks('constructor')).toEqual(['ex-other', '', '']);
+  });
+
   it('leaves the box empty where there are no helpers to ask', async () => {
     const held = hold(CONFIG, HOUSE, false);
     await settled();

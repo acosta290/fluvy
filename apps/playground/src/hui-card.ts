@@ -8,8 +8,9 @@ import {
 /*
  * Home Assistant's card wrapper (`hui-card`) is not here: a stand-in builds the card of a config as Home Assistant's
  * does, for the cards that hold others (the Expander) — a card of Fluvy's by its type; a card of Home Assistant's own
- * (`entities`, `markdown`) as a plate drawn the way its `ha-card` is under Fluvy's theme, in the `--ha-card-*` a
- * holder may change, so a frame shows how one sits; an error in its place for a config it cannot build. It is hidden
+ * (`entities`, `markdown`, `tile`, `heading`, `picture`) as a plate drawn the way its `ha-card` is under Fluvy's
+ * theme, with the padding Home Assistant gives each, in the `--ha-card-*` a holder may change, so a frame shows how
+ * one sits; an error in its place for a config it cannot build. It is hidden
  * while the card's `visibility` (a state's, here) does not hold or while the card hides itself, and says so
  * (`card-visibility-changed`), and it builds a card whose element is defined late again.
  */
@@ -55,6 +56,14 @@ const PLATE = `
   .name { flex: 1 1 auto; min-width: 0; margin-left: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .state { flex: 0 0 auto; margin-left: 8px; color: var(--fluvy-text); }
   p { margin: 0; }
+  .tile { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 10px; }
+  .tile .badge { flex-basis: 36px; height: 36px; border-radius: 50%; background: var(--fluvy-inset, var(--fluvy-page)); }
+  .tile .name { margin-left: 0; line-height: 20px; }
+  .tile .state { display: block; margin-left: 0; font-size: 12px; line-height: 16px; color: var(--fluvy-text-secondary); }
+  .card:has(> .heading) { border: 0; background: none; }
+  .heading { padding: 0 4px; font-size: 16px; line-height: 24px; }
+  .card:has(> img) { overflow: hidden; }
+  img { display: block; width: 100%; height: 180px; object-fit: cover; }
   .error { color: var(--fluvy-text-secondary); }
   .error__title { font-weight: 600; color: var(--fluvy-danger); }
 `;
@@ -93,6 +102,40 @@ const OWN: Readonly<
     words.textContent = String(config['content'] ?? '');
     content.append(words);
     return [content];
+  },
+  // a tile: its icon and its two lines in a row of 56 with its hairline, padded by 10 at the sides alone
+  tile: (config, hass) => {
+    const state = hass?.states[String(config['entity'] ?? '')];
+    const content = document.createElement('div');
+    content.className = 'tile';
+    const badge = document.createElement('span');
+    badge.className = `badge ${state?.state === 'on' ? 'is-on' : ''}`;
+    const icon = document.createElement('ha-state-icon') as HTMLElement & { stateObj?: unknown };
+    icon.stateObj = state;
+    badge.append(icon);
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = String(state?.attributes['friendly_name'] ?? config['entity'] ?? '');
+    const value = document.createElement('span');
+    value.className = 'state';
+    value.textContent = state ? (hass?.formatEntityState?.(state) ?? state.state) : '';
+    name.append(value);
+    content.append(badge, name);
+    return [content];
+  },
+  // a heading: no surface of its own, its words 4 in
+  heading: (config) => {
+    const content = document.createElement('div');
+    content.className = 'heading';
+    content.textContent = String(config['heading'] ?? '');
+    return [content];
+  },
+  // a picture: the card whole, nothing round it
+  picture: (config) => {
+    const image = document.createElement('img');
+    image.src = String(config['image'] ?? '');
+    image.alt = '';
+    return [image];
   },
   // what Home Assistant draws in the place of a card it cannot build: that it is a configuration error, and why
   error: (config) => {

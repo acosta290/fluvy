@@ -39,10 +39,67 @@ export interface Held {
 
 /** The mark of a card that is not Fluvy's: its padding is its own, which the expander's surface takes in as it can. */
 export const OTHER = 'ex-other';
+/** The mark of one Home Assistant draws as a tile: on the expander's surface it keeps its own, as a tile of Fluvy's. */
+const TILE = 'ex-tile';
 
 /** Whether a config names a card of Fluvy's. */
 const ours = (config: LovelaceCardConfig): boolean =>
   typeof config.type === 'string' && config.type.startsWith('custom:fluvy-');
+
+/** How far a card stands out of its place on the expander's surface, above and below and at its sides, in px. */
+type Out = readonly [y: number, x: number];
+/** In its place as it is: a card with no padding of its own to turn out. */
+const IN_PLACE: Out = [0, 0];
+
+/**
+ * The cards of Home Assistant's own that do not pad their content by its `ha-card`'s 16 (what the expander turns any
+ * other card out by, 12 above and below), by their type: what each pads it by instead, so its content stands in the
+ * head's column too. A picture, a map and a web page fill their card, and a card that holds others (a stack, a grid, a
+ * condition) has none of its own: what it holds stands out by itself.
+ */
+const OUT: ReadonlyMap<string, Out> = new Map<string, Out>([
+  ['calendar', [12, 8]],
+  ['gauge', [12, 12]],
+  ['heading', [0, 4]],
+  ...[
+    'picture',
+    'picture-entity',
+    'picture-glance',
+    'picture-elements',
+    'map',
+    'iframe',
+    'vertical-stack',
+    'horizontal-stack',
+    'grid',
+    'conditional',
+    'entity-filter',
+  ].map((type): [string, Out] => [type, IN_PLACE]),
+]);
+
+/** What Home Assistant draws as a tile, or as a surface painted whole (a player's artwork): in its place, on its own. */
+const TILES: ReadonlySet<string> = new Set([
+  'tile',
+  'button',
+  'entity-button',
+  'area',
+  'media-control',
+]);
+
+/**
+ * Marks what stands in the page for a card that is not Fluvy's, for the expander's surface (`expander-card.ts`): that
+ * it is another's, how far it is turned out where that is not Home Assistant's 16 and 12 (`--ex-x`, `--ex-y`), and
+ * that it keeps a surface of its own.
+ */
+function mark(element: HTMLElement, config: LovelaceCardConfig): void {
+  if (ours(config)) return;
+  element.classList.add(OTHER);
+  const tile = TILES.has(config.type);
+  element.classList.toggle(TILE, tile);
+  const out = tile ? IN_PLACE : OUT.get(config.type);
+  if (!out) return;
+  element.style.setProperty('--ex-y', `${out[0]}px`);
+  element.style.setProperty('--ex-x', `${out[1]}px`);
+}
 
 /** A card of `config`, built and handed the house: not in the page yet. */
 export function hold(
@@ -52,7 +109,7 @@ export function hold(
 ): Held {
   if (customElements.get('hui-card')) {
     const wrapper: Wrapper = document.createElement('hui-card');
-    wrapper.classList.toggle(OTHER, !ours(config));
+    mark(wrapper, config);
     wrapper.config = config;
     wrapper.hass = hass;
     wrapper.preview = preview;
@@ -73,7 +130,7 @@ export function hold(
     };
   }
   const box = document.createElement('div');
-  box.classList.toggle(OTHER, !ours(config));
+  mark(box, config);
   let card: LovelaceCard | undefined;
   let house = hass;
   let previewed = preview;

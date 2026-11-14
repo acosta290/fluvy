@@ -1044,8 +1044,10 @@ Assistant builds them the first time the card opens, with their own `visibility`
 it is folded, so a folded expander costs the page nothing.
 
 `style: card` (the default) draws the head and the cards on one surface: the cards draw none of their own and stand
-in the head's column, a hairline between them, so a group reads as one card. `plain` leaves the head on the page and
-each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width holds (two
+in the head's column, a hairline between them, so a group reads as one card. Home Assistant's own cards stand there
+by what each pads its content by: most by its 16, a calendar, a gauge and a heading by theirs, a picture, a map and a
+stack as they are, and a tile, a button or an area card as a tile, on a surface of its own. `plain` leaves the head on
+the page and each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width holds (two
 on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the hairline),
 16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
 Fluvy's it holds that name none of their own, so a group can have a colour; `icon_color` colours the circle alone.

@@ -3,7 +3,8 @@
  * Interaction tests for the Expander card (#180) on the playground's `expander` sheet: folded it is its head, at
  * the height it declares; a tap opens it and builds its cards, which stand in the head's column on its surface —
  * a card of Fluvy's by its own padding turned out, a compact row by its 16, what stands on the page as it is, a
- * card of Home Assistant's without a surface — each under a hairline; the fold moves, and is at once under
+ * card of Home Assistant's without a surface, by the padding its type has (a tile on its own) — each under a
+ * hairline; the fold moves, and is at once under
  * reduced motion; folded again its cards leave the page; the keyboard opens and folds it; a head with a tap of its
  * own leaves the fold to a round; it opens by itself with its condition and folds with it; it hides while every
  * card it holds is hidden; it stands as it was left after a reload; its columns hold on a desktop and give way on a
@@ -194,6 +195,20 @@ const transparent = (colour) => colour === 'rgba(0, 0, 0, 0)' || colour === 'tra
       entities.box.join() === '4,4' &&
       note.box.join() === '4,4',
     JSON.stringify([entities, note]),
+  );
+  const theirs = await column(card(page, 'Home Assistant’s heading, tile and picture'));
+  const [heading, tile, picture] = theirs.cards;
+  check(
+    'a heading’s words (its 4) and a picture stand in the column, a tile of Home Assistant’s in it on its own surface',
+    heading.box.join() === '16,16' &&
+      transparent(heading.fill) &&
+      tile.box.join() === '20,20' &&
+      !transparent(tile.fill) &&
+      tile.border === '1px' &&
+      picture.box.join() === '20,20' &&
+      picture.border === '0px' &&
+      theirs.cards.every((held) => held.other && held.rule),
+    JSON.stringify(theirs.cards),
   );
 
   const plain = await column(card(page, 'Plain · open'));

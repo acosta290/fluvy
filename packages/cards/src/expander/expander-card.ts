@@ -261,15 +261,25 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         height: 1px;
         background: var(--fluvy-border);
       }
-      /* a card that is not Fluvy's keeps its own padding (Home Assistant's 16, as most have it): turned out as far
-         as that, less above and below, where a picture has none to give */
+      /* a card that is not Fluvy's keeps its own padding: turned out as far as that — Home Assistant's 16, as most
+         have it, less above and below, where a header has less to give; what one of its own cards pads its content
+         by instead, where held.ts knows it (on the wrapper itself, over these) */
       .ex-card ::slotted(.ex-other) {
-        margin: -12px -16px;
+        --ex-x: 16px;
+        --ex-y: 12px;
+        margin: calc(-1 * var(--ex-y)) calc(-1 * var(--ex-x));
       }
       .ex-card ::slotted(.ex-other)::before {
-        top: calc(12px - var(--ex-gap) / 2);
-        left: 16px;
-        right: 16px;
+        top: calc(var(--ex-y) - var(--ex-gap) / 2);
+        left: var(--ex-x);
+        right: var(--ex-x);
+      }
+      /* what Home Assistant draws as a tile keeps its surface, a tile of Fluvy's: its fill, its hairline, its corners */
+      .ex-card ::slotted(.ex-tile) {
+        --ha-card-background: var(--fluvy-card);
+        --ha-card-border-width: 1px;
+        --ha-card-border-color: var(--fluvy-edge, var(--fluvy-border));
+        --ha-card-border-radius: var(--fluvy-radius-lg);
       }
       .ex-empty {
         grid-column: 1 / -1;

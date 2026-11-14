@@ -170,7 +170,8 @@ const media = (extra: Record<string, unknown> = {}) => ({
  * of their own (Fluvy's, and Home Assistant's through its `--ha-card-*`), or each on its own under a head that stands
  * on the page; folded and open, in columns, nested, at a phone's column, in half a section and across a desktop;
  * the head's count, its chevron at either end, a head that runs another thing and leaves the fold to a round, a
- * condition that opens it, a card it cannot build, and no cards yet; see-through over a view's background (#186).
+ * condition that opens it, a card it cannot build, and no cards yet; Home Assistant's cards that pad their own way,
+ * and see-through over a view's background (#186).
  */
 export const sheet: SheetSpec = {
   states: STATES,
@@ -390,6 +391,24 @@ export const sheet: SheetSpec = {
     },
     // as the person left it, on this device: what the other frames switch off, so two looks at the sheet agree
     { title: 'Remembers', cards: [seldom({ title: 'Left open', remember: 'device' })] },
+    // Home Assistant's cards that do not pad by its 16 (#186): a heading's words and a picture in the column, a tile
+    // in it on its own surface, as a tile of Fluvy's
+    {
+      title: 'Home Assistant’s heading, tile and picture',
+      cards: [
+        garden({
+          title: 'Terrace',
+          icon: 'home',
+          entities: ['light.ex_terrace', 'light.ex_path'],
+          expanded: true,
+          cards: [
+            { type: 'heading', heading: 'Lights' },
+            { type: 'tile', entity: 'light.ex_terrace' },
+            { type: 'picture', image: ART },
+          ],
+        }),
+      ],
+    },
     // see-through, over a view's background (#186): the surface blurs what shows through, once; what it holds draws
     // no box of its own in it, and the hairline under the head stays
     {
