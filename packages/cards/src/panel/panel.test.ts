@@ -142,6 +142,18 @@ async function mount(admin = true, extra: Record<string, unknown> = {}) {
   return { ...f, panel, root, swatch, button, row, chip, pick, settle };
 }
 
+/**
+ * Waits until `ready` holds: a section's own file landing, a save's writes and their echo done. As long as the machine
+ * needs (a loaded runner is many times slower than a laptop, and a fixed wait there is a test that fails now and
+ * then), five seconds at most.
+ */
+const until = async (ready: () => unknown): Promise<void> => {
+  for (let waited = 0; waited < 5000 && !ready(); waited += 10)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+};
+/** The apply bar gone: every write of a Save done, or an edit back to what is saved (the bar leaves in 160 ms). */
+const barGone = (root: ParentNode): Promise<void> => until(() => !root.querySelector('.pn-bar'));
+
 describe('the settings panel', () => {
   it('shows the house’s look chosen, and a picked palette as pending until it is applied', async () => {
     const { panel, root, swatch, written } = await mount();
@@ -718,7 +730,7 @@ describe('the settings panel', () => {
     expect(root.querySelector('.pn-bar')?.textContent).toContain('2 changes');
     button('Save')!.click();
     // the house's write, the store's echo and the device's memory take a few ticks
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     // the house keeps every other wall setting as it was; the device remembers itself
     expect(handle.settings().wall).toMatchObject({
@@ -769,7 +781,7 @@ describe('the settings panel', () => {
     await settle();
     expect(root.querySelector('.pn-bar')?.textContent).toContain('Wall · Way out');
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     expect(handle.settings().wall.exit).toBe('hold');
     panel.remove();
@@ -877,7 +889,7 @@ describe('the settings panel', () => {
     saver.shadowRoot!.querySelector('dialog')!.dispatchEvent(new MouseEvent('click'));
     await new Promise((resolve) => setTimeout(resolve, 260));
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     // the device's own memory, nothing of the house's
     expect(written).toEqual([]);
@@ -2288,13 +2300,13 @@ describe('the settings panel', () => {
     expect(localStorage.getItem('fluvy:device')).toBeNull();
     expect(document.documentElement.style.getPropertyValue('--fluvy-zoom')).toBe('');
     chip('100 %')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200)); // the bar leaves in 160
+    await barGone(root); // the bar leaves in 160
     await settle();
     expect(root.querySelector('.pn-bar')).toBeNull(); // back to what is saved: no edit
     chip('125 %')!.click();
     await settle();
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     // the device's own memory, nothing of the house's or the person's; the view's size is on the page already
     expect(written).toEqual([]);
@@ -2343,7 +2355,7 @@ describe('the settings panel', () => {
     expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Performance · Lite');
     expect(worn).toEqual([]); // nothing worn before the bar says so
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     // the device's own memory, nothing of the house's or the person's, and the page wears it at once
     expect(written).toEqual([]);
@@ -2389,7 +2401,7 @@ describe('the settings panel', () => {
       'Sidebar beside the page · On',
     );
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     expect(written).toEqual([]);
     expect(readDevice().dock).toBe(true);
@@ -2421,7 +2433,7 @@ describe('the settings panel', () => {
       'Hide dashboard sidebars · On',
     );
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     // nothing of it goes to Home Assistant: the device keeps it
     expect(written).toEqual([]);
@@ -2461,13 +2473,13 @@ describe('the settings panel', () => {
       )!;
     /** The section's own file lands, then the panel draws it. */
     const landed = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await until(() => tile('None'));
       await settle();
     };
     /** Saved, and the bar gone (it leaves in 160 ms). */
     const save = async () => {
       button('Save')!.click();
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await barGone(root);
       await settle();
     };
     panel.tab = 'dashboard';
@@ -2631,7 +2643,7 @@ describe('the settings panel', () => {
     await settle();
     // the first card leads to the dashboards that are not automatic
     row('Other dashboards')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await until(() => root.querySelector('.fv-card__sub')?.textContent?.trim() === 'Tablet');
     await settle();
     expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('Tablet');
     expect(chip('Fluvy auto')).toBeDefined();
@@ -2643,7 +2655,7 @@ describe('the settings panel', () => {
     // a person changed its views in Home Assistant meanwhile: the save reads it again and keeps them
     tablet = { views: [{ title: 'Home' }, { title: 'Garden' }], title: 'Tablet' };
     button('Save')!.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await barGone(root);
     await settle();
     expect(asked).toEqual(['tablet']);
     expect(saved).toHaveLength(1);
@@ -2739,13 +2751,13 @@ describe('the settings panel', () => {
     });
     const save = async () => {
       button('Save')!.click();
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await barGone(root);
       await settle();
     };
     panel.tab = 'dashboard';
     await settle();
     (panel as unknown as FluvyPanel).sidebar('fluvy-auto');
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await until(() => root.querySelector('.se-stack hui-stack-card-editor'));
     await settle();
     // one written by hand is the person's own: its lists open, the head's first
     const stack = root.querySelector<StackEditor>('.se-stack hui-stack-card-editor')!;

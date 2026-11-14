@@ -5,6 +5,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Development
+
+- The settings panel's tests wait for what they wait on (a section's own file landing, a save's writes done, the apply
+  bar gone) where they waited a fixed time: on a loaded runner one or another of them failed now and then.
+
 ## [1.21.0] — 2026-11-14
 
 ### Visible on upgrade
