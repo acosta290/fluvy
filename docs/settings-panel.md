@@ -37,7 +37,8 @@ The words that stand on the page — the greeting, a section's heading, the head
 the light ink on a deep colour, as a filled tile's do; the cards keep their own. A picture's address is checked before it
 reaches the page: a path that starts with one `/`, or an `http` or `https` address, with no spaces, quotes, parentheses,
 backslashes, semicolons, braces, angle brackets or invisible characters such as a zero-width space (a file name with a
-space is written `%20`); `data:` and every other scheme are refused, and so is a name or a password before the host
+space is written `%20`; the two joiners Persian and the Indic scripts write their words with, ZWNJ and ZWJ, are letters
+of the name); `data:` and every other scheme are refused, and so is a name or a password before the host
 (`https://user:pass@…`), which a browser never sends for a picture. One it cannot draw turns the field's words to the
 warning, and nothing is kept.
 

@@ -114,6 +114,11 @@ describe('a picture’s address, before it reaches CSS', () => {
       // an at sign in the path is the path's
       '/local/icons/sun@2x.png',
       'https://example.com/a@2x.jpg?by=me@example.com',
+      // the joiners Persian and the Indic scripts write their words with (ZWNJ, ZWJ)
+      '/local/عکس\u200cها/خانه.jpg',
+      'https://example.com/تصاویر/پس\u200cزمینه.jpg',
+      '/local/ශ්\u200dරී-ලංකා.jpg',
+      '/local/क्\u200dष/घर.jpg',
     ])
       expect(imageAddress(address), address).toBe(address);
     expect(imageAddress('  /local/x.jpg \n')).toBe('/local/x.jpg');
@@ -138,14 +143,17 @@ describe('a picture’s address, before it reaches CSS', () => {
       '/local/a\u0000b.jpg',
       '/local/a\u007fb.jpg',
       '/local/x.jpg") ; background: red; x:url("',
-      // an invisible character: a zero-width space, a joiner, a direction mark or override, a byte-order mark, a soft
-      // hyphen
+      // an invisible character: a zero-width space, a word joiner, a direction mark, override or isolate, an Arabic
+      // letter mark, a byte-order mark, a soft hyphen; a word's joiner where no word goes on (the host's first letter)
       '/local/a\u200bb.jpg',
-      'https://example.com/a\u200d.jpg',
+      '/local/a\u2060b.jpg',
       '/local/a\u200eb.jpg',
       '/local/\u202egpj.exe',
+      '/local/\u2066a.jpg',
+      '/local/a\u061cb.jpg',
       '/local/a\ufeff.jpg',
       'https://exam\u00adple.com/a.jpg',
+      'https://\u200dexample.com/a.jpg',
     ])
       expect(imageAddress(address), JSON.stringify(address)).toBeUndefined();
   });

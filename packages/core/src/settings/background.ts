@@ -40,15 +40,16 @@ const ADDRESS_MAX = 2048;
 
 /**
  * A picture's address: a path of Home Assistant's (`/local/…`, one slash first) or an `http`/`https` address with its
- * host, made of a URL's own characters and letters of any language. Never a quote, a parenthesis, a backslash, a
- * semicolon, a brace, an angle bracket, a control character, an invisible one (a zero-width space, a direction mark)
- * or white space of any kind, so nothing it holds can end the CSS string it is written into (`url("…")`) or the
+ * host, made of a URL's own characters and letters of any language, with the two joiners Persian and the Indic scripts
+ * write their words with (ZWNJ, ZWJ) past its host's first letter. Never a quote, a parenthesis, a backslash, a
+ * semicolon, a brace, an angle bracket, a control character, any other invisible one (a zero-width space, a direction
+ * mark) or white space of any kind, so nothing it holds can end the CSS string it is written into (`url("…")`) or the
  * declaration around it, nor hide in it; never `data:`, `javascript:` or any other scheme (a picture lives on a server,
  * and the settings stay small), nor a name and a password before the host (`user:pass@host`, which a browser will not
  * send for a picture, and the settings would keep in the clear).
  */
 const ADDRESS =
-  /^(?:https?:\/\/(?![^/?#]*@)[^\s\p{Cc}\p{Cf}"'()\\;{}<>`^|/]|\/(?!\/))[^\s\p{Cc}\p{Cf}"'()\\;{}<>`^|]*$/iu;
+  /^(?:https?:\/\/(?![^/?#]*@)[^\s\p{Cc}\p{Cf}"'()\\;{}<>`^|/]|\/(?!\/))(?:[^\s\p{Cc}\p{Cf}"'()\\;{}<>`^|]|\u200c|\u200d)*$/iu;
 
 /** A picture's address as Fluvy draws it (the space around it dropped), or undefined where it is not one. */
 export function imageAddress(value: unknown): string | undefined {
