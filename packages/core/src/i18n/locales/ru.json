@@ -98,8 +98,11 @@
     "low": "Мин.",
     "high": "Макс.",
     "action.preheating": "Прогрев",
-    "action.defrosting": "Размораживание",
-    "action.humidifying": "Увлажнение"
+    "action.defrosting": "Разморозка",
+    "action.humidifying": "Увлажнение",
+    "window_open": "Окно открыто",
+    "door_open": "Дверь открыта",
+    "battery": "Заряд {value}"
   },
   "cover": {
     "position": "Положение",
@@ -1876,7 +1879,18 @@
     "gauge": "Шкала",
     "slider_style": "Стиль ползунка",
     "slider_style_helper": "Не задано: как у всех ползунков в настройках Fluvy",
-    "slider_words": "Подписи под ним"
+    "slider_words": "Подписи под ним",
+    "doing": "Текущее действие",
+    "show_state": "Показывать действие",
+    "state_entity": "Источник действия",
+    "state_entity_helper": "Для термостата, который не сообщает действие: датчик или выключатель, который его сообщает",
+    "show_valve": "Показывать открытие клапана",
+    "valve_entity": "Клапан",
+    "valve_attribute": "Атрибут клапана",
+    "show_window": "Показывать открытое окно",
+    "window_entity": "Окно",
+    "show_low_battery": "Предупреждать о низком заряде",
+    "found_helper": "Пусто: ищется на устройстве"
   },
   "energy-period-card": {
     "name": "Период энергии",
@@ -2868,7 +2882,10 @@
     "charts.deleted": "Набор удалён",
     "charts.light": "Светлая",
     "charts.dark": "Тёмная",
-    "charts.preview_sub": "Ваши графики с этими настройками"
+    "charts.preview_sub": "Ваши графики с этими настройками",
+    "dashboard.thermostat_state": "Состояние термостатов",
+    "dashboard.brief": "Кратко",
+    "dashboard.detailed": "Подробно"
   },
   "customise": {
     "title": "Настройка",
@@ -3337,6 +3354,10 @@
     "sound_mode": "Режим звука",
     "history": "Последние 24 часа",
     "history_open": "Открыть в «Истории»",
-    "history_none": "Нет истории"
+    "history_none": "Нет истории",
+    "valve": "Клапан",
+    "window": "Окно",
+    "door": "Дверь",
+    "battery": "Заряд"
   }
 }

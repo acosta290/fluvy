@@ -51,7 +51,8 @@ counts with the house (what an entity's capabilities draw, what a room holds; ev
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
 card import it from their own chunks), a room's quick actions (fetched as the bundle starts too: the room card in
-core reaches them through `loadQuickActions`), the weather, calendar, template, Energy period and usage, web page, Expander, Slider, Vacuum, Thermostat, remote, Vehicle, items and
+core reaches them through `loadQuickActions`; and what says what a thermostat is doing, which a tile and a room's row
+asked to say it reach through `doingReading`, in the Thermostat card's chunk), the weather, calendar, template, Energy period and usage, web page, Expander, Slider, Vacuum, Thermostat, remote, Vehicle, items and
 chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
 their cards are announced in core — `src/energy-family.ts` and its siblings, their names and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
@@ -106,7 +107,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `vacuum` | 8 KB | the Vacuum card: the robot's and the mower's (1.20: it left core), which robots a hand can drive and how (#178), the drive pad's English |
 | `vacuum-drive` | 8 KB | the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop, its sheet; fetched by the first Vacuum card that draws a Drive command |
 | `ring` | 4 KB | the ring (1.20): the disc of four arrows round a middle key the TV remote's D-pad and the drive pad both draw |
-| `climate` | 8 KB | the Thermostat card: the climate's, the water heater's and the humidifier's (1.21: it left core), its rules |
+| `climate` | 8 KB | the Thermostat card: the climate's, the water heater's and the humidifier's (1.21: it left core), its rules, and what says what a thermostat is doing (#185: its action, its valve, its window, its battery), which a tile and a room's climate row asked to say it reach here |
 | `remote` | 16 KB | the TV remote card: its keys and the integrations' commands for them, the platforms it knows by name, its English |
 | `app-logos` | 24 KB | the platforms' logos (Simple Icons, Material Design Icons, Fluvy's monograms), fetched by the first remote card that draws an app |
 | `vehicle` | 24 KB | the Vehicle card: what finds a car's entities and folds its integration's words, its glyphs, its English |

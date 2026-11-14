@@ -1148,6 +1148,7 @@ export class FluvyPanel extends LitElement {
     const size = word('tile_size', 'large') === 'compact' ? 'compact' : 'large';
     const switches = word('tile_switch', 'show');
     const variant = word('thermostat_variant', 'dial');
+    const detailed = word('thermostat_state', 'brief') === 'detailed';
     const flow = word('flow_style', 'stream');
     const room = word('room_variant', 'tile');
     // what the dashboard asks of its rooms' photos: where the name stands, the readouts' row and labels
@@ -1160,7 +1161,7 @@ export class FluvyPanel extends LitElement {
           html`<div class="pn-preview__tiles">
               ${house.room('living', room, look)}${house.room('kitchen', room, look)}
             </div>
-            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            <div class="pn-preview__side">${house.thermostat(variant, detailed)}</div>
             ${house.tile('living', size, switches)}`,
         );
       case 'energy':
@@ -1180,7 +1181,7 @@ export class FluvyPanel extends LitElement {
           html`<div class="pn-preview__tiles">
               ${house.room('living', 'tile')}${house.room('kitchen', 'tile')}
             </div>
-            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            <div class="pn-preview__side">${house.thermostat(variant, detailed)}</div>
             ${house.clock()}`,
         );
       default:
@@ -1188,7 +1189,7 @@ export class FluvyPanel extends LitElement {
           html`<div class="pn-preview__tiles">
               ${house.tile('living', size, switches)}${house.tile('kitchen', size, switches)}
             </div>
-            <div class="pn-preview__side">${house.thermostat(variant)}</div>
+            <div class="pn-preview__side">${house.thermostat(variant, detailed)}</div>
             ${house.energy(flow, this.meters ?? null)}`,
         );
     }

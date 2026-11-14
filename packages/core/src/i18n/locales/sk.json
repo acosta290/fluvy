@@ -809,7 +809,10 @@
     "high": "Vysoká",
     "action.preheating": "Predhrieva",
     "action.defrosting": "Odmrazuje",
-    "action.humidifying": "Zvlhčuje"
+    "action.humidifying": "Zvlhčuje",
+    "window_open": "Otvorené okno",
+    "door_open": "Otvorené dvere",
+    "battery": "Batéria {value}"
   },
   "cover": {
     "position": "Poloha",
@@ -1280,7 +1283,18 @@
     "gauge": "Meradlo",
     "slider_style": "Štýl posuvníka",
     "slider_style_helper": "Bez zmeny: ako pri všetkých posuvníkoch v nastaveniach Fluvy",
-    "slider_words": "Hodnoty pod ním"
+    "slider_words": "Hodnoty pod ním",
+    "doing": "Čo práve robí",
+    "show_state": "Zobraziť, čo robí",
+    "state_entity": "Činnosť čítaná z",
+    "state_entity_helper": "Pre termostat, ktorý neuvádza činnosť: senzor alebo vypínač, ktorý ju uvádza",
+    "show_valve": "Zobraziť otvorenie ventilu",
+    "valve_entity": "Ventil",
+    "valve_attribute": "Atribút ventilu",
+    "show_window": "Zobraziť otvorené okno",
+    "window_entity": "Okno",
+    "show_low_battery": "Upozorniť na slabú batériu",
+    "found_helper": "Prázdne: hľadá sa na zariadení"
   },
   "page": {
     "menu": "Otvoriť ponuku",
@@ -2803,7 +2817,10 @@
     "charts.deleted": "Sada odstránená",
     "charts.light": "Svetlá",
     "charts.dark": "Tmavá",
-    "charts.preview_sub": "Vaše grafy s týmito nastaveniami"
+    "charts.preview_sub": "Vaše grafy s týmito nastaveniami",
+    "dashboard.thermostat_state": "Stav termostatov",
+    "dashboard.brief": "Stručne",
+    "dashboard.detailed": "Podrobne"
   },
   "customise": {
     "title": "Prispôsobenie",
@@ -3272,6 +3289,10 @@
     "sound_mode": "Režim zvuku",
     "history": "Posledných 24 hodín",
     "history_open": "Otvoriť v Histórii",
-    "history_none": "Žiadna história"
+    "history_none": "Žiadna história",
+    "valve": "Ventil",
+    "window": "Okno",
+    "door": "Dvere",
+    "battery": "Batéria"
   }
 }

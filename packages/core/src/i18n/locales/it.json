@@ -93,7 +93,10 @@
     "high": "Alta",
     "action.preheating": "Preriscaldando",
     "action.defrosting": "Sbrinando",
-    "action.humidifying": "Umidificando"
+    "action.humidifying": "Umidificando",
+    "window_open": "Finestra aperta",
+    "door_open": "Porta aperta",
+    "battery": "Batteria {value}"
   },
   "cover": {
     "position": "Apertura",
@@ -604,7 +607,18 @@
     "gauge": "Indicatore",
     "slider_style": "Stile del cursore",
     "slider_style_helper": "Invariato, quello di tutti i cursori nelle impostazioni di Fluvy",
-    "slider_words": "Valori sotto"
+    "slider_words": "Valori sotto",
+    "doing": "Cosa sta facendo",
+    "show_state": "Mostra cosa sta facendo",
+    "state_entity": "Azione letta da",
+    "state_entity_helper": "Per un termostato che non indica la sua azione: un sensore o un interruttore che la indica",
+    "show_valve": "Mostra l'apertura della valvola",
+    "valve_entity": "Valvola",
+    "valve_attribute": "Attributo della valvola",
+    "show_window": "Mostra una finestra aperta",
+    "window_entity": "Finestra",
+    "show_low_battery": "Segnala la batteria scarica",
+    "found_helper": "Vuoto, cercato sul suo dispositivo"
   },
   "strategy": {
     "home": "Casa",
@@ -1539,7 +1553,10 @@
     "charts.deleted": "Set rimosso",
     "charts.light": "Chiaro",
     "charts.dark": "Scuro",
-    "charts.preview_sub": "I tuoi grafici con queste impostazioni"
+    "charts.preview_sub": "I tuoi grafici con queste impostazioni",
+    "dashboard.thermostat_state": "Stato dei termostati",
+    "dashboard.brief": "Breve",
+    "dashboard.detailed": "Dettagliato"
   },
   "customise": {
     "title": "Personalizzazione",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Modalità audio",
     "history": "Ultime 24 ore",
     "history_open": "Apri in Cronologia",
-    "history_none": "Nessuna cronologia"
+    "history_none": "Nessuna cronologia",
+    "valve": "Valvola",
+    "window": "Finestra",
+    "door": "Porta",
+    "battery": "Batteria"
   }
 }

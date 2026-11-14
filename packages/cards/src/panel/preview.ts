@@ -104,6 +104,7 @@ const STATES = (names: PreviewNames) => ({
       max_temp: 35,
       target_temp_step: 0.5,
       supported_features: 1,
+      valve_position: 42,
     },
     last_changed: new Date().toISOString(),
     last_updated: new Date().toISOString(),
@@ -275,8 +276,14 @@ export class PreviewHouse {
     });
   }
 
-  thermostat(variant: string): LovelaceCard {
-    return this.card({ type: 'custom:fluvy-thermostat-card', entity: ENTITY.bedroom, variant });
+  /** The thermostat in a dashboard's variant, saying how far its valve is open where the dashboard asks (`detailed`). */
+  thermostat(variant: string, detailed = false): LovelaceCard {
+    return this.card({
+      type: 'custom:fluvy-thermostat-card',
+      entity: ENTITY.bedroom,
+      variant,
+      ...(detailed ? { show_valve: true } : {}),
+    });
   }
 
   /**

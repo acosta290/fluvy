@@ -123,7 +123,9 @@ const BUDGETS = {
   // the ring (1.20): the disc of four arrows round a middle key the TV remote and the drive pad both draw
   ring: 4096,
   // the Thermostat card (1.21, 2026-11-14: it left core, 4.9 KB of what every page loads): the climate's, the water
-  // heater's and the humidifier's card and its rules; measured at 5.6 KB
+  // heater's and the humidifier's card and its rules, 5.6 KB, and what says what a thermostat is doing with what it
+  // reads of its valve, its window and its battery (#185), which a tile and a room's row reach here; measured at
+  // 7.3 KB
   climate: 8192,
   // the TV remote card (1.18, #143): the card, its keys and the integrations' commands for them, the platforms it
   // knows by name, its English; its editor goes with the forms. Measured at 11.2 KB

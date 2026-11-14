@@ -788,7 +788,10 @@
     "high": "高",
     "action.preheating": "预热中",
     "action.defrosting": "除霜中",
-    "action.humidifying": "加湿中"
+    "action.humidifying": "加湿中",
+    "window_open": "窗户未关",
+    "door_open": "门未关",
+    "battery": "电池 {value}"
   },
   "cover": {
     "position": "位置",
@@ -1783,7 +1786,18 @@
     "gauge": "仪表",
     "slider_style": "滑块样式",
     "slider_style_helper": "未设置：沿用 Fluvy 设置中所有滑块的样式",
-    "slider_words": "下方刻度值"
+    "slider_words": "下方刻度值",
+    "doing": "当前动作",
+    "show_state": "显示当前动作",
+    "state_entity": "动作读取自",
+    "state_entity_helper": "用于不报告动作的恒温器：选择能反映动作的传感器或开关",
+    "show_valve": "显示阀门开度",
+    "valve_entity": "阀门",
+    "valve_attribute": "阀门属性",
+    "show_window": "显示窗户未关",
+    "window_entity": "窗户",
+    "show_low_battery": "电池电量低时提示",
+    "found_helper": "留空：在设备上查找"
   },
   "energy-period-card": {
     "name": "能源周期",
@@ -2746,7 +2760,10 @@
     "charts.deleted": "颜色组已删除",
     "charts.light": "浅色",
     "charts.dark": "深色",
-    "charts.preview_sub": "应用这些设置后的图表"
+    "charts.preview_sub": "应用这些设置后的图表",
+    "dashboard.thermostat_state": "恒温器状态",
+    "dashboard.brief": "简要",
+    "dashboard.detailed": "详细"
   },
   "customise": {
     "title": "自定义",
@@ -3213,6 +3230,10 @@
     "sound_mode": "声音模式",
     "history": "过去 24 小时",
     "history_open": "在历史中打开",
-    "history_none": "没有历史"
+    "history_none": "没有历史",
+    "valve": "阀门",
+    "window": "窗户",
+    "door": "门",
+    "battery": "电池"
   }
 }

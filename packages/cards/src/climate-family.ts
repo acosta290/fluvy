@@ -5,9 +5,34 @@ import { pretty } from './shared/mode-words.js';
 
 /**
  * The Thermostat card, announced at start and defined when its chunk lands (`climate-cards.ts`), as the Vacuum card
- * is: what the card picker lists and how tall the card is at a 360 column, without the card itself. Every page carries
- * this file: it stays tiny.
+ * is: what the card picker lists and how tall the card is at a 360 column, without the card itself; and the way to
+ * what says what a thermostat is doing, for the cards every page carries. Every page carries this file: it stays
+ * tiny.
  */
+
+/**
+ * What says what a thermostat is doing (`thermostat/doing.ts`, 1.21, #185), once it has landed: it travels with the
+ * card's chunk, fetched as the bundle starts; `null` where it cannot be fetched.
+ */
+type Reading = typeof import('./thermostat/doing.js');
+let reading: Reading | null | undefined;
+let fetching: Promise<unknown> | undefined;
+
+/** Fetches the reading, once: with the families, so a tile asked to say it does from its first render. */
+export const loadDoing = (): Promise<unknown> =>
+  (fetching ??= import('./thermostat/doing.js').then(
+    (module) => (reading = module),
+    () => (reading = null),
+  ));
+
+/**
+ * The reading for a card every page carries that is asked to say what a thermostat is doing (a climate's tile, a
+ * room's climate row): none until it has landed — the card says the state, as before, and draws again as it lands.
+ */
+export function doingReading(host: { requestUpdate(): void }): Reading | undefined {
+  if (reading === undefined) void loadDoing().then(() => host.requestUpdate());
+  return reading ?? undefined;
+}
 
 /** Unless the config lists its own, a water heater shows its first six operations, a humidifier Off and five modes. */
 export const SHOWN = 6;

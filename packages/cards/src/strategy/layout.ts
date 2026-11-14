@@ -305,9 +305,16 @@ export const scenesCard = (home: HomeRegistry, title: string, ids: readonly stri
   });
 };
 
-/** A thermostat in the dashboard's variant. */
+/**
+ * A thermostat in the dashboard's variant; where the dashboard asks (`thermostat_state: detailed`, #185), saying how
+ * far its valve is open, an open window and a low battery, each found by the card where there is one.
+ */
 export const thermostat = (id: string, style: CardStyle): Card =>
-  full('thermostat', { entity: id, ...(style.thermostat ? { variant: style.thermostat } : {}) });
+  full('thermostat', {
+    entity: id,
+    ...(style.thermostat ? { variant: style.thermostat } : {}),
+    ...(style.doing ? { show_valve: true, show_window: true, show_battery: true } : {}),
+  });
 /**
  * A tile in the dashboard's size (a compact odd one out still spans the column: `tileRows`), its switch as the
  * dashboard asks: a compact tile draws none but a wall rocker's, and keeps the word for the day it is made large.

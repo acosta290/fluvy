@@ -103,6 +103,7 @@ export async function buildContext(
     energy: await houseEnergy(hass, home),
     style: {
       ...(config.thermostat_variant ? { thermostat: config.thermostat_variant } : {}),
+      ...(config.thermostat_state === 'detailed' ? { doing: true } : {}),
       ...(config.tile_size ? { tiles: config.tile_size } : {}),
       ...(config.tile_switch ? { switches: config.tile_switch } : {}),
       ...(config.flow_style ? { flow: config.flow_style } : {}),

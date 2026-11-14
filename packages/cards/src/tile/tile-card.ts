@@ -1,8 +1,10 @@
 import {
   actionRuns,
+  formatNumber,
   isActive,
   isUsable,
   lightDefaults,
+  numberAttr,
   relativeTime,
   resolveEntity,
   sliderStill,
@@ -36,6 +38,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 
+import { doingReading } from '../climate-family.js';
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { DIMMABLE, lightLook, litColour, withMembers } from '../shared/light.js';
 import { fitLine, TextRuler, type Segment } from '../shared/fit.js';
@@ -96,6 +99,12 @@ export interface TileItem {
    * no level; else the group's, else the toggle.
    */
   switch_style?: SwitchStyle;
+  /**
+   * A climate's or a humidifier's tile says what it is doing and what it is set to on its line ("Heating · 21.5°",
+   * "Idle · 21.5°", "Window open"), and a large climate's ends its head with what it measures ("20.8 °C"), where it
+   * said its mode (#185); else the group's, else the mode as before. Its fill stays its mode's.
+   */
+  show_action?: boolean;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
@@ -124,7 +133,8 @@ export interface TileCardConfig extends FluvyCardConfig, LightColours, Omit<Tile
  * width. `words`: the line is the person's own (a template card's): what is left of it once its last parts are gone
  * ends in an ellipsis, as a name does, rather than going. `figure`: the figure the line ends in and keeps
  * (`keepsFigure`): where the whole line does not hold, the words before it go and the figure stays, alone. `plated`:
- * a compact tile's rocker stands at its row's end.
+ * a compact tile's rocker stands at its row's end. `forms`: what the line says instead, in order, where it holds not
+ * even its first words (a thermostat's action: Fluvy's own word, then its mode).
  */
 interface LineFit {
   readonly dash?: boolean;
@@ -133,6 +143,7 @@ interface LineFit {
   readonly under?: boolean;
   readonly words?: boolean | undefined;
   readonly figure?: string | undefined;
+  readonly forms?: readonly string[] | undefined;
 }
 
 /** What a tile shows of its entity (`look`): what a card built on the tile may answer otherwise (the template card). */
@@ -150,6 +161,9 @@ export interface TileLook {
   /** Its line is the person's own words: what fits of it ends in an ellipsis as a name does, never left out. */
   readonly words?: boolean;
 }
+
+/** What a thermostat's tile says of what it is doing: its line, and what the line gives way to (`doingLine`). */
+type TileDoing = ReturnType<typeof import('../thermostat/doing.js').doingLine>;
 
 const COVER_SET_POSITION = 4;
 const FAN_SET_SPEED = 1;
@@ -503,6 +517,25 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return NUMBERS.has(view.domain);
   }
 
+  /**
+   * What a thermostat's tile says on its line where it is asked (`show_action`, #185: its own, else its card's), a
+   * climate or a humidifier that can be read: what it is doing and what it is set to (`doingLine`, in the Thermostat
+   * card's chunk), a window sensor on its device followed while it is read. None for any other tile, and until the
+   * reading has landed: its line is its state's, as before.
+   */
+  protected doing(item: TileItem, view: EntityView): TileDoing | null {
+    if (
+      !(item.show_action ?? this.config?.show_action) ||
+      view.status !== 'ok' ||
+      !/^(climate|humidifier)$/.test(view.domain)
+    )
+      return null;
+    const reading = doingReading(this);
+    if (!reading) return null;
+    this.follows(reading.windowSensor(this.hass, view.id));
+    return reading.doingLine(this, view, this.stateOf(view));
+  }
+
   /** Widths laid out by the browser in the tile's own classes (a mini's 12 px, a compact's 13), never guessed. */
   private readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
 
@@ -525,7 +558,15 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * rocker takes its plate and its gap too.
    */
   private fitState(line: string, size: TileSize, view: EntityView, fit: LineFit = {}): string {
-    const { dash = false, inside = false, under = false, words = false, figure, plated } = fit;
+    const {
+      dash = false,
+      inside = false,
+      under = false,
+      words = false,
+      figure,
+      plated,
+      forms,
+    } = fit;
     const width = Math.floor(this.tileWidth());
     const small = size !== 'large';
     const mini = size === 'mini';
@@ -549,7 +590,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // the reading the line begins with (the figure it keeps, else the state), shorter; none for a line that begins
     // with anything else (a room, a time)
     const text = figure ?? stateText(this.hass, view);
-    const shorter = segments[0]?.text === text ? shorterForms(this.hass, view, text) : [];
+    const shorter =
+      forms ?? (segments[0]?.text === text ? shorterForms(this.hass, view, text) : []);
     return shorter.find((form) => measure(form) <= room) ?? (dash ? '—' : '');
   }
 
@@ -741,6 +783,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // a number's line (the Slider's tile's) gives way from its words, never its figure: where it does not hold whole,
     // the figure alone
     const figure = level && !words && this.keepsFigure(view) ? level.text : undefined;
+    const told = this.doing(item, view);
     const sensorLike = view.domain === 'sensor' || view.domain === 'binary_sensor' || !canToggle;
     const iconTone =
       currentTone(view, on ? tone : 'accent') === 'neutral' ? 'accent' : on ? tone : 'accent';
@@ -793,10 +836,17 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         runs(item.tap_action ?? (usable && canToggle && !plated ? TOGGLE : MORE_INFO)),
         doubleNow,
       );
-      let line = this.tileLine(item, view, lit, level, false, true);
+      let line = told?.line ?? this.tileLine(item, view, lit, level, false, true);
       const reading = usable ? this.readoutText(item) : '';
       if (reading) line = `${line} · ${reading}`;
-      line = this.fitState(line, size, view, { dash: !usable, inside, words, figure, plated });
+      line = this.fitState(line, size, view, {
+        dash: !usable,
+        inside,
+        words,
+        figure,
+        plated,
+        forms: told?.forms,
+      });
       return html`<article
         class=${classes}
         data-card
@@ -821,8 +871,17 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const face = `600 16px ${getComputedStyle(this).fontFamily}`;
     const holds = (text: string): boolean => HEAD_LEAD + textWidth(text, face) <= inner;
     // a tile of nothing (a template card without an entity) has no reading, and one whose foot sets it (a number) says
-    // it on its line
-    const parts = sensorLike && item.entity && !level ? valueParts(this.hass, view) : null;
+    // it on its line; a climate that says what it is doing on its line ends its head with what it measures
+    const measured = told && !canToggle ? numberAttr(view, 'current_temperature') : null;
+    const parts =
+      measured !== null
+        ? {
+            value: formatNumber(this.hass, measured, { digits: 1 }),
+            unit: this.hass?.config.unit_system.temperature ?? '°C',
+          }
+        : sensorLike && item.entity && !level
+          ? valueParts(this.hass, view)
+          : null;
     const valueInHead = parts !== null && holds(`${parts.value} ${parts.unit}`.trim());
     // a card built on the tile may end its head otherwise (the Slider card's control); else the tile's switch, apart
     // where the tile is asked to show it (`show_switch`) and holds it beside its circle (a rocker's plate down to 84)
@@ -832,7 +891,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const switchApart =
       switches && shows === true && inner >= (rocker ? HEAD_LEAD + PLATE : HEAD_ROOM);
     const lead = circle(usable && switches && !switchApart);
-    const line = this.tileLine(item, view, lit, level, valueInHead);
+    const line = told?.line ?? this.tileLine(item, view, lit, level, valueInHead);
     // its level's figure in the switch's place (`show_switch: value`): the one its line ends in ("On · 70 %") goes up
     // to the head's end, as a sensor's reading stands there, and the line keeps the state alone — where the scale's
     // widest figure holds beside the circle, so a level never moves its figure from one to the other
@@ -969,6 +1028,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
           under: true,
           words,
           figure,
+          forms: told?.forms,
         })}
       </p>
       ${foot} ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}

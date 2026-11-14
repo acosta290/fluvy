@@ -914,7 +914,10 @@
     "high": "Maks.",
     "action.preheating": "Nagrzewanie",
     "action.defrosting": "Rozmrażanie",
-    "action.humidifying": "Nawilżanie"
+    "action.humidifying": "Nawilżanie",
+    "window_open": "Okno otwarte",
+    "door_open": "Drzwi otwarte",
+    "battery": "Bateria {value}"
   },
   "clock": {
     "week": "Tydzień {week}",
@@ -1217,7 +1220,18 @@
     "gauge": "Wskaźnik",
     "slider_style": "Styl suwaka",
     "slider_style_helper": "Nieustawione: wspólny dla wszystkich suwaków, z ustawień Fluvy",
-    "slider_words": "Wartości pod spodem"
+    "slider_words": "Wartości pod spodem",
+    "doing": "Co teraz robi",
+    "show_state": "Pokaż, co robi",
+    "state_entity": "Działanie odczytane z",
+    "state_entity_helper": "Dla termostatu, który nie podaje działania: czujnik lub przełącznik, który je podaje",
+    "show_valve": "Pokaż otwarcie zaworu",
+    "valve_entity": "Zawór",
+    "valve_attribute": "Atrybut zaworu",
+    "show_window": "Pokaż otwarte okno",
+    "window_entity": "Okno",
+    "show_low_battery": "Ostrzegaj o słabej baterii",
+    "found_helper": "Puste: szukane na urządzeniu"
   },
   "energy": {
     "solar": "PV",
@@ -2555,7 +2569,10 @@
     "charts.deleted": "Zestaw usunięty",
     "charts.light": "Jasna",
     "charts.dark": "Ciemna",
-    "charts.preview_sub": "Twoje wykresy z tymi ustawieniami"
+    "charts.preview_sub": "Twoje wykresy z tymi ustawieniami",
+    "dashboard.thermostat_state": "Stan termostatów",
+    "dashboard.brief": "Krótko",
+    "dashboard.detailed": "Szczegółowo"
   },
   "customise": {
     "title": "Dostosowanie",
@@ -3336,6 +3353,10 @@
     "sound_mode": "Tryb dźwięku",
     "history": "Ostatnie 24 godziny",
     "history_open": "Otwórz w Historii",
-    "history_none": "Brak historii"
+    "history_none": "Brak historii",
+    "valve": "Zawór",
+    "window": "Okno",
+    "door": "Drzwi",
+    "battery": "Bateria"
   }
 }

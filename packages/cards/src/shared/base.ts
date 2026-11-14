@@ -215,7 +215,10 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
 
   /** The templates among the card's own texts (`ownText`), rendered by Home Assistant: made by the first one asked. */
   private ownTexts: TemplateTexts | undefined;
-  /** The entities the card's own texts named in its last render: a change of one draws it again, as a watched one's. */
+  /**
+   * The entities the card's own texts named in its last render, and those it read beside the ones it watches (`follows`):
+   * a change of one draws it again, as a watched one's.
+   */
   private readonly ownNamed = new Set<string>();
 
   protected override shouldUpdate(changed: PropertyValues): boolean {
@@ -239,6 +242,14 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     if (isTemplate(own)) this.ownTexts ??= new TemplateTexts(this);
     if (isEntityId(own)) this.ownNamed.add(own);
     return ownLine(this.hass, own, this.ownTexts, this.config?.entity, held);
+  }
+
+  /**
+   * An entity the render reads beside those the card watches (one found on its entity's device, 1.21): watched while
+   * it is read.
+   */
+  protected follows(entityId: string | undefined): void {
+    if (entityId) this.ownNamed.add(entityId);
   }
 
   /**

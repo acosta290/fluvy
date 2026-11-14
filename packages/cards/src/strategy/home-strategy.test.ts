@@ -932,6 +932,37 @@ describe('custom:fluvy-home strategy', () => {
     expect(await tilesOf({ tile_switch: 'never' })).toEqual(shown);
   });
 
+  it('says what the thermostats are doing in full only where the dashboard asks (#185)', async () => {
+    const cardsOf = async (config: Record<string, unknown>) => {
+      const { views } = await FluvyHomeStrategy.generate(
+        { type: 'custom:fluvy-home', ...config },
+        everything(),
+      );
+      return views.flatMap((v) => v.sections.flatMap((s) => s.cards));
+    };
+    const asked = ['show_valve', 'show_window', 'show_battery', 'show_action'];
+    const plain = await cardsOf({});
+    // nothing of it is written until it is asked: a house upgraded keeps its dashboard as it was
+    expect(plain.every((c) => asked.every((key) => !(key in c)))).toBe(true);
+    expect(await cardsOf({ thermostat_state: 'brief' })).toEqual(plain);
+    expect(await cardsOf({ thermostat_state: 'everything' })).toEqual(plain);
+    const detailed = await cardsOf({ thermostat_state: 'detailed' });
+    const of = (cards: typeof detailed, type: string) =>
+      cards.filter((c) => c.type === `custom:fluvy-${type}-card`);
+    expect(of(detailed, 'thermostat').length).toBeGreaterThan(0);
+    expect(
+      of(detailed, 'thermostat').every(
+        (c) => c['show_valve'] === true && c['show_window'] === true && c['show_battery'] === true,
+      ),
+    ).toBe(true);
+    expect(of(detailed, 'room').length).toBeGreaterThan(0);
+    expect(of(detailed, 'room').every((c) => c['show_action'] === true)).toBe(true);
+    // and nothing else of the dashboard moved
+    const bare = (cards: typeof detailed) =>
+      cards.map((c) => Object.fromEntries(Object.entries(c).filter(([k]) => !asked.includes(k))));
+    expect(bare(detailed)).toEqual(plain);
+  });
+
   it('puts every card of the library to use in a house that has one of everything', async () => {
     const CATALOGUE = await (await import('../index.js')).catalogue();
     // the views as chips under the greeting too: the chips card is in use

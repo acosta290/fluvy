@@ -9,6 +9,8 @@ import {
 } from '@fluvy/core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
+import { shownNames } from '../shared/fixtures/editor.js';
+import { visibleFields } from '../shared/form.js';
 import {
   FluvyThermostatCard,
   modeLabel,
@@ -402,37 +404,37 @@ describe('the fan speeds and presets, in the page’s words (#142)', () => {
   });
 });
 
+/** A ruler of 8 a letter, a badge its words and its sides: the widths a head is fitted by. */
+const RULER = {
+  width: (_cls: string, text: string) => text.length * 8,
+  pill: (_cls: string, text: string, sides: number) => text.length * 8 + sides,
+  clear() {},
+};
+const draw = async (
+  state: HassEntity,
+  width = 360,
+  more: Partial<ThermostatCardConfig> = {},
+  says: Partial<HomeAssistant> = {},
+): Promise<FluvyThermostatCard> => {
+  const card = document.createElement('fluvy-thermostat-card') as FluvyThermostatCard;
+  Object.assign((card as unknown as { head: object }).head, { ruler: RULER });
+  card.setConfig(config({ entity: state.entity_id, ...more }) as LovelaceCardConfig);
+  card.hass = { ...house(state), ...says } as HomeAssistant;
+  card.width = width;
+  document.body.append(card);
+  await card.updateComplete;
+  return card;
+};
+/** The head's badge: its word and its tone; none where it gave way. */
+const badge = (card: FluvyThermostatCard): [word: string, tone: string] | null => {
+  const pill = card.renderRoot.querySelector('.fv-card__head .fv-badge');
+  return pill
+    ? [pill.textContent?.trim() ?? '', /fv-badge--(\w+)/.exec(pill.className)?.[1] ?? '']
+    : null;
+};
+const line = (card: FluvyThermostatCard): string =>
+  card.renderRoot.querySelector('.fv-card__sub')?.textContent?.trim() ?? '';
 describe('what it is doing, in the head (#185)', () => {
-  /** A ruler of 8 a letter, a badge its words and its sides: the widths a head is fitted by. */
-  const RULER = {
-    width: (_cls: string, text: string) => text.length * 8,
-    pill: (_cls: string, text: string, sides: number) => text.length * 8 + sides,
-    clear() {},
-  };
-  const draw = async (
-    state: HassEntity,
-    width = 360,
-    more: Partial<ThermostatCardConfig> = {},
-    says: Partial<HomeAssistant> = {},
-  ): Promise<FluvyThermostatCard> => {
-    const card = document.createElement('fluvy-thermostat-card') as FluvyThermostatCard;
-    Object.assign((card as unknown as { head: object }).head, { ruler: RULER });
-    card.setConfig(config({ entity: state.entity_id, ...more }) as LovelaceCardConfig);
-    card.hass = { ...house(state), ...says } as HomeAssistant;
-    card.width = width;
-    document.body.append(card);
-    await card.updateComplete;
-    return card;
-  };
-  /** The head's badge: its word and its tone; none where it gave way. */
-  const badge = (card: FluvyThermostatCard): [word: string, tone: string] | null => {
-    const pill = card.renderRoot.querySelector('.fv-card__head .fv-badge');
-    return pill
-      ? [pill.textContent?.trim() ?? '', /fv-badge--(\w+)/.exec(pill.className)?.[1] ?? '']
-      : null;
-  };
-  const line = (card: FluvyThermostatCard): string =>
-    card.renderRoot.querySelector('.fv-card__sub')?.textContent?.trim() ?? '';
   const said = async (
     state: string,
     attributes: Record<string, unknown>,
@@ -552,5 +554,175 @@ describe('what it is doing, in the head (#185)', () => {
     const card = await draw(idle, 172, {}, long);
     expect([badge(card), line(card)]).toEqual([null, 'Bereit']);
     card.remove();
+  });
+});
+
+describe('what it is asked to say with it (#185)', () => {
+  /** A radiator valve idle, its position, its battery near its end and its window sensor on its device. */
+  const valve = entity('climate.bedroom_trv', 'heat', {
+    friendly_name: 'Bedroom TRV',
+    hvac_modes: ['off', 'heat'],
+    temperature: 18,
+    current_temperature: 18.4,
+    current_humidity: 46,
+    hvac_action: 'idle',
+  });
+  const SIBLINGS = [
+    entity('sensor.bedroom_trv_position', '0', { unit_of_measurement: '%' }),
+    entity('sensor.bedroom_trv_battery', '8', {
+      device_class: 'battery',
+      unit_of_measurement: '%',
+    }),
+    entity('binary_sensor.bedroom_trv_window', 'off', { device_class: 'window' }),
+    entity('switch.boiler', 'on', {}),
+    entity('sensor.landing_humidity', '58', { unit_of_measurement: '%' }),
+  ];
+  /** The valve's house: its siblings (`moved`: some as they stand now), each on its device. */
+  const home = (...moved: HassEntity[]): Partial<HomeAssistant> => {
+    const all = [valve, ...SIBLINGS].map(
+      (state) => moved.find((now) => now.entity_id === state.entity_id) ?? state,
+    );
+    return {
+      states: Object.fromEntries(all.map((state) => [state.entity_id, state])),
+      entities: Object.fromEntries(
+        [valve, ...SIBLINGS.slice(0, 3)].map(({ entity_id }) => [
+          entity_id,
+          { entity_id, device_id: 'valve' },
+        ]),
+      ),
+    } as unknown as Partial<HomeAssistant>;
+  };
+  const drawn = (more: Partial<ThermostatCardConfig> = {}, width = 360, ...moved: HassEntity[]) =>
+    draw(valve, width, more, home(...moved));
+  const warned = (card: FluvyThermostatCard): string =>
+    card.renderRoot.querySelector('.fv-card__sub .cl-warn')?.textContent?.trim() ?? '';
+  const open = { ...SIBLINGS[2]!, state: 'on' };
+
+  it('says nothing more until it is asked: the house upgraded draws what it drew', async () => {
+    const card = await drawn();
+    expect([badge(card), line(card), warned(card)]).toEqual([['Idle', 'neutral'], '46 % RH', '']);
+    card.remove();
+  });
+
+  it('says how far the valve is open beside the word, found on its device or named', async () => {
+    let card = await drawn({ show_valve: true });
+    expect(badge(card)).toEqual(['Idle · 0 %', 'neutral']);
+    card.remove();
+    card = await drawn({ valve_entity: 'sensor.landing_humidity' });
+    expect(badge(card)).toEqual(['Idle · 58 %', 'neutral']);
+    card.remove();
+    // half a section: the word leads the line, its figure after it
+    card = await drawn({ show_valve: true }, 172);
+    expect([badge(card), line(card)]).toEqual([null, 'Idle · 0 %']);
+    card.remove();
+  });
+
+  it('says a window open in the warning tone, in its badge and where it leads the line', async () => {
+    let card = await drawn({ show_window: true });
+    expect(badge(card)).toEqual(['Idle', 'neutral']);
+    card.remove();
+    card = await drawn({ show_window: true }, 360, open);
+    expect(badge(card)).toEqual(['Window open', 'warning']);
+    card.remove();
+    card = await drawn({ show_window: true }, 172, open);
+    expect([badge(card), line(card), warned(card)]).toEqual([null, 'Window open', 'Window open']);
+    card.remove();
+  });
+
+  it('leads the line with a low battery in the warning ink, the word after it where it steps down', async () => {
+    let card = await drawn({ show_battery: true });
+    expect([badge(card), line(card), warned(card)]).toEqual([
+      ['Idle', 'neutral'],
+      'Battery 8 % · 46 % RH',
+      'Battery 8 %',
+    ]);
+    card.remove();
+    // 172: the line holds "Battery 8 %" and no more beside the circle; without it, the word too
+    card = await drawn({ show_battery: true, show_icon: 'never' }, 212);
+    expect([line(card), warned(card)]).toEqual(['Battery 8 % · Idle', 'Battery 8 %']);
+    card.remove();
+    card = await drawn({ show_battery: true, show_window: true }, 320, open);
+    expect(warned(card)).toBe('Battery 8 % · Window open');
+    card.remove();
+    // a battery that is not low says nothing
+    const charged = { ...SIBLINGS[1]!, state: '64' };
+    card = await drawn({ show_battery: true }, 360, charged);
+    expect([line(card), warned(card)]).toEqual(['46 % RH', '']);
+    card.remove();
+  });
+
+  it('reads the action and the humidity from another entity where one is named', async () => {
+    const card = await drawn({
+      state_entity: 'switch.boiler',
+      humidity_entity: 'sensor.landing_humidity',
+    });
+    expect([badge(card), line(card)]).toEqual([['Heating', 'heat'], '58 % RH']);
+    card.remove();
+  });
+
+  it('hides the word where asked: no badge, and nothing of it in the line', async () => {
+    let card = await drawn({ show_state: false, show_valve: true });
+    expect([badge(card), line(card)]).toEqual([null, '46 % RH']);
+    card.remove();
+    card = await drawn({ show_state: false, show_battery: true }, 172);
+    expect(line(card)).toBe('Battery 8 %');
+    card.remove();
+  });
+
+  it('draws again as what it found changes: its window sensor is followed while it is read', async () => {
+    const card = await drawn({ show_window: true });
+    expect(badge(card)?.[0]).toBe('Idle');
+    const hass = card.hass!;
+    card.hass = { ...hass, states: { ...hass.states, [open.entity_id]: open } };
+    await card.updateComplete;
+    expect(badge(card)).toEqual(['Window open', 'warning']);
+    card.remove();
+  });
+
+  it('keeps its height whatever it is asked: nothing of it is a row', () => {
+    const asked = {
+      show_valve: true,
+      show_window: true,
+      show_battery: true,
+      state_entity: 'switch.boiler',
+      humidity_entity: 'sensor.landing_humidity',
+      show_state: false,
+    };
+    for (const variant of ['dial', 'compact', 'ruler'] as const)
+      expect(FluvyThermostatCard.layoutHeight(config({ variant, ...asked }))).toBe(
+        FluvyThermostatCard.layoutHeight(config({ variant })),
+      );
+  });
+
+  it('shows in its editor what it found for each sensor it is asked to read, and writes none of it', () => {
+    const hass = { ...house(valve), ...home() } as HomeAssistant;
+    const shown = (more: Partial<ThermostatCardConfig>) =>
+      thermostatEditor.defaults(config({ entity: valve.entity_id, ...more }), hass);
+    expect(shown({})).toMatchObject({
+      show_state: true,
+      show_valve: false,
+      show_window: false,
+      show_battery: false,
+    });
+    expect(shown({})).not.toHaveProperty('valve_entity');
+    expect(shown({ show_valve: true, show_window: true, show_battery: true })).toMatchObject({
+      valve_entity: 'sensor.bedroom_trv_position',
+      window_entity: 'binary_sensor.bedroom_trv_window',
+      battery_entity: 'sensor.bedroom_trv_battery',
+    });
+    // what cannot act is not offered: a humidifier has no valve and no window, a hidden word no options
+    const fields = (data: Record<string, unknown>) =>
+      shownNames(visibleFields(thermostatEditor.getConfigForm().schema, data, hass));
+    const climate = fields({ entity: valve.entity_id, show_state: true });
+    expect(climate).toEqual(
+      expect.arrayContaining(['state_entity', 'show_valve', 'valve_attribute', 'show_window']),
+    );
+    const humidifier = fields({ entity: 'humidifier.bedroom', show_state: true });
+    expect(humidifier).toEqual(expect.arrayContaining(['show_state', 'state_entity']));
+    expect(humidifier).not.toEqual(expect.arrayContaining(['show_valve']));
+    expect(humidifier).not.toEqual(expect.arrayContaining(['humidity_entity']));
+    const hidden = fields({ entity: valve.entity_id, show_state: false });
+    expect(hidden).not.toEqual(expect.arrayContaining(['state_entity']));
+    expect(hidden).toEqual(expect.arrayContaining(['show_battery', 'humidity_entity']));
   });
 });

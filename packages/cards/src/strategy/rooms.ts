@@ -49,13 +49,15 @@ function roomLights(home: HomeRegistry, areaId: string): { lights?: string[] } {
 
 /**
  * A room's card: its page as its path, the dashboard's style — its photo's own (#159) as the dashboard asks of every
- * room, then of this one — what the dashboard tunes it to hold (`rooms`), and its lights where a lamp on a plug is one.
+ * room, then of this one, and its climate row saying what its thermostat is doing where the dashboard asks (#185) —
+ * what the dashboard tunes it to hold (`rooms`), and its lights where a lamp on a plug is one.
  */
 export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card => ({
   type: 'custom:fluvy-room-card',
   area: area.area_id,
   path: roomPath(ctx.base, area),
   ...(ctx.style.room ? { variant: ctx.style.room } : {}),
+  ...(ctx.style.doing ? { show_action: true } : {}),
   ...ctx.style.roomLook,
   ...ctx.home.look(area.area_id),
   ...ctx.home.tuning(area.area_id),

@@ -47,6 +47,7 @@ export const SHARED_LABELS: Readonly<Record<string, MessageKey>> = {
   secondary: 'editor.secondary',
   min: 'editor.min',
   max: 'editor.max',
+  show_action: 'editor.show_state',
 };
 
 /** The language an editor speaks: `getConfigForm()` is static, so it comes from the document. */
@@ -454,6 +455,16 @@ export const holdsSwitch =
   (data: Readonly<Record<string, unknown>>): boolean =>
     idsOf(listed(data, key, alias)).some(switches);
 
+/** Whether an entity is one whose tile may say what it is doing (`showActionField`): a climate or a humidifier. */
+export const acts = (entity: unknown): boolean =>
+  typeof entity === 'string' && /^(climate|humidifier)\./.test(entity);
+
+/** Whether a card's list names one. */
+export const holdsActing =
+  (key: string, alias?: string) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    idsOf(listed(data, key, alias)).some(acts);
+
 /** A field (or a row) shown only while `when` says it can act: one that acts only in a style is shown in that style. */
 export const onlyWhen = (
   when: NonNullable<HaFormSchemaItem['when']>,
@@ -657,6 +668,21 @@ export const switchStyleField = ({ item = false } = {}): HaFormSchemaItem => ({
   ]),
   helper: item ? 'editor.item_switch_style_helper' : 'editor.switch_style_helper',
 });
+
+/**
+ * Whether a thermostat's tile says what it is doing and what it is set to (`show_action`, 1.21, #185), where it said
+ * its mode: off until asked. An item's (`item`: a tile of a group) is empty until chosen, its group's then.
+ */
+export const showActionField = ({ item = false } = {}): HaFormSchemaItem =>
+  item
+    ? {
+        ...choiceField('show_action', [
+          ['true', 'common.on'],
+          ['false', 'common.off'],
+        ]),
+        helper: 'editor.item_show_switch_helper',
+      }
+    : boolField('show_action');
 
 /**
  * Whether a tile that switches draws a switch that has a style (`switchStyleField`), from its size and what it is

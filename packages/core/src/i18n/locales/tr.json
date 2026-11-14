@@ -93,7 +93,10 @@
     "high": "Yüksek",
     "action.preheating": "Ön ısıtıyor",
     "action.defrosting": "Buz çözüyor",
-    "action.humidifying": "Nemlendiriyor"
+    "action.humidifying": "Nemlendiriyor",
+    "window_open": "Pencere açık",
+    "door_open": "Kapı açık",
+    "battery": "Pil {value}"
   },
   "cover": {
     "position": "Konum",
@@ -604,7 +607,18 @@
     "gauge": "Gösterge",
     "slider_style": "Kaydırıcı stili",
     "slider_style_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kaydırıcılarınki",
-    "slider_words": "Altındaki değerler"
+    "slider_words": "Altındaki değerler",
+    "doing": "Şu an ne yapıyor",
+    "show_state": "Ne yaptığını göster",
+    "state_entity": "Eylemin okunduğu varlık",
+    "state_entity_helper": "Eylemini bildirmeyen bir termostat için: bunu bildiren bir sensör veya anahtar",
+    "show_valve": "Vana açıklığını göster",
+    "valve_entity": "Vana",
+    "valve_attribute": "Vana özniteliği",
+    "show_window": "Açık pencereyi göster",
+    "window_entity": "Pencere",
+    "show_low_battery": "Zayıf pili bildir",
+    "found_helper": "Boşsa, cihazında aranır"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -1539,7 +1553,10 @@
     "charts.deleted": "Set kaldırıldı",
     "charts.light": "Açık",
     "charts.dark": "Koyu",
-    "charts.preview_sub": "Bu ayarlarla grafikleriniz"
+    "charts.preview_sub": "Bu ayarlarla grafikleriniz",
+    "dashboard.thermostat_state": "Termostatların durumu",
+    "dashboard.brief": "Kısa",
+    "dashboard.detailed": "Ayrıntılı"
   },
   "customise": {
     "title": "Özelleştirme",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Ses modu",
     "history": "Son 24 saat",
     "history_open": "Geçmiş’te aç",
-    "history_none": "Geçmiş yok"
+    "history_none": "Geçmiş yok",
+    "valve": "Vana",
+    "window": "Pencere",
+    "door": "Kapı",
+    "battery": "Pil"
   }
 }

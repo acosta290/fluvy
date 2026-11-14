@@ -444,6 +444,119 @@ describe('a thermostat’s sheet', () => {
   });
 });
 
+describe('a thermostat’s sheet says what the card that opened it asked (#185)', () => {
+  /** A radiator valve idle: its position, its battery near its end and its window sensor on its device. */
+  const TRV = entity('climate.bedroom', 'heat', {
+    friendly_name: 'Bedroom TRV',
+    temperature: 18,
+    current_temperature: 18.4,
+    current_humidity: 46,
+    hvac_modes: ['off', 'heat'],
+    hvac_action: 'idle',
+  });
+  const WINDOW = entity('binary_sensor.bedroom_window', 'off', { device_class: 'window' });
+  const home = (window = WINDOW): House => {
+    const hass = house(
+      TRV,
+      window,
+      entity('sensor.bedroom_position', '0', { unit_of_measurement: '%' }),
+      entity('sensor.bedroom_battery', '8', { device_class: 'battery', unit_of_measurement: '%' }),
+    );
+    return {
+      ...hass,
+      entities: Object.fromEntries(
+        Object.keys(hass.states).map((entity_id) => [entity_id, { entity_id, device_id: 'valve' }]),
+      ),
+    } as unknown as House;
+  };
+  const EVERYTHING = { show_valve: true, show_window: true, show_battery: true };
+  /** The sheet as a card of `config` opens it. */
+  async function openedBy(config: Record<string, unknown>, hass = home()): Promise<Sheet> {
+    const from = Object.assign(document.createElement('div'), { rawHass: hass, config });
+    document.body.append(from);
+    openDetails(from, hass, TRV.entity_id);
+    const sheet = [...document.body.children].find(
+      (child) => child.localName === 'fluvy-details-climate',
+    ) as Sheet;
+    await sheet.updateComplete;
+    return sheet;
+  }
+  const status = (sheet: Sheet): string => text(sheet, '.fv-sheet__head .fv-card__sub');
+  /** The readings' rows: each title, its value and the ink it wears. */
+  const readings = (sheet: Sheet): string[][] =>
+    [...root(sheet).querySelectorAll('.dt-rows .fv-row')].map((row) => {
+      const value = row.querySelector('.fv-row__value');
+      return [
+        row.querySelector('.fv-row__title')?.textContent?.trim() ?? '',
+        value?.textContent?.trim() ?? '',
+        /fv-row__value--(\w+)/.exec(value?.className ?? '')?.[1] ?? '',
+      ];
+    });
+
+  it('asked nothing, is the sheet it was', async () => {
+    const sheet = await openedBy({ type: 'custom:fluvy-thermostat-card', entity: TRV.entity_id });
+    expect([status(sheet), readings(sheet)]).toEqual(['Idle · 46 % RH', []]);
+  });
+
+  it('says the valve’s opening beside the word, and a row for each reading a Thermostat card asked for', async () => {
+    const sheet = await openedBy({
+      type: 'custom:fluvy-thermostat-card',
+      entity: TRV.entity_id,
+      ...EVERYTHING,
+    });
+    expect(status(sheet)).toBe('Idle · 0 % · 46 % RH');
+    expect(readings(sheet)).toEqual([
+      ['Valve', '0 %', ''],
+      ['Window', 'Closed', 'quiet'],
+      ['Battery', '8 %', 'warning'],
+    ]);
+  });
+
+  it('says a window open as the card does, its row in the warning ink', async () => {
+    const sheet = await openedBy(
+      { type: 'custom:fluvy-thermostat-card', entity: TRV.entity_id, show_window: true },
+      home({ ...WINDOW, state: 'on' }),
+    );
+    expect(status(sheet)).toBe('Window open · 46 % RH');
+    expect(readings(sheet)).toEqual([['Window', 'Open', 'warning']]);
+  });
+
+  it('reads the window as a tile that says its action does: its own word, else its group’s', async () => {
+    const open = home({ ...WINDOW, state: 'on' });
+    const group = (tile: Record<string, unknown>, more: Record<string, unknown> = {}) => ({
+      type: 'custom:fluvy-tiles-card',
+      tiles: [{ entity: TRV.entity_id, ...tile }],
+      ...more,
+    });
+    let sheet = await openedBy(group({ show_action: true }), open);
+    expect([status(sheet), readings(sheet)]).toEqual([
+      'Window open · 46 % RH',
+      [['Window', 'Open', 'warning']],
+    ]);
+    document.body.replaceChildren();
+    sheet = await openedBy(group({}, { show_action: true }), open);
+    expect(status(sheet)).toBe('Window open · 46 % RH');
+    document.body.replaceChildren();
+    sheet = await openedBy(group({ show_action: false }, { show_action: true }), open);
+    expect([status(sheet), readings(sheet)]).toEqual(['Idle · 46 % RH', []]);
+  });
+
+  it('draws again as a sensor it found changes', async () => {
+    const hass = home();
+    const sheet = await openedBy(
+      { type: 'custom:fluvy-thermostat-card', entity: TRV.entity_id, show_window: true },
+      hass,
+    );
+    expect(status(sheet)).toBe('Idle · 46 % RH');
+    sheet.hass = {
+      ...hass,
+      states: { ...hass.states, [WINDOW.entity_id]: { ...WINDOW, state: 'on' } },
+    } as HomeAssistant;
+    await sheet.updateComplete;
+    expect(status(sheet)).toBe('Window open · 46 % RH');
+  });
+});
+
 describe('a cover’s sheet', () => {
   it('sends the cover where the dial says, and runs its commands and its tilt', async () => {
     const hass = house(BLIND);

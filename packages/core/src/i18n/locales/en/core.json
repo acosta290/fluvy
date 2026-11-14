@@ -93,7 +93,10 @@
     "high": "High",
     "action.preheating": "Preheating",
     "action.defrosting": "Defrosting",
-    "action.humidifying": "Humidifying"
+    "action.humidifying": "Humidifying",
+    "window_open": "Window open",
+    "door_open": "Door open",
+    "battery": "Battery {value}"
   },
   "cover": {
     "position": "Position",

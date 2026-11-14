@@ -94,6 +94,15 @@ const THERMOSTAT = choice(
   'dashboard.thermostat',
   words(['dial', 'compact', 'ruler']),
 );
+/**
+ * What the thermostats say of what they are doing (#185): as each card does by itself, or with the valve, the window
+ * and the battery found for each, the rooms' climate rows saying what their thermostats are doing.
+ */
+const THERMOSTAT_STATE = choice(
+  'thermostat_state',
+  'dashboard.thermostat_state',
+  words(['brief', 'detailed']),
+);
 const TILES = choice('tile_size', 'dashboard.tiles', [
   { value: 'large', label: 'dashboard.large' },
   { value: 'compact', label: 'dashboard.rows' },
@@ -173,6 +182,7 @@ export const TEMPLATES: readonly Template[] = [
     options: [
       HIDE,
       THERMOSTAT,
+      THERMOSTAT_STATE,
       TILES,
       SWITCHES,
       FLOW,
@@ -194,7 +204,17 @@ export const TEMPLATES: readonly Template[] = [
     header: 'hello',
     views: roomsViews,
     rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
-    options: [...ROOMS, THERMOSTAT, TILES, SWITCHES, GREETING_TABS, BACKGROUND, CAPS, EXCLUDE],
+    options: [
+      ...ROOMS,
+      THERMOSTAT,
+      THERMOSTAT_STATE,
+      TILES,
+      SWITCHES,
+      GREETING_TABS,
+      BACKGROUND,
+      CAPS,
+      EXCLUDE,
+    ],
   },
   {
     id: 'energy',
@@ -245,6 +265,7 @@ export const TEMPLATES: readonly Template[] = [
     options: [
       { key: 'areas', kind: 'areas', label: 'dashboard.areas' },
       THERMOSTAT,
+      THERMOSTAT_STATE,
       choice('scenes_max', 'dashboard.scenes', counts([4, 6, 8], 'dashboard.count')),
       BACKGROUND,
       CAPS,

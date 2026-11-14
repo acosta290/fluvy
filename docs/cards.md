@@ -457,6 +457,79 @@ image: /local/lounge-tv.png # or image.lounge_tv
 image_mode: fallback
 ```
 
+## Thermostat
+
+The thermostat card's badge says what the device is doing, not the mode it is in: **Heating**, **Idle**,
+**Preheating**, **Defrosting**, a humidifier's **Humidifying**; the mode's word where the entity says no action. It
+is Home Assistant's own word for the action where Fluvy speaks the page's language (the integration's, where it has
+one), and it wears the action's tone: heating, preheating and defrosting the heat's, cooling the cool's, idle and off
+quiet, whatever tone the card, its dial and its mode tiles keep for the mode. In a column too narrow for the badge
+beside the name (half a section, a long name) the word leads the line under the name instead ("Heating · 46 % RH"),
+so it is always said; `show_state: false` hides it.
+
+What else the card says of what the device is doing is asked for, each off until it is:
+
+| Key | What it says |
+| --- | --- |
+| `show_valve: true` | how far the valve is open, beside the word: "Heating · 42 %", "Idle · 0 %". Found on the climate itself (`valve_position`, ZHA's `pi_heating_demand`, Netatmo's `heating_power_request`), else a percentage sensor or number of its own device (`…_pi_heating_demand`, `…_valve_position`, `…_position`, Tado's `…_heating`, `…_valve_opening_degree`; never one of the device's settings), else the most open of the valves a Better Thermostat drives |
+| `valve_entity`, `valve_attribute` | the sensor or the number that says it, or the climate's own attribute that does, where none is found or another is meant |
+| `show_window: true` | "Window open" (or "Door open") in the warning tone while one is and the thermostat is on: as the climate says so itself (`window_open`, `door_open`, Better Thermostat's `heating_blocked_by`), else as a window or door sensor of its own device does. With Better Thermostat, what else holds the heating back is said in its own words ("No call for heat", "Valve maintenance") |
+| `window_entity` | the window's or the door's sensor, where none is found or another is meant |
+| `show_battery: true` | a battery at 20 % or less leads the line under the name, in the warning ink: "Battery 8 %". The battery sensor of the climate's own device, else the lowest of those a Better Thermostat reads |
+| `battery_entity` | the battery sensor, where none is found or another is meant |
+| `state_entity` | another entity whose state says the action, for a thermostat that says none: a sensor whose state is one of Home Assistant's actions (`heating`, `idle` …), or a switch (on: what the mode does; off: idle) |
+| `humidity_entity` | the room's humidity from another sensor, where the climate measures none |
+
+Nothing found, nothing said. None of it adds a row: the card is as tall as it was. The editor's **What it is doing**
+group holds them, each sensor's picker showing what was found.
+
+```yaml
+# a room behind Better Thermostat: the valve it drives, the window it watches, its valves' batteries
+type: custom:fluvy-thermostat-card
+entity: climate.bedroom
+variant: compact
+show_valve: true
+show_window: true
+show_battery: true
+```
+
+```yaml
+# a Zigbee valve on ZHA: its demand is on the climate itself, and the room's window sensor is named
+type: custom:fluvy-thermostat-card
+entity: climate.living_room_trv
+show_valve: true
+window_entity: binary_sensor.living_room_window
+```
+
+```yaml
+# a thermostat that says no action: its heater's switch says it, a sensor the room's humidity
+type: custom:fluvy-thermostat-card
+entity: climate.hallway
+state_entity: switch.hallway_heater
+humidity_entity: sensor.hallway_humidity
+```
+
+A climate's or a humidifier's **tile** says it on its line with `show_action: true` (the tile card's, a tile's of the
+tiles card or the whole group's, a room's tiles'): the word and what it is set to ("Heating · 21.5°", "Idle · 21.5°"),
+"Window open" alone, and a large climate tile ends its head with what it measures ("20.8 °C") where it said its mode.
+Its fill stays its mode's. A **room**'s climate row says it with the room card's own `show_action: true`. Fluvy's
+**details sheet** says the same word as the card that opened it, and a row for each reading that card asked for:
+Valve, Window, Battery.
+
+```yaml
+type: custom:fluvy-tiles-card
+show_action: true
+tiles:
+  - climate.living_room
+  - climate.bedroom
+  - entity: humidifier.nursery
+    show_action: false # this one keeps its state
+```
+
+Better Thermostat's action is the room's decision and a valve's opening is the valve's own: the two may disagree for a
+moment ("Idle · 12 %" while a valve still closes). The automatic dashboards say all of it with one option,
+[`thermostat_state: detailed`](automatic-dashboard.md#options).
+
 ## Media
 
 The media card's line under the title is the player's own: who made what plays, else its state and when it last played,
@@ -1651,13 +1724,13 @@ roles:
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
-| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `unavailable`, `show_switch`, `switch_style`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`) | `entities` → `tiles` |
+| **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `show_action`, `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
+| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `show_action`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `unavailable`, `show_switch`, `switch_style`, `show_action`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`) | `entities` → `tiles` |
 | **Template** | `custom:fluvy-template-card` | A tile whose name, line, icon, colour and fill are templates, with or without an entity; a Mushroom template card pastes in. | `secondary` (`state`, `area`, `last-changed`, `none`), `since`, `variant` (`compact`, `mini`, `large`), `active` (`auto`, `always`, `never`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `tint` (`on`, `always`), `readouts` | `primary` → `name`, `icon_color` → `color`, `layout` → `variant`, `vertical` → `variant` |
 | **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `show_brightness` (`true`, `when_on`, `false`), `variant` (`auto`, `full`, `compact`), `show_stepper`, `live_update`, `show_temperature`, `show_color`, `temperature_tint`, `tint` (`off`, `on`, `always`), `tint_strength` (`soft`, `brightness`, `full`, `full_brightness`), `light_whites` (`palette`, `temperature`), `colors` (a list: `color`, `name`, `rgb`) | — |
 | **Slider** | `custom:fluvy-slider-card` | Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head. | `variant` (`full`, `compact`, `tile`), `show_stepper`, `control` (`auto`, `mute`, `switch`, `none`), `toggle_entity`, `min`, `max`, `label`, `live_update`, `tint` (`off`, `on`, `always`) | — |
 | **Room lights** | `custom:fluvy-lights-card` | A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour. | `area`, `variant` (`row`, `chips`, `tiles`), `show_brightness`, `show_count`, `show_level`, `show_color`, `color_action` (`sheet`, `more-info`), `color_control` (`ruler`, `wheel`), `light_colors`, `light_whites` (`palette`, `temperature`), `tint` (`on`, `always`), `name_lines` (`1`, `2`), `switch_style` (`toggle`, `rocker`), `empty_text`, `hide_empty`, `lights` (a list: `entity`, `name`, `icon`, `color`), `colors` (a list: `color`, `name`, `rgb`) | `entities` → `lights` |
-| **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `image`, `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`) | — |
+| **Thermostat** | `custom:fluvy-thermostat-card` | Climate, water heater or humidifier on a dial, with modes, presets and fan speeds. | `image`, `subtitle`, `variant` (`dial`, `compact`, `ruler`), `show_stepper`, `show_modes`, `modes_style` (`tiles`, `chips`, `full`), `modes` (`off`, `heat`, `cool`, `heat_cool`, `auto`, `dry`, `fan_only`), `show_current`, `show_presets`, `preset_style` (`full`, `chips`), `show_fan`, `fan_style` (`full`, `chips`), `when_off` (`all`, `essentials`), `show_state`, `state_entity`, `show_valve`, `valve_entity`, `valve_attribute`, `show_window`, `window_entity`, `show_battery`, `battery_entity`, `humidity_entity` | — |
 | **Entities** | `custom:fluvy-entities-card` | Rows of entities: a switch for what toggles, the value for what is measured. | `title`, `subtitle`, `variant` (`rows`, `compact`), `show_rows_when`, `show_count`, `light_colors`, `light_whites` (`palette`, `temperature`), `more`, `more_path`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `options`, `labels`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`, `show_when`; between them `type: section`, `type: divider`) | `entities` → `rows` |
 | **Items** | `custom:fluvy-items-card` | The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24. | `title`, `subtitle`, `attribute` (`auto`), `preset` (`auto`, `none`, `flights`), `item_name`, `item_secondary`, `item_value`, `item_unit`, `item_icon`, `item_image`, `item_url`, `items_template`, `sort`, `sort_order` (`ascending`, `descending`), `variant` (`rows`, `compact`, `tiles`), `max_rows`, `show_count`, `show_image`, `item_tap` (`sheet`, `none`), `empty_text`, `hide_empty` | — |
 | **Media** | `custom:fluvy-media-card` | A media player: artwork, seek bar, transport and volume — full, compact row or hero. | `secondary`, `image`, `image_mode` (`fallback`, `always`), `variant` (`full`, `mini`, `hero`), `source_style` (`full`, `chips`), `show_source`, `show_volume`, `show_power`, `controls` (`power`, `previous`, `play`, `next`, `volume`) | — |
@@ -1685,7 +1758,7 @@ roles:
 
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
-| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `name_position` (`bottom`, `top`), `show_climate`, `show_count`, `readout_style` (`row`, `wrap`), `readout_labels` (`auto`, `words`, `icons`, `none`), `show_quick_actions`, `show_arrow`, `picture`, `path`, `lights`, `temperature_entity`, `humidity_entity`, `include`, `exclude`, `tint` (`on`, `always`), `name_lines` (`1`, `2`), `switch_style` (`toggle`, `rocker`), `light_colors`, `light_whites` (`palette`, `temperature`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `switch_style`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`), `quick_actions` (a list: `group`, `entity`, `name`, `icon`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | — |
+| **Room** | `custom:fluvy-room-card` | A room of the house from its area: its picture, its climate, what is on, and its controls. | `area`, `variant` (`photo`, `tile`, `row`), `controls` (`rows`, `tiles`, `none`), `name_position` (`bottom`, `top`), `show_climate`, `show_count`, `readout_style` (`row`, `wrap`), `readout_labels` (`auto`, `words`, `icons`, `none`), `show_quick_actions`, `show_arrow`, `show_action`, `picture`, `path`, `lights`, `temperature_entity`, `humidity_entity`, `include`, `exclude`, `tint` (`on`, `always`), `name_lines` (`1`, `2`), `switch_style` (`toggle`, `rocker`), `light_colors`, `light_whites` (`palette`, `temperature`), `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `switch_style`, `show_action`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`), `quick_actions` (a list: `group`, `entity`, `name`, `icon`, `tone`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | — |
 | **Map** | `custom:fluvy-map-card` | Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate. | `title`, `variant` (`zones`, `map`, `rows`), `map_shape` (`wide`, `square`), `hours_to_show`, `default_zoom`, `fit_zones`, `show_empty`, `show_distance`, `map_path`, `empty_text`, `hide_empty`, `zones` (a list: `entity`, `name`, `icon`) | — |
 
 ## Structure and navigation

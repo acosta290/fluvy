@@ -93,7 +93,10 @@
     "high": "強",
     "action.preheating": "予熱中",
     "action.defrosting": "霜取り中",
-    "action.humidifying": "加湿中"
+    "action.humidifying": "加湿中",
+    "window_open": "窓開放中",
+    "door_open": "ドア開放中",
+    "battery": "バッテリー {value}"
   },
   "cover": {
     "position": "位置",
@@ -554,7 +557,18 @@
     "gauge": "ゲージ",
     "slider_style": "スライダーのスタイル",
     "slider_style_helper": "変更しないときは Fluvy の設定のすべてのスライダーの値",
-    "slider_words": "下の目盛り"
+    "slider_words": "下の目盛り",
+    "doing": "現在の動作",
+    "show_state": "動作を表示",
+    "state_entity": "動作の取得元",
+    "state_entity_helper": "動作を通知しないサーモスタット用：動作を示すセンサーまたはスイッチ",
+    "show_valve": "バルブ開度を表示",
+    "valve_entity": "バルブ",
+    "valve_attribute": "バルブの属性",
+    "show_window": "窓の開放を表示",
+    "window_entity": "窓",
+    "show_low_battery": "バッテリー低下を表示",
+    "found_helper": "空のときはデバイスから検出"
   },
   "strategy": {
     "home": "ホーム",
@@ -2701,7 +2715,10 @@
     "charts.deleted": "セットを削除しました",
     "charts.light": "ライト",
     "charts.dark": "ダーク",
-    "charts.preview_sub": "この設定でのグラフ"
+    "charts.preview_sub": "この設定でのグラフ",
+    "dashboard.thermostat_state": "サーモスタットの状態",
+    "dashboard.brief": "簡易",
+    "dashboard.detailed": "詳細"
   },
   "customise": {
     "title": "カスタマイズ",
@@ -3213,6 +3230,10 @@
     "sound_mode": "サウンドモード",
     "history": "過去24時間",
     "history_open": "履歴で開く",
-    "history_none": "履歴なし"
+    "history_none": "履歴なし",
+    "valve": "バルブ",
+    "window": "窓",
+    "door": "ドア",
+    "battery": "バッテリー"
   }
 }

@@ -1,7 +1,8 @@
-import { lightDefaults, type LovelaceConfigForm } from '@fluvy/core';
+import { lightDefaults, type HaFormSchemaItem, type LovelaceConfigForm } from '@fluvy/core';
 import {
   accentField,
   actionFields,
+  acts,
   colourFields,
   drawsSwitch,
   emptyFields,
@@ -9,6 +10,7 @@ import {
   entityField,
   fieldRow,
   formLabels,
+  holdsActing,
   holdsLight,
   holdsSwitch,
   lightColourFields,
@@ -16,6 +18,7 @@ import {
   nameLinesField,
   onlyWhen,
   selectField,
+  showActionField,
   showSwitchField,
   sinceChoices,
   sinceField,
@@ -54,6 +57,7 @@ export const keys = configKeys<TilesCardConfig>()([
   'name_lines',
   'show_switch',
   'switch_style',
+  'show_action',
   'readouts',
   'tiles',
   'columns',
@@ -63,10 +67,7 @@ export const keys = configKeys<TilesCardConfig>()([
   ...EMPTY_KEYS,
 ]);
 
-/**
- * A tile's fields: every one; those of a compact tile, whose switch has a style and no place of its own to hide; those
- * of a large tile that shows no switch; and those of a tile with no switch at all.
- */
+/** A tile's fields: every one a tile may show; what an item shows of them is its entity's and its group's to say. */
 const TILE_FIELDS = [
   entityField(),
   nameIconFields(),
@@ -76,14 +77,18 @@ const TILE_FIELDS = [
   unavailableField({ item: true }),
   showSwitchField({ item: true }),
   switchStyleField({ item: true }),
+  showActionField({ item: true }),
   // a small tile's tap toggles what toggles, a large one's opens; its circle may be its switch
   actionFields({ icon: true, tap: null, iconTap: null }),
 ];
-const without = (...names: readonly string[]) =>
-  TILE_FIELDS.filter((field) => !names.includes(field.name));
-const TILE_FIELDS_STYLE = without('show_switch');
-const TILE_FIELDS_NO_STYLE = without('switch_style');
-const TILE_FIELDS_NO_SWITCH = without('show_switch', 'switch_style');
+/** The fields without those named: one form a set of names, so an item's form is the same one while it stays its kind. */
+const FORMS = new Map<string, readonly HaFormSchemaItem[]>();
+const without = (names: readonly string[]): readonly HaFormSchemaItem[] => {
+  const key = names.join();
+  let form = FORMS.get(key);
+  if (!form) FORMS.set(key, (form = TILE_FIELDS.filter((field) => !names.includes(field.name))));
+  return form;
+};
 
 export const lists: readonly RowsListSpec[] = [
   {
@@ -101,6 +106,7 @@ export const lists: readonly RowsListSpec[] = [
       'unavailable',
       'show_switch',
       'switch_style',
+      'show_action',
       'tap_action',
       'hold_action',
       'double_tap_action',
@@ -110,14 +116,20 @@ export const lists: readonly RowsListSpec[] = [
     ],
     schema: TILE_FIELDS,
     // a tile's own switch where it has one, of an entity that switches: a large tile's, with its style while it
-    // shows; a compact tile's style, its rocker at its row's end
+    // shows; a compact tile's style, its rocker at its row's end; and what it is doing, a climate's or a humidifier's
     schemaOf: (item, card) => {
       const size = card?.['size'];
-      if (!card || size === 'mini' || !switches(item['entity'])) return TILE_FIELDS_NO_SWITCH;
-      if (size !== 'large') return TILE_FIELDS_STYLE;
-      return drawsSwitch(size, item['show_switch'] ?? card['show_switch'])
-        ? TILE_FIELDS
-        : TILE_FIELDS_NO_STYLE;
+      const entity = item['entity'];
+      return without([
+        ...(!card || size === 'mini' || !switches(entity)
+          ? ['show_switch', 'switch_style']
+          : size !== 'large'
+            ? ['show_switch']
+            : drawsSwitch(size, item['show_switch'] ?? card['show_switch'])
+              ? []
+              : ['switch_style']),
+        ...(acts(entity) ? [] : ['show_action']),
+      ]);
     },
   },
 ];
@@ -132,6 +144,7 @@ export const defaults: EditorDefaults = (config) => ({
   columns: config['size'] === 'mini' ? '3' : '2',
   show_switch: true,
   switch_style: 'toggle',
+  show_action: false,
   tint: 'on',
   light_colors: lightDefaults().colors,
   light_whites: 'temperature',
@@ -154,6 +167,8 @@ export function getConfigForm(): LovelaceConfigForm {
           drawsSwitch(data['size'], data['show_switch']) && holdsSwitch('tiles', 'entities')(data),
         switchStyleField(),
       ),
+      // its thermostats say what they are doing and what they are set to, where they said their mode
+      onlyWhen(holdsActing('tiles', 'entities'), showActionField()),
       ...colourFields(),
       tintField(),
       // a light's colours where the group holds a light; its large tiles' sliders in a style (the fill is theirs)

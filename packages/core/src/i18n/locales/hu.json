@@ -93,7 +93,10 @@
     "high": "Magas",
     "action.preheating": "Előfűtés",
     "action.defrosting": "Leolvasztás",
-    "action.humidifying": "Párásítás"
+    "action.humidifying": "Párásítás",
+    "window_open": "Nyitott ablak",
+    "door_open": "Nyitott ajtó",
+    "battery": "Elem {value}"
   },
   "cover": {
     "position": "Pozíció",
@@ -554,7 +557,18 @@
     "gauge": "Mérőóra",
     "slider_style": "Csúszka stílusa",
     "slider_style_helper": "Érintetlenül: az összes csúszkáé, a Fluvy beállításaiból",
-    "slider_words": "Feliratok alatta"
+    "slider_words": "Feliratok alatta",
+    "doing": "Mit csinál éppen",
+    "show_state": "A működés megjelenítése",
+    "state_entity": "A működés forrása",
+    "state_entity_helper": "Olyan termosztáthoz, amely nem jelzi a működését: egy érzékelő vagy kapcsoló, amely jelzi",
+    "show_valve": "A szelepnyitás megjelenítése",
+    "valve_entity": "Szelep",
+    "valve_attribute": "A szelep attribútuma",
+    "show_window": "A nyitott ablak megjelenítése",
+    "window_entity": "Ablak",
+    "show_low_battery": "A gyenge elem jelzése",
+    "found_helper": "Üresen: az eszközén keresi"
   },
   "strategy": {
     "home": "Otthon",
@@ -2813,7 +2827,10 @@
     "charts.deleted": "Készlet törölve",
     "charts.light": "Világos",
     "charts.dark": "Sötét",
-    "charts.preview_sub": "A diagramjaid ezekkel a beállításokkal"
+    "charts.preview_sub": "A diagramjaid ezekkel a beállításokkal",
+    "dashboard.thermostat_state": "Termosztátok állapota",
+    "dashboard.brief": "Rövid",
+    "dashboard.detailed": "Részletes"
   },
   "customise": {
     "title": "Testreszabás",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Hangmód",
     "history": "Elmúlt 24 óra",
     "history_open": "Megnyitás az Előzményekben",
-    "history_none": "Nincs előzmény"
+    "history_none": "Nincs előzmény",
+    "valve": "Szelep",
+    "window": "Ablak",
+    "door": "Ajtó",
+    "battery": "Elem"
   }
 }

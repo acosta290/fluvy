@@ -3,7 +3,6 @@ import {
   isUsable,
   localize,
   readText,
-  stateText,
   writeText,
   type EntityView,
   type FluvyCardConfig,
@@ -17,6 +16,7 @@ import {
   decimalsOf,
   head,
   label,
+  LOW_BATTERY,
   options,
   readout,
   rulerLabels,
@@ -39,20 +39,24 @@ import { Card, type CardEditor, type ControlHost } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
-import { HeadFit } from '../energy/head.js';
+import { HeadFit, type FittedHead } from '../energy/head.js';
 import { optionCell, optionColumnsFor, optionsHold, valuesHeld } from '../shared/options.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import type { WhenOff } from '../shared/config.js';
 import { chipRow } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
+import { degrees, doing, setpoint, type Doing } from './doing.js';
+import { batteryLevel, humidityOf, valveOf, windowBy, type ReadingsAsk } from './readings.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
 export type RowStyle = 'chips' | 'full';
 
-export interface ThermostatCardConfig extends FluvyCardConfig {
+export interface ThermostatCardConfig extends FluvyCardConfig, ReadingsAsk {
   /** The line under the name; empty hides it. Default: the area (left out where it is the name) and the humidity. */
   subtitle?: string;
+  /** The word for what it is doing, in the head (default); hidden, nothing says it. */
+  show_state?: boolean;
   /**
    * A picture of the person's own in the circle's place (#99): an address, or an entity whose picture it is (an air
    * conditioner's product picture, `image.living_ac`). The circle's glyph where it cannot be read.
@@ -79,16 +83,6 @@ export interface ThermostatCardConfig extends FluvyCardConfig {
   when_off?: WhenOff;
 }
 
-/** What a thermostat is doing, as its head says it. */
-export interface Doing {
-  /** The word: Home Assistant's own where Fluvy speaks the page's language, else Fluvy's. */
-  readonly text: string;
-  /** Fluvy's word where Home Assistant's is said: what a line too narrow for that one says. */
-  readonly short?: string;
-  /** The tone the word wears: its action's, never its mode's — idle and off are quiet. */
-  readonly tone: Tone;
-}
-
 /** A thermostat as its card and its details sheet draw it. */
 export interface ThermostatModel {
   readonly kind: 'climate' | 'water_heater' | 'humidifier';
@@ -108,6 +102,7 @@ export interface ThermostatModel {
   readonly canRange: boolean;
   readonly canOff: boolean;
   readonly arc: DialArc;
+  /** What it is doing, as its head says it (`doing`). */
   readonly doing: Doing;
   /** Every mode the entity offers, in `modeOrder`. */
   readonly modes: readonly OptionItem[];
@@ -148,21 +143,6 @@ const MODE_TONE: Record<string, Tone> = {
   fan_only: 'fan',
   off: 'neutral',
 };
-/**
- * The tone an action's word wears, by what Home Assistant calls it (a climate's `hvac_action`, a humidifier's
- * `action`): what the device is doing, whatever mode it is in. Idle and off are quiet.
- */
-const ACTION_TONE: ReadonlyMap<string, Tone> = new Map([
-  ['preheating', 'heat'],
-  ['heating', 'heat'],
-  ['defrosting', 'heat'],
-  ['cooling', 'cool'],
-  ['drying', 'dry'],
-  ['fan', 'fan'],
-  ['humidifying', 'water'],
-  ['idle', 'neutral'],
-  ['off', 'neutral'],
-]);
 /** A climate's modes, in Home Assistant's order: the card draws them so, and has a word for each. */
 export const MODE_ORDER = ['off', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'];
 /** A climate's `supported_features` bit for a low and a high end. */
@@ -250,12 +230,6 @@ const rememberSetpoint = (entityId: string, mode: string, value: string): void =
 const recallSetpoint = (entityId: string, mode: string): string =>
   readText(`fluvy:setpoint:${entityId}:${mode}`);
 
-function degrees(hass: HomeAssistant | undefined, value: number | undefined, step: number): string {
-  if (value === undefined) return '';
-  const digits = step < 1 ? 1 : 0;
-  return `${formatNumber(hass, value, { digits, minDigits: digits })}°`;
-}
-
 /**
  * What reading a thermostat asks of whoever draws it (its card, its details sheet): the house in the language Fluvy
  * speaks and as the page has it, the state it shows (the expected one while a change is in flight), and the modes it
@@ -266,31 +240,8 @@ export interface ThermostatHost {
   readonly rawHass: HomeAssistant | undefined;
   state(view: EntityView): string;
   readonly modes?: readonly string[] | undefined;
-}
-
-/**
- * What an action is called (`attribute`: a climate's `hvac_action`, a humidifier's `action`), and the tone it wears:
- * Home Assistant's own word where Fluvy speaks the page's language (the integration's, where it has one), else
- * Fluvy's for the nine Home Assistant knows, else the action, tidied; one that is none of the nine wears `tone`.
- */
-function acting(
-  host: ThermostatHost,
-  view: EntityView,
-  attribute: string,
-  action: string,
-  tone: Tone,
-): Doing {
-  const known = ACTION_TONE.get(action);
-  const short = known
-    ? localize(host.hass, `climate.action.${action}` as MessageKey)
-    : pretty(action);
-  const stateObj = view.stateObj;
-  const said =
-    stateObj &&
-    haWord(host.rawHass, action, (h) =>
-      h.formatEntityAttributeValue?.(stateObj, attribute, action),
-    );
-  return { text: said ?? short, ...(said && said !== short ? { short } : {}), tone: known ?? tone };
+  /** What it is asked to say beyond its action (`doing`): nothing, where its card asks nothing. */
+  readonly ask?: ReadingsAsk | undefined;
 }
 
 /**
@@ -319,7 +270,6 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
     const on = state === 'on';
     const mode = view.attr<string>('mode');
     const target = num('humidity');
-    const action = view.attr<unknown>('action');
     return {
       kind: 'humidifier',
       tone: 'water',
@@ -336,10 +286,7 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
       canRange: false,
       canOff: true,
       arc: 'to-target',
-      doing:
-        typeof action === 'string' && action
-          ? acting(host, view, 'action', action, 'water')
-          : { text: stateText(host.hass, view), tone: off ? 'neutral' : 'water' },
+      doing: doing(host, view, state, off ? 'neutral' : 'water', host.ask),
       modes: modes.map((m): OptionItem =>
         m === 'off'
           ? {
@@ -391,7 +338,7 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
       canRange: false,
       canOff: modes.includes('off'),
       arc: 'to-target',
-      doing: { text: stateText(host.hass, view), tone: off ? 'neutral' : 'heat' },
+      doing: doing(host, view, state, off ? 'neutral' : 'heat', host.ask),
       modes: modes.map((m): OptionItem => ({
         key: m,
         label: word(m),
@@ -431,10 +378,8 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
             ? 'accent'
             : 'heat';
   const target = num('temperature');
-  const setpoint = isRange
-    ? `${degrees(host.hass, low, 1).replace('°', '')}–${degrees(host.hass, high, 1)}`
-    : degrees(host.hass, target, step);
-  if (!off && view.status === 'ok') rememberSetpoint(view.id, state, setpoint);
+  const set = setpoint(host.hass, view, state);
+  if (!off && view.status === 'ok') rememberSetpoint(view.id, state, set);
   return {
     kind: 'climate',
     tone,
@@ -459,14 +404,7 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
         : state === 'fan_only' || state === 'dry'
           ? 'none'
           : 'to-target',
-    // what it is doing where it says so, in that action's tone; else the mode it is in, in the mode's
-    doing:
-      typeof action === 'string' && action
-        ? acting(host, view, 'hvac_action', action, tone)
-        : {
-            text: off ? localize(host.hass, 'climate.mode.off') : stateText(host.hass, view),
-            tone,
-          },
+    doing: doing(host, view, state, tone, host.ask),
     modes: modes.map((m): OptionItem => ({
       key: m,
       label: word(m),
@@ -474,7 +412,7 @@ export function thermostatModel(host: ThermostatHost, view: EntityView): Thermos
         m === state
           ? m === 'off'
             ? localize(host.hass, 'climate.standby')
-            : setpoint
+            : set
           : m === 'off'
             ? ''
             : recall(m),
@@ -535,6 +473,20 @@ export function chooseMode(
 }
 
 /**
+ * A head's line with the warnings it begins with in the warning ink (a low battery, a window open where the word leads
+ * the line): `warnings` in the order the line may begin with them; the line as it is where it begins with none.
+ */
+function warned(sub: string, warnings: readonly string[]): string | TemplateResult {
+  let lead = 0;
+  for (const warning of warnings.filter(Boolean)) {
+    const next = sub.slice(lead && lead + 3);
+    if (next !== warning && !next.startsWith(`${warning} · `)) break;
+    lead += (lead && 3) + warning.length;
+  }
+  return lead ? html`<span class="cl-warn">${sub.slice(0, lead)}</span>${sub.slice(lead)}` : sub;
+}
+
+/**
  * Thermostat, water heater and humidifier on one card: the dial with its knob on the ring (two for a
  * heat/cool range), the measured value as a dot outside it, the stepper, then the modes as option
  * tiles and presets / fan speeds as chips. Every null the integrations send is survived.
@@ -556,6 +508,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       .is-narrow .fv-option__value {
         font-size: 14px;
         letter-spacing: -0.01em;
+      }
+      /* what the head's line warns of (a low battery, an open window) before the rest of it */
+      .cl-warn {
+        color: var(--fluvy-warning);
       }
     `,
   ];
@@ -612,9 +568,70 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         rawHass: this.rawHass,
         state: (shown) => this.stateOf(shown),
         modes: this.config?.modes,
+        ask: this.config,
       },
       view,
     );
+  }
+
+  /**
+   * The head fitted to its column: the name over its line, and what the thermostat is doing as its badge — the word,
+   * and beside it how far its valve is open where the card asks ("Heating · 42 %"). The line leads with a low battery
+   * where the card asks ("Battery 8 %", in the warning ink), then says the card's own (`subtitle`), else the area
+   * where it says more than the name ("Garderobe / Garderobe" said it twice) and the room's humidity. The word is
+   * never lost (#185): where its badge cannot stand beside the name and the line it steps down into the line, after
+   * the battery and before the rest, which gives way after it — Home Assistant's word to Fluvy's own where even alone
+   * it would not hold. What the line reads of other entities is watched while it reads them.
+   */
+  private fitHead(
+    view: EntityView,
+    m: ThermostatModel,
+    name: string,
+  ): FittedHead & { readonly line: string | TemplateResult } {
+    const ask: ReadingsAsk & Pick<ThermostatCardConfig, 'show_state'> = this.config ?? {};
+    const percent = (value: number): string => `${formatNumber(this.hass, value, { digits: 0 })} %`;
+    const valve = valveOf(this.hass, view, ask);
+    const battery = batteryLevel(this.hass, view, ask);
+    const humidity = humidityOf(this.hass, view, ask);
+    for (const read of [valve, battery, humidity, windowBy(this.hass, view, ask)])
+      this.follows(read?.entity);
+    this.follows(ask.state_entity);
+    const said = m.doing;
+    const shown = ask.show_state !== false;
+    // out of reach, the word is the state's alone
+    const figure = valve && isUsable(view) ? percent(valve.value) : '';
+    const low =
+      battery && battery.value <= LOW_BATTERY
+        ? this.t('climate.battery', { value: percent(battery.value) })
+        : '';
+    const own = this.subtitle(
+      [view.areaName === name ? '' : view.areaName, humidity ? `${percent(humidity.value)} RH` : '']
+        .filter(Boolean)
+        .join(' · '),
+    );
+    const led = (...first: readonly string[]): string =>
+      [low, ...first, own.sub.trim() && own.sub].filter(Boolean).join(' · ');
+    const width = this.contentWidth;
+    let fitted = this.head.fit({
+      width,
+      title: name,
+      ...(low ? { sub: led() } : own),
+      badge: shown
+        ? { text: [said.text, figure].filter(Boolean).join(' · '), tone: said.tone }
+        : null,
+    });
+    const stepped = shown && fitted.badge === nothing;
+    if (stepped)
+      fitted = this.head.fit({
+        width,
+        title: name,
+        sub: led(said.text, figure),
+        shorter: said.short && !low ? [led(said.short, figure)] : [],
+      });
+    return {
+      ...fitted,
+      line: warned(fitted.sub, [low, stepped && said.tone === 'warning' ? said.text : '']),
+    };
   }
 
   private setTarget(view: EntityView, m: ThermostatModel, detail: DialChangeDetail): void {
@@ -864,18 +881,6 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const unusable = !isUsable(view);
     const m = this.model(view);
     const tone: Tone = unusable ? 'off' : m.tone;
-    const humidity = view.attr<number | null>('current_humidity');
-    // the area where it says more than the name ("Garderobe / Garderobe" said it twice), and the room's humidity
-    const line = this.subtitle(
-      [
-        view.areaName === name ? '' : view.areaName,
-        m.kind === 'climate' && typeof humidity === 'number'
-          ? `${formatNumber(this.hass, humidity, { digits: 0 })} % RH`
-          : '',
-      ]
-        .filter(Boolean)
-        .join(' · '),
-    );
     const isPct = m.unit === '%';
     const figure = (v: number): string =>
       formatNumber(this.hass, v, { digits: m.step < 1 ? 1 : 0, minDigits: m.step < 1 ? 1 : 0 });
@@ -892,25 +897,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
         ? `${formatNumber(this.hass, v, { digits: 0 })} %`
         : `${formatNumber(this.hass, v, { digits: 0 })}°`;
 
-    const doing: Doing = unusable ? { text: stateText(this.hass, view), tone: 'off' } : m.doing;
-    let fitted = this.head.fit({
-      width: this.contentWidth,
-      title: name,
-      ...line,
-      badge: { text: doing.text, tone: doing.tone },
-    });
-    // the word is never lost (1.21, #185): where its badge cannot stand beside the name and the line, it steps down
-    // into the line as its first segment, the rest giving way after it — Home Assistant's word to Fluvy's own where
-    // even alone it would not hold
-    if (fitted.badge === nothing) {
-      const led = (word: string): string => (line.sub.trim() ? `${word} · ${line.sub}` : word);
-      fitted = this.head.fit({
-        width: this.contentWidth,
-        title: name,
-        sub: led(doing.text),
-        shorter: doing.short ? [led(doing.short)] : [],
-      });
-    }
+    const fitted = this.fitHead(view, m, name);
     // out of reach, a mode, a preset and a fan speed keep their place at rest: the dashed tile or chip takes no tap
     const modes = this.shownModes(m).map((o) => (unusable ? { ...o, unavailable: true } : o));
     // the essentials while off: the head, the value and the modes stay; presets and fan speeds wait for a mode
@@ -922,7 +909,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       class="fv-card cl-card ${unusable ? 'is-unavailable is-off' : ''} ${this.contentWidth < 292 ? 'is-narrow' : ''}"
       data-card
     >
-      ${head({ icon: fitted.icon ? iconOf(view, this.config?.icon) : null, picture: this.pictures.shown(imageOf(this.hass, this.config?.image)), pictureFailed: this.pictures.failed, tone, title: name, sub: fitted.sub, trailing: fitted.badge, name: true, cut: fitted.cut, ...this.headActions(view.id) })}
+      ${head({ icon: fitted.icon ? iconOf(view, this.config?.icon) : null, picture: this.pictures.shown(imageOf(this.hass, this.config?.image)), pictureFailed: this.pictures.failed, tone, title: name, sub: fitted.line, trailing: fitted.badge, name: true, cut: fitted.cut, ...this.headActions(view.id) })}
       ${
         this.variant() !== 'dial'
           ? this.renderValueRow(view, m, name, unusable, figure, edge, now)

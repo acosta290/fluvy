@@ -8,6 +8,10 @@
     "sound_mode": "Sound mode",
     "history": "Last 24 hours",
     "history_open": "Open in History",
-    "history_none": "No history"
+    "history_none": "No history",
+    "valve": "Valve",
+    "window": "Window",
+    "door": "Door",
+    "battery": "Battery"
   }
 }

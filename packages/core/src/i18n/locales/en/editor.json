@@ -205,6 +205,17 @@
     "gauge": "Gauge",
     "slider_style": "Slider style",
     "slider_style_helper": "Untouched: every slider’s, from Fluvy’s settings",
-    "slider_words": "Words under it"
+    "slider_words": "Words under it",
+    "doing": "What it is doing",
+    "show_state": "Show what it is doing",
+    "state_entity": "Action read from",
+    "state_entity_helper": "For a thermostat that says no action: a sensor or a switch that does",
+    "show_valve": "Show the valve’s opening",
+    "valve_entity": "Valve",
+    "valve_attribute": "Valve attribute",
+    "show_window": "Show an open window",
+    "window_entity": "Window",
+    "show_low_battery": "Warn of a low battery",
+    "found_helper": "Empty: found on its device"
   }
 }

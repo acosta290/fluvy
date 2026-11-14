@@ -3,6 +3,7 @@ import {
   areaContents,
   areaEntities,
   deviceNameOf,
+  idsOf,
   lightDefaults,
   resolveEntity,
   type ClimateKind,
@@ -14,6 +15,7 @@ import { configKeys } from '../shared/config.js';
 import {
   accentField,
   actionFields,
+  acts,
   areaField,
   boolField,
   choiceField,
@@ -25,10 +27,12 @@ import {
   formLabels,
   iconField,
   lightColourFields,
+  listed,
   nameIconFields,
   nameLinesField,
   onlyWhen,
   selectField,
+  showActionField,
   showIconField,
   sinceChoices,
   switches,
@@ -64,6 +68,16 @@ const drawsLights = (form: Readonly<Record<string, unknown>>): boolean =>
 /** …its category rows. */
 const drawsRows = ({ variant, controls }: Readonly<Record<string, unknown>>): boolean =>
   variant !== 'row' && (controls ?? 'rows') === 'rows';
+
+/**
+ * …a thermostat that may say what it is doing: its climate row's, or a tile's of its own (a climate or a humidifier).
+ */
+const holdsThermostat = (form: Readonly<Record<string, unknown>>, hass?: HomeAssistant): boolean =>
+  drawsRows(form)
+    ? Boolean(hass?.states) &&
+      areaEntities(hass as HomeAssistant, String(form['area'] ?? ''), { domains: ['climate'] })
+        .length > 0
+    : drawsTiles(form) && idsOf(listed(form, 'tiles')).some(acts);
 
 /** …its quick actions. */
 const drawsQuick = ({ show_quick_actions: shown }: Readonly<Record<string, unknown>>): boolean =>
@@ -115,6 +129,7 @@ export const keys = configKeys<RoomCardConfig>()([
   'readout_labels',
   'show_quick_actions',
   'show_arrow',
+  'show_action',
   'controls',
   'tiles',
   'quick_actions',
@@ -157,7 +172,15 @@ const ENTITY_ITEM: readonly HaFormSchemaItem[] = [
  */
 const ownField = (key: string): boolean => key !== 'unavailable' && key !== 'show_switch';
 const TILE_FIELDS = (tilesLists[0]?.schema ?? []).filter((field) => ownField(field.name));
-const TILE_FIELDS_NO_SWITCH = TILE_FIELDS.filter((field) => field.name !== 'switch_style');
+/** A tile's fields by what its entity is: one that switches has its switch's style, a thermostat what it is doing. */
+const TILE_FORMS = [false, true].map((styled) =>
+  [false, true].map((acting) =>
+    TILE_FIELDS.filter(
+      (field) =>
+        (styled || field.name !== 'switch_style') && (acting || field.name !== 'show_action'),
+    ),
+  ),
+);
 
 export const lists: readonly RowsListSpec[] = [
   {
@@ -165,8 +188,9 @@ export const lists: readonly RowsListSpec[] = [
     title: 'editor.tiles',
     keys: (tilesLists[0]?.keys ?? []).filter(ownField),
     schema: TILE_FIELDS,
-    // a tile's own switch style, of an entity that switches
-    schemaOf: (item) => (switches(item['entity']) ? TILE_FIELDS : TILE_FIELDS_NO_SWITCH),
+    // a tile's own switch style, of an entity that switches; what it is doing, of a climate or a humidifier
+    schemaOf: (item) =>
+      TILE_FORMS[Number(switches(item['entity']))]?.[Number(acts(item['entity']))] ?? TILE_FIELDS,
     when: drawsTiles,
   },
   {
@@ -265,6 +289,7 @@ export const defaults: EditorDefaults = (config, hass) => {
     readout_labels: 'auto',
     show_quick_actions: true,
     show_arrow: true,
+    show_action: false,
     quick_actions: defaultGroups({ hass, devices, lights }),
     lights,
     tint: 'on',
@@ -314,6 +339,8 @@ export function getConfigForm(): LovelaceConfigForm {
         ),
       ),
       fieldRow(boolField('show_quick_actions'), onlyWhen(drawsArrows, boolField('show_arrow'))),
+      // its climate row and its thermostats' tiles say what they are doing, where they said their mode
+      onlyWhen(holdsThermostat, showActionField()),
       // the list is edited item by item (the rows editor takes the field out of the form)
       { name: 'quick_actions', selector: { object: {} } },
       // a picture is the photo's alone (the default where the room has one)

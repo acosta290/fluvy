@@ -229,10 +229,11 @@ const VACUUM =
   /\/packages\/(cards\/src\/(vacuum-cards\.ts|vacuum\/)|core\/src\/i18n\/locales\/en\/vacuum\.json)/;
 
 /**
- * The Thermostat card (the climate's, the water heater's and the humidifier's card and its rules; its editor goes with
- * the forms, its words are core's: the gauge and the schedules say some of them): fetched as the bundle starts and
- * defined as it lands, as the Vacuum card is (`climate-family.ts` stays in core: the name, the height). It left core
- * in 1.21.
+ * The Thermostat card (the climate's, the water heater's and the humidifier's card and its rules, what says what a
+ * thermostat is doing and what it reads of its valve, its window and its battery, #185; its editor goes with the
+ * forms, its words are core's: the gauge and the schedules say some of them): fetched as the bundle starts and
+ * defined as it lands, as the Vacuum card is (`climate-family.ts` stays in core: the name, the height, and the way to
+ * that reading for a tile and a room's row asked to say it). It left core in 1.21.
  */
 const CLIMATE =
   /\/packages\/(cards\/src\/(climate-cards\.ts|thermostat\/)|ui\/src\/styles\/(generated\/)?climate\.ts)/;

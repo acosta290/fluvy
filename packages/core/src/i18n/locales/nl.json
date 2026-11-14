@@ -93,7 +93,10 @@
     "high": "Hoog",
     "action.preheating": "Verwarmt voor",
     "action.defrosting": "Ontdooit",
-    "action.humidifying": "Bevochtigt"
+    "action.humidifying": "Bevochtigt",
+    "window_open": "Raam open",
+    "door_open": "Deur open",
+    "battery": "Batterij {value}"
   },
   "cover": {
     "position": "Positie",
@@ -604,7 +607,18 @@
     "gauge": "Meter",
     "slider_style": "Stijl van de schuifregelaar",
     "slider_style_helper": "Onaangeroerd: die van alle schuifregelaars, uit de instellingen van Fluvy",
-    "slider_words": "Waarden eronder"
+    "slider_words": "Waarden eronder",
+    "doing": "Wat het doet",
+    "show_state": "Tonen wat het doet",
+    "state_entity": "Actie gelezen uit",
+    "state_entity_helper": "Voor een thermostaat die geen actie meldt: een sensor of schakelaar die dat wel doet",
+    "show_valve": "Klepopening tonen",
+    "valve_entity": "Klep",
+    "valve_attribute": "Klepattribuut",
+    "show_window": "Open raam tonen",
+    "window_entity": "Raam",
+    "show_low_battery": "Lage batterij melden",
+    "found_helper": "Leeg: gezocht op het apparaat"
   },
   "strategy": {
     "home": "Thuis",
@@ -1539,7 +1553,10 @@
     "charts.deleted": "Set verwijderd",
     "charts.light": "Licht",
     "charts.dark": "Donker",
-    "charts.preview_sub": "Je grafieken met deze instellingen"
+    "charts.preview_sub": "Je grafieken met deze instellingen",
+    "dashboard.thermostat_state": "Status van thermostaten",
+    "dashboard.brief": "Kort",
+    "dashboard.detailed": "Uitgebreid"
   },
   "customise": {
     "title": "Aanpassen",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Geluidsmodus",
     "history": "Laatste 24 uur",
     "history_open": "Openen in Geschiedenis",
-    "history_none": "Geen geschiedenis"
+    "history_none": "Geen geschiedenis",
+    "valve": "Klep",
+    "window": "Raam",
+    "door": "Deur",
+    "battery": "Batterij"
   }
 }

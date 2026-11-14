@@ -93,7 +93,10 @@
     "high": "Haut",
     "action.preheating": "Préchauffe",
     "action.defrosting": "Dégivre",
-    "action.humidifying": "Humidifie"
+    "action.humidifying": "Humidifie",
+    "window_open": "Fenêtre ouverte",
+    "door_open": "Porte ouverte",
+    "battery": "Batterie {value}"
   },
   "cover": {
     "position": "Position",
@@ -604,7 +607,18 @@
     "gauge": "Jauge",
     "slider_style": "Style du curseur",
     "slider_style_helper": "Inchangé, celui de tous les curseurs dans les réglages de Fluvy",
-    "slider_words": "Repères dessous"
+    "slider_words": "Repères dessous",
+    "doing": "Ce qu'il fait",
+    "show_state": "Afficher ce qu'il fait",
+    "state_entity": "Action lue depuis",
+    "state_entity_helper": "Pour un thermostat qui n'indique pas son action : un capteur ou un interrupteur qui l'indique",
+    "show_valve": "Afficher l'ouverture de la vanne",
+    "valve_entity": "Vanne",
+    "valve_attribute": "Attribut de la vanne",
+    "show_window": "Afficher une fenêtre ouverte",
+    "window_entity": "Fenêtre",
+    "show_low_battery": "Signaler une batterie faible",
+    "found_helper": "Vide, recherché sur son appareil"
   },
   "strategy": {
     "home": "Accueil",
@@ -1539,7 +1553,10 @@
     "charts.deleted": "Jeu retiré",
     "charts.light": "Clair",
     "charts.dark": "Sombre",
-    "charts.preview_sub": "Vos graphiques avec ces réglages"
+    "charts.preview_sub": "Vos graphiques avec ces réglages",
+    "dashboard.thermostat_state": "État des thermostats",
+    "dashboard.brief": "Bref",
+    "dashboard.detailed": "Détaillé"
   },
   "customise": {
     "title": "Personnaliser",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Mode sonore",
     "history": "Dernières 24 heures",
     "history_open": "Ouvrir dans l’Historique",
-    "history_none": "Aucun historique"
+    "history_none": "Aucun historique",
+    "valve": "Vanne",
+    "window": "Fenêtre",
+    "door": "Porte",
+    "battery": "Batterie"
   }
 }

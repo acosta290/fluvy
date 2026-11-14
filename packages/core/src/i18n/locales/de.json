@@ -93,7 +93,10 @@
     "high": "Hoch",
     "action.preheating": "Heizt vor",
     "action.defrosting": "Taut ab",
-    "action.humidifying": "Befeuchtet"
+    "action.humidifying": "Befeuchtet",
+    "window_open": "Fenster offen",
+    "door_open": "Tür offen",
+    "battery": "Batterie {value}"
   },
   "cover": {
     "position": "Position",
@@ -604,7 +607,18 @@
     "gauge": "Anzeige",
     "slider_style": "Schieberegler-Stil",
     "slider_style_helper": "Unverändert: der aller Schieberegler aus den Fluvy-Einstellungen",
-    "slider_words": "Werte darunter"
+    "slider_words": "Werte darunter",
+    "doing": "Was es gerade tut",
+    "show_state": "Zeigen, was es tut",
+    "state_entity": "Aktion gelesen aus",
+    "state_entity_helper": "Für einen Thermostat, der keine Aktion meldet: ein Sensor oder Schalter, der sie meldet",
+    "show_valve": "Ventilöffnung zeigen",
+    "valve_entity": "Ventil",
+    "valve_attribute": "Ventil-Attribut",
+    "show_window": "Offenes Fenster zeigen",
+    "window_entity": "Fenster",
+    "show_low_battery": "Schwache Batterie melden",
+    "found_helper": "Leer: auf dem Gerät gesucht"
   },
   "strategy": {
     "home": "Zuhause",
@@ -1539,7 +1553,10 @@
     "charts.deleted": "Satz entfernt",
     "charts.light": "Hell",
     "charts.dark": "Dunkel",
-    "charts.preview_sub": "Deine Diagramme mit diesen Einstellungen"
+    "charts.preview_sub": "Deine Diagramme mit diesen Einstellungen",
+    "dashboard.thermostat_state": "Zustand der Thermostate",
+    "dashboard.brief": "Kurz",
+    "dashboard.detailed": "Ausführlich"
   },
   "customise": {
     "title": "Anpassen",
@@ -3213,6 +3230,10 @@
     "sound_mode": "Klangmodus",
     "history": "Letzte 24 Stunden",
     "history_open": "Im Verlauf öffnen",
-    "history_none": "Kein Verlauf"
+    "history_none": "Kein Verlauf",
+    "valve": "Ventil",
+    "window": "Fenster",
+    "door": "Tür",
+    "battery": "Batterie"
   }
 }

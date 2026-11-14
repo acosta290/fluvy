@@ -1,9 +1,16 @@
 import { formatNumber, type EntityView, type MessageKey } from '@fluvy/core';
-import { label, type DialChangeDetail, type IconRef, type Tone } from '@fluvy/ui';
+import { label, LOW_BATTERY, type DialChangeDetail, type IconRef, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { Burst, Hold } from '../cover/common.js';
 import { chipRow } from '../shared/chips.js';
 import { modeWord } from '../shared/mode-words.js';
+import {
+  batteryLevel,
+  humidityOf,
+  valveOf,
+  windowBy,
+  type ReadingsAsk,
+} from '../thermostat/readings.js';
 import {
   chooseMode,
   defaultModes,
@@ -14,7 +21,7 @@ import {
 } from '../thermostat/thermostat-card.js';
 import type { DaySpec } from './history.js';
 import { keys, listAttr, sheetRows, type SheetRow } from './parts.js';
-import { DetailsSheet, type Status } from './sheet.js';
+import { DetailsSheet, type DetailsConfig, type LiveHass, type Status } from './sheet.js';
 
 /** A row of options a climate may have beside its modes: where it lists them, where it says the one chosen, its service. */
 interface Row {
@@ -60,6 +67,24 @@ const sameTarget = (a: DialChangeDetail | null, b: DialChangeDetail | null): boo
   a?.value === b?.value && a?.low === b?.low && a?.high === b?.high;
 
 /**
+ * What the card that opened a sheet asks to be said of its thermostat (1.21, #185): a Thermostat card's own keys; a
+ * tile's `show_action` (its own, else its group's or its room's), which reads the window as the tile does. Nothing
+ * where the card asks nothing.
+ */
+function askOf(card: unknown, entityId: string | undefined): ReadingsAsk {
+  const config = (card as { readonly config?: Readonly<Record<string, unknown>> } | undefined)
+    ?.config;
+  if (!config) return {};
+  if (String(config['type']).endsWith('fluvy-thermostat-card')) return config;
+  const tiles: readonly unknown[] = Array.isArray(config['tiles']) ? config['tiles'] : [];
+  const tile = tiles.find(
+    (item): item is Readonly<Record<string, unknown>> =>
+      typeof item === 'object' && item !== null && 'entity' in item && item.entity === entityId,
+  );
+  return (tile?.['show_action'] ?? config['show_action']) === true ? { show_window: true } : {};
+}
+
+/**
  * A thermostat's details — a climate's, a water heater's, a humidifier's, read as the thermostat card reads them: the
  * target on the dial (a low and a high for a range), what it measures as a dot outside the ring and under the figure;
  * one step down and one up under it; its modes as chips, each with its glyph; then its preset, its fan speed and its
@@ -81,6 +106,19 @@ export class FluvyDetailsClimate extends DetailsSheet {
     for (const hold of this.chosen.values()) hold.clear();
   }
 
+  /** What the card that opened the sheet asks to be said of the thermostat (`askOf`); its own config's, docked. */
+  private ask: ReadingsAsk = {};
+
+  override setConfig(config: DetailsConfig & ReadingsAsk): void {
+    super.setConfig(config);
+    this.ask = config;
+  }
+
+  override open(openedBy?: HTMLElement, source?: LiveHass): void {
+    this.ask = askOf(source, this.config?.entity);
+    super.open(openedBy, source);
+  }
+
   /** The thermostat read once for each view of it: a render asks for it from every part of the sheet. */
   private read: { readonly view: EntityView; readonly model: ThermostatModel } | undefined;
 
@@ -89,11 +127,20 @@ export class FluvyDetailsClimate extends DetailsSheet {
       this.read = {
         view,
         model: thermostatModel(
-          { hass: this.hass, rawHass: this.rawHass, state: (shown) => this.stateOf(shown) },
+          {
+            hass: this.hass,
+            rawHass: this.rawHass,
+            state: (shown) => this.stateOf(shown),
+            ask: this.ask,
+          },
           view,
         ),
       };
     return this.read.model;
+  }
+
+  private percent(value: number): string {
+    return `${formatNumber(this.hass, value, { digits: 0 })} %`;
   }
 
   protected tone(view: EntityView): Tone {
@@ -104,18 +151,70 @@ export class FluvyDetailsClimate extends DetailsSheet {
     return !this.model(view).off;
   }
 
-  /** What it is doing, and the room's humidity where a climate measures it: "Heating · 46 % RH". */
+  /**
+   * What it is doing, as its card says it (how far its valve is open beside the word, where the card asks), and the
+   * room's humidity where a climate measures it: "Heating · 42 % · 46 % RH".
+   */
   protected status(view: EntityView): Status {
-    const m = this.model(view);
-    const humidity = view.attr<number | null>('current_humidity');
+    const valve = valveOf(this.hass, view, this.ask);
+    const humidity = humidityOf(this.hass, view, this.ask);
+    this.follows(this.ask.state_entity);
+    this.follows(humidity?.entity);
     return {
       parts: [
-        m.doing.text,
-        m.kind === 'climate' && typeof humidity === 'number'
-          ? `${formatNumber(this.hass, humidity, { digits: 0 })} % RH`
-          : '',
+        this.model(view).doing.text,
+        valve ? this.percent(valve.value) : '',
+        humidity ? `${this.percent(humidity.value)} RH` : '',
       ],
     };
+  }
+
+  /**
+   * What the opening card asked to be read, a row each where it is known: how far the valve is open, the window or the
+   * door by it (open, in the warning ink), the battery (low, in the warning ink). What they read is followed.
+   */
+  private readings(view: EntityView, unusable: boolean): SheetRow[] {
+    const valve = valveOf(this.hass, view, this.ask);
+    const window = windowBy(this.hass, view, this.ask);
+    const battery = batteryLevel(this.hass, view, this.ask);
+    for (const read of [valve, window, battery]) this.follows(read?.entity);
+    const row = (icon: IconRef, title: string, value: string, ink = ''): SheetRow => ({
+      kind: 'control',
+      icon,
+      title,
+      disabled: unusable,
+      control: html`<span class="fv-row__value ${ink}">${value}</span>`,
+      end: this.ruler.width('fv-row__value', value),
+    });
+    return [
+      ...(valve ? [row('drop', this.t('sheets.valve'), this.percent(valve.value))] : []),
+      ...(window
+        ? [
+            row(
+              window.door
+                ? window.open
+                  ? 'doorOpen'
+                  : 'door'
+                : window.open
+                  ? 'windowOpen'
+                  : 'window',
+              this.t(window.door ? 'sheets.door' : 'sheets.window'),
+              this.t(window.open ? 'common.open' : 'common.closed'),
+              window.open ? 'fv-row__value--warning' : 'fv-row__value--quiet',
+            ),
+          ]
+        : []),
+      ...(battery
+        ? [
+            row(
+              'battery',
+              this.t('sheets.battery'),
+              this.percent(battery.value),
+              battery.value <= LOW_BATTERY ? 'fv-row__value--warning' : '',
+            ),
+          ]
+        : []),
+    ];
   }
 
   /** The day's line is what it measures: the room's temperature, the tank's, the air's humidity. */
@@ -283,7 +382,10 @@ export class FluvyDetailsClimate extends DetailsSheet {
             )}`
           : nothing
       }
-      ${sheetRows(this.ruler, this.room, m.kind === 'climate' ? this.rows(view, unusable) : [])}`;
+      ${sheetRows(this.ruler, this.room, [
+        ...this.readings(view, unusable),
+        ...(m.kind === 'climate' ? this.rows(view, unusable) : []),
+      ])}`;
   }
 }
 

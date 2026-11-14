@@ -440,6 +440,49 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   family's rows: as many equal columns as hold every label and figure, the last readout across a shorter last row,
   never a cut "Remaining".
 
+## Thermostat: what it is doing (1.21, #185)
+
+One reading (`doing()`, `thermostat/doing.ts`, in the Thermostat card's chunk) for everything that says what a
+thermostat is doing: its card's head, its tile, a room's climate row and its details sheet. In order: out of reach (the state's word, the off skin); a window or
+a door open (the warning tone); what else holds the heating back (Better Thermostat's own word, neutral); the action
+(`hvac_action`, a humidifier's `action`, or another entity's state), in the action's tone; else the mode, in the
+mode's. The word is Home Assistant's where Fluvy speaks the page's language, and Fluvy's own is kept as its short
+form for a line that holds no more.
+
+- **Nothing new by itself.** A card says the action and nothing else until it is asked: the valve (`show_valve`,
+  `valve_entity`, `valve_attribute`), the window (`show_window`, `window_entity`), the battery (`show_battery`,
+  `battery_entity`), the action or the humidity from another entity (`state_entity`, `humidity_entity`); a tile and a
+  room's row say their mode until `show_action`. What is asked for and not named is found, on the climate itself, on
+  its own device, or on the valves a Better Thermostat drives; nothing found, nothing said. A number among a device's
+  settings is never taken for a reading.
+- **No new rows.** Everything stands in the head: `thermostatHeight` reads none of these keys.
+- **The badge** is the word and, beside it, how far the valve is open: "Heating · 42 %", "Idle · 0 %", one pill in the
+  word's tone. "Window open" wears the warning's fill. Out of reach the figure goes: the state's word alone.
+- **The line** leads with a low battery (20 % or less, `LOW_BATTERY`: "Battery 8 %") in the warning ink
+  (`--fluvy-warning`, as a row's warning value), then the card's own (`subtitle`), else the area and the humidity.
+  Where the badge steps down (§ Header pattern) the word stands after the battery and before the rest, a warning
+  word in the warning ink too: "Battery 8 % · Window open". What follows gives way from its end; in a line that holds
+  only one of them the battery stays and the word waits, since a valve whose battery ends does nothing at all.
+- **Hidden** (`show_state: false`): no badge and no word in the line; a low battery is still said.
+- **A tile** (`show_action`): its line is the word and what it is set to ("Heating · 21.5°", "Idle · 21.5°"), the
+  word alone while a window is open or it is off; what does not hold gives way by parts — what it is set to, then the
+  word to Fluvy's own, then to the mode — never a cut and never nothing. A large climate tile ends its head with what
+  it measures ("20.8 °C", a sensor tile's figure) where it said its mode. Its fill stays its mode's: idle, a heating
+  thermostat's tile is still the heat's.
+- **A room's climate row** (`show_action`): the same line, fitted to the row. A tile and a row are every page's, the
+  reading the Thermostat card's chunk's, fetched as the bundle starts (`doingReading`): until it has landed they say
+  their mode, in the same box, and draw again as it lands.
+- **The details sheet** says the same word, the valve's figure after it, and a row for each reading the card that
+  opened it asked for, between the modes and the options: Valve (`drop`), Window or Door (its glyph open or shut;
+  "Open" in the warning ink, "Closed" quiet), Battery (`battery`; low, in the warning ink). They are readings: 60 rows
+  with a value at their end, no chevron and no tap.
+- **The editor**: one folded group, "What it is doing", on the Thermostat card: the word's switch, then each reading's
+  switch beside its sensor's picker, which shows what was found while none is named ("Empty: found on its device").
+  What cannot act is not shown: a valve and a window are a climate's, the word's options the word's. A tile's switch
+  shows for a climate or a humidifier alone; in a group each such tile has its own, empty until chosen.
+- **The automatic dashboards**: one option, Thermostat state: Brief (the default, nothing written) · Detailed, which
+  writes `show_valve`, `show_window` and `show_battery` on the thermostats and `show_action` on the rooms.
+
 ## Clocks and calendar
 
 - Analog face = the ruler's ticks bent into a circle: majors R/10 in ink, minors R/20 in border-strong (majors only at R 56); hour hand 0.52 R inside the numerals, minute 0.85 R and second 0.88 R over the numerals to the tick ring, widths 6/4/2 (R ≥ 96) · 5/3/2 (72) · 4/3/2 (56), round caps; only the second hand carries a counterweight (cap radius + 8); the cap is the Fluvy knob without halo or lift, 28 / 20 / 16. Numerals 14/600 secondary at 0.75 R (12/600 at R 56). Plain clocks are accent; a weather clock takes the sky's tone (accent at night, solar by day). Digital time 64/72 at −0.03 em, tabular, ink pulled onto the column (−0.06 em, declared `data-align="optical"`); seconds or AM/PM as a 24 unit on the baseline; date 14/500 secondary — the full date in a 320 column, "Thu 17 Sep" in narrow columns and tiles.

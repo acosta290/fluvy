@@ -160,7 +160,8 @@ export interface HeadOptions {
   readonly lead?: TemplateResult;
   readonly tone?: Tone;
   readonly title: string;
-  readonly sub?: string;
+  /** The line under the title; a template where words of it wear an ink of their own (a thermostat's warnings). */
+  readonly sub?: string | TemplateResult;
   readonly trailing?: TemplateResult | typeof nothing;
   /**
    * The card's tap: the head is then the card's button — the title is a button whose overlay is stretched over the

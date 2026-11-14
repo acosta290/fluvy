@@ -35,7 +35,7 @@ import { APPLIANCES_FAMILY } from './appliances-family.js';
 import { AUTOMATIONS_FAMILY } from './automations-family.js';
 import { CALENDAR_FAMILY } from './calendar-family.js';
 import { CHART_FAMILY } from './chart-family.js';
-import { CLIMATE_FAMILY } from './climate-family.js';
+import { CLIMATE_FAMILY, loadDoing } from './climate-family.js';
 import { detailsSheets } from './details-family.js';
 import { DEVICES_FAMILY } from './devices-family.js';
 import { ENERGY_FAMILY, ENERGY_PERIOD_FAMILY, type FamilyEntry } from './energy-family.js';
@@ -275,14 +275,16 @@ for (const [entries] of FAMILIES)
   for (const [tag, name, description, height] of entries)
     announceCard({ tag, name, description }, height);
 /**
- * The families defined, the chart engine and the room's quick actions landed (what a test waits on before its page
- * goes; the bundle never waits): they are fetched with the families, so a core card's chart is drawn before its
- * history answers, and a room's quick actions with its first render.
+ * The families defined, the chart engine, the room's quick actions and what says what a thermostat is doing landed
+ * (what a test waits on before its page goes; the bundle never waits): they are fetched with the families, so a core
+ * card's chart is drawn before its history answers, a room's quick actions with its first render, and a tile asked
+ * what its thermostat is doing says so from its first.
  */
 export const familiesDefined: Promise<unknown> = Promise.all([
   ...FAMILIES.map(([, chunk]) => chunk()),
   loadChartEngine(),
   loadQuickActions(),
+  loadDoing(),
 ]);
 
 /** Every card with its element: the eager ones, then each family's (docs, tests), the chart engine landed. */

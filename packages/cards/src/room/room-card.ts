@@ -42,6 +42,7 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
 import { Crossfade } from '../shared/crossfade.js';
 import { counted } from '../shared/counted.js';
+import { doingReading } from '../climate-family.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
 import { sinceIds } from '../shared/since.js';
@@ -123,6 +124,11 @@ export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTunin
   show_quick_actions?: boolean;
   /** The arrows that say the room opens (default); hidden, the words have their room and a tap still opens it. */
   show_arrow?: boolean;
+  /**
+   * Its climate row says what the thermostat is doing and what it is set to ("Heating · 21.5°", "Window open"), where
+   * it says its mode, and so do its thermostats' tiles (#185); a tile may say its own.
+   */
+  show_action?: boolean;
   /**
    * The quick actions in order, as many as the width holds: the room's `lights`, `covers`, `fans` or `media` (a round
    * for each set), or an entity (default: its lights, then its blinds).
@@ -658,6 +664,12 @@ export class FluvyRoomCard extends FluvyTileCard {
     const to = this.destination();
     const lights = roomLights(this.room, ids);
     const climate = ids.find((id) => id.startsWith('climate.'));
+    const thermostat = climate ? this.entity(climate) : undefined;
+    // what it is doing where the card asks, once its reading has landed (the Thermostat card's chunk): a window
+    // sensor on its device is followed while it is read
+    const doing =
+      thermostat?.status === 'ok' && this.room?.show_action ? doingReading(this) : undefined;
+    if (doing && thermostat) this.follows(doing.windowSensor(this.hass, thermostat.id));
     const player = ids.find((id) => id.startsWith('media_player.'));
     const unavailable = ids.filter((id) => !isUsable(this.entity(id))).length;
     // every device's row where the room has one: a room of sensors alone has its readings and no rows
@@ -672,12 +684,14 @@ export class FluvyRoomCard extends FluvyTileCard {
             ] as const,
           ]
         : []),
-      ...(climate
+      ...(thermostat
         ? [
             [
               'thermo',
               this.t('room.climate'),
-              stateText(this.hass, this.entity(climate)),
+              doing
+                ? doing.doingLine(this, thermostat, this.stateOf(thermostat)).line
+                : stateText(this.hass, thermostat),
               'heat',
             ] as const,
           ]
@@ -724,6 +738,11 @@ export class FluvyRoomCard extends FluvyTileCard {
           )
         : undefined,
     );
+    // a line of several parts (what the thermostat is doing, and what it is set to) keeps what its row holds
+    const room = this.headFit.rowRoom(this.contentWidth, '', {
+      icon: keep,
+      end: to && this.arrows ? 44 : 0,
+    });
     return html`<div class="am-rows">
       ${rows.map(([glyph, title, sub, tone]) =>
         listRow({
@@ -731,7 +750,7 @@ export class FluvyRoomCard extends FluvyTileCard {
           tone,
           ...(tone === 'light' ? { tone: lightsTone, accent: this.accents.item(colour) } : {}),
           title,
-          sub,
+          sub: this.headFit.fitRowSub(sub, room),
           trailing: to && this.arrows ? 'chevron' : 'none',
           ...(to ? { onTap: () => this.open() } : {}),
         }),

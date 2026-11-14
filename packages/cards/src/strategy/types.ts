@@ -81,6 +81,12 @@ export interface FluvyStrategyConfig {
   hide?: readonly string[];
   /** The thermostats' variant (default: each card's own, the dial). */
   thermostat_variant?: ThermostatVariant;
+  /**
+   * What the thermostats say of what they are doing (1.21, #185): as each card does by itself (`brief`, the default),
+   * or with what is found for each (`detailed`) — how far its valve is open, an open window, a low battery — a room's
+   * climate row saying what its thermostat is doing and what it is set to.
+   */
+  thermostat_state?: 'brief' | 'detailed';
   /** The lights' tiles: large (default, with their ruler) or compact rows. */
   tile_size?: 'large' | 'compact';
   /**
@@ -263,6 +269,8 @@ export interface EnergyRoles {
 /** How the generated cards are drawn: the dashboard's options (fluvy's panel edits them). */
 export interface CardStyle {
   readonly thermostat?: ThermostatVariant;
+  /** The thermostats and the rooms' climate rows say what they are doing in full (`thermostat_state: detailed`). */
+  readonly doing?: boolean;
   readonly tiles?: 'large' | 'compact';
   readonly switches?: TileSwitch;
   readonly flow?: FlowStyle;

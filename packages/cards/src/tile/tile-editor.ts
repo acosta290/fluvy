@@ -6,6 +6,7 @@ import {
 } from '@fluvy/core';
 import {
   actionFields,
+  acts,
   askedSliderStyle,
   colourFields,
   drawsSwitch,
@@ -18,6 +19,7 @@ import {
   nameLinesField,
   onlyWhen,
   selectField,
+  showActionField,
   showSwitchField,
   sinceChoices,
   sinceField,
@@ -40,6 +42,7 @@ export const keys = configKeys<TileCardConfig>()([
   'name_lines',
   'show_switch',
   'switch_style',
+  'show_action',
   'readouts',
   'since',
   'tint',
@@ -52,6 +55,7 @@ export const defaults: EditorDefaults = () => ({
   name_lines: '1',
   show_switch: true,
   switch_style: 'toggle',
+  show_action: false,
   since: '',
   tint: 'on',
   light_colors: lightDefaults().colors,
@@ -90,6 +94,8 @@ export function getConfigForm(): LovelaceConfigForm {
       ),
       // its switch's style where it draws one: a large tile that shows it, a compact one's at its row's end
       onlyWhen(styled, switchStyleField()),
+      // a climate or a humidifier says what it is doing and what it is set to, where it said its mode
+      onlyWhen(({ entity }) => acts(entity), showActionField()),
       sinceField(),
       ...colourFields(),
       onlyWhen(tintsAtRest, tintField()),

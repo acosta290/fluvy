@@ -450,6 +450,9 @@
     "charts.deleted": "Set deleted",
     "charts.light": "Light",
     "charts.dark": "Dark",
-    "charts.preview_sub": "Your charts with these settings"
+    "charts.preview_sub": "Your charts with these settings",
+    "dashboard.thermostat_state": "Thermostat state",
+    "dashboard.brief": "Brief",
+    "dashboard.detailed": "Detailed"
   }
 }
