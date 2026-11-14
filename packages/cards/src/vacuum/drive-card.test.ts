@@ -280,8 +280,12 @@ describe('the Vacuum card driven', () => {
     const { hass, said } = house('xiaomi_miio', id);
     const card = await draw(hass, { entity: id, show_drive: true });
     await driven(card);
+    // a pad that left the page says nothing: the card knows it left with it
+    const heard = vi.fn();
+    card.addEventListener('fluvy-drive-end', heard);
     card.remove();
     expect(said().at(-1)).toBe('xiaomi_miio.vacuum_remote_control_stop');
+    expect(heard).not.toHaveBeenCalled();
     // back on the page it is at rest: nothing is driven until Drive is tapped again
     document.body.append(card);
     await card.updateComplete;
@@ -296,6 +300,27 @@ describe('the Vacuum card driven', () => {
       'xiaomi_miio.vacuum_remote_control_stop',
     ]);
     expect(pad(card)).toBeNull();
+  });
+
+  it('takes the pad to its sheet where the card’s room for the ring goes, and goes on driving', async () => {
+    const id = robot();
+    const { hass, said } = house('xiaomi_miio', id);
+    const card = await draw(hass, { entity: id, show_drive: true });
+    await driven(card);
+    // the parts drawn shorter (a font, a narrower column): 20 less its 16 holds no ring
+    laidOut(10);
+    card.width = 352;
+    await vi.waitFor(() =>
+      expect(sheet(card)?.shadowRoot?.querySelector('fluvy-drive-pad')).toBeTruthy(),
+    );
+    expect(pad(card)).toBeNull();
+    expect(labels(card).at(-1)).toBe('Done');
+    // the pad that left ended its remote control; the sheet's begins its own
+    expect(said()).toEqual([
+      'xiaomi_miio.vacuum_remote_control_start',
+      'xiaomi_miio.vacuum_remote_control_stop',
+      'xiaomi_miio.vacuum_remote_control_start',
+    ]);
   });
 
   it('leaves a refused call in the card’s error tone for a moment', async () => {

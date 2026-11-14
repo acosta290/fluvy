@@ -44,8 +44,9 @@ const LIT_MS = 180;
  * The drive pad (#178): the remote's ring with Stop in its middle, driving a robot by hand. Attached with a profile
  * it starts the robot's remote control; a tap on an arrow is one step, an arrow held (a finger, or a key of the
  * keyboard's arrows) keeps the robot moving and stops it when let go, Stop stops it; taken off the page, it ends
- * remote control. Over by itself or by a refused call, it says `fluvy-drive-end`. Without a profile it is drawn and
- * does nothing (the playground).
+ * remote control and says nothing, from a node no longer on the page (whoever took it off knows: the card that drew it
+ * in its sheet instead, or that left the page with it). Over by itself or by a refused call, it says `fluvy-drive-end`.
+ * Without a profile it is drawn and does nothing (the playground).
  */
 export class FluvyDrivePad extends LitElement {
   static override styles: CSSResultGroup = [
@@ -148,13 +149,14 @@ export class FluvyDrivePad extends LitElement {
         this.session = undefined;
         this.held = undefined;
         this.lit_ = '';
-        this.dispatchEvent(
-          new CustomEvent<DriveEndDetail>(DRIVE_END, {
-            detail: { failed },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        if (this.isConnected)
+          this.dispatchEvent(
+            new CustomEvent<DriveEndDetail>(DRIVE_END, {
+              detail: { failed },
+              bubbles: true,
+              composed: true,
+            }),
+          );
       },
     });
     this.session.start();
