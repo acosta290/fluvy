@@ -195,15 +195,24 @@ export const sidebarStyles = css`
     height: 1px;
     background: var(--fluvy-border);
   }
-  /* a card that is not Fluvy's keeps its own padding (Home Assistant's 16): turned out as far as that, less above
-     and below, where a picture has none to give */
+  /* a card that is not Fluvy's keeps its own padding: turned out as far as that — Home Assistant's 16, less above
+     and below — or by what its own type pads its content by, where the Expander's table knows it (held.ts writes
+     it on the wrapper, over these); what Home Assistant draws as a tile keeps a surface of its own, a tile of Fluvy's */
   .fv-card .sb-cards ::slotted(.ex-other) {
-    margin: -12px -16px;
+    --ex-x: 16px;
+    --ex-y: 12px;
+    margin: calc(-1 * var(--ex-y)) calc(-1 * var(--ex-x));
   }
   .fv-card .sb-cards ::slotted(.ex-other[data-ruled])::before {
-    top: calc(12px - var(--sb-gap) / 2);
-    left: 16px;
-    right: 16px;
+    top: calc(var(--ex-y) - var(--sb-gap) / 2);
+    left: var(--ex-x);
+    right: var(--ex-x);
+  }
+  .fv-card .sb-cards ::slotted(.ex-tile) {
+    --ha-card-background: var(--fluvy-card);
+    --ha-card-border-width: 1px;
+    --ha-card-border-color: var(--fluvy-edge, var(--fluvy-border));
+    --ha-card-border-radius: var(--fluvy-radius-lg);
   }
   /* without a surface: each card on its own, a section's 16 apart, the head and the foot with them */
   .sb--plain,
