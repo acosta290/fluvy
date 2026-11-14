@@ -244,6 +244,32 @@ describe('a double tap (#179)', () => {
     expect(heard).toEqual(['switch.turn_on', 'switch.turn_on']);
   });
 
+  it('runs a large tile’s tap as its double and its hold: a toggle flips its switch at once, in every style', async () => {
+    for (const switch_style of [undefined, 'rocker']) {
+      for (const by of ['tap', 'double tap']) {
+        const { card, root, heard } = await drawn({
+          type: 'custom:fluvy-tile-card',
+          entity: 'switch.kettle',
+          ...(switch_style ? { switch_style } : {}),
+          ...(by === 'tap' ? { tap_action: TOGGLE } : { double_tap_action: TOGGLE }),
+        });
+        // the rocker's drawing lands with its chunk
+        await vi.dynamicImportSettled();
+        await card.updateComplete;
+        const surface = root.querySelector('.fv-tile__tap')!;
+        tap(surface);
+        if (by === 'double tap') tap(surface);
+        await card.updateComplete;
+        const label = `${switch_style ?? 'toggle'}, ${by}`;
+        expect(heard, label).toEqual(['switch.turn_on']);
+        // the switch says what was asked before Home Assistant answers
+        const flipped = root.querySelector('[role="switch"]');
+        expect(flipped?.getAttribute('aria-checked'), label).toBe('true');
+        document.body.replaceChildren();
+      }
+    }
+  });
+
   it('a tap still waiting is let go when the card leaves the page', async () => {
     const { card, root, heard } = await drawn(TILE);
     tap(root.querySelector('.fv-tile__tap')!);

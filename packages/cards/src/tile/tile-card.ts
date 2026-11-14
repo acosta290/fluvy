@@ -754,7 +754,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const classes = usable
       ? `fv-tile fv-tile--${tone} fv-tile--tap${sizeClass}${tinted} ${on ? 'is-on' : ''}`
       : `fv-tile fv-tile--off fv-tile--tap${sizeClass}`;
-    // what cannot be read cannot be switched: its tap opens the details, its toggle (if asked) goes to Home Assistant
+    // what cannot be read cannot be switched: its tap opens the details, its toggle (if asked) goes to Home Assistant;
+    // a tap, a hold and a double tap of the tile all run so, in every size
     const runs = (action: ActionConfig | undefined): (() => void) | undefined =>
       action && actionRuns(action, view.id)
         ? () => (usable ? this.act(view, lit, action) : this.tap(view.id, action))
@@ -861,7 +862,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const tapNow = this.tapper(
       item.double_tap_action,
       view.id,
-      this.runner(item.tap_action ?? MORE_INFO, view.id),
+      runs(item.tap_action ?? MORE_INFO),
       doubleNow,
     );
 
