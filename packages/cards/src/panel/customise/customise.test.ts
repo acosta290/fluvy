@@ -226,6 +226,13 @@ describe('Customise (#170)', () => {
     await settle(40);
     expect(root.querySelector('.cz-top')).toBeNull();
     expect(row('Customise')).toBeDefined();
+    // nor does a link to it: Customise's file is never fetched for them
+    panel.route = { prefix: '/fluvy', path: '/dashboard/fluvy-auto' };
+    await settle(40);
+    expect(root.querySelector('.cz-top')).toBeNull();
+    expect(
+      (panel as unknown as { customiserLoading?: Promise<void> }).customiserLoading,
+    ).toBeUndefined();
   });
 
   it('hides a card and saves the strategy with the edit laid over what was saved', async () => {

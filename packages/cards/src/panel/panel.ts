@@ -383,7 +383,8 @@ export class FluvyPanel extends LitElement {
       // `/fluvy/dashboard/<url path>` opens Customise on that dashboard (a url path is a slug: read as it is written)
       this.customising = tab === 'dashboard' ? (this.route.path.split('/')[2] ?? '') : '';
     }
-    if (this.customising) this.loadCustomiser();
+    // Customise is an administrator's: nobody else's page fetches its file, whatever its address names
+    if (this.customising && this.hass?.user?.is_admin) this.loadCustomiser();
     if (changed.has('hass') && this.hass) {
       if (!this.off) this.attach();
       this.dark = this.hass.themes?.darkMode ?? false;
