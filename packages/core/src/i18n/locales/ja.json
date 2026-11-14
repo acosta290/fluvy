@@ -619,7 +619,8 @@
     "gates": "ガレージ・門",
     "calendars": "カレンダー",
     "lists": "ToDoリスト",
-    "timers": "タイマー"
+    "timers": "タイマー",
+    "whole_home": "家全体"
   },
   "page": {
     "menu": "メニューを開く",
@@ -2604,6 +2605,12 @@
     "dashboard.in_full": "すべて",
     "dashboard.exclude": "除外するエンティティ",
     "dashboard.exclude_sub": "どのビューにも表示せず、どこにも数えません。家にないものとして扱います",
+    "dashboard.group_by": "照明とシーン",
+    "dashboard.together": "まとめて",
+    "dashboard.by_room": "部屋ごと",
+    "dashboard.scenes_style": "シーンの形式",
+    "dashboard.scene_tiles": "タイル",
+    "dashboard.scene_chips": "チップ",
     "rooms.title": "部屋の並び順",
     "rooms.sub": "部屋ごとのリストすべてに、どのダッシュボードでも適用",
     "rooms.auto": "自動",

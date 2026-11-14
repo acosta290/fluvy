@@ -669,7 +669,8 @@
     "gates": "Garagentore & Tore",
     "calendars": "Kalender",
     "lists": "To-do-Listen",
-    "timers": "Timer"
+    "timers": "Timer",
+    "whole_home": "Ganzes Haus"
   },
   "page": {
     "menu": "Menü öffnen",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Vollständig",
     "dashboard.exclude": "Ausgelassene Entitäten",
     "dashboard.exclude_sub": "Auf keiner Ansicht gezeigt und nirgends gezählt, als hätte das Haus sie nicht",
+    "dashboard.group_by": "Lichter und Szenen",
+    "dashboard.together": "Zusammen",
+    "dashboard.by_room": "Nach Raum",
+    "dashboard.scenes_style": "Szenen als",
+    "dashboard.scene_tiles": "Kacheln",
+    "dashboard.scene_chips": "Chips",
     "rooms.title": "Reihenfolge der Räume",
     "rooms.sub": "Für jede Liste nach Raum, auf jedem Dashboard",
     "rooms.auto": "Automatisch",

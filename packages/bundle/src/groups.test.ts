@@ -48,8 +48,10 @@ describe('the groups’ chunk', () => {
       ).toEqual([]);
   });
 
-  it('comes with the heights the automatic dashboards count with the house', () => {
+  it('comes with the automatic dashboards and the heights they count with the house', () => {
+    expect(statics('cards/src/strategy/layout.ts')).toContain('../shared/groups.js');
     expect(statics('cards/src/house-heights.ts')).toContain('./shared/groups.js');
+    expect(chunkOf(at('cards/src/strategy/layout.ts'))).toBe('strategy');
     expect(chunkOf(at('cards/src/house-heights.ts'))).toBe('house-heights');
   });
 });

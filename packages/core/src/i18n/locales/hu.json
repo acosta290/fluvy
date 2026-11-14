@@ -619,7 +619,8 @@
     "gates": "Garázsajtók és kapuk",
     "calendars": "Naptárak",
     "lists": "Teendőlisták",
-    "timers": "Időzítők"
+    "timers": "Időzítők",
+    "whole_home": "Egész ház"
   },
   "page": {
     "menu": "Menü megnyitása",
@@ -2716,6 +2717,12 @@
     "dashboard.in_full": "Teljes egészében",
     "dashboard.exclude": "Kihagyott entitások",
     "dashboard.exclude_sub": "Egyik nézeten sem jelennek meg, és sehol sem számítanak, mintha a házban nem is lennének",
+    "dashboard.group_by": "Világítás és jelenetek",
+    "dashboard.together": "Együtt",
+    "dashboard.by_room": "Szobánként",
+    "dashboard.scenes_style": "Jelenetek megjelenése",
+    "dashboard.scene_tiles": "Csempék",
+    "dashboard.scene_chips": "Címkék",
     "rooms.title": "Szobák sorrendje",
     "rooms.sub": "Minden szobánkénti listához, minden vezérlőpulton",
     "rooms.auto": "Automatikus",

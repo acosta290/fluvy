@@ -95,6 +95,17 @@ export interface FluvyStrategyConfig {
    * (`rocker`, #177: each tile then switches and nothing more, a compact one's rocker at its row's end).
    */
   tile_switch?: TileSwitch;
+  /**
+   * Which room a light or a scene belongs to (#189): `room` draws Home's lights under their rooms' quiet labels, and
+   * the scenes of Home and of the Lights view under theirs, in the house's order of its rooms, their names short under
+   * them; unsaid (`none`), each list as it stands.
+   */
+  group_by?: 'none' | 'room';
+  /**
+   * The scenes: a tile each (`tiles`, the default), or pills that fill their rows on one card (`chips`, #189), by
+   * room on Home and on the Lights view, twelve before their "N more" row.
+   */
+  scenes_style?: 'tiles' | 'chips';
   /** How the energy flow draws its lanes (default: stream; 1.3's `ribbons` reads as it). */
   flow_style?: FlowStyle;
   /** The rooms' cards (default: a photo where the area has one, else a tile). */
@@ -273,6 +284,10 @@ export interface CardStyle {
   readonly doing?: boolean;
   readonly tiles?: 'large' | 'compact';
   readonly switches?: TileSwitch;
+  /** Home's lights and the house's scenes stand by room (`group_by: room`, #189). */
+  readonly byRoom?: boolean;
+  /** The scenes are chips (`scenes_style: chips`, #189). */
+  readonly sceneChips?: boolean;
   readonly flow?: FlowStyle;
   readonly room?: RoomVariant;
   /** What every room's photo is asked for (`room_name_position` …); a room's own comes over it. */

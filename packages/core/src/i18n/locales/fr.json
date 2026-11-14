@@ -669,7 +669,8 @@
     "gates": "Portes de garage et portails",
     "calendars": "Calendriers",
     "lists": "Listes de tâches",
-    "timers": "Minuteurs"
+    "timers": "Minuteurs",
+    "whole_home": "Toute la maison"
   },
   "page": {
     "menu": "Ouvrir le menu",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Complètes",
     "dashboard.exclude": "Entités exclues",
     "dashboard.exclude_sub": "Affichées sur aucune vue et comptées nulle part, comme si la maison n’en avait pas",
+    "dashboard.group_by": "Lumières et scènes",
+    "dashboard.together": "Ensemble",
+    "dashboard.by_room": "Par pièce",
+    "dashboard.scenes_style": "Scènes en",
+    "dashboard.scene_tiles": "Tuiles",
+    "dashboard.scene_chips": "Puces",
     "rooms.title": "Ordre des pièces",
     "rooms.sub": "Pour toute liste par pièce, sur chaque tableau de bord",
     "rooms.auto": "Automatique",

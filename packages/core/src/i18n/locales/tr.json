@@ -669,7 +669,8 @@
     "gates": "Garaj kapıları ve bahçe kapıları",
     "calendars": "Takvimler",
     "lists": "Yapılacaklar listeleri",
-    "timers": "Zamanlayıcılar"
+    "timers": "Zamanlayıcılar",
+    "whole_home": "Tüm ev"
   },
   "page": {
     "menu": "Menüyü aç",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Tam",
     "dashboard.exclude": "Hariç tutulan varlıklar",
     "dashboard.exclude_sub": "Hiçbir görünümde gösterilmez, hiçbir yerde sayılmaz; evde yokmuş gibi",
+    "dashboard.group_by": "Işıklar ve sahneler",
+    "dashboard.together": "Birlikte",
+    "dashboard.by_room": "Odaya göre",
+    "dashboard.scenes_style": "Sahneler şöyle",
+    "dashboard.scene_tiles": "Kutular",
+    "dashboard.scene_chips": "Çipler",
     "rooms.title": "Odaların sırası",
     "rooms.sub": "Odaya göre her liste için, her panelde",
     "rooms.auto": "Otomatik",

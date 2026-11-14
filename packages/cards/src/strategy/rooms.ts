@@ -14,6 +14,7 @@ import {
   lightGroups,
   lightTiles,
   readoutsCards,
+  scenesCap,
   scenesCard,
   section,
   thermostat,
@@ -272,9 +273,9 @@ export function roomSections(
   );
   const scenes = capped(
     ctx,
-    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
+    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle', ...scenesCap(ctx.style) },
     parts.scenes,
-    (ids) => [[scenesCard(home, t('strategy.scenes'), ids)]],
+    (ids) => [[scenesCard(ctx, t('strategy.scenes'), ids, { room: area.name })]],
   );
   const rest = capped(
     ctx,
@@ -293,7 +294,10 @@ export function roomSections(
         ctx,
         'scenes',
         when(scenes.shown.length, () =>
-          moreAfter([[scenesCard(home, t('strategy.scenes'), scenes.shown)]], scenes),
+          moreAfter(
+            [[scenesCard(ctx, t('strategy.scenes'), scenes.shown, { room: area.name })]],
+            scenes,
+          ),
         ),
       ),
       ...part(

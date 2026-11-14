@@ -10,11 +10,14 @@ import {
   hasSources,
   headed,
   heading,
+  houseScenes,
   lightGroups,
-  lightTiles,
+  lightRooms,
+  lightRows,
   productionCards,
   readoutsCards,
   runsOf,
+  scenesCap,
   scenesCard,
   solarCurves,
   solarGauges,
@@ -87,10 +90,11 @@ const attention = (ctx: StrategyContext): Card =>
 export function homeView(ctx: StrategyContext): Section[] {
   const { home, t, base, weather, energy } = ctx;
   const { climate } = home;
+  // by room (#189), the first rooms' lights, room by room, are the ones the view shows
   const lights = capped(
     ctx,
     { key: 'lights', title: 'room.lights', icon: 'fluvy:bulb' },
-    home.lights,
+    ctx.style.byRoom ? lightRooms(ctx, home.lights).flatMap(([, ids]) => ids) : home.lights,
     (ids) => lightGroups(ctx, ids),
   );
   const appliances = capped(
@@ -123,9 +127,9 @@ export function homeView(ctx: StrategyContext): Section[] {
   );
   const scenes = capped(
     ctx,
-    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle' },
-    home.scenes,
-    (ids) => [[scenesCard(home, t('strategy.scenes'), ids)]],
+    { key: 'scenes', title: 'strategy.scenes', icon: 'fluvy:sparkle', ...scenesCap(ctx.style) },
+    houseScenes(ctx, home.scenes),
+    (ids) => [[scenesCard(ctx, t('strategy.scenes'), ids, { house: true })]],
   );
   // what needs a look, then the controls, the climate and the day, the energy and the house's state, in reading
   // order; the single-purpose cards fill the columns' feet; the appliances as the reporter of #47 drew them, across
@@ -141,7 +145,7 @@ export function homeView(ctx: StrategyContext): Section[] {
           moreAfter(
             headed(
               heading(t('room.lights'), 'fluvy:bulb', lights.all, `${base}/lights`),
-              tileRows(lightTiles(home, lights.shown, ctx.style)),
+              lightRows(ctx, lights.shown),
             ),
             lights,
           ),
@@ -243,7 +247,10 @@ export function homeView(ctx: StrategyContext): Section[] {
         ctx,
         'scenes',
         when(scenes.shown.length, () =>
-          looseAfter([scenesCard(home, t('strategy.scenes'), scenes.shown)], scenes),
+          looseAfter(
+            [scenesCard(ctx, t('strategy.scenes'), scenes.shown, { house: true })],
+            scenes,
+          ),
         ),
       ),
     ],
@@ -268,16 +275,16 @@ export function lightsView(ctx: StrategyContext): Section[] {
   const title = automations.length ? 'strategy.automations' : 'strategy.scenes';
   const scenes = capped(
     ctx,
-    { key: 'scenes', title, icon: 'fluvy:sparkle' },
-    [...home.scenes, ...automations],
-    (ids) => [[scenesCard(home, t(title), ids)]],
+    { key: 'scenes', title, icon: 'fluvy:sparkle', ...scenesCap(ctx.style) },
+    houseScenes(ctx, [...home.scenes, ...automations]),
+    (ids) => [[scenesCard(ctx, t(title), ids, { house: true })]],
   );
   blocks.push(
     ...part(
       ctx,
       'scenes',
       when(scenes.shown.length, () =>
-        moreAfter([[scenesCard(home, t(title), scenes.shown)]], scenes),
+        moreAfter([[scenesCard(ctx, t(title), scenes.shown, { house: true })]], scenes),
       ),
     ),
   );

@@ -669,7 +669,8 @@
     "gates": "Porte del garage e cancelli",
     "calendars": "Calendari",
     "lists": "Liste di cose da fare",
-    "timers": "Timer"
+    "timers": "Timer",
+    "whole_home": "Tutta la casa"
   },
   "page": {
     "menu": "Apri il menu",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Completi",
     "dashboard.exclude": "Entità escluse",
     "dashboard.exclude_sub": "Non compaiono in nessuna vista e non contano da nessuna parte, come se la casa non le avesse",
+    "dashboard.group_by": "Luci e scene",
+    "dashboard.together": "Insieme",
+    "dashboard.by_room": "Per stanza",
+    "dashboard.scenes_style": "Scene come",
+    "dashboard.scene_tiles": "Riquadri",
+    "dashboard.scene_chips": "Chip",
     "rooms.title": "Ordine delle stanze",
     "rooms.sub": "Per ogni elenco per stanza, in ogni dashboard",
     "rooms.auto": "Automatico",

@@ -2706,6 +2706,12 @@
     "dashboard.in_full": "Úplné",
     "dashboard.exclude": "Vynechané entity",
     "dashboard.exclude_sub": "Nezobrazia sa v žiadnom zobrazení a nikde sa nezapočítajú, akoby ich dom nemal",
+    "dashboard.group_by": "Svetlá a scény",
+    "dashboard.together": "Spolu",
+    "dashboard.by_room": "Podľa miestností",
+    "dashboard.scenes_style": "Scény ako",
+    "dashboard.scene_tiles": "Dlaždice",
+    "dashboard.scene_chips": "Štítky",
     "rooms.title": "Poradie miestností",
     "rooms.sub": "Pre každý zoznam podľa miestností, na každom paneli",
     "rooms.auto": "Automaticky",
@@ -2981,7 +2987,8 @@
     "gates": "Garáže a brány",
     "calendars": "Kalendáre",
     "lists": "Zoznamy úloh",
-    "timers": "Časovače"
+    "timers": "Časovače",
+    "whole_home": "Celý dom"
   },
   "template": {
     "card": "Šablóna",

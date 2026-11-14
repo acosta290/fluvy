@@ -1,3 +1,4 @@
+import { shortNames } from '../shared/groups.js';
 import { listed, part, TAKES } from './edit.js';
 import { OUTDOOR, type HomeRegistry } from './home-registry.js';
 import type {
@@ -41,6 +42,12 @@ export const heading = (
   icon,
   ...(entities.length ? { entities: [...entities] } : {}),
   ...(path ? { path } : {}),
+});
+/** A quiet label over a part of a group: a room's name over its lights (#189). */
+export const label = (title: string): Card => ({
+  type: 'custom:fluvy-heading-card',
+  title,
+  heading_style: 'label',
 });
 export const section = (...cards: Card[]): Section => ({ type: 'grid', cards });
 /** `...when(value, (v) => [cards])`: the cards only when the house has the thing. */
@@ -290,18 +297,60 @@ export const readoutsCards = (
   }));
 };
 
+/** The cap of a list of scenes as the dashboard draws them: twelve as chips, a row's worth each; else the house's. */
+export const scenesCap = ({ sceneChips }: CardStyle): { readonly cap?: number } =>
+  sceneChips ? { cap: 12 } : {};
+
+/** Whether the scenes of a view of the whole house stand by room: where the dashboard groups by room, or draws chips. */
+const scenesByRoom = ({ byRoom, sceneChips }: CardStyle): boolean => Boolean(byRoom || sceneChips);
+
+/** Scenes by the room they are in, what is in none under "Whole home", in the house's order of its rooms. */
+const sceneRooms = (
+  { home, t }: Pick<StrategyContext, 'home' | 't'>,
+  ids: readonly string[],
+): (readonly [name: string, ids: string[]])[] => home.byRoom(ids, () => t('strategy.whole_home'));
+
+/**
+ * The scenes of a view of the whole house in the order its card stands in: room by room where it stands by room, so
+ * its cap falls after the first rooms'; else as the house lists them.
+ */
+export const houseScenes = (
+  ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
+  ids: readonly string[],
+): readonly string[] =>
+  scenesByRoom(ctx.style) ? sceneRooms(ctx, ids).flatMap(([, group]) => group) : ids;
+
 /**
  * Scenes (and what runs like one) on one Scenes card under a title, the last run marked: each as Home Assistant names
- * it, two alike told apart (#170).
+ * it, two alike told apart (#170). As the dashboard asks (#189), they are chips (`scenes_style`), and on a view of the
+ * whole house (`house`) that groups by room, or draws chips, each room's stand under its name in the house's order of
+ * its rooms, what is in none under "Whole home": the card reads their names short there. On a room's own page
+ * (`room`: its name) the chips say theirs without it.
  */
-export const scenesCard = (home: HomeRegistry, title: string, ids: readonly string[]): Card => {
-  const name = home.apart(ids, (id) => home.name(id));
+export const scenesCard = (
+  ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
+  title: string,
+  ids: readonly string[],
+  { house = false, room }: { readonly house?: boolean; readonly room?: string } = {},
+): Card => {
+  const { home, style } = ctx;
+  /** A group's scenes as its card takes them: an id, or with the name that tells it apart, or says it short. */
+  const entries = (group: readonly string[]): (string | Record<string, string>)[] => {
+    const name = home.apart(group, (id) => home.name(id));
+    const names = group.map(name);
+    const short = style.sceneChips && room ? shortNames(room, names) : names;
+    return group.map((id, at) => {
+      const said = home.named(id, short[at]);
+      return said['name'] ? { entity: id, ...said } : id;
+    });
+  };
   return full('scenes', {
     title,
-    scenes: ids.map((id) => {
-      const said = home.named(id, name(id));
-      return said['name'] ? { entity: id, ...said } : id;
-    }),
+    ...(style.sceneChips ? { variant: 'chips' } : {}),
+    scenes:
+      house && scenesByRoom(style)
+        ? sceneRooms(ctx, ids).flatMap(([name, group]) => [{ section: name }, ...entries(group)])
+        : entries(ids),
   });
 };
 
@@ -334,6 +383,34 @@ export const lightTiles = (
   const named = namesOf(home, ids);
   return ids.map((id) => sizedTile(id, named(id), style));
 };
+
+/** Lights by the room they are in, indoor and outdoor where they have none, in the house's order of its rooms. */
+export const lightRooms = (
+  { home, t }: Pick<StrategyContext, 'home' | 't'>,
+  ids: readonly string[],
+): (readonly [name: string, ids: string[]])[] =>
+  home.byRoom(ids, (id) => (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor')));
+
+/**
+ * Lights shown together as rows of tiles (`tileRows`); where the dashboard groups by room (#189), each room's under
+ * its quiet label, which rides with its first row, their names short under it (`shortNames`: two alike in a room told
+ * apart first).
+ */
+export function lightRows(
+  ctx: Pick<StrategyContext, 'home' | 't' | 'style'>,
+  ids: readonly string[],
+): Card[][] {
+  const { home, style } = ctx;
+  if (!style.byRoom) return tileRows(lightTiles(home, ids, style));
+  return lightRooms(ctx, ids).flatMap(([name, group]) => {
+    const said = home.apart(group, (id) => home.displayName(id));
+    const short = shortNames(name, group.map(said));
+    const [first = [], ...rest] = tileRows(
+      group.map((id, at) => sizedTile(id, home.named(id, short[at]), style)),
+    );
+    return [[label(name), ...first], ...rest];
+  });
+}
 
 /** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
 /** The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer). */
@@ -468,18 +545,18 @@ export function headed(head: Card, rows: readonly Card[][]): Card[][] {
 }
 
 /**
- * Lights by area (indoor and outdoor where they have none), in the house's order of its rooms (`byRoom`: the biggest
- * group first where it names none): a room of two lights or more starts with all of them on one card (the room in one
- * tap, a round a light); a dimmable light is a full card (a row of its own); the switches after it are tiles, two a
- * row. On the lights' own view each group is a part (`parts`, #170: `lights:<area id>`, a list of its own); in a
- * subview of every light they are cards alone.
+ * Lights by area (indoor and outdoor where they have none), in the house's order of its rooms (`lightRooms`: the
+ * biggest group first where it names none): a room of two lights or more starts with all of them on one card (the
+ * room in one tap, a round a light); a dimmable light is a full card (a row of its own); the switches after it are
+ * tiles, two a row. On the lights' own view each group is a part (`parts`, #170: `lights:<area id>`, a list of its
+ * own); in a subview of every light they are cards alone.
  */
 export function lightGroups(
   ctx: Pick<StrategyContext, 'home' | 't' | 'style'> & Partial<Pick<StrategyContext, 'more'>>,
   ids: readonly string[],
   parts = false,
 ): Card[][] {
-  const { home, t } = ctx;
+  const { home } = ctx;
   const blocks = (name: string, group: readonly string[]): Card[][] => {
     // a group's cards and tiles stand together under its heading: two alike are told apart
     const named = namesOf(home, group);
@@ -493,16 +570,14 @@ export function lightGroups(
       ),
     ]);
   };
-  return home
-    .byRoom(ids, (id) => (home.outdoor(id) ? t('strategy.outdoor') : t('strategy.indoor')))
-    .flatMap(([name, group]) => {
-      if (!parts) return blocks(name, group);
-      const [first = ''] = group;
-      const id = `lights:${home.areaOf(first) ?? (home.outdoor(first) ? 'outdoor' : 'indoor')}`;
-      const own = listed(ctx, id, group, {
-        takes: TAKES['lights'] as readonly string[],
-        title: name,
-      });
-      return part(ctx, id, own.length ? blocks(name, own) : []);
+  return lightRooms(ctx, ids).flatMap(([name, group]) => {
+    if (!parts) return blocks(name, group);
+    const [first = ''] = group;
+    const id = `lights:${home.areaOf(first) ?? (home.outdoor(first) ? 'outdoor' : 'indoor')}`;
+    const own = listed(ctx, id, group, {
+      takes: TAKES['lights'] as readonly string[],
+      title: name,
     });
+    return part(ctx, id, own.length ? blocks(name, own) : []);
+  });
 }

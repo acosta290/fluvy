@@ -669,7 +669,8 @@
     "gates": "Puertas de garaje y cancelas",
     "calendars": "Calendarios",
     "lists": "Listas de tareas",
-    "timers": "Temporizadores"
+    "timers": "Temporizadores",
+    "whole_home": "Toda la casa"
   },
   "page": {
     "menu": "Abrir el menú",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Completas",
     "dashboard.exclude": "Entidades excluidas",
     "dashboard.exclude_sub": "No aparecen en ninguna vista ni cuentan en ningún sitio, como si la casa no las tuviera",
+    "dashboard.group_by": "Luces y escenas",
+    "dashboard.together": "Juntas",
+    "dashboard.by_room": "Por habitación",
+    "dashboard.scenes_style": "Escenas como",
+    "dashboard.scene_tiles": "Mosaicos",
+    "dashboard.scene_chips": "Chips",
     "rooms.title": "Orden de las habitaciones",
     "rooms.sub": "Para toda lista por habitación, en todos los paneles",
     "rooms.auto": "Automático",

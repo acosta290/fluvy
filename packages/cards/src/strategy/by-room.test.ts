@@ -6,6 +6,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { generate } from './generate.js';
 import { HomeRegistry } from './home-registry.js';
+import { strategyOptions, templateById } from './templates.js';
 import type { Card, FluvyStrategyConfig, View } from './types.js';
 
 // the families' chunks are fetched as the module loads: they land before the file's environment goes
@@ -13,7 +14,8 @@ afterAll(() => familiesDefined);
 
 /*
  * Which room a light or a scene belongs to (#189), on the automatic dashboards: the house's order of its rooms, read
- * by every list by room — with none chosen, the dashboards are 1.20's.
+ * by every list by room; Home's lights under their rooms' labels and the scenes as chips by room, each an option a
+ * person turns on — with none of them, the dashboards are 1.20's.
  */
 
 const entity = (
@@ -58,6 +60,12 @@ const kind = (card: Card): string => card.type.replace('custom:fluvy-', '').repl
 /** A view's cards of a kind. */
 const ofKind = (view: View, name: string): Card[] =>
   cardsOf(view).filter((card) => kind(card) === name);
+/** A card as a word: a heading or a label by its title, a tile by the name it says. */
+const said = (card: Card): string =>
+  kind(card) === 'heading'
+    ? `${card['heading_style'] === 'label' ? '#' : '##'} ${String(card['title'])}`
+    : `${String(card['entity'])}${card['name'] ? ` "${String(card['name'])}"` : ''}`;
+
 describe('the house’s order of its rooms on the automatic dashboards (#189)', () => {
   afterEach(() => setRoomOrder({ sort: 'auto', order: [] }));
 
@@ -161,5 +169,166 @@ describe('the house’s order of its rooms on the automatic dashboards (#189)', 
       'Ground floor',
       'Other rooms',
     ]);
+  });
+});
+
+describe('Home by room, an option a person turns on (#189)', () => {
+  it('is 1.20’s dashboard while nobody asks: the options’ own words for off write nothing new', async () => {
+    const plain = await home();
+    expect(await home({ group_by: 'none', scenes_style: 'tiles' })).toEqual(plain);
+    const cards = plain.views.flatMap(cardsOf);
+    expect(cards.some((card) => card['heading_style'] === 'label')).toBe(false);
+    for (const card of cards.filter((card) => kind(card) === 'scenes')) {
+      expect(card['variant']).toBeUndefined();
+      expect((card['scenes'] as unknown[]).every((entry) => !Object(entry).section)).toBe(true);
+    }
+  });
+
+  it('draws Home’s lights under their rooms’ labels, a label with its first row, the names short', async () => {
+    const { views } = await home({ group_by: 'room' });
+    const column = viewOf(views, 'home').sections.find((section) =>
+      section.cards.some((card) => card['heading_style'] === 'label'),
+    );
+    const cards = column?.cards ?? [];
+    const from = cards.findIndex((card) => card['title'] === 'Lights');
+    const more = cards.findIndex((card) => card['more'] !== undefined);
+    // the cap of six counts the tiles: the kitchen's four (the biggest room first), then the bedroom's two
+    expect(cards.slice(from, more).map(said)).toEqual([
+      '## Lights',
+      '# Kitchen',
+      'light.kitchen_counter "Counter"',
+      'light.kitchen_island "Island"',
+      'light.kitchen_pendant "Pendant"',
+      'switch.kitchen_light "Light"',
+      '# Bedroom',
+      // a name that says nothing of its room stays as it is
+      'light.bedroom_bedside',
+      'light.bedroom_ceiling "Ceiling"',
+    ]);
+    // what the view leaves to the subview: every light, room by room, as the Lights view groups them
+    expect(cards[more]?.['more']).toBe(2);
+    const subview = viewOf(views, 'home-lights');
+    expect(ofKind(subview, 'heading').map((card) => String(card['title']))).toEqual([
+      'Home',
+      'Kitchen',
+      'Bedroom',
+      'Living room',
+      'Outdoor',
+    ]);
+    // a label is no heading of its own: 12 of its column, and never a meta, a glyph or a way somewhere
+    const label = cards[from + 1] as Card;
+    expect(label).toEqual({
+      type: 'custom:fluvy-heading-card',
+      title: 'Kitchen',
+      heading_style: 'label',
+    });
+  });
+
+  it('keeps a name a person gave a light whole, and their own order inside its room', async () => {
+    const { views } = await home({
+      group_by: 'room',
+      edit: {
+        cards: { 'home/lights:light.kitchen_pendant': { options: { name: 'Kitchen Pendant' } } },
+        entities: {
+          'home/lights': { order: ['light.kitchen_pendant'], drop: ['light.kitchen_island'] },
+        },
+      },
+    });
+    const tiles = ofKind(viewOf(views, 'home'), 'tile').map(said);
+    expect(tiles.slice(0, 3)).toEqual([
+      'light.kitchen_pendant "Kitchen Pendant"',
+      'light.kitchen_counter "Counter"',
+      'switch.kitchen_light "Light"',
+    ]);
+  });
+
+  it('follows the house’s order of its rooms: the first rooms’ lights are the ones Home shows', async () => {
+    setRoomOrder({ sort: 'auto', order: ['living_room', 'bedroom'] });
+    try {
+      const { views } = await home({ group_by: 'room' });
+      const labels = ofKind(viewOf(views, 'home'), 'heading')
+        .filter((card) => card['heading_style'] === 'label')
+        .map((card) => card['title']);
+      expect(labels).toEqual(['Living room', 'Bedroom', 'Kitchen']);
+    } finally {
+      setRoomOrder({ sort: 'auto', order: [] });
+    }
+  });
+
+  it('draws the scenes of Home and of the Lights view by room, as tiles under their labels', async () => {
+    const { views } = await home({ group_by: 'room' });
+    for (const path of ['home', 'lights']) {
+      const [card] = ofKind(viewOf(views, path), 'scenes');
+      expect(card?.['variant'], path).toBeUndefined();
+      // the card reads the names short under each room itself; the one in no room stands under "Whole home"
+      expect(card?.['scenes'], path).toEqual([
+        { section: 'Kitchen' },
+        'scene.kitchen_cooking',
+        'scene.kitchen_dinner',
+        'scene.kitchen_evening',
+        { section: 'Living room' },
+        'scene.living_relax',
+        'scene.living_tv',
+        { section: 'Whole home' },
+        'scene.good_night',
+      ]);
+    }
+    // a room's own page has one room: its scenes as they were
+    const [kitchen] = ofKind(viewOf(views, 'room-kitchen'), 'scenes');
+    expect(kitchen?.['scenes']).toEqual([
+      'scene.kitchen_cooking',
+      'scene.kitchen_dinner',
+      'scene.kitchen_evening',
+    ]);
+  });
+
+  it('draws the scenes as chips: by room on Home and the Lights view, twelve before their "N more" row', async () => {
+    const { views } = await home({ scenes_style: 'chips' });
+    const [card] = ofKind(viewOf(views, 'home'), 'scenes');
+    expect(card).toMatchObject({ title: 'Scenes', variant: 'chips' });
+    expect((card?.['scenes'] as unknown[]).filter((entry) => Object(entry).section)).toEqual([
+      { section: 'Kitchen' },
+      { section: 'Living room' },
+      { section: 'Whole home' },
+    ]);
+    // the lights stay as they were: their grouping is another option
+    expect(cardsOf(viewOf(views, 'home')).some((c) => c['heading_style'] === 'label')).toBe(false);
+    // a room's page: its chips say their names without it
+    const [living] = ofKind(viewOf(views, 'room-living_room'), 'scenes');
+    expect(living).toMatchObject({ variant: 'chips' });
+    expect(living?.['scenes']).toEqual([
+      { entity: 'scene.living_relax', name: 'Relax' },
+      { entity: 'scene.living_tv', name: 'TV' },
+    ]);
+    // twenty scenes: twelve as chips, room by room, where tiles show six
+    const many = Array.from({ length: 14 }, (_, n) =>
+      entity(`scene.hall_${String(n).padStart(2, '0')}`, `Hall ${n}`, 'bedroom'),
+    );
+    const chips = await home({ scenes_style: 'chips' }, house([...MORE, ...many]));
+    const [capped] = ofKind(viewOf(chips.views, 'home'), 'scenes');
+    const shown = (capped?.['scenes'] as unknown[]).filter((entry) => !Object(entry).section);
+    expect(shown).toHaveLength(12);
+    // the biggest room first: its fourteen fill the twelve
+    expect((capped?.['scenes'] as unknown[])[0]).toEqual({ section: 'Bedroom' });
+    const tiles = await home({}, house([...MORE, ...many]));
+    expect((ofKind(viewOf(tiles.views, 'home'), 'scenes')[0]?.['scenes'] as unknown[]).length).toBe(
+      6,
+    );
+  });
+
+  it('offers both options on the home dashboard, the scenes’ on the rooms dashboard, and reads their words alone', () => {
+    const keys = (id: 'home' | 'rooms' | 'wall' | 'energy'): string[] =>
+      templateById(id).options.map((option) => option.key);
+    expect(keys('home')).toEqual(expect.arrayContaining(['group_by', 'scenes_style']));
+    expect(keys('rooms')).toContain('scenes_style');
+    expect(keys('rooms')).not.toContain('group_by');
+    expect(keys('wall')).not.toContain('scenes_style');
+    expect(keys('energy')).not.toContain('group_by');
+    const template = templateById('home');
+    expect(strategyOptions({ group_by: 'room', scenes_style: 'chips' }, template)).toEqual({
+      group_by: 'room',
+      scenes_style: 'chips',
+    });
+    expect(strategyOptions({ group_by: 'floor', scenes_style: 'pills' }, template)).toEqual({});
   });
 });

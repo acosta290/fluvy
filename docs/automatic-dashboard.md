@@ -81,7 +81,7 @@ list of rows or tiles is shown instead: it takes the room a "1 more" row would.
 | `alarms`, `locks`, `cameras` | Security (the Security dashboard's Cameras view: 12), a room's cameras | 2, 4, 4 |
 | `media` | Media, a room | 6 |
 | `calendars`, `lists`, `timers`, `actions` | Agenda | 3, 3, 3, 6 |
-| `scenes` | Home, Lights (scenes and light automations), a room | 6 |
+| `scenes` | Home, Lights (scenes and light automations), a room | 6 (12 as chips: `scenes_style`) |
 | `batteries`, `phones`, `plants`, `helpers`, `updates` | Sensors | 8, 8, 4, 6, 8 |
 | `consumption` | the energy dashboard's devices (Energy; the Energy dashboard's Devices view: 12) | 8 |
 | `today` | the day's energy readings as stat tiles | 4 |
@@ -155,6 +155,8 @@ is [Customise](#customise):
 | `thermostat_state` | `brief` (default), `detailed` | home, rooms, wall | what the thermostats say of what they are doing: as each card does by itself, or (`detailed`) with how far its valve is open, an open window and a low battery, each found where there is one (the thermostat card's `show_valve`, `show_window` and `show_battery`), a room's climate row saying what its thermostat is doing and what it is set to (the room card's `show_action`). Nothing is written until it is chosen; see [Thermostat](cards.md#thermostat) |
 | `tile_size` | `large` (default), `compact` | home, rooms | the tiles' size on the Lights view, the Home view and a room's page |
 | `tile_switch` | `show` (default), `hide`, `value`, `rocker` | home, rooms | the large tiles' switches, the lights' and the appliances': beside their icon circles, hidden (a tap on a tile's circle switches it, a tap on the tile opens its details), the level's figure in their place (the tile card's `show_switch`), or wall rockers (the tile card's `switch_style: rocker`: each tile then switches and nothing more, with no ruler, and a compact tile's rocker stands at its row's end) |
+| `group_by` | `none` (default), `room` | home | which room a light or a scene belongs to (1.21): Home's lights under their rooms' quiet labels, and the scenes of Home and of the Lights view under theirs, the names short under each ([by room](#by-room)) |
+| `scenes_style` | `tiles` (default), `chips` | home, rooms | the scenes as pills that fill their rows on one card, the last run one filled, by room on Home and on the Lights view; twelve before their "N more" row |
 | `flow_style` | `stream` (default; `ribbons` reads as it), `legs`, `rail` | home, energy | the energy flow's drawing |
 | `room_variant` | `photo` (default: a photo where the area has one, else a tile), `tile`, `row` | home, rooms | the rooms' cards |
 | `room_name_position` | `bottom` (default), `top` | home, rooms | where a room's photo carries its name: at its foot beside the quick actions, or at its top, the foot then theirs alone; the panel offers it while the rooms may be photos |
@@ -176,6 +178,32 @@ Without `language`, the dashboard's words follow the language of whoever opens i
 chosen in the panel's *Preferences*). A house is read in every language at once: a switch called *Küche* or
 *cocina* is a light's room in any of them. The settings file *Preferences* exports (its last card, *Fluvy*) carries every dashboard's options
 under `dashboards`, by url path; a file from Fluvy 1.2 (one `dashboard` key) still lands on the home dashboard.
+
+## By room
+
+Two options of the home dashboard say which room a light or a scene belongs to (1.21). Both are off until chosen, in
+the panel's *Dashboards* tab or in the raw configuration, so a dashboard looks as it did:
+
+```yaml
+strategy:
+  type: custom:fluvy-home
+  group_by: room        # Home's lights and the scenes under their rooms
+  scenes_style: chips   # the scenes as pills
+```
+
+- **`group_by: room`.** Home's lights stand room by room, each room's under its quiet label, their names short under
+  it (*Kitchen Pendant* is *Pendant*); lights in no room stand under *Indoor* or *Outdoor*, as on the Lights view.
+  The list's cap still counts tiles, and it takes the first rooms' lights: the rest is one tap away, under "N more".
+  The scenes of Home and of the Lights view stand under their rooms' labels too, those in no room under *Whole home*.
+- **`scenes_style: chips`.** Every Scenes card the dashboard writes draws its scenes as pills on one card (the Scenes
+  card's `variant: chips`): by room on Home and on the Lights view, and on a room's own page without its room's name.
+  As chips a list shows twelve before its "N more" row.
+
+The rooms stand in the house's order, the panel's *Dashboards › Rooms in order*
+([the settings panel](settings-panel.md#rooms-in-order)): every list by room follows it, the Rooms view, the Lights
+view's groups, the lists a "N more" page splits by room, a wall's rooms and the room pages' tabs of the Rooms
+dashboard. *Automatic*, the default, is each list as it always sorted: the rooms floor by floor and A to Z, a list
+by room its biggest room first. What Customise moved on a dashboard stays that dashboard's own, over the house's.
 
 ## A background of its own
 

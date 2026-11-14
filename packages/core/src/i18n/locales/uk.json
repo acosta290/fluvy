@@ -2771,6 +2771,12 @@
     "dashboard.in_full": "Повністю",
     "dashboard.exclude": "Виключені сутності",
     "dashboard.exclude_sub": "Не показуються в жодній вкладці й ніде не враховуються, ніби їх у будинку немає",
+    "dashboard.group_by": "Світло і сцени",
+    "dashboard.together": "Разом",
+    "dashboard.by_room": "За кімнатами",
+    "dashboard.scenes_style": "Показ сцен",
+    "dashboard.scene_tiles": "Плитки",
+    "dashboard.scene_chips": "Чипи",
     "rooms.title": "Порядок кімнат",
     "rooms.sub": "Для кожного списку за кімнатами, на кожній панелі",
     "rooms.auto": "Автоматично",
@@ -3130,7 +3136,8 @@
     "gates": "Ворота",
     "calendars": "Календарі",
     "lists": "Списки справ",
-    "timers": "Таймери"
+    "timers": "Таймери",
+    "whole_home": "Увесь дім"
   },
   "template": {
     "card": "Шаблон",

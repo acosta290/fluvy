@@ -3,6 +3,7 @@ import {
   DEMO_DASHBOARDS,
   DEMO_ENERGY_SOURCES,
   DEMO_EXTRAS,
+  DEMO_FLOORS,
   DEMO_ROOMS,
   demoHass,
 } from '@fluvy/demo-home';
@@ -41,7 +42,8 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * (`customise`, #170: on the demo home, opened by its address), with changes waiting — a card hidden, one moved first,
  * a light left out of a list and a switch added to it, a view hidden (`changes`) — with what was saved before
  * (`customised`: the clock as an analogue one, a room put first), its lights unfolded to their entities (`list`), the
- * clock's options in their sheet (`sheet`). Several join with commas.
+ * clock's options in their sheet (`sheet`). The house's rooms in an order of its own, the home dashboard grouping by
+ * room and drawing its scenes as chips (`rooms`, #189: with `dashboards`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -73,7 +75,8 @@ export type PanelState =
   | 'changes'
   | 'customised'
   | 'list'
-  | 'sheet';
+  | 'sheet'
+  | 'rooms';
 
 /**
  * Three sets of series colours a house might keep: the earth's, which follows the palette (its colours named), the
@@ -165,6 +168,16 @@ export function mountPanel(
       },
     } as HomeAssistant;
   }
+  // the home dashboard by room, its scenes as chips, and the floors its rooms are on (#189)
+  if (has('rooms')) {
+    configs.set('fluvy-auto', {
+      strategy: { type: 'custom:fluvy-home', group_by: 'room', scenes_style: 'chips' },
+    });
+    hass = {
+      ...hass,
+      floors: Object.fromEntries(DEMO_FLOORS.map((floor) => [floor.floor_id, { ...floor }])),
+    } as HomeAssistant;
+  }
   // Customise reads a whole house: the demo home's, with its rooms, its energy and one of everything
   demoHome = has('customise');
   if (demoHome) hass = withDemoHome(hass);
@@ -225,6 +238,11 @@ export function mountPanel(
         ...(has('sets') ? { series: 'sea' } : {}),
       },
       ...(has('sets') ? { chartSets: SETS } : {}),
+    });
+  // the house's rooms in an order of its own: the kitchen first, then the living room (#189)
+  if (has('rooms'))
+    void store.saveHouse({
+      rooms: { sort: 'auto', order: ['kitchen', 'living_room', 'bedroom', 'garden'] },
     });
   // every card see-through at 80 %, what shows through blurred (the appearance preview on its picture)
   if (has('glass'))

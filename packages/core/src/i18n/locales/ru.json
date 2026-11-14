@@ -2771,6 +2771,12 @@
     "dashboard.in_full": "Целиком",
     "dashboard.exclude": "Исключённые объекты",
     "dashboard.exclude_sub": "Не показываются ни в одном виде и нигде не учитываются, как будто их нет в доме",
+    "dashboard.group_by": "Свет и сцены",
+    "dashboard.together": "Вместе",
+    "dashboard.by_room": "По комнатам",
+    "dashboard.scenes_style": "Вид сцен",
+    "dashboard.scene_tiles": "Плитки",
+    "dashboard.scene_chips": "Чипы",
     "rooms.title": "Порядок комнат",
     "rooms.sub": "Для каждого списка по комнатам, на каждой панели",
     "rooms.auto": "Автоматически",
@@ -3130,7 +3136,8 @@
     "gates": "Ворота",
     "calendars": "Календари",
     "lists": "Списки дел",
-    "timers": "Таймеры"
+    "timers": "Таймеры",
+    "whole_home": "Весь дом"
   },
   "template": {
     "card": "Шаблон",

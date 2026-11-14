@@ -669,7 +669,8 @@
     "gates": "Garagedeuren & poorten",
     "calendars": "Agenda’s",
     "lists": "Takenlijsten",
-    "timers": "Timers"
+    "timers": "Timers",
+    "whole_home": "Hele huis"
   },
   "page": {
     "menu": "Menu openen",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Volledig",
     "dashboard.exclude": "Uitgesloten entiteiten",
     "dashboard.exclude_sub": "Op geen enkele weergave getoond en nergens geteld, alsof het huis ze niet heeft",
+    "dashboard.group_by": "Verlichting en scènes",
+    "dashboard.together": "Samen",
+    "dashboard.by_room": "Per kamer",
+    "dashboard.scenes_style": "Scènes als",
+    "dashboard.scene_tiles": "Tegels",
+    "dashboard.scene_chips": "Chips",
     "rooms.title": "Volgorde van de kamers",
     "rooms.sub": "Voor elke lijst per kamer, op elk dashboard",
     "rooms.auto": "Automatisch",

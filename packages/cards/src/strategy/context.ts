@@ -106,6 +106,8 @@ export async function buildContext(
       ...(config.thermostat_state === 'detailed' ? { doing: true } : {}),
       ...(config.tile_size ? { tiles: config.tile_size } : {}),
       ...(config.tile_switch ? { switches: config.tile_switch } : {}),
+      ...(config.group_by === 'room' ? { byRoom: true } : {}),
+      ...(config.scenes_style === 'chips' ? { sceneChips: true } : {}),
       ...(config.flow_style ? { flow: config.flow_style } : {}),
       ...(config.room_variant ? { room: config.room_variant } : {}),
       roomLook: roomLook(config, 'room_'),

@@ -2458,6 +2458,12 @@
     "dashboard.in_full": "W całości",
     "dashboard.exclude": "Pominięte encje",
     "dashboard.exclude_sub": "Niewidoczne w żadnym widoku i nigdzie nieliczone, jakby nie było ich w domu",
+    "dashboard.group_by": "Światła i sceny",
+    "dashboard.together": "Razem",
+    "dashboard.by_room": "Według pomieszczeń",
+    "dashboard.scenes_style": "Sceny jako",
+    "dashboard.scene_tiles": "Kafelki",
+    "dashboard.scene_chips": "Chipy",
     "rooms.title": "Kolejność pomieszczeń",
     "rooms.sub": "Dla każdej listy według pomieszczeń, na każdym pulpicie",
     "rooms.auto": "Automatycznie",
@@ -2913,7 +2919,8 @@
     "gates": "Bramy i drzwi garażowe",
     "calendars": "Kalendarze",
     "lists": "Listy zadań",
-    "timers": "Minutniki"
+    "timers": "Minutniki",
+    "whole_home": "Cały dom"
   },
   "template": {
     "card": "Szablon",

@@ -117,6 +117,16 @@ const SWITCHES = choice('tile_switch', 'dashboard.tile_switch', [
   { value: 'value', label: 'dashboard.switch_value' },
   { value: 'rocker', label: 'dashboard.switch_rocker' },
 ]);
+/** Which room a light or a scene belongs to (#189): each list as it stands, or by room under quiet labels. */
+const GROUPS = choice('group_by', 'dashboard.group_by', [
+  { value: 'none', label: 'dashboard.together' },
+  { value: 'room', label: 'dashboard.by_room' },
+]);
+/** The scenes (#189): a tile each, or pills that fill their rows on one card. */
+const SCENES = choice('scenes_style', 'dashboard.scenes_style', [
+  { value: 'tiles', label: 'dashboard.scene_tiles' },
+  { value: 'chips', label: 'dashboard.scene_chips' },
+]);
 const FLOW = choice('flow_style', 'dashboard.flow', words(['stream', 'legs', 'rail']));
 const ROOM = choice('room_variant', 'dashboard.rooms', words(['photo', 'tile', 'row']));
 /** What is a room's photo's alone acts while the rooms may be photos (the default where an area has a picture). */
@@ -185,6 +195,8 @@ export const TEMPLATES: readonly Template[] = [
       THERMOSTAT_STATE,
       TILES,
       SWITCHES,
+      GROUPS,
+      SCENES,
       FLOW,
       ...ROOMS,
       GREETING_TABS,
@@ -210,6 +222,7 @@ export const TEMPLATES: readonly Template[] = [
       THERMOSTAT_STATE,
       TILES,
       SWITCHES,
+      SCENES,
       GREETING_TABS,
       BACKGROUND,
       CAPS,

@@ -102,6 +102,9 @@ const PANEL = [
   // everywhere: the frame, our icons in the sidebar and in Settings, the Activity and History pages
   ['scope-everywhere', 'scope&state=everywhere'],
   ['dashboard', 'dashboard&state=dashboards'],
+  // the house's rooms in an order of its own, each a row with its arrows; the home dashboard by room, its scenes as
+  // chips (#189)
+  ['dashboard-rooms', 'dashboard&state=dashboards,rooms'],
   // Customise (1.20, #170), on the demo home: the home dashboard's views and the Home view's cards; what was saved
   // before, with its lights unfolded to their entities; the clock's options in their sheet
   ['customise', 'dashboard&state=dashboards,customise'],

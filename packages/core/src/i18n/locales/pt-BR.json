@@ -669,7 +669,8 @@
     "gates": "Portas de garagem e portões",
     "calendars": "Calendários",
     "lists": "Listas de tarefas",
-    "timers": "Temporizadores"
+    "timers": "Temporizadores",
+    "whole_home": "Casa toda"
   },
   "page": {
     "menu": "Abrir o menu",
@@ -1440,6 +1441,12 @@
     "dashboard.in_full": "Completas",
     "dashboard.exclude": "Entidades deixadas de fora",
     "dashboard.exclude_sub": "Não aparecem em nenhuma visualização nem contam em lugar nenhum, como se a casa não as tivesse",
+    "dashboard.group_by": "Luzes e cenas",
+    "dashboard.together": "Juntas",
+    "dashboard.by_room": "Por cômodo",
+    "dashboard.scenes_style": "Cenas como",
+    "dashboard.scene_tiles": "Blocos",
+    "dashboard.scene_chips": "Chips",
     "rooms.title": "Ordem dos cômodos",
     "rooms.sub": "Para toda lista por cômodo, em todos os painéis",
     "rooms.auto": "Automática",
