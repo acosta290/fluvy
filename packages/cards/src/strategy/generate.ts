@@ -1,6 +1,6 @@
 // the dashboards' words first: they are here before anything in the strategy's chunk says them
 import './english.js';
-import type { HomeAssistant } from '@fluvy/core';
+import { lookHandle, type HomeAssistant } from '@fluvy/core';
 import { APPLIANCES_PATH, applianceSections, appliancesView } from './appliances.js';
 import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
@@ -16,11 +16,22 @@ import type {
   View,
 } from './types.js';
 
-/** An automatic dashboard: the template its type names, built from the house. Fetched when a dashboard asks. */
+/** How long a browser's first visit waits for the house's settings before its dashboard is built without them, in ms. */
+const SETTLE = 1500;
+
+/**
+ * An automatic dashboard: the template its type names, built from the house. Fetched when a dashboard asks. A browser
+ * on its first visit keeps no copy of the house's settings yet, and a dashboard is built once: it waits for Home
+ * Assistant's answer, never long, so the rooms stand in the house's order from the first frame (1.21, #189).
+ */
 export async function generate(
   config: FluvyStrategyConfig,
   hass: HomeAssistant,
 ): Promise<{ views: View[] }> {
+  await Promise.race([
+    lookHandle()?.settled(),
+    new Promise<void>((resolve) => setTimeout(resolve, SETTLE)),
+  ]);
   return generateWith(templateOf(config.type) ?? HOME_TEMPLATE, config, hass);
 }
 

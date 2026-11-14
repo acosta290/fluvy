@@ -51,6 +51,7 @@ function fixture(
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    settled: () => Promise.resolve(),
     setWall: () => undefined,
     wearDevice: () => void readDevice(),
     stop: () => undefined,

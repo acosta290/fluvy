@@ -45,6 +45,8 @@ Edit dashboard dialog:
   the dialog's menu, and nothing is written unless a field is changed (#188, asked by @darrenhaken).
 - The settings panel's Recreate keeps what Customise changed on an automatic dashboard's views and cards and takes only
   its options back to their defaults; Customise's *Back to automatic* still removes them (#187, asked by @SentinelXS).
+- A Tiles or a Scenes card whose list already held a `- section:` entry draws it as that group's label, where 1.20
+  skipped the entry (#189).
 
 ### Added
 

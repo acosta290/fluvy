@@ -88,6 +88,7 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
       wallDark = state.dark;
       apply();
     },
+    settled: () => Promise.resolve(),
     wearDevice: apply,
     stop: () => store.stop(),
   };

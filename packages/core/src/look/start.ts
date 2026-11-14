@@ -100,6 +100,11 @@ export interface LookHandle {
   preview(preview: LookPreview | null): void;
   /** Calls `listener` whenever the settings change (here or on another device). */
   onChange(listener: (settings: EffectiveSettings) => void): () => void;
+  /**
+   * Resolves once the settings are the house's own: a copy this browser kept from an earlier visit, or Home
+   * Assistant's first answer. What is built once from them (an automatic dashboard) waits for it on a first visit.
+   */
+  settled(): Promise<void>;
   /** The wall's say: on, the frame goes; a forced mode re-derives the look. */
   setWall(state: WallState): void;
   /**
@@ -151,7 +156,15 @@ export function startLook(): LookHandle | undefined {
   const early = (globalThis as { __fluvyEarlyLook?: CSSStyleSheet }).__fluvyEarlyLook;
   const engine = new LookEngine(env.document, env.createSheet, storage, early);
   const store = new SettingsStore(appHass, storage);
-  let settings = cachedSettings(storage) ?? resolveSettings(HOUSE_DEFAULTS, PERSONAL_DEFAULTS);
+  const kept = cachedSettings(storage);
+  let settings = kept ?? resolveSettings(HOUSE_DEFAULTS, PERSONAL_DEFAULTS);
+  // the house's own settings are here: at once where this browser kept a copy, else with Home Assistant's first answer
+  let answered = (): void => {};
+  const settled = kept
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        answered = resolve;
+      });
 
   const prefersDark = (): boolean =>
     typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
@@ -343,6 +356,7 @@ export function startLook(): LookHandle | undefined {
       remark();
       if (changed) refreshCards();
       for (const listener of listeners) listener(next);
+      answered();
     });
   });
 
@@ -364,6 +378,7 @@ export function startLook(): LookHandle | undefined {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    settled: () => settled,
     setWall: (state) => {
       wall = state;
       preferences();

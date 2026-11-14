@@ -59,6 +59,7 @@ function fixture(admin = true, extra: Record<string, unknown> = {}) {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    settled: () => Promise.resolve(),
     setWall: () => undefined,
     wearDevice: () => void worn.push(readDevice().performance),
     stop: () => undefined,
