@@ -29,12 +29,17 @@ const BUDGETS = {
   // the appliances' announcement and icons, heights read from the house, the judges' fixes; the lazy families'
   // English left core first, about 9 KB): 224 in 1.8, 222 in 1.7, 220 before
   core: 241_664,
-  // the settings panel and its English
-  panel: 40_960,
+  // the settings panel and its English. 44 KB since 2026-11-14 (1.21, 3.3 KB: the form Home Assistant's pencil opens on
+  // an automatic dashboard, #188, 1.2 KB; the house's order of its rooms and the dashboards' groups by room and chips,
+  // #189, 1.0 KB; a dashboard's Sidebar row, its route and its saves beside the strategy, #187, 0.9 KB; what a
+  // thermostat says and the screensaver at the device's size, #185, #190): measured at 42.1 KB; 40 before
+  panel: 45_056,
   // Customise (1.20, #170): the Dashboards tab's section that edits an automatic dashboard's views and cards (what it
   // reads of the dashboard, what it changes of its `edit`, its rows, its sheet, its English), fetched the first time a
-  // dashboard is customised. Measured at 9.3 KB
-  customise: 12_288,
+  // dashboard is customised. 14 KB since 2026-11-14 (1.21, #188, 3.1 KB: rows dragged to their places and sent to
+  // an end, the tabs as a list, the sheet "Add a card" with its three ways, a view's rows searched; a card offered
+  // hidden, #190): measured at 12.3 KB; 12 before, measured at 9.3 KB
+  customise: 14_336,
   // a dashboard's sidebar in the panel (1.21, #187): the Dashboards tab's section that writes `fluvy_sidebar:` without
   // YAML (none, the ready-made one, the person's own: where it stands, its lists of cards in Home Assistant's stack
   // editor, the YAML of a dashboard kept in a file, its English), fetched the first time a dashboard's sidebar is
@@ -56,14 +61,16 @@ const BUDGETS = {
   // editor and its English. 17 KB since 2026-11-13 (1.20: following an Energy date picker, `collection_key`, #181, and
   // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before
   'chart-card': 17_408,
-  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 86 KB since
+  // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 87 KB since
+  // 2026-11-14 (1.21, #190, 0.9 KB: Where it went's words in their bars' order in the fewest tiers and the lift of a
+  // word's bar, Production's arrays past four as Other, a forecast's miss shared): measured at 86.5 KB; 86 KB since
   // 2026-11-13 (1.20, 4.6 KB: Production's forecast from Home Assistant, tomorrow and the days ahead, #183; every
   // array counted, History bars summing sensors, the flow's names on two lines, imported meters, #181, #183; the
   // round's double tap, #179): measured at 85.5 KB; 81 KB since 2026-11-12 (1.19.1, #170, 0.9 KB: the flow's steady layout, its words giving way before its list, the house's words
   // clear of its lanes, two sources of a kind told apart by their devices); 80 KB since 1.10 (its sheet left core,
   // 2.4 KB); 76 since 1.9 (the family's English, the history bars' live day and resets, the power chart's axes); 64
   // before
-  energy: 88_064,
+  energy: 89_088,
   // the Energy period card: the strip, its picker and its sheet (1.11, #62); the Energy usage card joins it. 17 KB
   // since 2026-11-13 (1.20: water and gas over the range, #181, and the period's bar, #182): measured at 16.7 KB; 16
   // before

@@ -5,6 +5,179 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+Nothing new shows by itself in this release: every new function is a key, an option or a setting that is off until it
+is turned on, so an upgrade changes no dashboard. What changes without being asked is a fix, or Home Assistant's own
+Edit dashboard dialog:
+
+- The Thermostat card's word for what the device is doing wears the tone of the action, never of the mode: Idle and Off
+  are quiet where Idle wore the heating tone and read as heating, and a water heater or a humidifier that is off says
+  Off quietly too (#185, asked by @ross104).
+- The Thermostat card says every action Home Assistant knows, Preheating and Defrosting too, and a humidifier's own
+  (Humidifying, Idle), in Home Assistant's own words where Fluvy speaks the page's language, where it said the mode
+  (#185, asked by @ross104).
+- The Thermostat card never loses that word: in a column too narrow for its badge beside the name (half a section, a
+  long name) it leads the line under the name ("Heating · 46 % RH"), where it vanished and nothing said the action
+  (#185, asked by @ross104).
+- Where it went keeps its words in their bars' order in every row, each over its own bar, in the fewest tiers that
+  allows: on a phone, or one read at 125 or 150 %, no word stands at the column's end right of a later bar's, and the
+  house's devices read left to right and down instead of piling out of order; a desktop column whose words fit one tier
+  draws as before, and one that needed two may now need one (#190, reported by @waphbs).
+- A Production card with more than four arrays counts every array in its day and draws four stacks, the fourth the rest
+  of them together as Other, where it counted the first four.
+- Every Fluvy sheet (a light's, a thermostat's, a cover's, a player's and a fan's details, an alert's, the cameras', an
+  item's, a schedule's, the room lights' colours, the robot's drive, the alarm's and the lock's keypad, the Energy
+  period's dates and Customise's options) keeps its last button above the phone's system bar, the Companion app's
+  included, and a sheet taller than the screen stops under the status bar, so a tap above it closes it and its body
+  scrolls under a finger (#190, reported by @waphbs).
+- A details sheet reads at the size of the card that opened it, at 100 % from the edit mode or the settings panel where
+  it took the device's size, and a screen too small for its dialog at that size (a tablet at 150 %) gets the bottom
+  sheet (#190, reported by @waphbs).
+- On see-through cards with blur, the cards an Expander holds stand on its surface and the hairline under its head is
+  back, where each held card drew a blurred box of its own inside it (#186, asked by @SentinelXS).
+- Home Assistant's own cards inside an Expander stand in its column by their own padding: a tile, a button, an area card
+  and a media player keep a surface of their own as Fluvy's tiles do, a picture, a map, a web page and a stack are no
+  longer pushed 16 past the column, and a calendar, a gauge and a heading line up with the head (#186, asked by
+  @SentinelXS).
+- Automatic dashboards: Home Assistant's pencil opens a form of Fluvy's in its Edit dashboard dialog, with a first row
+  that leads to Customise and the dashboard's most used options, where it showed the strategy's YAML; the YAML stays in
+  the dialog's menu, and nothing is written unless a field is changed (#188, asked by @darrenhaken).
+- The settings panel's Recreate keeps what Customise changed on an automatic dashboard's views and cards and takes only
+  its options back to their defaults; Customise's *Back to automatic* still removes them (#187, asked by @SentinelXS).
+
+### Added
+
+- A dashboard can keep a sidebar of its own beside its views, the same on every view: `fluvy_sidebar:` beside `views:`
+  or `strategy:` gives it a head and a foot that stay in sight, a middle that scrolls, any cards and a menu of its pages
+  with the open one marked, at the start or the end, as a panel, one card or no surface, as wide as each device asks,
+  folded to its icons, and above the view or in a drawer on a phone (#187, asked by @SentinelXS).
+- The settings panel gives a dashboard its sidebar without YAML: each automatic dashboard's card in Dashboards has a
+  Sidebar row with None, Clock and pages or Your own, its place and its cards in Home Assistant's card editor, the
+  dashboards of your own take one from Other dashboards, and a dashboard kept in a YAML file gets the YAML to copy
+  (#187, asked by @SentinelXS).
+- Preferences, This device has Hide dashboard sidebars, so a phone or a small tablet keeps the whole screen for the
+  views whatever a dashboard asks for (#187, asked by @SentinelXS).
+- Customise: a view's cards, a list's entities and the dashboard's tabs are dragged to their places by the handle before
+  each row, with a mouse or a finger, and their buttons gain Move to the top and Move to the bottom, so Scenes first on
+  Home is one press where it took fifteen (#188, asked by @darrenhaken).
+- Customise: the tabs unfold under Place among the tabs, each with its handle and its switch (#188, asked by
+  @darrenhaken).
+- Customise: Add a card opens a sheet with three ways: a card of any other view or room page shown here as well or moved
+  here, still automatic; one of Fluvy's cards filled in its own form with the card drawn over it; or YAML (#188, asked
+  by @darrenhaken).
+- Automatic dashboards: `edit.views.<view>.also` shows cards of other views on a view as well, each with an order and
+  options of its own there; a card whose view is gone is ignored (#188, asked by @darrenhaken).
+- Customise: a view of more than eight cards has a search field over its rows (#188, asked by @darrenhaken).
+- Settings › Fluvy › Dashboards has Rooms in order: Automatic, As in Home Assistant, A to Z or Your own, where the rooms
+  are dragged or moved with their arrows. Every list by room follows it: the Rooms view, the Lights view's groups, the
+  pages a long list splits by room, a wall's rooms and its room picker, and the Tiles and Scenes cards that group by
+  area. Automatic, the default, keeps each list as it was (#189, asked by @darrenhaken).
+- The home dashboard has a Lights and scenes option, Together or By room: by room, Home's lights stand under their
+  rooms' labels with short names (Kitchen Pendant reads Pendant), and the scenes of Home and of the Lights view stand
+  under theirs (#189, asked by @darrenhaken).
+- The home and rooms dashboards have a Scenes as option, Tiles or Chips: as chips the scenes are pills that fill their
+  rows on one card, by room on Home and the Lights view, the last run one filled, twelve before the N more row (#189,
+  asked by @darrenhaken).
+- The Tiles card and the Scenes card take sections (`- section: Kitchen`) and `group_by: area` or `floor`, each group
+  under a quiet label, in the house's order of its rooms or A to Z with `group_order: name`. Names read short inside a
+  room's group, and `short_names: false` keeps them whole (#189, asked by @darrenhaken).
+- The Scenes card has `variant: chips`: its scenes as pills that fill their rows on one card, the last run one filled
+  (#189, asked by @darrenhaken).
+- The Heading card has `heading_style: label`, a quiet label over a part of a group (#189, asked by @darrenhaken).
+- The Thermostat card says how far the valve is open beside the word with `show_valve: true` ("Heating · 42 %", "Idle ·
+  0 %"), found on the climate, on its device or on the valves a Better Thermostat drives, or named with `valve_entity`
+  or `valve_attribute` (#185, asked by @ross104).
+- The Thermostat card says "Window open" in the warning tone with `show_window: true` or `window_entity` while a window
+  or a door is open and the thermostat is on, and what else Better Thermostat holds the heating back for, in its own
+  words (#185, asked by @ross104).
+- The Thermostat card leads its line with a low battery in the warning ink with `show_battery: true` or
+  `battery_entity`: "Battery 8 %" at 20 % or less (#185, asked by @ross104).
+- The Thermostat card reads its action from another entity with `state_entity`, for a thermostat that says none, and the
+  room's humidity from another sensor with `humidity_entity`, and `show_state: false` hides the word (#185, asked by
+  @ross104).
+- A climate's or a humidifier's tile says what it is doing and what it is set to with `show_action: true` ("Heating ·
+  21.5°", "Idle · 21.5°", "Window open"), on the Tile card, on a tile of the Tiles card or for the whole group, and a
+  large climate tile then ends its head with what it measures ("20.8 °C") (#185, asked by @ross104).
+- The Room card's climate row and its thermostats' tiles say what the thermostat is doing with `show_action: true`
+  (#185, asked by @ross104).
+- Fluvy's details sheet of a thermostat says the same word as the card that opened it, with a row for each reading that
+  card asked for: Valve, Window, Battery (#185, asked by @ross104).
+- The automatic dashboards say all of it with one option in the panel's Dashboards tab, Thermostat state: Detailed
+  (`thermostat_state: detailed`), which finds the valve, an open window and a low battery for every thermostat and has
+  the rooms' climate rows say what their thermostat is doing (#185, asked by @ross104).
+- The Thermostat card's editor has a "What it is doing" group whose pickers show the sensors that were found, and the
+  Tile, Tiles and Room editors offer the switch where a climate or a humidifier is there to say it (#185, asked by
+  @ross104).
+- The Expander card takes cards for its head (`head_cards`): a clock or a weather tile stands where the title would,
+  stays while the card is folded and keeps its own taps, and the chevron becomes a round button beside it (#186, asked
+  by @SentinelXS).
+- The Expander card's chevron can stand at the foot (`chevron_position: bottom`) as a row that says Show more and Show
+  less, and folding from there brings the head back into view (#186, asked by @SentinelXS).
+- The Expander card's chevron can be larger for a wall tablet (`chevron_size: large`) (#186, asked by @SentinelXS).
+- The Expander card opens, folds or toggles from any other card: give it an `id` and that card a `fire-dom-event` action
+  with `fluvy_expander: {id, action}`; the expander-card's own action is answered too, and a card inside the Expander
+  can ask without an id (`fluvy_expander: toggle`) (#186, asked by @SentinelXS).
+- The Expander card's editor edits the head's cards in a list of their own, shows the action to copy under the ID, and
+  offers the head's own options only while no cards stand as the head (#186, asked by @SentinelXS).
+- The automatic dashboards can show the next seven days of solar forecast under the last days where every forecast the
+  Energy dashboard links to the panels holds a week (Solcast, Open-Meteo Solar Forecast): the Next days · forecast card
+  starts hidden and is shown from Customise (#190, reported by @waphbs).
+- Where it went lifts a word's bar and ribbons while the pointer or the focus is on it, the rest of the diagram resting,
+  and every word is reached by the keyboard (#190).
+- Wall mode: **Screensaver too**, under the size on the Wall tab's device card, reads the screensaver's clock and
+  weather at this tablet's size, in a column as wide as the cards'; it is off until it is turned on, offered only where
+  the size is not 100 %, and kept by the tablet alone (#190, reported by @waphbs).
+
+### Fixed
+
+- The settings panel keeps what an automatic dashboard's configuration holds beside its strategy (a `kiosk_mode:`, Home
+  Assistant's `background:`, a title): saving its options, Recreate and an imported settings file each wrote the
+  strategy alone and erased the rest (#187, asked by @SentinelXS).
+- An item's sheet taller than the screen opens at its head, where it opened scrolled down to Close (#190).
+- The History page's dates on a phone keep Show above the phone's home bar, as the Activity page's do (#190).
+- A solar forecast Home Assistant cannot give is asked for once a minute for every Production card on a view, where each
+  card asked again.
+- Settings panel: a link to Customise or to a dashboard's sidebar opened by someone who is not an administrator no
+  longer fetches their files.
+- Customise: the view that is open stays open when another tab is put before it.
+- Customise: a card moved to the first or the last place keeps the keyboard's focus on its buttons.
+- Two rows or two tiles of one entity, each with its own double tap, take a tap on each as two taps, where the second
+  ran its double tap (#179).
+- A large tile whose tap toggles flips its switch or its rocker at once under the finger, as its double tap, its hold
+  and a compact tile's tap do (#179).
+- A Vacuum card being driven whose column grows too narrow for the ring moves the pad to its sheet and keeps driving,
+  where drive mode ended (#178).
+- A page background whose picture address is written in Persian or an Indic script, with the joiners those words take
+  (ZWNJ, ZWJ), is drawn; every other invisible character is still refused.
+- The sidebar beside the page loads again at the next navigation when its file failed to load, where it waited for a
+  reload.
+- Ukrainian names the house as Home Assistant's own Ukrainian does, будинок, in the energy cards, the panel and
+  Customise; a Home's name keeps Дім.
+
+### Development
+
+- The Thermostat card is fetched as a family of its own (`climate`, 8 KB) and every page loads 4.9 KB less: every page
+  is 231.0 KB of 236 with the whole round in. A person's own picture in a head's circle and where a modal sheet stands
+  on a phone travel with the chunks that draw them (`shared`).
+- New lazy chunks: `climate`, `groups` (a list in groups, 4 KB), `sidebar` (10 KB) and `sidebar-editor` (6 KB). Budgets
+  raised, each dated in `check.mjs`: the settings panel 44 KB, Customise 14 KB, energy 87 KB. The house's settings are
+  version 6 (`rooms`).
+- What says what a thermostat is doing lives in the Thermostat card's chunk, and a tile or a room's row asked to say it
+  reaches it there, so core carries only the way to it.
+- One rule says where every modal sheet stands on a phone (`shared/sheet-insets.ts`), and the dashboard's view says its
+  zoom (`--fv-zoom`) so an inset stays in screen pixels; `interactions-sheets.mjs` opens all ten sheets at 100, 125 and
+  150 % with the app's insets, in Chromium and WebKit (#190).
+- A waiting tap is keyed by its surface (`tapper(of, at, tap, double)`), and the Alerts card's tests set every key an
+  alert and a clause take and check that none is warned about.
+- The playground stands Home Assistant's `ha-sortable` in with SortableJS 1.15.6, the library Home Assistant uses, and
+  `interactions-customise.mjs` drags rows with a real mouse and a real finger and reads what Save writes; it draws a
+  dashboard with a sidebar (`?dashboard=sidebar&side=menu|long|cards|drawer`), the panel's sidebar section and the
+  pencil's form, the app's insets (`?insets=44,34`), and sheets for what a thermostat is doing, the groups by room and
+  the Expander's head cards.
+- The view icon tests read real names that begin with a short stem's letters (Холодильник, Залізниця, Дімка, Доміно): a
+  stem under four letters matches whole words only.
+
 ## [1.20.0] — 2026-11-13
 
 ### Visible on upgrade

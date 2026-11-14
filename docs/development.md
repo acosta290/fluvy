@@ -82,8 +82,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | --- | --- | --- |
 | `fluvy.js` | 2 KB | the entry |
 | `core` | 236 KB | what every page loads |
-| `panel` | 40 KB | the settings panel and its English |
-| `customise` | 12 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
+| `panel` | 44 KB | the settings panel and its English |
+| `customise` | 14 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
 | `sidebar-editor` | 6 KB | a dashboard's sidebar in the panel (1.21, #187), the Dashboards tab's section that writes `fluvy_sidebar:` without YAML, and its English: fetched the first time a dashboard's sidebar is opened |
 | `strategy` | 29 KB | the automatic dashboards: their views and cards, each card in a part with an id of its own, and a person's `edit` laid over them |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
@@ -91,7 +91,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
 | `chart-card` | 17 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
 | `energy-period` | 17 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
-| `energy` | 86 KB | the energy family and its sheet, the history bars with it |
+| `energy` | 87 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
 | `media` | 16 KB | the player and the now-playing strip |
 | `devices` | 36 KB | the lock, the alarm and its keypad, the camera and the cameras, the printer, the job's times, the rows the lock, the alarm and the camera are built on |
