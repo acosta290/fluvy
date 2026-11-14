@@ -12,6 +12,7 @@ import {
   scaleOf,
   TIER,
   type LaidNode,
+  type SankeyLayout,
 } from './layout.js';
 import { crossingsOf, houseKids, idNamed, sankeyModel, ZERO, type DeviceInput } from './model.js';
 
@@ -286,13 +287,18 @@ describe('the sankey’s geometry', () => {
       { key: 'c', value: 1, ink: 'home', x: 72, w: 28 },
       { key: 'd', value: 1, ink: 'home', x: 108, w: 24 },
     ];
-    // a bar in the left half tries the start first, one in the right half the end
+    // a tier's first at the start, its second at the end, read left to right and down (#190)
     const packed = packLabels(row, () => 50, 132);
     expect(packed.map((p) => [p.x, p.end, p.tier])).toEqual([
       [0, false, 0],
       [80, true, 0],
-      [80, true, 1],
       [0, false, 1],
+      [80, true, 1],
+    ]);
+    // a word alone on its tier stands at the end where its bar is in the right half
+    expect(packLabels(row.slice(1, 3), () => 90, 132).map((p) => [p.x, p.w, p.end])).toEqual([
+      [0, 90, false],
+      [40, 92, true],
     ]);
     // a column from 200 up keeps the words at their bars (the last one at its bar's end, the column's)
     const wide = packLabels(
@@ -301,6 +307,168 @@ describe('the sankey’s geometry', () => {
       264,
     );
     expect(wide.map((p) => p.x)).toEqual([0, 72, 144, 212]);
+  });
+});
+
+describe('the words in their bars’ order, leaning to their bars (#190)', () => {
+  const model = sankeyModel(day.totals, day.allocation, DEVICES, 4);
+  /** The playground's words, as the card's ruler measures them. */
+  const WORDS: Record<string, number> = {
+    grid: 55,
+    battery: 59,
+    solar: 66,
+    house: 65,
+    charged: 61,
+    exported: 67,
+    'device:0': 72,
+    'device:1': 55,
+    'device:2': 56,
+    other: 100,
+    unmeasured: 99,
+  };
+  const measure = (key: string): number => WORDS[key] ?? 60;
+  /** Each row's words: its keys a tier, in their order. */
+  const tiers = (g: SankeyLayout, row: readonly LaidNode[]): string[][] => {
+    const keys = new Set(row.map((n) => n.key));
+    const own = g.labels.filter((l) => keys.has(l.key));
+    return [...new Set(own.map((l) => l.y))]
+      .sort((a, b) => a - b)
+      .map((y) =>
+        own
+          .filter((l) => l.y === y)
+          .sort((a, b) => a.x - b.x)
+          .map((l) => l.key),
+      );
+  };
+  /** Never out of order: down the rows' tiers (the sources' read up, from their bars) and across each tier. */
+  const inOrder = (g: SankeyLayout): void => {
+    for (const [row, up] of [
+      [g.top, true],
+      [g.mid, false],
+      [g.kids, false],
+    ] as const) {
+      const read = tiers(g, row);
+      expect((up ? read.reverse() : read).flat(), row.map((n) => n.key).join()).toEqual(
+        row.map((n) => n.key),
+      );
+    }
+  };
+
+  it('a phone’s column (272) reads Heat pump · Car · Kitchen, where Car stood right of Kitchen', () => {
+    const g = layoutSankey(model, 272, measure);
+    inOrder(g);
+    expect(tiers(g, g.top)).toEqual([['grid', 'battery', 'solar']]);
+    expect(tiers(g, g.mid)).toEqual([['house', 'charged'], ['exported']]);
+    expect(tiers(g, g.kids)).toEqual([['device:0', 'device:1', 'device:2'], ['unmeasured']]);
+    // the height it had: the same tiers
+    expect(g.height).toBe(416);
+  });
+
+  it('the reporter’s five words under the house: each under its bar, in order, never at the column’s end', () => {
+    const rooms = sankeyModel(
+      day.totals,
+      day.allocation,
+      [
+        { index: 0, id: 'boiler', value: 4.2 },
+        { index: 1, id: 'north', value: 2.6 },
+        { index: 2, id: 'studio', value: 1.9 },
+        { index: 3, id: 'south', value: 1.4 },
+      ],
+      4,
+    );
+    const words = (key: string): number =>
+      ({ 'device:0': 54, 'device:1': 86, 'device:2': 55, 'device:3': 86, unmeasured: 100 })[key] ??
+      measure(key);
+    const g = layoutSankey(rooms, 272, words);
+    inOrder(g);
+    // 1.20 drew North room at the column's end, right of Studio, and three tiers read as a pile
+    expect(tiers(g, g.kids)).toEqual([
+      ['device:0', 'device:1'],
+      ['device:2'],
+      ['device:3'],
+      ['unmeasured'],
+    ]);
+    for (const l of g.labels.filter((label) => label.key.startsWith('device:'))) {
+      const bar = g.kids.find((n) => n.key === l.key) as LaidNode;
+      expect(l.x <= bar.x + bar.w && l.x + l.w >= bar.x, l.key).toBe(true);
+    }
+  });
+
+  it('125 % (200) and 150 % (152) take the fewest tiers that keep each word over its bar', () => {
+    const at200 = layoutSankey(model, 200, measure);
+    inOrder(at200);
+    // Battery stands over its own bar, a tier above Grid's, where it stood at the column's end over the sun's
+    expect(tiers(at200, at200.top)).toEqual([['battery', 'solar'], ['grid']]);
+    expect(tiers(at200, at200.mid)).toEqual([['house', 'charged'], ['exported']]);
+    expect(tiers(at200, at200.kids)).toEqual([
+      ['device:0', 'device:1'],
+      ['device:2'],
+      ['unmeasured'],
+    ]);
+    const at152 = layoutSankey(model, 152, measure);
+    inOrder(at152);
+    expect(tiers(at152, at152.kids)).toEqual([
+      ['device:0', 'device:1'],
+      ['device:2'],
+      ['unmeasured'],
+    ]);
+    // half a column: two columns of words, the start and the end
+    for (const l of at152.labels) expect(l.x === 0 || l.x + l.w === 152, l.key).toBe(true);
+  });
+
+  it('keeps every column’s words in order, inside it, on the 4 grid, 16 apart, each over its bar', () => {
+    for (let width = 120; width <= 480; width += 4) {
+      const g = layoutSankey(model, width, measure);
+      inOrder(g);
+      for (const row of [g.top, g.mid, g.kids]) {
+        const own = g.labels.filter((l) => row.some((n) => n.key === l.key));
+        for (const l of own) {
+          expect(l.x % 4, `${width} ${l.key}`).toBe(0);
+          expect(l.x >= 0 && l.x + l.w <= width, `${width} ${l.key}`).toBe(true);
+          const mates = own.filter((m) => m.y === l.y);
+          const next = mates.find((m) => m.x > l.x);
+          if (next) expect(next.x - (l.x + l.w), `${width} ${l.key}`).toBeGreaterThanOrEqual(APART);
+          // from half a section up, a word that shares its tier stands over its own bar
+          const bar = row.find((n) => n.key === l.key) as LaidNode;
+          if (width >= 200 && mates.length > 1)
+            expect(
+              Math.min(l.x + l.w, bar.x + bar.w) - Math.max(l.x, bar.x),
+              `${width} ${l.key}`,
+            ).toBeGreaterThanOrEqual(Math.min(8, bar.w / 2) - 3);
+        }
+      }
+    }
+  });
+
+  it('a desktop column that reads in one tier keeps it, word for word', () => {
+    // the sources at 320: Grid and Battery at their bars' starts, Solar at its end, as 1.20 drew them
+    const g = layoutSankey(model, 320, measure);
+    expect(g.labels.filter((l) => l.tier === 0 && g.top.some((n) => n.key === l.key))).toEqual([
+      { key: 'grid', x: 0, w: 55, tier: 0, end: false, y: 0 },
+      { key: 'battery', x: 76, w: 59, tier: 0, end: false, y: 0 },
+      { key: 'solar', x: 252, w: 68, tier: 0, end: true, y: 0 },
+    ]);
+  });
+
+  it('a long word (Russian “Другие устройства”) takes a tier of its own at the column’s end, uncut', () => {
+    const five = sankeyModel(
+      day.totals,
+      day.allocation,
+      [...DEVICES, { index: 4, id: 'washer', value: 0.9 }, { index: 5, id: 'fridge', value: 0.4 }],
+      3,
+    );
+    const ru = (key: string): number =>
+      ({ other: 140, unmeasured: 92, charged: 76, exported: 56 })[key] ?? measure(key);
+    const g = layoutSankey(five, 200, ru);
+    inOrder(g);
+    expect(tiers(g, g.kids)).toEqual([
+      ['device:0', 'device:1'],
+      ['device:2'],
+      ['other'],
+      ['unmeasured'],
+    ]);
+    const other = g.labels.find((l) => l.key === 'other');
+    expect(other).toMatchObject({ x: 60, w: 140, end: true });
   });
 });
 

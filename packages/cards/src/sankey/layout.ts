@@ -3,7 +3,8 @@ import type { FlowLink, FlowNode, Ink, SankeyModel } from './model.js';
 /**
  * The diagram's geometry, top to bottom, in true proportions: ONE px-per-kWh scale for every bar and ribbon — the
  * largest that lets every row (its bars and the 8 px between them) hold in the column. Each row's words are packed
- * by their measured width: anchored at the bar's start, else at its end, else on the next tier, 16 px apart.
+ * by their measured width in their bars' order, 16 px apart: one tier at their bars' starts or ends, else the fewest
+ * lines that keep each over its bar.
  *
  *   sources' words (tiers of 36, the nearest under) · 8 · bars 8 · ribbons 88 · bars 8 · 8 · targets' words · 12 ·
  *   the house's ribbons 88 (leaving under its words' band) · its devices' bars 8 · 8 · their words
@@ -22,8 +23,8 @@ export const LEAVE_GAP = 12;
 /** The stem the house's ribbons leave from: 4 tall, its bottom where they start. */
 export const STEM = 4;
 /**
- * Under this column (half a section) a tier holds its words at the column's start and at its end only: bars this
- * narrow would put every word at a start of its own, five columns of words where the eye reads two.
+ * Under this column (half a section) a line holds two words at most, at the column's start and at its end: bars this
+ * narrow would put every word at a place of its own, five columns of words where the eye reads two.
  */
 export const NARROW = 200;
 
@@ -84,50 +85,91 @@ function lay(row: readonly FlowNode[], scale: number, x0 = 0): LaidNode[] {
   });
 }
 
+const down4 = (v: number): number => Math.floor(v / 4) * 4;
+const up4 = (v: number): number => Math.ceil(v / 4) * 4;
+
 /**
- * Packs a row's words: each tries tier 0 at its bar's start (on the 4 grid), then at its bar's end (its box starts
- * on the grid, its right edge is the bar's end), then against the column's end (a column too narrow for either),
- * then the next tier; boxes of a tier stay 16 apart and inside `[0, width]`. A box wider than the column is the
- * column (its name ends in an ellipsis). Half a column (`NARROW`) keeps two places only, the column's start and its
- * end — the end first for a bar in the right half — so its words stand in two columns, in their bars' order.
+ * Packs a row's words in their bars' order, each leaning to its bar. One tier holds them where each stands at its
+ * bar's start (on the 4 grid) or, right-aligned, at its end, 16 after the one before it; else they take the fewest
+ * lines that keep every word over its bar (8 of the bar under its box, so none reads as a neighbour's), filled in
+ * order, 16 apart: a word stands at its bar's start, pushed right by the one before it, pulled left by what follows it
+ * on its line — and then right-aligned, toward its bar, where its box ends on the bar or is the line's last (which ends
+ * where the column does). A word alone on its line stands as near its bar as the column lets it; a box wider than the
+ * column is the column, read from its start (its name ends in an ellipsis). Half a column (`NARROW`) leans its words
+ * to the column's start and end instead: a line's first at the start, its second at the end, a word alone at the end
+ * where its bar stands in the right half.
  */
 export function packLabels(
   row: readonly LaidNode[],
   measure: (key: string) => number,
   width: number,
 ): Omit<LaidLabel, 'y'>[] {
-  const tiers: [number, number][][] = [];
-  const fits = (t: number, a: number, b: number): boolean =>
-    a >= 0 && b <= width && (tiers[t] ?? []).every(([s, e]) => b + APART <= s || a >= e + APART);
+  const lw = row.map((n) => Math.min(width, Math.ceil(measure(n.key))));
   const narrow = width < NARROW;
-  return row.map((n) => {
-    const lw = Math.min(width, Math.ceil(measure(n.key)));
+  let after = 0;
+  const tier: Omit<LaidLabel, 'y'>[] = [];
+  for (const [i, n] of row.entries()) {
+    const w = lw[i] as number;
     const right = n.x + n.w;
-    const edge = Math.max(0, Math.floor((width - lw) / 4) * 4);
-    // against the column's end, right-aligned there; a box as wide as the column reads from its start
-    const atEnd = { x: edge, w: width - edge, end: edge > 0 };
-    const atStart = { x: 0, w: lw, end: false };
-    const places = narrow
-      ? n.x + n.w / 2 > width / 2
-        ? [atEnd, atStart]
-        : [atStart, atEnd]
-      : [
-          { x: Math.floor(n.x / 4) * 4, w: lw, end: false },
-          {
-            x: Math.floor((right - lw) / 4) * 4,
-            w: Math.round(right) - Math.floor((right - lw) / 4) * 4,
-            end: true,
-          },
-          atEnd,
-        ];
-    // a tier of its own always holds the last place: the loop ends there at the latest
-    for (let t = 0; ; t++)
-      for (const p of places)
-        if (fits(t, p.x, p.x + p.w)) {
-          (tiers[t] ??= []).push([p.x, p.x + p.w]);
-          return { key: n.key, x: p.x, w: p.w, tier: t, end: p.end };
-        }
-  });
+    const start = down4(n.x);
+    const end = down4(right - w);
+    const place = narrow
+      ? null
+      : start >= after && start + w <= width
+        ? { x: start, w, end: false }
+        : end >= after
+          ? { x: end, w: Math.round(right) - end, end: true }
+          : null;
+    if (!place) break;
+    tier.push({ key: n.key, ...place, tier: 0 });
+    after = place.x + place.w + APART;
+  }
+  if (tier.length === row.length) return tier;
+
+  /** A line's boxes, and whether they all stand inside the column, each over its bar (in half a column, two at most). */
+  const lay = (line: readonly number[], t: number) => {
+    // what a word and those after it on its line take: each box on the grid and 16 after the one before
+    let rest = line.reduce(
+      (sum, i, k) => sum + (k < line.length - 1 ? up4(lw[i] as number) + APART : (lw[i] as number)),
+      0,
+    );
+    let cursor = 0;
+    let over = !narrow || line.length < 3;
+    const boxes = line.map((i, k) => {
+      const n = row[i] as LaidNode;
+      const w = lw[i] as number;
+      const lean = narrow
+        ? k || (line.length < 2 && n.x + n.w / 2 > width / 2)
+          ? width
+          : 0
+        : down4(n.x);
+      const x = Math.max(cursor, Math.min(lean, down4(width - rest)));
+      const last = k === line.length - 1;
+      // over its bar: 8 of it under the box at least (half of a bar narrower than 16)
+      over &&=
+        x + w <= width &&
+        (narrow || Math.min(x + w, n.x + n.w) - Math.max(x, n.x) >= Math.min(8, n.w / 2));
+      cursor = x + up4(w) + APART;
+      rest -= up4(w) + APART;
+      // right-aligned where it was pulled left of its bar: toward it, where its box ends on the bar or the column's end
+      const end = w < width && (narrow ? lean > 0 : x < lean && (last || x + w <= n.x + n.w));
+      return {
+        key: n.key,
+        x,
+        w: end && last ? width - x : w,
+        tier: t,
+        end,
+      };
+    });
+    return { boxes, over };
+  };
+  const lines: number[][] = [];
+  for (const i of row.keys()) {
+    const line = lines.at(-1);
+    if (line && lay([...line, i], 0).over) line.push(i);
+    else lines.push([i]);
+  }
+  return lines.flatMap((line, t) => lay(line, t).boxes);
 }
 
 const tiersOf = (labels: readonly Omit<LaidLabel, 'y'>[]): number =>

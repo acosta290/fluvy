@@ -6,7 +6,8 @@
  * What it proves: the sankey reads the Energy dashboard's meters and devices (the figures its dashboard shows), one
  * px-per-kWh scale for every bar and ribbon, the house's ribbons in its ink at 24 %, a device inside another left
  * out and the rest "not measured", dashed; rows reordered when the grid charges the battery; words packed apart
- * inside the column; a period switch asks the statistics again; a tap opens a meter's more-info; a meter down, a
+ * inside the column; a word under the pointer or the focus (every word is reached by the keyboard) lifts its bar and
+ * ribbons and rests the rest at 45 %; a period switch asks the statistics again; a tap opens a meter's more-info; a meter down, a
  * device missing, no Energy dashboard and unreadable statistics each say so. The score's rings are Home Assistant's
  * gauges (the fossil energy asked the way the Energy dashboard asks it), a ring the house cannot have is left out
  * and the rest stay centred, the net says its way, and taps open the grid's meter and the CO₂ signal; in every
@@ -155,6 +156,45 @@ const drawing = (card) =>
     'the house and “not measured” are not buttons: nothing to open',
     !l.find((x) => x.key === 'house')?.button && !l.find((x) => x.key === 'unmeasured')?.button,
   );
+
+  // a word under the pointer lifts its bar and ribbons, the rest rest at 45 %; the focus does the same (#190)
+  const lifted = () =>
+    card.evaluate((c) => {
+      const root = c.shadowRoot;
+      const opacity = (el) => Number(getComputedStyle(el).opacity);
+      const parts = [...root.querySelectorAll('.en-ribbon, .en-node-bar[data-key]')];
+      return {
+        on: parts.filter((p) => p.classList.contains('is-on')).map((p) => p.dataset.key),
+        resting: parts.filter((p) => opacity(p) < 0.5).length,
+        all: parts.length,
+      };
+    });
+  await card.locator('.en-sk-label[data-key="solar"]').hover();
+  // its 200 ms ease run
+  await page.waitForTimeout(400);
+  const sun = await lifted();
+  check(
+    'a word under the pointer lifts its bar and its ribbons; the rest of the diagram rests at 45 %',
+    sun.on.join() === 'solar-house,solar-charged,solar-exported,solar' &&
+      sun.resting === sun.all - sun.on.length,
+    JSON.stringify(sun),
+  );
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(400);
+  const rested = await lifted();
+  check(
+    'the pointer gone, every part is as it was',
+    rested.on.length === 0 && rested.resting === 0,
+  );
+  await card.locator('.en-sk-label[data-key="unmeasured"]').focus();
+  const kept = await lifted();
+  check(
+    'every word is reached by the keyboard, a figure worked out too: its focus lifts what it names',
+    kept.on.join() === 'house-unmeasured,unmeasured' &&
+      (await card.locator('.en-sk-label:not([tabindex="0"])').count()) === 0,
+    JSON.stringify(kept),
+  );
+  await card.locator('.en-sk-label[data-key="unmeasured"]').blur();
 
   // a meter goes down while the card is on screen: the head says so
   await page.evaluate(() => window.fluvyMock.set('sensor.fl_grid_in_energy', 'unavailable'));

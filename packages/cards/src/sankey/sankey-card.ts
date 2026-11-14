@@ -243,6 +243,8 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   private dataKey = '';
   /** The picker's answer the diagram was last read from. */
   private followed: EnergyDataLike | undefined;
+  /** The node whose words are under the pointer or hold the focus: its bar and ribbons lifted, the rest resting. */
+  private lit: string | undefined;
 
   override getCardSize(): number {
     return Math.ceil(FluvyEnergySankeyCard.layoutHeight(this.config ?? { type: '' }) / 50);
@@ -537,14 +539,27 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
     </article>`;
   }
 
+  /** Lifts a node's bar and ribbons (none: every one at rest). */
+  private light(key?: string): void {
+    if (key === this.lit) return;
+    this.lit = key;
+    this.requestUpdate();
+  }
+
   private renderDiagram(scene: Scene, w: number): TemplateResult {
     const g: SankeyLayout = layoutSankey(scene.model, w, (key) => this.labelWidth(scene, key));
+    const lit = this.lit;
+    // a ribbon is its two nodes' (`grid-house`), lifted with either
+    const on = (keys: string): string => (lit && keys.split('-').includes(lit) ? 'is-on' : '');
     const bars = (row: readonly LaidNode[], y: number): TemplateResult[] =>
       row.map(
         (n) =>
-          svg`<rect class="en-node-bar en-ink--${n.ink} ${n.dashed ? 'is-dashed' : ''}" data-key=${n.key} x=${n.x.toFixed(1)} y=${y} width=${Math.max(0, n.w).toFixed(1)} height=${BAR} rx=${Math.min(4, n.w / 2).toFixed(1)}></rect>`,
+          svg`<rect class="en-node-bar en-ink--${n.ink} ${n.dashed ? 'is-dashed' : ''} ${on(n.key)}" data-key=${n.key} x=${n.x.toFixed(1)} y=${y} width=${Math.max(0, n.w).toFixed(1)} height=${BAR} rx=${Math.min(4, n.w / 2).toFixed(1)}></rect>`,
       );
-    return html`<div class="en-sankey" style="height:${g.height}px">
+    return html`<div
+      class="en-sankey ${g.labels.some((l) => l.key === lit) ? 'is-lit' : ''}"
+      style="height:${g.height}px"
+    >
       <svg
         width=${w}
         height=${g.height}
@@ -552,8 +567,8 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         aria-hidden="true"
         data-measure="drawn"
       >
-        ${g.ribbons.map((r) => svg`<path class="en-ribbon en-ink--${r.ink}" data-key=${r.key} d=${r.d}></path>`)}
-        ${g.stem ? svg`<rect class="en-node-bar en-ink--home is-stem" x=${g.stem.x.toFixed(1)} y=${g.stem.y} width=${g.stem.w.toFixed(1)} height="4" rx="2"></rect>` : nothing}
+        ${g.ribbons.map((r) => svg`<path class="en-ribbon en-ink--${r.ink} ${on(r.key)}" data-key=${r.key} d=${r.d}></path>`)}
+        ${g.stem ? svg`<rect class="en-node-bar en-ink--home is-stem ${on('house')}" x=${g.stem.x.toFixed(1)} y=${g.stem.y} width=${g.stem.w.toFixed(1)} height="4" rx="2"></rect>` : nothing}
         ${bars(g.top, g.y0)}${bars(g.mid, g.y1)}${bars(g.kids, g.y2)}
       </svg>
       ${g.labels.map((l) => {
@@ -561,12 +576,19 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         if (!words) return nothing;
         const entity = words.entity;
         const open = entity ? () => this.tap(entity, { action: 'more-info' }) : undefined;
+        const light = (): void => this.light(l.key);
+        const rest = (): void => this.light();
+        // every word is reached by the keyboard, to lift what it names; a meter's opens it too
         return html`<span
           class="en-sk-label ${l.end ? 'is-end' : ''} ${open ? 'fv-row--tap' : ''}"
           data-key=${l.key}
           style="left:${l.x}px;top:${l.y}px;width:${l.w}px"
           role=${open ? 'button' : nothing}
-          tabindex=${open ? '0' : nothing}
+          tabindex="0"
+          @pointerenter=${light}
+          @pointerleave=${rest}
+          @focus=${light}
+          @blur=${rest}
           @click=${open ?? nothing}
           @keydown=${open ? activateKey(open) : nothing}
           ><span class="en-sk-name" data-name>${words.name}</span

@@ -613,10 +613,17 @@
       "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
     },
     {
+      "frame": "sankey/Five words under the house",
+      "tag": "fluvy-energy-sankey-card",
+      "declared": 576,
+      "drawn": 612,
+      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+    },
+    {
       "frame": "sankey/Long names",
       "tag": "fluvy-energy-sankey-card",
       "declared": 516,
-      "drawn": 588,
+      "drawn": 552,
       "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
     },
     {
@@ -658,7 +665,7 @@
       "frame": "sankey/The grid charges the battery",
       "tag": "fluvy-energy-sankey-card",
       "declared": 516,
-      "drawn": 328,
+      "drawn": 292,
       "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
     },
     {

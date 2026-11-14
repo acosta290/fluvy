@@ -1026,6 +1026,12 @@ them.
 **Sankey.** One px-per-kWh scale for every bar and ribbon (true proportions); rows Grid · Battery · Solar → House ·
 Charged · Exported, so no ribbon crosses another; the house's own ribbons leave 56 px under its bar, under its words,
 at 24 %; labels packed by their measured width (at the bar's start, else its end, else a second tier), 16 px apart.
+Since 1.21 (#190) the words keep their bars' order in every row: one tier where each stands at its bar's start or end;
+else the fewest tiers that keep each over its own bar (8 px of the bar under its words at least), filled left to
+right, each word at its bar's start, pushed right by the one before it and pulled left by what follows it on its tier,
+right-aligned where that leaves its bar on its right (a tier's last then ends where the column does), so a word never
+stands at the column's end over another's bar. A word under the pointer or the focus (every word is reached by the
+keyboard) lifts its bar and ribbons; the rest of the diagram rests at 45 % (200 ms, none under reduced motion).
 
 **Glyphs.** `tower` is the grid in every state (the head keeps the bolt), `generator` a fuel can, `swap` two opposed
 arrows (the balance), `oven`.
@@ -1177,8 +1183,9 @@ measured at the widest a house says (10 kW), as a curve's widest figures are mea
 **Modes and the sankey in a narrow column (1.9).** An energy device's modes (the batteries' and the charger's) are
 option tiles only while every name holds its cell (`optionsHold`, as the thermostat's modes); else the chips, which
 never cut a word. The sankey in half a column (under 200): a tier holds its words at the column's start and at its end
-only — the end first for a bar in the right half — so the words stand in two columns in their bars' order, instead of
-a start per bar (five columns of words where the eye reads two). A device gone from the house keeps the room of the name
+only (since 1.21 its first at the start and its second at the end, read in order; a word alone at the end where its
+bar is in the right half), so the words stand in two columns in their bars' order, instead of a start per bar (five
+columns of words where the eye reads two). A device gone from the house keeps the room of the name
 it had (the friendly name the page last read, or the registry's), so its labels keep their tiers; only a name that is
 the id's alone takes no more than its figure's room and ends in its ellipsis there.
 

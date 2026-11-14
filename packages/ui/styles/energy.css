@@ -803,6 +803,15 @@
   opacity: 0.5;
 }
 
+/* a word under the pointer or the focus lifts its bar and ribbons: the rest of the diagram rests at 45 % */
+.en-sankey :is(.en-ribbon, .en-node-bar) {
+  transition: opacity 200ms var(--fv-ease);
+}
+
+.en-sankey.is-lit :is(.en-ribbon, .en-node-bar):not(.is-on) {
+  opacity: 0.45;
+}
+
 .en-sk-label {
   position: absolute;
   display: flex;

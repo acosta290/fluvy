@@ -42,6 +42,23 @@ const DEVICES: Record<string, Rows> = {
   'sensor.sk_washer_energy': buckets([0, 0.9, 0, 0]),
   'sensor.sk_fridge_energy': buckets([0.1, 0.1, 0.1, 0.1]),
   'sensor.sk_long_energy': buckets([1.0, 0.5, 0.3, 0.9]),
+  // #190's house: a boiler and three rooms on meters of their own
+  'sensor.sk_boiler_energy': buckets([1.6, 0.6, 0.4, 1.6]),
+  'sensor.sk_north_room_energy': buckets([0.4, 0.8, 0.6, 0.8]),
+  'sensor.sk_studio_energy': buckets([0, 0.9, 0.7, 0.3]),
+  'sensor.sk_south_room_energy': buckets([0.2, 0.3, 0.4, 0.5]),
+};
+
+/** #190's house in English: its boiler and rooms, the four the card draws by name, and what no meter accounts for. */
+const ROOMS = {
+  type: 'custom:fluvy-energy-sankey-card',
+  devices: [
+    { entity: 'sensor.sk_boiler_energy', name: 'Boiler' },
+    { entity: 'sensor.sk_north_room_energy', name: 'North room' },
+    { entity: 'sensor.sk_studio_energy', name: 'Studio' },
+    { entity: 'sensor.sk_south_room_energy', name: 'South room' },
+  ],
+  _now: NOW,
 };
 
 /** Answers the statistics a question asks for from a table (an id the table does not know has no rows). */
@@ -213,6 +230,10 @@ export const sheet: SheetSpec = {
     ['sensor.sk_washer_energy', '0.9', energy('Washing machine energy')],
     ['sensor.sk_fridge_energy', '0.4', energy('Fridge energy')],
     ['sensor.sk_long_energy', '2.7', energy('Underfloor heating in the ground-floor bathroom')],
+    ['sensor.sk_boiler_energy', '4.2', energy('Boiler energy')],
+    ['sensor.sk_north_room_energy', '2.6', energy('North room energy')],
+    ['sensor.sk_studio_energy', '1.9', energy('Studio energy')],
+    ['sensor.sk_south_room_energy', '1.4', energy('South room energy')],
     [
       'sensor.sk_co2',
       '42',
@@ -385,6 +406,14 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+
+    /* the words in their bars' order, leaning to their bars (#190): a phone's column, and the same phone read at
+       125 % and 150 % (its column 200 and 152), where 1.20 piled the words out of their order */
+    { title: 'Five words under the house', cards: [ROOMS] },
+    { title: 'Five words · a phone', width: 312, cards: [ROOMS] },
+    { title: 'Five words · a phone at 125 %', width: 240, cards: [ROOMS] },
+    // a short title of its own, as a card this narrow is given ("Where it went" is longer in Dutch and Russian)
+    { title: 'Five words · a phone at 150 %', width: 192, cards: [{ ...ROOMS, title: 'Energy' }] },
 
     /* the score */
     {
