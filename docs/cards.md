@@ -86,7 +86,10 @@ entity (its settings, its history, what it relates to, its attributes), and Clos
 closes it, the focus going back to what was tapped. At the foot, the entity's last 24 hours are drawn in the house's
 chart style (how long it was on, or a thermostat's temperature), and a tap on them opens Fluvy's
 [History](pages.md#history) for that entity. A sheet is a bottom sheet on a phone and a dialog in the middle of a wide
-screen.
+screen. It reads at the size of the card that opened it (a device that reads its dashboards at 125 % opens its sheets
+at 125 %, and a screen too narrow for the dialog at that size gets the bottom sheet). Every sheet of Fluvy's keeps its
+foot above the phone's system bar (the Companion app's too) and, when it is taller than the screen, stops short of the
+top so a tap above it closes it; its body scrolls.
 
 Every other entity opens Home Assistant's dialog as before, and so does every card that is not Fluvy's: Fluvy answers
 only the `more-info` of its own cards.

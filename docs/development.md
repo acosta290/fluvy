@@ -63,8 +63,8 @@ light card's colour controls (the first colour bulb), the cards' visual editor, 
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
 are see-through), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
 one), the page's background (the first dashboard that wears one), the icon set's other part (the first time Home Assistant asks for one of its icons),
-what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, a name's
-plain letters: with the first chunk that needs them)
+what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, where a
+modal sheet stands on a phone, a name's plain letters: with the first chunk that needs them)
 and a language's catalogue (English's core part ships in core; a lazy family's English part travels with the family's
 chunk, registered as it lands). `packages/bundle/groups.mjs` says which chunk each module goes to; a family's group
 names its English part, or core keeps it, and every module no group names lands in core: the build stops
@@ -127,7 +127,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
-| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, a name's plain letters |
+| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |

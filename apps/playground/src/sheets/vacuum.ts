@@ -214,5 +214,11 @@ export const sheet: SheetSpec = {
       hass: withServices,
       cards: [{ type: VACUUM, entity: 'vacuum.dr_gone', show_drive: true }],
     },
+    // asked for its sheet: Drive opens the pad over the page whatever the column, as on a phone at any size (#190)
+    {
+      title: 'Drive · in its sheet',
+      hass: withServices,
+      cards: [{ type: VACUUM, entity: 'vacuum.dr_robot', show_drive: true, drive_style: 'sheet' }],
+    },
   ],
 };

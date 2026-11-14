@@ -37,6 +37,7 @@ import { TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
 import { LaidWidth } from '../../shared/laid.js';
 import { optionCell, optionColumnsFor, optionsHold } from '../../shared/options.js';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 import { daysShort, daysText, lastText, spanText, suggestAlias } from '../format.js';
 import {
   checkSchedule,
@@ -353,11 +354,9 @@ export class FluvyScheduleSheet extends LitElement {
       /* the sheet scrolls inside the dialog, which is the viewport: the footer ends the content, nothing sticky */
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         touch-action: pan-y;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: ss-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -520,6 +519,7 @@ export class FluvyScheduleSheet extends LitElement {
         pointer-events: none;
       }
     `,
+    sheetInsets,
   ];
 
   static override properties = {

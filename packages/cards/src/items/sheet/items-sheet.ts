@@ -12,6 +12,7 @@ import {
 import { TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
 import { LaidWidth } from '../../shared/laid.js';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 import { fitSegments } from '../fields.js';
 import type { SheetRow } from '../presets.js';
 
@@ -120,11 +121,9 @@ export class FluvyItemsSheet extends LitElement {
       }
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         touch-action: pan-y;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: is-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -208,6 +207,7 @@ export class FluvyItemsSheet extends LitElement {
         width: 100%;
       }
     `,
+    sheetInsets,
   ];
 
   static override properties = {
@@ -301,9 +301,12 @@ export class FluvyItemsSheet extends LitElement {
   protected override updated(changed: PropertyValues): void {
     const dialog = this.renderRoot.querySelector('dialog');
     if (dialog && !dialog.open && this.open_ && !this.leaving_) dialog.showModal();
+    // the focus on Close, the sheet at its head: a tall one opens where it starts, not at its foot (#190)
     if (changed.has('open_') && this.open_ && !this.docked)
       requestAnimationFrame(() =>
-        this.renderRoot.querySelector<HTMLElement>('.is-actions .fv-btn:last-child')?.focus(),
+        this.renderRoot
+          .querySelector<HTMLElement>('.is-actions .fv-btn:last-child')
+          ?.focus({ preventScroll: true }),
       );
   }
 

@@ -12,6 +12,7 @@ import {
 import { TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
 import { LaidWidth } from '../../shared/laid.js';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 import {
   cameraRowStyles,
   fitLines,
@@ -130,11 +131,9 @@ export class FluvyCamerasSheet extends LitElement {
       }
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         touch-action: pan-y;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: cs-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -194,6 +193,7 @@ export class FluvyCamerasSheet extends LitElement {
         width: 100%;
       }
     `,
+    sheetInsets,
   ];
 
   static override properties = {

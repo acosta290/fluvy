@@ -68,15 +68,13 @@ export const detailsStyles = css`
       opacity: 0;
     }
   }
-  /* the sheet reads at the size this device reads its dashboards at, as the cards under it do */
+  /* the sheet reads at the size of the card that opened it (--fv-zoom, said by openDetails), as that card does */
   dialog .fv-sheet {
     max-width: 392px;
-    max-height: 100%;
     overflow-y: auto;
     touch-action: pan-y;
     overscroll-behavior: contain;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-    zoom: var(--fluvy-zoom, 1);
+    zoom: var(--fv-zoom, 1);
     animation: dt-up 320ms var(--fv-ease-out) both;
   }
   dialog.is-leaving {
@@ -90,9 +88,13 @@ export const detailsStyles = css`
     width: 100%;
   }
 
-  /* a wide screen: a dialog in the middle of it, every corner round, no grabber to pull; it rises as it fades in */
+  /* a wide screen: a dialog in the middle of what the system's bars leave of it, every corner round, no grabber to
+     pull; it rises as it fades in */
   :host([wide]) dialog {
+    box-sizing: border-box;
     justify-content: center;
+    padding-block: var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
   :host([wide]) .fv-sheet {
     border-radius: var(--fluvy-radius-xl);

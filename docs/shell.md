@@ -54,9 +54,10 @@ the wall fails open, never trapped.
 
 A device that reads its dashboards larger ([wall mode](wall.md), *Reading from across the room*) carries
 `--fluvy-zoom` on `<html>` (`1.25`; nothing at 100 %), and the `device-zoom` sheet on `hui-root` turns it into CSS
-`zoom` on the dashboard's view alone (`#view > hui-view`), back to 1 in the edit mode. The sheet is filled whatever
-the theme, since every rule hangs on the variable; the loader sets the variable from the device's memory before
-Home Assistant paints, and the bundle takes it over.
+`zoom` on the dashboard's view alone (`#view > hui-view`), back to 1 in the edit mode. The view says the same to what
+opens from it (`--fv-zoom`), so a card's sheet takes the screen's safe areas in its own pixels. The sheet is filled
+whatever the theme, since every rule hangs on the variable; the loader sets the variable from the device's memory
+before Home Assistant paints, and the bundle takes it over.
 
 ## What it never does
 

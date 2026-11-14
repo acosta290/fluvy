@@ -332,11 +332,13 @@ const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 /**
  * What only the chunks fetched later share (1.20): the local dates and the month grid (the calendar, the date picker,
  * the schedule sheet, the Energy period card, the items' fields), the clock of the cards that say how long ago
- * (`Ticker`), the width a sheet was laid out at (`LaidWidth`) and a name's plain letters (the appliances, the strategy,
- * the view icons). Nothing every page runs reaches them: in core every page waited on them, here they come with the
- * first chunk that needs them — as the bundle starts, beside the editors' fields the families fetch too.
+ * (`Ticker`), the width a sheet was laid out at (`LaidWidth`), where a modal sheet stands on a phone (`sheetInsets`,
+ * 1.21) and a name's plain letters (the appliances, the strategy, the view icons). Nothing every page runs reaches them:
+ * in core every page waited on them, here they come with the first chunk that needs them — as the bundle starts,
+ * beside the editors' fields the families fetch too.
  */
-const SHARED = /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid)|core\/src\/plain)\.ts/;
+const SHARED =
+  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets)|core\/src\/plain)\.ts/;
 
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;

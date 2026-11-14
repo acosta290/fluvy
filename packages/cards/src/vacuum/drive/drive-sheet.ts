@@ -8,6 +8,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 import type { DriveProfile } from '../drive.js';
 import { DRIVE_END, type DriveEndDetail } from './drive-pad.js';
 
@@ -95,11 +96,9 @@ export class FluvyDriveSheet extends LitElement {
       }
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         touch-action: pan-y;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: ds-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -139,6 +138,7 @@ export class FluvyDriveSheet extends LitElement {
         width: 100%;
       }
     `,
+    sheetInsets,
   ];
 
   static override properties = {

@@ -32,7 +32,7 @@ family owns ships with that family's chunk and is said only where that chunk has
 | Tile · compact | 76 tall, padding 16, radius 16 — the scene tile's geometry: 44 icon, 12 gap, name 15/600 over state 13/500 (36 block centred on the icon); with `name_lines: 2` (1.13, #100) the name takes two balanced lines where one would end in an ellipsis, an ellipsis only past the second, and the tile is 88 (96 inside a card) whatever its name says, so a row stays level | the whole tile is the button — tap toggles what toggles (opens what does not), hold 500 ms opens the details; no switch: the tone fill says "on" (asked for a wall rocker, its plate stands at the row's end and a tap opens the details: § Rocker); a small tile says "Unavailable" without the time |
 | Tile · mini | 108 tall, padding 12, radius 16: 44 icon, 8 gap, name 13/600 over state 12/500, centred; 124 with the name in two lines (`name_lines: 2`), the circles of a row level | same behaviour; three or four per row |
 | Tiles group | `.fv-tiles`: compact or mini tiles 8 px apart, or large ones (icon circle + switch, ruler or readouts) at the section's gaps; 2 / 3 / 4 per row or `auto` (148 / 84 minimum) | one card, the Mushroom-style pairs and threes; grouped and lone tiles are the same tile. A compact tile under 128 gives its name the icon's room, so buttons people reach for on a phone are large |
-| Sheet | 392 wide, padding 16, content 360, radius 24 top | grabber, title/sub + close or switch |
+| Sheet | 392 wide, padding 16, content 360, radius 24 top | grabber, title/sub + close or switch; in a modal dialog on a phone (1.21, #190: every sheet of ours, one rule, `sheetInsets`) its foot keeps the system's bar under its last control (Home Assistant's `--safe-area-inset-bottom`, the Companion app's, else the browser's; 16 at least) and a tall one stops 24 under the top, or under the status bar where it takes more, so there is scrim to tap and its body scrolls — both in the screen's pixels, whatever size the sheet reads at |
 | Phone frame | 392, side padding 16, content 360 | status bar, hello, room chips, sections, bottom nav 60 |
 | Unavailable | dashed 1 px outline, page fill, neutral ink | card, tile, stat tile, icon ring **and** badge all dashed; value "—", the word "Unavailable" stays — a compact row, which has no second line for the word, says it as its value ("Unavailable", "Unknown", "Not found"; the dash only where the word would not leave the name its room); an entity that is not there draws the `ban` glyph, never a kind's |
 
@@ -811,7 +811,8 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   accent and a line under the row says what the second tap does, in the warning's ink); then, for a list, *Entities*
   (or *Devices*): compact rows, each a switch, an open one unfolding its own row of buttons, and Home Assistant's
   entity picker to add one.
-- **Options**: the house's bottom sheet in the top layer (a native dialog, 480 at most, 24 from the top): the grabber,
+- **Options**: the house's bottom sheet in the top layer (a native dialog, 480 at most, 24 from the top or the status
+  bar's height where it takes more, its foot over the system's bar): the grabber,
   the card's circle and name over *Options*, the ×; one line (only what you change is kept); the card's own form,
   which scrolls between the head and an equal pair, *Reset* (quiet, out of reach until an option is kept) and *Done*.
 - **Your cards**: a label, a line of what they are, and a row with the small quiet *Add* button; tapped, Home
@@ -2869,9 +2870,10 @@ may say its own (`details`).
 
 - **The sheet.** The language's sheet (392 at the most, 16 sides, a content column of 360, radius 24 at the top, the
   grabber), opened on the page's body as a modal dialog over a 48 % scrim: at the foot of a phone, rising 320 ms; on a
-  screen 600 wide and 600 tall or more, **a dialog in the middle** — every corner 24, no grabber (16 over the head),
-  a lift under it (`0 24px 64px -24px` at 40 % of the palette's shade), rising 12 px as it fades in, 240 ms. It reads at
-  the size the device reads its dashboards at (`--fluvy-zoom`), in the look the page wears and Home Assistant's mode.
+  screen that holds 600 × 600 of the sheet's own pixels, **a dialog in the middle** of what the system's bars leave —
+  every corner 24, no grabber (16 over the head), a lift under it (`0 24px 64px -24px` at 40 % of the palette's shade),
+  rising 12 px as it fades in, 240 ms. It reads at the size of the card that opened it (1.21, #190: the view's size a
+  device reads larger, 100 % from an edit mode or the panel), in the look the page wears and Home Assistant's mode.
   Taller than the screen, the sheet scrolls as one; nothing inside it ever scrolls. Reduced motion: no rise, no fade.
 - **The head** (44). The entity's circle in its tone while it is doing something (neutral at rest, the off skin out
   of reach; a player's artwork in its place), its name 20/600 over its line 13/500 — its area, where that says more

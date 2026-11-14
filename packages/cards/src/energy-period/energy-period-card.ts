@@ -54,6 +54,7 @@ import {
 } from '../shared/form.js';
 import { LaidWidth } from '../shared/laid.js';
 import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
+import { sheetInsets } from '../shared/sheet-insets.js';
 import {
   chosenDays,
   GRAIN_PRESET,
@@ -361,10 +362,8 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       }
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: ep-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -429,6 +428,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         width: 100%;
       }
     `,
+    sheetInsets,
   ];
 
   static override base: readonly BaseKey[] = [

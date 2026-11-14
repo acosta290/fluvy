@@ -659,6 +659,36 @@ describe('the sheet as a dialog', () => {
     expect(root(sheet).activeElement?.classList.contains('dt-close')).toBe(true);
   });
 
+  it('reads at the size of the card that opened it, a dialog only where the screen holds 600 of that size', async () => {
+    const asked: string[] = [];
+    const matchMedia = window.matchMedia;
+    window.matchMedia = (query: string) => {
+      asked.push(query);
+      return matchMedia.call(window, query);
+    };
+    try {
+      // a card drawn at 100 % (an edit mode, a panel: whatever size the device reads its views at)
+      const plain = await opened(FLOOR);
+      expect(plain.sheet.style.getPropertyValue('--fv-zoom')).toBe('1');
+      expect(asked.at(-1)).toBe('(min-width: 600px) and (min-height: 600px)');
+      // a card of a view this device reads at 125 %: 288 of its own pixels drawn 360 wide
+      const hass = house(FLOOR);
+      const from = card(hass);
+      Object.defineProperty(from, 'offsetWidth', { value: 288 });
+      from.getBoundingClientRect = () => ({ width: 359.9 }) as DOMRect;
+      from.button.focus();
+      openDetails(from, hass, FLOOR.entity_id);
+      const sheet = [...document.body.children].find((child) =>
+        child.localName.startsWith('fluvy-details-'),
+      ) as Sheet;
+      await sheet.updateComplete;
+      expect(sheet.style.getPropertyValue('--fv-zoom')).toBe('1.25');
+      expect(asked.at(-1)).toBe('(min-width: 750px) and (min-height: 750px)');
+    } finally {
+      window.matchMedia = matchMedia;
+    }
+  });
+
   it('closes on Close, on Escape and on its scrim, and gives the focus back to what was tapped', async () => {
     const first = await opened(FLOOR);
     one<HTMLButtonElement>(first.sheet, '.dt-close').click();

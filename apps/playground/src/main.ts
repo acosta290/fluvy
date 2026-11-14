@@ -90,6 +90,9 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  *                        it: motion reduced, nothing blurred behind a see-through card, every chart and gauge at rest
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
  *                        it asks none): &danger= &success= &notice= the same; a frame may name its own (`statuses`)
+ * ?insets=44,34         the safe areas the Companion app hands Home Assistant (#190), top and bottom in px, as Home
+ *                        Assistant says them on <html> (`--safe-area-inset-top`, `--safe-area-inset-bottom`): a
+ *                        status bar and a system bar over an edge-to-edge page, which every sheet keeps clear of
  * ?panel=appearance      fluvy's settings panel (appearance | charts | scope | dashboard | wall | preferences);
  *                        &sheet= keeps a sheet's house beside it (&frames=none: a suite mounts its own cards in it)
  * &state=pending,guest     …at a moment of its own (see `PanelState` in panel.ts)
@@ -133,6 +136,13 @@ if (params.get('nopopover') === '1')
     value: undefined,
     configurable: true,
   });
+// the Companion app's safe areas, as Home Assistant hands them on to every page (`?insets=44,34`: the top's, the bottom's)
+const insets = params.get('insets')?.split(',').map(Number) ?? [];
+if (insets.length && insets.every((px) => px >= 0)) {
+  const [top = 0, bottom = top] = insets;
+  document.documentElement.style.setProperty('--safe-area-inset-top', `${top}px`);
+  document.documentElement.style.setProperty('--safe-area-inset-bottom', `${bottom}px`);
+}
 document.documentElement.dataset['mode'] = dark ? 'dark' : 'light';
 document.documentElement.lang = language;
 // the language's words before anything is drawn: a screenshot never catches the English fallback

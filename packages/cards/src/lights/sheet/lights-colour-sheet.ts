@@ -33,6 +33,7 @@ import { clamp255, tripletOf, type Rgb } from '../../light/swatches.js';
 import { COLOURED, hexOf } from '../../shared/light.js';
 import { FontsSettled } from '../../shared/fonts.js';
 import { LaidWidth } from '../../shared/laid.js';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 import { ringSize, type HueRingChangeDetail } from './hue-ring.js';
 
 /** A light of the room as the sheet reads it. */
@@ -222,11 +223,9 @@ export class FluvyLightsColourSheet extends LitElement {
       }
       dialog .fv-sheet {
         max-width: 392px;
-        max-height: 100%;
         overflow-y: auto;
         touch-action: pan-y;
         overscroll-behavior: contain;
-        padding-bottom: max(16px, env(safe-area-inset-bottom));
         animation: ls-up 320ms var(--fv-ease-out) both;
       }
       dialog.is-leaving {
@@ -268,6 +267,7 @@ export class FluvyLightsColourSheet extends LitElement {
         width: 100%;
       }
     `,
+    sheetInsets,
   ];
 
   static override properties = {

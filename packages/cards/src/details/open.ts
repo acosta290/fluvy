@@ -1,4 +1,5 @@
 import { domainOf, type HomeAssistant } from '@fluvy/core';
+import { zoomOf } from '@fluvy/ui';
 import './climate.js';
 import './cover.js';
 import './fan.js';
@@ -23,8 +24,9 @@ let current: DetailsSheet | undefined;
 
 /**
  * Opens an entity's details sheet for the card that asked (`node`): a sheet of its kind on the page's body — over the
- * dashboard, the sidebar and whatever popup the card stands in — which follows Home Assistant through that card,
- * gives the focus back to what was tapped in it, and goes from the page as it closes.
+ * dashboard, the sidebar and whatever popup the card stands in — which reads at the size that card reads at (a view
+ * a device reads larger, an edit mode or a panel that does not), follows Home Assistant through that card, gives the
+ * focus back to what was tapped in it, and goes from the page as it closes.
  */
 export function openDetails(node: HTMLElement, hass: HomeAssistant, entityId: string): void {
   const tag = SHEETS[domainOf(entityId)];
@@ -50,5 +52,7 @@ export function openDetails(node: HTMLElement, hass: HomeAssistant, entityId: st
   sheet.open(
     tapped instanceof HTMLElement ? tapped : node,
     'rawHass' in card ? (card as LiveHass) : undefined,
+    // the card's size as its box is drawn, in whole percents (a device's sizes are)
+    Math.round(zoomOf(node) * 100) / 100,
   );
 }

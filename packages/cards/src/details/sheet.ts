@@ -19,6 +19,7 @@ import { fitLine, TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { LaidWidth } from '../shared/laid.js';
 import { rowEndStyles } from '../shared/row-end.js';
+import { sheetInsets } from '../shared/sheet-insets.js';
 import { DayStrip, type DaySpec } from './history.js';
 import { detailsStyles } from './styles.js';
 
@@ -43,8 +44,13 @@ const LEAVE_MS = 200;
 const CIRCLE = 56;
 const ROUNDS = 108;
 const NAME_MIN = 96;
-/** A screen this wide and this tall holds the sheet as a dialog in its middle. */
-const WIDE = '(min-width: 600px) and (min-height: 600px)';
+/** A screen this wide and this tall, in the sheet's own pixels, holds the sheet as a dialog in its middle. */
+const WIDE = 600;
+/** That screen in the screen's pixels, for a sheet drawn at `zoom`: one narrow at the sheet's size has it at its foot. */
+const wideScreen = (zoom: number): string => {
+  const side = Math.round(WIDE * zoom);
+  return `(min-width: ${side}px) and (min-height: ${side}px)`;
+};
 /** The dial's ring at a phone's column, and at its least; from this ring up it is the large dial (a 48 figure). */
 const RING = 96;
 const RING_MIN = 56;
@@ -74,7 +80,8 @@ const keepTouch = { handleEvent: (event: Event): void => event.stopPropagation()
  * settings, its history, what it relates to) and one to close; then the kind's one control, a dial, the keys and the
  * rows under it (`renderBody`); and at the foot its last 24 hours, a tap from Fluvy's History page. It is a card in
  * all but where it stands: it reads the look, speaks the person's language, shows a change at once and calls Home
- * Assistant as a card does. Opened on the page's body, it follows Home Assistant through the card that opened it.
+ * Assistant as a card does. Opened on the page's body, it follows Home Assistant through the card that opened it and
+ * reads at that card's size (#190).
  * Escape, the scrim and Close close it, the focus going back where it came from; so does leaving the page. `_docked`
  * draws it in the flow (the playground).
  */
@@ -84,6 +91,7 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     rowEndStyles,
     chartStyles,
     detailsStyles,
+    sheetInsets,
   ];
 
   static override properties = {
@@ -104,7 +112,10 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
   /** Widths laid out by the browser in the sheet's own classes. */
   protected readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
   private readonly day = new DayStrip(this);
-  private readonly screen = typeof matchMedia === 'function' ? matchMedia(WIDE) : undefined;
+  /** The screen it stands on, asked whether it is a wide one at the sheet's size. */
+  private screen: MediaQueryList | undefined;
+  /** The size it reads at: the one the card that opened it reads at. */
+  private zoom = 1;
   private source: LiveHass | undefined;
   private openedBy: HTMLElement | undefined;
   private openedAt = 0;
@@ -175,12 +186,19 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     this.toggleAttribute('wide', this.wide_);
   }
 
-  /** Opens the sheet; `openedBy` gets the focus back, `source` has Home Assistant's `hass` while it is open. */
-  open(openedBy?: HTMLElement, source?: LiveHass): void {
+  /**
+   * Opens the sheet; `openedBy` gets the focus back, `source` has Home Assistant's `hass` while it is open, and `zoom` is
+   * the size the card that opened it reads at: the sheet reads at it too, and is a wide screen's dialog only where the
+   * screen holds it at that size.
+   */
+  open(openedBy?: HTMLElement, source?: LiveHass, zoom = 1): void {
     clearTimeout(this.leaveTimer);
     this.leaveTimer = 0;
     this.openedBy = openedBy;
     this.source = source;
+    this.zoom = zoom;
+    this.style.setProperty('--fv-zoom', String(zoom));
+    if (this.isConnected) this.watchScreen();
     this.leaving_ = false;
     this.open_ = true;
     this.openedAt = performance.now();
@@ -215,10 +233,17 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     this.mark();
   };
 
+  /** Watches the screen for the sheet's size (again when it changes), and stands as the screen says now. */
+  private watchScreen(): void {
+    this.screen?.removeEventListener('change', this.onScreen);
+    this.screen = typeof matchMedia === 'function' ? matchMedia(wideScreen(this.zoom)) : undefined;
+    this.screen?.addEventListener('change', this.onScreen);
+    this.onScreen();
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
-    this.onScreen();
-    this.screen?.addEventListener('change', this.onScreen);
+    this.watchScreen();
     window.addEventListener('location-changed', this.leave);
     window.addEventListener('popstate', this.leave);
   }

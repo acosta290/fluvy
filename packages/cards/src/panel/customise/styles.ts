@@ -1,4 +1,5 @@
 import { css } from 'lit';
+import { sheetInsets } from '../../shared/sheet-insets.js';
 
 /**
  * Customise on top of the panel's language: a view's parts as rows that unfold (the open one a panel on the page's
@@ -195,8 +196,8 @@ export const customiseStyles = css`
       opacity: 0;
     }
   }
-  /* a surface of its own at the window's foot, 24 from its top at most; its head and its buttons stay, and the
-     card's form scrolls between them */
+  /* a surface of its own at the window's foot, clear of the screen's edges as every sheet is (the rule after it); its
+     head and its buttons stay, and the card's form scrolls between them */
   .cz-sheet {
     position: fixed;
     inset: auto 0 0;
@@ -206,13 +207,12 @@ export const customiseStyles = css`
     box-sizing: border-box;
     width: 100%;
     max-width: 480px;
-    max-height: calc(100% - 24px);
     margin-inline: auto;
     overflow: hidden;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
     outline: none;
     animation: cz-up 320ms var(--fv-ease-out) both;
   }
+  ${sheetInsets}
   .cz-sheet__body {
     display: grid;
     flex: 1 1 auto;
