@@ -126,6 +126,13 @@ export interface ShareDraft {
 export type StrategyEdit = Readonly<Record<string, unknown>>;
 /** The pending edits of every dashboard, by its url path. */
 export type StrategyEdits = Readonly<Record<string, StrategyEdit>>;
+/**
+ * The dashboards' own sidebars waiting to be saved (#187), by url path: the `fluvy_sidebar` each is to hold, `null`
+ * where it is to hold none.
+ */
+export type SideEdits = Readonly<Record<string, unknown>>;
+/** The key a dashboard's configuration keeps its sidebar under, beside `views:` or `strategy:`. */
+export const SIDEBAR_KEY = 'fluvy_sidebar';
 
 /**
  * What every section renders from, and the panel's actions it may call. Nothing a tab changes is saved at once:
@@ -153,6 +160,7 @@ export interface PanelContext {
   readonly houseEdit: HouseEdit;
   readonly personalEdit: PersonalEdit;
   readonly strategyEdits: StrategyEdits;
+  readonly sideEdits: SideEdits;
   /**
    * What this browser is (a wall panel or not, its size, how hard it works), as remembered, and the changes waiting in
    * the apply bar.
@@ -182,6 +190,10 @@ export interface PanelContext {
   setSeriesDraft(draft: SeriesDraft | undefined): void;
   editPersonal(edit: PersonalEdit): void;
   editStrategy(urlPath: string, edit: StrategyEdit): void;
+  /** A dashboard's own sidebar (`fluvy_sidebar`, #187) as saved, with its edit on top; undefined: it has none. */
+  sidebarOf(urlPath: string): unknown;
+  /** Gives a dashboard a sidebar, or none (undefined): an edit, saved from the bar with the rest. */
+  editSidebar(urlPath: string, sidebar: unknown): void;
   /** This device's own settings — a wall panel or not, its size (its own memory, saved from the apply bar like the rest). */
   editDevice(patch: DevicePatch): void;
   /** The screensaver as the wall would show it now, over this page until a tap. */
@@ -211,6 +223,15 @@ export interface DashboardInfo {
    * person wrote there): the panel reads none of it, and every save of the strategy keeps it (`configWith`).
    */
   readonly rest?: Readonly<Record<string, unknown>>;
+  /**
+   * It has a configuration of its own (its views, or a strategy): what a sidebar is written beside. One that Home
+   * Assistant draws by itself has none, and takes no sidebar until a person takes control of it there.
+   */
+  readonly stored?: boolean;
+  /** Its own sidebar as saved (`fluvy_sidebar`, #187), whatever kind of dashboard it is. */
+  readonly sidebar?: unknown;
+  /** It is kept in a YAML file: the panel cannot save it, and says what to write there. */
+  readonly yaml?: boolean;
   /** Its id in the dashboards collection and whether the sidebar lists it: what an administrator's list says. */
   readonly id?: string;
   readonly inSidebar?: boolean;
@@ -358,6 +379,15 @@ export const configWith = (
   dashboard: Pick<DashboardInfo, 'rest'> | undefined,
   strategy: Readonly<Record<string, unknown>>,
 ): Record<string, unknown> => ({ ...dashboard?.rest, strategy });
+
+/** A configuration with this sidebar, or with none (`null`): the rest of it as it was. */
+export function withSidebar(
+  config: Readonly<Record<string, unknown>>,
+  sidebar: unknown,
+): Record<string, unknown> {
+  const rest = Object.fromEntries(Object.entries(config).filter(([key]) => key !== SIDEBAR_KEY));
+  return sidebar === null || sidebar === undefined ? rest : { ...rest, [SIDEBAR_KEY]: sidebar };
+}
 
 /** A strategy with its edits on top (an `undefined` edit takes the key away). */
 export function withEdit(
@@ -593,6 +623,10 @@ export function changeLines(ctx: PanelContext): string[] {
         );
     }
   }
+  for (const urlPath of Object.keys(ctx.sideEdits))
+    lines.push(
+      `${ctx.dashboards.find((d) => d.urlPath === urlPath)?.title ?? urlPath} · ${t('dashboard.side')}`,
+    );
   const personal = ctx.personalEdit;
   if (personal.language)
     lines.push(

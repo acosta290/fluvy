@@ -9,6 +9,38 @@ dashboard without the key is exactly as it was.
 It is not Home Assistant's own sidebar (the one that lists the dashboards), and not a card: it belongs to one
 dashboard, and it holds cards. On a wall tablet it is the column that never changes.
 
+## In the settings panel
+
+No YAML is needed. *Fluvy › Dashboards*, in each automatic dashboard's card: **Sidebar** (an administrator's). Three
+choices, and a small picture of the dashboard that follows them:
+
+- **None**: the dashboard as it was. The key is taken out.
+- **Clock and pages**: a clock at the head (with the weather where the house has any), the dashboard's views as a
+  menu with the open one marked, and at the foot what needs a look in one line (an Alerts card: hazards, what is open
+  or unlocked, errors, low batteries).
+- **Your own**: it starts from the same, and *Cards* then says what it holds: the pages menu on or off, and the cards
+  of its head, its middle and its foot, a list at a time, in Home Assistant's own card editor (a tab a card, its
+  picker, move, copy and delete). Where Home Assistant has not loaded that editor yet, the list opens in its YAML
+  field; open any dashboard once and come back for the picker.
+
+With a sidebar chosen, *Place* says where it stands: its side, its surface (a panel, one card, or plain), its width on
+a tablet and on a desktop, what a phone gets (none, above the view, or a drawer), whether it folds to its icons and
+whether the header's tabs give way to its menu. Every change waits in the bar with the panel's others, and **Save**
+writes `fluvy_sidebar:` beside the dashboard's `strategy:`. Only what you chose is written: a choice that is the
+default leaves no key behind, and whatever else the configuration holds stays as it was.
+
+The dashboards of your own take one the same way: *Dashboards › Other dashboards*, or a dashboard's chip at the top of
+the section. Theirs is written beside their `views:`, read again at the moment of saving, so nothing you changed in
+Home Assistant meanwhile is lost. Two kinds are different:
+
+- **A dashboard kept in a YAML file** cannot be saved from the panel: choose as above, and the section shows the YAML
+  to copy into its file.
+- **A dashboard Home Assistant draws by itself** (an Overview nobody has taken control of) has no configuration to
+  write beside, and is not listed until it has one.
+
+What the panel does not edit stays as written: a width as a share, pages written by hand, `views`, `users`,
+`subviews` and `card_opacity`.
+
 ## Where the key goes
 
 Beside `views:` in a dashboard's raw configuration (⋮ › *Edit dashboard* › ⋮ › *Raw configuration editor*, or the

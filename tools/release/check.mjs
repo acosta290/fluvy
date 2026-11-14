@@ -35,6 +35,11 @@ const BUDGETS = {
   // reads of the dashboard, what it changes of its `edit`, its rows, its sheet, its English), fetched the first time a
   // dashboard is customised. Measured at 9.3 KB
   customise: 12_288,
+  // a dashboard's sidebar in the panel (1.21, #187): the Dashboards tab's section that writes `fluvy_sidebar:` without
+  // YAML (none, the ready-made one, the person's own: where it stands, its lists of cards in Home Assistant's stack
+  // editor, the YAML of a dashboard kept in a file, its English), fetched the first time a dashboard's sidebar is
+  // opened. Measured at 4.9 KB
+  'sidebar-editor': 6144,
   // the automatic dashboards. 29 KB since 2026-11-13 (1.20: every card stands in a part with an id of its own and a
   // person's `edit` is laid over them, #170, 2.1 KB; the range's usage, tomorrow's production, several arrays and
   // what is shown together told apart, 1.4 KB: measured at 27.7 KB); 25 KB since 2026-11-12 (1.19.1: scenes on Home

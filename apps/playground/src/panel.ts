@@ -49,7 +49,9 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * command centre of the rooms' scenes), the sheet "Add a card" on the dashboard's own cards with two of them picked
  * (`add`), on Fluvy's cards (`cards`) and on one of them in its own form, drawn over it (`new`); and, without the
  * panel, what Home Assistant's pencil opens on the dashboard (`pencil`: its "Edit dashboard" dialog with the
- * strategy's form). Several join with commas.
+ * strategy's form). A dashboard's own sidebar (#187: `sidebar`, its section opened on the home dashboard by its
+ * address), which holds the ready-made one (`sidepreset`) or one of the person's own at the end, as a card, folding
+ * (`sideown`), or opened on a dashboard kept in a YAML file (`sideyaml`). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -89,7 +91,11 @@ export type PanelState =
   | 'add'
   | 'cards'
   | 'new'
-  | 'pencil';
+  | 'pencil'
+  | 'sidebar'
+  | 'sidepreset'
+  | 'sideown'
+  | 'sideyaml';
 
 /**
  * Three sets of series colours a house might keep: the earth's, which follows the palette (its colours named), the
@@ -198,6 +204,13 @@ export function mountPanel(
     configs.set('fluvy-auto', { strategy: { type: 'custom:fluvy-home', edit: SAVED_EDIT } });
   if (has('centre'))
     configs.set('fluvy-auto', { strategy: { type: 'custom:fluvy-home', edit: CENTRE_EDIT } });
+  // a sidebar the home dashboard already has, beside its strategy: the ready-made one, or the person's own
+  if (has('sidepreset') || has('sideown'))
+    configs.set('fluvy-auto', {
+      strategy: { type: 'custom:fluvy-home' },
+      fluvy_sidebar: has('sideown') ? OWN_SIDEBAR : PRESET_SIDEBAR,
+    });
+  yamlMode = has('sideyaml');
   // two sensors that see a person, so the Screen card offers its wake-on-motion dropdown (a room as the hint)
   if (has('wall')) hass = withMotionSensors(hass);
   // the dashboards as Home Assistant hands them to every frontend (its own Overview, the house's, maybe ours)
@@ -293,7 +306,16 @@ export function mountPanel(
   };
   panel.handle = handle;
   // Customise is opened as a link to it opens it: the dashboard's url path after the tab's
-  panel.route = { prefix: '/fluvy', path: has('customise') ? '/dashboard/fluvy-auto' : `/${tab}` };
+  panel.route = {
+    prefix: '/fluvy',
+    path: has('customise')
+      ? '/dashboard/fluvy-auto'
+      : has('sideyaml')
+        ? '/dashboard/dashboard-energy/sidebar'
+        : has('sidebar')
+          ? '/dashboard/fluvy-auto/sidebar'
+          : `/${tab}`,
+  };
   panel.narrow = window.innerWidth < 870;
   panel.hass = hass;
   onPanels = () => {
@@ -398,8 +420,36 @@ const ROOM_SCENES = [
   ['scene.living_room_film', 'Film night', 'living_room'],
 ] as const;
 
+/** The ready-made sidebar, as the panel's *Clock and pages* writes it for a house with no weather. */
+const PRESET_SIDEBAR = {
+  header: { cards: [{ type: 'custom:fluvy-clock-card', face: 'digital' }] },
+  menu: { items: 'views' },
+  footer: {
+    cards: [
+      {
+        type: 'custom:fluvy-alerts-card',
+        variant: 'banner',
+        alerts: ['hazards', 'open', 'unlocked', 'errors', 'low_battery'].map((preset) => ({
+          preset,
+        })),
+      },
+    ],
+  },
+};
+/** A sidebar of a person's own: at the end, as one card that folds, a thermostat in its middle. */
+const OWN_SIDEBAR = {
+  position: 'end',
+  style: 'card',
+  width: { tablet: 240 },
+  collapsible: true,
+  ...PRESET_SIDEBAR,
+  cards: [{ type: 'custom:fluvy-thermostat-card', entity: 'climate.living', variant: 'compact' }],
+};
+
 /** Whether the page's house is the demo home (the energy preferences are then its own). */
 let demoHome = false;
+/** Whether the house's Energy dashboard is kept in a YAML file (Home Assistant then refuses to save it). */
+let yamlMode = false;
 
 /** A name the demo home left as its entity's id (`heat_pump`), as a person would write it ("Heat pump"). */
 const named = (name: unknown): { friendly_name?: string } =>
@@ -564,7 +614,13 @@ function panelsFor(states: readonly PanelState[]): HomeAssistant['panels'] {
     ...Object.fromEntries(
       dashboards.map((dashboard) => [
         dashboard.url_path,
-        { component_name: 'lovelace', ...dashboard },
+        {
+          component_name: 'lovelace',
+          ...dashboard,
+          ...(yamlMode && dashboard.url_path === 'dashboard-energy'
+            ? { config: { mode: 'yaml' } }
+            : {}),
+        },
       ]),
     ),
     fluvy: { component_name: 'custom', url_path: 'fluvy', title: 'Fluvy', icon: 'fluvy:sun' },

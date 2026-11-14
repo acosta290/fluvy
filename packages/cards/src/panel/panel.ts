@@ -54,9 +54,11 @@ import {
   changeLines,
   configWith,
   sameLook,
+  SIDEBAR_KEY,
   TABS,
   unsaved,
   withEdit,
+  withSidebar,
   type DashboardEntry,
   type DashboardInfo,
   type HouseEdit,
@@ -64,6 +66,7 @@ import {
   type PersonalEdit,
   type StrategyEdit,
   type ShareDraft,
+  type SideEdits,
   type StrategyEdits,
   type StringKey,
   type Tab,
@@ -85,6 +88,7 @@ import {
 import { backgroundStyles, panelStyles } from './styles.js';
 import { charts, chartsPreview } from './charts.js';
 import type { Customiser } from './customise/index.js';
+import type { SidebarEditor } from './sidebar/index.js';
 import type { SeriesDraft } from './series.js';
 
 import {
@@ -144,6 +148,7 @@ export class FluvyPanel extends LitElement {
     houseEdit: { state: true },
     personalEdit: { state: true },
     strategyEdits: { state: true },
+    sideEdits: { state: true },
     deviceEdit: { state: true },
     share: { state: true },
     seriesDraft: { state: true },
@@ -160,6 +165,7 @@ export class FluvyPanel extends LitElement {
     leaving: { state: true },
     creating: { state: true },
     customising: { state: true },
+    siding: { state: true },
     dark: { type: Boolean, reflect: true },
     noTheme: { type: Boolean, reflect: true, attribute: 'no-theme' },
   };
@@ -178,6 +184,8 @@ export class FluvyPanel extends LitElement {
   declare houseEdit: HouseEdit;
   declare personalEdit: PersonalEdit;
   declare strategyEdits: StrategyEdits;
+  /** The dashboards' own sidebars waiting in the apply bar (#187). */
+  declare sideEdits: SideEdits;
   /** This device's own changes waiting in the apply bar (a wall panel or not, its size, how hard it works). */
   declare deviceEdit: DevicePatch;
   /** The Share card's words for the custom palette in the draft. */
@@ -206,6 +214,8 @@ export class FluvyPanel extends LitElement {
   declare creating: string;
   /** The url path of the dashboard being customised ('' when none: the Dashboards tab lists them). */
   declare customising: string;
+  /** The url path of the dashboard whose sidebar is being edited ('' when none, #187). */
+  declare siding: string;
   declare dark: boolean;
   declare noTheme: boolean;
 
@@ -231,6 +241,9 @@ export class FluvyPanel extends LitElement {
   /** Customise (#170), once its file has landed: fetched the first time a dashboard is customised. */
   private customiser: Customiser | undefined;
   private customiserLoading: Promise<void> | undefined;
+  /** The sidebar's section (#187), once its file has landed: fetched the first time a dashboard's sidebar is opened. */
+  private sideEditor: SidebarEditor | undefined;
+  private sideEditorLoading: Promise<void> | undefined;
   private barTimer = 0;
   private stillTimer = 0;
   private fontTimer = 0;
@@ -270,6 +283,7 @@ export class FluvyPanel extends LitElement {
     this.personalEdit = {};
     this.deviceEdit = {};
     this.strategyEdits = {};
+    this.sideEdits = {};
     this.tryOnApp = false;
     this.dashboards = [];
     this.notice = '';
@@ -284,6 +298,7 @@ export class FluvyPanel extends LitElement {
     this.leaving = false;
     this.creating = '';
     this.customising = '';
+    this.siding = '';
     this.dark = false;
     this.noTheme = false;
   }
@@ -338,6 +353,7 @@ export class FluvyPanel extends LitElement {
     super.disconnectedCallback();
     this.closeSaver?.();
     this.customiser?.dispose();
+    this.sideEditor?.dispose();
     this.offWords?.();
     this.offWords = undefined;
     this.off?.();
@@ -381,11 +397,17 @@ export class FluvyPanel extends LitElement {
       // `/fluvy/about` (a link from before 1.5) opens Preferences, where Fluvy's own card now is
       const tab = (segment === 'about' ? 'preferences' : segment) as Tab | undefined;
       if (tab && TABS.includes(tab)) this.tab = tab;
-      // `/fluvy/dashboard/<url path>` opens Customise on that dashboard (a url path is a slug: read as it is written)
-      this.customising = tab === 'dashboard' ? (this.route.path.split('/')[2] ?? '') : '';
+      // `/fluvy/dashboard/<url path>` opens Customise on that dashboard (a url path is a slug: read as it is written),
+      // `/fluvy/dashboard/<url path>/sidebar` its sidebar (#187)
+      const [, , urlPath = '', section] = this.route.path.split('/');
+      const sidebar = tab === 'dashboard' && section === 'sidebar';
+      this.customising = tab === 'dashboard' && !sidebar ? urlPath : '';
+      this.siding = sidebar ? urlPath : '';
     }
-    // Customise is an administrator's: nobody else's page fetches its file, whatever its address names
+    // Customise and a dashboard's sidebar are an administrator's: nobody else's page fetches their files, whatever
+    // its address names
     if (this.customising && this.hass?.user?.is_admin) this.loadCustomiser();
+    if (this.siding && this.hass?.user?.is_admin) this.loadSidebarEditor();
     if (changed.has('hass') && this.hass) {
       if (!this.off) this.attach();
       this.dark = this.hass.themes?.darkMode ?? false;
@@ -462,6 +484,7 @@ export class FluvyPanel extends LitElement {
       this.stillTimer = window.setTimeout(() => this.setAttribute('still', ''), 700);
     }
     if (this.customising) this.customiser?.updated(this.renderRoot);
+    if (this.siding) this.sideEditor?.updated();
     // the tab strip scrolls sideways on a phone: a mouse drags it too
     const strip = this.renderRoot.querySelector<HTMLElement>('.pn-tabs__row');
     if (strip !== this.strip) {
@@ -531,6 +554,7 @@ export class FluvyPanel extends LitElement {
       Object.keys(this.houseEdit).length > 0 ||
       Object.keys(this.personalEdit).length > 0 ||
       Object.keys(this.strategyEdits).length > 0 ||
+      Object.keys(this.sideEdits).length > 0 ||
       Object.keys(this.deviceEdit).length > 0
     );
   }
@@ -595,7 +619,7 @@ export class FluvyPanel extends LitElement {
         const entry = entries.get(panel.url_path);
         // a dashboard kept out of the sidebar has no panel title or icon; the collection still knows them
         const icon = panel.icon ?? entry?.icon ?? undefined;
-        const info: DashboardInfo = {
+        const base: DashboardInfo = {
           urlPath: panel.url_path,
           title:
             panel.title ||
@@ -603,6 +627,8 @@ export class FluvyPanel extends LitElement {
             (panel.url_path === 'lovelace' ? overview() : panel.url_path),
           ...(icon ? { icon } : {}),
           ...(entry ? { id: entry.id, inSidebar: entry.show_in_sidebar } : {}),
+          // a dashboard kept in a file, as Home Assistant says of its panel
+          ...(panel.config?.mode === 'yaml' ? { yaml: true } : {}),
         };
         const config = await hass
           .callWS<{ strategy?: Record<string, unknown> } & Record<string, unknown>>({
@@ -613,6 +639,13 @@ export class FluvyPanel extends LitElement {
         // the strategy is the panel's to edit; what stands beside it is kept as it is, for every save
         const { strategy, ...rest } = config ?? {};
         const template = templateOf(strategy?.['type']);
+        // its own sidebar (#187), beside `strategy:` or `views:`
+        const sidebar = rest[SIDEBAR_KEY];
+        const info: DashboardInfo = {
+          ...base,
+          ...(config ? { stored: true } : {}),
+          ...(sidebar === undefined ? {} : { sidebar }),
+        };
         return strategy && template ? { ...info, strategy, template, rest } : info;
       }),
     );
@@ -625,6 +658,42 @@ export class FluvyPanel extends LitElement {
       if (Object.keys(kept).length) edits[dashboard.urlPath] = kept;
     }
     this.strategyEdits = edits;
+    // and the sidebars that still differ from what their dashboard holds
+    this.sideEdits = Object.fromEntries(
+      Object.entries(this.sideEdits).filter(([urlPath, sidebar]) => {
+        const saved = this.dashboards.find((d) => d.urlPath === urlPath);
+        return saved && JSON.stringify(saved.sidebar ?? null) !== JSON.stringify(sidebar);
+      }),
+    );
+  }
+
+  /**
+   * Opens a dashboard's sidebar (its url path), or closes it (''): the Dashboards tab's cards give way to its section,
+   * and the address says so, as Customise's does.
+   */
+  sidebar(urlPath: string): void {
+    this.siding = urlPath;
+    this.customising = '';
+    if (this.route)
+      navigate(`${this.route.prefix}/dashboard${urlPath ? `/${urlPath}/sidebar` : ''}`, true);
+  }
+
+  /** The sidebar section's own file, fetched once: its styles join the panel's as it lands. */
+  private loadSidebarEditor(): void {
+    this.sideEditorLoading ??= import('./sidebar/index.js').then(
+      ({ SidebarEditor, sidebarEditorStyles }) => {
+        const root = this.renderRoot as ShadowRoot;
+        if (sidebarEditorStyles.styleSheet)
+          root.adoptedStyleSheets = [...root.adoptedStyleSheets, sidebarEditorStyles.styleSheet];
+        this.sideEditor = new SidebarEditor(this);
+        this.requestUpdate();
+      },
+      (error: unknown) => {
+        this.sideEditorLoading = undefined;
+        this.siding = '';
+        this.show(error instanceof Error ? error.message : String(error));
+      },
+    );
   }
 
   /**
@@ -633,6 +702,7 @@ export class FluvyPanel extends LitElement {
    */
   customise(urlPath: string): void {
     this.customising = urlPath;
+    this.siding = '';
     if (this.route) navigate(`${this.route.prefix}/dashboard${urlPath ? `/${urlPath}` : ''}`, true);
   }
 
@@ -712,6 +782,7 @@ export class FluvyPanel extends LitElement {
       houseEdit: this.houseEdit,
       personalEdit: this.personalEdit,
       strategyEdits: this.strategyEdits,
+      sideEdits: this.sideEdits,
       device: this.device,
       deviceEdit: this.deviceEdit,
       saved: handle.store.house.palettes,
@@ -771,6 +842,21 @@ export class FluvyPanel extends LitElement {
         this.strategyEdits = next;
         this.lastEdited = urlPath;
       },
+      sidebarOf: (urlPath) =>
+        urlPath in this.sideEdits
+          ? (this.sideEdits[urlPath] ?? undefined)
+          : this.dashboards.find((d) => d.urlPath === urlPath)?.sidebar,
+      editSidebar: (urlPath, sidebar) => {
+        const saved = this.dashboards.find((d) => d.urlPath === urlPath);
+        // written beside a configuration: a dashboard without one, or kept in a file, is not the panel's to save
+        if (!saved?.stored || saved.yaml) return;
+        const next = { ...this.sideEdits };
+        // back to what the dashboard holds is no edit
+        if (JSON.stringify(sidebar ?? null) === JSON.stringify(saved.sidebar ?? null))
+          delete next[urlPath];
+        else next[urlPath] = sidebar ?? null;
+        this.sideEdits = next;
+      },
       editDevice: (patch) => {
         this.deviceEdit = unsaved({ ...this.deviceEdit, ...patch }, this.device);
       },
@@ -791,6 +877,7 @@ export class FluvyPanel extends LitElement {
         this.houseEdit = {};
         this.personalEdit = {};
         this.strategyEdits = {};
+        this.sideEdits = {};
         this.deviceEdit = {};
         this.tryOnApp = false;
       },
@@ -827,14 +914,18 @@ export class FluvyPanel extends LitElement {
     if (Object.keys(this.houseEdit).length) await store.saveHouse(this.houseEdit);
     if (Object.keys(this.personalEdit).length) await store.savePersonal(this.personalEdit);
     let written = false;
-    for (const [urlPath, edit] of Object.entries(this.strategyEdits)) {
+    // each dashboard once: its strategy's options and its own sidebar (#187) in one write
+    for (const urlPath of new Set([
+      ...Object.keys(this.strategyEdits),
+      ...Object.keys(this.sideEdits),
+    ])) {
       const dashboard = this.dashboards.find((d) => d.urlPath === urlPath);
-      const saved = dashboard?.strategy;
-      if (!saved || !Object.keys(edit).length) continue;
+      const config = dashboard && (await this.configOf(dashboard));
+      if (!config) continue;
       await this.hass?.callWS({
         type: 'lovelace/config/save',
-        url_path: urlPath,
-        config: configWith(dashboard, withEdit(saved, edit)),
+        url_path: urlPath === 'lovelace' ? null : urlPath,
+        config,
       });
       written = true;
     }
@@ -851,6 +942,26 @@ export class FluvyPanel extends LitElement {
       if (edit.performance !== undefined || edit.dock !== undefined) handle.wearDevice();
     }
     this.tryOnApp = false;
+  }
+
+  /**
+   * A dashboard's configuration with its pending edits, to save; undefined where it has none. An automatic dashboard's
+   * is its strategy with its options changed beside what else it held; a dashboard of the person's own is read again
+   * first, whole, so nothing they changed in Home Assistant meanwhile is written over, and takes its sidebar alone.
+   */
+  private async configOf(dashboard: DashboardInfo): Promise<Record<string, unknown> | undefined> {
+    const { urlPath, strategy } = dashboard;
+    const edit = this.strategyEdits[urlPath] ?? {};
+    const side = urlPath in this.sideEdits;
+    if (!side && !(strategy && Object.keys(edit).length)) return undefined;
+    const config = strategy
+      ? configWith(dashboard, withEdit(strategy, edit))
+      : await this.hass?.callWS<Record<string, unknown>>({
+          type: 'lovelace/config',
+          url_path: urlPath === 'lovelace' ? null : urlPath,
+          force: true,
+        });
+    return config && side ? withSidebar(config, this.sideEdits[urlPath]) : config;
   }
 
   /**
@@ -950,11 +1061,14 @@ export class FluvyPanel extends LitElement {
         // a dashboard being customised (an administrator's): its views and cards in the tab's place
         if (this.customising && ctx.admin)
           return this.customiser?.render(ctx, this.customising) ?? html``;
+        // a dashboard's own sidebar (an administrator's, #187), likewise
+        if (this.siding && ctx.admin) return this.sideEditor?.render(ctx, this.siding) ?? html``;
         return dashboards(ctx, {
           create: (template) => createDashboard(this, ctx, template),
           recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
           open: (urlPath) => navigate(`/${urlPath}`),
           customise: (urlPath) => this.customise(urlPath),
+          sidebar: (urlPath) => this.sidebar(urlPath),
           showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),
           creating: this.creating,
           recreateArmed: this.recreateArmed,
@@ -992,6 +1106,8 @@ export class FluvyPanel extends LitElement {
           )
         : undefined;
     }
+    // a sidebar is drawn in its section's own picture
+    if (this.tab === 'dashboard' && this.siding && ctx.admin) return undefined;
     if (this.tab === 'dashboard') {
       const previewed = this.previewed();
       if (!previewed) return undefined;

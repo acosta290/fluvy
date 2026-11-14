@@ -125,6 +125,8 @@ export interface HassPanel {
   icon: string | null;
   /** False for a panel the sidebar never lists (Home Assistant's `light`, `climate`, …: reached from elsewhere). */
   show_in_sidebar?: boolean;
+  /** What the panel's component is told: a dashboard's says how it is kept (`mode`: `storage`, or `yaml` in a file). */
+  config?: { readonly mode?: string } | null;
 }
 
 export interface HomeAssistant {

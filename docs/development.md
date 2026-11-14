@@ -42,9 +42,10 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,sidebar,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,sidebar,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
-shows it), the settings panel (and Customise, the first time one of its dashboards is customised), what they
+shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
+sidebar, the first time its section is opened), what they
 share (the date picker; the pages'
 period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
@@ -83,6 +84,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `core` | 236 KB | what every page loads |
 | `panel` | 40 KB | the settings panel and its English |
 | `customise` | 12 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
+| `sidebar-editor` | 6 KB | a dashboard's sidebar in the panel (1.21, #187), the Dashboards tab's section that writes `fluvy_sidebar:` without YAML, and its English: fetched the first time a dashboard's sidebar is opened |
 | `strategy` | 29 KB | the automatic dashboards: their views and cards, each card in a part with an id of its own, and a person's `edit` laid over them |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
@@ -239,7 +241,11 @@ the Popover API away, as an older WebView has none; `panel=dashboard&state=dashb
 created, `recreate` its Recreate row armed; `customise` opens Customise on the home dashboard, on the demo home, and
 `tabs`, `drag`, `centre`, `add`, `cards` and `new` beside it are its moments: the tabs unfolded, a row lifted, the
 rooms' scenes shown on Home, the sheet "Add a card" on each of its ways; `state=pencil` is Home Assistant's "Edit
-dashboard" dialog with the strategy's form; `panel=wall&state=wall` makes this browser a wall panel), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
+dashboard" dialog with the strategy's form; `state=sidebar` opens a dashboard's sidebar section, `sidepreset` or
+`sideown` on a dashboard that has one, `sideyaml` on one kept in a YAML file; `panel=wall&state=wall` makes this browser
+a wall panel), `dashboard=sidebar&side=menu|long|cards|drawer` (a dashboard with a sidebar of its own, #187: `sidepos=end`,
+`sidestyle=card|plain`, `sidephone=top|drawer`, `sidefold=1`, the rest in `apps/playground/src/side.ts`;
+`interactions-dashboard-sidebar.mjs` and `interactions-panel-sidebar.mjs` prove it), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
 wall panel on the real controller: `after=` minutes, `bg=wall` the mesh), `activity=1&moment=burst`, `history=1&moment=week`,
 `frames=none` (the house with no frame drawn: a suite mounts its own cards in it, as `interactions-unavailable.mjs` its
 live and unavailable twins), `dashboard=home&viewtheme=Fluvy` (the view as Home Assistant themes a view, a section or a

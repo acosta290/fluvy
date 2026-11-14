@@ -2394,6 +2394,359 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
   });
 
+  it('gives an automatic dashboard a sidebar from its card: none until chosen, the ready-made one or the person’s own written beside its strategy, a default never written, and taken away again (1.21, #187)', async () => {
+    const saved: { type: string; url_path?: string | null; config?: Record<string, unknown> }[] =
+      [];
+    const beside = { kiosk_mode: { hide_header: true } };
+    let config: Record<string, unknown> = { ...beside, strategy: { type: 'custom:fluvy-home' } };
+    const { panel, root, row, chip, button, settle } = await mount(true, {
+      callWS: async (message: {
+        type: string;
+        url_path?: string | null;
+        config?: Record<string, unknown>;
+      }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message);
+          if (message.url_path === 'fluvy-auto') config = message.config!;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? config
+          : { views: [] };
+      },
+    });
+    const tile = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.fv-option')].find(
+        (option) => option.querySelector('.fv-option__value')?.textContent?.trim() === name,
+      )!;
+    /** The section's own file lands, then the panel draws it. */
+    const landed = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await settle();
+    };
+    /** Saved, and the bar gone (it leaves in 160 ms). */
+    const save = async () => {
+      button('Save')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await settle();
+    };
+    panel.tab = 'dashboard';
+    await settle();
+    // nothing of it by itself: a row in the dashboard's card, which says what it would give
+    const way = row('Sidebar')!;
+    expect(way.querySelector('.fv-row__sub')?.textContent?.trim()).toBe(
+      'A clock, its pages and your cards beside its views',
+    );
+    way.click();
+    await landed();
+    expect(tile('None').getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.se-mock__side')).toBeNull();
+    expect(button('Save')).toBeUndefined();
+    // the ready-made one: a clock, the views as its menu, what needs a look — an edit for the bar
+    tile('Clock and pages').click();
+    await settle();
+    expect(tile('Clock and pages').getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.se-mock__side--panel')).not.toBeNull();
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Fluvy auto · Sidebar');
+    await save();
+    const preset = {
+      header: { cards: [{ type: 'custom:fluvy-clock-card', face: 'digital' }] },
+      menu: { items: 'views' },
+      footer: {
+        cards: [
+          {
+            type: 'custom:fluvy-alerts-card',
+            variant: 'banner',
+            alerts: ['hazards', 'open', 'unlocked', 'errors', 'low_battery'].map((name) => ({
+              preset: name,
+            })),
+          },
+        ],
+      },
+    };
+    // written beside the strategy, and what else stood there is kept
+    expect(saved.at(-1)).toMatchObject({ url_path: 'fluvy-auto' });
+    expect(saved.at(-1)?.config).toEqual({
+      ...beside,
+      strategy: { type: 'custom:fluvy-home' },
+      fluvy_sidebar: preset,
+    });
+    expect(button('Save')).toBeUndefined();
+    // where it stands: only what was chosen is written, and a choice that is the default takes its key away
+    chip('At the end')!.click();
+    await settle();
+    chip('Card')!.click();
+    await settle();
+    chip('360')!.click();
+    await settle();
+    chip('Drawer')!.click();
+    await settle();
+    row('Folds to its icons')!.querySelector<HTMLElement>('[role="switch"]')!.click();
+    await settle();
+    expect(root.querySelector('.se-mock__row.is-end .se-mock__side--card')).not.toBeNull();
+    await save();
+    expect(saved.at(-1)?.config?.['fluvy_sidebar']).toEqual({
+      ...preset,
+      position: 'end',
+      style: 'card',
+      width: { tablet: 360 },
+      phone: 'drawer',
+      collapsible: true,
+    });
+    chip('At the start')!.click();
+    await settle();
+    chip('Panel')!.click();
+    await settle();
+    chip('280')!.click();
+    await settle();
+    await save();
+    expect(saved.at(-1)?.config?.['fluvy_sidebar']).toEqual({
+      ...preset,
+      phone: 'drawer',
+      collapsible: true,
+    });
+    // their own: what it holds — the menu off is the key gone, and the tabs' row goes with it
+    expect(row('Pages menu')).toBeUndefined();
+    tile('Your own').click();
+    await settle();
+    expect(tile('Your own').getAttribute('aria-pressed')).toBe('true');
+    expect(row('Hide the header’s tabs')).toBeDefined();
+    row('Pages menu')!.querySelector<HTMLElement>('[role="switch"]')!.click();
+    await settle();
+    expect(row('Hide the header’s tabs')).toBeUndefined();
+    expect(chip('Head · 1')).toBeDefined();
+    expect(chip('Middle')).toBeDefined();
+    await save();
+    expect(saved.at(-1)?.config?.['fluvy_sidebar']).toEqual({
+      header: preset.header,
+      footer: preset.footer,
+      phone: 'drawer',
+      collapsible: true,
+    });
+    // back in the tab its row says it has one
+    root.querySelector<HTMLElement>('.fv-round[aria-label="Close"]')!.click();
+    await settle();
+    expect(row('Sidebar')!.querySelector('.fv-row__sub')?.textContent?.trim()).toBe(
+      'Beside its views, on every one',
+    );
+    // none again: the key goes, the rest as it was before any of it
+    row('Sidebar')!.click();
+    await settle();
+    tile('None').click();
+    await settle();
+    await save();
+    expect(saved.at(-1)?.config).toEqual({ ...beside, strategy: { type: 'custom:fluvy-home' } });
+    panel.remove();
+  });
+
+  it('gives a dashboard of the person’s own a sidebar too, beside its views as they are when it is saved; one kept in a file gets the YAML to copy, and one Home Assistant draws by itself is not offered (1.21, #187)', async () => {
+    const saved: { type: string; url_path?: string | null; config?: Record<string, unknown> }[] =
+      [];
+    const asked: (string | null | undefined)[] = [];
+    const panels = {
+      lovelace: { component_name: 'lovelace', url_path: 'lovelace', title: null, icon: null },
+      'fluvy-auto': {
+        component_name: 'lovelace',
+        url_path: 'fluvy-auto',
+        title: 'Fluvy auto',
+        icon: 'fluvy:sun',
+      },
+      tablet: { component_name: 'lovelace', url_path: 'tablet', title: 'Tablet', icon: null },
+      plans: {
+        component_name: 'lovelace',
+        url_path: 'plans',
+        title: 'Plans',
+        icon: null,
+        config: { mode: 'yaml' },
+      },
+    };
+    let tablet: Record<string, unknown> = { views: [{ title: 'Home' }] };
+    const { panel, root, row, chip, button, settle } = await mount(true, {
+      panels,
+      callWS: async (message: {
+        type: string;
+        url_path?: string | null;
+        force?: boolean;
+        config?: Record<string, unknown>;
+      }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message);
+          if (message.url_path === 'tablet') tablet = message.config!;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type !== 'lovelace/config') return {};
+        if (message.force) asked.push(message.url_path);
+        // the default dashboard is Home Assistant's own: it has no configuration to read
+        if (message.url_path === null) throw new Error('config_not_found');
+        if (message.url_path === 'fluvy-auto') return { strategy: { type: 'custom:fluvy-home' } };
+        return message.url_path === 'tablet' ? tablet : { views: [{ title: 'Plans' }] };
+      },
+    });
+    const tile = (name: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('.fv-option')].find(
+        (option) => option.querySelector('.fv-option__value')?.textContent?.trim() === name,
+      )!;
+    panel.tab = 'dashboard';
+    await settle();
+    // the first card leads to the dashboards that are not automatic
+    row('Other dashboards')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
+    expect(root.querySelector('.fv-card__sub')?.textContent?.trim()).toBe('Tablet');
+    expect(chip('Fluvy auto')).toBeDefined();
+    expect(chip('Plans')).toBeDefined();
+    // the one with nothing to write beside is not among them
+    expect(chip('Overview')).toBeUndefined();
+    tile('Clock and pages').click();
+    await settle();
+    // a person changed its views in Home Assistant meanwhile: the save reads it again and keeps them
+    tablet = { views: [{ title: 'Home' }, { title: 'Garden' }], title: 'Tablet' };
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    expect(asked).toEqual(['tablet']);
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({ url_path: 'tablet' });
+    expect(saved[0]!.config).toMatchObject({
+      views: [{ title: 'Home' }, { title: 'Garden' }],
+      title: 'Tablet',
+      fluvy_sidebar: { menu: { items: 'views' } },
+    });
+    // a dashboard kept in a file: nothing for the bar, the YAML to copy in its place
+    chip('Plans')!.click();
+    await settle();
+    expect(root.querySelector('.se-code')).toBeNull();
+    tile('Clock and pages').click();
+    await settle();
+    chip('At the end')!.click();
+    await settle();
+    expect(button('Save')).toBeUndefined();
+    const code = root.querySelector('.se-code')!.textContent!;
+    expect(code.split('\n').slice(0, 4)).toEqual([
+      'fluvy_sidebar:',
+      '  header:',
+      '    cards:',
+      '      - type: custom:fluvy-clock-card',
+    ]);
+    expect(code).toContain('\n  position: end');
+    expect(saved).toHaveLength(1);
+    // an address that names the dashboard Home Assistant draws by itself: the head alone, and the way back
+    (panel as unknown as FluvyPanel).sidebar('lovelace');
+    await settle();
+    expect(root.querySelectorAll('.fv-option')).toHaveLength(0);
+    expect(root.querySelector('.fv-round[aria-label="Close"]')).not.toBeNull();
+    panel.remove();
+  });
+
+  it('edits a sidebar’s three lists of cards in Home Assistant’s stack editor, a list at a time: the head’s and the foot’s under cards, an emptied list’s key gone (1.21, #187)', async () => {
+    /** Home Assistant's stack editor, as the section speaks to it. */
+    class StackEditor extends HTMLElement {
+      hass: unknown;
+      lovelace: unknown;
+      config: Record<string, unknown> | undefined;
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' }).innerHTML = '<ha-form></ha-form>';
+      }
+      setConfig(config: Record<string, unknown>): void {
+        this.config = config;
+      }
+      change(cards: unknown[]): void {
+        this.dispatchEvent(
+          new CustomEvent('config-changed', {
+            detail: { config: { ...this.config, cards } },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
+    }
+    // defined the way Home Assistant does: the stack card's own `getConfigElement` brings its editor
+    customElements.define(
+      'hui-vertical-stack-card',
+      class extends HTMLElement {
+        static getConfigElement(): Promise<HTMLElement> {
+          if (!customElements.get('hui-stack-card-editor'))
+            customElements.define('hui-stack-card-editor', StackEditor);
+          return Promise.resolve(document.createElement('hui-stack-card-editor'));
+        }
+      },
+    );
+    const clock = { type: 'custom:fluvy-clock-card', face: 'digital' };
+    const tile = { type: 'tile', entity: 'light.hall' };
+    const saved: Record<string, unknown>[] = [];
+    let config: Record<string, unknown> = {
+      strategy: { type: 'custom:fluvy-home' },
+      fluvy_sidebar: { header: [clock], cards: [tile], footer: { cards: [tile] }, views: ['home'] },
+    };
+    const { panel, root, chip, button, hass, settle } = await mount(true, {
+      callWS: async (message: {
+        type: string;
+        url_path?: string | null;
+        config?: Record<string, unknown>;
+      }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message.config!);
+          config = message.config!;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? config
+          : { views: [] };
+      },
+    });
+    const save = async () => {
+      button('Save')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await settle();
+    };
+    panel.tab = 'dashboard';
+    await settle();
+    (panel as unknown as FluvyPanel).sidebar('fluvy-auto');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
+    // one written by hand is the person's own: its lists open, the head's first
+    const stack = root.querySelector<StackEditor>('.se-stack hui-stack-card-editor')!;
+    expect(stack.config).toEqual({ type: 'vertical-stack', cards: [clock] });
+    expect(stack.hass).toBe(hass);
+    expect(stack.lovelace).toEqual({ views: [] });
+    expect(root.querySelector('.se-yaml')).toBeNull();
+    // its own Title field is left out: a list has no title
+    expect(stack.shadowRoot!.adoptedStyleSheets).toHaveLength(1);
+    // a card added there: the head's list as it was written (a list alone) becomes its cards
+    stack.change([clock, tile]);
+    await settle();
+    expect(chip('Head · 2')).toBeDefined();
+    await save();
+    expect(saved.at(-1)?.['fluvy_sidebar']).toEqual({
+      header: { cards: [clock, tile] },
+      cards: [tile],
+      footer: { cards: [tile] },
+      views: ['home'],
+    });
+    // the middle: its own cards handed over, and emptied, its key goes
+    chip('Middle · 1')!.click();
+    await settle();
+    expect(stack.config).toEqual({ type: 'vertical-stack', cards: [tile] });
+    stack.change([]);
+    await settle();
+    expect(chip('Middle')).toBeDefined();
+    chip('Foot · 1')!.click();
+    await settle();
+    stack.change([]);
+    await settle();
+    await save();
+    // what the panel does not edit (the views it is shown on) stays as written
+    expect(saved.at(-1)?.['fluvy_sidebar']).toEqual({
+      header: { cards: [clock, tile] },
+      views: ['home'],
+    });
+    panel.remove();
+  });
+
   it('says why only on dashboards cannot hold while the profile wears the Fluvy theme', async () => {
     const { panel, root, settle } = await mount(true, {
       selectedTheme: { theme: 'Fluvy' },

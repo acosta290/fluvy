@@ -1062,6 +1062,19 @@ had always had it: it stands in Home Assistant's view row, under the header, and
   blurred as the house blurs.
 - **Never in the way.** The edit mode has none. A wall has it from the top of the screen. It stands inside the
   floating frame and after Home Assistant's own sidebar, grows with the device's size, and wears a view's theme.
+- **In the panel.** A dashboard's card in the Dashboards tab has a *Sidebar* row under *Customise* (the sidebar's
+  glyph; the accent's circle once the dashboard has one, and its sub then says so), and the tab's first card an
+  *Other dashboards* row where the house has dashboards of its own. The row opens a section in the tab's place, as
+  Customise does, closed by the head's ×: one card with the dashboards as chips, a picture and three option tiles
+  (None, Clock and pages, Your own: the glyph, what the choice gives in the secondary ink on one line or two, its
+  name on the tile's last line; three in a row on a wide screen, one a row on a phone). The picture is the
+  dashboard in small, 148 tall on the page's fill with the control's radius and the hairline: a header strip, the
+  view as tiles, and the sidebar at its side as chosen (a panel to the picture's edges with one hairline, a card
+  with the view's gap round it, or its blocks alone), its pages as three circles with a line each, the open one in
+  the accent, its head and foot as blocks. *Place* and *Cards* are ordinary cards of chips and switch rows; a
+  list's cards are Home Assistant's stack editor, 12 under the hint, or its YAML field. A dashboard kept in a file
+  gets a *YAML* card: the text on the inset fill in the mono face 13/20, selectable whole, and a quiet button that
+  says it copied.
 
 ## Palettes that travel
 

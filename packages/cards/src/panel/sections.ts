@@ -120,6 +120,8 @@ import {
   TRANSLATING_URL,
 } from './model.js';
 import { copyText } from './clipboard.js';
+// the dashboard sidebar's glyph, its rows'
+import '../shared/side-glyph.js';
 
 /** One rhythm for every choice inside a card: 8 between cells on a phone, 12 on a wide panel. */
 export const gap = (ctx: PanelContext): number => (ctx.wide ? 12 : 8);
@@ -1700,12 +1702,36 @@ function backgroundOwn(ctx: PanelContext, urlPath: string, current: unknown): Te
   ${own ? backgroundChoice(ctx, parseBackground(current), ctx.admin ? edit : null) : nothing}`;
 }
 
+/**
+ * The way into a dashboard's own sidebar (#187), an administrator's: the accent's circle once it has one, as
+ * Customise's row once it holds an edit. `others`: the row that leads to the dashboards of the person's own.
+ */
+function sidebarRow(
+  ctx: PanelContext,
+  dashboard: DashboardInfo,
+  actions: DashboardActions,
+  others = false,
+): TemplateResult {
+  const has = !others && ctx.sidebarOf(dashboard.urlPath) !== undefined;
+  return listRow({
+    icon: 'sidePanel',
+    tone: has ? 'accent' : 'neutral',
+    title: ctx.t(others ? 'dashboard.side_others' : 'dashboard.side'),
+    sub: ctx.t(
+      others ? 'dashboard.side_others_sub' : has ? 'dashboard.side_on' : 'dashboard.side_sub',
+    ),
+    onTap: () => actions.sidebar(dashboard.urlPath),
+  });
+}
+
 export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
   open(urlPath: string): void;
   /** Opens Customise on a dashboard: its views and cards, hidden, moved and tuned (#170). */
   customise(urlPath: string): void;
+  /** Opens a dashboard's own sidebar (#187): none, the ready-made one, or the person's own. */
+  sidebar(urlPath: string): void;
   /** Lists a dashboard in Home Assistant's sidebar, or not. */
   showInSidebar(urlPath: string, on: boolean): void;
   /** The url path of the dashboard being created ('' when none): its row says so and takes no second tap. */
@@ -1750,6 +1776,7 @@ function dashboardOptions(
           ? { onTap: () => actions.customise(dashboard.urlPath) }
           : { trailing: 'none' as const }),
       })}
+      ${ctx.admin ? sidebarRow(ctx, dashboard, actions) : nothing}
     </div>
     ${template.options.map((option) => {
       // a house without areas has no rooms to choose from
@@ -1950,6 +1977,10 @@ function roomsCard(ctx: PanelContext): TemplateResult | typeof nothing {
  * one tap), the house's order of its rooms, then a card of options per dashboard the house has.
  */
 export function dashboards(ctx: PanelContext, actions: DashboardActions): TemplateResult {
+  // a dashboard of the person's own takes a sidebar too (#187): the first of them leads to them all
+  const [own] = ctx.admin
+    ? ctx.dashboards.filter((dashboard) => !dashboard.template && dashboard.stored)
+    : [];
   return html`<section class="fv-card pn-card">
       ${head({ icon: 'grid', title: ctx.t('dashboard.title'), sub: ctx.t('dashboard.sub') })}
       <div class="pn-rows">
@@ -1984,6 +2015,7 @@ export function dashboards(ctx: PanelContext, actions: DashboardActions): Templa
               : { trailing: 'none' as const }),
           });
         })}
+        ${own ? sidebarRow(ctx, own, actions, true) : nothing}
       </div>
     </section>
     ${roomsCard(ctx)}

@@ -234,19 +234,19 @@ export function getConfigForm(): LovelaceConfigForm {
 /* ---------- its cards, in Home Assistant's stack editor ---------- */
 
 const STACK_CARD = 'hui-vertical-stack-card';
-const STACK_EDITOR = 'hui-stack-card-editor';
+export const STACK_EDITOR = 'hui-stack-card-editor';
 /** How long the editor waits for the stack editor before it opens on the code field (which gives way as it lands). */
 const GRACE = 800;
 
 /** Home Assistant's stack editor, as far as the expander's speaks to it. */
-interface StackEditor extends HTMLElement {
+export interface StackEditor extends HTMLElement {
   hass?: HomeAssistant | undefined;
   lovelace?: unknown;
   setConfig(config: LovelaceCardConfig): void;
 }
 
 /** The stack editor's own Title field, which the expander's form holds: left out of its place. */
-const untitled = (): CSSStyleSheet | undefined => {
+export const untitled = (): CSSStyleSheet | undefined => {
   try {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync('ha-form{display:none}');
@@ -264,7 +264,7 @@ let defining: Promise<unknown> | undefined;
  * stack card's own `getConfigElement` once the card helpers have asked for a stack. None of it is public API: where a
  * step is missing the promise never settles, or fails, and the code field stays.
  */
-function stackEditor(): Promise<unknown> {
+export function stackEditor(): Promise<unknown> {
   defining ??= (async () => {
     if (!customElements.get(STACK_EDITOR)) {
       const helpers = (await window.loadCardHelpers?.()) as
