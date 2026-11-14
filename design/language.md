@@ -833,7 +833,7 @@ form for a line that holds no more.
   "Cancels in 4 seconds"). The preview draws the template touched last. Between the templates and the dashboards'
   cards stands the house's order of its rooms (§ Groups by room, 1.21), from two rooms on.
 
-## Customise (1.20, #170)
+## Customise (1.20, #170; 1.21, #188)
 
 - **Where**: each dashboard's card in the Dashboards tab opens with a *Customise* row (the sliders glyph, the bare
   chevron; the accent circle and "Customised" once it holds an edit; for someone who is not an administrator a line
@@ -844,25 +844,57 @@ form for a line that holds no more.
   and the appliances' the same way.
 - **The view card**: the view's own icon and name over "15 of 16 shown", an *Edited* badge at the head's end once
   anything of it changed. A tab has two rows: *Show this view* (a switch; the first view says *Always*) and *Place
-  among the tabs* ("2 of 9" under it, two quiet rounds at its end, earlier and later). Then *Cards*: a row a part, in
-  the order they are read.
+  among the tabs* ("2 of 9" under it, two quiet rounds at its end, earlier and later; from 648 a caret before them).
+  A tap on its words unfolds the tabs under it (1.21) as the open panel does a part: *Views*, a compact row a tab in
+  the person's order (the handle, the view's icon, its name, its switch; the first says *Always*), and the two rounds
+  take the card's fill there. Then *Cards*: a row a part, in the order they are read; over more than eight, the
+  language's search field (the glyph leading), which narrows the rows by a card's name, its kind or the view it
+  comes from, read by their plain letters; nothing found is the empty state ("Nothing matches").
 - **A part's row**: the icon circle (the accent's while it shows, neutral while it is hidden), its name, and under it
   what it is ("Thermostat") or how much of its list shows ("5 of 6 shown"), "Hidden" or "Edited" before it; at its end
   a caret that says it unfolds, then the switch. An edited part carries a dot of the accent on its circle, ringed by
   what it stands on. Rows are never cut: a long name takes a second line.
+- **The handle** (1.21, #188): six dots (a 20 glyph, the secondary ink at 56 %, at full strength under the pointer)
+  in the gutter before a row's circle — the card's 20, the 12 of an open row's ground — never in the row's own column:
+  the rows keep their geometry. It is a finger's 44 wide from the gutter over the circle's start, the row's whole
+  height, and takes no scroll (`touch-action: none`); a tap on it is the row's own. Every part, every entity shown and
+  every tab has one; an entity left out waits at its list's foot without one.
+- **Dragged** (Home Assistant's own sorting, `ha-sortable` without its styles): the row is lifted where it stands —
+  the raised card's fill inside a 2 px ring of the accent with the lift's shadow, radius 16, 12 past the column on
+  each side as an open row is, no hairline round it, at full strength under the finger — and it stands where it will
+  land: the rows between slide out of its way (150 ms; at once where the page asks for less motion). A mouse also
+  carries the browser's own image of the lifted row. Dropped, the ring and the lift ease away in 200 ms where it
+  stands; nothing jumps, since the page draws the new order on the same row. What is written is the fewest places.
 - **Open**, the row and what it unfolds stand on the page's ground as one panel (radius 16, 12 past the card's column
   on each side, no hairline round it): a row of glyph buttons in equal cells on the 8 gap, on the card's fill with its
-  hairline, as buttons on the page are (up, down, the sliders for *Options*, the undo for reset: armed, it takes the
-  accent and a line under the row says what the second tap does, in the warning's ink); then, for a list, *Entities*
-  (or *Devices*): compact rows, each a switch, an open one unfolding its own row of buttons, and Home Assistant's
-  entity picker to add one.
+  hairline, as buttons on the page are (to the top, up, down, to the bottom — a chevron against the bar of an end —
+  the sliders for *Options*, the undo for reset: armed, it takes the accent and a line under the row says what the
+  second tap does, in the warning's ink; in a column that would leave six under 44, two rows: the four moves, then
+  the others); then, for a list, *Entities* (or *Devices*): compact rows, each a handle and a switch, an open one
+  unfolding its own row of buttons, and Home Assistant's entity picker to add one.
 - **Options**: the house's bottom sheet in the top layer (a native dialog, 480 at most, 24 from the top or the status
   bar's height where it takes more, its foot over the system's bar): the grabber,
   the card's circle and name over *Options*, the ×; one line (only what you change is kept); the card's own form,
   which scrolls between the head and an equal pair, *Reset* (quiet, out of reach until an option is kept) and *Done*.
-- **Your cards**: a label, a line of what they are, and a row with the small quiet *Add* button; tapped, Home
-  Assistant's YAML field in its place over an equal pair, *Cancel* and *Add* (out of reach until the YAML names a
-  type). An own card is a row among the view's, its chevron in the switch's place; open, its YAML under its buttons.
+- **Your cards**: a label, a line of what they are, and a row with the small quiet *Add* button, which opens the
+  sheet. What a person added is a row among the view's, its chevron in the switch's place and the bin among its
+  buttons: a card of their own (open, its YAML under its buttons; one of Fluvy's has *Options* too, its own form),
+  or a card of another view, named as it is there over "From Kitchen", with *Options* of its own on this view.
+- **Add a card** (1.21, #188), the same sheet: the plus circle, *Add a card* over the view's name, the ×; the three
+  ways as a full chip row fitted to the sheet's own column (*This dashboard*, *Fluvy's cards*, *YAML*), which stays
+  while the rest scrolls. *This dashboard*: one line of what it does, the search field, then a label a view and under
+  it a row a card (its circle in the accent once picked, its name, what it is, a switch that picks it; never a
+  heading, never one already shown here), over an equal pair, *Move here* (quiet) and *Show here too* (the accent),
+  out of reach until one is picked. *Fluvy's cards*: the search field and a row a card without a circle (its name as
+  the card picker says it, its description under it, the chevron). A tap opens the card's form in the sheet, under
+  its name over *Add a card*: the card itself first, drawn as it will be on the real house and never touched, then
+  its form, over *Cancel* and *Add*; while the card refuses what the form holds, its own words stand in its place in
+  the warning's ink and *Add* is out of reach. *YAML*: one line, Home Assistant's YAML field, *Cancel* and *Add*.
+- **The pencil's form** (1.21, #188) stands in Home Assistant's own dialog, in its inks (`--primary-text-color`,
+  `--divider-color`, Fluvy's tokens where they are missing): a row on the theme's card radius with a 1 px hairline,
+  64 at least, the sliders glyph, *Customise* (16/500) over what it does (14, the secondary ink), the chevron; it is
+  a link, firmed in the primary colour under the pointer, ringed 2 px on focus. 24 under it, Home Assistant's form
+  with four fields at most: the views shown, then the template's first choices as dropdowns.
 - **Reset**: a row at the view card's foot once the view is edited, and a card of its own under it for the whole
   dashboard (*Back to automatic*), each armed on the first tap as Recreate is.
 - **The preview** (the side column, from 1184): the open view as the dashboard will draw it with what is pending,

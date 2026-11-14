@@ -328,7 +328,10 @@ export class Customiser {
           (candidate) => candidate.dataset['item'] === moved.item,
         )
       : row?.querySelector<HTMLElement>(':scope > .cz-detail > .cz-actions');
-    within?.querySelectorAll<HTMLElement>('.fv-action')[moved.at]?.focus();
+    // at an end the button that brought it there has nowhere left to go: the nearest move that still has takes it
+    const buttons = [...(within?.querySelectorAll<HTMLButtonElement>('.fv-action') ?? [])];
+    const near = [0, 1, -1, 2, -2, 3, -3].map((step) => buttons[moved.at + step]);
+    near.find((button) => button && !button.disabled)?.focus();
   }
 
   /* ---------- the dashboard ---------- */
@@ -757,10 +760,13 @@ export class Customiser {
 
   /* ---------- a card added ---------- */
 
-  /** A search field: what is typed narrows the rows under it. */
+  /**
+   * A search field (the language's, its glyph leading, two pixels out as the field draws it): what is typed narrows
+   * the rows under it, and never leaves the field — Home Assistant binds single-letter shortcuts on the window.
+   */
   private search(ctx: PanelContext, query: string, typed: (query: string) => void): TemplateResult {
     const label = say(ctx.hass, 'search');
-    return html`<label class="fv-field cz-search"
+    return html`<label class="fv-field cz-search" data-align="optical"
       >${glyph('search')}<input
         class="fv-field__input"
         type="text"
@@ -772,6 +778,7 @@ export class Customiser {
         aria-label=${label}
         .value=${query}
         @input=${(event: Event) => typed((event.target as HTMLInputElement).value)}
+        @keydown=${(event: KeyboardEvent) => event.stopPropagation()}
     /></label>`;
   }
 
@@ -1042,7 +1049,7 @@ export class Customiser {
 
   /**
    * A row of glyph buttons under an open row: equal whole-pixel cells, as many as it has buttons — or, in a column
-   * that would leave six of them under a finger's 44, its four moves over the others.
+   * that would leave them under a finger's 44 (six on a phone), two rows: its four moves, then the others.
    */
   private buttons(
     ctx: PanelContext,
@@ -1050,11 +1057,11 @@ export class Customiser {
     run: (key: string) => void,
   ): TemplateResult {
     const width = ctx.fit?.width ?? 0;
-    const cells =
-      width && (width - (items.length - 1) * 8) / items.length < 44 ? MOVES.length : items.length;
-    return html`<div class="cz-actions" style="--cz-cells:${cells}">
-      ${actions(items, run, cells)}
-    </div>`;
+    const row = (cells: readonly ActionItem[]): TemplateResult =>
+      html`<div class="cz-actions" style="--cz-cells:${cells.length}">${actions(cells, run)}</div>`;
+    return width && (width - (items.length - 1) * 8) / items.length < 44
+      ? html`${row(items.slice(0, MOVES.length))}${row(items.slice(MOVES.length))}`
+      : row(items);
   }
 
   /** A row's four moves, from its place `at` among `count`: each still where it has nowhere to go. */
@@ -1637,6 +1644,8 @@ export class Customiser {
         ${emptyState('grid', say(ctx.hass, ctx.dashboards.length ? 'failed' : 'loading'))}
       </section>`;
     const { outline, tabs, pages, placed, view } = this.shown(ctx, dashboard);
+    // the view opened first stays the open one: a tab put before it never takes the rows from under the person
+    if (view) this.viewId = view.id;
     const edit = this.edit;
     const chip = (candidate: ViewOutline) => ({
       key: candidate.id,

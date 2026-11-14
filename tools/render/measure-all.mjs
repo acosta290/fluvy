@@ -110,6 +110,13 @@ const PANEL = [
   ['customise', 'dashboard&state=dashboards,customise'],
   ['customise-list', 'dashboard&state=dashboards,customise,customised,list'],
   ['customise-sheet', 'dashboard&state=dashboards,customise,sheet'],
+  // 1.21 (#188): the tabs unfolded under the view's place among them; a command centre of the rooms' scenes shown on
+  // Home as well; the sheet "Add a card" on the dashboard's own cards, on Fluvy's, and on one of them in its form
+  ['customise-tabs', 'dashboard&state=dashboards,customise,tabs'],
+  ['customise-centre', 'dashboard&state=dashboards,customise,centre'],
+  ['customise-add', 'dashboard&state=dashboards,customise,add'],
+  ['customise-cards', 'dashboard&state=dashboards,customise,cards'],
+  ['customise-new', 'dashboard&state=dashboards,customise,new'],
   ['wall', 'wall&state=wall'],
   ['wall-night', 'wall&state=wall,night'],
   // this browser not a wall panel: its row says so, and what turning it on does under it

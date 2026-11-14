@@ -251,23 +251,44 @@ entity picker; a pattern, a device or a domain written in the raw configuration 
 
 An automatic dashboard can be shaped without giving up what makes it automatic. In the panel's *Dashboards* tab each
 dashboard's card opens with a **Customise** row (an administrator's): it lists the dashboard's views as chips, its
-rooms' pages after them, and the open view's cards as rows, in the order they are read.
+rooms' pages after them, and the open view's cards as rows, in the order they are read. Home Assistant's own pencil
+leads there too: on an automatic dashboard it opens *Edit dashboard* with a first row, **Customise**, and the
+dashboard's most used options under it (the views it shows, its thermostats, its tiles).
 
 - **A view**: *Show this view* leaves it out or brings it back (the first view always shows), and the two arrows
-  place it among the tabs, so any view can lead.
-- **A card**: its switch hides it. A tap on its row unfolds its buttons: move up, move down, *Options* and reset.
-  *Options* opens the card's own form in a sheet; only what you change there is kept, so the rest of the card stays
-  as the house builds it. A few cards are offered hidden, as something you turn on (the Production view's *Next days ·
-  forecast*, 1.21): their row says *Hidden* until its switch shows them, and `hidden: false` is all that is kept.
+  place it among the tabs, so any view can lead. A tap on *Place among the tabs* unfolds every tab as a row: drag
+  one to its place by its handle, or switch it off there.
+- **A card**: its switch hides it. Drag it by its handle (the six dots before its circle, with a mouse or a finger)
+  to where it should be read, or tap its row for its buttons: to the top, up, down, to the bottom, *Options* and
+  reset. *Options* opens the card's own form in a sheet; only what you change there is kept, so the rest of the card
+  stays as the house builds it. A view of more than eight cards has a search field over them. A few cards are offered
+  hidden, as something you turn on (the Production view's *Next days · forecast*, 1.21): their row says *Hidden*
+  until its switch shows them, and `hidden: false` is all that is kept.
 - **A list** (the lights of the Home view, a view's thermostats, the rows of the Security card): its entities are
-  rows of their own under it. Each has a switch that leaves it out; a tap on one unfolds its own buttons (move up,
-  move down, and *Options* where the entity is a card of its own, such as a light's tile); *Add an entity* adds one
-  of a domain the list takes.
-- **Your cards**: *Add a card* takes a card's YAML and lays it after the view's own; it is then moved like any other.
+  rows of their own under it. Each has a switch that leaves it out and a handle to drag it by; a tap on one unfolds
+  its own buttons (to the top, up, down, to the bottom, and *Options* where the entity is a card of its own, such as
+  a light's tile); *Add an entity* adds one of a domain the list takes.
+- **Add a card** opens a sheet with three ways:
+  - *This dashboard*: the cards of every other view and room page. Pick some by their switches, then **Show here
+    too** (the card is on both views) or **Move here** (it is hidden where it was). Either way it stays automatic:
+    it is the same card the house builds for its own view, with the devices that arrive later. Its row says where it
+    comes from; its *Options* are its own on this view (a title, a variant), and *Remove* takes it away again, a
+    moved one going back to its view.
+  - *Fluvy's cards*: pick one of Fluvy's cards, fill in its own form (the card is drawn over it, on your house) and
+    add it. Nothing to write.
+  - *YAML*: a card's YAML, typed or pasted from another dashboard.
+
+  What you add is laid after the view's own cards and moved like any other.
 - **Reset**: one card, one view or the whole dashboard (*Back to automatic*), each on a second tap.
 
 Nothing is saved on a tap: the bar at the foot counts the changes ("3 changes") and saves or discards them, and on a
 wide screen the view is drawn beside its rows as it will be, on the real house.
+
+**Scenes first on Home.** A command centre at the top of the dashboard takes two steps. Open *Customise*, tap the
+*Scenes* row of the Home view and press *To the top* (or drag it there): it is now read first. For the scenes of
+single rooms, tap *Add a card*, search "scenes" under *This dashboard*, switch on the kitchen's and the living
+room's, press *Show here too*, and drag the new rows up beside the first. Each can be titled after its room in its
+*Options*. A script or an automation joins a Scenes card as an entity (*Add an entity* under its row).
 
 What is saved is one `edit` object in the dashboard's strategy. It holds differences, never a copy: everything it
 does not name stays automatic, a new device still arrives in the card that draws it, and deleting `edit` is the
@@ -284,6 +305,10 @@ strategy:
         add:                             # cards of your own, after the view's
           - type: markdown
             content: Filters are due in March
+      home:
+        also:                            # cards of other views shown here as well, still automatic
+          - room-kitchen/scenes
+          - room-living_room/scenes
     cards:
       home/weather: { hidden: true }     # a card left out
       energy/ahead: { hidden: false }    # a card offered hidden, shown (the week's solar forecast)
@@ -293,6 +318,11 @@ strategy:
       rooms/room:garden: { order: -1 }   # a negative place counts from the end: last
       home/lights:light.sofa:
         options: { name: Reading lamp }  # one card of a list
+      home/also:room-kitchen/scenes:     # the kitchen's scenes as Home shows them:
+        order: 0                         #   read first
+        options: { title: Kitchen }      #   under a title of their own here
+      room-living_room/scenes:
+        hidden: true                     # moved: on Home alone, no longer on its room's page
     entities:
       home/lights:
         drop: [switch.patio_light]          # left out of the list
@@ -302,7 +332,7 @@ strategy:
 
 | Key | What it holds |
 | --- | --- |
-| `views.<view>` | `hidden` (any view but the template's first), `order` (its place among the tabs) and `add` (card configs laid after the view's own, each the part `<view>/own:<its place in the list>`) |
+| `views.<view>` | `hidden` (any view but the template's first), `order` (its place among the tabs), `add` (card configs laid after the view's own, each the part `<view>/own:<its place in the list>`) and `also` (the ids of other views' cards shown here as well, each the part `<view>/also:<that id>`) |
 | `cards.<id>` | `hidden` (`true` leaves a card out, `false` shows one offered hidden), `order` (its place among its view's parts) and `options`: keys laid over the generated config (a variant, a title, a colour, the entity itself), `null` to take one away; a card's `type` is never changed |
 | `entities.<id>` | `drop` (entities left out), `add` (entities shown besides: each one the house has, of a domain the list takes) and `order` (the entities read first, the others after them in the house's order) |
 
@@ -319,8 +349,16 @@ change in the panel and read the dashboard's raw configuration.
 parts that have none keep the house's order round those that do. A view's columns are cut again round a part that
 moved, so they still end level; on the wall, a card joins the column of the card it now follows.
 
-**What the house no longer has.** An id that matches nothing (a room that was deleted) is ignored and kept: it works
-again if the room comes back, and a reset takes it away.
+**A card of another view.** `also` names cards by their ids on their own views (`room-kitchen/scenes`,
+`lights/lights:<area id>`, `media/media`), from any tab, room page or the appliances' page of the same dashboard. The
+strategy builds each on its own view a second time, with whatever you changed on it there, and lays it after the
+view's own and your cards; on this view it is the part `<view>/also:<id>`, which takes an `order` and `options` of
+its own. A list shown this way keeps its cap, and its "N more" row opens the whole list from the view that shows it
+and comes back there. Hidden on its own view (`cards.<id>.hidden`), it shows here alone: that is *Move here*.
+
+**What the house no longer has.** An id that matches nothing (a room that was deleted, a card of `also` whose view is
+gone) is ignored and kept: it draws nothing, it is never an error on the dashboard, it works again if the room comes
+back, and a reset takes it away.
 
 The dashboard's other options keep working beside `edit`: `hide`, `exclude`, `areas`, `caps` and the rest are read
 first, and `edit` is laid over what they leave. A list's cap counts what the list shows after the edit, so an entity

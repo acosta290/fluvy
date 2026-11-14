@@ -387,6 +387,9 @@ describe('Customise (#170)', () => {
     expect(tabs().slice(0, 3)).toEqual(['lights', 'home', 'rooms']);
     expect(m.edit()!['views']).toEqual({ lights: { order: 0 } });
     expect(m.root.querySelector('.cz-top .fv-chip')?.textContent?.trim()).toBe('Lights');
+    // the view that was open stays open, though another now leads the tabs
+    expect(m.root.querySelector('.cz-view .fv-card__title')?.textContent?.trim()).toBe('Home');
+    expect(m.parts()[0]).toMatch(/^home\//);
     // the first view the house draws always stays: it has no switch, the others have
     const tab = (id: string) => m.root.querySelector(`.cz-place .cz-item[data-view="${id}"]`)!;
     expect(tab('home').querySelector('.fv-hit')).toBeNull();

@@ -124,17 +124,13 @@ export const customiseStyles = css`
     transition: opacity 160ms var(--fv-ease, ease);
   }
   .cz-grip svg {
-    width: 16px;
-    height: 16px;
-    margin-inline-start: 2px;
+    width: 20px;
+    height: 20px;
   }
+  /* on an open row's ground, and lifted, the gutter is the panel's 12: the dots stand in its middle */
   .cz-detail .cz-grip,
   :is(.is-open, .sortable-chosen) > .fv-row > .cz-grip {
-    inset-inline-start: -12px;
-  }
-  .cz-detail .cz-grip svg,
-  :is(.is-open, .sortable-chosen) > .fv-row > .cz-grip svg {
-    margin-inline-start: -2px;
+    inset-inline-start: -16px;
   }
   .fv-row:hover > .cz-grip,
   .sortable-chosen > .fv-row > .cz-grip {

@@ -1610,7 +1610,7 @@
     "way_dashboard": "Este painel",
     "way_fluvy": "Cartões do Fluvy",
     "way_dashboard_hint": "Cartões das outras visualizações e páginas deste painel. Escolha alguns e mostre-os também aqui ou mova-os para cá: eles continuam automáticos.",
-    "show_too": "Mostrar aqui também",
+    "show_too": "Mostrar aqui",
     "move_here": "Mover para cá",
     "from_view": "De {view}",
     "search": "Buscar",

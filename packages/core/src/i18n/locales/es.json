@@ -1610,7 +1610,7 @@
     "way_dashboard": "Este panel",
     "way_fluvy": "Tarjetas de Fluvy",
     "way_dashboard_hint": "Tarjetas de las otras vistas y páginas de este panel. Elige algunas y muéstralas también aquí o muévelas aquí: siguen siendo automáticas.",
-    "show_too": "Mostrar también aquí",
+    "show_too": "Mostrar aquí",
     "move_here": "Mover aquí",
     "from_view": "De {view}",
     "search": "Buscar",

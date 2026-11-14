@@ -12,6 +12,15 @@
  * to the button that opened it; on a wide screen the view is drawn beside its rows as it will be, never touched, and a
  * card hidden leaves it; Save writes the strategy with the edit; the page logs no error; at a 360 phone no row runs
  * past its card.
+ * And 1.21's (#188): every row has a handle, a finger's 44 that takes no scroll; a row dragged by it with a real
+ * mouse is lifted where it stands (the accent's ring, the 16 radius), lands where it is dropped and is written as one
+ * place; a finger drags one the same way, and the page stays still under it; a list's entities and the dashboard's
+ * tabs are dragged too, the tabs unfolded under the view's place among them; a card goes to the top in one press,
+ * the focus kept on its button; a page that asks for less motion slides no row; a view of many cards is searched;
+ * "Add a card" opens a sheet with three ways — a card of another view shown here as well, one of Fluvy's made in its
+ * own form and drawn over it, YAML — and Save writes them (`also`, `add`); someone who is no administrator fetches
+ * nothing of Customise; and Home Assistant's pencil gets the strategy's form, which leads to Customise and writes a
+ * choice as the panel does.
  */
 import { BASE, settle, startSuite } from './lib/suite.mjs';
 
@@ -109,8 +118,8 @@ const errors = (page) => {
       all.map((b) => b.getBoundingClientRect()).map((r) => [r.width, r.height]),
     );
   check(
-    'a tap on a row unfolds its buttons, a finger’s 44 each in equal cells',
-    buttons.length === 3 &&
+    'a tap on a row unfolds its buttons (its four moves and its reset), a finger’s 44 each in equal cells',
+    buttons.length === 5 &&
       buttons.every(([w, h]) => h === 44 && w >= 44 && w === buttons[0][0] && Number.isInteger(w)),
     JSON.stringify(buttons),
   );
@@ -249,6 +258,454 @@ const errors = (page) => {
     'another view picked, its cards are drawn in the first one’s place',
     lightsView.includes('fluvy-lights-card') && !lightsView.includes('fluvy-energy-flow-card'),
     lightsView.join(' '),
+  );
+  check('the page logged no error', seen.length === 0, seen.join(' | '));
+  await page.close();
+}
+
+/* ====================== 1.21 (#188): drag and drop, Top and Bottom, adding a card, the pencil ====================== */
+
+/** What Save writes: the dashboard's `edit`, as the last `lovelace/config/save` carries it. */
+const saved = async (page) => {
+  await page.evaluate(() => (window.fluvyMock.wsCalls.length = 0));
+  await page.locator('fluvy-panel .pn-bar .fv-btn--accent').click();
+  await settle(page, 400);
+  return page.evaluate(
+    () =>
+      window.fluvyMock.wsCalls.filter((call) => call.type === 'lovelace/config/save').at(-1)
+        ?.message?.config?.strategy?.edit ?? null,
+  );
+};
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const grip = (row) => row.locator(':scope > .fv-row > .cz-grip');
+const centre = async (locator) => {
+  await locator.scrollIntoViewIfNeeded();
+  const box = await locator.boundingBox();
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
+};
+/** A row held by its handle with the mouse and carried to the middle of another row, as a hand does: in steps. */
+const carry = async (page, from, to, { hold } = {}) => {
+  const start = await centre(grip(from));
+  const end = await centre(to);
+  // a handle is 44 wide from the gutter: its dots stand at its start
+  await page.mouse.move(start.box.x + 10, start.y);
+  await page.mouse.down();
+  for (let step = 1; step <= 16; step++) {
+    await page.mouse.move(start.box.x + 10, start.y + ((end.y - start.y) * step) / 16);
+    await page.waitForTimeout(25);
+  }
+  await page.waitForTimeout(250);
+  const held = hold ? await hold() : undefined;
+  await page.mouse.up();
+  await settle(page, 400);
+  return held;
+};
+
+/* ---------- a desktop: a card, an entity and a tab dragged with the mouse; Top; less motion ---------- */
+{
+  const page = await suite.page(CUSTOMISE, { viewport: { width: 1400, height: 1000 }, wait: 1800 });
+  const seen = errors(page);
+  const order = await parts(page);
+  const handle = await grip(part(page, 'home/appliances')).evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    const row = node.parentElement.getBoundingClientRect();
+    const style = getComputedStyle(node);
+    return {
+      width: box.width,
+      tall: box.height === row.height,
+      before: row.left - box.left,
+      touch: style.touchAction,
+      cursor: style.cursor,
+      hidden: node.getAttribute('aria-hidden'),
+    };
+  });
+  check(
+    'every row has a handle in the gutter before its circle: a finger’s 44, the row’s height, no scroll of its own',
+    handle.width === 44 &&
+      handle.tall &&
+      handle.before === 20 &&
+      handle.touch === 'none' &&
+      handle.cursor === 'grab' &&
+      handle.hidden === 'true' &&
+      (await page.locator('fluvy-panel .cz-parts > .cz-part > .fv-row > .cz-grip').count()) ===
+        order.length,
+    JSON.stringify(handle),
+  );
+  check(
+    'the list is Home Assistant’s own sorting, without its styles',
+    await page
+      .locator('fluvy-panel .cz-parts')
+      .evaluate(
+        (list) =>
+          list.parentElement.localName === 'ha-sortable' &&
+          list.parentElement.hasAttribute('no-style') &&
+          list.parentElement.options === undefined,
+      ),
+  );
+
+  // the third card carried up to the first one's place
+  const lifted = await carry(page, part(page, 'home/appliances'), part(page, 'home/attention'), {
+    hold: () =>
+      part(page, 'home/appliances').evaluate((row) => {
+        const style = getComputedStyle(row);
+        return {
+          chosen: row.classList.contains('sortable-chosen'),
+          ring: style.boxShadow.includes('inset') && style.boxShadow !== 'none',
+          radius: style.borderTopLeftRadius,
+          first: row.parentElement.querySelector('.cz-part') === row,
+        };
+      }),
+  });
+  check(
+    'a row dragged by its handle is lifted where it stands: the accent’s ring, the 16 radius, already where it will land',
+    lifted.chosen && lifted.ring && lifted.radius === '16px' && lifted.first,
+    JSON.stringify(lifted),
+  );
+  check(
+    'dropped, it stands where it was dropped and wears nothing of the drag',
+    (await parts(page))[0] === 'home/appliances' &&
+      (await parts(page)).length === order.length &&
+      !(await part(page, 'home/appliances').getAttribute('class')).includes('sortable'),
+    (await parts(page)).slice(0, 4).join(' '),
+  );
+  check('the apply bar names the change', (await barText(page)) === 'Fluvy auto · Customise');
+
+  // a list's entities
+  const lights = part(page, 'home/lights');
+  await lights.locator(':scope > .fv-row').click();
+  await settle(page, 300);
+  const items = () =>
+    lights.locator('.cz-item').evaluateAll((rows) => rows.map((row) => row.dataset.item));
+  const entities = await items();
+  await carry(
+    page,
+    lights.locator(`.cz-item[data-item="${entities[2]}"]`),
+    lights.locator(`.cz-item[data-item="${entities[0]}"]`),
+  );
+  check(
+    'an entity dragged to the head of its list leads it',
+    (await items())[0] === entities[2] && (await items()).length === entities.length,
+    (await items()).join(' '),
+  );
+  await lights.locator(':scope > .fv-row').click();
+  await settle(page, 200);
+
+  // the tabs, unfolded under the view's place among them
+  await page.locator('fluvy-panel .cz-place > .fv-row .fv-row__title').click();
+  await settle(page, 300);
+  const tabs = () =>
+    page
+      .locator('fluvy-panel .cz-place .cz-item')
+      .evaluateAll((rows) => rows.map((row) => row.dataset.view));
+  const before = await tabs();
+  check(
+    'a tap on the view’s place among the tabs unfolds them, a row a tab',
+    before.length === 9 && before[0] === 'home' && before[2] === 'lights',
+    before.join(' '),
+  );
+  await carry(
+    page,
+    page.locator('fluvy-panel .cz-place .cz-item[data-view="lights"]'),
+    page.locator('fluvy-panel .cz-place .cz-item[data-view="home"]'),
+  );
+  check(
+    'a tab dragged first leads the tabs, and the chips over them',
+    (await tabs())[0] === 'lights' &&
+      (await page.locator('fluvy-panel .cz-top .fv-chip').first().textContent()).trim() ===
+        'Lights',
+    (await tabs()).join(' '),
+  );
+  await page.locator('fluvy-panel .cz-place .cz-item[data-view="media"] .fv-hit').click();
+  await settle(page, 200);
+
+  // the scenes, last on Home, first in one press
+  const scenes = part(page, 'home/scenes');
+  await scenes.locator(':scope > .fv-row').click();
+  await settle(page, 200);
+  await action(scenes, 'Move to the top').click();
+  await settle(page, 300);
+  check(
+    'Top puts the last card first in one press',
+    (await parts(page))[0] === 'home/scenes',
+    (await parts(page)).slice(0, 3).join(' '),
+  );
+  check(
+    'and the focus stays among its buttons: at the top, on the nearest move that still has somewhere to go',
+    (await focused(page)) === 'Move down',
+    String(await focused(page)),
+  );
+
+  const edit = await saved(page);
+  check(
+    'Save writes each as the fewest places: one a card, one the entity put first, one the tab, and the view hidden',
+    same(edit?.cards, { 'home/appliances': { order: 1 }, 'home/scenes': { order: 0 } }) &&
+      same(edit?.entities, { 'home/lights': { order: [entities[2]] } }) &&
+      same(edit?.views, { lights: { order: 0 }, media: { hidden: true } }),
+    JSON.stringify(edit),
+  );
+  check('the page logged no error', seen.length === 0, seen.join(' | '));
+  await page.close();
+
+  const still = await suite.page(CUSTOMISE, {
+    viewport: { width: 1400, height: 1000 },
+    wait: 1800,
+    reducedMotion: 'reduce',
+  });
+  check(
+    'a page that asks for less motion slides no row out of the way',
+    await still
+      .locator('fluvy-panel .cz-parts')
+      .evaluate((list) => list.parentElement.options?.animation === 0),
+  );
+  await still.close();
+}
+
+/* ---------- a phone: a row dragged by a finger; the search; the sheet "Add a card" ---------- */
+{
+  const page = await suite.page(CUSTOMISE, {
+    viewport: { width: 360, height: 800 },
+    wait: 1500,
+    touch: true,
+  });
+  const seen = errors(page);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type, x, y) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: type === 'touchEnd' ? [] : [{ x: Math.round(x), y: Math.round(y) }],
+    });
+  const from = await centre(grip(part(page, 'home/covers')));
+  const to = await centre(part(page, 'home/attention'));
+  const scroll = () => page.evaluate(() => window.scrollY);
+  const at = await scroll();
+  await touch('touchStart', from.box.x + 12, from.y);
+  await page.waitForTimeout(120);
+  for (let step = 1; step <= 16; step++) {
+    await touch('touchMove', from.box.x + 12, from.y + ((to.y - 6 - from.y) * step) / 16);
+    await page.waitForTimeout(30);
+  }
+  await page.waitForTimeout(250);
+  const mid = await part(page, 'home/covers')
+    .first()
+    .evaluate((row) => ({
+      chosen: row.classList.contains('sortable-chosen'),
+      first: row.parentElement.querySelector('.cz-part') === row,
+      copy: getComputedStyle(row.parentElement.querySelector('.sortable-fallback') ?? row).display,
+    }));
+  const moved = await scroll();
+  await touch('touchEnd', from.box.x + 12, to.y);
+  await settle(page, 400);
+  check(
+    'a finger drags a row by its handle: lifted, it travels from place to place, and the page stays still under it',
+    mid.chosen && mid.first && moved === at,
+    `${JSON.stringify(mid)} · scroll ${at} → ${moved}`,
+  );
+  check(
+    'what follows the finger is the row itself: Home Assistant’s copy of it stays unseen',
+    mid.copy === 'none',
+    mid.copy,
+  );
+  check(
+    'dropped, it leads the view',
+    (await parts(page))[0] === 'home/covers' && (await parts(page)).length === 16,
+    (await parts(page)).slice(0, 3).join(' '),
+  );
+
+  // a view of many cards is searched
+  const field = page.locator('fluvy-panel .cz-view .cz-search input');
+  await field.fill('sce');
+  await settle(page, 200);
+  check(
+    'a view of many cards has a search field: what is typed narrows its rows',
+    same(await parts(page), ['home/scenes']),
+    (await parts(page)).join(' '),
+  );
+  await field.fill('');
+  await settle(page, 200);
+
+  // the sheet: a card of another view, shown here as well
+  await page.locator('fluvy-panel .cz-view .fv-row', { hasText: 'Add a card' }).click();
+  await page.waitForSelector('fluvy-panel dialog.cz-dialog .cz-sheet');
+  await settle(page, 400);
+  const sheet = page.locator('fluvy-panel dialog.cz-dialog .cz-sheet');
+  const ways = await sheet.locator('.fv-chip').allTextContents();
+  check(
+    '"Add a card" opens a sheet in the top layer with three ways, the dashboard’s own cards first',
+    (await page.locator('fluvy-panel dialog.cz-dialog').evaluate((d) => d.matches(':modal'))) &&
+      same(
+        ways.map((way) => way.trim()),
+        ['This dashboard', 'Fluvy’s cards', 'YAML'],
+      ) &&
+      (await sheet.locator('.cz-pair .fv-btn').first().isDisabled()),
+    ways.join(' | '),
+  );
+  await sheet.locator('.cz-search input').fill('scenes');
+  await settle(page, 200);
+  const groups = (await sheet.locator('.cz-label').allTextContents()).map((label) => label.trim());
+  check(
+    'what is typed finds the rooms’ own scenes, each under its room',
+    groups.includes('Kitchen') && groups.includes('Living room') && !groups.includes('Home'),
+    groups.join(' | '),
+  );
+  await sheet
+    .locator('.cz-label', { hasText: 'Kitchen' })
+    .locator('xpath=following-sibling::div[1]')
+    .locator('.fv-row')
+    .first()
+    .click();
+  await settle(page, 200);
+  const pair = await sheet
+    .locator('.cz-pair .fv-btn')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => [button.getBoundingClientRect().width, button.disabled]),
+    );
+  check(
+    'one picked, the equal pair can act: Move here and Show here too',
+    pair.length === 2 && pair[0][0] === pair[1][0] && !pair[0][1] && !pair[1][1],
+    JSON.stringify(pair),
+  );
+  await sheet.locator('.cz-pair .fv-btn--accent').click();
+  await settle(page, 500);
+  const taken = part(page, 'home/also:room-kitchen/scenes');
+  check(
+    'shown here too, it is a row of the view that says where it comes from',
+    (await taken.count()) === 1 &&
+      (await taken.locator('.fv-row__title').textContent()).trim() === 'Scenes' &&
+      (await taken.locator('.fv-row__sub').textContent()).trim() === 'From Kitchen',
+    (await parts(page)).at(-1),
+  );
+
+  // one of Fluvy's cards, made in its own form
+  await page.locator('fluvy-panel .cz-view .fv-row', { hasText: 'Add a card' }).click();
+  await page.waitForSelector('fluvy-panel dialog.cz-dialog .cz-sheet');
+  await settle(page, 400);
+  await sheet.locator('.fv-chip').nth(1).click();
+  await settle(page, 300);
+  await sheet.locator('.cz-search input').fill('dimmer');
+  await settle(page, 200);
+  await sheet.locator('.fv-row__title', { hasText: /^Light$/ }).click();
+  await page.waitForSelector('fluvy-panel dialog.cz-dialog fluvy-rows-editor ha-form');
+  await settle(page, 600);
+  const made = await sheet.evaluate((node) => {
+    const card = node.querySelector('.cz-sheet__card > fluvy-light-card');
+    return {
+      title: node.querySelector('.fv-card__title')?.textContent?.trim(),
+      drawn: (card?.getBoundingClientRect().height ?? 0) > 100,
+      inert: node.querySelector('.cz-sheet__card')?.hasAttribute('inert') ?? false,
+      add: [...node.querySelectorAll('.cz-pair .fv-btn')].at(-1)?.disabled,
+    };
+  });
+  check(
+    'a card of Fluvy’s opens in its own form, drawn over it as it will be and never touched',
+    made.title === 'Light' && made.drawn && made.inert && made.add === false,
+    JSON.stringify(made),
+  );
+  await sheet.locator('.cz-pair .fv-btn--accent').click();
+  await settle(page, 500);
+  check(
+    'added, it is a row of the view, after the one taken from the kitchen',
+    (await parts(page)).at(-2) === 'home/own:0' &&
+      (await parts(page)).at(-1) === 'home/also:room-kitchen/scenes',
+    (await parts(page)).slice(-2).join(' '),
+  );
+  check(
+    'nothing runs past the phone’s width',
+    !(await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    )),
+  );
+
+  const edit = await saved(page);
+  check(
+    'Save writes them: the finger’s place, the card shown as well, and the new card with what its form held',
+    same(edit?.cards, { 'home/covers': { order: 0 } }) &&
+      same(edit?.views?.home?.also, ['room-kitchen/scenes']) &&
+      edit?.views?.home?.add?.length === 1 &&
+      edit.views.home.add[0].type === 'custom:fluvy-light-card' &&
+      /^light\./.test(edit.views.home.add[0].entity),
+    JSON.stringify(edit),
+  );
+  check('the page logged no error', seen.length === 0, seen.join(' | '));
+  await page.close();
+}
+
+/* ---------- someone who is no administrator: nothing of Customise is fetched ---------- */
+{
+  /** A page opened on a link to Customise, and the files of Customise it asked the server for. */
+  const opened = async (query) => {
+    const page = await suite.browser.newPage({ viewport: { width: 412, height: 900 } });
+    const files = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/panel/customise/')) files.push(request.url());
+    });
+    await page.goto(`${BASE}?${query}`);
+    await page.waitForSelector('html[data-ready="1"]');
+    await page.waitForTimeout(1500);
+    return { page, files };
+  };
+  const guest = await opened('panel=dashboard&state=dashboards,customise,guest');
+  const admin = await opened(CUSTOMISE);
+  check(
+    'a link to Customise opened by someone who is no administrator fetches none of its files',
+    guest.files.length === 0 &&
+      admin.files.length > 0 &&
+      (await guest.page.locator('fluvy-panel .cz-top').count()) === 0,
+    `${guest.files.length} for a guest, ${admin.files.length} for an administrator`,
+  );
+  await guest.page.close();
+  await admin.page.close();
+}
+
+/* ---------- Home Assistant's pencil: the strategy's own form in its dialog ---------- */
+{
+  const page = await suite.page('panel=dashboard&state=pencil', {
+    viewport: { width: 412, height: 900 },
+    wait: 1200,
+  });
+  const seen = errors(page);
+  const form = page.locator('fluvy-strategy-form');
+  const link = await form.locator('a').evaluate((a) => ({
+    href: a.getAttribute('href'),
+    target: a.target,
+    height: a.getBoundingClientRect().height,
+    title: a.querySelector('.title')?.textContent,
+  }));
+  check(
+    'the strategy answers Home Assistant’s pencil with a form whose first row leads to Customise on that dashboard',
+    link.href === '/fluvy/dashboard/fluvy-auto' &&
+      link.target === '' &&
+      link.height >= 44 &&
+      link.title === 'Customise',
+    JSON.stringify(link),
+  );
+  const fields = await form
+    .locator('ha-form [data-field]')
+    .evaluateAll((nodes) => nodes.map((node) => node.dataset.field));
+  check(
+    'under it, the dashboard’s most used options: its views and its first three choices',
+    same(fields, ['views', 'thermostat_variant', 'tile_size', 'tile_switch']),
+    fields.join(' '),
+  );
+  const held = () => page.evaluate(() => window.fluvyPencil.config);
+  await form.locator('ha-form [data-field="tile_size"]').click();
+  await settle(page, 200);
+  const once = await held();
+  await form.locator('ha-form [data-field="tile_size"]').click();
+  await settle(page, 200);
+  const twice = await held();
+  check(
+    'a choice is written as the panel writes it: its default is no key, and the rest stays',
+    once.tile_size === 'compact' &&
+      !('tile_size' in twice) &&
+      same(twice, { type: 'custom:fluvy-home', hide: ['agenda'] }),
+    `${JSON.stringify(once)} → ${JSON.stringify(twice)}`,
+  );
+  await form.locator('ha-form [data-field="views"]').click();
+  await settle(page, 200);
+  check(
+    'a view switched back on leaves `hide`, which goes with its last one',
+    same(await held(), { type: 'custom:fluvy-home' }),
+    JSON.stringify(await held()),
   );
   check('the page logged no error', seen.length === 0, seen.join(' | '));
   await page.close();

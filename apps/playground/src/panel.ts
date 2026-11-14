@@ -447,16 +447,21 @@ function withDemoHome(hass: HomeAssistant): HomeAssistant {
   } as unknown as HomeAssistant;
 }
 
-/** What a selector finds in the panel, once it is drawn (five seconds at most). */
+/**
+ * What a selector finds in the panel, once it is drawn (five seconds at most): the first, the one at a place among
+ * them, or the one that says a text (a card's name, the same in every language).
+ */
 async function find(
   panel: HTMLElement,
   selector: string,
-  text?: string,
+  which: number | string = 0,
 ): Promise<HTMLElement | null> {
   for (let tries = 0; tries < 100; tries++) {
-    const found = [...(panel.shadowRoot?.querySelectorAll<HTMLElement>(selector) ?? [])].find(
-      (node) => text === undefined || node.textContent?.trim() === text,
-    );
+    const all = [...(panel.shadowRoot?.querySelectorAll<HTMLElement>(selector) ?? [])];
+    const found =
+      typeof which === 'number'
+        ? all[which]
+        : all.find((node) => node.textContent?.trim() === which);
     if (found) return found;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -470,11 +475,12 @@ async function find(
 async function unfold(panel: HTMLElement, sheet: boolean): Promise<void> {
   const part = `.cz-part[data-part="home/${sheet ? 'clock' : 'lights'}"]`;
   (await find(panel, `${part} > .fv-row`))?.click();
-  if (sheet) (await find(panel, `${part} .fv-action[aria-label="Options"]`))?.click();
+  // the fifth of its buttons, after its four moves
+  if (sheet) (await find(panel, `${part} > .cz-detail > .cz-actions .fv-action`, 4))?.click();
 }
 
-/** The sheet "Add a card", opened as a tap on its row opens it; then the way named, as a tap on its chip. */
-async function adding(panel: HTMLElement, way?: string): Promise<void> {
+/** The sheet "Add a card", opened as a tap on its row opens it; then a way of its three, as a tap on its chip. */
+async function adding(panel: HTMLElement, way = 0): Promise<void> {
   (await find(panel, '.cz-view .fv-row:has(> .fv-row__btn)'))?.click();
   if (way) (await find(panel, '.cz-sheet .fv-chip', way))?.click();
 }
@@ -497,19 +503,23 @@ const MOMENTS: Record<
   },
   // the rooms' scenes found and picked: what a command centre on Home is made of
   add: async (panel) => {
+    // searched by the dashboard's own word for scenes, in the page's language: what Home's row is called
+    const word = (await find(panel, '.cz-part[data-part="home/scenes"] .fv-row__title'))
+      ?.textContent;
     await adding(panel);
     const field = await find(panel, '.cz-sheet .cz-search input');
     if (!(field instanceof HTMLInputElement)) return;
-    field.value = 'scenes';
+    field.value = word?.trim() ?? '';
     field.dispatchEvent(new Event('input'));
     await new Promise((resolve) => setTimeout(resolve, 100));
-    for (const row of panel.shadowRoot?.querySelectorAll<HTMLElement>('.cz-sheet .fv-row') ?? [])
-      if (!row.closest('.pn-rows')?.previousElementSibling?.textContent?.includes('Lights'))
-        row.click();
+    // the rooms' own, each under its room's name (the house's, in no language)
+    for (const rows of panel.shadowRoot?.querySelectorAll<HTMLElement>('.cz-sheet .pn-rows') ?? [])
+      if (['Kitchen', 'Living room'].includes(rows.previousElementSibling?.textContent ?? ''))
+        rows.querySelector<HTMLElement>('.fv-row')?.click();
   },
-  cards: (panel) => adding(panel, 'Fluvy’s cards'),
+  cards: (panel) => adding(panel, 1),
   new: async (panel) => {
-    await adding(panel, 'Fluvy’s cards');
+    await adding(panel, 1);
     (await find(panel, '.cz-sheet .fv-row__title', 'Light'))?.click();
   },
 };
