@@ -558,6 +558,10 @@
     "slider_style": "Csúszka stílusa",
     "slider_style_helper": "Érintetlenül: az összes csúszkáé, a Fluvy beállításaiból",
     "slider_words": "Feliratok alatta",
+    "group_by": "Csoportosítás",
+    "group_order": "Csoportok sorrendje",
+    "group_order_helper": "Automatikus: a szobák sorrendje a Fluvy beállításaiból",
+    "short_names": "Rövid nevek a csoporton belül",
     "doing": "Mit csinál éppen",
     "show_state": "A működés megjelenítése",
     "state_entity": "A működés forrása",
@@ -1013,7 +1017,9 @@
     "sun": "Nap",
     "ends": "Végek és közép",
     "tile_fill": "Kitöltés",
-    "house_style": "Ház ({style})"
+    "house_style": "Ház ({style})",
+    "label": "Felirat",
+    "floor": "Emelet"
   },
   "tone": {
     "accent": "Kiemelés",

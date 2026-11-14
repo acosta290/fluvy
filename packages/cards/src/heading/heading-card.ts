@@ -24,8 +24,12 @@ export interface HeadingCardConfig extends FluvyCardConfig {
   path?: string;
   /** `bar` (default): the title with its meta at the right. `plain`: the title alone. */
   variant?: 'bar' | 'plain';
-  /** `subtitle` (default): the 20/600 title of a group. `title`: a page's section title, 27/600 (Home Assistant's own heading styles). */
-  heading_style?: 'title' | 'subtitle';
+  /**
+   * `subtitle` (default): the 20/600 title of a group. `title`: a page's section title, 27/600 (Home Assistant's own
+   * heading styles). `label`: a quiet label over a part of a group (a room's name over its lights, #189), its words
+   * alone.
+   */
+  heading_style?: 'title' | 'subtitle' | 'label';
 }
 
 /** The section title's link, measured in its own face (16/500). */
@@ -44,11 +48,17 @@ const LINK = 'hm-section hm-section--title > hm-section__text';
  * Below other cards of its section the heading opens a new group: it sits 24 under them (the grid's
  * 16 + 8) and 16 above its own cards, as the sheet's section titles do. As the first card of a section
  * it keeps the column's top line, so the columns still start level.
+ *
+ * `heading_style: label` is a group's label on the page (`.fv-group`, 1.21, #189): 13/600 in the second ink on a 20
+ * line, the title alone — no glyph, no meta, no tap. It stands the section's gap under what precedes it and 8 over its
+ * own cards, which it draws up to itself, so it counts 12 in its column.
  */
 export class FluvyHeadingCard extends Card<HeadingCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns: the section title's row is 32. */
   static override layoutHeight(config?: HeadingCardConfig): number {
-    return config?.heading_style === 'title' ? 32 : 24;
+    const style = config?.heading_style;
+    // a label's 20 line draws the cards under it 8 up: it takes 12 of its column
+    return style === 'title' ? 32 : style === 'label' ? 12 : 24;
   }
 
   private readonly head = new HeadFit(this);
@@ -71,6 +81,14 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
       }
       :host([follows]) .hm-section {
         margin-top: 8px;
+      }
+      /* a label is 8 over its cards, whatever the section's gap (16 in Fluvy's theme, 8 in Home Assistant's own);
+         on the page its words keep their second ink (the page's, where its background asks for one) */
+      :host([label]) {
+        margin-bottom: calc(8px - var(--ha-section-grid-row-gap, 8px));
+      }
+      .fv-group {
+        color: var(--fluvy-text-secondary);
       }
       .hm-section__title {
         flex: 0 1 auto;
@@ -184,6 +202,7 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
 
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
+    this.toggleAttribute('label', this.config?.heading_style === 'label');
     this.placeInSection();
   }
 
@@ -208,6 +227,8 @@ export class FluvyHeadingCard extends Card<HeadingCardConfig> {
   /** "2 of 4 on" while something is on, otherwise the plain count. Unreachable entities count as devices, never as on. */
   protected renderCard(): TemplateResult {
     const title = this.config?.title ?? '';
+    if (this.config?.heading_style === 'label')
+      return html`<h3 class="fv-group" data-name>${title}</h3>`;
     const plain = this.config?.variant === 'plain';
     const text = plain
       ? ''

@@ -1221,6 +1221,10 @@
     "slider_style": "Styl suwaka",
     "slider_style_helper": "Nieustawione: wspólny dla wszystkich suwaków, z ustawień Fluvy",
     "slider_words": "Wartości pod spodem",
+    "group_by": "Grupuj według",
+    "group_order": "Kolejność grup",
+    "group_order_helper": "Automatycznie: kolejność pomieszczeń z ustawień Fluvy",
+    "short_names": "Krótkie nazwy w grupie",
     "doing": "Co teraz robi",
     "show_state": "Pokaż, co robi",
     "state_entity": "Działanie odczytane z",
@@ -2072,7 +2076,9 @@
     "sun": "Słońce",
     "ends": "Końce i środek",
     "tile_fill": "Wypełnienie",
-    "house_style": "Dom ({style})"
+    "house_style": "Dom ({style})",
+    "label": "Etykieta",
+    "floor": "Piętro"
   },
   "page": {
     "menu": "Otwórz menu",

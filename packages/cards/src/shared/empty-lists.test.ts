@@ -15,7 +15,8 @@ afterAll(() => familiesDefined);
  * #48: a card of a list is never a configuration error for being empty. A filter that matches nothing yet hands it
  * `[]` (auto-entities), then the matches on the same element; a list may hold objects with options of their own, a
  * section's title or a divider among them: no row of it, and drawn only by the cards whose list may stand in parts
- * (#157). Held here for each of the fifteen cards of a list.
+ * (#157; the tiles and the scenes under a section's label since #189). Held here for each of the fifteen cards of a
+ * list.
  */
 
 /** Every entity is called so, and so is every item: what a card shows of its list is found by this word. */
@@ -78,13 +79,13 @@ const named = (id: string): Record<string, unknown> => ({ entity: id, name: MARK
 const CASES: readonly ListCase[] = [
   { tag: 'fluvy-bars-card', key: 'entities', item: named('sensor.level'), section: 20 },
   { tag: 'fluvy-entities-card', key: 'entities', item: named('light.desk'), section: 28 },
-  { tag: 'fluvy-tiles-card', key: 'entities', item: named('light.desk') },
+  { tag: 'fluvy-tiles-card', key: 'entities', item: named('light.desk'), section: 28 },
   { tag: 'fluvy-updates-card', key: 'entities', item: { entity: 'update.core' } },
   { tag: 'fluvy-stat-tiles-card', key: 'entities', item: named('sensor.level') },
   { tag: 'fluvy-helpers-card', key: 'entities', item: named('input_boolean.guest') },
   { tag: 'fluvy-distribution-card', key: 'entities', item: named('sensor.power') },
   { tag: 'fluvy-actions-card', key: 'entities', item: named('script.night') },
-  { tag: 'fluvy-scenes-card', key: 'entities', item: named('scene.evening') },
+  { tag: 'fluvy-scenes-card', key: 'entities', item: named('scene.evening'), section: 28 },
   { tag: 'fluvy-openings-card', key: 'entities', item: named('binary_sensor.door') },
   { tag: 'fluvy-chips-card', key: 'chips', item: { name: MARKER, path: '/home' } },
   {
@@ -134,6 +135,10 @@ async function mount(c: ListCase, list: unknown, more?: Record<string, unknown>)
   card.setConfig(configOf(c, list, more));
   card.hass = hass;
   document.body.append(card);
+  await card.updateComplete;
+  // tiles and scenes under a label wait for what lays them out in groups (#189), and draw again as it lands
+  await import('./groups.js');
+  await new Promise((resolve) => setTimeout(resolve));
   await card.updateComplete;
   return card;
 }

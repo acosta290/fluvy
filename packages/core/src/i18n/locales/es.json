@@ -608,6 +608,10 @@
     "slider_style": "Estilo del deslizador",
     "slider_style_helper": "Sin tocar, el de todos los deslizadores en los ajustes de Fluvy",
     "slider_words": "Valores debajo",
+    "group_by": "Agrupar por",
+    "group_order": "Orden de los grupos",
+    "group_order_helper": "Automático: el orden de las habitaciones en los ajustes de Fluvy",
+    "short_names": "Nombres cortos dentro de un grupo",
     "doing": "Qué está haciendo",
     "show_state": "Mostrar qué está haciendo",
     "state_entity": "Acción leída de",
@@ -2086,7 +2090,9 @@
     "sun": "Sol",
     "ends": "Extremos y centro",
     "tile_fill": "Relleno",
-    "house_style": "Casa ({style})"
+    "house_style": "Casa ({style})",
+    "label": "Etiqueta",
+    "floor": "Planta"
   },
   "tone": {
     "accent": "Acento",

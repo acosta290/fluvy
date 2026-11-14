@@ -558,6 +558,10 @@
     "slider_style": "スライダーのスタイル",
     "slider_style_helper": "変更しないときは Fluvy の設定のすべてのスライダーの値",
     "slider_words": "下の目盛り",
+    "group_by": "グループ分け",
+    "group_order": "グループの並び順",
+    "group_order_helper": "自動：Fluvy の設定の部屋の並び順",
+    "short_names": "グループ内では名前を短く",
     "doing": "現在の動作",
     "show_state": "動作を表示",
     "state_entity": "動作の取得元",
@@ -1013,7 +1017,9 @@
     "sun": "太陽",
     "ends": "両端と中央",
     "tile_fill": "塗りつぶし",
-    "house_style": "家（{style}）"
+    "house_style": "家（{style}）",
+    "label": "ラベル",
+    "floor": "フロア"
   },
   "tone": {
     "accent": "アクセント",

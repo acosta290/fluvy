@@ -608,6 +608,10 @@
     "slider_style": "Stijl van de schuifregelaar",
     "slider_style_helper": "Onaangeroerd: die van alle schuifregelaars, uit de instellingen van Fluvy",
     "slider_words": "Waarden eronder",
+    "group_by": "Groeperen op",
+    "group_order": "Volgorde van de groepen",
+    "group_order_helper": "Automatisch: de volgorde van de kamers uit de instellingen van Fluvy",
+    "short_names": "Korte namen in een groep",
     "doing": "Wat het doet",
     "show_state": "Tonen wat het doet",
     "state_entity": "Actie gelezen uit",
@@ -2086,7 +2090,9 @@
     "sun": "Zon",
     "ends": "Uiteinden en midden",
     "tile_fill": "Vulling",
-    "house_style": "Huis ({style})"
+    "house_style": "Huis ({style})",
+    "label": "Label",
+    "floor": "Verdieping"
   },
   "tone": {
     "accent": "Accent",

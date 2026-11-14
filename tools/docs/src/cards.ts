@@ -26,7 +26,12 @@ type Schema = readonly {
 /** What a card's editor shows (its class's, or the module a card every page carries keeps it in). */
 interface Editor {
   keys: readonly string[];
-  lists?: readonly { key: string; alias?: string; schema: Schema; sections?: boolean }[];
+  lists?: readonly {
+    key: string;
+    alias?: string;
+    schema: Schema;
+    sections?: boolean | 'labels';
+  }[];
   getConfigForm(): { schema: Schema };
 }
 interface Contract {
@@ -167,8 +172,10 @@ function row(
     .map((field) => option(field, fields));
   const lists = cardLists.map((list) => {
     const keys = flatten(list.schema).map((f) => `\`${f.name}\``);
-    // a list in parts: what stands between its items
-    const between = list.sections ? '; between them `type: section`, `type: divider`' : '';
+    // a list in parts: what stands between its items (a label alone among tiles and scenes: `labels`)
+    const between = !list.sections
+      ? ''
+      : `; between them \`type: section\`${list.sections === 'labels' ? '' : ', `type: divider`'}`;
     return `\`${list.key}\` (a list: ${keys.join(', ')}${between})`;
   });
   const options = [...own, ...lists];

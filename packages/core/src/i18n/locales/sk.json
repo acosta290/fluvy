@@ -1284,6 +1284,10 @@
     "slider_style": "Štýl posuvníka",
     "slider_style_helper": "Bez zmeny: ako pri všetkých posuvníkoch v nastaveniach Fluvy",
     "slider_words": "Hodnoty pod ním",
+    "group_by": "Zoskupiť podľa",
+    "group_order": "Poradie skupín",
+    "group_order_helper": "Automaticky: poradie miestností z nastavení Fluvy",
+    "short_names": "Krátke názvy v skupine",
     "doing": "Čo práve robí",
     "show_state": "Zobraziť, čo robí",
     "state_entity": "Činnosť čítaná z",
@@ -1684,7 +1688,9 @@
     "sun": "Slnko",
     "ends": "Konce a stred",
     "tile_fill": "Výplň",
-    "house_style": "Domácnosť ({style})"
+    "house_style": "Domácnosť ({style})",
+    "label": "Popis",
+    "floor": "Poschodie"
   },
   "tone": {
     "accent": "Zvýraznenie",

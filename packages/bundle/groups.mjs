@@ -336,6 +336,14 @@ const BACKGROUND = /\/packages\/core\/src\/look\/background-layer\.ts/;
  */
 const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
 
+/**
+ * A list in groups (1.21, #189): what lays a Tiles or a Scenes card's list out in the house's rooms and floors or its
+ * own sections, the short names inside a group, and the scenes as chips — fetched by the first card asked for groups,
+ * with the automatic dashboards and with the heights they count with the house; a dashboard of plain lists never pays
+ * for it.
+ */
+const GROUPS_OF_A_LIST = /\/packages\/cards\/src\/shared\/groups\.ts/;
+
 /** The icon set's other part (`fluvy:washer`, `fluvy:gate-open` …): fetched the first time Home Assistant asks for one. */
 const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
 
@@ -385,7 +393,7 @@ const FORMS =
  * their own), automations and alerts families (each sheet on its own), the template card, the web page card, the
  * Expander card (its editor on its own, before the forms), the Slider card, the ring, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours, a room's quick actions, the cards' editor, the
  * fields every editor is built of, the view icons, what a see-through card wears, what a quiet one wears, the slider
- * styles, the switch styles, the page's background, this device's sidebar beside the page, the icon set's other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
+ * styles, the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out loud.
  * @type {readonly Group[]}
  */
 export const GROUPS = [
@@ -443,6 +451,7 @@ export const GROUPS = [
   { name: 'switch-styles', test: SWITCH_STYLES },
   { name: 'background', test: BACKGROUND },
   { name: 'dock', test: DOCK },
+  { name: 'groups', test: GROUPS_OF_A_LIST },
   { name: 'icons', test: ICONS },
   { name: 'shared', test: SHARED },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },

@@ -25,16 +25,29 @@ import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'li
 
 import { agoShort } from '../helpers/datetime.js';
 
-import { Card, type CardEditor } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor, type Press } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 
 import { TextRuler } from '../shared/fit.js';
+import type { SceneChip } from '../shared/groups.js';
 
 import { FontsSettled } from '../shared/fonts.js';
 import { columnsOf, ITEM_ALIASES, type AliasSpec, type Columns } from '../shared/config.js';
-import { EMPTY, entryCount, rowsOf, textWidth } from '../shared/heights.js';
-import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { chipRows, EMPTY, rowsOf, textWidth, type NameOf } from '../shared/heights.js';
+import {
+  asksGroups,
+  emptyPanel,
+  groupsHeight,
+  groupsModule,
+  groupsOf,
+  itemsOf,
+  listOf,
+  type EmptyList,
+  type Group,
+  type Grouped,
+  type SectionEntry,
+} from '../shared/lists.js';
 
 const s = strings('scenes');
 
@@ -53,11 +66,19 @@ export interface SceneItemConfig {
   color?: string;
 }
 
-export interface ScenesCardConfig extends FluvyCardConfig, EmptyList {
+export interface ScenesCardConfig extends FluvyCardConfig, EmptyList, Grouped {
   /** A section title above the tiles (the heading card's face). */
   title?: string;
-  /** The object form, for a per-scene `name`, `icon`, `subtitle` and `tap_action`. Wins over `entities`. */
-  scenes?: ReadonlyArray<string | SceneItemConfig>;
+  /**
+   * The object form, for a per-scene `name`, `icon`, `subtitle` and `tap_action`. Wins over `entities`. A section
+   * among them (`- section: Kitchen`) labels the scenes after it (#189).
+   */
+  scenes?: ReadonlyArray<string | SceneItemConfig | SectionEntry>;
+  /**
+   * `tiles` (default): a 76 tile a scene. `chips`: the scenes as pills that fill their rows on one card, the last run
+   * one filled (#189).
+   */
+  variant?: 'tiles' | 'chips';
   /** `auto` (default): two a row while every name fits its two lines; `1` or `2` to say so (two at most). */
   columns?: Columns;
   /** `always`: every tile shows its colour at rest too — a wash and its hairline (`on`, the default: the last run). */
@@ -91,25 +112,85 @@ const TILE = 76;
 const GRID_GAP = 16;
 const TILE_CHROME = 88;
 
+/** A word of a script whose words run together (kana, kanji, hangul): a line may end anywhere inside it. */
+const RUNS_TOGETHER = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
+/**
+ * Whether a name reads in a tile's two lines at `room`. In groups (`whole`), where names are short and often one
+ * word, each word must hold a line too: one wider than it would end a line inside itself ("Concentrat-e"), and the
+ * card draws one tile a row instead. A list without groups reads as 1.20 did.
+ */
+const reads = (
+  name: string,
+  room: number,
+  measure: (text: string) => number,
+  whole: boolean,
+): boolean =>
+  linesNeeded(name, room, measure) <= 2 &&
+  (!whole ||
+    (name.match(/[^\s-]*-(?=\S)|\S+/g) ?? []).every(
+      (word) => RUNS_TOGETHER.test(word) || measure(word) <= room,
+    ));
+
+/**
+ * The card's height at a 360 column from its config: its scenes in the groups its own sections make of them, or in
+ * `groups` — the house's, where the config asks for them and whoever counts has read the house (`house-heights.ts`,
+ * which says each scene's name too: `nameOf`, what a row of chips is laid out by).
+ */
+export function scenesHeight(
+  config: ScenesCardConfig,
+  nameOf: NameOf = () => undefined,
+  groups: readonly Group<SceneItemConfig>[] = groupsOf(config.scenes ?? config.entities),
+): number {
+  const head = config.title ? 40 : 0;
+  // no scenes: the empty panel where they would be
+  if (!groups.length) return head + EMPTY;
+  // a name the config gives, else the house's, else the id's own words
+  const names = ({ items }: Group<SceneItemConfig>): string[] =>
+    items.map(({ entity, name }) =>
+      String(
+        (typeof name === 'string' ? name : nameOf(entity)) ??
+          entity.slice(entity.indexOf('.') + 1).replace(/_/g, ' '),
+      ),
+    );
+  // as chips: the card's 20 round each group's rows of 44, its label over them
+  if (config.variant === 'chips')
+    return (
+      head +
+      40 +
+      groups.reduce((height, group) => height + chipRows(names(group)) * 44, 0) +
+      groupsHeight(groups, 16)
+    );
+  const asked = columnsOf(config.columns, 'auto');
+  // two a row, unless asked one, or a name the config gives would not read in its two lines on a half tile at 360
+  // (the card's own rule, `columns`, estimated: a title is 15/600)
+  const half = (360 - GRID_GAP) / 2 - TILE_CHROME;
+  const whole = groups.some(({ label }) => label);
+  const long =
+    asked === 'auto' &&
+    groups.some(({ items }) =>
+      items.some(
+        ({ name }) =>
+          typeof name === 'string' &&
+          !reads(name, half, (text) => textWidth(text, 'title') * (15 / 16), whole),
+      ),
+    );
+  const perRow = asked === 1 || long ? 1 : 2;
+  // each group's tiles start a row of their own, under its label
+  return (
+    head +
+    groups.reduce(
+      (height, { items }) => height + rowsOf(items.length, perRow) * (TILE + GRID_GAP) - GRID_GAP,
+      0,
+    ) +
+    groupsHeight(groups, GRID_GAP)
+  );
+}
+
 export class FluvyScenesCard extends Card<ScenesCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: ScenesCardConfig): number {
-    const n = entryCount(config, ['scenes', 'entities']);
-    const asked = columnsOf(config.columns, 'auto');
-    // two a row, unless asked one, or a name the config gives would not read in its two lines on a half tile at 360
-    // (the card's own rule, `columns`, estimated: a title is 15/600)
-    const half = (360 - GRID_GAP) / 2 - TILE_CHROME;
-    const named = itemsOf<SceneItemConfig>(config.scenes ?? config.entities).flatMap((item) =>
-      typeof item.name === 'string' ? [item.name] : [],
-    );
-    const long =
-      asked === 'auto' &&
-      named.some(
-        (name) => linesNeeded(name, half, (text) => textWidth(text, 'title') * (15 / 16)) > 2,
-      );
-    const perRow = asked === 1 || long ? 1 : 2;
-    // no scenes: the empty panel where the tiles would be
-    return (config.title ? 40 : 0) + (n ? rowsOf(n, perRow) * (TILE + GRID_GAP) - GRID_GAP : EMPTY);
+    return scenesHeight(config);
   }
 
   static override styles: CSSResultGroup = [
@@ -142,6 +223,13 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
       .am-scene .fv-row__text {
         min-width: 0;
       }
+      /* as chips: a group's first row under its label (or the card's edge), the next label 16 under the rows */
+      .am-chips > .fv-group {
+        margin: 16px 0 0;
+      }
+      .am-chips > :first-child {
+        margin-top: 0;
+      }
     `,
   ];
 
@@ -168,22 +256,28 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
   }
 
   /**
-   * Two tiles a row (164 wide at the least) while every name reads in its two lines there; one a row
-   * when a name would not ("Encender Luz Porche & Patio" in a 352 column), rather than cutting it.
+   * Two tiles a row (164 wide at the least) while every name reads in its two lines there (`reads`: in groups,
+   * `whole`, its words whole too); one a row when a name would not ("Encender Luz Porche & Patio" in a 352 column),
+   * rather than cutting it.
    */
-  private columns(names: readonly string[]): 1 | 2 {
+  private columns(names: readonly string[], whole: boolean): 1 | 2 {
     const asked = columnsOf(this.config?.columns, 'auto');
     if (asked === 1 || this.width < 344) return 1;
     if (asked !== 'auto') return 2;
     const room = (this.width - GRID_GAP) / 2 - TILE_CHROME; // a half tile, less its padding, circle and gap
-    const fits = names.every(
-      (name) => linesNeeded(name, room, (text) => this.ruler.width('fv-row__title', text)) <= 2,
+    const fits = names.every((name) =>
+      reads(name, room, (text) => this.ruler.width('fv-row__title', text), whole),
     );
     return fits ? 2 : 1;
   }
 
+  /** The config's list: its scenes and the sections among them. */
+  private list(): readonly unknown[] | undefined {
+    return this.config?.scenes ?? this.config?.entities;
+  }
+
   private items(): SceneItemConfig[] {
-    return itemsOf(this.config?.scenes ?? this.config?.entities);
+    return itemsOf(this.list());
   }
 
   protected override prepare(config: ScenesCardConfig): ScenesCardConfig {
@@ -218,95 +312,156 @@ export class FluvyScenesCard extends Card<ScenesCardConfig> {
     return at > 0 ? agoShort(this.hass, new Date(at), now) : s(this.hass, 'never');
   }
 
+  /** What a scene answers: a tap runs it, or is its own; a still press and two taps its own, else the card's (#179). */
+  private press(item: SceneItemConfig, view: EntityView): Press {
+    return this.pressOf(
+      {
+        hold_action: this.config?.hold_action,
+        double_tap_action: this.config?.double_tap_action,
+        ...item,
+      },
+      view.id,
+      () => this.run(view),
+    );
+  }
+
+  /**
+   * A scene as its chip (`variant: chips`): its name — the config's own glyph before it, where it gives one — on the
+   * accent's fill while it is the last run (`active`), in its own colour where it has one; out of reach, the dashed
+   * ring, which takes no tap (a still press opens its details).
+   */
+  private chip(item: SceneItemConfig, view: EntityView, active: boolean): SceneChip {
+    const gone = view.status === 'missing' || view.status === 'unavailable';
+    const accent = this.accents.item(item.color);
+    const { onTap, onHold }: Press = gone
+      ? { onHold: () => this.tap(view.id, MORE_INFO) }
+      : this.press(item, view);
+    return {
+      key: item.entity,
+      label: this.nameFor(view, item.name),
+      name: true,
+      active,
+      unavailable: gone,
+      ...(item.icon ? { glyph: item.icon } : {}),
+      ...(accent ? { accent, tone: 'accent' as const } : {}),
+      ...(onTap ? { onTap } : {}),
+      ...(onHold ? { onHold } : {}),
+    };
+  }
+
+  /**
+   * The scenes in the groups the config asks for (`Grouped`), each with its short name, laid out by their chunk —
+   * which draws the chips too: none while it is on its way, and one group of them all where the config asks for
+   * neither, or the chunk cannot be fetched (the scenes are tiles then).
+   */
   protected renderCard(): TemplateResult {
     const items = this.items();
     // no scenes: the panel where their tiles would be, across the grid and on the page as they are
     const panel = emptyPanel(this, !items.length, 'moon', 'common.no_scenes', true);
-    const views = items.map((item) => this.entity(item.entity));
+    const asked = this.config?.variant === 'chips' || asksGroups(this.config, this.list());
+    const module = asked ? groupsModule(this) : null;
+    const groups: readonly Group<SceneItemConfig>[] =
+      (module
+        ? module.laidOut<SceneItemConfig>(this.hass, this.config ?? {}, this.list())
+        : module === null && [{ label: '', items }]) || [];
+    const drawn = groups.flatMap((group) => group.items);
+    const views = new Map(items.map((item) => [item.entity, this.entity(item.entity)]));
+    const viewOf = (item: SceneItemConfig): EntityView => views.get(item.entity) as EntityView;
+    const firedOf = (item: SceneItemConfig): number => {
+      const view = viewOf(item);
+      return view.status === 'ok' || view.status === 'unknown'
+        ? firedAt(view, this.stateOf(view))
+        : 0;
+    };
+    const newest = Math.max(0, ...items.map(firedOf));
+    const active = (item: SceneItemConfig): boolean => newest > 0 && firedOf(item) === newest;
+
+    const title = this.config?.title;
+    const head = title
+      ? html`<div class="hm-section">
+          <div class="hm-section__lead"><h2 class="hm-section__title">${title}</h2></div>
+        </div>`
+      : nothing;
+    if (module && this.config?.variant === 'chips' && !panel)
+      return html`<div class="am-scenes">
+        ${head}
+        ${module.sceneChips(
+          groups.map((group) => ({
+            label: group.label,
+            items: group.items.map((item) => this.chip(item, viewOf(item), active(item))),
+          })),
+          // the card's 20 on each side
+          { ruler: this.ruler, width: this.width - 40 },
+        )}
+      </div>`;
+
     const columns = panel
       ? 1
       : this.columns(
-          items.map((item, index) => this.nameFor(views[index] as EntityView, item.name)),
+          drawn.map((item) => this.nameFor(viewOf(item), item.name)),
+          groups.some(({ label }) => label),
         );
     const frozen = this.config?._now ? new Date(this.config._now) : null;
     const now = frozen && !Number.isNaN(frozen.getTime()) ? frozen : new Date();
-
-    const fired = views.map((view) =>
-      view.status === 'ok' || view.status === 'unknown' ? firedAt(view, this.stateOf(view)) : 0,
-    );
-    const newest = Math.max(0, ...fired);
     // the line under a name only while it fits the tile's words column: a state is dropped, never cut
     const room = (columns === 2 ? (this.width - GRID_GAP) / 2 : this.width) - TILE_CHROME;
     const fitted = (line: string): string =>
       line && this.ruler.width('fv-row__sub', line) <= room ? line : '';
 
-    const title = this.config?.title;
     return html`<div class="am-scenes">
-      ${
-        title
-          ? html`<div class="hm-section">
-              <div class="hm-section__lead"><h2 class="hm-section__title">${title}</h2></div>
-            </div>`
-          : nothing
-      }
+      ${head}
       <div class="fv-grid2" style="--am-cols:${columns}">
         ${panel}
-        ${items.map((item, index) => {
-          const view = views[index] as EntityView;
-          const name = this.nameFor(view, item.name);
-          if (view.status === 'missing' || view.status === 'unavailable') {
-            const state = fitted(stateText(this.hass, view));
-            // out of reach, the scene's own tile in the off skin: its name keeps its two lines
-            return html`<button
-              class="fv-tile am-scene fv-tile--off fv-tile--tap"
-              data-card
-              data-target
-              @click=${() => this.tap(view.id, { action: 'more-info' })}
-            >
-              ${this.looksQuiet ? ico(iconOf(view, item.icon), 'neutral') : ico('ban', 'off')}
-              <span class="fv-row__text"
-                ><span class="fv-row__title">${name}</span
-                >${state ? html`<span class="fv-row__sub">${state}</span>` : nothing}</span
+        ${groups.map(
+          (group) =>
+            html`${group.label ? html`<h3 class="fv-group" data-name>${group.label}</h3>` : nothing}
+            ${group.items.map((item) => {
+              const view = viewOf(item);
+              const name = this.nameFor(view, item.name);
+              if (view.status === 'missing' || view.status === 'unavailable') {
+                const state = fitted(stateText(this.hass, view));
+                // out of reach, the scene's own tile in the off skin: its name keeps its two lines
+                return html`<button
+                  class="fv-tile am-scene fv-tile--off fv-tile--tap"
+                  data-card
+                  data-target
+                  @click=${() => this.tap(view.id, MORE_INFO)}
+                >
+                  ${this.looksQuiet ? ico(iconOf(view, item.icon), 'neutral') : ico('ban', 'off')}
+                  <span class="fv-row__text"
+                    ><span class="fv-row__title">${name}</span
+                    >${state ? html`<span class="fv-row__sub">${state}</span>` : nothing}</span
+                  >
+                </button>`;
+              }
+              const on = active(item);
+              const meta = fitted(this.meta(item, view, firedOf(item), now));
+              // a coloured scene keeps its colour at rest when the card asks (the last run is on: its full fill)
+              const tinted = this.config?.tint === 'always' && Boolean(item.color) && !on;
+              const { onTap, onHold } = this.press(item, view);
+              return html`<button
+                class="fv-tile am-scene fv-tile--tap ${on ? 'is-on fv-tile--accent' : ''} ${
+                  tinted ? 'is-tinted' : ''
+                }"
+                data-card
+                data-target
+                data-accent=${this.accents.item(item.color) ?? nothing}
+                aria-pressed=${on ? 'true' : 'false'}
+                .fvTap=${onTap}
+                .fvHold=${onHold}
+                @pointerdown=${startPress}
+                @contextmenu=${preventMenu}
+                @click=${clickPress}
+                @keydown=${holdKey(onHold)}
               >
-            </button>`;
-          }
-          const at = fired[index] ?? 0;
-          const active = at > 0 && at === newest;
-          const meta = fitted(this.meta(item, view, at, now));
-          // a coloured scene keeps its colour at rest when the card asks (the last run is on: its full fill)
-          const tinted = this.config?.tint === 'always' && Boolean(item.color) && !active;
-          // a tap runs it, or is its own; a still press and two taps its own, else the card's (#179)
-          const { onTap, onHold } = this.pressOf(
-            {
-              hold_action: this.config?.hold_action,
-              double_tap_action: this.config?.double_tap_action,
-              ...item,
-            },
-            view.id,
-            () => this.run(view),
-          );
-          return html`<button
-            class="fv-tile am-scene fv-tile--tap ${active ? 'is-on fv-tile--accent' : ''} ${
-              tinted ? 'is-tinted' : ''
-            }"
-            data-card
-            data-target
-            data-accent=${this.accents.item(item.color) ?? nothing}
-            aria-pressed=${active ? 'true' : 'false'}
-            .fvTap=${onTap}
-            .fvHold=${onHold}
-            @pointerdown=${startPress}
-            @contextmenu=${preventMenu}
-            @click=${clickPress}
-            @keydown=${holdKey(onHold)}
-          >
-            ${ico(iconOf(view, item.icon), active || tinted ? 'accent' : 'neutral')}
-            <span class="fv-row__text">
-              <span class="fv-row__title">${name}</span>
-              ${meta ? html`<span class="fv-row__sub">${meta}</span>` : nothing}
-            </span>
-          </button>`;
-        })}
+                ${ico(iconOf(view, item.icon), on || tinted ? 'accent' : 'neutral')}
+                <span class="fv-row__text">
+                  <span class="fv-row__title">${name}</span>
+                  ${meta ? html`<span class="fv-row__sub">${meta}</span>` : nothing}
+                </span>
+              </button>`;
+            })}`,
+        )}
       </div>
     </div>`;
   }

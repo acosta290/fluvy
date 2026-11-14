@@ -234,3 +234,83 @@ export const withSections = <T extends { readonly entity: string }>(
     isRow(entry) ? row(entry, next++) : listSection(entry.label, entry.line),
   );
 };
+
+/* ---------- groups among a list's tiles (1.21, #189) ---------- */
+
+/**
+ * What a card of tiles or of scenes adds to its own keys so its list reads in groups, each under a quiet label
+ * (`shared/groups.ts`): the list's own sections (`- section: Kitchen`, a label alone: no hairline stands on the
+ * page), or the house's.
+ */
+export interface Grouped {
+  /**
+   * A group a room (`area`) or a floor of what it lists, under its name; what is in none last, under "Other". Unsaid
+   * (`none`), the list as it stands.
+   */
+  group_by?: 'area' | 'floor' | 'none';
+  /** `name`: the groups A to Z; unsaid (`auto`), in the house's order of its rooms (fluvy's settings). */
+  group_order?: 'name' | 'auto';
+  /**
+   * Unsaid, a name inside a group that is a room or a floor of the house reads without that name at either end, nor a
+   * first word every name there shares, where each keeps a word; `true` reads them so under every label, `false`
+   * keeps every name whole. A name the config gives is never shortened.
+   */
+  short_names?: boolean;
+}
+
+/** The keys such a card adds to its own. */
+export const GROUP_KEYS = ['group_by', 'group_order', 'short_names'] as const;
+
+/** A group of a list: its label (none over what stands before the first section) and what stands under it. */
+export interface Group<T> {
+  readonly label: string;
+  readonly items: readonly T[];
+}
+
+/**
+ * A list as its own sections group it (`listedOf`): each label over the entries after it, those before the first
+ * under none; a label over nothing is no group, and a divider is none either.
+ */
+export function groupsOf<T extends { readonly entity: string }>(list: unknown): Group<T>[] {
+  const groups: { label: string; items: T[] }[] = [];
+  for (const entry of listedOf<T>(list))
+    if (!isRow(entry)) {
+      if (entry.label) groups.push({ label: entry.label, items: [] });
+    } else if (groups.length) groups.at(-1)?.items.push(entry);
+    else groups.push({ label: '', items: [entry] });
+  return groups.filter((group) => group.items.length);
+}
+
+/** Whether a config asks for its list in groups: by the house (`group_by`), or by a section among its entries. */
+export const asksGroups = (config: Grouped | undefined, list: unknown): boolean =>
+  config?.group_by === 'area' ||
+  config?.group_by === 'floor' ||
+  (Array.isArray(list) && list.some((entry) => Boolean(sectionOf(entry)?.label)));
+
+/**
+ * What the labels add to the rows of a list in groups: a label's 20 line and the 8 under it, and between two groups
+ * the 16 over a label (the rows' own `gap` where the second has none).
+ */
+export const groupsHeight = (groups: readonly Group<unknown>[], gap: number): number =>
+  groups.reduce(
+    (height, { label }, index) => height + (label ? 28 : 0) + (index ? (label ? 16 : gap) : 0),
+    0,
+  );
+
+type GroupsModule = typeof import('./groups.js');
+let grouping: GroupsModule | null | undefined;
+let fetchingGroups: Promise<unknown> | undefined;
+
+/**
+ * What lays a list out in groups (`shared/groups.ts`, the `groups` chunk: the house's rooms and floors, the short
+ * names, the scenes as chips), once the first card asked for groups has fetched it: none while it is on its way —
+ * `card` draws again as it lands — and `null` where it cannot be fetched: the card then draws its list as it stands.
+ */
+export function groupsModule(card: { requestUpdate(): void }): GroupsModule | null | undefined {
+  if (grouping === undefined)
+    void (fetchingGroups ??= import('./groups.js').then(
+      (module) => (grouping = module),
+      () => (grouping = null),
+    )).then(() => card.requestUpdate());
+  return grouping;
+}

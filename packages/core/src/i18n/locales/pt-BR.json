@@ -608,6 +608,10 @@
     "slider_style": "Estilo do controle deslizante",
     "slider_style_helper": "Sem mexer, o de todos os controles deslizantes nas configurações do Fluvy",
     "slider_words": "Valores embaixo",
+    "group_by": "Agrupar por",
+    "group_order": "Ordem dos grupos",
+    "group_order_helper": "Automático: a ordem dos cômodos nas configurações do Fluvy",
+    "short_names": "Nomes curtos dentro de um grupo",
     "doing": "O que está fazendo",
     "show_state": "Mostrar o que está fazendo",
     "state_entity": "Ação lida de",
@@ -2086,7 +2090,9 @@
     "sun": "Sol",
     "ends": "Extremos e meio",
     "tile_fill": "Preenchimento",
-    "house_style": "Casa ({style})"
+    "house_style": "Casa ({style})",
+    "label": "Rótulo",
+    "floor": "Andar"
   },
   "tone": {
     "accent": "Destaque",

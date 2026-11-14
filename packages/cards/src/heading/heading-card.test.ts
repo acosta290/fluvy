@@ -47,13 +47,44 @@ describe('the heading card’s styles (#47)', () => {
     );
   });
 
-  it('offers both styles in its editor, the group’s where the config says none', () => {
+  it('offers its styles in its editor, the group’s where the config says none', () => {
     const fields = JSON.stringify(headingEditor.getConfigForm().schema);
     expect(fields).toContain('"name":"heading_style"');
     expect(fields).toContain('"value":"title"');
     expect(fields).toContain('"value":"subtitle"');
+    expect(fields).toContain('"value":"label"');
     expect(headingEditor.defaults({ type: 'custom:fluvy-heading-card' }, undefined)).toMatchObject({
       heading_style: 'subtitle',
     });
+  });
+
+  it('is a quiet label where it says `label` (#189): its words alone, 12 of its column', async () => {
+    expect(
+      FluvyHeadingCard.layoutHeight({ type: 'custom:fluvy-heading-card', heading_style: 'label' }),
+    ).toBe(12);
+    const label = await mount({
+      title: 'Kitchen',
+      icon: 'fluvy:bulb',
+      subtitle: 'Edit',
+      path: '/kitchen',
+      heading_style: 'label',
+    });
+    const words = label.querySelector('.fv-group');
+    expect(words?.localName).toBe('h3');
+    expect(words?.textContent).toBe('Kitchen');
+    expect(words?.hasAttribute('data-name')).toBe(true);
+    // no glyph, no meta, no tap: a title's and a subtitle's
+    expect(label.querySelector('.hm-section')).toBeNull();
+    expect(label.querySelector('button')).toBeNull();
+    // the host says so: it draws the cards under it 8 up
+    expect((label.host as HTMLElement).hasAttribute('label')).toBe(true);
+    const group = await mount({ title: 'Lights' });
+    expect((group.host as HTMLElement).hasAttribute('label')).toBe(false);
+    // its editor offers a label its words and its style alone
+    const shown = headingEditor
+      .getConfigForm()
+      .schema.filter((field) => field.when?.({ heading_style: 'label' }) !== false)
+      .map((field) => field.name);
+    expect(shown).toEqual(['title', 'heading_style']);
   });
 });

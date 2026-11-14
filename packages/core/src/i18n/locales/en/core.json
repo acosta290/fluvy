@@ -727,7 +727,9 @@
     "sun": "Sun",
     "ends": "Ends and middle",
     "tile_fill": "Fill",
-    "house_style": "House ({style})"
+    "house_style": "House ({style})",
+    "label": "Label",
+    "floor": "Floor"
   },
   "tone": {
     "accent": "Accent",

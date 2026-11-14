@@ -86,10 +86,7 @@ entity (its settings, its history, what it relates to, its attributes), and Clos
 closes it, the focus going back to what was tapped. At the foot, the entity's last 24 hours are drawn in the house's
 chart style (how long it was on, or a thermostat's temperature), and a tap on them opens Fluvy's
 [History](pages.md#history) for that entity. A sheet is a bottom sheet on a phone and a dialog in the middle of a wide
-screen. It reads at the size of the card that opened it (a device that reads its dashboards at 125 % opens its sheets
-at 125 %, and a screen too narrow for the dialog at that size gets the bottom sheet). Every sheet of Fluvy's keeps its
-foot above the phone's system bar (the Companion app's too) and, when it is taller than the screen, stops short of the
-top so a tap above it closes it; its body scrolls.
+screen.
 
 Every other entity opens Home Assistant's dialog as before, and so does every card that is not Fluvy's: Fluvy answers
 only the `more-info` of its own cards.
@@ -438,6 +435,83 @@ rows:
     show_when: { entity: input_boolean.guests, state: 'on' }
 ```
 
+## Groups by room
+
+The Tiles card and the Scenes card may show which room a light or a scene belongs to (1.21): their list in groups,
+each under a quiet label. Without these keys a card draws as it always did.
+
+- **Sections of your own.** A section among the tiles or the scenes labels what follows it: `section: Kitchen` in a
+  line, or `type: section` with a `label`, as the lists above write one. What stands before the first section has no
+  label, and a label with nothing under it is not drawn. On the page there is no hairline: `line` and `type: divider`
+  draw nothing here. The editor adds a section under the picker, and it is dragged into place.
+- **The house's groups.** `group_by: area` gathers the list by room, `group_by: floor` by floor, each group under
+  its name and what is in none last, under *Other*. The rooms stand in the house's order (the panel's *Dashboards ›
+  Rooms in order*, [the settings panel](settings-panel.md#rooms-in-order)); while the house names none, as the list
+  first names them. `group_order: name` sorts the groups A to Z on this card. A list's own sections are not read while
+  it groups by the house.
+- **Short names.** Inside a group that is a room or a floor of the house, a name reads without that name at either end
+  (*Kitchen Pendant* under *Kitchen* is *Pendant*, *Luz de la cocina* is *Luz*), and without a first word every name
+  of the group shares, three names at least (*Lights Cooking*, *Lights Dinner*, *Lights Evening* are *Cooking*,
+  *Dinner*, *Evening*). A name is cut only as whole words, never to nothing, and never so that two read alike; where
+  that cannot be told, it stays whole. A `name` of your own is never shortened. `short_names: false` keeps every name
+  whole; `short_names: true` reads them short under a section of your own words too.
+- **Scenes as chips.** `variant: chips` on the Scenes card draws the scenes as pills on one card: each group's fill
+  their rows (four in a row while every name holds, else three, else two, a shorter last row sharing the width), and
+  the last run one is filled. A tap runs the scene, a still press opens its details; a scene's own `icon` stands
+  before its name and its `color` fills its pill while it is the last run. `columns` and `tint` are a tile's and do
+  nothing here.
+
+```yaml
+type: custom:fluvy-scenes-card
+title: Scenes
+variant: chips
+group_by: area              # or sections of your own, below
+scenes:
+  - scene.living_room_relax
+  - scene.living_room_movie
+  - scene.kitchen_cooking
+  - entity: scene.kitchen_dinner
+    name: Dinner for two    # your own words are never shortened
+  - scene.good_night        # in no room: under "Other"
+```
+
+```yaml
+type: custom:fluvy-tiles-card
+size: large
+columns: 2
+tiles:
+  - section: Kitchen
+  - light.kitchen_pendant
+  - light.kitchen_island
+  - section: Evening        # not a room: the names under it stay whole
+  - light.living_room_floor_lamp
+  - entity: light.hallway
+    name: Hall
+```
+
+```yaml
+type: custom:fluvy-tiles-card
+group_by: floor
+group_order: name           # A to Z, whatever the house's order
+short_names: false
+entities:
+  - light.kitchen_pendant
+  - light.bedroom_ceiling
+  - light.living_room_floor_lamp
+```
+
+A heading may be such a label on a dashboard written by hand: `heading_style: label` on the Heading card is its
+`title` alone, in the same quiet words, 8 over the cards that follow it.
+
+```yaml
+type: custom:fluvy-heading-card
+title: Kitchen
+heading_style: label
+```
+
+The height a card declares counts its own sections; the groups the house makes of it are counted where the house is
+read, on the automatic dashboards.
+
 ## Pictures of your own
 
 The thermostat, the media and the appliance cards take a picture of your own, `image`: an address (`/local/tv.png` for
@@ -456,79 +530,6 @@ entity: media_player.lounge_tv
 image: /local/lounge-tv.png # or image.lounge_tv
 image_mode: fallback
 ```
-
-## Thermostat
-
-The thermostat card's badge says what the device is doing, not the mode it is in: **Heating**, **Idle**,
-**Preheating**, **Defrosting**, a humidifier's **Humidifying**; the mode's word where the entity says no action. It
-is Home Assistant's own word for the action where Fluvy speaks the page's language (the integration's, where it has
-one), and it wears the action's tone: heating, preheating and defrosting the heat's, cooling the cool's, idle and off
-quiet, whatever tone the card, its dial and its mode tiles keep for the mode. In a column too narrow for the badge
-beside the name (half a section, a long name) the word leads the line under the name instead ("Heating · 46 % RH"),
-so it is always said; `show_state: false` hides it.
-
-What else the card says of what the device is doing is asked for, each off until it is:
-
-| Key | What it says |
-| --- | --- |
-| `show_valve: true` | how far the valve is open, beside the word: "Heating · 42 %", "Idle · 0 %". Found on the climate itself (`valve_position`, ZHA's `pi_heating_demand`, Netatmo's `heating_power_request`), else a percentage sensor or number of its own device (`…_pi_heating_demand`, `…_valve_position`, `…_position`, Tado's `…_heating`, `…_valve_opening_degree`; never one of the device's settings), else the most open of the valves a Better Thermostat drives |
-| `valve_entity`, `valve_attribute` | the sensor or the number that says it, or the climate's own attribute that does, where none is found or another is meant |
-| `show_window: true` | "Window open" (or "Door open") in the warning tone while one is and the thermostat is on: as the climate says so itself (`window_open`, `door_open`, Better Thermostat's `heating_blocked_by`), else as a window or door sensor of its own device does. With Better Thermostat, what else holds the heating back is said in its own words ("No call for heat", "Valve maintenance") |
-| `window_entity` | the window's or the door's sensor, where none is found or another is meant |
-| `show_battery: true` | a battery at 20 % or less leads the line under the name, in the warning ink: "Battery 8 %". The battery sensor of the climate's own device, else the lowest of those a Better Thermostat reads |
-| `battery_entity` | the battery sensor, where none is found or another is meant |
-| `state_entity` | another entity whose state says the action, for a thermostat that says none: a sensor whose state is one of Home Assistant's actions (`heating`, `idle` …), or a switch (on: what the mode does; off: idle) |
-| `humidity_entity` | the room's humidity from another sensor, where the climate measures none |
-
-Nothing found, nothing said. None of it adds a row: the card is as tall as it was. The editor's **What it is doing**
-group holds them, each sensor's picker showing what was found.
-
-```yaml
-# a room behind Better Thermostat: the valve it drives, the window it watches, its valves' batteries
-type: custom:fluvy-thermostat-card
-entity: climate.bedroom
-variant: compact
-show_valve: true
-show_window: true
-show_battery: true
-```
-
-```yaml
-# a Zigbee valve on ZHA: its demand is on the climate itself, and the room's window sensor is named
-type: custom:fluvy-thermostat-card
-entity: climate.living_room_trv
-show_valve: true
-window_entity: binary_sensor.living_room_window
-```
-
-```yaml
-# a thermostat that says no action: its heater's switch says it, a sensor the room's humidity
-type: custom:fluvy-thermostat-card
-entity: climate.hallway
-state_entity: switch.hallway_heater
-humidity_entity: sensor.hallway_humidity
-```
-
-A climate's or a humidifier's **tile** says it on its line with `show_action: true` (the tile card's, a tile's of the
-tiles card or the whole group's, a room's tiles'): the word and what it is set to ("Heating · 21.5°", "Idle · 21.5°"),
-"Window open" alone, and a large climate tile ends its head with what it measures ("20.8 °C") where it said its mode.
-Its fill stays its mode's. A **room**'s climate row says it with the room card's own `show_action: true`. Fluvy's
-**details sheet** says the same word as the card that opened it, and a row for each reading that card asked for:
-Valve, Window, Battery.
-
-```yaml
-type: custom:fluvy-tiles-card
-show_action: true
-tiles:
-  - climate.living_room
-  - climate.bedroom
-  - entity: humidifier.nursery
-    show_action: false # this one keeps its state
-```
-
-Better Thermostat's action is the room's decision and a valve's opening is the valve's own: the two may disagree for a
-moment ("Idle · 12 %" while a valve still closes). The automatic dashboards say all of it with one option,
-[`thermostat_state: detailed`](automatic-dashboard.md#options).
 
 ## Media
 
@@ -1120,12 +1121,10 @@ Assistant builds them the first time the card opens, with their own `visibility`
 it is folded, so a folded expander costs the page nothing.
 
 `style: card` (the default) draws the head and the cards on one surface: the cards draw none of their own and stand
-in the head's column, a hairline between them, so a group reads as one card. Home Assistant's own cards stand there
-by what each pads its content by: most by its 16, a calendar, a gauge and a heading by theirs, a picture, a map and a
-stack as they are, and a tile, a button or an area card as a tile, on a surface of its own. `plain` leaves the head on
-the page and each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width
-holds (two on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the
-hairline), 16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
+in the head's column, a hairline between them, so a group reads as one card. `plain` leaves the head on the page and
+each card on its own surface. `columns` lays the cards side by side, up to four and as many as the width holds (two
+on a phone), and `gap` is the room between them in px: 40 on the surface (a card's 20 on each side of the hairline),
+16 without one. `color` is the expander's colour, as on every card: its circle wears it, and so do the cards of
 Fluvy's it holds that name none of their own, so a group can have a colour; `icon_color` colours the circle alone.
 `card_color`, `card_opacity` and `card_border` are the surface's.
 
@@ -1209,127 +1208,6 @@ cards:
       - switch.lawn_sprinklers
       - switch.flower_beds
 ```
-
-`head_cards` puts cards where the head's words would stand: a clock, a weather tile, a player. They take the place of
-the circle, the title and its line, are laid out in the same `columns` and `gap` as the cards under them, and stay in
-the page while the expander is folded. Each keeps its own taps, so the head is no longer one button: what folds it is
-the chevron, a round button beside the cards (after them, or before them with `chevron_position: start`), or the foot.
-`title` is then what that button is called ("Open Today"). On one surface (`style: card`) the head's cards are held
-as the others are, a hairline between the head and what it holds; `plain` leaves them their surfaces. In half a
-section, where a card would not keep its width beside the round, the chevron stands at the foot by itself. The
-expander's height is what the cards of its head declare, so a dashboard plans it as it will draw. In the editor they
-have a list of their own, "Cards in the head", over the cards it holds.
-
-```yaml
-type: custom:fluvy-expander-card
-title: Today
-head_cards:
-  - type: custom:fluvy-clock-card
-    face: digital
-    weather: weather.home
-    show_forecast: false
-cards:
-  - type: custom:fluvy-weather-card
-    entity: weather.home
-    forecast: both
-    days: 3
-  - type: custom:fluvy-calendar-card
-    view: upcoming
-    entities:
-      - calendar.family
-```
-
-`chevron_position: bottom` stands the chevron at the foot: a row under what the expander holds that says "Show more"
-and, once it is open, "Show less", so a long group folds from where its reading ends, and folding from there brings
-the head back into view. A head of words is still the button it was. `chevron_size: large` draws a larger chevron for
-a hand at a wall tablet: the round and the foot's row are 56 where they were 44.
-
-```yaml
-type: custom:fluvy-expander-card
-title: Today
-chevron_position: bottom
-chevron_size: large
-head_cards:
-  - type: custom:fluvy-clock-card
-    face: digital
-cards:
-  - type: custom:fluvy-weather-card
-    entity: weather.home
-```
-
-To hide it for good, write `show_chevron: false`. With a head that is no button either (`tap_action` of `none`, or
-cards for a head), nothing on the card folds it: it opens from another card, by its condition (`open_when`) or as its
-config says (`expanded`).
-
-```yaml
-type: custom:fluvy-expander-card
-id: forecast
-title: Forecast
-show_chevron: false
-tap_action:
-  action: none
-cards:
-  - type: custom:fluvy-weather-card
-    entity: weather.home
-```
-
-Give the expander an `id`, and any card's `fire-dom-event` action opens, folds or toggles it: Fluvy's cards and Home
-Assistant's own both send it, from the same view, a subview or a popup. The action names the expander and says what
-to do: `toggle` (the default), `open` or `close`.
-
-```yaml
-type: custom:fluvy-template-card
-name: Forecast
-icon: mdi:weather-partly-cloudy
-tap_action:
-  action: fire-dom-event
-  fluvy_expander:
-    id: forecast
-    action: toggle
-```
-
-Home Assistant's action picker does not offer `fire-dom-event`, so it is written in YAML (a card of Home Assistant's
-own that carries it is edited as YAML from then on); the expander's editor shows the line to copy under its ID.
-Several expanders with one `id` are a group: they open and fold together, and a toggle opens them all while any of
-them is folded. A card the expander holds, in its head or under it, need not name it: `fluvy_expander: toggle` (or
-`open`, `close`) asks the expander that holds the card, so a clock for a head can be the button that opens it:
-
-```yaml
-type: custom:fluvy-expander-card
-title: Today
-show_chevron: false
-head_cards:
-  - type: custom:fluvy-clock-card
-    face: digital
-    tap_action:
-      action: fire-dom-event
-      fluvy_expander: toggle
-cards:
-  - type: custom:fluvy-weather-card
-    entity: weather.home
-```
-
-Opening it this way is your doing, as a tap on its head is: it is remembered (`remember`; an expander with an `id` is
-remembered by its view and its `id`, whatever else of it changes), `open_when` no longer folds it afterwards, and
-`close_after` counts from then. An expander inside a folded one is not in the page, and hears nothing until the outer
-one is open.
-
-Coming from expander-card, the buttons that open one go on working: Fluvy answers its action as it is written
-(`expander-card: {data: {expander-card-id, action}}`), so only the cards themselves are rewritten.
-
-| expander-card                                    | Fluvy's Expander                                                                        |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `type: custom:expander-card`                     | `type: custom:fluvy-expander-card`                                                      |
-| `title`, `cards`, `expanded`                     | the same                                                                                |
-| `title-card`                                     | `head_cards`, a list: one card or several                                               |
-| `title-card-button-overlay`, `overlay-margin`    | the chevron stands beside the head's cards, or at the foot (`chevron_position: bottom`) |
-| `title-card-clickable`                           | `tap_action: {action: fire-dom-event, fluvy_expander: toggle}` on the head's card       |
-| `expander-card-id`                               | `id`                                                                                    |
-| `storage-id`                                     | `remember` (`device` by default: nothing to write)                                      |
-| `clear`, `clear-children`                        | `style`: `card` holds the cards on one surface, `plain` leaves each its own             |
-| `expanded-gap`                                   | `gap`, in px                                                                            |
-| `show-button-users`                              | `show_chevron: false` hides it for everybody                                            |
-| `expander-card: {data: {expander-card-id, ...}}` | works as it is; Fluvy's own is `fluvy_expander: {id, action}`                           |
 
 ## Chart
 
@@ -1725,7 +1603,7 @@ roles:
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
 | **Tile** | `custom:fluvy-tile-card` | A light, switch, cover, fan, player, number or sensor as a tile: large with a precision ruler or two readouts, compact row, or mini. | `size` (`large`, `compact`, `mini`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `show_action`, `since`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts` | — |
-| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `show_action`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `unavailable`, `show_switch`, `switch_style`, `show_action`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`) | `entities` → `tiles` |
+| **Tiles** | `custom:fluvy-tiles-card` | A group of compact or mini tiles, two to four per row, 8 px apart. | `size` (`compact`, `mini`, `large`), `columns` (`1`, `2`, `3`, `4`, `auto`), `group_by` (`none`, `area`, `floor`), `group_order` (`auto`, `name`), `short_names`, `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `show_action`, `tint` (`on`, `always`), `light_colors`, `light_whites` (`palette`, `temperature`), `readouts`, `empty_text`, `hide_empty`, `tiles` (a list: `entity`, `name`, `icon`, `tone`, `color`, `readouts`, `since`, `unavailable`, `show_switch`, `switch_style`, `show_action`, `tap_action`, `hold_action`, `double_tap_action`, `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action`; between them `type: section`) | `entities` → `tiles` |
 | **Template** | `custom:fluvy-template-card` | A tile whose name, line, icon, colour and fill are templates, with or without an entity; a Mushroom template card pastes in. | `secondary` (`state`, `area`, `last-changed`, `none`), `since`, `variant` (`compact`, `mini`, `large`), `active` (`auto`, `always`, `never`), `name_lines` (`1`, `2`), `show_switch` (`true`, `false`, `value`), `switch_style` (`toggle`, `rocker`), `tint` (`on`, `always`), `readouts` | `primary` → `name`, `icon_color` → `color`, `layout` → `variant`, `vertical` → `variant` |
 | **Light** | `custom:fluvy-light-card` | The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, colour temperature. | `show_brightness` (`true`, `when_on`, `false`), `variant` (`auto`, `full`, `compact`), `show_stepper`, `live_update`, `show_temperature`, `show_color`, `temperature_tint`, `tint` (`off`, `on`, `always`), `tint_strength` (`soft`, `brightness`, `full`, `full_brightness`), `light_whites` (`palette`, `temperature`), `colors` (a list: `color`, `name`, `rgb`) | — |
 | **Slider** | `custom:fluvy-slider-card` | Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head. | `variant` (`full`, `compact`, `tile`), `show_stepper`, `control` (`auto`, `mute`, `switch`, `none`), `toggle_entity`, `min`, `max`, `label`, `live_update`, `tint` (`off`, `on`, `always`) | — |
@@ -1767,7 +1645,7 @@ roles:
 | --- | --- | --- | --- | --- |
 | **Hello** | `custom:fluvy-hello-card` | The greeting: name, date, weather and avatar. | `person`, `weather`, `show_weather`, `show_date`, `show_avatar` | — |
 | **Chips** | `custom:fluvy-chips-card` | A row of chips that navigate between views or open entities. | `tint` (`on`, `always`), `empty_text`, `hide_empty`, `chips` (a list: `name`, `icon`, `path`, `entity`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `label` → `name` |
-| **Heading** | `custom:fluvy-heading-card` | A section title with its count and a link. | `title`, `heading_style` (`title`, `subtitle`), `variant` (`bar`, `plain`), `subtitle`, `path` | `meta` → `subtitle` |
+| **Heading** | `custom:fluvy-heading-card` | A section title with its count and a link. | `title`, `heading_style` (`title`, `subtitle`, `label`), `variant` (`bar`, `plain`), `subtitle`, `path` | `meta` → `subtitle` |
 | **Expander** | `custom:fluvy-expander-card` | Any cards folded away under a head: a tap opens them, on one surface or each on its own. | `title`, `subtitle`, `show_summary`, `style` (`card`, `plain`), `columns` (`1`, `2`, `3`, `4`), `gap`, `show_chevron`, `chevron_position` (`end`, `start`, `bottom`), `chevron_size` (`regular`, `large`), `expanded`, `remember` (`device`, `user`, `off`), `open_when`, `close_after`, `id`, `icon_color`, `head_cards`, `cards` | — |
 | **Web page** | `custom:fluvy-web-card` | A web page on a plate — a map, a chart, a site of your own — under a head, in a frame or bare; sandboxed as Home Assistant’s iframe card is. | `url`, `variant` (`plate`, `frame`, `bare`), `title`, `subtitle`, `aspect_ratio` (`16:9`, `4:3`, `3:2`, `1:1`, `2:1`, `21:9`, `fill`), `height`, `scale`, `refresh`, `look` (`page`, `dark`, `auto`), `sandbox` (`standard`, `strict`, `off`), `allow_open_top_navigation`, `allow`, `show_open`, `show_fullscreen`, `show_reload` | `hide_background` → `variant`, `disable_sandbox` → `sandbox` |
 
@@ -1776,7 +1654,7 @@ roles:
 | Card | Type | What it is | Options | Reads |
 | --- | --- | --- | --- | --- |
 | **Scene** | `custom:fluvy-scene-card` | One scene, script or button as a tile with a done state. | `subtitle`, `show_subtitle` | `meta` → `subtitle` |
-| **Scenes** | `custom:fluvy-scenes-card` | A grid of scenes and scripts. | `title`, `columns` (`auto`, `1`, `2`), `tint` (`on`, `always`), `empty_text`, `hide_empty`, `scenes` (a list: `entity`, `name`, `icon`, `subtitle`, `color`, `tap_action`, `hold_action`, `double_tap_action`) | `entities` → `scenes` |
+| **Scenes** | `custom:fluvy-scenes-card` | A grid of scenes and scripts. | `title`, `variant` (`tiles`, `chips`), `columns` (`auto`, `1`, `2`), `group_by` (`none`, `area`, `floor`), `group_order` (`auto`, `name`), `short_names`, `tint` (`on`, `always`), `empty_text`, `hide_empty`, `scenes` (a list: `entity`, `name`, `icon`, `subtitle`, `color`, `tap_action`, `hold_action`, `double_tap_action`; between them `type: section`) | `entities` → `scenes` |
 | **Actions** | `custom:fluvy-actions-card` | Buttons and scripts as a list with run buttons. | `title`, `subtitle`, `columns`, `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`) | `entities` → `rows` |
 | **Helpers** | `custom:fluvy-helpers-card` | Numbers, selects, texts, booleans and dates as their own controls. | `title`, `subtitle`, `options_style` (`full`, `chips`), `empty_text`, `hide_empty`, `rows` (a list: `entity`, `name`, `icon`, `secondary`, `since`, `presets`, `options`, `display`, `labels`) | `entities` → `rows` |
 | **To-do** | `custom:fluvy-todo-card` | A to-do list: check, add, hide the done. | `subtitle`, `show_completed`, `show_add`, `show_due` | `title` → `name`, `hide_completed` → `show_completed` |

@@ -608,6 +608,10 @@
     "slider_style": "Estilo do cursor",
     "slider_style_helper": "Sem alterar: o de todos os cursores, nas definições do Fluvy",
     "slider_words": "Valores por baixo",
+    "group_by": "Agrupar por",
+    "group_order": "Ordem dos grupos",
+    "group_order_helper": "Automático: a ordem das divisões nas definições do Fluvy",
+    "short_names": "Nomes curtos dentro de um grupo",
     "doing": "O que está a fazer",
     "show_state": "Mostrar o que está a fazer",
     "state_entity": "Ação lida de",
@@ -2086,7 +2090,9 @@
     "sun": "Sol",
     "ends": "Extremos e meio",
     "tile_fill": "Preenchimento",
-    "house_style": "Casa ({style})"
+    "house_style": "Casa ({style})",
+    "label": "Etiqueta",
+    "floor": "Piso"
   },
   "tone": {
     "accent": "Destaque",

@@ -18,6 +18,7 @@ import {
   foldConditions,
   type FormLabeler,
   formLabels,
+  LABEL_FORM,
   NUMBER_DEFAULTS,
   SECTION_FORM,
   sectionLabels,
@@ -98,9 +99,10 @@ export interface RowsListSpec {
   readonly ready?: () => Promise<unknown>;
   /**
    * Whether the card draws sections among the list's rows (`SectionEntry`, #157): a section's label and a divider are
-   * then items of their own kind, added under the picker and dragged into place with the rows.
+   * then items of their own kind, added under the picker and dragged into place with the rows. `labels`: its sections
+   * are labels alone (a group's, among tiles or scenes, #189) — no hairline to ask for, no divider to add.
    */
-  readonly sections?: boolean;
+  readonly sections?: boolean | 'labels';
 }
 
 /** The entities a list offers while its card names whose they are, and its switch's word. */
@@ -333,7 +335,7 @@ const sectionItem = (raw: unknown): Item | null => {
 
 /** Whether an item of a list that takes sections is one: a section or a divider, which names no entity. */
 export const isSection = (item: Item, list: RowsListSpec): boolean =>
-  list.sections === true &&
+  Boolean(list.sections) &&
   typeof item[idKeyOf(list)] !== 'string' &&
   (item['type'] === 'section' || item['type'] === 'divider');
 
@@ -1002,7 +1004,9 @@ export class FluvyRowsEditor extends LitElement {
             const section = isSection(item, list);
             const divider = section && item['type'] === 'divider';
             const schema = section
-              ? SECTION_FORM
+              ? list.sections === 'labels'
+                ? LABEL_FORM
+                : SECTION_FORM
               : this.itemSchema(list, item, card.asked, choices, key, scope);
             // an item's selects read a number its YAML holds as their word, as the card's form does (`decimals: 2`)
             return html`<div class="item ${pickedFirst(list) && !section ? 'item--entity' : ''}">
@@ -1046,9 +1050,13 @@ export class FluvyRowsEditor extends LitElement {
               <button type="button" @click=${() => this.addSection(list, 'section')}>
                 ${this.t('editor.add_section')}
               </button>
-              <button type="button" @click=${() => this.addSection(list, 'divider')}>
-                ${this.t('editor.add_divider')}
-              </button>
+              ${
+                list.sections === 'labels'
+                  ? nothing
+                  : html`<button type="button" @click=${() => this.addSection(list, 'divider')}>
+                      ${this.t('editor.add_divider')}
+                    </button>`
+              }
             </div>`
           : nothing
       }

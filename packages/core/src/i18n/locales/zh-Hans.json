@@ -1422,7 +1422,9 @@
     "sun": "太阳",
     "ends": "两端和中间",
     "tile_fill": "填充",
-    "house_style": "全屋（{style}）"
+    "house_style": "全屋（{style}）",
+    "label": "标签",
+    "floor": "楼层"
   },
   "tone": {
     "accent": "强调色",
@@ -1787,6 +1789,10 @@
     "slider_style": "滑块样式",
     "slider_style_helper": "未设置：沿用 Fluvy 设置中所有滑块的样式",
     "slider_words": "下方刻度值",
+    "group_by": "分组方式",
+    "group_order": "分组顺序",
+    "group_order_helper": "自动：使用 Fluvy 设置中的房间顺序",
+    "short_names": "组内使用简短名称",
     "doing": "当前动作",
     "show_state": "显示当前动作",
     "state_entity": "动作读取自",

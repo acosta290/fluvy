@@ -422,6 +422,32 @@
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
 }
 
+/* ---------- a group's label (1.21, #189) ----------
+   quiet words over the tiles or the chips they gather (a room's name): 13/600 in the second ink on a 20 line, across
+   the grid's columns, a name that may end in its ellipsis. It stands 8 over its group and 16 under the one before it,
+   whatever the grid's own gap between its rows (`--fv-rows-gap`: a group of tiles' 8, the scenes' 16, the section's
+   between large tiles); the first has nothing over it */
+.fv-group {
+  grid-column: 1 / -1;
+  height: 20px;
+  margin: calc(16px - var(--fv-rows-gap, 8px)) 0 calc(8px - var(--fv-rows-gap, 8px));
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--fluvy-text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fv-group:first-child {
+  margin-top: 0;
+}
+
+.fv-grid2 {
+  --fv-rows-gap: 16px;
+}
+
 /* An item's colour at rest (`tint: always`, on coloured items): its rest wash (as much of its fill as keeps the words
    at 4.5) and the fill's hairline; on keeps the full fill, so the two never read alike. Tiles, scenes, a room's and the
    lights' tiles here; tabs in controls.css. */

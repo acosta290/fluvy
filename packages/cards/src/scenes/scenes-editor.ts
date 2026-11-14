@@ -14,14 +14,16 @@ import {
   entityField,
   fieldRow,
   formLabels,
+  groupFields,
   nameIconFields,
+  onlyWhen,
   selectField,
   textField,
   tintField,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys } from '../shared/config.js';
-import { EMPTY_KEYS } from '../shared/lists.js';
+import { EMPTY_KEYS, GROUP_KEYS } from '../shared/lists.js';
 import type { ScenesCardConfig } from './scenes-card.js';
 
 /** The scenes card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
@@ -46,8 +48,10 @@ export const base: readonly BaseKey[] = [
 export const keys = configKeys<ScenesCardConfig>()([
   'title',
   'scenes',
+  'variant',
   'columns',
   'tint',
+  ...GROUP_KEYS,
   ...EMPTY_KEYS,
 ]);
 
@@ -57,6 +61,8 @@ export const lists: readonly RowsListSpec[] = [
     alias: 'entities',
     title: 'editor.scenes',
     domains: DOMAINS,
+    // a label among the scenes opens a group of them (#189)
+    sections: 'labels',
     keys: [
       'entity',
       'name',
@@ -79,17 +85,29 @@ export const lists: readonly RowsListSpec[] = [
 ];
 
 /** What the editor shows where the config says nothing: what the card does then. */
-export const defaults: EditorDefaults = () => ({ columns: 'auto', tint: 'on' });
+export const defaults: EditorDefaults = () => ({
+  variant: 'tiles',
+  columns: 'auto',
+  tint: 'on',
+  group_by: 'none',
+  group_order: 'auto',
+  short_names: true,
+});
+
+/** What is a tile's alone: how many stand in a row, and its colour at rest; a chip has neither. */
+const tiles = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant !== 'chips';
 
 export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
-      fieldRow(textField('title'), selectField('columns', ['auto', '1', '2'])),
+      fieldRow(textField('title'), selectField('variant', ['tiles', 'chips'])),
+      onlyWhen(tiles, selectField('columns', ['auto', '1', '2'])),
       entitiesField('entities', DOMAINS, true),
+      ...groupFields('scenes', 'entities'),
       fieldRow(accentField(), accentField('card_color', { none: true })),
       ...cardSurfaceFields(),
       unavailableField(),
-      tintField(),
+      onlyWhen(tiles, tintField()),
       emptyFields(),
       // what a tile answers where it names none: a still press, its details; two taps, nothing until set
       sectionField('editor.interactions', [

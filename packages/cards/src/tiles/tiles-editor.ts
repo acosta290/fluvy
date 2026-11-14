@@ -11,6 +11,7 @@ import {
   fieldRow,
   formLabels,
   holdsActing,
+  groupFields,
   holdsLight,
   holdsSwitch,
   lightColourFields,
@@ -32,7 +33,7 @@ import {
 import type { BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { EMPTY_KEYS } from '../shared/lists.js';
+import { EMPTY_KEYS, GROUP_KEYS } from '../shared/lists.js';
 import { SIZES, type TilesCardConfig } from './tiles-card.js';
 
 /** The tiles card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
@@ -64,6 +65,7 @@ export const keys = configKeys<TilesCardConfig>()([
   'tint',
   'light_colors',
   'light_whites',
+  ...GROUP_KEYS,
   ...EMPTY_KEYS,
 ]);
 
@@ -95,6 +97,8 @@ export const lists: readonly RowsListSpec[] = [
     key: 'tiles',
     alias: 'entities',
     title: 'editor.tiles',
+    // a label among the tiles opens a group of them (#189)
+    sections: 'labels',
     keys: [
       'entity',
       'name',
@@ -148,6 +152,9 @@ export const defaults: EditorDefaults = (config) => ({
   tint: 'on',
   light_colors: lightDefaults().colors,
   light_whites: 'temperature',
+  group_by: 'none',
+  group_order: 'auto',
+  short_names: true,
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -155,6 +162,7 @@ export function getConfigForm(): LovelaceConfigForm {
     schema: [
       entitiesField('entities', undefined, true),
       fieldRow(selectField('size', SIZES), selectField('columns', COLUMNS)),
+      ...groupFields('tiles', 'entities'),
       // a small tile's name may take two lines; a large one's switch may give way to its circle, where a tile has one
       onlyWhen(({ size }) => size !== 'large', nameLinesField()),
       onlyWhen(

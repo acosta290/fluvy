@@ -608,6 +608,10 @@
     "slider_style": "Kaydırıcı stili",
     "slider_style_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kaydırıcılarınki",
     "slider_words": "Altındaki değerler",
+    "group_by": "Gruplama ölçütü",
+    "group_order": "Grupların sırası",
+    "group_order_helper": "Otomatik: Fluvy ayarlarındaki oda sırası",
+    "short_names": "Grup içinde kısa adlar",
     "doing": "Şu an ne yapıyor",
     "show_state": "Ne yaptığını göster",
     "state_entity": "Eylemin okunduğu varlık",
@@ -2086,7 +2090,9 @@
     "sun": "Güneş",
     "ends": "Uçlar ve orta",
     "tile_fill": "Dolgu",
-    "house_style": "Ev ({style})"
+    "house_style": "Ev ({style})",
+    "label": "Etiket",
+    "floor": "Kat"
   },
   "tone": {
     "accent": "Vurgu",

@@ -31,12 +31,15 @@ import { remoteGroups, remoteHeight } from './remote-family.js';
 import { buttonService } from './remote/keys.js';
 import { appSaid, platformOf, sourceChips, type AppSaid } from './remote/platforms.js';
 import { roomHeight, type RoomCardConfig } from './room/room-card.js';
+import { scenesHeight, type ScenesCardConfig } from './scenes/scenes-card.js';
 import { isWord, sensorHeight, type SensorCardConfig } from './sensor/sensor-card.js';
 import { normaliseExtras } from './sensor/series.js';
+import { laidOut } from './shared/groups.js';
 import { COLOURED, dims } from './shared/light.js';
 import type { NameOf } from './shared/heights.js';
 import { statTilesHeight, type StatTilesCardConfig } from './stat-tiles/stat-tiles-card.js';
 import type { ThermostatCardConfig } from './thermostat/thermostat-card.js';
+import { tilesHeight, type TilesCardConfig } from './tiles/tiles-card.js';
 import { updatesHeight, type UpdatesCardConfig } from './updates/updates-card.js';
 import { vacuumHeight } from './vacuum-family.js';
 import type { VacuumCardConfig } from './vacuum/vacuum-card.js';
@@ -247,6 +250,24 @@ function updates(config: UpdatesCardConfig, hass: HomeAssistant): number {
 const statTiles = (config: StatTilesCardConfig, hass: HomeAssistant): number =>
   statTilesHeight(config, namesIn(hass));
 
+/** The house a list is laid out in groups by: none where it has no states to read. */
+const read = (hass: HomeAssistant): HomeAssistant | undefined => (hass.states ? hass : undefined);
+
+/** The tiles in the groups the house makes of them (its rooms, its floors), where the card asks for them (#189). */
+const tiles = (config: TilesCardConfig, hass: HomeAssistant): number =>
+  tilesHeight(config, laidOut(read(hass), config, config.tiles ?? config.entities));
+
+/**
+ * The scenes in the groups the house makes of them, where the card asks for them, each by the name it draws (the
+ * house's, short inside its group): what its rows of chips are laid out by (#189).
+ */
+const scenes = (config: ScenesCardConfig, hass: HomeAssistant): number =>
+  scenesHeight(
+    config,
+    namesIn(hass),
+    laidOut(read(hass), config, config.scenes ?? config.entities),
+  );
+
 /** `lock.open`: the latch some locks can pull back. */
 const LOCK_OPEN = 1;
 
@@ -341,6 +362,8 @@ const HOUSE: ReadonlyMap<string, HouseHeight> = new Map<string, HouseHeight>([
   ['fluvy-helpers-card', helpers],
   ['fluvy-updates-card', updates],
   ['fluvy-stat-tiles-card', statTiles],
+  ['fluvy-tiles-card', tiles],
+  ['fluvy-scenes-card', scenes],
   ['fluvy-lock-card', lock],
   ['fluvy-alarm-card', alarm],
   ['fluvy-cameras-card', cameras],

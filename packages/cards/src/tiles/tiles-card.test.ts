@@ -175,6 +175,197 @@ describe('a tile out of reach', () => {
   });
 });
 
+/*
+ * Tiles in groups (#189): the list's own sections, or the house's rooms and floors, each under a quiet label; a
+ * config without them draws as 1.20 did.
+ */
+describe('a group of tiles in groups', () => {
+  const rooms = {
+    ...hass,
+    states: Object.fromEntries(
+      [
+        ['light.kitchen_pendant', 'Kitchen Pendant'],
+        ['light.kitchen_counter', 'Kitchen Counter'],
+        ['light.kitchen_hob', 'Kitchen Hob'],
+        ['light.living_floor', 'Living room Floor lamp'],
+        ['light.porch', 'Porch'],
+      ].map(([entity_id, friendly_name]) => [
+        entity_id,
+        {
+          entity_id,
+          state: 'off',
+          attributes: { friendly_name },
+          last_changed: '',
+          last_updated: '',
+        },
+      ]),
+    ),
+    entities: {
+      'light.kitchen_pendant': { entity_id: 'light.kitchen_pendant', area_id: 'kitchen' },
+      'light.kitchen_counter': { entity_id: 'light.kitchen_counter', area_id: 'kitchen' },
+      'light.kitchen_hob': { entity_id: 'light.kitchen_hob', area_id: 'kitchen' },
+      'light.living_floor': { entity_id: 'light.living_floor', area_id: 'living' },
+    },
+    areas: {
+      living: { area_id: 'living', name: 'Living room', floor_id: 'ground' },
+      kitchen: { area_id: 'kitchen', name: 'Kitchen', floor_id: 'ground' },
+    },
+    floors: { ground: { floor_id: 'ground', name: 'Ground floor', level: 0 } },
+  } as unknown as HomeAssistant;
+  const LIGHTS = [
+    'light.porch',
+    'light.kitchen_pendant',
+    'light.living_floor',
+    'light.kitchen_counter',
+    'light.kitchen_hob',
+  ];
+
+  /** The card on the house of rooms, once what lays its groups out has landed. */
+  async function grouped(config: Record<string, unknown>) {
+    const card = await group({ entities: undefined, ...config });
+    card.hass = rooms;
+    await import('../shared/groups.js');
+    await new Promise((resolve) => setTimeout(resolve));
+    await card.updateComplete;
+    return card;
+  }
+  /** What the grid holds, in its order: a label's words, or a tile's name. */
+  const drawn = (card: HTMLElement): string[] =>
+    [...card.shadowRoot!.querySelectorAll('.fv-tiles > .fv-group, .fv-tiles > .fv-tile')].map(
+      (el) =>
+        el.classList.contains('fv-group')
+          ? `# ${el.textContent}`
+          : el.querySelector('.fv-tile__name')!.textContent!,
+    );
+  const height = (config: Record<string, unknown>): number =>
+    FluvyTilesCard.layoutHeight({ type: 'custom:fluvy-tiles-card', ...config });
+
+  afterEach(() => document.body.replaceChildren());
+
+  it('draws a plain list as it always did: no label, every tile in the list’s order', async () => {
+    const card = await grouped({ tiles: LIGHTS });
+    expect(card.shadowRoot!.querySelector('.fv-group')).toBeNull();
+    expect(drawn(card)).toEqual([
+      'Porch',
+      'Kitchen Pendant',
+      'Living room Floor lamp',
+      'Kitchen Counter',
+      'Kitchen Hob',
+    ]);
+    // five compact tiles two a row: three rows of 76, 8 apart
+    expect(height({ tiles: LIGHTS })).toBe(3 * 76 + 2 * 8);
+  });
+
+  it('labels its own sections, each a label across the grid over its tiles', async () => {
+    const tiles = [
+      'light.porch',
+      { section: 'Kitchen' },
+      'light.kitchen_pendant',
+      { entity: 'light.kitchen_counter', name: 'Kitchen Counter' },
+      { section: 'Evening' },
+      'light.living_floor',
+      { section: 'Nothing under it' },
+    ];
+    const card = await grouped({ tiles });
+    // short under a room of the house, whole where the config names the tile and under words of its own
+    expect(drawn(card)).toEqual([
+      'Porch',
+      '# Kitchen',
+      'Pendant',
+      'Kitchen Counter',
+      '# Evening',
+      'Living room Floor lamp',
+    ]);
+    const label = card.shadowRoot!.querySelector('.fv-group')!;
+    expect(label.localName).toBe('h3');
+    expect(label.hasAttribute('data-name')).toBe(true);
+    // a row a group, a label 28 each, 16 over each label: 76 + (16 + 28 + 76) × 2
+    expect(height({ tiles })).toBe(76 + 2 * (16 + 28 + 76));
+    // the same list without its sections is two rows shorter in labels, and one row longer in tiles
+    expect(
+      height({ tiles: tiles.filter((entry) => typeof entry === 'string' || 'entity' in entry) }),
+    ).toBe(2 * 76 + 8);
+  });
+
+  it('groups by the house’s rooms and floors where asked, the names short under each', async () => {
+    const byArea = await grouped({ tiles: LIGHTS, group_by: 'area' });
+    expect(drawn(byArea)).toEqual([
+      '# Kitchen',
+      'Pendant',
+      'Counter',
+      'Hob',
+      '# Living room',
+      'Floor lamp',
+      '# Other',
+      'Porch',
+    ]);
+    const whole = await grouped({ tiles: LIGHTS, group_by: 'floor', short_names: false });
+    expect(drawn(whole)).toEqual([
+      '# Ground floor',
+      'Kitchen Pendant',
+      'Living room Floor lamp',
+      'Kitchen Counter',
+      'Kitchen Hob',
+      '# Other',
+      'Porch',
+    ]);
+    // `none` is none: the list as it stands
+    expect(drawn(await grouped({ tiles: LIGHTS, group_by: 'none' }))).toHaveLength(5);
+  });
+
+  it('declares its groups’ rows from its config, and the house’s where the house is read', async () => {
+    const { houseHeightOf } = await import('../house-heights.js');
+    const config = { type: 'custom:fluvy-tiles-card', tiles: LIGHTS, group_by: 'area' };
+    // by its config alone a card cannot know the rooms: the list as it stands, as with a house that has nothing to say
+    expect(FluvyTilesCard.layoutHeight(config)).toBe(3 * 76 + 2 * 8);
+    expect(houseHeightOf(config, -1, {} as HomeAssistant)).toBe(3 * 76 + 2 * 8);
+    // with the house: Kitchen's three (two rows), Living room's one, Other's one, a label each
+    expect(houseHeightOf(config, -1, rooms)).toBe(
+      28 + (2 * 76 + 8) + (16 + 28 + 76) + (16 + 28 + 76),
+    );
+    // large tiles: 168 a row, the section's 16 between two rows of a group
+    expect(houseHeightOf({ ...config, size: 'large' }, -1, rooms)).toBe(
+      28 + (2 * 168 + 16) + (16 + 28 + 168) + (16 + 28 + 168),
+    );
+    // a mini's three a row
+    expect(houseHeightOf({ ...config, size: 'mini' }, -1, rooms)).toBe(
+      28 + 108 + (16 + 28 + 108) + (16 + 28 + 108),
+    );
+    for (const size of ['compact', 'mini', 'large'])
+      expect(houseHeightOf({ ...config, size }, -1, rooms) % 4).toBe(0);
+  });
+
+  it('labels a section in a house that has no rooms: the label is the list’s own', async () => {
+    const card = await group({
+      entities: undefined,
+      tiles: [{ section: 'Kitchen' }, 'switch.kitchen'],
+    });
+    await import('../shared/groups.js');
+    await new Promise((resolve) => setTimeout(resolve));
+    await card.updateComplete;
+    expect(drawn(card)).toEqual(['# Kitchen', 'Kitchen']);
+  });
+
+  it('offers the groups in its editor: the house’s, their order where it makes them, the short names in a group', async () => {
+    const editor = await FluvyTilesCard.getConfigElement();
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = rooms;
+    const shown = async (config: Record<string, unknown>): Promise<string[]> =>
+      shownNames(
+        cardForm(await drawEditor(editor, { type: 'custom:fluvy-tiles-card', ...config })).schema,
+      );
+    const plain = await shown({ tiles: LIGHTS });
+    expect(plain).toContain('group_by');
+    expect(plain).not.toContain('group_order');
+    expect(plain).not.toContain('short_names');
+    const house = await shown({ tiles: LIGHTS, group_by: 'area' });
+    expect(house).toEqual(expect.arrayContaining(['group_by', 'group_order', 'short_names']));
+    // its own sections make groups too: their names may be short, their order is the list's
+    const own = await shown({ tiles: [{ section: 'Kitchen' }, ...LIGHTS] });
+    expect(own).toContain('short_names');
+    expect(own).not.toContain('group_order');
+  });
+});
+
 describe('the group’s editor offers its large tiles’ switches where they have one (#160)', () => {
   afterEach(() => document.body.replaceChildren());
 

@@ -830,7 +830,8 @@ form for a line that holds no more.
   and the row takes no second tap. Then one card of options per dashboard the house has, headed by the dashboard's
   own name: its views as rows (the first "Always", the others switches), each choice as a full chip row, the wall's
   rooms as chips that toggle, then the sidebar switch and *Recreate* in two taps (the armed row in the warning tone,
-  "Cancels in 4 seconds"). The preview draws the template touched last.
+  "Cancels in 4 seconds"). The preview draws the template touched last. Between the templates and the dashboards'
+  cards stands the house's order of its rooms (§ Groups by room, 1.21), from two rooms on.
 
 ## Customise (1.20, #170)
 
@@ -3088,6 +3089,58 @@ open it by its name: each a key, and a config without them draws as it did.
 - Its chunk is its own (`expander`), its editor's too (`expander-editor`, fetched when one is edited): every page
   carries only its name, its height and the three figures of its layout that height is counted with
   (`expander-family.ts`), and the two rules a held card reads (`fluvy/surfaces.css`).
+
+## Groups by room (1.21)
+
+Which room a light or a scene belongs to (#189, asked by @darrenhaken, whose own card grouped his scenes by room as
+chips): a list in groups, each under a quiet label, and the scenes as chips. Off until a person asks: a config without
+its keys, and a dashboard without its options, draw as 1.20 did.
+
+- **The label** (`.fv-group`) is a group's name over what it gathers: 13/600 in the second ink on a 20 line, in
+  sentence case as the house wrote it (a room's name is a name: it may end in its ellipsis, never wrap), from the
+  column's edge to the column's edge. It is quieter than a heading (20/600, the first ink) and no control: no glyph,
+  no count, no chevron, nothing to tap. It stands **8 over its group and 16 under the one before it**, whatever the
+  gap between the rows it sits among (a group of small tiles' 8, the scenes' 16, the section's between large tiles
+  and between cards): the label belongs to what follows it. The first label of a list has nothing over it.
+- **On the page**, between lone cards, the label is the Heading card's `heading_style: label`: its title alone. It
+  draws the cards under it 8 up, so it counts 12 of its column (`layoutHeight`), and where the columns are cut it
+  rides with its group's first row, never alone at a column's foot. On a page background of its own its words take
+  the page's second ink, as a heading's take the first.
+- **Among tiles** (the Tiles card, the Scenes card's tiles) the label spans the grid's columns and its group's tiles
+  start a row of their own under it; an odd tile out keeps its half, as in a list without groups. No hairline stands
+  on the page: a `line` or a divider of a list's sections draws nothing here.
+- **Scenes as chips** (`variant: chips`) are one card, the card's 20 round it, the Scenes card's title over it as
+  over its tiles: under each label its scenes as filled chips, the language's pill (36 in a 44 hit, 13/600, the
+  page's fill inside the card), 8 under the label, the rows 44 apart, 16 before the next label. **A chip row fills
+  its row**: as many chips as hold every name whole (four in one row, else three, else two; a shorter last row shares
+  the width among its own), measured in the row's own face, so "Concentrate" never ends in an ellipsis while three a
+  row would hold it. The **last run** scene is the chosen chip, on the accent's fill (its own colour's where it has
+  one): one at most on the card, as one tile at most is filled. A scene out of reach is the dashed ring, which takes
+  no tap; a still press on any chip opens its details. A chip is its name alone; the config's own `icon` stands
+  before it where it gives one. With no groups the card is its chips alone, 20 round them.
+- **Short names.** Inside a group that is a room or a floor of the house, what a name repeats is left out: the
+  group's name at either end, as whole words and with the marks and joining words that tied it there ("Kitchen ·
+  Pendant", "Lampe im Wohnzimmer", "Luz de la cocina", 「キッチンの照明」), then a first word every name of the group
+  shares, three names at least ("Lights Cooking", "Lights Dinner", "Lights Evening"). Each keeps a word; no two names
+  come to read alike; a short word nobody can tell from a joining one leaves the name whole ("Ceiling fan Kitchen");
+  a name written by a person is never touched. Under a section of a person's own words ("Night") nothing is
+  shortened unless they ask (`short_names: true`): "Good night" stays.
+- **Order.** The groups of the house stand in the house's one order of its rooms (the panel's *Rooms in order*):
+  each list's own until the house chooses, Home Assistant's, A to Z, or its own; what is in no room comes last
+  ("Other" on a card, "Whole home" over the automatic dashboards' scenes, "Indoor" and "Outdoor" over their lights).
+- **Heights** are the config's: a label 28 (its 20 line, 8 under it) and 16 over each but the first, each group's
+  tiles in rows of their own, each group's chips in the rows their names take (`chipRows`); the automatic dashboards
+  write their groups as sections, so nothing live decides them. The groups the house makes of a card that asks for
+  them (`group_by`) are counted where the house is read (`house-heights.ts`).
+- **In the panel** the house's order is a card of the Dashboards tab: its four choices a filled chip row, and under
+  *Your own* the rooms as rows — the circle is the grip (the up-and-down glyph, `grab`), the name, its floor under
+  it, and two bare rounds of 44 at the row's end, up and down, for the keyboard and for a finger that would rather
+  tap; the first cannot go up, the last cannot go down, and the focus stays on the room that moved. A room in the
+  hand is its row lifted (the card's fill, the lift's shadow, radius 12), the place it left at 40 %.
+- **Its chunk is its own** (`groups`: what makes the groups, the short names, the chips), fetched by the first card
+  asked for groups, and with the automatic dashboards; every page carries the label's rule and what declares a
+  grouped card's height. A card asked for groups draws nothing until it lands, and its list as it stands where it
+  cannot be fetched.
 
 ## Value row (1.9)
 

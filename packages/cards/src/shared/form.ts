@@ -20,7 +20,7 @@ import {
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
 import type { EditorChoices, RowsListSpec, SelectOption } from './rows-editor.js';
-import { statesOf } from './lists.js';
+import { asksGroups, statesOf } from './lists.js';
 import { LADDERS, ladderOf, unitClass } from './units.js';
 import words from '@fluvy/core/locales/en/editor.json';
 
@@ -720,6 +720,20 @@ export const showIconField = (): HaFormSchemaItem =>
 export const emptyFields = (): HaFormSchemaItem =>
   fieldRow(textField('empty_text'), boolField('hide_empty'));
 
+/**
+ * What a card of tiles or of scenes lays its list out in groups by (`Grouped`, #189): the house's rooms or floors,
+ * their order where the house makes the groups (the house's own, or A to Z), and — while the list is in groups, the
+ * house's or its own sections' (`key`, `alias`: where the card keeps it) — whether the names read short inside them.
+ */
+export const groupFields = (key: string, alias?: string): HaFormSchemaItem[] => [
+  selectField('group_by', ['none', 'area', 'floor']),
+  onlyWhen(({ group_by }) => group_by === 'area' || group_by === 'floor', {
+    ...selectField('group_order', ['auto', 'name']),
+    helper: 'editor.group_order_helper',
+  }),
+  onlyWhen((data) => asksGroups(data, listed(data, key, alias)), boolField('short_names')),
+];
+
 /** A list of entities in one picker (the visual editor's form; `listsEditor` gives each its own). */
 export const entitiesField = (
   name: string,
@@ -797,6 +811,8 @@ export function rowItems(
 export const SECTION_FORM: readonly HaFormSchemaItem[] = [
   fieldRow(textField('label'), boolField('line')),
 ];
+/** A section that is its label alone: one among tiles or scenes, which stand on the page (no hairline there, #189). */
+export const LABEL_FORM: readonly HaFormSchemaItem[] = [textField('label')];
 export const sectionLabels = formLabels({ label: 'editor.section', line: 'editor.line' });
 
 /** How a condition is asked: not at all, a number above one, below one or between two, a state that is a word or is not. */

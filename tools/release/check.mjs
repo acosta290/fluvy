@@ -184,6 +184,9 @@ const BUDGETS = {
   background: 4096,
   // this device's sidebar beside the page (1.20, #173): what answers the menus' asks
   dock: 1024,
+  // a list in groups (1.21, #189): the house's rooms and floors or a list's own sections under their labels, the
+  // short names inside a group and the scenes as chips; fetched by the first Tiles or Scenes card asked for groups
+  groups: 4096,
   // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
   icons: 4096,
   // what only the chunks fetched later share (1.20: it left core, 1.9 KB of what every page loads): the local dates

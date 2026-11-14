@@ -781,7 +781,9 @@
     "sun": "Сонце",
     "ends": "Краї й центр",
     "tile_fill": "Заливка",
-    "house_style": "Типовий ({style})"
+    "house_style": "Типовий ({style})",
+    "label": "Підпис",
+    "floor": "Поверх"
   },
   "tone": {
     "accent": "Акцент",
@@ -1880,6 +1882,10 @@
     "slider_style": "Стиль повзунка",
     "slider_style_helper": "Не задано: як у всіх повзунків у налаштуваннях Fluvy",
     "slider_words": "Підписи під ним",
+    "group_by": "Групувати за",
+    "group_order": "Порядок груп",
+    "group_order_helper": "Автоматично: порядок кімнат із налаштувань Fluvy",
+    "short_names": "Короткі назви в групі",
     "doing": "Поточна дія",
     "show_state": "Показувати дію",
     "state_entity": "Джерело дії",

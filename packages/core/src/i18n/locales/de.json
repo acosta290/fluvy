@@ -608,6 +608,10 @@
     "slider_style": "Schieberegler-Stil",
     "slider_style_helper": "Unverändert: der aller Schieberegler aus den Fluvy-Einstellungen",
     "slider_words": "Werte darunter",
+    "group_by": "Gruppieren nach",
+    "group_order": "Reihenfolge der Gruppen",
+    "group_order_helper": "Automatisch: die Reihenfolge der Räume aus den Fluvy-Einstellungen",
+    "short_names": "Kurze Namen in einer Gruppe",
     "doing": "Was es gerade tut",
     "show_state": "Zeigen, was es tut",
     "state_entity": "Aktion gelesen aus",
@@ -2086,7 +2090,9 @@
     "sun": "Sonne",
     "ends": "Enden und Mitte",
     "tile_fill": "Füllung",
-    "house_style": "Haus ({style})"
+    "house_style": "Haus ({style})",
+    "label": "Beschriftung",
+    "floor": "Etage"
   },
   "tone": {
     "accent": "Akzent",

@@ -7,6 +7,7 @@ import {
   fieldRow,
   formLabels,
   iconField,
+  onlyWhen,
   selectField,
   textField,
 } from '../shared/form.js';
@@ -30,18 +31,20 @@ export const keys = configKeys<HeadingCardConfig>()([
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({ variant: 'bar', heading_style: 'subtitle' });
 
+/** A label is its words alone: its glyph, its meta and its tap are a title's and a subtitle's. */
+const headed = ({ heading_style }: Readonly<Record<string, unknown>>): boolean =>
+  heading_style !== 'label';
+
 export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
-      fieldRow(textField('title'), iconField()),
-      fieldRow(
-        selectField('heading_style', ['title', 'subtitle']),
-        selectField('variant', ['bar', 'plain']),
-      ),
-      fieldRow(textField('subtitle'), textField('path')),
-      entitiesField('entities'),
+      textField('title'),
+      selectField('heading_style', ['title', 'subtitle', 'label']),
+      onlyWhen(headed, fieldRow(iconField(), selectField('variant', ['bar', 'plain']))),
+      onlyWhen(headed, fieldRow(textField('subtitle'), textField('path'))),
+      onlyWhen(headed, entitiesField('entities')),
       // a tap alone, as Home Assistant's own heading: its path's where none is chosen
-      sectionField('editor.interactions', [actionField()]),
+      onlyWhen(headed, sectionField('editor.interactions', [actionField()])),
     ],
     ...formLabels({}),
   };

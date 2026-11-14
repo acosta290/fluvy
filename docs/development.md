@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,expander,expander-editor,slider,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised), what they
 share (the date picker; the pages'
@@ -129,6 +129,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `switch-styles` | 4 KB | the switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked, what a cover makes of it, and their sheet; fetched by the first tile asked for one |
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
+| `groups` | 4 KB | a list in groups (1.21, #189): the house's rooms and floors or a list's own sections under their labels, the short names inside a group, the scenes as chips; fetched by the first Tiles or Scenes card asked for groups, and with the automatic dashboards |
 | `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
 | `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
