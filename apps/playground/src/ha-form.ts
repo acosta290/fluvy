@@ -167,7 +167,28 @@ class MockForm extends LitElement {
       >
         <span class="label">${label}</span><span class="track"></span>
       </button>`;
-    const select = (selector as { select?: { options?: readonly Option[] } }).select;
+    const select = (selector as { select?: { options?: readonly Option[]; multiple?: boolean } })
+      .select;
+    if (select?.options?.length && select.multiple) {
+      // several of them: the chosen ones' words, in the options' order; a tap takes the last one away, and brings
+      // the first one left out back once something is
+      const all = select.options.map(valueOf);
+      const chosen = all.filter((option) => Array.isArray(value) && value.includes(option));
+      const left = all.find((option) => !chosen.includes(option));
+      return html`<button
+        class="field"
+        data-field=${item.name}
+        @click=${() => this.change(item.name, left ? [...chosen, left] : chosen.slice(0, -1))}
+      >
+        <span class="label">${label}</span
+        ><span class="value"
+          >${select.options
+            .filter((option) => chosen.includes(valueOf(option)))
+            .map(labelOf)
+            .join(', ')}</span
+        >
+      </button>`;
+    }
     if (select?.options?.length) {
       const options = select.options;
       const at = options.findIndex((option) => valueOf(option) === String(value));

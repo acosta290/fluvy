@@ -43,7 +43,13 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * a light left out of a list and a switch added to it, a view hidden (`changes`) — with what was saved before
  * (`customised`: the clock as an analogue one, a room put first), its lights unfolded to their entities (`list`), the
  * clock's options in their sheet (`sheet`). The house's rooms in an order of its own, the home dashboard grouping by
- * room and drawing its scenes as chips (`rooms`, #189: with `dashboards`). Several join with commas.
+ * room and drawing its scenes as chips (`rooms`, #189: with `dashboards`). And 1.21's (#188): the tabs unfolded under
+ * the view's place among them (`tabs`), a row lifted on its way up the list (`drag`: the scenes, as a mouse or a
+ * finger holds them), the kitchen's and the living room's scenes shown on Home as well and put first (`centre`: a
+ * command centre of the rooms' scenes), the sheet "Add a card" on the dashboard's own cards with two of them picked
+ * (`add`), on Fluvy's cards (`cards`) and on one of them in its own form, drawn over it (`new`); and, without the
+ * panel, what Home Assistant's pencil opens on the dashboard (`pencil`: its "Edit dashboard" dialog with the
+ * strategy's form). Several join with commas.
  */
 export type PanelState =
   | 'pending'
@@ -76,7 +82,14 @@ export type PanelState =
   | 'customised'
   | 'list'
   | 'sheet'
-  | 'rooms';
+  | 'rooms'
+  | 'tabs'
+  | 'drag'
+  | 'centre'
+  | 'add'
+  | 'cards'
+  | 'new'
+  | 'pencil';
 
 /**
  * Three sets of series colours a house might keep: the earth's, which follows the palette (its colours named), the
@@ -183,6 +196,8 @@ export function mountPanel(
   if (demoHome) hass = withDemoHome(hass);
   if (has('customised'))
     configs.set('fluvy-auto', { strategy: { type: 'custom:fluvy-home', edit: SAVED_EDIT } });
+  if (has('centre'))
+    configs.set('fluvy-auto', { strategy: { type: 'custom:fluvy-home', edit: CENTRE_EDIT } });
   // two sensors that see a person, so the Screen card offers its wake-on-motion dropdown (a room as the hint)
   if (has('wall')) hass = withMotionSensors(hass);
   // the dashboards as Home Assistant hands them to every frontend (its own Overview, the house's, maybe ours)
@@ -327,6 +342,8 @@ export function mountPanel(
         'fluvy-auto': { edit: { ...(has('customised') ? SAVED_EDIT : {}), ...PENDING_EDIT } },
       };
     if (has('list') || has('sheet')) setTimeout(() => void unfold(panel, has('sheet')), 400);
+    const moment = (['tabs', 'drag', 'add', 'cards', 'new'] as const).find(has);
+    if (moment) setTimeout(() => void MOMENTS[moment](panel), 400);
     if (has('saved')) panel.notice = hass.language === 'es' ? 'Guardado' : 'Saved';
     if (has('menu'))
       void panel.updateComplete.then(() => {
@@ -360,6 +377,27 @@ const PENDING_EDIT = {
   },
 };
 
+/**
+ * A command centre on Home (#188): the kitchen's and the living room's scenes shown there as well, read first and
+ * second, each still its room's own card.
+ */
+const CENTRE_EDIT = {
+  views: { home: { also: ['room-kitchen/scenes', 'room-living_room/scenes'] } },
+  cards: {
+    'home/also:room-kitchen/scenes': { order: 0 },
+    'home/also:room-living_room/scenes': { order: 1 },
+  },
+};
+
+/** The rooms' own scenes of the house Customise reads: what a person brings to Home as a command centre. */
+const ROOM_SCENES = [
+  ['scene.kitchen_cooking', 'Cooking', 'kitchen'],
+  ['scene.kitchen_dinner', 'Dinner', 'kitchen'],
+  ['scene.kitchen_cleaning_up', 'Cleaning up', 'kitchen'],
+  ['scene.living_room_reading', 'Reading', 'living_room'],
+  ['scene.living_room_film', 'Film night', 'living_room'],
+] as const;
+
 /** Whether the page's house is the demo home (the energy preferences are then its own). */
 let demoHome = false;
 
@@ -371,7 +409,19 @@ const named = (name: unknown): { friendly_name?: string } =>
 
 /** The house as the demo home: its rooms, floors and devices, its entities over the page's own. */
 function withDemoHome(hass: HomeAssistant): HomeAssistant {
-  const demo = demoHass({ more: [...DEMO_EXTRAS, ...DEMO_ROOMS], sources: DEMO_ENERGY_SOURCES });
+  const demo = demoHass({
+    more: [
+      ...DEMO_EXTRAS,
+      ...DEMO_ROOMS,
+      ...ROOM_SCENES.map(([id, name, area]) => ({
+        id,
+        state: 'unknown',
+        attributes: { friendly_name: name },
+        registry: { area_id: area },
+      })),
+    ],
+    sources: DEMO_ENERGY_SOURCES,
+  });
   const stamp = '2026-09-17T19:47:00Z';
   return {
     ...hass,
@@ -397,23 +447,72 @@ function withDemoHome(hass: HomeAssistant): HomeAssistant {
   } as unknown as HomeAssistant;
 }
 
+/** What a selector finds in the panel, once it is drawn (five seconds at most). */
+async function find(
+  panel: HTMLElement,
+  selector: string,
+  text?: string,
+): Promise<HTMLElement | null> {
+  for (let tries = 0; tries < 100; tries++) {
+    const found = [...(panel.shadowRoot?.querySelectorAll<HTMLElement>(selector) ?? [])].find(
+      (node) => text === undefined || node.textContent?.trim() === text,
+    );
+    if (found) return found;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return null;
+}
+
 /**
  * Unfolds Home's lights to their entities, as a tap on their row does; with `sheet`, the clock instead, and its
- * options in their sheet (the third of its buttons). Each waits for what it taps to be drawn.
+ * options in their sheet (the sliders among its buttons). Each waits for what it taps to be drawn.
  */
 async function unfold(panel: HTMLElement, sheet: boolean): Promise<void> {
-  const find = async (selector: string): Promise<HTMLElement | null> => {
-    for (let tries = 0; tries < 100; tries++) {
-      const found = panel.shadowRoot?.querySelector<HTMLElement>(selector);
-      if (found) return found;
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-    return null;
-  };
   const part = `.cz-part[data-part="home/${sheet ? 'clock' : 'lights'}"]`;
-  (await find(`${part} > .fv-row`))?.click();
-  if (sheet) (await find(`${part} .fv-action:nth-child(3)`))?.click();
+  (await find(panel, `${part} > .fv-row`))?.click();
+  if (sheet) (await find(panel, `${part} .fv-action[aria-label="Options"]`))?.click();
 }
+
+/** The sheet "Add a card", opened as a tap on its row opens it; then the way named, as a tap on its chip. */
+async function adding(panel: HTMLElement, way?: string): Promise<void> {
+  (await find(panel, '.cz-view .fv-row:has(> .fv-row__btn)'))?.click();
+  if (way) (await find(panel, '.cz-sheet .fv-chip', way))?.click();
+}
+
+/** The moments of 1.21's Customise (#188), each reached as a person reaches it: by taps on what is drawn. */
+const MOMENTS: Record<
+  'tabs' | 'drag' | 'add' | 'cards' | 'new',
+  (panel: HTMLElement) => Promise<void>
+> = {
+  tabs: async (panel) => {
+    (await find(panel, '.cz-place > .fv-row'))?.click();
+  },
+  // the scenes on their way up the list, as Home Assistant's sorting holds a row: lifted, three rows from the top
+  drag: async (panel) => {
+    const scenes = await find(panel, '.cz-part[data-part="home/scenes"]');
+    const rows = scenes?.parentElement?.querySelectorAll('.cz-part');
+    if (!scenes || !rows) return;
+    scenes.classList.add('sortable-chosen', 'sortable-ghost');
+    rows[2]?.before(scenes);
+  },
+  // the rooms' scenes found and picked: what a command centre on Home is made of
+  add: async (panel) => {
+    await adding(panel);
+    const field = await find(panel, '.cz-sheet .cz-search input');
+    if (!(field instanceof HTMLInputElement)) return;
+    field.value = 'scenes';
+    field.dispatchEvent(new Event('input'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    for (const row of panel.shadowRoot?.querySelectorAll<HTMLElement>('.cz-sheet .fv-row') ?? [])
+      if (!row.closest('.pn-rows')?.previousElementSibling?.textContent?.includes('Lights'))
+        row.click();
+  },
+  cards: (panel) => adding(panel, 'Fluvy’s cards'),
+  new: async (panel) => {
+    await adding(panel, 'Fluvy’s cards');
+    (await find(panel, '.cz-sheet .fv-row__title', 'Light'))?.click();
+  },
+};
 
 /** The dashboard panels of the demo home (one of them the home template's, unless `missing`) and the created ones. */
 const MOTION_SENSORS = [

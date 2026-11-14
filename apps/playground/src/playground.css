@@ -81,3 +81,35 @@ html[data-mode='dark'] .pg-look__name {
   display: block;
   padding: 0;
 }
+/* ?state=pencil: Home Assistant's "Edit dashboard" dialog, its surface in the page's middle and its title over the
+   dashboard's name; what stands in it is the strategy's own editor */
+.pg-pencil {
+  display: block;
+  padding: 24px 16px;
+}
+.pg-dialog {
+  box-sizing: border-box;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: var(--fluvy-radius-xl);
+  background: var(--fluvy-card);
+  box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
+}
+.pg-dialog header {
+  margin-bottom: 24px;
+}
+.pg-dialog__title,
+.pg-dialog__sub {
+  margin: 0;
+  font:
+    600 20px/28px Inter,
+    sans-serif;
+  color: var(--fluvy-text);
+}
+.pg-dialog__sub {
+  font:
+    400 14px/20px Inter,
+    sans-serif;
+  color: var(--fluvy-text-secondary);
+}

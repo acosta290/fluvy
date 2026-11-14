@@ -48,6 +48,7 @@ import { mountActivity, type ActivityMoment } from './activity.js';
 import { MOCK_PERIODS } from './collection.js';
 import { mountHistory, type HistoryMoment } from './history.js';
 import { mountPanel, PANEL_WS, type PanelState } from './panel.js';
+import { mountPencil } from './pencil.js';
 import { cardsFor, mountWall, wallSettingsFor, type WallMoment } from './wall.js';
 import { mountViewTheme } from './themes.js';
 import { outOfReachView } from './out-of-reach.js';
@@ -296,7 +297,9 @@ mock.subscribe((hass: HomeAssistant) => {
 });
 
 const stage = document.getElementById('stage') as HTMLElement;
-if (panelTab) mountPanel(stage, mock.hass(), panelTab, dark, panelStates);
+// the pencil's dialog stands alone: what Home Assistant opens on the dashboard, never inside the panel
+if (panelTab && panelStates.includes('pencil')) void mountPencil(stage, mock.hass());
+else if (panelTab) mountPanel(stage, mock.hass(), panelTab, dark, panelStates);
 if (history)
   mountHistory(
     stage,
