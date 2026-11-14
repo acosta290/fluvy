@@ -22,13 +22,21 @@ export type SolarForecasts = Readonly<
   Record<string, { readonly wh_hours?: Readonly<Record<string, number>> } | undefined>
 >;
 
-const forecasts = new WeakMap<object, { hour: number; promise: Promise<SolarForecasts | null> }>();
+/** A question for the forecasts: its hour, its answer, and until when a miss is kept (once it missed). */
+interface Asked {
+  readonly hour: number;
+  readonly promise: Promise<SolarForecasts | null>;
+  miss?: number;
+}
+const forecasts = new WeakMap<object, Asked>();
 const HOUR = 3_600_000;
+/** How long a forecast that could not be read is kept: every card that asks meanwhile shares the miss. */
+const MISS = 60_000;
 
 /**
  * The forecasts of the house's arrays, asked once per connection and hour of the clock (an integration refreshes its
- * own a few times a day; every card on a view asks the same question). `null` when they cannot be read, which is not
- * kept: the next card to ask asks Home Assistant again.
+ * own a few times a day; every card on a view asks the same question). `null` when they cannot be read, which is kept
+ * a minute from the question: the cards of a view share one miss, and the first to ask after it asks again.
  */
 export function fetchSolarForecast(
   hass: HomeAssistant,
@@ -37,11 +45,12 @@ export function fetchSolarForecast(
   const key = (hass.connection as object | undefined) ?? hass;
   const hour = Math.floor(now / HOUR);
   const hit = forecasts.get(key);
-  if (hit?.hour === hour) return hit.promise;
+  if (hit && (hit.miss === undefined ? hit.hour === hour : now < hit.miss)) return hit.promise;
   const promise = hass.callWS<SolarForecasts>({ type: 'energy/solar_forecast' }).catch(() => null);
-  forecasts.set(key, { hour, promise });
+  const asked: Asked = { hour, promise };
+  forecasts.set(key, asked);
   void promise.then((answer) => {
-    if (answer === null && forecasts.get(key)?.promise === promise) forecasts.delete(key);
+    if (answer === null) asked.miss = now + MISS;
   });
   return promise;
 }

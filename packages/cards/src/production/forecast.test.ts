@@ -211,7 +211,7 @@ describe('Home Assistant’s forecast for a card', () => {
     expect(asked).toEqual(['energy/get_prefs']);
   });
 
-  it('asks once an hour of the clock for every card of a house, and again where it could not be read', async () => {
+  it('asks once an hour of the clock for every card of a house, and again a minute after it could not be read', async () => {
     const asked: string[] = [];
     const hass = house({}, { solcast: { wh_hours: {} } }, asked);
     const first = await fetchSolarForecast(hass, 10 * HOUR + 5);
@@ -219,11 +219,15 @@ describe('Home Assistant’s forecast for a card', () => {
     expect(asked).toHaveLength(1);
     await fetchSolarForecast(hass, 11 * HOUR);
     expect(asked).toHaveLength(2);
+    // a miss is shared by every card that asks within its minute, across the hour too: one question, not one a card
     const failing: string[] = [];
     const down = house({}, new Error('no energy'), failing);
-    expect(await fetchSolarForecast(down, 10 * HOUR)).toBeNull();
+    expect(await fetchSolarForecast(down, 11 * HOUR - 30_000)).toBeNull();
     await Promise.resolve();
-    expect(await fetchSolarForecast(down, 10 * HOUR + 1)).toBeNull();
+    expect(await fetchSolarForecast(down, 11 * HOUR - 30_000 + 1)).toBeNull();
+    expect(await fetchSolarForecast(down, 11 * HOUR + 29_999)).toBeNull();
+    expect(failing).toHaveLength(1);
+    expect(await fetchSolarForecast(down, 11 * HOUR + 30_000)).toBeNull();
     expect(failing).toHaveLength(2);
   });
 });
