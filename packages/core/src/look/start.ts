@@ -131,6 +131,8 @@ export async function connected(
 }
 
 let handle: LookHandle | undefined;
+/** Whether the page said that the sidebar's file did not load (`dock`): once. */
+let dockSaid = false;
 
 /**
  * Starts the look once for the page: the last settings this browser saw are applied at once (no flash
@@ -280,16 +282,27 @@ export function startLook(): LookHandle | undefined {
 
   /**
    * The sidebar beside the page, where this device chose it (`dock.ts`): its file fetched once the choice is made, as
-   * the page starts or as the choice is saved; each menu's ask reads the choice again (a wall keeps its own).
+   * the page starts or as the choice is saved; each menu's ask reads the choice again (a wall keeps its own). A file
+   * that does not load (a stale build, the network) is said once and asked for again at the next navigation, once.
    */
   let offSidebar: (() => void) | undefined;
   let docking = false;
   const dock = (): void => {
     if (docking || !readDevice().dock) return;
     docking = true;
-    void import('./dock.js').then((m) => {
-      if (handle) offSidebar = m.watchSidebar(() => readDevice().dock && !wall.on);
-    });
+    void import('./dock.js').then(
+      (m) => {
+        if (handle) offSidebar = m.watchSidebar(() => readDevice().dock && !wall.on);
+      },
+      (error: unknown) => {
+        docking = false;
+        if (!dockSaid) console.warn(`[fluvy] dock did not load: ${error} · ${versionNote()}`);
+        dockSaid = true;
+        if (!handle) return;
+        window.addEventListener('location-changed', dock, { once: true });
+        window.addEventListener('popstate', dock, { once: true });
+      },
+    );
   };
   /**
    * This device draws Lite, or Full, again: the cards move (or stop) and blur as it says, and a page's background is
@@ -360,6 +373,8 @@ export function startLook(): LookHandle | undefined {
       observer.disconnect();
       reduced.removeEventListener('change', wearDevice);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('location-changed', dock);
+      window.removeEventListener('popstate', dock);
       offSidebar?.();
       offFrames();
       offThemes();
