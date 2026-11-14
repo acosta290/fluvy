@@ -152,6 +152,8 @@ const LEAVE_MS = 200;
 const PREVIEW_MS = 160;
 /** The sheet's width at most, as its style draws it: its rows of chips are fitted to it. */
 const SHEET_WIDTH = 480;
+/** The rows a view shows before it is searched: what a phone holds on one screen. */
+const MANY = 8;
 
 /** Whether what was typed is found in one of a row's words, read by their plain letters ("kuche" finds "Küche"). */
 const found = (query: string, ...words: readonly string[]): boolean => {
@@ -275,6 +277,8 @@ export class Customiser {
   private openItem = '';
   /** The tabs unfolded under the open view's place among them. */
   private openTabs = false;
+  /** What the open view's rows are searched for. */
+  private query = '';
   /** What a second tap would reset: a part's id, `view`, `all` ('' none). */
   private armed = '';
   private armTimer = 0;
@@ -441,6 +445,7 @@ export class Customiser {
     this.viewId = view;
     this.openPart = '';
     this.openItem = '';
+    this.query = '';
     this.host.requestUpdate();
   }
 
@@ -1463,15 +1468,26 @@ export class Customiser {
       event.stopPropagation();
       placeTab(view.id, at + by);
     };
+    // a view of many cards is searched: what is typed narrows its rows to those whose words hold it, or the view
+    // they come from. A row's buttons still move it among all the view's cards (found, it goes to the top in one
+    // press); dragged, it is dropped among the rows drawn
+    const searched = order.length > MANY;
+    const rows = searched
+      ? order.filter((part) => {
+          const { title, kind } = this.wordsOf(part.taken?.part ?? part, ctx);
+          return found(this.query, title, kind, part.taken?.view.title ?? '');
+        })
+      : order;
     const seen = order.map((part) => part.id);
-    /** Puts a part on a place among the rows drawn, with the fewest places kept. */
-    const place = (id: string, to: number): void =>
+    const drawn = rows.map((part) => part.id);
+    /** Puts a part on a place among the view's cards (`among`: those a drop counts), with the fewest places kept. */
+    const place = (id: string, to: number, among: readonly string[] = seen): void =>
       this.reorder(
         'cards',
         ids,
         moved(
           pinned(ids, (other) => edit.cards?.[other]?.order),
-          seen,
+          among,
           id,
           to,
         ),
@@ -1547,20 +1563,29 @@ export class Customiser {
           : nothing
       }
       <p class="fv-label pn-label">${ctx.t('dashboard.cards')}</p>
+      ${
+        searched
+          ? this.search(ctx, this.query, (query) => {
+              this.query = query;
+              this.host.requestUpdate();
+            })
+          : nothing
+      }
       ${sortable(
         'cz-part',
         html`<div class="cz-parts">
           ${
             // each row moves with its part: a button pressed again after a move still has the focus
             repeat(
-              order,
+              rows,
               (part) => part.id,
               (part) => this.partRow(ctx, view, part, seen, place),
             )
           }
         </div>`,
-        (from, to) => place(seen[from] as string, to),
+        (from, to) => place(drawn[from] as string, to, drawn),
       )}
+      ${rows.length || !order.length ? nothing : emptyState('search', say(ctx.hass, 'no_match'))}
       ${this.ownBlock(ctx, view)}
       ${
         changed
@@ -1591,6 +1616,7 @@ export class Customiser {
       this.openPart = '';
       this.openItem = '';
       this.openTabs = false;
+      this.query = '';
       this.sheet = undefined;
       this.drawn = undefined;
     }

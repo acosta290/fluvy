@@ -395,6 +395,59 @@ describe('Customise (#170)', () => {
     expect(tab('rooms').classList.contains('is-off')).toBe(true);
   });
 
+  it('searches a view of many cards, and moves the one found among them all (#188)', async () => {
+    const m = await mount();
+    await m.open();
+    const order = m.parts() as string[];
+    const field = () => m.root.querySelector<HTMLInputElement>('.cz-view .cz-search input');
+    const type = async (query: string) => {
+      field()!.value = query;
+      field()!.dispatchEvent(new Event('input'));
+      await m.settle(2);
+    };
+    // sixteen rows on Home: more than a phone holds on one screen
+    expect(order.length).toBeGreaterThan(8);
+    expect(field()).not.toBeNull();
+    await type('sce');
+    expect(m.parts()).toEqual(['home/scenes']);
+    // by what a card is as well as by its name, whatever the letters' case
+    await type('THERMO');
+    expect(m.parts()).toEqual(['home/thermostat']);
+    await type('no such card');
+    expect(m.parts()).toEqual([]);
+    expect(m.root.querySelector('.cz-view .fv-empty-state')?.textContent).toContain(
+      'Nothing matches',
+    );
+    // found, a card goes to the top of the whole view in one press: its buttons count every card
+    await type('sce');
+    await m.act(await m.unfold('home/scenes'), 'Move to the top');
+    expect(m.edit()).toEqual({ cards: { 'home/scenes': { order: 0 } } });
+    await type('');
+    expect(m.parts()).toEqual(['home/scenes', ...order.filter((id) => id !== 'home/scenes')]);
+    // dragged among the rows found, it lands beside the one it was dropped on
+    await type('s');
+    const found = m.parts() as string[];
+    expect(found.length).toBeGreaterThan(2);
+    expect(found.length).toBeLessThan(order.length);
+    m.root
+      .querySelector('.cz-parts')!
+      .parentElement!.dispatchEvent(
+        new CustomEvent('item-moved', { detail: { oldIndex: 0, newIndex: 1 }, bubbles: true }),
+      );
+    await m.settle(2);
+    expect(m.parts().slice(0, 2)).toEqual([found[1], 'home/scenes']);
+    await type('');
+    const all = m.parts() as string[];
+    expect(all.indexOf('home/scenes')).toBe(all.indexOf(found[1] as string) + 1);
+    // a view of a few cards has no field: the Climate view's five
+    [...m.root.querySelectorAll<HTMLElement>('.cz-top .fv-chip')]
+      .find((chip) => chip.textContent?.trim() === 'Climate')!
+      .click();
+    await m.settle(2);
+    expect(m.parts().length).toBeLessThanOrEqual(8);
+    expect(field()).toBeNull();
+  });
+
   it('thins out a list, adds to it what it takes and orders it', async () => {
     const m = await mount();
     await m.open();
