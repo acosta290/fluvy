@@ -114,9 +114,9 @@ export class FluvyDetailsClimate extends DetailsSheet {
     this.ask = config;
   }
 
-  override open(openedBy?: HTMLElement, source?: LiveHass): void {
+  override open(openedBy?: HTMLElement, source?: LiveHass, zoom?: number): void {
     this.ask = askOf(source, this.config?.entity);
-    super.open(openedBy, source);
+    super.open(openedBy, source, zoom);
   }
 
   /** The thermostat read once for each view of it: a render asks for it from every part of the sheet. */

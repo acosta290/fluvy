@@ -797,6 +797,18 @@ describe('the sheet as a dialog', () => {
       await sheet.updateComplete;
       expect(sheet.style.getPropertyValue('--fv-zoom')).toBe('1.25');
       expect(asked.at(-1)).toBe('(min-width: 750px) and (min-height: 750px)');
+      // every kind of sheet takes that size, the thermostat's too (it reads what its card asks as it opens)
+      const warm = house(THERMOSTAT);
+      const dial = card(warm);
+      Object.defineProperty(dial, 'offsetWidth', { value: 288 });
+      dial.getBoundingClientRect = () => ({ width: 359.9 }) as DOMRect;
+      dial.button.focus();
+      openDetails(dial, warm, THERMOSTAT.entity_id);
+      const climate = [...document.body.children].find(
+        (child) => child.localName === 'fluvy-details-climate',
+      ) as Sheet;
+      await climate.updateComplete;
+      expect(climate.style.getPropertyValue('--fv-zoom')).toBe('1.25');
     } finally {
       window.matchMedia = matchMedia;
     }
