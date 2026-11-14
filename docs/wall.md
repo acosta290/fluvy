@@ -67,7 +67,13 @@ tablet remembers; a phone that opens the same dashboard keeps its own size. `?zo
 Only the dashboard's view grows — the cards, their text and their controls — and the layout follows: a column that
 held three cards holds two. Home Assistant's header and sidebar, its dialogs and the edit mode stay at their size, so
 a dashboard is edited as it is laid out. The size is read before Home Assistant paints, so a page never starts small
-and jumps.
+and jumps. A card's details sheet opens at the card's size.
+
+The screensaver keeps 100 % unless the tablet asks it to follow: **Screensaver too** (1.21), under the size on the
+*Wall* tab's device card, off until it is turned on and shown only where the size is not 100 %, reads the clock and
+the weather at the tablet's size, in a column as wide as the cards' (480 at 100 %, 600 at 125 %, never wider than the
+screen). The way out in the corner, the notices and the way back from a subview keep their size. Like the size, it is
+the tablet's own.
 
 An older tablet that struggles can draw **Lite**, its own choice too: *This device · Performance* in the panel's
 *Preferences* tab. Nothing blurs behind a see-through card, no card enters, the gauges rest — see
@@ -80,8 +86,9 @@ An older tablet that struggles can draw **Lite**, its own choice too: *This devi
   the address once read.
 - Wall mode fails open: if Home Assistant's pages change under Fluvy's feet, the sidebar and the header simply
   return (see [troubleshooting](troubleshooting.md)).
-- The wall's settings are the house's (`wall` in the settings file *Preferences* exports); what this device is
-  and its size stay in the browser (`localStorage`, `fluvy:device`), and a pause in the session (`sessionStorage`,
-  `fluvy:wall-paused`). `?zoom=` is dropped from the address once read, as `?kiosk` is.
+- The wall's settings are the house's (`wall` in the settings file *Preferences* exports); what this device is,
+  its size and whether its screensaver follows the size stay in the browser (`localStorage`, `fluvy:device`, as
+  `"screensaverZoom": true`), and a pause in the session (`sessionStorage`, `fluvy:wall-paused`). `?zoom=` is
+  dropped from the address once read, as `?kiosk` is.
 - The wall's own pieces — the controller, the screensaver, the corner and the toast — load only on a device that
   is a wall (their own chunk); a phone never pays for them.

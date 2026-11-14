@@ -1099,8 +1099,9 @@ export class FluvyPanel extends LitElement {
 
   /**
    * The screensaver as the wall would show it now, over this page until a tap: the settings shown (the clock or
-   * black, the wall's background, its day or night), the real piece, mounted under the panel's look — in the
-   * night's tokens when it is night — and taken down by the tap that would wake the wall.
+   * black, the wall's background, its day or night, this device's size where it follows it), the real piece, mounted
+   * under the panel's look — in the night's tokens when it is night — and taken down by the tap that would wake the
+   * wall.
    */
   private previewScreensaver(): void {
     this.closeSaver?.();
@@ -1124,6 +1125,8 @@ export class FluvyPanel extends LitElement {
         host,
         preview: true,
         onWake: () => this.closeSaver?.(),
+        // this device's size as it is being chosen
+        device: { ...this.device, ...this.deviceEdit },
       });
       this.closeSaver = () => {
         this.closeSaver = undefined;

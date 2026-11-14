@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Una pared no tiene cabecera: un botón con el nombre de la vista, o la cabecera de Home Assistant en las subvistas",
     "wall.subview_button": "Botón atrás",
     "wall.subview_header": "Cabecera",
+    "wall.saver_size": "También el salvapantallas",
+    "wall.saver_size_sub": "Su reloj a este tamaño",
     "lights.title": "Luces",
     "lights.sub": "Donde una tarjeta no diga nada",
     "lights.tint": "Mostrar su color",

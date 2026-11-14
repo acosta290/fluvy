@@ -2630,6 +2630,8 @@
     "wall.subview_sub": "壁挂面板没有顶栏：用带视图名称的按钮，或在子视图中使用 Home Assistant 的顶栏",
     "wall.subview_button": "返回按钮",
     "wall.subview_header": "顶栏",
+    "wall.saver_size": "屏保也一样",
+    "wall.saver_size_sub": "时钟也用此尺寸",
     "lights.title": "灯光",
     "lights.sub": "卡片未单独指定时",
     "lights.tint": "显示灯光颜色",

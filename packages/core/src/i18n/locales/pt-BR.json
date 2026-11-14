@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Uma parede não tem cabeçalho: um botão com o nome da visualização, ou o cabeçalho do Home Assistant nas subvisualizações",
     "wall.subview_button": "Botão voltar",
     "wall.subview_header": "Cabeçalho",
+    "wall.saver_size": "O protetor de tela também",
+    "wall.saver_size_sub": "Seu relógio neste tamanho",
     "lights.title": "Luzes",
     "lights.sub": "Onde um cartão não diz nada",
     "lights.tint": "Mostrar a cor",

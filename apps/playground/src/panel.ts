@@ -31,7 +31,8 @@ import { createMemoryLook, type MemoryLook } from './look-memory.js';
  * the house's default theme Fluvy Light (`house-light`), edits on the other tabs
  * waiting to be saved (`edits`), the language menu open (`menu`), every template's dashboard created, the home's
  * leaving out a water heater and the inverter's MPPT readings (`dashboards`), a dashboard's Recreate row armed
- * (`recreate`), this browser a wall panel (`wall`), three palettes saved by the house (`palettes`), the wall dark
+ * (`recreate`), this browser a wall panel (`wall`), read at 125 % with its screensaver at that size too (`sized`,
+ * #190), three palettes saved by the house (`palettes`), the wall dark
  * with a veil on the mesh (`night`), a warning of the house's own saved and a danger in its very colour waiting
  * (`statuses`), the house's charts in the soft style with a gauge that moves (`styled`: every fine row, its waves
  * too), three sets of series colours kept by the house, the second worn (`sets`), a new set being made with two
@@ -60,6 +61,7 @@ export type PanelState =
   | 'dashboards'
   | 'recreate'
   | 'wall'
+  | 'sized'
   | 'palettes'
   | 'night'
   | 'statuses'
@@ -236,7 +238,10 @@ export function mountPanel(
     });
 
   // what this browser is: the panel reads its memory when it is made
-  writeDevice({ wall: has('wall') });
+  writeDevice({
+    wall: has('wall'),
+    ...(has('sized') ? { zoom: 125 as const, screensaverZoom: true } : {}),
+  });
   const panel = document.createElement('fluvy-panel') as HTMLElement & {
     hass: HomeAssistant;
     handle: LookHandle;

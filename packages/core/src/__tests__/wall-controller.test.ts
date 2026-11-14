@@ -16,6 +16,7 @@ import {
   type BackOptions,
   type CornerOptions,
   type NoticeOptions,
+  type ScreensaverOptions,
   type WallPhase,
   type WallState,
   type WallUi,
@@ -41,12 +42,14 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
   let back: BackOptions | undefined;
   let backTitle = '';
   let wakeUp: (() => void) | undefined;
+  let saver: ScreensaverOptions | undefined;
   let corner: CornerOptions | undefined;
   let notice: NoticeOptions | undefined;
   const ui: WallUi = {
     sleep: (options) => {
       shown.sleep++;
       wakeUp = options.onWake;
+      saver = options;
       return () => shown.closed++;
     },
     corner: (options) => {
@@ -103,6 +106,7 @@ function setup(wallPatch: Partial<ReturnType<typeof resolveSettings>['wall']> = 
     shown,
     change,
     wake: () => wakeUp?.(),
+    saver: () => saver,
     corner: () => corner,
     notice: () => notice,
     back: () => back,
@@ -242,6 +246,18 @@ describe('the wall controller', () => {
     wake();
     expect(wall.phase()).toBe('awake');
     expect(shown.closed).toBe(1);
+    wall.stop();
+  });
+
+  it('tells the screensaver this device’s size and whether it follows it (#190), read as it falls asleep', async () => {
+    const { wall, saver } = setup({ after: 2 });
+    localStorage.setItem(
+      DEVICE_KEY,
+      JSON.stringify({ version: 1, wall: true, zoom: 125, screensaverZoom: true }),
+    );
+    await vi.advanceTimersByTimeAsync(2 * 60_000 + 1);
+    expect(wall.phase()).toBe('asleep');
+    expect(saver()?.device).toMatchObject({ zoom: 125, screensaverZoom: true });
     wall.stop();
   });
 

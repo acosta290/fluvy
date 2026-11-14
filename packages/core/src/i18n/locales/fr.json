@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Un mur n’a pas d’en-tête : un bouton au nom de la vue, ou l’en-tête de Home Assistant dans les sous-vues",
     "wall.subview_button": "Bouton retour",
     "wall.subview_header": "En-tête",
+    "wall.saver_size": "L’écran de veille aussi",
+    "wall.saver_size_sub": "Son horloge à cette taille",
     "lights.title": "Lumières",
     "lights.sub": "Là où une carte ne précise rien",
     "lights.tint": "Afficher leur couleur",

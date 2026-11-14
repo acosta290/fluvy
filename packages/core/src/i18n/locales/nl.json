@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Een wand heeft geen kopbalk: een knop met de naam van de weergave, of de kopbalk van Home Assistant in subweergaven",
     "wall.subview_button": "Terugknop",
     "wall.subview_header": "Kopbalk",
+    "wall.saver_size": "Ook de schermbeveiliging",
+    "wall.saver_size_sub": "De klok op deze grootte",
     "lights.title": "Lampen",
     "lights.sub": "Waar een kaart zelf niets zegt",
     "lights.tint": "Hun kleur tonen",

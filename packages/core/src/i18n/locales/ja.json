@@ -2585,6 +2585,8 @@
     "wall.subview_sub": "壁掛け画面にはヘッダーがないため、ビュー名のボタンか、サブビューだけHome Assistantのヘッダーを使います",
     "wall.subview_button": "戻るボタン",
     "wall.subview_header": "ヘッダー",
+    "wall.saver_size": "スクリーンセーバーも",
+    "wall.saver_size_sub": "時計もこのサイズで表示",
     "lights.title": "照明",
     "lights.sub": "カードに個別の設定がないとき",
     "lights.tint": "色を表示",

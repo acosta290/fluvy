@@ -13,7 +13,7 @@ import type { RootElement } from '../look/tabs.js';
 import { currentView, NO_VIEW, VIEW_EVENT, type ViewFacts } from '../look/view.js';
 import { urlPathOf } from '../pages.js';
 import { walkShadow } from '../shell/dom.js';
-import { readDevice, writeDevice } from '../settings/device.js';
+import { readDevice, writeDevice, type DeviceSettings } from '../settings/device.js';
 import { safeSession } from '../storage.js';
 import type { EffectiveSettings, WallExit } from '../settings/schema.js';
 import { createIdle, type Idle } from './idle.js';
@@ -51,6 +51,8 @@ export interface ScreensaverOptions {
   readonly host?: ParentNode;
   /** A look at it from the settings panel: the pointer stays. */
   readonly preview?: boolean;
+  /** This device's size, and whether its screensaver follows it (1.21, #190); none: the screensaver at 100 %. */
+  readonly device?: Pick<DeviceSettings, 'zoom' | 'screensaverZoom'>;
 }
 
 export interface CornerOptions {
@@ -239,6 +241,7 @@ export function createWall(deps: WallDeps): WallHandle {
         weather,
         hass: deps.hass,
         onWake: () => idle?.poke(),
+        device: readDevice(),
       });
     });
   };

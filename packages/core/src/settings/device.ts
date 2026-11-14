@@ -35,6 +35,11 @@ export interface DeviceSettings {
    * Home Assistant's way.
    */
   readonly dock: boolean;
+  /**
+   * The screensaver at this device's size too (1.21, #190): a wall read from across the room reads its clock as large
+   * as its cards. Off, it keeps 100 %, as the corner, the toast and the way back always do.
+   */
+  readonly screensaverZoom: boolean;
 }
 
 /** What a device may change about itself (the version is never written). */
@@ -46,6 +51,7 @@ export const DEVICE_DEFAULTS: DeviceSettings = {
   zoom: 100,
   performance: 'auto',
   dock: false,
+  screensaverZoom: false,
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -66,6 +72,7 @@ export function parseDevice(raw: unknown): DeviceSettings {
       ? (performance as DevicePerformance)
       : DEVICE_DEFAULTS.performance,
     dock: value['dock'] === true,
+    screensaverZoom: value['screensaverZoom'] === true,
   };
 }
 

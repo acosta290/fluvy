@@ -337,6 +337,8 @@
     "wall.subview_sub": "A wall has no header: a button with the view’s name, or Home Assistant’s header in subviews",
     "wall.subview_button": "Back button",
     "wall.subview_header": "Header",
+    "wall.saver_size": "Screensaver too",
+    "wall.saver_size_sub": "Its clock at this size",
     "lights.title": "Lights",
     "lights.sub": "Where a card says nothing of its own",
     "lights.tint": "Show their colour",

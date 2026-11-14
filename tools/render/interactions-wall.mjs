@@ -2,7 +2,8 @@
  * The wall in a real Chromium against the playground: the page as a wall panel on the real controller —
  * no chrome attribute without a touch, the screensaver after the minutes, the touch that wakes it reaching no
  * card, the corner's button that leaves (there while someone is, gone at rest, the notice and the way back), the
- * corner's hold that pauses when the house chose it (a shorter hold does nothing), and the night.
+ * corner's hold that pauses when the house chose it (a shorter hold does nothing), the night, and the screensaver at
+ * the device's size where the device asks for it (#190).
  *
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-wall.mjs
  */
@@ -224,6 +225,49 @@ const ready = async (page) => {
     `${await header()} · corner ${await cornerTop()}`,
   );
   await page.close();
+}
+
+/* ---------- the screensaver at the device's size, where the device asks for it (#190) ---------- */
+{
+  /** The screensaver's column and its clock, as the screen draws them. */
+  const saver = (page) =>
+    page.locator('fluvy-wall-screensaver .column').evaluate((column) => {
+      const box = column.getBoundingClientRect();
+      const digits = column.firstElementChild.shadowRoot.querySelector('.ck-big, .ck-time');
+      return {
+        left: box.left,
+        width: box.width,
+        height: box.height,
+        digits: digits ? Math.round(digits.getBoundingClientRect().height) : 0,
+      };
+    });
+  const at = async (asked) => {
+    const page = await suite.page(
+      `dashboard=home&wall=1&moment=asleep&zoom=125${asked ? '&saverzoom=1' : ''}`,
+      { viewport: VIEWPORT },
+    );
+    await ready(page);
+    await page.locator('fluvy-wall-screensaver dialog').waitFor();
+    await settle(page, 600);
+    const drawn = await saver(page);
+    await page.close();
+    return drawn;
+  };
+  const kept = await at(false);
+  const sized = await at(true);
+  check(
+    'at 125 % the screensaver keeps 100 % (its 480 column) until the device asks it to follow',
+    kept.width === 480 && kept.height === VIEWPORT.height,
+    JSON.stringify(kept),
+  );
+  check(
+    'asked, it reads at 125 %: a 600 column in the middle of the screen, the whole height, the clock 1.25 × as tall',
+    sized.width === 600 &&
+      sized.left === (VIEWPORT.width - 600) / 2 &&
+      sized.height === VIEWPORT.height &&
+      Math.abs(sized.digits - kept.digits * 1.25) <= 1,
+    JSON.stringify({ kept, sized }),
+  );
 }
 
 await suite.finish();

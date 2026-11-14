@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Duvarda başlık yok: görünümün adını taşıyan bir düğme ya da alt görünümlerde Home Assistant başlığı",
     "wall.subview_button": "Geri düğmesi",
     "wall.subview_header": "Başlık",
+    "wall.saver_size": "Ekran koruyucu da",
+    "wall.saver_size_sub": "Saati bu boyutta",
     "lights.title": "Işıklar",
     "lights.sub": "Bir kart kendisi belirtmediğinde",
     "lights.tint": "Rengini göster",

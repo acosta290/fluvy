@@ -2687,6 +2687,8 @@
     "wall.subview_sub": "Nástenka nemá hlavičku: tlačidlo s názvom zobrazenia alebo hlavička Home Assistantu v podzobrazeniach",
     "wall.subview_button": "Tlačidlo Späť",
     "wall.subview_header": "Hlavička",
+    "wall.saver_size": "Aj šetrič obrazovky",
+    "wall.saver_size_sub": "Jeho hodiny v tejto veľkosti",
     "lights.title": "Svetlá",
     "lights.sub": "Keď karta neurčuje vlastné nastavenie",
     "lights.tint": "Zobraziť ich farbu",

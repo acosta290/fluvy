@@ -2439,6 +2439,8 @@
     "wall.subview_sub": "Tryb ściany nie ma nagłówka: przycisk z nazwą widoku albo nagłówek Home Assistanta w podwidokach",
     "wall.subview_button": "Przycisk Wstecz",
     "wall.subview_header": "Nagłówek",
+    "wall.saver_size": "Także wygaszacz",
+    "wall.saver_size_sub": "Jego zegar w tym rozmiarze",
     "lights.title": "Światła",
     "lights.sub": "Gdy karta nie określa tego sama",
     "lights.tint": "Pokaż ich kolor",

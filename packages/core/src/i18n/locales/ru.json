@@ -2752,6 +2752,8 @@
     "wall.subview_sub": "На стене верхней панели нет: кнопка с названием вида или верхняя панель Home Assistant во вспомогательных видах",
     "wall.subview_button": "Кнопка «Назад»",
     "wall.subview_header": "Верхняя панель",
+    "wall.saver_size": "Заставка тоже",
+    "wall.saver_size_sub": "Часы на ней в этом размере",
     "lights.title": "Свет",
     "lights.sub": "Если в карточке не задано иное",
     "lights.tint": "Показывать их цвет",

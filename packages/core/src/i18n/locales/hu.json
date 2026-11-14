@@ -2697,6 +2697,8 @@
     "wall.subview_sub": "A falnak nincs fejléce: a nézet nevével ellátott gomb, vagy a Home Assistant fejléce az almezőkben",
     "wall.subview_button": "Vissza gomb",
     "wall.subview_header": "Fejléc",
+    "wall.saver_size": "A képernyővédő is",
+    "wall.saver_size_sub": "Az órája ebben a méretben",
     "lights.title": "Világítás",
     "lights.sub": "Ahol a kártya nem mond saját beállítást",
     "lights.tint": "A színük megjelenítése",

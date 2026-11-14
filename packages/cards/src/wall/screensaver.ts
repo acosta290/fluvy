@@ -5,12 +5,14 @@ import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 /*
  * The screensaver: a modal dialog in the browser's top layer (over every dialog of Home Assistant's), the wall's
  * background — or black — with the clock and the weather in a 480 column, or nothing. The touch that wakes the
- * wall ends here: it reaches no card. Escape does not close it (the wall has no keyboard); a touch does.
+ * wall ends here: it reaches no card. Escape does not close it (the wall has no keyboard); a touch does. Where the
+ * device asked for it (#190) the column reads at the device's size, as its cards do.
  */
 export class FluvyWallScreensaver extends LitElement {
   static override properties = {
     clock: { type: Boolean },
     dim: { type: Boolean },
+    zoom: { type: Number },
     weather: { attribute: false },
     hass: { attribute: false },
   };
@@ -48,14 +50,17 @@ export class FluvyWallScreensaver extends LitElement {
         background: #000;
         color: rgb(255 255 255 / 0.6);
       }
+      /* zoomed, the column counts the screen's width and its insets in its own pixels: it fills the screen as it did */
       .column {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        width: min(480px, 100vw - 32px);
+        width: min(480px, 100vw / var(--ws-zoom) - 32px);
         min-height: 100%;
         margin: 0 auto;
-        padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+        padding: calc(env(safe-area-inset-top, 0px) / var(--ws-zoom)) 0
+          calc(env(safe-area-inset-bottom, 0px) / var(--ws-zoom));
+        zoom: var(--ws-zoom);
         --fluvy-card: transparent;
         --fluvy-border: transparent;
       }
@@ -68,6 +73,8 @@ export class FluvyWallScreensaver extends LitElement {
 
   declare clock: boolean;
   declare dim: boolean;
+  /** The size its column reads at: 1, or this device's where it asked the screensaver to follow it. */
+  declare zoom: number;
   declare weather: string | undefined;
   declare hass: HomeAssistant | undefined;
   /** The touch that wakes the wall. */
@@ -80,6 +87,7 @@ export class FluvyWallScreensaver extends LitElement {
     super();
     this.clock = true;
     this.dim = false;
+    this.zoom = 1;
   }
 
   private get dialog(): HTMLDialogElement | null {
@@ -153,7 +161,7 @@ export class FluvyWallScreensaver extends LitElement {
       @click=${this.wake}
       @cancel=${(event: Event) => event.preventDefault()}
     >
-      <div class="column">${this.clockCard()}</div>
+      <div class="column" style="--ws-zoom: ${this.zoom}">${this.clockCard()}</div>
     </dialog>`;
   }
 }

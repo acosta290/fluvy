@@ -45,6 +45,8 @@ export function sleep(options: ScreensaverOptions): () => void {
   saver.dim = options.dim;
   saver.weather = options.weather;
   saver.onWake = options.onWake;
+  // at this device's size where it asked for it (#190), else at 100 % as the wall's other pieces are
+  saver.zoom = options.device?.screensaverZoom ? options.device.zoom / 100 : 1;
   saver.toggleAttribute('preview', options.preview === true);
   const unfollow = follow(saver, options.hass);
   (options.host ?? wallHost(document)).append(saver);

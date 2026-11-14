@@ -2752,6 +2752,8 @@
     "wall.subview_sub": "На стіні немає верхньої панелі: кнопка з назвою вкладки або верхня панель Home Assistant у підвкладках",
     "wall.subview_button": "Кнопка «Назад»",
     "wall.subview_header": "Верхня панель",
+    "wall.saver_size": "Заставка також",
+    "wall.saver_size_sub": "Годинник на ній у цьому розмірі",
     "lights.title": "Світло",
     "lights.sub": "Якщо в картці не задано інше",
     "lights.tint": "Показувати їхній колір",

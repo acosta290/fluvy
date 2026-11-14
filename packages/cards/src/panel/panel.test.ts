@@ -717,15 +717,65 @@ describe('the settings panel', () => {
     const saver = root.querySelector('fluvy-wall-screensaver') as HTMLElement & {
       clock: boolean;
       dim: boolean;
+      zoom: number;
     };
     expect(saver).not.toBeNull();
     expect(saver.hasAttribute('preview')).toBe(true); // a desktop keeps its pointer
     expect(saver.clock).toBe(true);
     expect(saver.dim).toBe(false);
+    expect(saver.zoom).toBe(1); // at 100 % unless the device asks it to follow its size (#190)
     saver.shadowRoot!.querySelector('dialog')!.dispatchEvent(new MouseEvent('click'));
     await new Promise((resolve) => setTimeout(resolve, 260)); // its fade
     expect(root.querySelector('fluvy-wall-screensaver')).toBeNull();
     panel.remove();
+  });
+
+  it('offers the screensaver at this device’s size where it is not 100 %, off until asked, its preview following it (#190)', async () => {
+    localStorage.removeItem('fluvy:device');
+    const { panel, root, row, chip, button, written, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    const saverRow = () => row('Screensaver too');
+    // at 100 % it has nothing to follow
+    expect(saverRow()).toBeUndefined();
+    chip('125 %')!.click();
+    await settle();
+    expect(saverRow()?.querySelector('.fv-switch')?.getAttribute('aria-checked')).toBe('false');
+    saverRow()!.querySelector<HTMLElement>('.fv-hit')!.click();
+    await settle();
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('2 changes');
+    // the preview reads at the size being chosen, before it is saved
+    row('See the screensaver')!.click();
+    for (
+      let waited = 0;
+      waited < 2000 && !root.querySelector('fluvy-wall-screensaver');
+      waited += 20
+    )
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    await settle();
+    const saver = root.querySelector('fluvy-wall-screensaver') as HTMLElement & {
+      zoom: number;
+      updateComplete: Promise<boolean>;
+    };
+    await saver.updateComplete;
+    expect(saver.zoom).toBe(1.25);
+    expect(
+      saver.shadowRoot!.querySelector<HTMLElement>('.column')!.style.getPropertyValue('--ws-zoom'),
+    ).toBe('1.25');
+    saver.shadowRoot!.querySelector('dialog')!.dispatchEvent(new MouseEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 260));
+    button('Save')!.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await settle();
+    // the device's own memory, nothing of the house's
+    expect(written).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('fluvy:device') ?? '{}')).toMatchObject({
+      zoom: 125,
+      screensaverZoom: true,
+    });
+    panel.remove();
+    localStorage.removeItem('fluvy:device');
+    document.documentElement.style.removeProperty('--fluvy-zoom');
   });
 
   it('draws the wall preview in the night the settings give, veiled as the night darkens it', async () => {
@@ -2344,8 +2394,9 @@ describe('the settings panel', () => {
     URL.createObjectURL = (blob: Blob) => ((file = blob), 'blob:fluvy');
     const click = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = () => undefined;
-    // what this screen keeps for itself (#173's sidebar beside the page among it) travels with no file
-    writeDevice({ dock: true, zoom: 125 });
+    // what this screen keeps for itself (#173's sidebar beside the page, #190's screensaver at its size among it)
+    // travels with no file
+    writeDevice({ dock: true, zoom: 125, screensaverZoom: true });
     const ops = panel as unknown as { context(): PanelContext };
     exportSettings(panel as unknown as FluvyPanel, ops.context());
     URL.createObjectURL = create;
@@ -2361,6 +2412,7 @@ describe('the settings panel', () => {
       'version',
     ]);
     expect(JSON.stringify(exported)).not.toContain('dock');
+    expect(JSON.stringify(exported)).not.toContain('screensaverZoom');
     expect(exported['house']).toMatchObject({
       palette: 'volt',
       shape: 'round',

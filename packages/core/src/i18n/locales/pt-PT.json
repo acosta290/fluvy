@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Uma parede não tem cabeçalho: use um botão com o nome da vista ou o cabeçalho do Home Assistant nas vistas secundárias",
     "wall.subview_button": "Botão voltar",
     "wall.subview_header": "Cabeçalho",
+    "wall.saver_size": "A proteção de ecrã também",
+    "wall.saver_size_sub": "O seu relógio neste tamanho",
     "lights.title": "Luzes",
     "lights.sub": "Onde um cartão não indica a cor",
     "lights.tint": "Mostrar a cor",

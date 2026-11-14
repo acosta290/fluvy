@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Una parete non ha intestazione: un pulsante con il nome della vista, o l’intestazione di Home Assistant nelle sottoviste",
     "wall.subview_button": "Tasto indietro",
     "wall.subview_header": "Intestazione",
+    "wall.saver_size": "Anche il salvaschermo",
+    "wall.saver_size_sub": "Il suo orologio a questa dimensione",
     "lights.title": "Luci",
     "lights.sub": "Dove una scheda non dice nulla",
     "lights.tint": "Mostra il colore",

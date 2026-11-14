@@ -1938,7 +1938,7 @@ export function wall(ctx: PanelContext): TemplateResult {
         // the switch is this browser's own, kept in no house setting: while it is off, what turning it on does
         isWall ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('wall.use_hint')}</p>`
       }
-      ${deviceSize(ctx)}
+      ${deviceSize(ctx)} ${saverSize(ctx)}
       <p class="fv-label pn-label">${ctx.t('wall.address')}</p>
       <div class="pn-address">
         <span class="pn-address__url" data-name>${address}</span>
@@ -2162,6 +2162,24 @@ function deviceSize(ctx: PanelContext): TemplateResult {
       // five sizes on one line where the column holds them ("100 %" + the pill's sides), else three over two
       ctx.wide ? 5 : 3,
     )}`;
+}
+
+/**
+ * The screensaver at this device's size (1.21, #190), under the size on the Wall tab's device card, its own memory too:
+ * off, it keeps 100 % as the wall's corner and toast do. At 100 % it has nothing to follow, and is not shown.
+ */
+function saverSize(ctx: PanelContext): TemplateResult | typeof nothing {
+  if ((ctx.deviceEdit.zoom ?? ctx.device.zoom) === 100) return nothing;
+  return html`<div class="pn-rows">
+    ${listRow({
+      icon: 'clock',
+      title: ctx.t('wall.saver_size'),
+      sub: ctx.t('wall.saver_size_sub'),
+      trailing: 'switch',
+      on: ctx.deviceEdit.screensaverZoom ?? ctx.device.screensaverZoom,
+      onToggle: (on) => ctx.editDevice({ screensaverZoom: on }),
+    })}
+  </div>`;
 }
 
 /* ---------- preferences ---------- */

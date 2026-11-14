@@ -17,7 +17,8 @@ import { createMemoryLook } from './look-memory.js';
  * look, this page made a wall (`fluvy:device`) on a dashboard the mock's panels list. `moment=` puts it where a
  * screenshot wants it: awake (the corner alone), asleep (the screensaver), dim (the screensaver in black),
  * paused (the toast), corner (the corner mid-hold), left (out of the wall, the notice with the way back), night
- * (dark with the night veil). `exit=hold` chooses the hidden hold; the button is the default.
+ * (dark with the night veil). `exit=hold` chooses the hidden hold; the button is the default. `saverzoom=1` is this
+ * device's screensaver at its size (#190), with `?dashboard=…&zoom=125` the size.
  */
 export type WallMoment = 'awake' | 'asleep' | 'dim' | 'paused' | 'corner' | 'left' | 'night';
 
@@ -82,13 +83,13 @@ export async function mountWall(
   moment: WallMoment,
   wall: Partial<WallSettings>,
 ): Promise<WallFacade> {
-  writeDevice({ wall: true });
+  const params = new URLSearchParams(location.search);
+  writeDevice({ wall: true, screensaverZoom: params.get('saverzoom') === '1' });
   sessionStorage.removeItem('fluvy:wall-paused');
   // the page is the wall dashboard: the controller reads the dashboard off the address
   if (!location.pathname.startsWith('/fluvy-wall'))
     history.replaceState(null, '', `/fluvy-wall/wall${location.search}`);
   const look = createMemoryLook(doc, dark);
-  const params = new URLSearchParams(location.search);
   // the playground's canvas stands for Home Assistant's view: on a wall it wears the wall's background, as the view's
   // background does (a dashboard's mock draws that one itself: `hui-view-background`)
   if (!params.has('dashboard'))

@@ -1423,6 +1423,8 @@
     "wall.subview_sub": "Eine Wand hat keine Kopfzeile: eine Taste mit dem Namen der Ansicht oder die Kopfzeile von Home Assistant in Unteransichten",
     "wall.subview_button": "Zurück-Taste",
     "wall.subview_header": "Kopfzeile",
+    "wall.saver_size": "Auch der Bildschirmschoner",
+    "wall.saver_size_sub": "Seine Uhr in dieser Größe",
     "lights.title": "Lichter",
     "lights.sub": "Wo eine Karte nichts Eigenes festlegt",
     "lights.tint": "Ihre Farbe zeigen",

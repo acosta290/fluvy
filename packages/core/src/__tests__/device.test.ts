@@ -14,8 +14,15 @@ import {
 } from '../settings/device.js';
 import { HOUSE_DEFAULTS, PERSONAL_DEFAULTS, resolveSettings } from '../settings/schema.js';
 
-/** A device as it is from the factory: no wall, at 100 %, Auto, Home Assistant's own sidebar. */
-const FACTORY = { version: 1, wall: false, zoom: 100, performance: 'auto', dock: false } as const;
+/** A device as it is from the factory: no wall, at 100 %, Auto, Home Assistant's own sidebar, a screensaver at 100 %. */
+const FACTORY = {
+  version: 1,
+  wall: false,
+  zoom: 100,
+  performance: 'auto',
+  dock: false,
+  screensaverZoom: false,
+} as const;
 
 describe('what this device is', () => {
   beforeEach(() => localStorage.clear());
@@ -115,6 +122,23 @@ describe('how hard this device works (Lite, #165)', () => {
     expect(readDevice().dock).toBe(true);
     expect(writeDevice({ wall: false }).dock).toBe(true);
     expect(writeDevice({ dock: false }).dock).toBe(false);
+  });
+
+  it('keeps its screensaver at 100 % unless it asks it to follow its size (#190), off where a 1.20 device stored none', () => {
+    localStorage.setItem(
+      DEVICE_KEY,
+      '{"version":1,"wall":true,"zoom":125,"performance":"auto","dock":false}',
+    );
+    expect(readDevice()).toEqual({ ...FACTORY, wall: true, zoom: 125 });
+    expect(writeDevice({ screensaverZoom: true })).toEqual({
+      ...FACTORY,
+      wall: true,
+      zoom: 125,
+      screensaverZoom: true,
+    });
+    expect(writeDevice({ zoom: 150 }).screensaverZoom).toBe(true);
+    expect(parseDevice({ screensaverZoom: 'yes' }).screensaverZoom).toBe(false);
+    expect(writeDevice({ screensaverZoom: false }).screensaverZoom).toBe(false);
   });
 
   it('draws Lite where the device chose it, never where it chose Full, and for Auto where the system asks for less motion or memory is short', () => {
