@@ -51,9 +51,13 @@ export function withoutPart(edit: DashboardEdit, id: string): DashboardEdit {
   return next;
 }
 
-/** An edit without what a person changed on one view: its parts', and its own entry (its cards of their own too). */
+/**
+ * An edit without what a person changed on one view: what it took from other views (one that was moved here goes
+ * back to its own), its parts', and its own entry (its cards of their own too).
+ */
 export function withoutView(edit: DashboardEdit, view: string): DashboardEdit {
-  let next = withoutPart(edit, view);
+  let next = alsoOf(edit, view).reduce((kept, id) => withoutAlso(kept, view, id), edit);
+  next = withoutPart(next, view);
   next = patched(next, 'views', view, clearing(next.views?.[view]));
   return next;
 }

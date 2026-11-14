@@ -772,6 +772,23 @@ describe('a dashboard’s `edit` (#170)', () => {
       // named twice, it is shown once
       const twice = await built('home', { views: { home: { also: [KITCHEN, KITCHEN] } } }, cooking);
       expect(twice.of('home', `also:${KITCHEN}`)).toHaveLength(1);
+      // a view the dashboard's own options leave out is no view of it: nothing is taken from it, nor from the
+      // rooms' pages once the Rooms view is left out (Customise lists none of their cards)
+      for (const hide of [['media'], ['rooms']] as const) {
+        const left = await built('home', undefined, cooking, { hide });
+        const asked = await built(
+          'home',
+          { views: { home: { also: ['media/media', KITCHEN] } } },
+          cooking,
+          { hide },
+        );
+        const expected = hide[0] === 'media' ? [`also:${KITCHEN}`] : ['also:media/media'];
+        expect(
+          [...new Set(asked.laid('home').filter((id) => id.startsWith('also:')))],
+          hide[0],
+        ).toEqual(expected);
+        expect(asked.views.map((v) => v.path)).toEqual(left.views.map((v) => v.path));
+      }
     });
   });
 

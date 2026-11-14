@@ -31,9 +31,17 @@ interface Source {
   readonly build: (ctx: StrategyContext) => unknown;
 }
 
-/** The views of a template's dashboard a part can be taken from, by their paths: its tabs, its rooms' pages, every appliance's. */
-function sourcesOf(template: Template, ctx: StrategyContext): Map<string, Source> {
-  const specs = viewsOf(template, ctx);
+/**
+ * The views of a template's dashboard a part can be taken from, by their paths: its tabs, its rooms' pages, every
+ * appliance's. All but the views the dashboard's own options leave out (`left`: its `hide`), which are no views of
+ * it — Customise lists none of their cards; a view a person hid in Customise still gives its parts.
+ */
+function sourcesOf(
+  template: Template,
+  ctx: StrategyContext,
+  left: ReadonlySet<string>,
+): Map<string, Source> {
+  const specs = viewsOf(template, ctx).filter((spec, index) => index === 0 || !left.has(spec.key));
   const sources = new Map<string, Source>();
   for (const spec of specs)
     sources.set(spec.key, {
@@ -41,7 +49,7 @@ function sourcesOf(template: Template, ctx: StrategyContext): Map<string, Source
       icon: spec.icon,
       build: spec.build,
     });
-  // every room the template opens, whichever of its tabs the dashboard keeps
+  // every room the template opens from those tabs, whichever of them a person hid
   const tabs = specs.map((spec) => spec.key);
   for (const { area, back } of template.rooms?.(ctx, tabs) ?? [])
     sources.set(`room-${area.area_id}`, {
@@ -106,7 +114,8 @@ export async function generateWith(
       const part = `also:${id}`;
       const cut = id.indexOf('/');
       const from = id.slice(0, cut);
-      const source = from === path ? undefined : (sources ??= sourcesOf(template, ctx)).get(from);
+      sources ??= sourcesOf(template, ctx, new Set(config.hide ?? []));
+      const source = from === path ? undefined : sources.get(from);
       if (!source) return { id: part, cards: [] };
       const more = moreHost(from, source.title, source.icon, template.columns, showing(edit, id), {
         on: { path, title, icon },

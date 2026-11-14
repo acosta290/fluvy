@@ -234,7 +234,10 @@ pnpm --filter @fluvy/playground dev      # http://127.0.0.1:5183/
 own tokens), `palette=volt`, `shape=round`, `accent=%23ff4a1a&character=vivid&base=cool`, `compare=linen,volt`,
 `panel=appearance&state=pending,guest` (`panel=preferences&state=menu` opens the language menu; `nopopover=1` takes
 the Popover API away, as an older WebView has none; `panel=dashboard&state=dashboards` has every template's dashboard
-created, `recreate` its Recreate row armed; `panel=wall&state=wall` makes this browser a wall panel), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
+created, `recreate` its Recreate row armed; `customise` opens Customise on the home dashboard, on the demo home, and
+`tabs`, `drag`, `centre`, `add`, `cards` and `new` beside it are its moments: the tabs unfolded, a row lifted, the
+rooms' scenes shown on Home, the sheet "Add a card" on each of its ways; `state=pencil` is Home Assistant's "Edit
+dashboard" dialog with the strategy's form; `panel=wall&state=wall` makes this browser a wall panel), `sheet=home&wall=1&moment=awake|asleep|dim|paused|corner|night` (the page as a
 wall panel on the real controller: `after=` minutes, `bg=wall` the mesh), `activity=1&moment=burst`, `history=1&moment=week`,
 `frames=none` (the house with no frame drawn: a suite mounts its own cards in it, as `interactions-unavailable.mjs` its
 live and unavailable twins), `dashboard=home&viewtheme=Fluvy` (the view as Home Assistant themes a view, a section or a

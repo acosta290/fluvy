@@ -165,14 +165,12 @@ describe('a dashboard’s edit as Customise changes it (#170)', () => {
       [`home/also:${scenes}`]: { order: 0 },
       [scenes]: { hidden: true, options: { title: 'Cook' } },
     });
-    // the last one leaves no list, and a view's reset takes them all with their places
+    // the last one leaves no list
     expect(withoutAlso({ views: { home: { also: [scenes] } } }, 'home', scenes)).toEqual({});
+    // a view's reset takes them all with their places, and what it had moved goes back too: nothing is left nowhere
     expect(withoutView(edit, 'home')).toEqual({
       views: { climate: { also: ['media/media'] } },
-      cards: {
-        [scenes]: { hidden: true, options: { title: 'Cook' } },
-        'media/media': { hidden: true },
-      },
+      cards: { [scenes]: { options: { title: 'Cook' } }, 'media/media': { hidden: true } },
     });
   });
 });

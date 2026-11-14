@@ -265,8 +265,10 @@ const placeOf = (move: Move, at: number, count: number): number =>
 /**
  * Customise (#170): an automatic dashboard's views and cards as rows — hidden, moved, tuned, their lists thinned out
  * and added to, cards of the person's own after them — every change an edit of the dashboard's `edit`, laid over what
- * is there and saved from the panel's bar with the rest. It keeps what it shows (the dashboard as it was read, the
- * open view, the open row, the armed reset, the options' sheet) and draws inside the panel, in its language.
+ * is there and saved from the panel's bar with the rest. Since 1.21 (#188) a row is dragged to its place by its
+ * handle or sent to an end by a button, a view of many cards is searched, and a card is added from a sheet: one of
+ * the dashboard's other views', one of Fluvy's in its own form, or YAML. It keeps what it shows (the dashboard as it
+ * was read, the open view, the open row, the armed reset, the sheet) and draws inside the panel, in its language.
  */
 export class Customiser {
   private ctx: PanelContext | undefined;

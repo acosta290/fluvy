@@ -285,7 +285,7 @@ Nothing is saved on a tap: the bar at the foot counts the changes ("3 changes") 
 wide screen the view is drawn beside its rows as it will be, on the real house.
 
 **Scenes first on Home.** A command centre at the top of the dashboard takes two steps. Open *Customise*, tap the
-*Scenes* row of the Home view and press *To the top* (or drag it there): it is now read first. For the scenes of
+*Scenes* row of the Home view and press *Move to the top* (or drag it there): it is now read first. For the scenes of
 single rooms, tap *Add a card*, search "scenes" under *This dashboard*, switch on the kitchen's and the living
 room's, press *Show here too*, and drag the new rows up beside the first. Each can be titled after its room in its
 *Options*. A script or an automation joins a Scenes card as an entity (*Add an entity* under its row).
@@ -350,11 +350,13 @@ parts that have none keep the house's order round those that do. A view's column
 moved, so they still end level; on the wall, a card joins the column of the card it now follows.
 
 **A card of another view.** `also` names cards by their ids on their own views (`room-kitchen/scenes`,
-`lights/lights:<area id>`, `media/media`), from any tab, room page or the appliances' page of the same dashboard. The
+`lights/lights:<area id>`, `media/media`), from any tab, room page or the appliances' page of the same dashboard
+(a view the dashboard's *Views* option leaves out gives none: it is no view of it). The
 strategy builds each on its own view a second time, with whatever you changed on it there, and lays it after the
 view's own and your cards; on this view it is the part `<view>/also:<id>`, which takes an `order` and `options` of
 its own. A list shown this way keeps its cap, and its "N more" row opens the whole list from the view that shows it
-and comes back there. Hidden on its own view (`cards.<id>.hidden`), it shows here alone: that is *Move here*.
+and comes back there. Hidden on its own view (`cards.<id>.hidden`), it shows here alone: that is *Move here*;
+*Remove*, or a reset of the view, shows it on its own view again.
 
 **What the house no longer has.** An id that matches nothing (a room that was deleted, a card of `also` whose view is
 gone) is ignored and kept: it draws nothing, it is never an error on the dashboard, it works again if the room comes

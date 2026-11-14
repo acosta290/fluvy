@@ -4,7 +4,8 @@ import { sheetInsets } from '../../shared/sheet-insets.js';
 /**
  * Customise on top of the panel's language: a view's parts as rows that unfold (the open one a panel on the page's
  * ground, the 16 of an inner tile, its buttons on the card's fill as buttons on the page are), a list's entities as
- * compact rows inside it, and the options' sheet — the house's bottom sheet, over the page in the top layer.
+ * compact rows inside it, each row's handle in the gutter and the row lifted while it is dragged, and the sheet —
+ * the house's bottom sheet, over the page in the top layer: a card's form, or the ways to add a card.
  */
 export const customiseStyles = css`
   /* what the section is for, under its head: prose on the card's own rhythm */

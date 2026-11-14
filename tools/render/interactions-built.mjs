@@ -12,6 +12,8 @@
  *   loaded;
  * - a card every page carries keeps its editor's form in the forms chunk: no dashboard fetches it, and the card's
  *   editor brings it, worded;
+ * - an automatic dashboard's strategy answers Home Assistant's pencil with its form (#188): the settings panel's chunk
+ *   is fetched then and no sooner, and the form says the panel's words;
  * - on a page that wears another theme, the patches leave Home Assistant's stand-in elements as Home Assistant draws
  *   them (a chart's font and colour, an icon's path, no attribute of ours, no Inter or sheet in HACS's frame, the
  *   page's chrome), and once Home Assistant applies the Fluvy theme they take Fluvy's; HACS's frame is told where the
@@ -240,6 +242,38 @@ for (const lang of LANGUAGES) {
   check(
     `${lang}: …from the forms chunk`,
     (await fetched()).some((name) => name.includes('/chunks/forms-')),
+  );
+
+  // Home Assistant's pencil on an automatic dashboard, as its "Edit dashboard" dialog asks the strategy (#188)
+  const pencil = await tab.evaluate(async (lang) => {
+    const form = await window.customElements
+      .get('ll-strategy-dashboard-fluvy-home')
+      .getConfigElement();
+    form.hass = { ...window.standInHass(lang), panelUrl: 'fluvy-home' };
+    form.setConfig({ type: 'custom:fluvy-home' });
+    document.body.replaceChildren(form);
+    await form.updateComplete;
+    const link = form.shadowRoot.querySelector('a');
+    return {
+      tag: form.localName,
+      href: link.getAttribute('href'),
+      title: link.querySelector('.title').textContent,
+      sub: link.querySelector('.sub').textContent,
+      views: form.label({ name: 'views' }),
+    };
+  }, lang);
+  check(
+    `${lang}: the pencil's form leads to Customise on its dashboard, in the panel's words`,
+    pencil.tag === 'fluvy-strategy-form' &&
+      pencil.href === '/fluvy/dashboard/fluvy-home' &&
+      pencil.title === words.panel['dashboard.customise'] &&
+      pencil.sub === words.panel['dashboard.customise_sub'] &&
+      pencil.views === words.panel['dashboard.views'],
+    JSON.stringify(pencil),
+  );
+  check(
+    `${lang}: …from the settings panel's chunk, fetched when the pencil is pressed`,
+    (await fetched()).some((name) => name.includes('/chunks/panel-')),
   );
   check(`${lang}: no page error`, errors.length === 0, errors.join(' | '));
   await tab.close();
