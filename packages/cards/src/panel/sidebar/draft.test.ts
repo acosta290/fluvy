@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { alike } from '../model.js';
 import {
   hasMenu,
   kindOf,
@@ -84,6 +85,36 @@ describe('a dashboard’s sidebar as the panel edits it', () => {
       style: 'card',
     });
     expect(withKey({ collapsible: true }, 'collapsible', false, false)).toEqual({});
+  });
+
+  it('keeps a key where it stood: a list handed back as it was is the table it was', () => {
+    const raw = { header: { cards: [{ type: 'clock' }] }, menu: { items: 'views' }, cards: [] };
+    const again = withList(raw, 'header', [{ type: 'clock' }]);
+    expect(JSON.stringify(again)).toBe(JSON.stringify(raw));
+    expect(Object.keys(withKey(raw, 'position', 'end', 'start'))).toEqual([
+      'header',
+      'menu',
+      'cards',
+      'position',
+    ]);
+  });
+
+  it('is the same sidebar whatever order its keys were written in: an editor’s own order is no change to save', () => {
+    const saved = {
+      header: { cards: [{ type: 'clock', face: 'digital' }] },
+      menu: { items: 'views' },
+    };
+    const handed = {
+      menu: { items: 'views' },
+      header: { cards: [{ face: 'digital', type: 'clock' }] },
+    };
+    expect(alike(saved, handed)).toBe(true);
+    expect(alike(saved, { ...handed, position: 'end' })).toBe(false);
+    // a list's order is its own
+    expect(
+      alike({ cards: [{ type: 'a' }, { type: 'b' }] }, { cards: [{ type: 'b' }, { type: 'a' }] }),
+    ).toBe(false);
+    expect(alike(null, null)).toBe(true);
   });
 
   it('writes a device’s width in px beside the others as they stand, and no width where each is its default', () => {

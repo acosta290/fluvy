@@ -343,6 +343,20 @@ export function swatchColors(choice: PaletteChoice, mode: PaletteMode) {
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
+/** A value written with every table's keys in one order: what two tables that hold the same both read as. */
+const ordered = (value: unknown): string =>
+  JSON.stringify(value, (_key, held: unknown) =>
+    held && typeof held === 'object' && !Array.isArray(held)
+      ? Object.fromEntries(Object.entries(held).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : held,
+  );
+
+/**
+ * Whether two configurations hold the same, whatever order their keys were written in: Home Assistant's editors hand
+ * a card back with its keys in their own order, which is no change of it.
+ */
+export const alike = (a: unknown, b: unknown): boolean => ordered(a) === ordered(b);
+
 /** The part of an edit that differs from what is saved (an edit back to the saved value is no edit). */
 export function unsaved<T extends object>(edit: T, saved: object): T {
   const kept: Record<string, unknown> = {};

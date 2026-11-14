@@ -51,6 +51,7 @@ import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.
 import { knownPalettes, matchOf } from './palettes.js';
 
 import {
+  alike,
   changeLines,
   configWith,
   sameLook,
@@ -662,7 +663,7 @@ export class FluvyPanel extends LitElement {
     this.sideEdits = Object.fromEntries(
       Object.entries(this.sideEdits).filter(([urlPath, sidebar]) => {
         const saved = this.dashboards.find((d) => d.urlPath === urlPath);
-        return saved && JSON.stringify(saved.sidebar ?? null) !== JSON.stringify(sidebar);
+        return saved && !alike(saved.sidebar ?? null, sidebar);
       }),
     );
   }
@@ -852,8 +853,7 @@ export class FluvyPanel extends LitElement {
         if (!saved?.stored || saved.yaml) return;
         const next = { ...this.sideEdits };
         // back to what the dashboard holds is no edit
-        if (JSON.stringify(sidebar ?? null) === JSON.stringify(saved.sidebar ?? null))
-          delete next[urlPath];
+        if (alike(sidebar ?? null, saved.sidebar ?? null)) delete next[urlPath];
         else next[urlPath] = sidebar ?? null;
         this.sideEdits = next;
       },

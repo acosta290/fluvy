@@ -79,10 +79,16 @@ export const withContent = (raw: Raw | undefined, content: Raw): Raw => ({
   ...content,
 });
 
-/** A key as chosen; one chosen as its default goes (`fallback`: what the sidebar does without the key). */
+/**
+ * A key as chosen, where it stood (a new one last); one chosen as its default goes (`fallback`: what the sidebar does
+ * without the key). Its place is kept so that a list Home Assistant's editor hands back as it was is the table it was.
+ */
 export const withKey = (raw: Raw, key: string, value: unknown, fallback: unknown): Raw => {
-  const rest = Object.fromEntries(Object.entries(raw).filter(([own]) => own !== key));
-  return same(value, fallback) ? rest : { ...rest, [key]: value };
+  if (same(value, fallback))
+    return Object.fromEntries(Object.entries(raw).filter(([own]) => own !== key));
+  return key in raw
+    ? Object.fromEntries(Object.entries(raw).map(([own, old]) => [own, own === key ? value : old]))
+    : { ...raw, [key]: value };
 };
 
 /** A device's width in px; undefined where it is a share of the dashboard (the panel offers px alone). */
