@@ -1595,6 +1595,8 @@
     "later": "Arkaya",
     "up": "Yukarı taşı",
     "down": "Aşağı taşı",
+    "top": "En üste taşı",
+    "bottom": "En alta taşı",
     "options": "Seçenekler",
     "reset_card": "Yeniden dokun: bu kartı yine ev çizer",
     "entities": "Varlıklar",

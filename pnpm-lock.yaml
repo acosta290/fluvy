@@ -97,6 +97,12 @@ importers:
       '@mdi/js':
         specifier: 7.4.47
         version: 7.4.47
+      '@types/sortablejs':
+        specifier: 1.15.9
+        version: 1.15.9
+      sortablejs:
+        specifier: 1.15.6
+        version: 1.15.6
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -795,6 +801,9 @@ packages:
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
 
+  '@types/sortablejs@1.15.9':
+    resolution: {integrity: sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==}
+
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
@@ -1286,6 +1295,9 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  sortablejs@1.15.6:
+    resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
 
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
@@ -1783,6 +1795,8 @@ snapshots:
   '@types/node@24.19.2':
     dependencies:
       undici-types: 7.24.6
+
+  '@types/sortablejs@1.15.9': {}
 
   '@types/trusted-types@2.0.7': {}
 
@@ -2301,6 +2315,8 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  sortablejs@1.15.6: {}
 
   source-map-js@1.2.2: {}
 

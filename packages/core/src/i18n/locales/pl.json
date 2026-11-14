@@ -2612,6 +2612,8 @@
     "later": "Później",
     "up": "Przesuń w górę",
     "down": "Przesuń w dół",
+    "top": "Przesuń na samą górę",
+    "bottom": "Przesuń na sam dół",
     "options": "Opcje",
     "reset_card": "Dotknij ponownie, a tę kartę znów narysuje dom",
     "entities": "Encje",

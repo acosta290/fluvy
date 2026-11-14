@@ -3,10 +3,10 @@ import { edited, pinned } from '../../strategy/edit.js';
 import type { DashboardEdit } from '../../strategy/types.js';
 import {
   leading,
+  moved,
   optionsOf,
   patched,
   pinsFor,
-  stepped,
   withoutOwn,
   withoutPart,
   withoutView,
@@ -143,11 +143,39 @@ describe('the places a person’s order needs (#170)', () => {
   });
 
   it('steps a part past the ones nobody sees', () => {
-    const seen = (id: string): boolean => id !== 'c' && id !== 'd';
-    expect(stepped(ids, 'e', -1, seen)).toEqual(['a', 'e', 'b', 'c', 'd', 'f']);
-    expect(stepped(ids, 'b', 1, seen)).toEqual(['a', 'c', 'd', 'e', 'b', 'f']);
-    expect(stepped(ids, 'a', -1, seen)).toEqual(ids);
-    expect(stepped(ids, 'f', 1, seen)).toEqual(ids);
+    const seen = ['a', 'b', 'e', 'f'];
+    expect(moved(ids, seen, 'e', 1)).toEqual(['a', 'e', 'b', 'c', 'd', 'f']);
+    expect(moved(ids, seen, 'b', 2)).toEqual(['a', 'c', 'd', 'e', 'b', 'f']);
+    expect(moved(ids, seen, 'a', -1)).toEqual(ids);
+    expect(moved(ids, seen, 'f', 4)).toEqual(ids);
+    // one nobody sees, or one that is no part of the list, moves nothing
+    expect(moved(ids, seen, 'c', 0)).toEqual(ids);
+    expect(moved(ids, seen, 'z', 0)).toEqual(ids);
+  });
+
+  it('drops a row on any place among those seen, and a step back is the house’s order again', () => {
+    const seen = ['a', 'b', 'e', 'f'];
+    // dragged down two rows: right after the one it now follows
+    expect(moved(ids, seen, 'a', 2)).toEqual(['b', 'c', 'd', 'e', 'a', 'f']);
+    // dragged up two rows: right before the one it now leads
+    expect(moved(ids, seen, 'f', 1)).toEqual(['a', 'f', 'b', 'c', 'd', 'e']);
+    const down = moved(ids, seen, 'e', 3);
+    expect(down).toEqual(['a', 'b', 'c', 'd', 'f', 'e']);
+    expect(moved(down, ['a', 'b', 'f', 'e'], 'e', 2)).toEqual(ids);
+  });
+
+  it('puts a part at the top or the bottom with one place, past the ones nobody sees', () => {
+    // the first and the last of the list are not seen: an end is the list's all the same
+    const seen = ['b', 'c', 'd', 'e'];
+    const top = moved(ids, seen, 'e', 0);
+    expect(top).toEqual(['e', 'a', 'b', 'c', 'd', 'f']);
+    expect([...pinsFor(ids, top)]).toEqual([['e', 0]]);
+    const bottom = moved(ids, seen, 'b', seen.length - 1);
+    expect(bottom).toEqual(['a', 'c', 'd', 'e', 'f', 'b']);
+    expect([...pinsFor(ids, bottom)]).toEqual([['b', -1]]);
+    // sixteen parts, the last put first: one place, where fifteen steps were pressed before
+    const many = Array.from({ length: 16 }, (_, index) => `part${index}`);
+    expect([...pinsFor(many, moved(many, many, 'part15', 0))]).toEqual([['part15', 0]]);
   });
 });
 

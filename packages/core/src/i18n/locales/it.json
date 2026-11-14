@@ -1595,6 +1595,8 @@
     "later": "Dopo",
     "up": "Sposta su",
     "down": "Sposta giù",
+    "top": "Sposta in cima",
+    "bottom": "Sposta in fondo",
     "options": "Opzioni",
     "reset_card": "Tocca di nuovo perché la casa torni a disegnare questa scheda",
     "entities": "Entità",

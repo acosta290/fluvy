@@ -1595,6 +1595,8 @@
     "later": "Plus tard",
     "up": "Monter",
     "down": "Descendre",
+    "top": "Monter tout en haut",
+    "bottom": "Descendre tout en bas",
     "options": "Options",
     "reset_card": "Touchez encore pour que la maison dessine à nouveau cette carte",
     "entities": "Entités",

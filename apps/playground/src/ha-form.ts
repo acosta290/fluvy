@@ -1,5 +1,6 @@
 import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { defineSortableStub } from './ha-sortable.js';
 
 type Labeler = (schema: HaFormSchemaItem, localize?: (key: string) => string) => string | undefined;
 
@@ -202,6 +203,5 @@ class MockForm extends LitElement {
 /** Defines the stand-ins where Home Assistant's own are not there (always, in the playground). */
 export function defineFormStub(): void {
   if (!customElements.get('ha-form')) customElements.define('ha-form', MockForm);
-  if (!customElements.get('ha-sortable'))
-    customElements.define('ha-sortable', class extends HTMLElement {});
+  defineSortableStub();
 }

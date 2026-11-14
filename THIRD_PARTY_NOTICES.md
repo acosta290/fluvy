@@ -196,6 +196,9 @@ distributed under the Apache 2.0 license.
   https://github.com/Templarian/MaterialDesign-JS
 - **culori** 4.0.2 — MIT, © Dan Burzo. The OKLCH maths behind the palettes; only the derived hex values reach the
   theme and the bundle. https://github.com/Evercoder/culori
+- **SortableJS** 1.15.6 — MIT, © the SortableJS contributors. The library behind Home Assistant's own `ha-sortable`:
+  the playground stands that element in with it, so a row dragged there is dragged as it is at home. Home Assistant
+  brings its own; nothing of it reaches the release. https://github.com/SortableJS/Sortable
 - Development tooling (Vite, Rollup, terser, TypeScript, Vitest, happy-dom, tsx, ESLint, Prettier, Playwright,
   resvg, ruff) under MIT, Apache-2.0 and MPL-2.0 licences, listed with their licence texts in `node_modules` after
   `pnpm install`.

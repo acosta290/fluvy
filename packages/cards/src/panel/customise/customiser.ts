@@ -4,14 +4,18 @@ import { domainOf, type HomeAssistant, localize, strings } from '@fluvy/core';
 import {
   actions,
   type ActionItem,
+  addGlyphs,
   badge,
   button,
   emptyState,
   glyph,
   head,
+  icon,
   listRow,
+  reducedMotion,
   round,
   toggle,
+  type Tone,
 } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
@@ -26,10 +30,10 @@ import type { DashboardInfo, PanelContext } from '../model.js';
 import { choice } from '../sections.js';
 import {
   leading,
+  moved,
   optionsOf,
   patched,
   pinsFor,
-  stepped,
   withoutOwn,
   withoutPart,
   withoutView,
@@ -48,6 +52,13 @@ import {
 } from './outline.js';
 
 const say = strings('customise');
+
+/** Customise's own glyphs, in the set's hand: a row's handle (six dots), and a chevron against the bar of an end. */
+addGlyphs({
+  grip: '<g fill="currentColor" stroke="none"><circle cx="9.5" cy="6" r="1.4"/><circle cx="14.5" cy="6" r="1.4"/><circle cx="9.5" cy="12" r="1.4"/><circle cx="14.5" cy="12" r="1.4"/><circle cx="9.5" cy="18" r="1.4"/><circle cx="14.5" cy="18" r="1.4"/></g>',
+  toTop: '<path d="M6 6h12"/><path d="m6 17 6-6 6 6"/>',
+  toBottom: '<path d="M6 18h12"/><path d="m6 7 6 6 6-6"/>',
+});
 
 /** What the panel is to Customise: what draws it again, and how it is left. */
 export interface CustomiseHost {
@@ -147,6 +158,53 @@ const keepEscape = (event: KeyboardEvent): void => {
   if (event.key === 'Escape') event.stopPropagation();
 };
 
+/** A row's circle with its handle before it: six dots in the gutter, what a mouse or a finger drags the row by. */
+const gripped = (ref: string | TemplateResult, tone: Tone = 'neutral'): TemplateResult =>
+  html`<span class="cz-grip" aria-hidden="true">${icon('grip')}</span
+    ><span class="fv-ico fv-ico--${tone}" data-icon
+      >${typeof ref === 'string' ? icon(ref) : ref}</span
+    >`;
+
+/** What a list that stands still asks of Home Assistant's sorting: no row slides out of the way. */
+const STILL = { animation: 0 };
+
+/**
+ * A list whose rows are dragged by their handles: Home Assistant's own sorting (`ha-sortable`, as the cards' editor
+ * uses it), a mouse's or a finger's — the buttons are the keyboard's. `list` is the element that holds the rows
+ * (`row`: their class; one that `is-fixed` stays where it is); `dropped` is told the place a row left and the one it
+ * was dropped on. The rows between slide out of its way, or stand still where the page asks for less motion.
+ */
+const sortable = (
+  row: 'cz-part' | 'cz-item',
+  list: TemplateResult,
+  dropped: (from: number, to: number) => void,
+): TemplateResult =>
+  html`<ha-sortable
+    no-style
+    handle-selector=".${row} > .fv-row > .cz-grip"
+    draggable-selector=".${row}:not(.is-fixed)"
+    .options=${reducedMotion() ? STILL : undefined}
+    @item-moved=${(event: CustomEvent<{ oldIndex: number; newIndex: number }>) => {
+      event.stopPropagation();
+      dropped(event.detail.oldIndex, event.detail.newIndex);
+    }}
+    >${list}</ha-sortable
+  >`;
+
+/** The ways a row moves by the keyboard, as its first buttons stand: to the top, up, down, to the bottom. */
+const MOVES = ['top', 'up', 'down', 'bottom'] as const;
+type Move = (typeof MOVES)[number];
+const isMove = (key: string): key is Move => (MOVES as readonly string[]).includes(key);
+const MOVE_GLYPHS: Readonly<Record<Move, string>> = {
+  top: 'toTop',
+  up: 'up',
+  down: 'down',
+  bottom: 'toBottom',
+};
+/** The place a move takes a row to, from its place `at` among `count`. */
+const placeOf = (move: Move, at: number, count: number): number =>
+  move === 'top' ? 0 : move === 'up' ? at - 1 : move === 'down' ? at + 1 : count - 1;
+
 /**
  * Customise (#170): an automatic dashboard's views and cards as rows — hidden, moved, tuned, their lists thinned out
  * and added to, cards of the person's own after them — every change an edit of the dashboard's `edit`, laid over what
@@ -160,6 +218,8 @@ export class Customiser {
   private viewId = '';
   private openPart = '';
   private openItem = '';
+  /** The tabs unfolded under the open view's place among them. */
+  private openTabs = false;
   /** What a second tap would reset: a part's id, `view`, `all` ('' none). */
   private armed = '';
   private armTimer = 0;
@@ -590,19 +650,40 @@ export class Customiser {
       : { title: word || typeName(card?.type ?? ''), kind: '', name: false };
   }
 
-  /** A row of glyph buttons under an open row: equal whole-pixel cells, as many as it has buttons. */
-  private buttons(items: readonly ActionItem[], run: (key: string) => void): TemplateResult {
-    return html`<div class="cz-actions" style="--cz-cells:${items.length}">
-      ${actions(items, run)}
+  /**
+   * A row of glyph buttons under an open row: equal whole-pixel cells, as many as it has buttons — or, in a column
+   * that would leave six of them under a finger's 44, its four moves over the others.
+   */
+  private buttons(
+    ctx: PanelContext,
+    items: readonly ActionItem[],
+    run: (key: string) => void,
+  ): TemplateResult {
+    const width = ctx.fit?.width ?? 0;
+    const cells =
+      width && (width - (items.length - 1) * 8) / items.length < 44 ? MOVES.length : items.length;
+    return html`<div class="cz-actions" style="--cz-cells:${cells}">
+      ${actions(items, run, cells)}
     </div>`;
   }
 
+  /** A row's four moves, from its place `at` among `count`: each still where it has nowhere to go. */
+  private moves(ctx: PanelContext, at: number, count: number): ActionItem[] {
+    return MOVES.map((key) => ({
+      key,
+      glyph: MOVE_GLYPHS[key],
+      label: say(ctx.hass, key),
+      disabled: key === 'top' || key === 'up' ? at <= 0 : at >= count - 1,
+    }));
+  }
+
+  /** A part's row among the rows drawn (`seen`: their ids in order); `place` puts one of them on a place among them. */
   private partRow(
     ctx: PanelContext,
     view: ViewOutline,
     part: PartOutline,
-    order: readonly PartOutline[],
-    ids: readonly string[],
+    seen: readonly string[],
+    place: (id: string, to: number) => void,
   ): TemplateResult {
     const edit = this.edit;
     const own = part.kind === 'own';
@@ -630,24 +711,11 @@ export class Customiser {
       .filter(Boolean)
       .join(' · ');
     const open = this.openPart === part.id;
-    const seen = order.map((other) => other.id);
     const at = seen.indexOf(part.id);
-    const move = (by: 1 | -1): void =>
-      this.reorder(
-        'cards',
-        ids,
-        stepped(
-          pinned(ids, (id) => edit.cards?.[id]?.order),
-          part.id,
-          by,
-          (id) => seen.includes(id),
-        ),
-      );
     const tunes = !own && part.card && (!list || listKey(part.card, list) !== undefined);
     const armed = this.armed === part.id;
     const items: ActionItem[] = [
-      { key: 'up', glyph: 'up', label: say(ctx.hass, 'up'), disabled: at <= 0 },
-      { key: 'down', glyph: 'down', label: say(ctx.hass, 'down'), disabled: at >= seen.length - 1 },
+      ...this.moves(ctx, at, seen.length),
       ...(tunes ? [{ key: 'options', glyph: 'sliders', label: say(ctx.hass, 'options') }] : []),
       ...(own
         ? [{ key: 'remove', glyph: 'trash', label: say(ctx.hass, 'remove') }]
@@ -662,9 +730,9 @@ export class Customiser {
           ]),
     ];
     const run = (key: string): void => {
-      if (key === 'up' || key === 'down') {
-        this.moved = { part: part.id, at: key === 'up' ? 0 : 1 };
-        move(key === 'up' ? -1 : 1);
+      if (isMove(key)) {
+        this.moved = { part: part.id, at: MOVES.indexOf(key) };
+        place(part.id, placeOf(key, at, seen.length));
       } else if (key === 'options' && part.card) {
         const key = listKey(part.card, list);
         this.openSheet(part.id, title, iconOf(part, ctx.hass), part.card, key ? [key] : []);
@@ -679,8 +747,7 @@ export class Customiser {
       data-part=${part.id}
     >
       ${listRow({
-        icon: iconOf(part, ctx.hass),
-        tone: hidden ? 'neutral' : 'accent',
+        icon: gripped(iconOf(part, ctx.hass), hidden ? 'neutral' : 'accent'),
         title,
         name,
         ...(sub ? { sub } : {}),
@@ -704,7 +771,7 @@ export class Customiser {
       ${
         open
           ? html`<div class="cz-detail">
-              ${this.buttons(items, run)}
+              ${this.buttons(ctx, items, run)}
               ${
                 armed
                   ? html`<p class="pn-hint cz-armed">
@@ -744,35 +811,37 @@ export class Customiser {
     // a list of devices (the appliances' bands) is thinned out and ordered; only entities are added
     const devices = list.items.some((item) => !item.includes('.'));
     const dropped = list.items.filter((item) => !shown.includes(item));
-    const move = (item: string, by: 1 | -1): void => {
-      const asked = [...shown];
-      const from = asked.indexOf(item);
-      asked.splice(from, 1);
-      asked.splice(from + by, 0, item);
-      this.editList(part, { order: leading(this.itemsOf(ctx, part, false), asked) });
-    };
+    /** Puts an entity on a place among those shown: the list names only what was put first. */
+    const place = (item: string, to: number): void =>
+      this.editList(part, {
+        order: leading(this.itemsOf(ctx, part, false), moved(shown, shown, item, to)),
+      });
     const row = (item: string, on: boolean): TemplateResult => {
       const name = nameOf(ctx.hass, item);
       const state = ctx.hass.states[item];
       const card = on ? itemCard(part, item) : undefined;
       const open = on && this.openItem === item;
       const at = shown.indexOf(item);
+      // the entity's own icon as Home Assistant draws it, in the row's circle
+      const drawn = state
+        ? html`<ha-state-icon
+            class="fv-haicon"
+            .hass=${ctx.hass}
+            .stateObj=${state}
+          ></ha-state-icon>`
+        : (list.icon ?? 'plug');
+      // one left out waits at the list's foot, where nothing is dragged
       return html`<div
-        class="cz-item ${on ? '' : 'is-off'} ${open ? 'is-open' : ''}"
+        class="cz-item ${on ? '' : 'is-off is-fixed'} ${open ? 'is-open' : ''}"
         data-item=${item}
       >
         ${listRow({
           compact: true,
-          // the entity's own icon as Home Assistant draws it, in the row's circle
-          icon: state
-            ? html`<span class="fv-ico fv-ico--neutral" data-icon
-                ><ha-state-icon
-                  class="fv-haicon"
-                  .hass=${ctx.hass}
-                  .stateObj=${state}
-                ></ha-state-icon
-              ></span>`
-            : (list.icon ?? 'plug'),
+          icon: on
+            ? gripped(drawn)
+            : html`<span class="fv-ico fv-ico--neutral" data-icon
+                >${typeof drawn === 'string' ? icon(drawn) : drawn}</span
+              >`,
           title: name,
           name: true,
           trailing: toggle(on, 'accent', (next) => this.toggleItem(part, item, next), name),
@@ -789,29 +858,23 @@ export class Customiser {
         ${
           open
             ? this.buttons(
+                ctx,
                 [
-                  { key: 'up', glyph: 'up', label: say(ctx.hass, 'up'), disabled: at <= 0 },
-                  {
-                    key: 'down',
-                    glyph: 'down',
-                    label: say(ctx.hass, 'down'),
-                    disabled: at >= shown.length - 1,
-                  },
+                  ...this.moves(ctx, at, shown.length),
                   ...(card
                     ? [{ key: 'options', glyph: 'sliders', label: say(ctx.hass, 'options') }]
                     : []),
                 ],
                 (key) => {
-                  if (key === 'options' && card)
+                  if (isMove(key)) {
+                    this.moved = { part: part.id, item, at: MOVES.indexOf(key) };
+                    place(item, placeOf(key, at, shown.length));
+                  } else if (card)
                     this.openSheet(`${part.id}:${item}`, name, iconOf(part, ctx.hass), card, [
                       'entity',
                       'area',
                       'device',
                     ]);
-                  else {
-                    this.moved = { part: part.id, item, at: key === 'up' ? 0 : 1 };
-                    move(item, key === 'up' ? -1 : 1);
-                  }
                 },
               )
             : nothing
@@ -820,13 +883,17 @@ export class Customiser {
     };
     const taken = [...shown, ...dropped];
     return html`<p class="fv-label cz-label">${say(ctx.hass, devices ? 'devices' : 'entities')}</p>
-      <div class="cz-items">
-        ${repeat(
-          taken,
-          (item) => item,
-          (item) => row(item, shown.includes(item)),
-        )}
-      </div>
+      ${sortable(
+        'cz-item',
+        html`<div class="cz-items">
+          ${repeat(
+            taken,
+            (item) => item,
+            (item) => row(item, shown.includes(item)),
+          )}
+        </div>`,
+        (from, to) => place(shown[from] as string, to),
+      )}
       ${
         devices
           ? nothing
@@ -939,6 +1006,49 @@ export class Customiser {
 
   /* ---------- a view ---------- */
 
+  /**
+   * The dashboard's tabs as rows under the open view's place among them, in the person's order: each dragged to its
+   * place by its handle, and shown or left out by its switch (the first the house draws always stays).
+   */
+  private tabsBlock(
+    ctx: PanelContext,
+    tabs: readonly ViewOutline[],
+    first: ViewOutline | undefined,
+    place: (id: string, to: number) => void,
+  ): TemplateResult {
+    const edit = this.edit;
+    const row = (tab: ViewOutline): TemplateResult => {
+      const hidden = tab !== first && edit.views?.[tab.id]?.hidden === true;
+      return html`<div class="cz-item ${hidden ? 'is-off' : ''}" data-view=${tab.id}>
+        ${listRow({
+          compact: true,
+          icon: gripped(tab.icon),
+          title: tab.title,
+          name: true,
+          ...(tab === first
+            ? { trailing: 'value' as const, value: ctx.t('dashboard.always'), quiet: true }
+            : {
+                trailing: toggle(
+                  !hidden,
+                  'accent',
+                  (on) =>
+                    this.change(
+                      patched(this.edit, 'views', tab.id, { hidden: on ? undefined : true }),
+                    ),
+                  tab.title,
+                ),
+              }),
+        })}
+      </div>`;
+    };
+    return html`<p class="fv-label cz-label">${ctx.t('dashboard.views')}</p>
+      ${sortable(
+        'cz-item',
+        html`<div class="cz-items">${repeat(tabs, (tab) => tab.id, row)}</div>`,
+        (from, to) => place((tabs[from] as ViewOutline).id, to),
+      )}`;
+  }
+
   private viewCard(
     ctx: PanelContext,
     view: ViewOutline,
@@ -959,13 +1069,29 @@ export class Customiser {
         id.startsWith(`${view.id}/`),
       );
     const tabIds = tabs.map((tab) => tab.id);
-    const placed = pinned(tabIds, (id) => edit.views?.[id]?.order);
-    const place = placed.indexOf(view.id);
-    const moveTab = (by: 1 | -1): void =>
+    const lined = pinned(tabs, (tab) => edit.views?.[tab.id]?.order);
+    const placed = lined.map((tab) => tab.id);
+    const at = placed.indexOf(view.id);
+    /** Puts a tab on a place among the tabs, with the fewest places kept. */
+    const placeTab = (id: string, to: number): void =>
+      this.reorder('views', tabIds, moved(placed, placed, id, to));
+    /** A step of the open view's, from the row's own buttons: the row unfolds on a tap of its words alone. */
+    const step = (by: 1 | -1) => (event: Event) => {
+      event.stopPropagation();
+      placeTab(view.id, at + by);
+    };
+    const seen = order.map((part) => part.id);
+    /** Puts a part on a place among the rows drawn, with the fewest places kept. */
+    const place = (id: string, to: number): void =>
       this.reorder(
-        'views',
-        tabIds,
-        stepped(placed, view.id, by, () => true),
+        'cards',
+        ids,
+        moved(
+          pinned(ids, (other) => edit.cards?.[other]?.order),
+          seen,
+          id,
+          to,
+        ),
       );
     const armed = this.armed === 'view';
     return html`<section class="fv-card pn-card cz-view">
@@ -999,40 +1125,59 @@ export class Customiser {
                         ),
                     })
               }
-              ${listRow({
-                icon: 'updown',
-                title: say(ctx.hass, 'place'),
-                sub: say(ctx.hass, 'place_of', { place: place + 1, count: placed.length }),
-                trailing: html`<span class="cz-steps"
-                  >${round(
-                    'chevronLeft',
-                    'quiet',
-                    say(ctx.hass, 'earlier'),
-                    () => moveTab(-1),
-                    place <= 0,
-                  )}${round(
-                    'chevron',
-                    'quiet',
-                    say(ctx.hass, 'later'),
-                    () => moveTab(1),
-                    place >= placed.length - 1,
-                  )}</span
-                >`,
-              })}
+              <div class="cz-place ${this.openTabs ? 'is-open' : ''}">
+                ${listRow({
+                  icon: 'updown',
+                  title: say(ctx.hass, 'place'),
+                  sub: say(ctx.hass, 'place_of', { place: at + 1, count: placed.length }),
+                  trailing: html`<span class="cz-caret" aria-hidden="true">${glyph('chevron')}</span
+                    ><span class="cz-steps"
+                      >${round(
+                        'chevronLeft',
+                        'quiet',
+                        say(ctx.hass, 'earlier'),
+                        step(-1),
+                        at <= 0,
+                      )}${round(
+                        'chevron',
+                        'quiet',
+                        say(ctx.hass, 'later'),
+                        step(1),
+                        at >= placed.length - 1,
+                      )}</span
+                    >`,
+                  open: this.openTabs,
+                  onTap: () => {
+                    this.openTabs = !this.openTabs;
+                    this.host.requestUpdate();
+                  },
+                })}
+                ${
+                  this.openTabs
+                    ? html`<div class="cz-detail">
+                        ${this.tabsBlock(ctx, lined, first, placeTab)}
+                      </div>`
+                    : nothing
+                }
+              </div>
             </div>`
           : nothing
       }
       <p class="fv-label pn-label">${ctx.t('dashboard.cards')}</p>
-      <div class="cz-parts">
-        ${
-          // each row moves with its part: a button pressed again after a move still has the focus
-          repeat(
-            order,
-            (part) => part.id,
-            (part) => this.partRow(ctx, view, part, order, ids),
-          )
-        }
-      </div>
+      ${sortable(
+        'cz-part',
+        html`<div class="cz-parts">
+          ${
+            // each row moves with its part: a button pressed again after a move still has the focus
+            repeat(
+              order,
+              (part) => part.id,
+              (part) => this.partRow(ctx, view, part, seen, place),
+            )
+          }
+        </div>`,
+        (from, to) => place(seen[from] as string, to),
+      )}
       ${this.ownBlock(ctx, view)}
       ${
         changed
@@ -1062,6 +1207,7 @@ export class Customiser {
       this.viewId = '';
       this.openPart = '';
       this.openItem = '';
+      this.openTabs = false;
       this.adding = undefined;
       this.drawn = undefined;
     }

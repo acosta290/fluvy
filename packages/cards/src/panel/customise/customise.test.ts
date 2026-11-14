@@ -310,6 +310,91 @@ describe('Customise (#170)', () => {
     expect(up.disabled).toBe(true);
   });
 
+  it('puts a card at the top or the bottom with one press, kept as one place (#188)', async () => {
+    const m = await mount();
+    await m.open();
+    const order = m.parts() as string[];
+    const scenes = 'home/scenes';
+    // the scenes close the Home view as the house lays it out: fifteen presses of "up" before
+    expect(order.indexOf(scenes)).toBeGreaterThan(8);
+    const disabled = (label: string): boolean =>
+      [...m.part(scenes)!.querySelectorAll<HTMLButtonElement>('.fv-action')].find(
+        (button) => button.getAttribute('aria-label') === label,
+      )!.disabled;
+    await m.act(await m.unfold(scenes), 'Move to the top');
+    expect(m.parts()).toEqual([scenes, ...order.filter((id) => id !== scenes)]);
+    expect(m.edit()).toEqual({ cards: { [scenes]: { order: 0 } } });
+    expect([disabled('Move to the top'), disabled('Move up')]).toEqual([true, true]);
+    expect([disabled('Move down'), disabled('Move to the bottom')]).toEqual([false, false]);
+    await m.act(m.part(scenes)!, 'Move to the bottom');
+    expect(m.parts().at(-1)).toBe(scenes);
+    expect(m.edit()).toEqual({ cards: { [scenes]: { order: -1 } } });
+    expect([disabled('Move down'), disabled('Move to the bottom')]).toEqual([true, true]);
+  });
+
+  it('reorders the cards, a list’s entities and the tabs where a row is dropped (#188)', async () => {
+    const m = await mount();
+    await m.open();
+    /** A row dropped on another place of its list, as Home Assistant's sorting says it. */
+    const drop = async (list: Element, oldIndex: number, newIndex: number) => {
+      expect(list.parentElement!.localName).toBe('ha-sortable');
+      list.parentElement!.dispatchEvent(
+        new CustomEvent('item-moved', { detail: { oldIndex, newIndex }, bubbles: true }),
+      );
+      await m.settle(2);
+    };
+    const order = m.parts() as string[];
+    const [first, second, third, fourth] = order as [string, string, string, string];
+    // every row is held by a handle before its circle
+    expect(m.part(first)!.querySelector(':scope > .fv-row > .cz-grip')).not.toBeNull();
+    await drop(m.root.querySelector('.cz-parts')!, 3, 1);
+    expect(m.parts().slice(0, 4)).toEqual([first, fourth, second, third]);
+    expect(m.edit()).toEqual({ cards: { [fourth]: { order: 1 } } });
+    // dropped back where the house reads it, nothing is kept
+    await drop(m.root.querySelector('.cz-parts')!, 1, 3);
+    expect(m.parts()).toEqual(order);
+    expect(m.edit()).toBeUndefined();
+
+    // a list's entities: the one dropped first is the only one its order names
+    const lights = await m.unfold('home/lights');
+    const items = () =>
+      [...m.part('home/lights')!.querySelectorAll<HTMLElement>('.cz-item')].map(
+        (item) => item.dataset['item'],
+      );
+    const before = items() as string[];
+    // one left out waits at the list's foot, where nothing is dragged: it has no handle
+    await m.flip(lights.querySelector(`.cz-item[data-item="${before[0]}"]`)!);
+    const left = m.part('home/lights')!.querySelector(`.cz-item[data-item="${before[0]}"]`)!;
+    expect(left.classList.contains('is-fixed')).toBe(true);
+    expect(left.querySelector('.cz-grip')).toBeNull();
+    await drop(m.part('home/lights')!.querySelector('.cz-items')!, 2, 0);
+    expect(items().slice(0, 3)).toEqual([before[3], before[1], before[2]]);
+    expect(m.edit()!['entities']).toEqual({
+      'home/lights': { drop: [before[0]], order: [before[3]] },
+    });
+    // a drop inside the list never reaches the cards' own
+    expect(m.edit()!['cards']).toBeUndefined();
+
+    // the tabs unfold under the open view's place among them, each with its handle and its switch
+    m.row('Place among the tabs')!.click();
+    await m.settle(2);
+    const tabs = () =>
+      [...m.root.querySelectorAll<HTMLElement>('.cz-place .cz-item')].map(
+        (tab) => tab.dataset['view'],
+      );
+    expect(tabs().slice(0, 3)).toEqual(['home', 'rooms', 'lights']);
+    await drop(m.root.querySelector('.cz-place .cz-items')!, 2, 0);
+    expect(tabs().slice(0, 3)).toEqual(['lights', 'home', 'rooms']);
+    expect(m.edit()!['views']).toEqual({ lights: { order: 0 } });
+    expect(m.root.querySelector('.cz-top .fv-chip')?.textContent?.trim()).toBe('Lights');
+    // the first view the house draws always stays: it has no switch, the others have
+    const tab = (id: string) => m.root.querySelector(`.cz-place .cz-item[data-view="${id}"]`)!;
+    expect(tab('home').querySelector('.fv-hit')).toBeNull();
+    await m.flip(tab('rooms'));
+    expect(m.edit()!['views']).toEqual({ lights: { order: 0 }, rooms: { hidden: true } });
+    expect(tab('rooms').classList.contains('is-off')).toBe(true);
+  });
+
   it('thins out a list, adds to it what it takes and orders it', async () => {
     const m = await mount();
     await m.open();

@@ -1595,6 +1595,8 @@
     "later": "Después",
     "up": "Subir",
     "down": "Bajar",
+    "top": "Subir al principio",
+    "bottom": "Bajar al final",
     "options": "Opciones",
     "reset_card": "Toca otra vez para que la casa vuelva a dibujar esta tarjeta",
     "entities": "Entidades",

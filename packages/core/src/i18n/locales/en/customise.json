@@ -16,6 +16,8 @@
     "later": "Later",
     "up": "Move up",
     "down": "Move down",
+    "top": "Move to the top",
+    "bottom": "Move to the bottom",
     "options": "Options",
     "reset_card": "Tap again to draw this card as the house does",
     "entities": "Entities",

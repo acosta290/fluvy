@@ -2871,6 +2871,8 @@
     "later": "Hátrébb",
     "up": "Mozgatás fel",
     "down": "Mozgatás le",
+    "top": "Mozgatás legfelülre",
+    "bottom": "Mozgatás legalulra",
     "options": "Opciók",
     "reset_card": "Koppints újra, és a kártyát ismét a ház rajzolja",
     "entities": "Entitások",

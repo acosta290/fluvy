@@ -1595,6 +1595,8 @@
     "later": "Later",
     "up": "Omhoog",
     "down": "Omlaag",
+    "top": "Helemaal omhoog",
+    "bottom": "Helemaal omlaag",
     "options": "Opties",
     "reset_card": "Tik nog eens om het huis deze kaart weer te laten tekenen",
     "entities": "Entiteiten",

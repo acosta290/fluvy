@@ -2860,6 +2860,8 @@
     "later": "Neskôr",
     "up": "Posunúť vyššie",
     "down": "Posunúť nižšie",
+    "top": "Posunúť úplne hore",
+    "bottom": "Posunúť úplne dole",
     "options": "Možnosti",
     "reset_card": "Ťuknite znova a túto kartu opäť nakreslí dom",
     "entities": "Entity",

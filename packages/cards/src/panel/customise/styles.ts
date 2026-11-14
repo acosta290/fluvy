@@ -18,12 +18,14 @@ export const customiseStyles = css`
     grid-template-columns: minmax(0, 1fr);
   }
   .cz-part,
-  .cz-item {
+  .cz-item,
+  .cz-place {
     position: relative;
   }
   /* the rows' hairline, from their words on: each part is a box of its own, so the rows' own rule cannot draw it */
   .cz-part + .cz-part::before,
-  .cz-item + .cz-item::before {
+  .cz-item + .cz-item::before,
+  .fv-row + .cz-place::before {
     content: '';
     position: absolute;
     left: 56px;
@@ -52,12 +54,19 @@ export const customiseStyles = css`
     transform: rotate(90deg);
     transition: transform 200ms var(--fv-ease, ease);
   }
-  .cz-part.is-open .cz-caret svg {
+  .cz-part.is-open > .fv-row .cz-caret svg,
+  .cz-place.is-open > .fv-row .cz-caret svg {
     transform: rotate(-90deg);
   }
   /* a phone's column gives the caret's room to the words: a long one ("Electrodomésticos") is never cut for it */
   @container pn (max-width: 399px) {
     .cz-caret {
+      display: none;
+    }
+  }
+  /* the tabs' row ends in its two steps too: its caret waits for a column that holds them all beside its words */
+  @container pn (max-width: 647px) {
+    .cz-place .cz-caret {
       display: none;
     }
   }
@@ -85,15 +94,97 @@ export const customiseStyles = css`
     box-shadow: 0 0 0 2px var(--fluvy-inset, var(--fluvy-page));
   }
   /* open: the row and what it unfolds on the page's ground, 12 past the card's column on each side */
-  .cz-part.is-open {
+  .cz-part.is-open,
+  .cz-place.is-open {
     margin: 4px -12px;
     padding: 0 12px 12px;
     border-radius: var(--fluvy-radius-lg);
     background: var(--fluvy-inset, var(--fluvy-page));
   }
   .cz-part.is-open::before,
-  .cz-part.is-open + .cz-part::before {
+  .cz-part.is-open + .cz-part::before,
+  .cz-place.is-open::before {
     content: none;
+  }
+
+  /* ---------- a row dragged ---------- */
+  /* a row's handle: six dots in the gutter before its circle (the card's 20, an open row's 12), a finger's 44 from
+     there over the circle's start; a tap on it is the row's own */
+  .cz-grip {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -20px;
+    display: flex;
+    align-items: center;
+    width: 44px;
+    color: var(--fluvy-text-secondary);
+    opacity: 0.56;
+    cursor: grab;
+    touch-action: none;
+    transition: opacity 160ms var(--fv-ease, ease);
+  }
+  .cz-grip svg {
+    width: 16px;
+    height: 16px;
+    margin-inline-start: 2px;
+  }
+  .cz-detail .cz-grip,
+  :is(.is-open, .sortable-chosen) > .fv-row > .cz-grip {
+    inset-inline-start: -12px;
+  }
+  .cz-detail .cz-grip svg,
+  :is(.is-open, .sortable-chosen) > .fv-row > .cz-grip svg {
+    margin-inline-start: -2px;
+  }
+  .fv-row:hover > .cz-grip,
+  .sortable-chosen > .fv-row > .cz-grip {
+    opacity: 1;
+  }
+  /* lifted: the row on the raised card's fill inside the accent's ring, the 16 of an inner tile and 12 past the
+     column on each side as an open row is; it stands where it will land, and the rows between slide out of its way.
+     Dropped, the ring and the lift ease away where it stands */
+  .cz-part,
+  .cz-item {
+    transition:
+      background-color 200ms var(--fv-ease, ease),
+      box-shadow 200ms var(--fv-ease, ease);
+  }
+  .cz-part.sortable-chosen,
+  .cz-item.sortable-chosen {
+    z-index: 1;
+    margin-inline: -12px;
+    padding-inline: 12px;
+    border-radius: var(--fluvy-radius-lg);
+    background: var(--fluvy-card-elevated, var(--fluvy-card));
+    box-shadow:
+      inset 0 0 0 2px var(--fluvy-accent),
+      var(--fluvy-shadow-lift);
+  }
+  .sortable-chosen .cz-grip {
+    cursor: grabbing;
+  }
+  /* held, never pressed: the row keeps its full strength under the finger that lifts it */
+  .sortable-chosen > .fv-row--tap:active {
+    opacity: 1;
+  }
+  .sortable-chosen::before,
+  .sortable-chosen + .cz-part::before,
+  .sortable-chosen + .cz-item::before {
+    content: none;
+  }
+  /* what follows a finger is the row itself, from place to place: Home Assistant's own copy of it stays unseen */
+  .sortable-fallback {
+    display: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cz-part,
+    .cz-item,
+    .cz-grip {
+      transition: none;
+    }
+  }
+  :host([reduced-motion]) :is(.cz-part, .cz-item, .cz-grip) {
+    transition: none;
   }
   .cz-detail {
     display: grid;
@@ -111,7 +202,8 @@ export const customiseStyles = css`
     justify-content: start;
     margin-top: 0;
   }
-  .cz-detail .fv-action:not(.fv-action--accent) {
+  .cz-detail .fv-action:not(.fv-action--accent),
+  .cz-place.is-open .cz-steps > .fv-round {
     background: var(--fluvy-card);
     box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
   }

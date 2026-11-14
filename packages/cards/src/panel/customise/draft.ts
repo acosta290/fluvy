@@ -115,19 +115,32 @@ export function pinsFor(
   return pins;
 }
 
-/** `ids` with one moved a step among those a person sees (`seen`): past the hidden and the empty ones between. */
-export function stepped(
+/**
+ * `ids` with one put on a place among those a person sees (`seen`, in their order; `to`: its place among them):
+ * where a row dropped there, a step, or a press of Top or Bottom leaves it. Gone up, it stands right before the one
+ * it now leads; gone down, right after the one it now follows — past the hidden and the empty ones between, and no
+ * others; on the first place or the last it leads or closes them all, so an end stays an end when the house grows.
+ */
+export function moved(
   ids: readonly string[],
+  seen: readonly string[],
   id: string,
-  by: 1 | -1,
-  seen: (id: string) => boolean,
+  to: number,
 ): string[] {
-  const from = ids.indexOf(id);
-  let to = from + by;
-  while (to >= 0 && to < ids.length && !seen(ids[to] as string)) to += by;
-  if (from < 0 || to < 0 || to >= ids.length) return [...ids];
+  const from = seen.indexOf(id);
+  const others = seen.filter((other) => other !== id);
+  const place = Math.max(0, Math.min(others.length, to));
+  if (from < 0 || place === from) return [...ids];
   const next = ids.filter((other) => other !== id);
-  next.splice(to, 0, id);
+  const at =
+    place === 0
+      ? 0
+      : place === others.length
+        ? next.length
+        : place < from
+          ? next.indexOf(others[place] as string)
+          : next.indexOf(others[place - 1] as string) + 1;
+  next.splice(at, 0, id);
   return next;
 }
 
