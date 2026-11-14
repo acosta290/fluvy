@@ -135,7 +135,8 @@ Edit dashboard dialog:
 
 - The settings panel keeps what an automatic dashboard's configuration holds beside its strategy (a `kiosk_mode:`, Home
   Assistant's `background:`, a title): saving its options, Recreate and an imported settings file each wrote the
-  strategy alone and erased the rest (#187, asked by @SentinelXS).
+  strategy alone and erased the rest; and it reads the dashboard again as it saves, so what was written in Home
+  Assistant since the panel opened is kept (#187, asked by @SentinelXS).
 - An item's sheet taller than the screen opens at its head, where it opened scrolled down to Close (#190).
 - The History page's dates on a phone keep Show above the phone's home bar, as the Activity page's do (#190).
 - A solar forecast Home Assistant cannot give is asked for once a minute for every Production card on a view, where each

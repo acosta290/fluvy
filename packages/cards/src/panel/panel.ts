@@ -945,23 +945,42 @@ export class FluvyPanel extends LitElement {
   }
 
   /**
-   * A dashboard's configuration with its pending edits, to save; undefined where it has none. An automatic dashboard's
-   * is its strategy with its options changed beside what else it held; a dashboard of the person's own is read again
-   * first, whole, so nothing they changed in Home Assistant meanwhile is written over, and takes its sidebar alone.
+   * A dashboard's configuration with its pending edits, to save; undefined where it has none. It is read again first,
+   * whole, so nothing changed in Home Assistant since the panel read it is written over: an automatic dashboard's is
+   * its strategy as it stands now with its options changed, beside what else it holds now (as the panel read it, where
+   * it cannot be read again); a dashboard of the person's own takes its sidebar alone.
    */
   private async configOf(dashboard: DashboardInfo): Promise<Record<string, unknown> | undefined> {
     const { urlPath, strategy } = dashboard;
     const edit = this.strategyEdits[urlPath] ?? {};
     const side = urlPath in this.sideEdits;
     if (!side && !(strategy && Object.keys(edit).length)) return undefined;
-    const config = strategy
-      ? configWith(dashboard, withEdit(strategy, edit))
-      : await this.hass?.callWS<Record<string, unknown>>({
-          type: 'lovelace/config',
-          url_path: urlPath === 'lovelace' ? null : urlPath,
-          force: true,
-        });
+    const now = await this.hass
+      ?.callWS<Record<string, unknown>>({
+        type: 'lovelace/config',
+        url_path: urlPath === 'lovelace' ? null : urlPath,
+        force: true,
+      })
+      .catch(() => undefined);
+    const config = strategy ? this.automatic(dashboard, strategy, edit, now) : now;
     return config && side ? withSidebar(config, this.sideEdits[urlPath]) : config;
+  }
+
+  /** An automatic dashboard's configuration to save: `now`, where it still holds a strategy of Fluvy's, else as read. */
+  private automatic(
+    dashboard: DashboardInfo,
+    strategy: Readonly<Record<string, unknown>>,
+    edit: StrategyEdit,
+    now: Readonly<Record<string, unknown>> | undefined,
+  ): Record<string, unknown> {
+    const { strategy: held, ...rest } = now ?? {};
+    const still =
+      typeof held === 'object' && held !== null && !Array.isArray(held)
+        ? (held as Readonly<Record<string, unknown>>)
+        : undefined;
+    return still && templateOf(still['type'])
+      ? { ...rest, strategy: withEdit(still, edit) }
+      : configWith(dashboard, withEdit(strategy, edit));
   }
 
   /**

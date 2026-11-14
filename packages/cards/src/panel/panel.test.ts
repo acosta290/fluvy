@@ -412,6 +412,44 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('reads an automatic dashboard again before it saves: what was written in Home Assistant since the panel opened is kept', async () => {
+    const saved: { config?: unknown }[] = [];
+    let config: Record<string, unknown> = { strategy: { type: 'custom:fluvy-home' } };
+    const { panel, chip, button, settle } = await mount(true, {
+      callWS: async (message: {
+        type: string;
+        url_path?: string | null;
+        config?: Record<string, unknown>;
+      }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          config = message.config!;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        return message.type === 'lovelace/config' && message.url_path === 'fluvy-auto'
+          ? config
+          : { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    // meanwhile, in the raw configuration editor: a key beside the strategy, and an option of its own
+    config = {
+      kiosk_mode: { hide_header: true },
+      strategy: { type: 'custom:fluvy-home', flow_style: 'rail' },
+    };
+    chip('Ruler')!.click();
+    await settle();
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({
+      kiosk_mode: { hide_header: true },
+      strategy: { type: 'custom:fluvy-home', flow_style: 'rail', thermostat_variant: 'ruler' },
+    });
+  });
+
   it('keeps what a dashboard’s configuration holds beside its strategy: saving its options, Recreate and an imported file each write it back, and Recreate keeps what Customise changed', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // what a person wrote beside `strategy:` in the raw configuration, none of it the panel's
