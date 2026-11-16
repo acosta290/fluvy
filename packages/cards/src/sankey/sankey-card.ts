@@ -7,7 +7,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { activateKey, emptyState, head } from '@fluvy/ui';
+import { activateKey, emptyState, head, optionGrid } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
@@ -49,6 +49,7 @@ import {
   following,
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
+import { legendColumns } from '../energy/legend-row.js';
 import { deviceName, scaled, scaleOf, type Scale } from '../energy/power.js';
 import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
@@ -548,19 +549,18 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   }
 
   private renderDiagram(scene: Scene, w: number): TemplateResult {
-    const g: SankeyLayout = layoutSankey(scene.model, w, (key) => this.labelWidth(scene, key));
+    const g: SankeyLayout = layoutSankey(scene.model, w, (key) => this.labelWidth(scene, key), false);
     const lit = this.lit;
     // a ribbon is its two nodes' (`grid-house`), lifted with either
     const on = (keys: string): string => (lit && keys.split('-').includes(lit) ? 'is-on' : '');
+    // the devices' words stand in a legend under the diagram, so any of their keys lights it too
+    const known = lit !== undefined && [...g.top, ...g.mid, ...g.kids].some((n) => n.key === lit);
     const bars = (row: readonly LaidNode[], y: number): TemplateResult[] =>
       row.map(
         (n) =>
           svg`<rect class="en-node-bar en-ink--${n.ink} ${n.dashed ? 'is-dashed' : ''} ${on(n.key)}" data-key=${n.key} x=${n.x.toFixed(1)} y=${y} width=${Math.max(0, n.w).toFixed(1)} height=${BAR} rx=${Math.min(4, n.w / 2).toFixed(1)}></rect>`,
       );
-    return html`<div
-      class="en-sankey ${g.labels.some((l) => l.key === lit) ? 'is-lit' : ''}"
-      style="height:${g.height}px"
-    >
+    return html`<div class="en-sankey ${known ? 'is-lit' : ''}" style="height:${g.height}px">
       <svg
         width=${w}
         height=${g.height}
@@ -597,6 +597,60 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
           ><span class="en-sk-name" data-name>${words.name}</span
           ><span class="en-sk-value"
             >${words.value}<span class="en-unit">${words.unit}</span></span
+          ></span
+        >`;
+      })}
+    </div>${this.renderKids(scene, g.kids, w)}`;
+  }
+
+  /**
+   * The devices' names, as the usage card's legend: a square in the device's ink, its name, its figure under it, in
+   * equal columns — folded when the names do not hold them — rather than words that must stand in tiers over bars one
+   * or two pixels wide.
+   */
+  private renderKids(scene: Scene, kids: readonly LaidNode[], w: number): TemplateResult | typeof nothing {
+    const items = kids.flatMap((node) => {
+      const words = scene.words.get(node.key);
+      return words ? [{ node, words }] : [];
+    });
+    if (!items.length) return nothing;
+    const columns = legendColumns(
+      items.map((item) => item.words.name),
+      w,
+      this.head.ruler,
+    );
+    const grid = columns < items.length ? optionGrid(items.length, columns) : undefined;
+    const light = (key?: string): void => this.light(key);
+    return html`<div
+      class="en-legend en-sk-legend"
+      data-align="center"
+      style=${
+        grid
+          ? `grid-template-columns:repeat(${grid.tracks}, minmax(0,1fr));grid-auto-flow:row;row-gap:12px`
+          : nothing
+      }
+    >
+      ${items.map((item, index) => {
+        const entity = item.words.entity;
+        const open = entity ? () => this.tap(entity, { action: 'more-info' }) : undefined;
+        return html`<span
+          class="en-legend__item ${open ? 'fv-row--tap' : ''}"
+          data-key=${item.node.key}
+          style=${grid ? `grid-column:span ${grid.spans[index] ?? 1}` : nothing}
+          role=${open ? 'button' : 'img'}
+          aria-label=${open ? nothing : `${item.words.name} ${item.words.value} ${item.words.unit}`.trim()}
+          tabindex="0"
+          @pointerenter=${() => light(item.node.key)}
+          @pointerleave=${() => light()}
+          @focus=${() => light(item.node.key)}
+          @blur=${() => light()}
+          @click=${open ?? nothing}
+          @keydown=${open ? activateKey(open) : nothing}
+          ><span class="en-legend__name"
+            ><i class="en-sq en-ink--${item.node.ink}"></i
+            ><span class="en-legend__text">${item.words.name}</span></span
+          ><span class="en-legend__value"
+            >${item.words.value}<span class="en-unit">${item.words.unit}</span></span
           ></span
         >`;
       })}

@@ -11,6 +11,7 @@ import {
   RIBBONS,
   scaleOf,
   TIER,
+  WORDS_GAP,
   type LaidNode,
   type SankeyLayout,
 } from './layout.js';
@@ -220,6 +221,16 @@ describe('the sankey’s geometry', () => {
     expect(g.stem).not.toBeNull();
     const house = g.mid.find((n) => n.key === 'house') as LaidNode;
     expect(g.stem?.w).toBeCloseTo(house.w, 9);
+  });
+
+  it('a card that names the devices in a legend asks for no words over their bars', () => {
+    const legend = layoutSankey(model, 320, (key) => WORDS[key] ?? 60, false);
+    const kidKeys = new Set(g.kids.map((n) => n.key));
+    expect(legend.kids).toHaveLength(g.kids.length);
+    expect(legend.labels.some((l) => kidKeys.has(l.key))).toBe(false);
+    // the bars of the devices, the 8 px under them, and no tier of words there
+    expect(legend.height).toBe(g.y2 + BAR + WORDS_GAP);
+    expect(g.height - legend.height).toBeGreaterThan(0);
   });
 
   it('packs each row’s words on the 4 grid, 16 apart, inside the column: at the bar’s start, else its end', () => {
